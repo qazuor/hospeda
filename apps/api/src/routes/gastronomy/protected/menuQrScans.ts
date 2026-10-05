@@ -21,7 +21,6 @@
  * @module routes/gastronomy/protected/menuQrScans
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, QrCodeScanStatsSchema, QrCodeScanWindowSchema } from '@repo/schemas';
 import {
     buildEmptyQrCodeScanStats,
@@ -34,8 +33,7 @@ import {
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -132,10 +130,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
                 windowMs: 60_000,
                 max: MENU_QR_SCANS_RATE_LIMIT_MAX,
                 keyPrefix: 'menu-qr-scans:gastronomy'
-            }),
-            // Loader before checker (HOS-1074) — same as `menuQr.ts`.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MENU_QR_SCAN_METRICS)
+            })
         ]
     }
 });

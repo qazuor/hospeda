@@ -9,8 +9,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { entitlementMiddleware } from '../../../middlewares/entitlement';
-import { gateComparator } from '../../../middlewares/tourist-entitlements';
+
 import type { AppMiddleware } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -102,6 +101,6 @@ export const compareAccommodationsRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        middlewares: [entitlementMiddleware(), setCompareCount, gateComparator()]
+        middlewares: [setCompareCount]
     }
 });

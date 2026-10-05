@@ -38,7 +38,6 @@
  * a caller able to state its own allowance would have none.
  */
 
-import { LimitKey } from '@repo/billing';
 import {
     AccommodationFeaturedMediaAddOutputSchema,
     AccommodationIdSchema,
@@ -48,8 +47,6 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getRemainingLimit } from '../../../middlewares/entitlement';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -104,19 +101,12 @@ export const adminAddFeaturedMediaRoute = createAdminRoute({
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
 
-        const ownerId = (accommodation.data as { ownerId?: string | null }).ownerId;
-        const planGalleryCap =
-            ownerId && ownerId === actor.id
-                ? getRemainingLimit(
-                      ctx as Context<AppBindings>,
-                      LimitKey.MAX_PHOTOS_PER_ACCOMMODATION
-                  )
-                : undefined;
-
+        // The per-plan gallery cap (MAX_PHOTOS_PER_ACCOMMODATION) was removed
+        // with the legacy billing system (HOS-1416); `planGalleryCap` stays
+        // unset so only the service's own per-entity cap applies.
         const result = await accommodationService.addFeaturedMedia(actor, {
             accommodationId,
-            media: body as AccommodationMediaAddPayload,
-            planGalleryCap
+            media: body as AccommodationMediaAddPayload
         });
 
         if (result.error) {

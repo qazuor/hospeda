@@ -23,7 +23,6 @@
  * @module apps/api/services/ai-context/gastronomy-ai-context
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     gastronomies,
     gastronomyFaqs,
@@ -266,7 +265,7 @@ function formatOpeningHours(openingHours: Record<string, unknown> | null): strin
 export async function assembleGastronomyContext(
     input: AssembleChatContextInput
 ): Promise<AssembleChatContextOutput> {
-    const { entityId, resolvedPrompt, locale, ownerEntitlements } = input;
+    const { entityId, resolvedPrompt, locale } = input;
     const db = getDb();
 
     const rows = await db
@@ -293,12 +292,7 @@ export async function assembleGastronomyContext(
 
     const [faqs, menuItems] = await Promise.all([
         safeLoadFaqs(entityId),
-        // The carta is gated. `ownerEntitlements` is what the ROUTE resolved for
-        // this owner in the same request — see the module docblock for why the
-        // gate exists even though today's tiers make it unreachable.
-        ownerEntitlements.has(EntitlementKey.MANAGE_GASTRONOMY_MENU)
-            ? safeLoadMenuItems(entityId)
-            : Promise.resolve([] as GastronomyContextMenuItem[])
+        safeLoadMenuItems(entityId)
     ]);
 
     const contextBlock = buildGastronomyMarkdownContext(venue, faqs, menuItems);

@@ -14,10 +14,16 @@
  * @module services/publish-draft-delete
  */
 
-import type { CommerceVertical } from '@repo/billing';
 import type { Actor, ServiceOutput } from '@repo/service-core';
 import { ExperienceService, GastronomyService } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
+
+/**
+ * The two commerce verticals a draft delete can target. The shared type lived
+ * in `@repo/billing` and came down with the legacy billing system (HOS-1416);
+ * it is local now — same values, no billing meaning.
+ */
+type CommerceVertical = 'gastronomy' | 'experience';
 
 /**
  * Built on FIRST USE, never at module load — the same rule, and for the same
@@ -70,5 +76,11 @@ export async function deleteOwnCommerceDraft(input: {
             return getGastronomyService().softDeleteOwnDraft(actor, id);
         case 'experience':
             return getExperienceService().softDeleteOwnDraft(actor, id);
+        default: {
+            // Unreachable for the local union; kept so widening the union is a
+            // compile error rather than a silently mis-routed delete.
+            const exhaustiveCheck: never = vertical;
+            throw new Error(`Unsupported commerce vertical: ${String(exhaustiveCheck)}`);
+        }
     }
 }

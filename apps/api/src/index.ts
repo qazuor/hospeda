@@ -4,7 +4,6 @@
  */
 import { serve } from '@hono/node-server';
 import { resolveConfig } from '@repo/ai-core';
-import { validateBillingConfigOrThrow } from '@repo/billing';
 import {
     initializeModerationEngine,
     registerModerationMonitoringHooks
@@ -12,7 +11,6 @@ import {
 import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { configureLogger, LogFormat, LogLevel, registerCaptureHook } from '@repo/logger';
 import {
-    ensureDefaultPromoCodes,
     getIndexNowService,
     initializeIndexNowService,
     initializeRevalidationService,
@@ -290,25 +288,6 @@ const startServer = async (): Promise<void> => {
                 `Startup healthcheck OK: moderation credential resolved for provider '${moderationProviderId}'`
             );
         }
-
-        // Validate billing configuration
-        validateBillingConfigOrThrow();
-
-        // Mount qzpay-hono admin tier under /api/v1/admin/billing/*.
-        // Deferred until after initializeDatabase() because the mount calls
-        // getQZPayBilling() which needs the DB pool ready. See the comment on
-        // mountQZPayAdminTier() in routes/billing/admin/index.ts for the
-        // ESM-hoisting reason this cannot live at module-load time.
-        const { mountQZPayAdminTier } = await import('./routes/billing/admin');
-        mountQZPayAdminTier();
-
-        // Ensure default promo codes exist. HOS-1171 emptied that list: its one
-        // entry was HOSPEDA_FREE, and this call was the THIRD place that created
-        // it — the one that would have restored an active, uncapped comp code on
-        // every fresh database after the seed baseline and the seeded row both
-        // retired it. Kept as the seam for a future default, not as a no-op to
-        // delete.
-        await ensureDefaultPromoCodes();
 
         // Initialize ISR revalidation service (optional — only if secret is configured)
         if (env.HOSPEDA_REVALIDATION_SECRET) {

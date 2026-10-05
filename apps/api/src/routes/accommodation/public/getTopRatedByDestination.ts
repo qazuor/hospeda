@@ -7,14 +7,10 @@ import { AccommodationPublicSchema, PaginationResultSchema, ServiceErrorCode } f
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import type { AccommodationData } from '../../../utils/entitlement-filter';
-import {
-    filterAccommodationListByOwnerEntitlements,
-    stripRichDescriptionFields
-} from '../../../utils/entitlement-filter';
+import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -104,24 +100,9 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     const total = rawAccommodations.length;
     const totalPages = total === 0 ? 0 : 1;
 
-    // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.
-    // ONE batch query for all unique ownerIds on this page, then parallel billing
-    // lookups, then a synchronous gate pass. Fail-closed.
-    const uniqueOwnerIds = [
-        ...new Set(
-            rawAccommodations
-                .map((a) => (a as { ownerId?: string }).ownerId)
-                .filter((id): id is string => typeof id === 'string' && id.length > 0)
-        )
-    ];
-    const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
-    const accommodations = filterAccommodationListByOwnerEntitlements(
-        // TYPE-WORKAROUND: rawAccommodations comes from the service's untyped
-        // result shape; filterAccommodationListByOwnerEntitlements only reads
-        // ownerId/isVerified, both present at runtime on every accommodation item.
-        rawAccommodations as unknown as AccommodationData[],
-        ownerEntitlementsMap
-    );
+    // The SPEC-291 isVerified owner-entitlement gate was removed with the
+    // legacy billing system (HOS-1416); `isVerified` is emitted as stored.
+    const accommodations = rawAccommodations;
 
     return {
         data: accommodations,

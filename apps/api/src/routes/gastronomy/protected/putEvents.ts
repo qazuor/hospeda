@@ -33,7 +33,7 @@
  *
  * @module routes/gastronomy/protected/putEvents
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     GastronomyEventsOutputSchema,
     type GastronomyEventsReplacePayload,
@@ -45,8 +45,7 @@ import { GastronomyService, replaceGastronomyEvents } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -98,10 +97,5 @@ export const protectedPutGastronomyEventsRoute = createCRUDRoute({
     responseSchema: GastronomyEventsOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyEvents(ctx, params, body),
-    options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_EVENTS)
-        ]
-    }
+    options: {}
 });

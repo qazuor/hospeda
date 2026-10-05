@@ -14,8 +14,6 @@
  *     `checkLimit` requires the Hono `Context` populated by `entitlementMiddleware`.
  */
 
-import { LimitKey } from '@repo/billing';
-import { accommodationMediaModel } from '@repo/db';
 import {
     AccommodationIdSchema,
     type AccommodationMediaAddInput,
@@ -26,9 +24,9 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
+
 import { getActorFromContext } from '../../../utils/actor';
-import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
+
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -84,53 +82,8 @@ export const adminAddMediaRoute = createAdminRoute({
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
 
-        const ownerId = (accommodation.data as { ownerId?: string | null }).ownerId;
-        if (ownerId && ownerId === actor.id) {
-            const { total: currentGalleryPhotoCount } =
-                await accommodationMediaModel.findByAccommodation({
-                    accommodationId,
-                    state: 'visible',
-                    isFeatured: false
-                });
-
-            const planLimitCheck = checkLimit({
-                context: ctx,
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                currentCount: currentGalleryPhotoCount
-            });
-
-            const threshold = calculateThreshold(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-            const usagePercent = calculateUsagePercent(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-
-            if (threshold === 'warning' || threshold === 'critical') {
-                ctx.header(
-                    'X-Usage-Warning',
-                    `limitKey=${LimitKey.MAX_PHOTOS_PER_ACCOMMODATION};usage=${currentGalleryPhotoCount};max=${planLimitCheck.maxAllowed};threshold=${threshold}`
-                );
-            }
-
-            if (!planLimitCheck.allowed) {
-                apiLogger.warn(
-                    `Plan photo limit reached for accommodation ${accommodationId} (owner ${actor.id}): ${planLimitCheck.currentCount}/${planLimitCheck.maxAllowed}`
-                );
-                throw new ServiceError(
-                    ServiceErrorCode.LIMIT_REACHED,
-                    planLimitCheck.upgradeMessage ?? 'Photo limit reached',
-                    buildLimitReachedDetails({
-                        limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                        currentCount: planLimitCheck.currentCount,
-                        maxAllowed: planLimitCheck.maxAllowed,
-                        usagePercent
-                    })
-                );
-            }
-        }
+        // The per-plan gallery photo cap (MAX_PHOTOS_PER_ACCOMMODATION) was
+        // removed with the legacy billing system (HOS-1416).
 
         // ── Delegate to service ───────────────────────────────────────────────
         const input: AccommodationMediaAddInput = {

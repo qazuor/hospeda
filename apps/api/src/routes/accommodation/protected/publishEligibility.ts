@@ -9,8 +9,7 @@
 import { PublishEligibilityResponseSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getQZPayBilling } from '../../../middlewares/billing';
-import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -18,13 +17,9 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 // Same wiring as the publish route itself. The billing client is passed as a
 // getter rather than a value so the resolver reads it per request instead of
 // capturing a `null` when module load races billing initialisation.
-const accommodationService = new AccommodationService(
-    { logger: apiLogger },
-    undefined,
-    null,
-    undefined,
-    buildAccommodationPublishDeps(() => getQZPayBilling())
-);
+// The publish-deps (trial eligibility + local trial) went down with the legacy
+// billing system (HOS-1416); `publishDeps` is optional in `AccommodationService`.
+const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * GET /api/v1/protected/accommodations/publish-eligibility

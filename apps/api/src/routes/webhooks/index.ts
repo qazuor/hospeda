@@ -14,4 +14,3 @@
 
 export { brevoWebhookRoutes } from './brevo';
 export { webhookHealthRoutes } from './health';
-export { createMercadoPagoWebhookRoutes } from './mercadopago';

@@ -34,7 +34,6 @@
  * @module routes/gastronomy/protected/brochure
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     EntityTypeEnum,
     PermissionEnum,
@@ -49,8 +48,7 @@ import { entityNotFoundError, GastronomyService } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { buildGastronomyBrochureContent } from '../../../services/commerce-brochure/brochure-content';
 import { buildBrochureResponse } from '../../../services/commerce-brochure/brochure-response';
 import { GastronomyBrochureSourceSchema } from '../../../services/commerce-brochure/brochure-source';
@@ -58,8 +56,8 @@ import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -156,10 +154,6 @@ export const protectedGetGastronomyBrochureRoute = createProtectedRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetGastronomyBrochure(ctx, params),
     options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.DOWNLOAD_LISTING_PDF)
-        ],
         // Generating a PDF fetches and embeds a photo. Cheaper than a page
         // render, dearer than a JSON read — and nobody legitimately needs a
         // printable sheet twice a second.

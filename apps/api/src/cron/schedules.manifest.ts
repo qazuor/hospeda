@@ -44,29 +44,6 @@ export interface CronScheduleEntry {
  */
 export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
     {
-        name: 'abandoned-pending-subs',
-        displayName: 'Suscripciones abandonadas',
-        category: 'billing',
-        schedule: '0 * * * *',
-        description:
-            'Marks subscriptions stuck in pending_provider/incomplete past the 30-minute TTL as abandoned.'
-    },
-    {
-        name: 'addon-expiry',
-        displayName: 'Expiración de add-ons',
-        category: 'billing',
-        schedule: '0 5 * * *',
-        description: 'Expire addons whose subscription term has ended.'
-    },
-    {
-        name: 'addon-subscription-reconcile',
-        displayName: 'Reconciliación de add-ons recurrentes',
-        category: 'billing',
-        schedule: '45 */6 * * *',
-        description:
-            "Closes abandoned 'pending' recurring add-on checkouts (cancelling and VERIFYING their MercadoPago preapproval first — nothing else sweeps them: every add-on cron filters status='active' and every subscription sweep excludes the add-on domain), and reports soft-cancelled add-ons that addon-expiry left active past the period they paid for (HOS-847 PR 7c)."
-    },
-    {
         name: 'alerts-digest',
         displayName: 'Digest de alertas y ofertas',
         category: 'notifications',
@@ -104,14 +81,6 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'system',
         schedule: '0 5 * * *',
         description: 'Purge app_log_entries older than 30 days (WARN/ERROR only).'
-    },
-    {
-        name: 'apply-scheduled-plan-changes',
-        displayName: 'Cambios de plan programados',
-        category: 'billing',
-        schedule: '*/15 * * * *',
-        description:
-            'Apply due scheduled plan changes (SPEC-141 D7 downgrade) on subscriptions whose period_end has passed.'
     },
     {
         name: 'archive-abandoned-drafts',
@@ -179,13 +148,6 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Sync occupancy dates from every active Airbnb/Booking/other iCal feed (HOS-162 Phase 3).'
     },
     {
-        name: 'dunning',
-        displayName: 'Reintentos de cobro',
-        category: 'billing',
-        schedule: '0 6 * * *',
-        description: 'Retry past-due billing payments and notify customers.'
-    },
-    {
         name: 'entity-views-purge',
         displayName: 'Purga de vistas de entidades',
         category: 'system',
@@ -202,27 +164,12 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Aggregate entity_views and partner_logo_clicks into their monthly rollups before the 95-day purge deletes them. Runs daily and rewrites the previous month plus the current month-to-date, so a single missed run cannot leave a permanent hole (HOS-1063 A-6).'
     },
     {
-        name: 'exchange-rate-fetch',
-        displayName: 'Tipos de cambio',
-        category: 'billing',
-        schedule: '0 */3 * * *',
-        description: 'Refresh ARS / USD / EUR exchange rates from upstream APIs.'
-    },
-    {
         name: 'destination-weather-fetch',
         displayName: 'Clima de destinos',
         category: 'content',
         schedule: '0 6,18 * * *',
         description:
             'Refresh cached Open-Meteo weather (current + 16-day forecast) for published destinations with coordinates.'
-    },
-    {
-        name: 'finalize-cancelled-subs',
-        displayName: 'Finalizar suscripciones canceladas',
-        category: 'billing',
-        schedule: '30 4 * * *',
-        description:
-            'Finalizes soft-cancelled subscriptions whose current_period_end has elapsed: flips status to cancelled, revokes addons, clears entitlement cache (SPEC-147).'
     },
     {
         name: 'lead-intake-backstop',
@@ -248,20 +195,6 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Close newsletter campaigns whose deliveries have all resolved (status sending → sent).'
     },
     {
-        name: 'notification-log-purge',
-        displayName: 'Purga de logs de notificaciones',
-        category: 'notifications',
-        schedule: '0 3 * * *',
-        description: 'Drop notification log rows older than the retention window.'
-    },
-    {
-        name: 'notification-schedule',
-        displayName: 'Envío de notificaciones programadas',
-        category: 'notifications',
-        schedule: '0 8 * * *',
-        description: 'Dispatch scheduled notifications whose send-at has arrived.'
-    },
-    {
         name: 'page-revalidation',
         displayName: 'Revalidación de páginas (ISR)',
         category: 'search-cache',
@@ -274,44 +207,6 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'search-cache',
         schedule: '0 */6 * * *',
         description: 'Rebuild the materialized search index used for fuzzy queries.'
-    },
-    {
-        name: 'subscription-poll',
-        displayName: 'Sondeo de suscripciones (MP)',
-        category: 'billing',
-        schedule: '* * * * *',
-        description:
-            'Poll MercadoPago /preapproval/{id} for pending subscriptions to flip them to active when the subscription_preapproval webhook is delayed or lost (SPEC-143 Finding #17 fallback).'
-    },
-    {
-        name: 'courtesy-expiry',
-        displayName: 'Cierre de períodos de cortesía',
-        category: 'billing',
-        schedule: '0 * * * *',
-        description:
-            'Resume the MercadoPago preapproval of subscriptions whose gifted courtesy window has ended, and notify subscribers when a gift starts and when it ends (HOS-180). Load-bearing, not a backstop: nothing else resumes a paused preapproval, so a run that fails leaves the subscriber without service.'
-    },
-    {
-        name: 'trial-reconcile',
-        displayName: 'Reconciliación de pruebas',
-        category: 'billing',
-        schedule: '0 2 * * *',
-        description:
-            'Reconcile trials whose window has elapsed against MercadoPago: convert the ones whose charge landed, route failed charges to dunning, and mirror cancellations. Renamed from trial-expiry (HOS-171) — it no longer cancels elapsed trials.'
-    },
-    // 'trial-pre-end-notif' intentionally omitted: the job was DELETED (HOS-121).
-    // It duplicated notification-schedule's TRIAL_ENDING_REMINDER sender; its two
-    // robustness advantages (skip-tolerant D-3 window + durable
-    // billing_subscription_events dedup) were ported into
-    // notification-schedule.job.ts, then the duplicate cron was removed. There is
-    // no registered job by this name anymore — this note is kept only to explain
-    // the gap for anyone tracing the SPEC-126 D5 / HOS-115 history.
-    {
-        name: 'webhook-retry',
-        displayName: 'Reintento de webhooks',
-        category: 'system',
-        schedule: '0 */1 * * *',
-        description: 'Retry failed outbound webhook deliveries.'
     },
     {
         name: 'refresh-external-reputation',
@@ -330,83 +225,11 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Checks the status of pending/running Apify actor runs for external reputation data and persists results when runs complete.'
     },
     {
-        name: 'propagate-plan-price-changes',
-        displayName: 'Propagación de cambios de precio de plan',
-        category: 'billing',
-        schedule: '*/15 * * * *',
-        description:
-            'Propagate admin plan price DECREASES to existing subscribers’ MercadoPago preapprovals (HOS-176). Increases are gated on the owner re-auth smoke + notice flow.'
-    },
-    {
         name: 'social-publish-dispatch',
         displayName: 'Despacho de publicaciones sociales',
         category: 'content',
         schedule: '*/5 * * * *',
         description:
             'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11). Skipped when the make_api_key vault credential is absent.'
-    },
-    {
-        name: 'partner-expiry',
-        displayName: 'Expiración de partners',
-        category: 'billing',
-        schedule: '15 4 * * *',
-        description:
-            'Archive partners whose endsAt has passed — backup safety net for missed MP webhooks (SPEC-271 T-271-12).'
-    },
-    {
-        name: 'preapproval-less-expiry',
-        displayName: 'Suscripciones sin preapproval vencidas',
-        category: 'billing',
-        schedule: '30 5 * * *',
-        description:
-            'Expire active/trialing subscriptions that have no MercadoPago preapproval and whose period elapsed (H-21). Without a preapproval they are invisible to subscription-poll and to dunning, so nothing else ever moves them out of active.'
-    },
-    {
-        name: 'subscription-drift-reconcile',
-        displayName: 'Divergencias con MercadoPago',
-        category: 'billing',
-        schedule: '17 * * * *',
-        description:
-            'Re-read every non-terminal subscription that holds a MercadoPago preapproval and re-apply the provider verdict through the webhook transition (HOS-914). Catches the divergence a lost webhook leaves behind, which no other sweep looks for. A preapproval MercadoPago cannot resolve is reported for a human, never cancelled.'
-    },
-    {
-        name: 'partner-payment-review',
-        displayName: 'Aliados sin pago registrado',
-        category: 'billing',
-        schedule: '30 4 * * *',
-        description:
-            'Ask an admin whether a partner activated outside MercadoPago, whose confirmed period lapsed, should be taken down (HOS-1299). Flags and emails only — it never changes the partner status, lifecycle or visibility, because cutting off somebody who did pay is the expensive mistake.'
-    },
-    {
-        name: 'partner-unpaid-reaper',
-        displayName: 'Aliados sin pagar',
-        category: 'billing',
-        schedule: '45 4 * * *',
-        description:
-            'Nudge unpaid provisioned partners at 30 days and archive them at 90 (HOS-278 R-3). Never deletes: archiving flips lifecycleState and an admin can reverse it.'
-    },
-    {
-        name: 'entity-subscription-cache-reconcile',
-        displayName: 'Reconciliación de la caché de estado de suscripción',
-        category: 'billing',
-        schedule: '30 */6 * * *',
-        description:
-            'Re-derive entity_subscriptions from live billing (HOS-1084 / HOS-1292 backstop): rebuilds every accommodation row (stale status/plan, missing rows, orphans) and corrects the mirrored status of every commerce row, reconciling the listing visibility that follows from it.'
-    },
-    {
-        name: 'featured-by-entitlement-reconcile',
-        displayName: 'Reconciliación de destacados por plan y addon',
-        category: 'billing',
-        schedule: '0 */6 * * *',
-        description:
-            'Correct drift between accommodations.featuredByEntitlement and its plan/addon billing sources of truth (SPEC-309 T-014 backstop).'
-    },
-    {
-        name: 'reactivation-supersession-reconcile',
-        displayName: 'Reconciliación de reactivaciones pagas',
-        category: 'billing',
-        schedule: '0 * * * *',
-        description:
-            'Backstop for HOS-114 paid reactivations: cancels + audits any superseded subscription the webhook left orphaned (e.g. a transient provider cancel failure).'
     }
 ];

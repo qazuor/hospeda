@@ -25,13 +25,12 @@
  * conflicts"), this file's route is registered before `get.ts` in
  * `protected/index.ts` so the literal path isn't swallowed by `/{id}`.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { OwnerPromotionListItemSchema, TouristAudienceEnum } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { hasEntitlement } from '../../../middlewares/entitlement';
-import { gateExclusiveDeals } from '../../../middlewares/tourist-entitlements';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -63,9 +62,9 @@ export const protectedListExclusiveDealsRoute = createProtectedListRoute({
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query ?? {});
 
-        const audienceScope = hasEntitlement(ctx, EntitlementKey.VIP_PROMOTIONS_ACCESS)
-            ? [TouristAudienceEnum.PLUS, TouristAudienceEnum.VIP]
-            : [TouristAudienceEnum.PLUS];
+        // The VIP_PROMOTIONS_ACCESS entitlement gate was removed with the
+        // legacy billing system (HOS-1416); both audiences are listed now.
+        const audienceScope = [TouristAudienceEnum.PLUS, TouristAudienceEnum.VIP];
 
         const result = await ownerPromotionService.findExclusiveDeals(
             actor,
@@ -86,7 +85,5 @@ export const protectedListExclusiveDealsRoute = createProtectedListRoute({
             pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
         };
     },
-    options: {
-        middlewares: [gateExclusiveDeals()]
-    }
+    options: {}
 });

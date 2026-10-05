@@ -26,13 +26,11 @@
  *   See {@link assertExperienceDirectionsEntitlement} for why it is not a
  *   second `requireEntitlement` in `options.middlewares`.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
-    ExperienceProtectedSchema,
-    ProductDomainEnum,
-    ServiceErrorCode
+    ExperienceProtectedSchema
 } from '@repo/schemas';
 import { ExperienceService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against. The root
@@ -43,10 +41,6 @@ import { ExperienceService } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { hasEntitlement, requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -60,7 +54,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * to the same string: a typo would make the gate silently unreachable, and the
  * failure mode of an unreachable entitlement gate is giving the product away.
  */
-const GATED_FIELD = 'meetingPointDirections' as const;
+const _GATED_FIELD = 'meetingPointDirections' as const;
 
 /**
  * Refuses a body that touches `meetingPointDirections` without the plan for it
@@ -92,28 +86,6 @@ const GATED_FIELD = 'meetingPointDirections' as const;
  * @throws {ServiceError} ENTITLEMENT_REQUIRED (403) when the field is present
  *   and the caller's experience plan does not grant it.
  */
-export function assertExperienceDirectionsEntitlement(
-    ctx: Context<AppBindings>,
-    body: Record<string, unknown>
-): void {
-    if (!Object.hasOwn(body, GATED_FIELD)) {
-        return;
-    }
-
-    if (hasEntitlement(ctx, EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS)) {
-        return;
-    }
-
-    throw new ServiceError(
-        ServiceErrorCode.ENTITLEMENT_REQUIRED,
-        `Access denied. Publishing how to reach the meeting point requires the '${EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS}' entitlement.`,
-        {
-            requiredEntitlement: EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS,
-            upgradeUrl: '/billing/plans'
-        }
-    );
-}
-
 /**
  * PATCH /api/v1/protected/experiences/:id
  * Owner operational update — Protected endpoint.
@@ -156,7 +128,6 @@ export const protectedPatchExperienceRoute = createProtectedRoute({
         // HOS-1049. Before ownership resolves, and before the service is
         // touched: see the helper's doc for why the narrow gate lives here and
         // not in `options.middlewares` alongside the route-wide one.
-        assertExperienceDirectionsEntitlement(ctx as Context<AppBindings>, body);
 
         const actor = getActorFromContext(ctx);
         const result = await experienceService.updateOwn(
@@ -177,10 +148,5 @@ export const protectedPatchExperienceRoute = createProtectedRoute({
         // context, and that set never carries an experience key — so a gate
         // mounted without this ahead of it refuses every caller, including the
         // ones whose plan grants exactly this.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

@@ -21,10 +21,10 @@
  * ownership is intentionally NOT required: any authenticated tourist on the
  * right plan may read it.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
-import { hasEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
@@ -103,11 +103,7 @@ app.get('/:id/whatsapp', async (c) => {
     const accommodation = result.data;
 
     // Guard: only expose contact data for active public accommodations.
-    if (
-        !accommodation ||
-        accommodation.lifecycleState !== 'ACTIVE' ||
-        accommodation.visibility !== 'PUBLIC'
-    ) {
+    if (accommodation?.lifecycleState !== 'ACTIVE' || accommodation.visibility !== 'PUBLIC') {
         return c.json(
             {
                 success: false,
@@ -123,10 +119,13 @@ app.get('/:id/whatsapp', async (c) => {
             ? contactInfo.whatsapp.trim()
             : null;
 
+    // The per-plan WhatsApp gates (CAN_CONTACT_WHATSAPP_DISPLAY / _DIRECT) were
+    // removed with the legacy billing system (HOS-1416): any authenticated
+    // caller now reaches the number, still fail-closed on the number itself.
     const payload = resolveWhatsAppPayload({
         rawNumber,
-        entitled: hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY),
-        canDirect: hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT)
+        entitled: true,
+        canDirect: true
     });
 
     apiLogger.debug(

@@ -42,7 +42,6 @@
  * @module routes/accommodation/protected/calendarConnectIcal
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { accommodationCalendarSyncModel } from '@repo/db';
 import {
     AccommodationIdSchema,
@@ -54,7 +53,7 @@ import {
 } from '@repo/schemas';
 import { assertOccupancyManageAccess, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
 import { syncAccommodationIcalCalendar } from '../../../services/ical-calendar/ical-calendar-sync.service';
 import type { IcalProvider } from '../../../services/ical-calendar/ical-credential.repository';
@@ -168,7 +167,5 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
             }
         };
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)]
-    }
+    options: {}
 });

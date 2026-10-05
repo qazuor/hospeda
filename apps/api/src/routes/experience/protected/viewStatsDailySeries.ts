@@ -11,12 +11,10 @@
  * @see HOS-734
  */
 
-import { EntitlementKey } from '@repo/billing';
 import type { ServiceErrorCode } from '@repo/schemas';
 import { EntityTypeEnum, EntityViewWindowSchema, HostViewDailySeriesSchema } from '@repo/schemas';
 import { entityViewService, ServiceError } from '@repo/service-core';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -62,10 +60,6 @@ export const protectedExperienceViewStatsDailySeriesRoute = createProtectedRoute
         };
     },
     options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)
-        ],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

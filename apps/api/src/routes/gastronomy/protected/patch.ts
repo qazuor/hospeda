@@ -21,19 +21,16 @@
  *   says WHO may touch this row, the entitlement says whether their PLAN
  *   includes editing at all.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type GastronomyOwnerUpdateInput,
     GastronomyOwnerUpdateInputSchema,
-    GastronomyProtectedSchema,
-    ProductDomainEnum
+    GastronomyProtectedSchema
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -85,10 +82,5 @@ export const protectedPatchGastronomyRoute = createProtectedRoute({
         // context, and that set never carries a gastronomy key — so a gate
         // mounted without this ahead of it refuses every caller, including the
         // ones whose plan grants exactly this.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
     }
 });

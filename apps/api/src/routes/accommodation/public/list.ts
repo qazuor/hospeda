@@ -25,7 +25,7 @@
  * - Stable `id DESC` tiebreaker is appended by the model to guarantee
  *           deterministic pagination across pages when leading sort keys tie.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationPublicSchema,
     type AccommodationSearchHttp,
@@ -34,17 +34,9 @@ import {
     type SortField
 } from '@repo/schemas';
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
-import type { Context } from 'hono';
-import { hasEntitlement } from '../../../middlewares/entitlement';
-import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
-import type { AppBindings } from '../../../types';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
-import type { AccommodationData } from '../../../utils/entitlement-filter';
-import {
-    filterAccommodationListByOwnerEntitlements,
-    stripRichDescriptionFields
-} from '../../../utils/entitlement-filter';
+import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -189,13 +181,11 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // SPEC-289 write-hook: fire-and-forget search history recording.
         // Gate conditions (all must be true to record):
         //   1. Actor is authenticated (not a GUEST)
-        //   2. Actor has CAN_VIEW_SEARCH_HISTORY entitlement (Plus / VIP plans)
-        //   3. User has not opted out (checked inside service.record())
+        //   2. User has not opted out (checked inside service.record())
+        // (The per-plan entitlement condition was removed with the legacy
+        // billing system, HOS-1416.)
         // Never blocks or fails the search response — errors are caught and logged.
-        if (
-            !isGuestActor(actor) &&
-            hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)
-        ) {
+        if (!isGuestActor(actor)) {
             void searchHistoryService
                 .record(actor, {
                     queryText: httpQuery.q ?? null,
@@ -242,56 +232,21 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // any schema change.
         const rawItems = result.data?.items || [];
 
-        // Deduplicate ownerIds for this page — shared by the AI_CHAT badge (F1)
-        // and the isVerified badge gate (SPEC-291 Phase 3b). Computing once avoids
-        // a second pass over the items array.
-        const uniqueOwnerIds = [
-            ...new Set(
-                rawItems
-                    .map((item) => (item as { ownerId?: string }).ownerId)
-                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
-            )
-        ];
-
-        // F1 + SPEC-291 Phase 3b: ONE owner-entitlement resolution serves both
-        // the "Chat IA" badge and the `isVerified` badge gate.
-        //
-        // HOS-1084 collapsed what used to be two independent resolutions of the
-        // same fact. AI_CHAT was resolved per owner through a route-local
-        // 5-minute `Map` (`ownerAiChatCache`) while the verified gate went
-        // through the batch resolver's own 5-minute `Map` — two per-process
-        // caches, two expiries, over one owner-level entitlement set. Both are
-        // gone: the batch resolver now reads the shared, webhook-fresh
-        // `entity_subscriptions` cache, so a page costs one batched cache read
-        // plus one plan lookup per DISTINCT plan, and the badge stops depending
-        // on which API instance answered.
-        //
-        // Fail-closed is preserved end to end: a resolution failure yields an
-        // empty entitlement array for that owner, which shows no badge.
-        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
-
-        const rawMappedItems = rawItems.map((item) => {
-            const ownerId = (item as { ownerId?: string }).ownerId;
-            const ownerEntitlements = ownerId ? ownerEntitlementsMap.get(ownerId) : undefined;
-            return {
-                ...stripRichDescriptionFields(item),
-                // HOS-929: public read treats holding either the admin-curated
-                // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-                // flag as featured. `featuredByEntitlement` itself is stripped by
-                // `AccommodationPublicSchema` (never in its pick).
-                isFeatured: resolvePublicIsFeatured(
-                    item as { isFeatured: boolean; featuredByEntitlement?: boolean }
-                ),
-                hasAiChat: ownerEntitlements?.includes(EntitlementKey.AI_CHAT) ?? false
-            };
-        });
-
-        // SPEC-291 Phase 3b: gate isVerified by owner billing entitlement.
-        // Pure synchronous pass over the already-mapped items — no extra DB calls.
-        const items = filterAccommodationListByOwnerEntitlements(
-            rawMappedItems as AccommodationData[],
-            ownerEntitlementsMap
-        );
+        // The owner-entitlement resolutions that served the "Chat IA" badge (F1)
+        // and the isVerified badge gate (SPEC-291 Phase 3b) were removed with
+        // the legacy billing system (HOS-1416). AI chat is no longer plan-gated,
+        // so the badge is unconditional; `isVerified` is emitted as stored.
+        const items = rawItems.map((item) => ({
+            ...stripRichDescriptionFields(item),
+            // HOS-929: public read treats holding either the admin-curated
+            // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
+            // flag as featured. `featuredByEntitlement` itself is stripped by
+            // `AccommodationPublicSchema` (never in its pick).
+            isFeatured: resolvePublicIsFeatured(
+                item as { isFeatured: boolean; featuredByEntitlement?: boolean }
+            ),
+            hasAiChat: true
+        }));
 
         return {
             items,

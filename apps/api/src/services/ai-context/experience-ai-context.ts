@@ -19,7 +19,6 @@
  * @module apps/api/services/ai-context/experience-ai-context
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { experienceFaqs, experiences, getDb } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -280,7 +279,7 @@ function formatDuration(minutes: number): string {
 export async function assembleExperienceContext(
     input: AssembleChatContextInput
 ): Promise<AssembleChatContextOutput> {
-    const { entityId, resolvedPrompt, locale, ownerEntitlements } = input;
+    const { entityId, resolvedPrompt, locale } = input;
     const db = getDb();
 
     const rows = await db
@@ -314,11 +313,7 @@ export async function assembleExperienceContext(
 
     const faqs = await safeLoadFaqs(entityId);
 
-    const contextBlock = buildExperienceMarkdownContext(
-        experience,
-        faqs,
-        ownerEntitlements.has(EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS)
-    );
+    const contextBlock = buildExperienceMarkdownContext(experience, faqs, true);
 
     return {
         contextBlock,

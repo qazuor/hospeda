@@ -9,7 +9,7 @@
  * web app redirects the host to the admin panel edit page so they can fill
  * in the rest of the listing (location, price, photos, amenities, etc.).
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type AccommodationCreateDraftHttp,
     AccommodationCreateDraftHttpSchema,
@@ -19,8 +19,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -72,9 +71,5 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
         // SPEC-145 T-004: entitlement gate BEFORE limit check — host must have the
         // PUBLISH_ACCOMMODATIONS entitlement (granted on all owner/complex plans)
         // before we even consult the accommodation-count limit.
-        middlewares: [
-            requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS),
-            enforceAccommodationLimit()
-        ]
     }
 });

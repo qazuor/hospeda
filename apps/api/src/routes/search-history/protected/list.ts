@@ -10,14 +10,11 @@
  * @route GET /api/v1/protected/search-history
  * @module routes/search-history/protected/list
  */
-import { LimitKey } from '@repo/billing';
+
 import { UserSearchHistoryListItemSchema } from '@repo/schemas';
 import { SearchHistoryService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getRemainingLimit } from '../../../middlewares/entitlement';
-import { gateSearchHistory } from '../../../middlewares/tourist-entitlements';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -46,21 +43,14 @@ export const listSearchHistoryRoute = createProtectedRoute({
         total: z.number()
     }),
     options: {
-        middlewares: [gateSearchHistory()],
         customRateLimit: { requests: 120, windowMs: 60000 }
     },
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
 
-        // Resolve the plan limit from the entitlement context.
-        // getRemainingLimit returns -1 for unlimited, 0 for disabled.
-        // Both are mapped to a safe default: for unlimited (staff) we use
-        // the hard cap (200); disabled should not reach here (gate blocks it).
-        const rawLimit = getRemainingLimit(
-            ctx as Context<AppBindings>,
-            LimitKey.MAX_SEARCH_HISTORY_ENTRIES
-        );
-        const planLimit = rawLimit === -1 ? 200 : rawLimit > 0 ? rawLimit : DEFAULT_PLAN_LIMIT;
+        // The per-plan MAX_SEARCH_HISTORY_ENTRIES limit was removed with the
+        // legacy billing system (HOS-1416); the hard cap (200) always applies.
+        const planLimit = DEFAULT_PLAN_LIMIT;
 
         const result = await searchHistoryService.list(actor, { planLimit });
 

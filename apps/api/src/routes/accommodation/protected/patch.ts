@@ -2,38 +2,26 @@
  * Protected patch accommodation endpoint
  * Requires authentication and ownership
  */
-import { EntitlementKey } from '@repo/billing';
+
 import type { AccommodationUpdateHttp, AccommodationUpdateInput } from '@repo/schemas';
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
     AccommodationUpdateHttpSchema,
     httpToDomainAccommodationUpdate,
-    PermissionEnum,
-    ProductDomainEnum
+    PermissionEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import {
-    gateRichDescription,
-    gateVideoEmbed
-} from '../../../middlewares/accommodation-entitlements';
-import { getQZPayBilling } from '../../../middlewares/billing';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
-import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const accommodationService = new AccommodationService(
-    { logger: apiLogger },
-    undefined,
-    null,
-    undefined,
-    buildAccommodationPublishDeps(() => getQZPayBilling())
-);
+// The publish-deps (trial eligibility + local trial) went down with the legacy
+// billing system (HOS-1416); `publishDeps` is optional in `AccommodationService`.
+const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * PATCH /api/v1/protected/accommodations/:id
@@ -125,11 +113,5 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         // The EDIT_ACCOMMODATION_INFO gate still uses the ENTITLEMENT_REQUIRED
         // envelope (code, details: {requiredEntitlement, upgradeUrl}) — the
         // two content gates no longer throw at all as of HOS-216.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            gateRichDescription(),
-            gateVideoEmbed(),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

@@ -1,6 +1,4 @@
 import type { OpenAPIHono, RouteConfig, RouteHandler } from '@hono/zod-openapi';
-import type { QZPayBilling } from '@qazuor/qzpay-core';
-import type { EntitlementKey, LimitKey } from '@repo/billing';
 import type { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { MiddlewareHandler, Schema } from 'hono';
@@ -85,45 +83,6 @@ export interface AppBindings {
          * `NODE_ENV=test` + `HOSPEDA_DISABLE_AUTH=true` + `CI!=='true'`.
          */
         mockUserRoles?: readonly RoleEnum[];
-        qzpay?: QZPayBilling;
-        billingEnabled?: boolean;
-        billingCustomerId?: string | null;
-        userEntitlements: Set<EntitlementKey>;
-        ownerEntitlements: Set<EntitlementKey>;
-        userLimits: Map<LimitKey, number>;
-        /**
-         * True when the billing service failed to load entitlements.
-         * Used by requireLimit and requireEntitlement to return 503
-         * instead of silently granting unlimited access.
-         */
-        billingLoadFailed?: boolean;
-        webhookEventId?: string;
-        /**
-         * HOS-216: sanitized replacement for `body.description` on
-         * `PATCH /accommodations/:id`, stashed by `gateRichDescription` /
-         * `gateVideoEmbed` (see `middlewares/accommodation-entitlements.ts`)
-         * when the actor lacks the entitlement for content detected in the
-         * submitted description. The route handler applies this instead of
-         * the raw body value so only the gated syntax is dropped — the rest
-         * of the PATCH (name, price, capacity, contact...) still persists.
-         * `undefined` means neither gate touched the description.
-         */
-        accommodationDescriptionOverride?: string;
-        /**
-         * Sanitized replacement for `body.videos` on `PATCH /accommodations/:id`,
-         * stashed by `gateVideoEmbed` when the actor lacks `CAN_EMBED_VIDEO`.
-         *
-         * Separate from {@link accommodationDescriptionOverride} because the two
-         * carry different surfaces of the same gate: a description with a pasted
-         * YouTube link, and the dedicated `videos` column the editor writes. The
-         * gate used to inspect only the first, so an actor with no video
-         * entitlement could still fill the column — and the read filter that was
-         * supposed to hide it was matching a shape that no longer exists.
-         *
-         * Always the empty array when set (neutralize, not reject — HOS-216).
-         * `undefined` means the gate did not touch the videos.
-         */
-        accommodationVideosOverride?: readonly unknown[];
     };
 }
 

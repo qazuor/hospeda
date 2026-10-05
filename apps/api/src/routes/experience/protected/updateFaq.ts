@@ -5,20 +5,17 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * The FAQ must belong to the specified experience (enforced inside updateExperienceFaq).
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     ExperienceFaqSingleOutputSchema,
     type ExperienceFaqUpdateInput,
     FaqWithChannelVisibilityUpdatePayloadSchema,
-    type FaqWithChannelVisibilityUpdatePayloadType,
-    ProductDomainEnum
+    type FaqWithChannelVisibilityUpdatePayloadType
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceFaq } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -71,10 +68,5 @@ export const protectedUpdateExperienceFaqRoute = createCRUDRoute({
     options: {
         // HOS-1275: mirrors the gastronomy twin. See `addFaq.ts` for why the
         // vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

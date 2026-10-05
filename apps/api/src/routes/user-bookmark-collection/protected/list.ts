@@ -4,14 +4,11 @@
  * usage block indicating the current count and the per-user limit.
  * @route GET /api/v1/protected/user-bookmark-collections
  */
-import { LimitKey } from '@repo/billing';
+
 import { UserBookmarkCollectionListItemSchema } from '@repo/schemas';
 import { ServiceError, UserBookmarkCollectionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getRemainingLimit } from '../../../middlewares/entitlement';
-import { gateCollections } from '../../../middlewares/tourist-entitlements';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams } from '../../../utils/pagination';
@@ -53,7 +50,7 @@ export const listUserBookmarkCollectionsRoute = createProtectedRoute({
             .transform((v) => v === 'true')
     },
     responseSchema: ListCollectionsResponseSchema,
-    options: { middlewares: [gateCollections()] },
+    options: {},
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -79,12 +76,9 @@ export const listUserBookmarkCollectionsRoute = createProtectedRoute({
         // biome-ignore lint/style/noNonNullAssertion: result.data is guaranteed when result.error is absent
         const { rows, total } = result.data!;
 
-        // Resolve the plan limit from the entitlement context.
-        // getRemainingLimit returns -1 for unlimited, 0 for disabled.
-        // Both are mapped to a safe default: for unlimited (staff) we use
-        // the hard cap (25); disabled should not reach here (gate blocks it).
-        const rawLimit = getRemainingLimit(ctx as Context<AppBindings>, LimitKey.MAX_COLLECTIONS);
-        const max = rawLimit === -1 ? 25 : rawLimit > 0 ? rawLimit : DEFAULT_PLAN_LIMIT;
+        // The per-plan MAX_COLLECTIONS limit was removed with the legacy
+        // billing system (HOS-1416); the hard cap (25) always applies.
+        const max = DEFAULT_PLAN_LIMIT;
 
         return {
             items: rows,

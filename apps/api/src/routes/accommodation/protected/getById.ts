@@ -3,7 +3,6 @@
  * Returns a single accommodation only if it is owned by the authenticated user.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     amenities,
     eq,
@@ -16,9 +15,8 @@ import type { AmenityProtected, FeatureProtected } from '@repo/schemas';
 import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
 import { AccommodationService, entityNotFoundError, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
-import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -129,54 +127,6 @@ async function fetchProtectedFeatures(accommodationId: string): Promise<FeatureP
 }
 
 /**
- * Resolves the owning host's entitlement set for the rich-description gate.
- *
- * Uses the UNCACHED single resolver, not the 5-minute-cached batch variant
- * (`resolveOwnerEntitlementsForOwnerIds`) that the listing badge resolver uses.
- * That costs a handful of round-trips on the editor's blocking SSR fetch, and it
- * is deliberate: this gate decides whether a host sees a feature they just paid
- * for. Serving it from a 5-minute cache means an upgrade appears not to have
- * worked — the worst possible minute to be stale is the one right after payment.
- * The badge resolver caches because it answers for many owners at once on a page
- * nobody is watching for their own change; this answers for one owner, about
- * their own plan, on the page they opened to use it.
- *
- * Failures are contained rather than propagated. Letting one throw would 500 this
- * GET, and `editar.astro` redirects the owner away from a failed fetch — so a
- * billing hiccup would lock a host out of editing their accommodation at all (the
- * HOS-190 lock-out class). A failure resolves to "no entitlement proven": the
- * premium pair is withheld, every other field is still served.
- *
- * Note what that means when billing is degraded rather than down. The layers
- * beneath catch their own failures and degrade instead of throwing, each in its
- * own way: `resolveOwnerRole` returns a null role (losing only the staff bypass),
- * `loadOwnerCustomerId` / `loadCustomerEntitlements` return an empty set, and an
- * unconfigured billing stack resolves to `getDefaultEntitlements()` — the
- * tourist-free plan, which is NOT empty but does not carry
- * CAN_USE_RICH_DESCRIPTION either. Every one of those paths is fail-closed for
- * this gate, and none of them reaches the `catch` below; what they produce is an
- * entitled host whose rich description silently reads as "your plan does not
- * include this". The `catch` covers only a throw those layers do not model.
- *
- * @param ownerId - The accommodation's owner.
- * @returns The owner's entitlements, or an empty set when they cannot be read.
- */
-async function resolveOwnerRichDescriptionEntitlements(
-    ownerId: string
-): Promise<readonly EntitlementKey[]> {
-    try {
-        return await resolveOwnerEntitlementsForOwnerId(ownerId);
-    } catch (error) {
-        apiLogger.warn(
-            `Owner-entitlement lookup failed for owner ${ownerId}; withholding rich description: ${
-                error instanceof Error ? error.message : String(error)
-            }`
-        );
-        return [];
-    }
-}
-
-/**
  * GET /api/v1/protected/accommodations/:id
  * Get own accommodation by ID - Protected endpoint
  *
@@ -237,35 +187,20 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
         }
 
         // HOS-321: load the junction relations the service does not eager-load.
-        // BETA-199 adds the owner's entitlement lookup for the rich-description
-        // gate below. All three run only AFTER the ownership check, so a
-        // foreign/missing id never triggers them — and together, because this GET
-        // blocks the editor page's SSR and the lookup depends on nothing the
-        // junction queries produce.
-        const [amenitiesData, featuresData, ownerEntitlements] = await Promise.all([
+        // Both run only AFTER the ownership check, so a foreign/missing id never
+        // triggers them — and together, because this GET blocks the editor
+        // page's SSR and the lookup depends on nothing the junction queries
+        // produce.
+        const [amenitiesData, featuresData] = await Promise.all([
             fetchProtectedAmenities(accommodation.id),
-            fetchProtectedFeatures(accommodation.id),
-            resolveOwnerRichDescriptionEntitlements(accommodation.ownerId)
+            fetchProtectedFeatures(accommodation.id)
         ]);
 
-        // BETA-199: the premium rich-description pair. This is the ONLY route
-        // responding with `AccommodationProtectedSchema` that may emit it — the
-        // other seven strip it unconditionally (see the schema's comment).
-        //
-        // Gated on the entitlements of the ROW'S OWNER, never the reader's: an
-        // admin holding ACCOMMODATION_UPDATE_ANY reads other hosts' rows through
-        // here, and keying the gate on whoever is looking would hand out (or
-        // withhold) premium content by reader instead of by plan.
-        //
-        // Both fields go together. Dropping only the plain one drops nothing in
-        // practice — the web transform resolves the visitor's locale from the
-        // i18n sibling in PREFERENCE to it (HOS-339).
-        const gated = ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION)
-            ? accommodation
-            : stripRichDescriptionFields(accommodation);
-
+        // BETA-199: the premium rich-description pair. The owner-plan gate was
+        // removed with the legacy billing system (HOS-1416); the pair is served
+        // unconditionally on this owner-facing editor GET.
         return {
-            ...gated,
+            ...accommodation,
             // `undefined` (not `[]`) when empty, mirroring the admin/public
             // routes: the field is `.optional()` on the response schema.
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,

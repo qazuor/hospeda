@@ -3,13 +3,11 @@
  * Routes that require authentication
  */
 import { createRouter } from '../../../utils/create-app';
-import { userEntitlementsRoute } from './entitlements';
 import { protectedGetUserByIdRoute } from './getById';
 import { newsletterToggleRoute } from './newsletter';
 import { protectedPatchUserRoute } from './patch';
 import { userReviewsRoute } from './reviews';
 import { userStatsRoute } from './stats';
-import { userSubscriptionRoute } from './subscription';
 import { tourProgressGetRoute, tourProgressRoute } from './tourProgress';
 import { protectedUpdateUserRoute } from './update';
 import { whatsNewSeenRoute } from './whatsNewSeen';
@@ -21,12 +19,6 @@ app.route('/', userReviewsRoute);
 
 // GET /me/stats - User statistics
 app.route('/', userStatsRoute);
-
-// GET /me/subscription - User subscription details
-app.route('/', userSubscriptionRoute);
-
-// GET /me/entitlements - Merged entitlements + limits + plan context
-app.route('/', userEntitlementsRoute);
 
 // POST /me/newsletter/toggle - Toggle newsletter subscription
 app.route('/', newsletterToggleRoute);

@@ -23,7 +23,7 @@
 import { RecommendationFeedResponseSchema } from '@repo/schemas';
 import { RecommendationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { gateRecommendations } from '../../../middlewares/tourist-entitlements';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -44,7 +44,6 @@ export const getRecommendationsRoute = createProtectedRoute({
     tags: ['Recommendations'],
     responseSchema: RecommendationFeedResponseSchema,
     options: {
-        middlewares: [gateRecommendations()],
         customRateLimit: { requests: 120, windowMs: 60000 }
     },
     handler: async (ctx: Context) => {

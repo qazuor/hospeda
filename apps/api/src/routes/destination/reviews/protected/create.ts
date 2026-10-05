@@ -3,7 +3,6 @@
  * Requires authentication
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     DestinationIdSchema,
     DestinationReviewCreateBodySchema,
@@ -12,7 +11,7 @@ import {
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
@@ -68,6 +67,6 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
         // plans (tourist-free, tourist-vip — HOS-1224 retired tourist-plus) and on all owner/complex
         // plans via tourist-VIP entitlement inheritance (SPEC-216). Same gate as
         // accommodation reviews.
-        middlewares: [writeReviewRateLimit, requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
+        middlewares: [writeReviewRateLimit]
     }
 });

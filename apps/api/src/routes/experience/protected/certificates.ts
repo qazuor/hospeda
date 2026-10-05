@@ -37,7 +37,6 @@
  * @module routes/experience/protected/certificates
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     EntityTypeEnum,
     ExperienceCertificateCreateInputSchema,
@@ -62,24 +61,24 @@ import {
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { buildCertificateContent } from '../../../services/experience-certificate/certificate-content';
 import { buildCertificateResponse } from '../../../services/experience-certificate/certificate-response';
 import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
-/** The gate every route in this module carries, spelled once. */
-const CERTIFICATE_GATE = [
-    commerceVerticalEntitlementMiddleware('experience'),
-    requireEntitlement(EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE)
-];
+/**
+ * The gate every route in this module carries, spelled once. The vertical
+ * entitlement + ISSUES_EXPERIENCE_CERTIFICATE gates were removed with the
+ * legacy billing system (HOS-1416); only burst rate limits remain per route.
+ */
+const CERTIFICATE_GATE: never[] = [];
 
 /**
  * TYPE-WORKAROUND: the service-core certificate helpers take the model, and the

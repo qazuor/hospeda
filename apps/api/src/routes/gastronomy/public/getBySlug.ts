@@ -3,14 +3,13 @@
  * Returns a single gastronomy listing projected through GastronomyPublicSchema.
  * Returns null (404) when the listing is not found or not publicly visible.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { GastronomyPublicSchema } from '@repo/schemas';
 import {
     GastronomyService,
     getGastronomyDailySpecials,
     getGastronomyEvents,
     getGastronomyMenu,
-    resolveOwnerGastronomyPlanEntitlementSet,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -118,46 +117,34 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // reads of the same subscription if a plan change landed mid-render,
         // publishing one paid feature while withholding another for no reason a
         // reader could see. See `resolveOwnerGastronomyPlanEntitlements`.
-        const [
-            amenitiesData,
-            featuresData,
-            menuResult,
-            eventsResult,
-            dailySpecialsResult,
-            ownerPlanEntitlements
-        ] = await Promise.all([
-            fetchGastronomyAmenities(gastronomy.id),
-            fetchGastronomyFeatures(gastronomy.id),
-            getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
-            getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
-            getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today }),
-            resolveOwnerGastronomyPlanEntitlementSet({ ownerId: gastronomy.ownerId })
-        ]);
+        const [amenitiesData, featuresData, menuResult, eventsResult, dailySpecialsResult] =
+            await Promise.all([
+                fetchGastronomyAmenities(gastronomy.id),
+                fetchGastronomyFeatures(gastronomy.id),
+                getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
+                getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
+                getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today })
+            ]);
 
+        // The per-plan menu/events/daily-specials gates (HOS-895, HOS-1042,
+        // HOS-1043) were removed with the legacy billing system (HOS-1416):
+        // every grant below is unconditional.
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_MENU
-            ),
-            ownerGrantsMenuItemPhotos: ownerPlanEntitlements.has(EntitlementKey.MENU_ITEM_PHOTOS),
-            ownerGrantsMenuTranslations: ownerPlanEntitlements.has(
-                EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
-            )
+            ownerGrantsMenuManagement: true,
+            ownerGrantsMenuItemPhotos: true,
+            ownerGrantsMenuTranslations: true
         });
 
         const eventsGate = applyGastronomyVenueEventsGate({
             events: eventsResult.error ? [] : eventsResult.data.events,
-            ownerGrantsVenueEvents: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_EVENTS
-            )
+            ownerGrantsVenueEvents: true
         });
 
         const dailySpecialsGate = applyGastronomyDailySpecialsGate({
             dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
-            ownerGrantsDailySpecial: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
-            )
+            ownerGrantsDailySpecial: true
         });
 
         return {

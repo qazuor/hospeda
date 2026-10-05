@@ -8,7 +8,6 @@
 
 import { ApiInfoSchema } from '@repo/schemas';
 import { mustChangePasswordGate } from '../middlewares/must-change-password';
-import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
 import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
 import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import type { AppOpenAPI } from '../types';
@@ -55,10 +54,6 @@ import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
-import { createBillingRoutesHandler } from './billing';
-import { adminBillingRoutes } from './billing/admin';
-import { publicBillingRoutes } from './billing/public';
-import { publicGetCheckoutConfigRoute } from './billing/public/getCheckoutConfig.js';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
 import { adminCommerceRoutes, protectedCommerceRoutes, publicCommerceRoutes } from './commerce';
 import { contactRoutes } from './contact';
@@ -137,13 +132,11 @@ import {
     adminDeletePartnerRoute,
     adminGetPartnerRoute,
     adminListPartnerMentionsRoute,
-    adminListPartnerPlansRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
     adminReviewPartnerContentRoute,
     adminReviewPartnerPaymentRoute,
     adminRevokePartnerRoute,
-    adminSendPaymentLinkRoute,
     adminUpdatePartnerMentionRoute,
     adminUpdatePartnerRoute,
     protectedPartnerRoutes,
@@ -201,22 +194,12 @@ import {
     adminSystemTagRoutes,
     adminUserTagModerationRoutes
 } from './tag/user-tag/index.js';
-// SPEC-217: static import (NOT require) so tsup inlines qzpay-control once and it
-// shares the single @repo/billing test-control `state` singleton with applyTestControl.
-// A dynamic require() here produced a second module instance under the ESM bundle,
-// so the failNext queue written by the HTTP handler was invisible to applyTestControl.
-// The module is inert in production (every entry point is gated by isTestControlEnabled()).
-import { createQZPayTestControlRoutes } from './test/qzpay-control.js';
 import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
 import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
-import {
-    brevoWebhookRoutes,
-    createMercadoPagoWebhookRoutes,
-    webhookHealthRoutes
-} from './webhooks';
+import { brevoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 import { protectedWhatsNewRoutes } from './whats-new';
 
@@ -374,13 +357,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/exchange-rates', publicExchangeRateRoutes);
 
         // Other public routes (read-only)
-        app.route('/api/v1/public/plans', publicBillingRoutes);
-        // HOS-937 review fix: read-only checkout-behavior flags (currently just
-        // `ownPreapprovalEnabled`) the web pricing pages need to decide
-        // whether to render the payer-email confirm dialog. Mounted separately
-        // from `/api/v1/public/plans` rather than nested under it — the flag is
-        // a checkout-behavior concern, not plan data.
-        app.route('/api/v1/public/billing/checkout-config', publicGetCheckoutConfigRoute);
         app.route('/api/v1/public', contactRoutes);
         // SPEC-101 public newsletter — token-gated verify + unsubscribe redirects.
         app.route('/api/v1/public/newsletter', newsletterPublicRoutes);
@@ -432,12 +408,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // ═══════════════════════════════════════════════════════════════════════
         // PROTECTED ROUTES - Authentication required, own resources
         // ═══════════════════════════════════════════════════════════════════════
-
-        // Enforce past-due grace period on ALL protected routes.
-        // Users whose subscription grace period has expired get 402.
-        // Exempt paths (payment-methods, checkout, reactivate) are handled
-        // inside the middleware itself.
-        app.use('/api/v1/protected/*', pastDueGraceMiddleware());
 
         // SPEC-239 T-041: Force-password-change gate on ALL protected routes.
         // Commerce owner accounts are provisioned with mustChangePassword=true.
@@ -575,12 +545,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/experiences', adminExperienceRoutes);
         // Partners program admin management (SPEC-271)
         app.route('/api/v1/admin/partners', adminListPartnersRoute);
-        app.route('/api/v1/admin/partners', adminListPartnerPlansRoute);
         app.route('/api/v1/admin/partners', adminGetPartnerRoute);
         app.route('/api/v1/admin/partners', adminCreatePartnerRoute);
         app.route('/api/v1/admin/partners', adminUpdatePartnerRoute);
         app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
-        app.route('/api/v1/admin/partners', adminSendPaymentLinkRoute);
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerPaymentRoute);
@@ -671,8 +639,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Exchange rates admin (admin-only management routes)
         app.route('/api/v1/admin/exchange-rates', adminExchangeRateRoutes);
 
-        // Admin billing, webhooks, and auth monitoring
-        app.route('/api/v1/admin/billing', adminBillingRoutes);
+        // Admin webhooks and auth monitoring
         app.route('/api/v1/admin/webhooks', adminWebhookRouter);
         app.route('/api/v1/admin/auth', adminAuthRoutes);
 
@@ -769,39 +736,14 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('✅ Admin routes registered successfully');
 
         // ═══════════════════════════════════════════════════════════════════════
-        // PROTECTED TIER - Billing and Reports
+        // WEBHOOKS
         // ═══════════════════════════════════════════════════════════════════════
 
-        // Billing routes (user-facing: trial, addons, promo-codes, subscriptions, etc.)
-        app.route('/api/v1/protected/billing', createBillingRoutesHandler());
-
-        // Webhook routes (public endpoints with signature verification)
-        const mercadoPagoWebhookRoutes = createMercadoPagoWebhookRoutes();
-        if (mercadoPagoWebhookRoutes) {
-            app.route('/api/v1/webhooks/mercadopago', mercadoPagoWebhookRoutes);
-        } else {
-            apiLogger.warn('⚠️ MercadoPago webhook routes not registered - billing not configured');
-        }
         app.route('/api/v1/webhooks', webhookHealthRoutes);
 
         // SPEC-101 T-101-32: Brevo email-event webhook. Public + token-gated
         // (X-Sib-Webhook-Token matched against HOSPEDA_BREVO_WEBHOOK_SECRET).
         app.route('/api/v1/public/webhooks', brevoWebhookRoutes);
-
-        // SPEC-092 T-036: QZPay test-only control endpoint.
-        // Mounted ONLY when both env gates are open. Accidental enablement
-        // in prod would still hit no-ops because the underlying control
-        // module checks the same gate, but we double-gate at the router
-        // for defense in depth.
-        if (
-            env.NODE_ENV !== 'production' &&
-            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true'
-        ) {
-            app.route('/api/v1/test/qzpay-control', createQZPayTestControlRoutes());
-            apiLogger.warn(
-                '⚠️ QZPay test-control endpoint mounted at /api/v1/test/qzpay-control (test-only)'
-            );
-        }
     } catch (error) {
         apiLogger.debug('❌ Failed to register routes:', String(error));
         throw error;

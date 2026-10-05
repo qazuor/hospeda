@@ -5,14 +5,12 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * The FAQ must belong to the specified gastronomy (enforced inside removeGastronomyFaq).
  */
-import { EntitlementKey } from '@repo/billing';
-import { GastronomyFaqRemoveOutputSchema, ProductDomainEnum } from '@repo/schemas';
+
+import { GastronomyFaqRemoveOutputSchema } from '@repo/schemas';
 import { GastronomyService, removeGastronomyFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -61,10 +59,5 @@ export const protectedRemoveGastronomyFaqRoute = createCRUDRoute({
         // commerce. Wired here with the same pair every sibling content route
         // carries, so the six of them stop being the exception that the next
         // change to the EDIT_* keys would silently leave behind.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
     }
 });

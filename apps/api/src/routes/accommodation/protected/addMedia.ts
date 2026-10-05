@@ -1,38 +1,16 @@
-/**
- * POST /api/v1/protected/accommodations/:id/media
- * Add a photo to an accommodation gallery — Protected (owner-facing) endpoint (SPEC-204)
- *
- * This is a URL-receiver endpoint: the caller has already uploaded the file to
- * Cloudinary via `POST /api/v1/admin/media/upload` (or equivalent). This endpoint
- * registers the returned URL + metadata as a new `accommodation_media` row.
- *
- * Plan cap enforcement:
- *   - Owner-actors always have `ownerId === actor.id`, so the cap check ALWAYS applies.
- *   - Enforcement happens in this route handler (not in the service) because
- *     `checkLimit` requires the Hono `Context` populated by `entitlementMiddleware`.
- *
- * Mirrors `apps/api/src/routes/accommodation/admin/addMedia.ts` cap-block verbatim,
- * adapted for the protected (owner-actor) context.
- */
-
-import { EntitlementKey, LimitKey } from '@repo/billing';
-import { accommodationMediaModel } from '@repo/db';
 import {
     AccommodationIdSchema,
     type AccommodationMediaAddInput,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
     AccommodationMediaSingleOutputSchema,
-    ProductDomainEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
-import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
+
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
 
@@ -83,53 +61,8 @@ export const protectedAddMediaRoute = createCRUDRoute({
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
 
-        const ownerId = (accommodation.data as { ownerId?: string | null }).ownerId;
-        if (ownerId && ownerId === actor.id) {
-            const { total: currentGalleryPhotoCount } =
-                await accommodationMediaModel.findByAccommodation({
-                    accommodationId,
-                    state: 'visible',
-                    isFeatured: false
-                });
-
-            const planLimitCheck = checkLimit({
-                context: ctx,
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                currentCount: currentGalleryPhotoCount
-            });
-
-            const threshold = calculateThreshold(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-            const usagePercent = calculateUsagePercent(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-
-            if (threshold === 'warning' || threshold === 'critical') {
-                ctx.header(
-                    'X-Usage-Warning',
-                    `limitKey=${LimitKey.MAX_PHOTOS_PER_ACCOMMODATION};usage=${currentGalleryPhotoCount};max=${planLimitCheck.maxAllowed};threshold=${threshold}`
-                );
-            }
-
-            if (!planLimitCheck.allowed) {
-                apiLogger.warn(
-                    `Plan photo limit reached for accommodation ${accommodationId} (owner ${actor.id}): ${planLimitCheck.currentCount}/${planLimitCheck.maxAllowed}`
-                );
-                throw new ServiceError(
-                    ServiceErrorCode.LIMIT_REACHED,
-                    planLimitCheck.upgradeMessage ?? 'Photo limit reached',
-                    buildLimitReachedDetails({
-                        limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                        currentCount: planLimitCheck.currentCount,
-                        maxAllowed: planLimitCheck.maxAllowed,
-                        usagePercent
-                    })
-                );
-            }
-        }
+        // The per-plan gallery photo cap (MAX_PHOTOS_PER_ACCOMMODATION) was
+        // removed with the legacy billing system (HOS-1416).
 
         // ── Delegate to service ───────────────────────────────────────────────
         const input: AccommodationMediaAddInput = {
@@ -147,9 +80,5 @@ export const protectedAddMediaRoute = createCRUDRoute({
     },
     options: {
         // SPEC-145 T-004 / SPEC-204: gallery mutation requires EDIT_ACCOMMODATION_INFO.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

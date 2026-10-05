@@ -20,14 +20,13 @@
  * @module routes/accommodation/protected/calendarConnectGoogle
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { AccommodationIdSchema } from '@repo/schemas';
 import { assertOccupancyManageAccess } from '@repo/service-core';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import {
     CALENDAR_OAUTH_STATE_COOKIE,
     CALENDAR_OAUTH_STATE_COOKIE_MAX_AGE_S,
@@ -151,7 +150,5 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
 
         return { authorizeUrl: authorizeUrl.toString() };
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)]
-    }
+    options: {}
 });

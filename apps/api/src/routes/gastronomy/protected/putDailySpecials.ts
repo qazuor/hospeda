@@ -31,7 +31,7 @@
  *
  * @module routes/gastronomy/protected/putDailySpecials
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     GastronomyDailySpecialsOutputSchema,
     type GastronomyDailySpecialsReplacePayload,
@@ -43,8 +43,7 @@ import { GastronomyService, replaceGastronomyDailySpecials } from '@repo/service
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -98,10 +97,5 @@ export const protectedPutGastronomyDailySpecialsRoute = createCRUDRoute({
     responseSchema: GastronomyDailySpecialsOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyDailySpecials(ctx, params, body),
-    options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL)
-        ]
-    }
+    options: {}
 });

@@ -15,7 +15,6 @@
  * can "create_direct" before they see the form.
  */
 
-import { LimitKey } from '@repo/billing';
 import { AccommodationIdSchema, LifecycleStatusEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -25,7 +24,7 @@ import {
     type OnboardingPrecheckDecision
 } from '../../../services/onboarding-precheck';
 import { getActorFromContext } from '../../../utils/actor';
-import { checkLimit } from '../../../utils/limit-check';
+
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -82,11 +81,8 @@ export const protectedHostOnboardingPrecheckRoute = createProtectedRoute({
 
         const currentCount = countResult.data?.count ?? 0;
 
-        const limitCheck = checkLimit({
-            context: ctx,
-            limitKey: LimitKey.MAX_ACCOMMODATIONS,
-            currentCount
-        });
+        // The per-plan MAX_ACCOMMODATIONS cap was removed with the legacy
+        // billing system (HOS-1416); the precheck always has quota now.
 
         // Draft rows: ownerId + lifecycleState=DRAFT + not-soft-deleted, plus
         // id/slug/name for the picker UI. `createForOnboarding` no longer looks
@@ -113,13 +109,13 @@ export const protectedHostOnboardingPrecheckRoute = createProtectedRoute({
 
         const decision: OnboardingPrecheckDecision = deriveOnboardingDecision({
             draftCount,
-            hasQuota: limitCheck.allowed
+            hasQuota: true
         });
 
         return {
             currentCount,
-            maxAllowed: limitCheck.maxAllowed,
-            hasQuota: limitCheck.allowed,
+            maxAllowed: 0,
+            hasQuota: true,
             draftCount,
             drafts: draftItems.map((item) => ({
                 id: item.id,

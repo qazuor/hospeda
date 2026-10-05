@@ -44,7 +44,7 @@
  *
  * @module routes/gastronomy/protected/uploadMenuFile
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type GastronomyMenuFileKind,
     GastronomyMenuFileUploadOutputSchema,
@@ -53,8 +53,7 @@ import {
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import {
@@ -291,13 +290,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
                 windowMs: 60_000,
                 max: MENU_FILE_UPLOAD_RATE_LIMIT_MAX,
                 keyPrefix: 'upload:gastronomy-menu-file'
-            }),
-            // Loader before checker (HOS-1074) — the global entitlement
-            // middleware resolves the ACCOMMODATION set, which never carries a
-            // commerce key, so `commerceVerticalEntitlementMiddleware` MUST run
-            // before `requireEntitlement` on every commerce route.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_MENU)
+            })
         ]
     }
 });

@@ -30,10 +30,7 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { captureServerAnalyticsEvent } from '../../../lib/posthog';
-import { getQZPayBilling } from '../../../middlewares/billing';
-import { clearEntitlementCache } from '../../../middlewares/entitlement';
-import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
-import { BillingCustomerSyncService } from '../../../services/billing-customer-sync';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -107,62 +104,6 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
             }
         });
 
-        // SPEC-143 Block 1: ensure a billing_customer row exists for the newly
-        // promoted host. This is idempotent — if the customer already exists
-        // (e.g. resumed path), the call is a no-op. We call it AFTER the
-        // transaction so we never block the host-promotion on a billing error.
-        // Failures are logged but do NOT fail the request; the entitlement
-        // middleware falls back to owner-basico defaults based on role alone
-        // when no billing customer is found, so the UX is unaffected.
-        //
-        // `actor.email` is populated by actorMiddleware from `user.email`
-        // (Better Auth session) for all authenticated users. If for any reason
-        // it is absent, we skip the sync rather than crash.
-        if (actor.email) {
-            try {
-                // HOS-596: the customer-sync facade, never the strict one — a
-                // MercadoPago failure must not roll back the local
-                // billing_customers row this flow just created.
-                const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
-                const syncService = new BillingCustomerSyncService(customerSyncBilling ?? null, {
-                    throwOnError: false
-                });
-                const customerId = await syncService.ensureCustomerExists({
-                    userId: actor.id,
-                    email: actor.email,
-                    name: actor.name
-                });
-                if (customerId) {
-                    apiLogger.info(
-                        { userId: actor.id, customerId },
-                        'host-onboarding/start: billing customer ensured'
-                    );
-                    // This same request ran the global entitlementMiddleware BEFORE
-                    // the handler promoted the actor USER -> HOST, so the entitlement
-                    // cache (keyed by customerId, 5-min TTL) now holds the pre-promotion
-                    // tourist-free set — which lacks EDIT_ACCOMMODATION_INFO. Without
-                    // invalidation, the host's very next request (e.g. editing their
-                    // fresh DRAFT via PATCH /protected/accommodations/:id) would read the
-                    // stale set and 403 for up to 5 minutes. Drop the cache so the next
-                    // load resolves the owner-basico HOST fallback. (HOS-152)
-                    clearEntitlementCache(customerId);
-                }
-            } catch (billingError) {
-                // Should never reach here (throwOnError: false), but guard anyway.
-                const msg =
-                    billingError instanceof Error ? billingError.message : String(billingError);
-                apiLogger.warn(
-                    { userId: actor.id, error: msg },
-                    'host-onboarding/start: billing customer sync failed (non-fatal)'
-                );
-            }
-        } else {
-            apiLogger.warn(
-                { userId: actor.id },
-                'host-onboarding/start: actor has no email — skipping billing customer sync'
-            );
-        }
-
         return {
             status: data.status,
             accommodationId: data.accommodation.id,
@@ -179,6 +120,5 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
         // limit applies unconditionally, drafts included — the web is responsible
         // for steering the user away from `/start` when they should resume/delete/
         // upgrade instead, via `GET /host-onboarding/precheck`.
-        middlewares: [enforceAccommodationLimit()]
     }
 });

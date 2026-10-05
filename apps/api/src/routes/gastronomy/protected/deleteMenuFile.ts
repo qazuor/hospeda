@@ -26,13 +26,12 @@
  *
  * @module routes/gastronomy/protected/deleteMenuFile
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { PermissionEnum, SuccessSchema } from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -118,11 +117,5 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
 
         return { success: true } as const;
     },
-    options: {
-        middlewares: [
-            // Loader before checker (HOS-1074) — see uploadMenuFile.ts.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_MENU)
-        ]
-    }
+    options: {}
 });

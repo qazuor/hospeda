@@ -5,20 +5,17 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * The FAQ must belong to the specified gastronomy (enforced inside updateGastronomyFaq).
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     FaqWithChannelVisibilityUpdatePayloadSchema,
     type FaqWithChannelVisibilityUpdatePayloadType,
     GastronomyFaqSingleOutputSchema,
-    type GastronomyFaqUpdateInput,
-    ProductDomainEnum
+    type GastronomyFaqUpdateInput
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyFaq } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -71,10 +68,5 @@ export const protectedUpdateGastronomyFaqRoute = createCRUDRoute({
     options: {
         // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
         // `addFaq.ts` for why the vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
     }
 });

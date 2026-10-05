@@ -292,10 +292,7 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 // session object carries no role at all. The hats live in
                 // `user_role`, one row each, and are read here per request.
                 //
-                // This is the SAME route billing entitlements already take
-                // (`entitlementMiddleware` queries the DB and `c.set`s the
-                // result, which this middleware merges into the actor below):
-                // a per-request value the plain-column session cannot express.
+                // A per-request value the plain-column session cannot express.
                 // Resolving them here is what makes them travel for free on
                 // `GET /api/v1/public/auth/me`, which is the one contract every
                 // downstream consumer reads (HOS-296 OQ-4, actor-only).
@@ -400,14 +397,6 @@ export const actorMiddleware = (): MiddlewareHandler => {
                         image: userImage,
                         mustChangePassword: userMustChangePassword
                     };
-                }
-
-                // Attach billing entitlements if available
-                const userEntitlements = c.get('userEntitlements');
-                if (userEntitlements) {
-                    actor.entitlements = new Set<string>(
-                        Array.from(userEntitlements || []).map((e) => String(e))
-                    );
                 }
             } catch (error) {
                 const detail = error instanceof Error ? error.message : String(error);

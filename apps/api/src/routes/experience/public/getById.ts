@@ -4,11 +4,7 @@
  * Returns 404 when the listing is not visible (non-existent, soft-deleted, or non-public).
  */
 import { ExperiencePublicSchema } from '@repo/schemas';
-import {
-    ExperienceService,
-    resolveOwnerGrantsExperienceDirections,
-    ServiceError
-} from '@repo/service-core';
+import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
@@ -50,18 +46,11 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
             return null;
         }
 
-        // HOS-1049. This route gates too, and that is not belt-and-braces:
-        // `meetingPointDirections` is named on `ExperiencePublicSchema`, so
-        // without this the response strip would happily pass the stored column
-        // straight through here while `getBySlug` withheld it — the same value,
-        // paid on one URL and free on the other.
-        const ownerGrantsDirections = await resolveOwnerGrantsExperienceDirections({
-            ownerId: experience.ownerId
-        });
-
+        // The per-plan directions gate (HOS-1049) was removed with the legacy
+        // billing system (HOS-1416): the how-to-get-there half is served whole.
         return applyExperienceDirectionsGate({
             experience: withPublicIsFeatured(withPublicVisibleFaqs(experience)),
-            ownerGrantsDirections
+            ownerGrantsDirections: true
         });
     },
     options: {

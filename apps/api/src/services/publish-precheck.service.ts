@@ -38,38 +38,17 @@
  * @module services/publish-precheck.service
  */
 
-// `isCommercePublishVertical` is imported HERE, from the package, and NOT through
-// `./publish-listing-reads` — which used to re-export it as a convenience.
-//
-// That convenience was a live bug. This file's test mocks
-// `./publish-listing-reads` to stub two reads, rebuilding the module as
-// `{ ...actual, countOwnListings, listOwnDraftListings }`. Spreading an ESM
-// namespace copies VALUES, not live bindings, so a re-exported symbol is
-// captured at whatever state it holds the instant the factory runs — and this
-// one came out `undefined`, making `ensureVerticalLimitLoaded` throw
-// `isCommercePublishVertical is not a function`. `resolvePublishPrecheck`
-// catches everything and fails open, so all six matrix cells silently answered
-// `create_direct` — including the one cell where that IS the right answer, which
-// therefore still passed. It read as a decision bug, not a missing function.
-// Whether it broke at all depended on module evaluation ORDER, which is why an
-// unrelated edit to that file surfaced it.
-//
-// Importing from the package means mocking the reads module can only affect the
-// reads that module declares.
-import {
-    isCommercePublishVertical,
-    LIMIT_KEY_BY_PUBLISH_VERTICAL,
-    type LimitKey,
-    type PublishVertical
-} from '@repo/billing';
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
-import { resolveCommerceVerticalCap } from '../middlewares/commerce-entitlement';
 import type { AppBindings } from '../types';
-import { checkLimit } from '../utils/limit-check';
 import { apiLogger } from '../utils/logger';
 import { deriveOnboardingDecision, type OnboardingPrecheckDecision } from './onboarding-precheck';
-import { countOwnListings, listOwnDraftListings, type PublishDraft } from './publish-listing-reads';
+import {
+    countOwnListings,
+    listOwnDraftListings,
+    type PublishDraft,
+    type PublishVertical
+} from './publish-listing-reads';
 
 /** What the precheck answers, for any vertical. */
 export interface PublishPrecheckResult {
@@ -99,44 +78,6 @@ const FAIL_OPEN: PublishPrecheckResult = {
 };
 
 /**
- * Publishes the vertical's cap into `userLimits` so the comparison below runs
- * through the shared {@link checkLimit}.
- *
- * Accommodation needs nothing: the global `entitlementMiddleware` has already
- * loaded that domain's keys, and `max_accommodations` is one of them. A commerce
- * vertical's key is never in that set by construction (SPEC-239 isolates the
- * domains), so it is resolved and written here — mirroring, for one request, what
- * `commerceVerticalEntitlementMiddleware` does for a statically-known vertical.
- *
- * Only `userLimits` is touched. `userEntitlements` is deliberately left alone:
- * this route gates on nothing, and replacing the accommodation entitlement set
- * on a read-only path could only cause a later gate to read the wrong domain.
- *
- * @param input.ctx - The request context.
- * @param input.vertical - The vertical being prechecked.
- */
-async function ensureVerticalLimitLoaded(input: {
-    ctx: Context<AppBindings>;
-    vertical: PublishVertical;
-}): Promise<void> {
-    const { ctx, vertical } = input;
-
-    if (!isCommercePublishVertical(vertical)) {
-        return;
-    }
-
-    const limitKey: LimitKey = LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical];
-    const cap = await resolveCommerceVerticalCap({
-        customerId: ctx.get('billingCustomerId'),
-        vertical
-    });
-
-    const limits = new Map<LimitKey, number>(ctx.get('userLimits') ?? []);
-    limits.set(limitKey, cap);
-    ctx.set('userLimits', limits);
-}
-
-/**
  * Resolves the publish precheck for one vertical.
  *
  * @param input.ctx - The request context, carrying the caller's limits.
@@ -150,11 +91,9 @@ export async function resolvePublishPrecheck(input: {
     actor: Actor;
     vertical: PublishVertical;
 }): Promise<PublishPrecheckResult> {
-    const { ctx, actor, vertical } = input;
+    const { ctx: _ctx, actor, vertical } = input;
 
     try {
-        await ensureVerticalLimitLoaded({ ctx, vertical });
-
         // Both reads are independent, so they go out together. Neither throws;
         // each answers `null` when it could not resolve.
         const [currentCount, drafts] = await Promise.all([
@@ -170,21 +109,17 @@ export async function resolvePublishPrecheck(input: {
             return FAIL_OPEN;
         }
 
-        const limitCheck = checkLimit({
-            context: ctx,
-            limitKey: LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical],
-            currentCount
-        });
-
+        // The per-plan listing cap was removed with the legacy billing system
+        // (HOS-1416); without a cap the precheck always has quota.
         const decision = deriveOnboardingDecision({
             draftCount: drafts.length,
-            hasQuota: limitCheck.allowed
+            hasQuota: true
         });
 
         return {
             currentCount,
-            maxAllowed: limitCheck.maxAllowed,
-            hasQuota: limitCheck.allowed,
+            maxAllowed: 0,
+            hasQuota: true,
             draftCount: drafts.length,
             drafts,
             decision

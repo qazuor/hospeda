@@ -43,7 +43,6 @@
  * @module routes/gastronomy/protected/menuQr
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { defaultLocale } from '@repo/i18n';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import {
@@ -61,8 +60,7 @@ import {
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../utils/actor';
 import { buildQrScanUrl } from '../../../utils/entity-qr';
@@ -178,13 +176,7 @@ export const protectedGetGastronomyMenuQrRoute = createProtectedRoute({
                 windowMs: 60_000,
                 max: MENU_QR_RATE_LIMIT_MAX,
                 keyPrefix: 'menu-qr:gastronomy'
-            }),
-            // Loader before checker (HOS-1074) — the global entitlement
-            // middleware resolves the ACCOMMODATION set, which never carries a
-            // commerce key, so `commerceVerticalEntitlementMiddleware` MUST run
-            // before `requireEntitlement` on every commerce route.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MENU_QR_SCAN_METRICS)
+            })
         ]
     }
 });

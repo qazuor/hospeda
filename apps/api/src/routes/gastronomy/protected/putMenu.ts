@@ -42,12 +42,11 @@
  *
  * @module routes/gastronomy/protected/putMenu
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     GastronomyMenuOutputSchema,
     type GastronomyMenuReplacePayload,
-    GastronomyMenuReplacePayloadSchema,
-    ServiceErrorCode
+    GastronomyMenuReplacePayloadSchema
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyMenu } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
@@ -55,14 +54,9 @@ import { GastronomyService, replaceGastronomyMenu } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { hasEntitlement, requireEntitlement } from '../../../middlewares/entitlement';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
-import { menuPayloadCarriesItemPhoto } from './menu-item-photo-gate';
-import { menuPayloadCarriesTranslations } from './menu-translations-gate';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -74,34 +68,9 @@ export async function handlePutGastronomyMenu(
 ) {
     const actor = getActorFromContext(ctx);
 
-    // HOS-1045 — the payload-conditional half of the gate. `hasEntitlement`
-    // reads the set `commerceVerticalEntitlementMiddleware` put in the context,
-    // so this is the caller's GASTRONOMY grants, not their accommodation ones,
-    // and it answers `false` when that set is missing entirely — the fail-closed
-    // direction, which is the only safe one for a paid capability.
-    if (
-        menuPayloadCarriesItemPhoto(body) &&
-        !hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.MENU_ITEM_PHOTOS)
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            `Access denied. This feature requires the '${EntitlementKey.MENU_ITEM_PHOTOS}' entitlement.`
-        );
-    }
-
-    // HOS-1043 — the payload-conditional half of the translations gate. Same
-    // shape and same reasoning as the photo check above: a `-pro` owner keeps
-    // writing an untranslated carta undisturbed, and only a document that
-    // NAMES a translation is refused when the plan does not grant it.
-    if (
-        menuPayloadCarriesTranslations(body) &&
-        !hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU)
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            `Access denied. This feature requires the '${EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU}' entitlement.`
-        );
-    }
+    // The payload-conditional gates on MENU_ITEM_PHOTOS (HOS-1045) and
+    // MULTILINGUAL_GASTRONOMY_MENU (HOS-1043) were removed with the legacy
+    // billing system (HOS-1416); the menu is written unconditionally.
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ and media routes use.
@@ -140,10 +109,5 @@ export const protectedPutGastronomyMenuRoute = createCRUDRoute({
     responseSchema: GastronomyMenuOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyMenu(ctx, params, body),
-    options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_MENU)
-        ]
-    }
+    options: {}
 });

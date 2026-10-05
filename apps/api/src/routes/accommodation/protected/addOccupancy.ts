@@ -23,7 +23,7 @@
  * with no subscription yet, even though the frontend gate (which trusts
  * `loadEntitlements`'s host-draft-defaults fallback) already let them in.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationIdSchema,
     AccommodationOccupancyCreateInputSchema,
@@ -31,7 +31,7 @@ import {
 } from '@repo/schemas';
 import { addOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -69,7 +69,5 @@ export const protectedAddOccupancyRoute = createProtectedRoute({
             input: { accommodationId, date, note }
         });
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
-    }
+    options: {}
 });

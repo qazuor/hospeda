@@ -16,17 +16,14 @@
  * mirroring removeFaq which is also ungated on the protected carril.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
-    DeleteResultSchema,
-    ProductDomainEnum
+    DeleteResultSchema
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -84,9 +81,5 @@ export const protectedRemoveMediaRoute = createCRUDRoute({
         // commerce. Wired here with the same pair every sibling content route
         // carries, so the six of them stop being the exception that the next
         // change to the EDIT_* keys would silently leave behind.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

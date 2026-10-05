@@ -93,9 +93,9 @@ import {
 } from '@repo/schemas';
 import { DEFAULT_POI_PROXIMITY_RADIUS_KM, DestinationService } from '@repo/service-core';
 import { isUsableEntityId } from '@repo/utils';
-import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota.js';
+
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit.js';
-import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
+
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { meterAiUsage } from '../../../utils/ai-usage-metering.js';
@@ -539,20 +539,9 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
     requestSchema: AiSearchChatRequestSchema,
     options: {
         middlewares: [
-            // Layer 0: load billing context into Hono context vars (entitlements, limits,
-            // billingLoadFailed). Does NOT gate AI_SEARCH — search is platform-governed.
-            // Runs first so downstream middleware / handler always has a populated context.
-            entitlementMiddleware(),
-            // Layer 1: burst control (perUser + perIP sliding-window rate limits).
+            // Burst control (perUser + perIP sliding-window rate limits).
             // Uses the same 'search' feature key as the sibling search-intent route (SPEC-199).
-            ...createAiRateLimitMiddlewares('search'),
-            // Layer 2: per-plan monthly quota keyed on the requesting (consuming)
-            // user (SPEC-283 §2.2, reverting SPEC-211 G-4 / §7.7). skipEntitlementGate
-            // is true because ai_search is auth-baseline (OQ-1): no plan grants
-            // AI_SEARCH, so only the graduated per-plan quota applies — the
-            // entitlement gate would otherwise 403 every request. The USD cost
-            // ceiling + metering stay inside the AI engine as a backstop.
-            createAiQuotaMiddleware('search', { skipEntitlementGate: true })
+            ...createAiRateLimitMiddlewares('search')
         ]
     },
     streamHandler: async ({ c }) => {

@@ -43,20 +43,15 @@
  * would reopen the exact evasion this design closes.
  */
 
-import { EntitlementKey, LimitKey } from '@repo/billing';
 import {
     AccommodationFeaturedMediaAddOutputSchema,
     AccommodationIdSchema,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
-    ProductDomainEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getRemainingLimit, requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -106,18 +101,12 @@ export const protectedAddFeaturedMediaRoute = createCRUDRoute({
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
 
-        // Resolved server-side, from the entitlement context the middleware
-        // populated. `-1` is the entitlement layer's spelling of "unlimited",
-        // which the service treats as "entity cap only".
-        const planGalleryCap = getRemainingLimit(
-            ctx as Context<AppBindings>,
-            LimitKey.MAX_PHOTOS_PER_ACCOMMODATION
-        );
-
+        // The per-plan gallery cap (MAX_PHOTOS_PER_ACCOMMODATION) was removed
+        // with the legacy billing system (HOS-1416); `planGalleryCap` stays
+        // unset so only the service's own per-entity cap applies.
         const result = await accommodationService.addFeaturedMedia(actor, {
             accommodationId,
-            media: body as AccommodationMediaAddPayload,
-            planGalleryCap
+            media: body as AccommodationMediaAddPayload
         });
 
         if (result.error) {
@@ -135,9 +124,5 @@ export const protectedAddFeaturedMediaRoute = createCRUDRoute({
     },
     options: {
         // Gallery mutation gate, same as every sibling media route.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

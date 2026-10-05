@@ -9,12 +9,12 @@
  * entitlement is enforced HERE at the route via `requireEntitlement` — see
  * the module doc in `addOccupancy.ts` for the full rationale.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { AccommodationIdSchema, OccupancyDateSchema } from '@repo/schemas';
 import { removeOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -48,7 +48,5 @@ export const protectedRemoveOccupancyRoute = createProtectedRoute({
 
         return await removeOccupancy({ actor, accommodationId, date });
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
-    }
+    options: {}
 });

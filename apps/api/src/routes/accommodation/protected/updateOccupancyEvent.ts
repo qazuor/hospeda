@@ -14,7 +14,7 @@
  * the same `loadEntitlements` path the frontend trusts, unlike a
  * service-level DB-driven resolver).
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationIdSchema,
     AccommodationOccupancyEventUpdateSchema,
@@ -23,7 +23,7 @@ import {
 import { updateOccupancyEvent } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -85,7 +85,5 @@ export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
 
         return { occupancy };
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
-    }
+    options: {}
 });

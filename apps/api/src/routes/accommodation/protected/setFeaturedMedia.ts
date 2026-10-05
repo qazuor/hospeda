@@ -19,17 +19,14 @@
  * Hono does not resolve the fixed suffix "/featured" as a `mediaId` UUID param.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
-    AccommodationMediaSingleOutputSchema,
-    ProductDomainEnum
+    AccommodationMediaSingleOutputSchema
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -80,9 +77,5 @@ export const protectedSetFeaturedMediaRoute = createCRUDRoute({
     },
     options: {
         // SPEC-145 T-004 / SPEC-204: gallery mutation requires EDIT_ACCOMMODATION_INFO.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

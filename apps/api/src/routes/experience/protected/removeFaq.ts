@@ -5,14 +5,12 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * The FAQ must belong to the specified experience (enforced inside removeExperienceFaq).
  */
-import { EntitlementKey } from '@repo/billing';
-import { ExperienceFaqRemoveOutputSchema, ProductDomainEnum } from '@repo/schemas';
+
+import { ExperienceFaqRemoveOutputSchema } from '@repo/schemas';
 import { ExperienceService, removeExperienceFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -61,10 +59,5 @@ export const protectedRemoveExperienceFaqRoute = createCRUDRoute({
         // commerce. Wired here with the same pair every sibling content route
         // carries, so the six of them stop being the exception that the next
         // change to the EDIT_* keys would silently leave behind.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

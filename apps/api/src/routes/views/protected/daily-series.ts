@@ -16,7 +16,6 @@
  * @see SPEC-207 §4.1
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     EntityViewWindowSchema,
     HostViewDailySeriesSchema,
@@ -24,7 +23,7 @@ import {
     type ServiceErrorCode
 } from '@repo/schemas';
 import { entityViewService, ServiceError } from '@repo/service-core';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -73,7 +72,6 @@ export const hostAccommodationDailySeriesRoute = createProtectedRoute({
         // Gated by VIEW_BASIC_STATS — same entitlement as accommodations/me stats
         // (SPEC-145 gate matrix: host Card G), ensuring both widgets are consistently
         // accessible on the same plan tier.
-        middlewares: [requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

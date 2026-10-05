@@ -13,14 +13,12 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
  * enforced inside `removeExperienceMedia` via `checkExperienceCanEditMedia`.
  */
-import { EntitlementKey } from '@repo/billing';
-import { ProductDomainEnum, SuccessSchema } from '@repo/schemas';
+
+import { SuccessSchema } from '@repo/schemas';
 import { ExperienceService, removeExperienceMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -77,10 +75,5 @@ export const protectedRemoveExperienceMediaRoute = createCRUDRoute({
         // commerce. Wired here with the same pair every sibling content route
         // carries, so the six of them stop being the exception that the next
         // change to the EDIT_* keys would silently leave behind.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

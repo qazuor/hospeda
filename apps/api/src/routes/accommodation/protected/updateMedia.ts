@@ -16,19 +16,16 @@
  * present — an empty body is rejected as `VALIDATION_ERROR`, not a silent 200.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
     AccommodationMediaSingleOutputSchema,
     type AccommodationMediaUpdatePayload,
-    AccommodationMediaUpdatePayloadSchema,
-    ProductDomainEnum
+    AccommodationMediaUpdatePayloadSchema
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -92,9 +89,5 @@ export const protectedUpdateMediaRoute = createCRUDRoute({
     options: {
         // HOS-388: gallery mutation requires EDIT_ACCOMMODATION_INFO (mirrors
         // reorderMedia / setFeaturedMedia).
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

@@ -8,13 +8,9 @@ import { composeAccommodationMedia, ServiceError } from '@repo/service-core';
 import { and, desc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
-import type { AccommodationData } from '../../../utils/entitlement-filter';
-import {
-    filterAccommodationListByOwnerEntitlements,
-    stripRichDescriptionFields
-} from '../../../utils/entitlement-filter';
+import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 /**
@@ -259,26 +255,9 @@ export const publicGetSimilarRoute = createPublicRoute({
             return destination ? { ...withMedia, cityDestination: destination } : withMedia;
         });
 
-        // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.
-        // Collect unique ownerIds for this page, resolve entitlements in ONE batch
-        // query, then apply the gate synchronously. Fail-closed: owners absent from
-        // the map (e.g. billing lookup failed) have isVerified forced to false.
-        const uniqueOwnerIds = [
-            ...new Set(
-                mappedRows
-                    .map((r) => (r as { ownerId?: string }).ownerId)
-                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
-            )
-        ];
-        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
-        return filterAccommodationListByOwnerEntitlements(
-            // TYPE-WORKAROUND: HOS-929's explicit `isFeatured` override above narrows
-            // this object literal enough that TS no longer sees "sufficient overlap"
-            // with `AccommodationData` for a direct `as` cast — go through `unknown`
-            // first, same as other raw-query mappings in this codebase.
-            mappedRows as unknown as AccommodationData[],
-            ownerEntitlementsMap
-        );
+        // The SPEC-291 isVerified owner-entitlement gate was removed with the
+        // legacy billing system (HOS-1416); `isVerified` is emitted as stored.
+        return mappedRows;
     },
     options: {
         cacheTTL: 300,

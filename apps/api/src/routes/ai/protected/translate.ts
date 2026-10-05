@@ -14,10 +14,10 @@
 
 import type { AiFeature } from '@repo/schemas';
 import { z } from 'zod';
-import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota';
+
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
 import { protectedAuthMiddleware } from '../../../middlewares/authorization';
-import { entitlementMiddleware } from '../../../middlewares/entitlement';
+
 import {
     loadTranslatableFields,
     loadTranslationEntityOwnership,
@@ -62,14 +62,14 @@ const TranslateRequestSchema = z
 
 export const protectedAiTranslateRoute = createRouter();
 
-// Apply middleware in correct order BEFORE the route handler
+// Apply middleware in correct order BEFORE the route handler.
+// (The entitlement loader + monthly quota middleware were removed with the
+// legacy billing system, HOS-1416.)
 protectedAiTranslateRoute.use('/', protectedAuthMiddleware());
-protectedAiTranslateRoute.use('/', entitlementMiddleware());
 const rateLimitMws = createAiRateLimitMiddlewares(FEATURE);
 for (const mw of rateLimitMws) {
     protectedAiTranslateRoute.use('/', mw);
 }
-protectedAiTranslateRoute.use('/', createAiQuotaMiddleware(FEATURE));
 
 protectedAiTranslateRoute.post('/', async (c) => {
     const handlerStartMs = Date.now();

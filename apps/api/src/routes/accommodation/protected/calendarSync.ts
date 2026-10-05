@@ -25,7 +25,6 @@
  * @module routes/accommodation/protected/calendarSync
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     type CalendarProviderToken,
@@ -36,7 +35,7 @@ import {
 } from '@repo/schemas';
 import { assertOccupancyManageAccess } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { syncAccommodationCalendar } from '../../../services/google-calendar/google-calendar-sync.service';
 import { syncAccommodationIcalCalendar } from '../../../services/ical-calendar/ical-calendar-sync.service';
 import type { IcalProvider } from '../../../services/ical-calendar/ical-credential.repository';
@@ -96,7 +95,5 @@ export const protectedCalendarSyncRoute = createProtectedRoute({
         const provider = ICAL_PROVIDER_BY_TOKEN[providerToken];
         return await syncAccommodationIcalCalendar({ accommodationId, provider });
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)]
-    }
+    options: {}
 });

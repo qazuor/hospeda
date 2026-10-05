@@ -5,12 +5,8 @@
  */
 
 import {
-    abandonedPendingSubsJob,
-    addonExpiryJob,
-    addonSubscriptionReconcileJob,
     alertsDigestJob,
     appLogPurgeJob,
-    applyScheduledPlanChangesJob,
     archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
     calendarSyncGoogleJob,
@@ -19,39 +15,21 @@ import {
     conversationNotificationJob,
     conversationTokenCleanupJob,
     conversationTokenReminderJob,
-    courtesyExpiryJob,
     cronRunPurgeJob,
     destinationWeatherFetchJob,
-    dunningJob,
-    entitySubscriptionCacheReconcileJob,
     entityViewsPurgeJob,
-    exchangeRateFetchJob,
-    featuredByEntitlementReconcileJob,
-    finalizeCancelledSubsJob,
     hostTradeStatsReconcileJob,
     hostTradeUsageExpiryJob,
     hostTradeUsageReminderJob,
     leadIntakeBackstopJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
-    notificationLogPurgeJob,
-    notificationScheduleJob,
     pageRevalidationJob,
-    partnerExpiryJob,
-    partnerPaymentReviewJob,
-    partnerUnpaidReaperJob,
     pollApifyReputationRunsJob,
-    preapprovalLessExpiryJob,
-    propagatePlanPriceChangesJob,
-    reactivationSupersessionReconcileJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
-    subscriptionDriftReconcileJob,
-    subscriptionPollJob,
-    trialExpiryJob,
-    viewMonthlyRollupJob,
-    webhookRetryJob
+    viewMonthlyRollupJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
 
@@ -60,24 +38,11 @@ import type { CronJobDefinition } from './types';
  * Jobs are registered by importing and adding them to this array
  */
 export const cronJobs: CronJobDefinition[] = [
-    trialExpiryJob,
-    webhookRetryJob,
-    notificationScheduleJob,
-    addonExpiryJob,
-    // Registered next to addon-expiry, not later: it is the only thing that
-    // notices when addon-expiry stops ending soft-cancelled add-ons, and the
-    // only thing that reaps the 'pending' rows addon-expiry never looks at
-    // (HOS-847 PR 7c).
-    addonSubscriptionReconcileJob,
-    courtesyExpiryJob,
     alertsDigestJob,
-    exchangeRateFetchJob,
     destinationWeatherFetchJob,
-    dunningJob,
     searchIndexRefreshJob,
     calendarSyncGoogleJob,
     calendarSyncIcalJob,
-    notificationLogPurgeJob,
     pageRevalidationJob,
     archiveExpiredPromotionsJob,
     archiveAbandonedDraftsJob,
@@ -88,11 +53,6 @@ export const cronJobs: CronJobDefinition[] = [
     conversationTokenReminderJob,
     conversationTokenCleanupJob,
     newsletterCloseCampaignsJob,
-    abandonedPendingSubsJob,
-    applyScheduledPlanChangesJob,
-    propagatePlanPriceChangesJob,
-    finalizeCancelledSubsJob,
-    subscriptionPollJob,
     cronRunPurgeJob,
     appLogPurgeJob,
     hostTradeStatsReconcileJob,
@@ -104,19 +64,7 @@ export const cronJobs: CronJobDefinition[] = [
     viewMonthlyRollupJob,
     refreshExternalReputationJob,
     socialPublishDispatchJob,
-    pollApifyReputationRunsJob,
-    partnerExpiryJob,
-    partnerPaymentReviewJob,
-    partnerUnpaidReaperJob,
-    entitySubscriptionCacheReconcileJob,
-    featuredByEntitlementReconcileJob,
-    reactivationSupersessionReconcileJob,
-    preapprovalLessExpiryJob,
-    // Registered next to preapproval-less-expiry because the two are exact
-    // complements: that job owns rows with NO preapproval, this one owns the
-    // rows that HAVE one and whose provider status nothing else re-reads
-    // (HOS-914).
-    subscriptionDriftReconcileJob
+    pollApifyReputationRunsJob
 ];
 
 /**

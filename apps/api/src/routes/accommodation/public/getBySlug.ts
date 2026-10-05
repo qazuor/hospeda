@@ -16,10 +16,10 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
+
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import { filterAccommodationByEntitlements } from '../../../utils/entitlement-filter';
+
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -177,7 +177,7 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
         slug: z.string().min(1).max(255)
     },
     responseSchema: AccommodationPublicSchema.nullable(),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
         // HOS-353: resolve visibility against a GUEST actor, never the caller.
         // Same reasoning as the sibling `getById` route — `checkCanView` is
         // actor-aware by design, and this response is stored under a public cache
@@ -206,13 +206,9 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
             ...result.data,
             isFeatured: resolvePublicIsFeatured(result.data)
         };
-        const ownerEntitlements = accommodation.ownerId
-            ? await resolveOwnerEntitlementsForOwnerId(accommodation.ownerId)
-            : [];
-        const filteredAccommodation = filterAccommodationByEntitlements(
-            accommodation,
-            ownerEntitlements
-        );
+        // The owner-entitlement gate on the premium fields was removed with the
+        // legacy billing system (HOS-1416); the payload is served whole.
+        const filteredAccommodation = accommodation;
 
         // Fetch related data in parallel
         const [owner, amenitiesData, featuresData, faqsData] = await Promise.all([

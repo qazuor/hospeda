@@ -587,7 +587,6 @@ export const ApiEnvBaseSchema = z.object({
      * "an unset or unknown slug stops the container, it does not 503 a
      * checkout". Unset falls back to the shipped catalogue defaults.
      */
-    HOSPEDA_COMMERCE_PLAN_SLUGS: z.string().optional(),
 
     /**
      * Extra trusted origins (CSV of full URLs). Applied to BOTH the

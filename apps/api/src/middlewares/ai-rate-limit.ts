@@ -33,8 +33,7 @@
  *
  * const handler = createProtectedStreamingRoute({
  *   middlewares: [
- *     ...createAiRateLimitMiddlewares('text_improve'),  // Layer 1 (burst)
- *     createAiQuotaMiddleware('text_improve'),           // Layer 2 (monthly quota)
+ *     ...createAiRateLimitMiddlewares('text_improve'),           // Layer 2 (monthly quota)
  *   ],
  *   streamHandler: async (c) => { ... },
  * });
@@ -150,7 +149,6 @@ const DEFAULT_MAX_PER_IP = 60;
  * const handler = createProtectedStreamingRoute({
  *   middlewares: [
  *     ...createAiRateLimitMiddlewares('chat', { maxPerUser: 10, maxPerIp: 30 }),
- *     createAiQuotaMiddleware('chat'),
  *   ],
  *   streamHandler: async (c) => { ... },
  * });
