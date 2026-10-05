@@ -54,17 +54,13 @@ describe('Admin CSP header integration', () => {
         expect(csp).toContain("media-src 'self'");
     });
 
-    it('should include specific MercadoPago subdomains in connect-src', () => {
+    it('should NOT include MercadoPago domains in connect-src (removed by HOS-1416)', () => {
         // Arrange & Act
         const csp = buildCspDirectives({ nonce: TEST_NONCE, sentryDsn: '' });
 
-        // Assert - specific subdomains
-        expect(csp).toContain('https://api.mercadopago.com');
-        expect(csp).toContain('https://sdk.mercadopago.com');
-        expect(csp).toContain('https://www.mercadopago.com');
-
-        // Assert - no wildcard
-        expect(csp).not.toContain('*.mercadopago.com');
+        // Assert - the qzpay/MercadoPago domains are gone with the billing surface
+        expect(csp).not.toContain('mercadopago.com');
+        expect(csp).not.toContain('mercadolibre.com');
     });
 
     it('should produce different CSP strings for different nonces', () => {

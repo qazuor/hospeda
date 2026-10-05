@@ -19,9 +19,9 @@
  * ```ts
  * import { requireBillingAccess } from '@/lib/billing-access';
  *
- * export const Route = createFileRoute('/_authed/billing/plans')({
+ * export const Route = createFileRoute('/_authed/billing/owner-promotions')({
  *     beforeLoad: ({ context }) => requireBillingAccess(context),
- *     component: BillingPlansPage,
+ *     component: BillingOwnerPromotionsPage,
  * });
  * ```
  *

@@ -31,7 +31,7 @@
  * For the `'host'` variant, when the resolver returns `{ locked: true }`:
  *  - Lock icon (`@repo/icons`)
  *  - `admin-dashboard.dashboard.host.views.locked.description` i18n copy
- *  - Focusable CTA `<a>` linking to `/billing/plans`
+ *  - (HOS-1416) the upsell CTA to `/billing/plans` was removed with the billing surface
  *
  * 403 from the views endpoint is already converted to `{ locked: true }` by the
  * resolver — it surfaces here as locked data, NOT as an error state.
@@ -172,16 +172,13 @@ export interface ViewsWidgetProps {
  * Shows:
  * - Lock icon (from `@repo/icons`)
  * - `admin-dashboard.dashboard.host.views.locked.description` copy
- * - CTA anchor linking to `/billing/plans` (focusable, `aria-label`)
+ * - (HOS-1416) the CTA anchor to `/billing/plans` was removed with the billing surface
  */
 function LockedStateBody() {
     const { t } = useTranslations();
 
     const description = t(
         'admin-dashboard.dashboard.host.views.locked.description' as Parameters<typeof t>[0]
-    );
-    const ctaLabel = t(
-        'admin-dashboard.dashboard.host.views.locked.cta' as Parameters<typeof t>[0]
     );
 
     return (
@@ -199,14 +196,9 @@ function LockedStateBody() {
                 />
             </span>
             <p className="font-medium text-foreground text-sm">{description}</p>
-            <a
-                href="/billing/plans"
-                className="mt-1 rounded-md border px-3 py-1.5 text-xs hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                data-testid="views-widget-locked-cta"
-                aria-label={ctaLabel}
-            >
-                {ctaLabel}
-            </a>
+            {/* HOS-1416: the locked-state CTA linked to the deleted
+                /billing/plans page and was removed with the legacy billing
+                surface. An upsell CTA can return with the new billing. */}
         </div>
     );
 }

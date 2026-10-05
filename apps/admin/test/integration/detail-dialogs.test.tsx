@@ -1,9 +1,9 @@
 /**
  * Detail Dialogs Integration Tests
  *
- * Tests for read-only detail dialogs: WebhookEventDetailDialog
- * and NotificationDetailDialog. These dialogs display data
- * without form submission.
+ * Tests for the read-only NotificationDetailDialog. This dialog displays
+ * data without form submission. (HOS-1416: the WebhookEventDetailDialog
+ * suite was removed with the dead billing_webhook_events table.)
  *
  * @module test/integration/detail-dialogs
  */
@@ -13,179 +13,12 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { NotificationLog } from '@/features/billing-notification-logs';
 import { NotificationDetailDialog } from '@/features/billing-notification-logs/components/NotificationDetailDialog';
-import type { WebhookEvent } from '@/features/billing-webhook-events';
-import { WebhookEventDetailDialog } from '@/features/billing-webhook-events/components/WebhookEventDetailDialog';
 import {
     mockNotificationLog,
     mockNotificationLogFailed,
     mockNotificationLogNoUser
 } from '../fixtures/notification-log.fixture';
-import { mockWebhookEvent, mockWebhookEventFailed } from '../fixtures/webhook-event.fixture';
 import { renderWithProviders } from '../helpers/render-with-providers';
-
-// ---------------------------------------------------------------------------
-// WebhookEventDetailDialog
-// ---------------------------------------------------------------------------
-
-describe('WebhookEventDetailDialog', () => {
-    const defaultProps = {
-        open: true,
-        onOpenChange: vi.fn()
-    };
-
-    describe('renders event data correctly', () => {
-        it('displays event ID in the dialog description', () => {
-            const event = { ...mockWebhookEvent } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={event}
-                />
-            );
-
-            expect(screen.getByText(`ID: ${event.id}`)).toBeInTheDocument();
-        });
-
-        it('displays provider name', () => {
-            const event = { ...mockWebhookEvent } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={event}
-                />
-            );
-
-            expect(screen.getByText(event.provider)).toBeInTheDocument();
-        });
-
-        it('displays provider event ID', () => {
-            const event = { ...mockWebhookEvent } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={event}
-                />
-            );
-
-            expect(screen.getByText(event.providerEventId)).toBeInTheDocument();
-        });
-
-        it('displays status badge with translated label', () => {
-            const event = { ...mockWebhookEvent } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={event}
-                />
-            );
-
-            expect(
-                screen.getByText(`admin-billing.webhookEvents.statuses.${event.status}`)
-            ).toBeInTheDocument();
-        });
-
-        it('displays type label with translated value', () => {
-            const event = { ...mockWebhookEvent } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={event}
-                />
-            );
-
-            // Translation mock returns the key as-is
-            expect(
-                screen.getByText('admin-billing.webhookEvents.types.paymentCreated')
-            ).toBeInTheDocument();
-        });
-
-        it('displays payload as formatted JSON', () => {
-            const event = { ...mockWebhookEvent } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={event}
-                />
-            );
-
-            const formattedPayload = JSON.stringify(event.payload, null, 2);
-            expect(
-                screen.getByText(
-                    (_content, element) =>
-                        element?.tagName === 'PRE' &&
-                        element.textContent?.includes(formattedPayload) === true
-                )
-            ).toBeInTheDocument();
-        });
-
-        it('displays error message for failed events', () => {
-            const event = { ...mockWebhookEventFailed } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={event}
-                />
-            );
-
-            expect(screen.getByText(mockWebhookEventFailed.errorMessage)).toBeInTheDocument();
-        });
-
-        it('displays retry count for events with retries', () => {
-            const event = { ...mockWebhookEventFailed } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={event}
-                />
-            );
-
-            expect(screen.getByText(String(mockWebhookEventFailed.retryCount))).toBeInTheDocument();
-        });
-
-        it('calls onOpenChange(false) when close button is clicked', async () => {
-            const user = userEvent.setup();
-            const onOpenChange = vi.fn();
-            const event = { ...mockWebhookEvent } as unknown as WebhookEvent;
-
-            renderWithProviders(
-                <WebhookEventDetailDialog
-                    event={event}
-                    open={true}
-                    onOpenChange={onOpenChange}
-                />
-            );
-
-            const closeButton = screen.getByText('admin-billing.common.close');
-            await user.click(closeButton);
-
-            expect(onOpenChange).toHaveBeenCalledWith(false);
-        });
-    });
-
-    describe('null event handling', () => {
-        it('renders nothing when event is null', () => {
-            const { container } = renderWithProviders(
-                <WebhookEventDetailDialog
-                    {...defaultProps}
-                    event={null}
-                />
-            );
-
-            expect(
-                screen.queryByText('admin-billing.webhookEvents.dialog.title')
-            ).not.toBeInTheDocument();
-            expect(container.querySelector('[role="dialog"]')).not.toBeInTheDocument();
-        });
-    });
-});
 
 // ---------------------------------------------------------------------------
 // NotificationDetailDialog

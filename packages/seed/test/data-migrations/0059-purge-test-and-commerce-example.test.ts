@@ -219,7 +219,6 @@ describe('in production', () => {
             'experiencesDeleted',
             'partnersDeleted',
             'accommodationsDeleted',
-            'billingCustomersDeleted',
             'occupancyDeleted',
             'entityViewsDeleted',
             'entityCommentsDeleted',

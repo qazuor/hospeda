@@ -17,7 +17,6 @@
  *   - `miCuentaSidebar`        — /me/* personal account pages
  *   - `misAlojamientosSidebar` — HOST's accommodation portfolio + create
  *   - `consultasSidebar`       — HOST's conversation inbox
- *   - `miFacturacionSidebar`   — HOST's subscription view
  *
  * @see apps/admin/src/config/ia/schema.ts  — Sidebar / SidebarItem type contracts
  */
@@ -515,153 +514,34 @@ const comunidadSidebar: SidebarInput = {
 // ---------------------------------------------------------------------------
 
 /**
- * Comercial sidebar — Billing, plans, subscriptions, invoices, promos, sponsorships.
+ * Comercial sidebar — Promotions, sponsorships, exchange rates.
  *
- * Mirrors the full SUPER_ADMIN commercial universe from doc 01 §13 (5.1–5.7).
- * Consolidates all items from the old `billing.section.tsx`.
+ * (HOS-1416: the plans/subscriptions/addons/metrics/payments/invoices/
+ * reconciliation/promo-codes/settings/webhook-events entries were removed
+ * along with the legacy billing pages. Owner promotions, sponsorships and
+ * exchange rates are live features that survived the demolition.)
  *
  * @example
  * ```ts
  * import { sidebars } from '@/config/ia/sidebars';
- * const subs = sidebars.comercialSidebar.items[0]; // suscripciones group
+ * const promo = sidebars.comercialSidebar.items[0]; // owner promotions link
  * ```
  */
 const comercialSidebar: SidebarInput = {
     items: [
-        // ── Suscripciones ─────────────────────────────────────────────────
-        {
-            type: 'group',
-            id: 'suscripciones',
-            label: { es: 'Suscripciones', en: 'Subscriptions', pt: 'Assinaturas' },
-            icon: 'CreditCardIcon',
-            defaultOpen: true,
-            permissions: ['PRICING_PLAN_VIEW', 'SUBSCRIPTION_VIEW'],
-            onMissing: 'hide',
-            items: [
-                {
-                    type: 'link',
-                    id: 'planes',
-                    label: { es: 'Planes', en: 'Plans', pt: 'Planos' },
-                    icon: 'ListIcon',
-                    route: '/billing/plans',
-                    permissions: ['PRICING_PLAN_VIEW'],
-                    onMissing: 'hide'
-                },
-                {
-                    type: 'link',
-                    id: 'subscriptions',
-                    label: {
-                        es: 'Suscripciones activas',
-                        en: 'Active subscriptions',
-                        pt: 'Assinaturas ativas'
-                    },
-                    icon: 'ReceiptIcon',
-                    route: '/billing/subscriptions',
-                    permissions: ['SUBSCRIPTION_VIEW'],
-                    onMissing: 'hide'
-                },
-                {
-                    type: 'link',
-                    id: 'addons',
-                    label: { es: 'Add-ons', en: 'Add-ons', pt: 'Add-ons' },
-                    icon: 'AddIcon',
-                    route: '/billing/addons',
-                    permissions: ['SUBSCRIPTION_ITEM_VIEW'],
-                    onMissing: 'hide'
-                },
-                {
-                    type: 'link',
-                    id: 'metricas-uso',
-                    label: { es: 'Métricas de uso', en: 'Usage metrics', pt: 'Métricas de uso' },
-                    icon: 'MetricsIcon',
-                    route: '/billing/metrics',
-                    permissions: ['BILLING_METRICS_READ'],
-                    onMissing: 'hide'
-                }
-            ]
-        },
-        { type: 'separator', id: 'sep-pagos' },
-        // ── Pagos ─────────────────────────────────────────────────────────
-        {
-            type: 'group',
-            id: 'pagos',
-            label: { es: 'Pagos', en: 'Payments', pt: 'Pagamentos' },
-            icon: 'ReceiptIcon',
-            defaultOpen: false,
-            permissions: ['PAYMENT_VIEW', 'INVOICE_VIEW', 'BILLING_RECONCILIATION_MANAGE'],
-            onMissing: 'hide',
-            items: [
-                {
-                    type: 'link',
-                    id: 'payments',
-                    label: { es: 'Transacciones', en: 'Transactions', pt: 'Transações' },
-                    icon: 'PriceIcon',
-                    route: '/billing/payments',
-                    permissions: ['PAYMENT_VIEW'],
-                    onMissing: 'hide'
-                },
-                {
-                    type: 'link',
-                    id: 'invoices',
-                    label: { es: 'Facturas', en: 'Invoices', pt: 'Faturas' },
-                    icon: 'FileTextIcon',
-                    route: '/billing/invoices',
-                    permissions: ['INVOICE_VIEW'],
-                    onMissing: 'hide'
-                },
-                {
-                    type: 'link',
-                    id: 'reconciliation',
-                    label: {
-                        es: 'Rescate de pagos huérfanos',
-                        en: 'Orphan payment rescue',
-                        pt: 'Resgate de pagamentos órfãos'
-                    },
-                    icon: 'ShieldAlertIcon',
-                    route: '/billing/reconciliation',
-                    permissions: ['BILLING_RECONCILIATION_MANAGE'],
-                    onMissing: 'hide'
-                }
-            ]
-        },
-        { type: 'separator', id: 'sep-promociones' },
         // ── Promociones ───────────────────────────────────────────────────
         {
-            type: 'group',
-            id: 'promociones',
-            label: { es: 'Promociones', en: 'Promotions', pt: 'Promoções' },
-            icon: 'PromotionsIcon',
-            defaultOpen: false,
-            permissions: ['DISCOUNT_CODE_VIEW', 'OWNER_PROMOTION_VIEW'],
-            onMissing: 'hide',
-            items: [
-                {
-                    type: 'link',
-                    id: 'promo-codes',
-                    label: {
-                        es: 'Códigos promocionales',
-                        en: 'Promo codes',
-                        pt: 'Códigos promocionais'
-                    },
-                    icon: 'CouponsIcon',
-                    route: '/billing/promo-codes',
-                    permissions: ['DISCOUNT_CODE_VIEW'],
-                    onMissing: 'hide'
-                },
-                {
-                    type: 'link',
-                    id: 'owner-promotions',
-                    label: {
-                        es: 'Promos para hosts',
-                        en: 'Host promotions',
-                        pt: 'Promoções para hosts'
-                    },
-                    icon: 'OffersIcon',
-                    route: '/billing/owner-promotions',
-                    permissions: ['OWNER_PROMOTION_VIEW'],
-                    onMissing: 'hide'
-                }
-            ]
+            type: 'link',
+            id: 'owner-promotions',
+            label: {
+                es: 'Promos para hosts',
+                en: 'Host promotions',
+                pt: 'Promoções para hosts'
+            },
+            icon: 'OffersIcon',
+            route: '/billing/owner-promotions',
+            permissions: ['OWNER_PROMOTION_VIEW'],
+            onMissing: 'hide'
         },
         { type: 'separator', id: 'sep-sponsorships' },
         // ── Sponsorships ──────────────────────────────────────────────────
@@ -716,52 +596,16 @@ const comercialSidebar: SidebarInput = {
             ]
         },
         { type: 'separator', id: 'sep-ops-billing' },
-        // ── Operaciones billing ────────────────────────────────────────────
-        {
-            type: 'group',
-            id: 'ops-billing',
-            label: { es: 'Operaciones billing', en: 'Billing ops', pt: 'Operações billing' },
-            icon: 'WebhookIcon',
-            defaultOpen: false,
-            permissions: ['EXCHANGE_RATE_VIEW', 'BILLING_READ_ALL'],
-            onMissing: 'hide',
-            items: [
-                {
-                    type: 'link',
-                    id: 'exchange-rates',
-                    label: { es: 'Tipos de cambio', en: 'Exchange rates', pt: 'Taxas de câmbio' },
-                    icon: 'DollarSignIcon',
-                    route: '/billing/exchange-rates',
-                    permissions: ['EXCHANGE_RATE_VIEW'],
-                    onMissing: 'hide'
-                },
-                {
-                    type: 'link',
-                    id: 'webhook-events',
-                    label: {
-                        es: 'Eventos de webhook',
-                        en: 'Webhook events',
-                        pt: 'Eventos de webhook'
-                    },
-                    icon: 'WebhookIcon',
-                    route: '/platform/ops/webhooks',
-                    permissions: ['BILLING_READ_ALL'],
-                    onMissing: 'hide'
-                }
-            ]
-        },
-        { type: 'separator', id: 'sep-config-billing' },
+        // ── Operaciones ────────────────────────────────────────────────────
+        // (HOS-1416: the billing webhook-events entry was removed with the
+        // dead billing_webhook_events table; exchange rates survive.)
         {
             type: 'link',
-            id: 'billing-settings',
-            label: {
-                es: 'Configuración billing',
-                en: 'Billing settings',
-                pt: 'Configuração billing'
-            },
-            icon: 'SettingsIcon',
-            route: '/billing/settings',
-            permissions: ['BILLING_READ_ALL'],
+            id: 'exchange-rates',
+            label: { es: 'Tipos de cambio', en: 'Exchange rates', pt: 'Taxas de câmbio' },
+            icon: 'DollarSignIcon',
+            route: '/billing/exchange-rates',
+            permissions: ['EXCHANGE_RATE_VIEW'],
             onMissing: 'hide'
         }
     ]
@@ -1206,23 +1050,6 @@ const miCuentaSidebar: SidebarInput = {
         },
         {
             type: 'link',
-            id: 'mi-facturacion',
-            label: {
-                es: 'Mi facturación',
-                en: 'My billing',
-                pt: 'Meu faturamento'
-            },
-            icon: 'CreditCardIcon',
-            route: '/account/billing',
-            exact: true,
-            // Per AC-23: BILLING_VIEW_OWN + SUBSCRIPTION_VIEW_OWN. The sidebar
-            // engine AND-evaluates `permissions`, so listing both hides the
-            // item from any actor missing either perm (e.g. EDITOR).
-            permissions: ['BILLING_VIEW_OWN', 'SUBSCRIPTION_VIEW_OWN'],
-            onMissing: 'hide'
-        },
-        {
-            type: 'link',
             id: 'mis-tags',
             label: { es: 'Mis tags', en: 'My tags', pt: 'Minhas tags' },
             icon: 'TagsIcon',
@@ -1293,48 +1120,6 @@ const consultasSidebar: SidebarInput = {
             route: '/conversations',
             exact: false,
             permissions: ['CONVERSATION_VIEW_OWN']
-        }
-    ]
-};
-
-/**
- * Mi facturación sidebar — HOST's own subscription view.
- *
- * Points to /billing/subscriptions — the most actionable billing page for a HOST
- * (see section comment in sections.ts for the full rationale). Plans read-only
- * catalog is also accessible via PRICING_PLAN_VIEW.
- *
- * Routes verified against `apps/admin/src/routes/_authed/billing/`:
- *   subscriptions.tsx, plans.tsx
- *
- * Note: the HOST usage widget is deferred to SPEC-155. /billing/metrics requires
- * BILLING_METRICS_READ which HOSTs do not hold.
- *
- * @example
- * ```ts
- * import { sidebars } from '@/config/ia/sidebars';
- * const items = sidebars.miFacturacionSidebar.items; // 2 items
- * ```
- */
-const miFacturacionSidebar: SidebarInput = {
-    items: [
-        {
-            type: 'link',
-            id: 'mi-suscripcion',
-            label: { es: 'Mi suscripción', en: 'My subscription', pt: 'Minha assinatura' },
-            icon: 'CreditCardIcon',
-            route: '/billing/subscriptions',
-            exact: true,
-            permissions: ['SUBSCRIPTION_VIEW']
-        },
-        {
-            type: 'link',
-            id: 'planes-disponibles',
-            label: { es: 'Planes disponibles', en: 'Available plans', pt: 'Planos disponíveis' },
-            icon: 'ListIcon',
-            route: '/billing/plans',
-            exact: true,
-            permissions: ['PRICING_PLAN_VIEW']
         }
     ]
 };
@@ -1548,6 +1333,5 @@ export const sidebars: Record<string, SidebarInput> = {
     analisisSidebar,
     miCuentaSidebar,
     misAlojamientosSidebar,
-    consultasSidebar,
-    miFacturacionSidebar
+    consultasSidebar
 };

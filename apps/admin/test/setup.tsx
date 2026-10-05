@@ -176,38 +176,6 @@ vi.mock('@tanstack/react-router', () => ({
         })
 }));
 
-// Mock @qazuor/qzpay-react — gates always render children in tests
-vi.mock('@qazuor/qzpay-react', () => ({
-    LimitGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    LimitReachedUI: () => <div data-testid="limit-reached" />,
-    EntitlementGate: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    useEntitlements: () => ({ check: () => true, isLoading: false }),
-    QZPayProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-    qzpayMergeTheme: (base: Record<string, unknown>, overrides: Record<string, unknown>) => {
-        const result = { ...base };
-        for (const key of Object.keys(overrides)) {
-            const baseVal = base[key];
-            const overVal = overrides[key];
-            if (
-                baseVal &&
-                typeof baseVal === 'object' &&
-                !Array.isArray(baseVal) &&
-                overVal &&
-                typeof overVal === 'object' &&
-                !Array.isArray(overVal)
-            ) {
-                result[key] = {
-                    ...(baseVal as Record<string, unknown>),
-                    ...(overVal as Record<string, unknown>)
-                };
-            } else {
-                result[key] = overVal;
-            }
-        }
-        return result;
-    }
-}));
-
 // Global mock for @repo/icons using a plain object (no Proxy).
 // Enumerates all icon names used across the admin app.
 // NOTE: Do NOT use a Proxy as the vi.mock factory return value — it causes

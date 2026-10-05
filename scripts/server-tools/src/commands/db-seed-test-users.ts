@@ -23,8 +23,7 @@
  * Safety:
  *   - Rejected outright on `--target=prod`. These are dev-only accounts with
  *     a well-known password (`Password123!`) — there is no legitimate case
- *     for creating them in a production database. Mirrors the same guard on
- *     `billing-test-reset` (see that file for the precedent).
+ *     for creating them in a production database.
  *   - The Postgres URL is DERIVED at runtime the same way `hops db-seed`
  *     does — via {@link getDbCredentials} + `docker port`, no new secret.
  */

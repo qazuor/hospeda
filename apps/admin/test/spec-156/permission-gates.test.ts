@@ -39,13 +39,9 @@ interface GatedPage {
 
 const ADMIN_SRC_ROOT = '../../src/routes/_authed';
 
-const ACCOUNT_PAGES: ReadonlyArray<GatedPage> = [
-    {
-        label: '/account/billing — Mi facturación landing (AC-23)',
-        file: `${ADMIN_SRC_ROOT}/account/billing.tsx`,
-        mustReferencePermissions: ['BILLING_VIEW_OWN', 'SUBSCRIPTION_VIEW_OWN']
-    }
-];
+// (HOS-1416: ACCOUNT_PAGES — the /account/billing gate audit — was removed
+// with the deleted account billing page.)
+const ACCOUNT_PAGES: ReadonlyArray<GatedPage> = [];
 
 const ANNOUNCEMENTS_PAGES: ReadonlyArray<GatedPage> = [
     {
@@ -98,12 +94,8 @@ const ADMIN_API_PAGES: ReadonlyArray<GatedPage> = [
         notes: 'Used to gate on BILLING_READ_ALL by mistake; swapped to the admin-api helper so ADMIN can reach it per checklist.',
         viaHelper: ADMIN_API_HELPER
     },
-    {
-        label: '/platform/ops/webhooks — webhook deliveries',
-        file: `${ADMIN_SRC_ROOT}/platform/ops/webhooks.tsx`,
-        mustReferencePermissions: ['ACCESS_API_ADMIN'],
-        viaHelper: ADMIN_API_HELPER
-    },
+    // (HOS-1416: the /platform/ops/webhooks roster entry was removed with the
+    // deleted billing webhook-events page.)
     {
         label: '/platform/email/logs — email/notification history',
         file: `${ADMIN_SRC_ROOT}/platform/email/logs.tsx`,
@@ -191,23 +183,14 @@ describe('SPEC-156 permission gate audit (T-043)', () => {
         }
     });
 
-    describe('AC-23 — Mi facturación requires BOTH new perms together', () => {
-        const src = loadPageSource(`${ADMIN_SRC_ROOT}/account/billing.tsx`);
-
-        it('gates on BILLING_VIEW_OWN && SUBSCRIPTION_VIEW_OWN (not OR)', () => {
-            // Conjunctive check so EDITOR (with neither) and any future role
-            // with only one of the two perms is excluded.
-            expect(
-                src.match(/BILLING_VIEW_OWN[\s\S]+?&&[\s\S]+?SUBSCRIPTION_VIEW_OWN/)
-            ).not.toBeNull();
-        });
-    });
+    // (HOS-1416: the AC-23 Mi facturación conjunctive-gate audit was removed
+    // with the deleted account billing page.)
 
     describe('Coverage roster', () => {
         it('audits all SPEC-156 PR-4 routes that introduce new beforeLoad gates', () => {
             // Defensive checksum so any future task adds itself to the
             // ALL_GATED_PAGES roster instead of silently being skipped.
-            expect(ALL_GATED_PAGES.length).toBe(12);
+            expect(ALL_GATED_PAGES.length).toBe(10);
         });
     });
 });

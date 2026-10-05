@@ -33,8 +33,6 @@
 
 import * as p from '@clack/prompts';
 import { appRestart } from './commands/app-restart.ts';
-import { billingTestLink } from './commands/billing-test-link.ts';
-import { billingTestReset } from './commands/billing-test-reset.ts';
 import { runContainerExec } from './commands/container-exec.ts';
 import { cronList } from './commands/cron-list.ts';
 import { cronTrigger } from './commands/cron-trigger.ts';
@@ -214,41 +212,6 @@ const COMMANDS: ReadonlyArray<Command> = [
         targetPolicy: 'default-ok',
         argv: { booleanFlags: ['--include-empty', ...HELP_FLAGS], valueFlags: [] },
         run: dbCounts
-    },
-    {
-        name: 'billing-test-link',
-        summary:
-            'Map a Hospeda signup user to a MercadoPago test buyer email so the smoke checkout can proceed (staging only).',
-        // Updates billing_customers — write operation.
-        targetPolicy: 'explicit-required',
-        argv: {
-            // `-y` is a real, working alias in the parser. It was undocumented
-            // until this change; the help text now lists it (HOS-510 follow-up
-            // decision: bless what the code accepts, then document it).
-            booleanFlags: ['--yes', '-y', ...HELP_FLAGS],
-            valueFlags: [
-                { name: '--email', syntax: 'both' },
-                { name: '--buyer-email', syntax: 'both' }
-            ]
-        },
-        run: billingTestLink
-    },
-    {
-        name: 'billing-test-reset',
-        summary:
-            'Wipe billing transactional data for a user so a fresh smoke iteration can start. Dry-run by default (pass --execute to write); prod requires typed-email confirmation.',
-        // Deletes rows across many billing tables — write/destroy operation.
-        // Prod is allowed (unlike before) but gated hard: dry-run default,
-        // --execute required to write, and --yes is rejected on prod.
-        targetPolicy: 'explicit-required',
-        argv: {
-            // `-y` as above. Note it is accepted by the PARSER and then
-            // rejected by a business rule on `--target=prod --execute`; that
-            // refusal is the command's to make, not this validator's.
-            booleanFlags: ['--delete-user', '--execute', '--yes', '-y', ...HELP_FLAGS],
-            valueFlags: [{ name: '--email', syntax: 'both' }]
-        },
-        run: billingTestReset
     },
     {
         name: 'db-backup-now',

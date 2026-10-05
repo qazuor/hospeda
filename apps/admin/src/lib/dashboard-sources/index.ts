@@ -27,14 +27,14 @@
  * @see apps/admin/src/lib/dashboard-sources/host.ts — T-018: HOST sources
  * @see apps/admin/src/lib/dashboard-sources/editor.ts — T-019: EDITOR sources
  * @see apps/admin/src/lib/dashboard-sources/admin.ts — T-020: ADMIN/SUPER base sources
- * @see apps/admin/src/lib/dashboard-sources/super.ts — T-021: SUPER_ADMIN-only sources
+ *   (HOS-1416: `super.ts` — the SUPER_ADMIN-only billing-metrics source — was
+ *   removed with the legacy billing surface.)
  */
 
 // Side-effect imports — each module registers its sources at load time.
 import './host';
 import './editor';
 import './admin';
-import './super';
 // Shared sources (span all four roles) — must be imported last to avoid
 // duplicate-registration errors in DEV if a role file accidentally re-registers.
 import './whats-new';

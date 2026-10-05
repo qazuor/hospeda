@@ -63,8 +63,7 @@ describe('sidebar labels are written in the locale they claim (HOS-618)', () => 
     const cases: ReadonlyArray<readonly [string, string]> = [
         ['sponsorships', 'Patrocinios'],
         ['sponsorships-list', 'Patrocinios activos'],
-        ['sponsors', 'Patrocinadores (entidad)'],
-        ['webhook-events', 'Eventos de webhook']
+        ['sponsors', 'Patrocinadores (entidad)']
     ];
 
     for (const [id, expected] of cases) {
@@ -74,10 +73,6 @@ describe('sidebar labels are written in the locale they claim (HOS-618)', () => 
             expect(item?.label?.es).toBe(expected);
         });
     }
-
-    it('webhook-events is Portuguese in pt, not English carried over', () => {
-        expect(itemById('webhook-events')?.label?.pt).toBe('Eventos de webhook');
-    });
 });
 
 describe('every navigation entry is labelled in all three locales', () => {

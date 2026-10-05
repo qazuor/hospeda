@@ -56,7 +56,6 @@ const TABLES_TO_COMPARE = [
     'sponsorship_packages',
     'exchange_rates',
     'ai_prompt_versions',
-    'billing_plans',
     'role_permission'
 ] as const;
 

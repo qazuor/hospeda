@@ -53,7 +53,7 @@ describe('runRequiredSteps (HOS-735)', () => {
         const steps = [
             step({ name: 'a', log }),
             step({ name: 'users', log, fail: boom }),
-            step({ name: 'commercePlan', log })
+            step({ name: 'sampleStep', log })
         ];
 
         // Act + Assert
@@ -67,7 +67,7 @@ describe('runRequiredSteps (HOS-735)', () => {
         const steps = [
             step({ name: 'a', log }),
             step({ name: 'users', log, fail: boom }),
-            step({ name: 'commercePlan', log }),
+            step({ name: 'sampleStep', log }),
             step({ name: 'z', log })
         ];
 
@@ -75,7 +75,7 @@ describe('runRequiredSteps (HOS-735)', () => {
         const result = await runRequiredSteps({ steps, continueOnError: true });
 
         // Assert
-        expect(log).toEqual(['a', 'users', 'commercePlan', 'z']);
+        expect(log).toEqual(['a', 'users', 'sampleStep', 'z']);
         expect(result.failedSteps).toEqual([{ name: 'users', error: boom }]);
     });
 

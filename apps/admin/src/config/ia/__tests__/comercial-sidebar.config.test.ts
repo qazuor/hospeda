@@ -8,7 +8,7 @@
  *   2. Every link item in comercialSidebar (both top-level and nested) carries
  *      `onMissing: 'hide'` (AC-6).
  *   3. `billing-cron` gates on `BILLING_READ_ALL`, NOT `ACCESS_PANEL_ADMIN` (AC-7).
- *   4. `billing-settings` gates on `BILLING_READ_ALL`, NOT `ACCESS_PANEL_ADMIN` (AC-7).
+ *   4. (HOS-1416) the `billing-settings` link was removed with the billing pages.
  *   5. Separator items are untouched — they carry no permissions or onMissing.
  *   6. The full rawConfig still passes AdminIAConfigSchema validation after T-005
  *      changes (boot-validation contract / AC-18).
@@ -113,18 +113,8 @@ describe('comercialSidebar IA config (SPEC-164 T-005)', () => {
     });
 
     // ── 4. billing-settings re-gated to BILLING_READ_ALL ─────────────────────
-
-    it('billing-settings gates on BILLING_READ_ALL (not ACCESS_PANEL_ADMIN) (AC-7)', () => {
-        if (!comercialItems) throw new Error('comercialSidebar items not found');
-        const allItems = collectPermissionedItems(comercialItems);
-        const billingSettings = allItems.find((item) => item.id === 'billing-settings');
-        expect(
-            billingSettings,
-            'billing-settings item not found in comercialSidebar'
-        ).toBeDefined();
-        expect(billingSettings?.permissions).toContain('BILLING_READ_ALL');
-        expect(billingSettings?.permissions).not.toContain('ACCESS_PANEL_ADMIN');
-    });
+    // (HOS-1416: the billing-settings link was removed with the legacy billing
+    // pages, so the AC-7 gate test no longer has a subject.)
 
     // ── 5. Separator items are untouched ──────────────────────────────────────
 

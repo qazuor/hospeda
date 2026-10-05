@@ -2,10 +2,11 @@
  * T-039 — SUPER_ADMIN role gating (SPEC-155)
  *
  * Asserts that the ADMIN role resolves to `adminBaseDashboard` (7 cards A–G)
- * and the SUPER_ADMIN role resolves to `superAdminDashboard` (9 cards = base
- * + super-only section). Also asserts that cards H and I (widget IDs
- * 'super-card-h', 'super-card-i') are present ONLY in the SUPER_ADMIN
- * dashboard and absent from the ADMIN dashboard.
+ * and the SUPER_ADMIN role resolves to `superAdminDashboard` (base + the
+ * super-only section). Also asserts that card H (widget ID 'super-card-h')
+ * is present ONLY in the SUPER_ADMIN dashboard and absent from the ADMIN
+ * dashboard. (HOS-1416: card I 'super-card-i' — the billing-metrics card —
+ * was removed with the legacy billing surface; the H-only invariants remain.)
  *
  * This is a config-placement gate: ADMIN literally never receives cards H/I
  * because `adminBaseDashboard` does not include those widgets. No runtime
@@ -36,8 +37,8 @@ import { dashboards, superAdminOnlySection } from '@/config/ia/dashboards';
 // CONSTANTS
 // ============================================================================
 
-/** Widget IDs that belong exclusively to the SUPER_ADMIN section (cards H + I). */
-const SUPER_ONLY_IDS = new Set(['super-card-h', 'super-card-i'] as const);
+/** Widget IDs that belong exclusively to the SUPER_ADMIN section (card H). */
+const SUPER_ONLY_IDS = new Set(['super-card-h'] as const);
 
 /** IDs of all 7 base cards shared by ADMIN and SUPER_ADMIN (cards A–G). */
 const ADMIN_BASE_IDS = new Set([
@@ -87,12 +88,12 @@ describe('T-039 ADMIN role — adminBaseDashboard (7 cards, no H/I)', () => {
 });
 
 // ============================================================================
-// T-039 — SUPER_ADMIN resolves to superAdminDashboard (9 cards = base + H + I)
+// T-039 — SUPER_ADMIN resolves to superAdminDashboard (base + H)
 // ============================================================================
 
-describe('T-039 SUPER_ADMIN role — superAdminDashboard (9 cards = base + super-only)', () => {
-    it('superAdminDashboard has exactly 11 widgets (9 base incl. views + whats-new + 2 super-only)', () => {
-        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(11);
+describe('T-039 SUPER_ADMIN role — superAdminDashboard (base + super-only)', () => {
+    it('superAdminDashboard has exactly 10 widgets (9 base incl. views + whats-new + 1 super-only)', () => {
+        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(10);
     });
 
     it('superAdminDashboard contains all 7 base widget IDs (A–G)', () => {
@@ -109,12 +110,7 @@ describe('T-039 SUPER_ADMIN role — superAdminDashboard (9 cards = base + super
         expect(ids).toContain('super-card-h');
     });
 
-    it('superAdminDashboard contains super-card-i', () => {
-        const ids = dashboards.superAdminDashboard?.widgets.map((w) => w.id) ?? [];
-        expect(ids).toContain('super-card-i');
-    });
-
-    it('superAdminDashboard contains all SUPER_ONLY_IDS (H + I)', () => {
+    it('superAdminDashboard contains all SUPER_ONLY_IDS (H; card I removed by HOS-1416)', () => {
         const ids = new Set(dashboards.superAdminDashboard?.widgets.map((w) => w.id));
         for (const superOnlyId of SUPER_ONLY_IDS) {
             expect(
@@ -126,10 +122,10 @@ describe('T-039 SUPER_ADMIN role — superAdminDashboard (9 cards = base + super
 });
 
 // ============================================================================
-// T-039 — Cards H and I are present ONLY in SUPER_ADMIN, absent from ADMIN
+// T-039 — Card H is present ONLY in SUPER_ADMIN, absent from ADMIN
 // ============================================================================
 
-describe('T-039 config-placement gating — H and I absent from ADMIN, present in SUPER', () => {
+describe('T-039 config-placement gating — H absent from ADMIN, present in SUPER', () => {
     it('super-card-h: present in superAdminDashboard, absent in adminBaseDashboard', () => {
         const superIds = dashboards.superAdminDashboard?.widgets.map((w) => w.id) ?? [];
         const adminIds = dashboards.adminBaseDashboard?.widgets.map((w) => w.id) ?? [];
@@ -138,19 +134,11 @@ describe('T-039 config-placement gating — H and I absent from ADMIN, present i
         expect(adminIds).not.toContain('super-card-h');
     });
 
-    it('super-card-i: present in superAdminDashboard, absent in adminBaseDashboard', () => {
-        const superIds = dashboards.superAdminDashboard?.widgets.map((w) => w.id) ?? [];
-        const adminIds = dashboards.adminBaseDashboard?.widgets.map((w) => w.id) ?? [];
-
-        expect(superIds).toContain('super-card-i');
-        expect(adminIds).not.toContain('super-card-i');
-    });
-
-    it('superAdminDashboard has 2 more widgets than adminBaseDashboard', () => {
+    it('superAdminDashboard has 1 more widget than adminBaseDashboard', () => {
         const superCount = dashboards.superAdminDashboard?.widgets.length ?? 0;
         const adminCount = dashboards.adminBaseDashboard?.widgets.length ?? 0;
 
-        expect(superCount - adminCount).toBe(2);
+        expect(superCount - adminCount).toBe(1);
     });
 });
 
@@ -161,12 +149,6 @@ describe('T-039 config-placement gating — H and I absent from ADMIN, present i
 describe('T-039 onMissing gating (AC-7)', () => {
     it('super-card-h has onMissing: "hide" in superAdminDashboard', () => {
         const widget = dashboards.superAdminDashboard?.widgets.find((w) => w.id === 'super-card-h');
-        expect(widget).toBeDefined();
-        expect(widget?.onMissing).toBe('hide');
-    });
-
-    it('super-card-i has onMissing: "hide" in superAdminDashboard', () => {
-        const widget = dashboards.superAdminDashboard?.widgets.find((w) => w.id === 'super-card-i');
         expect(widget).toBeDefined();
         expect(widget?.onMissing).toBe('hide');
     });

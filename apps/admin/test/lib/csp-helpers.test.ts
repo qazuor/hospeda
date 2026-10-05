@@ -40,29 +40,18 @@ describe('buildCspDirectives', () => {
         expect(result).toContain("'strict-dynamic'");
     });
 
-    it('should include unsafe-eval for MercadoPago SDK', () => {
+    it('should NOT include the MercadoPago domains removed by HOS-1416', () => {
         const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
-        expect(result).toContain("'unsafe-eval'");
-    });
-
-    it('should include MercadoPago domains in connect-src', () => {
-        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
-        expect(result).toContain('https://api.mercadopago.com');
-        expect(result).toContain('https://sdk.mercadopago.com');
-        expect(result).toContain('https://www.mercadopago.com');
-        expect(result).toContain('https://api.mercadolibre.com');
-        expect(result).toContain('https://api-static.mercadopago.com');
+        expect(result).not.toContain('mercadopago.com');
+        expect(result).not.toContain('mercadolibre.com');
+        expect(result).not.toContain('mlstatic.com');
+        expect(result).not.toContain("'unsafe-eval'");
     });
 
     it('should include worker-src and child-src for Sentry Replay', () => {
         const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
         expect(result).toContain("worker-src 'self' blob:");
         expect(result).toContain('child-src blob:');
-    });
-
-    it('should include frame-src for MercadoPago', () => {
-        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
-        expect(result).toContain('frame-src https://www.mercadopago.com');
     });
 
     it('should include report-uri when DSN is provided', () => {
@@ -134,19 +123,6 @@ describe('buildCspDirectives', () => {
 
         // Assert
         expect(result).toContain("media-src 'self'");
-    });
-
-    it('should use specific MercadoPago subdomains instead of wildcard', () => {
-        // Arrange & Act
-        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
-
-        // Assert - specific subdomains must be listed
-        expect(result).toContain('https://api.mercadopago.com');
-        expect(result).toContain('https://sdk.mercadopago.com');
-        expect(result).toContain('https://www.mercadopago.com');
-
-        // Assert - wildcard must NOT be used
-        expect(result).not.toContain('*.mercadopago.com');
     });
 
     it('should allowlist res.cloudinary.com in img-src', () => {
