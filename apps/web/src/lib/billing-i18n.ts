@@ -166,13 +166,16 @@ export function getLimitName(input: { key: string; t: Translator }): string {
  * `billing.limitHelp.<key>` answers both, and every limit key in the catalogue
  * has one.
  *
- * Falls back to `LIMIT_METADATA`'s English description rather than to an empty
- * string on purpose: the explanation is the accessible name the value hangs
- * off, so an unexplained number is the one output this must never produce.
+ * Falls back to a readable generic explanation until localized copy is
+ * restored; an unexplained number must never be rendered.
  */
 export function getLimitHelp(input: { key: string; t: Translator }): string {
     const { key, t } = input;
-    return t(`billing.limitHelp.${key}`, humanizeKey(key));
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: localized limit explanations replace this generic fallback.
+    return t(
+        `billing.limitHelp.${key}`,
+        `Allowed maximum for ${humanizeKey(key).replace(/^Max /, '')}.`
+    );
 }
 
 /**
