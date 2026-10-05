@@ -64,6 +64,10 @@ export * from './amenity/amenity.service';
 export * from './appLog/index.js';
 export * from './attraction/attraction.service';
 export * from './auditLog/index.js';
+export {
+    NotificationRetentionService,
+    type RetentionSummary
+} from './billing/notification/notification-retention.service.js';
 export * from './commerce';
 export type { CommerceListingHookState } from './commerce/commerce.types';
 export * from './contentModeration';
