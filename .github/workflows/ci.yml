@@ -427,6 +427,7 @@ jobs:
         env:
           BASE_SHA: ${{ env.CI_BASELINE_SHA }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_BASE_REF: ${{ github.base_ref }}
         run: bash scripts/check-drop-column-release-gap.sh
       - name: Check seed dual-write rule (HOS-25 T-024)
         # PR_BODY is passed via env (never inlined into `run:`) — it is
