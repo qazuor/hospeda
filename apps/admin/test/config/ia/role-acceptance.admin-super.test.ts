@@ -543,7 +543,7 @@ describe(`AC-12 — ${RoleEnum.ADMIN} role navigation`, () => {
         expect(adminHasDebug).toBe(false);
     });
 
-    it('all 8 sections have ≥1 accessible sidebar item for ADMIN', () => {
+    it('keeps surviving sections accessible while legacy commercial links are retired', () => {
         for (const sectionId of EXPECTED_MAIN_MENU) {
             // Arrange
             const section = validatedConfig.sections[sectionId];
@@ -560,7 +560,10 @@ describe(`AC-12 — ${RoleEnum.ADMIN} role navigation`, () => {
             });
 
             // Assert
-            expect(accessible).toBe(true);
+            // HOS-1416 removed the old billing admin links. The commercial
+            // section remains registered but has no accessible items until
+            // the replacement billing administration surface is built.
+            expect(accessible, sectionId).toBe(sectionId !== 'comercial');
         }
     });
 });
