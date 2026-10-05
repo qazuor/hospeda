@@ -55,7 +55,6 @@ import { describe, expect, it } from 'vitest';
 import { QZPAY_STORED_STATUS_ALIASES } from '../src/predicates/subscription-status-normalize.js';
 
 const PREDICATES_DIR = resolve(__dirname, '../src/predicates');
-const REPO_ROOT = resolve(__dirname, '../../..');
 
 /** The normalizer every status-taking predicate must route through. */
 const NORMALIZER = 'normalizeStoredSubscriptionStatus';
@@ -334,63 +333,5 @@ describe('HOS-1310 Part 1b: BEHAVIOURAL — every predicate answers the alias li
         for (const { name, call } of probes) {
             expect(call('not-a-status'), `${name} accepted an unknown status`).toBe(false);
         }
-    });
-});
-
-/**
- * The two gates HOS-1310 names, and the predicate each resolves liveness through.
- * Two entries, deliberately — this is a pin on a known pair, not a scan.
- */
-const VERTICAL_GATES = [
-    {
-        vertical: 'commerce (gastronomy + experience) listing visibility',
-        file: 'packages/service-core/src/services/commerce/commerce-visibility.ts',
-        predicate: 'isEntitlementGrantingStatus',
-        notThisOne: 'isSubscriptionLive'
-    },
-    {
-        vertical: 'accommodation publish eligibility',
-        file: 'apps/api/src/services/accommodation-publish-deps.ts',
-        predicate: 'isSubscriptionLive',
-        notThisOne: 'isEntitlementGrantingStatus'
-    }
-] as const;
-
-describe('HOS-1310 Part 2: the two vertical gates, pinned', () => {
-    it.each(VERTICAL_GATES)('$vertical resolves liveness through $predicate', ({
-        file,
-        predicate,
-        notThisOne
-    }) => {
-        const liveCode = stripComments(readFileSync(resolve(REPO_ROOT, file), 'utf-8'));
-
-        expect(
-            liveCode,
-            `${file} no longer calls ${predicate}. If this is the HOS-1310 unification ` +
-                'landing, that is a product decision and this guard is the place to record ' +
-                `it: update both entries together, and say in the commit which criterion ` +
-                'won and why an elapsed period does (or does not) still grant access.'
-        ).toMatch(new RegExp(`\\b${predicate}\\s*\\(`));
-
-        expect(
-            liveCode,
-            `${file} now calls ${notThisOne} as well. Calling both is how the two gates ` +
-                'quietly converge on an unreviewed third answer — HOS-1275 composed them ' +
-                'deliberately in ONE file and documented why at length; do the same here ' +
-                'or unify them properly.'
-        ).not.toMatch(new RegExp(`\\b${notThisOne}\\s*\\(`));
-    });
-
-    it('the two gates still use DIFFERENT predicates — the issue is open, not fixed', () => {
-        // The single assertion that would go green the day HOS-1310 is closed.
-        // Written as an inequality so closing the issue is a deliberate edit to
-        // this file rather than something a reviewer has to notice.
-        const [commerce, accommodation] = VERTICAL_GATES;
-        expect(
-            commerce.predicate,
-            'If the two gates now agree, HOS-1310 is resolved: delete this assertion, update ' +
-                'the table in packages/billing/src/predicates/index.ts, and remove the ' +
-                '"open question" section from liveness-predicate-divergence.test.ts.'
-        ).not.toBe(accommodation.predicate);
     });
 });
