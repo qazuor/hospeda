@@ -91,6 +91,7 @@ export function getPlanDescription(input: { plan: PlanLike; t: Translator }): st
  */
 export function getEntitlementName(input: { key: EntitlementKey; t: Translator }): string {
     const { key, t } = input;
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: locale labels replace the demolished plan-definition fallback.
     return t(`billing.entitlement.${key}`, humanizeKey(key));
 }
 
@@ -152,6 +153,7 @@ export function getDisplayFeatures(input: {
  */
 export function getLimitName(input: { key: string; t: Translator }): string {
     const { key, t } = input;
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: locale labels replace the demolished limit metadata fallback.
     return t(`billing.comparison.limitLabel.${key}`, humanizeKey(key));
 }
 

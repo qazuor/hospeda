@@ -346,6 +346,7 @@ export function selectAudiencePlans(
         tourist: filterPlansByCategory(accommodationPlans, 'tourist'),
         gastronomy: plansOf(results.gastronomy),
         experience: plansOf(results.experience),
+        // HOS-1352: transitional until V2 (HOS-1356), see PR: the new catalogue will identify sellable partner tiers.
         partner: plansOf(results.partner).filter((plan) => plan.slug !== 'partner-listing')
     };
 }
