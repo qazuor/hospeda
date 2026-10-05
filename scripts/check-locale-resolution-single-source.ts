@@ -72,8 +72,8 @@ export const HEADER_READER_ALLOWLIST: readonly AllowlistEntry[] = [
         reason: 'Admin server function reading the request header (HOS-609); resolution itself happens via matchAcceptLanguage/resolveDisplayLocale.'
     },
     {
-        file: 'apps/api/src/routes/billing/checkout-return-urls.ts',
-        reason: 'resolveReturnUrlLocale reads the header as step 3 of the precedence rule (HOS-605), delegating the actual decision to resolveDisplayLocale.'
+        file: 'apps/api/src/utils/return-url-locale.ts',
+        reason: 'resolveReturnUrlLocale reads the header as step 3 of the precedence rule (HOS-605), delegating the actual decision to resolveDisplayLocale. Relocated from routes/billing/checkout-return-urls.ts when HOS-1416 demolished the billing checkout builders; the locale resolver survived for the QR-sheet / brochure / certificate return links.'
     },
     {
         file: 'apps/api/src/routes/qr-code/public/resolve.ts',
