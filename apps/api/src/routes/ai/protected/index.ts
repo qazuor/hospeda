@@ -10,14 +10,12 @@
  *
  * - `protectedAiTextImproveRoute` — POST /text-improve (SPEC-198)
  *   Streams an SSE response of incremental text suggestions for a HOST
- *   accommodation field. Gated by `ai_text_improve` entitlement +
- *   `max_ai_text_improve_per_month` quota.
+ *   accommodation field. Burst rate limits and usage metering remain active.
  * - `protectedAiChatRoute` — POST /chat (SPEC-200)
- *   Accommodation assistant streaming SSE. Gated by the listing owner's
- *   `ai_chat` billing entitlement and per-owner monthly quota (SPEC-211).
+ *   Accommodation assistant streaming SSE with burst rate limits and metering.
  * - `protectedAiSearchChatRoute` — POST /search-chat (SPEC-212)
  *   Multi-turn conversational accommodation search streaming SSE.
- *   Platform-governed (auth + rate-limit only, no billing entitlement gate).
+ *   Available to authenticated users with burst rate limits and metering.
  *
  * When a sibling spec lands its handler file, ADD a new `app.route('/', ...)`
  * line below — do NOT recreate the barrel.

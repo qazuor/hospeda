@@ -10,6 +10,7 @@
  */
 
 import type { Accommodation, I18nText } from '@repo/schemas';
+import { stripVideoEmbeds } from '../lib/content-detection.js';
 
 /**
  * Accommodation data that may contain premium features
@@ -113,6 +114,37 @@ export function stripRichDescriptionFields<T extends object>(
         ...rest
     } = item as T & { richDescription?: unknown; richDescriptionI18n?: unknown };
     return rest as Omit<T, 'richDescription' | 'richDescriptionI18n'>;
+}
+
+/**
+ * Hides public fields that previously required an owner's paid plan until the
+ * replacement coverage contract is available. The result is independent of
+ * the viewer, so it is safe to put in the shared public response cache.
+ */
+export function maskLegacyPremiumFields<T extends object>(item: T): T {
+    const filtered = {
+        ...stripRichDescriptionFields(item),
+        isVerified: false,
+        hasWhatsapp: false
+    } as Record<string, unknown>;
+
+    if (typeof filtered.description === 'string') {
+        filtered.description = stripVideoEmbeds(filtered.description);
+    }
+    delete filtered.videos;
+
+    const media = filtered.media;
+    if (media && typeof media === 'object' && !Array.isArray(media) && 'videos' in media) {
+        filtered.media = { ...media, videos: [] };
+    }
+
+    const contactInfo = filtered.contactInfo;
+    if (contactInfo && typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
+        const { whatsapp: _whatsapp, ...remaining } = contactInfo as Record<string, unknown>;
+        filtered.contactInfo = remaining;
+    }
+
+    return filtered as T;
 }
 
 /**

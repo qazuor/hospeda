@@ -7,7 +7,7 @@ import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
-import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
+import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -40,7 +40,7 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
         // rich-description fields, so `stripWithSchema` does NOT hide them. Without this
         // the premium markdown rode a card listing.
         const strippedAccommodations = (result.data.accommodations ?? []).map(
-            stripRichDescriptionFields
+            maskLegacyPremiumFields
         );
 
         // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing

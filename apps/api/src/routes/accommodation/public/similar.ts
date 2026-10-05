@@ -10,7 +10,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
-import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
+import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 /**
@@ -241,7 +241,7 @@ export const publicGetSimilarRoute = createPublicRoute({
         // dropped only the plain field, so the "survives a query-layer change" guarantee
         // this block advertises did not actually hold for richDescriptionI18n.
         const mappedRows = rows.map((row) => {
-            const { destination, ...rest } = stripRichDescriptionFields(
+            const { destination, ...rest } = maskLegacyPremiumFields(
                 row as Record<string, unknown> & { destination?: unknown }
             );
             const media = composeAccommodationMedia({

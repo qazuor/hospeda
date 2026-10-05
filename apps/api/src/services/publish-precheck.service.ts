@@ -63,14 +63,12 @@ export interface PublishPrecheckResult {
 /**
  * The answer used whenever an input could not be resolved.
  *
- * `create_direct` with a zero cap is deliberately NOT "unlimited": the numbers
- * are what the panel would have rendered, and the panel is not rendered for this
- * decision. What matters is that the form shows and the server-side gate still
- * runs.
+ * A value of -1 means there is no plan-based cap during the transition.
+ * The panel does not render a quota for decisions with `hasQuota: true`.
  */
 const FAIL_OPEN: PublishPrecheckResult = {
     currentCount: 0,
-    maxAllowed: 0,
+    maxAllowed: -1,
     hasQuota: true,
     draftCount: 0,
     drafts: [],
@@ -118,7 +116,7 @@ export async function resolvePublishPrecheck(input: {
 
         return {
             currentCount,
-            maxAllowed: 0,
+            maxAllowed: -1,
             hasQuota: true,
             draftCount: drafts.length,
             drafts,

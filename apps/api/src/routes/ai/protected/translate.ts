@@ -7,7 +7,7 @@
  *
  * ## Middleware order
  *
- *   auth → entitlement → rateLimit-perUser → rateLimit-perIP → quota
+ *   auth → rateLimit-perUser → rateLimit-perIP
  *
  * @module apps/api/routes/ai/protected/translate
  */
@@ -131,7 +131,7 @@ protectedAiTranslateRoute.post('/', async (c) => {
         // HOS-584: authorize BEFORE loading or translating anything. This route
         // takes the target row's id from the request BODY, so nothing upstream
         // can check it — `ownershipMiddleware` reads `c.req.param(...)`, and the
-        // auth / entitlement / quota middlewares only ever look at the actor.
+        // Authentication and rate limit middleware only look at the actor.
         // Without this gate any authenticated user holding `AI_TRANSLATE` could
         // persist translations into another host's accommodation, or into staff
         // content, simply by knowing its id.
@@ -217,7 +217,7 @@ protectedAiTranslateRoute.post('/', async (c) => {
         //     but only AFTER persistence, so the caller is never charged a quota
         //     unit for a request that visibly 500s. HOS-190's Zod gate rejects
         //     malformed provider output deterministically, so charging before
-        //     persisting would burn the whole monthly quota on retries of the
+        //     persisting would create duplicate usage rows on retries of the
         //     same entity. The catch below still records the spend as 'error'.
         //
         // (The sibling `search-chat` route meters CONCURRENTLY with its

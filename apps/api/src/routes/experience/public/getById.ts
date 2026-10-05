@@ -46,11 +46,10 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
             return null;
         }
 
-        // The per-plan directions gate (HOS-1049) was removed with the legacy
-        // billing system (HOS-1416): the how-to-get-there half is served whole.
+        // Keep formerly plan-gated directions hidden until replacement coverage exists.
         return applyExperienceDirectionsGate({
             experience: withPublicIsFeatured(withPublicVisibleFaqs(experience)),
-            ownerGrantsDirections: true
+            ownerGrantsDirections: false
         });
     },
     options: {

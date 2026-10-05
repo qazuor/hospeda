@@ -126,25 +126,24 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
                 getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today })
             ]);
 
-        // The per-plan menu/events/daily-specials gates (HOS-895, HOS-1042,
-        // HOS-1043) were removed with the legacy billing system (HOS-1416):
-        // every grant below is unconditional.
+        // Until replacement coverage is available, formerly plan-gated menu,
+        // events and daily-specials data stay hidden on public reads.
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement: true,
-            ownerGrantsMenuItemPhotos: true,
-            ownerGrantsMenuTranslations: true
+            ownerGrantsMenuManagement: false,
+            ownerGrantsMenuItemPhotos: false,
+            ownerGrantsMenuTranslations: false
         });
 
         const eventsGate = applyGastronomyVenueEventsGate({
             events: eventsResult.error ? [] : eventsResult.data.events,
-            ownerGrantsVenueEvents: true
+            ownerGrantsVenueEvents: false
         });
 
         const dailySpecialsGate = applyGastronomyDailySpecialsGate({
             dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
-            ownerGrantsDailySpecial: true
+            ownerGrantsDailySpecial: false
         });
 
         return {

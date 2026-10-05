@@ -27,12 +27,15 @@ export { conversationTokenReminderJob } from './conversation-token-reminder.job.
 export { cronRunPurgeJob } from './cron-run-purge.job.js';
 export { destinationWeatherFetchJob } from './destination-weather-fetch.job.js';
 export { entityViewsPurgeJob } from './entity-views-purge.job.js';
+export { exchangeRateFetchJob } from './exchange-rate-fetch.job.js';
 export { hostTradeStatsReconcileJob } from './host-trade-stats-reconcile.job.js';
 export { hostTradeUsageExpiryJob } from './host-trade-usage-expiry.job.js';
 export { hostTradeUsageReminderJob } from './host-trade-usage-reminder.job.js';
 export { leadIntakeBackstopJob } from './lead-intake-backstop.job.js';
 export { mediaOrphanCleanupJob } from './media-orphan-cleanup.job.js';
 export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
+export { notificationLogPurgeJob } from './notification-log-purge.job.js';
+export { notificationScheduleJob } from './notification-schedule.job.js';
 export { pageRevalidationJob } from './page-revalidation.job.js';
 export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js';
 export { refreshExternalReputationJob } from './refresh-external-reputation.job.js';

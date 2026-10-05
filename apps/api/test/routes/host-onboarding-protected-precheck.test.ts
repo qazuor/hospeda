@@ -108,7 +108,7 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
         expect(body.success).toBe(true);
         expect(body.data).toEqual({
             currentCount: 0,
-            maxAllowed: 0,
+            maxAllowed: -1,
             hasQuota: true,
             draftCount: 0,
             drafts: [],
@@ -153,9 +153,9 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
         expect(body.data.decision).toBe('pick_draft_or_create');
         expect(body.data.draftCount).toBe(2);
         // The per-plan cap was removed with the legacy billing system
-        // (HOS-1416); hasQuota is always true and maxAllowed reads 0.
+        // (HOS-1416); hasQuota is always true and -1 means unlimited.
         expect(body.data.hasQuota).toBe(true);
-        expect(body.data.maxAllowed).toBe(0);
+        expect(body.data.maxAllowed).toBe(-1);
         expect(body.data.drafts).toHaveLength(2);
     });
 

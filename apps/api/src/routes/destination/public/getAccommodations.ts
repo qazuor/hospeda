@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
-import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
+import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -44,7 +44,7 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
         // field. The static `AccommodationListItem` type declares neither, but the
         // underlying `findAll` runs `SELECT *`, so both are present at runtime.
         const strippedAccommodations = (result.data?.accommodations ?? []).map((a) =>
-            stripRichDescriptionFields(a)
+            maskLegacyPremiumFields(a)
         );
 
         // The isVerified owner-entitlement gate was removed with the legacy

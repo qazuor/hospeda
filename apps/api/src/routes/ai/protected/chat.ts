@@ -197,7 +197,6 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const body = (await c.req.json()) as AiChatRequest;
         const actor = getActorFromContext(c);
         const locale = body.locale ?? DEFAULT_LOCALE;
-        const _now = new Date();
         const handlerStartMs = Date.now();
 
         // -----------------------------------------------------------------------
@@ -230,12 +229,16 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // HTTP 404 before any SSE bytes are written.
         // -----------------------------------------------------------------------
         const db = getDb();
-        const listingTable =
-            entityType === 'accommodation'
-                ? accommodations
-                : entityType === 'gastronomy'
-                  ? gastronomies
-                  : experiences;
+        // Exhaustive lookup, not a binary ternary (HOS-1079): a literal-equality
+        // chain keyed on the vertical silently answers the else-branch for every
+        // value it does not name. The record is total over `AiChatEntityType`,
+        // so the compiler owns the exhaustiveness.
+        const LISTING_TABLE_BY_ENTITY_TYPE = {
+            accommodation: accommodations,
+            gastronomy: gastronomies,
+            experience: experiences
+        } as const;
+        const listingTable = LISTING_TABLE_BY_ENTITY_TYPE[entityType];
         const rows = await db
             .select({ ownerId: listingTable.ownerId })
             .from(listingTable)

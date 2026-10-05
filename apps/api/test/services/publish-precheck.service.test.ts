@@ -81,11 +81,11 @@ describe.each(VERTICALS)('publish precheck decision matrix — %s', (vertical) =
         expect(result.decision).toBe('pick_draft_or_create');
     });
 
-    it('reports the counts it decided on (maxAllowed reads 0: no cap)', async () => {
+    it('reports the counts it decided on (-1 means no plan cap)', async () => {
         const { ctx } = arrange({ vertical, currentCount: 2, draftCount: 1 });
         const result = await resolvePublishPrecheck({ ctx, actor: ACTOR, vertical });
         expect(result.currentCount).toBe(2);
-        expect(result.maxAllowed).toBe(0);
+        expect(result.maxAllowed).toBe(-1);
         expect(result.draftCount).toBe(1);
         expect(result.drafts).toHaveLength(1);
     });

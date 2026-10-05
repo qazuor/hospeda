@@ -156,6 +156,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Hard-delete entity_views and partner_logo_clicks telemetry rows older than 95 days (30d analytics window + 65d buffer, GDPR-lite data minimisation, SPEC-159 T-011 / HOS-1063 A-3).'
     },
     {
+        name: 'exchange-rate-fetch',
+        displayName: 'Tipos de cambio',
+        category: 'system',
+        schedule: '0 */3 * * *',
+        description: 'Refresh ARS / USD / EUR exchange rates from upstream APIs.'
+    },
+    {
         name: 'view-monthly-rollup',
         displayName: 'Consolidado mensual de vistas y clics',
         category: 'system',
@@ -193,6 +200,20 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '*/5 * * * *',
         description:
             'Close newsletter campaigns whose deliveries have all resolved (status sending → sent).'
+    },
+    {
+        name: 'notification-log-purge',
+        displayName: 'Purga de logs de notificaciones',
+        category: 'notifications',
+        schedule: '0 3 * * *',
+        description: 'Drop notification log rows older than the retention window.'
+    },
+    {
+        name: 'notification-schedule',
+        displayName: 'Envío de notificaciones programadas',
+        category: 'notifications',
+        schedule: '0 8 * * *',
+        description: 'Retry queued notifications whose send-at has arrived.'
     },
     {
         name: 'page-revalidation',

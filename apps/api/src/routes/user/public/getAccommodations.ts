@@ -22,7 +22,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { createGuestActor } from '../../../utils/actor';
-import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
+import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -101,11 +101,7 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
         // before reaching the response payload — fail-closed and independent of
         // any schema change.
         const rawItems = result.data?.items ?? [];
-        const strippedItems = rawItems.map(stripRichDescriptionFields);
-
-        // The isVerified owner-entitlement gate was removed with the legacy
-        // billing system (HOS-1416); `isVerified` is emitted as stored.
-        const items = strippedItems;
+        const items = rawItems.map(maskLegacyPremiumFields);
 
         return {
             items,

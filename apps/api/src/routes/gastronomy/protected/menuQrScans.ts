@@ -102,8 +102,7 @@ export async function handleGetGastronomyMenuQrScans(
 /**
  * GET /api/v1/protected/gastronomies/:id/menu-qr/scans
  *
- * Premium-only: gated on `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
- * alone (HOS-1044 §6.5), same as `menuQr.ts`.
+ * Owner-only. The former plan entitlement was removed with HOS-1416.
  */
 export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
     method: 'get',
@@ -112,8 +111,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
     description:
         'Returns the total scans, a gap-filled daily series, and device/OS/language breakdowns ' +
         'for the venue’s menu QR over a rolling window (7d or 30d, default 30d). A venue with no ' +
-        'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only, ' +
-        'and requires the menu_qr_scan_metrics entitlement granted by the premium gastronomy plan.',
+        'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

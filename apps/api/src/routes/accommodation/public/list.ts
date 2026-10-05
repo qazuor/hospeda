@@ -36,7 +36,7 @@ import {
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
-import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
+import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -237,7 +237,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // the legacy billing system (HOS-1416). AI chat is no longer plan-gated,
         // so the badge is unconditional; `isVerified` is emitted as stored.
         const items = rawItems.map((item) => ({
-            ...stripRichDescriptionFields(item),
+            ...maskLegacyPremiumFields(item),
             // HOS-929: public read treats holding either the admin-curated
             // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
             // flag as featured. `featuredByEntitlement` itself is stripped by

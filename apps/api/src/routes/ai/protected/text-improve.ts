@@ -8,23 +8,15 @@
  * accommodation field (`description`, `summary`, or `faq_answer`) or,
  * since HOS-1075, a comercio (gastronomy/experience) field.
  *
- * ## Middleware order (CRITICAL — wrong order = 503 on every request)
+ * ## Middleware order
  *
  * `createProtectedStreamingRoute` PREPENDS `protectedAuthMiddleware` to
  * whatever we pass in `options.middlewares`, so the final chain is:
  *
- *   auth → entitlement → entitlementRouter → rateLimit-perUser → rateLimit-perIP → quota
+ *   auth → rateLimit-perUser → rateLimit-perIP
  *
- * `entitlementMiddleware` MUST run before `entitlementRouter`
- * ({@link aiTextImproveEntitlementRouter}), which must in turn run before
- * `createAiQuotaMiddleware` — the quota middleware reads
- * `c.get('userEntitlements')`/`c.get('userLimits')`, which are populated by
- * whichever of the two ran last for this request (see
- * {@link aiTextImproveEntitlementRouter}'s docblock for why the choice is
- * per-request, not per-mount). Reordering causes 503 on every request (the
- * quota middleware's billing-load guard trips first) or, worse, silently
- * re-exposes the HOS-1075 leak by leaving the accommodation set in place for
- * a comercio request.
+ * The old entitlement and monthly quota middleware are suspended during the
+ * billing transition. Burst rate limits and usage metering remain active.
  *
  * ## Per-request service
  *

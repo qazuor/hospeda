@@ -114,7 +114,7 @@ export const protectedHostOnboardingPrecheckRoute = createProtectedRoute({
 
         return {
             currentCount,
-            maxAllowed: 0,
+            maxAllowed: -1,
             hasQuota: true,
             draftCount,
             drafts: draftItems.map((item) => ({

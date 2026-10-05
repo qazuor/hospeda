@@ -170,16 +170,6 @@ vi.mock('../../src/services/billing-usage.service', () => ({
     getApproachingLimits: vi.fn().mockResolvedValue({ success: true, data: [] })
 }));
 
-vi.mock('@qazuor/qzpay-hono', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { OpenAPIHono } = require('@hono/zod-openapi');
-    return {
-        createBillingRoutes: vi.fn(() => {
-            return new OpenAPIHono({ strict: false });
-        })
-    };
-});
-
 // ---------------------------------------------------------------------------
 // Imports (after all mocks are registered)
 // ---------------------------------------------------------------------------

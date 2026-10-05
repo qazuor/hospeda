@@ -61,9 +61,8 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
         // renders nothing for either, and an empty array on the wire would read
         // as "loaded, and there are none" from a payload that never joined.
         //
-        // HOS-1049: the how-to-get-there gate was removed with the legacy
-        // billing system (HOS-1416) — the instructions ship on every tier, and
-        // the meeting point and its coordinates were never part of the gate.
+        // HOS-1049: keep directions hidden until replacement coverage exists;
+        // the meeting point and coordinates remain public.
         const [amenitiesData, featuresData] = await Promise.all([
             fetchExperienceAmenities(experience.id),
             fetchExperienceFeatures(experience.id)
@@ -81,7 +80,7 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
                 amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
                 features: featuresData.length > 0 ? featuresData : undefined
             },
-            ownerGrantsDirections: true
+            ownerGrantsDirections: false
         });
     },
     options: {

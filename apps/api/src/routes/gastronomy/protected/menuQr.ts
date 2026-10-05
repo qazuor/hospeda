@@ -8,13 +8,7 @@
  * ## Order of refusals
  *
  * 1. **Authentication** — `createProtectedRoute`.
- * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
- *    loads the caller's GASTRONOMY grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `MENU_QR_SCAN_METRICS`. The loader MUST
- *    stay ahead of the gate: the global `entitlementMiddleware` has already
- *    put the ACCOMMODATION set in the context, and that set never carries a
- *    commerce key (HOS-1074).
- * 3. **Ownership**, as a 404 — before anything is minted, so a caller who
+ * 2. **Ownership**, as a 404 — before anything is minted, so a caller who
  *    does not own the listing cannot create a `qr_codes` row for someone
  *    else's venue, and so no 403 ever confirms that the id exists.
  *
@@ -23,7 +17,7 @@
  * `QrCodeService.getOrCreateForEntity` is idempotent on
  * `(entityType, entityId, purpose)` — a second call for the same venue
  * returns the SAME row (AC-2). The public `/carta/` page must never call it:
- * doing so would let any visitor of a non-premium venue's menu create a live
+ * doing so would let any visitor of a venue's menu create a live
  * `qr_codes` row as the side effect of a plain `GET`.
  *
  * The initial target is minted at the platform's default locale
@@ -153,16 +147,14 @@ export async function handleGetGastronomyMenuQr(
 /**
  * GET /api/v1/protected/gastronomies/:id/menu-qr
  *
- * Premium-only: gated on `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
- * alone (HOS-1044 §6.5), NOT by `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that
- * map is the floor every tier gets, and this key is a tier differentiator.
+ * Owner-only. The former plan entitlement was removed with HOS-1416.
  */
 export const protectedGetGastronomyMenuQrRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/menu-qr',
     summary: 'Get the menu QR for a gastronomy listing',
     description:
-        'Returns the SVG of the venue’s menu QR, the URL it encodes (`{site}/qr/{qrSlug}/`), and the carta page that URL redirects to. The code is created on the first call and reused afterwards, so the image stays byte-identical for the life of the listing even if the listing is renamed. Owner-only, and requires the menu_qr_scan_metrics entitlement granted by the premium gastronomy plan.',
+        'Returns the SVG of the venue’s menu QR, the URL it encodes (`{site}/qr/{qrSlug}/`), and the carta page that URL redirects to. The code is created on the first call and reused afterwards, so the image stays byte-identical for the life of the listing even if the listing is renamed. Owner-only.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

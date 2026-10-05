@@ -1,23 +1,9 @@
 /**
  * Protected exclusive-deals list endpoint (HOS-21 T-008/T-009)
  *
- * Tourist-facing listing of owner promotions scoped by touristAudience tier.
- * Reuses `OwnerPromotionService.findExclusiveDeals` (T-005/T-006) — NOT the
- * public `search()`/`list.ts` path used by `PromotionBanner`, which stays
- * ungated and untouched.
- *
- * Gated by `gateExclusiveDeals()` (EXCLUSIVE_DEALS entitlement). A caller who
- * additionally carries VIP_PROMOTIONS_ACCESS sees 'plus' + 'vip' rows; everyone
- * else sees 'plus' only (HOS-21 D1, additive VIP tier).
- *
- * HOS-1224 note: both entitlements are now carried by the SAME single tier.
- * `tourist-plus` — which held EXCLUSIVE_DEALS without VIP_PROMOTIONS_ACCESS and
- * was therefore the only actor that could observe the 'plus'-only branch — was
- * retired as a product, so `tourist-vip` is the sole paid tourist tier and no
- * accommodation plan lands in that branch either. The two-audience split stays
- * because it is a property of the DEAL (`TouristAudienceEnum`), not of a plan,
- * but the 'plus'-only path is currently unreachable for a tourist. Reported as
- * a HOS-1224 follow-up rather than removed here.
+ * The formerly paid inventory stays hidden while the replacement coverage
+ * contract is being built. Keep the endpoint and its response shape so clients
+ * can continue to request it safely.
  *
  * Mounted at `/exclusive-deals`, a distinct path from `/` (list) and `/{id}`
  * (get/update/patch/delete) — per the Destination Hierarchy Routes precedent
@@ -26,63 +12,32 @@
  * `protected/index.ts` so the literal path isn't swallowed by `/{id}`.
  */
 
-import { OwnerPromotionListItemSchema, TouristAudienceEnum } from '@repo/schemas';
-import { OwnerPromotionService, ServiceError } from '@repo/service-core';
-import type { Context } from 'hono';
+import { OwnerPromotionListItemSchema } from '@repo/schemas';
 import { z } from 'zod';
 
-import { getActorFromContext } from '../../../utils/actor';
-import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createProtectedListRoute } from '../../../utils/route-factory';
 
-const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
-
 /**
  * GET /api/v1/protected/owner-promotions/exclusive-deals
- * List exclusive deals visible to the authenticated tourist's plan tier.
+ * Return the transitional empty exclusive-deals collection.
  */
 export const protectedListExclusiveDealsRoute = createProtectedListRoute({
     method: 'get',
     path: '/exclusive-deals',
     summary: 'List exclusive deals',
-    description:
-        "Returns active owner promotions scoped to the authenticated tourist's plan tier (plus vs plus+vip). Excludes deals on accommodations the caller cannot see. Requires the EXCLUSIVE_DEALS entitlement.",
+    description: 'Returns no exclusive deals while replacement coverage is pending.',
     tags: ['Owner Promotions'],
     requestQuery: {
         accommodationId: z.string().uuid().optional()
     },
     responseSchema: OwnerPromotionListItemSchema,
-    handler: async (
-        ctx: Context,
-        _params: Record<string, unknown>,
-        _body: Record<string, unknown>,
-        query?: Record<string, unknown>
-    ) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx, _params, _body, query) => {
         const { page, pageSize } = extractPaginationParams(query ?? {});
-
-        // The VIP_PROMOTIONS_ACCESS entitlement gate was removed with the
-        // legacy billing system (HOS-1416); both audiences are listed now.
-        const audienceScope = [TouristAudienceEnum.PLUS, TouristAudienceEnum.VIP];
-
-        const result = await ownerPromotionService.findExclusiveDeals(
-            actor,
-            {
-                page,
-                pageSize,
-                accommodationId: query?.accommodationId as string | undefined
-            },
-            audienceScope
-        );
-
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
-        }
-
+        // Formerly paid inventory remains hidden until the replacement coverage exists.
         return {
-            items: result.data?.items ?? [],
-            pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
+            items: [],
+            pagination: getPaginationResponse(0, { page, pageSize })
         };
     },
     options: {}

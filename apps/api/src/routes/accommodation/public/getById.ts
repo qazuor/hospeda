@@ -15,6 +15,7 @@ import type { Context } from 'hono';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
+import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -76,9 +77,7 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
             isFeatured: resolvePublicIsFeatured(result.data)
         };
 
-        // The SPEC-187 owner-entitlement gate on the premium fields was removed
-        // with the legacy billing system (HOS-1416); the payload is served whole.
-        return accommodation;
+        return maskLegacyPremiumFields(accommodation);
     },
     options: {
         cacheTTL: 300,
