@@ -38,6 +38,11 @@ PROHIBIDO, sin excepción:
 
 TOPE: {un paquete | 90 minutos}. Al llegar, frená y escribí el informe aunque no hayas terminado.
 
+PROGRESO (obligatorio, te vigilan): agregá una línea a .hoja/progreso.md ANTES de cada paso y cada vez que termines uno, con este formato:
+HH:MM | PASO n/total | qué estás haciendo | archivo(s) | siguiente
+Por ejemplo: «14:32 | PASO 3/7 | adapto el middleware de cuota | apps/api/src/middlewares/ai-quota.ts | test del AC:U1:2».
+Antes de tocar el primer archivo, escribí tu plan como PASO 0 con la lista numerada de pasos. Si pasan 15 minutos sin que puedas escribir una línea nueva, porque un comando tarda o porque estás trabado, escribí qué está pasando. Un vigía externo te corta si: tocás un archivo fuera de permitidas.txt, el worktree no cambia en 20 minutos o superás el tope.
+
 INFORME OBLIGATORIO: al terminar o frenar, escribí .hoja/informe.md con EXACTAMENTE estas secciones:
 ## Estado
 HECHO | PARCIAL | FRENADO, y una línea de por qué.
@@ -52,6 +57,25 @@ Ambigüedades o decisiones que no tomaste. Vacío si no hay.
 ## Gates
 Comando exacto y resultado de cada uno.
 ```
+
+## Cómo lo lanza y lo vigila el coordinador
+
+1. Lanza el agente en segundo plano, con su salida a un log:
+   - Codex: `codex exec --json ... > <wt>/.hoja/agente.log 2>&1`. Cada herramienta que usa queda como un evento.
+   - OpenCode: `opencode run --format json ... > <wt>/.hoja/agente.log 2>&1`.
+2. Con su PID, lanza el vigía, también en segundo plano:
+   `python3 vigia.py <wt> <pid> --tope 90 --idle 20 --cada 5 --matar`.
+   El harness avisa cuando el vigía sale. El código de salida dice por qué:
+   - 0: el agente terminó;
+   - 2: se fue de alcance, y el vigía ya lo mató;
+   - 3: quedó quieto 20 minutos (colgado o en loop);
+   - 4: llegó al tope.
+3. Mientras corre, cualquiera puede ver el estado:
+   - `tail -f <wt>/.hoja/vigia.log`: una línea cada 5 minutos, con tiempo, archivos cambiados, último cambio, CPU y la última línea del agente;
+   - `tail -f <wt>/.hoja/progreso.md`: el plan y los pasos que va escribiendo el agente;
+   - `<wt>/.hoja/agente.log`: el detalle de cada acción.
+4. Si el agente no escribe `progreso.md`, el vigía igual lo controla por los archivos que cambian. El
+   progreso sirve para entender qué hace; la seguridad no depende de que el agente lo escriba.
 
 ## Lo que hace el coordinador al volver
 
