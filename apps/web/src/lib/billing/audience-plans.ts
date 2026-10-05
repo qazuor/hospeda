@@ -57,7 +57,6 @@
  * `./price-on-request-audiences.ts` and {@link resolveAudienceStartingPrices}.
  */
 
-import { PARTNER_TIER_PLAN_SLUG } from '@repo/billing';
 import type { ProductDomainValue } from '@repo/schemas';
 import type { PricingAudience } from '../billing-i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../pricing-plans';
@@ -230,19 +229,10 @@ export type AudienceStartingPrice =
 export type AudienceStartingPrices = Readonly<Record<AudienceCardId, AudienceStartingPrice | null>>;
 
 /**
- * The partner plan slugs a visitor can actually buy today.
- *
- * Read off `PARTNER_TIER_PLAN_SLUG`, the one place in the platform that maps a
- * partner TIER to a plan, rather than hardcoded here. It matters: the partner
- * domain also contains `partner-listing`, a pre-tier plan kept ACTIVE on purpose
- * because live partner rows still point at it. Taking a naive minimum over the
- * domain would advertise that legacy plan's price for an offer nobody can
- * subscribe to.
+ * The pre-tier `partner-listing` plan is excluded because it is not sellable.
+ * The sellable tier map from the demolished plan configuration is not copied
+ * into web. V2 will provide the replacement catalogue.
  */
-const SELLABLE_PARTNER_PLAN_SLUGS: ReadonlySet<string> = new Set(
-    Object.values(PARTNER_TIER_PLAN_SLUG).filter((slug): slug is string => slug !== null)
-);
-
 /**
  * The cheapest active plan in a list, as an {@link AudienceStartingPrice}.
  *
@@ -337,8 +327,7 @@ function plansOf(result: FetchPlansResult): readonly PublicPlanData[] {
  *
  * - `complex` is never selected. Neither accommodation branch asks for that
  *   category, which is what keeps the complex tier off this surface entirely.
- * - Partner is narrowed to {@link SELLABLE_PARTNER_PLAN_SLUGS}, dropping the
- *   still-active pre-tier `partner-listing`.
+ * - Partner drops only the known unsellable pre-tier `partner-listing`.
  *
  * Inactive plans are passed THROUGH rather than filtered here: both consumers
  * drop them (`resolveStartingPrice` and `computeMinimumTrialDays` each check
@@ -357,9 +346,7 @@ export function selectAudiencePlans(
         tourist: filterPlansByCategory(accommodationPlans, 'tourist'),
         gastronomy: plansOf(results.gastronomy),
         experience: plansOf(results.experience),
-        partner: plansOf(results.partner).filter((plan) =>
-            SELLABLE_PARTNER_PLAN_SLUGS.has(plan.slug)
-        )
+        partner: plansOf(results.partner).filter((plan) => plan.slug !== 'partner-listing')
     };
 }
 

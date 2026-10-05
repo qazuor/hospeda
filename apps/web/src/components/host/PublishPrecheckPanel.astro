@@ -16,13 +16,14 @@
  * secondary) so `upgrade_only` looks identical to before.
  */
 
-import type { PublishVertical } from '@repo/billing';
 import { AlertCircleIcon, ArrowRightIcon } from '@repo/icons';
 import { DeleteButton } from '@/components/host/DeleteButton.client';
 import type { HostOnboardingPrecheckDecision, HostOnboardingPrecheckDraft } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolvePrecheckPanelContent } from '@/lib/host/publish-precheck-panel-content';
+// HOS-1416: `PublishVertical` moved out of the demolished `@repo/billing`
+// config; the local mapper now owns it.
+import { resolvePrecheckPanelContent, type PublishVertical } from '@/lib/host/publish-precheck-panel-content';
 
 interface Props {
     readonly locale: SupportedLocale;

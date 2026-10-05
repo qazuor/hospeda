@@ -14,7 +14,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ALL_PLANS, LimitKey } from '@repo/billing';
+import { LimitKey } from '@repo/billing';
 import { describe, expect, it } from 'vitest';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { filterPlansByCategory } from '@/lib/billing/fetch-plans';
@@ -113,25 +113,10 @@ describe('what reaches the pricing grid', () => {
 });
 
 describe('plan-card copy (AC-12, AC-13, AC-15, AC-16)', () => {
-    const ownerAndTouristSlugs = ALL_PLANS.filter(
-        (plan) => plan.category === 'owner' || plan.category === 'tourist'
-    ).map((plan) => plan.slug);
-
-    it('covers every owner and tourist plan with a "recommended for" profile', () => {
-        // AC-12: no card without a profile. The key is resolved from a template
-        // literal (`pricing.recommendedFor.plan.${slug}`), which the repo's
-        // i18n key-coverage guard cannot see — so it is asserted here.
-        expect(ownerAndTouristSlugs.length).toBeGreaterThan(0);
-
-        for (const locale of LOCALES) {
-            const pricing = readLocaleJson(locale, 'pricing.json');
-            for (const slug of ownerAndTouristSlugs) {
-                const value = at(pricing, `recommendedFor.plan.${slug}`);
-                expect(typeof value, `${locale} / ${slug}`).toBe('string');
-                expect((value as string).length, `${locale} / ${slug}`).toBeGreaterThan(0);
-            }
-        }
-    });
+    // HOS-1416: the per-plan "recommended for" coverage sweep over ALL_PLANS
+    // was retired with the static plan catalog it enumerated — the plan source
+    // of truth is now the database. The generic-profile, limit-copy and
+    // trial-copy guards below still hold.
 
     it('provides a generic profile per audience, so an uncurated slug still gets one', () => {
         for (const locale of LOCALES) {

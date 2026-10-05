@@ -16,33 +16,17 @@
  * consumer and is responsible for resolving `labelKey`/`titleKey`/etc.
  * through `t()` and rendering the actual markup.
  *
- * ---
- * HOS-1156 T-013 — WHY THE ADD-ON CONTRACT CHANGED, DELIBERATELY
- *
- * This module used to resolve its add-on offer from a hardcoded
- * `LimitKey.MAX_ACCOMMODATIONS`, and said so in a rule: the caller "must not get
- * to decide WHICH add-on this panel points at". That rule was right and is KEPT.
- * What changed is who answers the question: the VERTICAL does, through the
- * exhaustive `LIMIT_KEY_BY_PUBLISH_VERTICAL` map, not the caller.
- *
- * The distinction is the whole point. A caller passing a free-form `limitKey`
- * could aim this panel at any add-on in the catalogue — which is what the
- * original rule forbade. A caller passing a vertical can only ever reach the cap
- * that vertical is actually blocked by, because the map is total and closed. The
- * panel still refuses to be pointed anywhere; it just serves three verticals now
- * instead of one.
- *
- * The `never hardcoded` guard in this module's test file was updated in the same
- * change, for the same reason — it froze the previous answer to that question,
- * and freezing it is exactly what made this an explicit decision rather than a
- * silent drift.
- * ---
+ * HOS-1352: transitional until V3 (HOS-1357), see PR: cap offers are
+ * unavailable while the replacement effective-limit contract is being built.
  */
 
-import { LIMIT_KEY_BY_PUBLISH_VERTICAL, type PublishVertical } from '@repo/billing';
 import type { HostOnboardingPrecheckDecision } from '@/lib/api/endpoints-protected';
-import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import type { SupportedLocale } from '@/lib/i18n';
+
+/**
+ * The verticals reachable from the header's "Publicar" menu.
+ */
+export type PublishVertical = 'accommodation' | 'gastronomy' | 'experience';
 
 /**
  * Per-vertical copy: which i18n namespace holds this vertical's draft-panel
@@ -154,22 +138,13 @@ export interface PrecheckPanelContent {
 export interface ResolvePrecheckPanelContentParams {
     /** Any decision except `create_direct` (that one renders the form directly). */
     readonly decision: HostOnboardingPrecheckDecision;
-    /**
-     * Active locale — used ONLY to build the add-on offer's URL (HOS-727).
-     *
-     * The add-on link is not passed in as a URL on purpose: the caller must not
-     * get to decide WHICH add-on this panel points at. The cap being hit is
-     * whichever one {@link vertical} names, so the panel resolves the offer from
-     * that limit and shows nothing at all if the limit stops being sellable.
-     */
+    /** Active locale retained for the caller contract. */
     readonly locale: SupportedLocale;
     /**
      * Which vertical is being published (HOS-1156 T-013).
      *
-     * Decides the cap the at-limit branches speak about, and therefore which
-     * add-on — if any — is offered. Defaults to `'accommodation'` so the callers
-     * that predate this parameter keep their exact previous behaviour rather
-     * than silently resolving a different cap.
+     * Selects the copy namespace. Defaults to `'accommodation'` for callers
+     * that predate this parameter.
      */
     readonly vertical?: PublishVertical;
     /**
@@ -217,7 +192,7 @@ export function resolvePrecheckPanelContent(
 ): PrecheckPanelContent {
     const {
         decision,
-        locale,
+        locale: _locale,
         editUrl,
         createUrl,
         accountPropertiesUrl,
@@ -225,70 +200,32 @@ export function resolvePrecheckPanelContent(
         vertical = 'accommodation'
     } = params;
 
-    const limitKey = LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical];
     const { ns, noun, nounPlural } = PRECHECK_COPY[vertical];
 
-    // HOS-727. Every "you are at your cap" branch below is the SAME cap — the one
-    // this vertical is capped by — and it is the highest purchase-intent moment
-    // in the product: the owner is stopped mid-publish. Offering only the plan
-    // upgrade there sends them down the slowest, most expensive route when a
-    // one-off add-on unblocks them immediately.
-    //
-    // Resolved FROM THE LIMIT, never hardcoded: if the vertical's add-on ever
-    // stops being purchasable, `addonOffer` becomes `null` and the CTA
-    // disappears instead of linking to a card that is not on the page.
-    //
-    // HOS-1156: the limit now comes from the vertical rather than from a literal.
-    // The caller still cannot choose the add-on — see the module docblock.
-    const addonOffer = resolveLimitAddonOffer({ locale, limitKey });
-
-    const addonAction: PrecheckPanelLinkAction | null =
-        addonOffer === null
-            ? null
-            : {
-                  kind: 'link',
-                  variant: 'primary',
-                  href: addonOffer.href,
-                  labelKey: 'account.subscription.usage.buyAddon',
-                  labelFallback: 'Ampliar con un complemento'
-              };
-
-    /**
-     * The same offer demoted to a text link, for the branches whose primary CTA
-     * is already the FREE unblock (resume or delete a draft). Paying should
-     * never outrank the option that costs nothing.
-     */
-    const secondaryAddonActions: readonly PrecheckPanelAction[] =
-        addonAction === null ? [] : [{ ...addonAction, variant: 'secondary' }];
+    // HOS-1352: transitional until V3 (HOS-1357), see PR: no plan-cap add-on is offered before effective limits exist.
 
     switch (decision) {
         case 'upgrade_only':
             return {
-                titleKey: `billing.limit.${limitKey}.atLimitPanel.title`,
+                titleKey: `${ns}.atLimitPanel.title`,
                 titleFallback: 'Llegaste al límite de tu plan',
-                bodyKey: `billing.limit.${limitKey}.atLimitPanel.body`,
+                bodyKey: `${ns}.atLimitPanel.body`,
                 bodyFallback: `Estás usando {{currentCount}} de {{maxAllowed}} ${nounPlural}. Para publicar otra, actualizá tu plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'maxAllowed',
                 actions: [
-                    // HOS-727: when there is an add-on for this cap it leads —
-                    // it is the action that actually unblocks the publish the
-                    // host came here to finish. The plan upgrade stays offered,
-                    // one step down. With no add-on the array degrades to
-                    // exactly the pre-HOS-727 pair, plan upgrade first.
-                    ...(addonAction === null ? [] : [addonAction]),
                     {
                         kind: 'link',
-                        variant: addonAction === null ? 'primary' : 'secondary',
+                        variant: 'primary',
                         href: subscriptionUrl,
-                        labelKey: `billing.limit.${limitKey}.atLimitPanel.primaryCta`,
+                        labelKey: `${ns}.atLimitPanel.primaryCta`,
                         labelFallback: 'Ver mi suscripción'
                     },
                     {
                         kind: 'link',
                         variant: 'secondary',
                         href: accountPropertiesUrl,
-                        labelKey: `billing.limit.${limitKey}.atLimitPanel.secondaryCta`,
+                        labelKey: `${ns}.atLimitPanel.secondaryCta`,
                         labelFallback: `Ver mis ${nounPlural}`
                     }
                 ]
@@ -342,9 +279,6 @@ export function resolvePrecheckPanelContent(
                         confirmTextKey: `${ns}.resumeDeleteOrUpgrade.deleteConfirm`,
                         confirmTextFallback: `¿Borrar este borrador? Vas a poder crear una ${noun} nueva.`
                     },
-                    // HOS-727: same cap, same offer — but behind the free
-                    // unblock, which is why it is the secondary variant here.
-                    ...secondaryAddonActions,
                     {
                         kind: 'link',
                         variant: 'secondary',
@@ -396,8 +330,6 @@ export function resolvePrecheckPanelContent(
                         labelKey: `${ns}.pickDraftDeleteOrUpgrade.pickCta`,
                         labelFallback: 'Editar un borrador existente'
                     },
-                    // HOS-727: same cap, same offer — behind the free unblock.
-                    ...secondaryAddonActions,
                     {
                         kind: 'link',
                         variant: 'secondary',

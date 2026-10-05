@@ -22,8 +22,6 @@
  * — no separate `GET /users/me/subscription` call is needed for that signal.
  */
 
-import { LIMIT_KEY_BY_COMMERCE_VERTICAL } from '@repo/billing';
-import { apiClient } from '../api/client';
 import type { CommerceVertical } from './owner-listings';
 
 /** Parsed usage reading for one commerce vertical's listing cap. */
@@ -52,21 +50,14 @@ export interface CommerceVerticalUsage {
  *   first listing's checkout completes.
  */
 export async function fetchCommerceVerticalUsage({
-    vertical,
-    cookieHeader
+    vertical: _vertical,
+    cookieHeader: _cookieHeader
 }: {
     readonly vertical: CommerceVertical;
     readonly cookieHeader?: string;
 }): Promise<CommerceVerticalUsage | null> {
-    const limitKey = LIMIT_KEY_BY_COMMERCE_VERTICAL[vertical];
-
-    const result = await apiClient.getProtected<CommerceVerticalUsage>({
-        path: `/api/v1/protected/billing/usage/${limitKey}`,
-        params: { productDomain: vertical },
-        cookieHeader
-    });
-
-    return result.ok ? result.data : null;
+    // HOS-1352: transitional until V3 (HOS-1357), see PR: the retired billing usage endpoint has no replacement yet.
+    return null;
 }
 
 /**
