@@ -265,6 +265,11 @@ jobs:
       - name: A branch cut from the umbrella may not target staging or main (DEC-ARCH-007)
         if: github.base_ref == 'staging' || github.base_ref == 'main'
         run: bash scripts/check-umbrella-branch-target.sh
+      # TEST:U1:1 (HOS-1416). Its own step, like every guard here: being listed
+      # in `pnpm check:guards` is NOT what makes a guard run in this job. Pure
+      # bash + git grep — needs no setup, so it runs before it to fail fast.
+      - name: Check no qzpay billing surface remains (HOS-1416 TEST:U1:1)
+        run: bash scripts/check-no-qzpay.sh
       - uses: ./.github/actions/setup
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh
@@ -301,59 +306,27 @@ jobs:
         run: bash scripts/check-product-domain-vocabulary.sh
       - name: Check raw-SQL/seed-file product_domain is not hardcoded to 'commerce' (HOS-692 AC-33)
         run: bash scripts/check-product-domain-raw-sql.sh
-      # Its own step, like every guard here. The third of the product-domain
-      # family and the only one that polices an ABSENCE: the two above ask what
-      # a write says, this one asks whether it says anything at all. The column
-      # is NOT NULL with a default, so an omitted create does not fail — it
-      # files the row under the default's vertical, which is how every tourist
-      # plan came to report `accommodation` in prod and staging alike without a
-      # single line of code being wrong (HOS-1233 F-4b).
-      - name: Check every billing plan/subscription create states its domain (HOS-1233 AC-15d)
-        run: pnpm check:product-domain-on-writes
-      - name: Check commerce plan resolution stays single-sited (HOS-688 AC-35)
-        run: bash scripts/check-commerce-plan-resolution.sh
-      - name: Check subscription domain comparisons are hydrated (HOS-1176)
-        run: bash scripts/check-subscription-domain-hydration.sh
+      # The HOS-1233 write-site guard (check-product-domain-on-writes) was
+      # retired with HOS-1416: the billing_plans/billing_subscriptions creates
+      # it policed died with the legacy billing tables, and the guard's own
+      # fail-loud branch (never pass over zero sites) is what made the
+      # retirement mandatory rather than optional.
       - name: Check locale resolution has a single source of truth (HOS-605 / HOS-609 / HOS-617)
         run: pnpm check:locale-resolution-single-source
       # HOS-936's read-direction guard (the trial window must not be derived
       # from `free_trial`) was retired with the module it protected — HOS-1012
-      # T-026. Not believing a reported trial stopped mattering once we stopped
-      # asking for one; the guard below is what enforces that.
-      - name: Check no checkout sends a trial to MercadoPago (HOS-1012 G-1)
-        run: bash scripts/check-no-trial-to-mercadopago.sh
-      # Its own step for the same reason as every guard in this job. The sibling
-      # of G-1: that one bans a trial in the preapproval payload, this one bans
-      # the `preapproval_plan_id` that made MercadoPago answer "card_token_id is
-      # required" and turned every own-preapproval checkout into a 500.
-      - name: Check no plan id reaches an own-preapproval create (HOS-1221 G-2)
-        run: bash scripts/check-no-plan-id-to-own-preapproval.sh
-      # The third of this family, and its own step for the same reason. The two
-      # above police what LEAVES for MercadoPago; this one polices what arrives
-      # in OUR subscription row through the back door: qzpay-core inherits
-      # `billing_prices.trial_days` whenever a caller omits `trialDays`, which is
-      # how a PAID subscription was born marked `trialing` for 30 days with the
-      # customer already charged (HOS-1221 bug D3). HOS-1221 states `trialDays: 0`
-      # at the call sites; this stops the column that feeds them from holding a
-      # value at all, so a future call site that forgets inherits nothing.
-      - name: Check billing_prices.trial_days is never written a value (HOS-1224 G-2)
-        run: pnpm check:no-price-trial-days
+      # T-026. The MercadoPago checkout guards of the HOS-1012/1221/1224 family
+      # (no-trial-to-mercadopago, no-plan-id-to-own-preapproval,
+      # no-price-trial-days) were retired with HOS-1416: the qzpay/MP checkout
+      # surface they policed no longer exists.
       - name: Check no binary vertical ternary remains (HOS-1079)
         run: bash scripts/check-no-binary-vertical-ternary.sh
-      # Its own step, like every guard here: being listed in `pnpm check:guards`
-      # is NOT what makes a guard run in this job (see the note above).
-      - name: Check the add-on purchase route reads the declared domain (HOS-1178)
-        run: bash scripts/check-addon-product-domain.sh
-      # Its own step for the same reason as every guard in this job. This one
-      # enumerates by EVENT rather than by symbol, which is the whole point:
-      # enumerating the callers of one function is how a second implementation
-      # of the authorized-payment handler went unrouted in the first place.
-      - name: Check every authorized-payment processor routes add-ons first (HOS-847)
-        run: bash scripts/check-addon-webhook-routing.sh
+      # The add-on checkout guards of this family (HOS-1178 domain-on-route,
+      # HOS-847 webhook routing) were retired with HOS-1416: the add-on
+      # checkout route and the MercadoPago webhook handlers they anchored on
+      # were demolished with the legacy billing system.
       - name: Check server code does no local-timezone date math (HOS-1010)
         run: bash scripts/check-local-date-math.sh
-      - name: Check the qzpay wave converges on one core (HOS-232)
-        run: bash scripts/check-qzpay-wave-convergence.sh
       # Its own step, like every guard here: being listed in `pnpm check:guards`
       # is NOT what makes a guard run in this job (see the note above). Fails
       # when admin's dependency tree resolves two copies of a Radix primitive
@@ -369,13 +342,11 @@ jobs:
       # never executes here.
       - name: Check 'qrcode' has exactly one importer (HOS-1129)
         run: bash scripts/check-qrcode-engine-isolation.sh
-      # Its own step for the same reason as the two above: `pnpm check:guards`
-      # listing it is not what makes it run here. A guard that only lived in that
-      # npm script would never execute in CI, and this one watches both doors
-      # between a negotiated price and the people who may not see it — the public
-      # plans endpoint and the protected one.
-      - name: Check unlisted plans cannot reach either plan listing (HOS-1062 AC-14)
-        run: bash scripts/check-unlisted-plan-filter.sh
+      # The HOS-1062 unlisted-plan-filter guard was retired with HOS-1416: the
+      # plan-listing routes it watched (apps/api/src/routes/billing/) were
+      # demolished with the legacy billing system.
+      - name: Check published contact addresses use hospeda.com.ar (HOS-928)
+        run: bash scripts/check-hospeda-email-domain.sh
       # Its own step, like every guard here: being listed in `pnpm check:guards`
       # is NOT what makes a guard run in this job (see the note above).
       - name: Check every contact_info column declares mergeableJsonbColumns
