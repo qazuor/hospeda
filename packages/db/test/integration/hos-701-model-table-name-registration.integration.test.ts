@@ -31,13 +31,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setDb } from '../../src/client.ts';
 import { AppLogEntryModel } from '../../src/models/app-log/appLogEntry.model.ts';
 import { AuditLogEntryModel } from '../../src/models/audit-log/auditLogEntry.model.ts';
-import { BillingPendingCheckoutModel } from '../../src/models/billing/billing-pending-checkout.model.ts';
-import { BillingAddonPurchaseModel } from '../../src/models/billing/billingAddonPurchase.model.ts';
-import { BillingDunningAttemptModel } from '../../src/models/billing/billingDunningAttempt.model.ts';
-import { BillingMpPlanModel } from '../../src/models/billing/billingMpPlan.model.ts';
 import { BillingNotificationLogModel } from '../../src/models/billing/billingNotificationLog.model.ts';
-import { BillingSettingsModel } from '../../src/models/billing/billingSettings.model.ts';
-import { BillingSubscriptionEventModel } from '../../src/models/billing/billingSubscriptionEvent.model.ts';
 import { ContentModerationTermModel } from '../../src/models/content-moderation/term.model.ts';
 import { ContentModerationThresholdModel } from '../../src/models/content-moderation/threshold.model.ts';
 import { CronRunModel } from '../../src/models/cron/cronRun.model.ts';
@@ -62,19 +56,17 @@ afterAll(async () => {
 });
 
 /**
- * All 18 models named in HOS-701, paired with a fresh instance. Order
- * mirrors the ticket's inventory table.
+ * Models named in HOS-701 that still exist, paired with a fresh instance.
+ * Order mirrors the ticket's inventory table. The legacy billing models
+ * (BillingAddonPurchaseModel, BillingDunningAttemptModel, BillingMpPlanModel,
+ * BillingPendingCheckoutModel, BillingSettingsModel,
+ * BillingSubscriptionEventModel) were removed with the legacy qzpay billing
+ * schema (HOS-1416).
  */
-const ALL_18_MODELS = [
+const REMAINING_MODELS = [
     ['AppLogEntryModel', new AppLogEntryModel()],
     ['AuditLogEntryModel', new AuditLogEntryModel()],
-    ['BillingAddonPurchaseModel', new BillingAddonPurchaseModel()],
-    ['BillingDunningAttemptModel', new BillingDunningAttemptModel()],
-    ['BillingMpPlanModel', new BillingMpPlanModel()],
     ['BillingNotificationLogModel', new BillingNotificationLogModel()],
-    ['BillingPendingCheckoutModel', new BillingPendingCheckoutModel()],
-    ['BillingSettingsModel', new BillingSettingsModel()],
-    ['BillingSubscriptionEventModel', new BillingSubscriptionEventModel()],
     ['ContentModerationTermModel', new ContentModerationTermModel()],
     ['ContentModerationThresholdModel', new ContentModerationThresholdModel()],
     ['CronRunModel', new CronRunModel()],
@@ -88,7 +80,7 @@ const ALL_18_MODELS = [
 
 describe('HOS-701: every model resolves against the REAL db.query barrel', () => {
     it.each(
-        ALL_18_MODELS
+        REMAINING_MODELS
     )('%s: getTableName() resolves to a real db.query entry with findFirst/findMany', (_className, model) => {
         // This mirrors EXACTLY what BaseModelImpl.findAllWithRelations /
         // findOneWithRelations do internally: `db.query[this.getTableName()]`.

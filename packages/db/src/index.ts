@@ -21,7 +21,6 @@ export {
 } from 'drizzle-orm';
 
 export * from './base/base.model.ts';
-export * from './billing/index.ts';
 export * from './client.ts';
 export * from './constants/index.ts';
 export * from './models/index.ts';

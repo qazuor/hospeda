@@ -1,7 +1,6 @@
 import type { ContactInfo, SocialNetwork } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { billingPlans, billingSubscriptions } from '../../billing/index.ts';
 import {
     LifecycleStatusPgEnum,
     PartnerContentReviewStatePgEnum,
@@ -57,12 +56,18 @@ export const partners = pgTable(
             .default('pending'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         analytics: jsonb('analytics').$type<PartnerAnalytics>().default({}),
-        planId: uuid('plan_id').references(() => billingPlans.id, {
-            onDelete: 'set null'
-        }),
-        subscriptionId: uuid('subscription_id').references(() => billingSubscriptions.id, {
-            onDelete: 'set null'
-        }),
+        /**
+         * Legacy billing-plan reference (HOS-1416: FK dropped with the legacy
+         * qzpay billing schema). The column survives for now; a later change
+         * decides whether it is repurposed or dropped.
+         */
+        planId: uuid('plan_id'),
+        /**
+         * Legacy billing-subscription reference (HOS-1416: FK dropped with the
+         * legacy qzpay billing schema). The column survives for now; a later
+         * change decides whether it is repurposed or dropped.
+         */
+        subscriptionId: uuid('subscription_id'),
         /**
          * The account that owns this partner listing (HOS-278 §6.5).
          *
@@ -260,15 +265,7 @@ export const partnersRelations = relations(partners, ({ one }) => ({
     }),
     createdBy: one(users, { fields: [partners.createdById], references: [users.id] }),
     updatedBy: one(users, { fields: [partners.updatedById], references: [users.id] }),
-    deletedBy: one(users, { fields: [partners.deletedById], references: [users.id] }),
-    plan: one(billingPlans, {
-        fields: [partners.planId],
-        references: [billingPlans.id]
-    }),
-    subscription: one(billingSubscriptions, {
-        fields: [partners.subscriptionId],
-        references: [billingSubscriptions.id]
-    })
+    deletedBy: one(users, { fields: [partners.deletedById], references: [users.id] })
 }));
 
 /** Type-inferred insert type for partners rows. */

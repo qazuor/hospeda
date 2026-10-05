@@ -7,12 +7,10 @@ import {
     eq,
     exists,
     gte,
-    inArray,
     isNotNull,
     isNull,
     lte,
     ne,
-    not,
     or,
     sql
 } from 'drizzle-orm';
@@ -23,9 +21,7 @@ import type {
     LifecycleStatusPgEnum,
     PartnerSubscriptionStatusPgEnum
 } from '../../schemas/enums.dbschema.ts';
-import type { SelectPartnerSubscription } from '../../schemas/partner/index.js';
 import { partners } from '../../schemas/partner/partner.dbschema.js';
-import { partnerSubscriptions } from '../../schemas/partner/partner_subscription.dbschema.js';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 
 export interface SearchPartnerFilters {
@@ -212,34 +208,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
     }
 
     /**
-     * Find partner with subscription details
-     */
-    async findWithSubscription(
-        id: string
-    ): Promise<(Partner & { subscription: SelectPartnerSubscription | null }) | null> {
-        const db = getDb();
-        const result = await db
-            .select({
-                partner: partners,
-                subscription: partnerSubscriptions
-            })
-            .from(partners)
-            .leftJoin(partnerSubscriptions, eq(partners.id, partnerSubscriptions.partnerId))
-            .where(and(eq(partners.id, id), isNull(partners.deletedAt)))
-            .limit(1);
-
-        if (result.length === 0) return null;
-
-        const row = result[0];
-        if (!row) return null;
-
-        return {
-            ...row.partner,
-            subscription: row.subscription
-        } as Partner & { subscription: SelectPartnerSubscription | null };
-    }
-
-    /**
      * Find partners expiring soon (for cron)
      */
     async findExpiringSoon(days = 7): Promise<Partner[]> {
@@ -319,36 +287,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      *   the first tick. Noisy rather than wrong (a partner with no payment
      *   record is the shape this hunts for) and it changes no state, but do not
      *   read this predicate as "the fixtures are excluded".
-     * - **no link row in an entitlement-granting status** — the subscription
-     *   carril already governs those, through the webhook, dunning and
-     *   `finalize-cancelled-subs`. (That chain has its own gaps — HOS-1306 —
-     *   but they are that issue's, and flagging here would double up on
-     *   machinery that mostly works.) The status set is
-     *   {@link ENTITLEMENT_GRANTING_STATUSES}, reused rather than spelled out,
-     *   and the two members that are NOT about being charged are the reason
-     *   this clause has to be a status test rather than a plain row test:
-     *
-     *   - `comp` — a permanently complimentary subscription. **HOS-1160** opens
-     *     these to partners, and grants one by calling
-     *     `reconcilePartnerForSubscription`, which seals `starts_at` (it must:
-     *     otherwise `partner-unpaid-reaper` archives the comped partner on day
-     *     90). A comped partner therefore has a sealed start date and, by
-     *     design, no payments EVER. Without this clause the cron would email an
-     *     admin asking whether to take down a partner the platform deliberately
-     *     gave the product to — the exact false accusation this feature exists
-     *     to avoid, aimed at the one partner who can never clear it.
-     *   - `courtesy` — a finite run of gifted cycles (HOS-180). Same shape, same
-     *     answer: no charge is expected while the window runs.
-     *
-     *   Reading the STATUS and not merely the row's existence also closes a real
-     *   gap in the other direction: a partner whose MercadoPago subscription
-     *   lapsed and who then paid cash keeps a stale `cancelled` link row, and a
-     *   plain row test would hide them forever — which is the very bug this
-     *   issue is about, wearing a different hat.
-     *
-     *   Note the split: `comp`/`courtesy` are NOT representable on
-     *   `partners.subscription_status` (a four-value enum), so this exclusion
-     *   cannot be read off the partner row and genuinely needs the link table.
      * - **`starts_at IS NOT NULL`** — a partner who never started is the unpaid
      *   reaper's, which reads exactly that column.
      * - **`payment_review_state IS NULL`** — already asked. This is what makes
@@ -356,22 +294,19 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      *   alert and not one per night.
      * - **`revoked_at IS NULL`** — an admin already dealt with them.
      *
+     * HOS-1416: the former fifth condition (a NOT EXISTS over the deleted
+     * `partner_subscriptions` link table, filtered by injected exempt
+     * subscription statuses) is gone with that table. The
+     * `exemptSubscriptionStatuses` input is kept in the signature so callers
+     * keep compiling; it no longer influences the predicate and T4 owns the
+     * caller-side cleanup.
+     *
      * The clock is `coalesce(payment_confirmed_through, starts_at)`, never
      * `ends_at`: writing a period into that column would arm `partner-expiry`,
      * which archives unattended.
      *
      * @param input - `{ confirmedThroughBefore, exemptSubscriptionStatuses }`
-     *   (RO-RO). The cutoff is `now` minus the review window. The exempt set is
-     *   INJECTED rather than imported, and that is not style: `@repo/billing`'s
-     *   only entry point is one barrel that pulls in the MercadoPago adapter,
-     *   and `packages/db` is imported by nearly every test in the monorepo — so
-     *   importing the canonical set here dragged the adapter into module graphs
-     *   whose `@repo/logger` mock does not define `createLogger`, and two unit
-     *   shards went red on suites that have nothing to do with partners. The
-     *   caller (`partner-payment-review.job.ts`) already lives in `apps/api`,
-     *   which imports billing legitimately, so it passes
-     *   `ENTITLEMENT_GRANTING_STATUSES` and the single source of truth is kept
-     *   without db taking on the dependency.
+     *   (RO-RO). The cutoff is `now` minus the review window.
      * @param limit - Batch ceiling, mirroring the other two partner crons.
      * @returns The partners an admin should be asked about.
      */
@@ -383,12 +318,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         limit = 100
     ): Promise<Partner[]> {
         const db = getDb();
-
-        // An empty set would make `inArray` degenerate to false, the NOT EXISTS
-        // always true, and every subscription-governed partner — comped ones
-        // included — land in the alert. Fall back to excluding any partner that
-        // has a link row at all: fewer questions, never a wrong accusation.
-        const hasExemptSet = input.exemptSubscriptionStatuses.length > 0;
 
         const result = await db
             .select()
@@ -405,31 +334,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
                     lte(
                         sql`coalesce(${partners.paymentConfirmedThrough}, ${partners.startsAt})`,
                         input.confirmedThroughBefore
-                    ),
-                    not(
-                        exists(
-                            db
-                                .select({ one: sql`1` })
-                                .from(partnerSubscriptions)
-                                .where(
-                                    and(
-                                        eq(partnerSubscriptions.partnerId, partners.id),
-                                        // Never narrow the injected set to
-                                        // `['active']`. That would re-admit
-                                        // `comp` (HOS-1160) and `courtesy`
-                                        // (HOS-180) — partners who legitimately
-                                        // never pay — into an alert asking an
-                                        // admin to take them down.
-                                        ...(hasExemptSet
-                                            ? [
-                                                  inArray(partnerSubscriptions.status, [
-                                                      ...input.exemptSubscriptionStatuses
-                                                  ])
-                                              ]
-                                            : [])
-                                    )
-                                )
-                        )
                     )
                 )
             )
@@ -523,49 +427,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             { id },
             { lifecycleState: state as LifecycleStatusEnum }
         ) as Promise<Partner | null>;
-    }
-
-    /**
-     * Link partner to subscription (for webhook handling)
-     */
-    async linkSubscription(
-        partnerId: string,
-        subscriptionId: string
-    ): Promise<SelectPartnerSubscription> {
-        const db = getDb();
-        const result = await db
-            .insert(partnerSubscriptions)
-            .values({
-                subscriptionId,
-                partnerId,
-                status: 'active',
-                productDomain: 'partner'
-            })
-            .onConflictDoUpdate({
-                target: partnerSubscriptions.partnerId,
-                set: {
-                    subscriptionId,
-                    status: 'active',
-                    updatedAt: new Date()
-                }
-            })
-            .returning();
-
-        if (!result[0]) {
-            throw new Error('Failed to link partner subscription');
-        }
-        return result[0];
-    }
-
-    /**
-     * Unlink partner subscription (for cancellation)
-     */
-    async unlinkSubscription(partnerId: string): Promise<void> {
-        const db = getDb();
-        await db
-            .update(partnerSubscriptions)
-            .set({ status: 'cancelled', updatedAt: new Date() })
-            .where(eq(partnerSubscriptions.partnerId, partnerId));
     }
 
     /**

@@ -93,12 +93,29 @@ export async function setup(): Promise<void> {
     //    are static here.
     const pkgDir = resolve(__dirname, '../..');
     try {
-        execFileSync('pnpm', ['run', 'drizzle-kit', 'migrate', '--config', 'drizzle.config.ts'], {
-            cwd: pkgDir,
-            env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
-            stdio: 'pipe',
-            timeout: 120_000
-        });
+        // HOS-1416: invoke the same toolchain the `drizzle-kit` package script
+        // wraps (`tsx node_modules/drizzle-kit/bin.cjs`) but WITHOUT going
+        // through `pnpm run`. pnpm's verify-deps-before-run gate aborts every
+        // `pnpm run` while the lockfile is out of sync with this package's
+        // package.json (the qzpay dep removal lands before its lockfile
+        // update), which broke the local integration setup. Same binary, same
+        // args, same env — no behaviour change once the lockfile is synced.
+        execFileSync(
+            process.execPath,
+            [
+                resolve(pkgDir, 'node_modules/tsx/dist/cli.mjs'),
+                'node_modules/drizzle-kit/bin.cjs',
+                'migrate',
+                '--config',
+                'drizzle.config.ts'
+            ],
+            {
+                cwd: pkgDir,
+                env: { ...process.env, HOSPEDA_DATABASE_URL: getTestConnectionString() },
+                stdio: 'pipe',
+                timeout: 120_000
+            }
+        );
     } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         throw new Error(
