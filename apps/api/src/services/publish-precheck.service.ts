@@ -68,6 +68,7 @@ export interface PublishPrecheckResult {
  */
 const FAIL_OPEN: PublishPrecheckResult = {
     currentCount: 0,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR: replace the uncapped sentinel with the effective vertical limit.
     maxAllowed: -1,
     hasQuota: true,
     draftCount: 0,
@@ -116,6 +117,7 @@ export async function resolvePublishPrecheck(input: {
 
         return {
             currentCount,
+            // HOS-1352: transitional until V3 (HOS-1357), see PR: replace the uncapped sentinel with the effective vertical limit.
             maxAllowed: -1,
             hasQuota: true,
             draftCount: drafts.length,

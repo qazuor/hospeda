@@ -34,7 +34,7 @@ export const protectedListExclusiveDealsRoute = createProtectedListRoute({
     responseSchema: OwnerPromotionListItemSchema,
     handler: async (_ctx, _params, _body, query) => {
         const { page, pageSize } = extractPaginationParams(query ?? {});
-        // Formerly paid inventory remains hidden until the replacement coverage exists.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR: the effective capability resolver restores exclusive-deal visibility.
         return {
             items: [],
             pagination: getPaginationResponse(0, { page, pageSize })

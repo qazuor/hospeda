@@ -114,6 +114,7 @@ export const protectedHostOnboardingPrecheckRoute = createProtectedRoute({
 
         return {
             currentCount,
+            // HOS-1352: transitional until V3 (HOS-1357), see PR: replace the uncapped sentinel with the effective vertical limit.
             maxAllowed: -1,
             hasQuota: true,
             draftCount,

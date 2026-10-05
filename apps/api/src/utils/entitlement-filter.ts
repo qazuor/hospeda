@@ -122,6 +122,7 @@ export function stripRichDescriptionFields<T extends object>(
  * the viewer, so it is safe to put in the shared public response cache.
  */
 export function maskLegacyPremiumFields<T extends object>(item: T): T {
+    // HOS-1352: transitional until V3 (HOS-1357), see PR: hide formerly paid public fields until effective capabilities resolve.
     const filtered = {
         ...stripRichDescriptionFields(item),
         isVerified: false,

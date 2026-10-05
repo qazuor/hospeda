@@ -23,6 +23,8 @@ import type { MiddlewareHandler } from 'hono';
 import type { AppBindings } from '../types';
 import { createSlidingWindowPerUserRateLimit, getClientIp } from './rate-limit';
 
+// HOS-1352: transitional until V3 (HOS-1357), see PR: AI has burst limits and metering without a monthly plan quota.
+
 // ---------------------------------------------------------------------------
 // AiRateLimitOptions
 // ---------------------------------------------------------------------------
