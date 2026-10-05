@@ -1061,7 +1061,6 @@ export class NotificationService {
 
         try {
             await db.insert(billingNotificationLog).values({
-                customerId: payload.customerId ?? null,
                 type: payload.type,
                 channel: 'email',
                 recipient: payload.recipientEmail,
