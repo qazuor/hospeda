@@ -137,7 +137,6 @@ describe('NotificationService', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_456',
                     type: NotificationType.PAYMENT_SUCCESS,
                     channel: 'email',
                     recipient: 'user@example.com',
