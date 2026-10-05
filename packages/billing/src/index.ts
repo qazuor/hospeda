@@ -1,14 +1,14 @@
 /**
- * @repo/billing - Billing configuration and types for the Hospeda platform
+ * @repo/billing - Shared billing constants, predicates and types
  *
- * Provides plan definitions, entitlement keys, limit keys, add-on configurations,
- * promo code definitions, and payment adapter configurations for the monetization system.
+ * Surviving surface after the legacy qzpay plan-config demolition
+ * (HOS-1416): subscription-status predicates, entitlement/limit key types,
+ * monetary helpers and the checkout reason i18n mapper. Plan catalogs,
+ * add-on/promo configs and payment adapters were removed with the old
+ * billing system; the plan source of truth is now the database.
  */
 
-export * from './adapters/index.js';
-export * from './config/index.js';
 export * from './constants/index.js';
 export * from './predicates/index.js';
 export * from './types/index.js';
 export * from './utils/index.js';
-export * from './validation/index.js';

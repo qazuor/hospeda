@@ -1,26 +1,17 @@
 /**
  * Featured-by-entitlement sync primitives (SPEC-292 T-004, renamed + hardened
- * SPEC-309 T-005).
+ * SPEC-309 T-005; billing-source guards removed with the legacy billing
+ * demolition, HOS-1416).
  *
  * Flips `featuredByEntitlement` on accommodations. Two shapes:
  *
  * - {@link syncFeaturedByEntitlementForOwner} — bulk, ALL of an owner's
- *   non-deleted accommodations in one statement (plan-driven).
- * - {@link syncFeaturedByEntitlementForAccommodation} — single row (addon-
- *   purchase/expiry driven, G-2).
+ *   non-deleted accommodations in one statement.
+ * - {@link syncFeaturedByEntitlementForAccommodation} — single row.
  *
- * The caller is responsible for resolving the entitlement (see
- * `featured-entitlement.resolver.ts`, T-004); these primitives are pure
- * writes with one exception each — the addon-aware guards below, which exist
- * specifically so a revoke on ONE source never clobbers a still-active grant
- * from the OTHER source (SPEC-309 H-1):
- *
- * - Owner-wide revoke (plan lapses) excludes accommodations that hold a live
- *   addon grant (H-1 consequence b — a downgrade must not clear featuring an
- *   addon still pays for).
- * - Single-accommodation revoke (addon expires) no-ops when the owner's plan
- *   still grants FEATURED_LISTING (H-1 consequence a's mirror — an addon
- *   lapsing must not clear featuring the plan still grants).
+ * Both primitives are pure writes. The SPEC-309 H-1 guards that coordinated
+ * the two billing sources (plan grants vs. addon grants) were removed with
+ * the legacy billing system they served; a revoke is now unconditional.
  *
  * **Layering decision — direct Drizzle update (mirrors `plan-restriction.service.ts`):**
  * The CLAUDE.md guidance ("all DB access through models extending BaseModel")
@@ -44,14 +35,9 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { accommodations, and, eq, getDb, isNull } from '@repo/db';
-import { notInArray } from 'drizzle-orm';
 import type { EntityChangeData } from '../../revalidation/entity-change.types.js';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import { serviceLogger } from '../../utils/service-logger';
-import {
-    getOwnerAccommodationIdsWithActiveFeaturedAddon,
-    resolveOwnerPlanGrantsFeatured
-} from './featured-entitlement.resolver.js';
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -112,15 +98,7 @@ export interface SyncFeaturedByEntitlementForOwnerInput {
 
 /**
  * Sets `featuredByEntitlement` to `active` on non-deleted accommodations
- * owned by `ownerId` (plan-driven, owner-wide).
- *
- * When `active === false`, first resolves the owner's addon-protected
- * accommodation set ({@link getOwnerAccommodationIdsWithActiveFeaturedAddon})
- * and excludes those ids from the clear — a plan downgrade must not clear
- * featuring on an accommodation that still holds a live `visibility-boost`
- * addon grant (SPEC-309 H-1 consequence b). When `active === true`, the
- * update is unconditional — addon-protected rows are already `true`, so
- * setting them to `true` again is a no-op in effect.
+ * owned by `ownerId` (owner-wide).
  *
  * Soft-deleted rows (`deletedAt IS NOT NULL`) are silently excluded. The
  * operation is idempotent.
@@ -134,19 +112,10 @@ export async function syncFeaturedByEntitlementForOwner(
     const { ownerId, active, db: injectedDb } = input;
     const db = injectedDb ?? getDb();
 
-    const baseConditions = [eq(accommodations.ownerId, ownerId), isNull(accommodations.deletedAt)];
-
-    if (!active) {
-        const protectedIds = await getOwnerAccommodationIdsWithActiveFeaturedAddon({ ownerId });
-        if (protectedIds.length > 0) {
-            baseConditions.push(notInArray(accommodations.id, protectedIds));
-        }
-    }
-
     const rows = await db
         .update(accommodations)
         .set({ featuredByEntitlement: active, updatedAt: new Date() })
-        .where(and(...baseConditions))
+        .where(and(eq(accommodations.ownerId, ownerId), isNull(accommodations.deletedAt)))
         .returning({ id: accommodations.id, slug: accommodations.slug });
 
     const updated = rows.length;
@@ -187,51 +156,33 @@ export async function syncFeaturedByEntitlementForOwner(
 export interface SyncFeaturedByEntitlementForAccommodationInput {
     /** The single accommodation to update. */
     readonly accommodationId: string;
-    /**
-     * Target value for `featuredByEntitlement`.
-     *
-     * - `true` — an addon purchase grants featuring for this accommodation.
-     * - `false` — the addon grant expired; the write is skipped (no-op) if
-     *   the owner's plan still grants FEATURED_LISTING.
-     */
+    /** Target value for `featuredByEntitlement`. */
     readonly active: boolean;
-    /** The accommodation's owner, needed for the plan-still-grants guard on revoke. */
+    /**
+     * The accommodation's owner. Retained for call-site compatibility; the
+     * plan-still-grants guard that consumed it was removed with the legacy
+     * billing system.
+     */
     readonly ownerId: string;
     /** Optional Drizzle transaction client, see {@link syncFeaturedByEntitlementForOwner}. */
     readonly db?: DrizzleClient;
 }
 
 /**
- * Sets `featuredByEntitlement` to `active` on a single accommodation
- * (addon-purchase/expiry driven, G-2).
+ * Sets `featuredByEntitlement` to `active` on a single accommodation.
  *
- * When `active === false` (an addon grant expiring), first resolves the
- * owner's PLAN entitlement ({@link resolveOwnerPlanGrantsFeatured}); if the
- * plan still grants FEATURED_LISTING, this is a no-op (`{ updated: 0 }`)
- * instead of clearing — the addon's expiry must not clear featuring the plan
- * independently grants (SPEC-309 H-1 consequence a's mirror image).
+ * Soft-deleted rows are silently excluded; the write is idempotent.
  *
  * @param input - Accommodation id, target flag value, owner id, and an
  *   optional db client.
- * @returns `{ updated, rows }` — zero/empty when the row is soft-deleted,
- *   not found, or the plan-still-grants guard short-circuits the revoke.
+ * @returns `{ updated, rows }` — zero/empty when the row is soft-deleted
+ *   or not found.
  */
 export async function syncFeaturedByEntitlementForAccommodation(
     input: SyncFeaturedByEntitlementForAccommodationInput
 ): Promise<SyncFeaturedByEntitlementResult> {
-    const { accommodationId, active, ownerId, db: injectedDb } = input;
+    const { accommodationId, active, db: injectedDb } = input;
     const db = injectedDb ?? getDb();
-
-    if (!active) {
-        const planStillGrants = await resolveOwnerPlanGrantsFeatured({ ownerId });
-        if (planStillGrants) {
-            serviceLogger.info(
-                { accommodationId, ownerId },
-                'sync-featured-by-entitlement: addon-expiry clear skipped, plan still grants FEATURED_LISTING'
-            );
-            return { updated: 0, rows: [] };
-        }
-    }
 
     const rows = await db
         .update(accommodations)
@@ -246,10 +197,9 @@ export async function syncFeaturedByEntitlementForAccommodation(
         'sync-featured-by-entitlement: updated single accommodation'
     );
 
-    // SPEC-309 T-018 (G-3): schedule ISR revalidation so addon-driven featuring
-    // changes (G-2, T-015/T-016) are reflected without waiting for TTL expiry.
-    // Fire-and-forget, same pattern as T-017. A no-op write (updated === 0,
-    // e.g. the plan-still-grants guard above) never schedules revalidation.
+    // SPEC-309 T-018 (G-3): schedule ISR revalidation so featuring changes are
+    // reflected without waiting for TTL expiry. Fire-and-forget, same pattern
+    // as T-017. A no-op write (updated === 0) never schedules revalidation.
     const [row] = rows;
     if (updated > 0 && row) {
         const revalidationService = getRevalidationService();

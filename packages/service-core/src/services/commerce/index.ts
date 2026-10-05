@@ -56,8 +56,6 @@ export {
 } from './commerce-media-compose';
 export {
     type CommerceEntityModel,
-    getCommerceListingSubscriptionStatus,
-    getCommerceListingSubscriptionStatuses,
     type ReconcileCommerceListingVisibilityInput,
     type ReconcileCommerceListingVisibilityResult,
     type ResolveCommerceListingCompleteness,
