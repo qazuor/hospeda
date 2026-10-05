@@ -289,7 +289,7 @@ If a future audit needs per-package numbers for `@repo/billing` in isolation, ru
 
 ## 3. Functional audit — runbooks vs e2e test inventory
 
-Every operational scenario in [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) is cross-checked against the e2e test inventory at [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/smoke-plans.test.ts). The audit covers the seven actionable runbook sections (§1–§7); §8–§10 are reference / metadata sections that do not map to test flows.
+Every operational scenario in [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) is cross-checked against the e2e test inventory at `apps/api/test/e2e/flows/billing/` (retired in HOS-1416). The audit covers the seven actionable runbook sections (§1–§7); §8–§10 are reference / metadata sections that do not map to test flows.
 
 | Runbook § | Scenario | Covering e2e test(s) | Notes |
 | --------- | -------- | -------------------- | ----- |
@@ -396,6 +396,6 @@ The audit's recommendation: **leave the 43 lines uncovered, document why here, a
 ## Cross-references
 
 - [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) — operational runbooks (functional-audit input)
-- [`apps/api/test/e2e/flows/billing/`](../../apps/api/test/e2e/flows/billing/smoke-plans.test.ts) — e2e test inventory
+- `apps/api/test/e2e/flows/billing/` (retired in HOS-1416) — e2e test inventory
 - [`.qtm/specs/SPEC-143-billing-testing-coverage/spec.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/spec.md) — spec + tasks state
 - SPEC-148 (cron-lag grace + plan lifecycle), SPEC-149 (MP error propagation + Sentry + retry policy), and SPEC-150 (multi-currency support) all shipped — their `.qtm/specs/` folders were retired 2026-07-02, see git history for the original spec docs.
