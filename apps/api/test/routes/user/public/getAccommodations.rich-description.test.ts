@@ -110,9 +110,6 @@ vi.mock('../../../../src/utils/logger', () => ({
 // different verdict: nothing here asserts on `isVerified` and the fixture does not
 // set it, so the gate short-circuits before it ever reads an entitlement. This
 // suite is about rich-description stripping; the gate has its own badge-gate suite.
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerIds: vi.fn().mockResolvedValue(new Map())
-}));
 
 /**
  * Minimal list route-factory mock: wraps the handler in a Hono app.

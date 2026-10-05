@@ -75,21 +75,8 @@ vi.mock('../../src/utils/logger.js', () => ({
 }));
 
 // Mock limit-enforcement: partial mock — preserve real exports, override only what we need.
-vi.mock('../../src/middlewares/limit-enforcement.js', async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import('../../src/middlewares/limit-enforcement.js')>();
-    return {
-        ...actual,
-        buildLimitReachedDetails: vi.fn(() => ({}))
-    };
-});
 
 // Mock limit-check utils (plan cap bypassed for admin but module must resolve).
-vi.mock('../../src/utils/limit-check.js', () => ({
-    checkLimit: vi.fn(() => ({ allowed: true, currentCount: 0, maxAllowed: -1, remaining: -1 })),
-    calculateThreshold: vi.fn(() => 'ok'),
-    calculateUsagePercent: vi.fn(() => 0)
-}));
 
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks are set up

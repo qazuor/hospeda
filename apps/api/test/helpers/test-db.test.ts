@@ -12,7 +12,6 @@ import {
     closeTestDb,
     createTestDb,
     createTestUser,
-    findTestCustomerByUserId,
     findTestUserById,
     isDatabaseAvailable,
     seedTestData
@@ -69,9 +68,9 @@ describe.skipIf(!dbAvailable)('Test Database Helpers', () => {
     });
 
     describe('seedTestData', () => {
-        it('should create test user and customer', async () => {
+        it('should create test user', async () => {
             // Arrange & Act
-            const { user, customer } = await seedTestData(db);
+            const { user } = await seedTestData(db);
 
             // Assert
             expect(user).toBeDefined();
@@ -79,11 +78,6 @@ describe.skipIf(!dbAvailable)('Test Database Helpers', () => {
             expect(user.slug).toBeDefined();
             expect(user.roles).toEqual([]);
             expect(user.displayName).toBe('Test User');
-
-            expect(customer).toBeDefined();
-            expect(customer.id).toBeDefined();
-            expect(customer.externalId).toBe(user.id);
-            expect(customer.email).toBe('test@example.com');
         });
     });
 
@@ -110,32 +104,6 @@ describe.skipIf(!dbAvailable)('Test Database Helpers', () => {
 
             // Assert
             expect(foundUser).toBeNull();
-        });
-    });
-
-    describe('findTestCustomerByUserId', () => {
-        it('should find customer by user ID', async () => {
-            // Arrange
-            const { user, customer } = await seedTestData(db);
-
-            // Act
-            const foundCustomer = await findTestCustomerByUserId(db, user.id);
-
-            // Assert
-            expect(foundCustomer).toBeDefined();
-            expect(foundCustomer?.id).toBe(customer.id);
-            expect(foundCustomer?.externalId).toBe(user.id);
-        });
-
-        it('should return null for non-existent customer', async () => {
-            // Arrange
-            const nonExistentUserId = crypto.randomUUID();
-
-            // Act
-            const foundCustomer = await findTestCustomerByUserId(db, nonExistentUserId);
-
-            // Assert
-            expect(foundCustomer).toBeNull();
         });
     });
 

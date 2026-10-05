@@ -114,11 +114,6 @@ vi.mock('../../../../src/utils/logger', () => ({
     }
 }));
 
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    ownerEntitlementMiddleware: vi.fn(),
-    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlementsForOwnerId
-}));
-
 function queueSelectResults(...rowsByCall: unknown[][]) {
     mockSelect.mockImplementation(function () {
         const rows = rowsByCall.shift() ?? [];

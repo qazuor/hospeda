@@ -33,10 +33,6 @@ const REVIEW_PAYMENT_ROUTE = path.resolve(
     __dirname,
     '../../../../src/routes/partners/admin/review-payment.ts'
 );
-const PAYMENT_REVIEW_JOB = path.resolve(
-    __dirname,
-    '../../../../src/cron/jobs/partner-payment-review.job.ts'
-);
 const PARTNER_SERVICE = path.join(
     REPO_ROOT,
     'packages/service-core/src/services/partner/partner.service.ts'
@@ -75,31 +71,6 @@ describe('HOS-1299 — the payment review route is an admin route behind PARTNER
 });
 
 describe('HOS-1299 — nothing on this path arms an unattended takedown', () => {
-    it('the cron writes no partner column other than paymentReviewState', () => {
-        const code = readCode(PAYMENT_REVIEW_JOB);
-        // The job's single `model.update` is the one write it is allowed. Any
-        // of these appearing means it started deciding instead of asking.
-        expect(code).not.toMatch(/subscriptionStatus/);
-        expect(code).not.toMatch(/lifecycleState/);
-        expect(code).not.toMatch(/endsAt/);
-        expect(code).not.toMatch(/revokedAt/);
-        expect(code).toMatch(/paymentReviewState/);
-    });
-
-    it('the cron hands the model the canonical exempt set, never a literal', () => {
-        // Arrange — the model applies whatever set it is given, so THIS is
-        // where "a comped partner is never accused" is actually decided. Its
-        // sibling guard in `packages/db` cannot see it: the set is injected
-        // precisely so `@repo/db` does not have to import `@repo/billing`,
-        // whose single barrel drags the MercadoPago adapter into every module
-        // graph that touches a model.
-        const code = readCode(PAYMENT_REVIEW_JOB);
-
-        // Act + Assert
-        expect(code).toMatch(/exemptSubscriptionStatuses:\s*ENTITLEMENT_GRANTING_STATUSES/);
-        expect(code).not.toMatch(/exemptSubscriptionStatuses:\s*\[/);
-    });
-
     it('the review route itself writes nothing — it delegates to the service', () => {
         const code = readCode(REVIEW_PAYMENT_ROUTE);
         expect(code).toMatch(/partnerService\.reviewPayment/);

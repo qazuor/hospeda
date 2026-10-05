@@ -551,9 +551,14 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 9. **Validate all inputs** with Zod schemas
 10. **Use TypeScript strict mode** - no `any` types
 
-## Entitlement & Limit Enforcement (SPEC-145)
+## Entitlement & Limit Enforcement (SPEC-145) — REMOVED (HOS-1416)
 
-### Middleware chain order
+> The legacy billing system was demolished (HOS-1416): the entitlement/limit
+> gates, the billing middleware chain, and the whole qzpay surface are gone.
+> This section survives only for the invariants that still apply to the
+> remaining pieces (`createErrorHandler` mapping, guard harness).
+
+### Middleware chain order (historical)
 
 Every protected route runs middleware in this order:
 
@@ -771,11 +776,15 @@ anything else.
 - Always use `PermissionEnum` for auth checks, never check roles directly
 - `ResponseFactory` must be used for all responses - no raw `c.json()`
 
-## Billing: key files and operational pointers
+## Billing: key files and operational pointers — REMOVED (HOS-1416)
 
-Routes live in `src/routes/billing/`: `start-paid.ts`, `plan-change.ts`,
-`subscription-cancel.ts`, `subscription-pause.ts`, `addons.ts`, `promo-codes.ts`,
-`trial.ts`, `settings.ts`, `usage.ts`, `metrics.ts`, `notifications.ts`.
+> The legacy billing routes, crons, services and MercadoPago webhooks were
+> demolished (HOS-1416). The lists below are kept as historical pointers only.
+
+The billing routes used to live in `src/routes/billing/`: `start-paid.ts`,
+`plan-change.ts`, `subscription-cancel.ts`, `subscription-pause.ts`,
+`addons.ts`, `promo-codes.ts`, `trial.ts`, `settings.ts`, `usage.ts`,
+`metrics.ts`, `notifications.ts`.
 
 Cron jobs for billing: `src/cron/jobs/dunning.job.ts`, `webhook-retry.job.ts`,
 `finalize-cancelled-subs.ts`, `trial-expiry.ts`, `addon-expiry.job.ts`,

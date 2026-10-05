@@ -17,17 +17,6 @@
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
-    const orig =
-        await importOriginal<typeof import('../../../../src/middlewares/tourist-entitlements')>();
-    return {
-        ...orig,
-        gateExclusiveDeals: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
-
 const findExclusiveDealsCaptures: Array<{
     actor: unknown;
     params: unknown;

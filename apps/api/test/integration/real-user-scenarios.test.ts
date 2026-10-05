@@ -72,37 +72,6 @@ vi.mock('@repo/logger', () => {
 });
 
 // Mock @repo/billing to avoid unbuilt dist issues in e2e config
-vi.mock('@repo/billing', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@repo/billing')>()),
-    DUNNING_RETRY_INTERVALS: [1, 3, 5, 7] as const,
-    DUNNING_GRACE_PERIOD_DAYS: 7,
-    OWNER_TRIAL_DAYS: 30,
-    COMPLEX_TRIAL_DAYS: 14,
-    PAYMENT_GRACE_PERIOD_DAYS: 3,
-    MAX_PAYMENT_RETRY_ATTEMPTS: 3,
-    ENTITLEMENT_CACHE_TTL_MS: 300000,
-    PLAN_CACHE_TTL_MS: 1800000,
-    DEFAULT_CURRENCY: 'ARS',
-    REFERENCE_CURRENCY: 'USD',
-    MERCADO_PAGO_DEFAULT_TIMEOUT_MS: 5000,
-    LimitKey: {
-        MAX_ACCOMMODATIONS: 'MAX_ACCOMMODATIONS',
-        MAX_IMAGES_PER_ACCOMMODATION: 'MAX_IMAGES_PER_ACCOMMODATION',
-        MAX_FEATURED_ACCOMMODATIONS: 'MAX_FEATURED_ACCOMMODATIONS'
-    },
-    EntitlementKey: {
-        ANALYTICS_BASIC: 'ANALYTICS_BASIC',
-        ANALYTICS_ADVANCED: 'ANALYTICS_ADVANCED'
-    },
-    ALL_PLANS: [],
-    ALL_ADDONS: [],
-    LIMIT_METADATA: {},
-    getPlanBySlug: vi.fn().mockReturnValue(undefined),
-    getAddonBySlug: vi.fn().mockReturnValue(undefined),
-    validateBillingConfigOrThrow: vi.fn(),
-    createMercadoPagoAdapter: vi.fn().mockReturnValue({}),
-    createBillingAdapter: vi.fn().mockReturnValue({})
-}));
 
 // Mock @repo/db to avoid real database connections
 vi.mock('@repo/db', async () => {

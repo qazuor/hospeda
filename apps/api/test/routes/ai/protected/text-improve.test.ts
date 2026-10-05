@@ -104,11 +104,6 @@ vi.mock('../../../../src/middlewares/authorization', () => ({
  * `createAiQuotaMiddleware` is what enforces the entitlement gate, and that
  * is mocked separately (and exercised in T-006 integration tests).
  */
-vi.mock('../../../../src/middlewares/entitlement', () => ({
-    entitlementMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
 
 /**
  * Rate-limit middlewares: no-op. Layer-level rate limits are tested in
@@ -122,11 +117,6 @@ vi.mock('../../../../src/middlewares/ai-rate-limit', () => ({
  * Quota + entitlement gate: no-op. T-006 covers the real behaviour with a
  * live DB and entitlement-mock helper.
  */
-vi.mock('../../../../src/middlewares/ai-quota', () => ({
-    createAiQuotaMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
 
 /**
  * AI service factory: return a stub AiService. `streamText` records the

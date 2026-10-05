@@ -139,53 +139,9 @@ vi.mock('@repo/logger', () => {
     };
 });
 
-// Stub out the billing middleware stack. These middlewares import from
-// @repo/billing and @qazuor/qzpay-core which require real credentials and
+// Stub out the Sentry middleware. These middlewares used to import from
+// @repo/billing and @qazuor/qzpay-core, which require real credentials and
 // a DB to function. All three are pass-through stubs.
-vi.mock('../../../src/middlewares/billing', async (importOriginal) => {
-    const original = await importOriginal<typeof import('../../../src/middlewares/billing')>();
-    return {
-        ...original,
-        billingMiddleware: vi.fn(
-            async (
-                c: { set: (key: string, value: unknown) => void },
-                next: () => Promise<void>
-            ) => {
-                c.set('billingEnabled', false);
-                await next();
-            }
-        ),
-        requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }),
-        getQZPayBilling: vi.fn(() => null),
-        resetBillingInstance: vi.fn()
-    };
-});
-
-vi.mock('../../../src/middlewares/billing-customer', () => ({
-    billingCustomerMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
-
-vi.mock('../../../src/middlewares/entitlement', () => ({
-    entitlementMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    requireEntitlement: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    requireLimit: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
-
-vi.mock('../../../src/middlewares/trial', () => ({
-    trialMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
 
 vi.mock('../../../src/middlewares/sentry', () => ({
     sentryMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {

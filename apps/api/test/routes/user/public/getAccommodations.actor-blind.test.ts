@@ -93,10 +93,6 @@ vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerIds: vi.fn().mockResolvedValue(new Map())
-}));
-
 /** Minimal list route-factory mock: wraps the handler in a Hono app. */
 vi.mock('../../../../src/utils/route-factory', () => ({
     createPublicListRoute: (options: {

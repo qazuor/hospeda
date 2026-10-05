@@ -56,6 +56,12 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // purges — so it belongs in ApiEnvBaseSchema, not here.)
     'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED', // packages/billing test-control gate (dev/test only)
 
+    // HOS-1416: the legacy commerce plan-slug mapping died with the legacy
+    // billing system. apps/api no longer validates it; the registry entry
+    // (packages/config) is removed by the repo-plumbing pass (T5), and the
+    // variable belongs in this gap set until then.
+    'HOSPEDA_COMMERCE_PLAN_SLUGS',
+
     // env-registry-hygiene (follow-up to HOS-79) — read directly by the
     // crontab-run bash script scripts/server-tools/weekly-restart.sh on the
     // VPS host, NOT by the api Node process / ApiEnvBaseSchema. Registered
