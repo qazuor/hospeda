@@ -84,31 +84,17 @@ describe('0062-hos686 listing moderation — meta', () => {
     });
 });
 
-describe('0062-hos686 listing moderation — exported lists shape', () => {
-    it('grants exactly the retired moderationChange permission', () => {
-        expect(STAFF_PERMISSIONS).toEqual([`${RETIRED}.moderationChange` as PermissionEnum]);
+describe('0062-hos686 listing moderation — retired by HOS-1417', () => {
+    it('grants nothing: the retired moderationChange permission was removed by migration 0126', () => {
+        expect(STAFF_PERMISSIONS).toEqual([]);
+        expect(GRANTS).toEqual([]);
     });
 
-    it('does NOT grant the retired moderateReview permission — that is a different authority', () => {
-        // The naming trap named in HOS-589 §6.7: `the retired moderateReview`
-        // moderates reviews ABOUT a listing, not the listing.
-        expect(STAFF_PERMISSIONS).not.toContain(`${RETIRED}.moderateReview` as PermissionEnum);
-    });
-
-    it('targets only SUPER_ADMIN and ADMIN', () => {
+    it('still targets only SUPER_ADMIN and ADMIN', () => {
         expect([...GRANTED_ROLES].sort()).toEqual([RoleEnum.ADMIN, RoleEnum.SUPER_ADMIN].sort());
     });
 
-    it('GRANTS is 1 permission x 2 roles = 2 pairs', () => {
-        expect(GRANTS).toHaveLength(2);
-        expect(GRANTS.filter((g) => g.role === RoleEnum.SUPER_ADMIN)).toHaveLength(1);
-        expect(GRANTS.filter((g) => g.role === RoleEnum.ADMIN)).toHaveLength(1);
-    });
-});
-
-describe('0062-hos686 listing moderation — historical grant retired', () => {
-    it('preserves the historical migration payload but removes the baseline grant', () => {
-        expect(STAFF_PERMISSIONS).toEqual([`${RETIRED}.moderationChange`]);
+    it('the seed baseline does not grant the retired permission either', () => {
         for (const perms of Object.values(ROLE_PERMISSIONS)) {
             expect(perms).not.toContain(`${RETIRED}.moderationChange`);
         }
@@ -116,29 +102,24 @@ describe('0062-hos686 listing moderation — historical grant retired', () => {
 });
 
 describe('0062-hos686 listing moderation — up()', () => {
-    it('inserts both (role, permission) pairs', async () => {
-        const insertedRows = GRANTS.map((g) => ({ ...g }));
-        const { ctx, readInsertValues } = buildCtx(insertedRows);
+    it('is a no-op that never touches the database', async () => {
+        const { ctx, readInsertValues } = buildCtx([]);
 
         const result = await migration.up(ctx);
 
-        // Assert the payload actually handed to `.values()`, not just the count
-        // the mocked `.returning()` echoed back.
-        expect(readInsertValues()).toEqual(GRANTS);
-        expect(result.counts?.granted).toBe(2);
+        expect(readInsertValues()).toEqual([]);
+        expect(result.counts?.granted).toBe(0);
         expect(result.counts?.alreadyPresent).toBe(0);
-        expect(result.summary).toMatch(/Granted 2 of 2/);
+        expect(result.summary).toMatch(/No-op/);
     });
 
-    it('is idempotent: does NOT throw and reports 0 inserted on the second run', async () => {
-        const { ctx: ctxFirst } = buildCtx(GRANTS.map((g) => ({ ...g })));
-        await expect(migration.up(ctxFirst)).resolves.not.toThrow();
+    it('is idempotent across runs', async () => {
+        const { ctx: first } = buildCtx([]);
+        const { ctx: second } = buildCtx([]);
 
-        const { ctx: ctxSecond } = buildCtx([]);
-        const result = await migration.up(ctxSecond);
+        await expect(migration.up(first)).resolves.toBeDefined();
+        const result = await migration.up(second);
 
         expect(result.counts?.granted).toBe(0);
-        expect(result.counts?.alreadyPresent).toBe(2);
-        expect(result.summary).toMatch(/Granted 0 of 2/);
     });
 });

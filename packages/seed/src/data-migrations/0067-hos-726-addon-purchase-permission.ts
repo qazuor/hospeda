@@ -55,7 +55,6 @@
  */
 import { rolePermission } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-// Ledgered migration: retain historical values as loose string assertions after enum retirement.
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -80,8 +79,11 @@ export const ADDON_PURCHASE_PERMISSION = PermissionEnum.BILLING_ADDON_PURCHASE;
 export const GRANTED_ROLES: readonly RoleEnum[] = [
     RoleEnum.SUPER_ADMIN,
     RoleEnum.ADMIN,
-    RoleEnum.HOST,
-    'COMMERCE_OWNER' as RoleEnum
+    RoleEnum.HOST
+    // The retired COMMERCE_OWNER role is deliberately absent: migration 0126
+    // (HOS-1417) deletes its role_permission rows, and on any DB still pending
+    // this data-migration `role_enum` no longer has the value, so naming it would
+    // make Postgres reject the insert. The end state is identical.
 ];
 
 /** `(role, permission)` pairs this migration ensures exist. */

@@ -8,8 +8,8 @@
  *
  * The migration constructs exactly ONE `RRolePermissionModel` instance and
  * calls `.hardDelete({ role, permission }, ctx.db)` on it once per targeted
- * role (HOST, the retired owner role), so this test spies on a single shared
- * `hardDelete` mock across both calls rather than building a per-instance
+ * role (HOST only; the retired role is cleaned by migration 0126), so this test
+ * spies on a shared `hardDelete` mock rather than building a per-instance
  * store.
  *
  * @module test/data-migrations/0010.data-migration
@@ -58,7 +58,6 @@ function buildCtx(deletedCount: number): {
 
 const migration = await loadMigrationByNumber({ number: '0010' });
 
-const OLD_ROLE = `${'COMM' + 'ERCE'}_OWNER`;
 const MIGRATION_NAME = `0010-remove-panel-admin-from-host-${'comm' + 'erce'}-owner`;
 
 describe(MIGRATION_NAME, () => {
@@ -70,7 +69,7 @@ describe(MIGRATION_NAME, () => {
         });
     });
 
-    it('calls RRolePermissionModel.hardDelete exactly twice, once per role, with ACCESS_PANEL_ADMIN', async () => {
+    it('calls RRolePermissionModel.hardDelete exactly once, for HOST, with ACCESS_PANEL_ADMIN', async () => {
         // Arrange — first run against an environment that still has the bad grant.
         const { ctx, hardDelete } = buildCtx(1);
 
@@ -78,20 +77,14 @@ describe(MIGRATION_NAME, () => {
         const result = await migration.up(ctx);
 
         // Assert
-        expect(hardDelete).toHaveBeenCalledTimes(2);
+        expect(hardDelete).toHaveBeenCalledTimes(1);
         expect(hardDelete).toHaveBeenNthCalledWith(
             1,
             { role: RoleEnum.HOST, permission: PermissionEnum.ACCESS_PANEL_ADMIN },
             FAKE_DB
         );
-        expect(hardDelete).toHaveBeenNthCalledWith(
-            2,
-            { role: OLD_ROLE as RoleEnum, permission: PermissionEnum.ACCESS_PANEL_ADMIN },
-            FAKE_DB
-        );
         expect(result.counts).toEqual({
-            [`${RoleEnum.HOST}-deleted`]: 1,
-            [`${OLD_ROLE as RoleEnum}-deleted`]: 1
+            [`${RoleEnum.HOST}-deleted`]: 1
         });
         expect(result.summary).toMatch(/Removed ACCESS_PANEL_ADMIN/);
     });
@@ -107,10 +100,9 @@ describe(MIGRATION_NAME, () => {
         const result = await migration.up(ctx);
 
         // Assert
-        expect(hardDelete).toHaveBeenCalledTimes(4); // 2 calls x 2 up() invocations above
+        expect(hardDelete).toHaveBeenCalledTimes(2); // 1 call x 2 up() invocations above
         expect(result.counts).toEqual({
-            [`${RoleEnum.HOST}-deleted`]: 0,
-            [`${OLD_ROLE as RoleEnum}-deleted`]: 0
+            [`${RoleEnum.HOST}-deleted`]: 0
         });
         expect(result.summary).toMatch(/already absent \(idempotent no-op\)/);
     });

@@ -39,7 +39,6 @@
  */
 import { rolePermission } from '@repo/db';
 import { type PermissionEnum, RoleEnum } from '@repo/schemas';
-// Ledgered migration: retain historical values as loose string assertions after enum retirement.
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -56,7 +55,11 @@ export const meta = {
  * compare its own copy to the seed and stay green while THIS constant drifted.
  */
 export const STAFF_PERMISSIONS: readonly PermissionEnum[] = [
-    'commerce.moderationChange' as PermissionEnum
+    // 'commerce.moderationChange' was retired by migration 0126 (HOS-1417), which
+    // deletes its role_permission rows. Data migrations run after the schema
+    // carril, so on any DB still pending this one `permission_enum` no longer has
+    // the value and naming it would make Postgres reject the insert. The end
+    // state — no such grant — is identical.
 ];
 
 /** The roles that receive it. Deliberately only the two staff roles. */
@@ -68,6 +71,13 @@ export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = GRA
 );
 
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
+    if (GRANTS.length === 0) {
+        return {
+            summary: 'No-op: commerce.moderationChange was retired by migration 0126 (HOS-1417).',
+            counts: { granted: 0, alreadyPresent: 0 }
+        };
+    }
+
     const inserted = await ctx.db
         .insert(rolePermission)
         .values(GRANTS)
