@@ -9,7 +9,7 @@
  * update → review moderation → rating recompute against a REAL ephemeral
  * PostgreSQL database.
  *
- * The former T-2 case (lead → admin-provisioned COMMERCE_OWNER via the
+ * The former T-2 case (lead → admin-provisioned GASTRONOMY_OWNER via the
  * dedicated owner-provisioning service) was removed by HOS-693 §6.2 along
  * with that service itself — owners now grant themselves the role by
  * creating their own listing (HOS-687).
@@ -85,18 +85,18 @@ const dbAvailable = isServiceTestDbAvailable();
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a COMMERCE_OWNER actor with operational edit permissions.
+ * Creates a GASTRONOMY_OWNER actor with operational edit permissions.
  * The `id` must match the seeded user to satisfy ownership checks.
  *
  * @param userId - The UUID of the owner user row in the DB.
- * @returns Actor with COMMERCE_OWNER role and relevant permissions.
+ * @returns Actor with GASTRONOMY_OWNER role and relevant permissions.
  */
 function createCommerceOwnerActor(userId: string): Actor {
     return {
         id: userId,
-        roles: [RoleEnum.COMMERCE_OWNER],
-        // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
-        permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+        roles: [RoleEnum.GASTRONOMY_OWNER],
+        // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces 10 per-section perms
+        permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
     };
 }
 
@@ -658,7 +658,7 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
     // showed "no pending reviews" because the list route 400'd on `?status=`.
     // The dedicated service method must filter by `moderationState` (NOT the
     // base adminList `status`/lifecycleState semantics) and require the
-    // COMMERCE_MODERATE_REVIEW permission.
+    // GASTRONOMY_MODERATE_REVIEW permission.
     // -----------------------------------------------------------------------
 
     it.skipIf(!dbAvailable)(

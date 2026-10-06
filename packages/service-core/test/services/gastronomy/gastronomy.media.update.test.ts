@@ -96,14 +96,14 @@ function makeGastronomy(overrides: Record<string, unknown> = {}) {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 const strangerActor: Actor = {
     id: 'stranger-id',
     roles: [RoleEnum.USER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 function makeGastronomyModel(entity: Record<string, unknown> | null = null) {

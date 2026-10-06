@@ -6,7 +6,7 @@
  * - Permission helpers, junction-sync utilities, visibility reconciler, and types
  *
  * HOS-693 §6.2 removed the admin owner-provisioning service that used to be
- * exported here (COMMERCE_OWNER user creation from an approved lead) —
+ * exported here (owner account creation from an approved lead) —
  * owners now grant themselves the role by creating their own listing
  * (HOS-687). HOS-695 (release C) removed `CommerceLeadService` itself: the
  * lead-intake funnel accepts no new submissions (its public form and admin

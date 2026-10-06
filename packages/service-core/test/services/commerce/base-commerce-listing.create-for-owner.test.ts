@@ -2,7 +2,7 @@
  * base-commerce-listing.create-for-owner.test.ts
  *
  * Unit tests for `BaseCommerceListingService.createForOwner` — the owner
- * self-service create that grants `COMMERCE_OWNER` in the same transaction as
+ * self-service create that grants `GASTRONOMY_OWNER` in the same transaction as
  * the listing insert (HOS-687 / HOS-589 §6.1).
  *
  * Covers:
@@ -259,7 +259,7 @@ beforeEach(() => {
 });
 
 describe('BaseCommerceListingService.createForOwner (HOS-687 §6.1)', () => {
-    it('grants BOTH the legacy and the vertical hat to the creating account (AC-1)', async () => {
+    it('grants the vertical role to the creating account (AC-1)', async () => {
         const { svc } = makeService();
 
         const result = (await svc.createForOwner(
@@ -269,26 +269,10 @@ describe('BaseCommerceListingService.createForOwner (HOS-687 §6.1)', () => {
 
         expect(result.error).toBeUndefined();
         expect(result.data?.id).toBe(ENTITY_ID);
-        // HOS-1077 raised this from 1 to 2, and the second call is the POINT of
-        // the expand release, not an accident of it. `COMMERCE_OWNER` is what
-        // every gate still reads during the migration window; the vertical role
-        // is what survives the contract release. Granting only the legacy one
-        // would make every listing created in between a row the contract
-        // release's backfill has to sweep a SECOND time — the expand release
-        // exists precisely so that sweep runs once.
-        expect(mockGrantRole).toHaveBeenCalledTimes(2);
+        expect(mockGrantRole).toHaveBeenCalledTimes(1);
 
         const grantArgs = mockGrantRole.mock.calls[0]?.[0];
         expect(grantArgs).toMatchObject({
-            userId: OWNER_ID,
-            role: RoleEnum.COMMERCE_OWNER,
-            grantedBy: null,
-            reason: RoleGrantReason.COMMERCE_LISTING_CREATED
-        });
-        // The vertical hat carries the identical envelope — same user, same
-        // reason, same null grantor — so neither call can drift into a
-        // different provenance than the other.
-        expect(mockGrantRole.mock.calls[1]?.[0]).toMatchObject({
             userId: OWNER_ID,
             role: RoleEnum.GASTRONOMY_OWNER,
             grantedBy: null,
@@ -296,25 +280,24 @@ describe('BaseCommerceListingService.createForOwner (HOS-687 §6.1)', () => {
         });
     });
 
-    it('grants the legacy hat plus THIS vertical only, and never revokes (AC-3)', async () => {
+    it('grants THIS vertical only, and never revokes (AC-3)', async () => {
         const { svc } = makeService();
 
         await svc.createForOwner(hostActor, VALID_INPUT);
 
         expect(mockRevokeRole).not.toHaveBeenCalled();
         const grantedRoles = mockGrantRole.mock.calls.map((call) => call[0]?.role);
-        // Exactly two, in this order, and asserted as a whole array rather than
+        // Exactly one, asserted as a whole array rather than
         // by membership: the failure this guards against is granting the OTHER
         // vertical's role (the fixture service is `gastronomy`, so an
         // EXPERIENCE_OWNER here would mean the map is read off the wrong key)
         // or granting the same role twice.
-        expect(grantedRoles).toEqual([RoleEnum.COMMERCE_OWNER, RoleEnum.GASTRONOMY_OWNER]);
+        expect(grantedRoles).toEqual([RoleEnum.GASTRONOMY_OWNER]);
         expect(grantedRoles).not.toContain(RoleEnum.EXPERIENCE_OWNER);
         // The grant is additive by construction — each call carries only its one
         // role and no role list that could replace what the account already
         // wears. A payload naming HOST here would mean the path rewrites hats.
         expect(mockGrantRole.mock.calls[0]?.[0]).not.toHaveProperty('roles');
-        expect(mockGrantRole.mock.calls[1]?.[0]).not.toHaveProperty('roles');
     });
 
     it('runs the insert and the grant inside ONE transaction', async () => {
@@ -335,10 +318,8 @@ describe('BaseCommerceListingService.createForOwner (HOS-687 §6.1)', () => {
         await svc.createForOwner(plainUserActor, { ...VALID_INPUT, amenityIds: ['amenity-1'] });
 
         expect(amenityJunction.create).toHaveBeenCalled();
-        // Two per listing since HOS-1077 (legacy + vertical). What this
-        // assertion is really pinning is that the junction sync did not add a
-        // grant of its own, nor cost one.
-        expect(mockGrantRole).toHaveBeenCalledTimes(2);
+        // Junction sync does not add a separate role grant.
+        expect(mockGrantRole).toHaveBeenCalledTimes(1);
     });
 
     it('does not duplicate the grant on a second listing, and does not error (AC-2)', async () => {
@@ -355,17 +336,13 @@ describe('BaseCommerceListingService.createForOwner (HOS-687 §6.1)', () => {
 
         expect(second.error).toBeUndefined();
         expect(second.data?.id).toBe(ENTITY_ID);
-        // Two calls per listing since HOS-1077 (legacy + vertical), so two
-        // listings make four. The call itself is the idempotent primitive, so
-        // "not duplicated" means no extra ROW, not a skipped call — the second
-        // listing re-issues both grants and `grantRole` answers
+        // The call itself is the idempotent primitive, so "not duplicated"
+        // means no extra ROW, not a skipped call — the second listing re-issues
+        // the grant and `grantRole` answers
         // `changed: false` on the `(user_id, role)` primary key.
-        expect(mockGrantRole).toHaveBeenCalledTimes(4);
-        // The second listing repeats the SAME pair, in the same order — a
-        // vertical role that appeared only on the first listing would leave the
-        // second owner half-hatted.
-        const secondListingRoles = mockGrantRole.mock.calls.slice(2).map((call) => call[0]?.role);
-        expect(secondListingRoles).toEqual([RoleEnum.COMMERCE_OWNER, RoleEnum.GASTRONOMY_OWNER]);
+        expect(mockGrantRole).toHaveBeenCalledTimes(2);
+        const secondListingRoles = mockGrantRole.mock.calls.slice(1).map((call) => call[0]?.role);
+        expect(secondListingRoles).toEqual([RoleEnum.GASTRONOMY_OWNER]);
     });
 
     it('aborts the whole unit of work when the grant fails', async () => {

@@ -101,8 +101,8 @@ function makeMediaRow(overrides: Partial<GastronomyMedia> = {}): GastronomyMedia
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 const touristActor: Actor = {
@@ -163,7 +163,7 @@ describe('addGastronomyMedia', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks COMMERCE_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         const input: GastronomyMediaAddInput = {
             gastronomyId: GASTRONOMY_ID,

@@ -82,15 +82,15 @@ function makeFaq(overrides: Partial<GastronomyFaq> = {}): GastronomyFaq {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces COMMERCE_FAQS_EDIT_OWN
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces COMMERCE_FAQS_EDIT_OWN
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 const _staffActor: Actor = {
     id: 'staff-id',
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.COMMERCE_EDIT_ALL, PermissionEnum.COMMERCE_VIEW_ALL]
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.GASTRONOMY_VIEW_ALL]
 };
 
 const touristActor: Actor = {
@@ -176,7 +176,7 @@ describe('addGastronomyFaq', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks COMMERCE_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
         // Arrange
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         const input: GastronomyFaqAddInput = {

@@ -13,8 +13,8 @@
  * ## Permission model
  *
  * All five operations (add / remove / reorder / setFeatured / get) are gated on
- * `checkExperienceCanEditMedia`: `COMMERCE_EDIT_OWN` (listing owner) or
- * `COMMERCE_EDIT_ALL` (staff). There is no separate public read path for media —
+ * `checkExperienceCanEditMedia`: `EXPERIENCE_EDIT_OWN` (listing owner) or
+ * `EXPERIENCE_EDIT_ALL` (staff). There is no separate public read path for media —
  * public consumers read the composed `media` field on the listing itself (via
  * `experience.media-read.ts`), not this management surface.
  *
@@ -639,7 +639,7 @@ export async function setFeaturedExperienceMedia(
  *
  * The PARENT experience listing is NOT: `checkExperienceCanEditMedia` throws FORBIDDEN
  * on an experience listing the actor may not edit and NOT_FOUND on one that does not
- * exist, so an ownership-scoped actor (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`)
+ * exist, so an ownership-scoped actor (`EXPERIENCE_EDIT_OWN` without `EXPERIENCE_EDIT_ALL`)
  * can tell a stranger's experience listing from an invented one. Every sibling media
  * helper shares that same gate, so closing the gap in `update` alone would leave it at
  * 404 while `remove` stays at 403 on the same parent — a follow-up covers all of them

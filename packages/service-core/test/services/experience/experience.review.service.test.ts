@@ -64,9 +64,9 @@ const staffActor: Actor = {
     id: STAFF_ID,
     roles: [RoleEnum.ADMIN],
     permissions: [
-        PermissionEnum.COMMERCE_EDIT_ALL,
-        PermissionEnum.COMMERCE_MODERATE_REVIEW,
-        PermissionEnum.COMMERCE_VIEW_ALL
+        PermissionEnum.EXPERIENCE_EDIT_ALL,
+        PermissionEnum.EXPERIENCE_MODERATE_REVIEW,
+        PermissionEnum.EXPERIENCE_VIEW_ALL
     ]
 };
 
@@ -151,7 +151,7 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceReviewService.moderateReview', () => {
-    it('should return FORBIDDEN when actor lacks COMMERCE_MODERATE_REVIEW', async () => {
+    it('should return FORBIDDEN when actor lacks EXPERIENCE_MODERATE_REVIEW', async () => {
         const service = makeService(makeReview());
         const input: ExperienceReviewModerateInput = {
             id: REVIEW_ID,
@@ -220,7 +220,7 @@ describe('ExperienceReviewService.moderateReview', () => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceReviewService.getPendingCount', () => {
-    it('should return FORBIDDEN when actor lacks COMMERCE_MODERATE_REVIEW', async () => {
+    it('should return FORBIDDEN when actor lacks EXPERIENCE_MODERATE_REVIEW', async () => {
         const service = makeService();
         const result = await service.getPendingCount(reviewerActor);
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);

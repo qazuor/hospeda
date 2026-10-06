@@ -7,7 +7,7 @@
  *
  * Before HOS-296 the hook was `update(users, { role: HOST })` — a DESTRUCTIVE
  * scalar overwrite guarded by `PRIVILEGED_ROLES = {HOST, ADMIN, CLIENT_MANAGER,
- * SUPER_ADMIN}`. That set omits `COMMERCE_OWNER`, `SPONSOR` and `EDITOR`, so
+ * SUPER_ADMIN}`. That set omits `GASTRONOMY_OWNER`, `SPONSOR` and `EDITOR`, so
  * activating an accommodation owned by any of them silently destroyed their hat.
  * The previous version of this file asserted exactly that behaviour (it
  * parametrised over the privileged set and asserted `userModel.update` was
@@ -121,7 +121,7 @@ describe('AccommodationService._assignHostRoleIfNeeded — G-6 regression (AC-2)
     // The three roles the old `PRIVILEGED_ROLES` guard omitted, i.e. exactly the
     // hats the pre-HOS-296 hook destroyed on every accommodation activation.
     const hatsTheOldGuardDestroyed = [
-        RoleEnum.COMMERCE_OWNER,
+        RoleEnum.GASTRONOMY_OWNER,
         RoleEnum.SPONSOR,
         RoleEnum.EDITOR
     ] as const;

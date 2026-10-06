@@ -96,8 +96,8 @@ function makeMediaRow(overrides: Partial<ExperienceMedia> = {}): ExperienceMedia
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.EXPERIENCE_OWNER],
+    permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN]
 };
 
 const touristActor: Actor = {
@@ -158,7 +158,7 @@ describe('addExperienceMedia', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks COMMERCE_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks EXPERIENCE_EDIT_OWN', async () => {
         const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
         const input: ExperienceMediaAddInput = {
             experienceId: EXPERIENCE_ID,

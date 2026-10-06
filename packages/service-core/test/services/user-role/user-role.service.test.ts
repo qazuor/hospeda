@@ -272,7 +272,7 @@ beforeEach(() => {
 describe('grantRole', () => {
     it('adds a hat without removing the ones already held', async () => {
         // Arrange
-        seedUser([RoleEnum.USER, RoleEnum.COMMERCE_OWNER]);
+        seedUser([RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER]);
 
         // Act
         const result = await grantRole({
@@ -286,7 +286,7 @@ describe('grantRole', () => {
         expect(result.error).toBeUndefined();
         expect(result.data?.changed).toBe(true);
         expect(await getUserRoles({ userId: USER_ID })).toEqual(
-            expect.arrayContaining([RoleEnum.USER, RoleEnum.COMMERCE_OWNER, RoleEnum.HOST])
+            expect.arrayContaining([RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER, RoleEnum.HOST])
         );
     });
 
@@ -586,11 +586,11 @@ describe('revokeRole — AC-12 concurrent revokes', () => {
 
     it('serializes three racing revokes down to two successes on a three-hat user', async () => {
         // Arrange
-        seedUser([RoleEnum.USER, RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]);
+        seedUser([RoleEnum.USER, RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]);
 
         // Act
         const outcomes = await Promise.all(
-            [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER, RoleEnum.USER].map((role) =>
+            [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER, RoleEnum.USER].map((role) =>
                 revokeRole({
                     userId: USER_ID,
                     role,

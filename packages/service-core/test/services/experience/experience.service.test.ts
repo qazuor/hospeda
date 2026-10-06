@@ -70,27 +70,27 @@ function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}):
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.EXPERIENCE_OWNER],
+    // SPEC-253 D2=b: single EXPERIENCE_EDIT_OWN replaces 10 per-section perms
+    permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN]
 };
 
 const staffActor: Actor = {
     id: 'staff-uuid-1',
     roles: [RoleEnum.ADMIN],
     permissions: [
-        PermissionEnum.COMMERCE_CREATE,
-        PermissionEnum.COMMERCE_EDIT_ALL,
-        PermissionEnum.COMMERCE_DELETE,
-        PermissionEnum.COMMERCE_VIEW_ALL
+        PermissionEnum.EXPERIENCE_CREATE,
+        PermissionEnum.EXPERIENCE_EDIT_ALL,
+        PermissionEnum.EXPERIENCE_DELETE,
+        PermissionEnum.EXPERIENCE_VIEW_ALL
     ]
 };
 
 const otherUserActor: Actor = {
     id: OTHER_USER,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    // SPEC-253 D2=b: COMMERCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.EXPERIENCE_OWNER],
+    // SPEC-253 D2=b: EXPERIENCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
+    permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN]
 };
 
 // ---------------------------------------------------------------------------
@@ -212,7 +212,7 @@ describe('ExperienceService.updateOwn — ownership gate', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should allow staff with COMMERCE_EDIT_ALL to update any listing', async () => {
+    it('should allow staff with EXPERIENCE_EDIT_ALL to update any listing', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(ENTITY_ID, { isPriceOnRequest: false }, staffActor);
@@ -224,13 +224,13 @@ describe('ExperienceService.updateOwn — ownership gate', () => {
 // updateOwn — per-section permission gates
 // ---------------------------------------------------------------------------
 
-describe('ExperienceService.updateOwn — single COMMERCE_EDIT_OWN gate (SPEC-253 D2=b)', () => {
-    it('should return FORBIDDEN when owner lacks COMMERCE_EDIT_OWN (no per-section gates)', async () => {
+describe('ExperienceService.updateOwn — single EXPERIENCE_EDIT_OWN gate (SPEC-253 D2=b)', () => {
+    it('should return FORBIDDEN when owner lacks EXPERIENCE_EDIT_OWN (no per-section gates)', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         const actorNoPerm: Actor = {
             id: OWNER_ID,
-            roles: [RoleEnum.COMMERCE_OWNER],
+            roles: [RoleEnum.EXPERIENCE_OWNER],
             permissions: [] // no permissions at all
         };
         const result = await service.updateOwn(ENTITY_ID, { isPriceOnRequest: true }, actorNoPerm);
@@ -317,7 +317,7 @@ describe('ExperienceService.updateOwn — single COMMERCE_EDIT_OWN gate (SPEC-25
         expect(updatePayload.richDescriptionI18n).toEqual(i18nValue);
     });
 
-    it('should bypass per-section gates for staff with COMMERCE_EDIT_ALL', async () => {
+    it('should bypass per-section gates for staff with EXPERIENCE_EDIT_ALL', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         // Staff can update any field without any editOwn permission
@@ -653,9 +653,9 @@ describe('ExperienceService._projectPublicEntity', () => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService._canView', () => {
-    it('should throw GONE for a deleted PUBLIC entity when actor lacks COMMERCE_VIEW_ALL', () => {
+    it('should throw GONE for a deleted PUBLIC entity when actor lacks EXPERIENCE_VIEW_ALL', () => {
         // The deleted-at gate fires first (before the owner check), so both owner
-        // and non-owner actors without COMMERCE_VIEW_ALL receive GONE (HOS-117
+        // and non-owner actors without EXPERIENCE_VIEW_ALL receive GONE (HOS-117
         // T-022) — but only because this listing was PUBLIC (indexable) before
         // deletion. Refined product decision: 410 is reserved for content that
         // was actually publicly discoverable.
@@ -664,7 +664,7 @@ describe('ExperienceService._canView', () => {
             deletedAt: new Date()
         });
         const service = makeService(entity);
-        // Owner without COMMERCE_VIEW_ALL → GONE (matches gastronomy parity)
+        // Owner without EXPERIENCE_VIEW_ALL → GONE (matches gastronomy parity)
         expect(() => (service as AnyService)._canView(ownerActor, entity)).toThrow(
             expect.objectContaining({ code: ServiceErrorCode.GONE })
         );
@@ -693,7 +693,7 @@ describe('ExperienceService._canView', () => {
         );
     });
 
-    it('should allow staff with COMMERCE_VIEW_ALL to view deleted entities', () => {
+    it('should allow staff with EXPERIENCE_VIEW_ALL to view deleted entities', () => {
         const entity = makeExperienceEntity({
             visibility: VisibilityEnum.PUBLIC,
             deletedAt: new Date()

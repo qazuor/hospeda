@@ -56,9 +56,9 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('checkCanCreateCommerce', () => {
-    it('should allow actor with COMMERCE_CREATE', () => {
+    it('should allow actor with GASTRONOMY_CREATE', () => {
         expect(() =>
-            checkCanCreateCommerce(makeActor([PermissionEnum.COMMERCE_CREATE]), {})
+            checkCanCreateCommerce(makeActor([PermissionEnum.GASTRONOMY_CREATE]), {})
         ).not.toThrow();
     });
 
@@ -107,45 +107,57 @@ describe('checkCanCreateCommerce', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkCanEditAll', () => {
-    it('should allow actor with COMMERCE_EDIT_ALL', () => {
+    it('should allow actor with GASTRONOMY_EDIT_ALL', () => {
         expect(() =>
-            checkCanEditAll(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), {})
+            checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {}, 'gastronomy')
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_EDIT_ALL', () => {
-        expectForbidden(() => checkCanEditAll(makeActor([]), {}));
+    it('should forbid actor without GASTRONOMY_EDIT_ALL', () => {
+        expectForbidden(() => checkCanEditAll(makeActor([]), {}, 'gastronomy'));
     });
 });
 
 // ---------------------------------------------------------------------------
-// checkCanEditOwn (SPEC-253 D2=b: single COMMERCE_EDIT_OWN, section param dropped)
+// checkCanEditOwn (SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN, section param dropped)
 // ---------------------------------------------------------------------------
 
 describe('checkCanEditOwn', () => {
     const entity = { ownerId: 'actor-1' };
     const nonOwnedEntity = { ownerId: 'other-user' };
 
-    it('should allow actor with COMMERCE_EDIT_ALL (staff bypass, any entity)', () => {
+    it('should allow actor with GASTRONOMY_EDIT_ALL (staff bypass, any entity)', () => {
         expect(() =>
-            checkCanEditOwn(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), nonOwnedEntity)
+            checkCanEditOwn(
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]),
+                nonOwnedEntity,
+                'gastronomy'
+            )
         ).not.toThrow();
     });
 
-    it('should allow owner with COMMERCE_EDIT_OWN', () => {
+    it('should allow owner with GASTRONOMY_EDIT_OWN', () => {
         expect(() =>
-            checkCanEditOwn(makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'actor-1'), entity)
+            checkCanEditOwn(
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'actor-1'),
+                entity,
+                'gastronomy'
+            )
         ).not.toThrow();
     });
 
-    it('should forbid owner with COMMERCE_EDIT_OWN who is NOT the entity owner', () => {
+    it('should forbid owner with GASTRONOMY_EDIT_OWN who is NOT the entity owner', () => {
         expectForbidden(() =>
-            checkCanEditOwn(makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'other-actor'), entity)
+            checkCanEditOwn(
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'other-actor'),
+                entity,
+                'gastronomy'
+            )
         );
     });
 
     it('should forbid actor with no permissions', () => {
-        expectForbidden(() => checkCanEditOwn(makeActor([]), entity));
+        expectForbidden(() => checkCanEditOwn(makeActor([]), entity, 'gastronomy'));
     });
 });
 
@@ -154,14 +166,14 @@ describe('checkCanEditOwn', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkCanDeleteCommerce', () => {
-    it('should allow actor with COMMERCE_DELETE', () => {
+    it('should allow actor with GASTRONOMY_DELETE', () => {
         expect(() =>
-            checkCanDeleteCommerce(makeActor([PermissionEnum.COMMERCE_DELETE]), {})
+            checkCanDeleteCommerce(makeActor([PermissionEnum.GASTRONOMY_DELETE]), {}, 'gastronomy')
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_DELETE', () => {
-        expectForbidden(() => checkCanDeleteCommerce(makeActor([]), {}));
+    it('should forbid actor without GASTRONOMY_DELETE', () => {
+        expectForbidden(() => checkCanDeleteCommerce(makeActor([]), {}, 'gastronomy'));
     });
 });
 
@@ -170,12 +182,14 @@ describe('checkCanDeleteCommerce', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkCanViewAll', () => {
-    it('should allow actor with COMMERCE_VIEW_ALL', () => {
-        expect(() => checkCanViewAll(makeActor([PermissionEnum.COMMERCE_VIEW_ALL]))).not.toThrow();
+    it('should allow actor with GASTRONOMY_VIEW_ALL', () => {
+        expect(() =>
+            checkCanViewAll(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'gastronomy')
+        ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_VIEW_ALL', () => {
-        expectForbidden(() => checkCanViewAll(makeActor([])));
+    it('should forbid actor without GASTRONOMY_VIEW_ALL', () => {
+        expectForbidden(() => checkCanViewAll(makeActor([]), 'gastronomy'));
     });
 });
 
@@ -184,9 +198,9 @@ describe('checkCanViewAll', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkCanAdminListCommerce', () => {
-    it('should allow actor with COMMERCE_VIEW_ALL', () => {
+    it('should allow actor with GASTRONOMY_VIEW_ALL', () => {
         expect(() =>
-            checkCanAdminListCommerce(makeActor([PermissionEnum.COMMERCE_VIEW_ALL]))
+            checkCanAdminListCommerce(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]), 'gastronomy')
         ).not.toThrow();
     });
 
@@ -197,7 +211,7 @@ describe('checkCanAdminListCommerce', () => {
     });
 
     it('should forbid actor with neither permission', () => {
-        expectForbidden(() => checkCanAdminListCommerce(makeActor([])));
+        expectForbidden(() => checkCanAdminListCommerce(makeActor([]), 'gastronomy'));
     });
 });
 
@@ -206,63 +220,59 @@ describe('checkCanAdminListCommerce', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkCanModerateReview', () => {
-    it('should allow actor with COMMERCE_MODERATE_REVIEW', () => {
+    it('should allow actor with GASTRONOMY_MODERATE_REVIEW', () => {
         expect(() =>
-            checkCanModerateReview(makeActor([PermissionEnum.COMMERCE_MODERATE_REVIEW]))
+            checkCanModerateReview(
+                makeActor([PermissionEnum.GASTRONOMY_MODERATE_REVIEW]),
+                'gastronomy'
+            )
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_MODERATE_REVIEW', () => {
-        expectForbidden(() => checkCanModerateReview(makeActor([])));
+    it('should forbid actor without GASTRONOMY_MODERATE_REVIEW', () => {
+        expectForbidden(() => checkCanModerateReview(makeActor([]), 'gastronomy'));
     });
 });
 
 // ---------------------------------------------------------------------------
 // HOS-1077 — per-vertical split
 //
-// The three properties that make the expand release safe, asserted against the
-// real check functions rather than a hand-rolled context:
-//
-//   1. The legacy `commerce.*` permission still passes (dual-read) — nobody
-//      loses access while live `role_permission` rows are backfilled.
-//   2. The vertical's own permission passes — the split is usable on day one.
-//   3. A gastronomy permission does NOT pass an experience check, and vice
-//      versa. This is the bug the issue is about: today one grant covers both
-//      verticals, so "moderates restaurants" implies "moderates excursions".
-//      If this block goes green with the vertical argument removed, the split
-//      is decorative.
+// Every check names its vertical, and only that vertical's permission passes.
 // ---------------------------------------------------------------------------
 
 describe('HOS-1077 per-vertical permission split', () => {
     const ownedEntity = { ownerId: 'actor-1' };
 
-    describe('the legacy commerce.* family still passes (dual-read)', () => {
-        it('accepts COMMERCE_EDIT_ALL on a gastronomy check', () => {
-            expect(() =>
-                checkCanEditAll(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), {}, 'gastronomy')
-            ).not.toThrow();
+    describe('one vertical never authorizes the other (HOS-1417 fail-closed)', () => {
+        it('rejects GASTRONOMY_EDIT_ALL on an experience check', () => {
+            expectForbidden(() =>
+                checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {}, 'experience')
+            );
         });
 
-        it('accepts COMMERCE_EDIT_ALL on an experience check', () => {
-            expect(() =>
-                checkCanEditAll(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), {}, 'experience')
-            ).not.toThrow();
+        it('rejects EXPERIENCE_EDIT_ALL on a gastronomy check', () => {
+            expectForbidden(() =>
+                checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'gastronomy')
+            );
         });
 
-        it('accepts COMMERCE_MODERATION_CHANGE on both verticals', () => {
-            const actor = makeActor([PermissionEnum.COMMERCE_MODERATION_CHANGE]);
-            expect(() => checkCanModerateCommerceListing(actor, 'gastronomy')).not.toThrow();
-            expect(() => checkCanModerateCommerceListing(actor, 'experience')).not.toThrow();
-        });
-
-        it('accepts COMMERCE_EDIT_OWN for the owner of a gastronomy listing', () => {
-            expect(() =>
-                checkCanEditOwn(
-                    makeActor([PermissionEnum.COMMERCE_EDIT_OWN]),
-                    ownedEntity,
+        it('rejects EXPERIENCE_MODERATION_CHANGE on a gastronomy check', () => {
+            expectForbidden(() =>
+                checkCanModerateCommerceListing(
+                    makeActor([PermissionEnum.EXPERIENCE_MODERATION_CHANGE]),
                     'gastronomy'
                 )
-            ).not.toThrow();
+            );
+        });
+
+        it('rejects a gastronomy owner editing their own experience-vertical row', () => {
+            expectForbidden(() =>
+                checkCanEditOwn(
+                    makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'actor-1'),
+                    ownedEntity,
+                    'experience'
+                )
+            );
         });
     });
 
@@ -350,13 +360,14 @@ describe('HOS-1077 per-vertical permission split', () => {
         });
     });
 
-    describe('a vertical permission alone does not pass a vertical-agnostic caller', () => {
-        // Callers that pass no vertical still read the legacy family only. That
-        // is deliberate: those call sites are the ones release 2 must convert,
-        // and a silent fail-open here would hide them.
-        it('GASTRONOMY_EDIT_ALL is refused when no vertical is supplied', () => {
+    describe('delete is scoped to its vertical', () => {
+        it('rejects EXPERIENCE_DELETE on a gastronomy check', () => {
             expectForbidden(() =>
-                checkCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {})
+                checkCanDeleteCommerce(
+                    makeActor([PermissionEnum.EXPERIENCE_DELETE]),
+                    {},
+                    'gastronomy'
+                )
             );
         });
     });

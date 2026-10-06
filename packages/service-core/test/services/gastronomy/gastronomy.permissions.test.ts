@@ -58,9 +58,9 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanCreate', () => {
-    it('should allow actor with COMMERCE_CREATE', () => {
+    it('should allow actor with GASTRONOMY_CREATE', () => {
         expect(() =>
-            checkGastronomyCanCreate(makeActor([PermissionEnum.COMMERCE_CREATE]), {})
+            checkGastronomyCanCreate(makeActor([PermissionEnum.GASTRONOMY_CREATE]), {})
         ).not.toThrow();
     });
 
@@ -85,44 +85,47 @@ describe('checkGastronomyCanCreate', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanEditAll', () => {
-    it('should allow actor with COMMERCE_EDIT_ALL', () => {
+    it('should allow actor with GASTRONOMY_EDIT_ALL', () => {
         expect(() =>
-            checkGastronomyCanEditAll(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), {})
+            checkGastronomyCanEditAll(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {})
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_EDIT_ALL', () => {
+    it('should forbid actor without GASTRONOMY_EDIT_ALL', () => {
         expectForbidden(() => checkGastronomyCanEditAll(makeActor([]), {}));
     });
 });
 
 // ---------------------------------------------------------------------------
-// checkGastronomyCanEditOwn (SPEC-253 D2=b: single COMMERCE_EDIT_OWN)
+// checkGastronomyCanEditOwn (SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanEditOwn', () => {
     const entity = { ownerId: 'actor-uuid-1' };
     const nonOwnedEntity = { ownerId: 'other-owner' };
 
-    it('should allow actor with COMMERCE_EDIT_ALL (staff bypass, any entity)', () => {
+    it('should allow actor with GASTRONOMY_EDIT_ALL (staff bypass, any entity)', () => {
         expect(() =>
-            checkGastronomyCanEditOwn(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), nonOwnedEntity)
+            checkGastronomyCanEditOwn(
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]),
+                nonOwnedEntity
+            )
         ).not.toThrow();
     });
 
-    it('should allow owner with COMMERCE_EDIT_OWN', () => {
+    it('should allow owner with GASTRONOMY_EDIT_OWN', () => {
         expect(() =>
             checkGastronomyCanEditOwn(
-                makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'actor-uuid-1'),
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'actor-uuid-1'),
                 entity
             )
         ).not.toThrow();
     });
 
-    it('should forbid COMMERCE_EDIT_OWN actor who is NOT the owner', () => {
+    it('should forbid GASTRONOMY_EDIT_OWN actor who is NOT the owner', () => {
         expectForbidden(() =>
             checkGastronomyCanEditOwn(
-                makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'other-actor'),
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'other-actor'),
                 entity
             )
         );
@@ -138,13 +141,13 @@ describe('checkGastronomyCanEditOwn', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanDelete', () => {
-    it('should allow actor with COMMERCE_DELETE', () => {
+    it('should allow actor with GASTRONOMY_DELETE', () => {
         expect(() =>
-            checkGastronomyCanDelete(makeActor([PermissionEnum.COMMERCE_DELETE]), {})
+            checkGastronomyCanDelete(makeActor([PermissionEnum.GASTRONOMY_DELETE]), {})
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_DELETE', () => {
+    it('should forbid actor without GASTRONOMY_DELETE', () => {
         expectForbidden(() => checkGastronomyCanDelete(makeActor([]), {}));
     });
 });
@@ -154,13 +157,13 @@ describe('checkGastronomyCanDelete', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanHardDelete', () => {
-    it('should allow actor with COMMERCE_DELETE', () => {
+    it('should allow actor with GASTRONOMY_DELETE', () => {
         expect(() =>
-            checkGastronomyCanHardDelete(makeActor([PermissionEnum.COMMERCE_DELETE]), {})
+            checkGastronomyCanHardDelete(makeActor([PermissionEnum.GASTRONOMY_DELETE]), {})
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_DELETE', () => {
+    it('should forbid actor without GASTRONOMY_DELETE', () => {
         expectForbidden(() => checkGastronomyCanHardDelete(makeActor([]), {}));
     });
 });
@@ -170,13 +173,13 @@ describe('checkGastronomyCanHardDelete', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanRestore', () => {
-    it('should allow actor with COMMERCE_EDIT_ALL', () => {
+    it('should allow actor with GASTRONOMY_EDIT_ALL', () => {
         expect(() =>
-            checkGastronomyCanRestore(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), {})
+            checkGastronomyCanRestore(makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]), {})
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_EDIT_ALL', () => {
+    it('should forbid actor without GASTRONOMY_EDIT_ALL', () => {
         expectForbidden(() => checkGastronomyCanRestore(makeActor([]), {}));
     });
 });
@@ -186,9 +189,9 @@ describe('checkGastronomyCanRestore', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanAdminList', () => {
-    it('should allow actor with COMMERCE_VIEW_ALL', () => {
+    it('should allow actor with GASTRONOMY_VIEW_ALL', () => {
         expect(() =>
-            checkGastronomyCanAdminList(makeActor([PermissionEnum.COMMERCE_VIEW_ALL]))
+            checkGastronomyCanAdminList(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]))
         ).not.toThrow();
     });
 
@@ -202,47 +205,47 @@ describe('checkGastronomyCanAdminList', () => {
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanModerateReview', () => {
-    it('should allow actor with COMMERCE_MODERATE_REVIEW', () => {
+    it('should allow actor with GASTRONOMY_MODERATE_REVIEW', () => {
         expect(() =>
-            checkGastronomyCanModerateReview(makeActor([PermissionEnum.COMMERCE_MODERATE_REVIEW]))
+            checkGastronomyCanModerateReview(makeActor([PermissionEnum.GASTRONOMY_MODERATE_REVIEW]))
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_MODERATE_REVIEW', () => {
+    it('should forbid actor without GASTRONOMY_MODERATE_REVIEW', () => {
         expectForbidden(() => checkGastronomyCanModerateReview(makeActor([])));
     });
 });
 
 // ---------------------------------------------------------------------------
-// checkGastronomyCanEditFaqs (SPEC-253 D2=b: COMMERCE_FAQS_EDIT_OWN replaced by COMMERCE_EDIT_OWN)
+// checkGastronomyCanEditFaqs (SPEC-253 D2=b: COMMERCE_FAQS_EDIT_OWN replaced by GASTRONOMY_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanEditFaqs', () => {
     const entity = { ownerId: 'actor-uuid-1' };
     const nonOwnedEntity = { ownerId: 'other-owner' };
 
-    it('should allow actor with COMMERCE_EDIT_ALL on any entity', () => {
+    it('should allow actor with GASTRONOMY_EDIT_ALL on any entity', () => {
         expect(() =>
             checkGastronomyCanEditFaqs(
-                makeActor([PermissionEnum.COMMERCE_EDIT_ALL]),
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_ALL]),
                 nonOwnedEntity
             )
         ).not.toThrow();
     });
 
-    it('should allow owner with COMMERCE_EDIT_OWN', () => {
+    it('should allow owner with GASTRONOMY_EDIT_OWN', () => {
         expect(() =>
             checkGastronomyCanEditFaqs(
-                makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'actor-uuid-1'),
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'actor-uuid-1'),
                 entity
             )
         ).not.toThrow();
     });
 
-    it('should forbid COMMERCE_EDIT_OWN actor who is NOT the owner', () => {
+    it('should forbid GASTRONOMY_EDIT_OWN actor who is NOT the owner', () => {
         expectForbidden(() =>
             checkGastronomyCanEditFaqs(
-                makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'other-actor'),
+                makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN], 'other-actor'),
                 entity
             )
         );
@@ -261,7 +264,7 @@ describe('checkGastronomyCanView', () => {
     it('should allow any actor (public read)', () => {
         expect(() => checkGastronomyCanView(makeActor([]))).not.toThrow();
         expect(() =>
-            checkGastronomyCanView(makeActor([PermissionEnum.COMMERCE_VIEW_ALL]))
+            checkGastronomyCanView(makeActor([PermissionEnum.GASTRONOMY_VIEW_ALL]))
         ).not.toThrow();
     });
 });
