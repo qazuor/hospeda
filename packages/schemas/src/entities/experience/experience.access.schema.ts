@@ -275,7 +275,7 @@ export type ExperiencePublic = z.infer<typeof ExperiencePublicSchema>;
  * PROTECTED ACCESS SCHEMA
  *
  * Contains data for authenticated users, including ownership and contact info.
- * Used for owner dashboards and COMMERCE_OWNER views.
+ * Used for owner dashboards and EXPERIENCE_OWNER views.
  */
 export const ExperienceProtectedSchema = ExperienceSchema.pick({
     // All public fields

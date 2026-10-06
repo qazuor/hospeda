@@ -207,12 +207,12 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `richDescriptionI18n` — localized rich-text translations
  *
  * Previously-permitted operational sections (unchanged):
- * - `openingHours`    — schedule (gated by `COMMERCE_EDIT_OWN`)
- * - `contactInfo`     — contact details (gated by `COMMERCE_EDIT_OWN`)
- * - `socialNetworks`  — social links (gated by `COMMERCE_EDIT_OWN`)
- * - `media`           — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
- * - `isPriceOnRequest`— price-on-request toggle (gated by `COMMERCE_EDIT_OWN`)
- * - `richDescription` — rich-text description (gated by `COMMERCE_EDIT_OWN`)
+ * - `openingHours`    — schedule (gated by `the vertical's EDIT_OWN`)
+ * - `contactInfo`     — contact details (gated by `the vertical's EDIT_OWN`)
+ * - `socialNetworks`  — social links (gated by `the vertical's EDIT_OWN`)
+ * - `media`           — featured image, gallery, videos (gated by `the vertical's EDIT_OWN`)
+ * - `isPriceOnRequest`— price-on-request toggle (gated by `the vertical's EDIT_OWN`)
+ * - `richDescription` — rich-text description (gated by `the vertical's EDIT_OWN`)
  * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
  *   experience starts (HOS-1048; ficha data, no entitlement)
  * - `meetingPointDirections` — how to GET there (HOS-1049). Accepted by the
@@ -222,8 +222,8 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `whatToBring` / `requirements` — the two practical checklists (HOS-1046)
  * - `cancellationPolicy` — free-text "what if it does not run" (HOS-1047)
  * - `acceptsPrivateGroups` — the group-enquiry toggle (HOS-1056)
- * - `amenityIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
- * - `featureIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
+ * - `amenityIds`      — junction sync (gated by `the vertical's EDIT_OWN`)
+ * - `featureIds`      — junction sync (gated by `the vertical's EDIT_OWN`)
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
@@ -315,7 +315,7 @@ export type ExperienceOwnerUpdateInput = z.infer<typeof ExperienceOwnerUpdateInp
 // ============================================================================
 
 /**
- * Schema for a `COMMERCE_OWNER` self-service listing create
+ * Schema for a `EXPERIENCE_OWNER` self-service listing create
  * (`POST /api/v1/protected/commerce/listings/:entityType`, HOS-166 §7.2).
  * Mirrors {@link GastronomyOwnerCreateInputSchema} — see that schema's JSDoc
  * for the full rationale on why each field is omitted.

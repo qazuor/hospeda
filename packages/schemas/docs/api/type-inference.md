@@ -501,7 +501,7 @@ import { RoleEnumSchema, type RoleEnum } from '@repo/schemas';
 
 // RoleEnum is:
 // 'SUPER_ADMIN' | 'ADMIN' | 'CLIENT_MANAGER' | 'EDITOR' | 'HOST' |
-// 'COMMERCE_OWNER' | 'SPONSOR' | 'USER' | 'GUEST' | 'SYSTEM'
+// 'GASTRONOMY_OWNER' | 'EXPERIENCE_OWNER' | 'SPONSOR' | 'USER' | 'GUEST' | 'SYSTEM'
 
 // An actor holds a SET of roles at once (HOS-296), never a single scalar —
 // and access is always decided by `actor.permissions`, never by role. This

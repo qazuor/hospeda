@@ -157,15 +157,15 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  * - `richDescriptionI18n` — localized rich-text translations
  *
  * Previously-permitted operational sections (unchanged):
- * - `openingHours`   — schedule (gated by `COMMERCE_EDIT_OWN`)
- * - `contactInfo`    — contact details (gated by `COMMERCE_EDIT_OWN`)
- * - `socialNetworks` — social links (gated by `COMMERCE_EDIT_OWN`)
- * - `media`          — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
- * - `menuUrl`        — online menu URL (gated by `COMMERCE_EDIT_OWN`)
- * - `priceRange`     — price-range tier (gated by `COMMERCE_EDIT_OWN`)
- * - `richDescription`— rich-text description (gated by `COMMERCE_EDIT_OWN`)
- * - `amenityIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
- * - `featureIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
+ * - `openingHours`   — schedule (gated by `the vertical's EDIT_OWN`)
+ * - `contactInfo`    — contact details (gated by `the vertical's EDIT_OWN`)
+ * - `socialNetworks` — social links (gated by `the vertical's EDIT_OWN`)
+ * - `media`          — featured image, gallery, videos (gated by `the vertical's EDIT_OWN`)
+ * - `menuUrl`        — online menu URL (gated by `the vertical's EDIT_OWN`)
+ * - `priceRange`     — price-range tier (gated by `the vertical's EDIT_OWN`)
+ * - `richDescription`— rich-text description (gated by `the vertical's EDIT_OWN`)
+ * - `amenityIds`     — junction sync (gated by `the vertical's EDIT_OWN`)
+ * - `featureIds`     — junction sync (gated by `the vertical's EDIT_OWN`)
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
@@ -224,7 +224,7 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
 // ============================================================================
 
 /**
- * Schema for a `COMMERCE_OWNER` self-service listing create
+ * Schema for a `GASTRONOMY_OWNER` self-service listing create
  * (`POST /api/v1/protected/commerce/listings/:entityType`, HOS-166 §7.2).
  *
  * Unlike {@link GastronomyAdminCreateInputSchema} (which trusts the caller for
