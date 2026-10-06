@@ -48,12 +48,52 @@ describe('publish precheck panel content during the billing transition', () => {
         ).toBe(false);
     });
 
+    it('falls back to the property list when a draft has no edit URL', () => {
+        const result = resolvePrecheckPanelContent({
+            ...BASE,
+            editUrl: undefined,
+            decision: 'resume_or_create'
+        });
+        expect(result.actions[0]).toMatchObject({ href: BASE.accountPropertiesUrl });
+    });
+
+    it('defaults to accommodation when no vertical is given', () => {
+        expect(resolvePrecheckPanelContent({ ...BASE, decision: 'upgrade_only' })).toEqual(
+            resolvePrecheckPanelContent({
+                ...BASE,
+                vertical: 'accommodation',
+                decision: 'upgrade_only'
+            })
+        );
+    });
+
+    it('keeps draft copy in each vertical namespace', () => {
+        expect(
+            resolvePrecheckPanelContent({
+                ...BASE,
+                vertical: 'gastronomy',
+                decision: 'resume_or_create'
+            }).titleKey
+        ).toBe('publish.precheck.gastronomy.resumeOrCreate.title');
+    });
+
+    it('uses the right noun in gastronomy fallback copy', () => {
+        const body = resolvePrecheckPanelContent({
+            ...BASE,
+            vertical: 'gastronomy',
+            decision: 'resume_or_create'
+        }).bodyFallback;
+        expect(body).toContain('ficha');
+        expect(body).not.toContain('propiedad');
+    });
+
     it.each([
-        ['accommodation', 'host.pages.nueva.precheck'],
-        ['gastronomy', 'publish.precheck.gastronomy'],
-        ['experience', 'publish.precheck.experience']
+        ['accommodation', 'max_accommodations'],
+        ['gastronomy', 'max_gastronomies'],
+        ['experience', 'max_experiences']
     ] as const)('uses the %s copy namespace', (vertical, namespace) => {
         const result = resolvePrecheckPanelContent({ ...BASE, vertical, decision: 'upgrade_only' });
-        expect(result.titleKey).toBe(`${namespace}.atLimitPanel.title`);
+        expect(result.titleKey).toBe(`billing.limit.${namespace}.atLimitPanel.title`);
+        expect(result.bodyKey).toBe(`billing.limit.${namespace}.atLimitPanel.body`);
     });
 });

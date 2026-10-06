@@ -78,6 +78,13 @@ const PRECHECK_COPY: Readonly<
     }
 };
 
+/** Retained locale key segments from the former publish-limit map. */
+const LIMIT_KEY_BY_PUBLISH_VERTICAL: Readonly<Record<PublishVertical, string>> = {
+    accommodation: 'max_accommodations',
+    gastronomy: 'max_gastronomies',
+    experience: 'max_experiences'
+};
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -201,15 +208,16 @@ export function resolvePrecheckPanelContent(
     } = params;
 
     const { ns, noun, nounPlural } = PRECHECK_COPY[vertical];
+    const limitKey = LIMIT_KEY_BY_PUBLISH_VERTICAL[vertical];
 
     // HOS-1352: transitional until V3 (HOS-1357), see PR: no plan-cap add-on is offered before effective limits exist.
 
     switch (decision) {
         case 'upgrade_only':
             return {
-                titleKey: `${ns}.atLimitPanel.title`,
+                titleKey: `billing.limit.${limitKey}.atLimitPanel.title`,
                 titleFallback: 'Llegaste al límite de tu plan',
-                bodyKey: `${ns}.atLimitPanel.body`,
+                bodyKey: `billing.limit.${limitKey}.atLimitPanel.body`,
                 bodyFallback: `Estás usando {{currentCount}} de {{maxAllowed}} ${nounPlural}. Para publicar otra, actualizá tu plan.`,
                 showQuota: true,
                 bodyPluralBasis: 'maxAllowed',
@@ -218,14 +226,14 @@ export function resolvePrecheckPanelContent(
                         kind: 'link',
                         variant: 'primary',
                         href: subscriptionUrl,
-                        labelKey: `${ns}.atLimitPanel.primaryCta`,
+                        labelKey: `billing.limit.${limitKey}.atLimitPanel.primaryCta`,
                         labelFallback: 'Ver mi suscripción'
                     },
                     {
                         kind: 'link',
                         variant: 'secondary',
                         href: accountPropertiesUrl,
-                        labelKey: `${ns}.atLimitPanel.secondaryCta`,
+                        labelKey: `billing.limit.${limitKey}.atLimitPanel.secondaryCta`,
                         labelFallback: `Ver mis ${nounPlural}`
                     }
                 ]
