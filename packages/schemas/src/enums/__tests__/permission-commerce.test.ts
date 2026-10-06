@@ -1,112 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { PermissionCategoryEnum, PermissionEnum } from '../permission.enum.js';
 
-// ============================================================================
-// SPEC-253 COMMERCE permissions and COMMERCE category
-// (Replaces SPEC-239 test — 10 per-section perms removed, COMMERCE_EDIT_OWN added)
-// ============================================================================
+// TEST:U1:5 / TEST:U1:6 — retired role and seven permission values stay absent.
+import { RoleEnum } from '../role.enum.js';
 
-describe('SPEC-253 COMMERCE permissions', () => {
-    it('should have COMMERCE category in PermissionCategoryEnum', () => {
-        expect(PermissionCategoryEnum.COMMERCE).toBe('COMMERCE');
-    });
+const RETIRED_PERMISSIONS = [
+    'commerce.editOwn',
+    'commerce.create',
+    'commerce.viewAll',
+    'commerce.editAll',
+    'commerce.delete',
+    'commerce.moderateReview',
+    'commerce.moderationChange'
+] as const;
 
-    describe('owner write permission (single, SPEC-253 D2=b)', () => {
-        it('should have COMMERCE_EDIT_OWN with correct value', () => {
-            expect(PermissionEnum.COMMERCE_EDIT_OWN).toBe('commerce.editOwn');
-        });
-    });
-
-    describe('admin-level permissions (5)', () => {
-        it('should have COMMERCE_CREATE', () => {
-            expect(PermissionEnum.COMMERCE_CREATE).toBe('commerce.create');
-        });
-
-        it('should have COMMERCE_VIEW_ALL', () => {
-            expect(PermissionEnum.COMMERCE_VIEW_ALL).toBe('commerce.viewAll');
-        });
-
-        it('should have COMMERCE_EDIT_ALL', () => {
-            expect(PermissionEnum.COMMERCE_EDIT_ALL).toBe('commerce.editAll');
-        });
-
-        it('should have COMMERCE_DELETE', () => {
-            expect(PermissionEnum.COMMERCE_DELETE).toBe('commerce.delete');
-        });
-
-        it('should have COMMERCE_MODERATE_REVIEW', () => {
-            expect(PermissionEnum.COMMERCE_MODERATE_REVIEW).toBe('commerce.moderateReview');
-        });
-
-        it('should have COMMERCE_MODERATION_CHANGE (HOS-686)', () => {
-            expect(PermissionEnum.COMMERCE_MODERATION_CHANGE).toBe('commerce.moderationChange');
-        });
-    });
-
-    it('should have exactly 7 COMMERCE entries (COMMERCE_EDIT_OWN + 6 admin)', () => {
-        // Arrange
-        const commercePerms = Object.values(PermissionEnum).filter((v) =>
-            v.startsWith('commerce.')
-        );
-        // Assert: 1 owner (COMMERCE_EDIT_OWN) + 6 admin-level = 7 total
-        // (was 15 in SPEC-239: 10 per-section + 5 admin; collapsed to 6 in
-        // SPEC-253 D2=b; COMMERCE_MODERATION_CHANGE added in HOS-686)
-        expect(commercePerms).toHaveLength(7);
-    });
-
-    describe('HOS-686 listing moderation is NOT review moderation', () => {
-        it('the two are distinct enum values', () => {
-            // The naming trap named in HOS-589 §6.7: grepping "moderate" under
-            // commerce finds the REVIEW permission first, and concluding the
-            // listing case is already covered is the reasonable — and wrong —
-            // reading.
-            expect(PermissionEnum.COMMERCE_MODERATION_CHANGE).not.toBe(
-                PermissionEnum.COMMERCE_MODERATE_REVIEW
-            );
-        });
-
-        it('is spelled camelCase like the rest of the commerce family, not dotted', () => {
-            // `commerce.moderation.change` (the accommodation/event/post
-            // spelling) would add a 14th dual-spelled family to the baseline
-            // frozen by `permission-naming-convention.guard.test.ts`.
-            expect(PermissionEnum.COMMERCE_MODERATION_CHANGE.split('.')).toHaveLength(2);
-        });
-    });
-
-    it('should NOT contain any of the removed per-section COMMERCE_*_EDIT_OWN perms', () => {
-        const removedValues = [
-            'commerce.schedule.editOwn',
-            'commerce.contact.editOwn',
-            'commerce.social.editOwn',
-            'commerce.media.editOwn',
-            'commerce.menu.editOwn',
-            'commerce.priceRange.editOwn',
-            'commerce.richDescription.editOwn',
-            'commerce.amenities.editOwn',
-            'commerce.features.editOwn',
-            'commerce.faqs.editOwn'
-        ];
-        const allValues = Object.values(PermissionEnum);
-        for (const removed of removedValues) {
-            expect(allValues).not.toContain(removed);
+describe('retired commerce role and permissions', () => {
+    it('has none of the seven retired permission values', () => {
+        const values = Object.values(PermissionEnum);
+        for (const permission of RETIRED_PERMISSIONS) {
+            expect(values).not.toContain(permission);
         }
     });
 
-    it('owner with COMMERCE_EDIT_OWN can gate on the single permission (AC-2)', () => {
-        // The value must be distinct from any admin perm to ensure correct gating.
-        expect(PermissionEnum.COMMERCE_EDIT_OWN).not.toBe(PermissionEnum.COMMERCE_EDIT_ALL);
-        expect(PermissionEnum.COMMERCE_EDIT_OWN).not.toBe(PermissionEnum.COMMERCE_CREATE);
+    it('has no COMMERCE_OWNER role', () => {
+        expect(Object.values(RoleEnum)).not.toContain('COMMERCE_OWNER');
+    });
+
+    it('retains the COMMERCE category for U1.3', () => {
+        expect(PermissionCategoryEnum.COMMERCE).toBe('COMMERCE');
     });
 });
-
-// ============================================================================
-// HOS-1077 — the per-vertical split of the COMMERCE family
-//
-// The block above freezes the legacy seven at exactly 7. It keeps passing after
-// the split precisely because the new values are `gastronomy.*`/`experience.*`
-// and not `commerce.*` — which is the naming decision, restated as a test that
-// would have caught the alternative.
-// ============================================================================
 
 describe('HOS-1077 per-vertical commerce permissions', () => {
     const VERTICALS = [

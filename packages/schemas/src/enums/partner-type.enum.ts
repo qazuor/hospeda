@@ -4,7 +4,7 @@
  */
 export enum PartnerTypeEnum {
     /** Commercial business partner */
-    COMMERCE = 'commerce',
+    BUSINESS = 'business',
     /** Non-governmental organization partner */
     NGO = 'ngo',
     /** Institutional partner (government, university, etc.) */

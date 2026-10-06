@@ -72,7 +72,7 @@ export enum PermissionCategoryEnum {
      * reason gastronomy could not be granted without experience. Split into
      * {@link PermissionCategoryEnum.GASTRONOMY} and
      * {@link PermissionCategoryEnum.EXPERIENCE}; kept through the expand release
-     * because the `commerce.*` permissions it classifies are still live.
+     * until the separate category cleanup in U1.3.
      */
     COMMERCE = 'COMMERCE',
     /** Gastronomy listings — the gastronomy half of the commerce split (HOS-1077). */
@@ -945,7 +945,7 @@ export enum PermissionEnum {
     BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
     BILLING_VIEW_OWN = 'billing.view.own', // Allows HOST to view their own billing data (subscription, invoices, payments, usage) via /protected/billing/*.
     SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
-    BILLING_ADDON_PURCHASE = 'billing.addon.purchase', // Allows a paying tier (HOST, COMMERCE_OWNER) to reach the self-service add-on catalog and buy from it (HOS-726). Deliberately NOT granted to plain USER: the add-on page gates per product domain on an entitlement-granting subscription, so a tourist only ever reaches its empty state. Distinct from BILLING_MANAGE, which is the admin-tier gate for activating/expiring add-ons on someone else's behalf.
+    BILLING_ADDON_PURCHASE = 'billing.addon.purchase', // Allows paying owner tiers to reach the self-service add-on catalog and buy from it (HOS-726). Deliberately NOT granted to plain USER: the add-on page gates per product domain on an entitlement-granting subscription, so a tourist only ever reaches its empty state. Distinct from BILLING_MANAGE, which is the admin-tier gate for activating/expiring add-ons on someone else's behalf.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
@@ -997,64 +997,34 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
     MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
 
-    // COMMERCE: Owner-scoped edit permission (SPEC-253)
-    // Replaces the 10 per-section COMMERCE_*_EDIT_OWN permissions (removed in SPEC-253 D2=b).
-    // A COMMERCE_OWNER holding this permission may edit all owner-accessible sections of
-    // their own commerce listing (operational fields, FAQs, i18n, etc.).
-    COMMERCE_EDIT_OWN = 'commerce.editOwn', // Allows a COMMERCE_OWNER to edit their own commerce listing (single owner write permission, SPEC-253).
-
-    // COMMERCE: Admin-level permissions (SPEC-239)
-    COMMERCE_CREATE = 'commerce.create', // Allows creating a new commerce listing.
-    COMMERCE_VIEW_ALL = 'commerce.viewAll', // Allows viewing all commerce listings (including private/draft).
-    COMMERCE_EDIT_ALL = 'commerce.editAll', // Allows editing any commerce listing regardless of ownership.
-    COMMERCE_DELETE = 'commerce.delete', // Allows soft-deleting any commerce listing.
-    COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview', // Allows moderating reviews on commerce listings.
-    // HOS-686: the LISTING's own moderation verdict — distinct from
-    // COMMERCE_MODERATE_REVIEW above, which moderates reviews written ABOUT a
-    // listing. Grepping "moderate" under commerce finds the review permission
-    // first, so the two are spelled apart on purpose.
-    //
-    // Spelled `commerce.moderationChange` (camelCase second segment), NOT
-    // `commerce.moderation.change` like its accommodation/event/post
-    // counterparts: the whole `commerce.*` family is camelCase, and a dotted
-    // third segment here would add a fourteenth dual-spelled family to the
-    // baseline frozen by `permission-naming-convention.guard.test.ts`.
-    COMMERCE_MODERATION_CHANGE = 'commerce.moderationChange', // Allows changing the moderation state of a commerce LISTING (gastronomy/experience).
-
-    // GASTRONOMY / EXPERIENCE: the per-vertical split of the `commerce.*` family (HOS-1077).
+    // GASTRONOMY / EXPERIENCE: the per-vertical replacement for the retired
+    // `commerce.*` family (HOS-1077 / HOS-1417).
     //
     // ## Why these exist
     //
-    // `commerce.*` names TWO product verticals at once, so it is impossible to
+    // `commerce.*` named TWO product verticals at once, so it was impossible to
     // grant edit rights over gastronomy without also granting them over
-    // experiences: a restaurant moderator moderates excursions, by construction.
+    // experiences: a restaurant moderator could moderate excursions too.
     // Accommodation never had that problem — it is one vertical with its own
     // family. These 14 give gastronomy and experience the same vocabulary.
     //
     // ## Deliberate shape: 7 each, NOT 64 each
     //
-    // This is a SPLIT of the seven, not an alignment with accommodation's 64.
+    // This replaced the seven old permissions, without aligning with accommodation's 64.
     // Roughly 14 of accommodation's 64 are per-SECTION listing permissions
     // (`amenities.edit`, `basicInfo.edit`, `faqs.edit`, `gallery.manage`, …)
-    // that SPEC-253 D2=b deliberately collapsed into the single
-    // `COMMERCE_EDIT_OWN` — re-creating them here would revert that decision.
+    // that SPEC-253 D2=b deliberately collapsed into one owner permission.
     // Others correspond to functionality commerce does not have
     // (`occupancy.manage`, `iaContent.approve`, `location.exact.view`), and a
     // permission no route ever demands is dead letter.
     //
     // ## Spelling
     //
-    // Two segments, camelCase second segment — identical to the `commerce.*`
-    // family they mirror, and for the same reason: a dotted third segment would
+    // Two segments, camelCase second segment — matching the retired family's
+    // spelling. A dotted third segment would
     // add a dual-spelled family to the baseline frozen by
     // `permission-naming-convention.guard.test.ts`.
     //
-    // ## Migration state (HOS-1077 release 1 = EXPAND)
-    //
-    // These coexist with `commerce.*`. Every gate reads BOTH (the vertical value
-    // OR the legacy one), so nobody loses access while live `role_permission`
-    // rows are backfilled. Release 2 (contract) removes the `commerce.*` seven,
-    // the `COMMERCE_OWNER` role and the dual-read.
     GASTRONOMY_EDIT_OWN = 'gastronomy.editOwn', // Allows a GASTRONOMY_OWNER to edit their own gastronomy listing.
     GASTRONOMY_CREATE = 'gastronomy.create', // Allows creating a new gastronomy listing.
     GASTRONOMY_VIEW_ALL = 'gastronomy.viewAll', // Allows viewing all gastronomy listings (including private/draft).
