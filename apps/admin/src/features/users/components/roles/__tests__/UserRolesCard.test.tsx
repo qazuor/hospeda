@@ -239,7 +239,8 @@ describe('UserRolesCard (HOS-296)', () => {
         expect(offered).not.toContain('SYSTEM');
         expect(offered).not.toContain('GUEST');
         expect(offered).toContain('SPONSOR');
-        expect(offered).toContain('COMMERCE_OWNER');
+        expect(offered).toContain('GASTRONOMY_OWNER');
+        expect(offered).toContain('EXPERIENCE_OWNER');
     });
 
     it('grants ADDITIVELY — the POST body carries only the new role', async () => {

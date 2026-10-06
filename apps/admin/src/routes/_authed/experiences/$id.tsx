@@ -228,7 +228,7 @@ function ExperienceViewPage() {
                     entityId={id}
                     entityName={experience?.name ?? id}
                     entityLabel={t('admin-entities.entities.experience.singular')}
-                    permission={PermissionEnum.COMMERCE_DELETE}
+                    permission={PermissionEnum.EXPERIENCE_DELETE}
                     useDeleteMutation={useDeleteExperienceMutation}
                     variant="full"
                     entityGender="f"
@@ -244,6 +244,7 @@ function ExperienceViewPage() {
                 entityName={experience?.name ?? id}
                 entityLabelKey="admin-entities.entities.experience.singular"
                 currentValue={experience?.moderationState}
+                permission={PermissionEnum.EXPERIENCE_MODERATION_CHANGE}
                 useModerateMutation={useModerateExperienceMutation}
             />
 

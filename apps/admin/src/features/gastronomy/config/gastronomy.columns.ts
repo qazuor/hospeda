@@ -188,7 +188,7 @@ export const createGastronomyColumns = (
                     entityId: row.id,
                     entityName: row.name,
                     entityLabel: t('admin-entities.entities.gastronomy.singular'),
-                    permission: PermissionEnum.COMMERCE_DELETE,
+                    permission: PermissionEnum.GASTRONOMY_DELETE,
                     useDeleteMutation: useDeleteGastronomyMutation,
                     variant: 'icon',
                     entityGender: 'f'

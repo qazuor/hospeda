@@ -3,7 +3,7 @@
  *
  * Uses `EntityCreatePageBase` with the experience consolidated config.
  * Supports an optional owner assignment via OwnerSelect (existing users only).
- * Gate-protected by COMMERCE_CREATE.
+ * Gate-protected by EXPERIENCE_CREATE.
  *
  * Mirrors the gastronomy create page pattern (SPEC-240 T-028).
  */
@@ -65,7 +65,7 @@ function ExperienceCreatePage() {
     };
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_CREATE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.EXPERIENCE_CREATE]}>
             <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={ExperienceAdminCreateInputSchema}

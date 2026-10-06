@@ -170,7 +170,7 @@ export const createExperienceColumns = (
                     entityId: row.id ?? '',
                     entityName: row.name ?? row.id ?? '',
                     entityLabel: t('admin-entities.entities.experience.singular'),
-                    permission: PermissionEnum.COMMERCE_DELETE,
+                    permission: PermissionEnum.EXPERIENCE_DELETE,
                     useDeleteMutation: useDeleteExperienceMutation,
                     variant: 'icon',
                     entityGender: 'f'

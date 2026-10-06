@@ -2,7 +2,7 @@
  * Gastronomy edit page — allows admins to update an existing gastronomy listing.
  *
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
- * Gate-protected by COMMERCE_EDIT_ALL.
+ * Gate-protected by GASTRONOMY_EDIT_ALL.
  *
  * HOS-382: the `media.featuredImage` / `media.gallery` field handlers were
  * removed. Those fields used to buffer uploads into a `media` object on
@@ -45,7 +45,7 @@ function GastronomyEditPage() {
     const entityData = useGastronomyPage(id);
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.GASTRONOMY_EDIT_ALL]}>
             <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                     <PageTabs

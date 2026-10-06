@@ -108,7 +108,7 @@ function extractConflictField(message: string): string | null {
 // ---------------------------------------------------------------------------
 
 const TYPE_OPTIONS: ReadonlyArray<{ value: PartnerTypeEnum; label: string }> = [
-    { value: PartnerTypeEnum.COMMERCE, label: 'Comercio' },
+    { value: PartnerTypeEnum.BUSINESS, label: 'Comercio' },
     { value: PartnerTypeEnum.NGO, label: 'ONG' },
     { value: PartnerTypeEnum.INSTITUTION, label: 'Institución' }
 ];
@@ -219,7 +219,7 @@ export function PartnerForm({
         defaultValues: {
             name: initialData?.name ?? '',
             slug: initialData?.slug ?? '',
-            type: initialData?.type ?? PartnerTypeEnum.COMMERCE,
+            type: initialData?.type ?? PartnerTypeEnum.BUSINESS,
             tier: initialData?.tier ?? PartnerTierEnum.GOLD,
             logoUrl: initialData?.logoUrl ?? null,
             websiteUrl: initialData?.websiteUrl ?? null,

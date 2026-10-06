@@ -30,7 +30,7 @@ export const createPartnersColumns = (t: ColumnTFunction): readonly ColumnConfig
             columnType: ColumnType.BADGE,
             badgeOptions: [
                 {
-                    value: 'commerce',
+                    value: 'business',
                     label: t('admin-filters.partnerType.commerce' as TranslationKey),
                     color: BadgeColor.BLUE
                 },

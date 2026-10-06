@@ -306,7 +306,7 @@ describe('createExperienceConsolidatedConfig — practical-details section', () 
         // route; a key per ficha field manufactures exactly that problem.
         const section = getPracticalDetailsSection();
 
-        expect(section?.permissions?.view).toEqual([PermissionEnum.COMMERCE_VIEW_ALL]);
-        expect(section?.permissions?.edit).toEqual([PermissionEnum.COMMERCE_EDIT_ALL]);
+        expect(section?.permissions?.view).toEqual([PermissionEnum.EXPERIENCE_VIEW_ALL]);
+        expect(section?.permissions?.edit).toEqual([PermissionEnum.EXPERIENCE_EDIT_ALL]);
     });
 });

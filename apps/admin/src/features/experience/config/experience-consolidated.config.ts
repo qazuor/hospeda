@@ -92,8 +92,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+            view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
         },
         fields: [
             {
@@ -105,8 +105,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Categoría de la actividad turística',
                 placeholder: 'Seleccioná el tipo…',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -125,8 +125,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Cómo se cobra la experiencia',
                 placeholder: 'Seleccioná la unidad…',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -146,8 +146,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
                     'Precio en centavos (ej: 150000 = $1500,00). Ignorado si "Consultar precio" está activo.',
                 placeholder: '0',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     min: 0,
@@ -162,8 +162,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
                 label: 'Consultar precio',
                 description: 'Cuando está activo muestra "Consultar precio" en lugar del monto.',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {}
             }
@@ -206,8 +206,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+            view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
         },
         fields: [
             {
@@ -220,8 +220,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
                     'Dirección o referencia del lugar donde arranca la experiencia. Puede ser un punto de referencia y no una calle.',
                 placeholder: 'Ej: Muelle 3 del puerto, frente a la caseta azul',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {}
             },
@@ -234,8 +234,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
                 description: 'Latitud en grados decimales (WGS84). Opcional.',
                 placeholder: '-32.4825',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     min: -90,
@@ -252,8 +252,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
                 description: 'Longitud en grados decimales (WGS84). Opcional.',
                 placeholder: '-58.2333',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     min: -180,
@@ -305,8 +305,8 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+            view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
         },
         fields: [
             {
@@ -319,8 +319,8 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
                     'Cuánto dura la experiencia, en minutos. 150 son dos horas y media. Vacío = sin declarar.',
                 placeholder: '150',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     min: 1,
@@ -339,8 +339,8 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
                 placeholder:
                     'Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {}
             },
@@ -353,8 +353,8 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
                 description:
                     'Cuando está activo, la ficha pública muestra una invitación a consultar por grupos. No publica tarifario.',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {}
             }
@@ -386,11 +386,11 @@ export const createExperienceConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedEntityConfig => ({
     sections: [
-        createCommerceIdentitySection(),
+        createCommerceIdentitySection('experience'),
         createExperienceSpecificSection(),
         createMeetingPointSection(),
         createPracticalDetailsSection(),
-        createCommerceOperationalSection()
+        createCommerceOperationalSection('experience')
     ],
     metadata: {
         title: t('admin-entities.entities.experience.singular'),

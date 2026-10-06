@@ -26,7 +26,7 @@
  */
 
 import type { TranslationKey } from '@repo/i18n';
-import { PermissionEnum } from '@repo/schemas';
+import type { PermissionEnum } from '@repo/schemas';
 import {
     InlineStateSelectCell,
     type InlineUpdateMutationLike
@@ -46,6 +46,8 @@ export interface CommerceListingModerationCardProps {
     readonly entityLabelKey: TranslationKey;
     /** Current `moderationState` of the listing. */
     readonly currentValue: unknown;
+    /** Moderation permission for this listing vertical. */
+    readonly permission: PermissionEnum;
     /**
      * The vertical's listing-moderation mutation hook — `(id) => mutation`.
      * Must be the LISTING hook, never the review one: they post to different
@@ -64,6 +66,7 @@ export function CommerceListingModerationCard({
     entityName,
     entityLabelKey,
     currentValue,
+    permission,
     useModerateMutation
 }: CommerceListingModerationCardProps) {
     const { t } = useTranslations();
@@ -84,7 +87,7 @@ export function CommerceListingModerationCard({
                     currentValue={currentValue}
                     successMessageKey="admin-entities.messages.moderationChanged"
                     options={CONTENT_MODERATION_OPTIONS(t)}
-                    permission={PermissionEnum.COMMERCE_MODERATION_CHANGE}
+                    permission={permission}
                     useUpdateMutation={useModerateMutation}
                     confirmValues={['REJECTED']}
                     confirmCopyKey="reject"

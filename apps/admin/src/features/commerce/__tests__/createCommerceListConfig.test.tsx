@@ -19,6 +19,7 @@
  *         throwing (shell renders from a config object — no forked shell code).
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -216,8 +217,24 @@ describe('createCommerceListConfig — extraListConfig overrides', () => {
 // AC-4: createCommerceIdentitySection
 // ---------------------------------------------------------------------------
 
+it('selects only the requested vertical permissions for shared sections', () => {
+    const gastronomy = createCommerceOperationalSection('gastronomy');
+    const experience = createCommerceOperationalSection('experience');
+    expect(gastronomy.permissions?.edit).toEqual([
+        PermissionEnum.GASTRONOMY_EDIT_OWN,
+        PermissionEnum.GASTRONOMY_EDIT_ALL
+    ]);
+    expect(experience.permissions?.edit).toEqual([
+        PermissionEnum.EXPERIENCE_EDIT_OWN,
+        PermissionEnum.EXPERIENCE_EDIT_ALL
+    ]);
+    expect(createCommerceIdentitySection('experience').permissions?.view).toEqual([
+        PermissionEnum.EXPERIENCE_VIEW_ALL
+    ]);
+});
+
 describe('createCommerceIdentitySection', () => {
-    const section = createCommerceIdentitySection();
+    const section = createCommerceIdentitySection('gastronomy');
 
     it('AC-4: returns a ConsolidatedSectionConfig with id "commerce-identity"', () => {
         expect(section.id).toBe('commerce-identity');
@@ -289,7 +306,7 @@ describe('createCommerceIdentitySection', () => {
 // ---------------------------------------------------------------------------
 
 describe('createCommerceOperationalSection', () => {
-    const section = createCommerceOperationalSection();
+    const section = createCommerceOperationalSection('gastronomy');
 
     it('AC-5: returns a ConsolidatedSectionConfig with id "commerce-operational"', () => {
         expect(section.id).toBe('commerce-operational');

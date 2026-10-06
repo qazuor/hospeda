@@ -213,7 +213,7 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
      * (HOS-686).
      *
      * Calls `POST ${apiEndpoint}/${id}/moderate` with `{ moderationState }`,
-     * gated server-side by `COMMERCE_MODERATION_CHANGE`.
+     * gated server-side by the vertical's `MODERATION_CHANGE`.
      *
      * ## Not `useModerateReviewMutation`
      *

@@ -9,7 +9,7 @@
  *  - extraFilters include a type filter
  *  - ExperiencesRoute is a valid route object
  *  - ExperiencesPageComponent is a function
- *  - EXPERIENCE_VIEW_PERMISSION is the COMMERCE_VIEW_ALL permission
+ *  - EXPERIENCE_VIEW_PERMISSION is the EXPERIENCE_VIEW_ALL permission
  */
 
 import { PermissionEnum } from '@repo/schemas';
@@ -79,7 +79,7 @@ describe('ExperiencesPageComponent', () => {
 });
 
 describe('EXPERIENCE_VIEW_PERMISSION', () => {
-    it('should be COMMERCE_VIEW_ALL', () => {
-        expect(EXPERIENCE_VIEW_PERMISSION).toBe(PermissionEnum.COMMERCE_VIEW_ALL);
+    it('should be EXPERIENCE_VIEW_ALL', () => {
+        expect(EXPERIENCE_VIEW_PERMISSION).toBe(PermissionEnum.EXPERIENCE_VIEW_ALL);
     });
 });

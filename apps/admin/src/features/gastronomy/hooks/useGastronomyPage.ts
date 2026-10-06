@@ -53,10 +53,10 @@ export const useGastronomyPage = (entityId: string) => {
             // HOS-1077 dual-read: these arrays are evaluated with `.some(...)`,
             // so naming both families IS the dual-read — no new mechanism.
             // Release 2 drops the COMMERCE_* entries.
-            view: [PermissionEnum.GASTRONOMY_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL],
-            create: [PermissionEnum.GASTRONOMY_CREATE, PermissionEnum.COMMERCE_CREATE],
-            delete: [PermissionEnum.GASTRONOMY_DELETE, PermissionEnum.COMMERCE_DELETE]
+            view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+            edit: [PermissionEnum.GASTRONOMY_EDIT_ALL],
+            create: [PermissionEnum.GASTRONOMY_CREATE],
+            delete: [PermissionEnum.GASTRONOMY_DELETE]
         }),
         []
     );

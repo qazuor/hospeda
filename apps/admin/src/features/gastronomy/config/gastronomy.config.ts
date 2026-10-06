@@ -92,7 +92,7 @@ const PRICE_RANGE_OPTIONS = [
  * Built on top of the shared commerce layer via `createCommerceListConfig`.
  *
  * Endpoint: `GET /api/v1/admin/gastronomies`
- * Permissions gate: COMMERCE_VIEW_ALL
+ * Permissions gate: GASTRONOMY_VIEW_ALL
  */
 export const gastronomyListConfig = createCommerceListConfig<GastronomyListItem>({
     entityName: 'gastronomies',
@@ -135,4 +135,4 @@ const { component, route } = createEntityListPage(gastronomyListConfig);
 export { component as GastronomiesPageComponent, route as GastronomiesRoute };
 
 /** Required permission to view the gastronomy list. */
-export const GASTRONOMY_VIEW_PERMISSION = PermissionEnum.COMMERCE_VIEW_ALL;
+export const GASTRONOMY_VIEW_PERMISSION = PermissionEnum.GASTRONOMY_VIEW_ALL;

@@ -188,16 +188,7 @@ const catalogoSidebar: SidebarInput = {
             label: { es: 'Gastronomía', en: 'Gastronomy', pt: 'Gastronomia' },
             icon: 'OffersIcon',
             defaultOpen: false,
-            // HOS-1077 dual-read. This gate is OR-semantics (see
-            // `isPermissionGateGranted`), so listing both families is all a
-            // dual-read needs here — no new mechanism. Release 2 drops the
-            // COMMERCE_* entries.
-            permissions: [
-                'GASTRONOMY_VIEW_ALL',
-                'GASTRONOMY_CREATE',
-                'COMMERCE_VIEW_ALL',
-                'COMMERCE_CREATE'
-            ],
+            permissions: ['GASTRONOMY_VIEW_ALL', 'GASTRONOMY_CREATE'],
             items: [
                 {
                     type: 'link',
@@ -205,7 +196,7 @@ const catalogoSidebar: SidebarInput = {
                     label: { es: 'Listado', en: 'List', pt: 'Lista' },
                     icon: 'ListIcon',
                     route: '/gastronomies',
-                    permissions: ['GASTRONOMY_VIEW_ALL', 'COMMERCE_VIEW_ALL']
+                    permissions: ['GASTRONOMY_VIEW_ALL']
                 },
                 {
                     type: 'link',
@@ -217,7 +208,7 @@ const catalogoSidebar: SidebarInput = {
                     },
                     icon: 'AddIcon',
                     route: '/gastronomies/new',
-                    permissions: ['GASTRONOMY_CREATE', 'COMMERCE_CREATE']
+                    permissions: ['GASTRONOMY_CREATE']
                 }
             ]
         },
@@ -229,13 +220,7 @@ const catalogoSidebar: SidebarInput = {
             label: { es: 'Experiencias', en: 'Experiences', pt: 'Experiências' },
             icon: 'OffersIcon',
             defaultOpen: false,
-            // HOS-1077 dual-read — see the gastronomy group above.
-            permissions: [
-                'EXPERIENCE_VIEW_ALL',
-                'EXPERIENCE_CREATE',
-                'COMMERCE_VIEW_ALL',
-                'COMMERCE_CREATE'
-            ],
+            permissions: ['EXPERIENCE_VIEW_ALL', 'EXPERIENCE_CREATE'],
             items: [
                 {
                     type: 'link',
@@ -243,7 +228,7 @@ const catalogoSidebar: SidebarInput = {
                     label: { es: 'Listado', en: 'List', pt: 'Lista' },
                     icon: 'ListIcon',
                     route: '/experiences',
-                    permissions: ['EXPERIENCE_VIEW_ALL', 'COMMERCE_VIEW_ALL']
+                    permissions: ['EXPERIENCE_VIEW_ALL']
                 },
                 {
                     type: 'link',
@@ -255,7 +240,7 @@ const catalogoSidebar: SidebarInput = {
                     },
                     icon: 'AddIcon',
                     route: '/experiences/new',
-                    permissions: ['EXPERIENCE_CREATE', 'COMMERCE_CREATE']
+                    permissions: ['EXPERIENCE_CREATE']
                 }
             ]
         },
