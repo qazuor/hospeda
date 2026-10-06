@@ -40,7 +40,13 @@ import {
     signupUser,
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
-import { demoteHostToUser, execSQL, getDbPool, getUserRoles } from '../../fixtures/db-helpers.ts';
+import {
+    demoteHostToUser,
+    execSQL,
+    getDbPool,
+    getUserRoles,
+    hasOldBillingSchema
+} from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -56,6 +62,11 @@ test.describe('HOST-07a: onboarding create-always + re-promotion @p0 @host @onbo
     });
 
     test('post1=created, post2=created (2nd draft), demote+post3=created (3rd draft, re-promoted)', async () => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         const user = await signupUser({}, { apiBaseUrl: API_URL });
         userId = user.id;
         await forceVerifyEmail(user.id);

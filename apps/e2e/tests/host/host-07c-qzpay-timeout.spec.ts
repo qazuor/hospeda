@@ -34,7 +34,7 @@
 
 import { expect, test } from '@playwright/test';
 import { createUser, ensureBillingCustomer, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { createQZPayTestControl } from '../../fixtures/qzpay-test-control.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -54,6 +54,11 @@ test.describe('HOST-07c: MP timeout during checkout @p0 @host @billing @resilien
     test('preapproval timeout: checkout fails and no subscription row is left behind', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         const qzpayControl = createQZPayTestControl(API_URL);
 
         // Skip the test cleanly when the test-control endpoint isn't mounted.

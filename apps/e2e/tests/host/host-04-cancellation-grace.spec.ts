@@ -27,7 +27,12 @@ import {
     createUser,
     forceVerifyEmail
 } from '../../fixtures/api-helpers.ts';
-import { execSQL, forcePeriodEndPast, getDbPool } from '../../fixtures/db-helpers.ts';
+import {
+    execSQL,
+    forcePeriodEndPast,
+    getDbPool,
+    hasOldBillingSchema
+} from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -45,6 +50,11 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
     test('paid host: write OK → cancel keeps grace → period_end past blocks writes', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // Paywall here is enforced by the date-aware publish gate (checkEligibility
         // + isSubscriptionLive, SPEC-217): a cancelled sub whose current_period_end is
         // past the 6h grace returns subscription_required. Deterministic against the

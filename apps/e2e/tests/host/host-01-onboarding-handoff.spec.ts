@@ -43,7 +43,12 @@ import {
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool, getUserRoles } from '../../fixtures/db-helpers.ts';
+import {
+    execSQL,
+    getDbPool,
+    getUserRoles,
+    hasOldBillingSchema
+} from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -72,6 +77,11 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         page,
         context: _context
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // ───────────────────────────────────────────────────────────────────
         // Web leg: signup + email verification + mini-form
         // ───────────────────────────────────────────────────────────────────

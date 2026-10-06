@@ -26,7 +26,7 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { expect, test } from '@playwright/test';
 import { createSubscription, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -45,6 +45,11 @@ test.describe('E2E-8: subscription cancel flow @p0 @host @billing @cross-app', (
     test('cancel flips status, preserves period_end, optional cancel-notification email', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
         await forceVerifyEmail(host.id);
