@@ -170,7 +170,8 @@ overrides:
   # declares the 3.x line. Fixing an advisory must not smuggle in a major.
   "fast-uri@>=3.0.0 <4": ">=3.1.5 <4"
   devalue: ">=5.9.3 <6"
-  seroval: ">=1.4.1"
+  # GHSA-jp82-f5mq-hwhp: solid-js (admin devtools) resolves seroval <=1.6.2.
+  seroval: ">=1.6.3 <2"
   tar: ">=7.5.11"
   tar-fs: ">=3.1.1"
   node-forge: ">=1.4.0"
@@ -329,6 +330,12 @@ overrides:
   # GHSA-ch52-4w7c-c8xp: Astro resolves 4.2.0. The advisory names 4.2.1
   # as patched, but npm's first published fixed version is 4.3.0.
   http-cache-semantics: ">=4.3.0 <5"
+  # GHSA-68fv-2mgg-jv7q: @tailwindcss/node (admin) resolves source-map-js
+  # <1.2.2. Keep the 1.x line its consumers declare.
+  source-map-js: ">=1.2.2 <2"
+  # GHSA-vc2v-76pw-4v95: @expo/cli (mobile, via @better-auth/expo) resolves
+  # compression 1.8.1. Keep the 1.x line.
+  compression: ">=1.8.2 <2"
 
 auditConfig:
   ignoreGhsas:
