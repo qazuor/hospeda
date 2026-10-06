@@ -119,14 +119,7 @@ const HOST_PERMISSION = 'accommodation.create' as const;
  * Permission that marks a user as a commerce listing owner (gastronomy /
  * experience self-service, SPEC-253). Fed to PostHog as `is_commerce_owner`.
  */
-const COMMERCE_OWNER_PERMISSIONS = [
-    'commerce.editOwn',
-    // HOS-1077: the per-vertical replacements. An account holding only one of
-    // these is a commerce owner too — reading just the legacy value would have
-    // filed every gastronomy-only owner as a `tourist` in PostHog.
-    'gastronomy.editOwn',
-    'experience.editOwn'
-] as const;
+const COMMERCE_OWNER_PERMISSIONS = ['gastronomy.editOwn', 'experience.editOwn'] as const;
 
 function resolveAnalyticsUserType(input: {
     readonly permissions: readonly string[] | null;
@@ -216,7 +209,7 @@ export function UserMenu({
     //   - the real segmentation levers here are already the permission-derived
     //     `is_host` / `is_commerce_owner` / `is_staff` booleans below, which
     //     are unchanged and keep working for a multi-hat user (a HOST +
-    //     COMMERCE_OWNER now correctly reports BOTH as true instead of
+    //     a vertical owner correctly reports BOTH as true instead of
     //     whichever single role happened to win).
     // Sorted so the property value is stable across identify calls and PostHog
     // does not record a person-property change on every page load.

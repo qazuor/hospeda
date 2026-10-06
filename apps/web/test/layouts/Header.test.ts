@@ -95,7 +95,7 @@ describe('Header.astro — Publicar CTA', () => {
     it('does NOT gate the CTA behind an isAlreadyHost / entitlements check (AC-12)', () => {
         // The old header hid the CTA entirely for an existing HOST via an SSR
         // entitlements fetch. HOS-691 AC-12 requires the control to be
-        // present for a HOST (and a COMMERCE_OWNER) account, so that check —
+        // present for a HOST (and a GASTRONOMY_OWNER) account, so that check —
         // and the SSR fetch backing it — must be gone. Checks the actual
         // declaration/fetch-call shape rather than a bare substring, which
         // this file's own explanatory comments may legitimately mention.

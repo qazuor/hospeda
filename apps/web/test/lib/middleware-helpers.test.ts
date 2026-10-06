@@ -1114,7 +1114,7 @@ describe('buildChangePasswordRedirect', () => {
  * protected route that is NOT the change-password route itself (avoiding a
  * redirect loop). These assertions verify that the commerce self-service area
  * (`/[lang]/mi-cuenta/comercio/...`) falls inside that gated set — so a freshly
- * provisioned COMMERCE_OWNER is forced through `cambiar-contrasena` before
+ * provisioned GASTRONOMY_OWNER is forced through `cambiar-contrasena` before
  * reaching it. The gate mechanism itself is reused from SPEC-239 (verify-only).
  */
 describe('SPEC-249 — commerce area force-password gating (T-020 / T-023)', () => {
@@ -1302,7 +1302,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
                     name: 'Multi Hat',
                     email: 'multi@test',
                     image: 'https://img.test/a.png',
-                    roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+                    roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
                     permissions: ['post.create', 'post.update.own']
                 },
                 isAuthenticated: true
@@ -1313,7 +1313,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
             id: 'u1',
             name: 'Multi Hat',
             email: 'multi@test',
-            roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+            roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
             permissions: ['post.create', 'post.update.own'],
             image: 'https://img.test/a.png',
             mustChangePassword: false,
@@ -1477,7 +1477,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
                 actor: {
                     id: 'u1',
                     email: 'u@test',
-                    roles: ['COMMERCE_OWNER'],
+                    roles: ['GASTRONOMY_OWNER'],
                     mustChangePassword: true
                 },
                 isAuthenticated: true

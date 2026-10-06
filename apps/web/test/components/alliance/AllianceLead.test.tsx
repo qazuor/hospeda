@@ -536,7 +536,7 @@ describe('AllianceLead', () => {
                 target: { value: 'Acme SA' }
             });
             fireEvent.change(screen.getByLabelText(/^partnerType/i), {
-                target: { value: 'commerce' }
+                target: { value: 'business' }
             });
             fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
                 target: { value: 'Agencia de turismo' }
@@ -561,7 +561,7 @@ describe('AllianceLead', () => {
                 target: { value: 'Acme SA' }
             });
             fireEvent.change(screen.getByLabelText(/^partnerType/i), {
-                target: { value: 'commerce' }
+                target: { value: 'business' }
             });
             fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
                 target: { value: 'Agencia de turismo' }
@@ -608,7 +608,7 @@ describe('AllianceLead', () => {
                 target: { value: 'Acme SA' }
             });
             fireEvent.change(screen.getByLabelText(/^partnerType/i), {
-                target: { value: 'commerce' }
+                target: { value: 'business' }
             });
             fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
                 target: { value: 'Agencia de turismo' }
@@ -635,7 +635,7 @@ describe('AllianceLead', () => {
                 target: { value: 'Acme SA' }
             });
             fireEvent.change(screen.getByLabelText(/^partnerType/i), {
-                target: { value: 'commerce' }
+                target: { value: 'business' }
             });
             fireEvent.change(screen.getByLabelText(/^website/i), {
                 target: { value: 'https://acme.com' }
@@ -675,7 +675,7 @@ describe('AllianceLead', () => {
                 target: { value: 'Acme SA' }
             });
             fireEvent.change(screen.getByLabelText(/^partnerType/i), {
-                target: { value: 'commerce' }
+                target: { value: 'business' }
             });
             fireEvent.change(screen.getByLabelText(/^partnershipType/i), {
                 target: { value: 'Agencia' }
@@ -701,7 +701,7 @@ describe('AllianceLead', () => {
                     ].sort()
                 );
                 expect(body.businessName).toBe('Acme SA');
-                expect(body.partnerType).toBe('commerce');
+                expect(body.partnerType).toBe('business');
                 // partnershipType stays prose — it is what alliance the
                 // applicant is proposing, not a typed column.
                 expect(body).not.toHaveProperty('partnershipType');

@@ -13,7 +13,7 @@
  * ## What changed under this file's feet
  *
  * HOS-687 opened these two pages to any signed-in account, because demanding
- * `COMMERCE_EDIT_OWN` on the page that GRANTS it made the role unreachable.
+ * the vertical EDIT_OWN permission on the page that grants it made publishing unreachable.
  * HOS-1156 then moved the form itself to `/publicar/{vertical}/` and left both
  * URLs as 301s — so the login redirect these cases used to assert is gone too,
  * along with the login it required: the page they now point at is public (D-1).

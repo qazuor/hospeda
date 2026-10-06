@@ -415,7 +415,7 @@ export interface SessionUser {
     readonly name: string;
     readonly email: string;
     /**
-     * Every role the user holds (USER, HOST, COMMERCE_OWNER, ADMIN, ...).
+     * Every role the user holds (USER, HOST, GASTRONOMY_OWNER, ADMIN, ...).
      *
      * HOS-296 replaced the former single `role` scalar with this set: one
      * account can wear several hats at once and there is deliberately NO

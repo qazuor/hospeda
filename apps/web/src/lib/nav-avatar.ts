@@ -47,7 +47,11 @@ function findAccountNavItemById(id: string): NavItem | undefined {
         if (found) {
             return found.requiredPermission
                 ? found
-                : { ...found, requiredPermission: group.requiredPermission };
+                : {
+                      ...found,
+                      requiredPermission: group.requiredPermission,
+                      requiredPermissions: group.requiredPermissions
+                  };
         }
     }
     return undefined;
@@ -71,7 +75,7 @@ export interface PickBusinessShortcutResult {
  * in priority order and returns the first item whose `requiredPermission` is
  * present in `permissions` — never more than one, even if the user qualifies
  * for several (e.g. a user with both `accommodation.create` and
- * `commerce.editOwn` sees only "Panel del anfitrión").
+ * `gastronomy.editOwn` sees only "Panel del anfitrión").
  *
  * @param params - `{ permissions }` (RO-RO).
  * @returns `{ item }` — the prioritized shortcut, or `{ item: null }` if none apply.

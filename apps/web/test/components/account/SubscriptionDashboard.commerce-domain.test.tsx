@@ -134,7 +134,7 @@ vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
  */
 const COMMERCE_OWNER: SubscriptionDashboardUser = {
     id: 'user-commerce-1',
-    roles: ['USER', 'COMMERCE_OWNER']
+    roles: ['USER', 'GASTRONOMY_OWNER']
 };
 
 const HOST: SubscriptionDashboardUser = { id: 'user-host-1', roles: ['USER', 'HOST'] };

@@ -21,7 +21,7 @@
  *
  * HOS-693 §6.2 removed the HOS-257 `prefill` prop (sourced from the caller's
  * own admin-provisioned commerce lead, which no longer exists — HOS-687
- * grants COMMERCE_OWNER on listing creation instead). The form always starts
+ * grants the matching vertical owner role on listing creation instead). The form always starts
  * blank now, which was already its behaviour for the common case
  * (AC-10/AC-11 predate this and still hold).
  *

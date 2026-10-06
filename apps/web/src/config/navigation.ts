@@ -70,6 +70,8 @@ export interface NavItem {
      * evaluated by `isVisibleByPermissions` / `isVisibleByRoles`.
      */
     readonly requiredPermission?: PermissionEnum;
+    /** Any one of these permissions makes this navigation node visible. */
+    readonly requiredPermissions?: readonly PermissionEnum[];
     /** Which surfaces render this item. */
     readonly surfaces: readonly NavSurface[];
     /** `data-tour` target id for the welcome tour (`src/config/tours.ts`), if any. */
@@ -90,6 +92,8 @@ export interface NavGroup {
      * "always visible" (e.g. the `cuenta` and `turista` groups).
      */
     readonly requiredPermission?: PermissionEnum;
+    /** Any one of these permissions makes this navigation node visible. */
+    readonly requiredPermissions?: readonly PermissionEnum[];
     /**
      * When `true`, surfaces should render this group's single item without a
      * group header (used for the `comercio` "cajón" group per spec §6.1).
@@ -170,7 +174,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                  * `BILLING_ADDON_PURCHASE` exists FOR this gate (owner decision,
                  * 2026-08-21). Nothing pre-existing fit: `requiredPermission`
                  * holds one permission with no OR, so `ACCOMMODATION_CREATE`
-                 * would have hidden the entry from the COMMERCE_OWNER who buys
+                 * would have hidden the entry from the GASTRONOMY_OWNER or EXPERIENCE_OWNER who buys
                  * `extra-gastronomies-1`, while `SUBSCRIPTION_VIEW_OWN` and
                  * `BILLING_VIEW_OWN` — the two that read like a fit — are both
                  * granted to plain `RoleEnum.USER` by the seed and would have
@@ -178,7 +182,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                  * above declares no permission at all, so there was nothing to
                  * copy from it either.
                  *
-                 * Granted to HOST, COMMERCE_OWNER, ADMIN and SUPER_ADMIN — see
+                 * Granted to HOST, GASTRONOMY_OWNER or EXPERIENCE_OWNER, ADMIN and SUPER_ADMIN — see
                  * the entry in `PERMISSION_ROLE_MAP` (`src/lib/nav-gating.ts`),
                  * the seed baseline, and the
                  * `0067-hos-726-addon-purchase-permission` data-migration.
@@ -324,7 +328,10 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
     {
         id: 'comercio',
         i18nKey: 'account.nav.groupCommerce',
-        requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
+        requiredPermissions: [
+            PermissionEnum.GASTRONOMY_EDIT_OWN,
+            PermissionEnum.EXPERIENCE_EDIT_OWN
+        ],
         suppressHeaderWhenSingle: true,
         items: [
             {
@@ -427,6 +434,8 @@ export const PROVIDER_NAV_GROUP: NavGroup = {
  */
 export type NavVisibilityPredicate = (node: {
     readonly requiredPermission?: PermissionEnum;
+    /** Any one of these permissions makes this navigation node visible. */
+    readonly requiredPermissions?: readonly PermissionEnum[];
 }) => boolean;
 
 /** Input for `getNavForSurface`. */

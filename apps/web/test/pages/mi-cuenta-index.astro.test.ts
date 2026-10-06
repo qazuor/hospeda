@@ -32,7 +32,7 @@ describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
         expect(source).toContain('hasCommerceNavAccess');
         // The repo's rule since HOS-296: gate on the role SET via the shared
         // predicate, never by comparing against a role string here.
-        expect(source).not.toMatch(/roles.*includes\(\s*['"]COMMERCE_OWNER['"]\s*\)/);
+        expect(source).not.toMatch(/roles.*includes\(\s*['"]GASTRONOMY_OWNER['"]\s*\)/);
     });
 
     it('offers the merchant a way into their listing from the dashboard', () => {

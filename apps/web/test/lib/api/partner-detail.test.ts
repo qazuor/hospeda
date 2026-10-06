@@ -18,7 +18,7 @@ const apiPayload = {
     slug: 'acme-litoral',
     name: 'Acme Litoral',
     description: 'Excursiones por el Litoral.',
-    type: 'commerce',
+    type: 'business',
     tier: 'gold',
     logoUrl: 'https://cdn.example.com/acme.png',
     websiteUrl: 'https://acme.example.com',
@@ -38,7 +38,7 @@ describe('toPartnerDetailProps', () => {
         // Assert
         expect(props.slug).toBe('acme-litoral');
         expect(props.name).toBe('Acme Litoral');
-        expect(props.type).toBe('commerce');
+        expect(props.type).toBe('business');
         expect(props.description).toBe('Excursiones por el Litoral.');
         expect(props.logoUrl).toBe('https://cdn.example.com/acme.png');
         expect(props.websiteUrl).toBe('https://acme.example.com');

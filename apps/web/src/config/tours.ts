@@ -163,15 +163,8 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
     {
         id: 'web.gastronomy.welcome',
         version: 1,
-        // HOS-788: split out of the old shared `web.commerce.welcome`. Gated
-        // on the vertical-specific `GASTRONOMY_OWNER` role only (HOS-1077),
-        // NOT the retiring `COMMERCE_OWNER` — `createForOwner`
-        // (`packages/service-core/src/services/commerce/base-commerce-listing.service.ts`)
-        // grants BOTH roles in the same transaction as the listing, so every
-        // real gastronomy owner already carries `GASTRONOMY_OWNER`. Including
-        // the shared legacy role here too would have made a pure
-        // EXPERIENCE_OWNER (who also gets `COMMERCE_OWNER`) match this tour
-        // as well, showing gastronomy-only content to an experience owner.
+        // HOS-788: each welcome tour is gated by its own vertical owner role.
+        // A gastronomy owner does not acquire the experience tour.
         roles: ['GASTRONOMY_OWNER'],
         trigger: 'auto-first-visit',
         steps: [
@@ -222,7 +215,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         version: 1,
         // HOS-788: split out of the old shared `web.commerce.welcome`, same
         // reasoning as `web.gastronomy.welcome` above — gated on
-        // `EXPERIENCE_OWNER` only, never the retiring `COMMERCE_OWNER`.
+        // `EXPERIENCE_OWNER` only, so gastronomy owners do not see this tour.
         //
         // No experience-exclusive step: `ExperienceCertificatePanel`
         // (`CommerceListingActions.client.tsx`) is real and experience-only,

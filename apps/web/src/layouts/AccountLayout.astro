@@ -48,7 +48,7 @@ const resolvedDescription = description ?? t('account.description');
 
 // HOS-296: the whole role SET drives the sidebar. A node is visible when ANY
 // held role grants its permission, so a user who is both HOST and
-// COMMERCE_OWNER sees both nav groups (AC-1).
+// GASTRONOMY_OWNER sees both nav groups (AC-1).
 const userRoles = Astro.locals.user?.roles ?? null;
 
 /**

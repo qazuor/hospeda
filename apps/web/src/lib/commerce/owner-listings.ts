@@ -74,7 +74,7 @@ export async function fetchOwnerCommerceListings({
  * fields) for the editor, from the vertical's `GET /{vertical}/{id}` endpoint.
  *
  * The protected getById endpoint enforces ownership server-side: non-owners
- * (without COMMERCE_VIEW_ALL) receive NOT_FOUND, so this call already fails
+ * (without the vertical's VIEW_ALL permission) receive NOT_FOUND, so this call already fails
  * cleanly for non-owners. The `editar.astro` page redirects on null/NOT_FOUND,
  * which remains the correct UX behaviour.
  *

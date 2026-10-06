@@ -201,8 +201,8 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
-                permissions: ['commerce.editOwn'],
-                roles: ['USER', 'COMMERCE_OWNER'],
+                permissions: ['gastronomy.editOwn'],
+                roles: ['USER', 'GASTRONOMY_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -225,8 +225,8 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
-                permissions: ['accommodation.create', 'commerce.editOwn'],
-                roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+                permissions: ['accommodation.create', 'gastronomy.editOwn'],
+                roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
                 cachedAt: Date.now()
             })
         );
