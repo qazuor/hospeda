@@ -161,15 +161,15 @@ export function CommercePlanChange({
             directionOf(plan.slug) === 'downgrade'
                 ? effectiveDateLabel === null
                     ? t(
-                          'commerce.owner.planChange.note.downgradeNoDate',
+                          'listing.owner.planChange.note.downgradeNoDate',
                           'Sin cargo. Empieza a regir al final del período que ya pagaste.'
                       )
                     : t(
-                          'commerce.owner.planChange.note.downgrade',
+                          'listing.owner.planChange.note.downgrade',
                           'Sin cargo. Empieza a regir el {date}.'
                       ).replace('{date}', effectiveDateLabel)
                 : t(
-                      'commerce.owner.planChange.note.upgrade',
+                      'listing.owner.planChange.note.upgrade',
                       'Pagás la diferencia proporcional ahora y empieza a regir enseguida.'
                   );
     }
@@ -208,7 +208,7 @@ export function CommercePlanChange({
      */
     function showApiError(error: ApiError | undefined, scope: 'preview' | 'change'): void {
         const generic = t(
-            'commerce.owner.planChange.error.generic',
+            'listing.owner.planChange.error.generic',
             'No pudimos cambiar tu plan. Probá de nuevo más tarde.'
         );
         if (error?.reason === TRIAL_REQUIRES_CHECKOUT_REASON) {
@@ -223,13 +223,13 @@ export function CommercePlanChange({
         if (scope === 'preview' && status === 422) {
             setErrorMessage(
                 t(
-                    'commerce.owner.planChange.error.previewUnavailable',
+                    'listing.owner.planChange.error.previewUnavailable',
                     'No pudimos calcular qué fichas quedarían fuera de ese plan. Probá de nuevo más tarde.'
                 )
             );
             return;
         }
-        setErrorMessage(t(`commerce.owner.planChange.error.${status}`, generic));
+        setErrorMessage(t(`listing.owner.planChange.error.${status}`, generic));
     }
 
     /** Step 1 → 2, or straight to the POST when there is nothing to choose. */
@@ -345,7 +345,7 @@ export function CommercePlanChange({
     return (
         <div className={styles.summary}>
             <span className={styles.currentPlan}>
-                {t('commerce.owner.planChange.currentLabel', 'Plan actual')}
+                {t('listing.owner.planChange.currentLabel', 'Plan actual')}
                 {': '}
                 <strong>{currentPlanName}</strong>
             </span>
@@ -358,13 +358,13 @@ export function CommercePlanChange({
                     setIsPickerOpen(true);
                 }}
             >
-                {t('commerce.owner.planChange.cta', 'Cambiar de plan')}
+                {t('listing.owner.planChange.cta', 'Cambiar de plan')}
             </button>
 
             <Dialog
                 isOpen={isPickerOpen}
                 onClose={closeFlow}
-                ariaLabel={t('commerce.owner.planPicker.title', 'Elegí tu plan')}
+                ariaLabel={t('listing.owner.planPicker.title', 'Elegí tu plan')}
                 size="md"
             >
                 {step === 'picker' && (
@@ -399,13 +399,13 @@ export function CommercePlanChange({
                 {step === 'scheduled' && scheduledFor !== null && (
                     <>
                         <DialogHeader>
-                            {t('commerce.owner.planChange.scheduled.title', 'Cambio programado')}
+                            {t('listing.owner.planChange.scheduled.title', 'Cambio programado')}
                         </DialogHeader>
                         <DialogBody className={styles.scheduled}>
                             {errorBanner}
                             <p className={styles.scheduledBody}>
                                 {t(
-                                    'commerce.owner.planChange.scheduled.body',
+                                    'listing.owner.planChange.scheduled.body',
                                     'Tu plan pasa a {plan} el {date}. Hasta entonces no cambia nada: seguís con {current} y todas tus fichas visibles.'
                                 )
                                     .replace('{plan}', targetPlanName)

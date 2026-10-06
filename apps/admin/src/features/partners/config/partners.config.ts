@@ -22,7 +22,7 @@ export const partnersConfig: EntityConfig<Partner> = {
                 type: 'select',
                 order: 1,
                 options: [
-                    { value: 'business', labelKey: 'admin-filters.partnerType.commerce' },
+                    { value: 'business', labelKey: 'admin-filters.partnerType.business' },
                     { value: 'ngo', labelKey: 'admin-filters.partnerType.ngo' },
                     { value: 'institution', labelKey: 'admin-filters.partnerType.institution' }
                 ]

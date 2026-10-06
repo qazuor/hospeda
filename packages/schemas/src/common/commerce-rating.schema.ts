@@ -32,10 +32,10 @@ export const CommerceRatingSchema = z.object({
      */
     food: z
         .number({
-            message: 'zodError.common.commerceRating.food.required'
+            message: 'zodError.common.listingRating.food.required'
         })
-        .min(0, { message: 'zodError.common.commerceRating.food.min' })
-        .max(5, { message: 'zodError.common.commerceRating.food.max' }),
+        .min(0, { message: 'zodError.common.listingRating.food.min' })
+        .max(5, { message: 'zodError.common.listingRating.food.max' }),
 
     /**
      * Service quality score.
@@ -44,10 +44,10 @@ export const CommerceRatingSchema = z.object({
      */
     service: z
         .number({
-            message: 'zodError.common.commerceRating.service.required'
+            message: 'zodError.common.listingRating.service.required'
         })
-        .min(0, { message: 'zodError.common.commerceRating.service.min' })
-        .max(5, { message: 'zodError.common.commerceRating.service.max' }),
+        .min(0, { message: 'zodError.common.listingRating.service.min' })
+        .max(5, { message: 'zodError.common.listingRating.service.max' }),
 
     /**
      * Ambiance / atmosphere score.
@@ -56,10 +56,10 @@ export const CommerceRatingSchema = z.object({
      */
     ambiance: z
         .number({
-            message: 'zodError.common.commerceRating.ambiance.required'
+            message: 'zodError.common.listingRating.ambiance.required'
         })
-        .min(0, { message: 'zodError.common.commerceRating.ambiance.min' })
-        .max(5, { message: 'zodError.common.commerceRating.ambiance.max' }),
+        .min(0, { message: 'zodError.common.listingRating.ambiance.min' })
+        .max(5, { message: 'zodError.common.listingRating.ambiance.max' }),
 
     /**
      * Value for money score.
@@ -68,10 +68,10 @@ export const CommerceRatingSchema = z.object({
      */
     value: z
         .number({
-            message: 'zodError.common.commerceRating.value.required'
+            message: 'zodError.common.listingRating.value.required'
         })
-        .min(0, { message: 'zodError.common.commerceRating.value.min' })
-        .max(5, { message: 'zodError.common.commerceRating.value.max' })
+        .min(0, { message: 'zodError.common.listingRating.value.min' })
+        .max(5, { message: 'zodError.common.listingRating.value.max' })
 });
 
 export type CommerceRating = z.infer<typeof CommerceRatingSchema>;

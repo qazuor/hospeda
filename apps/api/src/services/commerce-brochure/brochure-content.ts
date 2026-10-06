@@ -296,12 +296,12 @@ function commonFooterCopy(input: { locale: Locale }): { qrHint: string; footer: 
     return {
         qrHint: t({
             locale: input.locale,
-            key: 'commerce.brochure.qrHint',
+            key: 'listing.brochure.qrHint',
             fallback: 'Escaneá el código para ver la ficha completa.'
         }),
         footer: t({
             locale: input.locale,
-            key: 'commerce.brochure.footer',
+            key: 'listing.brochure.footer',
             fallback: 'hospeda.com.ar'
         })
     };

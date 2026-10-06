@@ -229,7 +229,7 @@ export function CommerceVenueEventsManager({
         setState('idle');
 
         if (result.ok) {
-            setMessage(t('commerce.owner.editor.venueEventsManager.saved', 'Agenda guardada.'));
+            setMessage(t('listing.owner.editor.venueEventsManager.saved', 'Agenda guardada.'));
             return;
         }
 
@@ -240,7 +240,7 @@ export function CommerceVenueEventsManager({
             setIsLocked(true);
             setMessage(
                 t(
-                    'commerce.owner.editor.venueEventsManager.locked',
+                    'listing.owner.editor.venueEventsManager.locked',
                     'Mantener una agenda de eventos está disponible desde el plan Profesional.'
                 )
             );
@@ -248,7 +248,7 @@ export function CommerceVenueEventsManager({
         }
 
         setMessage(
-            t('commerce.owner.editor.venueEventsManager.saveError', 'No se pudo guardar la agenda.')
+            t('listing.owner.editor.venueEventsManager.saveError', 'No se pudo guardar la agenda.')
         );
     }, [basePath, entries, t]);
 
@@ -261,11 +261,11 @@ export function CommerceVenueEventsManager({
             id="editor-venue-events"
         >
             <h2 className={styles.heading}>
-                {t('commerce.owner.editor.venueEventsManager.title', 'Agenda del local')}
+                {t('listing.owner.editor.venueEventsManager.title', 'Agenda del local')}
             </h2>
             <p className={styles.intro}>
                 {t(
-                    'commerce.owner.editor.venueEventsManager.intro',
+                    'listing.owner.editor.venueEventsManager.intro',
                     'Contale a tus comensales cuándo pasa algo en tu local: música en vivo, happy hour, la promo de los martes.'
                 )}
             </p>
@@ -293,7 +293,7 @@ export function CommerceVenueEventsManager({
                 disabled={atMax}
                 onClick={addEntry}
             >
-                {t('commerce.owner.editor.venueEventsManager.addEntry', 'Agregar evento')}
+                {t('listing.owner.editor.venueEventsManager.addEntry', 'Agregar evento')}
             </button>
 
             {atMax ? (
@@ -306,7 +306,7 @@ export function CommerceVenueEventsManager({
                      * wired now rather than left for whoever lowers it.
                      */}
                     {tPlural(
-                        'commerce.owner.editor.venueEventsManager.maxReached',
+                        'listing.owner.editor.venueEventsManager.maxReached',
                         GASTRONOMY_EVENTS_MAX_ENTRIES,
                         { max: GASTRONOMY_EVENTS_MAX_ENTRIES }
                     )}
@@ -327,8 +327,8 @@ export function CommerceVenueEventsManager({
                 }}
             >
                 {state === 'saving'
-                    ? t('commerce.owner.editor.venueEventsManager.saving', 'Guardando…')
-                    : t('commerce.owner.editor.venueEventsManager.save', 'Guardar agenda')}
+                    ? t('listing.owner.editor.venueEventsManager.saving', 'Guardando…')
+                    : t('listing.owner.editor.venueEventsManager.save', 'Guardar agenda')}
             </button>
 
             {message ? (

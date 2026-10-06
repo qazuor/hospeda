@@ -179,16 +179,16 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
             {
                 id: 'commerce',
                 target: '[data-tour="commerce"]',
-                title: 'account.welcomeTour.commerce.title',
-                body: 'account.welcomeTour.commerceGastronomy.body',
+                title: 'account.welcomeTour.listing.title',
+                body: 'account.welcomeTour.listingGastronomy.body',
                 side: 'right',
                 align: 'start'
             },
             {
                 id: 'commerce-listings',
                 target: '[data-tour="commerce-listings"]',
-                title: 'account.welcomeTour.commerceListings.title',
-                body: 'account.welcomeTour.commerceListings.body',
+                title: 'account.welcomeTour.myListings.title',
+                body: 'account.welcomeTour.myListings.body',
                 side: 'top',
                 align: 'start'
             },
@@ -203,8 +203,8 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
             {
                 id: 'commerce-views',
                 target: '[data-tour="commerce-views"]',
-                title: 'account.welcomeTour.commerceViews.title',
-                body: 'account.welcomeTour.commerceViews.body',
+                title: 'account.welcomeTour.listingViews.title',
+                body: 'account.welcomeTour.listingViews.body',
                 side: 'top',
                 align: 'start'
             }
@@ -239,24 +239,24 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
             {
                 id: 'commerce',
                 target: '[data-tour="commerce"]',
-                title: 'account.welcomeTour.commerce.title',
-                body: 'account.welcomeTour.commerceExperience.body',
+                title: 'account.welcomeTour.listing.title',
+                body: 'account.welcomeTour.listingExperience.body',
                 side: 'right',
                 align: 'start'
             },
             {
                 id: 'commerce-listings',
                 target: '[data-tour="commerce-listings"]',
-                title: 'account.welcomeTour.commerceListings.title',
-                body: 'account.welcomeTour.commerceListings.body',
+                title: 'account.welcomeTour.myListings.title',
+                body: 'account.welcomeTour.myListings.body',
                 side: 'top',
                 align: 'start'
             },
             {
                 id: 'commerce-views',
                 target: '[data-tour="commerce-views"]',
-                title: 'account.welcomeTour.commerceViews.title',
-                body: 'account.welcomeTour.commerceViews.body',
+                title: 'account.welcomeTour.listingViews.title',
+                body: 'account.welcomeTour.listingViews.body',
                 side: 'top',
                 align: 'start'
             }

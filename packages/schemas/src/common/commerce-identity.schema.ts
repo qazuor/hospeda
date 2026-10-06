@@ -35,36 +35,36 @@ export const CommerceIdentityFields = {
      * Required; between 2 and 100 characters.
      */
     name: z
-        .string({ message: 'zodError.commerce.name.required' })
-        .min(2, { message: 'zodError.commerce.name.min' })
-        .max(100, { message: 'zodError.commerce.name.max' }),
+        .string({ message: 'zodError.listing.name.required' })
+        .min(2, { message: 'zodError.listing.name.min' })
+        .max(100, { message: 'zodError.listing.name.max' }),
 
     /**
      * URL-safe identifier for the commerce listing.
      * Required; between 2 and 100 characters; must follow slug format.
      */
     slug: z
-        .string({ message: 'zodError.commerce.slug.required' })
-        .min(2, { message: 'zodError.commerce.slug.min' })
-        .max(100, { message: 'zodError.commerce.slug.max' }),
+        .string({ message: 'zodError.listing.slug.required' })
+        .min(2, { message: 'zodError.listing.slug.min' })
+        .max(100, { message: 'zodError.listing.slug.max' }),
 
     /**
      * Short marketing summary of the commerce listing.
      * Required; between 10 and 300 characters.
      */
     summary: z
-        .string({ message: 'zodError.commerce.summary.required' })
-        .min(10, { message: 'zodError.commerce.summary.min' })
-        .max(300, { message: 'zodError.commerce.summary.max' }),
+        .string({ message: 'zodError.listing.summary.required' })
+        .min(10, { message: 'zodError.listing.summary.min' })
+        .max(300, { message: 'zodError.listing.summary.max' }),
 
     /**
      * Full description of the commerce listing.
      * Required; between 20 and 2000 characters.
      */
     description: z
-        .string({ message: 'zodError.commerce.description.required' })
-        .min(20, { message: 'zodError.commerce.description.min' })
-        .max(2000, { message: 'zodError.commerce.description.max' }),
+        .string({ message: 'zodError.listing.description.required' })
+        .min(20, { message: 'zodError.listing.description.min' })
+        .max(2000, { message: 'zodError.listing.description.max' }),
 
     /**
      * Rich-text (markdown) variant of the description.
@@ -74,7 +74,7 @@ export const CommerceIdentityFields = {
      */
     richDescription: z
         .string()
-        .max(5000, { message: 'zodError.commerce.richDescription.max' })
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
         .nullish(),
 
     // -----------------------------------------------------------------------

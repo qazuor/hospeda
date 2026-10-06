@@ -24,7 +24,7 @@ import { SubscriptionStatusEnumSchema } from '../enums/subscription-status.schem
  */
 export const CommerceOwnerListingSummarySchema = z.object({
     /** Listing UUID (primary key of the gastronomy/experience row). */
-    id: z.string().uuid({ message: 'zodError.commerce.ownerListing.id.invalid' }),
+    id: z.string().uuid({ message: 'zodError.listing.ownerListing.id.invalid' }),
 
     /** Which commerce vertical this listing belongs to ('gastronomy' | 'experience'). */
     vertical: CommerceEntityTypeEnumSchema,

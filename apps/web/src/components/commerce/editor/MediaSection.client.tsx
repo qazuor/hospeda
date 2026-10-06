@@ -243,14 +243,14 @@ async function uploadEntityImage({
 function describeUploadError(err: unknown, t: Translate): string {
     if (err instanceof UploadTimeoutError) {
         return t(
-            'commerce.owner.editor.media.uploadTimeout',
+            'listing.owner.editor.media.uploadTimeout',
             'La subida tardó demasiado. Probá de nuevo.'
         );
     }
     return describeUploadEntityError({
         err,
         t,
-        fallback: t('commerce.owner.editor.media.uploadFailed', 'Error al subir la imagen')
+        fallback: t('listing.owner.editor.media.uploadFailed', 'Error al subir la imagen')
     });
 }
 
@@ -433,7 +433,7 @@ export function MediaSection({
 
                 if (!addResult.ok) {
                     reportError(
-                        addResult.error.message ?? t('commerce.owner.editor.media.persistFailed')
+                        addResult.error.message ?? t('listing.owner.editor.media.persistFailed')
                     );
                     return;
                 }
@@ -449,7 +449,7 @@ export function MediaSection({
                 if (!featuredResult.ok) {
                     reportError(
                         featuredResult.error.message ??
-                            t('commerce.owner.editor.media.featuredFailed')
+                            t('listing.owner.editor.media.featuredFailed')
                     );
                     return;
                 }
@@ -495,7 +495,7 @@ export function MediaSection({
         if (result.ok) {
             setFeaturedItem(null);
         } else {
-            reportError(result.error.message ?? t('commerce.owner.editor.media.removeFailed'));
+            reportError(result.error.message ?? t('listing.owner.editor.media.removeFailed'));
         }
         setOpLoading(false);
     }, [featuredItem, vertical, listingId, t, reportError]);
@@ -534,7 +534,7 @@ export function MediaSection({
 
             const remainingSlots = galleryCap - galleryItems.length;
             if (files.length > remainingSlots) {
-                reportError(tPlural('commerce.owner.editor.media.capReached', galleryCap));
+                reportError(tPlural('listing.owner.editor.media.capReached', galleryCap));
                 if (galleryInputRef.current) {
                     galleryInputRef.current.value = '';
                 }
@@ -604,8 +604,7 @@ export function MediaSection({
 
                     if (!addResult.ok) {
                         reportError(
-                            addResult.error.message ??
-                                t('commerce.owner.editor.media.persistFailed')
+                            addResult.error.message ?? t('listing.owner.editor.media.persistFailed')
                         );
                         // The cap was hit: every remaining file in the batch
                         // would fail identically, so stop instead of firing
@@ -652,7 +651,7 @@ export function MediaSection({
             if (result.ok) {
                 setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
             } else {
-                reportError(result.error.message ?? t('commerce.owner.editor.media.removeFailed'));
+                reportError(result.error.message ?? t('listing.owner.editor.media.removeFailed'));
             }
             setOpLoading(false);
         },
@@ -696,7 +695,7 @@ export function MediaSection({
                 reportError(
                     result.error.message ??
                         t(
-                            'commerce.owner.editor.media.metadataSaveFailed',
+                            'listing.owner.editor.media.metadataSaveFailed',
                             'No se pudieron guardar los datos de la foto'
                         )
                 );
@@ -724,12 +723,12 @@ export function MediaSection({
             id="editor-media"
         >
             <span className={fieldStyles.label}>
-                {t('commerce.owner.editor.sections.media', 'Fotos')}
+                {t('listing.owner.editor.sections.media', 'Fotos')}
             </span>
             <div className={styles.media}>
                 <div className={styles.mediaGroup}>
                     <span className={fieldStyles.label}>
-                        {t('commerce.owner.editor.media.featured', 'Imagen principal')}
+                        {t('listing.owner.editor.media.featured', 'Imagen principal')}
                     </span>
                     {featuredItem ? (
                         <div className={styles.mediaItem}>
@@ -738,17 +737,14 @@ export function MediaSection({
                                     src={featuredItem.url}
                                     alt={
                                         featuredItem.alt ??
-                                        t(
-                                            'commerce.owner.editor.media.featured',
-                                            'Imagen principal'
-                                        )
+                                        t('listing.owner.editor.media.featured', 'Imagen principal')
                                     }
                                     className={styles.mediaImage}
                                 />
                                 <button
                                     type="button"
                                     className={styles.mediaRemove}
-                                    aria-label={t('commerce.owner.editor.media.remove', 'Eliminar')}
+                                    aria-label={t('listing.owner.editor.media.remove', 'Eliminar')}
                                     disabled={anyOpInFlight || !opsReady || !featuredItem.id}
                                     onClick={handleFeaturedRemove}
                                 >
@@ -777,14 +773,14 @@ export function MediaSection({
                             disabled={isUploading || isCompressing}
                             onClick={() => featuredInputRef.current?.click()}
                         >
-                            {t('commerce.owner.editor.media.add', 'Agregar foto')}
+                            {t('listing.owner.editor.media.add', 'Agregar foto')}
                         </button>
                     )}
                     <input
                         ref={featuredInputRef}
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/heic"
-                        aria-label={t('commerce.owner.editor.media.featured', 'Imagen principal')}
+                        aria-label={t('listing.owner.editor.media.featured', 'Imagen principal')}
                         className={styles.mediaFileInput}
                         onChange={handleFeaturedSelect}
                     />
@@ -792,7 +788,7 @@ export function MediaSection({
 
                 <div className={styles.mediaGroup}>
                     <span className={fieldStyles.label}>
-                        {t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
+                        {t('listing.owner.editor.media.gallery', 'Galería de fotos')}
                     </span>
                     <div className={styles.mediaGallery}>
                         {galleryItems.map((image, index) => (
@@ -806,7 +802,7 @@ export function MediaSection({
                                         alt={
                                             image.alt ??
                                             t(
-                                                'commerce.owner.editor.media.gallery',
+                                                'listing.owner.editor.media.gallery',
                                                 'Galería de fotos'
                                             )
                                         }
@@ -816,7 +812,7 @@ export function MediaSection({
                                         type="button"
                                         className={styles.mediaRemove}
                                         aria-label={t(
-                                            'commerce.owner.editor.media.remove',
+                                            'listing.owner.editor.media.remove',
                                             'Eliminar'
                                         )}
                                         disabled={anyOpInFlight || !opsReady || !image.id}
@@ -849,7 +845,7 @@ export function MediaSection({
                                 type="button"
                                 className={styles.mediaAdd}
                                 disabled={isUploading || isCompressing}
-                                aria-label={t('commerce.owner.editor.media.add', 'Agregar foto')}
+                                aria-label={t('listing.owner.editor.media.add', 'Agregar foto')}
                                 onClick={() => galleryInputRef.current?.click()}
                             >
                                 +
@@ -861,29 +857,26 @@ export function MediaSection({
                         type="file"
                         accept="image/jpeg,image/png,image/webp,image/heic"
                         multiple={remainingGallerySlots > 1}
-                        aria-label={t('commerce.owner.editor.media.gallery', 'Galería de fotos')}
+                        aria-label={t('listing.owner.editor.media.gallery', 'Galería de fotos')}
                         className={styles.mediaFileInput}
                         onChange={handleGallerySelect}
                     />
                     <span className={styles.mediaHint}>
                         {t(
-                            'commerce.owner.editor.media.uploadHint',
+                            'listing.owner.editor.media.uploadHint',
                             'JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB',
                             { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
                         )}
                     </span>
                     {isCompressing && (
                         <p className={styles.mediaUploadBatchStatus}>
-                            {t(
-                                'commerce.owner.editor.media.processingImage',
-                                'Optimizando imagen…'
-                            )}
+                            {t('listing.owner.editor.media.processingImage', 'Optimizando imagen…')}
                         </p>
                     )}
                     {isUploading && uploadBatch && uploadBatch.total > 1 && (
                         <p className={styles.mediaUploadBatchStatus}>
                             {t(
-                                'commerce.owner.editor.media.uploadingBatch',
+                                'listing.owner.editor.media.uploadingBatch',
                                 'Subiendo foto {{current}} de {{total}}…',
                                 { current: uploadBatch.current, total: uploadBatch.total }
                             )}

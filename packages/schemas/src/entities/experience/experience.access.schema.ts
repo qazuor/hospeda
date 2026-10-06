@@ -170,7 +170,7 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
      */
     richDescription: z
         .string()
-        .max(5000, { message: 'zodError.commerce.richDescription.max' })
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
         .nullish(),
     /**
      * HOS-815: the publishable contact channels, narrowed by
@@ -357,7 +357,7 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
      * Description relaxed on the read side so DRAFT listings with short
      * descriptions can still be fetched without tripping `min(20)`.
      */
-    description: z.string().max(2000, { message: 'zodError.commerce.description.max' }),
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
     /**
      * HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
      * mobilePhone) must never 500 the response. Format stays strict on write.
@@ -368,7 +368,7 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     /** Rich-text description (protected visibility follows the same entitlement gate). */
     richDescription: z
         .string()
-        .max(5000, { message: 'zodError.commerce.richDescription.max' })
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
         .nullish(),
     /**
      * Currently-associated amenity catalog IDs (junction read-back, SPEC-249).
@@ -415,7 +415,7 @@ export const ExperienceAdminSchema = ExperienceSchema.extend({
      * Description relaxed on the read side so DRAFT listings can still be
      * fetched by the admin panel. See SPEC-143 Finding #9 (gastronomy pattern).
      */
-    description: z.string().max(2000, { message: 'zodError.commerce.description.max' }),
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see ExperienceProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish()
 });

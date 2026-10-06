@@ -146,7 +146,7 @@ export function CommerceViewsWidget({
             data-testid="commerce-views-widget"
         >
             <div className={styles.header}>
-                <h2 className={styles.title}>{t('commerce.owner.list.views.title', 'Vistas')}</h2>
+                <h2 className={styles.title}>{t('listing.owner.list.views.title', 'Vistas')}</h2>
                 <fieldset
                     className={styles.toggle}
                     aria-label={t('common.window.ariaLabel', 'Período de tiempo')}
@@ -178,7 +178,7 @@ export function CommerceViewsWidget({
                     role="alert"
                 >
                     {t(
-                        'commerce.owner.list.views.error',
+                        'listing.owner.list.views.error',
                         'No pudimos cargar las vistas. Probá de nuevo más tarde.'
                     )}
                 </p>
@@ -198,10 +198,10 @@ export function CommerceViewsWidget({
                             <span className={styles.rowName}>{row.name}</span>
                             <span className={styles.rowStats}>
                                 <span data-testid="commerce-views-unique">
-                                    {row.unique} {t('commerce.owner.list.views.unique', 'únicos')}
+                                    {row.unique} {t('listing.owner.list.views.unique', 'únicos')}
                                 </span>
                                 <span data-testid="commerce-views-total">
-                                    {row.total} {t('commerce.owner.list.views.total', 'totales')}
+                                    {row.total} {t('listing.owner.list.views.total', 'totales')}
                                 </span>
                             </span>
                         </li>

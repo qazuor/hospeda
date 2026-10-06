@@ -143,14 +143,14 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // (`downloading`/`download`/`locked`/`error`) with an inline Spanish
     // fallback, so a missing prefix does not render a raw key on an /en/ or
     // /pt/ page — it silently prints Spanish there instead.
-    'commerce.brochure',
+    'listing.brochure',
     // HOS-1057 — `ExperienceCertificatePanel.client.tsx` names every state it
     // renders with an inline Spanish fallback, so a missing prefix does not
     // print a raw key on an /en/ or /pt/ page: it silently prints Spanish
     // instead, which is the failure this list exists to prevent.
-    'commerce.certificate',
-    'commerce.changePassword',
-    'commerce.owner',
+    'listing.certificate',
+    'listing.changePassword',
+    'listing.owner',
     'common.anonymous',
     // Named directly by the review islands' network-failure branch. It is also
     // listed in EXTERNAL_I18N_KEY_PREFIXES, which covers the copy built inside

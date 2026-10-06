@@ -179,7 +179,7 @@ export function OpeningHoursSection({
             id="editor-openingHours"
         >
             <span className={fieldStyles.label}>
-                {t('commerce.owner.editor.sections.openingHours', 'Horarios de atención')}
+                {t('listing.owner.editor.sections.openingHours', 'Horarios de atención')}
             </span>
             <div className={styles.days}>
                 {DAYS.map(({ key, label }, dayIndex) => {

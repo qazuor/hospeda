@@ -48,7 +48,7 @@ export function ContactSection({
             id="editor-contact"
         >
             <legend className={styles.label}>
-                {t('commerce.owner.editor.sections.contactInfo', 'Información de contacto')}
+                {t('listing.owner.editor.sections.contactInfo', 'Información de contacto')}
             </legend>
             {/* HOS-371: searchable country-code combobox + local number,
                 replacing the bare `type="tel"` with a static "+54..."
@@ -69,7 +69,7 @@ export function ContactSection({
                 <TextField
                     prefix={COMMERCE_FIELD_PREFIX}
                     name="contactInfo.workEmail"
-                    label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
+                    label={t('listing.owner.editor.contactField.workEmail', 'Email')}
                     labelClassName={contactStyles.fieldLabel}
                     className={styles.input}
                     error={errors['contactInfo.workEmail']}

@@ -146,7 +146,7 @@ describe('the duplicate label table is gone (HOS-822)', () => {
 
     it.each(LOCALES)('the typeOption block is removed from the %s locale', (locale) => {
         const raw = readFileSync(
-            join(__dirname, `../../../../packages/i18n/src/locales/${locale}/commerce.json`),
+            join(__dirname, `../../../../packages/i18n/src/locales/${locale}/listing.json`),
             'utf-8'
         );
 

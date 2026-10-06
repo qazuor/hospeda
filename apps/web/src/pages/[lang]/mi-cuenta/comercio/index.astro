@@ -53,8 +53,8 @@ if (!hasCommerceNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 
-const title = t('commerce.owner.list.title', 'Mi comercio');
-const subtitle = t('commerce.owner.list.subtitle', '');
+const title = t('listing.owner.list.title', 'Mi comercio');
+const subtitle = t('listing.owner.list.subtitle', '');
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 const listings = await fetchOwnerCommerceListingsWithState({ cookieHeader });
@@ -156,7 +156,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
             class="mc-create-cta"
             href={createUrl}
         >
-            {t('commerce.owner.list.createCta', '+ Nuevo comercio')}
+            {t('listing.owner.list.createCta', '+ Nuevo comercio')}
         </a>
     </div>
 
@@ -165,14 +165,14 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
             {usageBadges.map(({ vertical, usage }) => (
                 <div class={`mc-usage mc-usage--${usage.threshold}`} role="status">
                     <span class="mc-usage__label">
-                        {tPlural(`commerce.owner.list.usage.${vertical}.label`, usage.maxAllowed, {
+                        {tPlural(`listing.owner.list.usage.${vertical}.label`, usage.maxAllowed, {
                             current: usage.currentUsage,
                             max: usage.maxAllowed
                         })}
                     </span>
                     {usage.threshold !== 'ok' && (
                         <a href={addonsUrl} class="mc-usage__upgrade">
-                            {t('commerce.owner.list.usage.upgrade', 'Ampliar cupo')}
+                            {t('listing.owner.list.usage.upgrade', 'Ampliar cupo')}
                         </a>
                     )}
                 </div>
@@ -254,7 +254,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                 <div class="mc-empty">
                     <p class="mc-empty__text">
                         {t(
-                            'commerce.owner.list.empty',
+                            'listing.owner.list.empty',
                             'Todavía no tenés comercios. Creá tu primera ficha para empezar.'
                         )}
                     </p>
@@ -262,7 +262,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                         class="mc-empty__cta"
                         href={createUrl}
                     >
-                        {t('commerce.owner.list.emptyCta', 'Crear mi primer comercio')}
+                        {t('listing.owner.list.emptyCta', 'Crear mi primer comercio')}
                     </a>
                 </div>
             ) : (
@@ -272,7 +272,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                             <div class="mc-list__main">
                                 <span class="mc-list__name">{listing.name}</span>
                                 <span class="mc-badge">
-                                    {t(`commerce.owner.list.badge.${listing.vertical}`, listing.vertical)}
+                                    {t(`listing.owner.list.badge.${listing.vertical}`, listing.vertical)}
                                 </span>
                             </div>
 
@@ -294,7 +294,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                                     path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar`
                                 })}
                             >
-                                {t('commerce.owner.list.edit', 'Editar')}
+                                {t('listing.owner.list.edit', 'Editar')}
                             </a>
                         </li>
                     ))}

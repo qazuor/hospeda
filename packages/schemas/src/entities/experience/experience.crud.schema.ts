@@ -101,8 +101,8 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()
-        .min(2, { message: 'zodError.commerce.slug.min' })
-        .max(100, { message: 'zodError.commerce.slug.max' })
+        .min(2, { message: 'zodError.listing.slug.min' })
+        .max(100, { message: 'zodError.listing.slug.max' })
         .optional(),
     /**
      * Owning user UUID. REQUIRED (H-88): `experiences.owner_id` is NOT NULL with

@@ -44,18 +44,18 @@ export type ExperienceSearchHttp = z.infer<typeof ExperienceSearchHttpSchema>;
  */
 export const ExperienceCreateHttpSchema = z.object({
     /** Display name of the experience listing. */
-    name: z.string().min(2, { message: 'zodError.commerce.name.min' }).max(100),
+    name: z.string().min(2, { message: 'zodError.listing.name.min' }).max(100),
     /** Short marketing summary. */
     summary: z
         .string()
-        .min(10, { message: 'zodError.commerce.summary.min' })
-        .max(300, { message: 'zodError.commerce.summary.max' })
+        .min(10, { message: 'zodError.listing.summary.min' })
+        .max(300, { message: 'zodError.listing.summary.max' })
         .optional(),
     /** Full description. */
     description: z
         .string()
-        .min(20, { message: 'zodError.commerce.description.min' })
-        .max(2000, { message: 'zodError.commerce.description.max' })
+        .min(20, { message: 'zodError.listing.description.min' })
+        .max(2000, { message: 'zodError.listing.description.max' })
         .optional(),
     /** Experience sub-type. */
     type: ExperienceTypeEnumSchema,

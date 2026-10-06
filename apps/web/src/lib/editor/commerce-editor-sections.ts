@@ -45,31 +45,31 @@ const SHARED_SECTIONS: readonly EditorSection[] = [
         id: 'basicInfo',
         slug: 'datos',
         group: 'property',
-        labelKey: 'commerce.owner.editor.sectionNav.basicInfo'
+        labelKey: 'listing.owner.editor.sectionNav.basicInfo'
     },
     {
         id: 'openingHours',
         slug: 'horarios',
         group: 'property',
-        labelKey: 'commerce.owner.editor.sectionNav.openingHours'
+        labelKey: 'listing.owner.editor.sectionNav.openingHours'
     },
     {
         id: 'price',
         slug: 'precio',
         group: 'property',
-        labelKey: 'commerce.owner.editor.sectionNav.price'
+        labelKey: 'listing.owner.editor.sectionNav.price'
     },
     {
         id: 'amenities',
         slug: 'servicios',
         group: 'property',
-        labelKey: 'commerce.owner.editor.sectionNav.amenities'
+        labelKey: 'listing.owner.editor.sectionNav.amenities'
     },
     {
         id: 'media',
         slug: 'fotos',
         group: 'content',
-        labelKey: 'commerce.owner.editor.sectionNav.media'
+        labelKey: 'listing.owner.editor.sectionNav.media'
     },
     {
         id: 'contact',
@@ -78,19 +78,19 @@ const SHARED_SECTIONS: readonly EditorSection[] = [
         // Not `sectionNav.contactInfo` — this page absorbs the former standalone
         // "Redes sociales" section too, exactly as the accommodation editor's
         // `contacto` page does, so the label has to cover both.
-        labelKey: 'commerce.owner.editor.sectionNav.contactSocial'
+        labelKey: 'listing.owner.editor.sectionNav.contactSocial'
     },
     {
         id: 'faqs',
         slug: 'preguntas',
         group: 'content',
-        labelKey: 'commerce.owner.editor.sectionNav.faqs'
+        labelKey: 'listing.owner.editor.sectionNav.faqs'
     },
     {
         id: 'translations',
         slug: 'traducciones',
         group: 'management',
-        labelKey: 'commerce.owner.editor.sectionNav.translations'
+        labelKey: 'listing.owner.editor.sectionNav.translations'
     }
 ];
 
@@ -126,7 +126,7 @@ const GASTRONOMY_ONLY_SECTIONS: readonly EditorSection[] = [
         id: 'menu',
         slug: 'carta',
         group: 'content',
-        labelKey: 'commerce.owner.editor.sectionNav.menu'
+        labelKey: 'listing.owner.editor.sectionNav.menu'
     },
     // HOS-1041 — the menú del día, immediately after the carta it is adjacent
     // to in meaning: the carta is what the venue cooks all year, this is what
@@ -142,13 +142,13 @@ const GASTRONOMY_ONLY_SECTIONS: readonly EditorSection[] = [
         id: 'dailySpecials',
         slug: 'menu-del-dia',
         group: 'content',
-        labelKey: 'commerce.owner.editor.sectionNav.dailySpecials'
+        labelKey: 'listing.owner.editor.sectionNav.dailySpecials'
     },
     {
         id: 'venueEvents',
         slug: 'eventos',
         group: 'content',
-        labelKey: 'commerce.owner.editor.sectionNav.venueEvents'
+        labelKey: 'listing.owner.editor.sectionNav.venueEvents'
     }
 ];
 
@@ -163,13 +163,13 @@ const EXPERIENCE_ONLY_SECTIONS: readonly EditorSection[] = [
         id: 'meetingPoint',
         slug: 'punto-de-encuentro',
         group: 'property',
-        labelKey: 'commerce.owner.editor.sectionNav.meetingPoint'
+        labelKey: 'listing.owner.editor.sectionNav.meetingPoint'
     },
     {
         id: 'practicalInfo',
         slug: 'datos-practicos',
         group: 'property',
-        labelKey: 'commerce.owner.editor.sectionNav.practicalInfo'
+        labelKey: 'listing.owner.editor.sectionNav.practicalInfo'
     }
 ];
 
@@ -184,9 +184,9 @@ export const COMMERCE_EDITOR_SECTION_GROUPS = ['property', 'content', 'managemen
  * reason the labels live on the registry rather than on the type.
  */
 export const COMMERCE_EDITOR_GROUP_LABEL_KEYS = {
-    property: 'commerce.owner.editor.group.listing',
-    content: 'commerce.owner.editor.group.content',
-    management: 'commerce.owner.editor.group.management'
+    property: 'listing.owner.editor.group.listing',
+    content: 'listing.owner.editor.group.content',
+    management: 'listing.owner.editor.group.management'
 } as const;
 
 /**
@@ -236,7 +236,7 @@ export function buildCommerceEditorRegistry({
         groups: COMMERCE_EDITOR_SECTION_GROUPS,
         groupLabelKeys: COMMERCE_EDITOR_GROUP_LABEL_KEYS,
         indexPath: 'mi-cuenta/comercio',
-        indexLabelKey: 'commerce.owner.editor.breadcrumb.listings',
+        indexLabelKey: 'listing.owner.editor.breadcrumb.listings',
         buildHubPath: ({ entityId }) => `mi-cuenta/comercio/${vertical}/${entityId}/editar`
     };
 }

@@ -730,7 +730,7 @@ export function CommerceListingEditor({
                 // response at all.
                 addToast({
                     type: 'info',
-                    message: t('commerce.owner.editor.noChanges', 'No hay cambios para guardar')
+                    message: t('listing.owner.editor.noChanges', 'No hay cambios para guardar')
                 });
                 return;
             }
@@ -762,7 +762,7 @@ export function CommerceListingEditor({
                 setStatus({ kind: 'idle' });
                 addToast({
                     type: 'success',
-                    message: t('commerce.owner.editor.success', 'Cambios guardados.')
+                    message: t('listing.owner.editor.success', 'Cambios guardados.')
                 });
             } else {
                 // Previously discarded `result.error` entirely and always showed
@@ -771,7 +771,7 @@ export function CommerceListingEditor({
                 // banner message otherwise — see `field-errors.ts` module doc.
                 handleApiError(
                     result.error,
-                    t('commerce.owner.editor.error', 'No se pudieron guardar los cambios.')
+                    t('listing.owner.editor.error', 'No se pudieron guardar los cambios.')
                 );
                 setStatus({ kind: 'error' });
             }
@@ -838,7 +838,7 @@ export function CommerceListingEditor({
         confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
         cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
         message: t(
-            'commerce.owner.editor.unsavedChanges',
+            'listing.owner.editor.unsavedChanges',
             'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
         )
     });

@@ -176,7 +176,7 @@ function Breakdown({
                     >
                         <span>
                             {key === 'unknown'
-                                ? t('commerce.owner.list.menuQr.unknown', 'Desconocido')
+                                ? t('listing.owner.list.menuQr.unknown', 'Desconocido')
                                 : key}
                         </span>
                         <span className={styles.breakdownValue}>{count}</span>
@@ -227,7 +227,7 @@ function QrBlock({
             <img
                 className={styles.qrImage}
                 alt={t(
-                    'commerce.owner.list.menuQr.qrAlt',
+                    'listing.owner.list.menuQr.qrAlt',
                     'Código QR que lleva a la carta de {{name}}',
                     {
                         name: listingName
@@ -236,7 +236,7 @@ function QrBlock({
                 src={buildSvgDataUrl(qr.svg)}
             />
             <p className={styles.qrTarget}>
-                {t('commerce.owner.list.menuQr.encodes', 'Lleva a: {{url}}', { url: qr.targetUrl })}
+                {t('listing.owner.list.menuQr.encodes', 'Lleva a: {{url}}', { url: qr.targetUrl })}
             </p>
             <button
                 type="button"
@@ -246,14 +246,14 @@ function QrBlock({
                 }}
                 data-testid="menu-qr-download"
             >
-                {t('commerce.owner.list.menuQr.download', 'Descargar QR (PNG)')}
+                {t('listing.owner.list.menuQr.download', 'Descargar QR (PNG)')}
             </button>
             {downloaded && (
                 <p
                     className={styles.downloaded}
                     role="status"
                 >
-                    {t('commerce.owner.list.menuQr.downloaded', 'Listo, lo descargamos.')}
+                    {t('listing.owner.list.menuQr.downloaded', 'Listo, lo descargamos.')}
                 </p>
             )}
         </div>
@@ -316,7 +316,7 @@ export function GastronomyMenuQrWidget({
         >
             <div className={styles.header}>
                 <h2 className={styles.title}>
-                    {t('commerce.owner.list.menuQr.title', 'QR de la carta')}
+                    {t('listing.owner.list.menuQr.title', 'QR de la carta')}
                 </h2>
                 <fieldset
                     className={styles.toggle}
@@ -360,7 +360,7 @@ export function GastronomyMenuQrWidget({
                                 data-testid="gastronomy-menu-qr-locked"
                             >
                                 {t(
-                                    'commerce.owner.list.menuQr.locked',
+                                    'listing.owner.list.menuQr.locked',
                                     'El QR de la carta y sus estadísticas de escaneo están disponibles en el plan Premium de gastronomía.'
                                 )}
                             </p>
@@ -372,7 +372,7 @@ export function GastronomyMenuQrWidget({
                                 role="alert"
                             >
                                 {t(
-                                    'commerce.owner.list.menuQr.error',
+                                    'listing.owner.list.menuQr.error',
                                     'No pudimos cargar los escaneos del QR. Probá de nuevo más tarde.'
                                 )}
                             </p>
@@ -388,14 +388,14 @@ export function GastronomyMenuQrWidget({
                                         {state.stats.total}
                                     </span>
                                     <span className={styles.totalLabel}>
-                                        {t('commerce.owner.list.menuQr.scans', 'escaneos')}
+                                        {t('listing.owner.list.menuQr.scans', 'escaneos')}
                                     </span>
                                 </div>
 
                                 {state.stats.total === 0 ? (
                                     <p className={styles.empty}>
                                         {t(
-                                            'commerce.owner.list.menuQr.empty',
+                                            'listing.owner.list.menuQr.empty',
                                             'Todavía no tuvo escaneos en este período.'
                                         )}
                                     </p>
@@ -405,23 +405,20 @@ export function GastronomyMenuQrWidget({
 
                                 <div className={styles.breakdowns}>
                                     <Breakdown
-                                        title={t(
-                                            'commerce.owner.list.menuQr.device',
-                                            'Dispositivo'
-                                        )}
+                                        title={t('listing.owner.list.menuQr.device', 'Dispositivo')}
                                         breakdown={state.stats.byDeviceType}
                                         t={t}
                                     />
                                     <Breakdown
                                         title={t(
-                                            'commerce.owner.list.menuQr.os',
+                                            'listing.owner.list.menuQr.os',
                                             'Sistema operativo'
                                         )}
                                         breakdown={state.stats.byOs}
                                         t={t}
                                     />
                                     <Breakdown
-                                        title={t('commerce.owner.list.menuQr.language', 'Idioma')}
+                                        title={t('listing.owner.list.menuQr.language', 'Idioma')}
                                         breakdown={state.stats.byBrowserLanguage}
                                         t={t}
                                     />

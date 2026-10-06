@@ -39,7 +39,7 @@ vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw =
-                key === 'commerce.owner.editor.translationPanel.localePlaceholder'
+                key === 'listing.owner.editor.translationPanel.localePlaceholder'
                     ? 'Ingresá el texto en {{locale}}...'
                     : (fallback ?? key);
             if (!params) return raw;

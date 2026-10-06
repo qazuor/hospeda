@@ -85,36 +85,36 @@ const ownerBenefits = [
 const experienceBenefits = [
 	{
 		Icon: MapIcon,
-		titleKey: 'commerce.landing.experience.benefits.item1.title',
-		descKey: 'commerce.landing.experience.benefits.item1.desc'
+		titleKey: 'listing.landing.experience.benefits.item1.title',
+		descKey: 'listing.landing.experience.benefits.item1.desc'
 	},
 	{
 		Icon: SettingsIcon,
-		titleKey: 'commerce.landing.experience.benefits.item2.title',
-		descKey: 'commerce.landing.experience.benefits.item2.desc'
+		titleKey: 'listing.landing.experience.benefits.item2.title',
+		descKey: 'listing.landing.experience.benefits.item2.desc'
 	},
 	{
 		Icon: ShieldIcon,
-		titleKey: 'commerce.landing.experience.benefits.item3.title',
-		descKey: 'commerce.landing.experience.benefits.item3.desc'
+		titleKey: 'listing.landing.experience.benefits.item3.title',
+		descKey: 'listing.landing.experience.benefits.item3.desc'
 	}
 ] as const;
 
 const gastronomyBenefits = [
 	{
 		Icon: MapIcon,
-		titleKey: 'commerce.landing.gastronomy.benefits.item1.title',
-		descKey: 'commerce.landing.gastronomy.benefits.item1.desc'
+		titleKey: 'listing.landing.gastronomy.benefits.item1.title',
+		descKey: 'listing.landing.gastronomy.benefits.item1.desc'
 	},
 	{
 		Icon: SettingsIcon,
-		titleKey: 'commerce.landing.gastronomy.benefits.item2.title',
-		descKey: 'commerce.landing.gastronomy.benefits.item2.desc'
+		titleKey: 'listing.landing.gastronomy.benefits.item2.title',
+		descKey: 'listing.landing.gastronomy.benefits.item2.desc'
 	},
 	{
 		Icon: ShieldIcon,
-		titleKey: 'commerce.landing.gastronomy.benefits.item3.title',
-		descKey: 'commerce.landing.gastronomy.benefits.item3.desc'
+		titleKey: 'listing.landing.gastronomy.benefits.item3.title',
+		descKey: 'listing.landing.gastronomy.benefits.item3.desc'
 	}
 ] as const;
 
@@ -152,8 +152,8 @@ const splitLastWord = (full: string): { main: string; accent: string } => {
 
 const touristHeading = splitLastWord(t('benefits.tourist.title'));
 const ownerHeading = splitLastWord(t('benefits.owner.title'));
-const experienceHeading = splitLastWord(t('commerce.landing.experience.benefits.title'));
-const gastronomyHeading = splitLastWord(t('commerce.landing.gastronomy.benefits.title'));
+const experienceHeading = splitLastWord(t('listing.landing.experience.benefits.title'));
+const gastronomyHeading = splitLastWord(t('listing.landing.gastronomy.benefits.title'));
 const partnerHeading = splitLastWord(t('benefits.partner.title'));
 
 const benefitsTitle = t('benefits.title', 'Beneficios');

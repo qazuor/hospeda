@@ -63,7 +63,7 @@ export function CommerceVenueEventEntryCard({
         <fieldset className={styles.card}>
             <legend className={styles.srOnly}>
                 {entry.title ||
-                    t('commerce.owner.editor.venueEventsManager.newEntry', 'Nuevo evento')}
+                    t('listing.owner.editor.venueEventsManager.newEntry', 'Nuevo evento')}
             </legend>
 
             <div className={styles.row}>
@@ -72,10 +72,10 @@ export function CommerceVenueEventEntryCard({
                     type="text"
                     value={entry.title}
                     placeholder={t(
-                        'commerce.owner.editor.venueEventsManager.titlePlaceholder',
+                        'listing.owner.editor.venueEventsManager.titlePlaceholder',
                         'Música en vivo, Happy hour…'
                     )}
-                    aria-label={t('commerce.owner.editor.venueEventsManager.entryTitle', 'Título')}
+                    aria-label={t('listing.owner.editor.venueEventsManager.entryTitle', 'Título')}
                     onChange={(event) => {
                         onPatch(index, { title: event.target.value });
                     }}
@@ -84,7 +84,7 @@ export function CommerceVenueEventEntryCard({
                     type="button"
                     className={styles.iconButton}
                     aria-label={t(
-                        'commerce.owner.editor.venueEventsManager.moveUp',
+                        'listing.owner.editor.venueEventsManager.moveUp',
                         'Subir el evento'
                     )}
                     onClick={() => {
@@ -97,7 +97,7 @@ export function CommerceVenueEventEntryCard({
                     type="button"
                     className={styles.iconButton}
                     aria-label={t(
-                        'commerce.owner.editor.venueEventsManager.moveDown',
+                        'listing.owner.editor.venueEventsManager.moveDown',
                         'Bajar el evento'
                     )}
                     onClick={() => {
@@ -113,7 +113,7 @@ export function CommerceVenueEventEntryCard({
                         onRemove(index);
                     }}
                 >
-                    {t('commerce.owner.editor.venueEventsManager.removeEntry', 'Quitar')}
+                    {t('listing.owner.editor.venueEventsManager.removeEntry', 'Quitar')}
                 </button>
             </div>
 
@@ -121,11 +121,11 @@ export function CommerceVenueEventEntryCard({
                 className={styles.textarea}
                 value={entry.description}
                 placeholder={t(
-                    'commerce.owner.editor.venueEventsManager.descriptionPlaceholder',
+                    'listing.owner.editor.venueEventsManager.descriptionPlaceholder',
                     'Detalle opcional'
                 )}
                 aria-label={t(
-                    'commerce.owner.editor.venueEventsManager.entryDescription',
+                    'listing.owner.editor.venueEventsManager.entryDescription',
                     'Descripción'
                 )}
                 onChange={(event) => {
@@ -144,7 +144,7 @@ export function CommerceVenueEventEntryCard({
                         }}
                     />
                     {t(
-                        'commerce.owner.editor.venueEventsManager.recurrenceWeekly',
+                        'listing.owner.editor.venueEventsManager.recurrenceWeekly',
                         'Todas las semanas'
                     )}
                 </label>
@@ -157,7 +157,7 @@ export function CommerceVenueEventEntryCard({
                             onSetRecurrence(index, 'once');
                         }}
                     />
-                    {t('commerce.owner.editor.venueEventsManager.recurrenceOnce', 'Un solo día')}
+                    {t('listing.owner.editor.venueEventsManager.recurrenceOnce', 'Un solo día')}
                 </label>
             </div>
 
@@ -167,7 +167,7 @@ export function CommerceVenueEventEntryCard({
                         className={styles.input}
                         value={entry.weekday}
                         aria-label={t(
-                            'commerce.owner.editor.venueEventsManager.weekday',
+                            'listing.owner.editor.venueEventsManager.weekday',
                             'Día de la semana'
                         )}
                         onChange={(event) => {
@@ -188,7 +188,7 @@ export function CommerceVenueEventEntryCard({
                         className={styles.input}
                         type="date"
                         value={entry.date}
-                        aria-label={t('commerce.owner.editor.venueEventsManager.date', 'Fecha')}
+                        aria-label={t('listing.owner.editor.venueEventsManager.date', 'Fecha')}
                         onChange={(event) => {
                             onPatch(index, { date: event.target.value });
                         }}
@@ -200,7 +200,7 @@ export function CommerceVenueEventEntryCard({
                     type="time"
                     value={entry.startTime}
                     aria-label={t(
-                        'commerce.owner.editor.venueEventsManager.startTime',
+                        'listing.owner.editor.venueEventsManager.startTime',
                         'Hora de inicio'
                     )}
                     onChange={(event) => {
@@ -213,7 +213,7 @@ export function CommerceVenueEventEntryCard({
                     type="time"
                     value={entry.endTime}
                     aria-label={t(
-                        'commerce.owner.editor.venueEventsManager.endTime',
+                        'listing.owner.editor.venueEventsManager.endTime',
                         'Hora de fin (opcional)'
                     )}
                     onChange={(event) => {
@@ -229,7 +229,7 @@ export function CommerceVenueEventEntryCard({
                             onPatch(index, { isActive: event.target.checked });
                         }}
                     />
-                    {t('commerce.owner.editor.venueEventsManager.active', 'Activo')}
+                    {t('listing.owner.editor.venueEventsManager.active', 'Activo')}
                 </label>
             </div>
         </fieldset>

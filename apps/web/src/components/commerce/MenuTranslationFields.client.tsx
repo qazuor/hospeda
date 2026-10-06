@@ -74,12 +74,12 @@ export function MenuTranslationFields({
             open={locked}
         >
             <summary className={styles.translationsSummary}>
-                {t('commerce.owner.editor.menuManager.translations', 'Traducciones (EN/PT)')}
+                {t('listing.owner.editor.menuManager.translations', 'Traducciones (EN/PT)')}
             </summary>
             {locked && (
                 <p className={styles.translationsLockedHint}>
                     {t(
-                        'commerce.owner.editor.menuManager.translationLockedHint',
+                        'listing.owner.editor.menuManager.translationLockedHint',
                         'Disponible en el plan Premium. Borrá el inglés y el portugués para guardar la carta en español.'
                     )}
                 </p>
@@ -90,10 +90,10 @@ export function MenuTranslationFields({
                     type="text"
                     value={nameEn}
                     placeholder={t(
-                        'commerce.owner.editor.menuManager.nameEnPlaceholder',
+                        'listing.owner.editor.menuManager.nameEnPlaceholder',
                         'Nombre en inglés'
                     )}
-                    aria-label={t('commerce.owner.editor.menuManager.nameEn', 'Nombre en inglés')}
+                    aria-label={t('listing.owner.editor.menuManager.nameEn', 'Nombre en inglés')}
                     onChange={(event) => {
                         onChange({ nameEn: event.target.value });
                     }}
@@ -103,13 +103,10 @@ export function MenuTranslationFields({
                     type="text"
                     value={namePt}
                     placeholder={t(
-                        'commerce.owner.editor.menuManager.namePtPlaceholder',
+                        'listing.owner.editor.menuManager.namePtPlaceholder',
                         'Nombre en portugués'
                     )}
-                    aria-label={t(
-                        'commerce.owner.editor.menuManager.namePt',
-                        'Nombre en portugués'
-                    )}
+                    aria-label={t('listing.owner.editor.menuManager.namePt', 'Nombre en portugués')}
                     onChange={(event) => {
                         onChange({ namePt: event.target.value });
                     }}
@@ -121,11 +118,11 @@ export function MenuTranslationFields({
                             type="text"
                             value={descriptionEn}
                             placeholder={t(
-                                'commerce.owner.editor.menuManager.descriptionEnPlaceholder',
+                                'listing.owner.editor.menuManager.descriptionEnPlaceholder',
                                 'Descripción en inglés'
                             )}
                             aria-label={t(
-                                'commerce.owner.editor.menuManager.descriptionEn',
+                                'listing.owner.editor.menuManager.descriptionEn',
                                 'Descripción en inglés'
                             )}
                             onChange={(event) => {
@@ -137,11 +134,11 @@ export function MenuTranslationFields({
                             type="text"
                             value={descriptionPt}
                             placeholder={t(
-                                'commerce.owner.editor.menuManager.descriptionPtPlaceholder',
+                                'listing.owner.editor.menuManager.descriptionPtPlaceholder',
                                 'Descripción en portugués'
                             )}
                             aria-label={t(
-                                'commerce.owner.editor.menuManager.descriptionPt',
+                                'listing.owner.editor.menuManager.descriptionPt',
                                 'Descripción en portugués'
                             )}
                             onChange={(event) => {

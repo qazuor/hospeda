@@ -76,14 +76,14 @@ export const ExperienceMediaAddPayloadSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — the upload endpoint returns this URL before this call is made.
      */
-    url: mediaAssetUrl('zodError.common.commerceMedia.url.invalid'),
+    url: mediaAssetUrl('zodError.common.listingMedia.url.invalid'),
     /**
      * Cloudinary `public_id` (e.g. `hospeda/dev/abc123`).
      * Optional — historic or external-URL payloads may not carry one.
      */
     publicId: z
         .string()
-        .min(1, { message: 'zodError.common.commerceMedia.publicId.min' })
+        .min(1, { message: 'zodError.common.listingMedia.publicId.min' })
         .optional(),
     /**
      * Short display caption (max 100 chars).
@@ -91,8 +91,8 @@ export const ExperienceMediaAddPayloadSchema = z.object({
      */
     caption: z
         .string()
-        .min(3, { message: 'zodError.common.commerceMedia.caption.min' })
-        .max(100, { message: 'zodError.common.commerceMedia.caption.max' })
+        .min(3, { message: 'zodError.common.listingMedia.caption.min' })
+        .max(100, { message: 'zodError.common.listingMedia.caption.max' })
         .optional(),
     /**
      * Longer description of photo content (max 300 chars).
@@ -100,8 +100,8 @@ export const ExperienceMediaAddPayloadSchema = z.object({
      */
     description: z
         .string()
-        .min(10, { message: 'zodError.common.commerceMedia.description.min' })
-        .max(300, { message: 'zodError.common.commerceMedia.description.max' })
+        .min(10, { message: 'zodError.common.listingMedia.description.min' })
+        .max(300, { message: 'zodError.common.listingMedia.description.max' })
         .optional(),
     /**
      * Accessible alt text for `<img alt>` and screen readers.
@@ -109,8 +109,8 @@ export const ExperienceMediaAddPayloadSchema = z.object({
      */
     alt: z
         .string()
-        .min(1, { message: 'zodError.common.commerceMedia.alt.min' })
-        .max(200, { message: 'zodError.common.commerceMedia.alt.max' })
+        .min(1, { message: 'zodError.common.listingMedia.alt.min' })
+        .max(200, { message: 'zodError.common.listingMedia.alt.max' })
         .optional(),
     /**
      * Optional credits/source metadata (photographer, sourceUrl, license).
@@ -393,7 +393,7 @@ export const ExperienceMediaUpdateInputSchema = z
         ...ExperienceMediaUpdatePayloadSchema.shape
     })
     .refine(hasAtLeastOneMediaTextField, {
-        message: 'zodError.common.commerceMedia.update.atLeastOneField'
+        message: 'zodError.common.listingMedia.update.atLeastOneField'
     });
 /** Inferred type for the update-media service input. */
 export type ExperienceMediaUpdateInput = z.infer<typeof ExperienceMediaUpdateInputSchema>;

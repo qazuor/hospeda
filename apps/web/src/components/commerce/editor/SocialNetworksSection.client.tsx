@@ -40,7 +40,7 @@ export function SocialNetworksSection({
             id="editor-socialNetworks"
         >
             <legend className={styles.label}>
-                {t('commerce.owner.editor.sections.socialNetworks', 'Redes sociales')}
+                {t('listing.owner.editor.sections.socialNetworks', 'Redes sociales')}
             </legend>
             {SOCIAL_KEYS.map((key) => {
                 const errorKey = `socialNetworks.${key}`;

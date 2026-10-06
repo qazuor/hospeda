@@ -458,7 +458,7 @@ function commerceExtrasRows({
         },
         {
             id: 'aiChatCommerce',
-            labelKey: 'billing.comparison.row.aiChatCommerce',
+            labelKey: 'billing.comparison.row.aiChatListing',
             cell: { kind: 'limit', key: aiChatLimitKey },
             status: 'available'
         }

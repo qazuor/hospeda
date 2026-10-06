@@ -75,7 +75,7 @@ export const UNGROUPED_CATEGORY_GROUP: PermissionCategoryGroup = 'Other';
 export const GROUP_TRANSLATION_KEYS: Record<PermissionCategoryGroup, TranslationKey> = {
     'Content Management': 'admin-pages.access.permissions.groupContentManagement',
     'User & Access': 'admin-pages.access.permissions.groupUserAccess',
-    'Commerce & Billing': 'admin-pages.access.permissions.groupCommerceBilling',
+    'Commerce & Billing': 'admin-pages.access.permissions.groupListingsBilling',
     'Marketing & Advertising': 'admin-pages.access.permissions.groupMarketingAdvertising',
     'Services & Listings': 'admin-pages.access.permissions.groupServicesListings',
     'System & Configuration': 'admin-pages.access.permissions.groupSystemConfiguration',

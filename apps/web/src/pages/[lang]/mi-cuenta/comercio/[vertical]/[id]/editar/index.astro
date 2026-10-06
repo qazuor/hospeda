@@ -44,7 +44,7 @@ const statuses = resolveCommerceEditorSectionStatuses({
 	},
 });
 
-const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
+const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 ---
 
 <CommerceEditorSectionLayout
@@ -55,8 +55,8 @@ const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 	currentSectionId={null}
 	currentSectionSlug={null}
 	title={detail.name}
-	subtitle={t('commerce.owner.editor.hub.subtitle', 'Elegí qué querés editar')}
-	description={t('commerce.owner.editor.pageDescription', 'Editar la información de tu ficha')}
+	subtitle={t('listing.owner.editor.hub.subtitle', 'Elegí qué querés editar')}
+	description={t('listing.owner.editor.pageDescription', 'Editar la información de tu ficha')}
 >
 	<div class="commerce-hub__identity">
 		<span class="commerce-hub__badge">{verticalLabel}</span>

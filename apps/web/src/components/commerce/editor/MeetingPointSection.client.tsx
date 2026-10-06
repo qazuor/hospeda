@@ -116,7 +116,7 @@ export function MeetingPointSection({
             <TextField
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="meetingPoint"
-                label={t('commerce.owner.editor.sections.meetingPoint', 'Punto de encuentro')}
+                label={t('listing.owner.editor.sections.meetingPoint', 'Punto de encuentro')}
                 labelClassName={styles.label}
                 className={styles.input}
                 error={errors.meetingPoint}
@@ -124,7 +124,7 @@ export function MeetingPointSection({
                 maxLength={300}
                 value={data.meetingPoint}
                 placeholder={t(
-                    'commerce.owner.editor.sections.meetingPointPlaceholder',
+                    'listing.owner.editor.sections.meetingPointPlaceholder',
                     'Ej: Muelle 3 del puerto, frente a la caseta azul'
                 )}
                 onChange={(event) => {
@@ -134,7 +134,7 @@ export function MeetingPointSection({
 
             <p className={styles.hint}>
                 {t(
-                    'commerce.owner.editor.sections.meetingPointHint',
+                    'listing.owner.editor.sections.meetingPointHint',
                     'Dónde arranca la experiencia. Puede ser una dirección o una referencia del lugar.'
                 )}
             </p>
@@ -142,7 +142,7 @@ export function MeetingPointSection({
             <TextField
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="meetingPointLat"
-                label={t('commerce.owner.editor.sections.meetingPointLat', 'Latitud (opcional)')}
+                label={t('listing.owner.editor.sections.meetingPointLat', 'Latitud (opcional)')}
                 labelClassName={styles.label}
                 className={styles.input}
                 error={errors.meetingPointLat}
@@ -163,7 +163,7 @@ export function MeetingPointSection({
             <TextField
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="meetingPointLong"
-                label={t('commerce.owner.editor.sections.meetingPointLong', 'Longitud (opcional)')}
+                label={t('listing.owner.editor.sections.meetingPointLong', 'Longitud (opcional)')}
                 labelClassName={styles.label}
                 className={styles.input}
                 error={errors.meetingPointLong}
@@ -183,7 +183,7 @@ export function MeetingPointSection({
 
             <p className={styles.hint}>
                 {t(
-                    'commerce.owner.editor.sections.meetingPointCoordsHint',
+                    'listing.owner.editor.sections.meetingPointCoordsHint',
                     'Si cargás las coordenadas, mostramos el punto en un mapa. Podés dejarlas vacías.'
                 )}
             </p>
@@ -199,7 +199,7 @@ export function MeetingPointSection({
                 as="textarea"
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="meetingPointDirections"
-                label={t('commerce.owner.editor.sections.meetingPointDirections', 'Cómo llegar')}
+                label={t('listing.owner.editor.sections.meetingPointDirections', 'Cómo llegar')}
                 labelClassName={styles.label}
                 className={styles.textarea}
                 error={errors.meetingPointDirections}
@@ -207,7 +207,7 @@ export function MeetingPointSection({
                 disabled={!data.meetingPointDirectionsEnabled}
                 value={checklistItemsToLines({ items: data.meetingPointDirections })}
                 placeholder={t(
-                    'commerce.owner.editor.sections.meetingPointDirectionsPlaceholder',
+                    'listing.owner.editor.sections.meetingPointDirectionsPlaceholder',
                     'Estacioná en la bajada municipal, sobre la costanera\nEl colectivo 4 te deja en la rotonda\nSon 300 m por camino de ripio, buscá el muelle de madera'
                 )}
                 onChange={(event) => {
@@ -221,11 +221,11 @@ export function MeetingPointSection({
             <p className={styles.hint}>
                 {data.meetingPointDirectionsEnabled
                     ? t(
-                          'commerce.owner.editor.sections.meetingPointDirectionsHint',
+                          'listing.owner.editor.sections.meetingPointDirectionsHint',
                           'Una indicación por línea. Dónde estacionar, qué colectivo, cuánto se camina desde la ruta, qué referencia buscar.'
                       )
                     : t(
-                          'commerce.owner.editor.sections.meetingPointDirectionsLocked',
+                          'listing.owner.editor.sections.meetingPointDirectionsLocked',
                           'El mapa y las indicaciones de cómo llegar no están incluidos en tu plan. El punto de encuentro sí, y se sigue publicando.'
                       )}
             </p>

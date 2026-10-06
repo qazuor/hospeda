@@ -104,13 +104,13 @@ export function AmenitiesSection({
                             onChange={() => onToggleAmenity(eventsAmenity.id)}
                         />
                         {t(
-                            'commerce.owner.editor.acceptsEvents.label',
+                            'listing.owner.editor.acceptsEvents.label',
                             'Acepto eventos (cumpleaños, empresas, casamientos)'
                         )}
                     </label>
                     <p className={fieldStyles.hint}>
                         {t(
-                            'commerce.owner.editor.acceptsEvents.hint',
+                            'listing.owner.editor.acceptsEvents.hint',
                             'Mostramos un botón de contacto en tu ficha para que te escriban por este tipo de consultas.'
                         )}
                     </p>
@@ -121,7 +121,7 @@ export function AmenitiesSection({
                 {amenityGroups.length > 0 && (
                     <fieldset className={styles.catalogGroup}>
                         <legend className={fieldStyles.label}>
-                            {t('commerce.owner.editor.sections.amenities', 'Servicios')}
+                            {t('listing.owner.editor.sections.amenities', 'Servicios')}
                         </legend>
                         <div className={styles.categoryList}>
                             {amenityGroups.map((group, index) => {
@@ -178,7 +178,7 @@ export function AmenitiesSection({
                 {features.length > 0 && (
                     <fieldset className={styles.catalogGroup}>
                         <legend className={fieldStyles.label}>
-                            {t('commerce.owner.editor.sections.features', 'Características')}
+                            {t('listing.owner.editor.sections.features', 'Características')}
                         </legend>
                         <div className={styles.catalogGrid}>
                             {features.map((feature) => (

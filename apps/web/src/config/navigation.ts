@@ -327,7 +327,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
     },
     {
         id: 'comercio',
-        i18nKey: 'account.nav.groupCommerce',
+        i18nKey: 'account.nav.groupListings',
         requiredPermissions: [
             PermissionEnum.GASTRONOMY_EDIT_OWN,
             PermissionEnum.EXPERIENCE_EDIT_OWN
@@ -336,7 +336,7 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
         items: [
             {
                 id: 'commerce',
-                i18nKey: 'commerce.owner.nav',
+                i18nKey: 'listing.owner.nav',
                 href: 'mi-cuenta/comercio',
                 icon: BriefcaseIcon,
                 surfaces: FULL_SURFACES,

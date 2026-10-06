@@ -222,7 +222,7 @@ export function CommerceDailySpecialsManager({
         setState('idle');
 
         if (result.ok) {
-            setMessage(t('commerce.owner.editor.dailySpecials.saved', 'Menú del día guardado.'));
+            setMessage(t('listing.owner.editor.dailySpecials.saved', 'Menú del día guardado.'));
             return;
         }
 
@@ -234,7 +234,7 @@ export function CommerceDailySpecialsManager({
             setIsLocked(true);
             setMessage(
                 t(
-                    'commerce.owner.editor.dailySpecials.locked',
+                    'listing.owner.editor.dailySpecials.locked',
                     'El menú del día está disponible desde el plan Profesional.'
                 )
             );
@@ -242,10 +242,7 @@ export function CommerceDailySpecialsManager({
         }
 
         setMessage(
-            t(
-                'commerce.owner.editor.dailySpecials.saveError',
-                'No se pudo guardar el menú del día.'
-            )
+            t('listing.owner.editor.dailySpecials.saveError', 'No se pudo guardar el menú del día.')
         );
     }, [basePath, specials, t]);
 
@@ -254,11 +251,11 @@ export function CommerceDailySpecialsManager({
     return (
         <section className={styles.panel}>
             <h2 className={styles.heading}>
-                {t('commerce.owner.editor.dailySpecials.title', 'Menú del día')}
+                {t('listing.owner.editor.dailySpecials.title', 'Menú del día')}
             </h2>
             <p className={styles.intro}>
                 {t(
-                    'commerce.owner.editor.dailySpecials.intro',
+                    'listing.owner.editor.dailySpecials.intro',
                     'El plato del día o la sugerencia del chef. Cada uno vale hasta la fecha que le pongas y después deja de mostrarse solo — no hace falta que vuelvas a sacarlo.'
                 )}
             </p>
@@ -277,7 +274,7 @@ export function CommerceDailySpecialsManager({
                             <legend className={styles.srOnly}>
                                 {special.title ||
                                     t(
-                                        'commerce.owner.editor.dailySpecials.newSpecial',
+                                        'listing.owner.editor.dailySpecials.newSpecial',
                                         'Nuevo plato del día'
                                     )}
                             </legend>
@@ -289,11 +286,11 @@ export function CommerceDailySpecialsManager({
                                     value={special.title}
                                     maxLength={150}
                                     placeholder={t(
-                                        'commerce.owner.editor.dailySpecials.titlePlaceholder',
+                                        'listing.owner.editor.dailySpecials.titlePlaceholder',
                                         'Milanesa a la napolitana con puré'
                                     )}
                                     aria-label={t(
-                                        'commerce.owner.editor.dailySpecials.titleLabel',
+                                        'listing.owner.editor.dailySpecials.titleLabel',
                                         'Plato'
                                     )}
                                     onChange={(event) =>
@@ -307,11 +304,11 @@ export function CommerceDailySpecialsManager({
                                     step={1}
                                     value={centsToPesosInputValue({ cents: special.priceCents })}
                                     placeholder={t(
-                                        'commerce.owner.editor.dailySpecials.pricePlaceholder',
+                                        'listing.owner.editor.dailySpecials.pricePlaceholder',
                                         'Precio'
                                     )}
                                     aria-label={t(
-                                        'commerce.owner.editor.dailySpecials.priceLabel',
+                                        'listing.owner.editor.dailySpecials.priceLabel',
                                         'Precio en pesos'
                                     )}
                                     onChange={(event) =>
@@ -330,7 +327,7 @@ export function CommerceDailySpecialsManager({
                                 >
                                     ↑
                                     <span className={styles.srOnly}>
-                                        {t('commerce.owner.editor.dailySpecials.moveUp', 'Subir')}
+                                        {t('listing.owner.editor.dailySpecials.moveUp', 'Subir')}
                                     </span>
                                 </button>
                                 <button
@@ -341,7 +338,7 @@ export function CommerceDailySpecialsManager({
                                 >
                                     ↓
                                     <span className={styles.srOnly}>
-                                        {t('commerce.owner.editor.dailySpecials.moveDown', 'Bajar')}
+                                        {t('listing.owner.editor.dailySpecials.moveDown', 'Bajar')}
                                     </span>
                                 </button>
                                 <button
@@ -349,7 +346,7 @@ export function CommerceDailySpecialsManager({
                                     className={styles.dangerButton}
                                     onClick={() => removeSpecial(index)}
                                 >
-                                    {t('commerce.owner.editor.dailySpecials.remove', 'Quitar')}
+                                    {t('listing.owner.editor.dailySpecials.remove', 'Quitar')}
                                 </button>
                             </div>
 
@@ -360,11 +357,11 @@ export function CommerceDailySpecialsManager({
                                     value={special.description}
                                     maxLength={500}
                                     placeholder={t(
-                                        'commerce.owner.editor.dailySpecials.descriptionPlaceholder',
+                                        'listing.owner.editor.dailySpecials.descriptionPlaceholder',
                                         'Con guarnición y postre'
                                     )}
                                     aria-label={t(
-                                        'commerce.owner.editor.dailySpecials.descriptionLabel',
+                                        'listing.owner.editor.dailySpecials.descriptionLabel',
                                         'Detalle'
                                     )}
                                     onChange={(event) =>
@@ -375,7 +372,7 @@ export function CommerceDailySpecialsManager({
 
                             <div className={styles.specialRow}>
                                 <label className={styles.dateLabel}>
-                                    {t('commerce.owner.editor.dailySpecials.from', 'Desde')}
+                                    {t('listing.owner.editor.dailySpecials.from', 'Desde')}
                                     <input
                                         className={styles.dateInput}
                                         type="date"
@@ -386,7 +383,7 @@ export function CommerceDailySpecialsManager({
                                     />
                                 </label>
                                 <label className={styles.dateLabel}>
-                                    {t('commerce.owner.editor.dailySpecials.until', 'Hasta')}
+                                    {t('listing.owner.editor.dailySpecials.until', 'Hasta')}
                                     <input
                                         className={styles.dateInput}
                                         type="date"
@@ -401,7 +398,7 @@ export function CommerceDailySpecialsManager({
                             {isExpired && (
                                 <p className={styles.expiredNote}>
                                     {t(
-                                        'commerce.owner.editor.dailySpecials.expired',
+                                        'listing.owner.editor.dailySpecials.expired',
                                         'Ya venció — no se está mostrando.'
                                     )}
                                 </p>
@@ -409,7 +406,7 @@ export function CommerceDailySpecialsManager({
                             {isScheduled && (
                                 <p className={styles.scheduledNote}>
                                     {t(
-                                        'commerce.owner.editor.dailySpecials.scheduled',
+                                        'listing.owner.editor.dailySpecials.scheduled',
                                         'Programado — todavía no se muestra.'
                                     )}
                                 </p>
@@ -423,7 +420,7 @@ export function CommerceDailySpecialsManager({
                     className={styles.secondaryButton}
                     onClick={addSpecial}
                 >
-                    {t('commerce.owner.editor.dailySpecials.add', 'Agregar plato del día')}
+                    {t('listing.owner.editor.dailySpecials.add', 'Agregar plato del día')}
                 </button>
             </div>
 
@@ -434,8 +431,8 @@ export function CommerceDailySpecialsManager({
                 onClick={() => void save()}
             >
                 {state === 'saving'
-                    ? t('commerce.owner.editor.dailySpecials.saving', 'Guardando…')
-                    : t('commerce.owner.editor.dailySpecials.save', 'Guardar menú del día')}
+                    ? t('listing.owner.editor.dailySpecials.saving', 'Guardando…')
+                    : t('listing.owner.editor.dailySpecials.save', 'Guardar menú del día')}
             </button>
 
             {message && <p className={styles.message}>{message}</p>}

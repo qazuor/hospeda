@@ -82,20 +82,20 @@ describe('beneficios/index.astro — the five audience sections', () => {
 
 describe('beneficios/index.astro — copy stays single-sourced', () => {
     const REUSED_KEYS = [
-        'commerce.landing.experience.benefits.title',
-        'commerce.landing.experience.benefits.item1.title',
-        'commerce.landing.experience.benefits.item1.desc',
-        'commerce.landing.experience.benefits.item2.title',
-        'commerce.landing.experience.benefits.item2.desc',
-        'commerce.landing.experience.benefits.item3.title',
-        'commerce.landing.experience.benefits.item3.desc',
-        'commerce.landing.gastronomy.benefits.title',
-        'commerce.landing.gastronomy.benefits.item1.title',
-        'commerce.landing.gastronomy.benefits.item1.desc',
-        'commerce.landing.gastronomy.benefits.item2.title',
-        'commerce.landing.gastronomy.benefits.item2.desc',
-        'commerce.landing.gastronomy.benefits.item3.title',
-        'commerce.landing.gastronomy.benefits.item3.desc',
+        'listing.landing.experience.benefits.title',
+        'listing.landing.experience.benefits.item1.title',
+        'listing.landing.experience.benefits.item1.desc',
+        'listing.landing.experience.benefits.item2.title',
+        'listing.landing.experience.benefits.item2.desc',
+        'listing.landing.experience.benefits.item3.title',
+        'listing.landing.experience.benefits.item3.desc',
+        'listing.landing.gastronomy.benefits.title',
+        'listing.landing.gastronomy.benefits.item1.title',
+        'listing.landing.gastronomy.benefits.item1.desc',
+        'listing.landing.gastronomy.benefits.item2.title',
+        'listing.landing.gastronomy.benefits.item2.desc',
+        'listing.landing.gastronomy.benefits.item3.title',
+        'listing.landing.gastronomy.benefits.item3.desc',
         // `item1` retired by HOS-1228 (HOS-941 D-13): it promised access to a
         // network of verified stays and businesses, which nothing implements.
         // The survivors keep their original numbers — they pair with
@@ -111,11 +111,11 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
 
     it.each(LOCALES)('resolves every reused key in %s', (locale) => {
         const trees = {
-            commerce: readLocale(locale, 'commerce'),
+            listing: readLocale(locale, 'listing'),
             'alliance-leads': readLocale(locale, 'alliance-leads')
         };
         for (const key of REUSED_KEYS) {
-            const namespace = key.startsWith('commerce.') ? 'commerce' : 'alliance-leads';
+            const namespace = key.startsWith('listing.') ? 'listing' : 'alliance-leads';
             const value = lookup(trees[namespace], key);
             expect(typeof value, `${locale}: ${key}`).toBe('string');
             expect((value as string).length, `${locale}: ${key} is empty`).toBeGreaterThan(0);

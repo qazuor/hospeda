@@ -178,28 +178,28 @@ export function buildCertificateContent(input: {
     const experienceName = i18nText({ value: experience.nameI18n, locale }) || experience.name;
 
     return {
-        title: t({ locale, key: 'commerce.certificate.title', fallback: 'Certificado' }),
+        title: t({ locale, key: 'listing.certificate.title', fallback: 'Certificado' }),
         preamble: t({
             locale,
-            key: 'commerce.certificate.preamble',
+            key: 'listing.certificate.preamble',
             fallback: 'El presente certifica que'
         }),
         recipientName: certificate.recipientName,
         connector: t({
             locale,
-            key: 'commerce.certificate.connector',
+            key: 'listing.certificate.connector',
             fallback: 'realizó la experiencia'
         }),
         experienceName,
         dateLine: formatCertificateDate({ completedAt: certificate.completedAt, locale }),
         qrHint: t({
             locale,
-            key: 'commerce.certificate.qrHint',
+            key: 'listing.certificate.qrHint',
             fallback: 'Escaneá el código para conocer la experiencia.'
         }),
         footer: t({
             locale,
-            key: 'commerce.certificate.footer',
+            key: 'listing.certificate.footer',
             fallback: 'hospeda.com.ar'
         }),
         publicUrl: buildExperiencePublicUrl({

@@ -72,7 +72,7 @@ export function PriceSection({
                     as="select"
                     prefix={COMMERCE_FIELD_PREFIX}
                     name="priceRange"
-                    label={t('commerce.owner.editor.sections.priceRange', 'Rango de precios')}
+                    label={t('listing.owner.editor.sections.priceRange', 'Rango de precios')}
                     labelClassName={styles.label}
                     className={styles.input}
                     value={data.priceRange}
@@ -86,7 +86,7 @@ export function PriceSection({
                             key={tier}
                             value={tier}
                         >
-                            {t(`commerce.owner.editor.priceRangeOption.${tier}`, tier)}
+                            {t(`listing.owner.editor.priceRangeOption.${tier}`, tier)}
                         </option>
                     ))}
                 </TextField>
@@ -94,7 +94,7 @@ export function PriceSection({
                 <TextField
                     prefix={COMMERCE_FIELD_PREFIX}
                     name="menuUrl"
-                    label={t('commerce.owner.editor.sections.menuUrl', 'Enlace al menú')}
+                    label={t('listing.owner.editor.sections.menuUrl', 'Enlace al menú')}
                     labelClassName={styles.label}
                     className={styles.input}
                     error={errors.menuUrl}
@@ -123,7 +123,7 @@ export function PriceSection({
                         onFieldChange('isPriceOnRequest', event.target.checked);
                     }}
                 />
-                {t('commerce.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
+                {t('listing.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
             </label>
 
             {/* T-021: priceFrom — disabled when isPriceOnRequest */}
@@ -131,7 +131,7 @@ export function PriceSection({
             <TextField
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="priceFrom"
-                label={t('commerce.owner.editor.sections.priceFrom', 'Precio desde')}
+                label={t('listing.owner.editor.sections.priceFrom', 'Precio desde')}
                 labelClassName={styles.label}
                 className={styles.input}
                 error={errors.priceFrom}
@@ -150,7 +150,7 @@ export function PriceSection({
                 as="select"
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="priceUnit"
-                label={t('commerce.owner.editor.sections.priceUnit', 'Unidad de precio')}
+                label={t('listing.owner.editor.sections.priceUnit', 'Unidad de precio')}
                 labelClassName={styles.label}
                 className={styles.input}
                 error={errors.priceUnit}
@@ -166,7 +166,7 @@ export function PriceSection({
                         key={unit}
                         value={unit}
                     >
-                        {t(`commerce.owner.editor.priceUnitOption.${unit}`, unit)}
+                        {t(`listing.owner.editor.priceUnitOption.${unit}`, unit)}
                     </option>
                 ))}
             </TextField>

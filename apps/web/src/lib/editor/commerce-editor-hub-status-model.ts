@@ -96,7 +96,7 @@ export function resolveCommerceEditorSectionStatuses({
 
     if (input.photoCount > 0) {
         statuses.media = {
-            labelKey: 'commerce.owner.editor.hub.status.photos',
+            labelKey: 'listing.owner.editor.hub.status.photos',
             tone: 'neutral',
             params: { count: input.photoCount }
         };
@@ -104,7 +104,7 @@ export function resolveCommerceEditorSectionStatuses({
 
     if (input.faqCount > 0) {
         statuses.faqs = {
-            labelKey: 'commerce.owner.editor.hub.status.faqs',
+            labelKey: 'listing.owner.editor.hub.status.faqs',
             tone: 'neutral',
             params: { count: input.faqCount }
         };
@@ -114,7 +114,7 @@ export function resolveCommerceEditorSectionStatuses({
     // instead of reporting "0 seleccionados".
     if (input.selectedCatalogCount > 0) {
         statuses.amenities = {
-            labelKey: 'commerce.owner.editor.hub.status.selected',
+            labelKey: 'listing.owner.editor.hub.status.selected',
             tone: 'neutral',
             params: { count: input.selectedCatalogCount }
         };
@@ -162,14 +162,14 @@ function resolveBlockingStatuses({
         if (!sectionId || !suffix) continue;
 
         const labelKeys = bySection.get(sectionId) ?? [];
-        labelKeys.push(`commerce.owner.checklist.field.${suffix}`);
+        labelKeys.push(`listing.owner.checklist.field.${suffix}`);
         bySection.set(sectionId, labelKeys);
     }
 
     const statuses: Record<string, EditorSectionStatus> = {};
     for (const [sectionId, labelKeys] of bySection) {
         statuses[sectionId] = {
-            labelKey: 'commerce.owner.editor.hub.status.blockedFromPublishing',
+            labelKey: 'listing.owner.editor.hub.status.blockedFromPublishing',
             tone: 'blocking',
             missingRequirementLabelKeys: labelKeys
         };

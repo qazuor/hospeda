@@ -26,7 +26,7 @@ import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
  * able to evolve independently.
  */
 export const CommerceMediaStateSchema = z.enum(['visible', 'archived'], {
-    message: 'zodError.common.commerceMedia.state.invalid'
+    message: 'zodError.common.listingMedia.state.invalid'
 });
 export type CommerceMediaState = z.infer<typeof CommerceMediaStateSchema>;
 
@@ -64,15 +64,15 @@ export const BaseCommerceMediaSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — every media row must have a URL.
      */
-    url: mediaAssetUrl('zodError.common.commerceMedia.url.invalid'),
+    url: mediaAssetUrl('zodError.common.listingMedia.url.invalid'),
     /**
      * Short display caption (max 100 chars).
      * Nullable/optional — not all uploads include a caption.
      */
     caption: z
         .string()
-        .min(3, { message: 'zodError.common.commerceMedia.caption.min' })
-        .max(100, { message: 'zodError.common.commerceMedia.caption.max' })
+        .min(3, { message: 'zodError.common.listingMedia.caption.min' })
+        .max(100, { message: 'zodError.common.listingMedia.caption.max' })
         .nullable()
         .optional(),
     /**
@@ -81,8 +81,8 @@ export const BaseCommerceMediaSchema = z.object({
      */
     description: z
         .string()
-        .min(10, { message: 'zodError.common.commerceMedia.description.min' })
-        .max(300, { message: 'zodError.common.commerceMedia.description.max' })
+        .min(10, { message: 'zodError.common.listingMedia.description.min' })
+        .max(300, { message: 'zodError.common.listingMedia.description.max' })
         .nullable()
         .optional(),
     /**
@@ -91,8 +91,8 @@ export const BaseCommerceMediaSchema = z.object({
      */
     alt: z
         .string()
-        .min(1, { message: 'zodError.common.commerceMedia.alt.min' })
-        .max(200, { message: 'zodError.common.commerceMedia.alt.max' })
+        .min(1, { message: 'zodError.common.listingMedia.alt.min' })
+        .max(200, { message: 'zodError.common.listingMedia.alt.max' })
         .nullable()
         .optional(),
     /**
@@ -101,7 +101,7 @@ export const BaseCommerceMediaSchema = z.object({
      */
     publicId: z
         .string()
-        .min(1, { message: 'zodError.common.commerceMedia.publicId.min' })
+        .min(1, { message: 'zodError.common.listingMedia.publicId.min' })
         .nullable()
         .optional(),
     /**
@@ -129,7 +129,7 @@ export const BaseCommerceMediaSchema = z.object({
     /**
      * 0-based display order within the active gallery. Lower = appears first.
      */
-    sortOrder: z.number().int({ message: 'zodError.common.commerceMedia.sortOrder.int' }),
+    sortOrder: z.number().int({ message: 'zodError.common.listingMedia.sortOrder.int' }),
     /**
      * Timestamp set when the photo is moved to `state = 'archived'`.
      * Null while the photo is visible. Used for FIFO restore ordering.
@@ -180,22 +180,22 @@ export const CommerceMediaUpdatePayloadSchema = z.object({
     /** Short display caption (max 100 chars). `null` clears it; omit to leave unchanged. */
     caption: z
         .string()
-        .min(3, { message: 'zodError.common.commerceMedia.caption.min' })
-        .max(100, { message: 'zodError.common.commerceMedia.caption.max' })
+        .min(3, { message: 'zodError.common.listingMedia.caption.min' })
+        .max(100, { message: 'zodError.common.listingMedia.caption.max' })
         .nullable()
         .optional(),
     /** Longer photo description (max 300 chars). `null` clears it; omit to leave unchanged. */
     description: z
         .string()
-        .min(10, { message: 'zodError.common.commerceMedia.description.min' })
-        .max(300, { message: 'zodError.common.commerceMedia.description.max' })
+        .min(10, { message: 'zodError.common.listingMedia.description.min' })
+        .max(300, { message: 'zodError.common.listingMedia.description.max' })
         .nullable()
         .optional(),
     /** Accessible alt text (max 200 chars). `null` clears it; omit to leave unchanged. */
     alt: z
         .string()
-        .min(1, { message: 'zodError.common.commerceMedia.alt.min' })
-        .max(200, { message: 'zodError.common.commerceMedia.alt.max' })
+        .min(1, { message: 'zodError.common.listingMedia.alt.min' })
+        .max(200, { message: 'zodError.common.listingMedia.alt.max' })
         .nullable()
         .optional(),
     /** Optional credits/source metadata. `null` clears it; omit to leave unchanged. */

@@ -49,7 +49,7 @@ function collectStringValues(obj: unknown): string[] {
 }
 
 function loadMenuQrStrings(locale: 'es' | 'en' | 'pt'): string[] {
-    const filePath = path.join(I18N_LOCALES_DIR, locale, 'commerce.json');
+    const filePath = path.join(I18N_LOCALES_DIR, locale, 'listing.json');
     const content = JSON.parse(fs.readFileSync(filePath, 'utf-8')) as {
         owner?: { list?: { menuQr?: unknown } };
     };
@@ -100,12 +100,11 @@ describe('GastronomyMenuQrWidget forbidden wording (HOS-1044 NG-3/NG-4)', () => 
     });
 
     for (const locale of ['es', 'en', 'pt'] as const) {
-        it(`the ${locale} commerce.json menuQr strings carry no location/origin/country wording`, () => {
+        it(`the ${locale} listing.json menuQr strings carry no location/origin/country wording`, () => {
             const strings = loadMenuQrStrings(locale);
-            expect(
-                strings.length,
-                `menuQr keys missing in ${locale}/commerce.json`
-            ).toBeGreaterThan(0);
+            expect(strings.length, `menuQr keys missing in ${locale}/listing.json`).toBeGreaterThan(
+                0
+            );
 
             const hits = strings.flatMap((text) =>
                 findForbiddenHits({ text, terms: FORBIDDEN_TERMS_BY_LOCALE[locale] }).map(
@@ -113,7 +112,7 @@ describe('GastronomyMenuQrWidget forbidden wording (HOS-1044 NG-3/NG-4)', () => 
                 )
             );
 
-            expect(hits, `Forbidden terms found in ${locale}/commerce.json menuQr`).toEqual([]);
+            expect(hits, `Forbidden terms found in ${locale}/listing.json menuQr`).toEqual([]);
         });
     }
 

@@ -50,7 +50,7 @@ const MAX_SIZE_BYTES = mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB);
 export function validateMediaFileType(file: File, t: Translate): string | null {
     if (!(MEDIA_SECTION_ALLOWED_TYPES as readonly string[]).includes(file.type)) {
         return t(
-            'commerce.owner.editor.media.invalidType',
+            'listing.owner.editor.media.invalidType',
             'Solo se permiten archivos JPG, PNG, WebP o HEIC'
         );
     }
@@ -71,7 +71,7 @@ export function validateMediaFileType(file: File, t: Translate): string | null {
 export function validateMediaFileSize(file: File, t: Translate): string | null {
     if (file.size > MAX_SIZE_BYTES) {
         return t(
-            'commerce.owner.editor.media.tooLarge',
+            'listing.owner.editor.media.tooLarge',
             'El archivo no puede superar {{maxSize}}MB',
             { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
         );
@@ -93,7 +93,7 @@ export function validateMediaFileSize(file: File, t: Translate): string | null {
  */
 export function buildMediaCompressionUnsupportedTooLargeMessage(t: Translate): string {
     return t(
-        'commerce.owner.editor.media.compressionUnsupportedTooLarge',
+        'listing.owner.editor.media.compressionUnsupportedTooLarge',
         'No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana.',
         { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
     );

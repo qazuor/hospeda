@@ -254,21 +254,21 @@ export function CommerceTranslationPanel({
     // language they are typing in.
     const localeSuffix = ` (${LOCALE_LABELS[activeLocale]})`;
     const fieldLabels: Record<TranslatableField, string> = {
-        nameI18n: `${t('commerce.owner.editor.translationPanel.fieldName', 'Nombre')}${localeSuffix}`,
-        summaryI18n: `${t('commerce.owner.editor.translationPanel.fieldSummary', 'Resumen')}${localeSuffix}`,
-        descriptionI18n: `${t('commerce.owner.editor.translationPanel.fieldDescription', 'Descripción')}${localeSuffix}`,
-        richDescriptionI18n: `${t('commerce.owner.editor.translationPanel.fieldRichDescription', 'Descripción ampliada')}${localeSuffix}`
+        nameI18n: `${t('listing.owner.editor.translationPanel.fieldName', 'Nombre')}${localeSuffix}`,
+        summaryI18n: `${t('listing.owner.editor.translationPanel.fieldSummary', 'Resumen')}${localeSuffix}`,
+        descriptionI18n: `${t('listing.owner.editor.translationPanel.fieldDescription', 'Descripción')}${localeSuffix}`,
+        richDescriptionI18n: `${t('listing.owner.editor.translationPanel.fieldRichDescription', 'Descripción ampliada')}${localeSuffix}`
     };
 
     return (
         <fieldset className={styles.section}>
             <legend className={styles.sectionTitle}>
-                {t('commerce.owner.editor.translationPanel.sectionTitle', 'Traducciones')}
+                {t('listing.owner.editor.translationPanel.sectionTitle', 'Traducciones')}
             </legend>
 
             <p className={styles.sectionDescription}>
                 {t(
-                    'commerce.owner.editor.translationPanel.sectionDescription',
+                    'listing.owner.editor.translationPanel.sectionDescription',
                     'Editá las traducciones de los campos principales de tu comercio en los tres idiomas disponibles.'
                 )}
             </p>
@@ -277,10 +277,7 @@ export function CommerceTranslationPanel({
             <div
                 className={styles.tabBar}
                 role="tablist"
-                aria-label={t(
-                    'commerce.owner.editor.translationPanel.sectionTitle',
-                    'Traducciones'
-                )}
+                aria-label={t('listing.owner.editor.translationPanel.sectionTitle', 'Traducciones')}
             >
                 {SUPPORTED_LOCALES.map((loc) => {
                     const hasContent = localeHasContent({ values, locale: loc });
@@ -351,7 +348,7 @@ export function CommerceTranslationPanel({
                                 // "{{locale}}". Same failure mode as BETA-124's
                                 // summary counter.
                                 placeholder={t(
-                                    'commerce.owner.editor.translationPanel.localePlaceholder',
+                                    'listing.owner.editor.translationPanel.localePlaceholder',
                                     `Ingresá el texto en ${LOCALE_LABELS[activeLocale]}...`,
                                     { locale: LOCALE_LABELS[activeLocale] }
                                 )}
