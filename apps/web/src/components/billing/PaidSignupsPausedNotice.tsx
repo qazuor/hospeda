@@ -5,7 +5,7 @@
  * surfaced to the web through `fetchCheckoutConfig`).
  *
  * One component and one pair of i18n keys for every surface the freeze covers
- * — the pricing plan cards, the owner commerce publish CTA and the add-on
+ * — the pricing plan cards, the owner listing publish CTA and the add-on
  * purchase cards — so the three never drift into three different promises.
  * Rendered with `role="status"`: it is information, not an error.
  */

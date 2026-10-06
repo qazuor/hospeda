@@ -116,10 +116,16 @@ const TEXTS = {
 const HOST_PERMISSION = 'accommodation.create' as const;
 
 /**
- * Permission that marks a user as a commerce listing owner (gastronomy /
- * experience self-service, SPEC-253). Fed to PostHog as `is_commerce_owner`.
+ * Permission that marks a user as a gastronomy listing owner (self-service,
+ * SPEC-253). Fed to PostHog as `is_gastronomy_owner`.
  */
-const COMMERCE_OWNER_PERMISSIONS = ['gastronomy.editOwn', 'experience.editOwn'] as const;
+const GASTRONOMY_OWNER_PERMISSION = 'gastronomy.editOwn' as const;
+
+/**
+ * Permission that marks a user as an experience listing owner (self-service,
+ * SPEC-253). Fed to PostHog as `is_experience_owner`.
+ */
+const EXPERIENCE_OWNER_PERMISSION = 'experience.editOwn' as const;
 
 function resolveAnalyticsUserType(input: {
     readonly permissions: readonly string[] | null;
@@ -130,7 +136,8 @@ function resolveAnalyticsUserType(input: {
     }
     if (
         permissions?.includes(HOST_PERMISSION) ||
-        COMMERCE_OWNER_PERMISSIONS.some((permission) => permissions?.includes(permission))
+        permissions?.includes(GASTRONOMY_OWNER_PERMISSION) ||
+        permissions?.includes(EXPERIENCE_OWNER_PERMISSION)
     ) {
         return 'owner';
     }
@@ -195,7 +202,7 @@ export function UserMenu({
     // but not the permission set), so the initial identify carries the id
     // alone; a second identify with the enriched props fires when /auth/me (or
     // the cache) lands. PostHog merges person properties across identify calls,
-    // so segmenting funnels by is_host / is_commerce_owner / is_staff works
+    // so segmenting funnels by is_host / is_gastronomy_owner / is_experience_owner / is_staff works
     // without re-sending the id-only call.
     //
     // HOS-296 — the `role` scalar person-property became the `roles` ARRAY.
@@ -207,7 +214,7 @@ export function UserMenu({
     //     with `contains`, so `roles contains 'HOST'` replaces the old
     //     `role = 'HOST'` breakdown one-for-one;
     //   - the real segmentation levers here are already the permission-derived
-    //     `is_host` / `is_commerce_owner` / `is_staff` booleans below, which
+    //     `is_host` / `is_gastronomy_owner` / `is_experience_owner` / `is_staff` booleans below, which
     //     are unchanged and keep working for a multi-hat user (a HOST +
     //     a vertical owner correctly reports BOTH as true instead of
     //     whichever single role happened to win).
@@ -224,9 +231,8 @@ export function UserMenu({
                       user_type: resolveAnalyticsUserType({ permissions }),
                       roles: rolesKey.length > 0 ? rolesKey.split(',') : [],
                       is_host: permissions.includes(HOST_PERMISSION),
-                      is_commerce_owner: COMMERCE_OWNER_PERMISSIONS.some((permission) =>
-                          permissions.includes(permission)
-                      ),
+                      is_gastronomy_owner: permissions.includes(GASTRONOMY_OWNER_PERMISSION),
+                      is_experience_owner: permissions.includes(EXPERIENCE_OWNER_PERMISSION),
                       is_staff: permissions.includes(STAFF_DISCRIMINATOR_PERMISSION)
                   };
         identifyUser(user.id, props);

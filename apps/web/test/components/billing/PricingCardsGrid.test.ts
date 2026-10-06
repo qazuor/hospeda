@@ -364,7 +364,7 @@ describe('PricingCardsGrid.astro', () => {
 
     describe('promo-code entry point above the grid (HOS-984)', () => {
         it('gates the entry point on a checkout grid with a real amount to discount', () => {
-            // `'link'` grids (commerce, partner) never mount PlanPurchaseButton at
+            // `'link'` grids (gastronomy/experience, partner) never mount PlanPurchaseButton at
             // all, and `'consult'` cards (aliados) show no amount — an anchor to a
             // field that is not there would be a dead link either way.
             expect(src).toContain(

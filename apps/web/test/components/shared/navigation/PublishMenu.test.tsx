@@ -57,8 +57,8 @@ describe('PublishMenu', () => {
             '/es/publicar/experiencias/'
         );
 
-        // HOS-1156: the two commerce entries used to read `/es/planes/…/` here,
-        // and that was the defect — a "Publicar" menu whose two commerce options
+        // HOS-1156: the two gastronomy and experience entries used to read `/es/planes/…/` here,
+        // and that was the defect — a "Publicar" menu whose two gastronomy and experience options
         // opened SALES pages. The literals above are deliberately spelled out
         // rather than derived from `PUBLISH_CTA_OPTIONS`: deriving them would
         // make this case pass for any value the config happened to hold, which

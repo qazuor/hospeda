@@ -31,7 +31,7 @@ interface Props {
 const { socialNetworks, menuUrl, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
-// Both the menu link and the social profiles are authored by the commerce
+// Both the menu link and the social profiles are authored by the listing
 // owner in `/mi-cuenta/comercio`, and `z.string().url()` accepts `javascript:`
 // — so this allow-list, not the schema, is what keeps a payload out of the
 // hrefs below (HOS-592 / F-02). A refused value drops its link entirely.

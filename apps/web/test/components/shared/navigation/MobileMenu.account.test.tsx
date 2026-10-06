@@ -195,7 +195,7 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('shows the "Mi comercio" business shortcut for commerce-only owners', async () => {
+    it('shows the "Mi comercio" business shortcut for gastronomy/experience-only owners', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({

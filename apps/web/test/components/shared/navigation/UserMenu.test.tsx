@@ -647,13 +647,14 @@ describe('UserMenu — PostHog identify/reset', () => {
                 roles: ['GASTRONOMY_OWNER', 'HOST', 'USER'],
                 user_type: 'owner',
                 is_host: true,
-                is_commerce_owner: true,
+                is_gastronomy_owner: true,
+                is_experience_owner: false,
                 is_staff: false
             });
         });
     });
 
-    it('keeps is_commerce_owner true for an experience-only owner', async () => {
+    it('marks an experience-only owner via is_experience_owner', async () => {
         global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             json: async () => ({
@@ -672,7 +673,11 @@ describe('UserMenu — PostHog identify/reset', () => {
         await waitFor(() => {
             expect(identifyUser).toHaveBeenLastCalledWith(
                 'user-1',
-                expect.objectContaining({ is_commerce_owner: true, user_type: 'owner' })
+                expect.objectContaining({
+                    is_gastronomy_owner: false,
+                    is_experience_owner: true,
+                    user_type: 'owner'
+                })
             );
         });
     });
@@ -699,7 +704,8 @@ describe('UserMenu — PostHog identify/reset', () => {
                 roles: ['ADMIN', 'USER'],
                 user_type: 'staff',
                 is_host: false,
-                is_commerce_owner: false,
+                is_gastronomy_owner: false,
+                is_experience_owner: false,
                 is_staff: true
             });
         });

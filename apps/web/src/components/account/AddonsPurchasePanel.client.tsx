@@ -59,7 +59,7 @@ const SUBSCRIPTION_GATE_REASONS: ReadonlySet<string> = new Set([
  * that add-on's own `productDomain` (HOS-1293).
  *
  * Addon purchases are NOT a host-only surface — `targetCategories` is always
- * `owner`/`complex` because `PlanCategory` has no commerce member (see
+ * `owner`/`complex` because `PlanCategory` has no gastronomy or experience member (see
  * `AddonDefinition.productDomain`'s doc in `@repo/billing`), but
  * `extra-gastronomies-1` / `extra-experiences-1` are real, purchasable,
  * gastronomy/experience-domain add-ons. Before this fix every card's gate CTA
@@ -70,8 +70,8 @@ const SUBSCRIPTION_GATE_REASONS: ReadonlySet<string> = new Set([
  * Anything other than `'gastronomy'`/`'experience'` (accommodation, `null`,
  * or a future domain this panel does not yet know) degrades to `'host'` —
  * every add-on in the catalogue today carries `productDomain: 'accommodation'`
- * except the two commerce pairs, so this is not a guess so much as the
- * existing default kept for everything that isn't explicitly commerce.
+ * except the two gastronomy and experience pairs, so this is not a guess so much as the
+ * existing default kept for everything that isn't explicitly gastronomy or experience.
  *
  * @param productDomain - The add-on's own `productDomain`, from the catalogue.
  * @returns The audience {@link resolveSubscriptionPlansPathForAudience} expects.

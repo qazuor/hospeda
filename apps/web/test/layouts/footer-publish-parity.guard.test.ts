@@ -1,7 +1,7 @@
 /**
  * @file footer-publish-parity.guard.test.ts
  * @description HOS-826 — the footer's "Para vos" column must offer the same
- * commerce verticals the header's "Publicar" chooser does.
+ * gastronomy and experience verticals the header's "Publicar" chooser does.
  *
  * ## Why parity, and not "the two links exist"
  *
@@ -13,7 +13,7 @@
  * every page of the site, with nothing failing.
  *
  * So this reads the real constant the header renders from and requires each
- * commerce vertical's href to appear among the footer's `forYouLinks`. Renaming
+ * gastronomy or experience vertical's href to appear among the footer's `forYouLinks`. Renaming
  * a route in `discovery-doors.ts` fails here until the footer is updated too —
  * which is the property the literals in `Footer.astro` trade away and this
  * guard buys back.
@@ -38,7 +38,7 @@ import { PUBLISH_CTA_OPTIONS } from '@/config/discovery-doors';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
 
 /**
- * The sales page each commerce vertical used to point at, before HOS-1156.
+ * The sales page each gastronomy or experience vertical used to point at, before HOS-1156.
  *
  * Kept as literals on purpose: this is the regression being guarded against, so
  * it must be spelled out rather than derived from anything the fix owns.
@@ -67,19 +67,19 @@ function readForYouBlock(src: string): string {
 
 const forYouBlock = readForYouBlock(footerSrc);
 
-/** The two commerce verticals — see the docstring for why `accommodation` is out. */
-const COMMERCE_OPTION_IDS: ReadonlyArray<string> = ['gastronomy', 'experience'];
+/** The two gastronomy and experience verticals — see the docstring for why `accommodation` is out. */
+const OWNER_VERTICAL_OPTION_IDS: ReadonlyArray<string> = ['gastronomy', 'experience'];
 
-describe('HOS-826 — footer "Para vos" offers every commerce vertical', () => {
+describe('HOS-826 — footer "Para vos" offers every gastronomy or experience vertical', () => {
     it('the header chooser still exposes the options this guard reads', () => {
         // Non-vacuity: if PUBLISH_CTA_OPTIONS were emptied or its ids renamed,
         // every loop below would iterate zero times and report success.
         const ids = PUBLISH_CTA_OPTIONS.map((option) => option.id);
-        expect(ids).toEqual(expect.arrayContaining([...COMMERCE_OPTION_IDS]));
+        expect(ids).toEqual(expect.arrayContaining([...OWNER_VERTICAL_OPTION_IDS]));
         expect(PUBLISH_CTA_OPTIONS.length).toBeGreaterThanOrEqual(3);
     });
 
-    for (const id of COMMERCE_OPTION_IDS) {
+    for (const id of OWNER_VERTICAL_OPTION_IDS) {
         it(`links the ${id} vertical at the header's own destination`, () => {
             const option = PUBLISH_CTA_OPTIONS.find((candidate) => candidate.id === id);
             expect(option).toBeDefined();

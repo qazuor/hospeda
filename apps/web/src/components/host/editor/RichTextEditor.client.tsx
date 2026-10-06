@@ -174,7 +174,7 @@ export function RichTextEditor({
             // it did not receive. The `setEditable` fix below removes the one
             // source that actually fired this on mount, but any future emit
             // that serializes back to the value we already hold is equally not
-            // an edit, and a parent that dirty-tracks per field (the commerce
+            // an edit, and a parent that dirty-tracks per field (the gastronomy/experience
             // owner editor, HOS-371) would flag the field dirty from it.
             if (md === (valueRef.current ?? '')) {
                 return;
@@ -206,7 +206,7 @@ export function RichTextEditor({
     // already in TipTap's canonical form (`"a\nb"` serializes back as `"a b"`,
     // a trailing newline is stripped, runs of blank lines collapse). So the
     // equality guard in `onUpdate` did not catch it, and any parent that
-    // dirty-tracks per field (the commerce owner editor, HOS-371) saw the field
+    // dirty-tracks per field (the gastronomy/experience owner editor, HOS-371) saw the field
     // go dirty on load — Save enabled with zero edits, and the stored Markdown
     // silently re-flowed on the next save of an unrelated field.
     useEffect(() => {
@@ -241,7 +241,7 @@ export function RichTextEditor({
              * positioned ancestor the surrounding PAGE happens to provide —
              * `.wrapper` itself declares no `position` — so the hint climbed
              * out of the editor and was drawn on top of the field's own title
-             * (24px of overlap in the commerce editor). Do not flatten this
+             * (24px of overlap in the listing editor). Do not flatten this
              * div, and do not move the overlay out of it.
              */}
             <div className={styles.editorArea}>

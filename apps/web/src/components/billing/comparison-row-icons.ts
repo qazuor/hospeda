@@ -89,7 +89,7 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     aiChatOwner: ChatIcon,
     aiSupport: BriefcaseIcon,
     // Gastronomy (HOS-1032). `PlanComparisonTable` guards with `{RowIcon && …}`,
-    // so an unmapped row degrades silently — which is why the two commerce
+    // so an unmapped row degrades silently — which is why the two gastronomy/experience
     // tables would otherwise have rendered ONE iconed row among fifteen, beside
     // owner and tourist tables where every row has one.
     maxGastronomies: ForkKnifeIcon,
@@ -107,8 +107,8 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     editExperienceInfo: EditIcon,
     experienceDirections: CompassIcon,
     experienceCertificate: CheckCircleIcon,
-    // Shared by both commerce verticals
+    // Shared by both gastronomy and experience verticals
     listingPdf: FileTextIcon,
     // Same icon as `aiChat` / `aiChatOwner`, same reason: distinct audiences.
-    aiChatCommerce: ChatIcon
+    aiChatListing: ChatIcon
 };

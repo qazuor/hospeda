@@ -6,7 +6,7 @@
  * Follows `AccommodationEditor.client.tsx`: one component owns the form state,
  * the mutable baseline, the PATCH diff and the submit; the section components
  * only render. The sticky `EditorSectionNav` and the `ActionBar` are the same
- * generic components that editor uses — the commerce editor's omission of both
+ * generic components that editor uses — the listing editor's omission of both
  * is a known gap, not a lighter-weight variant to copy.
  */
 

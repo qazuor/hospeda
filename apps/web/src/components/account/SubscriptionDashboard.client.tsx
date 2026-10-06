@@ -22,15 +22,12 @@ import { billingApi, userApi } from '@/lib/api/endpoints-protected';
 import type { ProductDomainScope } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
-import type { CommerceVertical } from '@/lib/commerce/owner-listings';
-import type { CommercePlanOption } from '@/lib/commerce/plan-options';
 import { getAdminUrl } from '@/lib/env';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
-import { CommercePlanChange } from '../commerce/CommercePlanChange.client';
 import { PlanChangeFlow } from './PlanChangeFlow.client';
 import { PlanUsageSection } from './PlanUsageSection.client';
 import styles from './SubscriptionDashboard.module.css';
@@ -87,19 +84,8 @@ export interface SubscriptionDashboardProps {
      */
     readonly plans?: readonly PublicPlanData[];
     /**
-     * This vertical's tiers, when `productDomain` is a commerce one (HOS-1213).
-     *
-     * A commerce subscription changes tiers through `CommercePlanChange` and its
-     * own `POST /protected/commerce/{vertical}/change-plan`, never through
-     * `PlanChangeFlow` — so its catalogue arrives as a separate prop rather than
-     * being squeezed into `plans`. Passing the two through one field is what
-     * produced the bug: with a single list, a commerce dashboard rendered the
-     * accommodation flow over whatever plans happened to be in it.
-     */
-    readonly commercePlans?: readonly CommercePlanOption[];
-    /**
      * Which of the caller's subscriptions to load (HOS-259). A dual-role
-     * owner (accommodation host AND commerce-listing owner) can have TWO
+     * owner (accommodation host AND gastronomy/experience listing owner) can have TWO
      * subscriptions under the same billing customer; this scopes both the
      * initial fetch and the silent refresh to the right one. Defaults to
      * `'accommodation'` server-side when omitted (see `userApi.getSubscription`).
@@ -108,24 +94,11 @@ export interface SubscriptionDashboardProps {
 }
 
 /**
- * Whether this dashboard is showing a COMMERCE vertical's subscription.
- *
- * Narrows `ProductDomainScope` to the two verticals `CommercePlanChange`
- * accepts. Written as an inclusion list so a domain added later (`partner`, say)
- * is excluded until somebody decides what its plan change looks like, rather
- * than being handed to a component built for gastronomy and experience.
- */
-function isCommerceVertical(domain: ProductDomainScope | undefined): domain is CommerceVertical {
-    return domain === 'gastronomy' || domain === 'experience';
-}
-
-/**
  * Whether this dashboard is showing the ACCOMMODATION subscription (HOS-1321).
  *
  * Gates pause/resume, which are accommodation-specific in their copy AND in
- * their effect. It exists because `commerceVertical === null` — the shape
- * HOS-1278 used for the same job — is a NEGATION, and a fourth domain walks
- * straight through it: `isCommerceVertical('tourist')` is `false`, so a
+ * their effect. It exists because a negation ("not a gastronomy/experience domain") is the
+ * wrong shape for the job, and a fourth domain walks straight through it: a
  * `tourist-vip` holder was offered "Pausar" and a modal reading "tus
  * alojamientos se ocultan del sitio y no podrás editarlos", about accommodation
  * they do not have.
@@ -155,9 +128,8 @@ function isCommerceVertical(domain: ProductDomainScope | undefined): domain is C
  * showed them a Pausar button) now lands on the tourist tab with
  * `status: 'paused'`, where `canResume` is `false` and `canCancel` excludes
  * `paused` — a paused subscription with no action on it. Strictly better than
- * the "Sin suscripción activa" they saw before this spec, and commerce has
- * carried the same gap since HOS-1278, so it is left alone rather than grown
- * into this change.
+ * the "Sin suscripción activa" they saw before this spec, so it is left alone
+ * rather than grown into this change.
  *
  * An INCLUSION list, so a fifth domain is excluded until somebody decides what
  * pausing means for it and writes copy that is true.
@@ -176,13 +148,11 @@ export function isAccommodationDashboard(domain: ProductDomainScope | undefined)
  *
  * The accommodation AND tourist tabs do — `plan-domains.config.ts` files both
  * catalogues under the accommodation plan-change machinery, and there is no
- * second route for tourists the way commerce has one per vertical.
+ * second route for tourists.
  *
  * Also an INCLUSION list, and for the same reason as
- * {@link isAccommodationDashboard}: the two call sites below used to say
- * `commerceVertical === null`, which hands the accommodation flow to every
- * domain that is not one of the two commerce verticals — a fifth domain
- * included. Listed instead, a fifth domain renders NO plan-change UI until
+ * {@link isAccommodationDashboard}: a negation ("every domain that is not gastronomy or experience") would hand
+ * the accommodation flow to a fifth domain too. Listed instead, a fifth domain renders NO plan-change UI until
  * somebody decides which flow it belongs to, which is dark rather than wrong.
  */
 export function isAccommodationPlanChangeDashboard(
@@ -719,17 +689,9 @@ export function SubscriptionDashboard({
     locale,
     user,
     plans,
-    commercePlans,
     productDomain
 }: SubscriptionDashboardProps) {
     const { t } = createTranslations(locale);
-
-    /**
-     * HOS-1213: a commerce vertical's subscription never uses the accommodation
-     * plan-change flow. Resolved once here so the CTA and the modal below cannot
-     * disagree about which flow this dashboard offers.
-     */
-    const commerceVertical = isCommerceVertical(productDomain) ? productDomain : null;
 
     // ── State ──────────────────────────────────────────────────────────────
 
@@ -1124,14 +1086,10 @@ export function SubscriptionDashboard({
     // HOS-1278: the pause/resume flow is accommodation-specific
     // (`PauseConfirmModal`'s copy literally says "tus alojamientos se ocultan",
     // and the backend's `accommodationsUpdated` effect is scoped to that
-    // domain). Offering it on a commerce dashboard would show accommodation
-    // copy to a gastronomy/experience owner and doesn't fit
-    // `CommercePlanChange`'s per-vertical flow model. A dedicated commerce
-    // pause UI (with correct copy) is a separate follow-up, not this fix.
+    // domain).
     //
-    // HOS-1321: gated on `isAccommodationDashboard`, NOT on the
-    // `commerceVertical === null` this used to say. That was a negation, and
-    // `tourist` — the fourth domain — walked straight through it: a
+    // HOS-1321: gated on `isAccommodationDashboard`, an inclusion list, because
+    // a negation lets `tourist` — the fourth domain — walk straight through: a
     // `tourist-vip` holder was offered "Pausar" and told their accommodation
     // would be hidden. The backend refuses the domain and reports
     // `accommodationsUpdated: 0`, so the modal described an effect that would
@@ -1295,20 +1253,9 @@ export function SubscriptionDashboard({
                     </div>
                 )}
 
-                {/* HOS-1213: a commerce vertical brings its OWN CTA + flow.
-                    `CommercePlanChange` renders the button itself and returns
-                    null when the vertical has no other tier to move to, which is
-                    why this branch is not gated on a plan count the way the
-                    accommodation one is. `canChangePlan` still gates it: that
-                    predicate mirrors the backend's own `active | trialing` find,
-                    and the commerce route answers the same way.
-
-                    HOS-1321: the accommodation branch is now selected by an
-                    inclusion list, not by `commerceVertical === null`. Same
-                    class of bug as `canPause` above — a negation hands this
-                    flow to every domain that is merely not-commerce, so a fifth
-                    one would silently POST to the accommodation change-plan
-                    route. Listed, it renders neither branch until classified. */}
+                {/* HOS-1321: the plan-change CTA is selected by an inclusion list,
+                    so a domain that is not classified renders no plan-change UI
+                    at all (dark rather than wrong). */}
                 {isAccommodationPlanChangeDashboard(productDomain) ? (
                     plans && plans.length > 0 ? (
                         <button
@@ -1344,21 +1291,6 @@ export function SubscriptionDashboard({
                             {t('account.pages.subscription.upgradeLink', 'Ver planes disponibles')}
                         </a>
                     )
-                ) : commerceVertical !== null && canChangePlan && subscription ? (
-                    // HOS-1321: the two branches are now selected by two
-                    // INDEPENDENT inclusion lists, so "not the accommodation
-                    // flow" no longer implies "a commerce vertical" — a fifth
-                    // domain is neither, and renders no plan-change UI at all.
-                    // The null check is what makes that a rendered `null`
-                    // instead of `CommercePlanChange` handed a null vertical.
-                    <CommercePlanChange
-                        vertical={commerceVertical}
-                        currentPlanSlug={subscription.planSlug}
-                        currentPlanName={subscription.planName}
-                        plans={commercePlans ?? []}
-                        currentPeriodEnd={subscription.currentPeriodEnd}
-                        locale={locale}
-                    />
                 ) : null}
             </section>
 
@@ -1607,13 +1539,10 @@ export function SubscriptionDashboard({
             )}
 
             {/* ── Plan-change flow modal (SPEC-203 T-005/T-007/T-008/T-009) ──
-               The domain gate is defence in depth (HOS-1213): the CTA that sets
-               `showPlanChangeFlow` is not rendered on a commerce dashboard, so
-               this can only fire if a future edit reintroduces one. It is cheap,
-               and what it prevents is a commerce subscription being offered
-               accommodation plans — the exact bug this closes. HOS-1321 turned
-               it from `commerceVertical === null` into the same inclusion list
-               the CTA uses, so the two cannot disagree about a new domain. */}
+               The domain gate is defence in depth: the CTA that sets
+               `showPlanChangeFlow` is only rendered for the domains in
+               `isAccommodationPlanChangeDashboard`, so the modal uses the same
+               inclusion list and the two cannot disagree about a new domain. */}
             {showPlanChangeFlow &&
                 isAccommodationPlanChangeDashboard(productDomain) &&
                 plans &&

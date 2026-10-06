@@ -23,7 +23,7 @@
  * stay free text for that kind, same as before.
  *
  * Includes a honeypot `_hp` field for spam rejection, the same pattern the
- * commerce pre-onboarding lead form used before HOS-693 §6.2 removed it.
+ * gastronomy/experience pre-onboarding lead form used before HOS-693 §6.2 removed it.
  * Rate-limit (429) and generic API errors surface friendly i18n messages.
  *
  * Hydration: caller MUST use `client:load` (the `kind` prop is fixed per
