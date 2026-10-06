@@ -42,7 +42,7 @@
 
 import { expect, test } from '@playwright/test';
 import { createUser, ensureBillingCustomer, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { createQZPayTestControl } from '../../fixtures/qzpay-test-control.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -88,6 +88,11 @@ test.describe('RES-01: MP down during checkout → retry, no duplicates @p0 @res
     test('first checkout fails (no sub), retry succeeds, sub count stays at 1', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         const qzpayControl = createQZPayTestControl(API_URL);
         try {
             await qzpayControl.snapshot();

@@ -62,7 +62,7 @@ import {
     createUser,
     forceVerifyEmail
 } from '../../fixtures/api-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { postPaymentApprovedWebhook } from '../../fixtures/mp-webhook-helper.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -81,6 +81,11 @@ test.describe('HOST-02: trial → MP upgrade @p0 @host @billing @real-payment', 
     test('reactivate-trial → checkout redirect returned, old sub not cancelled, customer not duplicated', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // ── Gate: env credentials present? ────────────────────────────────
         const hasMpSecret = Boolean(process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET);
         const hasMpToken = Boolean(process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN);

@@ -36,7 +36,7 @@
 import { expect, test } from '@playwright/test';
 import { createSubscription, createUser, resolvePlanIdBySlug } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -107,6 +107,11 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
     });
 
     test('gate: free tier is blocked with ENTITLEMENT_REQUIRED', async () => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         test.fixme(accIds.length < 2, 'Seed needs ≥ 2 ACTIVE accommodations');
 
         // ── Arrange: a fresh USER with no subscription = tourist-free tier ──
@@ -122,6 +127,11 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
     });
 
     test('gate: VIP allows its cap, blocks one more with LIMIT_REACHED', async () => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         test.fixme(vipCap < 1, 'tourist-vip carries no max_compare_items limit');
         test.fixme(accIds.length < vipCap + 1, `Seed needs ≥ ${vipCap + 1} ACTIVE accommodations`);
@@ -150,6 +160,11 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
     test('UI flow: select from listing → floating bar → compare page → matrix', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         test.fixme(accIds.length < 2, 'Seed needs ≥ 2 ACTIVE accommodations');
         if (!vipPlanId) return;

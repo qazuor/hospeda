@@ -79,6 +79,26 @@ export async function execSQL<T extends Record<string, unknown> = Record<string,
 }
 
 /**
+ * Reports whether the retired billing schema (`billing_plans`, `billing_customers`,
+ * `billing_subscriptions`, ...) still exists in the E2E database.
+ *
+ * Migration 0125 (HOS-1416) dropped those tables with the old billing engine
+ * (HOS-1352 U1.1). Specs whose subject IS that engine (checkout, plan change,
+ * dunning, add-ons, tier gates) call this to defer themselves at RUNTIME with
+ * `test.fixme(!(await hasOldBillingSchema()), ...)` until the new billing (B units)
+ * brings its own fixtures. It is a real precondition probe, not a hard-coded
+ * switch, so a spec that gets a schema back runs again without being touched.
+ *
+ * @returns `true` when `billing_plans` exists in the `public` schema.
+ */
+export async function hasOldBillingSchema(): Promise<boolean> {
+    const rows = await execSQL<{ present: boolean }>(
+        "SELECT to_regclass('public.billing_plans') IS NOT NULL AS present"
+    );
+    return rows[0]?.present === true;
+}
+
+/**
  * Reads the set of roles a user holds, from the `user_role` junction table.
  *
  * HOS-296 dropped `users.role`; the hats now live one row each in `user_role`.
