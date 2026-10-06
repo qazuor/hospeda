@@ -7,7 +7,7 @@
  * extras, no missing entries, no duplicates) and then applies the new
  * `sortOrder` positions in a single transaction.
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
+ * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
  * enforced inside `reorderGastronomyMedia` via `checkGastronomyCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
@@ -45,7 +45,7 @@ export const protectedReorderGastronomyMediaRoute = createCRUDRoute({
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
+        'exactly. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
     tags: ['Gastronomy', 'Gastronomy Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

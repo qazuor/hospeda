@@ -39,8 +39,8 @@
  * that must stay a factory concern rather than an in-handler check
  * (HOS-589 AC-8).
  *
- * Until HOS-687 the same door was bolted three times — `requiredPermissions:
- * [COMMERCE_CREATE]` here, `checkCanCreateCommerce` in the service's
+ * Until HOS-687 the same door was bolted three times — a route permission here,
+ * `checkCanCreateCommerce` in the service's
  * `_canCreate`, and `hasCommerceNavAccess` on the web create page. All three
  * turned away the signed-in person holding no commerce role, which is exactly
  * everyone this flow exists for: nobody could reach the create call that would
@@ -48,13 +48,13 @@
  * two of three leaves the flow just as broken while looking fixed.
  *
  * The ADMIN create routes (`gastronomy/admin/create.ts` and its experience
- * twin) still carry `requiredPermissions: [COMMERCE_CREATE]`, so relaxing the
+ * twin) still carry their vertical's CREATE permission, so relaxing the
  * shared service predicate did not widen the admin path.
  *
  * ## The role grant
  *
  * Creating the listing IS what makes the caller a commerce owner:
- * `createForOwner` grants `COMMERCE_OWNER` inside the same transaction as the
+ * `createForOwner` grants the vertical's owner role inside the same transaction as the
  * insert (mirror of `AccommodationService.createForOnboarding`). It is
  * idempotent on `(user_id, role)` and additive, so a second listing changes
  * nothing and an account that already holds `HOST` keeps it.
@@ -135,7 +135,7 @@ export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     path: '/listings/gastronomy',
     summary: 'Create a gastronomy listing (owner self-service)',
     description:
-        'Creates a gastronomy listing owned by the authenticated caller and grants them the COMMERCE_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires an authenticated session and no commerce permission.',
+        'Creates a gastronomy listing owned by the authenticated caller and grants them the GASTRONOMY_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires an authenticated session and no commerce permission.',
     tags: ['Commerce'],
     // No `requiredPermissions` on purpose (HOS-687): this route is how an
     // account BECOMES a commerce owner, so demanding the owner's permission to
@@ -226,7 +226,7 @@ export const protectedCreateExperienceListingRoute = createProtectedRoute({
     path: '/listings/experience',
     summary: 'Create an experience listing (owner self-service)',
     description:
-        'Creates an experience listing owned by the authenticated caller and grants them the COMMERCE_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires an authenticated session and no commerce permission.',
+        'Creates an experience listing owned by the authenticated caller and grants them the EXPERIENCE_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires an authenticated session and no commerce permission.',
     tags: ['Commerce'],
     // No `requiredPermissions` on purpose (HOS-687) — see the gastronomy route
     // above and the module docstring.

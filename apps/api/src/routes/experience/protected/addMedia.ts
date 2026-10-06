@@ -6,7 +6,7 @@
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
  * returned URL + metadata as a new `experience_media` row.
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
+ * Gated on EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff) —
  * enforced inside `addExperienceMedia` via `checkExperienceCanEditMedia`.
  */
 
@@ -38,7 +38,7 @@ export const protectedAddExperienceMediaRoute = createCRUDRoute({
     summary: 'Add photo to experience listing gallery',
     description:
         'Registers an already-uploaded URL as a new experience_media row. ' +
-        'Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
+        'Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).',
     tags: ['Experience', 'Experience Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

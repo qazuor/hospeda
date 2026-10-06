@@ -13,7 +13,7 @@
  *
  * No request body — gastronomyId and mediaId come from URL params.
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
+ * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
  * enforced inside `setFeaturedGastronomyMedia` via `checkGastronomyCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
@@ -46,7 +46,7 @@ export const protectedSetFeaturedGastronomyMediaRoute = createCRUDRoute({
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2. ' +
+        'photo to visible first. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff). ' +
         'No request body — ids come from URL params.',
     tags: ['Gastronomy', 'Gastronomy Media'],
     requestParams: {

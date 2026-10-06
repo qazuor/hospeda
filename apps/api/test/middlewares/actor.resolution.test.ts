@@ -226,26 +226,26 @@ describe('Actor permission resolution — multi-role union (HOS-296 AC-3)', () =
     });
 
     it('carries EVERY held role onto the actor, in the order user_role returned them', async () => {
-        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]);
+        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]);
 
         const { roles } = await resolveActor(createAuthUser());
 
-        expect(roles).toEqual([RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]);
+        expect(roles).toEqual([RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]);
     });
 
     it('asks the cache for the WHOLE role set, not one role at a time', async () => {
-        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]);
+        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]);
 
         await resolveActor(createAuthUser());
 
         expect(mockGetPermissionsForRoles).toHaveBeenCalledTimes(1);
         expect(mockGetPermissionsForRoles).toHaveBeenCalledWith({
-            roles: [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]
+            roles: [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]
         });
     });
 
     it('resolves the UNION of the permissions of both hats', async () => {
-        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]);
+        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]);
         // The cache is the component that computes the union; the middleware
         // consumes whatever it returns for the whole set.
         mockGetPermissionsForRoles.mockResolvedValue([P1, P4]);
@@ -256,11 +256,11 @@ describe('Actor permission resolution — multi-role union (HOS-296 AC-3)', () =
     });
 
     it('AC-3: a DENY beats a grant that comes from ANY held role', async () => {
-        // P1 arrives from the HOST hat, P4 from the COMMERCE_OWNER hat, and P2
+        // P1 arrives from the HOST hat, P4 from the GASTRONOMY_OWNER hat, and P2
         // from an explicit per-user grant. The deny list names P1 and P4 — one
         // permission from each hat — and both must be stripped. Accumulating a
         // second hat cannot be a way around an explicit deny (R-1).
-        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]);
+        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]);
         mockGetPermissionsForRoles.mockResolvedValue([P1, P4]);
         mockGetUserPermissionsWithEffect.mockResolvedValue({
             grants: [P2],
@@ -275,7 +275,7 @@ describe('Actor permission resolution — multi-role union (HOS-296 AC-3)', () =
     });
 
     it('AC-3: a DENY also beats a per-user GRANT of the same permission held by a role', async () => {
-        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]);
+        mockGetUserRoles.mockResolvedValue([RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]);
         mockGetPermissionsForRoles.mockResolvedValue([P1]);
         mockGetUserPermissionsWithEffect.mockResolvedValue({ grants: [P1], denies: [P1] });
 

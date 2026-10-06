@@ -6,9 +6,9 @@
  * to let drift.
  *
  * What is asserted here that nothing else covers:
- *  - the declared permission is `COMMERCE_MODERATION_CHANGE`, not
- *    `COMMERCE_MODERATE_REVIEW` (which moderates reviews) and not
- *    `COMMERCE_EDIT_ALL` (which would let any staff editor clear a rejection);
+ *  - the declared permission is each vertical's MODERATION_CHANGE, not
+ *    MODERATE_REVIEW (which moderates reviews) or EDIT_ALL
+ *    (which would let any staff editor clear a rejection);
  *  - the handler delegates to `service.moderate`, not to `update` — routing the
  *    verdict through the generic update would put it back behind the edit
  *    permission and would be invisible from the caller's side;
@@ -106,7 +106,7 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.COMMERCE_MODERATION_CHANGE]
+    permissions: [PermissionEnum.GASTRONOMY_MODERATION_CHANGE]
 };
 
 const LISTING_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -164,19 +164,14 @@ describe('both verticals expose a listing-moderate route (AC-10)', () => {
         });
 
         it(`${name}: is gated by moderationChange and nothing else`, () => {
-            // Exact equality, still. `COMMERCE_MODERATE_REVIEW` here would gate
+            // Exact equality, still. MODERATE_REVIEW here would gate
             // the listing verdict behind the review authority;
-            // `COMMERCE_EDIT_ALL` would let any staff editor clear a rejection.
+            // EDIT_ALL would let any staff editor clear a rejection.
             // Both read as "an admin-only route" at a glance.
             //
-            // HOS-1077 turned the AND list into ONE or-group: the vertical's own
-            // moderationChange, or the legacy commerce one. The AND list must be
-            // gone — leaving a permission there would AND it with the group and
-            // silently tighten the gate.
+            // The route declares only its vertical's moderationChange.
             expect(getRoute(summary).requiredPermissions).toBeUndefined();
-            expect(getRoute(summary).anyOfPermissions).toEqual([
-                [moderationChange, PermissionEnum.COMMERCE_MODERATION_CHANGE]
-            ]);
+            expect(getRoute(summary).anyOfPermissions).toEqual([[moderationChange]]);
         });
 
         it(`${name}: does NOT accept the OTHER vertical's moderationChange`, () => {

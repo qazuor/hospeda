@@ -155,13 +155,13 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const gastronomyId = params.id as string;
         const listing = await gastronomyService.getById(actor, gastronomyId);
-        const hasEditAll = actor.permissions?.includes(PermissionEnum.COMMERCE_EDIT_ALL);
+        const hasEditAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_ALL);
 
         if (
             listing.error ||
             !listing.data ||
             (!hasEditAll && listing.data.ownerId !== actor.id) ||
-            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.COMMERCE_EDIT_OWN))
+            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_OWN))
         ) {
             return createErrorResponse(
                 { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },

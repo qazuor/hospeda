@@ -101,7 +101,7 @@ app.route('/', adminUpdateGastronomyFaqRoute);
 // DELETE /:id/faqs/:faqId - Remove FAQ from a listing
 app.route('/', adminRemoveGastronomyFaqRoute);
 
-// Media management (HOS-372) - gated on COMMERCE_EDIT_ALL
+// Media management (HOS-372) - gated on GASTRONOMY_EDIT_ALL
 
 // PATCH /:id/media/reorder - Reorder gallery photos
 // Registered before /:id/media/:mediaId to prevent "reorder" matching as a mediaId param

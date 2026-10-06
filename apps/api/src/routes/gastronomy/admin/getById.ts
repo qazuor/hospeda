@@ -16,7 +16,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * GET /api/v1/admin/gastronomies/:id
  * Get gastronomy listing by ID — Admin endpoint.
  *
- * Gate requires COMMERCE_VIEW_ALL; the service layer additionally enforces
+ * Gate requires GASTRONOMY_VIEW_ALL; the service layer additionally enforces
  * entity-level visibility (owned vs. all).
  */
 export const adminGetGastronomyByIdRoute = createAdminRoute({
@@ -24,9 +24,9 @@ export const adminGetGastronomyByIdRoute = createAdminRoute({
     path: '/{id}',
     summary: 'Get gastronomy listing by ID (admin)',
     description:
-        'Retrieves full gastronomy listing information including admin fields. Requires GASTRONOMY_VIEW_ALL (or the legacy COMMERCE_VIEW_ALL).',
+        'Retrieves full gastronomy listing information including admin fields. Requires GASTRONOMY_VIEW_ALL.',
     tags: ['Gastronomy'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL]],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_VIEW_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

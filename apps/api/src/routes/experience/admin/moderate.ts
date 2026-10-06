@@ -11,9 +11,9 @@
  * ## Not to be confused with the review route
  *
  * `POST /reviews/{id}/moderate` (already registered on this router) moderates
- * reviews written ABOUT a listing and is gated by `COMMERCE_MODERATE_REVIEW`.
+ * reviews written ABOUT a listing and is gated by `EXPERIENCE_MODERATE_REVIEW`.
  * This one moderates the listing itself and is gated by
- * `COMMERCE_MODERATION_CHANGE`. Two authorities, two permissions.
+ * `EXPERIENCE_MODERATION_CHANGE`. Two authorities, two permissions.
  *
  * @module routes/experience/admin/moderate
  */
@@ -35,7 +35,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * POST /api/v1/admin/experiences/:id/moderate
  *
  * @throws 400 if `moderationState` is not a valid moderation status.
- * @throws 403 if the actor lacks both EXPERIENCE_MODERATION_CHANGE and COMMERCE_MODERATION_CHANGE.
+ * @throws 403 if the actor lacks EXPERIENCE_MODERATION_CHANGE.
  * @throws 404 if the listing does not exist or is soft-deleted.
  */
 export const adminModerateExperienceRoute = createAdminRoute({
@@ -46,11 +46,9 @@ export const adminModerateExperienceRoute = createAdminRoute({
         'Sets the experience listing moderation state (PENDING | APPROVED | REJECTED). ' +
         'Does not touch visibility directly — the commerce visibility reconciler reacts to ' +
         'REJECTED by flipping the listing to PRIVATE/INACTIVE. Rejecting schedules an edge ' +
-        'cache purge so the destination page stops serving it. Requires EXPERIENCE_MODERATION_CHANGE (or the legacy COMMERCE_MODERATION_CHANGE).',
+        'cache purge so the destination page stops serving it. Requires EXPERIENCE_MODERATION_CHANGE.',
     tags: ['Experiences', 'Admin'],
-    anyOfPermissions: [
-        [PermissionEnum.EXPERIENCE_MODERATION_CHANGE, PermissionEnum.COMMERCE_MODERATION_CHANGE]
-    ],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_MODERATION_CHANGE]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

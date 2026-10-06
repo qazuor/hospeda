@@ -10,7 +10,7 @@
  * so the asset is removed BEFORE the row, aborting the whole operation if
  * storage fails rather than leaving a permanently-billed orphan.
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
+ * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
  * enforced inside `removeGastronomyMedia` via `checkGastronomyCanEditMedia`.
  */
 
@@ -38,7 +38,7 @@ export const protectedRemoveGastronomyMediaRoute = createCRUDRoute({
     summary: 'Remove photo from gastronomy listing gallery',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. ' +
-        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
+        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
     tags: ['Gastronomy', 'Gastronomy Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

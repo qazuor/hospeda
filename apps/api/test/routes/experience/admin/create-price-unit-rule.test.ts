@@ -41,14 +41,12 @@ const ADMIN_HEADERS = {
     'user-agent': 'vitest',
     'x-mock-actor-id': ACTOR_ID,
     'x-mock-actor-role': 'ADMIN',
-    // `commerce.viewAll` rides along because the admin experience router mounts
+    // `experience.viewAll` rides along because the admin experience router mounts
     // its LIST route at the same '/' path, and a sub-app's middleware applies
     // to every method on it.
     'x-mock-actor-permissions': JSON.stringify([
         'access.panelAdmin',
         'experience.create',
-        'commerce.create',
-        'commerce.viewAll',
         'experience.viewAll'
     ])
 };

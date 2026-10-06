@@ -126,7 +126,7 @@ const CASES = [
     {
         label: 'gastronomy',
         service: GastronomyService,
-        staffPermission: PermissionEnum.COMMERCE_VIEW_ALL,
+        staffPermission: PermissionEnum.GASTRONOMY_VIEW_ALL,
         segment: 'gastronomia',
         importRoute: async () => {
             const mod = await import('../../src/routes/gastronomy/protected/qrCode.js');
@@ -140,7 +140,7 @@ const CASES = [
     {
         label: 'experience',
         service: ExperienceService,
-        staffPermission: PermissionEnum.COMMERCE_VIEW_ALL,
+        staffPermission: PermissionEnum.EXPERIENCE_VIEW_ALL,
         segment: 'experiencias',
         importRoute: async () => {
             const mod = await import('../../src/routes/experience/protected/qrCode.js');

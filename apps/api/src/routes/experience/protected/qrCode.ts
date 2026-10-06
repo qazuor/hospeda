@@ -10,7 +10,7 @@
  * this is the SAME code the printable sheet carries and not a second one, why
  * both clauses of "published" are checked before anything is minted, and why
  * there is no entitlement gate. As in gastronomy, the staff bypass is
- * `COMMERCE_VIEW_ALL`.
+ * `EXPERIENCE_VIEW_ALL`.
  *
  * ## An experience holds three codes and this route touches exactly one
  *
@@ -78,7 +78,7 @@ export async function handleGetExperienceQrCode(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.EXPERIENCE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }

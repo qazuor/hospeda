@@ -165,8 +165,8 @@ const CASES: readonly RouteCase[] = [
         fk: 'gastronomyId',
         mock: mockUpdateGastronomy,
         removeMock: mockRemoveGastronomy,
-        permissions: [PermissionEnum.COMMERCE_EDIT_OWN],
-        role: 'COMMERCE_OWNER'
+        permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN],
+        role: 'GASTRONOMY_OWNER'
     },
     {
         name: 'admin gastronomy',
@@ -185,8 +185,8 @@ const CASES: readonly RouteCase[] = [
         fk: 'experienceId',
         mock: mockUpdateExperience,
         removeMock: mockRemoveExperience,
-        permissions: [PermissionEnum.COMMERCE_EDIT_OWN],
-        role: 'COMMERCE_OWNER'
+        permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN],
+        role: 'EXPERIENCE_OWNER'
     },
     {
         name: 'admin experience',

@@ -26,7 +26,7 @@
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL). The service helper `addExperienceFeaturedMedia` enforces the
+ * Requires EXPERIENCE_EDIT_ALL. The service helper `addExperienceFeaturedMedia` enforces the
  * same gate via `checkExperienceCanEditMedia`.
  */
 import {
@@ -62,9 +62,9 @@ export const adminAddExperienceFeaturedMediaRoute = createAdminRoute({
         '— soft-deleted, so it disappears from the listing while its stored file ' +
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
-        '(HOS-791). Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        '(HOS-791). Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

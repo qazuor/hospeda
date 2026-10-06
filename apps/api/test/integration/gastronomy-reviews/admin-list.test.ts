@@ -63,7 +63,7 @@ describe('Admin GastronomyReview List — moderation status filter (SPEC-259 reg
     // Grant the full commerce admin permission set so the route middleware
     // pipeline (sibling routes share the gastronomy admin router) does not
     // block before the handler runs. The endpoint itself requires
-    // COMMERCE_MODERATE_REVIEW.
+    // GASTRONOMY_MODERATE_REVIEW.
     const adminActor = {
         id: crypto.randomUUID(),
         roles: [RoleEnum.ADMIN],
@@ -73,11 +73,11 @@ describe('Admin GastronomyReview List — moderation status filter (SPEC-259 reg
             PermissionEnum.ACCESS_PANEL_ADMIN,
             PermissionEnum.ACCESS_API_ADMIN,
             PermissionEnum.MANAGE_CONTENT,
-            PermissionEnum.COMMERCE_VIEW_ALL,
-            PermissionEnum.COMMERCE_CREATE,
-            PermissionEnum.COMMERCE_EDIT_ALL,
-            PermissionEnum.COMMERCE_DELETE,
-            PermissionEnum.COMMERCE_MODERATE_REVIEW
+            PermissionEnum.GASTRONOMY_VIEW_ALL,
+            PermissionEnum.GASTRONOMY_CREATE,
+            PermissionEnum.GASTRONOMY_EDIT_ALL,
+            PermissionEnum.GASTRONOMY_DELETE,
+            PermissionEnum.GASTRONOMY_MODERATE_REVIEW
         ]
     };
 

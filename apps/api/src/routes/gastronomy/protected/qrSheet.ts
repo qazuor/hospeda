@@ -9,7 +9,7 @@
  * the full reasoning for the order of the checks, for why there is NO
  * entitlement gate, for why the code is minted once and reused, and for why the
  * minted destination ignores the downloader's language. One thing differs here:
- * the staff bypass is `COMMERCE_VIEW_ALL`, not `ACCOMMODATION_UPDATE_ANY`.
+ * the staff bypass is `GASTRONOMY_VIEW_ALL`, not `ACCOMMODATION_UPDATE_ANY`.
  *
  * ## The publicity check is BOTH clauses, as in accommodation
  *
@@ -83,7 +83,7 @@ export async function handleGetGastronomyQrSheet(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }

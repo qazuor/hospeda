@@ -15,7 +15,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * GET /api/v1/admin/gastronomies
  * List gastronomy listings — Admin endpoint.
  *
- * Permission model: the entity-specific permission (COMMERCE_VIEW_ALL) is
+ * Permission model: the entity-specific permission (GASTRONOMY_VIEW_ALL) is
  * enforced in the service (`_canAdminList` → `checkGastronomyCanAdminList`).
  * The route gate only requires admin-panel access, matching the accommodation
  * admin list pattern.

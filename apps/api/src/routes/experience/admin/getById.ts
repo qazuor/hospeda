@@ -16,7 +16,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * GET /api/v1/admin/experiences/:id
  * Get experience listing by ID — Admin endpoint.
  *
- * Gate requires COMMERCE_VIEW_ALL; the service layer additionally enforces
+ * Gate requires EXPERIENCE_VIEW_ALL; the service layer additionally enforces
  * entity-level visibility (owned vs. all).
  */
 export const adminGetExperienceByIdRoute = createAdminRoute({
@@ -24,9 +24,9 @@ export const adminGetExperienceByIdRoute = createAdminRoute({
     path: '/{id}',
     summary: 'Get experience listing by ID (admin)',
     description:
-        'Retrieves full experience listing information including admin fields. Requires EXPERIENCE_VIEW_ALL (or the legacy COMMERCE_VIEW_ALL).',
+        'Retrieves full experience listing information including admin fields. Requires EXPERIENCE_VIEW_ALL.',
     tags: ['Experience'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL]],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_VIEW_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
