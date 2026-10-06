@@ -170,6 +170,6 @@ auto-detect which models a stored credential has access to.
 ## Related documentation
 
 - [ADR-031 — AI Foundation Architecture](../../docs/decisions/ADR-031-ai-core-foundation-architecture.md)
-- [SPEC-173](../../.qtm/specs/SPEC-173-ai-core/spec.md)
+- SPEC-173 (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
 - [ADR-006 — Integer Monetary Values](../../docs/decisions/ADR-006-integer-monetary-values.md)
 - [ADR-016 — Billing fail-open policy](../../docs/decisions/ADR-016-billing-fail-open.md)

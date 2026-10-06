@@ -828,7 +828,7 @@ For incident response:
 [`docs/billing/billing-runbooks.md`](../../docs/billing/billing-runbooks.md)
 
 For the deferred SPEC-193 staging smoke batch (pre-promotion gate):
-[`SPEC-193 pending-staging-smoke`](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md)
+`SPEC-193 pending-staging-smoke` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
 
 ## AI Social routes — Custom GPT integration (`/api/v1/ai/social/*`)
 

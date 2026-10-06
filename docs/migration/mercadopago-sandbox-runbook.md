@@ -4,7 +4,7 @@
 > standalone 10-smoke verification model. That model is **superseded**. As of
 > SPEC-193, MP-dependent staging smokes are **batched**: every merged billing
 > PR defers its MP-specific sections to a single pre-promotion run tracked in
-> [`.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md`](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md).
+> `.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`).
 > This runbook documents **how to operate the MP sandbox** during those batched
 > runs and incident response. It does NOT re-author the smoke flows or card tables
 > that already exist in SPEC-143.
@@ -13,10 +13,10 @@
 
 | What you need | Where it lives |
 |---|---|
-| Actual smoke flows to execute | [SPEC-143 staging smoke checklist](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md) |
-| Which sections are deferred to the SPEC-193 batch | [SPEC-193 pending-staging-smoke](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md) |
-| Test card numbers and outcome codes | [SPEC-143 mp-test-cards-reference](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md) |
-| Production go-live gate (post-staging promotion) | [SPEC-143 prod-smoke-checklist](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md) |
+| Actual smoke flows to execute | SPEC-143 staging smoke checklist (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`) |
+| Which sections are deferred to the SPEC-193 batch | SPEC-193 pending-staging-smoke (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`) |
+| Test card numbers and outcome codes | SPEC-143 mp-test-cards-reference (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`) |
+| Production go-live gate (post-staging promotion) | SPEC-143 prod-smoke-checklist (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`) |
 | Incident response for a live billing failure | [docs/billing/billing-runbooks.md](../billing/billing-runbooks.md) |
 | Grace period mechanics (dunning / cron-lag / soft-cancel) | [docs/billing/grace-period-source-of-truth.md](../billing/grace-period-source-of-truth.md) |
 
@@ -123,13 +123,13 @@ Create at least two:
 When a smoke flow reaches the MP checkout page (after `/start-paid` redirects):
 
 1. Log into the MP sandbox checkout using the **buyer** test account credentials.
-2. Enter a test card from the [SPEC-143 cards reference](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md).
+2. Enter a test card from the SPEC-143 cards reference (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`).
 3. Set the cardholder name to the outcome code you want (`APRO`, `OTHE`, `CONT`, etc.).
 4. **Use a card the buyer has not used before.** If MP offers a saved card, decline
    it and enter a different number — see §3.3, which is the single most expensive
    failure mode in this whole document.
 
-See the [SPEC-143 staging checklist](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md)
+See the SPEC-143 staging checklist (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
 section "Pre-flight: MP test buyer browser session" for the full pre-condition steps
 required before any flow that authorizes a payment.
 
@@ -170,7 +170,7 @@ Visible in the browser console on the MP checkout page:
 healthy attempt does not show them.
 
 **Fix.** Use a card number the buyer has never used, so MP asks for the CVV and skips
-the ESC path entirely. The [cards reference](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/mp-test-cards-reference.md)
+the ESC path entirely. The cards reference (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
 lists five; rotate to one that is not saved yet. Verified on 2026-08-28: seven consecutive
 failures on the saved Mastercard `…0604`, then an immediate `authorized` on a fresh Visa
 (`card_id 9834888704`), local row `trialing`, whole webhook chain intact.
@@ -361,7 +361,7 @@ Before promoting `staging` → `main` (the production go-live), the entire SPEC-
 deferred batch must pass, followed by the production smoke. The production smoke
 gate is documented in:
 
-[`.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md)
+`.qtm/specs/SPEC-143-billing-testing-coverage/docs/prod-smoke-checklist.md` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
 
 That document covers: production env var verification, DNS/Cloudflare readiness,
 Flows 1–3 (annual checkout, monthly checkout, addon purchase) against real MP

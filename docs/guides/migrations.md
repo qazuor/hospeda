@@ -383,4 +383,4 @@ See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](../decisio
 - [ADR-029: Versioned Migration Strategy](../decisions/ADR-029-versioned-migration-strategy.md)
 - [ADR-017: PostgreSQL-Specific Features](../decisions/ADR-017-postgres-specific-features.md)
 - [packages/db/docs/triggers-manifest.md](../../packages/db/docs/triggers-manifest.md)
-- [SPEC-178 CI wiring handoff](../../.qtm/specs/SPEC-178-versioned-db-migration-strategy/ci-wiring-handoff.md)
+- SPEC-178 CI wiring handoff (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
