@@ -1,0 +1,14 @@
+# VB-10 · spec → fuente · 10-corte/B7.md 10-corte/B8a.md
+
+## Hallazgos
+
+10-corte/B7.md:294 · «sucesión, y cada una de las seis ramas de `12` §5.3 tiene un acto que conserva la bandera, de modo que» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1068 («las SEIS ramas de `12` §5.3 tienen cada una un acto que apaga la bandera») · BLOQUEA
+
+10-corte/B8a.md:681 · «Antes de aceptar una cancelación se exige que el cliente haya exportado al menos una vez todas sus fichas con contenido; si falta alguna, se rechaza la solicitud.» · sin soporte · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B7.md | 1–1817 | 260 | 1 | 0 |
+| 10-corte/B8a.md | 1–721 | 140 | 1 | 0 |

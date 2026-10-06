@@ -1,0 +1,13 @@
+# VA-A7 · fuente → spec · B/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+Sin hallazgos: 0 BLOQUEA y 0 MENOR.
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md | 60 transiciones vivas (274 celdas), prohibiciones y prosa normativa transversal de §§3–10 | 1–3062 | 0 | 0 |
+
+Se cotejó el texto vivo completo contra la spec, excluyendo como prueba de cobertura exclusiva 80-abiertos.md, el glosario y el registro de decisiones. Las transiciones y su prosa normativa están recogidas en 04-catalogos.md. La cláusula de MP6 «no emite comprobante», omitida en su entrada del catálogo, está exigida por AC:B5:19 (10-corte/B5.md:372–381), por lo que no constituye una regla ausente de la spec. Se consultaron el decision log y las decisiones del owner para las sustituciones y el reparto entre corte y fases posteriores; S25–S28 están retiradas.

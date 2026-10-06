@@ -1,0 +1,18 @@
+# VA-A9 · fuente → spec · B/docs/{10-verticales-planes-billing-options,12-suscripcion,21-migracion,22-lo-legal}.md
+
+## Hallazgos
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:166 · «Qué plan anclan (owner 2026-09-26, `G1-3`): el vendible de `rank` más alto [...] de Alojamiento vigente el día del corte, en la vertical en que tenían `comp`» (G1-3 en 28-fase-9-vuelta-1/10-decisiones-del-owner.md:21 dice «más alto»; ningún 📌 ni letra posterior lo cambia) · distinta en 30-el-corte.md:639 («**anclados al vendible de `rank` más bajo de Alojamiento, en la vertical en que tenían `comp`**», en el «Qué» del paso 3b que construye la herramienta de B9a); contradice además la propia spec en 30-el-corte.md:1071 y 10-corte/B9a.md:36/960 («más alto») · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:123 · «Y la ventana de 60 días de `DEC-MP-002` no aplica acá. Esa ventana protege a quien no eligió el precio nuevo. El que elige un plan lo acepta en el acto, con su precio a la vista» · ausente (la transcripción de §3.5 en 20-fase-3/B12.md:138-165 corta antes de este párrafo; ni AC:B8b:7 ni AC:B12:* ni 01-decisiones-vigentes lo dicen; rg «no aplica acá», «ventana de 60», «no eligió», «dos meses» sin hits pertinentes). Sin efecto práctico porque AC:B8b:7 ya hace inmediato el cambio voluntario · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1190 · «cerrado: el pagador no puede pausar (`EX-53`, mirado en la web y en la app), así que un `paused` sin un `PUT` nuestro es la mora de `DEC-MP-008`» · distinta en 10-corte/B3.md:451-452 («y una pausa dada desde la cuenta del pagador, que tampoco se distingue, se trata como la del proveedor por mora»): afirma como posible un acto que la medición descartó; el desenlace (S6 por mora) coincide · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| 10-verticales-planes-billing-options.md | ~38 | 1–270 | 1 | 0 |
+| 12-suscripcion.md | ~120 | 1–1198 | 0 | 1 |
+| 21-migracion.md | ~32 | 1–696 | 0 | 1 |
+| 22-lo-legal.md | ~20 | 1–196 | 0 | 0 |

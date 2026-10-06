@@ -1,0 +1,19 @@
+# VB-11 · spec → fuente · 10-corte/B9a.md, 20-fase-2/B9b.md, 20-fase-1/V9b.md
+
+## Hallazgos
+
+20-fase-2/B9b.md:106 · «medio, y el resultado **se redondea una sola vez**, a la unidad mínima, con el mismo» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:55 («redondea una sola vez, hacia abajo»): AC:B9b:1 omite la dirección obligatoria del redondeo. El ejemplo aislado no define la regla para todos los montos; tampoco TEST:B9b:1 la exige en general. Un implementador puede adoptar otra política para otras fracciones de centavo y cobrar un centavo adicional. La búsqueda en la spec no encuentra la regla general de redondear hacia abajo. · BLOQUEA
+
+20-fase-2/B9b.md:239 · «termina en el acto por `S10`, con `fin_real` escrito y la relectura, con reembolso proporcional, la suscripción» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:140 («un tercer evento de `S10`, con `fin_real` y la relectura, sin reembolso y con el aviso a la persona»). BO está aplicada también en .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1074 y docs/03-maquinas-de-estado.md:160. AC:B9b:11 exige devolver dinero donde la fuente lo prohíbe, y contradice AC:B9b:13 (línea 269) y TEST:B9b:14 (línea 610), que exigen no reembolsar. · BLOQUEA
+
+20-fase-1/V9b.md:460 · «Cada exportación de contenido consume una unidad de una cuota mensual fija de tres exportaciones por cuenta; agotarla impide exportar hasta el mes siguiente.» · sin soporte: no existe esa cuota, su contador ni su bloqueo mensual en las fuentes congeladas, el decision log o las decisiones posteriores del owner. .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:920 permite «exportarla o reactivarla a borrador sin pagar nada» y exige que ambas salidas sean alcanzables (líneas 941–942); §2.1, fila 3 (línea 229), otorga recuperar lo propio mediante el piso. La cuota agrega una restricción comercial que impediría recuperar contenido antes del borrado; también entra en conflicto con la regla 3 de este mismo archivo (líneas 473–495) y AC:V5:2. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B9a.md | 1–1417; 59–715 excluidas del bloque por g-secciones (G2) | 190 | 0 | 0 |
+| 20-fase-2/B9b.md | 1–667 | 170 | 2 | 0 |
+| 20-fase-1/V9b.md | 1–815 | 230 | 1 | 0 |
+
+Verificado contra fuentes congeladas, descartando texto tachado y consultando precisiones del log y del owner. No se ejecutaron pruebas del producto: la revisión es documental. Las skills de contexto citadas fuera de V no tienen copia dentro de V y no se leyeron, por la restricción de lectura del brief. No hay AGENTS.md ni .qz/project.json dentro de V.

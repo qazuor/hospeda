@@ -1,0 +1,14 @@
+# VB-06 · spec → fuente · 10-corte/V5.md, 10-corte/V6.md
+
+## Hallazgos
+
+10-corte/V5.md:430 · «su conversación sobre la `PURGED` se lee entera y admite mensajes.» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:231 («sobre una ficha que ya no se publica, y en sólo lectura sobre una `PURGED`») · BLOQUEA
+
+10-corte/V6.md:1067 · «Cada dueño puede ejecutar hasta cinco publicaciones de fichas por día en una vertical; las siguientes se rechazan hasta el día siguiente aunque tenga cupo disponible.» · sin soporte · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V5.md | 1–1574 | 300 | 1 | 0 |
+| 10-corte/V6.md | 1–1496 | 340 | 1 | 0 |

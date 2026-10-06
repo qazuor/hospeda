@@ -1,0 +1,37 @@
+ hops · local · spec-hos-1352-billing-redesign ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  db  (sin base registrada)
+  pg  hospeda-postgres
+57 pasos, leídos de .github/workflows/ci.yml  ·  3 no aplican acá
+
+[1/57] lint · Biome lint
+Scope: all 31 workspace projects
+[ERR_SQLITE_ERROR] unable to open database file
+
+pnpm: unable to open database file
+    at file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:100555:19
+    at sqliteRetry (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:100465:14)
+    at StoreIndex.openDatabase (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:100554:9)
+    at new StoreIndex (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:100539:14)
+    at createNewStoreController (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:164254:83)
+    at async installDeps (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:200176:17)
+    at async Object.handler5 (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:201331:3)
+    at async file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:314630:19
+    at async main4 (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:314598:30)
+    at async runPnpm (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:314893:5)
+[ERROR] Command failed with exit code 1: pnpm install
+
+pnpm: Command failed with exit code 1: pnpm install
+    at getFinalError (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:88983:14)
+    at makeError (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:91290:21)
+    at getSyncResult (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:93134:10)
+    at spawnSubprocessSync (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:93094:14)
+    at execaCoreSync (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:93024:23)
+    at callBoundExeca (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:95552:23)
+    at boundExeca (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:95529:49)
+    at sync2 (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:95684:14)
+    at runPnpmCli (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:252072:5)
+    at runDepsStatusCheck (file:///home/qazuor/.local/share/pnpm/.tools/pnpm/11.18.0/node_modules/pnpm/dist/pnpm.mjs:253836:7)
+
+Falló: Biome lint
+Es el paso 1 de 57. No sigo: lo que rompe primero suele explicar el resto.
+ hops · local · spec-hos-1352-billing-redesign ━━━━━━━━━━━━━━━━━━━━━━━━ 2.0s ✗

@@ -1,0 +1,150 @@
+# Brief de la pasada 4 de redacción · spec consolidada de HOS-1352
+
+Sos uno de TRES redactores de la cuarta pasada. Trabajan EN PARALELO, cada uno sobre archivos
+distintos de la spec consolidada del rediseño de Verticales y Billing de Hospeda. Respondé en
+español rioplatense. La spec va en español; identificadores, tablas, columnas, rutas y código van
+tal cual estén en las fuentes. Scripts en Python con comentarios en inglés.
+
+## Dónde
+
+- Worktree: `/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign`, branch
+  `spec/HOS-1352-billing-verticals-redesign`. NUNCA leas ni escribas en
+  `/home/qazuor/projects/WEBS/hospeda2`. Rutas absolutas siempre.
+- Skills, leelos antes de empezar: `<worktree>/.claude/skills/hospeda-specs/SKILL.md`,
+  `hospeda-billing/SKILL.md` y `hops-linear-workflow/SKILL.md`.
+- `D=.specs/HOS-1352-billing-verticals-redesign/docs` · `V=.specs/HOS-1353-verticales-capacidades-y-autorizacion` ·
+  `B=.specs/HOS-1354-billing-cobro-y-proveedor` · `C=.specs/HOS-1352-billing-verticals-redesign/spec-consolidada`.
+- **Fuentes congeladas en `b949031c701bc735edf6b6e01fc762b3b46747c6`.** `Origen:` cita `archivo:línea`
+  en ESE SHA. Leé las fuentes con `git show b949031c70:<path>` o con los helpers de
+  `$C/scripts/comun.py`, nunca del árbol de trabajo.
+- Verificá que HEAD sea `183de33a72` o posterior. Git sólo en lectura.
+
+## Contrato (no se relitiga)
+
+1. `$D/01-decision-log.md`: `DEC-METH-019` y `DEC-ARCH-017` con todos sus 📌 (método y partición).
+2. `$D/41-corte-del-mvp/10-decisiones-del-owner.md`: las letras Y a CE, todas decididas.
+3. `$C/scripts/trazar.py`, `defs.py`, `comun.py`: reglas R1–R22 y TODOS los formatos (ancla
+   `<a id="...">`, `Origen:`, referencias, plantilla AO, US, `AC:<pieza>:n` en Dado/Cuando/Entonces,
+   `TEST:<pieza>:n` con tipos de la lista cerrada y etiqueta de smoke, actores). Copiá los formatos,
+   no inventes.
+4. `$C/_trabajo/asignacion.json` (qué ítem se DEFINE dónde), `cobertura.json` (pieza DUEÑA del AC,
+   tipos mínimos de test), `adjudicacion.json` (qué parte de MIXTO y 📌 vive), `inventario.json`.
+5. `$C/_trabajo/verificacion/vuelta-1/adjudicacion/patrones.txt`: los patrones P1–P10 de la
+   verificación ciega y los «Criterios uniformes». Leelos: la vuelta 2 va a buscar exactamente eso.
+
+## Reglas de redacción (no negociables)
+
+- **Nada inventado.** Cada US, AC, test, regla y dato cita al menos un ítem fuente. Lo que las
+  fuentes no deciden NO se escribe: va a tu archivo de abiertos.
+- **No se pierde nada.** Contenido completo y vigente: sin tachados, con los 📌 vivos fundidos y las
+  partes muertas omitidas según la adjudicación. No resumas: diez cláusulas son diez (P4).
+- **Se define una vez, se referencia N.** Lo de otro archivo va como link a su ancla.
+- **Derivado se marca** (P7): «Derivado:» con la cadena de citas. `cobertura.json` y
+  `asignacion.json` nunca aparecen como procedencia en la spec.
+- **Ejemplos** con «Juan» (anfitrión de una cabaña en Colón que se suscribe al Básico la semana
+  siguiente al corte), sólo si la fuente lo soporta.
+- **Conteos con script**, nunca a ojo. `rg` con ruta explícita (`rg -r` es replace).
+
+## Lo que NO podés hacer
+
+- Escribir fuera de TUS archivos (abajo). Excepciones: tu archivo de abiertos y tu reporte.
+- Editar fuentes (`$D`, `$V`, `$B`, el log, la matriz). Un error de fuente va a tu reporte.
+- **Editar a mano un archivo generado**:
+  - `01-decisiones-vigentes.md` (g1) y `04-catalogos.md` (g3): se cambian en
+    `$C/scripts/generadores/g1/` y `g3/` y se regeneran;
+  - `10-corte/B4.md`–`B7.md`: se cambian en `$C/scripts/generadores/g8/src/*.md` y se regeneran
+    con `python3 $C/scripts/generadores/g8/gen.py B4 B5 B6 B7`;
+  - el bloque entre `<!-- g-secciones: inicio … -->` y `<!-- g-secciones: fin -->` de B9a, B11,
+    B13a, B8b, B10 y B12: es la transcripción de sus capítulos (H-ORQ-2, ya resuelto). No se toca.
+    Fuera de ese bloque, esas piezas son tuyas como cualquier otra.
+  Después de regenerar, `npx markdownlint-cli2 --fix --config .markdownlint-cli2.jsonc <archivos>`
+  desde la raíz del worktree.
+- Correr git que escriba (add, commit, push, checkout, stash). Los commits los hace el orquestador.
+- Tocar Linear. Lanzar subagentes.
+- Correr suites de test del repo (vitest, pnpm test): esta branch es sólo documentación.
+
+## Qué hacer, en este orden
+
+1. **Errores de `trazar.py` de tu grupo** (lista en tu sección de abajo). Corré
+   `python3 $C/scripts/trazar.py $C/_trabajo/inventario.json $C/_trabajo/adjudicacion.json $C --cobertura=$C/_trabajo/cobertura.json`
+   para ver el estado; imprime 3 ejemplos por regla, así que filtrá por tus archivos.
+2. **Correcciones REAL de la vuelta 1**: `$C/_trabajo/pasada4/correcciones-<tu-grupo>.txt`. Cada una
+   trae «sale» y «entra». Ubicala por el texto «sale» (los números de línea son del original
+   `296e6495b6` y se movieron). Si «sale» ya no está y «entra» sí, ya está aplicada. Si la
+   corrección cae dentro de un bloque g-secciones, o la cubre ya la transcripción, anotalo como
+   «resuelta por g-secciones» y seguí. Si una corrección exige decidir algo que fuentes y letras no
+   deciden, va a abiertos.
+3. **Etiquetas de Linear de cada pieza tuya** (H-VB-B5-2, P9): `kind-spec` más las `area-*` de la
+   fila, con la cita del 5º 📌 de `DEC-METH-019`.
+4. **Autochequeo**: trazar en 0 en tus archivos, en TODAS las reglas; markdownlint sin errores en
+   tus archivos. Los generadores que toques, ejecutados y con salida limpia.
+
+## Abiertos y reporte
+
+- **Abiertos**: `$C/_trabajo/abiertos/pasada4-<tu-grupo>.md`. Una entrada por hueco: qué falta, qué
+  ítem o pieza, la cita de por qué las fuentes no lo deciden, y una pregunta para el owner con
+  opciones numeradas (costo y riesgo), UNA recomendada y un ejemplo con Juan. Sin letra: la asigna
+  el orquestador.
+- **Reporte final** en markdown compacto, con números de script:
+  - archivos tocados;
+  - errores de trazar de tu lista: resueltos y pendientes, por regla;
+  - correcciones: aplicadas, ya estaban, resueltas por g-secciones, a abiertos (por id `H-…`);
+  - errores de trazar que quedan en tus archivos, por regla;
+  - abiertos; errores de fuentes; lo inferido, marcado.
+  Terminá con `## Key Learnings:` numerado.
+
+---
+
+## Grupo `transversal`
+
+**Tus archivos**: `00-indice.md`, `02-nucleo.md`, `02-nucleo-*.md`, `03-contrato-de-cobertura.md`,
+`10-corte/U1.md`–`U3.md`, `10-corte/V1.md`–`V6.md`, `10-corte/V8a.md`, `10-corte/V9a.md`,
+`20-fase-1/V9b.md`, `20-fase-4/V7.md`, `20-fase-4/V8b.md`, `30-el-corte.md`, `80-abiertos.md`,
+`90-retirados.md`, y los generadores `g1/` (01) y `g3/` (04).
+
+**Errores de trazar**:
+
+- `DEP:15`: R1 (se define en `03-contrato-de-cobertura.md`), R7, R7b y R18 (su AC y un test, en
+  `V7`). Es la fila 15 del §2.6 de `B/descomposicion.md` (BC, `H-VB-B2-15`): `V7`, la acción 6,
+  espera al pago manual de `B5`.
+- R20, tachado de fuente vivo en la spec (8): `02-nucleo-auditoria.md` («que no tiene fila para
+  él»), `02-nucleo-outbox.md` («la pausa alcanzada por una vertical discontinuada»), `02-nucleo.md`
+  («y lo mismo sobre la presencia de un partner»), `10-corte/V2.md` («ni la versión de trial ni las
+  dos no vendibles declaran here…»), `30-el-corte.md` ×2 («si el paso 3 alcanzó a escribir algo»;
+  «falla la promoción staging → main del punto 2 mientras la ra…»), `80-abiertos.md` ×2 («que no
+  tiene fila para él»; «si el cobro que agota una promo es el que saca a la fila del…»). trazar te
+  da la línea de la fuente donde está tachado: leé qué la reemplazó y escribí eso.
+- R4 `04-catalogos.md#apz-a1-bis`: se resuelve cuando `billing-despues` defina `APZ:A1-bis` en
+  `B10`. No lo toques; verificá al final que dé 0.
+
+## Grupo `billing-corte`
+
+**Tus archivos**: `10-corte/B1.md`, `B2.md`, `B3.md`, `B8a.md`, `B9a.md`, `B11.md`, `B13a.md`, y
+`B4`–`B7` a través de `scripts/generadores/g8/src/`.
+
+**Errores de trazar**:
+
+- `DEC-MP-002#📌4` (CC): R7, R7b y R18. Su AC y un test van en `B2`: la acción 19 rechaza fijar el
+  precio de una versión hacia la que hay un `S38` encolado; el predicado nuevo y su test.
+- R6 `lista-b2` (`10-corte/B2.md:102`): el `Origen:` del «Lista cuando» no cita la posición del ítem;
+  corregí la cita contra el SHA congelado.
+
+## Grupo `billing-despues`
+
+**Tus archivos**: `20-fase-2/B8b.md`, `20-fase-2/B9b.md`, `20-fase-3/B10.md`, `20-fase-3/B12.md`,
+`20-fase-3/B13b.md`.
+
+**Errores de trazar**:
+
+- `APZ:A1-bis`: R1, se DEFINE en `B10` (ancla `apz-a1-bis`, que `04-catalogos.md` ya referencia),
+  más R7, R7b y R18 (integración con DB).
+- `TRANS:B:A1-bis`: R7, R7b, R14 y R18. AC en `B10` y test de integración con DB. El texto vigente
+  de `A1-bis` (`B/03` §8) incluye CD **y CE**: con scope `LISTING`, el objetivo pasa las guardas de
+  `A1` (ficha propia, de la vertical del producto, `admiteDestaque`; si no, «no existe» y no nace
+  instancia). Va su AC y su test.
+- `DEC-ARCH-017#📌9` (CD) y `DEC-ARCH-017#📌10` (CE): R7, R7b y R18, AC y test en `B10`. El «Lista
+  cuando» de `B10` (`B/descomposicion.md` §4, fila `B10`) ya trae los dos criterios.
+- R6 `lista-b10` y `lista-b12`: corregí las citas del «Lista cuando» contra el SHA congelado.
+- R20 en `20-fase-3/B12.md`: «y no cambia ningún monto antes de esa fecha» está tachado en
+  `B/descomposicion.md:1066`. Manda BZ (`H-VB-B8-6`): lo que se conserva es que ningún COBRO sale
+  al precio nuevo antes de la fecha.

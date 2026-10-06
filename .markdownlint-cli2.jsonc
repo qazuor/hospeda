@@ -32,5 +32,16 @@
         "MD058": true,
         "MD060": false
     },
-    "ignores": ["node_modules/**", "**/node_modules/**", "dist/**", "build/**", ".claude/**"]
+    // The HOS-1352 program design corpus is reviewed as a whole and kept verbatim
+    // (the PDR is immutable). CI does not lint .specs. Owner decision 2026-10-06.
+    "ignores": [
+        "node_modules/**",
+        "**/node_modules/**",
+        "dist/**",
+        "build/**",
+        ".claude/**",
+        ".specs/HOS-1352-*/**",
+        ".specs/HOS-1353-*/**",
+        ".specs/HOS-1354-*/**"
+    ]
 }

@@ -1,0 +1,18 @@
+# VB-01 · spec → fuente · 00-indice.md, 02-nucleo-glosario.md
+
+## Hallazgos
+
+02-nucleo-glosario.md:41 · «Un User puede tener varias, **hasta diez por vertical**.» · sin soporte (la fuente citada, .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:46, dice sólo «Un User puede tener varias.»; ningún archivo de `fuentes/`, incluidos el decision log y 41-corte-del-mvp/10-decisiones-del-owner.md, fija un tope de diez fichas por vertical. El único «hasta diez» del corpus es de fotos, V/docs/17-autorizacion.md:450) · BLOQUEA
+
+00-indice.md:463 · «| **las sub-épicas** | cortan de `staging` y mergean **a ella**. Nunca a `staging` directamente |» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md:268 («las sub-épicas | cortan de ella y mergean **a ella**») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2635 (DEC-ARCH-007: «Las sub-épicas cortan de esa rama y mergean a esa rama»). También contradice a la propia spec: 01-decisiones-vigentes.md:5522 y 00-indice.md:1126 («Corta de la rama de integración del paraguas»). Lo que nace de `staging` es la rama épica (16-fase-7-del-paraguas.md:816), no las sub-épicas · BLOQUEA
+
+00-indice.md:91-93 · «**El grafo, recontado después de las letras BL a BR** … **30 piezas, 22 al corte, 35 guards con 34 al corte, 62 flechas y cero violaciones**» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md (📌 CD de DEC-ARCH-017, en la salida persistida, l. 17-18: «recontado … 63 flechas —la de BC, `B5 → V7`—»). Contradicción interna con 01-decisiones-vigentes.md:6672 (63 flechas), que la spec ya incluye como DEC-ARCH-017#📌9. El índice presenta 62 como el recuento vigente y no menciona la flecha `B5 → V7` · MENOR
+
+00-indice.md:1410-1411 · «La regla vive con las decisiones del proveedor en [01-decisiones-vigentes.md](01-decisiones-vigentes.md#dec-mp-006).» · cita mal apuntada: la regla «ante un reclamo, mirar el PAGO, nunca el correo» está en 01-decisiones-vigentes.md:4775, dentro del bloque `dec-mail-001` (ancla en :4717), y no en `dec-mp-006` (:2368) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-nucleo-glosario.md | 1–959 | 180 | 1 | 0 |
+| 00-indice.md | 1–1603 | 260 | 1 | 2 |

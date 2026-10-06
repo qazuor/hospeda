@@ -1,0 +1,1 @@
+SHA 3c3e88b9b59cb7d766bc34848b8ffd657eb95770 · 137 veredictos · {'MIXTO': {'VIVO': 41}, 'PIN': {'PARCIAL': 47, 'VIVO': 27, 'MUERTO': 9}, 'BK': {'PARCIAL': 10, 'VIVO': 3}} · cambian el sentido: [] · invierten una regla con fuente: ['DEC-DATA-005#📌6', 'DEC-DATA-002', 'DEC-MP-003', 'DEC-SUB-019']

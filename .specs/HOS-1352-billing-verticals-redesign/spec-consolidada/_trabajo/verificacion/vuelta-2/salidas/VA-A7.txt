@@ -1,0 +1,45 @@
+# VA-A7 · fuente → spec · .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+(ninguno con severidad BLOQUEA ni MENOR)
+
+Notas de método y casos revisados que NO llegan a hallazgo:
+
+- Tablas de transiciones S1–S38, P1–P7, RF1–RF5, MP1–MP6, A1–A7 y la tabla de §3.3 (PROH:B:1–6):
+  comparadas columna por columna (desde / evento / hacia / condición / efectos o nota), mecánicamente y
+  quitando lo tachado, contra las entradas `TRANS:B:*` y `PROH:B:*` de 04-catalogos.md. Sólo hay
+  diferencias de espacios, salvo una:
+  .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:187 · «(el empate lo gana el
+  cliente, como en `DEC-MP-002`)» · el evento de `TRANS:B:S37` en 04-catalogos.md:4006 omite el
+  paréntesis, pero la regla no cambia: lo que queda es «estrictamente posterior», y el desempate
+  aparece explícito en 20-fase-3/B12.md:214 y :656 («con la renovación el mismo día del fin del aviso,
+  gana la siguiente»). No es un hallazgo.
+- Texto en prosa: 04-catalogos.md copia las líneas 21–3062 en 51 bloques «Texto de la fuente … sin lo
+  tachado». Comparé cada bloque palabra por palabra contra la fuente sin lo tachado (ratio entre 0,97 y
+  0,999). Las únicas diferencias son los títulos `##`/`###`/`####` que el bloque no copia, los `---`,
+  la sintaxis de los links y las tablas que viven en sus propias entradas. No se agrega, cambia ni pierde
+  ninguna regla.
+- Hueco de la copia: las líneas 942–956 (§ de S25–S28, retiradas por C8) quedan fuera, pero están
+  recogidas en 90-retirados.md:357–392 («retirada … El número no se reusa»).
+- Las líneas 1–20 son el frontmatter y el alcance del capítulo, sin regla normativa.
+- Muestreo de ACs en las piezas dueñas (sale del campo «Pieza dueña» de cada TRANS):
+  ventana de autorización de 72 h / 7 días (B3 AC/TEST:B3:10); fórmula `fin_de_servicio`
+  y `max(…)` de S11 (B8a:39, 126, 178, 257); topes de pausa 4/8/3 por `user + vertical`, que sobreviven
+  a la baja (AC:B8b:1); la pausa de complemento por S32 que no consume cupo (AC:B7:21); el grace menor
+  que el ciclo (B7:654, V2:211, nucleo-modelo:136); el correo `failed` definitivo que no bloquea la
+  cancelación (B3:315, B7:1499); motivo 21 a los 3 días (B7:193, B11:1074); «toda llegada a un terminal
+  pasa la fila de alcance a FUERA "terminó"» (AC:B12:6, B12:254/386). Todo coincide con la fuente vigente.
+- Comprobé las decisiones del owner del corte (41-corte-del-mvp/10-decisiones-del-owner.md: BJ, BO, BP,
+  BZ, CA, AR, AS, AV) que tocan S1, S2, S7, S10, S37 y S38. La fuente ya trae BJ, BO, BP y CA, y
+  la spec las recoge igual.
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md | ~330 (filas S/P/RF/MP/A/PROH, más las reglas en prosa de §3–§10 y de «lo que esta mitad NO cierra») | 1–3062 | 0 | 0 |
+
+Alcance real del recorrido: el texto completo (1–3062) se comparó de forma mecánica contra la copia del
+catálogo. Contra los AC/TEST de las piezas dueñas sólo muestreé las ~10 reglas de arriba; no revisé
+los AC de cada transición uno por uno.

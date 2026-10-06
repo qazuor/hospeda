@@ -1,0 +1,16 @@
+# VA-A6 · fuente → spec · B/descomposicion.md; B/docs/02-modelo-de-datos.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:383 · «número, PDF» · ausente (búsqueda de `PDF`/`pdf` en toda s/c1c03210/ sin resultados; 10-corte/B5.md:198–207 exige emitir el comprobante y 10-corte/B5.md:869–874 enumera sus campos, pero ninguno exige generar/conservar el PDF. La obligación sigue respaldada por DEC-LEGAL-001 en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:967–978; su precisión y las decisiones del owner no la retiran. Una implementación que sólo escriba el receipt satisface esos AC sin producir el documento exigido) · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:577 · «Cada user: máximo un uso de cada código» · distinta en s/c1c03210/20-fase-2/B9b.md:341 («Un código promocional sólo se puede canjear desde una cuenta creada antes de la publicación del código; las cuentas posteriores reciben un rechazo sin consumirlo.»): agrega una condición de elegibilidad por fecha de creación de la cuenta. El modelo de promo_code de la línea 576 establece cupo y ventana de validez del código; DEC-PROMO-001 y sus precisiones (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:806–840) agregan cupo total, fechas y piso del importe, sin esa condición. Se buscó también en toda la fuente congelada y en docs/41-corte-del-mvp/10-decisiones-del-owner.md sin encontrar una decisión que autorice rechazar a las cuentas nuevas. La spec rechaza así un primer canje que cumple las condiciones de la fuente · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/descomposicion.md | ≈300 (incluidas reiteraciones de alcance, reparto y criterios de salida) | 1–1157 | 0 | 0 |
+| B/docs/02-modelo-de-datos.md | ≈230 (campos, restricciones, escritores, efectos y motivos) | 1–1298 | 1 | 1 |
+
+BLOQUEA: 2. MENOR: 0.

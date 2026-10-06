@@ -1,0 +1,20 @@
+# VB-12 · spec → fuente · 10-corte/B11.md, 10-corte/B13a.md, 20-fase-3/B13b.md, 20-fase-3/B12.md
+
+## Hallazgos
+
+10-corte/B11.md:35 · «la exención de una terminal espera a que cierre el registro de cobro de su penúltimo ciclo» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:149 («la exención de una terminal espera a que cierre el registro de cobro de su último ciclo») y fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:212 («dos, recién cuando cerró el registro de cobro del último ciclo de su preapproval»); contradicción interna con AC:B11:15, 10-corte/B11.md:1597–1599, que exige el último ciclo · BLOQUEA
+
+20-fase-3/B13b.md:157 · «Al moderar una ficha desde el panel se moderan también todas las fichas publicadas del mismo dueño en esa vertical, con el mismo motivo y en el mismo acto.» · más fuerte que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:497 («un admin la modera, con motivo») y fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7098–7105 (DEC-DATA-007: la decisión y sus efectos recaen sobre la ficha); no hay soporte vivo para propagar la moderación a las demás fichas del dueño · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B11.md | 1–2355 | 280 | 1 | 0 |
+| 10-corte/B13a.md | 1–1300 | 240 | 0 | 0 |
+| 20-fase-3/B13b.md | 1–263 | 65 | 1 | 0 |
+| 20-fase-3/B12.md | 1–831 | 180 | 0 | 0 |
+
+Recorrido hasta el final de los cuatro archivos. Los bloques delimitados por `g-secciones` se excluyeron de la auditoría normativa y del conteo de afirmaciones, conforme a bloques.txt: pertenecen a G2. Se contrastaron las reglas con las fuentes congeladas, sus decisiones posteriores y las coincidencias internas de la spec mediante `rg --hidden`.
+
+Las tres skills de contexto indicadas por el brief no están dentro de V; no se leyeron sus rutas externas por la restricción del mismo brief de leer sólo dentro de V.

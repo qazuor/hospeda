@@ -1,0 +1,366 @@
+{
+    "04-catalogos.md": {
+        "total": 9843,
+        "checked": 6152,
+        "unmatched": [
+            [
+                3,
+                "Catálogo único de transiciones, transiciones prohibidas, motivos de la marca de conciliación, candados, reglas y mentiras del proveedor falso, guards, validaciones del panel y filas de la matriz de Mercado Pago (organización por pieza con catálogos únicos: [DEC-METH-019](01-decisiones-vigentes.md#dec-meth-019), punto 2, letra [AH](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-ah))."
+            ],
+            [
+                5,
+                "**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`9149b84a25`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto."
+            ],
+            [
+                7,
+                "Las secciones *«texto de la fuente»* traen, sin lo tachado, la prosa de la misma sección de la fuente que rodea cada tabla: son reglas de la tabla entera y se leen junto con sus filas."
+            ],
+            [
+                166,
+                "> **`T1`, `T6`, y `T8` (desde la FASE 9 completa, 6c; `T7` salió: revisión del owner, 2026-09-28, N7) exigen que el hash del correo no tenga fila en esa vertical.** Si la tiene,"
+            ],
+            [
+                421,
+                "- **efectos** (efectos): arranca la campaña de recuperación (la condición salió con la revisión del owner, 2026-09-28, C8); **la publicación la mueve `PB2`**, por el cambio de `cubierto` (§9), **y el reloj de retención tampoco es suyo: lo arranca el hecho 5 por el mismo cambio de `cubierto`**, que escriben `PB2` y el recálculo (cap. 02 §2.5). `T3` no escribe `listing.inactiva_desde` (FASE 9 vuelta 2, `F-8V2A2-007`)"
+            ],
+            [
+                533,
+                "- **efectos** (efectos): **crea la fila de `trial`, consumida**, sin reloj y sin campaña — igual que `T6`, con otro disparador (owner 2026-09-25; FASE 9 completa, decisión 6c, `R12-OWNER-1`)"
+            ],
+            [
+                938,
+                ">    atascado (`S12`, `S10`, `T3` o el de un addon `DÍAS_FIJOS`) o hasta que venza la red de"
+            ],
+            [
+                1351,
+                "**Y el panel tiene un listado de arreglos pendientes** (`V/19`): los pedidos abiertos, con la fecha sugerida vencida y los que el dueño ya avisó."
+            ],
+            [
+                1395,
+                "nada nuevo; **ninguna condición lee una columna**, así que `G-R6` tampoco; **`PB11` escribe"
+            ],
+            [
+                1629,
+                "- **condición** (guardas): (La guarda `admiteAltas` salió con la revisión del owner, 2026-09-28, C8: las verticales no se discontinúan.) **La versión elegida es vigente y vendible** —`políticaDePlan(versión).vigente` y `.vendible`, contrato §4.1—, para el alta nueva Y para la sucesión: la pricing sólo muestra lo vendible (`B/19` §2), pero un link guardado al checkout de un plan retirado llegaba igual, y la persona ve *«este plan ya no está a la venta»* con los vigentes al lado (FASE 9 vuelta 1, `N-G4V-07`: la gemela de `admiteAltas`, que tenía superficie y guarda; ésta tenía sólo superficie; `admiteAltas` salió, ésta queda). **Y** no hay otro **origen** vivo para ese `user + vertical`, **o la fila declara una sucesión** (`sucede_a`). **Y si declara una sucesión sobre una predecesora `ACTIVE` de pagador con tarjeta, el preapproval de la predecesora se relee por id antes de aceptar el cambio y tiene que estar `authorized`**: si no lo está —p. ej. `paused` por una mora cuyo webhook no nos llegó—, **el cambio no se ofrece** (*«tu último cobro no entró, actualizá tu tarjeta»*, el camino de `DEC-SUB-021`; `B/19` §4 fila 17-ter) **y la relectura corre la transición que corresponda por la tabla del §10.1** —sobre `paused`, `S6` por su segundo evento— (FASE 8 completa, owner 2026-09-25). **Las otras dos predecesoras admitidas no pasan por esta relectura**: la `CANCEL_SCHEDULED` tiene el preapproval ya cancelado por `S11`, y la `SUSPENDED` de tarjeta tiene su propia relectura, que exige `cancelled` (`G-R1-A`, `B/20` §2). **Y no hay, para ese `user + vertical`, una fila `CHARGE_DECLINED` cuyo preapproval no se haya releído `cancelled`.** Si la hay, `S1` lo relee por id en el acto: si lo ve `cancelled`, sigue; si no, corre la cancelación con la regla de relectura de `S17` y el correo antes, y **el alta no se admite en esta llamada** (*«estamos cerrando tu intento anterior; probá de nuevo en unos minutos»*). Sin esto el alta nueva convivía con un preapproval que el proveedor podía seguir reciclando, y `GR-1` midió que actualizar el medio de pago lo cobra en minutos (FASE 9 vuelta 1, `F-8V1B1-003`). **Y, si compra Turista VIP, el `user` no tiene un plan vigente que lo herede** (`DEC-ENT-003`; corte del MVP, owner 2026-10-01, BJ: el código de error del rechazo queda abierto; residuo corregido el 2026-10-02)"
+            ],
+            [
+                1804,
+                "   estar en `S11`, `S13`, `S17` o `S22`; las dos últimas salieron con la revisión del owner, 2026-09-28, C8)."
+            ],
+            [
+                2040,
+                "aplicado **sin gastar una relectura**,. **La segunda ya no la hace el `version`**: detectar *«cambió sin avisarnos»* es del"
+            ],
+            [
+                2095,
+                "| `pending` | cualquier otro — **salvo la fila terminal de una cancelación nuestra, la terminal que el proveedor canceló tras un cobro rechazado y todavía no está exenta (FASE 9 vuelta 3, owner 2026-09-30, lote U) y la `CANCEL_SCHEDULED` de `S11`, que tienen sus pares al final de esta tabla** (`S26` salió con la revisión del owner, 2026-09-28, C8) | **divergencia real** — el proveedor no puede retroceder a pendiente. Marca |"
+            ],
+            [
+                2108,
+                "| `authorized` · `paused` · `pending` ✚ | `CANCEL_SCHEDULED` a la que llevó **`S11`**: manda la cancelación en el acto y deja la fila **viva** hasta `S12` (`S26` salió con la revisión del owner, 2026-09-28, C8) | **el mismo veredicto que el par de arriba**: **reintentar la cancelación** desde el barrido, con el correo antes —el que ya salió no se repite, §3.2 precisión 3— y la relectura después; **la marca `CANCELACIÓN_SIN_CONFIRMAR`, recién a los 3 días de la transición que decidió la cancelación**, y abierta la marca **el barrido deja de reintentar** (owner 2026-09-25; FASE 8 completa, `F-8CB1-013`). **No rompe el par `cancelled` × `CANCEL_SCHEDULED`**, que sigue siendo *«nada: es lo esperado»*: éste es el de la llamada que no llegó. **Y no alcanza a la `CANCEL_SCHEDULED` de `S7`**, que llega ahí justamente porque la relectura ya vio el preapproval `cancelled` (§3.2) — **sí a las filas de complemento que `S7` o el espejo de `R18` llevan a `CANCEL_SCHEDULED` por la regla de `S11`**, que cuentan como de `S11` (owner 2026-09-27, FASE 9 vuelta 2, `R18-b`) |"
+            ],
+            [
+                2700,
+                "la ventana —desde el grace ya no se declara, `DEC-SUB-021`— como un incidente. **La marca no deshace una sucesión en curso**: bloquea"
+            ],
+            [
+                2939,
+                "- **efectos** (efectos): se pausa en el proveedor y **el servicio se sostiene de nuestro lado** (`DEC-GRANT-003`). **Y el `PUT paused` se confirma por relectura**, como en `S8` (FASE 9 completa, `F-8CB2-003`): **si la relectura sigue viendo `authorized`, `S9` NO ocurre** —la fila se queda en `ACTIVE`, no se abre la `subscription_pause` ni se re-emite nada—, **`S14` pone la marca con motivo `PAUSA_NO_APLICADA`** (`B/02` §2.5, motivo 22), y **el aviso a `SUPER_ADMIN` dice que la cortesía no se aplicó**. En un pagador manual no hay `PUT` y esta parte no corre. **Por el segundo disparador se re-emite la cortesía diferida**: `subscription_id` pasa a esta fila, `inicio` es hoy **—o, sobre una sucesora que vive del crédito de `DEC-SUB-006`, el fin de ese crédito: la cortesía arranca cuando se agota lo que la persona ya pagó, no encima de eso** (owner 2026-09-27, FASE 9 vuelta 2, `R17`, `F-8V2B1-004`)—, `fin` es `inicio` + `saldo_meses`, y **`saldo_meses` vuelve a nulo**. **La pausa se abre igual en el acto de autorizar**, con `fin_previsto` en ese `fin`: así cruza exactamente los `saldo_meses` cobros que caen desde el fin del crédito, y el primer cobro corrido por el crédito queda adentro sin que haga falta otro momento para pausar (el saldo pasó a meses: FASE 8 completa, `F-8CB1-001`, owner 2026-09-25, `B/02` §2.4). Es la misma fila de `courtesy_grant`, entera, con la firma de `SUPER_ADMIN` original — no una cortesía nueva, así que el §35.4 sigue auditando **por grant**. **Riesgo aceptado y declarado por `DEC-GRANT-007`**: entre `S2` y este acto el proveedor **puede cobrar** el primer pago, y ese cobro se devuelve **por el camino que ya existe** —la marca con motivo `COBRO_DURANTE_CORTESÍA` y la confirmación de una persona, `B/02` §2.5 y `DEC-RF-002`—, sin inventar un mecanismo para evitarlo"
+            ],
+            [
+                3059,
+                "- **efectos** (efectos): **se cancela en el proveedor de inmediato** y se guarda **nuestra** fecha de fin de servicio (`DEC-SUB-009`). **La fecha sale de los cobros acreditados, nunca de la fecha del próximo cobro** (FASE 8 completa, `F-8CB1-012`): **`fin_de_servicio = inicio(P) + un ciclo de la billing option anclada`**, donde **`P` es el `covered_period` más reciente de la fila con `liberado_en` nulo** (`B/02` §2.3) — el período que el último cobro acreditado pagó, **sea `payment` o `manual_payment`**. La copia de la fecha del próximo cobro **no entra**: sobre una fila con un cobro en reintento esa fecha ya corrió un ciclo sin pago (**observado el 2026-09-24, no registrado en la matriz**; FASE 9 completa, C2), y usarla regalaba ese ciclo. **Si un cobro anterior a la baja se acredita después** (`B/05` C2, primera fila), escribe su `covered_period` y la extensión que ese § manda es **`max(fin_de_servicio vigente, la fórmula recalculada)`**: una extensión nunca acorta (FASE 9 vuelta 1, R4, `F-8V1B2-002`). **Precisado el 2026-09-27 (owner, FASE 9 vuelta 2, `R17`, `F-8V2B1-002`): el crédito de `DEC-SUB-006` cuenta como período pagado.** Sobre una sucesora que vive de ese crédito —lo pagado sin usar de la predecesora, convertido en días que corren su primer cobro (`B/12` §5.2)—, **`fin_de_servicio = max(fórmula, fin del crédito)`**, donde **el fin del crédito es la fecha de primer cobro que `DEC-SUB-006` le corrió al crearla**, con la corrección de `B/12` §5.4 si la hubo. **Una fila sin ningún `covered_period`** no tiene entrada para la fórmula, y su fin de servicio es el fin del crédito; **sólo si tampoco tiene crédito** el fin de servicio es el instante de la baja, como en `S24`: como `CANCEL_SCHEDULED` emite fuente sólo hasta esa fecha (`12-contrato…` §2.6), el servicio se corta ahí mismo y `S12` encuentra su fecha ya cumplida. Lo cerrado el 2026-09-25 pensaba sólo en la ventana de 72 h de `B/12` §5.2, y el crédito dura semanas —un cambio de anual a mensual, un arrepentimiento—: la baja cortaba en el acto lo que la persona ya había pagado. **Antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y se reintenta; si no hay destinatario, se cancela igual y el no-entregable se escala. **Y en el mismo acto cancela en el proveedor los complementos recurrentes que dependen de ella** (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`, `F-8V2B1-001`). **La selección es la de `S32`**: las filas DE COMPLEMENTO en `ACTIVE`, con su instancia viva, que complementan a esta principal —la `VERTICAL_SUBSCRIPTION` que cuelga de ella, el `LISTING` sobre una ficha de su vertical, y el `USER`/`GLOBAL` cuyo producto declara compatible esa vertical sólo si en ninguna otra vertical compatible queda una principal viva que no esté `PAUSED`, `SUSPENDED` **ni `CANCEL_SCHEDULED`**, ni un ancla viva— (**`CANCEL_SCHEDULED` en la exclusión es la lectura del grupo A de la FASE 9 vuelta 2, confirmada por el owner**: FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-c`; sin ella, un `USER` compatible con dos verticales que se da de baja en las dos cobra un ciclo después de la segunda baja). **La regla es la de la principal**: el correo antes de cada llamada, la relectura de `S17`, y la fila de complemento a `CANCEL_SCHEDULED` **con el mismo `fin_de_servicio` de la principal** —para un `USER`/`GLOBAL`, el más tardío entre las principales compatibles en `CANCEL_SCHEDULED`—. **El complemento sigue dando servicio hasta esa fecha**, la instancia no cambia de estado, y **en esa fecha los cierra `S21`, antes que su propio `S12`**: el `S12` de la principal dispara la orfandad (`A5`), y `S21` toma la fila de complemento y abre el motivo 14 si su último cobro pagó días posteriores (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`; el orden, en la fila de `S12`). (Sale: `S26` y `vertical_discontinuation` se retiraron con la revisión del owner, 2026-09-28, C8, y el motivo que abre `S21` es el de su tabla de disparadores; FASE 9 vuelta 3, `F-8V3B1-007`.) Es lo que `DEC-SUB-009` hace con la principal y lo que `S32` hizo con la pausa y la suspensión (`G2-2`): sin esto el preapproval del complemento, con su propio aniversario, cobraba un ciclo entero después de la baja, y `S21` lo ponía en el motivo 14 con propuesta *no devolver*. **Una fila de complemento que no está en `ACTIVE` no entra**, igual que en `S32`: la alcanza la orfandad cuando `S12` saca a la principal de las filas vivas (`B/16` §4.3)"
+            ],
+            [3083, "estado significa, textual, *«con la baja pedida y mandada al"],
+            [
+                3130,
+                "- **efectos** (efectos): se corta el servicio; proceso **idempotente**. **Sobre una fila DE COMPLEMENTO, por el primer evento, corre después de su principal y de la orfandad que ella dispara** (owner 2026-09-27, FASE 9 vuelta 2, `R1-c`): en la fecha de fin corre primero el `S12` de las principales, la orfandad corre `A5` → `S21` sobre sus complementos —que los lleva a `CANCELLED` y abre el motivo 14 cuando el último cobro pagó días posteriores a esa fecha (`B/02` §2.5) (sale con C8: la tabla ya no existe; FASE 9 vuelta 3, `F-8V3B1-007`)—, y recién después este `S12` sobre las filas de complemento que sigan en `CANCEL_SCHEDULED`, que son las que la orfandad no alcanzó —un `USER`/`GLOBAL` con otra principal compatible viva—. **Y sobre ese `USER`/`GLOBAL` este `S12` apaga también su instancia** por `A5` (primera cláusula: la baja que la persona pidió la alcanzó por la regla de `S11`), porque su preapproval ya está cancelado y no hay cobro que reanudar (`PA-5`): sin eso la instancia quedaba `ACTIVE` sin ninguna fila que la cobre ni la emita, y la persona la veía viva al volver de la pausa de la otra principal (FASE 9 vuelta 2, verificación, `N-A-02`, arreglo de texto). Vale para la `CANCEL_SCHEDULED` que puso `S11` (`S26` salió con la revisión del owner, 2026-09-28, C8) —y para la que puso la regla de `S11` desde el espejo de `R18` o desde `S7` (owner 2026-09-27, FASE 9 vuelta 2, `R18-b`), **o desde `S22` sobre una fila que vive del crédito** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`)—. Sin ese orden, el `S12` del complemento llegaba primero, `S21` lo encontraba `CANCELLED` y no escribía nada, y el residuo quedaba sin que ninguna persona lo viera. **Por el segundo evento, además, `S14` abre la marca con motivo `CONTRACARGO`** (`B/02` §2.5) con el pago colgado, y **al proveedor no se manda nada nuevo**: el preapproval ya lo canceló `S11`, y si esa cancelación no se confirmó la sigue el reintento del `B/09` §3. **Cerrado el 2026-09-25 (owner)**: **si la fila es la predecesora de una sucesión en curso, por el segundo evento corre `S31` sobre su sucesora**, igual que tras `S6` por el tercero (FASE 8 completa, pendiente 8, owner 2026-09-25). `S31` encuentra a la sucesora por su `sucede_a`, que `S18` limpia, así que corre antes de que `S18` evalúe; si la deja `ABANDONED`, `S18` no corre —su `desde` es una sucesora viva— y la sucesión se cae, como en `S3`. **Y el aviso a la persona es el mismo correo de contracargo** (`NUCLEO/07` §6, `B/19` §4 fila 10-ter; orquestador, FASE 8 completa, pendiente 8)"
+            ],
+            [
+                3449,
+                "- **efectos** (efectos): **cierra la sucesión, y es el único acto que lo hace.** Son **cinco** escrituras: se escribe **`sucedida_por`** en la predecesora; se **limpia `sucede_a`** en la sucesora; **lo que colgaba de la predecesora y se puede re-apuntar se re-apunta a la SUCESORA** —los **complementos** (`B/16` §4.2), con el inventario completo en `B/02` §2.6—; **la redención de promo NO se re-apunta: la promo se pierde con el cambio de plan** y se queda colgando de la predecesora, sin que se escriba nada (`B/14` §2.2; FASE 8 completa, pendiente 7, owner 2026-09-25); **si la predecesora tiene una cortesía vigente, NO se re-apunta: se CIERRA sobre ella y se le escribe el `saldo_meses`** que le quedaba (la fracción de mes se redondea **para arriba**, `B/02` §2.4; **y si la sucesora es de plan no mensual —trimestral, semestral o anual—, el saldo no se escribe: se CIERRA con `motivo_cierre = DESTINO_DE_PLAN_NO_MENSUAL`**, porque ahí no hay cortesía temporal (FASE 9 completa, contradicción 1 de `03` §R4.5), y la persona lo supo antes de elegir el plan, `B/19` §4 fila 13-quater (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25)), para que `S9` la re-emita sobre la sucesora cuando ésta llegue a `ACTIVE` (`DEC-GRANT-007`, `B/14` §4.4); y **si la predecesora retiene un pago pendiente por `S19`, se le abre a ELLA una marca `requiere_conciliación` con motivo `REEMBOLSO_POR_CONFIRMAR`**, con **el pago colgado de ella** (`B/02` §2.2 y §2.5; ramas 1, 5 y 6 de `B/12` §5.3, `DEC-RF-002`). **Salvo cuando la predecesora murió por `S36`**: ese pago lo devuelve el `RF1` de `S36` y `S18` no abre marca sobre él (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-o`). La sucesora pasa a ser el origen"
+            ],
+            [
+                4035,
+                "- **efectos** (efectos): **Es la transición que el 📌 de `DEC-SUB-020` pedía y ninguna fila hacía** (FASE 8 completa, pendiente 8, owner 2026-09-25): un contracargo es una disputa, no una mora que el cambio de plan resuelva, así que **la sucesora también se corta**. **Por los dos destinos la sucesora deja de ser fila viva y la sucesión se cae como en `S3`, sin `S18`** (FASE 8 completa, owner 2026-09-25) —desde `ACTIVE` iba a `SUSPENDED`, que es fila viva, y la sucesión quedaba en curso sin nadie que la cerrara—. **La persona vuelve por la predecesora**: si quedó `SUSPENDED` por `S6`, por una sucesión desde `SUSPENDED` de tarjeta (`G-R1-A`, `B/20` §2). **Se cancela su preapproval en el proveedor con la regla de relectura de `S17`** —si la relectura ya lo ve `cancelled`, no se manda nada—, **y antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): **si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y la reintenta el barrido** —`S31` llega a su destino pase lo que pase con la llamada, y es una de las filas de la salvedad 4 de `B/09` §3 (FASE 8 completa, owner 2026-09-25)—; si no hay destinatario, se cancela igual y el no-entregable se escala; un pagador manual no tiene preapproval, y esta parte no le corre (`B/06` §7). **Y si la sucesora era de un pagador manual en `PENDING_AUTHORIZATION`, su primera cuota —abierta en `S1` y nunca registrada— se cierra en el mismo acto** por la segunda cláusula de `MP3` (§7), como en `S3`. **Y si hay un saldo de cortesía diferido esperando a esta sucesora** (`NUCLEO/01` §2.6), **se cierra acá**: `saldo_cerrado_en` y `motivo_cierre = CONTRACARGO_DE_LA_PREDECESORA` (`B/02` §2.4) — ninguno de los tres valores que ya había describe este desenlace. **Y si la predecesora retenía un pago pendiente por `S19`, se reevalúa en el acto por la rama 2 de `B/12` §5.3**, como en `S3`. **No es `S3`**, aunque comparta con ella el destino desde `PENDING_AUTHORIZATION`: `S3` avisa *«venció tu plazo»* y cierra el saldo con `VENTANA_DE_AUTORIZACIÓN_VENCIDA`; acá no venció nada (`S28` salió con la revisión del owner, 2026-09-28, C8). **`S31` se escribe en la misma transacción que la escritura de `S6` —o de `S12`— que la dispara** (FASE 9 vuelta 1, `F-8V1B2-006`). Su llamada de cancelación sale después y, como en `S3`, la fila llega a su destino pase lo que pase con ella: la reintenta la salvedad 4. Entre las dos escrituras no hay ventana donde `S17` pueda cancelar a la predecesora y `S18` limpiar el puntero. ⚠️ **Lo que esta fila deja abierto** está en *«lo que esta mitad NO cierra»*: qué aviso recibe la persona por la sucesora (los otros dos, cerrados: FASE 8 completa, owner 2026-09-25)"
+            ],
+            [
+                4111,
+                "- **desde** (estado origen): `ACTIVE`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` **o `PAUSED`, con cualquiera de los dos motivos** (owner 2026-09-26, `X-2`; FASE 9 vuelta 1, `N-3` de `25-verificado-G5`: la condición legal es el plazo, no el estado)"
+            ],
+            [
+                4224,
+                "regulariza —cambia la tarjeta o paga la cuota—, vuelve a `ACTIVE` por `S5`, y ahí cambia de plan. *(Tachado 2026-09-26: `GR-1` quedó `VERIFIED` — cambiar la tarjeta dispara un reintento en el momento que cobra con ella, y la pantalla lo puede decir.)*"
+            ],
+            [
+                4263,
+                "- **por qué**: **La excepción, del owner** (FASE 8 completa, pendiente 8, owner 2026-09-25): **`PAUSED` con motivo `COURTESY` → `SUSPENDED` por `S6`, sólo por su tercer evento —el contracargo—**, porque la cortesía da servicio y un contracargo corta a toda fila que da servicio (`DEC-SUB-020`, su 📌). **No choca con la razón de esta fila**: `S6` no modifica el preapproval pausado, **lo cancela**, que es justo lo que `EX-11` mide que sí se puede. Lo demás de la celda sigue igual: está medido que **estando pausada el proveedor rechaza toda modificación** (`EX-11`), y que **sí deja cancelar**. **Las dos que quedan afuera de la prohibición tienen fila**: `ACTIVE` es `S10`, y `CANCELLED` es **`S22`** —la baja— y `S13` —el grant—. Esta celda decía qué no pasa y, hasta `S22`, una de las dos que sí pasan no estaba escrita. (`S25` salió con la revisión del owner, 2026-09-28, C8)"
+            ],
+            [
+                4387,
+                "- **nota** (guardas y efectos): si el pago es de una suscripción con una redención de promo cuyo `cobros_restantes` es mayor que 0, **lo decrementa en uno en el mismo acto** (`B/02` §2.4) —**sólo si el cobro salió con el descuento**: su importe no pasa del monto esperado con esa promo aplicada (`B/14` §2.4); si salió sin él, el contador no se mueve y lo cobrado de más lo marca el barrido con el motivo 24 (owner 2026-09-27, FASE 9 vuelta 2, `R20`, `F-8V2B3-001`)—, y si llega a 0 corre `S30`; si cuelga de una instancia de addon, no escribe `covered_period` (`B/02` §2.3) (corrección de diseño, FASE 8 completa, `F-8CB1-007`, `F-8CB1-008`). **Corre también sobre una fila de `payment` que ya existe**: un reintento que se aprueba **dentro del mismo registro de cobro** llega con el mismo id del hecho, y `C6` ya no lo descarta — relee la fila existente y, si está `PENDING` y la lectura por id dice `approved`, corre este `P1` sobre ella (`B/05` C6, §10.2; FASE 8 completa, `F-8CB3-003`). **El período que escribe en `covered_period` sale de la fecha del propio registro de cobro**, no de la fecha del próximo cobro (`B/02` §2.3; FASE 8 completa, `F-8CB3-005`, `F-8CB1-011`). **Si esa escritura choca con el `UNIQUE`** —el período ya tiene un cobro acreditado—, **el pago pasa igual a `SUCCEEDED`**: la plata entró y el hecho se registra, porque rechazarlo dejaba plata sin fila; **no se escribe la cobertura**, y `S14` abre la marca con motivo **`COBRO_DUPLICADO`** (`B/02` §2.5, motivo 20; FASE 8 completa, pendiente 6, owner 2026-09-25) **con el pago colgado**: un período con dos cobros lo mira una persona, con el default de devolver (`B/19` §6) (`DEC-CONC-002` punto 4). **Y emite el comprobante** —el `receipt` de este cobro, `B/02` §2.3, `DEC-LEGAL-001`—, también sobre el pago de un addon de única vez (FASE 8 completa, `F-8CB3-006`), **con la copia del nombre y el correo de quien paga, leídos de la fila de `user` dueña del cobro en esta misma transacción** (revisión del owner, casos vecinos, 2026-09-29, caso K-A; `B/02` §2.3). **Salvo sobre una cuenta que la acción 24 ya dio de baja** (`NUCLEO/08` §3; verificación corta, 2026-09-29, lote N-C), que la misma fila de `user` dice: su nombre y su correo ya son el seudónimo, así que `P1` **deja las dos columnas nulas y el comprobante sin enviar**, como sobre una lápida; el resto de lo que hace no cambia. Es la red de la precondición de la 24, que no alcanza a un cobro en vuelo. **Y si es el primer pago acreditado de una suscripción, emite el aviso de cobertura** (`12-contrato…` §3) **después de su commit, nunca dentro de su transacción** —adentro, la máquina de trial relee `cobrada: no` y `T2` no dispara— (FASE 9 vuelta 2, `F-8V2C1-002`): su `cobrada` pasa de `no` a `sí`, que es lo que convierte el trial (`V/03` §2, `T2`; `DEC-TRIAL-010`, owner 2026-09-25). **Sobre una lápida —la de recepción, la única que queda (FASE 5, simplificación del corte, S-40 y S-70)— el asiento es este `P1`, con menos efectos** (FASE 9 vuelta 2, `F-8V2B3-005`): el `payment` nace `PENDING` colgado de la lápida y pasa a `SUCCEEDED` en la misma transacción que lo escribe, porque la plata entró y la devolución que proponga su marca (`B/09` §2.4) sale de un pago acreditado. **No escribe `covered_period`** (la lápida no da servicio y no se extiende nada), **no toca ninguna promo** (no tiene redención) **y no emite el aviso de cobertura**: la lápida no tiene usuario ni vertical y no es una fila que emita fuente, así que no hay `cobrada` que pase a `sí`. **Sí emite el comprobante**, que `DEC-LEGAL-001` pone por cada cobro; no tiene destinatario, así que queda en su fila sin enviarse, **y sin nombre ni correo del pagador, porque no hay `user` del que copiarlos** (revisión del owner, casos vecinos, 2026-09-29, caso K-A; `B/02` §2.3). La marca, cuando la hay, se escribe en la misma transacción que el `payment`, y nada de lo que corre después del commit la revierte"
+            ],
+            [
+                4669,
+                "- **evento** (disparador): se agota el grace sin que el admin haga nada — **o, sobre la PRIMERA cuota, se agota la ventana de autorización y `S3` se lleva la fila a `ABANDONED`** (§7.2, *«cómo entra el grace»*) — **o, tercera cláusula, la suscripción sale de `GRACE_PERIOD` o de `PENDING_AUTHORIZATION` por cualquier transición que no sea `S5`, `S6`, `S2`/`S29` ni `S3`** —del grace, `S13`, `S17`, `S20`, `S21` y `S24`; de `PENDING_AUTHORIZATION` con la primera cuota abierta, `S13`, `S20` y `S21`: **las ocho salidas del dominio**, recontadas sobre la tabla del §3.2 (revisión del owner, 2026-09-28, C8: salen `S26` y `S28`); `S31` ya la cierra por la segunda cláusula— (owner 2026-09-25; FASE 9 completa, 8f, `F-8CB2-005`): la cuota impaga de quien se va no queda viva, y registrarla después con `MP1` ya no avanza la fecha del próximo cobro de una fila muerta"
+            ],
+            [
+                5305,
+                "- **evento** (disparador): **el admin registra una transferencia que no cae en ninguna cuota abierta**: una segunda del mismo período, o una sobre una fila que ya no abre cuotas, como una `CANCELLED` (FASE 9 vuelta 3, owner 2026-09-30, lote W; `F-8V3B1-005`; la plantilla sin llenar, verificación, VC3-cobro-06)"
+            ],
+            [
+                5382,
+                "- **nota** (guardas y efectos): **la misma ventana que `S3`**, con sus **dos** plazos según el método de pago (§3.4 punto 1). **Y el efecto de `S3`** (FASE 9 completa, C-R5-2): si es recurrente, **relee su preapproval por id** —si lo ve `authorized`, `A3` no ocurre y corre `A2`: nuestro reloj no decide solo sobre un estado del proveedor— y **lo cancela en el proveedor, con la regla de relectura de `S17` y con nuestro correo antes** (§3.2, *«el correo antes de cancelar»*); si la cancelación falla, la reintenta el barrido por la salvedad 1 de `B/09` §3. Un preapproval `pending` no vence (`EX-1`), así que sin esto el enlace viejo se podía autorizar más tarde. **De única vez no hay preapproval, y lo que corre es su gemelo sobre la orden** (FASE 9 vuelta 2, owner 2026-09-27, `R4`, `F-8V2B1-003`, `F-8V2B2-004`): **`A3` sólo confirma, nunca crea** (FASE 9 vuelta 3, owner 2026-09-30, lote E, `F-8V3B1-001`, `F-8V3B1-002`, `F-8V3B2-001`). El reenvío de la ventana se apoyaba en `EX-41`, que midió el reenvío inmediato; el de horas después, con el token de la tarjeta vencido, es `EX-43`, `UNKNOWN`, y si la orden nunca había existido el reenvío la creaba y la cobraba tres días después, sobre una compra que la persona ya había rehecho. **Con el id de la orden guardado**, `A3` la relee por id: con un pago aprobado no ocurre y corre `A2`; sin él, ocurre; si la relectura no responde, no ocurre en esa corrida y la condición se vuelve a evaluar en la siguiente. **Sin id de orden, `A3` ocurre sin reenviar nada**: la instancia pasa a `ABANDONED` sin id, y si la orden llegó a existir y se pagó, la busca la comprobación de órdenes pagadas del barrido por el identificador del pedido (`B/09` §3), (`EX-57`, **`VERIFIED` el 2026-09-30, en sandbox y con ventana: el proveedor encuentra la orden por esa referencia, con la ventana anclada a la creación local del pedido**; lo que la medición no cubrió —producción y un pedido de más de 30 días— está declarado en *«lo que este capítulo NO cierra»* de `B/09` (matriz, `EX-57`; residuo corregido el 2026-10-02). La orden que se aprueba después de que `A3` abandonó la ve el barrido (`B/09` §3, la comprobación de órdenes pagadas)"
+            ],
+            [
+                5585,
+                "Cada motivo es un valor de la columna **`motivo`** de **`reconciliation_mark`**, *«enumeración cerrada, §2.5»* (`B/02` §2.2, línea 57). El nombre del valor va en el título de cada ítem."
+            ],
+            [
+                6033,
+                "- **¿hay plata del cliente que devolver?**: **no**. **Cerrado el 2026-09-25 (owner)**: el motivo se partió y el segundo camino es el 20. **Re-decidida el 2026-09-25 (orquestador, FASE 8 completa, pendiente 8)**: **la plata entró bien; lo que falta es asentarla**, así que no hay nada que devolver"
+            ],
+            [6109, "Cada candado es la sección entera de la fuente, sin lo tachado."],
+            [
+                6395,
+                "Lo resuelve `UNIQUE(proveedor, id_del_hecho)`: la segunda instancia falla al insertar. **Sin lock y sin coordinación.**"
+            ],
+            [
+                6464,
+                "- **qué hace el falso a propósito**: dice «ok» a un cambio y **lo aplica**: el ciclo, el plan, la fecha de cobro, la prueba gratis y la baja programada de una suscripción viva; y al crear, el campo `items` devuelve `201` y se descarta"
+            ],
+            [6470, "La sección no tiene texto vigente fuera de su título."],
+            [6747, "producción, ni quién avisara si no corría**. Desde esta revisión es una"],
+            [
+                6748,
+                "batería con esas tres cosas, y **la construye `B1`**, con el falso y sus dos listas:"
+            ],
+            [
+                6751,
+                "   que pasa. **Las cinco de comportamiento medido, `RP7` a `RP11`, no se reproducen"
+            ],
+            [
+                7511,
+                "| **con unidad que los construya** | **35** de los que cuenta esta tabla; **el 35 es `G19`, con su unidad, `V5`** (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H); **el 34 es `G18`, con su fila en `V/20` §2 y su unidad, `V1`** (FASE 5, lote de la aplicación, owner 2026-09-30, E; recontado en la segunda tanda) (salen `G-R3`, de `V2`, y `G-R5-B`, de `V6`, que pasan a ser validaciones del panel y las construyen las mismas unidades: revisión del owner, 2026-09-28, N1 y C9) | **`G15` `G16` `G17` (`B1`)**, que nacen con unidad (revisión del owner, 2026-09-28), más los **17** (FASE 5, lote de la aplicación, owner 2026-09-30, E; verificación, `VF5-05`; con `G19`, FASES 6 y 7, verificación, 2026-09-30, F8) que ya la tenían — `G1` `G3` (`V1`), **`G8` (`U1`**, la unidad del paraguas que hace la limpieza del principio: verificación corta, 2026-09-29, lote O-A), `G2` `G4` `G6` (`V5`), `G5` y `G-R6-B` (`V6`), `G9` `G10` `G11` `G12` (`B1`), `G7` (`B2`), `G13` (**`V4`**: owner 2026-09-26, `G5-5`), **`G14` (`V1`**, revisión del owner, 2026-09-28, N6; `G-R5` salió por C14) **y `G18` (`V1`**, FASE 5, lote de la aplicación, owner 2026-09-30, E) **y `G19` (`V5`**, FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H) — más los **14** que reparte la quinta enmienda: `G-R3` (`V2`), `G-R2` `G-R2-B` (`V3`), `G-R4` `G-R4-B` `G-R6` (`V4`), `G-R3-B` `G-R3-C` (`V5`), `G-R1-A` `G-R1-B` `G-R1-E` `G-R1-F` (`B3`), `G-R1-D` (`B7`), `G-R1-C` (`B8`) — y **`G-R5-B` (`V6`)**, que nace con unidad (FASE 8 completa, owner 2026-09-25) — **y `G-R2-C` (`B4`)**, asignado en la FASE 9 completa (owner 2026-09-25, decisión 10c; `B/descomposicion.md` §2, fila `B4`) *(pasa a `B4`, al corte: corte del MVP, owner 2026-10-01, AA y AV; residuo corregido el 2026-10-02)* **y `G-R9` (`V6`)**, que nace con unidad (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-k`) |"
+            ],
+            [
+                7671,
+                "- **qué falla si se rompe**: **aparece, sin distinguir mayúsculas, el nombre del agrupamiento viejo de Gastronomía y Experiencia en cualquier archivo versionado del repositorio**: código, esquema, tipos, tests, docs, specs, comentarios, nombres de archivo, la historia de migraciones y el ledger del seed. **Una sola exención, por nombre: el PDR de HOS-1352 (`00-PDR.md`)**, que no se edita y lo nombra en su §55.1; la causa va escrita en el guard (revisión del owner, 2026-09-28, C3, `L2-a` y `L2-b`). **Ya no hay excepción histórica**: lo que la nombre se reescribe o se borra. El guard arma el patrón sin escribir la palabra, para no fallar sobre su propio texto, **y el script del corte arma igual el valor viejo que tenga que nombrar al leer la base vieja: sin escribir la palabra de corrido, así que pasa `G8` sin entrar a la lista de pendientes** (`16-fase-7…` §4.2; revisión del owner, casos vecinos, 2026-09-29, caso F-D). **Hasta el corte la historia de migraciones y el ledger del seed la nombran y sólo el paso 6 del corte los reemplaza** (`16-fase-7…` §4.2): **mientras tanto el guard lleva una lista de pendientes cerrada, con **tres entradas por carpeta, y ninguna más** (verificación corta, 2026-09-29, lote N-A: el trinquete salió): la historia de migraciones (`packages/db/src/migrations/**`) **sin el carril de extras (`packages/db/src/migrations/extras/**`), que no entra a la lista: los extras no tienen registro y se reaplican, así que un extra nuevo con la palabra falla desde el primer día y no el del corte, y `U1` reescribe los dos que la nombran hoy, `032` (nombre y comentarios) y `033` (comentario)** (FASE 5, owner 2026-09-30, lote 1 H, `F5-BD-019`, `F5-U1-055`), las migraciones de datos del seed que el ledger anota (`packages/seed/src/data-migrations/**`)** **y las carpetas del programa en `.specs/` (`HOS-1352-…`, `HOS-1353-…` y `HOS-1354-…`), que por el caso 41 se quedan en el repositorio hasta el cierre de HOS-1352** (revisión del owner, casos vecinos, 2026-09-29, caso H-A). **La tercera entrada son sólo esas tres carpetas: las specs de otros issues y `.qtm/` que la nombran no entran a la lista, y las limpia la limpieza del principio en el mismo cambio que construye el guard** (verificación corta, 2026-09-29, lote N-A; `16-fase-7…` §4.6) (`21` §4; revisión del owner, casos vecinos, 2026-09-29, caso I-D). **Lo que está en la lista no falla, y la lista no admite **una cuarta carpeta** (lote N-A). El paso 6 del corte le saca las dos historias, en el mismo commit que las reemplaza, y un build destinado a producción después del corte falla si le queda una de las dos** (revisión del owner, casos vecinos, 2026-09-29, caso 8). **Esa regla la enciende el mismo commit del paso 6**: desde ahí, que la lista vuelva a tener una de las dos historias falla; antes, el despliegue del paso 3, que es un build destinado a producción con la lista llena, no falla por ella (revisión del owner, casos vecinos, 2026-09-29, caso F-B). **La tercera entrada la saca el commit del cierre de HOS-1352**, que reescribe el diseño vigente sin la palabra y saca los informes históricos (`HOS-1352/spec.md`, *«Al cerrar HOS-1352»*), **y ese mismo commit extiende la regla: desde ahí, la lista no vacía falla** (revisión del owner, casos vecinos, 2026-09-29, caso H-A). **Sin trinquete y sin lista de pendientes de código** (verificación corta, 2026-09-29, lote N-A): el trinquete que el lote M-E le sumaba el mismo día sale antes de llegar al código, porque **el código del sistema viejo sale entero de la rama al principio de la épica**, en la limpieza del principio (`16-fase-7…` §4.6), que borra el cobro viejo y renombra o borra todo lo que nombra la palabra. **`G8` corre sobre todo el repositorio desde que nace**, con el PDR como única exención y las tres carpetas como única lista, y nace verde porque la limpieza va antes que él o con él. **Las tres carpetas siguen haciendo falta**, revisadas una por una: la historia de migraciones, porque una migración aplicada no se reescribe y la que la rama genera para borrar lo viejo lo nombra (hasta el paso 6); las migraciones de datos del seed, que el ledger anota como aplicadas, **menos las que usan el cobro viejo, que `U1` saca de la rama** (FASE 5, owner 2026-09-30, lote 1 C, `F5-U1-048`: ya no se congelan) (hasta el paso 6); y las carpetas del programa, cuyos informes históricos la citan (hasta el cierre de HOS-1352). Lo construye la unidad que hace la limpieza del principio, en el mismo cambio: **`U1`, la unidad del paraguas que va antes de `V1` y de `B1`** (verificación corta, 2026-09-29, lote O-A; `16-fase-7…` §4.6)"
+            ],
+            [
+                7684,
+                "- **qué falla si se rompe**: **un build destinado a producción importa el módulo de la implementación de arranque que contesta por billing** (; la pregunta salió con la revisión del owner, 2026-09-28, C8). **Son las seis respuestas de arranque que contestan por billing: el `no` a las cuatro fuentes de billing, el `detenida: no` de `retenciónDetenida` y el `no` de `puedeCobrarle` (contrato §5.1 y §6.3), las seis en el módulo vigilado, y un caso de `G13` por cada una que lo pone en rojo si el build de producción la enlaza** (FASE 9 vuelta 3, `F-8V3C1-002`, `F-8V3D1-001`), **no** la resolución del trial ni la del título `BASE`, que son de verticales en las dos implementaciones (contrato §6.3; FASE 9 vuelta 2, `F-8V2C1-005`; la fila, corregida en la verificación, `22-` §5)"
+            ],
+            [
+                8023,
+                "- **de dónde sale**: `D15`, cap. 03 §3.2 (`S18`), cap. 02 §2.2, §2.5 y §2.6, `DEC-RF-002`"
+            ],
+            [
+                8062,
+                "- **de dónde sale**: cap. 02 §2.2, §2.4 y §2.5, cap. 03 §3.2 (**`S3`**, `S14`, `S15`, `S18`, **`S21`**; revisión del owner, 2026-09-28, C8), cap. 09 §3, cap. 14 §4.3, **cap. 16 §4.3**, cap. 19 §6, `NUCLEO/01` §2.5 y §2.6, `DEC-RF-002`, `DEC-RF-003`, **`DEC-RF-006`**, `DEC-GRANT-011`, **`DEC-GRANT-013`**"
+            ],
+            [
+                8107,
+                "Las filas de la matriz son **sólo citables** ([AX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t5-ax)): no exigen AC propio; las citan los ítems y las piezas que se apoyan en ellas. Cada fila va con todas sus columnas."
+            ],
+            [
+                8109,
+                "**Cómo se lee una fila** (`D/06` §Reglas, 4 y 6): cada fila lleva **fecha y entorno**, y una fila sin fecha se lee como `UNKNOWN` (`S-MP-02`); un `PARTIALLY_SUPPORTED` **tiene que nombrar qué parte**. Cuándo caduca una fila verificada: [B1](10-corte/B1.md#pieza-b1) (`B/06` §8, que cierra `S-MP-02`)."
+            ],
+            [
+                8111,
+                "**Estados** (`D/06` §Estados, §61): `VERIFIED`, se ejecutó y funciona como lo necesitamos, con evidencia; `NOT_SUPPORTED`, se ejecutó y el proveedor no lo permite, con evidencia; `PARTIALLY_SUPPORTED`, funciona con una restricción **nombrada**; `UNKNOWN`, no se probó, o la fila caducó —por un cambio en lo que la sostiene, no por antigüedad (`B/06` §8, regla 2: *«una fila caduca cuando cambia lo que la sostiene, no por antigüedad»*)—."
+            ],
+            [9400, "Nota del catálogo sobre la fila siguiente:"],
+            [
+                9588,
+                "- **Conclusión**: **Sin medir;**, sobre una preferencia propia sin pagar. Hay que ver tres cosas: que el update de `expiration_date_to` = ahora que manda el método `expire` entra, que **la relectura de la preferencia** lo devuelve, y que **el proveedor rechaza pagar la preferencia vencida**. Un `200` al update no prueba ninguna de las dos últimas (`EX-20`: un `2xx` no significa que el cambio se haya aplicado). Si no la vence, el 1a no tiene cómo acotar esas preferencias y `Y-1` vuelve al owner 🚫 **No se mide, por decisión del owner** (2026-09-30, FASE 5, simplificación del corte (`./38-fase-5/20-simplificacion-del-corte.md`), lote C y S-59): el corte ya no vence por API las `Preference` del cambio de plan del viejo (S-43): quien tenga una abierta es una de las cinco cuentas, a quien el owner le pide no pagar nada en el viejo, y un cobro tardío de un débito viejo se trata como cualquier débito desconocido. Queda `UNKNOWN`, sin bloquear nada"
+            ],
+            [
+                9611,
+                "- **Para qué**: la exención de las terminales (`B/09` §3; FASE 9 vuelta 2, `R2`) *(sin el sujeto del corte desde el 2026-09-30: FASE 5, simplificación del corte (`./38-fase-5/20-simplificacion-del-corte.md`), S-60)*"
+            ],
+            [
+                9645,
+                "- **Conclusión**: `WH-4` midió los reintentos, no su destino. Si va a la vieja, el evento se pierde **y su cobro lo ve el barrido de B11 como el de cualquier desconocido** (la lápida del corte salió: FASE 5, simplificación del corte, S-40 y S-70; verificación, `VF5-06`) 🔎 **Indicio, no medición** (2026-09-29, anexo del 29/09 (`./mp-probes/RESULTS-2026-09-29.md#anexo-con-los-dos-canales-escuchando-2909-mañana`)): mientras el owner cambiaba la URL de Webhooks de `/` a `/webhooks`, dos avisos fechados `14:34:27Z` en su propio cuerpo llegaron a la URL **nueva** a las 14:40:10Z, y no quedó ningún intento a la vieja (el receptor contestaba `200` a todo). Compatible con «sale a la URL vigente al momento de entregar», pero no es esta pregunta, que es sobre un **reintento** tras un `500`, y la ventana estaba contaminada (también cambió la selección de eventos) 🚫 **No se mide, por decisión del owner** (2026-09-29, decisiones sobre las mediciones (`./30-revision-del-owner/27-decisiones-sobre-las-mediciones.md`), M-4): si el día del corte se pierde un reintento, el barrido diario lo relee (`B/21`, «NO cierra», punto (3)). Queda `UNKNOWN`, sin bloquear nada 📌 **Sin sujeto desde el 2026-09-29, con OK del owner** (decisiones sobre la verificación (`./30-revision-del-owner/32-decisiones-sobre-la-verificacion.md`), lote O-B): la URL de notificación ya no cambia en el corte. El receptor nuevo sirve la misma ruta que el viejo, `/api/v1/webhooks/mercadopago`, […], y el reintento vuelve a la misma URL (`16-fase-7-del-paraguas.md` §4.2, pasos […] y 4b). El estado no cambia: la pregunta sigue sin medir, y ya no condiciona ningún paso"
+            ]
+        ]
+    },
+    "10-corte/B11.md": {
+        "total": 2358,
+        "range": [76, 1316],
+        "checked": 1076,
+        "unmatched": [
+            [
+                104,
+                "por id (`RC-4`), mientras que leer **por id sí es confiable** (`RC-1`;",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "23"]]
+            ],
+            [
+                350,
+                "| `S3` → `ABANDONED` | **nuestra llamada**: el job que recorre las vencidas *«cancela el preapproval en el proveedor»* (`B/03` §3.4 punto 2), y `B/06` §6 lo subraya con `EX-1` (`PARTIALLY_SUPPORTED` desde el 2026-09-23: un `pending` no vence solo; FASE 9 vuelta 1, `F-8V1D1-005`) — *«es lo único que impide una autorización viva que puede cobrar»* | **no** — **con la misma salvedad de `S23` y `S24`: sobre un pagador manual sí está exenta**, porque ahí no hubo llamada que confirmar (`B/06` §7) y la fila es **la de un alta que nunca pagó su primera cuota** (`B/03` §7.2). No mueve el conteo de la salvedad 4: `S3` sigue siendo una de sus **doce** filas, igual que `S23` y `S24` (con `S36`, FASE 9 vuelta 1, §4 punto 4 de `25-verificado-G5`; **quince** con la lápida de recepción, owner 2026-09-26, `X-1`; **doce** sin `S25`, `S27` ni `S28`, revisión del owner, 2026-09-28, C8) |",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+            ],
+            [
+                361,
+                "*(fila retirada: **sale** (revisión del owner, 2026-09-28, C8): las verticales no se discontinúan)*",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+            ],
+            [
+                363,
+                "*(fila retirada: **sale** (FASE 5, owner 2026-09-30, simplificación del corte, S-40): sin lápida del corte, un cobro tardío de un débito viejo entra como desconocido y lo toma la lápida de recepción de la fila de abajo)*",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+            ],
+            [
+                373,
+                "| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — **once** de las **doce** filas *«no»* de la tabla de arriba (revisión del owner, 2026-09-28, C8: salen `S25`, `S27` y `S28`; FASE 5, simplificación del corte, S-40: sale la lápida del corte): `S12`, `S3`, `S13`, **`S16`**, **`S20`**, **`S22`**, **`S23`**, **`S24`**, **`S31`**, **`S36`** y **la lápida de recepción** (**la de recepción** desde el owner 2026-09-26, `X-1`; **`S36`** desde la FASE 9 vuelta 1, residuo 2 de `17-`; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`** desde la FASE 8 completa, owner 2026-09-25, residuo A de `R12`: pasó de *«sí»* a *«no»* al cancelar de nuestro lado). **La duodécima, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras diez son principales** (la lápida de recepción, con su clase propia, cuenta de este lado), y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y `S3`, `S23`, `S24`, `S31` y `S36` entran sólo cuando hubo llamada** (FASE 9 completa, C-R5-4: la tabla de arriba da la misma salvedad a las cinco; `S36`, FASE 9 vuelta 1; sin `S27` ni `S28` desde la revisión del owner, 2026-09-28, C8): sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe | hasta que la relectura lo vea `cancelled` —**y después, hasta que cierre el registro de cobro del ciclo, por el criterio de la exención** (FASE 9 vuelta 2, `F-8V2B3-006`)—; **sobre la de `S16` que el proveedor ya había cancelado, hasta que pase la ventana de relectura de la cancelación por rechazo** (FASE 9 vuelta 3, lote K). **Sobre la lápida de recepción la relectura mira el estado y los cobros, no el monto** (la ventana del corte salió: FASE 5, simplificación del corte, S-41): no tiene versión contra la cual comparar un monto (`B/02` §2.2; FASE 9 vuelta 1, R6) | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: el aviso de cancelación existe **sólo si la cancelación se aplicó** (`EX-15` mide que cancelar sí notifica), así que si la llamada no se aplicó (FASE 9 vuelta 1, `F-8V1B3-007`) **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación**, con el correo antes y la relectura después; **marca recién a los 3 días de la transición que decidió la cancelación** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+            ],
+            [
+                406,
+                "   que se escribió (§2.4), (FASE 5,",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+            ],
+            [
+                408,
+                "   salió;). **El reintento sobre la lápida de recepción",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+            ],
+            [
+                785,
+                "*(fila retirada: **sale** (revisión del owner, 2026-09-28, C8))*",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+            ],
+            [
+                824,
+                "> emitir**, y **lo repara `SUPER_ADMIN` volviendo a otorgar la",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+            ],
+            [
+                1161,
+                "**no comparte ejecución con el barrido**. Las 26 h son el día del",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "1115"]]
+            ]
+        ]
+    },
+    "10-corte/B13a.md": {
+        "total": 1299,
+        "range": [55, 444],
+        "checked": 273,
+        "unmatched": [
+            [
+                155,
+                "| 3-bis | al **pedir la baja** de una suscripción principal teniendo **addons recurrentes que dependen de ella** —de ficha (`LISTING`) en esa vertical, de la suscripción (`VERTICAL_SUBSCRIPTION`), y de cuenta (`USER`/`GLOBAL`) si no les queda otra vertical compatible con una principal que siga (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`)—, antes de confirmar | **qué addons se cancelan y por cuánto**: mueren con la suscripción —cuando deja de ser fila viva, que según el estado desde el que se pide es al fin del servicio o hoy (fila 8)—. **Desde `ACTIVE` su cobro se corta hoy, en el mismo acto que el del plan, y se siguen viendo hasta el fin del servicio** (`S11`, `R1-a`); desde los otros estados se apagan hoy con ella. **Lo que no se promete**: que se corte hoy el cobro de un addon que todavía espera autorización o está en mora, porque ése se apaga recién al fin del servicio (`B/16`, NO cierra). **Si vuelve, los contrata de nuevo**, no se reanudan | FASE 8 completa, `F-8CA2-003` (owner 2026-09-25), cap. 16 §4.2 y §4.4; **cap. 03 §3.2 `S11`** (FASE 9 vuelta 2, `R1-a`, `F-8V2B1-001`) |",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "97"]]
+            ],
+            [
+                173,
+                "| 13-quater | al **elegir un plan no mensual —trimestral, semestral o anual—** —el cambio de plan (el alta nueva con saldo diferido salió con `S25`: revisión del owner, 2026-09-28, C8)— **teniendo una cortesía vigente o un saldo diferido** en esa vertical | **que pierde los N meses de cortesía que le quedan**, porque sobre un plan que no es mensual no hay cortesía temporal, y que decide él: puede seguir en mensual y conservarlos | `DEC-GRANT-003` impl. 6, `B/02` §2.4 (`DESTINO_DE_PLAN_NO_MENSUAL`) (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25; FASE 9 completa, contradicción 1 de `03` §R4.5) |",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "97"]]
+            ],
+            [
+                187,
+                "*(fila retirada: **sale** (revisión del owner, 2026-09-28, C8): las verticales no se discontinúan, y el sistema no manda avisos de un acto que no existe)*",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "97"]]
+            ],
+            [
+                189,
+                "*(fila retirada: **sale** (revisión del owner, 2026-09-28, C8), con `S25` y `DEC-GRANT-010`)*",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "97"]]
+            ],
+            [
+                191,
+                "*(fila retirada: **sale** (revisión del owner, 2026-09-28, C8): no hay vertical que deje de admitir altas. Una vertical con todos sus planes retirados no ofrece checkout porque no tiene versión vendible, y lo dice la fila 29 de `V/19` §4)*",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "97"]]
+            ],
+            [
+                271,
+                "*(fila retirada: **sale** (revisión del owner, 2026-09-28, C8): la acción 16 ya no existe)*",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "204"]]
+            ]
+        ]
+    },
+    "10-corte/B9a.md": {
+        "total": 1427,
+        "range": [60, 724],
+        "checked": 480,
+        "unmatched": [
+            [
+                473,
+                "Si el saldo **sobreviviera** al grant, después de `S13` **esa ruta no vuelve a matchear nunca**: la sucesora que el `sucedida_por` nombra la canceló `S13`. Tampoco lo levanta la **sexta** comprobación del `B/09` §3, que resuelve *«la fila que tenía",
+                [
+                    [
+                        ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                        "454"
+                    ]
+                ]
+            ]
+        ]
+    },
+    "20-fase-2/B8b.md": {
+        "total": 1404,
+        "range": [54, 339],
+        "checked": 187,
+        "unmatched": [
+            [
+                92,
+                "| 1 | **otro downgrade** | **se rechaza mientras exista el anterior**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "216"]]
+            ]
+        ]
+    },
+    "20-fase-3/B10.md": {
+        "total": 1944,
+        "range": [91, 1210],
+        "checked": 916,
+        "unmatched": [
+            [
+                200,
+                ">   proveedor permite** (`EX-57`, **`VERIFIED` el 2026-09-30, en sandbox y con ventana**; residuo corregido el",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "71"]]
+            ],
+            [
+                860,
+                "`B/03` §3.2 sacan a una fila principal de las filas vivas —**`S31`**, la",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "758"]]
+            ],
+            [
+                869,
+                "2, verificación, owner 2026-09-27, `V2-b`)—; **`S31`**, la sucesora del",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "758"]]
+            ],
+            [
+                871,
+                "catorce con ella, once desde la revisión del owner, 2026-09-28, C8); y **`S36`**, la revocación. **`S11` no entra**: manda la fila a `CANCEL_SCHEDULED`, que **sigue siendo fila viva**, y sus",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "758"]]
+            ],
+            [
+                1042,
+                "el grant que era su título**—. Ahí el cliente no hizo nada y pierde días que pagó. **Y tampoco vale cuando a su",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "921"]]
+            ],
+            [
+                1170,
+                "  sin pasar por `PB9` ni por `PB12`: **desde `G5-2` el",
+                [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "1039"]]
+            ]
+        ]
+    },
+    "20-fase-3/B12.md": {
+        "total": 831,
+        "range": [66, 268],
+        "checked": 151,
+        "unmatched": [
+            [
+                131,
+                "cuando la deja su última suscripción. El listado de administración del §48 la muestra",
+                [
+                    [
+                        ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                        "75"
+                    ]
+                ]
+            ]
+        ]
+    }
+}

@@ -1,0 +1,1507 @@
+---
+title: Worklog / Progress Log
+linear: HOS-1352
+statusSource: linear
+created: 2026-09-15
+updated: 2026-09-30
+status: CURRENT
+---
+
+# Worklog
+
+Registro cronológico exigido por el [PDR](./00-PDR.md) §3.2. Tiene que poder responder, en
+cualquier momento: **"¿Qué hicimos hasta ahora y por qué?"**
+
+Se escribe hacia abajo. Nada se edita retroactivamente: si algo resultó estar mal, se agrega
+una entrada nueva que lo diga.
+
+---
+
+## 2026-09-15 — Reset del programa
+
+### Qué pasó
+
+Una pasada anterior de este mismo programa produjo análisis, decisiones y mediciones que
+resultaron **contaminados**: parte de su fundamento venía de fuentes que el §0 prohíbe
+explícitamente usar como tales — comportamiento legacy, documentación obsoleta,
+implementaciones actuales, memoria de sesiones previas y suposiciones sobre Mercado Pago.
+
+El caso que lo destapó: se le atribuyó al PDR una afirmación que el PDR **no hace**. Eso es
+peor que usar información vieja, porque falsifica el origen de la afirmación y la vuelve
+irrastreable: quien la lea después no tiene forma de saber que hay que verificarla.
+
+Una auditoría posterior encontró que el problema no era aislado. Había citas a secciones del
+PDR que decían otra cosa, decisiones apoyadas en artefactos preexistentes leídos como estado
+actual, y conteos que no reproducían.
+
+### Qué se decidió
+
+**Reset total** (`DEC-METH-001`): el único documento que sobrevive es
+[`00-PDR.md`](./00-PDR.md). Todo lo demás se rehace desde cero.
+
+El owner eligió esta opción por sobre dos alternativas menos drásticas (conservar las
+decisiones ya tomadas, o conservar además los hechos ya medidos). El motivo: **cero
+herencia**, ni siquiera un resultado medido por una sesión contaminada.
+
+### Qué se hizo
+
+1. **Verificación de integridad del PDR.** Se comprobó contra el historial de git que
+   `00-PDR.md` fue introducido por un único commit y que su contenido no fue modificado desde
+   entonces. Sigue siendo verbatim.
+2. **Borrado** de todos los demás documentos del programa, incluidas las sondas de Mercado
+   Pago. No se archivaron ni se marcaron como históricos: se eliminaron. Un documento marcado
+   `LEGACY` que queda a mano vuelve a contaminar, y §3.5 advierte justamente sobre *"permitir
+   que documentación antigua parezca vigente"*.
+3. **FASE 0 rehecha** (§65): Decision Log, este Worklog y el Handoff, más el índice del
+   programa.
+4. **FASE 1A rehecha** (§67): lectura crítica del PDR contra sí mismo, sin mirar código, sin
+   consultar documentación del repo, sin tracking y sin memoria.
+
+### Problema de método que queda registrado
+
+Las tres reglas que se agregaron al Decision Log salen directamente de lo que falló:
+
+- Sólo se admiten **tres fuentes** de fundamento: el PDR, una medición propia fechada, o una
+  respuesta explícita del owner.
+- Si una decisión cita un `§`, **el texto se verifica contra el PDR antes de escribirla**.
+- Ningún documento de este programa referencia trabajo anterior. Un enlace a algo previo es un
+  defecto, no una fuente.
+
+---
+
+## 2026-09-15 — FASE 0
+
+**Completada.** Los cuatro entregables del §65:
+
+| Documento | Qué es |
+|---|---|
+| [`00-PDR.md`](./00-PDR.md) | Ya estaba, verbatim, con integridad verificada |
+| [`01-decision-log.md`](./01-decision-log.md) | Formato del §3.4, reglas, y `DEC-METH-001` |
+| [`02-worklog.md`](./02-worklog.md) | Este archivo |
+| [`03-handoff.md`](./03-handoff.md) | Handoff vivo del §3.3 |
+
+Más el índice en [`../spec.md`](../spec.md) con el orden de lectura obligatorio del §66.
+
+**Decisiones tomadas**: una, `DEC-METH-001` (reset total), decidida por el owner.
+
+---
+
+## 2026-09-15 — FASE 1A
+
+**Entregada.** Análisis crítico del dominio en
+[`05-phase-1a-domain-analysis.md`](./05-phase-1a-domain-analysis.md).
+
+### Qué se investigó
+
+Únicamente el PDR, leído entero y contra sí mismo. Cada `§` citado se verificó contra el texto
+antes de escribirlo.
+
+### Qué se encontró
+
+**101 hallazgos** agrupados por dominio, con ID estable:
+
+| Categoría | Cantidad |
+|---|---|
+| Contradicciones internas del PDR | 5 |
+| Ambigüedades | 13 |
+| **Decisiones bloqueantes de FASE 2** | **12** |
+| Decisiones abiertas no bloqueantes | 5 |
+| Edge cases sin regla | 12 |
+| Riesgos | 5 |
+| Requisitos aparentemente olvidados | 35 |
+| Objeciones | 6 |
+| Mejoras sugeridas | 9 |
+| Pendientes de validación con Mercado Pago | toda la sección 4 |
+
+De las 12 bloqueantes, **8 las decide el owner** y **4 las decide el experimento** de FASE 1C
+— no se pueden responder por conversación porque dependen de hechos del proveedor que §58
+exige comprobar.
+
+### Lo más estructural que apareció
+
+- **Los planes**: el PDR nunca dice si son mutables o versionados, y define encima de esa
+  respuesta la derivación del Trial Plan, el enforcement de excedentes, los cambios de precio
+  y el recálculo de limits.
+- **"El plan más premium" no es computable.** §10.3 lo exige y ningún lado define el orden.
+- **§9 es inaplicable tal como está escrito**: no se puede evaluar una capacidad sin nombrarla
+  en código. Hace falta acotar el principio, o se va a violar en silencio.
+- **§7 y §8 no traen criterio para distinguirse.** "Motor único" y "comportamiento específico
+  de vertical" son las dos correctas, y sin una regla escrita cualquier divergencia futura se
+  justifica sola como Eje 2.
+- **La matriz de cambio de plan tiene seis celdas sin política**, porque §27 y §28 definen
+  upgrade/downgrade sobre un eje y §18 crea dos.
+- **Falta el estado "autorización creada y todavía no completada"**, que el modelo del §5.6
+  vuelve estructural: existe siempre, por diseño.
+- **Faltan la baja online y el derecho de revocación**, que el PDR no menciona en ningún lado
+  y son obligaciones para cobrar por débito automático.
+
+### Experimentos realizados
+
+**Ninguno.** FASE 1C no empezó y no puede empezar antes de que el owner responda 1A. La matriz
+de [`06-mp-validation-matrix.md`](./06-mp-validation-matrix.md) quedó armada con sus **53
+filas en `UNKNOWN`**: 42 de la matriz mínima del §60 y 11 agregadas por el propio análisis,
+marcadas como agregadas.
+
+### Mediciones realizadas
+
+**Ninguna.** Varias decisiones dependen de cuántos clientes reales hay (`O-MIG-01` señala que
+el propio §56 apoya su conclusión en un *"hay pocos customers actuales"* sin número). Medirlo
+no rompe ninguna prohibición — §4 permite explícitamente *"ejecutar queries"* e *"inspeccionar
+DB"* — pero está cerca de la línea del §67, así que **se preguntó en vez de asumirlo**
+(pregunta 24).
+
+### Preguntas abiertas
+
+**25**, en el §16 del análisis. Las 8 primeras son bloqueantes.
+
+### Respuestas del owner
+
+Ninguna todavía.
+
+---
+
+## 2026-09-15 — Cierre de las 8 bloqueantes que decide el owner
+
+Se recorrieron una por una, con alternativas y consecuencias sobre la mesa. **Nueve decisiones
+registradas** en [`01-decision-log.md`](./01-decision-log.md).
+
+| Pregunta | Decisión |
+|---|---|
+| `BD-ARCH-01` planes mutables o versionados | `DEC-ARCH-001` — híbrido: se versiona lo que tiene efecto |
+| `BD-ARCH-02` orden entre planes | `DEC-ARCH-002` — rank explícito, sólo los vendibles |
+| `C-TRIAL-01` "1 ficha" contra los limits de Basic | `DEC-TRIAL-001` — overrides declarados en DB, por vertical |
+| `BD-TRIAL-01` derivación en vivo o congelada | `DEC-TRIAL-002` — trinquete: en vivo, nunca empeora |
+| `BD-SUB-01` la matriz tier × ciclo | `DEC-SUB-001` — sube ya, baja espera, el ciclo se aplica ya |
+| `C-PARTNER-01` trial de Partner | `DEC-TRIAL-003` — configurable por plan, en cero hoy |
+| `BD-MIG-01` qué se le promete a quien paga | `DEC-MIG-001` — coordinación manual de las 5, cero código |
+| `BD-TRIAL-02` señal de identidad | `DEC-TRIAL-004` — el email normalizado bloquea, el resto observa |
+| `O-METH-02` conteos de producción | `DEC-METH-002` — autorizados, con fecha y método |
+
+### Un cambio de orden, y por qué
+
+`BD-MIG-01` se planteó **después** de medir, no antes. El §56 apoya su preferencia por la
+coordinación manual en un *"hay pocos customers actuales"* que el PDR no cuantifica
+(`O-MIG-01`), y decidir sobre una premisa sin verificar era repetir el error que motivó el
+reset. Así que se adelantó la pregunta 24, se autorizó medir, y recién entonces se preguntó.
+
+### Mediciones realizadas
+
+Tres consultas read-only contra producción, en [`07-facts-inventory.md`](./07-facts-inventory.md).
+
+**La premisa del §56 quedó verificada por goleada**: cero pagos cobrados en la historia del
+sistema, **tres** relaciones con compromiso de cobro vivo y dos cortesías. Gastronomía,
+experiencia y partner tienen cero filas. El primer trial vence el **2026-09-26**.
+
+### Una decisión que no se puede implementar todavía
+
+`DEC-SUB-001` está tomada pero **condicionada a FASE 1C**: compensar en días requiere correr
+la primera fecha de cobro sobre una suscripción ya autorizada, y eso está en `UNKNOWN`
+(`EX-7`/`EX-8`). Su plan B ya está declarado, así que si el experimento dice que no, entra
+solo y no hay que volver a preguntar.
+
+### Problemas encontrados
+
+Al redactar `DEC-TRIAL-002` apareció una ambigüedad de orden entre el trinquete y los
+overrides de `DEC-TRIAL-001`: aplicar el piso antes de los overrides dejaba un agujero por el
+que bajar un override degradaba a los trials en curso. Se corrigió en el acto fijando que **el
+trinquete se aplica al final, sobre el resultado completo**.
+
+---
+
+## 2026-09-15 — Cierre de las 16 preguntas no bloqueantes
+
+Mismo formato, una por una. **Diecinueve decisiones más**, para un total de **28**.
+
+| Pregunta | Decisión |
+|---|---|
+| `A-TRIAL-01` publicación inmediata o mediada | `DEC-TRIAL-005` — inmediata: publicar es quedar visible |
+| `M-TRIAL-01` trial de Turista | `DEC-TRIAL-006` — sí; el botón `Empezar` del §47 |
+| `M-TRIAL-02` estado pre-trial | `DEC-TRIAL-007` — borradores ilimitados, archivado por inactividad |
+| `R-TRIAL-01` entitlements caros en trial | `DEC-ENT-001` — todas las funciones, con cuota propia de trial |
+| `OD-ENT-01` reset de las cuotas | `DEC-ENT-002` — mensual siempre, sin arrastre |
+| `A-ENT-01` alcance de la herencia VIP | `DEC-ENT-003` — entitlements y limits; no puede comprar VIP |
+| `A-ENT-01` (b) el VIP previo ya pago | `DEC-ENT-004` — se cancela ya, sin reembolso |
+| `C-SUB-01` grace de 10 días | `DEC-SUB-002` — en DB por plan, default 10 |
+| `E-SUB-03` cambiar de plan en grace | `DEC-SUB-003` — permitido, es el camino de recuperación |
+| `OD-SUB-01` ventana de límites de pausa | `DEC-SUB-004` — por user + vertical |
+| `E-ADDON-01`/`02` addon sobre ficha borrada o despublicada | `DEC-ADDON-001` — se pierde con la ficha; el reloj no se congela |
+| `M-PROMO-01` cupo de un promo code | `DEC-PROMO-001` — cupo total + ventana de validez |
+| `OD-PROMO-01` scope "verticales futuras" | `DEC-PROMO-002` — permitido sin restricción |
+| `M-GRANT-01` Free Forever y el dinero cobrado | `DEC-GRANT-001` — corta ya sin reembolso; revocar no restaura |
+| `A-GRANT-01` quién otorga una cortesía | `DEC-GRANT-002` — sólo `SUPER_ADMIN` |
+| `C-DATA-01` retención a los 90 y 180 días | `DEC-DATA-001` — oculto del público, visible al dueño, dos avisos |
+| `O-LEGAL-01` comprobante no fiscal | `DEC-LEGAL-001` — confirmado, sin fecha ni disparador |
+| `O-METH-03` criterio de FASE 5 | `DEC-METH-003` — se define al empezar FASE 5, y es su gate |
+
+### Tres apartamientos declarados del PDR
+
+No son errores: son decisiones conscientes que se apartan del texto, registradas como tales
+porque el PDR no se edita (§3.1).
+
+- **`DEC-ENT-001`** contra el §10.3, que dice *"exactamente los entitlements del plan más
+  premium"*: los medidos llevan cuota propia de trial.
+- **`DEC-GRANT-002`** contra el §34, que dice *"Admin puede otorgar"*: la cortesía temporal
+  pasa a ser exclusiva de `SUPER_ADMIN`, para que una cortesía sin tope no sea un Free Forever
+  otorgado por quien no podía otorgarlo.
+- **`DEC-LEGAL-001`** deja explícito que *"cuando entre ARCA"* no es un disparador y que nada
+  va a avisar.
+
+### Dos decisiones tomadas contra la recomendación
+
+Con su riesgo declarado, no re-litigadas:
+
+- **`DEC-ENT-004`** y **`DEC-GRANT-001`** — cancelar sin reembolso. Hoy el monto es un mes
+  parcial porque todas las suscripciones vivas son mensuales (medido). Anotadas para revisar
+  el día que exista un ciclo anual.
+
+### Tres hallazgos nuevos, residuo de decisiones tomadas
+
+- **`E-TRIAL-04`** — con publicación inmediata toda moderación es reactiva, y bajar una ficha
+  ya publicada no devuelve el trial (§10.2).
+- **`E-ENT-01`** — qué pasa con los beneficios de turista heredados cuando el plan comercial
+  se suspende.
+- **`E-SUB-05`** — cómo se compensan días sobre una suscripción que está en deuda.
+
+### Dos cosas que se cerraron solas
+
+- **`E-TRIAL-01`** quedó **disuelto** por `DEC-TRIAL-005`: sin revisión previa no hay rechazo
+  posterior.
+- **`R-DATA-01`** quedó **resuelto** por `DEC-DATA-001`: los dos avisos tapan el silencio entre
+  el `+60` de la campaña y el día 90.
+
+### Una corrección de método, en el momento
+
+Al redactar `DEC-TRIAL-002` apareció una ambigüedad de orden entre el trinquete y los overrides
+de `DEC-TRIAL-001`. Se corrigió fijando que el trinquete se aplica **al final, sobre el
+resultado completo**: aplicarlo antes dejaba un agujero por el que bajar un override degradaba
+a los trials en curso.
+
+---
+
+## 2026-09-15 — FASE 1C, sondas 01 a 03
+
+**21 de 55 filas medidas.** El owner entregó las credenciales del sandbox; quedaron **fuera del
+repo**, leídas por entorno, y ningún script las contiene.
+
+Se consiguió **autorizar por API con un `card_token`**, sin navegador, lo que destrabó todo el
+bloque post-autorización sin depender de un flujo manual.
+
+### El hallazgo que atraviesa todo lo demás
+
+**Mercado Pago acepta cambios que no aplica, y responde `2xx`.** Cuatro casos medidos: el campo
+`items` al crear, dos intentos aislados de cambiar `frequency`, y un token de tarjeta guardada
+que se genera con `201` y después no sirve.
+
+**Un `2xx` no prueba que el cambio se haya aplicado.** Toda mutación exige relectura y
+comparación campo por campo. Es la regla que más va a pesar en el diseño del reconciliador.
+
+### Lo que cambió una decisión ya tomada
+
+`EX-4` salió `NOT_SUPPORTED`: el ciclo de una suscripción autorizada no se puede mutar. Eso
+dejó a **`DEC-SUB-001` sin mecanismo**.
+
+En vez de re-decidir ahí mismo, **se midió lo que elegía entre las dos salidas posibles**
+(sonda 03): recrear la suscripción **no exige recargar la tarjeta, sólo el código de
+seguridad**. Con ese dato, `DEC-SUB-005` mantuvo la política intacta y reemplazó sólo el
+mecanismo.
+
+Decidir antes de medir habría sido repetir el error que motivó el reset.
+
+### Otras dos bloqueantes quedaron decidibles
+
+- **`BD-MP-03`**: `PC-1` y `PC-3` `VERIFIED` — el monto de una autorizada se muta **sin nuevo
+  consentimiento** del proveedor.
+- **`BD-MP-04`**: `EX-5` `NOT_SUPPORTED` — una autorización cubre **un solo monto**.
+
+### Dos defectos del proveedor que condicionan el diseño
+
+- **`/preapproval/search` ignora `external_reference` en silencio** (111 resultados con
+  cualquier valor), y ése es nuestro único vínculo con el dominio. Hay que guardar el id del
+  proveedor y leer por `GET`. En `/v1/payments/search` el mismo filtro **sí** funciona.
+- **El piso es ARS 15**: una cortesía "sin cobrar" bajando el monto no existe.
+
+### Lo que no se pudo medir, y por qué
+
+Renovaciones, grace y efectos reales de la pausa necesitan **que pase tiempo** — la pausa de la
+sonda duró 1,3 segundos y de eso **no se concluye nada** sobre §26.4. Webhooks necesitan **un
+endpoint público**. Reembolsos y los correos del proveedor siguen sin probarse.
+
+---
+
+## 2026-09-15 — FASE 1C: el reloj, y tres conteos que mentían
+
+Sin credenciales en el entorno de esta sesión no se pudo medir nada nuevo. Se hizo lo que no
+dependía de ellas.
+
+### Se corrigieron tres afirmaciones falsas en los propios documentos del programa
+
+Las mediciones de webhooks (`WH-1`, `WH-4`, `EX-2`) entraron a la matriz **sin actualizar sus
+totales**, así que tres documentos afirmaban un estado que la propia matriz desmentía:
+
+| Documento | Decía | Es |
+|---|---|---|
+| `06-mp-validation-matrix.md` (cabecera y resumen) | 5 parciales, 32 `UNKNOWN`, "tres casos" del §0 | **8** parciales, **29** `UNKNOWN`, **cinco** casos |
+| `03-handoff.md` | "21 de 55 filas medidas", 5 parciales, 32 `UNKNOWN` | **26 de 55**, 8 parciales, 29 `UNKNOWN` |
+| `04-open-decisions.md` | "hoy **las 53 filas** dicen `UNKNOWN`" (dos veces) | 29 de **55**, y `BD-MP-03`/`BD-MP-04` ya no |
+
+No es contabilidad: la regla 3 del Decision Log y el §61 **prohíben decidir sobre una fila
+`UNKNOWN`**. Un documento que dice que las 53 filas están en `UNKNOWN` bloquea dos decisiones
+que ya se pueden tomar. El `DEC-SUB-001` del handoff describía además un condicional que
+`DEC-SUB-005` ya había reemplazado.
+
+### El atajo para las diecisiete filas que sólo esperan tiempo
+
+`RN-1..3`, `GR-1..3`, `PS-2`/`4`/`5`/`6`, `PA-4`, `EX-1`, `UP-1`/`2`, `DW-1`/`2` y `CT-1`/`3`
+no están en `UNKNOWN` por falta de permisos: **esperan que el proveedor ejecute un ciclo**.
+
+La espera no es de un mes. Sale de una medición que ya estaba hecha y que nadie había usado
+para esto: al rechazar `frequency_type: "years"`, el proveedor contestó *"valid ones are
+`[days, months]`"* (`FR-4`). **Un ciclo diario pone una renovación real a 24 h.**
+
+Eso **no está medido** y no se dio por cierto: que `days` se acepte al crear no prueba que se
+guarde ni que se ejecute. Es el primer control de la sonda 05, por relectura, siguiendo el §0.
+
+### Dos sondas nuevas, verificadas en seco
+
+- [`probe-05-arrancar-el-reloj.sh`](./mp-probes/probe-05-arrancar-el-reloj.sh) — crea **siete**
+  suscripciones de ciclo diario (una por bloque de filas), deja hechas las mutaciones del día 0
+  —bajar el monto, subirlo, llevarlo al piso de ARS 15, pausar— y escribe un manifiesto.
+- [`probe-06-leer-el-reloj.sh`](./mp-probes/probe-06-leer-el-reloj.sh) — vuelve a las 24 h,
+  48 h y 72 h y reporta el **delta entre dos fotos fechadas**, no el estado. Con `REANUDAR=1`
+  toma la foto antes y después de reanudar la pausa: ese par es el que decide el §26.4.
+
+Las dos se corrieron contra un `curl` stubbeado, sin tocar la red. **La corrida en seco
+encontró dos defectos que habrían costado un día de calendario cada uno**: una variable con
+`Ñ` que bajo `set -u` mataba la sonda después del primer sujeto —seis de siete no se creaban—,
+y un `request.json` que guardaba un `card_token_id: null` que nunca se había mandado, o sea
+evidencia falsificada.
+
+### Lo que quedó esperando al owner
+
+Cuatro cosas, y ninguna es una decisión de diseño: credenciales en el entorno, una aplicación
+de Mercado Pago aparte para pruebas (el webhook es por aplicación y su URL no se cambia por
+API), qué credenciales habilitan reembolsos en sandbox, y la casilla del comprador de prueba.
+
+---
+
+## 2026-09-15 — El reloj arrancó, y la sonda 07
+
+El owner cargó las credenciales. **31 de 57 filas medidas** (eran 26 de 55).
+
+### Un supuesto que era falso, y lo corrigió el owner
+
+Se había escrito un guard que exigía que el access token empezara con `TEST-`. **Está mal**:
+el modo de pruebas actual de Mercado Pago se arma creando un **usuario vendedor de prueba** y,
+bajo él, una aplicación propia, cuyas credenciales empiezan con `APP_USR-` y son
+**indistinguibles por su forma** de unas productivas. Ese guard bloqueaba el caso bueno y
+habría dejado pasar el malo.
+
+El discriminador real lo da el proveedor: `GET /users/me` → `tags: ["test_user", …]`. El guard
+ahora exige ese tag, y además verifica que **comprador y vendedor no sean la misma cuenta**.
+
+### El ciclo diario funciona: el reloj está corriendo
+
+`frequency: 1, frequency_type: "days"` se acepta, se autoriza y **queda así**, verificado por
+relectura en los seis sujetos: `authorized`, un cobro al crear, `next_payment_date` al día
+siguiente. Siete suscripciones vivas, una por bloque de filas. Se leen con la sonda 06 desde
+el 2026-09-16 ~11:30.
+
+### Cuatro mediciones nuevas
+
+- **`PC-2` tiene techo**: el rango real es **ARS 15 a ARS 2.000.000**.
+- **`UP-1`/`UP-2` a `PARTIALLY`**: subir el monto queda aplicado en el acto y **no cobra la
+  diferencia**; `next_payment_date` no se mueve. Cuánto cobra en el ciclo siguiente lo dice
+  el reloj.
+- **`PA-4`**: una tarjeta que va a rechazar **no llega a crear la suscripción** (`400
+  CC_VAL_433`), porque la validación ocurre antes. Consecuencia incómoda: **no se puede
+  fabricar un cobro fallido eligiendo una tarjeta mala**, y `RN-2`/`GR-*` quedaron sin
+  mecanismo salvo el intento de `renov-falla3`.
+- **`EX-12` `NOT_SUPPORTED`**: un `card_token` sirve para **una sola** suscripción. La primera
+  corrida de la sonda 05 tokenizó una vez y reusó: **perdió cinco de siete sujetos**. Importa
+  fuera de la sonda, porque todo reintento de creación —y `DEC-SUB-005`— tiene que tokenizar
+  de nuevo.
+
+### `EX-11` — qué se puede hacer sobre una suscripción pausada
+
+La sonda 05 devolvió al pasar `400 "You can not modify a paused preapproval."`. El mensaje
+sugería mucho más de lo que se había probado, así que se midió con la **sonda 07**, y con
+control:
+
+| Sobre el mismo sujeto | |
+|---|---|
+| cambiar el monto **estando pausada** | `400`, y el monto **no se movió** |
+| cambiar el monto **ya reanudada** | `200`, y el monto **cambió** |
+
+El segundo es el control y es lo que hace válida la conclusión: **bloquea el estado, no la
+operación**. Y por otro lado, **cancelar una pausada sí funciona**: la pausa no atrapa al
+cliente.
+
+Esto abre `E-SUB-06`: un cambio de precio programado (`DEC-MP-001`) que cae sobre una
+suscripción pausada **no se puede aplicar en su fecha efectiva**.
+
+### Un `NOT_SUPPORTED` que casi se inventa
+
+El primer intento de la sonda 07 se comió un **`429 local_rate_limited`** justo en el paso que
+decidía. Un `429` no dice que la operación esté prohibida: dice que **no llegó a evaluarse**.
+Darlo por `NOT_SUPPORTED` habría fabricado una limitación inexistente. La sonda reintenta con
+backoff y la conclusión de arriba es de la corrida limpia.
+
+Es el reverso del §0: allá un `2xx` no probaba que algo se aplicara; acá un error no prueba
+que algo esté prohibido. **Ningún código de estado, de ninguna familia, alcanza solo.**
+
+---
+
+## 2026-09-15 — Los webhooks dejaron de ser inobservables
+
+El owner repuntó el webhook de la aplicación de prueba a un receptor propio.
+**36 de 60 filas medidas.**
+
+### Por qué hizo falta un receptor propio
+
+Medir webhooks contra staging era medir **nuestra interpretación** del
+proveedor: la tabla guarda el evento ya normalizado —MP manda
+`subscription_authorized_payment` y el log lo llama `invoice.updated`— y **no
+guarda headers**, así que la firma no se podía ni mirar. Los túneles no
+funcionan desde este entorno. La salida fue un Worker en la cuenta de
+Cloudflare del owner, que guarda cada POST tal cual llega.
+
+### Cinco filas cerradas, y dos corrigen supuestos
+
+- **`EX-2` a `VERIFIED`**: el cuerpo trae **`version`**, un contador monótono
+  por recurso (5, 9, 11, 12 en orden causal). Lo anterior —"el id del evento
+  cambia en cada reentrega, deduplicá por tipo + recurso"— seguía siendo
+  cierto, pero se había medido sobre la tabla normalizada de staging, que **no
+  guarda este campo**. Con `version` además se puede **descartar un evento
+  viejo que llega tarde**, que es lo que `M-CONC-02` pedía.
+- **`EX-14` `NOT_SUPPORTED`**: un `payment.created` de la cuenta de prueba
+  llega con **`live_mode: true`**. **No se puede distinguir sandbox de
+  producción mirando el evento.** Segundo caso del día en que una señal que
+  *parece* indicar entorno no lo indica — el primero fue el prefijo `TEST-`.
+- **`EX-15` `VERIFIED`**: **mutar el monto NO emite ningún webhook.** 91
+  segundos de ventana sin entregas, con la mutación aplicada, y la `version`
+  del recurso saltando de 5 a 9: el recurso cambió y el proveedor no avisó.
+  Crear, pausar, reanudar y cancelar sí notifican.
+- **`EX-13` `PARTIALLY`**: llega `x-signature: ts=…,v1=<hex64>` en todas las
+  entregas reales. Falta la clave secreta del panel: hoy la firma se **ve**,
+  no se **verifica**.
+- **`WH-2` `VERIFIED`**: demoras de **0,6 s a 32 s**, muy variables.
+
+### Lo que esto le hace a `DEC-MP-001`
+
+La decisión dice que un cambio de precio se aplica mutando el monto. Ahora se
+sabe que esa operación **puede responder `2xx` sin aplicarse** (§0) **y no
+emite ningún evento**. No hay vía de confirmación asincrónica: la única forma
+de saber si un aumento se aplicó es **releer y comparar**. No invalida la
+decisión —sigue siendo la única que no le pide nada al cliente— pero vuelve la
+relectura **obligatoria**.
+
+### Tres defectos de método propios
+
+1. **La marca de tiempo se anotaba al terminar la llamada, no al enviarla.**
+   La corría casi un segundo y hacía que un evento posterior a la acción
+   apareciera como anterior. Toda la atribución se apoya en esa marca.
+2. **La sonda no reintentaba ante `429`.** La corrida de 60 s se comió uno en
+   el cambio de monto: la mutación no se aplicó y el paso no pudo afirmar
+   nada. Segunda vez en el día.
+3. **El lector buscaba la firma en `.eventos[0]`**, que era un POST de prueba
+   propio sin firma, e informaba "sin headers de firma" con la firma presente
+   en todas las entregas reales. Un falso negativo sobre justo la pregunta que
+   el receptor venía a contestar.
+
+Y una lección que costó dos corridas: **para atribuir un evento a una acción
+hay que espaciar las acciones más que la demora máxima de entrega**. Con 1,4 s
+era imposible; con 20 s seguía siendo ambiguo; con 90 s es una lectura.
+
+---
+
+## 2026-09-16 y 09-17 — FASE 1B, y un hueco de este mismo documento
+
+> **Este worklog no tiene entradas de FASE 1B entre el 2026-09-15 y hoy.** Las hay: son 104
+> hallazgos, `F-1B-001` a `F-1B-104`, escritos en
+> [`08-phase-1b-code-discovery.md`](./08-phase-1b-code-discovery.md), que hizo de registro.
+> No se reconstruyen acá hacia atrás —el §3.2 pide un registro cronológico, no uno inventado
+> después— pero queda anotado que **el registro de 1B vive en `08`, no en este archivo**.
+
+### Lo que se cerró el 2026-09-17
+
+Tres carriles, en el orden que pedía el handoff.
+
+**1. La sonda que `F-1B-093` no había podido correr, anda.** Los dos intentos anteriores
+fallaron —uno por resolución de módulos de `tsx`, el otro matado por el techo de cinco
+minutos—. Escrita como test de vitest dentro de `apps/api`, construye la app con `initApp()`
+y vuelca `app.routes` más el documento OpenAPI **en 31 segundos**. Reproduce los seis números
+de `F-1B-016` exacto.
+
+Lo que agregó no es el número sino su condición: **los 1.032 handlers se miden con billing sin
+inicializar**, y la causa está medida y no inferida — el mock global de `@repo/db` de
+`apps/api` no exporta `createBillingAdapter`, el `catch` de `getBillingInstance` se lo traga, y
+las dos fábricas de qzpay devuelven routers vacíos. Faltan 48 rutas y todo el webhook de
+MercadoPago. `F-1B-105` a `F-1B-108`.
+
+De paso corrigió dos atribuciones: los 9 handlers de billing fuera del contrato **no son de
+qzpay** (cinco son un 404 que hospeda registra a propósito), y `createBillingRoutes` declara
+**34** registros y no 30.
+
+**2. `apps/api/src/services` quedó en 185 de 185 archivos.** Los 74 que este registro no citaba
+—19.654 líneas— se leyeron en siete carriles delegados con contrato de evidencia estricto.
+`F-1B-109` a `F-1B-119`.
+
+Dos correcciones a hallazgos anteriores salieron de ahí y se verificaron a mano antes de
+escribirlas: de los dos módulos de métricas de billing **sólo uno está montado** (`F-1B-077`
+los contaba a los dos, por confundir `routes/metrics/` con `routes/billing/metrics.ts`), y el
+segundo puente de reconciliación tiene **12** call sites y no 13 (`F-1B-062` contaba la
+declaración).
+
+**3. Qué agregan las 125 migraciones estructurales.** `F-1B-120` a `F-1B-122`. El hallazgo que
+cruza con el resto del relevamiento: de las 21 columnas que hospeda le agregó a tablas
+`billing_*`, **trece caen sobre tablas que modela qzpay, y las trece son invisibles para sus
+mappers de lectura** — verificado leyendo el fuente de qzpay en el ancla, no citando
+`F-1B-096`.
+
+### Cómo se trabajó, y qué falló
+
+Siete sub-agentes en paralelo, cada uno con el contrato de evidencia del `08` en el prompt
+—`archivo:línea` obligatorio, el docblock no vale como prueba, contar el denominador antes de
+recorrerlo, sin juicios— y el contexto ya medido que necesitaban para orientarse.
+
+**Se verificaron a mano las siete afirmaciones más graves antes de escribir ninguna**: el
+módulo de métricas no montado, el tamaño del archivo contra su propio docblock, la lectura de
+credencial fuera del `try`, los call sites del puente, el `JOIN` ausente de `getSystemUsage`,
+los imports de `certificate-render.ts` y los mappers de qzpay. **Las siete se sostuvieron**, y
+dos afinaron un número que el sub-agente había redondeado.
+
+Dos trampas de medición nuevas, que van al contador:
+
+1. **Comparar `app.routes` contra el documento OpenAPI sin normalizar las dos grafías de
+   parámetro** (`:id` contra `{id}`) marca como «no documentada» a **toda** ruta parametrizada:
+   149 en vez de 49. Fue el primer resultado y era todo falso.
+2. **El `ADD COLUMN` número 182 está dentro de un comentario** (`0123_brief_nebula.sql:3`, que
+   explica un modo de falla citando la frase). Son 181. Tercera vez que la causa de un conteo
+   inflado es la propia documentación del código.
+
+### Segunda tanda del 2026-09-17 — cinco carriles más, y uno que no necesitaba lo que decía necesitar
+
+**El carril que estaba anotado como «necesita una base alcanzable» no la necesitaba.**
+`F-1B-105` había medido que lo único que impide inicializar billing bajo el arnés de tests es un
+export que le falta al mock de `@repo/db`. Reponerlo a nivel de archivo con un `vi.mock` alcanza:
+la app se construye igual, `billingConfigured` da `true`, y el inventario real son **1.078
+handlers** — 1.032 era el piso (`F-1B-123`).
+
+**Y de ahí salió un hallazgo que no se buscaba.** La primera corrida dio 1.056 en vez de 1.078
+porque la sonda llamaba `mountQZPayAdminTier()` **después** de `initApp()`, y `apps/api/src/index.ts`
+lo hace **antes** (`:301` contra `:359`). Hono copia las rutas de un sub-app al montarlo, así que
+el orden es load-bearing: invertir esas dos líneas hace desaparecer **22 rutas de admin de
+billing, once de ellas mutantes**, sin romper nada visible. La consecuencia más ancha es que
+**`initApp()` no construye la app que se sirve** (`F-1B-124`).
+
+Cerrados además: las **358 FK internas** —el grafo es una estrella, 253 apuntan a `users`
+(`F-1B-126`)—, los **50 archivos de `hono` y `react`** de qzpay, con lo que **qzpay queda relevado
+entero** (`F-1B-127`, `F-1B-128`), los **cuatro vocabularios de estado** que faltaban
+(`F-1B-125`) y los **sospechosos de la matriz de gates** (`F-1B-129`).
+
+**Una verificación que evitó un hallazgo falso.** Con la sonda mal ordenada, la lectura obvia era
+*«`mountQZPayAdminTier()` es un no-op, las 22 rutas no existen en producción»*. Mirar el orden de
+`index.ts` antes de escribirlo mostró lo contrario: en producción el orden es el correcto y las 22
+existen. El hallazgo real quedó en la fragilidad del orden, no en una ausencia.
+
+---
+
+## Próximo paso
+
+**Leer el reloj con la sonda 06, desde el 2026-09-16 ~11:30.** Es lo único que no se puede
+apurar, y de ahí salen `RN-*`, `GR-*`, `PS-2`/`4`/`5`/`6`, `EX-1`, `UP-2`, `DW-*` y `CT-*`.
+
+Después:
+
+- **`BD-MP-01` (pausa) y `BD-MP-02` (cortesía)** siguen bloqueando FASE 2, y las dos dependen
+  de lo que devuelva la 06. `EX-11` ya le adelantó a `BD-MP-01` dos restricciones duras.
+- **`BD-MP-04` espera al owner**: la medición no la cerró.
+- **`WH-4` y `WH-5`** se fuerzan con el interruptor `--fail` del receptor.
+- **`EX-13`** necesita la clave secreta de webhook del panel.
+- ⚠️ **Restaurar el webhook de staging** cuando termine 1C: hoy la app de
+  prueba apunta a la sonda, y el `PUT` por API da `403`, así que es a mano.
+- **FASE 1B sigue bloqueada** por `DEC-METH-001`: no se lee código hasta que el diseño esté
+  cerrado.
+
+**Las 25 preguntas de FASE 1A están respondidas, pero FASE 1C abrió una nueva.** `BD-MP-04`
+tiene sus filas medidas y **le sobrevivió una elección de diseño**: con un solo monto por
+autorización (`EX-5`) y varias autorizaciones conviviendo (`EX-6`), un addon recurrente se
+puede implementar de dos maneras y las dos funcionan. Está planteada con su cuadro y una
+recomendación en `04-open-decisions.md`. Lo demás que falta del owner es **habilitación, no
+decisión**.
+
+---
+
+## 2026-09-17 — Cierre de FASE 1B y arranque de FASE 2
+
+### Qué pasó, en orden
+
+**De madrugada, tres hallazgos que cerraron el último carril grande de 1B.** El carril era **la
+frontera conceptual qzpay↔hospeda**: siete hallazgos previos la tocaban de costado y ninguno la
+enunciaba entera.
+
+- **`F-1B-130`** — el módulo que existe para desambiguar las dos grafías de «cancelada» opera hoy
+  sobre **cero filas**, y la cifra de producción que su docblock cita para justificarse no se
+  reproduce contra la base: al 2026-08-15, fecha del módulo, la tabla tenía **dos** filas.
+- **`F-1B-131`** — **«cancelar a fin de período» desde el admin ejecuta todos los efectos de una
+  baja inmediata menos el status**: revoca addons, despublica la ficha de comercio y limpia
+  entitlements el mismo día, mientras la fila sigue `active`. Y es la opción **por defecto** del
+  diálogo. Cadena verificada eslabón por eslabón. Contradice el §24 y `DEC-SUB-009`. **No se
+  tocó** (§4).
+- **`F-1B-132`** — la frontera, enunciada: **seis repartos sobre las mismas 27 tablas y ninguno
+  coincide**. Hospeda tiene el DDL y la decisión, qzpay el modelo y la superficie; la escritura va
+  **14 tablas a 13** (205 escrituras crudas de hospeda, medidas); el vocabulario de estados no lo
+  gobierna nadie. Y **el corte no es por entidad sino por camino**.
+
+**Al mediodía arrancó FASE 2.** El owner aprobó el eje **híbrido** —núcleo transversal, después
+subdominios, después ejecución—, con **22 capítulos, un archivo cada uno**, en `09-master-spec/`.
+
+**La Parte I quedó completa el mismo día** — los 10 archivos de `00` a `09` — y con ella **30 de
+los 72 huecos técnicos cerrados**.
+
+### Por qué así
+
+El owner preguntó explícitamente si la spec se estaba escribiendo *«habiendo analizado todo el
+código actual»*, con marcas de qué se reusa y qué se reescribe. **No, y es deliberado**: eso es
+FASE 5. El §0 prohíbe que la implementación existente condicione el diseño, y `DEC-METH-003` puso
+la clasificación detrás de un gate. FASE 1B ya relevó el código —132 hallazgos con `archivo:línea`—
+y ese registro es el insumo de FASE 5, **no fuente de diseño de FASE 2**.
+
+### Dos decisiones nuevas, las dos del owner
+
+- **`DEC-ARCH-003`** — los dos `SUSPENDED` del PDR se separan; el del trial es **`TRIAL_EXPIRED`**.
+- **`DEC-OBS-001`** — `RECONCILIATION_REQUIRED` avisa por listado accionable más correo
+  **agregado**, no uno por evento.
+
+Con eso son **45 decisiones** y **cuatro apartamientos declarados** del PDR.
+
+### Una corrección propia, registrada y no escondida
+
+El capítulo 03 afirmaba que los eventos del proveedor **no traen orden confiable**, y sobre esa
+premisa justificaba la regla de no-retroceso. **Era falsa**: `EX-2` está `VERIFIED` y mide que el
+cuerpo trae un contador **`version` monótono por recurso**. La conclusión —releer el recurso en vez
+de creerle al evento— no cambió, porque un evento ordenado sigue sin decir el estado actual; lo que
+cambió es la razón, y ahora el contador **se usa**: descarta un evento viejo sin gastar una
+relectura.
+
+Es el tipo de defecto que este programa persigue: una razón caduca debajo de una conclusión
+correcta, que ningún test ve.
+
+### Un error operativo, corregido
+
+Un `git add` de un **directorio** —no de archivos sueltos— coló al repo
+`probe-08-webhook-sink/.wrangler/cache/wrangler-account.json`, con el account ID de Cloudflare del
+owner. Sacado con `git rm --cached` y `.wrangler/` agregado al `.gitignore` (`1ee6347f0` →
+`561183907`). El scanner de secretos del pre-commit **no lo frenó**: un account ID no matchea
+ningún patrón de credencial.
+
+### Qué queda para la próxima sesión
+
+1. **Leer los tres relojes** —`pausa-real` y `renov-falla3` en sandbox, `apagon` en producción—,
+   que vencen el mismo 2026-09-17 y contestan **cinco de las ocho filas `UNKNOWN`**. Comandos y
+   horas exactas en [`03-handoff.md`](./03-handoff.md).
+2. **Seguir por el capítulo 10** de la Master Spec.
+
+---
+
+## 2026-09-18 (tarde) — El programa se parte en dos épicas, y el diseño se desarma
+
+### Qué pasó
+
+El owner decidió **partir el programa en dos épicas autónomas** (`DEC-ARCH-005`) y, en la misma
+conversación, que la frontera entre ellas fuera **un contrato con dos implementaciones desde el día
+uno** (`DEC-ARCH-006`). El desarme se ejecutó el mismo día.
+
+El motivo: el bloqueo que tenía todo detenido —no saber con qué pasarela vamos a cobrar— **alcanza
+al dinero y no alcanza a las capacidades**. Se estaba esperando por una razón que no aplicaba a la
+mitad del programa.
+
+### Lo que se midió antes de decidir
+
+- **8 de 21 capítulos escritos no citan ninguna medición del proveedor** (contados con `rg`), y son
+  casi exactamente la épica que arranca. El corte no hubo que inventarlo: ya estaba en el material.
+- **De los cuatro capítulos de verticales, sólo tres referencias cruzan a billing**, y las tres
+  viven en la sección *«Lo que este capítulo NO cierra»*. Son exclusiones —el capítulo diciendo que
+  eso no es suyo—, no dependencias. **Eso es lo que autorizó el desarme.**
+- **De las seis entidades del catálogo comercial, cinco no tienen un solo campo de dinero.** El
+  precio vive en una sola tabla hoja, `billing_option`.
+
+### Una corrección de alcance, y venía de un error de un sub-agente
+
+Un agente clasificador afirmó que el acoplamiento más cargado era la derivación del plan de trial,
+«porque lee el catálogo de planes en vivo», y marcó el trial como posiblemente-billing. **Verificado
+contra el capítulo 02 §2.1: es al revés.** Lee `rank` y `vendible`, que están en `plan_version` y no
+son un precio.
+
+La consecuencia no es menor: **el catálogo de planes entero, menos `billing_option`, entra en la
+épica que arranca hoy**. Verificar la afirmación más grave de un sub-agente cambió el alcance de una
+épica.
+
+### Qué se produjo
+
+| | |
+|---|---|
+| `11-particion-del-programa.md` | el corte, su fundamento y el reparto capítulo por capítulo |
+| `12-contrato-de-cobertura.md` | la frontera: un hecho y un aviso, con sus dos implementaciones y tres defensas |
+| `DEC-ARCH-005` y `DEC-ARCH-006` | asentadas; el log queda en **48 decisiones** |
+| el desarme | **7 capítulos al núcleo, 11 a verticales, 13 a billing**; `09-master-spec/` retirado |
+| `HOS-1353/spec.md` | reescrita como spec **autónoma** |
+
+### Cómo se verificó el desarme
+
+**Antes de retirar ningún original**: 105 de 105 encabezados presentes en alguna mitad, y el volumen
+de texto entre 1,06x y 1,29x del de partida.
+
+Dos correcciones sobre lo que entregaron los agentes que partieron los capítulos:
+
+1. Uno **declaró** haber dejado afuera los párrafos de apertura y las secciones *«NO cierra»* del 02
+   y el 03, en vez de adivinar dónde iban — que era exactamente lo pedido. Se repusieron a mano.
+2. Una verificación propia marcó 11 líneas como perdidas en los otros cinco capítulos y **eran
+   falsos positivos míos**: el agente anotó las referencias cruzadas metiendo la marca dentro del
+   paréntesis existente en vez de abrir uno nuevo, que resultó más legible que lo especificado.
+
+### Lo que NO se decidió
+
+- **Cuál es la pasarela.** Sigue en el paso 4 de 6, esperando la PRUEBA 0 y el KYC de Mobbex.
+- **Si el capítulo 13 adopta el cargo puntual como modelo canónico.** Planteado, con sus tres
+  opciones y una recomendación, y sin responder. Es la primera pregunta de HOS-1354.
+
+---
+
+## 2026-09-18 (tarde, II) — Autónomas para desarrollar, juntas para liberar
+
+### Qué pasó
+
+El owner aclaró el alcance de `DEC-ARCH-005`, y la aclaración canceló trabajo que se estaba por
+proponer. **«Autónomas» era *cada una se desarrolla sin esperar a la otra*, no *cada una puede
+salir a producción sola*.** Textual: *«van a llegar sí o sí juntas y terminadas ambas a
+producción»*.
+
+**Por qué importa**: con la lectura equivocada, esta sesión había propuesto una **tercera
+implementación del contrato** —un adaptador sobre el billing actual, para que verticales pudiera
+llegar a producción sin la otra épica—. Era código real sobre un sistema condenado, escrito para
+tirarlo, **resolviendo un problema que el programa no tiene**. Se descartó.
+
+### La decisión, y lo que la hace cumplir
+
+`DEC-ARCH-007`. Y no queda librada a que alguien se acuerde: **el owner propuso una rama de
+integración del paraguas**, y eso convierte *«no lo hagas»* en *«no se puede»* — misma forma que la
+condición A de `DEC-ARCH-004`.
+
+| | |
+|---|---|
+| rama de integración | `epic/HOS-1352-verticales-billing`, **nace con el primer código** |
+| las sub-épicas | cortan de ella y mergean a ella, **nunca a `staging`** |
+| `staging` → paraguas | **periódicamente y como obligación**, nunca al revés hasta el final |
+| dónde se revisa | en los PRs de sub-épica → paraguas, no en el PR final |
+
+Las tres condiciones que se le pusieron salen de los modos de falla conocidos de una rama de larga
+vida: la divergencia contra un repo que se mueve mucho, un PR final demasiado grande para revisarse
+de verdad, y que es una **excepción declarada** al flujo de 6 pasos del `CLAUDE.md` del repo — sin
+declararla, el primer agente que entre la «corrige».
+
+### El riesgo cambió de forma
+
+**No es la coexistencia de dos sistemas en producción** —no la hay— **sino la espera**: si una
+épica termina meses antes, su código espera. Lo acotan el merge periódico y la integración
+continua; **cómo se integra sin activar** es materia de la FASE 7 de cada épica y quedó sin
+resolver a propósito.
+
+### Y las fases quedaron repartidas
+
+5, 6 y 7 se parten limpio. 8 y 9, cada épica la suya **más una final sobre el conjunto**. La 10 se
+desarrolla en paralelo y **despliega una sola vez**. **La 1C no se parte**: es billing entera. Las
+3 y 4 ya se cumplieron en su nivel grueso al partir el programa.
+
+### Qué se produjo
+
+`DEC-ARCH-007` asentada —el log queda en **49 decisiones**, recontadas con `rg`—, la partición y
+las dos specs actualizadas, el contrato con una sección nueva que explica **por qué no hay una
+tercera implementación**, y **la spec autónoma de `HOS-1354`**, que faltaba.
+
+### Una cosa que no se hizo, y a propósito
+
+El owner pidió actualizar *«todas las specs, pdr, o cualquier md»*. **El PDR no se tocó**: su
+propia regla dice que no se edita nunca y que toda desviación se registra como decisión en el log
+— que es exactamente lo que se hizo.
+
+---
+
+## 2026-09-19 — FASE 8 completa, y la FASE 9 arranca por su requisito de entrada
+
+### Ocho agentes adversariales, en tres pasadas
+
+`DEC-ARCH-007` implicación 2 pedía que cada épica hiciera su FASE 8 **más una final sobre el
+conjunto**. Se ejecutó así, y cada pasada se partió **por vector de ataque, no por capítulos**,
+con el material completo para todos: A1 acceso cruzado · A2 máquinas y carreras · A3 datos y
+acoplamiento · B1 doble cobro y pérdida de pago · B2 idempotencia y carreras · B3 conciliación y
+migración · C1 la costura · C2 liberación y coexistencia.
+
+La razón de partir por vector y no por racimo de capítulos es medible después: a un agente que
+busca *«el doble cobro»* le sale un doble cobro con su camino o una ausencia argumentada; a uno
+que busca *«romper»* le sale una lista de generalidades, y sólo lo primero lo puede resolver o
+descartar la FASE 9. Partir por capítulos se descartó por la razón opuesta: un agente que ve
+cuatro capítulos no puede ver el acoplamiento entre los otros, que es una de las diez categorías
+del §65.
+
+### 141 hallazgos, 48 críticos, y cuatro convergencias
+
+Recontados con script sobre los ocho informes, que viven en
+[`14-fase-8-adversarial/`](./14-fase-8-adversarial/). **Cuatro defectos los encontraron tres
+agentes ciegos entre sí cada uno** — la señal de severidad más fuerte que produce el método, y
+que una sola pasada por épica no habría dado:
+
+1. **el contrato no transporta `grant` ni `addon`** — tres agentes, **las dos épicas**;
+2. **el `UNIQUE` de suscripción viva hace inejecutable todo upgrade** — tres de billing;
+3. **el trial no puede nacer** — tres de verticales;
+4. **el preapproval huérfano / los terminales sin barrer** — tres de billing.
+
+### La causa raíz, que ningún agente individual podía ver
+
+Las cuatro tienen **la misma forma**: una regla validada contra el caso que la motivó y después
+escrita como **cuantificador universal** sobre un dominio que incluye el caso donde es falsa. Y
+las cuatro son una contradicción **entre dos capítulos, nunca dentro de uno**.
+
+De ahí el quinto defecto, que no está en ningún informe individual: el método cierra huecos **por
+capítulo**, lo que comprueba que un capítulo cubre sus casos y **nunca que una regla cubra los
+suyos**, porque los suyos viven en otros capítulos. **No existe ningún lugar donde una regla se
+verifique contra el dominio completo que cuantifica** — y el único artefacto que podía hacerlo era
+el documento único que el desarme del 18/09 retiró.
+
+### Tres cosas que se verificaron aparte, y una me corrigió a mí
+
+- **`DEC-ARCH-007` tiene un mecanismo que no existe en el repo.** Medido: los 15 workflows
+  declaran `main`, `staging` y `develop`, y **ninguno nombra `epic` ni un patrón `**`**. Un PR de
+  sub-épica al paraguas entra **sin lint, sin typecheck, sin tests y sin los guards**. La regla
+  está escrita cuatro veces en las specs y **cero veces en el repo**, y el único camino con CI
+  completa es el que la decisión prohíbe.
+- **La fila sin id de la matriz no era una novena `UNKNOWN`**: es un duplicado desactualizado de
+  `EX-33`, `VERIFIED` en producción con tarjeta real desde el 16/09. El conteo del script —89
+  filas, 49 `VERIFIED`, **8** `UNKNOWN`— **nunca estuvo mal**.
+- **Los invariantes son 51, no 49**, y acá me equivoqué primero en la dirección contraria: informé
+  49 apoyándome en dos frases del capítulo 04 que resultaron **anteriores a `D13` y `D14`**. Lo
+  corrigió la pasada C. **Cuando varios agentes discrepan sobre un número, dirime la aritmética
+  del documento, no la mayoría**: cuatro informes dijeron 49 y la suma dice 51.
+
+### `DEC-METH-004` — la FASE 9 tiene cuatro salidas
+
+Decisión del owner. El §65 manda actualizar cuatro documentos y el programa ya no vive sólo ahí:
+el 18/09 se publicaron **25 issues de Linear** y unos **27 artifacts** contra un modelo que estos
+hallazgos movieron. La fase cierra **el diseño, el registro, las sub-specs y lo publicado**, en
+ese orden y con la propagación **al final**.
+
+Y define **«resuelto»**: el camino del hallazgo, reejecutado sobre el texto corregido, ya no
+llega — y para un **racimo**, además, la regla corregida se verifica contra **todo el dominio que
+cuantifica**. Se descartó el criterio más barato —*«el capítulo dice qué pasa»*— porque **es el
+que produjo la causa raíz**.
+
+### El requisito de entrada de la FASE 9, ya escrito
+
+[`15-fase-9/00-dominios-de-los-racimos.md`](./15-fase-9/00-dominios-de-los-racimos.md): cada
+racimo con su dominio como **lista finita con fuente por elemento**, no como descripción. El
+número que ordena la fase:
+
+> **327 casos. La FASE 8 miró 63. Quedan 264 sin mirar.**
+
+Y **siete dimensiones no se pueden enumerar desde los documentos**, que es el resultado más
+valioso: son dominios que hoy **no se pueden cerrar**. Dos consecuencias duras: **R4 no tiene
+dominio cerrable** —su eje son los estados del vínculo con el proveedor, y `provider_link` no
+tiene columna de estado ni máquina, así que los valores se derivaron en vez de leerse, que *es* el
+racimo— y **parte de R1 depende del capítulo 13, que no existe**.
+
+### Las seis correcciones de registro, aplicadas
+
+Con autorización del owner. **Tres resultaron ser otra cosa al medirlas**: los guards no son tres
+cuentas en conflicto sino **un catálogo de 11 (`G1`…`G11`, sin huecos) más `G12` y `G13`
+huérfanos**, nacidos en las descomposiciones y ausentes de todo capítulo `20`; y las máquinas no
+son cuatro respuestas sino **ocho que pide el §63 contra nueve que define el capítulo 03**, con la
+§10 que no es una máquina sino la regla de no-retroceso.
+
+Y un criterio que quedó fijado al aplicarlas: **un registro fechado no se reescribe.** El §676 de
+este mismo worklog dice «45 decisiones» y es correcto **en su fecha**; el barrido de
+`04-open-decisions.md` verificó «50» y eso es lo que verificó, así que lleva nota al pie en vez de
+un número nuevo. Sólo se corrigió el `03-handoff.md`, que **declara una regla vigente** y no narra
+un momento.
+
+### Qué se produjo
+
+Nueve documentos nuevos en dos carpetas, el log en **51 decisiones**, la matriz intacta en
+**89/49/8**, y el PDR sin tocar.
+
+### Lo que no se hizo
+
+**Ningún racimo se resolvió.** Está el andamiaje que permite resolverlos y no el trabajo. Y de la
+FASE 8 sobreviven **dos falsos positivos declarados como tales** para que nadie los reabra: la
+lista del cap. 19 §4 no perdió ítems —la unión de las dos mitades es 1–14— y `G7` no falta, está
+en billing por reparto.
+
+---
+
+## 2026-09-19, tarde — las 33 decisiones, aplicadas a los capítulos
+
+### Qué pasó
+
+Los cinco racimos resueltos dejaron **37 decisiones del owner**, contestadas en la tanda de la
+mañana. Esta entrada registra el **PASO 1** —aplicarlas a los capítulos— y el **PASO 2** —las seis
+`DEC-` que faltaban y el registro—, que son los dos primeros del orden que `DEC-METH-006` fija y
+que no se reordena.
+
+**Siete commits**, de `4f34afa1a` a `8bf004a6d`, sobre `spec/HOS-1352-billing-verticals-redesign`
+(PR #3360). Seis paquetes, y el primero es atómico por obligación: `D-01`, `D-04`, `D-05`, `D-06`
+y `D-20` tocan todas el **contrato de cobertura**, que es la frontera, y `DEC-ARCH-006` dice que
+**ninguna épica lo muta sola**.
+
+### Una contradicción entre dos decisiones de la misma tanda, encontrada al aplicarlas
+
+**`D-01` enumera `cubierto` sobre CUATRO tipos y `D-04` agrega un quinto TÍTULO.** No es una
+discusión de nombres: `cubierto` tiene **tres consumidores declarados** —el paso 5 de la
+autorización, `PB2` y el §6 del capítulo 15—, y si el piso contara, el campo quedaría en `true`
+**para siempre y para todos**, cambiando el significado de los tres sin que ninguna decisión lo
+hubiera dicho.
+
+Es **la causa raíz del programa otra vez**: una regla validada contra el caso que la motivó y
+escrita como cuantificador universal. Se le llevó al owner como una pregunta con dos opciones, y
+**eligió la 2**: el piso es una clase aparte, `cubierto` conserva su significado comercial, y **el
+paso 5 deja de ser `cubierto`**.
+
+**La consecuencia se escribió en voz alta en vez de esconderse**: con un piso siempre presente,
+**el paso 5 ya no rechaza a nadie** y toda la defensa se apoya en el paso 6. Eso obligó a reescribir
+el argumento con que `V/17` §2.2 cierra `S-AUTH-01`, que se apoyaba textualmente en que *«ahí el
+paso 5 no encuentra título»*, y a ampliar `G-R3` para que cubra **las dos** versiones no vendibles
+de cada vertical.
+
+### Y una promesa que una decisión hace y no cumple
+
+**`D-04` afirma ser *«la única salida que además cierra `F-8A1-005`»*, y lo cierra a medias.** El
+hallazgo tiene dos sujetos: el `Turista Free` se caía en el paso 5 y el título `BASE` lo destraba;
+el `Guest` **se cae en el paso 1** —*«no autenticado»*— y nunca llega al 5.
+
+No se resolvió en el paso 1 por dos razones independientes: admitir al `Guest` en el paso 1 deja
+**dos** de los nueve pasos incapaces de rechazar a nadie, que es una decisión de arquitectura y no
+la aplicación de una decisión tomada; y arrastra `A-ENT-02`, que el capítulo 17 declara
+explícitamente que **no cierra**.
+
+**Decisión del owner: queda para la 8-bis**, y se creó
+[`15-fase-9/08-residuos-del-paso-1.md`](./15-fase-9/08-residuos-del-paso-1.md) para que la 8-bis
+lo **recorra** en vez de redescubrirlo. Es el archivo donde viven los residuos del paso 1: lo que
+una decisión promete y su aplicación no alcanza a cumplir.
+
+### Qué cambió de forma, no sólo de texto
+
+- **El contrato tiene tres clases de fuente y seis tipos.** `cubierto` cuenta sólo `TÍTULO`;
+  `BASE` y `ADDON` no. `hasta` pasó de dos valores a cuatro. La referencia **no es anulable**, y
+  eso obligó a que `courtesy_grant` y `permanent_grant` ganaran su columna.
+- **El candado del §11 son dos claves**, partidas por `sucede_a`, y `RECONCILIATION_REQUIRED`
+  **dejó de ser un estado**: pasó a ser una marca que no pisa el estado real. Entró
+  `CHARGE_DECLINED` y **siguen siendo nueve**.
+- **`T1` puede disparar.** Su condición vieja —*«no hay trial previo»*— decía lo mismo que su
+  estado de origen **y lo negaba**: se cae por redundante, no por permisiva.
+- **Los dos `21-migracion.md` describen que no se migra.** Cuatro de los cinco problemas críticos
+  de la migración **pierden sujeto** y la unidad de trabajo que iba a escribirla no se crea.
+- **Cuatro guards nuevos** y tres columnas de `vertical` que no existían.
+
+### Qué se produjo
+
+El decision log pasa de **54 a 60** decisiones y de **5 a 7** apartamientos declarados del PDR —
+recontado con `rg -c "^### DEC-"` menos la plantilla, no a mano. Un documento nuevo del paraguas
+(`16-fase-7-del-paraguas.md`) y uno nuevo de la fase (`15-fase-9/08-residuos-del-paso-1.md`). La
+matriz **intacta**, y el PDR sin tocar.
+
+### Lo que no se hizo, y por qué
+
+**Las fichas de las dos `descomposicion.md` no se tocaron.** `D-07` nombra a `V4` y `D-10` a una
+unidad de cada épica, pero eso es la **salida 3** de `DEC-METH-004`, y `DEC-METH-006` §3 la manda
+hacer **una sola vez, después de la 8-bis** — porque si la 8-bis trae críticos, la 9-bis los
+resuelve y habría que propagar 52 objetos de nuevo. La única excepción fue reemplazar
+`RECONCILIATION_REQUIRED` en `HOS-1354/descomposicion.md`, que quedaba nombrando algo que dejó de
+existir.
+
+**Tampoco se tocaron el `CLAUDE.md` del repo ni los workflows** (`D-29`): son archivos del repo y
+su aplicación **la decide el owner**, como ya declaraba `DEC-CI-001` implicación 1.
+
+---
+
+## 2026-09-19/20 — el ciclo dio su primera vuelta entera
+
+### Qué pasó
+
+La FASE 8 volvió a correr sobre el diseño que la FASE 9 había corregido, y la FASE 9 volvió a
+correr sobre lo que ésa encontró. **Es la primera vuelta completa del ciclo que `DEC-METH-006`
+creó**, y lo que dejó no es sólo una lista de arreglos: es la medición de si el ciclo, tal como
+estaba escrito, terminaba.
+
+**No terminaba**, y eso es el resultado principal de la vuelta.
+
+### La FASE 8-bis
+
+Ocho vectores, tres pasadas, ciegos entre sí. **112 hallazgos, 28 críticos, 6.916 líneas** en
+[`17-fase-8-bis/`](./17-fase-8-bis/). Los conteos salen de un script sobre los ocho archivos, no de
+los índices que los agentes devolvieron — uno de ellos se contradijo a sí mismo en el suyo.
+
+**Los 28 críticos son 23 defectos distintos**: cinco pares eran el mismo defecto visto por dos
+agentes que no se leyeron. Deduplicar no es prolijidad — sin eso se le pregunta dos veces al owner
+por la misma cosa.
+
+### El resultado que cambió el método
+
+> **De los 25 críticos de las pasadas A y B, 25 los produjo la tanda de arreglos anterior. Ninguno
+> era un defecto preexistente.**
+
+La condición de corte —*«hasta que una pasada no traiga ningún crítico nuevo»*— **medía un stock**
+cuando el generador es **el acto de arreglar**. El conteo baja (48 → 28) porque baja el tamaño de
+la tanda, no porque baje la deuda.
+
+**La causa, con caso testigo medido**: la definición de «resuelto» exigía recorrer *«todo su
+dominio»*, y ése es **el dominio del PROBLEMA, nunca el del ARREGLO**. Al partir el `UNIQUE` del
+§11 por `sucede_a`, el dominio pasó de **90 a 180 pares** y se verificaron los 90 viejos. **La
+mitad nueva contenía el doble cobro que el arreglo venía a cerrar.**
+
+Y su complemento, que ningún informe individual podía ver: **`R2` construyó el título `BASE` sobre
+una premisa que `R3` volvió falsa**, sin que ninguno lo notara.
+
+`DEC-METH-008` lo corrige en cuatro partes, y el owner agregó la cuarta: **la elección entre
+arreglar un crítico y declararlo con causa la toma él, caso por caso.**
+
+### La 9-bis
+
+Las 23 decisiones se tomaron **familia por familia**: 22 arreglar, 1 aplicar, ninguna declarada con
+causa. Tres llevaron discusión de opciones. Y los 23 se aplicaron **por artefacto, no por familia**
+—contrato, verticales, billing, el corte—, precisamente porque aplicar por familia es el error que
+produjo la tanda anterior.
+
+### Lo que hay que registrar aunque incomode
+
+**Tres de los arreglos de la 9-bis corrigen cosas que la FASE 9 escribió mal el día anterior**, y
+dos las había escrito yo al aplicar:
+
+| qué se había escrito | por qué estaba mal |
+|---|---|
+| la fecha de primer cobro se guarda | se guardaba **la que mandamos**: verificaba el único dato que no podía estar mal |
+| una fila marcada **no se barre** | apagaba **el único detector** de una divergencia de monto, y el cobro equivocado seguía saliendo todos los meses |
+| *«un día como mínimo»* | fallaba por **cuándo se comprueba**, no por el número: se verificaba al nacer y tenía que durar 71 horas |
+
+**Y una cuarta, de otro tipo**: al aplicar *«no se migra»* se eliminó la regla que conserva el
+rastro del compromiso cancelado — **aunque esa regla no migra nada**. Es el modo de falla que
+conviene recordar: **una decisión que vuelve innecesario un trabajo puede llevarse algo que seguía
+haciendo falta.**
+
+**Y una quinta, de método**: *«las doce fichas del catálogo»* circuló como dato y era **una
+inferencia de un agente**, que convirtió *«12 filas de alojamiento»* en *«12 publicadas»*. Lo
+repetí en un capítulo sin verificarlo. Se corrigió: **cuántas están publicadas se mide el día del
+corte**, que es cuando importa y el único momento en que no está vencido.
+
+### Una decisión que cambió al escribirla
+
+El defecto 22 se había resuelto **sembrando un trial** a la población existente. Al escribirlo, el
+owner recordó el criterio que gobierna todo el capítulo —*son pocos, la mayoría no pagó nunca, los
+conozco a todos y les hablo*— y la siembra **dejó de tener sentido**: no ahorraba ninguna
+conversación y sí agregaba filas. **Se sacó.** Quedó *«se despublican, se avisa antes, se los
+llama»*, y de paso *«no se hereda ninguna fila»* volvió a ser literal del lado de verticales.
+
+### Qué se produjo
+
+Nueve documentos nuevos en `17-fase-8-bis/`, el log en **62 decisiones** —con `DEC-METH-008` y
+`DEC-ARCH-008`—, el resumen de invariantes **recontado entero con script** (52, 10 de base, 18
+apoyos sobre 15), la matriz intacta y el PDR sin tocar.
+
+### Lo que no se hizo
+
+**La propagación**, que es la salida 3 y 4: las fichas de las dos descomposiciones, los 22 issues y
+los artifacts **siguen describiendo el diseño de antes**. Va al final del ciclo, una sola vez,
+sobre un diseño que ya no se mueva — que es exactamente lo que `DEC-METH-006` §3 decidió.
+
+---
+
+## 2026-09-24 — la sonda 49 dio veredicto, el dunning quedó decidido y el inventario bajó a dos
+
+> **El worklog no tiene entradas del 20/09 al 23/09.** Lo de esos días está en `03-handoff.md`
+> (sección *«Histórico: 2026-09-23»* y anteriores) y en los rastros de `21-`, `22-` y `23-`. Esta
+> entrada cubre sólo la sesión de la tarde y noche del 24/09.
+
+### Mediciones (producción, sólo `GET` salvo lo que se dice)
+
+- **`RN-3`**: el sujeto reactivado el 23/09 volvió a intentar cobrar en el lote siguiente
+  (24/09 14:02 `-04`), **rechazado** por riesgo, sin recuperar los ciclos adeudados. Los dos
+  controles siguen pausados. El owner liberó el presupuesto **mientras sirva para medir**.
+- **Sonda 49**: `expire_date` a **48,0 h** sobre un ciclo de 2 días. **La ventana de reintentos es el
+  ciclo.**
+- **Cadencia de cobro**: lotes al minuto `:02`, en el primero posterior a la hora de la fecha.
+- **Campos del resumen**: `charged_quantity` y `last_charged_date` se mueven con un rechazo;
+  `charged_amount` no.
+
+### Decisiones (log de 107 a 109)
+
+`DEC-MP-007` (sin planes de MP) y `DEC-SUB-019` (al vencer el grace se cancela el preapproval, y el
+grace es más corto que el ciclo). Esta última salió de una pregunta del owner y **reemplazó la
+recomendación que se le había hecho minutos antes**, que dejaba el preapproval vivo; las dos
+posiciones están en la entrada.
+
+### Capítulos
+
+- `B/03`: `S3` relee antes de cancelar; `S6` pregunta si cobró y cancela el preapproval; la tabla
+  §10.1 gana el par `cancelled` × `SUSPENDED`; el grace se acota al ciclo.
+- `B/12`: ventana reducida sólo para tarjeta (§5.4); §1.4 reemplazado; la cadencia de cobro medida.
+- `B/06` §3.1: los dos caminos a un reloj de cobro propio, cerrados (`EX-31`, `EX-32`).
+- `B/05`, `B/19`, `B/20`: las «dos puertas» del pago impago son **una por método de pago**.
+- Núcleo: `D17` (lo del proveedor se relee por id) — 54 invariantes; índice recontado.
+- Inventario de compensación: de 18/7 a **23/2**.
+- Matriz: sólo la nota de `GR-2` (deja de bloquear para tarjeta); conteos sin cambio, 93/53/14/22/4.
+- `mp-probes/leer-rn-3.py`: el lector de `RN-3`, que vivía en el scratchpad.
+
+### Revisión
+
+Un agente de revisión en frío sobre `DEC-SUB-019` encontró seis lugares que seguían asumiendo que
+una suspendida de tarjeta podía reactivarse por un cobro reciclado; otro agente los corrigió y
+**metió un error nuevo** (una «puerta manual» para el pagador con tarjeta), que se corrigió a mano en
+los cinco lugares.
+
+---
+
+## 2026-09-24 (noche) y 2026-09-25 — la FASE 8 completa corrió y sus racimos se resolvieron con el owner
+
+> Cubre desde `9b5e4d3c8f` (24/09 21:55) hasta `d5ae42ce62` (25/09 17:44). El detalle de cada
+> resolución está en [`25-fase-8-completa/00-hallazgos.md`](./25-fase-8-completa/00-hallazgos.md) §5
+> y en `03-handoff.md` (secciones del 25/09).
+
+### La FASE 8 completa (`DEC-METH-014`)
+
+Nueve agentes Opus, ciegos entre sí y del historial, uno por vector (`A1`…`D1`). **133 hallazgos, 15
+críticos** (la primera FASE 8 había dado 141 y 48). Se consolidaron en **14 racimos** por causa,
+más dos críticos sin convergencia y un resto de acceso fino, billing y registro. Las 323 citas
+textuales se verificaron con script: ninguna inventada.
+
+### Mediciones
+
+- **Cartera de producción** (24/09 22:05-22:15, sólo `SELECT` y `GET`): las 3 `abandoned` no tienen
+  preapproval; las dos `LANZAMIENTO60` están extendidas también en MP; sólo `ed00a8fd` cobra el
+  26/09. **Apareció `f6d89f71…`, del owner, sin fila local y a punto de cobrar ARS 18.000: se canceló
+  con OK del owner, sin que cobrara.** Los 5 `preapproval_plan` viejos seguían vendiendo.
+- **Sonda 50** (`EX-40`): un plan de MP se cancela por API y **es reversible**, contra la documentación.
+- **Sonda 51** (`EX-41`, sandbox): `/v1/orders` es idempotente por `X-Idempotency-Key`; misma clave
+  con otro cuerpo da `409`; `external_reference` no deduplica.
+- **`RC-9`**: `GET /preapproval/{id}` no trae `version`, trae `last_modified`.
+- Entraron a la matriz la sonda 49 (`GR-3`, `RC-7`, `RN-1`, `RN-3`), `RC-8` y `PA-6` (`UNKNOWN`).
+
+### Decisiones (log de 111 a 117)
+
+Nuevas: `DEC-SUB-020` (contracargo), `DEC-SUB-021` (en grace no se cambia de plan; supera a
+`DEC-SUB-003`), `DEC-DATA-005` (la retención sólo toca fichas), `DEC-METH-015` (los residuos de borde
+se declaran), `DEC-ARCH-009` (reconciliador diario de cobertura), `DEC-TRIAL-010` (el trial se
+convierte con el primer pago). Precisadas: `DEC-MIG-003`, `DEC-GRANT-003`, `DEC-GRANT-004`,
+`DEC-MAIL-001`, `DEC-CONC-002`, `DEC-SUB-006`, `DEC-SUB-017`. **Registro**: los IDs duplicados se
+renumeraron a `DEC-ARCH-010` y `DEC-ENT-005`, clasificando cada referencia por contexto (8
+cambiaron, 21 quedaron); tres correcciones del log con OK del owner (`08e2a6ffb8`).
+
+### Capítulos
+
+Los 14 racimos, `F-8CA1-001`, `F-8CA2-004` y el registro de `D1` se resolvieron uno por uno, en ~20
+tandas de agentes sobre casi todos los capítulos de `B/*`, `V/*`, el núcleo y el contrato. Los
+residuos de borde quedaron declarados en los «NO cierra» de cada capítulo (`DEC-METH-015`).
+
+### Lo que no se hizo
+
+- La FASE 9 quedó a medias: **no se reejecutaron los caminos de los hallazgos** sobre el texto
+  corregido ni se declaró el dominio de los racimos nuevos (criterio de `DEC-METH-004`). Arrancó el
+  25/09 a la tarde en [`26-fase-9-completa/`](./26-fase-9-completa/).
+- Sub-specs, issues de Linear y artifacts siguen describiendo el diseño viejo.
+
+### Registro
+
+- Rama pusheada el 25/09 sin forzar (PR #3360). El owner decidió **no reescribir** los commits con
+  `Co-Authored-By` del 23-24/09; desde el 25/09 van sin atribución.
+
+---
+
+## 2026-09-25 (noche) — la FASE 9 completa: 133 caminos reejecutados, 33 decisiones, todo aplicado
+
+### Verificación (salida 1, criterio de `DEC-METH-004`)
+
+Nueve agentes Opus reejecutaron el camino de cada hallazgo sobre el texto corregido y declararon el
+dominio de cada racimo ([`26-fase-9-completa/00-veredictos.md`](./26-fase-9-completa/00-veredictos.md)).
+Resultado: **86 dejan de llegar, 36 siguen llegando, 11 llegan a otra cosa**. El cierre del 25/09
+a la tarde estaba sobredimensionado por dos causas: resoluciones que citaban sólo algunos miembros
+del racimo (26 de los 35 del resto nunca se trataron) y arreglos que abrían el caso gemelo (`T6`
+junto a `T2`, *«la principal más reciente»* frente a una sucesión abandonada, `PB11` sin reiniciar el
+reloj).
+
+### Decisiones
+
+Los **33 puntos al owner** se resolvieron en ocho lotes, más 8 elecciones de agentes ratificadas y
+las asignaciones de unidad ([`10-decisiones-del-owner.md`](./26-fase-9-completa/10-decisiones-del-owner.md)).
+Contra la recomendación: `2a` (no se conserva nada del billing viejo), `2d`, `2g` (la cartera
+arranca como clientes nuevos, trial incluido), `3c` (grace para la sucesora de quien venía pagando,
+con un control del barrido que propuso el owner) y `6c` (el botón de suscribirse manda a publicar a
+quien todavía no publicó, idea del owner). **Un error propio**: en `3c` presenté mal numeradas las
+opciones y el owner eligió sobre esa presentación; se re-preguntó. Otro: tomé un *«dale, sigamos»*
+como aprobación de un lote que no había contestado; se deshizo y se re-preguntó.
+
+### Aplicación
+
+Carriles sin archivos compartidos: verticales + contrato + núcleo, el corte, billing en dos tandas
+en serie (las dos tocan `B/03`), un barrido de pendientes cruzados y dos pasadas al log. Log 117 →
+**124**; matriz sin filas nuevas, `RN-3` cerrada (**55 · 15 · 23 · 5**). Listas cerradas movidas y
+recontadas: motivos 20 → 22, acciones 13 → 14, máquinas 9 → 10, hechos del reloj 5 → 6, `S31` →
+`S35`, `T7` → `T8`, firma del contrato 6 → 7 campos.
+
+### Sub-specs (salida 3)
+
+Recorridas enteras. La de billing estaba congelada en la mañana del 24/09 (pasarela *«sin decidir»*,
+B6 *«bloqueada»*) y **cuatro criterios de terminación pedían construir lo que el owner había
+revertido** (B7, B8, B9, B10). Toda regla nueva quedó con unidad.
+
+### Medición
+
+`RN-3` leída en producción (sólo `GET`): reactivar una pausada por mora retoma el ciclo siguiente,
+no recupera lo adeudado y el proveedor vuelve a pausar. `GR-1` queda para el 26/09 con la sonda 49
+(el owner cambia el medio de pago).
+
+📌 **2026-09-26 04:33 UTC**: `GR-1` leída (sólo `GET`) → **`VERIFIED`**; matriz **56 · 15 · 23 · 4**
+(`26-fase-9-completa/22`).
+
+### Lo que no se hizo
+
+Salida 4 (Linear y artifacts), la decisión sobre la 8-bis, y la lectura de `GR-1`.
+
+## 2026-09-26 (madrugada) — `GR-1` medida y la salida 4
+
+- **`GR-1` `VERIFIED`**: el owner cambió la tarjeta de la sonda 49 dentro de la ventana de reintentos y el
+  registro rechazado del 24/09 pasó a aprobado a las 00:31 `-04`, un minuto después del cambio, fuera del
+  lote del `:02`. Matriz 56 · 15 · 23 · 4. Se levantó la condición de `DEC-SUB-021` en log, capítulos y
+  sub-specs.
+- **Salida 4**: 27 artifacts reescritos por cuatro agentes (fichas de unidad e issue juntos) y
+  republicados en sus URLs; 25 descripciones de Linear reescritas y verificadas; etiquetas de bloqueo
+  vencidas sacadas y áreas agregadas, con OK del owner. Un detalle corregido a mano: siete descripciones
+  arrancaban con un comentario HTML copiado del ejemplo.
+- Pendiente: la 8-bis (sí/no) y `status-needs-owner-decision` en HOS-1354.
+
+## 2026-09-26 (día y noche) — la vuelta 1 del ciclo 8↔9: FASE 8, FASE 9 y la salida 4
+
+- **`DEC-MP-006`**: 📌 «sin destino pendiente» con OK del owner (la cláusula 2 se mantiene como
+  higiene); propagado con tachado + fecha.
+- **FASE 8 vuelta 1** desde cero (`27-`): 9 ciegos, 100 hallazgos (1 crítico), 12 racimos;
+  `verificar-citas.py` nuevo (acepta cita antes/después de la referencia, comillas rectas y
+  abreviaturas `B/NN`, `V/NN`, `N/NN`).
+- **FASE 9 vuelta 1** (`28-`): atribución (R1 generado por la tanda del 25/09), cinco grupos de
+  resolución, decisiones del owner en `28-…/10-`, aplicación en dos tandas + tres tandas de OK,
+  verificación de los 100 caminos (86/3/11), cierre de 23 casos vecinos. Log 126, matriz 99/5.
+- **Salida 4**: artifacts y Linear al día.
+- **Aprendido**: el caso vecino sigue siendo el generador (23 hoy contra 47 el 25/09): un mecanismo
+  nuevo copia la forma de otro sin sus reglas (el empuje de `PURGED` sin «después del commit»), y
+  una lista enumerada se vence con cada transición nueva (`S36`).
+- Pendiente: los tres arreglos chicos del handoff y la FASE 8 vuelta 2.
+
+## 2026-09-26 (noche) al 2026-09-27 — la vuelta 2 del ciclo 8↔9: FASE 8 y FASE 9
+
+- **Tres arreglos chicos** antes de revisar (`1cccd9119d`): `V/spec.md` §1 y §7 (pasarela
+  decidida, `DEC-MP-005`/`006`), el «NO cierra» 3 de `V/03` §9 desglosado, y seis decisiones del
+  26/09 asignadas a unidades en `B/descomposicion.md` §2.
+- **FASE 8 vuelta 2** entera (`29-fase-8-vuelta-2/`): nueve ciegos → **56 hallazgos, 1 crítico**
+  (`F-8V2B1-001`: el addon recurrente cobraba otro mes tras la baja), 28 racimos; 225 citas
+  verificadas. Tendencia 133/15 → 100/1 → 56/1. Atribución contra hunks (`01-`): la crítica es
+  **preexistente**; su gemelo `F-8V2D1-001` (`S36` fuera de la orfandad) lo generó la tanda del 26/09.
+- **Corte de `DEC-METH-013`**: tope de dos vueltas alcanzado; el owner leyó la crítica y eligió
+  arreglarla (`R1-a`). **Se deja de girar el ciclo 8↔9.**
+- **FASE 9 vuelta 2**: 30 decisiones del owner en `29-…/10-` (dos contra la recomendación:
+  `R1-c` y `R11-3b`, este último por un hecho del owner), aplicadas en ocho grupos (`11-`…`18-`);
+  **56 de 56 hallazgos aplicados**. Lote de log y matriz con OK del owner: 16 📌 + marcas de Estado
+  (precisadas 44), un 📌 en `DEC-RF-008`; matriz **104 · 56/15/23/10 `UNKNOWN`** (`EX-43`…`EX-47`).
+- **Listas cerradas nuevas**: 24 motivos (9 devuelven), 14 disparadores de orfandad, 16 acciones
+  administrativas (15 capacidades del actor), 8 preguntas del §4.1, 12 dependencias de billing,
+  8 precisiones de `V/17`, 14 filas en la tabla del corte (4b, 4c, 5b), entidad nueva
+  `vertical_discontinuation`.
+- **Aprendido**: una remisión («como `S11`») arrastra las exclusiones de la regla original y obliga a
+  declarar pertenencia; los conteos se buscan por palabra además de por número; un script de recuento
+  se valida corriéndolo sobre la copia anterior.
+- Pendiente: salida 4 (artifacts y Linear), FASE 5, FASE 6 y lo que queda de la FASE 7.
+
+## 2026-09-27 (noche) — la salida 4 de la vuelta 2
+
+- **Mapa primero**: un agente cruzó `29-…/10-`…`18-` con las dos `descomposicion.md` y las fichas
+  vivas. El rango de la vuelta 2 es `218c045fa3..2fb827212e`; `1cccd9119d` (26/09 noche) no había
+  llegado a las fichas y se llevó con la vuelta (B8, B13, V6).
+- **Artifacts**: 25 republicados en sus URLs (tablero, paraguas, contrato, las dos épicas, V2–V9,
+  B2–B13); V1 y B1 sin cambios, confirmado contra la ficha viva. El tablero cambia cuatro textos y
+  ningún dato del grafo; su `<script id="state">` quedó idéntico.
+- **Linear**: 23 descripciones actualizadas por parches anclados (HOS-1355 y HOS-1364 sin
+  cambios), sin tocar estado, prioridad ni etiquetas; comentario de progreso en HOS-1352.
+- **Aprendido**: las cifras viejas vivían también donde la fila del mapa no cambiaba («once» en B2 y
+  el tablero, «quince» en V8, B5 y B13) y en los issues aparte de las fichas; se buscan por palabra
+  en los dos lugares. Y el `index.html` que baja `read` con `path` trae el envoltorio del servicio:
+  republicarlo tal cual lo envuelve dos veces (pasó con cinco fichas; se republicaron limpias).
+- Pendiente: FASE 5, FASE 6 y lo que queda de la FASE 7.
+
+## 2026-09-27 (noche) al 2026-09-28 — la verificación de la vuelta 2, y su cierre
+
+- **Por qué**: la vuelta 1 cerró con una verificación (`28-…/20-veredictos.md`) y la vuelta 2 no
+  la tenía. El owner eligió cerrarla antes de pasar a la FASE 5, en vez de una vuelta 3 (que
+  `DEC-METH-013` no permite) o de declarar todo.
+- **Verificación** (`29-…/20-`…`23-`): tres agentes Opus reejecutaron los 56 caminos. **55 DEJA · 1
+  SIGUE**; 13 casos vecinos nuevos, ninguno CRITICA (contra 23 en la vuelta 1).
+- **Decisiones**: el owner contestó seis lotes con letras (`24-`), todas la recomendada; en `j`
+  pidió investigar antes de elegir, y la investigación (`25-`) mostró que Outlook no ignora los
+  puntos: el seudónimo de `R23` juntaba a dos personas en el proveedor más usado del país.
+- **Aplicación** en cuatro tandas en serie (`26-`…`29-`), la última con OK del owner para log y
+  matriz: 15 📌, `EX-48`…`EX-50`, guards 32.
+- **Aprendido**: un «arreglo de texto» puede ser una decisión, y al revés; al aplicar aparecen casos
+  vecinos que piden elegir (hubo dos lotes más por eso). Un espejo que quedó afuera de dos lotes no
+  aparece buscando la cifra anterior: hay que buscar también las de antes (`$D/spec.md` seguía en
+  98 filas y 48 decisiones).
+- Pendiente: salida 4 de esta tanda, FASE 5, FASE 6 y lo que queda de la FASE 7.
+
+## 2026-09-28 (mañana) — la salida 4 de la verificación de la vuelta 2
+
+- Con OK del owner, mismo método que el 27/09 (mapa primero, cuatro tramos, tablero y paraguas a
+  mano): **19 artifacts** republicados y **18 descripciones** de Linear, más el comentario de
+  progreso en HOS-1352. El tablero suma `G-R9` al `g` de V6 (32 guards); sus dependencias y su
+  `state` no cambian.
+- **Aprendido**: el pie de las fichas se fija antes de repartir los tramos (se eligieron dos
+  fórmulas y hubo que republicar siete); los issues copian cifras de la épica que el mapa no ve
+  (HOS-1363 decía «ninguna» fila `UNKNOWN` con `EX-49` suya); y una unidad «sin cambios» puede
+  tener el nombre viejo de una acción (B3).
+- Pendiente: hablar con el owner con qué se sigue (FASE 5, 6 y lo pendiente de la 7).
+
+## 2026-09-28 (tarde y noche) — la presentación y la revisión del owner
+
+- **Presentación** «Verticales y cobro, rediseñados» (artifact), en lenguaje llano y con 59 casos
+  borde marcados. El owner la leyó entera, dejó 15 comentarios y 9 notas.
+- **Revisión** (`30-revision-del-owner/`): dos informes de impacto, unas 45 decisiones en lotes con
+  letras (`10-`), aplicación en cuatro tandas en serie y el lote del log y la matriz con OK.
+- **Hallazgos**: el filtro de avisos era de hospeda2 y contaminó mediciones; Outlook no ignora los
+  puntos; la FAQ promete una baja de cuenta que no existe; «commerce» está en 1.204 archivos del
+  código; no había ninguna acción administrativa para editar el catálogo.
+- **Aprendido**: una tanda puede invalidar en silencio lo que otra acababa de escribir (la frase de
+  que verticales no le pregunta nada a billing); se relee lo recién aplicado antes de proponer.
+- Pendiente: casos vecinos, mediciones, verificación corta, publicar, FASE 5.
+
+## 2026-09-29 (noche) al 2026-09-30 — FASE 8 y FASE 9, vuelta 3 (`DEC-METH-016`)
+
+- **FASE 8 vuelta 3** (`37-fase-8-vuelta-3/`): nueve revisores Opus ciegos sobre `923b23586b`, con
+  los mismos vectores que la vuelta 2. **65 hallazgos: 1 CRITICA, 26 ALTA, 25 MEDIA, 13 BAJA**, en
+  30 racimos (`00-`). Tendencia 133/15 → 100/1 → 56/1 → 65/1. La atribución contra los diffs
+  `377a7c568b..923b23586b` (`01-`) dio la crítica **preexistente**, y de las 27 ALTA o más, 10
+  generadas, 1 agravada y 16 preexistentes; las generadas salen de seis commits de la revisión del
+  owner y de los lotes M a O, ninguna de los casos vecinos ni de las mediciones.
+- **FASE 9 vuelta 3** (`10-decisiones-del-owner.md`): **40 decisiones** en lotes A a AN; 4 contra
+  la recomendación (F, I, J, AJ). La crítica bajó a ALTA con arreglo (lote A).
+- **Aplicación**: tres grupos en paralelo, cada uno dueño de sus archivos (`11-` verticales, `12-`
+  billing, `13-` núcleo, contrato y corte), un cuarto que aplicó los cruces y recontó (`14-`), los
+  lotes P a AA (`15-`), el log y la matriz con OK (`16-`), la verificación corta (`20-` cobro, `21-`
+  verticales y transversal: 21 hallazgos, 5 bloqueaban) y su aplicación (`22-`, `23-`).
+- **Cifras**: log **139** (123 funcionales y 16 de metodología), precisadas sin SUPERSEDED **70**,
+  nuevas `DEC-AUTH-004` y `DEC-AUTH-005`; matriz **117 = 61 · 16 · 24 · 16** (`EX-57` a `EX-59`);
+  acciones administrativas vivas **25**; plazos **18** (los nuevos, 7, 7 y 180 días; 5 sin valor);
+  dependencias entre épicas **12**; guards 33; unidades 23; entradas del contrato 8.
+- **Anotado al cerrar**: las tres mediciones nuevas se corren antes de `B6`/`B11`
+  (`$B/descomposicion.md`), y las cuatro situaciones que una restauración no deshace se releen antes
+  del ensayo del corte (`16-` §4.3).
+- **Aprendido**: aplicar en paralelo con un dueño por archivo y un cuarto agente de cruces
+  funciona, pero la verificación corta siempre encuentra dos lotes que escribieron distinto sobre la
+  misma regla (A y AA sobre el link de reclamo) y decisiones que no llegaron a la tabla que se
+  ejecuta (U en `B/03` §10.1). Un cambio de nombre (la acción 26) no arrastra su confirmación ni sus
+  espejos.
+- Pendiente: publicar (con OK del owner), después hablar con el owner cómo sigue (FASE 5).
+- **Salida 5** (mismo 2026-09-30, con OK del owner): mapa de cambios `377a7c568b..a348c52903` (70
+  commits) y seis tramos en paralelo sin artifacts compartidos. 29 artifacts republicados, la ficha
+  nueva de `U1` y el issue HOS-1400, 25 descripciones de Linear y comentario en HOS-1352. La
+  presentación tenía 36 contradicciones con el diseño vigente además de las tres del handoff; los
+  15 hilos quedaron resueltos. Los residuos sin tachar que vio la publicación se corrigieron en la
+  fuente (`37-…/24-`). **Aprendido**: `discontinu\w*` no encuentra «discontinúan»; una frase partida
+  en dos renglones no aparece con `rg` línea por línea; las cifras infladas por algo retirado no
+  nombran lo retirado, hay que buscarlas por número.
+
+## 2026-09-30 (tarde) — mediciones EX-57/58/59 y FASE 5 decidida
+
+- **Mediciones** (`mp-probes/RESULTS-2026-09-30.md`, sondas 58, 59 y 60; el número de la sonda no
+  es el de la fila): `EX-57` `VERIFIED` en sandbox (`GET /v1/orders` con `begin_date`/`end_date` de
+  30 días como máximo y `external_reference` exacto; `/v1/payments/search` de respaldo); `EX-58`
+  `VERIFIED` en sandbox (clave obligatoria, reenvío idempotente, `409` con otro monto, id y monto
+  por devolución; la nueva sale por resta, así que las devoluciones de una orden van de a una);
+  `EX-59` `PARTIALLY_SUPPORTED` en sandbox **y producción** (corrida de sólo lectura del owner:
+  sólo `/v1/payments/{id}` de un pago **aprobado** trae el correo; los rechazados traen `null`).
+  Matriz **117 = 63 · 16 · 24 · 14**. Se arregló `contar-filas-de-la-matriz.py`: un estado tachado
+  más largo ganaba al vigente.
+- **FASE 5**: criterio con el owner (`DEC-METH-017`, apartamiento del PDR), nombre del package del
+  contrato (`DEC-ARCH-015`, `@repo/billing-verticals-contract`, tras descartar el owner la primera
+  propuesta) y premisas del corte fijadas por el owner (`DEC-MIG-007`: sin convivencia, cinco
+  cuentas con una ficha cada una, el resto no importa, aviso por privado sin nada programado). Log
+  **142**. Cinco agentes en paralelo contra `origin/staging` `35e2d63e81` (`38-fase-5/01-`…`05-`,
+  200 piezas), consolidado por causa (`00-`, 44 racimos), lotes 1 a 6 decididos y un barrido del
+  corte contra `DEC-MIG-007` (`20-`, 78 piezas) también decidido. Todo en
+  `38-fase-5/10-decisiones-del-owner.md`. Contra la recomendación: lote 1 I (se recrean los enums
+  sin los valores del cobro viejo) y lote 4 B (rol de socio para Partner, que no se quita).
+- **Aprendido**: el índice de codegraph está sobre el clone principal, atrasado respecto de
+  staging: sirve para orientarse, y toda cita se verifica con `git show origin/staging:`. Una tabla
+  `billing_*` puede ser infraestructura de toda la plataforma (`billing_notification_log`). Un
+  número que viene en el encargo se recuenta (184 declarado, 200 reales).
+- **Pendiente**: la aplicación de todo lo decidido (ver el handoff).
+
+## 2026-09-30 (noche) — FASE 5 aplicada entera
+
+- **Aplicación** de todo `38-fase-5/10-decisiones-del-owner.md` (lotes 1 a 6 y la simplificación del
+  corte) con ocho agentes en paralelo, un dueño por archivo (registros `38-fase-5/11-`…`18-`), y un
+  agente de cruces que recontó y aplicó lo mecánico (`21-cruces.md`). Lo no decidido volvió al owner
+  en tres tandas: **A–L** (contra la recomendación: A, la regla que bloquea toda escritura queda
+  hasta el reintento si se aborta), **M–P** y **Q** (la unidad del guard nuevo). Registros `22-`…`27-`.
+- **Verificación ajena** (`28-verificacion.md`): 8 hallazgos, 4 bloqueaban (3 mecánicos resueltos,
+  1 era una elección escrita sin letra del owner, `VF5-04`, contestada con la Q). Citas de los
+  registros: 80 % en su línea, el resto corridas por tandas posteriores.
+- **Cifras** (script): log **142** (1 SUPERSEDED más: `DEC-MIG-004` por `DEC-MIG-007`); matriz
+  **117 = 63 · 16 · 24 · 14**, esperan medición 9, no se miden 9; unidades **24** (`U2`, outbox
+  común); guards **34** (`G18` en `V1`) = 18 · 15 · 1; dependencias entre épicas 12.
+- **Aprendido**: el resumen de las decisiones del owner puede transcribir mal la opción (`PB9` por
+  `PB12`): manda el texto de la opción en el consolidado. Una pregunta que queda en «Vuelve al owner»
+  de un registro se pierde si la tanda siguiente toma sólo algunos registros. Al reemplazar un
+  sujeto («el script del corte» → la herramienta de `V6`), buscar la frase vieja en todo el texto
+  vivo, no sólo en lo registrado.
+- Commits `9dac8201dd`…`59631ad440`. **Sin pushear** (PR #3360).
+
+## 2026-09-30 (cierre) — la FASE 5 publicada
+
+- **Artifacts** (con OK del owner): tres agentes en paralelo, uno por grupo sin artifacts
+  compartidos, contra `7a224777ad..73e6f0b167`. 23 republicados y la ficha nueva de `U2`; seis sin
+  cambios. Segunda pasada para linkear `U2` y poner su issue una vez creado.
+- **Linear**: HOS-1401 (`U2`) creado; HOS-1400 y 18 descripciones actualizadas por parches anclados,
+  sin tocar estado, prioridad ni etiquetas; HOS-354 reescrita como el «entrar como» de una versión
+  posterior (el owner: «lo vamos a hacer después»); comentario de progreso en HOS-1352.
+- **Aprendido**: `read` sin `path` es el que habilita republicar, pero no deja archivo; el que baja
+  con `path` trae el envoltorio del servicio. Las versiones viejas tenían el esqueleto doble y el
+  `save()` del tablero lo reproducía en cada tilde. Linear normaliza el markdown al guardar (negritas
+  alrededor de código, links a issues, tachados con backticks): los anchors de un `patch` se copian
+  de un `get_issue` reciente. «Queda el gate de la FASE 5» vivía en casi todas las descripciones y
+  ningún recuento numérico lo veía: las frases de estado también se buscan.
+- Registros `38-fase-5/30-`, `31-`, `32-`. **Sin pushear** (PR #3360).
+
+## 2026-09-30 (noche tarde) — FASES 6 y 7 cerradas y publicadas
+
+- **Por qué**: el recap mostró dos fases sueltas antes de la FASE 10: la 6 (rewrite/reuse) sin
+  registro de cierre y el último ítem de la 7 (`acceptance gates`), con fecha antes de que nazca la
+  rama.
+- **Propuesta, tres lotes y verificación** (`39-fases-6-y-7/`): A–G, H–J (pase de la FASE 6) y K–M
+  (dudas de la aplicación), todas la recomendada. `DEC-METH-018`, `DEC-ARCH-016`, `U3` y `G19`.
+  Verificación ajena: 14 hallazgos, 4 bloqueaban, todos arreglados.
+- **Publicación**: tres agentes en paralelo; ficha nueva de `U3`, HOS-1402, HOS-1352 reescrita.
+- **Aprendido**: el pase de la FASE 6 partió «el núcleo de autorización» en cinco piezas y sólo una
+  iba contra el modelo (el actor de sistema, 31 copias); «remendar todo» y «reescribir todo» eran
+  las dos respuestas equivocadas. Tachar la consecuencia en los espejos sin tachar la decisión
+  madre deja al log diciendo las dos cosas (`DEC-TEST-003`). Las letras de lote se repiten entre
+  fases: el origen tiene que nombrar el lote. Un subject de commit de 101 caracteres falla el
+  commitlint y deja todo stageado: se destagea y se commitea por partes.
+- Commits `2a430303fa`…(el de este handoff). **Sin pushear** (PR #3360).
+
+## 2026-10-01 — congelamiento, CI de la épica, promoción a `main` y la rama épica
+
+- **Plan nuevo del owner**: antes de la FASE 10, (1) el corte del MVP, (2) una spec consolidada sin
+  tachados con verificación mecánica y doble, (3) el árbol completo en Linear; un handoff entre
+  cada paso. Y congelar ya las altas del sistema viejo para cerrar la ventana.
+- **Hecho**: congelamiento (#3437, N/O/R/S), CI de `epic/**` (#3436) y guard de destino corregido
+  (P y T, #3448), promoción `staging → main` (#3447) con sus destrabes (#3449 novedades, #3450
+  CodeQL), tanda de smoke HOS-1403, backlog BETA-214, rama épica creada.
+- **Aprendido**: desactivar un plan desde el admin **no** congela altas (el checkout resuelve por
+  slug) y **sí** agenda la cancelación de todos sus suscriptores: el interruptor obvio era el
+  peligroso. El trial de alojamiento nace al publicar, no en el checkout (HOS-1012), así que
+  congelar el checkout no cerraba la ventana. Un guard corregido una vez puede seguir equivocado:
+  P pasaba sus 12 tests y bloqueaba toda promoción con la épica viva, porque ningún test probaba una
+  promoción; T lo vio al promover de verdad. Un gate que nunca corría (el audit de novedades,
+  matado por `bash -e` y por un comando borrado) esconde deuda que aparece toda junta el día de la
+  promoción. CodeQL no corre en PRs a `staging`: sus alertas aparecen recién en la promoción.
+- **Sin pushear al cierre**: nada; branch de spec pusheada.

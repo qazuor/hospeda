@@ -1,0 +1,31 @@
+s/c1c03210/20-fase-1/V9b.md:519:   antigüedad, y el 90 y el 180 caían hasta 90 días antes de lo que esta cuenta dice.)* **Y durante
+s/c1c03210/10-corte/V3.md:235:  el 28 o 29 de febrero y el 31 de marzo; (b) renueva cada mes aunque pague una vez por año; (c) hasta
+s/c1c03210/10-corte/V3.md:584:2. **La prueba gratis también renueva cada mes, desde el día en que arrancó** (`L2-f1`, contra la
+s/c1c03210/10-corte/V2.md:130:  default), **días de trial** (los planes de Partner en cero), si permite pausa, si hereda Turista VIP
+s/c1c03210/10-corte/V2.md:446:vuelve disjuntas— y no puede vivir en el catálogo. **Partner**, con el trial en cero
+s/c1c03210/10-corte/V4.md:257:  Turista, el botón `Empezar`)
+s/c1c03210/10-corte/V4.md:614:**La cuota del trial se renueva cada mes, desde el día en que arrancó la prueba** (revisión del
+s/c1c03210/10-corte/V4.md:735:cualquier plazo. Hoy la única vertical en cero es Partner (`DEC-TRIAL-003`), y queda en cero. Con
+s/c1c03210/10-corte/V8a.md:383:| 19 | el aviso de **restitución**, cuando el cupo vuelve a alcanzar y las fichas se republican solas (`PB3`, `PB7`) | **cuáles volvieron**, **cuáles no** y **el criterio**: vuelve primero la que cayó al final, hasta llenar el cupo —y las fichas del sistema viejo que nunca se publicaron en el nuevo, primero y por antigüedad de carga (`V/03` §9, *«cuáles vuelven»*; FASE 9 vuelta 1, `N-G1-01`)—. Y que las que no entraron **siguen ahí y no se borran** | [DEC-DATA-003](../01-decisiones-vigentes.md#dec-data-003), `V/03` §9, `V/15` §4.3, `NUCLEO/07` §6 |
+s/c1c03210/10-corte/V8a.md:408:| **el listado de arreglos pendientes** (revisión del owner, 2026-09-28, C10) | los pedidos de arreglo abiertos, con su antigüedad, la fecha sugerida vencida y los que el dueño ya avisó que corrigió; desde ahí el admin cierra el pedido, baja la ficha o la levanta (`NUCLEO/08` §3). Sin él, un pedido que no baja la ficha no tiene quién lo vuelva a mirar (`V/03` §9, *«la moderación en dos niveles»*; [DEC-DATA-007](../01-decisiones-vigentes.md#dec-data-007)) |
+s/c1c03210/10-corte/V1.md:145:  publicada»*; turista, *«el botón `Empezar`»*; partner, **ninguno declarado**; una vertical sin
+s/c1c03210/00-indice.md:435:El capítulo 21 midió que **Gastronomía, Experiencia y Partner tienen cero filas** y que **no hay un
+s/c1c03210/00-indice.md:1184:El capítulo 21 midió que **Gastronomía, Experiencia y Partner tienen cero filas**, y que **no hay
+s/c1c03210/01-decisiones-vigentes.md:116:### DEC-TRIAL-003 — El trial es configurable por plan; Partner lo tiene en cero
+s/c1c03210/01-decisiones-vigentes.md:138:  forzarlo — Partner sí usa el motor de trial, con la duración en cero. Encenderlo mañana es
+s/c1c03210/01-decisiones-vigentes.md:167:Partner queda en cero.
+s/c1c03210/01-decisiones-vigentes.md:310:  lo dispara el botón `Empezar` del §47; (3) sí tiene, y arranca al usar una capacidad VIP.
+s/c1c03210/01-decisiones-vigentes.md:347:Partner queda en cero.
+s/c1c03210/01-decisiones-vigentes.md:2773:también se renueva cada mes, desde el día en que arrancó la prueba (contra la recomendación).
+s/c1c03210/01-decisiones-vigentes.md:4224:  camino»*** (`V/03` §9). Cualquier otro criterio —antigüedad, elección del dueño, el origen
+s/c1c03210/01-decisiones-vigentes.md:5186:  | filas a migrar en Gastronomía, Experiencia y Partner | **cero**, y **cero pagos históricos** (cap. 21) |
+s/c1c03210/01-decisiones-vigentes.md:12347:- **elige**: **2**: también se renueva cada mes, desde el día en que arrancó la prueba
+s/c1c03210/80-abiertos.md:166:- `V/docs/11-trial.md:464` — **El evento de activación de Partner** queda diferido, no respondido (`DEC-TRIAL-003`): hoy su trial está en cero **y no se enciende en esta versión** (revisión del owner, 2026-09-28, N7; §8).
+s/c1c03210/10-corte/B1.md:301:  autorizaciones propias del owner al monto mínimo, cancelando y devolviendo en la misma corrida) y a
+s/c1c03210/10-corte/B1.md:348:- **Entonces** mide el buscador, los lotes de cobro y las devoluciones al monto mínimo, cancela y
+s/c1c03210/10-corte/B1.md:612:2. **Una fila caduca cuando cambia lo que la sostiene**, no por antigüedad: una versión nueva de la API,
+s/c1c03210/20-fase-4/V7.md:745:  owner 2026-09-25, FASE 9 completa, 7c). Partner tiene cero filas, así que tampoco hay nada que
+s/c1c03210/04-catalogos.md:1217:cada 90 días sobre una ficha publicada y cubierta, y con 85 días de antigüedad al pausar la ficha se
+s/c1c03210/04-catalogos.md:1352:antigüedad, la fecha sugerida vencida y los que el dueño ya avisó.
+s/c1c03210/04-catalogos.md:6761:   autorizaciones propias del owner, al monto mínimo (`PC-2`), y cancelando y devolviendo en la
+s/c1c03210/04-catalogos.md:8112:**Estados** (`D/06` §Estados, §61): `VERIFIED`, se ejecutó y funciona como lo necesitamos, con evidencia; `NOT_SUPPORTED`, se ejecutó y el proveedor no lo permite, con evidencia; `PARTIALLY_SUPPORTED`, funciona con una restricción **nombrada**; `UNKNOWN`, no se probó, o la fila caducó —por un cambio en lo que la sostiene, no por antigüedad (`B/06` §8, regla 2: *«una fila caduca cuando cambia lo que la sostiene, no por antigüedad»*)—.

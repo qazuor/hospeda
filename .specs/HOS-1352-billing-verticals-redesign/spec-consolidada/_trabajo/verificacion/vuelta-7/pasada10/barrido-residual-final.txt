@@ -1,0 +1,4 @@
+rg exit 0
+./01-decisiones-vigentes.md:6222:> **Parte sin efecto** (adjudicación `PARCIAL`): «las doce dependencias entre épicas»: BC agrega la fila 15 y quedan trece. Lo supera: `.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:392` («**y BC suma la 15: son trece**»). Lo omitido del texto de arriba está marcado «[…]».
+
+Única coincidencia: cita histórica en nota Parte sin efecto; no regla viva.

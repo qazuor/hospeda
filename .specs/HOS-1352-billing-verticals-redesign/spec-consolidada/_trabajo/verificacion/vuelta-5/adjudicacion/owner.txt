@@ -1,0 +1,33 @@
+# OWNER — vuelta 5
+
+## CK · Transporte del aviso de cambio de cobertura
+
+Propuesta de letra; NO decidida. La última letra de la fuente congelada es CJ (P/docs/41-corte-del-mvp/10-decisiones-del-owner.md:224).
+Hallazgo único: H5-VA-A2-1; duplicado: H5-VB-03-1.
+
+Disyuntiva: ¿billing emite el aviso de cobertura después del commit sin entrega durable, como DEC-ARCH-009 y el contrato, o lo escribe en una cola durable, como exige la fila de B4?
+
+Evidencia verificada:
+- P/docs/12-contrato-de-cobertura.md:835–845 declara que el aviso no tiene transporte durable y que el reconciliador diario es la red; :828–833 advierte que esa red no corre la máquina de trial.
+- P/docs/01-decision-log.md:6149–6171, DEC-ARCH-009: el owner eligió el reconciliador diario. Hacer durable el aviso era una alternativa distinta, descartada.
+- B/descomposicion.md:138 manda encolar el aviso de cobertura en el outbox de U2, con atribución a FASE 5, lote 2 A. El texto está vivo, no tachado.
+- Leídos tanto A (P/docs/38-fase-5/10-decisiones-del-owner.md:55) como su 📌 aplicado (P/docs/01-decision-log.md:2477–2485): crean la pieza U2, su supresión, bitácora y correlación. No deciden reemplazar DEC-ARCH-009 ni amplían explícitamente el outbox de correos a eventos de dominio. La pregunta R5-10 (38-fase-5/00-consolidado.md:228–237) trata de quién construye la cola de correos.
+- En pristina, 03-contrato-de-cobertura.md:849 y 10-corte/B4.md:129, :349–350, :391–392 conservan ambos mandatos. El mismo texto de B4 está en g8/src/B4.md.
+
+1. Conservar el aviso no durable y el reconciliador diario — RECOMENDADA.
+   Ratificar DEC-ARCH-009 y retirar de B/descomposicion y de B4 la obligación de encolar este evento en U2. El aviso sigue saliendo después del commit; el outbox sigue siendo de correos. No cambia la necesidad de releer cobertura ni el reconciliador diario ni sus exclusiones.
+   Costo: corregir la fila fuente de B4, revisar sus requisitos derivados, AC y tests en g8/src/B4.md, re-congelar y regenerar. Revisar también las frases que vinculan la escritura del reloj de retención a ese encolado; no hacer un reemplazo ciego de palabras. U2 puede seguir siendo dependencia por otras obligaciones: no borrar la arista automáticamente.
+   Riesgo: se conserva el atraso admitido de hasta un día para los casos cubiertos por el reconciliador y la limitación ya declarada para trial. La decisión no promete recuperar el aviso de primer pago por ese reconciliador.
+
+2. Hacer durable el aviso de cobertura, conservando el reconciliador diario.
+   Reemplazar explícitamente la parte correspondiente de DEC-ARCH-009 y del contrato. Definir el transporte de eventos con escritura transaccional y entrega después del commit: identidad/deduplicación, reintentos, recuperación de una entrega interrumpida, confirmación y observabilidad. Decidir si U2 aloja ese transporte separadamente de sus correos; no aplicar opt-out, rebote duro ni tope diario a un evento de dominio.
+   Costo: ampliar contrato, modelo y alcance de la pieza que lo construye; ajustar AC/tests, dependencias y presupuesto del corte; re-congelar y regenerar. El reconciliador sigue siendo útil ante avisos incorrectos y vencimientos por fecha, no sólo pérdidas de transporte.
+   Riesgo: más estado y fallos operativos, consumidores idempotentes y posible crecimiento del alcance de U2. La palabra «encolar» no alcanza para cerrar esas decisiones.
+
+Ejemplo común: Juan es anfitrión de una cabaña en Colón y se suscribe al Básico la semana siguiente al corte. El pago se acredita, se escribe el nuevo estado de cobertura y el proceso cae antes de entregar el aviso a verticales. La lectura del contrato ya debe mostrar el estado confirmado.
+- Opción 1: el aviso puede perderse. Para una ficha comprendida en su población, el reconciliador diario compara cobertura y corrige el estado dentro de su cadencia. Si Juan aún tenía trial activo, no se puede prometer que esa corrida lo convierta: la fuente excluye la máquina de trial de esa red.
+- Opción 2: queda una entrega pendiente durable, que otro proceso retoma; verticales relee cobertura y procesa el evento sin duplicar efectos. El reconciliador diario continúa cubriendo diferencias y vencimientos aunque no haya evento.
+
+Tras la elección: registrar CK y su 📌, armonizar ambas fuentes, re-congelar y aplicar la variante elegida a la consolidada. No hay un sale/entra incondicional mientras las dos opciones sigan abiertas. H4-VB-09-2 ya fue aplicada: trataba el instante del encolado, no decidía este transporte; su premisa deberá revisarse según CK.
+
+P = .specs/HOS-1352-billing-verticals-redesign; B = .specs/HOS-1354-billing-cobro-y-proveedor. Todas las fuentes citadas son las congeladas bajo v/fuentes/.

@@ -1,0 +1,107 @@
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:42:| AM | forma de las US y los AC | 1 | sí | por pieza (30); US por actor (anfitrión, dueño de comercio, partner, admin, turista, sistema/cron); AC en Given/When/Then con id `AC:<pieza>:n`; el *«Lista cuando»* es el AC de salida |
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:43:| AN | forma del mapa AC → test | 1 | sí | por pieza, con tipos de lista cerrada: unitario, integración con DB, ruta API (contrato de errores), guard estático, migración (desde cero y sobre datos), e2e web/admin, smoke manual con etiqueta (local/staging/prod, MP sandbox). Cada invariante con ≥1 test; cada transición con test de integración, incluidas las prohibidas; cada uno de los 35 guards con su prueba de mutación |
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:172:  fichas. No hay forma de propagar bien antes de saber cómo quedó cada racimo.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:232:  §27/§28 necesitan el mismo orden para que "upgrade" y "downgrade" signifiquen algo. Ninguno
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:294:  enforcement del §28.1 — que además pide *"informar antes"*, y acá no hay a quién informar
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:323:- **Problema**: §27 (upgrade inmediato) y §28 (downgrade a fin de ciclo) definen el cambio de
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:418:- **Motivo**: es lo que el §56 preveía, y la medición confirma su premisa de forma aplastante:
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:521:- **Decisión**: **(2)**. Y con eso queda establecida la forma general: **cada vertical declara
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:696:  4. **Conviene —no forma parte de la decisión— avisarle por correo antes de cancelar.** Al
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:775:     para un problema de la misma forma. Conviene que usen la misma señal.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:858:  2. **Mitigación sugerida — no forma parte de la decisión**: que el acto de **crear una
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:880:- **Motivo**: consistente con `DEC-ENT-004`, que resolvió el mismo dilema de la misma forma.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1180:    **necesita un medio de pago**, y no tenemos la tarjeta del cliente de forma reusable
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1185:  prorrateada **al instante** en el upgrade y **difiere** el downgrade al próximo ciclo. La
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1197:  - **(A) deja un agujero que el downgrade diferido no cierra**: subir de plan y **cancelar antes
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1204:     desde ya), y el **downgrade** se ejecuta como una **mutación programada para el fin del
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1207:  2. ~~**El downgrade tiene que ser diferido de verdad.** Si se muta el monto en el momento en que
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1218:     cierra la decisión (C) de arriba, no el downgrade. **El downgrade no necesita la cola de
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1241:### DEC-SUB-008 — El downgrade muta el monto ya, baja los entitlements al fin del ciclo, y el excedente se avisa antes de tocarlo
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1244:- **Problema**: el §28 pide que el downgrade se aplique al fin del ciclo conservando el plan
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1262:  3. **El excedente se avisa, no se ejecuta por sorpresa.** Al pedir el downgrade se le muestra
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1269:  - **Bloquear el downgrade hasta que ordene empuja a cancelar del todo.** Alguien que baja porque
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1313:  así que hay que emularlo — y la forma obvia de emularlo es la peligrosa.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1451:  **Si resultara que el silencio no alcanza, esta decisión cambia de forma**: haría falta una
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1488:  downgrade ya tiene el monto mutado al precio del plan destino (`DEC-SUB-008`) y su `S38` encolado
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1494:  `B/12` §3.2 quiso preservar: ningún aumento entra por la puerta del downgrade. `B2` suma ese
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1558:     proveedor emite **tres notificaciones por reembolso, en dos formatos distintos para el mismo
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1595:  desconocidos. La forma canónica de hacerlo —dos extracciones paralelas, la nuestra y la del
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1653:       motivo nuevo, que entra al listado accionable. Es la forma del 📌 de arriba —reintentar y, a
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1752:     de `A5` y `A6`, hasta 3 días (la forma del primer 📌 de `DEC-CONC-002`). Antes `B/09` §3 lo contaba entre los que cancelan y ninguna fila de `B/03`
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1812:  registro ni trámite**, y **24 horas** para informar el código de identificación.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1865:  2. **Un reembolso emite TRES notificaciones, en DOS formatos distintos para el mismo hecho**
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1869:  4. El riesgo de plataforma de `R-MP-01` **cae entero sobre este punto**: es la única capacidad
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1896:    formas de pedirlo, cuatro `200`, cero cambios, `last_modified` congelado en las cuatro — con el
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1978:    suscripción viva**. Dos formas, dos `200`, `free_trial` siguió `null`, `last_modified`
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1981:    Cuatro formas, cuatro `200`, nada escrito.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2259:     información suficiente para investigar, alerta en Admin, y cero decisiones destructivas
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2284:  no las tiene o las tiene de una forma que no sirve. La segunda, que el reparto actual entre
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2325:  cobrar ningún beneficio, y la frontera está rota de una forma medida y no accidental. La (1)
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2352:     sobrevive y lo que se revisa es la forma. Varias mejoran si el proveedor nuevo puede lo que
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2424:- **Decisión**: **(2)**, y con una precisión del owner que es la que le da forma: **las dos
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2451:  ninguno coincide (`F-1B-132`)— y se acota de dos formas: la frontera tiene **una sola fuente**
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2631:  leer de dos formas muy distintas. Una es *«cada una se desarrolla sin esperar a la otra»*; la
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2654:- **Motivo**: es la misma forma de la **condición A de `DEC-ARCH-004`** — convertir *«no lo hagas»*
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2766:  escritura queda puesta hasta el reintento**: la plataforma entera, las cinco cuentas incluidas,
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2770:  acepta que, si el reintento tarda días, la plataforma quede en sólo lectura ese tiempo (FASE 5,
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2791:  los mismos archivos en la próxima, que es **la misma forma del defecto que la FASE 8 encontró**
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2899:  después certifica lo que ya se hizo; no protege. Es la misma forma que `DEC-ARCH-004` ya le dio a
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2950:- **Por qué no la (3)**: sería **una segunda forma de declarar entitlements**, que ~~`V/02` §1.2~~ `NUCLEO/02` §1.2
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3165:    el paso 5; se acepta que los del resto de la plataforma paren esas horas (E).
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3185:    puesta hasta el reintento**: la plataforma entera, las cinco cuentas incluidas, queda en sólo
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3272:  guards aplicó exactamente esta forma sobre 45 scripts y dio **7 `MUERE` / 6 `REVISAR` / 32
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3557:  forma de terminar.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3558:- **Desviación declarada del PDR §34**, que pide *«scope configurable, de forma equivalente al
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3732:  pierde. Quien recibe la revocación se entera cuando intenta seguir usando la plataforma.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3843:  3. **La fuente no cambia de forma**: sigue transportando `addon_instance.addon_version_id` y
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4217:  da salida*. Acá **volvió a Premium y pagó**, que es la forma más explícita que tiene de decir qué
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4521:  —*«declará tus escrituras»*— que un guard estático **sólo puede comprobar en su forma, no en su
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4566:  > pasa a ser lo que siempre fue: **una medición de un momento**, en la misma forma que usan los
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4600:    diferencia es medible y no de gusto — aquél sólo podía comprobar su **forma** (*que la fila diga
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4848:  escrita, y la justificación es falsa. Dos formas:
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4856:- **La forma operativa, sacada de las cuatro que fallaron**: **la justificación no puede empezar con
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4860:- **Y la forma correcta no hay que inventarla: ya está escrita, por el mismo equipo, en el mismo
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4936:  - **Dejar el saldo esperando** a que la persona se suscriba de nuevo: **es la forma que `B/16`
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4975:  información con la que evitar esa pérdida**, y decirlo es además lo que empuja a completar el
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4997:### DEC-DATA-004 — Se ratifican las tres formas que la tanda eligió sin consultar: la rama de `PB7`, el orden del cupo y la lista de los cinco
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4999:- **Fecha**: 2026-09-23 · **Estado**: ACCEPTED — **la cifra de `H1`, precisada el 2026-09-25**: los consumidores de `inactiva_desde` son **seis**, no cinco (FASE 8 completa `F-8CD1-009`; `V/02` §2.5). Se ratificó la forma de la lista, no su cifra · **Decide**: owner
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5000:- **Por qué esta decisión existe**: la tanda 9-bis-4 tomó tres elecciones de forma y las dejó
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5014:  camino»*** (`V/03` §9). Cualquier otro criterio —antigüedad, elección del dueño, el origen
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5025:  lugares o una enmienda a una decisión cerrada. **Entre dos formas que el guard no distingue, queda
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5030:  verde—. Eso **no es una elección de forma**: es un defecto `MEDIA` y lo arregla la tanda.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5042:  y no estaba definida en ninguno**. El guard más cargado del programa **no podía formar su
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5095:    humano la cierre: es ***«un instrumento abierto sin fecha de cierre»***, la forma que `B/16` §1.3
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5228:  sin dueño, sin vencimiento y sin nadie que lo mire»*** — la forma que `B/16` §1.3 rechaza por
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5268:  Las dos formas conviven porque describen dos actos distintos: **enumeración para lo que cierra una
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5271:  - **Texto libre también acá**, por uniformidad con `DEC-GRANT-008`: una sola forma, pero **ningún
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5274:  - **Declararlo como regla general de dos formas**: es lo que en los hechos queda, y está escrito
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5296:  contradecir `B/05` §3 y sin duplicar** información que ya existe en otro lado. Es superficie, no
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5322:- **Y hay una razón de forma que pesa igual**: con `DEC-SUB-016` **nosotros** alargamos esa ventana
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5355:     forma aplicada a los escritores**.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5369:  cierra, la rama que no vale se borra. Es de la misma forma que ésta: un criterio de terminación,
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5387:  3. **Hay precedente de la misma forma**: `NUCLEO/01` §1.2 → `V9`.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5489:  amplía su predicado—, y lo que reemplaza es **un argumento en prosa**, que es la forma que el
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5567:    elegirlos sería decidir con menos información que la que ya tenemos sobre MP.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5658:  canónico— **devuelve `403` en las cuatro formas de pedirlo**, con el mensaje idéntico *«The
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5661:  pedido: no hay forma de armar el request que lo evite.** Y la vía alternativa está cerrada por diseño
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5684:  se compensa con código, y las cuatro formas de pedirlo están medidas. **Es el primer caso donde esa
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5728:- **Decisión, y se registra de una forma que NO es un apartamiento del método**: **el sistema no
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5837:  llamada dentro de una transición que ya existe**, de la misma forma que `S23`; no es un job nuevo.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6368:  suscribirte»*—, con la misma forma que `DEC-MP-008`.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6402:- **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el 2026-09-27, con OK del owner** (FASE 9 vuelta 2, `R2`, `R21` y `R21-b`: el cobro sobre la lápida posterior al día del corte y el titular que sólo conoce el proveedor; ver su 📌) — **y precisada otra vez con OK del owner** (FASE 9 vuelta 2, verificación: `V2-a` el 2026-09-27, `V2-m` y `V2-r` el 2026-09-28: la fecha del pago, el 1b que la espera y las anuales del viejo; ver su segundo 📌) — **y precisada el 2026-09-28, con OK del owner** (revisión del owner, C12, sobre el punto 3 de la decisión; ver su último 📌); **y precisada otra vez el 2026-09-29, con OK del owner** (verificación corta, lote P-B: el detector lista también los cobros del día del corte sin `payment`; ver su último 📌); **y precisada el 2026-09-30, con OK del owner** (FASE 9 vuelta 3, lotes F y G: nada se devuelve y el titular que sólo conoce el proveedor; ver su penúltimo 📌); **y precisada otra vez el 2026-09-30, con OK del owner** (FASE 5, simplificación del corte, lotes C y D, con el OK del lote E, y J del lote 1: siguen los puntos 1 y 3 y el hecho del lote F; caen los 📌 del 27/09, de `V2-a`/`V2-m`/`V2-r` y del 29/09, y el del 30/09 en su lote G; el punto 2 queda sin sujeto; ver su último 📌); **y precisada una vez más el 2026-09-30, con OK del owner** (FASE 5, lote de la aplicación, letra A, **contra la recomendación**: tras un aborto, la plataforma queda en sólo lectura hasta el reintento; ver su último 📌) · **Decide**: owner
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6519:  **la regla que bloquea toda escritura hasta el reintento**: la plataforma entera, las cinco
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6718:- **Motivo**: es la forma que `V/18` §1.2 ya eligió para la página —*«una capacidad que se tiene o no
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6870:  rol. La recomendación inicial era la 1 (sacar sólo `delete`); tras pedir más información, el
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6956:  ese día. Quedaban dos formas abiertas: el dueño con varias fichas a la vista (`L1-a`) y las fichas
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7018:     cortesía. De ellas se conserva la información de sus fichas. **Cada una tiene una sola ficha**:
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7100:### DEC-SUB-023 — Migrar a los clientes de un plan retirado es un tercer camino, aparte del upgrade y del downgrade
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7118:  `DEC-SUB-007` ni el downgrade de `DEC-SUB-008`: es un tercer camino.
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7134:  antigüedad. Una cortesía temporal vigente el día de la migración espera a volver. Y que pausados y
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7150:  downgrade, y el motivo 24 deriva el precio de la versión que rige el período que cubre el cobro. Un
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7169:  quiera, compara también la forma de las respuestas, avisa por correo y no ajusta nada; si no
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7802:  plataforma entera en sólo lectura (`DEC-MIG-002`). D: es la forma que el diseño ya usa, y esperar
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7863:     no se reconstruye; si cambia la forma de una tabla que tiene filas el día del corte; o si la
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8115:  9. **La forma** (AM): US y AC por pieza (30), US por actor (anfitrión, dueño de comercio, partner,
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8180:  el 5c en producción) o guard estático; `trazar.py` la acepta. Precisa AM sin cambiar la forma de
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8209:  de su fase en el checklist de smoke, con el formato de `B13a`**; **las listas que viven en el
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8224:| | Recontadas el 2026-09-16 leyendo los encabezados, no a mano: la tabla venía arrastrando **un error de uno** desde antes de esta sesión. La plantilla del formato (`### DEC-<AREA>-<NNN>`) no es una decisión y no se cuenta |

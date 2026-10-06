@@ -1,0 +1,13 @@
+# VA-A7 · fuente → spec · B/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:166 · «el `status_detail` de ese único intento, con un mapa y un genérico obligatorio» · distinta en s/b249f841/04-catalogos.md:3358 («el `status_detail` de ese único intento, con un mapa»): S16 pierde el mensaje obligatorio para los motivos de rechazo que no estén mapeados. Buscado en toda s/b249f841/, incluidas B3, B13a, sus AC/TEST y DEC-MP-004: no hay una cláusula equivalente que cubra los detalles desconocidos. La regla sigue vigente en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4812–4813; ninguna decisión posterior del log ni de docs/41-corte-del-mvp/10-decisiones-del-owner.md la reemplaza. Permite implementar el mapa sin respuesta para un status_detail nuevo. · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1852 · «se escribe *«por el proveedor»*» · distinta en s/b249f841/04-catalogos.md:4542 («corre **`P3` o `P4`** sobre el pago, según el acumulado (§6). **Lo que suma al acumulado es la suma de esas devoluciones**»): RF3 omite registrar por dónde se ejecutó la devolución al pasar a EXECUTED; AC:B6:5, s/b249f841/10-corte/B6.md:131–140, también omite esa escritura. Buscado en toda s/b249f841/: B5:849 conserva en el modelo «en `EXECUTED` por dónde se ejecutó», pero ningún AC, TEST ni efecto de RF3 exige escribir el origen «por el proveedor»; RF4 sólo cubre el asiento de devoluciones por fuera. El esquema no sustituye el escritor de este dato de trazabilidad. Revisados DEC-RF-008 y sus precisiones en el decision log, y docs/41-corte-del-mvp/10-decisiones-del-owner.md: no retiran este efecto. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/03-maquinas-de-estado.md | 60 transiciones (274 campos), 6 prohibiciones y reglas complementarias de §§3–10; cotejo de todo el texto vivo, excluyendo tachados y decisiones reemplazadas | 1–3062 | 0 | 2 |

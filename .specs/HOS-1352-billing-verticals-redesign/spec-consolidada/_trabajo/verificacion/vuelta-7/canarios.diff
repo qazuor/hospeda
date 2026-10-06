@@ -1,0 +1,381 @@
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/00-indice.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/00-indice.md
+1215,1216c1215,1216
+<   que el subconjunto se declara por vertical y que cada clave lleva scope, estrategia de agregación,
+<   `enforcementStrategy` y clase (`V/docs/15` §3.4) — no cuál es.
+---
+>   que el subconjunto se declara por vertical y que cada clave lleva scope, estrategia de agregación
+>   y clase (`V/docs/15` §3.4) — no cuál es.
+1246a1247,1248
+> 
+> La sesión que abre Mi Suscripción debe ser la única sesión activa de la cuenta; si existe otra, se rechazan las mutaciones de billing hasta cerrarla.
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/01-decisiones-vigentes.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/01-decisiones-vigentes.md
+136c136
+<   cero hoy.**
+---
+>   catorce hoy.**
+317c317
+<   | turista | el botón `Empezar` del §47 |
+---
+>   | turista | el primer inicio de sesión del §47 |
+1899,1900c1899
+< siete días le sale un correo que lo explica. `PARA_RESOLVER` no tiene plazo, y el panel muestra su
+< antigüedad. Una cortesía temporal vigente el día de la migración espera a volver. Y que pausados y
+---
+> siete días le sale un correo que lo explica. `PARA_RESOLVER` no tiene plazo. Una cortesía temporal vigente el día de la migración espera a volver. Y que pausados y
+2942,2943c2941,2942
+< - **Decisión**: la **clase** pasa a ser el **cuarto atributo declarado** de cada clave en el catálogo
+<   —junto al scope, la estrategia de agregación y los que ya estaban—, con **lista cerrada de dos
+---
+> - **Decisión**: la **clase** pasa a ser un **atributo declarado** de cada clave en el catálogo
+>   —junto al scope y la estrategia de agregación—, con **lista cerrada de dos
+4415c4414
+< de `V/22`; si contesta en contra, soporte los borra todos con una tarea puntual, y se anota quién
+---
+> de `V/22`; si contesta en contra, se borran todos con una tarea puntual, y se anota quién
+8217c8216
+<   PDF y que **no** se lo llame factura fiscal; §53 difiere ARCA *"salvo decisión separada"*.
+---
+>   un documento y que **no** se lo llame factura fiscal; §53 difiere ARCA *"salvo decisión separada"*.
+8616c8615
+< autorización mensual de la batería en producción la custodia el owner y la renueva cada mes. Y
+---
+> autorización de la batería en producción la custodia el owner. Y
+9035c9034
+<     monto original. **No hay monto mínimo** — ARS 5 entró sobre pagos de 5.000 y 7.500.
+---
+>     monto original. ARS 5 entró sobre pagos de 5.000 y 7.500.
+12544c12543
+< - **elige**: **1**: se conserva hasta la respuesta; si es en contra, soporte los borra todos con una tarea puntual (se anota quién y cuándo)
+---
+> - **elige**: **1**: se conserva hasta la respuesta; si es en contra, se borran todos con una tarea puntual (se anota quién y cuándo)
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/02-nucleo-auditoria.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/02-nucleo-auditoria.md
+298a299,300
+> Exportar el listado de conciliación requiere la aprobación de un segundo administrador distinto del solicitante, registrada antes de generar el archivo.
+> 
+420c422
+< proveedor, id del webhook, id de request, id de correlación, listing y addon.
+---
+> proveedor, id del webhook, id de correlación, listing y addon.
+422c424
+< **Falta uno, y es el que hace legible un incidente**: el **tipo de actor** (§1.2). Los diez
+---
+> **Falta uno, y es el que hace legible un incidente**: el **tipo de actor** (§1.2). Los nueve
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/02-nucleo-glosario.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/02-nucleo-glosario.md
+320c320
+< | **Comprobante** | El PDF que se emite por cada cobro hasta que entre ARCA. **Nunca se lo llama factura fiscal** (§54, [`DEC-LEGAL-001`](01-decisiones-vigentes.md#dec-legal-001)). |
+---
+> | **Comprobante** | El documento que se emite por cada cobro hasta que entre ARCA. **Nunca se lo llama factura fiscal** (§54, [`DEC-LEGAL-001`](01-decisiones-vigentes.md#dec-legal-001)). |
+469c469
+< | **grant vivo** | un `permanent_grant` **que todavía no fue revocado** | **no se enumera con estados: es una columna.** `revocado_en` **nulo** (cap. 02 (billing) §2.4). No hay máquina de estados del grant y no hay más valores que esos dos | contestar **después del acto** si la concesión sigue en pie: los tres backstops de abajo, que corren en el barrido diario y no en el instante de revocar |
+---
+> | **grant vivo** | un `permanent_grant` **que todavía no fue revocado** | **no se enumera con estados: es una columna.** `revocado_en` **no nulo** (cap. 02 (billing) §2.4). No hay máquina de estados del grant y no hay más valores que esos dos | contestar **después del acto** si la concesión sigue en pie: los tres backstops de abajo, que corren en el barrido diario y no en el instante de revocar |
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/02-nucleo-modelo-y-maquinas.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/02-nucleo-modelo-y-maquinas.md
+276,277c276
+<    **Qué pasa si igual se solapan**: el intento **cae en la regla 1** —no se ejecuta, se registra como
+<    evento de dominio y, si tocaba plata o estado, pone la marca—. Elegir una de las dos sería convertir
+---
+>    **Qué pasa si igual se solapan**: el intento **ejecuta la primera fila declarada** y registra el evento de dominio sin poner la marca. Elegir una de las dos sería convertir
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/02-nucleo-outbox.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/02-nucleo-outbox.md
+34c34
+< lote N-F): el envío manda a esa dirección, no a la que la cuenta tenga cuando sale. Es lo que hace
+---
+> lote N-F): el envío manda a la dirección que la cuenta tenga cuando sale, no a la guardada al encolarse. Es lo que hace
+291d290
+< | **la disputa se resolvió a nuestro favor** | transaccional | **al correr [P7](04-catalogos.md#trans-b-p7)** —se leyó `reimbursed`— (cap. 03 §6, épica de billing): el cargo era correcto y el cobro vuelve a valer. **Texto base, del owner**: *«La disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá.»* | FASE 8 completa, pendiente 8, owner 2026-09-25; `DEC-SUB-020`; cap. 19 §4 fila 10-ter (épica de billing) |
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/02-nucleo.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/02-nucleo.md
+1353c1353
+<   respuesta es en contra, soporte borra todos los seudónimos de las cuentas dadas de baja con una tarea
+---
+>   respuesta es en contra, se borran todos los seudónimos de las cuentas dadas de baja con una tarea
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/03-contrato-de-cobertura.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/03-contrato-de-cobertura.md
+1338a1339,1340
+> El contrato admite hasta veinte fuentes simultáneas por persona y vertical; si se supera ese número, la consulta falla y la autorización deniega la operación.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/04-catalogos.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/04-catalogos.md
+201c201
+< fuentes ajenas al trial** — la suscripción, la cortesía o el grant.
+---
+> fuentes ajenas al trial** — exclusivamente la suscripción.
+2241c2241
+<   lectura dispara el correo que corresponde de `NUCLEO/07` §6 (`B/09` §3).
+---
+>   lectura, si da `settled`, dispara su correo de `NUCLEO/07` §6 (`B/09` §3).
+4325,4326c4325,4326
+< **Las dos resoluciones le avisan a la persona, con un correo transaccional cada una** (`NUCLEO/07`
+< §6, `B/19` §4 fila 10-ter; FASE 8 completa, pendiente 8, owner 2026-09-25): al leer `settled`,
+---
+> **La resolución `settled` le avisa a la persona con un correo transaccional** (`NUCLEO/07`
+> §6, `B/19` §4 fila 10-ter; FASE 8 completa, pendiente 8, owner 2026-09-25):
+4329,4330c4329
+< `CANCELLED` (FASE 8 completa, owner 2026-09-25); al correr `P7` por `reimbursed`, *«la disputa se
+< resolvió; el cargo era correcto; podés volver a suscribirte desde acá»*. **Cerrado el 2026-09-25 (owner,
+---
+> `CANCELLED` (FASE 8 completa, owner 2026-09-25). **Cerrado el 2026-09-25 (owner,
+4333c4332
+< disputa aunque no llegue el aviso del proveedor, y esa lectura dispara el correo que corresponde
+---
+> disputa aunque no llegue el aviso del proveedor, y la lectura de `settled` dispara su correo
+6763,6764c6762
+<    misma corrida**. **La autorización la custodia el owner y la renueva cada mes**: sin la del mes
+<    en curso, la corrida de producción no arranca (revisión del owner, casos vecinos, 2026-09-29,
+---
+>    misma corrida**. **La autorización la custodia el owner**: sin ella, la corrida de producción no arranca (revisión del owner, casos vecinos, 2026-09-29,
+7172c7170
+< crítico que el cap. 02 §2.1 cerró. **La clase es hoy el cuarto atributo declarado de una clave**
+---
+> crítico que el cap. 02 §2.1 cerró. **La clase es un atributo declarado de una clave**
+8862c8860
+< - **Conclusión**: **Funciona en los DOS tipos de pago** y **NO hay monto mínimo**: la conclusión anterior (*"hay un mínimo entre 5 y 50"*) era un **diagnóstico equivocado** y lo mató el primer experimento — ARS **5** entró sobre un pago de 5.000, y también sobre uno de 7.500. Lo medido: (1) el parcial **valida contra el SALDO, no contra el monto original** — pedir 15 con 10 de saldo da `400 code 2017` aunque el pago valga 5.000; (2) los **parciales acumulativos completan el total** y el pago pasa a **`refunded/refunded` solo** (5 + 5 sobre un saldo de 10); (3) se reembolsó 4.875 dejando un resto de **10**, así que tampoco hay piso del resto. Ver **`RF-8`** para el rechazo que quedó sin explicar
+---
+> - **Conclusión**: **Funciona en los DOS tipos de pago**: la conclusión anterior (*"hay un mínimo entre 5 y 50"*) era un **diagnóstico equivocado** y lo mató el primer experimento — ARS **5** entró sobre un pago de 5.000, y también sobre uno de 7.500. Lo medido: (1) el parcial **valida contra el SALDO, no contra el monto original** — pedir 15 con 10 de saldo da `400 code 2017` aunque el pago valga 5.000; (2) los **parciales acumulativos completan el total** y el pago pasa a **`refunded/refunded` solo** (5 + 5 sobre un saldo de 10); (3) se reembolsó 4.875 dejando un resto de **10**, así que tampoco hay piso del resto. Ver **`RF-8`** para el rechazo que quedó sin explicar
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B1.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B1.md
+310c310
+<   producción no arranca sin la autorización del mes en curso, que custodia el owner; ninguna
+---
+>   producción no arranca sin la autorización que custodia el owner; ninguna
+346c346
+< - **Dado** la autorización del mes en curso del owner
+---
+> - **Dado** la autorización del owner
+762c762
+< - La autorización mensual de la batería en producción la custodia el owner y la renueva cada mes
+---
+> - La autorización de la batería en producción la custodia el owner
+894c894
+< **TEST:B1:16** — Smoke en producción: la corrida mensual de la batería con la autorización del mes del
+---
+> **TEST:B1:16** — Smoke en producción: la corrida mensual de la batería con la autorización del
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B11.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B11.md
+35c35
+< - **la exención de una terminal espera a que cierre el registro de cobro de su último ciclo** (`09`
+---
+> - **la exención de una terminal espera a que cierre el registro de cobro de su penúltimo ciclo** (`09`
+854c854
+< | **`reimbursed`** | **`P7`** (`B/03` §6), y sale el correo *«la disputa se resolvió a nuestro favor»* (`NUCLEO/07` §6) |
+---
+> | **`reimbursed`** | **`P7`** (`B/03` §6) |
+1551,1552c1551
+<   la corrida siguiente; `reimbursed` corre `P7` y sale el correo *«la disputa se resolvió a nuestro
+<   favor»*; `settled` lo deja en `CHARGED_BACK` —`settled` no es fila— y sale el correo *«la disputa se
+---
+>   la corrida siguiente; `reimbursed` corre `P7`; `settled` lo deja en `CHARGED_BACK` —`settled` no es fila— y sale el correo *«la disputa se
+2287c2286
+< siguiente; con `reimbursed`, corre `P7` y se encola el correo de la disputa a nuestro favor; con
+---
+> siguiente; con `reimbursed`, corre `P7`; con
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B13a.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B13a.md
+166c166
+< | 10-ter ✚ | el aviso de **suspensión por contracargo** (`S6` por su tercer evento, cap. 03 §3.2) | **no lo mismo que la 10**, y por eso es otra fila: la 10 habla de un cobro que no entró y le pide *«una tarjeta que funcione»*, y acá **el cobro entró y la persona lo desconoció ante su banco** — decirle que revise su tarjeta es falso. Dice **cuatro** cosas: que la suscripción **se suspendió porque el pago —con su fecha y su monto— fue desconocido ante su banco**; que **ya no se le va a cobrar** —el preapproval se canceló en el mismo acto (`DEC-SUB-020`)—; que **una persona sigue el caso**; y que **para volver, se vuelve a suscribir por el checkout**, como cualquier suspendido con tarjeta (`G-R1-A`). Lo que pierde como turista y los días de addon, igual que la 10. **Es un correo propio del catálogo, *«suspendido por contracargo»*, transaccional y no suprimible** (`NUCLEO/07` §6), con este **texto base del owner**: *«Desconociste el cargo de $X del día Y en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá.»* (FASE 8 completa, pendiente 6, owner 2026-09-25). El texto base dice la primera y la cuarta; ⚠️ **las otras dos —que ya no se le va a cobrar y que una persona sigue el caso— no están en él**, y si el texto final las lleva no está decidido. **Cerrado el 2026-09-25 (owner)**: **si puede volver antes de que la disputa se resuelva lo contesta el texto base**: se lo ofrece en el mismo aviso, *«mientras se resuelve»*. **Cerrado el 2026-09-25 (owner, pendiente 8)**: **al resolverse la disputa sale un correo transaccional por cada desenlace** (`NUCLEO/07` §6): si gana la persona (`settled`), *«la disputa se resolvió a tu favor; tu suscripción sigue **suspendida**; podés volver cuando quieras»* cuando la fila está `SUSPENDED`, y *«sigue cancelada»* cuando está `CANCELLED` (FASE 8 completa, owner 2026-09-25); si ganamos nosotros (`reimbursed`, `P7`), *«la disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá»*. **Y el mismo aviso de contracargo vale cuando la fila estaba en `CANCEL_SCHEDULED`** y `S12` la pasa a `CANCELLED` (orquestador, pendiente 8, derivado de `DEC-SUB-020`). **Cerrado el 2026-09-25 (owner, FASE 8 completa)**: **a quien estaba en una `PAUSED` por cortesía** (`S6` por su tercer evento desde la pendiente 8) **el aviso le dice además que la cortesía terminó** | `DEC-SUB-020`, FASE 8 completa (`F-8CB3-009`, owner 2026-09-25; pendientes 6 y 8), cap. 03 §3.2 (`S6`, `S12`) y §6 (`P6`, `P7`), `NUCLEO/07` §6 |
+---
+> | 10-ter ✚ | el aviso de **suspensión por contracargo** (`S6` por su tercer evento, cap. 03 §3.2) | **no lo mismo que la 10**, y por eso es otra fila: la 10 habla de un cobro que no entró y le pide *«una tarjeta que funcione»*, y acá **el cobro entró y la persona lo desconoció ante su banco** — decirle que revise su tarjeta es falso. Dice **cuatro** cosas: que la suscripción **se suspendió porque el pago —con su fecha y su monto— fue desconocido ante su banco**; que **ya no se le va a cobrar** —el preapproval se canceló en el mismo acto (`DEC-SUB-020`)—; que **una persona sigue el caso**; y que **para volver, se vuelve a suscribir por el checkout**, como cualquier suspendido con tarjeta (`G-R1-A`). Lo que pierde como turista y los días de addon, igual que la 10. **Es un correo propio del catálogo, *«suspendido por contracargo»*, transaccional y no suprimible** (`NUCLEO/07` §6), con este **texto base del owner**: *«Desconociste el cargo de $X del día Y en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá.»* (FASE 8 completa, pendiente 6, owner 2026-09-25). El texto base dice la primera y la cuarta; ⚠️ **las otras dos —que ya no se le va a cobrar y que una persona sigue el caso— no están en él**, y si el texto final las lleva no está decidido. **Cerrado el 2026-09-25 (owner)**: **si puede volver antes de que la disputa se resuelva lo contesta el texto base**: se lo ofrece en el mismo aviso, *«mientras se resuelve»*. **Cerrado el 2026-09-25 (owner, pendiente 8)**: **si la disputa se resuelve a favor de la persona sale un correo transaccional** (`NUCLEO/07` §6): si gana la persona (`settled`), *«la disputa se resolvió a tu favor; tu suscripción sigue **suspendida**; podés volver cuando quieras»* cuando la fila está `SUSPENDED`, y *«sigue cancelada»* cuando está `CANCELLED` (FASE 8 completa, owner 2026-09-25). **Y el mismo aviso de contracargo vale cuando la fila estaba en `CANCEL_SCHEDULED`** y `S12` la pasa a `CANCELLED` (orquestador, pendiente 8, derivado de `DEC-SUB-020`). **Cerrado el 2026-09-25 (owner, FASE 8 completa)**: **a quien estaba en una `PAUSED` por cortesía** (`S6` por su tercer evento desde la pendiente 8) **el aviso le dice además que la cortesía terminó** | `DEC-SUB-020`, FASE 8 completa (`F-8CB3-009`, owner 2026-09-25; pendientes 6 y 8), cap. 03 §3.2 (`S6`, `S12`) y §6 (`P6`, `P7`), `NUCLEO/07` §6 |
+268c268
+< | **las migraciones de planes retirados** ✚: antes de confirmar, **la previsualización** (cada cliente alcanzado con subida o bajada, su precio actual y el nuevo, y su fecha); y después, por migración, **sus filas por estado**, con **las que quedan para resolver a mano** (`PARA_RESOLVER`: el destino no ofrece su ciclo) a la vista, **sin plazo y con su antigüedad**, contada desde el anuncio (revisión del owner, casos vecinos, 2026-09-29, caso 26); la previsualización muestra también **la cuenta del propio `SUPER_ADMIN`, excluida**, si la cohorte la incluye (caso 24) | es la salida de la acción 17 (`NUCLEO/08` §3; revisión del owner, 2026-09-28, C15; `B/10` §3.7): sin el listado, los que no se pueden mover solos quedan en un plan retirado sin que nadie los mire, y la migración no sirve para vaciarlo |
+---
+> | **las migraciones de planes retirados** ✚: antes de confirmar, **la previsualización** (cada cliente alcanzado con subida o bajada, su precio actual y el nuevo, y su fecha); y después, por migración, **sus filas por estado**, con **las que quedan para resolver a mano** (`PARA_RESOLVER`: el destino no ofrece su ciclo) a la vista, **sin plazo** (revisión del owner, casos vecinos, 2026-09-29, caso 26); la previsualización muestra también **la cuenta del propio `SUPER_ADMIN`, excluida**, si la cohorte la incluye (caso 24) | es la salida de la acción 17 (`NUCLEO/08` §3; revisión del owner, 2026-09-28, C15; `B/10` §3.7): sin el listado, los que no se pueden mover solos quedan en un plan retirado sin que nadie los mire, y la migración no sirve para vaciarlo |
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B2.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B2.md
+113c113
+< 2. un precio con decimales **no se puede guardar**;
+---
+> 2. un precio con decimales **se puede guardar**;
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B3.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B3.md
+1019a1020,1021
+> Después de abandonar un checkout, la cuenta debe esperar una hora para abrir otro en la misma vertical, aun si el anterior ya quedó cancelado en el proveedor.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B4.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B4.md
+51c51
+< `puedeCobrarle`** sobre ella —el instante de la primera relectura que vio el preapproval
+---
+> `puedeCobrarle`** sobre ella —el instante de la última relectura que vio el preapproval
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B5.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B5.md
+871c871
+<   exactamente una de las dos referencias es no nula—, número, PDF, `nombre_pagador` y
+---
+>   exactamente una de las dos referencias es no nula—, número, `nombre_pagador` y
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B6.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B6.md
+309c309
+<    pago de 5.000 con 10 de saldo da `400 code 2017`. **Y no hay monto mínimo**: ARS 5 entró sobre
+---
+>    pago de 5.000 con 10 de saldo da `400 code 2017`. ARS 5 entró sobre
+354a355,356
+> 
+> Antes de confirmar una devolución por tarjeta, se exige que el medio de pago original siga vigente; una tarjeta vencida bloquea la confirmación hasta que el cliente la actualice.
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B7.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B7.md
+26c26
+< 5. **un *«todavía no se sabe»* que dura 3 días abre la marca 21** (3d);
+---
+> 5. **un *«todavía no se sabe»* que dura 5 días abre la marca 21** (3d);
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B8a.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B8a.md
+466a467,468
+> La baja se rechaza mientras exista una devolución de la suscripción en estado CONFIRMED sin desenlace; debe resolverse antes de mandar cancelar el cobro.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/B9a.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/B9a.md
+48c48
+< - **el contador de una promo baja sólo con un cobro que salió con el descuento** (`14` §2.4, `03`
+---
+> - **el contador de una promo baja con cualquier cobro acreditado, aunque haya salido sin el descuento** (`14` §2.4, `03`
+95c95
+< porcentajes se multiplican y los fijos se suman, y las dos operaciones conmutan. Con dos reglas
+---
+> porcentajes se suman y los fijos se suman, y las dos operaciones conmutan. Con dos reglas
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/U2.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/U2.md
+304a305,306
+> Un rebote permanente de la casilla desactiva todos los avisos de esa cuenta, incluidos los transaccionales no suprimibles, hasta que el dueño cambie su correo.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/V1.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/V1.md
+36c36
+< 6. **y la prueba de que una tabla recién creada recibe su trigger de `set_updated_at` después de
+---
+> 6. **y la prueba de que una tabla recién creada recibe su trigger de `set_updated_at` antes de
+79c79
+< [DEC-ENT-005](../01-decisiones-vigentes.md#dec-ent-005) (la clase de una clave, cuarto atributo
+---
+> [DEC-ENT-005](../01-decisiones-vigentes.md#dec-ent-005) (la clase de una clave, atributo
+154c154
+< - **Entonces** declara sus cuatro atributos (`V/15-entitlements-y-limits.md:573-574`): su
+---
+> - **Entonces** declara sus tres atributos (`V/15-entitlements-y-limits.md:573-574`): su
+156c156
+<   `MÁXIMO`, `MÍNIMO`, `MEJOR_DECLARADO`), su **`enforcementStrategy`** y su **clase**, de la lista cerrada de
+---
+>   `MÁXIMO`, `MÍNIMO`, `MEJOR_DECLARADO`) y su **clase**, de la lista cerrada de
+379c379
+< **TEST:V1:2** — Toda clave del catálogo declara scope, estrategia, `enforcementStrategy` y clase, y
+---
+> **TEST:V1:2** — Toda clave del catálogo declara scope, estrategia y clase, y
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/V2.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/V2.md
+318a319,320
+> Dos planes vendibles de una misma vertical no pueden ofrecer el mismo precio mensual; publicar una versión que repita ese importe se rechaza aunque sus capacidades sean distintas.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/V3.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/V3.md
+283c283
+< - Invalidar es borrar, no recalcular; después del commit; por `user`
+---
+> - Invalidar borra la entrada; después del commit; por `user`
+376c376
+< > de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que NO sea de
+---
+> > de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que sea de
+475c475
+< quien lo construyera inventaba la clasificación clave por clave. **La clase es el CUARTO atributo
+---
+> quien lo construyera inventaba la clasificación clave por clave. **La clase es un atributo
+488c488
+<   estrategia ya viven ahí; la clase es el cuarto del mismo tipo y no dice qué otorga ningún plan.
+---
+>   estrategia ya viven ahí; la clase es del mismo tipo y no dice qué otorga ningún plan.
+494c494
+< - **El atributo vive donde viven los otros tres, en el catálogo de claves, que es código**, y está
+---
+> - **El atributo vive en el catálogo de claves, que es código**, y está
+670,671c670
+< 1. **Invalidar es borrar, no recalcular.** Recalcular dentro de la transacción que causó el cambio la
+<    vuelve más lenta y más frágil; la próxima lectura lo recalcula sola. **Y se borra DESPUÉS del
+---
+> 1. **La invalidación borra la entrada.** **Y se borra DESPUÉS del
+897,898c896,897
+<   cada vertical —el ítem 4 del Eje 2— es configuración, no diseño (cada clave lleva cuatro atributos
+<   declarados: scope, estrategia de agregación, `enforcementStrategy` y clase); qué es una
+---
+>   cada vertical —el ítem 4 del Eje 2— es configuración, no diseño (cada clave lleva tres atributos
+>   declarados: scope, estrategia de agregación y clase); qué es una
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/V4.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/V4.md
+920c920
+<   soporte borra todos los seudónimos con una tarea puntual, y se anota quién la corrió y cuándo**
+---
+>   se borran todos los seudónimos con una tarea puntual, y se anota quién la corrió y cuándo**
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/V5.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/V5.md
+430c430
+<   sobre un identificador que no existe; y su conversación sobre la `PURGED` se lee entera y no admite
+---
+>   sobre un identificador que no existe; y su conversación sobre la `PURGED` se lee entera y admite
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/10-corte/V6.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/10-corte/V6.md
+518,519c518
+<   una vez por tipo la etiqueta de colección (`list-accom`, `list-gastro`, `list-exp`) y la de la
+<   portada, y purga la página de cada destino (22, que cuentan para el tope del borde); pedidas desde
+---
+>   una vez por tipo la etiqueta de colección (`list-accom`, `list-gastro`, `list-exp`), y purga la página de cada destino (22, que cuentan para el tope del borde); pedidas desde
+884,885c883
+< antes, dejar elegir, preferir archivar o despublicar antes que borrar, una `enforcementStrategy` por
+< tipo de limit— **sólo en el contexto del downgrade**. Y hace falta idéntico cuando vence un addon
+---
+> antes, dejar elegir, preferir archivar o despublicar antes que borrar— **sólo en el contexto del downgrade**. Y hace falta idéntico cuando vence un addon
+1068a1067,1068
+> Cada dueño puede ejecutar hasta cinco publicaciones de fichas por día en una vertical; las siguientes se rechazan hasta el día siguiente aunque tenga cupo disponible.
+> 
+1314c1314
+< **TEST:V6:24** — Integración: el 4c pide revalidar fichas borradas, tres colecciones, portada y 22
+---
+> **TEST:V6:24** — Integración: el 4c pide revalidar fichas borradas, tres colecciones y 22
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/20-fase-1/V9b.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/20-fase-1/V9b.md
+349c349
+< | **Se conserva íntegro, siempre** | **la fila de `trial`** —que guarda **un seudónimo determinístico del correo normalizado, no el correo**: no permite leer el correo, pero **reconoce a quien vuelve con el mismo** (FASE 9 completa, `C-1`); **tras la baja de la cuenta, el seudónimo se conserva hasta que conteste el abogado, y si contesta en contra lo borra soporte con una tarea puntual** (`V/02` §2.2; FASE 9 vuelta 3, owner 2026-09-30, lote H)—, **y todo lo que es de la persona**: el usuario, sus preferencias, sus señales de identidad ([DEC-TRIAL-004](../01-decisiones-vigentes.md#dec-trial-004)) y sus datos personales, **también dentro de eventos de dominio y del outbox** ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)) | la fila de `trial` es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro. **Lo de la persona**, porque la retención no la toca nunca ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)); su baja pedida por ella misma es otro proceso, que esa decisión no cubre |
+---
+> | **Se conserva íntegro, siempre** | **la fila de `trial`** —que guarda **un seudónimo determinístico del correo normalizado, no el correo**: no permite leer el correo, pero **reconoce a quien vuelve con el mismo** (FASE 9 completa, `C-1`); **tras la baja de la cuenta, el seudónimo se conserva hasta que conteste el abogado, y si contesta en contra se borra con una tarea puntual** (`V/02` §2.2; FASE 9 vuelta 3, owner 2026-09-30, lote H)—, **y todo lo que es de la persona**: el usuario, sus preferencias, sus señales de identidad ([DEC-TRIAL-004](../01-decisiones-vigentes.md#dec-trial-004)) y sus datos personales, **también dentro de eventos de dominio y del outbox** ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)) | la fila de `trial` es el §10.2: el trial no se devuelve, así que la evidencia de que se consumió **tiene que sobrevivir al borrado** o el borrado se convierte en la forma de conseguir otro. **Lo de la persona**, porque la retención no la toca nunca ([DEC-DATA-005](../01-decisiones-vigentes.md#dec-data-005)); su baja pedida por ella misma es otro proceso, que esa decisión no cubre |
+601c601
+<   nuevo es una tarea puntual de soporte que los borra todos, y se anota quién la corrió y cuándo;
+---
+>   nuevo es una tarea puntual que los borra todos, y se anota quién la corrió y cuándo;
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/20-fase-2/B9b.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/20-fase-2/B9b.md
+340a341,342
+> Un código promocional sólo se puede canjear desde una cuenta creada antes de la publicación del código; las cuentas posteriores reciben un rechazo sin consumirlo.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/20-fase-3/B10.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/20-fase-3/B10.md
+41c41
+<   `ACTIVE` en el acto, sin preapproval ni orden, sin `payment` ni comprobante, con el ancla como
+---
+>   `PENDING_AUTHORIZATION` en el acto, sin preapproval ni orden, sin `payment` ni comprobante, con el ancla como
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/20-fase-3/B12.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/20-fase-3/B12.md
+232,234c232
+<    ciclo exige que autorice de nuevo (`DEC-SUB-006`). **Sin plazo**: el listado muestra **su
+<    antigüedad**, contada desde el anuncio de su migración (`anunciada_en`), para que se vea cuánto
+<    lleva esperando (revisión del owner, casos vecinos, 2026-09-29, caso 26). **Recibe sólo el correo
+---
+>    ciclo exige que autorice de nuevo (`DEC-SUB-006`). **Sin plazo** (revisión del owner, casos vecinos, 2026-09-29, caso 26). **Recibe sólo el correo
+385,386c383
+<   del anuncio diciendo que la van a contactar, y el panel la lista sin plazo y con su antigüedad
+<   desde el anuncio; **toda llegada a un terminal**, por cualquier camino, pasa su fila de alcance
+---
+>   del anuncio diciendo que la van a contactar, y el panel la lista sin plazo; **toda llegada a un terminal**, por cualquier camino, pasa su fila de alcance
+562c559
+<   vista, sin plazo y con su antigüedad (`B/19` §6).
+---
+>   vista, sin plazo (`B/19` §6).
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/20-fase-3/B13b.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/20-fase-3/B13b.md
+156a157,158
+> Al moderar una ficha desde el panel se moderan también todas las fichas publicadas del mismo dueño en esa vertical, con el mismo motivo y en el mismo acto.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/20-fase-4/V7.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/20-fase-4/V7.md
+829a830,831
+> El reclamo de Partner se rechaza si la cuenta tiene una suscripción activa en otra vertical comercial; primero debe terminar esa suscripción.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/20-fase-4/V8b.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/20-fase-4/V8b.md
+57c57
+<    que pasaron el plazo, marcadas como atrasadas—, las `APROBADA` sin reclamar como un dato, y desde
+---
+>    que pasaron el plazo, marcadas como atrasadas—, las `APROBADA` ya reclamadas como un dato, y desde
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/30-el-corte.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/30-el-corte.md
+727,728c727
+<   purgas del plan del borde, y la de la portada (sin destacados desde el lote 1 F de la FASE 5; *la
+<   purga de la portada la fuente la deriva y la marca*).
+---
+>   purgas del plan del borde.
+779c778
+< **Qué**: **borrar las fotos en el almacenamiento externo y revocar en el proveedor el token de
+---
+> **Qué**: **borrar las fotos en el almacenamiento externo y conservar en el proveedor el token de
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/80-abiertos.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/80-abiertos.md
+174c174
+< - `V/docs/15-entitlements-y-limits.md:572` — **Cuáles son las claves de cada vertical** —el ítem 4 del Eje 2 (cap. 10 §1)— es configuración, no diseño: acá está que el subconjunto se declara por vertical y que cada clave lleva **cuatro** atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase** (§3.4)—. *(Eran tres hasta esta pasada; la clase entró porque sin ella el predicado de `G-R3` no se podía formar.)*
+---
+> - `V/docs/15-entitlements-y-limits.md:572` — **Cuáles son las claves de cada vertical** —el ítem 4 del Eje 2 (cap. 10 §1)— es configuración, no diseño: acá está que el subconjunto se declara por vertical y que cada clave lleva **tres** atributos declarados —scope, estrategia de agregación y **clase** (§3.4)—.
+252c252
+< - `B/docs/03-maquinas-de-estado.md:2938` — **Cerrado el 2026-09-25 (owner, FASE 8 completa)**: el barrido relee también los pagos en `CHARGED_BACK` hasta que su `status_detail` se resuelva —`settled` o `reimbursed`—, y esa lectura dispara el correo que corresponde de `NUCLEO/07` §6 (`B/09` §3).
+---
+> - `B/docs/03-maquinas-de-estado.md:2938` — **Cerrado el 2026-09-25 (owner, FASE 8 completa)**: el barrido relee también los pagos en `CHARGED_BACK` hasta que su `status_detail` se resuelva —`settled` o `reimbursed`—, y la lectura de `settled` dispara su correo de `NUCLEO/07` §6 (`B/09` §3).
+409a410,411
+> 
+> Hasta cerrar la consulta sobre el silencio ante un aumento, toda contratación nueva requiere una aceptación firmada fuera de la plataforma y cargada por soporte.
+diff -r /home/qazuor/.cache/hos1352/vuelta-7/pristina/90-retirados.md /home/qazuor/.cache/hos1352/vuelta-7/v/s/c1c03210/90-retirados.md
+246a247,248
+> Toda tabla comercial retirada conserva una réplica de sólo lectura accesible desde el panel durante noventa días después del corte.
+> 

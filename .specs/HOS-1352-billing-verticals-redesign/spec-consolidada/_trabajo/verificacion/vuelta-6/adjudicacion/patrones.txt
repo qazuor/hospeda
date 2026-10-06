@@ -1,0 +1,15 @@
+# Patrones — vuelta 6
+
+P-RESUMEN: una precisión aplicada a la pieza y al procedimiento puede dejar resúmenes manuales anteriores en el índice. H6-INDICE-PRECIOS tiene dos ubicaciones y dos detectores; es un único defecto. Antecedente: H4-VA-A6-1, sin reabrir lo ya resuelto.
+
+P-TEST: comprobar el verbo del efecto, no sólo su emisor. Encolar y emitir después del commit sin entrega durable no son equivalentes. TEST:B9a:2 quedó anterior a CK; su tramo es manual aunque B9a contenga también secciones generadas.
+
+P-GENERADOR: una exclusión provisional de alcance no prueba vigencia semántica. CF:CC estaba explícitamente pendiente, mientras la validación aceptaba «fuera de alcance». Registrar el reemplazo parcial y su evidencia; conservar la regla comercial y la titularidad del AC. No marcar toda CC como retirada. Antecedentes: H5-G1-5/6/7, ya corregidos para AP/BN/BU.
+
+P-CANARIO: una cláusula plantada puede seguir existiendo en otro bloque. Eso limita el alcance de una acusación de ausencia global, pero no borra la discrepancia puntual que mide el canario. VA-A8 descartó el cambio de C2 por encontrar una regla equivalente en B8a; G2 sí lo reportó. Se distingue detección de defecto de mera observación descartada.
+
+P-EXTRACCION: hallazgos-todos.txt incluye salidas de rg como si fueran informes y dos declaraciones de ausencia como ítems. Sólo 26 archivos finales determinan detectores y hallazgos. Conciliación exhaustiva en hallazgos.json: cada ocurrencia sustantiva pertenece a un canario o a uno de los tres únicos.
+
+Verificado: informes finales, diff de canarios, correspondencia con pristina, fuentes citadas, precisiones de BM/CF/CK y código de g1. Los tachados no se usaron como autoridad vigente. Consultados los hallazgos y antecedentes de las vueltas 1 a 5.
+Inferido: severidad BLOQUEA de las dos contradicciones manuales por alterar procedimiento y efecto exigido al test; severidad MENOR del defecto de señalización de g1 porque la regla vigente de CF sí está presente.
+Pendiente: aplicar las propuestas y regenerar g1 en una tarea posterior autorizada. No se ejecutaron generadores ni pruebas de producto; ésta es una adjudicación documental y el adapter sólo declara build de producto, ajeno a este alcance. Sin git, tracker, red ni cambios fuera de adjudicacion/. No hay OWNER; no se crea owner.txt.

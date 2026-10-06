@@ -1,0 +1,23 @@
+# VA-A1 · fuente → spec · P/docs/nucleo/{00-indice,01-glosario,02-modelo-de-datos,03-maquinas-de-estado,04-invariantes,07-outbox-y-notificaciones,08-auditoria-y-observabilidad}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:83 · «Qué pasa si igual se solapan: el intento cae en la regla 1 —no se ejecuta, se registra como evento de dominio y, si tocaba plata o estado, pone la marca—» · distinta en s/c1c03210/02-nucleo-modelo-y-maquinas.md:276 («el intento **ejecuta la primera fila declarada** y registra el evento de dominio sin poner la marca»). La spec introduce precedencia y permite ejecutar una transición ambigua, mientras la fuente exige detenerla y marcarla. Buscados «solap», «guardas», «precedencia» y «primera fila» en el decision log y las decisiones del owner del corte: no hay reemplazo posterior que autorice este comportamiento. · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:263 · «la disputa se resolvió a nuestro favor | transaccional | al correr P7 —se leyó reimbursed—» y «La disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá.» · ausente (búsqueda con rg --hidden en toda s/c1c03210/ por «disputa», «nuestro favor», «cargo era correcto», «reimbursed» y «P7»; revisados el catálogo de 02-nucleo-outbox.md §6, TRANS:B:P7 en 04-catalogos.md:4464, AC:B5:8 en 10-corte/B5.md:245, la fila 10-ter de 10-corte/B13a.md:166 y el barrido en 10-corte/B11.md:848). Se conserva la transición del pago y el correo para settled, pero ningún catálogo, AC, TEST o transición exige el correo al ganar Hospeda la disputa. DEC-SUB-020 y sus precisiones, y las decisiones del owner del corte, no retiran esta obligación. · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:499 · «El §50 pide como mínimo: userId, vertical, subscriptionId, paymentId, identificadores del proveedor, id del webhook, id de request, id de correlación, listing y addon.» · distinta en s/c1c03210/02-nucleo-auditoria.md:421 («El §50 pide como mínimo: `userId`, vertical, `subscriptionId`, `paymentId`, identificadores del proveedor, id del webhook, id de correlación, listing y addon.»). Desaparece el id de request y la línea 424 reduce explícitamente el total a nueve campos. Buscados «id de request», «id del request», «requestId», «request_id» e «id de solicitud» en toda la spec: no hay obligación equivalente. La mención histórica al contexto de request en §2.4 no exige conservar ese identificador en los logs. El decision log y las decisiones del owner del corte no reemplazan esta regla. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| P/docs/nucleo/00-indice.md | ≈18 | 1–211 | 0 | 0 |
+| P/docs/nucleo/01-glosario.md | ≈145 | 1–981 | 0 | 0 |
+| P/docs/nucleo/02-modelo-de-datos.md | ≈65 | 1–274 | 0 | 0 |
+| P/docs/nucleo/03-maquinas-de-estado.md | ≈24 | 1–176 | 0 | 1 |
+| P/docs/nucleo/04-invariantes.md | ≈75 | 1–328 | 0 | 0 |
+| P/docs/nucleo/07-outbox-y-notificaciones.md | ≈85 | 1–383 | 1 | 0 |
+| P/docs/nucleo/08-auditoria-y-observabilidad.md | ≈115 | 1–520 | 0 | 1 |
+
+Conteos de reglas aproximados por cláusulas, sin contar otra vez sus repeticiones explicativas ni el texto tachado o reemplazado. Recorrido completo: 2.873 líneas. Total: 3 BLOQUEA, 0 MENOR; 1 ausente y 2 distintas. P = HOS-1352-billing-verticals-redesign.

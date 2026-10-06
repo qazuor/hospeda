@@ -1,0 +1,516 @@
+# Correcciones de la adjudicación ciega, vuelta 3 (HOS-1352)
+
+Generado por `render.py` desde `hallazgos.json`. Líneas de la spec REAL (`v3-pristina` = HEAD
+`a10f010e78`, sin canarios); fuentes congeladas en `591034c665`. Toda `sale` se verificó contra su
+línea con `build.py`, y toda ancla de un `entra` existe. Un archivo *generado* se corrige en su
+generador, su `omisiones.json` o su fuente, nunca en el `.md`; B4–B7 se corrigen en `g8/src`, que
+tiene las mismas líneas; un tramo g-secciones se corrige en la fuente o en `secciones/` y se regenera.
+
+## Conteo
+
+- REAL BLOQUEA: 2
+- REAL MENOR: 31
+- GENERADOR MENOR: 4
+- FUENTE MENOR: 4
+- FALSO: 5
+- OWNER: 1
+- únicos: 47; hallazgos no canario agrupados: 61
+
+## Por archivo de la spec
+
+### `00-indice.md`
+
+- **H3-VB01-4** · REAL MENOR · l. 26 — El índice y 80-abiertos dicen que las fuentes están congeladas en `c7a3fac…` «después de aplicar las letras BK a CB»; la spec cita y aplica hasta CI, y 01 y 04 dicen `591034c665`, el SHA real del congelado.
+  - sale:
+    Todo sale de las fuentes congeladas en el commit `c7a3fac90070b154e3a811944d06e0de08cba5df`
+  - entra:
+    Todo sale de las fuentes congeladas en el commit `591034c665b56336d49eab894a4e4ce3c38d5abe`
+
+- **H3-VB01-4** · REAL MENOR · l. 27 — El índice y 80-abiertos dicen que las fuentes están congeladas en `c7a3fac…` «después de aplicar las letras BK a CB»; la spec cita y aplica hasta CI, y 01 y 04 dicen `591034c665`, el SHA real del congelado.
+  - sale:
+    (re-congeladas después de aplicar las letras BK a CB del owner): cada
+  - entra:
+    (re-congeladas después de aplicar las letras BK a CI del owner): cada
+
+- **H3-VB01-3** · REAL MENOR · l. 375 — El índice dice que `U2` «va antes de las piezas que encolan: `V6`, `V9a`, `V9b`, `B4` y `B12`»: `V9a` no encola (espera a `U2` por la flecha que heredó de `V9`), y el mismo índice lo dice en :670.
+  - sale:
+    va antes de las piezas que encolan**: `V6`, `V9a`, `V9b`, `B4` y `B12` (FASE 5, owner 2026-09-30, lote 2 A; `NUCLEO/07` §1.4)
+  - entra:
+    va antes de las piezas que encolan**: `V6`, `V9b`, `B4` y `B12` (FASE 5, owner 2026-09-30, lote 2 A; `NUCLEO/07` §1.4; `V9a` no encola: la espera por la flecha que heredó de `V9`)
+
+### `01-decisiones-vigentes.md` — generado: `scripts/generadores/g1/ (gen01.py, omisiones.json)`
+
+- **H3-VA8-2** · FUENTE MENOR · l. 8625 — DEC-CONC-001 (parte 2) dice que la recuperación tras un timeout pregunta «por `payer_email` + `status`»; B/05 §1.1 y B/09 lo corrigieron (F-8CB3-011): se filtra en el proveedor SÓLO por correo, y el estado se mira de nuestro lado. El log nunca recogió la corrección y ningún 📌 la precisa. Las piezas llevan la regla correcta (B11:1092, :1094, AC:B11:23).
+  - dónde: corregir el log (abajo) y regenerar g1
+  - sale:
+    por `payer_email` + `status`
+  - entra:
+    (sin cambio a mano: lo trae la fuente corregida al regenerar g1)
+
+- **H3-G1-3** · GENERADOR MENOR · l. 13018 — Cinco letras del registro salen sin «⚠️ Caducada en parte» aunque una letra o un 📌 posterior las corrigió: B de 38-fase-5 t4 («asignado al aprobar la postulación», corregida por F), F de t6 («o el alta directa del admin con dueño», corregida por N), H de t6 («`starts_at` y `ends_at` quedan hasta la unidad de socios», precisada por O), y `G5-3` y `G2-1` de 28-fase-9-vuelta-1 (su predicado y su «en el mismo acto» murieron tachados en el log, L3 y L1). La cabecera promete esa marca. Sólo citables.
+  - agrupa: H3-G1-3, H3-G1-4, H3-G1-5, H3-G1-6, H3-G1-7
+  - dónde: scripts/generadores/g1/omisiones.json, clave `letras_muertas`, cinco entradas `alcance: "en parte"`: «OWN:38-fase-5:t4:B» (por: «el rol de socio se da en el acto que fija al dueño, no al aprobar (F)», origen 38-fase-5/10-decisiones-del-owner.md:133); «OWN:38-fase-5:t6:F» (por: «el alta directa del admin no fija dueño; F se lee «cuando queda con dueño» (N)», origen :153); «OWN:38-fase-5:t6:H» (por: «`V7` borra `starts_at` y `ends_at` con su migración (O)», origen :154); «OWN:28-fase-9-vuelta-1:t1:G5-3» (por: «el barrido lista las pausas con regalo neto positivo, dure lo que dure (L3)», origen 01-decision-log.md:1921); «OWN:28-fase-9-vuelta-1:t1:G2-1» (por: «emitido por el mismo acto de PB9/PB12, después de su commit (L1)», origen 01-decision-log.md:2523). Y en gen01.py, P-H: (a) por cada letra, si otra letra POSTERIOR del mismo archivo la nombra («F se lee», «precisa B») o tacha su frase, falla salvo que esté en `letras_muertas`/`letras_vivas_revisadas`; (b) la celda «qué decide»/«elige» se busca (≥ 8 palabras seguidas) dentro de ~~…~~ en las fuentes posteriores; si aparece, falla igual; (c) 38-fase-5 entra en el barrido
+  - sale:
+    asignado al aprobar la postulación
+  - entra:
+    (sin cambio a mano: el generador agrega debajo de cada una de las cinco letras su línea «⚠️ **Caducada en parte**: … (Origen: …). Sólo citable; no se implementa.»)
+
+### `03-contrato-de-cobertura.md`
+
+- **H3-VB03-3** · FUENTE MENOR · l. 507 — 03-contrato:507 dice que `S36` desde `ACTIVE` o `CANCEL_SCHEDULED` «es una de las diez»; el mismo archivo cuenta nueve (:493, :561), y nueve incluyen a `S36`. La fuente tiene el mismo residuo (12-contrato:480 vivo).
+  - sale:
+    `CANCEL_SCHEDULED` es una de las diez
+  - entra:
+    `CANCEL_SCHEDULED` es una de las nueve
+
+### `04-catalogos.md` — generado: `scripts/generadores/g3/gen.py (y el inventario)`
+
+- **H3-G2-10** · GENERADOR MENOR · l. — — g3 (y el inventario del que lee) da por MUERTA toda sección cuyo TÍTULO está tachado y no adjunta su cuerpo vivo: se pierden los ~6,4 mil caracteres vivos de V/03:365-479 («Sale entera… el panel no deja pasar los días de prueba de 0 a más de 0», las «Seis cosas que la tabla fija») y el residuo de B/03:944-956 y V/03:1339-1351. Las reglas operativas están en las filas T1–T8, V4, 03-contrato y 90-retirados.
+  - agrupa: H3-G2-10, H3-G2-11
+  - dónde: el armado del inventario: una SEC de título tachado con texto fuera de ~~…~~ en el cuerpo es `MIXTO`, no `MUERTO`; scripts/generadores/g3/gen.py:329: `_secs` acepta `VIVO` y `MIXTO` (de una MIXTA va el cuerpo limpio, sin el título tachado, con el «**Sale entera**…» vivo); y un guard en gen.py: falla si una SEC `MUERTO` tiene texto vivo
+  - entra:
+    (sin cambio a mano: regenerar g3 después de corregir el inventario; el texto vivo entra adjunto a TRANS:V:T1…T8 y a TRANS:B:S10 por la regla de `_destino`)
+
+- **H3-VA10-6** · FUENTE MENOR · l. 7941 — La glosa de GUARD:G-R1-F dice que la cláusula hace cumplir que otorgar un grant **no** cierre un saldo diferido (DEC-GRANT-011); DEC-GRANT-013, posterior, dice que lo CIERRA con `GRANT_PERMANENTE_OTORGADO`. La spec copia `B/20` §2, que quedó vieja. El predicado del guard (motivo de la enumeración cerrada) sigue valiendo.
+  - dónde: corregir la fuente (abajo) y regenerar g3 con el SHA nuevo
+  - sale:
+    es la mitad que hace cumplir que otorgar un grant **no** cierre un saldo diferido
+  - entra:
+    (sin cambio a mano: lo trae la fuente corregida al regenerar g3)
+
+### `10-corte/B11.md`
+
+- **H3-G2-13** · GENERADOR MENOR · l. — — secciones/gen.py descarta como muerta una fila cuya celda id está tachada entera aunque otra celda traiga texto vivo normativo («**sale** …»): se pierde «sin lápida del corte, un cobro tardío de un débito viejo entra como desconocido y lo toma la lápida de recepción» (B11) y «una vertical con todos sus planes retirados no ofrece checkout … fila 29 de `V/19` §4» (B13a). Las dos reglas viven en otra fila u otra pieza.
+  - dónde: scripts/generadores/secciones/gen.py:78-88: una fila es muerta sin aviso sólo si TODAS sus celdas no vacías están tachadas enteras; si alguna trae texto vivo que empieza con «**sale**» (sin distinguir mayúsculas), la fila sale de la tabla y ese texto vivo va como nota debajo («*(fila retirada: …)*»); cualquier otro texto vivo hace fallar el generador
+  - entra:
+    (sin cambio a mano: regenerar g-secciones; igual B13a)
+
+- **H3-VB12-3** · REAL MENOR · l. 1539 — AC:B11:13 (órdenes pagadas) busca por el identificador del pedido sobre toda `UNA_VEZ` en `ABANDONED` sin id de orden; la fuente lo acota a las que tienen la clave persistida (sin clave no salió ninguna orden).
+  - sale:
+    - **Dado** una instancia `UNA_VEZ` en `ABANDONED`, dentro de la ventana del plazo 18
+  - entra:
+    - **Dado** una instancia `UNA_VEZ` en `ABANDONED` con su clave persistida (se persiste antes de la
+      llamada, así que sin clave no salió ninguna orden), dentro de la ventana del plazo 18
+
+- **H3-VB12-4** · REAL MENOR · l. 2204 — B11:2204 habla de «las veinte cláusulas del criterio»; LISTA:B11 tiene 21 (la 21, `cancelado_visto_en`, de CH).
+  - sale:
+    Las veinte cláusulas del criterio
+  - entra:
+    Las veintiuna cláusulas del criterio
+
+### `10-corte/B13a.md`
+
+- **H3-VA10-3** · REAL MENOR · l. 605 — La fila 19-bis de `B/19` §4 (antes de confirmar el checkout de un alta con el trial corriendo: pierde los días al acreditarse el primer cobro, y si se rechaza sigue en su trial) no tiene AC ni TEST: está sólo en la transcripción de B13a y en la prosa de V4, que dice que la superficie es de B13a.
+  - sale:
+      se llena con lo medido y no se inventa.
+  - entra:
+      se llena con lo medido y no se inventa. **Y antes de confirmar el checkout de un alta con el trial
+      corriendo en esa vertical** (fila 19-bis), la pantalla dice las dos mitades: que al acreditarse el
+      primer cobro el trial termina y pierde los días que le quedaban, y que si ese cobro se rechaza sigue
+      en su trial, con esos días ([DEC-TRIAL-010](../01-decisiones-vigentes.md#dec-trial-010)).
+
+- **H3-VA10-7** · REAL MENOR · l. 616 — Dos AC citan `B/14` §3.4 («Un canje rechazado no se consume») para reglas que están en §4.3 (cortesía temporal + grant permanente): AC:B9b:7 (el ancla viva) y AC:B13a:6 (otorgar termina la cortesía y cierra el saldo diferido). La cita de B13a la introdujo la corrección H2-VA10-3 de la vuelta 2.
+  - agrupa: H3-VA10-7, H3-VB11-3, H3-VB12-5
+  - sale:
+    (`B/14` §3.4)
+  - entra:
+    (`B/14` §4.3)
+
+- **H3-VA10-5** · REAL MENOR · l. 684 — Ningún AC/TEST de B13a pide que cada cosa de Mi Suscripción y de la pricing diga en qué vertical vale (y lo global como global), ni la pricing por vertical con las tres situaciones del §47; está sólo en la sección UI de B13a (:905-908).
+  - sale:
+    - **Entonces** lee la versión vigente y sólo si es vendible —un plan retirado no aparece—; y a esa
+  - entra:
+    - **Entonces** hay una pricing por vertical, Turista incluida, con las tres situaciones del §47 —primer
+      uso, trial y activo; el cambio de plan del activo con el aviso de AU hasta `B8b`—; cada cosa que
+      muestra, y cada cosa de Mi Suscripción, dice en qué vertical vale, y lo global se muestra como global
+      (`B/19` §3 y §7); lee la versión vigente y sólo si es vendible —un plan retirado no aparece—; y a esa
+
+### `10-corte/B3.md`
+
+- **H3-VA9-3** · REAL MENOR · l. 450 — AC:B3:19 dice que «una pausa dada desde la cuenta del pagador, que tampoco se distingue, se trata como la del proveedor por mora»: se apoya en el 📌 N8, que el 📌 de `EX-53` (2026-09-29) superó: el pagador no puede pausar desde su cuenta. El desenlace (`S6` por mora) es el mismo.
+  - agrupa: H3-VA9-3, H3-VB08-3
+  - sale:
+      ya pagó (consecuencia aceptada); y una pausa dada desde la cuenta del pagador, que tampoco se distingue,
+  - entra:
+      ya pagó (consecuencia aceptada); y el pagador no puede pausar desde su cuenta (`EX-53`, medido el
+
+- **H3-VA9-3** · REAL MENOR · l. 451 — AC:B3:19 dice que «una pausa dada desde la cuenta del pagador, que tampoco se distingue, se trata como la del proveedor por mora»: se apoya en el 📌 N8, que el 📌 de `EX-53` (2026-09-29) superó: el pagador no puede pausar desde su cuenta. El desenlace (`S6` por mora) es el mismo.
+  - agrupa: H3-VA9-3, H3-VB08-3
+  - sale:
+      se trata como la del proveedor por mora.
+  - entra:
+      2026-09-29): un `paused` sin un `PUT` nuestro es la mora del proveedor.
+
+- **H3-VB08-4** · REAL MENOR · l. 618 — AC:B3:31 dice que «ninguna transición de una lee el estado de la otra»; el invariante 9 no lo dice, y la misma pieza tiene cruces declarados (`S2` del plan cancela Turista VIP; la guarda de `S1` lee la herencia).
+  - sale:
+      otra `ACTIVE`, y ninguna transición de una lee el estado de la otra.
+  - entra:
+      otra `ACTIVE`, y lo que le pasa a una no mueve a la otra (los cruces que el diseño declara —`S2`
+      sobre Turista VIP y la herencia que lee la guarda de `S1`— no están en este escenario).
+
+- **H3-VA6-2** · REAL BLOQUEA · l. 913 — Que el `external_reference` de todo preapproval nuevo sea el `id` de su fila de `subscription`, «principal o de complemento», sólo está para la principal (AC:B3 de `S1`). B10, que crea el preapproval del complemento recurrente (`A2`), no lo dice en ningún AC, y B3 no lo pone en `provider_link`: un complemento sin la referencia es invisible para el barrido (`B/09` §2.4).
+  - sale:
+    - **`provider_link`** (`B/02` §2.2): la suscripción que vincula, el id del proveedor, cuál es el proveedor,
+  - entra:
+    - **`provider_link`** (`B/02` §2.2) —y el `external_reference` de **todo** preapproval que crea el sistema
+      nuevo, principal o de complemento, es el `id` de su fila de `subscription`, escrito en el cuerpo de la
+      creación con la clave ya persistida—: la suscripción que vincula, el id del proveedor, cuál es el proveedor,
+
+- **H3-VA6-3** · REAL MENOR · l. 949 — ESQ:5 (B3 crea `plan_migration` y `plan_migration_subscription`) ya lista las columnas (corrección H2-VA6-5) pero no las restricciones de `B/02` §2.2: FK a `plan_version` para las dos versiones, las dos de la misma vertical, el plazo del aviso no menor que el mínimo de `DEC-MP-002`, y los valores del estado y del motivo de un FUERA. Como B12 no puede traer migración estructural, si B3 no las crea no nacen.
+  - sale:
+    `UNIQUE(subscription_id) WHERE estado = 'PENDIENTE'` en la segunda.
+  - entra:
+    `UNIQUE(subscription_id) WHERE estado = 'PENDIENTE'` en la segunda; en la primera, FK a `plan_version` para
+    las dos versiones, **las dos de la misma vertical**, y el plazo del aviso **no menor que el mínimo del aviso
+    de aumento** de `DEC-MP-002`; el estado de la segunda es `PENDIENTE`, `APLICADA`, `FUERA`, `PARA_RESOLVER`
+    o `CANCELADA`, y el motivo de un `FUERA`, *cambió de plan*, *se dio de baja* o *terminó*.
+
+- **H3-VA10-4** · REAL MENOR · l. 970 — ESQ:8 (B3 crea `addon_product`) lista sólo `version_id`: faltan el precio, la recurrencia (el cobro lo declara el producto: única vez o periódico) y las verticales compatibles de `B/02` §2.4.
+  - sale:
+    Son `addon_product` —con `version_id` → `addon_version` **no anulable**: sin ella el producto no se puede
+  - entra:
+    Son `addon_product` —su precio, su recurrencia (el cobro lo declara el producto: de única vez o periódico) y
+    sus verticales compatibles, con `version_id` → `addon_version` **no anulable**: sin ella el producto no se puede
+
+### `10-corte/B4.md` — generado: `scripts/generadores/g8/src/B4.md`
+
+- **H3-VB09-2** · REAL MENOR · l. 476 — TEST:B4:10 pide «los tests 1 a 9 en verde»; TEST:B4:11 (anotar la cancelación vista, que cubre AC:B4:10 y AC:B4:11) queda afuera, también por posición: está entre el 9 y el 10.
+  - dónde: scripts/generadores/g8/src/B4.md:476 (mismo texto y misma línea; regenerar con `gen.py B4`)
+  - sale:
+    los tests 1 a 9 en verde
+  - entra:
+    los tests 1 a 9 y el 11 en verde
+
+### `10-corte/B5.md` — generado: `scripts/generadores/g8/src/B5.md`
+
+- **H3-VB09-3** · REAL MENOR · l. 359 — AC:B5:18 pone en el «Dado» una cuota `DECLARED_UNPAID` de una suscripción en `GRACE_PERIOD`: ninguna transición la produce (MP2 y la 1.ª cláusula de MP3 suspenden; la 3.ª sale del grace) y el «Entonces» no define efecto desde ahí.
+  - dónde: scripts/generadores/g8/src/B5.md:359 (mismo texto y misma línea; regenerar con `gen.py B5`)
+  - sale:
+    que sigue en `SUSPENDED` o `GRACE_PERIOD`
+  - entra:
+    que sigue en `SUSPENDED`
+
+### `10-corte/B6.md` — generado: `scripts/generadores/g8/src/B6.md`
+
+- **H3-VB09-4** · REAL MENOR · l. 104 — AC:B6:2 (el contracargo visto antes de `RF2`) no pide el efecto de `RF5` por contracargo: el pago colgado de la marca que proponía devolverlo queda resuelto sin devolver, con el contracargo anotado y visible junto a `CONTRACARGO`. Sin él, la guarda de `S15` no deja levantar la marca. Está en TRANS:B:RF5, que el AC cita.
+  - dónde: scripts/generadores/g8/src/B6.md:104 (mismo texto y misma línea; regenerar con `gen.py B6`)
+  - sale:
+    `FAILED`, sin mover el pago.
+  - entra:
+    `FAILED`, sin mover el pago; **el pago colgado de la marca que proponía devolverlo queda resuelto sin
+    devolver**, con el contracargo anotado, y la persona lo ve en el listado junto a la marca `CONTRACARGO`.
+
+### `10-corte/B7.md` — generado: `scripts/generadores/g8/src/B7.md`
+
+- **H3-VB10-4** · REAL MENOR · l. 204 — AC:B7:9 (`paused` sin `PUT` nuestro → `S6` por su segundo evento) no pone las guardas de `S6`: con un pago del período pendiente de `S19` o con un cobro acreditado en la relectura, `S6` no ocurre y corre `S5`/`P1`. Están en TRANS:B:S6, que el AC cita, y en AC:B7:8 sólo para el primer evento.
+  - dónde: scripts/generadores/g8/src/B7.md:204 (mismo texto y misma línea; regenerar con `gen.py B7`)
+  - sale:
+    con motivo `CUSTOMER_REQUEST`, y no hay un motivo de pausa propio del proveedor.
+  - entra:
+    con motivo `CUSTOMER_REQUEST`, y no hay un motivo de pausa propio del proveedor; **con las guardas de
+    `S6`**: si hay un pago del período pendiente de `S19`, o la relectura muestra un cobro acreditado del
+    período, `S6` no ocurre y corre lo que dice [AC:B7:8](#ac-b7-8) (`S5`, y `P1` sobre una fila `ACTIVE`).
+
+- **H3-VB10-5** · REAL MENOR · l. 290 — La cláusula 9 de LISTA:B7 (el pago manual en sucesión, «con su devolución asentada igual que la de un cobro del proveedor») no tiene AC propio: AC:B7:16 cubre la entrada del pago manual y no el asiento de su devolución.
+  - dónde: scripts/generadores/g8/src/B7.md:290 (mismo texto y misma línea; regenerar con `gen.py B7`)
+  - sale:
+    ninguna corrida deja un pago pendiente para siempre.
+  - entra:
+    ninguna corrida deja un pago pendiente para siempre; y cuando la rama termina en devolución, la de un
+    pago registrado a mano se asienta igual que la de un cobro del proveedor (`03` §7, `02` §2.3).
+
+### `10-corte/B9a.md`
+
+- **H3-G2-12** · GENERADOR MENOR · l. 57 — B9a dice transcribir «el capítulo `14`, entero», pero g-secciones no trae el preámbulo de B/14 (la tabla de entrada promo → monto, cortesía → pausa «sólo sobre planes mensuales y en meses enteros», grant → obligación, l. 17-31) ni el residuo vivo de §4.6 (l. 634-644: una cortesía sobre un plan retirado no tiene nada que resolver; el diferimiento del saldo tiene un solo escritor, `S18`). Las dos reglas viven en otros §§.
+  - dónde: el inventario corta una SEC de preámbulo (texto entre el `#` del capítulo y su primer `##`) y la marca VIVO; scripts/generadores/secciones/fuentes.json `10-corte/B9a.md`: sumar `[B/14, 13]` (preámbulo) y `[B/14, 634]` (§4.6, MIXTO tras H3-G2-10); y gen.py: cuando la fila de capítulos dice «entero», compara la lista de fuentes.json con TODAS las SEC no MUERTO del capítulo y falla si falta una
+  - sale:
+    Las secciones de el capítulo `14`, entero,
+  - entra:
+    (sin cambio a mano: regenerar g-secciones)
+
+### `10-corte/U1.md`
+
+- **H3-VB04-3** · REAL MENOR · l. 562 — U1 deja «el nombre de *«las tres tablas»* de `is_featured` y `featured_by_entitlement`» a propuesta del PR y, en Abiertos (:828-830), lo da resuelto: son las tres tablas de fichas (`B/21` :511-513).
+  - sale:
+    Lo mismo vale para el nombre neutro de la bitácora y para el nombre de *«las tres
+  - entra:
+    Lo mismo vale para el nombre neutro de la bitácora. *«Las tres
+
+- **H3-VB04-3** · REAL MENOR · l. 563 — U1 deja «el nombre de *«las tres tablas»* de `is_featured` y `featured_by_entitlement`» a propuesta del PR y, en Abiertos (:828-830), lo da resuelto: son las tres tablas de fichas (`B/21` :511-513).
+  - sale:
+      tablas»* de `is_featured` y `featured_by_entitlement`.
+  - entra:
+      tablas»* de `is_featured` y `featured_by_entitlement` no se proponen: son las tres tablas de fichas, las
+      de Alojamiento, Gastronomía y Experiencia (`B/21-migracion.md:511-513`).
+
+### `10-corte/V3.md`
+
+- **H3-VB05-4** · REAL MENOR · l. 420 — V3:420 manda la lista de invalidación a `V/02` §2.6; está en §3.2 («Se invalida por evento»).
+  - sale:
+    la lista de invalidación (abajo; `V/02` §2.6).
+  - entra:
+    la lista de invalidación (abajo; `V/02` §3.2).
+
+- **H3-VB05-5** · REAL MENOR · l. 719 — V3 dice que «la cuota restante que conviene mostrar y el total de trial son superficies de `V8a` y `B13a`»: DEC-ENT-002 sólo dice que *conviene* mostrar la cuota restante del mes, no asigna pieza, y ni V8a ni B13a la recogen. Es una asignación sin destino ni soporte.
+  - sale:
+    N/A — la cuota restante que conviene mostrar y el total de trial son superficies de `V8a` y `B13a`
+  - entra:
+    N/A — `V3` no tiene pantalla. *(Que la UI muestre la cuota restante del mes es una recomendación de
+
+- **H3-VB05-5** · REAL MENOR · l. 720 — V3 dice que «la cuota restante que conviene mostrar y el total de trial son superficies de `V8a` y `B13a`»: DEC-ENT-002 sólo dice que *conviene* mostrar la cuota restante del mes, no asigna pieza, y ni V8a ni B13a la recogen. Es una asignación sin destino ni soporte.
+  - sale:
+    (`DEC-ENT-002`, implicación 3; `V/descomposicion.md` §2, fila `V3`).
+  - entra:
+    `DEC-ENT-002`, implicación 3 —*«conviene»*—, no un requisito: ninguna fila de la descomposición la asigna
+    y ninguna pieza la construye en esta versión.)*
+
+### `10-corte/V4.md`
+
+- **H3-VB05-6** · REAL MENOR · l. 227 — El «Dado» de AC:V4:2 enumera la normalización por proveedor sin Yahoo (`+` queda salvo medición) ni AOL, Zoho, GMX y los ISP argentinos (`+` queda); leído solo, los manda a «todo dominio que la lista no nombra» y les quita el `+`. La tabla completa está en V4:851-853.
+  - sale:
+      Fastmail y Yandex quitan el `+`; todo dominio que la lista no nombra cuenta como dominio propio y
+  - entra:
+      Fastmail y Yandex quitan el `+`; Yahoo deja el `+` salvo que la medición confirme quitarlo, y AOL, Zoho,
+      GMX y los ISP argentinos lo dejan; todo dominio que la lista no nombra cuenta como dominio propio y
+
+- **H3-VA4-4** · REAL MENOR · l. 414 — La consolidación de la campaña del trial («una sola pieza por persona y por hito, que nombra todas las verticales», antes que la supresión del tope diario) está en la prosa de V4 (:661-665) y en ningún AC/TEST.
+  - sale:
+      mergea antes que `U2`.
+  - entra:
+      mergea antes que `U2`. **Y los hitos de varias verticales que caen el mismo día salen en una sola
+      pieza por persona y por hito, que nombra todas las verticales**: la consolidación pasa antes que la
+      supresión del tope diario (`V/11` §6.2).
+
+### `10-corte/V5.md`
+
+- **H3-VA4-3** · REAL MENOR · l. 418 — La precisión 7 de `V/17` §1.2 (conversaciones, reseñas y comentarios son de quien los escribe, sólo sobre una ficha `PUBLISHED`; sobre una que no lo está contesta «no existe») tiene criterio de demostración propio para V5 en la descomposición, pero V5 la tiene sólo en la prosa (:632-650): ni AC, ni TEST, ni LISTA:V5.
+  - dónde: un AC nuevo antes de AC:V5:23 (l. 418); AC:V5:23 lo suma a su rango, LISTA:V5 suma la cláusula y un TEST:V5 de integración lo cubre
+  - entra:
+    <a id="ac-v5-25"></a>
+    **AC:V5:25** — Conversaciones, reseñas y comentarios: de quien los escribe, sobre una ficha que exista para él.
+    
+    - **Dado** un turista, una ficha `PUBLISHED` ajena, una en borrador ajena y una `PURGED` sobre la que ya
+      tenía una conversación
+    - **Cuando** le escribe a cada una y deja una reseña
+    - **Entonces** sobre la publicada la conversación y la reseña se crean (el paso 4 pregunta por el dueño
+      de la conversación o de la reseña, que es quien escribe); sobre la borrador contesta lo mismo que
+      sobre un identificador que no existe; y su conversación sobre la `PURGED` se lee entera y no admite
+      mensajes.
+    Fuente: [LISTA:V5](#lista-v5), [FILA:V5](#fila-v5)
+    Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:515
+    
+
+- **H3-VB06-5** · REAL MENOR · l. 1538 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    §4, fila `V5` (l. 709).
+  - entra:
+    §4, fila `V5` (l. 716).
+
+- **H3-VB06-5** · REAL MENOR · l. 1541 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    (lista de piezas, l. 943)
+  - entra:
+    (lista de piezas, l. 948)
+
+### `10-corte/V6.md`
+
+- **H3-VA5-3** · REAL MENOR · l. 491 — AC:V6:18 (la herramienta del corte escribe las cinco pruebas) no pide lo que la prosa de V6 (:974-995) sí trae de `V/21`: el plan de trial, las versiones y el fin tomados del catálogo que la migración del paso 3 ya cargó, la campaña previa agendada, y que correr la herramienta dos veces no escribe dos.
+  - sale:
+      siembran trials consumidos; y se verifican a mano. El script suelto del corte no importa código de
+  - entra:
+      siembran trials consumidos; cada fila lleva el plan de trial, las versiones y el fin tomados del
+      catálogo que la migración del paso 3 ya cargó, y su campaña previa agendada; correr la herramienta
+      dos veces no escribe dos (`UNIQUE(user_id, vertical)`); y se verifican a mano. El script suelto del corte no importa código de
+
+- **H3-VB06-5** · REAL MENOR · l. 1468 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    (lista de piezas, l. 944; esquema del corte, l. 979–980).
+  - entra:
+    (lista de piezas, l. 949; esquema del corte, l. 984–985).
+
+### `10-corte/V8a.md`
+
+- **H3-VB06-5** · REAL MENOR · l. 645 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    `V8a` (l. 712 y 713).
+  - entra:
+    `V8a` (l. 719 y 720).
+
+- **H3-VB06-5** · REAL MENOR · l. 648 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    §4.6 (l. 946)
+  - entra:
+    §4.6 (l. 951)
+
+### `10-corte/V9a.md`
+
+- **H3-VB06-5** · REAL MENOR · l. 311 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    (lista de piezas, l. 948)
+  - entra:
+    (lista de piezas, l. 953)
+
+### `20-fase-1/V9b.md`
+
+- **H3-VA3-3** · REAL MENOR · l. 160 — AC:V9b:4 (lo que cuelga de la ficha en `PB9`) no pide dos filas de la lista cerrada de `V/02` §4.1, que vale igual para `PB9` y `PB12`: que llegar a `PURGED` no escribe `deleted_at` (el trigger de extras borraría los favoritos) y que el pedido de arreglo se cierra sin correo y se conserva. AC:V6:13 sí las pide para `PB12`; V9b las tiene sólo en la transcripción (:367-368). Contra la costumbre del repo (soft delete por defecto), es justo la que un implementador escribiría al revés.
+  - sale:
+      dueño, y datos del dueño que sólo sirven a esa ficha
+  - entra:
+      dueño, un favorito de un turista, un pedido de arreglo abierto, y datos del dueño que sólo sirven a
+      esa ficha
+
+- **H3-VA3-3** · REAL MENOR · l. 164 — AC:V9b:4 (lo que cuelga de la ficha en `PB9`) no pide dos filas de la lista cerrada de `V/02` §4.1, que vale igual para `PB9` y `PB12`: que llegar a `PURGED` no escribe `deleted_at` (el trigger de extras borraría los favoritos) y que el pedido de arreglo se cierra sin correo y se conserva. AC:V6:13 sí las pide para `PB12`; V9b las tiene sólo en la transcripción (:367-368). Contra la costumbre del repo (soft delete por defecto), es justo la que un implementador escribiría al revés.
+  - sale:
+      del dueño que sólo servía a la ficha no tiene filas de ella; la configuración de revalidación no se
+  - entra:
+      del dueño que sólo servía a la ficha no tiene filas de ella; `PB9` no escribe `deleted_at`, así que
+      el favorito sigue (el trigger de extras no corre); el pedido de arreglo queda cerrado en el mismo acto,
+      sin correo, y su fila se conserva; la configuración de revalidación no se
+
+### `20-fase-2/B8b.md`
+
+- **H3-VB13-5** · REAL MENOR · l. 1312 — TEST:B8b:23 (migración desde cero, sin migración estructural en la rama) cita `DEC-RF-003` (el default DEVOLVER de la rama 6), que no tiene que ver con lo que verifica.
+  - sale:
+     · [DEC-RF-003](../01-decisiones-vigentes.md#dec-rf-003) · [GATE:FP.3]
+  - entra:
+     · [GATE:FP.3]
+
+- **H3-VB13-4** · REAL MENOR · l. 1331 — TEST:B8b:24 comprueba que el diff no toca `B3`, `B5` ni `B7`; AC:B8b:24 (BL) dice también `B8a`.
+  - sale:
+    pieza no toca archivos de `B3`, `B5` ni `B7`.
+  - entra:
+    pieza no toca archivos de `B3`, `B5`, `B7` ni `B8a`.
+
+### `20-fase-2/B9b.md`
+
+- **H3-VA10-7** · REAL MENOR · l. 185 — Dos AC citan `B/14` §3.4 («Un canje rechazado no se consume») para reglas que están en §4.3 (cortesía temporal + grant permanente): AC:B9b:7 (el ancla viva) y AC:B13a:6 (otorgar termina la cortesía y cierra el saldo diferido). La cita de B13a la introdujo la corrección H2-VA10-3 de la vuelta 2.
+  - agrupa: H3-VA10-7, H3-VB11-3, H3-VB12-5
+  - sale:
+    (`B/14` §3.4).
+  - entra:
+    (`B/14` §4.3).
+
+### `20-fase-3/B10.md`
+
+- **H3-VA6-2** · REAL BLOQUEA · l. 1289 — Que el `external_reference` de todo preapproval nuevo sea el `id` de su fila de `subscription`, «principal o de complemento», sólo está para la principal (AC:B3 de `S1`). B10, que crea el preapproval del complemento recurrente (`A2`), no lo dice en ningún AC, y B3 no lo pone en `provider_link`: un complemento sin la referencia es invisible para el barrido (`B/09` §2.4).
+  - sale:
+      checkout del proveedor y con su ciclo alineado al del plan sólo al crearlo; la de única vez con
+  - entra:
+      checkout del proveedor, con `external_reference` igual al `id` de su fila de suscripción de
+      complemento, escrito en el cuerpo de la creación con la clave ya persistida (`B/02` §2.2), y con su
+      ciclo alineado al del plan sólo al crearlo; la de única vez con
+
+### `20-fase-4/V7.md`
+
+- **H3-VB07-4** · REAL BLOQUEA · l. 205 — En la rama del correo sin usuario, quién escribe `owner_user_id`: `V/02` §2.7 dice que el acto de reclamar es la validación de ese correo. V7 (AC:V7:4) crea el usuario y manda la validación y no dice que validarla vincula; ningún AC/TEST ni regla de V7 lo recoge. Siguiendo la spec, el Partner aprobado de esa rama queda sin dueño, sin rol de socio y sin camino para obtenerlo.
+  - sale:
+      (§17.3).
+  - entra:
+      (§17.3); **en esa rama la validación de ese correo es el reclamo**: al validarse, la cuenta creada
+      queda en `owner_user_id` y recibe el rol de socio (`V/02` §2.7: *«en la rama del correo sin usuario,
+      la validación de ese correo»*).
+
+- **H3-VB07-6** · REAL MENOR · l. 223 — AC:V7:6 y TEST:V7:6 comprueban que la `PENDIENTE` atrasada «aparece marcada en el panel», pero el panel de postulaciones es de `V8b`, que se mergea después; `V7` es dueña del PLAZO:8 y de la lectura.
+  - sale:
+    - **Entonces** ninguna cambia de estado; la `PENDIENTE` aparece marcada como atrasada en el panel y la
+  - entra:
+    - **Entonces** ninguna cambia de estado; la consulta de atrasadas (la que muestra el panel de `V8b`)
+      devuelve la `PENDIENTE`, y la
+
+- **H3-VB07-5** · REAL MENOR · l. 319 — AC:V7:16 y TEST:V7:16 piden que «ningún archivo del repositorio» nombre `starts_at`, `ends_at` ni `tier` de `partners`; la fuente dice «ni la base ni ningún archivo del panel», y para `tier`, que la página y las rutas leen la clave. Leído a la letra, el test falla con las migraciones que borran esas columnas.
+  - sale:
+      archivo del repositorio nombra `starts_at`, `ends_at` ni `tier` de `partners`.
+  - entra:
+      archivo del panel, de la página pública ni de las rutas del socio nombra `starts_at`, `ends_at` ni
+      `tier` de `partners` (las migraciones que las borran, sí: son historia).
+
+- **H3-VB07-5** · REAL MENOR · l. 964 — AC:V7:16 y TEST:V7:16 piden que «ningún archivo del repositorio» nombre `starts_at`, `ends_at` ni `tier` de `partners`; la fuente dice «ni la base ni ningún archivo del panel», y para `tier`, que la página y las rutas leen la clave. Leído a la letra, el test falla con las migraciones que borran esas columnas.
+  - sale:
+    **TEST:V7:16** — Unitario sobre el repositorio: ningún archivo nombra `starts_at`, `ends_at` ni `tier`
+  - entra:
+    **TEST:V7:16** — Unitario sobre el código de la aplicación, sin las migraciones: ningún archivo nombra `starts_at`, `ends_at` ni `tier`
+
+- **H3-VB06-5** · REAL MENOR · l. 1061 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    (lista de piezas, l. 945; esquema del corte, l. 979–980)
+  - entra:
+    (lista de piezas, l. 950; esquema del corte, l. 984–985)
+
+- **H3-VB06-5** · REAL MENOR · l. 1062 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    (las fases posteriores, l. 1079–1111).
+  - entra:
+    (las fases posteriores, l. 1135–1177).
+
+### `20-fase-4/V8b.md`
+
+- **H3-VB06-5** · REAL MENOR · l. 302 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    fila `V8b` (l. 714)
+  - entra:
+    fila `V8b` (l. 721)
+
+- **H3-VB06-5** · REAL MENOR · l. 306 — Citas «l. N» corridas en la sección de fuentes de seis piezas de verticales: las filas de `V/descomposicion` §4 y de la lista de piezas, el esquema del corte y las fases posteriores de `16-fase-7` (entre +5 y +56).
+  - agrupa: H3-VB06-5, H3-VB06-6, H3-VB07-8, H3-VB07-9, H3-VB07-10, H3-VB07-11
+  - sale:
+    (l. 947, nota del esquema l. 989–992)
+  - entra:
+    (l. 952, nota del esquema l. 994–997)
+
+### `30-el-corte.md`
+
+- **H3-VB14-5** · FUENTE MENOR · l. 1435 — 30-el-corte:1434-1435 dice que los precios del corte «los carga el paso 3a»; el paso 3a del mismo archivo (:610-612) dice que se cargan en la migración estructural del paso 3 y el 3a sólo los verifica. Copia a la letra la aplicación de BM (16-fase-7:1125), que quedó vieja frente a la tabla de pasos.
+  - sale:
+    carga el paso 3a y **ningún precio cambia
+  - entra:
+    carga la migración estructural del [paso 3](#paso-3) y los verifica el 3a, y **ningún precio cambia
+
+- **H3-VA2-3** · REAL MENOR · l. 1564 — AC:CORTE:1 (el ensayo) trae en su «Dado» `U3` mergeada, los plazos y la copia, pero no que se releyeron las dos situaciones que una restauración no deshace (§4.3), condición del momento 3. Está en GATE:M3, que el AC cita.
+  - agrupa: H3-VA2-3, H3-VB14-4
+  - sale:
+    - **Dado** que [U3](10-corte/U3.md#pieza-u3) está mergeada, los plazos sin valor tienen el suyo desde
+  - entra:
+    - **Dado** que [U3](10-corte/U3.md#pieza-u3) está mergeada, se releyeron las dos situaciones que una restauración
+      no deshace ([paso 2b](#paso-2b), §4.3), los plazos sin valor tienen el suyo desde
+
+### `80-abiertos.md`
+
+- **H3-VB01-4** · REAL MENOR · l. 7 — El índice y 80-abiertos dicen que las fuentes están congeladas en `c7a3fac…` «después de aplicar las letras BK a CB»; la spec cita y aplica hasta CI, y 01 y 04 dicen `591034c665`, el SHA real del congelado.
+  - sale:
+    `c7a3fac90070b154e3a811944d06e0de08cba5df`. Abreviaturas
+  - entra:
+    `591034c665b56336d49eab894a4e4ce3c38d5abe`. Abreviaturas
+
+- **H3-VB13-6** · REAL MENOR · l. 355 — 80-abiertos:355 dice que, «precisado por BZ», los 3 días del reintento de un aumento corren desde `S37`; BZ no habla del reintento, y la fuente que transcribe dice «desde su fecha efectiva (§2.4)». Inferencia no marcada.
+  - sale:
+    y los 3 días del reintento corren desde `S37`, como los de toda mutación nuestra (corte del MVP
+  - entra:
+    y los 3 días del reintento de monto corren desde su fecha efectiva (`B/14` §2.4), como dice la fuente (corte del MVP
+
+## En las fuentes (residuos; piden otro SHA congelado)
+
+- **H3-VA10-6** · `.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md`:61 — «es la mitad que hace cumplir que otorgar un grant **no** cierre un saldo diferido (cap. 14 §4.3, `DEC-GRANT-011`)» → «es la mitad que hace cumplir que sólo cierren un saldo diferido los actos que la enumeración nombra, otorgar un grant entre ellos (`GRANT_PERMANENTE_OTORGADO`; cap. 14 §4.3, `DEC-GRANT-013`)»; y sumar `DEC-GRANT-013` a la columna de fuentes de la fila
+- **H3-VA8-2** · `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md`:1531 — «por `payer_email` + `status`» → «~~por `payer_email` + `status`~~ **filtrando en el proveedor sólo por `payer_email`, y el estado de nuestro lado** (FASE 8, `F-8CB3-011`; `B/05` §1.1)»; la medición `RC-1` de :1517 (el buscador sí filtra por los dos) queda: es un hecho medido, no la regla
+- **H3-VB03-3** · `.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md`:480 — «es una de las diez» → «es una de las ~~diez~~ **nueve**» (residuo del recuento de :465)
+- **H3-VB14-5** · `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md`:1125 — «los carga el paso 3a con el catálogo» → «los carga la migración estructural del paso 3 con el catálogo y los verifica el 3a»
+
+## FALSO (sin corrección)
+
+- **H3-G2-14** (G2) — El verificador pide que la introducción de la matriz en 04 transcriba las reglas 1, 2, 3, 5 y 7, el Procedimiento y la Composición de D/06. **Por qué es falso**: re-reporta un FALSO ya adjudicado en la vuelta 2 (H2-G2-4). vuelta 2, H2-G2-4 (FALSO): las reglas 2, 3 y 7 de D/06 las precisa `B/06` §8 (posterior) y las recoge B1 (10-corte/B1.md, re-verificación por capability); la 1 y la 5 (ninguna fila sin experimento; sondas versionadas) y el Procedimiento/Composición son reglas del proceso de diseño de la matriz, no de lo que se construye · spec 01-decisiones-vigentes.md:9509 y 30-el-corte.md:1316 traen la regla 2
+- **H3-VB06-3** (VB-06) — El retiro de `USER_IMPERSONATE` de la base (enum recreado y migración de datos) es más fuerte que la fuente. **Por qué es falso**: la derivación está marcada; FALSO conocido de las vueltas 1 y 2. spec 10-corte/V5.md:279-283 lleva «*(Derivado: la fuente dice sólo «el permiso no existe en el enum», `V/descomposicion.md:544`; el carril sale del principio de `F5-AUT-023` …; lo marco.)*» · vuelta 2, criterio: «USER_IMPERSONATE, H-VB-B6-3/H-VB-B4-3: FALSO en sustancia y REAL en el marcado»; el marcado ya está
+- **H3-VB06-4** (VB-06) — AC:V5:23 corre «los casos de AC:V5:1 a AC:V5:16» y el verificador lee que deja afuera AC:V5:24. **Por qué es falso**: FALSO conocido de la vuelta 2 (H2-VB06-7). spec 10-corte/V5.md:331: el ancla `ac-v5-24` está entre `ac-v5-14` (:319) y `ac-v5-15` (:341), así que el rango en orden del documento la incluye · vuelta 2, H2-VB06-7: el mismo hallazgo, FALSO
+- **H3-VB10-3** (VB-10) — B7 atribuye a BW (y a DEC-ARCH-017#📌7) que la rama 4 de las seis vaya detrás de la interfaz que llama `S13`; el verificador dice que BW sólo decide quién crea `domain_event` y que la rama 4 sale de BL. **Por qué es falso**: el verificador leyó la celda de BW en la tabla de letras y no el 📌 que la aplica, que sí suma la rama 4. spec 01-decisiones-vigentes.md, DEC-ARCH-017#📌7 (el 📌 de BW, «corte del MVP, BW, la 1»): «**Y la regla de BL alcanza también la rama 4 del criterio de `B7`**: `S13` es de `B9a`, que llega después, así que `B7` escribe esa rama entera y la llama por interfaz» · .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md: el mismo 📌, en DEC-ARCH-017
+- **H3-VB14-3** (VB-14) — AC:CORTE:2 hace condición de avance el tope de purgas verificado; el verificador dice que la fuente sólo hace bloqueante a `EX-49`. **Por qué es falso**: la verificación es una de las tres cosas del paso 0, que precede al irreversible; que no esté en la lista de ocho gates del momento 4 no la saca del paso 0. .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:146 (paso 0): «**tres cosas** …: el despliegue ensayado entero en `staging` y verde, la medición … (`EX-49`) y la verificación del tope de purgas del borde» y «se verifica el tope de purgas … antes del 4c: cuál es, y que las 22 purgas por destino del 4c entran en él» · .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:146, última columna: «lo irreversible (paso 1) sólo arranca cuando lo que puede fallar (paso 3) ya se probó»: el paso 0 completo es condición del paso 1
+
+## OWNER
+
+- **H3-VB07-7** → letra **CJ** de `owner.txt`.

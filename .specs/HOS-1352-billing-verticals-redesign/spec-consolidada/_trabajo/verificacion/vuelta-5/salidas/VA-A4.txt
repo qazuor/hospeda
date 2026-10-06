@@ -1,0 +1,19 @@
+# VA-A4 · fuente → spec · V/descomposicion.md; V/docs/10-verticales-planes-billing-options.md; V/docs/11-trial.md; V/docs/15-entitlements-y-limits.md; V/docs/17-autorizacion.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:220 · «Lo que sí hace falta es que **el número de arriba sea visible para quien fija la cuota**» · ausente (búsqueda con rg --hidden en toda s/2e9ef99e/ por costo máximo, peor caso, techo real, cuotas de trial y combinaciones de cuota/costo con visible/mostrar/muestra; s/2e9ef99e/10-corte/V4.md:606 conserva la fórmula del costo máximo por persona, pero omite mostrar su resultado a quien configura la cuota; el editor del catálogo de s/2e9ef99e/10-corte/V8a.md:409 sólo exige comparar versiones y mostrar validaciones. Ningún AC, TEST ni catálogo recoge esa visualización. Las precisiones de DEC-ENT-001 y DEC-ENT-002 y las decisiones del owner del corte no retiran esta obligación) · BLOQUEA
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:520 · «nadie se da el rol a sí mismo ni se lo quita: lo hace otra cuenta que ya lo tiene» · distinta en s/2e9ef99e/10-corte/V5.md:353 («sobre la propia cuenta lo admite el paso 3»). AC:V5:15 permite ejecutar la acción 26 sobre la propia cuenta, en contradicción con la regla vigente y con DEC-AUTH-002 (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6825). La misma spec conserva el rechazo en V5.md:941 y TEST:V5:17, V5.md:1412; el AC deja dos instrucciones incompatibles sobre el control de permisos. Ninguna decisión posterior del owner autoriza esa excepción · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md | ≈260 | 1–768 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md | ≈35 | 1–153 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md | ≈65 | 1–473 | 1 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md | ≈85 | 1–596 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md | ≈120 | 1–816 | 0 | 1 |
+
+Conteos de reglas aproximados; los hallazgos repetidos en la descomposición se contabilizan una sola vez, en el capítulo que define la regla. Total: 2 BLOQUEA, 0 MENOR; 1 ausente y 1 distinta.

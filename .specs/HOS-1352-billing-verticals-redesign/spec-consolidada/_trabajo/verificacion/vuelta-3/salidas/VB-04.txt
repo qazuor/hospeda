@@ -1,0 +1,18 @@
+# VB-04 · spec → fuente · 10-corte/U1.md 10-corte/U2.md 10-corte/U3.md 10-corte/V1.md
+
+## Hallazgos
+
+10-corte/U3.md:169 · «el conteo del recorrido puede diferir del `total` del paginado en hasta un 1%, y **todo id conocido** tiene que aparecer en él; una corrida donde el conteo no iguala o donde falta un id conocido falla» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:150 («el conteo del recorrido tiene que igualar el `total` del paginado [...]; si no, el corte no avanza») y :852 («el conteo del recorrido iguala el `total` del paginado, y una corrida donde no lo iguala falla»); ninguna fuente ni decisión del owner admite una tolerancia del 1% (`rg` sin hits). También choca dentro de la spec con U3.md:58-60 (LISTA:U3), U3.md:349-350 (TEST:U3:4), U3.md:401 (TEST:U3:11) y con la misma oración del AC («una corrida donde el conteo no iguala [...] falla»). Un implementador que siga el AC deja pasar un recorrido incompleto en el gate del paso 2 · BLOQUEA
+
+10-corte/V1.md:319 · «Una clave que ninguna versión de plan asigna durante dos publicaciones seguidas se borra en la migración siguiente.» · sin soporte: no aparece en V/descomposicion.md:61/712, V/docs/20-testing.md:52/59 (G3, G18), NUCLEO/02 §1.2-§1.4, DEC-ARCH-013 ni sus 📌 (01-decision-log.md:7279-7343); `rg --hidden` por «dos publicaciones», «publicaciones seguidas» o clave sin uso/huérfana no da nada. Regla inventada: obligaría a construir una purga de claves que la fuente no manda (y que choca con «el catálogo de claves es código»: una clave sólo sale cuando sale del código) · BLOQUEA
+
+10-corte/U1.md:562-563 · «Lo mismo vale para el nombre neutro de la bitácora y para el nombre de *«las tres tablas»* de `is_featured` y `featured_by_entitlement`» (las propone el PR de `U1`) · contradicción interna con U1.md:828-830 (Abiertos: «*«Las tres tablas»* de `is_featured` son las tres tablas de fichas —las de Alojamiento, Gastronomía y Experiencia—»), que es lo que dice la fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:511-513 («en las tres tablas de fichas»). Una sección deja el dato a propuesta del PR y la otra lo da resuelto; lo que se construye es lo mismo · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/U1.md | 1–847 | 120 | 0 | 1 |
+| 10-corte/U2.md | 1–493 | 60 | 0 | 0 |
+| 10-corte/U3.md | 1–475 | 65 | 1 | 0 |
+| 10-corte/V1.md | 1–522 | 65 | 1 | 0 |

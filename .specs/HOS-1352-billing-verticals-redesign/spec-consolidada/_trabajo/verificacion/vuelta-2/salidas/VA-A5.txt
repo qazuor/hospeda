@@ -1,0 +1,28 @@
+# VA-A5 · fuente → spec · V/18-partner.md, V/19-superficies.md, V/20-testing.md, V/21-migracion.md, V/22-lo-legal.md, D/06-mp-validation-matrix.md
+
+## Hallazgos
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:71 · «qué puede hacer mientras tanto: verla, exportarla, editarla y borrarla, no publicarla» (fila 24, al moderar una ficha; owner g3) · distinta en 10-corte/V8a.md:388 («qué puede hacer mientras tanto: verla y exportarla, no editarla, borrarla ni publicarla»). La spec invierte lo que el dueño puede hacer sobre una ficha MODERATED: le niega editar y borrar, que la fuente le da. Contradice además lo que dice la propia spec en 04-catalogos.md:647 y 10-corte/V5.md:514 («verla, exportarla, editarla y borrarla»), y la decisión g3 (01-decisiones-vigentes.md:12094). Ninguna letra posterior lo cambia: `rg` sobre 41-corte-del-mvp/10-decisiones-del-owner.md no da nada sobre fichas moderadas. Quien construya el aviso de la fila 24 le diría al dueño lo contrario de lo que autoriza la cadena de V5 · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:371-381 · «E2E: lo que hoy se hace a mano … 1. trial completo: activación, campaña previa, vencimiento, campaña de recuperación y conversión tardía» · ausente como AC/TEST. Sólo aparece como texto en 30-el-corte.md:1535-1544. Busqué en todos los `TEST:*` con `Tipo: e2e` de 10-corte/ y 20-fase-*/ (V4 no tiene ningún e2e; los únicos e2e que hablan de trial son los del botón, en V8a). Ninguna pieza ni el CORTE tiene un TEST e2e del recorrido entero del trial, así que nadie lo construye · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:202 · fila GR-3: «el último reintento cae **~18 h después** del primer intento (`renov-ok`: creado 09-20T20:01:41, `last_retry` 09-21T14:07:04)» · distinta en 04-catalogos.md:8213 («el último reintento cae **~12 h después** del primer intento»). El valor medido está cambiado: las marcas de tiempo que la misma celda cita dan unas 18 h, igual que la fuente y 26-fase-9-completa/01-…:622. Ninguna pieza cita MP:GR-3 por ahora, pero la fila es la base medida de la política de reintentos del proveedor, y desde DEC-METH-019 la spec es la única fuente · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:167, 203-204, 257 · el rojo de la mitad (c) de G-R6-B «se rompe … sacándole al día 180 su lectura … y el rojo tiene que decir «lector declarado que ya no lee» y nombrarlo» / «sacándole a `PB9` su lectura» · distinta en 10-corte/V6.md:1213-1216 (TEST:V6:16, mutación (c): «sacar la lectura de `PB4`»; no exige que el rojo nombre al lector). La mutación cambia de lector, quizás porque PB9 llega con V9b y no existe en V6. Igual se ejerce el predicado, pero falta la exigencia de nombrar al lector, y la elección no está declarada · MENOR
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:68-72 · «Un producto de scope `LISTING` **no lista a Partner** … la incompatibilidad es **un dato**» · sólo vive en la narración de diseño de 20-fase-4/V7.md:421-433. Ningún AC, TEST ni validación del catálogo de addons (B13b, VAL, G-R2-C) comprueba que ningún producto `LISTING` declare a Partner entre sus verticales compatibles. La fuente dice que es un dato y no un control, así que lo que falta es a lo sumo la comprobación del dato sembrado · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| HOS-1353/docs/18-partner.md | ~45 (presencia y claves, moderación, 404, reconciliador, postulación y PP1 a PP3, espera y su anulación, las 5 reglas del reclamo, rol de socio, alta B, no-trial, lo que no cierra) | 1–407 | 1 (MENOR) | 0 |
+| HOS-1353/docs/19-superficies.md | ~30 (§1, §2, las filas 1 a 35 de §4, el panel de §6, lo que no cierra) | 1–111 | 0 | 1 (BLOQUEA) |
+| HOS-1353/docs/20-testing.md | ~40 (las 4 capas; G1 a G19, G-R2 a G-R9 y las VAL G-R3 y G-R5-B; mutaciones; §2.1; §5 E2E) | 1–381 (fin del archivo) | 1 (BLOQUEA) | 1 (MENOR) |
+| HOS-1353/docs/21-migracion.md | ~40 (no migra; las 5 cuentas; prueba del corte; tabla de paso y 5b; 4c; columnas que borra V6; inactiva_desde C; sólo lectura en el aborto; grants 3b; partner 410→404; limpieza de U1, `business` y specs por estado) | 1–777 | 0 | 0 |
+| HOS-1353/docs/22-lo-legal.md | ~8 (no guardar teléfono, CUIT ni dispositivo; seudónimo determinístico; la acción 24 sobre una postulación sin cuenta; la baja conserva el seudónimo hasta la respuesta; la pregunta 5) | 1–141 | 0 | 0 |
+| HOS-1352/docs/06-mp-validation-matrix.md | 7 reglas, 4 estados y 117 filas (estado y fecha comparados por script en las 117; conclusión normalizada en las 117) | 1–573 | 0 | 1 (BLOQUEA) |
+
+Notas de método:
+- La elisión de EX-46 en 04-catalogos.md («[…]» donde la fuente dice «el borde la cierra … hasta que las lápidas están escritas» y «pasos 3, 4») está adjudicada como PARCIAL/muerta en 04-catalogos.md:9516. No la reporto.
+- En el HOS-1353 21-migracion.md, las líneas 86–282 y 300–487 no tienen cita `Origen:` con su ruta completa. Igual verifiqué su contenido vivo contra V6.md (FILA, LISTA, «La prueba gratis que escribe el corte»), 30-el-corte.md y U1.md, y está.

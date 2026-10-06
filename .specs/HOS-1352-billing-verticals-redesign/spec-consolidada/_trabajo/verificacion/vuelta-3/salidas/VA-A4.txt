@@ -1,0 +1,31 @@
+# VA-A4 · fuente → spec · V/descomposicion.md, V/docs/10-verticales-planes-billing-options.md, V/docs/11-trial.md, V/docs/15-entitlements-y-limits.md, V/docs/17-autorizacion.md
+
+(V = .specs/HOS-1353-verticales-capacidades-y-autorizacion; spec = s/a10f010e/)
+
+## Hallazgos
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:67 · «Y se dice en el momento de despublicar, no en los términos. Que el reloj no se detiene es la primera pregunta de alguien molesto, y un aviso en el acto la convierte en una decisión informada» (y su fila en V/19 §4: «2 | al despublicar una ficha en trial | que el reloj del trial no se detiene», 19-superficies.md:61, viva, sin tachado ni decisión posterior que la saque) · ausente (V4.md:472-490 transcribe el §1 y omite el párrafo; la tabla «Lo que hay que decir» de 10-corte/V8a.md:375-398 salta de la fila 1 a la 4; AC:V8a:6 (V8a.md:209) y la lista de UI web (V8a.md:439) enumeran «1, 4, 8, 9, …» sin la 2; rg «no se detiene», «momento de despublicar», «al despublicar» en toda la spec: sin resultados normativos; tampoco está en V9a/V9b/B13a) · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:420 · «Si el primer cobro se rechaza, el trial sigue, con los días que le quedaban … un alta que no ocurrió no consume el trial» · distinta en 10-corte/V4.md:748 («Salvo el segundo rechazo dentro del mismo trial, que sí lo termina: la persona pasa a `TRIAL_EXPIRED` aunque le queden días») — excepción sin soporte en ninguna fuente (rg --hidden «segundo rechazo», «aunque le queden días», «dos rechazos» sobre fuentes/ y el decision log: cero), más fuerte que la fuente y contradictoria con el propio AC:V4:6 (c) (V4.md:283: «la persona sigue en su trial con los días que le quedaban») · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:219 (precisión 7, conversaciones/reseñas/comentarios) y su criterio de demostración en .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:515 (unidad V5: «un turista le escribe a una ficha publicada ajena y deja una reseña; sobre una ficha en borrador ajena contesta lo mismo que sobre un identificador que no existe; su conversación sobre una `PURGED` se lee entera y no admite mensajes») · ausente de AC/TEST (sólo en la prosa de 10-corte/V5.md:632-650; ningún AC:V5:1-24 ni TEST:V5 crea conversación/reseña/comentario sobre ficha no publicada ni afirma el «no existe»; AC:V8a:5/6 y V9b sólo cubren la superficie y el caso `PURGED`, no la regla de autorización de crear sobre una ficha no `PUBLISHED`; LISTA:V5 no la nombra) · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:312 · «Una sola pieza por persona y por hito, que nombra todas las verticales que le corresponden. La consolidación pasa antes que la supresión del capítulo 07» · ausente de AC/TEST (sólo en la prosa de 10-corte/V4.md:661-663 y 677; AC:V4:16, AC:V4:17, TEST:V4:22, TEST:V4:23, U2 y 02-nucleo-outbox.md no la recogen: rg «consolida», «por persona y por hito», «nombra.*verticales») · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| V/descomposicion.md | ~110 (filas V1–V9b del §2, §1.1, §2.1–§2.14, §3, criterios del §4) | 1–768 | 1 (compartido con 17:219, línea de conversaciones) | 0 |
+| V/docs/10-verticales-planes-billing-options.md | ~12 | 1–153 | 0 | 0 |
+| V/docs/11-trial.md | ~30 | 1–473 | 2 | 1 |
+| V/docs/15-entitlements-y-limits.md | ~45 | 1–593 | 0 | 0 |
+| V/docs/17-autorizacion.md | ~75 | 1–816 | 1 (el mismo de descomposicion:515) | 0 |
+
+Nota de método: 10, 11 y 15 se recorrieron regla por regla contra la spec (V2, V3, V4, V5, V6, V8a,
+B13a, catálogos). 17 y descomposicion se recorrieron enteros, contrastando cada párrafo contra la
+transcripción casi literal de V5/V1–V9b (comparación por oraciones normalizadas) y verificando a mano
+las reglas cuyo texto no aparecía literal y los criterios del §2.10–§2.13 y §4 asignados a cada pieza
+contra sus AC/LISTA. Los «distintos» aparentes por renumeración (la acción de moderar = ACC:12 en la
+spec vs. «la decimotercera» en la fuente) están declarados en la nota N1 de 02-nucleo.md:1115 y no se
+reportan.

@@ -1,0 +1,16 @@
+# VB-04 · spec → fuente · 10-corte/U1.md, 10-corte/U2.md, 10-corte/U3.md, 10-corte/V1.md
+
+## Hallazgos
+
+10-corte/U1.md:543 · «Las rutas retiradas del cobro viejo se conservan como endpoints de sólo respuesta: devuelven `410` durante un año desde el corte, sin redirigir a las rutas nuevas.» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7537 («La primera unidad de trabajo del programa borra todo el cobro viejo (`qzpay` y sus cinco `package.json`, sus rutas, sus crons, su adaptador y lo que sólo el sistema viejo usa)»). La obligación de conservar endpoints y responder `410` durante un año no tiene soporte vivo ni precisión posterior que la autorice; contradice también AC:U1:1 en 10-corte/U1.md:218 («no quedan las rutas del cobro viejo»). Construiría rutas y un plazo de compatibilidad que la fuente no manda. · BLOQUEA
+
+10-corte/U3.md:63 · «2. **está mergeada en la rama del paraguas después del ensayo del corte** (paso 0);» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:856 («Y está mergeada en la rama del paraguas antes del ensayo del corte»), ratificado en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7635 («se mergea en la rama del paraguas antes del ensayo del corte»). Invierte un requisito operativo: el ensayo ejecuta U3 ya mergeada. Contradice también AC:U3:10 en 10-corte/U3.md:239 y 30-el-corte.md:1283, que exigen el merge antes del ensayo. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/U1.md | 1–851 | 190 | 1 | 0 |
+| 10-corte/U2.md | 1–493 | 110 | 0 | 0 |
+| 10-corte/U3.md | 1–475 | 105 | 1 | 0 |
+| 10-corte/V1.md | 1–521 | 130 | 0 | 0 |

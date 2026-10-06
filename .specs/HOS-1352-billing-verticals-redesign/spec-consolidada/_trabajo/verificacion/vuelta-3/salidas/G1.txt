@@ -1,0 +1,43 @@
+# G1 · spec → fuente · 01-decisiones-vigentes.md
+
+## Hallazgos
+
+01-decisiones-vigentes.md:4165 · «El dueño que no la quiera pública tiene  **`PB1`** y la despublica» (DEC-DATA-003, «El riesgo aceptado») · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4220 («tiene ~~`PB1`~~ **`PB6`** y la despublica»): la copia conserva el valor TACHADO (`PB1`, con la negrita que era del vivo) y pierde el vivo (`PB6`). Choca además con la nota de la línea siguiente de la propia copia (:4166, «`PB1` sale sólo de `DRAFT`, así que la transición que despublica a mano es `PB6`»). Un implementador que siga el texto normativo cablea la despublicación manual a la transición equivocada · BLOQUEA
+
+01-decisiones-vigentes.md:9228 · «De las **seis** transiciones que dejan huérfano un addon (`B/16` §4.3),  **CINCO no son un acto del cliente**» (cuerpo de DEC-RF-004, «Ampliado el 2026-09-23») · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5125 («~~seis~~ **DOCE** transiciones que dejan huérfano un addon (`B/16` §4.3), ~~dos~~ **CINCO no son»): sobrevive la cifra tachada (`seis`, en negrita) y desaparece la viva (`DOCE`). Contradicción interna en el mismo bloque: :9232 «no cuál de las doce mató al título» y el enmendado siguiente «doce y cinco, no seis y dos». Valor equivocado en una cifra que el texto usa para acotar el dominio de `NO DEVOLVER` · BLOQUEA
+
+01-decisiones-vigentes.md:13018 · letra B de 38-fase-5 (lotes 4 a 6, `R5-24`): «se crea un **rol de socio** … asignado al aprobar la postulación» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:133 (letra F: «el rol de socio se da en el acto que fija al dueño de la presencia …, no al aprobar la postulación») y 01-decision-log.md:6725 («**no se asigna al aprobar la postulación**»): la letra se rinde viva sin «⚠️ Caducada en parte», contra lo que promete la cabecera de la sección («Las letras que una fuente posterior dejó sin efecto llevan su marca ⚠️ Caducada»). Sólo citable (AX) · MENOR
+
+01-decisiones-vigentes.md:13171 · letra F de 38-fase-5 (lote de la aplicación): «(el reclamo, o el alta directa del admin con dueño)» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md (letra N) y 01-decision-log.md:6737 («El *«alta directa del admin con dueño»* del 📌 anterior se lee *«cuando queda con dueño»*»): la misma frase está omitida «[…]» en el 📌2 de DEC-ENT-006 (nota :3024) y la letra sigue sin ⚠️. Sólo citable · MENOR
+
+01-decisiones-vigentes.md:13189 · letra H de 38-fase-5: «`starts_at` y `ends_at` quedan hasta la unidad de socios» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:154 (letra O: «`V7` borra `partners.starts_at` y `partners.ends_at` con su migración») y 16-fase-7-del-paraguas.md:984: la misma frase está omitida «[…]» en DEC-ENT-006#📌2 (:3024) y DEC-ARCH-014#📌5 (:6144), pero la letra se rinde viva sin ⚠️. Sólo citable · MENOR
+
+01-decisiones-vigentes.md:11583 · letra `G5-3` de 28-fase-9-vuelta-1: «el barrido lista en el resumen las pausas de menos de un ciclo que cruzaron una fecha de cobro salteada» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1922-1926 («~~Una pausa de menos de un ciclo que cruza una fecha de cobro salteada regala ese ciclo~~ **Toda pausa que cruza … regala días, dure lo que dure** … el barrido lista ~~esas pausas~~ **las pausas con regalo neto positivo**», L3 de la misma ronda): el predicado de la letra murió tachado en el log y la letra sale sin ⚠️. El detector P-H del generador sólo mira citas tachadas del ID de la letra, no contenido tachado que la letra produjo. Sólo citable · MENOR
+
+01-decisiones-vigentes.md:11482 · letra `G2-1` de 28-fase-9-vuelta-1: «un hecho empujado de verticales a billing en el mismo acto de `PB9`/`PB12`» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2523-2524 («emitido ~~en el mismo acto de `PB9` y de `PB12`~~ **por el mismo acto** de `PB9` y de `PB12`, **después de su commit**», L1): la letra se rinde sin ⚠️ con la forma que el log tachó. Sólo citable · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 01-decisiones-vigentes.md | 1–14140 (completo) | ~1.700 (138 DEC, 209 📌 desarrollados + 8 punteros a retirados, 319 letras con sus ~1.090 celdas) | 2 | 5 |
+
+Método. Todo el archivo se cotejó de forma automática, no por muestreo: (a) para cada una de las 138 decisiones
+se reconstruyó el texto de la copia volviendo a insertar cada 📌 en el lugar de su puntero `→ ver 📌n`, y se lo
+comparó palabra por palabra (difflib sobre tokens) contra el rango de la entrada en el log congelado sin lo
+tachado; toda diferencia se revisó a mano. (b) Las 319 letras se recompusieron desde su fila de origen
+(`partir` por `|` no escapado + quitar lo tachado) y se compararon celda por celda: 0 diferencias. (c) Títulos,
+anclas, `Origen:` de decisiones y de 📌 (que la línea sea el encabezado o un 📌 de esa decisión): 0 errores.
+(d) Las 291 líneas «Dueña del AC» apuntan a una pieza cuyo archivo nombra la decisión: 291/291.
+
+Clases de error buscadas (en TODO el archivo):
+- Tachado que sobrevive como vivo: 0 `~~` en la salida; pero 2 casos «~~A~~ **B**» en la misma línea rendidos como «**A**» (PB1/PB6 y seis/DOCE, arriba). Los otros ~13 tachados de reemplazo dentro de texto rendido salen bien (`G-R4` cuatro, filas de `B/20`/`V/20`/guards 16/17/29, `PB12`, `NUCLEO/02`, `ficha(idDeFicha)`, «las pausas con regalo neto positivo», `S36`, `GRACE_PERIOD` «la cuota ya existe», re-anclaje `MP4`, «y no suma guards», `coberturaPerdidaEn`). El `unstrike` de gen01.py, tal como está escrito, no produce estos dos; la salida no coincide con lo que el generador leído dice hacer.
+- Celdas cortadas en `\|`: 0 (ninguna celda termina en `\`, cantidad de celdas = columnas del encabezado en las 319 letras).
+- Texto pegado al bloque equivocado: segmentación de 📌 revisada (📌 que absorben ítems de lista: todos son sub-listas indentadas del propio 📌 en la fuente); el único caso de la fuente (cola de DEC-ARCH-014#📌7 que es de `U3`) está reubicado en el 📌6 con nota. 0 hallazgos.
+- Decisión/📌 retirado que aparece vigente: las 8 `SUPERSEDED` enteras del log están en 90-retirados y no en 01; las 4 `SUPERSEDED EN PARTE` llevan nota; los 📌 que el log da por `SUPERSEDED` (DEC-MIG-005 📌1/2/4, DEC-MIG-006 📌1, DEC-MIG-003 📌6, DEC-ARCH-006 📌4/5, DEC-RF-008 📌2) salen como puntero a retirados; la parte lote G del 📌5 de DEC-MIG-005 sale «[…]». 0 hallazgos.
+- Letra del owner caducada sin ⚠️: las que nombran las notas de caducidad (28: G1-1, G2-4; 29: R15) y las del detector P-H llevan ⚠️ (23). Hallazgos: 5 letras superadas por una letra o un tachado posterior sin ⚠️ (B, F, H de 38-fase-5; G5-3 y G2-1 de 28), todas MENOR por ser sólo citables.
+- Omisiones (vivo de la fuente que falta): 146 `### DEC-` del log = 138 en 01 + 8 en 90-retirados; cada fila de las 9 tablas `10-decisiones-del-owner.md` rendida (378; la única ausente, BI de 41-corte:123, está retirada con enlace). Toda diferencia de la comparación por tokens es un «[…]» con su nota «Parte sin efecto» en el mismo bloque (54 notas; los dos «[…]» sin nota propia son el texto reubicado y uno literal de la fuente en DEC-METH-019). 0 hallazgos.
+- «[…]» sin justificación: cotejadas contra su fuente las notas de DEC-TRIAL-010, DEC-DATA-005 (nucleo/08:214), DEC-ARCH-017 (AV, BG, BW), DEC-MIG-001, DEC-MP-008, DEC-SUB-013, DEC-ADDON-004, DEC-DATA-008, DEC-ARCH-013, DEC-ENT-006 y DEC-ARCH-014#📌5 (V6 vs V7: coincide con 16-fase-7:984, AP). 0 hallazgos.
+
+Ítems cotejados además a mano contra la fuente (≥40, principio/medio/final; tablas y prosa; con y sin 📌):
+DEC-TRIAL-001; DEC-TRIAL-002; DEC-TRIAL-003 (cabecera); DEC-TRIAL-010 y su nota; DEC-SUB-010 📌 (G5-3); DEC-SUB-013 nota; DEC-SUB-019 omisión; DEC-SUB-021 📌1 omisiones; DEC-MP-003 omisión; DEC-MP-008 📌; DEC-ENT-006 📌1, 📌2, 📌3, 📌4; DEC-ADDON-002 📌2; DEC-ADDON-004 📌1; DEC-DATA-001 cuerpo, 📌1, 📌2; DEC-DATA-002 omisiones; DEC-DATA-003 (PB1/PB6); DEC-DATA-004 título; DEC-DATA-005 📌; DEC-DATA-008 📌3; DEC-ARCH-006 implicaciones 4 y 5 y 📌4/📌5 retirados; DEC-ARCH-013 📌1; DEC-ARCH-014 📌5, 📌6, 📌7 (reubicado); DEC-ARCH-017 notas; DEC-MIG-001; DEC-MIG-003 📌6 retirado; DEC-MIG-005 📌1 a 📌7; DEC-MIG-006 📌1 a 📌3; DEC-GRANT-004 (📌 entre paréntesis); DEC-CONC-002 📌1 y 📌2; DEC-RF-004 cuerpo (seis/DOCE); DEC-RF-008 📌2 retirado; DEC-METH-019 📌4; letras G1-1, G2-1, G2-4, G4-2, G5-3, G5-4 (28); R15, R2, R5 (29); 2d, 6a, 6b (26); G, N, S, T, X, AD (37); B, D, F, H, O (38); F, K (39); BI (41).

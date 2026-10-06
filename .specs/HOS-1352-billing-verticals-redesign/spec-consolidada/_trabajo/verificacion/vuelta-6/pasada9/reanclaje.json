@@ -1,0 +1,246 @@
+{
+    "desde": "3c3e88b9b59cb7d766bc34848b8ffd657eb95770",
+    "hasta": "5381f7579687651df168575c85f144f9b48daea7",
+    "archivos": {
+        "00-indice.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 323
+        },
+        "02-nucleo-auditoria.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 102
+        },
+        "02-nucleo-glosario.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 240
+        },
+        "02-nucleo-modelo-y-maquinas.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 62
+        },
+        "02-nucleo-outbox.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 116
+        },
+        "02-nucleo.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 239
+        },
+        "03-contrato-de-cobertura.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 209
+        },
+        "30-el-corte.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 205
+        },
+        "80-abiertos.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 238
+        },
+        "90-retirados.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 89
+        },
+        "10-corte/B1.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 81
+        },
+        "10-corte/B11.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 54
+        },
+        "10-corte/B13a.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 38
+        },
+        "10-corte/B2.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 23
+        },
+        "10-corte/B3.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 78
+        },
+        "10-corte/B8a.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 13
+        },
+        "10-corte/B9a.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 37
+        },
+        "10-corte/U1.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 23
+        },
+        "10-corte/U2.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 6
+        },
+        "10-corte/U3.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 9
+        },
+        "10-corte/V1.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 14
+        },
+        "10-corte/V2.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 23
+        },
+        "10-corte/V3.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 50
+        },
+        "10-corte/V4.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 71
+        },
+        "10-corte/V5.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 681
+        },
+        "10-corte/V6.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 393
+        },
+        "10-corte/V8a.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 79
+        },
+        "10-corte/V9a.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 6
+        },
+        "20-fase-1/V9b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 290
+        },
+        "20-fase-2/B8b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 53
+        },
+        "20-fase-2/B9b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 15
+        },
+        "20-fase-3/B10.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 43
+        },
+        "20-fase-3/B12.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 26
+        },
+        "20-fase-3/B13b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 4
+        },
+        "20-fase-4/V7.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 396
+        },
+        "20-fase-4/V8b.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 3
+        },
+        "scripts/generadores/g8/src/B4.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 33
+        },
+        "scripts/generadores/g8/src/B5.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 88
+        },
+        "scripts/generadores/g8/src/B6.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 50
+        },
+        "scripts/generadores/g8/src/B7.md": {
+            "cambiadas": [],
+            "desconocidas": [],
+            "remapeadas": 0,
+            "iguales": 746
+        }
+    }
+}

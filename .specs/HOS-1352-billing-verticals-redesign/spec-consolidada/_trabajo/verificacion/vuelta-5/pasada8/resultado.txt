@@ -1,0 +1,72 @@
+Pasada 8 · vuelta 5 · HOS-1352
+
+Aplicada con autorización del owner: CK = 1. Contra confirma los dos BLOQUEA
+y los tres GENERADOR; sin FALSO ni CORRECCIÓN A AJUSTAR. Aplicados 2 REAL
+BLOQUEA, 5 REAL MENOR, 3 GENERADOR y la decisión CK.
+
+Commits previos: fdbb300e33 (artefactos), 3c3e88b9b5 (F), bba93a3d34 (S),
+5e2c53c177 (G fase 1). Headers en inglés y <=100 caracteres.
+Fuentes congeladas: 3c3e88b9b59cb7d766bc34848b8ffd657eb95770.
+
+F: CK registrada como OWN:41-corte-del-mvp:t17:CK (fila 234).
+DEC-ARCH-009#📌2 agregado (línea 6182), sólo pin nuevo y remisión Estado;
+verificado comparando el log anterior sin esos dos agregados.
+Las filas históricas del owner quedaron intactas. Correcciones tachadas y
+agregadas en B/descomposicion (138, 731, 892) y contrato fuente (1130).
+B4 → U2 se conserva: U2 → B3 → B4, además del camino por V4;
+B3 encola alta y cancelación, y U2 aporta auditoría/correlación. El aviso de
+cobertura no es una obligación del outbox de correos.
+
+S: aviso después del commit, sin entrega durable. Revertida la parte de
+H4-VB-09-2 que encolaba cobertura con el estado; se conserva la atomicidad
+de los correos de U2. Reloj coberturaPerdidaEn persiste con la caída antes
+del aviso, aunque se frene o pierda. Reconciliador diario conserva población,
+exclusiones y hasta un día de atraso; no corre la máquina de trial.
+Aplicados H5-VB-06-2, H5-VB-08-4, H5-VB-04-1, H5-VB-07-4/5/6/7.
+Los siete sale/entra se comprobaron literalmente en las salidas finales.
+
+G: AP, BN y BU llevan caducidad parcial. Detector revisa las relaciones
+«precisa», distinguiendo reemplazos y adiciones. Sandbox: 14 canarios, cero
+fallas; con gen01.py anterior fallan exactamente AP, BN y BU (3 fallas,
+exit 1). Control negativo BY conserva BL vigente. Logs adjuntos.
+Hallazgo adicional pendiente de adjudicación: CF reemplaza en parte la
+ubicación del predicado/test de CC (B2 → B3); no se aplicó una cuarta marca.
+Registro explícito «fuera de alcance», no se lo clasificó como aditivo.
+
+Re-congelado: inventario, asignación y adjudicación, reanclado de cobertura
+(102 citas movidas, ninguna sin lugar) y sellado; pin CK asignado a B4.
+39 citas manuales movidas; 3 CAMBIADA revisadas: B4 src, filas fuente 138
+(dos citas) y 731, conservan ubicación y autoridad tras CK.
+107 anclajes de secciones comprobados, ninguno se movió.
+Regenerados g1, g3, g8 B4-B7 (argumentos explícitos) y secciones.
+Índice y abiertos actualizan SHA; índice declara hasta CK.
+Markdown formateado y JSON con Biome. cobertura.json (>1 MiB) conserva
+el formato de dos espacios de su generador y de HEAD para evitar ruido
+de formato en miles de líneas; validado semánticamente.
+
+Verificación documental, logs y exit codes en checks.json:
+- trazar: APROBADO (0); seis avisos R18 no bloqueantes por tipos derivados.
+- cobertura: 752/752 normativos con pieza; APROBADO (0).
+- canarios: 65 + 40 + 14 + 6 + 8 = 133, cero fallas; exit 0 por suite.
+- aristas: cero violaciones; contar: exit 0.
+- markdownlint global: 83 archivos, cero errores; exit 0.
+- Biome JSON: exit 0.
+- 65 artefactos cotejados con caché: textos idénticos y JSON semánticamente
+  iguales (el hook formatea JSON al archivarlos).
+
+Incidencias resueltas: cobertura inicialmente reclamó los hashes y la
+asignación del pin nuevo; sellados y asignación resolvieron ambos.
+El primer gen.py de g8 sin argumentos no genera archivos; se ejecutó otra
+vez con B4 B5 B6 B7 y se verificó la salida B4, no sólo exit 0.
+
+Verificación adicional no completada: qz-verify --changed no acota a estos
+archivos; anunció 57 pasos de CI del monorepo y falló antes del primer lint
+por el store SQLite de pnpm (exit 1, qz-verify.log). No se ejecutó CI ni
+runtime de producto. Las validaciones documentales del RUNBOOK sí pasaron.
+
+No push ni Linear. Archivos ajenos y cachés preexistentes no incorporados.
+Reversión: fuentes, spec, generador y re-congelado están separados; revertir
+fuentes junto con su re-congelado para mantener consistencia.
+La vuelta 5 no cortó (2 REAL BLOQUEA), aunque detectó 42/42 canarios (VB
+28/28, G 4/4, VA 10/10; propios 39/42). Esta pasada corrige los hallazgos;
+la próxima vuelta ciega, 6, debe comprobar el criterio de corte. No se lanzó.

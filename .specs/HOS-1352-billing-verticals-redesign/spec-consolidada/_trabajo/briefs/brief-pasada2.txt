@@ -1,0 +1,34 @@
+# Brief de la pasada 2 de redacción · spec consolidada de HOS-1352
+
+Sos uno de los redactores de la SEGUNDA pasada. Trabajás en paralelo con otros, cada uno sobre archivos distintos de la spec consolidada. Respondé en español rioplatense.
+
+## Antes de empezar
+
+1. Leé entero el brief de la primera pasada: `/tmp/claude-1000/-home-qazuor-projects-WEBS-hospeda2/aea3b776-f265-47b9-b02c-90f6c9d5c9f6/scratchpad/brief-redaccion.md`. Sus reglas valen todas: nada inventado, no se pierde nada, cada cosa se define una vez, formatos de `trazar.py`, plantilla AO, prohibido git y prohibido editar fuentes. Sólo cambia una cosa: **el SHA congelado ahora es `17f9702675`**. Ignorá el `f80c0f2715` que aparece en ese brief.
+2. Verificá que HEAD del worktree sea `0f4124b6e7` o posterior. No corras git más que en lectura.
+3. Leé tu lista de trabajo: `$C/_trabajo/pasada2/<tu-grupo>.md`. También `$C/_trabajo/pasada2/reanclar.json`, para las citas que caen sobre texto cambiado. `$C` = `/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada`.
+4. Las decisiones del owner ya tomadas, de Y a BX, están en `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md`. No se relitigan. Las de esta tanda (BK a BX) cambian varias piezas; leé las filas que toquen tus archivos.
+
+## Qué hacer, en este orden
+
+1. **Ítems nuevos.** Definilos (R1) y escribí sus AC y tests en la pieza dueña según `cobertura.json` (R7, R7b, R18).
+2. **Ítems con contenido de fuente cambiado.** Actualizá todo lo derivado (US, AC, tests, reglas, texto) para que diga lo que dice la fuente HOY. Que el ancla siga valiendo no alcanza.
+3. **Citas sobre texto cambiado** (R6). Leé la línea nueva, corregí el texto si cambió el sentido y corregí la cita.
+4. **Secciones R17 asignadas a tu grupo.**
+   - Si están «ya cubiertas», agregá la cita `Origen:` en el bloque donde está ese contenido.
+   - Si el contenido está «ausente» o «parcial», escribí el contenido completo y vigente (sin tachados, con los 📌 y las letras aplicados) en el archivo asignado, dentro del bloque de la pieza o del ítem más afín, o bajo un `##` propio, con su `Origen:` apuntando a TODAS las líneas de la sección.
+   - Las secciones «⚠ confirmar» van donde dice la lista, salvo que leyendo encuentres una pieza que las construye de verdad. En ese caso, decilo en tu reporte.
+5. **Archivos generados** (01, 04, B4–B7): NO se editan a mano. Lo que les toque se cambia en su generador (`$C/scripts/generadores/<g>/`, y en B4–B7 en `g8/src/*.md`). Después se regenera y se aplica `npx markdownlint-cli2 --fix --config .markdownlint-cli2.jsonc <archivos>` desde la raíz del worktree.
+6. **Autochequeo.** Corré `python3 $C/scripts/trazar.py $C/_trabajo/inventario.json $C/_trabajo/adjudicacion.json $C --cobertura=$C/_trabajo/cobertura.json` y filtrá los errores de tus archivos (los nombres de regla empiezan con `^R`). Tus archivos tienen que quedar en 0 en todas las reglas, R17 incluida para las secciones de tu lista. Corré también markdownlint sobre tus archivos y dejalos sin errores.
+
+## Abiertos y reporte
+
+- **Abiertos:** si algo exige decidir lo que las fuentes no deciden, NO lo escribas. Anotalo en `$C/_trabajo/abiertos/pasada2-<tu-grupo>.md`, con el formato de la primera pasada.
+- **Reporte final**, en markdown compacto y con números de script:
+  - archivos tocados;
+  - por categoría (nuevos, cambiados, citas, R17), cuántos resolviste y cuántos quedan;
+  - errores de `trazar.py` en tus archivos, por regla;
+  - abiertos;
+  - errores de fuentes;
+  - lo inferido, marcado como tal.
+  Terminá con `## Key Learnings:` numerado.

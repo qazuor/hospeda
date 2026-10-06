@@ -1,0 +1,109 @@
+# Correcciones propuestas — vuelta 7
+
+Sólo propuestas. Líneas de la spec real en pristina, nunca de la copia ciega. Fuente congelada: 5381f7579687651df168575c85f144f9b48daea7.
+Dos REAL BLOQUEA; un FUENTE; cero REAL MENOR, FALSO, GENERADOR y OWNER.
+Los canarios no requieren correcciones: pristina ya conserva las reglas originales.
+
+## 10-corte/B1.md
+
+### H7-VB-08-2 · REAL BLOQUEA · línea 357
+
+AC:B1:20 y Seguridad extienden el guard de entorno a toda sonda, incluidas las de sólo lectura; la fuente lo exige a lo que muta.
+Generado: no. Destino de aplicación futura: el archivo manual de la spec.
+
+SALE (literal):
+```text
+- **Cuando** va a hacer una sonda o una mutación contra el proveedor, y cuando va a hacer una que mueve
+  plata
+```
+ENTRA (literal):
+```text
+- **Cuando** va a hacer una operación que muta algo en el proveedor, y cuando va a hacer una sonda
+  que mueve plata
+```
+
+### H7-VB-08-2 · REAL BLOQUEA · línea 359
+
+AC:B1:20 y Seguridad extienden el guard de entorno a toda sonda, incluidas las de sólo lectura; la fuente lo exige a lo que muta.
+Generado: no. Destino de aplicación futura: el archivo manual de la spec.
+
+SALE (literal):
+```text
+- **Entonces** toda sonda o mutación abre con `GET /users/me` y aborta, sin mandar nada, si la cuenta no
+```
+ENTRA (literal):
+```text
+- **Entonces** toda operación que muta algo abre con `GET /users/me` y aborta, sin mandar nada, si la cuenta no
+```
+
+### H7-VB-08-2 · REAL BLOQUEA · línea 768
+
+AC:B1:20 y Seguridad extienden el guard de entorno a toda sonda, incluidas las de sólo lectura; la fuente lo exige a lo que muta.
+Generado: no. Destino de aplicación futura: el archivo manual de la spec.
+
+SALE (literal):
+```text
+van como AC propio ([AC:B1:20](#ac-b1-20)): toda sonda o mutación contra el proveedor abre con
+```
+ENTRA (literal):
+```text
+van como AC propio ([AC:B1:20](#ac-b1-20)): toda operación que muta algo en el proveedor abre con
+```
+
+## 80-abiertos.md
+
+### H7-VB-13-3 · REAL BLOQUEA · línea 355
+
+80-abiertos:355 conserva el comienzo del reintento en la fecha efectiva; la fuente congelada actual exige contarlo desde S37, siete días antes.
+Generado: no. Destino de aplicación futura: el archivo manual de la spec.
+
+SALE (literal):
+```text
+y los 3 días del reintento de monto corren desde su fecha efectiva (`B/14` §2.4), como dice la fuente
+```
+ENTRA (literal):
+```text
+y los 3 días del reintento de monto corren desde `S37`, que muta el monto siete días antes de la fecha efectiva (`B/14`, cierre de «El instante del aumento de precio»; `B/09` §3; `DEC-MP-002` y su 📌 de CC), como dice la fuente
+```
+
+## En las fuentes
+
+### H7-VB-13-5 · FUENTE
+
+80-abiertos:451 transcribe fielmente el residuo de B/22:87 que sitúa la mutación en la fecha efectiva. El 📌 de CC ya lo reemplaza por S37 siete días antes.
+No corregir aisladamente la transcripción. Primero corregir B/22, volver a congelar las fuentes y sincronizar la copia. No hace falta decisión de producto: el 📌 de CC ya resolvió el instante.
+
+Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:87
+
+SALE (literal):
+```text
+llegada la fecha efectiva **el monto se muta automáticamente**; el cliente no acepta nada, puede cancelar antes
+```
+ENTRA (literal):
+```text
+**`S37` muta el monto automáticamente siete días antes de la fecha efectiva**, y **ningún cobro sale al precio nuevo antes de esa fecha** (`DEC-MP-002`, 📌 de CC, leído con BZ); el cliente no acepta nada, puede cancelar antes
+```
+
+Propagación después del re-congelado: 80-abiertos.md:451 (línea actual de pristina; manual, no generado).
+
+SALE (literal):
+```text
+llegada la fecha efectiva **el monto se muta automáticamente**; el cliente no acepta nada, puede cancelar antes
+```
+ENTRA (literal):
+```text
+**`S37` muta el monto automáticamente siete días antes de la fecha efectiva**, y **ningún cobro sale al precio nuevo antes de esa fecha** (`DEC-MP-002`, 📌 de CC, leído con BZ); el cliente no acepta nada, puede cancelar antes
+```
+
+## FALSO
+
+Ninguno entre los tres hallazgos no canarios. G1-4 y G2-5 son detecciones parciales de una alteración plantada, no falsos defectos de la spec real.
+
+## Antecedentes y aplicación
+
+- H7-VB-08-2 corrige una ampliación introducida en la propuesta H2-VA8-11. Se conserva su objetivo de tener AC y prueba de los guards.
+- H7-VB-13-3 se apoya en la fuente actual ya corregida; H3-VB13-6 juzgó una fuente anterior que aún decía «fecha efectiva».
+- H7-VB-13-5 es otra ubicación del residuo temporal tratado en vuelta 4, H4-VB-08-4; no reabre BZ/CC.
+- Ninguna corrección REAL toca archivos generados. Los cambios plantados dentro de g1/g3/secciones/g8 no demuestran defectos de sus reglas.
+- TEST:B1:19 ya habla de abortar antes de la primera mutación; no requiere ampliar el guard a las lecturas.
+- Verificación realizada: los cuatro reemplazos REAL y la corrección de fuente/propagación existen una sola vez y comienzan en las líneas declaradas. No se aplicaron.

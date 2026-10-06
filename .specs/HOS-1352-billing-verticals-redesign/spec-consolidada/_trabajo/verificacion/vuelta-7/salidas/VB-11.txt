@@ -1,0 +1,15 @@
+# VB-11 · spec → fuente · 10-corte/B9a.md, 20-fase-2/B9b.md, 20-fase-1/V9b.md
+
+## Hallazgos
+
+10-corte/B9a.md:48 · «el contador de una promo baja con cualquier cobro acreditado, aunque haya salido sin el descuento» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:145 («el contador de una promo baja sólo con un cobro que salió con el descuento»), confirmado por fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:249 («el contador baja sólo si el importe cobrado no pasa del monto esperado con esa promo aplicada») y el 📌 R20 de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5507. También contradice AC:B9b:4 (20-fase-2/B9b.md:141) y LISTA:B9 (10-corte/B9a.md:1045): consumiría la promo aunque el cliente hubiera pagado el precio entero · BLOQUEA
+
+20-fase-2/B9b.md:341 · «Un código promocional sólo se puede canjear desde una cuenta creada antes de la publicación del código; las cuentas posteriores reciben un rechazo sin consumirlo.» · sin soporte: agrega una guarda por antigüedad de la cuenta ausente del modelo de promo_code y promo_redemption (fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:577), del capítulo 14 y de DEC-PROMO-001 (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:814: «Cada código declara cuántos canjes admite en total y entre qué fechas es válido, además del límite por persona»). No hay una decisión posterior en el log ni en docs/41-corte-del-mvp/10-decisiones-del-owner.md que imponga ese rechazo; excluiría cuentas nuevas de canjes que la fuente permite · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B9a.md | 1–1430 (59–725 excluidas: g-secciones, asignadas a G2) | 180 | 1 | 0 |
+| 20-fase-2/B9b.md | 1–669 | 150 | 1 | 0 |
+| 20-fase-1/V9b.md | 1–813 | 220 | 0 | 0 |

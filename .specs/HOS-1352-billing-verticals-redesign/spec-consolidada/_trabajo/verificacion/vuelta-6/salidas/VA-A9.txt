@@ -1,0 +1,14 @@
+# VA-A9 · fuente → spec · B/docs/{10-verticales-planes-billing-options,12-suscripcion,21-migracion,22-lo-legal}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1072 · «una `PAUSED` por `COURTESY` **sí emite**, como `tipo: CORTESÍA`» · distinta en s/b249f841/20-fase-2/B9b.md:397 («Una cortesía temporal recién otorgada empieza a prestar servicio al día siguiente de su firma; hasta entonces no emite ninguna fuente de cobertura.»). Introduce un día sin cobertura al otorgar la cortesía, contrario al servicio sostenido durante esa pausa; también contradice AC:B9b:7 y la fila `PAUSED` por `COURTESY` del contrato de cobertura. DEC-GRANT-003 y sus precisiones mantienen el servicio; no aparece una excepción de inicio al día siguiente en el decision log ni en las decisiones posteriores del owner. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| B/docs/10-verticales-planes-billing-options.md | ≈80 | 1–270 | 0 | 0 |
+| B/docs/12-suscripcion.md | ≈130 | 1–1198 | 0 | 1 |
+| B/docs/21-migracion.md | ≈65 | 1–696 | 0 | 0 |
+| B/docs/22-lo-legal.md | ≈30 | 1–196 | 0 | 0 |

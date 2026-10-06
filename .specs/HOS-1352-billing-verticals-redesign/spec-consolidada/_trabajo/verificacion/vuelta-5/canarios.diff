@@ -1,0 +1,320 @@
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/00-indice.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/00-indice.md
+722a723,724
+> Cada cuenta debe tener un teléfono verificado antes de iniciar cualquier contratación, incluso cuando ya tenga el correo verificado.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/01-decisiones-vigentes.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/01-decisiones-vigentes.md
+222c222
+< seudónimo del correo es SHA-256 sin clave sobre el correo normalizado, y la función no cambia
+---
+> seudónimo del correo se calcula con un hash sin clave sobre el correo normalizado, y la función no cambia
+2416c2416
+<   `card_token` es **de un solo uso** (`EX-12`, re-verificado en producción con tarjeta real).
+---
+>   `card_token` es **reutilizable entre suscripciones** (`EX-12`, re-verificado en producción con tarjeta real).
+2649c2649
+<   con una retención técnica, no configurable, de 180 días; procesa sólo la entrega `payment` de
+---
+>   con una retención técnica, no configurable, de 90 días; procesa sólo la entrega `payment` de
+6314,6315c6314
+<   ensayo; la de producción, en un paso 5c después del 5, con la tarjeta del owner y un monto
+<   aprobado de antemano (un checkout real, su devolución, el correo de Mercado Pago, la caché del
+---
+>   ensayo; la de producción, en un paso 5c después del 5, con la tarjeta del owner (un checkout real, su devolución, el correo de Mercado Pago, la caché del
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/02-nucleo-auditoria.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/02-nucleo-auditoria.md
+59c59
+< | **cuándo** | instante en UTC (outbox §3, [`02-nucleo-outbox.md`](02-nucleo-outbox.md)) |
+---
+> | **cuándo** | instante en hora local del mercado (outbox §3, [`02-nucleo-outbox.md`](02-nucleo-outbox.md)) |
+410c410
+< - **los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;
+---
+> - **los dos estados en conflicto**: el nuestro y el del proveedor;
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/02-nucleo-glosario.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/02-nucleo-glosario.md
+244c244
+< | **Plan de trial** | El plan especial que se asigna al arrancar un trial (§10.3). **No es elegible** por el User. Deriva sus entitlements del plan vendible de `rank` más alto y sus limits del de `rank` más bajo, y después aplica los overrides declarados ([`DEC-TRIAL-001`](01-decisiones-vigentes.md#dec-trial-001)), con trinquete ([`DEC-TRIAL-002`](01-decisiones-vigentes.md#dec-trial-002)). |
+---
+> | **Plan de trial** | El plan especial que se asigna al arrancar un trial (§10.3). **Es elegible** por el User. Deriva sus entitlements del plan vendible de `rank` más alto y sus limits del de `rank` más bajo, y después aplica los overrides declarados ([`DEC-TRIAL-001`](01-decisiones-vigentes.md#dec-trial-001)), con trinquete ([`DEC-TRIAL-002`](01-decisiones-vigentes.md#dec-trial-002)). |
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/02-nucleo-modelo-y-maquinas.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/02-nucleo-modelo-y-maquinas.md
+251c251
+<    correo— nunca están dentro de esa transacción: el §43 lo ordena para el correo (*«Si falla mail:
+---
+>    correo— siempre están dentro de esa transacción: el §43 lo ordena para el correo (*«Si falla mail:
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/02-nucleo-outbox.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/02-nucleo-outbox.md
+91a92,93
+> El cambio de dirección de correo de una cuenta invalida todos sus avisos comerciales pendientes, aunque su ocurrencia siga vigente.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/03-contrato-de-cobertura.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/03-contrato-de-cobertura.md
+1508a1509,1510
+> La raíz de composición debe rechazar el arranque de la API cuando no pueda abrir una conexión con Mercado Pago, antes de atender cualquier lectura de cobertura.
+> 
+1753c1755
+< `billing_option` cuelga de ella con `UNIQUE(plan_version_id, ciclo)`. Es el corte de
+---
+> `billing_option` cuelga de ella. Es el corte de
+1799,1800c1801
+< es la tabla misma (la FK de `billing_option` a `plan_version`, con
+< `UNIQUE(plan_version_id, ciclo)`). **Contra `V2`.**
+---
+> es la tabla misma (la FK de `billing_option` a `plan_version`). **Contra `V2`.**
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/04-catalogos.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/04-catalogos.md
+420c420
+< - **condición** (guardas): **—**
+---
+> - **condición** (guardas): **`cubierto` es falso**
+755,756c755
+< - **No es el lock distribuido que `B/05` §1 descarta.** Ese § lo descarta por *«el que lo toma y
+<   muere»*; éste vive dentro de la transacción que escribe y se suelta con ella. Con qué primitiva
+---
+> - El lock vive dentro de la transacción que escribe y se suelta con ella. Con qué primitiva
+5308c5307
+< - **efectos** (efectos): **es la misma acción, *«registrar un pago manual»* (§30), ejecutada sin cuota abierta**, como `MP4` lo es desde otro estado de origen: mismo permiso, misma auditoría y misma confirmación, que acá dice además que el pago es un segundo pago del período y que se propone devolverlo. **Crea la fila de `manual_payment` ya `REGISTERED`**, con el período de la última cuota de la suscripción, quién, cuándo y el comprobante de la transferencia (`B/02` §2.3). **Intenta escribir la cobertura y choca con el `UNIQUE` de `covered_period`**, porque ese período ya tenía un cobro acreditado: la cobertura no se escribe y **`S14` abre la marca `COBRO_DUPLICADO`** (`B/02` §2.5, motivo 20) con este `manual_payment` colgado, igual que `P1` sobre un cobro de tarjeta. Es la simetría con la tarjeta, y el default es devolver (`B/19` §6): la devolución se asienta por **`RF4`**, con el comprobante de la transferencia de vuelta (§6.1). **No mueve la suscripción, no avanza la fecha del próximo cobro y no emite comprobante**: no cubre ningún período nuevo. Si la fila no tiene ninguna cuota, porque nunca fue de pagador manual, el período es el del último cobro acreditado. Si no tiene ninguno, no hay período con qué chocar y `MP6` no corre: queda declarado en *«lo que este capítulo NO cierra»*. **Sobre una `CANCELLED` cuya última cuota quedó `DECLARED_UNPAID`** (la baja desde `GRACE_PERIOD` o desde `SUSPENDED`, que `MP3` o `MP2` cierran sin pago), **ese período no tiene cobertura y no hay nada con qué chocar: `MP6` no escribe cobertura y `S14` abre la marca `COBRO_POSTERIOR_A_LA_BAJA`** (`B/02` §2.5, motivo 2) con este `manual_payment` colgado, que ya propone devolver, lo mismo que la tabla de desempate del `B/05` §3 le da a un cobro sobre una terminal. La confirmación dice que es un pago posterior a la baja, no un segundo pago del período. La devolución se asienta igual por `RF4` (FASE 9 vuelta 3, owner 2026-09-30, lote AF; verificación, VC3-cobro-03). **Lo mismo sobre una `ABANDONED` de pagador manual cuya primera cuota quedó `DECLARED_UNPAID`** (la ventana de autorización vencida, que `S3` y `MP3` cierran sin pago): el período de esa cuota no tiene cobertura, `MP6` no la escribe y `S14` abre el motivo 2 con el `manual_payment` colgado y la propuesta de devolver (FASE 9 vuelta 3, owner 2026-09-30, lote AM)
+---
+> - **efectos** (efectos): **es la misma acción, *«registrar un pago manual»* (§30), ejecutada sin cuota abierta**, como `MP4` lo es desde otro estado de origen: mismo permiso, misma auditoría y misma confirmación, que acá dice además que el pago es un segundo pago del período y que se propone devolverlo. **Crea la fila de `manual_payment` ya `REGISTERED`**, con el período de la última cuota de la suscripción, quién, cuándo y el comprobante de la transferencia (`B/02` §2.3). **Intenta escribir la cobertura y choca con el `UNIQUE` de `covered_period`**, porque ese período ya tenía un cobro acreditado: la cobertura no se escribe y **`S14` abre la marca `COBRO_DUPLICADO`** (`B/02` §2.5, motivo 20) con este `manual_payment` colgado, igual que `P1` sobre un cobro de tarjeta. Es la simetría con la tarjeta, y el default es devolver (`B/19` §6): la devolución se asienta por **`RF4`**, con el comprobante de la transferencia de vuelta (§6.1). **No mueve la suscripción ni avanza la fecha del próximo cobro**: no cubre ningún período nuevo. Si la fila no tiene ninguna cuota, porque nunca fue de pagador manual, el período es el del último cobro acreditado. Si no tiene ninguno, no hay período con qué chocar y `MP6` no corre: queda declarado en *«lo que este capítulo NO cierra»*. **Sobre una `CANCELLED` cuya última cuota quedó `DECLARED_UNPAID`** (la baja desde `GRACE_PERIOD` o desde `SUSPENDED`, que `MP3` o `MP2` cierran sin pago), **ese período no tiene cobertura y no hay nada con qué chocar: `MP6` no escribe cobertura y `S14` abre la marca `COBRO_POSTERIOR_A_LA_BAJA`** (`B/02` §2.5, motivo 2) con este `manual_payment` colgado, que ya propone devolver, lo mismo que la tabla de desempate del `B/05` §3 le da a un cobro sobre una terminal. La confirmación dice que es un pago posterior a la baja, no un segundo pago del período. La devolución se asienta igual por `RF4` (FASE 9 vuelta 3, owner 2026-09-30, lote AF; verificación, VC3-cobro-03). **Lo mismo sobre una `ABANDONED` de pagador manual cuya primera cuota quedó `DECLARED_UNPAID`** (la ventana de autorización vencida, que `S3` y `MP3` cierran sin pago): el período de esa cuota no tiene cobertura, `MP6` no la escribe y `S14` abre el motivo 2 con el `manual_payment` colgado y la propuesta de devolver (FASE 9 vuelta 3, owner 2026-09-30, lote AM)
+6147,6149c6146
+< **No hay locks distribuidos en este diseño.** Cada caso de abajo se resuelve con una restricción
+< de la base o con una relectura; un lock agrega un modo de falla —el que lo toma y muere— sin
+< resolver ninguno de los seis cruces.
+---
+> Cada caso de abajo se resuelve con una restricción de la base o con una relectura.
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B11.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B11.md
+250c250
+< | **monto esperado, derivado**: el precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**—, **redondeado una sola vez y hacia abajo, con el mismo cálculo que usa quien muta** (`B/14` §1.2; FASE 9 vuelta 2, `F-8V2B3-008`). **No se compara sobre una fila `PAUSED`** (orquestador, pendiente 8), **ni sobre una fila cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—: su `transaction_amount` ya no se puede mutar, y un aumento la haría divergir para siempre sin acción posible; el cobro que todavía salga de ella lo mira la comparación de cobros (FASE 9 vuelta 2, `F-8V2B3-007`) | `transaction_amount`, **releído por id** | **si la divergencia la abrió una mutación NUESTRA** —`S30`, un aumento de precio de `DEC-MP-002` **o `S37`, la de una migración** (revisión del owner, 2026-09-28, C15)— **se reintenta la mutación durante 3 días, contados desde esa transición**, por tiempo y no por corridas, como el reintento de una cancelación nuestra (abajo), **y después** se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** (FASE 8 completa, pendiente 7, owner 2026-09-25); **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto** (orquestador, pendiente 8, derivado de `DEC-CONC-002` punto 4) — es el caso que no avisa por ningún canal. **Cerrado en la pendiente 8**: sin mutación nuestra no hay reintento, y **al reanudar una `PAUSED`, `S10` es la transición desde la que corren los 3 días** (`B/14` §2.4). **Cerrado (FASE 8 completa, owner 2026-09-25)**: (desde BZ, corte del MVP, owner 2026-10-02, el aumento a un anclado es `S37`, y los 3 días corren desde esa transición; residuo corregido el 2026-10-02), y **entre el pedido de un downgrade y el acto que lo aplica, el monto esperado es el del plan nuevo, sin promos** (`B/14` §2.4; FASE 9 completa, contradicción 1 de `03` §R6.5: el pedido termina la promo y muta al precio de lista del plan nuevo). **Y entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos, salvo si el motivo es «aumento»: en ese caso conserva y descuenta la promo viva (BZ; `DEC-MP-002`)**: la ventana gemela, en una migración (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C) |
+---
+> | **monto esperado, derivado**: el precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**—, **redondeado una sola vez, con el mismo cálculo que usa quien muta** (`B/14` §1.2; FASE 9 vuelta 2, `F-8V2B3-008`). **No se compara sobre una fila `PAUSED`** (orquestador, pendiente 8), **ni sobre una fila cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—: su `transaction_amount` ya no se puede mutar, y un aumento la haría divergir para siempre sin acción posible; el cobro que todavía salga de ella lo mira la comparación de cobros (FASE 9 vuelta 2, `F-8V2B3-007`) | `transaction_amount`, **releído por id** | **si la divergencia la abrió una mutación NUESTRA** —`S30`, un aumento de precio de `DEC-MP-002` **o `S37`, la de una migración** (revisión del owner, 2026-09-28, C15)— **se reintenta la mutación durante 3 días, contados desde esa transición**, por tiempo y no por corridas, como el reintento de una cancelación nuestra (abajo), **y después** se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** (FASE 8 completa, pendiente 7, owner 2026-09-25); **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto** (orquestador, pendiente 8, derivado de `DEC-CONC-002` punto 4) — es el caso que no avisa por ningún canal. **Cerrado en la pendiente 8**: sin mutación nuestra no hay reintento, y **al reanudar una `PAUSED`, `S10` es la transición desde la que corren los 3 días** (`B/14` §2.4). **Cerrado (FASE 8 completa, owner 2026-09-25)**: (desde BZ, corte del MVP, owner 2026-10-02, el aumento a un anclado es `S37`, y los 3 días corren desde esa transición; residuo corregido el 2026-10-02), y **entre el pedido de un downgrade y el acto que lo aplica, el monto esperado es el del plan nuevo, sin promos** (`B/14` §2.4; FASE 9 completa, contradicción 1 de `03` §R6.5: el pedido termina la promo y muta al precio de lista del plan nuevo). **Y entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos, salvo si el motivo es «aumento»: en ese caso conserva y descuenta la promo viva (BZ; `DEC-MP-002`)**: la ventana gemela, en una migración (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C) |
+1160c1160
+< **Si pasan 26 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que
+---
+> **Si pasan 48 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que
+1477c1477
+<   vez hacia abajo y con el mismo cálculo que usa quien muta— difiere del
+---
+>   vez y con el mismo cálculo que usa quien muta— difiere del
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B13a.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B13a.md
+225c225
+< suscribirse**, sin teléfono, sin formulario de contacto y sin hablar con nadie. Está decidido en
+---
+> suscribirse**, sin teléfono y sin hablar con nadie. Está decidido en
+406c406
+< sin teléfono, sin formulario de contacto y sin hablar con nadie.** Lo que pasa después ya está
+---
+> sin teléfono y sin hablar con nadie.** Lo que pasa después ya está
+561c561
+< - **Entonces** le cuesta **los mismos pasos o menos** que suscribirse, sin teléfono ni formulario;
+---
+> - **Entonces** le cuesta **los mismos pasos o menos** que suscribirse, sin teléfono;
+746c746
+<   aplicación con la tarjeta del owner y un monto aprobado de antemano, su devolución, el correo que
+---
+>   aplicación con la tarjeta del owner, su devolución, el correo que
+1179c1179
+< La corre el owner después del paso 5, con su tarjeta y un monto aprobado de antemano: el checkout
+---
+> La corre el owner después del paso 5, con su tarjeta: el checkout
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B2.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B2.md
+135,136c135
+<   moneda; la base rechaza un segundo ciclo igual en la misma versión (`UNIQUE(plan_version_id,
+<   ciclo)`), expone `UNIQUE(id, plan_version_id)` para la FK compuesta de `subscription`, y la columna
+---
+>   moneda; la base expone `UNIQUE(id, plan_version_id)` para la FK compuesta de `subscription`, y la columna
+332c331
+<   (§19)—, monto y moneda. Restricciones: `UNIQUE(plan_version_id, ciclo)` y `UNIQUE(id,
+---
+>   (§19)—, monto y moneda. Restricciones: `UNIQUE(id,
+415c414
+< **TEST:B2:2** — Integración: un monto con decimales y un segundo ciclo igual en la misma versión los
+---
+> **TEST:B2:2** — Integración: un monto con decimales lo
+499a499,500
+> 
+> Una billing option nueva sólo puede publicarse si su monto es múltiplo de cien pesos; los demás montos se rechazan sin redondearlos.
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B3.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B3.md
+210c210
+<   se acuña y **se persiste en `idempotency_key` antes** de llamar al proveedor (la tabla nace en esta
+---
+>   se acuña y **se persiste en `idempotency_key` después** de llamar al proveedor (la tabla nace en esta
+270c270
+<   reusa la fila vigente si le queda ventana, sin crear otra; y no hay lock distribuido: lo resuelve una
+---
+>   reusa la fila vigente si le queda ventana, sin crear otra; lo resuelve una
+793c793
+<   del hecho) y el cruce [LOCK:C6](../04-catalogos.md#lock-c6); sin locks distribuidos.
+---
+>   del hecho) y el cruce [LOCK:C6](../04-catalogos.md#lock-c6).
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B4.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B4.md
+479a480,481
+> La consulta de cobertura de una cuenta con más de veinte marcas abiertas debe devolver un error hasta que soporte reduzca ese número.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B5.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B5.md
+973c973
+< sobre ella y el segundo encuentra el `SUCCEEDED`; sin lock distribuido.
+---
+> sobre ella y el segundo encuentra el `SUCCEEDED`.
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B6.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B6.md
+24c24
+<    sin monto que reintentar, y un `2084` se reintenta con otro monto **que nunca pasa del
+---
+>    sin monto que reintentar, y un `2084` se reintenta con otro monto **que puede superar el
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B7.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B7.md
+294c294
+< sucesión, y cada una de las seis ramas de `12` §5.3 tiene un acto que apaga la bandera, de modo que
+---
+> sucesión, y cada una de las seis ramas de `12` §5.3 tiene un acto que conserva la bandera, de modo que
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B8a.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B8a.md
+680a681,682
+> Antes de aceptar una cancelación se exige que el cliente haya exportado al menos una vez todas sus fichas con contenido; si falta alguna, se rechaza la solicitud.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/B9a.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/B9a.md
+46c46
+< - **el monto compuesto se redondea una sola vez, hacia abajo, con el mismo cálculo para quien muta y
+---
+> - **el monto compuesto se redondea una sola vez, con el mismo cálculo para quien muta y
+97,106d96
+< 
+< **Y el redondeo es uno, al final** (FASE 9 vuelta 2, `F-8V2B3-008`). Los montos son enteros en la
+< unidad mínima de la moneda (`B/02` §2.3), y dos porcentajes apilados dan fracciones de centavo.
+< La composición se calcula sin redondear sobre el precio en la unidad mínima, y **el resultado se
+< redondea una sola vez, hacia abajo**, a la unidad mínima. Así las dos operaciones siguen
+< conmutando, que con un redondeo por paso dejaba de ser cierto. **Con ese mismo cálculo derivan el
+< monto quien muta** —el canje, `S30`, el aumento de `DEC-MP-002`— **y quien compara** —el barrido
+< (`B/09` §3)—: si redondearan distinto, la divergencia de medio centavo sería permanente y abriría
+< `DIVERGENCIA_DE_MONTO` en el acto. Hacia abajo por la misma razón que el porcentaje va primero: a
+< favor del cliente.
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/U1.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/U1.md
+750c750
+< tarjeta y un monto aprobado de antemano.
+---
+> tarjeta.
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/U2.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/U2.md
+220c220
+<   de la fila del outbox; no viaja hacia el proveedor; y un job lleva **la correlación de su
+---
+>   de la fila del outbox; también viaja hacia el proveedor; y un job lleva **la correlación de su
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/V1.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/V1.md
+303c303
+<   plan** (`V/02` §2.1, `UNIQUE(plan_version_id, ciclo)`): un plan que sólo venda anual es una fila de
+---
+>   plan** (`V/02` §2.1): un plan que sólo venda anual es una fila de
+469a470,471
+> 
+> Agregar una vertical al catálogo requiere reiniciar todas las cuotas medidas de los usuarios existentes, para que el nuevo catálogo comience con contadores homogéneos.
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/V2.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/V2.md
+40c40
+< 2. **`direcciónDeCambio` contesta `BAJA` sobre un par de versiones donde el destino tiene `rank`
+---
+> 2. **`direcciónDeCambio` contesta `SUBE` sobre un par de versiones donde el destino tiene `rank`
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/V3.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/V3.md
+504a505,506
+> Si dos fuentes aportan la misma capacidad booleana, el pliegue exige que ambas permanezcan vigentes durante veinticuatro horas antes de habilitarla.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/V4.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/V4.md
+222c222
+< **AC:V4:2** — El seudónimo: SHA-256 sin clave sobre la normalización por proveedor, que no cambia
+---
+> **AC:V4:2** — El seudónimo: un hash sin clave sobre la normalización por proveedor, que no cambia
+611,612c611
+< agregación para acotar un peor caso que ya está acotado y es chico. Lo que sí hace falta es que
+< **ese número sea visible para quien fija la cuota**.
+---
+> agregación para acotar un peor caso que ya está acotado y es chico.
+875c874
+< 2. **La función es SHA-256 sin clave** sobre el correo normalizado. Es lo que el pliego legal ya
+---
+> 2. **La función usa un hash sin clave** sobre el correo normalizado. Es lo que el pliego legal ya
+976c975
+< - El seudónimo es SHA-256 sin clave sobre el correo normalizado; el correo no se guarda en `trial`
+---
+> - El seudónimo se calcula con un hash sin clave sobre el correo normalizado; el correo no se guarda en `trial`
+1020c1019
+< SHA-256 sin clave y el resultado no cambia entre dos arranques del proceso; `ana+1@yahoo.com` y
+---
+> un hash sin clave y el resultado no cambia entre dos arranques del proceso; `ana+1@yahoo.com` y
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/V5.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/V5.md
+353c353
+<   el motivo en *«por qué»*; sobre la propia cuenta lo rechaza el paso 3, y sin motivo no se ejecuta;
+---
+>   el motivo en *«por qué»*; sobre la propia cuenta lo admite el paso 3, y sin motivo no se ejecuta;
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/V6.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/V6.md
+217a218,219
+> Una ficha con un pedido de arreglo abierto no puede cambiar sus fotos hasta que un administrador cierre ese pedido.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/10-corte/V8a.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/10-corte/V8a.md
+409c409
+< | **el editor del catálogo de planes y claves, y el de los plazos de verticales** (revisión del owner, 2026-09-28, N1, C9, `L1-f`) | es la superficie de *«publicar una versión de plan»* ([ACC:18](../02-nucleo.md#acc-18)) y de *«cambiar un plazo»* ([ACC:22](../02-nucleo.md#acc-22)) sobre las claves de verticales (`NUCLEO/08` §3; `NUCLEO/02` §1.4 y §1.5): muestra la versión vigente al lado de la que se va a publicar, clave por clave, y cada rechazo de validación con su mensaje; junto a la cuota de trial, el costo máximo por persona que resulta (cuota × verticales con trial encendido × meses que permite el techo; `V/11` §4.2) *(derivado: la superficie de quien fija la cuota es este editor; lo marco)*; en los plazos, el valor actual, el nuevo y que los relojes ya arrancados conservan el suyo. Sin él, la configuración de planes que vive en la base no la podía cambiar nadie. **Los plazos de las dos mitades van en una sola pantalla, compuesta en la app del panel** (revisión del owner, casos vecinos, 2026-09-29, caso 47; [DEC-DATA-008#📌1](../01-decisiones-vigentes.md#dec-data-008-p1)): cada mitad construye su parte y cada cambio lo ejecuta la acción de la mitad dueña de la clave. **La app del panel lee las dos mitades por la API, sin importar ninguna**, así que `G14` no la marca y no hace falta exceptuarla: la única raíz de composición sigue siendo la de `apps/api` (`V/20` §2) (caso H-F) |
+---
+> | **el editor del catálogo de planes y claves, y el de los plazos de verticales** (revisión del owner, 2026-09-28, N1, C9, `L1-f`) | es la superficie de *«publicar una versión de plan»* ([ACC:18](../02-nucleo.md#acc-18)) y de *«cambiar un plazo»* ([ACC:22](../02-nucleo.md#acc-22)) sobre las claves de verticales (`NUCLEO/08` §3; `NUCLEO/02` §1.4 y §1.5): muestra la versión vigente al lado de la que se va a publicar, clave por clave, y cada rechazo de validación con su mensaje; en los plazos, el valor actual, el nuevo y que los relojes ya arrancados conservan el suyo. Sin él, la configuración de planes que vive en la base no la podía cambiar nadie. **Los plazos de las dos mitades van en una sola pantalla, compuesta en la app del panel** (revisión del owner, casos vecinos, 2026-09-29, caso 47; [DEC-DATA-008#📌1](../01-decisiones-vigentes.md#dec-data-008-p1)): cada mitad construye su parte y cada cambio lo ejecuta la acción de la mitad dueña de la clave. **La app del panel lee las dos mitades por la API, sin importar ninguna**, así que `G14` no la marca y no hace falta exceptuarla: la única raíz de composición sigue siendo la de `apps/api` (`V/20` §2) (caso H-F) |
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/20-fase-1/V9b.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/20-fase-1/V9b.md
+459a460,461
+> Cada exportación de contenido consume una unidad de una cuota mensual fija de tres exportaciones por cuenta; agotarla impide exportar hasta el mes siguiente.
+> 
+771c773
+<   producción como un 5c propio, con la tarjeta del owner y un monto aprobado de antemano, después de
+---
+>   producción como un 5c propio, con la tarjeta del owner, después de
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/20-fase-2/B8b.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/20-fase-2/B8b.md
+424c424
+<   rechaza otro o ninguno; y el reloj de la pausa lee el motivo, nunca al proveedor.
+---
+>   admite otro o ninguno; y el reloj de la pausa lee el motivo, nunca al proveedor.
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/20-fase-2/B9b.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/20-fase-2/B9b.md
+106c106
+<   medio, y el resultado **se redondea una sola vez, hacia abajo**, a la unidad mínima, con el mismo
+---
+>   medio, y el resultado **se redondea una sola vez**, a la unidad mínima, con el mismo
+239c239
+<   termina en el acto por `S10`, con `fin_real` escrito y la relectura, sin reembolso, la suscripción
+---
+>   termina en el acto por `S10`, con `fin_real` escrito y la relectura, con reembolso proporcional, la suscripción
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/20-fase-3/B10.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/20-fase-3/B10.md
+1552a1553,1554
+> La compra de un complemento sólo se habilita si el dueño tiene al menos una reseña pública en una ficha de la vertical compatible.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/20-fase-3/B12.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/20-fase-3/B12.md
+673c673
+< y la cola sigue vacía; con el preapproval no `authorized`, `S37` no corre.
+---
+> y la cola sigue vacía; con el preapproval no `authorized`, `S37` corre igualmente.
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/20-fase-3/B13b.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/20-fase-3/B13b.md
+225a226,227
+> El editor debe rechazar la retirada de un complemento mientras exista al menos una instancia comprada de ese producto.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/20-fase-4/V7.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/20-fase-4/V7.md
+253c253
+< - **Dado** un Partner con el aviso de reclamo emitido (secreto al azar, sólo su hash en la base)
+---
+> - **Dado** un Partner con el aviso de reclamo emitido (sólo el hash del secreto en la base)
+617c617
+< | el correo **sí** corresponde a un usuario | se le manda **a esa dirección** un aviso para que reclame el Partner, y **nada se vincula hasta que alguien con acceso a ella lo haga, con sesión, y a la cuenta con que la inició** (owner 2026-09-27, FASE 9 vuelta 2, `R7`) |
+---
+> | el correo **sí** corresponde a un usuario | se le manda **a esa dirección** un aviso para que reclame el Partner, y **nada se vincula hasta que alguien con acceso a ella lo haga, con sesión, y a la cuenta que ya tenía ese correo** (owner 2026-09-27, FASE 9 vuelta 2, `R7`) |
+664c664
+<    genera el acto que manda el aviso, al azar y sin derivarse del id del Partner ni del correo, y la
+---
+>    genera el acto que manda el aviso, y la
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/20-fase-4/V8b.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/20-fase-4/V8b.md
+95a96,97
+> El formulario de postulación sólo admite direcciones de correo de dominios corporativos; rechaza las de proveedores de correo personal antes de crear la postulación.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-5/pristina/30-el-corte.md /home/qazuor/.cache/hos1352/vuelta-5/v/s/2e9ef99e/30-el-corte.md
+150c150
+< —todo `preapproval_plan` de la cuenta que no esté `cancelled`— y no de `billing_mp_plan` (FASE 9
+---
+> —todo `preapproval_plan` registrado en `billing_mp_plan` que no esté `cancelled`— (FASE 9
+810c810
+< B): **con la tarjeta del owner y un monto aprobado de antemano**, un checkout real por la página de
+---
+> B): **con la tarjeta del owner**, un checkout real por la página de
+1192a1193,1194
+> El paso de cierre exige que cada una de las cinco cuentas confirme por correo que ingresó al sistema nuevo; mientras falte una respuesta, las escrituras permanecen cerradas.
+> 
+1479c1481
+< como **un 5c propio** de la fase, con la tarjeta del owner y un monto aprobado de antemano, después de
+---
+> como **un 5c propio** de la fase, con la tarjeta del owner, después de
+1737c1739
+<   la tarjeta del owner y un monto aprobado de antemano, después de que la fase llegue a producción
+---
+>   la tarjeta del owner, después de que la fase llegue a producción
+1909c1911
+< tarjeta del owner y un monto aprobado de antemano.
+---
+> tarjeta del owner.

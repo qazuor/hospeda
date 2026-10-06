@@ -1,0 +1,34 @@
+# VA-A1 · fuente → spec · bloque A1 (núcleo 00, 01, 02, 03, 04, 07, 08)
+
+Spec leída: `s/a580e415/` (02-nucleo.md, 02-nucleo-glosario.md, 02-nucleo-modelo-y-maquinas.md,
+02-nucleo-outbox.md, 02-nucleo-auditoria.md, más búsquedas en 04-catalogos.md, 10-corte/*, 20-fase-*/*,
+00-indice.md, 80-abiertos.md y 90-retirados.md para comprobar si una regla está rendida en otro lado).
+
+## Reglas con problema
+
+```
+docs/nucleo/03-maquinas-de-estado.md:83 · «Si dos filas que comparten (desde, evento) igual se solapan, el intento cae en la regla 1: no se ejecuta, se registra como evento de dominio y, si tocaba plata o estado, abre la marca; no se elige una de las dos» · ausente (la regla 7 de 02-nucleo-modelo-y-maquinas.md:268-276 pasa de «es un defecto de la tabla» al guard G-R4 sin el comportamiento en ejecución; GUARD:G-R4 en 04-catalogos.md:7670-7684 tampoco lo dice) · BLOQUEA
+docs/nucleo/07-outbox-y-notificaciones.md:181 · «Una cuenta dada de baja por la acción 24 es una cuenta borrada para la jerarquía de supresión (fila 2)» · ausente (02-nucleo-outbox.md:192 y U2.md:196/TEST:U2:7 tienen la fila «cuenta borrada» sin la equivalencia; ACC:24 en 02-nucleo.md:1287-1315 dice «la cuenta no se borra, se seudonimiza», así que sin la frase un implementador puede no suprimir y mandar al seudónimo) · BLOQUEA
+docs/nucleo/07-outbox-y-notificaciones.md:70 · «U2 va antes de V4 y B3 (flechas U2→V4 y U2→B3, BR) y por transitividad antes de V6, V9a, V9b, B4, B5, B7, B12 y las demás que encolan» · distinta en 02-nucleo-outbox.md:68-73 (conserva la lista vieja tachada «V6, V9, B4 y B12» y no nombra V4 ni B3; la regla correcta sí está en U2.md:450-457, B3.md:934 y 00-indice.md:94) · MENOR
+docs/nucleo/07-outbox-y-notificaciones.md:287 · «Fila del catálogo: “reembolso de revocación fallido”, transaccional no suprimible, a SUPER_ADMIN, al llegar un refund de revocación a FAILED (RF5); la construye B11» · distinta en 02-nucleo-outbox.md:280-310 (la tabla del catálogo no tiene la fila; la regla vive en B11.md:57, 501, 561-564 y AC:B11:22) · MENOR
+docs/nucleo/07-outbox-y-notificaciones.md:288 · «Fila del catálogo: “cobro duplicado detectado”, transaccional no suprimible, a SUPER_ADMIN, al abrirse la marca COBRO_DUPLICADO (motivo 20); la construye B11» · distinta en 02-nucleo-outbox.md:280-310 (falta la fila; vive en B11.md:561-564) · MENOR
+docs/nucleo/08-auditoria-y-observabilidad.md:518 · «El correo inmediato del refund de revocación fallido tiene su fila en el catálogo del cap. 07 §6 desde BR, como el de COBRO_DUPLICADO; los dos los construye B11» · distinta en 02-nucleo-auditoria.md:438-440 (dice todavía que el catálogo «no tiene fila para él», el texto tachado de la fuente; contradice B11.md:561) · MENOR
+docs/nucleo/08-auditoria-y-observabilidad.md:400 · «La agrupación del aviso es por tipo + sujeto: cientos de eventos de un mismo incidente colapsan en una línea con su conteo» · distinta en 02-nucleo-auditoria.md:311-316 (la fila «la agrupación» falta en la tabla del §4.1 aunque el Origen cita la línea 400; la regla está en el AC de B11.md:334-336, «conteo por tipo + sujeto») · MENOR
+```
+
+## Resumen por archivo
+
+| archivo fuente | líneas recorridas | reglas normativas vivas revisadas | ausentes | distintas |
+|---|---|---|---|---|
+| `nucleo/00-indice.md` | 1-211 (entero) | 8 (fuentes admitidas y lista de `SUPERSEDED`, 1B no es fuente, el núcleo es el único lugar de definición, `O-METH-01`, `S-METH-01`, reparto del cap. 13, retiro del cambio de tarjeta, `RN-3` abierto). El resto es mapa, conteos e historia | 0 | 0 |
+| `nucleo/01-glosario.md` | 1-981 (entero) | ~95 (entidades y definiciones §1.1-1.7; los cinco hechos + `C`, `G-R6-B`, relecturas de `PB4`/`PB5`/`PB9`, pausa que detiene el reloj y `retenciónDetenida`, los tres bordes del hecho 5; estados §2.1-2.3; los cuatro «vivos» y sus inventarios —27+9 filas de fila viva, 9 de grant/ancla, 12 de marca abierta, 11 de cortesía diferida— y sus tres reglas de uso; `pagando`; `puedePausar` y sus cinco precisiones; lista Eje 2 de ocho y su guard) | 0 | 0 |
+| `nucleo/02-modelo-de-datos.md` | 1-274 (entero) | ~40 (separación catálogo/configuración y las dos direcciones; §1.4 puntos 1-4; las siete filas de lo que rechaza panel o base; los 19 plazos con valor y reloj; cuándo se fijan los vacíos y la migración que falla; (a)(b)(c) fuera de lista; versionado de plazos y la salvedad del fin de pausa; las cinco validaciones; quién construye; `domain_event` y `outbox`) | 0 | 0 |
+| `nucleo/03-maquinas-de-estado.md` | 1-176 (entero) | 13 (las siete reglas, los cuatro pares disjuntos, los nueve casos de `desde` compartido, el fallback de solapamiento) | 1 | 0 |
+| `nucleo/04-invariantes.md` | 1-328 (entero) | ~58 (niveles y regla de reparto; las 37 del §64; las 15 `D`; el párrafo vivo de la pausa que vence sin reanudar; los tres huecos del §4; conteos). Las notas de recuento 246-328 son historia | 0 | 0 |
+| `nucleo/07-outbox-y-notificaciones.md` | 1-383 (entero) | ~48 (§1.1-1.4; clave de dedup y fecha objetivo; huso y sus tres consecuencias; dos clases; jerarquía de cuatro; tope por destinatario; las tres reglas del §5.3 y el `reason`; las 29 filas vivas del catálogo y sus párrafos; envío al menos una vez) | 1 | 3 |
+| `nucleo/08-auditoria-y-observabilidad.md` | 1-520 (entero) | ~60 (criterio y actos del dueño; siete campos y el de contenido; append-only y retención; baja manual en tres pasos; correlación §2.1-2.4; las 25 acciones vivas del §3 y sus reglas generales; enrutado de cinco; dos reglas de confirmación; §4.1 cinco filas y tres tipos del resumen; lista cerrada de la excepción; información suficiente; tipo de actor; productor del refund fallido) | 0 | 2 |
+
+**Totales**: ~322 reglas normativas vivas revisadas; **2 ausentes** (las dos BLOQUEA) y **5 distintas**
+(las cinco MENOR). Cuatro de las cinco MENOR son el mismo patrón: el texto del núcleo quedó con la
+versión tachada o sin la fila nueva de BR (owner 2026-10-02), mientras la pieza (`U2`, `B11`, `B3`) sí la
+tiene; el riesgo es una contradicción interna, no una regla perdida.
