@@ -22,6 +22,33 @@ export interface MergeGateResult {
 export const EXPECTED_BASE = 'staging';
 
 /**
+ * Umbrella integration branches (`epic/**`, DEC-CI-001 in the root CLAUDE.md).
+ *
+ * A multi-epic program reaches `staging` as ONE unit through its umbrella, so
+ * its leaf PRs legitimately target `epic/<name>` instead of the integration
+ * base. The umbrella's own PR to `staging` still goes through the normal rule.
+ * The name must have something after the slash: a bare `epic/` is no branch.
+ */
+const UMBRELLA_BASE = /^epic\/.+/;
+
+/**
+ * Whether a base branch is acceptable for a pull request.
+ *
+ * @param input.base - The PR's base branch.
+ * @param input.expectedBase - The declared integration base.
+ * @returns True for the integration base or an umbrella `epic/**` branch.
+ */
+function isAcceptedBase({
+    base,
+    expectedBase
+}: {
+    readonly base: string;
+    readonly expectedBase: string;
+}): boolean {
+    return base === expectedBase || UMBRELLA_BASE.test(base);
+}
+
+/**
  * Decides whether a pull request may be merged.
  *
  * Rules are evaluated in order and the FIRST one that blocks is the only one
@@ -55,7 +82,7 @@ export function evaluateMergeGate({
     if (pr.isDraft) {
         return { verdict: 'blocked', reason: 'Es un draft. Sacalo de draft antes de mergear.' };
     }
-    if (pr.baseRefName !== expectedBase) {
+    if (!isAcceptedBase({ base: pr.baseRefName, expectedBase })) {
         return {
             verdict: 'blocked',
             reason: `Apunta a «${pr.baseRefName}», no a «${expectedBase}». El trabajo debe entrar por la base de integración declarada; las promociones posteriores requieren una decisión explícita.`
