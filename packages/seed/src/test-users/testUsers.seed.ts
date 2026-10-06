@@ -171,7 +171,7 @@ function splitDisplayName(displayName: string): { firstName: string; lastName: s
  *
  * `extraRoles` (HOS-694) lets a single fixture declare more than one
  * non-USER hat at once — used by `host-commerce@local.test` (HOST +
- * COMMERCE_OWNER) to exercise HOS-296's multi-role invariant end-to-end
+ * GASTRONOMY_OWNER) to exercise HOS-296's multi-role invariant end-to-end
  * without needing a second `role` field on `TestUserSpec`.
  *
  * Grants run BEFORE revokes for the same reason.

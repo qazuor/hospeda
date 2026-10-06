@@ -9,8 +9,8 @@
  *  1. `hasActiveSubscription` is a server-managed field that the
  *     ExperienceUpdateInputSchema explicitly omits; it cannot be set via the
  *     service CRUD path.
- *  2. The seed must create the COMMERCE_OWNER user who will own the listings
- *     (no COMMERCE_OWNER users exist in the required-seed pipeline).
+ *  2. The seed reuses the gastronomy owner and grants `EXPERIENCE_OWNER`
+ *     before inserting that user's experience listings.
  *
  * Idempotent: each INSERT uses ON CONFLICT (slug) DO NOTHING so re-running
  * the seed is safe.
