@@ -1,0 +1,14 @@
+# VA-A6 · fuente → spec · B/descomposicion.md, B/docs/02-modelo-de-datos.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:692 · «sobre una versión sin clientes fija el precio; sobre una con clientes se rechaza y se publica una versión nueva, que rige para las altas; un monto menor que ARS 15 se rechaza» · distinta en s/2e9ef99e/10-corte/B2.md:500 («Una billing option nueva sólo puede publicarse si su monto es múltiplo de cien pesos; los demás montos se rechazan sin redondearlos.»). Agrega una guarda que rechaza precios admitidos por la fuente, por ejemplo ARS 150. B/docs/02-modelo-de-datos.md:386 exige enteros en la unidad mínima de la moneda, no múltiplos de cien pesos. Se buscaron ambas formulaciones en toda la fuente congelada, el decision log y las decisiones del owner; BM mantiene la mecánica y el piso de ARS 15, y BZ/CC/CF no agregan esa granularidad · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:31 · «UNIQUE(plan_version_id, ciclo)» · ausente (búsqueda con rg --hidden en toda s/2e9ef99e/, incluida búsqueda multilínea de la clave en ambos órdenes y de formulaciones equivalentes de unicidad por versión y ciclo; revisión de AC:B2:1 en 10-corte/B2.md:130 y del modelo en 10-corte/B2.md:331). Sólo se especifica UNIQUE(id, plan_version_id), que sirve a la FK de subscription y permite dos billing_option del mismo ciclo para una misma versión. TEST:B2:1 menciona «sus dos UNIQUE», pero no define el segundo. La obligación de crear todas las restricciones sigue vigente por AD/BN; no hay una decisión posterior que retire esta clave · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/descomposicion.md | ≈350 (incluidas reiteraciones y criterios de salida) | 1–1157 | 0 | 1 |
+| B/docs/02-modelo-de-datos.md | ≈250 (incluidas restricciones, efectos y motivos) | 1–1298 | 1 | 0 |

@@ -1,0 +1,8 @@
+✓ base: exit 0
+✓ mixto    el cuerpo vivo de dos secciones de título tachado va adjunto
+✓ muerto   exit 1 · 6 secciones MIXTO devueltas a MUERTO (la regla del título)
+✓ defecto  exit 1 · «4. Grace» sin entrada en «adjuntar»
+✓ sobrante exit 1 · una entrada que no es una sección
+✓ ajeno    exit 1 · una entrada hacia un id que no es de 04
+
+6 canarios · 0 fallas

@@ -1,0 +1,13 @@
+# VA-A8 · fuente → spec · B/docs/05-idempotencia-y-concurrencia.md, B/docs/06-proveedor.md, B/docs/09-conciliacion.md
+
+## Hallazgos
+
+Sin hallazgos confirmados: 0 BLOQUEA y 0 MENOR.
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| B/docs/05-idempotencia-y-concurrencia.md | ≈75 | 1–556 | 0 | 0 |
+| B/docs/06-proveedor.md | ≈85 | 1–570 | 0 | 0 |
+| B/docs/09-conciliacion.md | ≈150 | 1–1322 | 0 | 0 |

@@ -1,0 +1,14 @@
+# VB-01 · spec → fuente · 00-indice.md, 02-nucleo-glosario.md
+
+## Hallazgos
+
+00-indice.md:723 · «Cada cuenta debe tener un teléfono verificado antes de iniciar cualquier contratación, incluso cuando ya tenga el correo verificado.» · sin soporte · BLOQUEA
+
+02-nucleo-glosario.md:244 · «**Es elegible** por el User.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:301 («**No es elegible** por el User.») · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 00-indice.md | 1–1631 | 350 | 1 | 0 |
+| 02-nucleo-glosario.md | 1–959 | 270 | 1 | 0 |

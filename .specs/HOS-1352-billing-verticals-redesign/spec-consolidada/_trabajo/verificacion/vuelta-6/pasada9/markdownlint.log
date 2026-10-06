@@ -1,0 +1,4 @@
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: /home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/**/*.md !node_modules/** !**/node_modules/** !dist/** !build/** !.claude/**
+Linting: 83 files
+Summary: 0 issues in 0 files

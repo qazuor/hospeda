@@ -1,0 +1,23 @@
+# VB-13 · spec → fuente · 20-fase-2/B8b.md 20-fase-3/B10.md 80-abiertos.md
+
+## Hallazgos
+
+20-fase-3/B10.md:1316 · «Entonces pasa a `EXPIRED` contando sólo los días en que la ficha se vio: **el reloj se congela** mientras la ficha está despublicada.» (AC:B10:5) · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2538 («A4 | `ACTIVE` | llega su fecha de fin | `EXPIRED` | **el reloj no se congela** aunque la ficha esté despublicada (`DEC-ADDON-001`)»); también .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:781 («DEC-ADDON-001 — El addon se pierde con la ficha, y su reloj no se congela»; la alternativa (2) «el reloj se congela mientras la ficha no se vea» fue la descartada) y .specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:721 («su reloj no se congela»). Contradicción interna además con 01-decisiones-vigentes.md:3070 y con la propia sección Reglas de B10 (B10.md:1552, DEC-ADDON-001). TEST:B10:6 (B10.md:1755) no lo detecta: sólo mira que llegue a EXPIRED en la fecha · BLOQUEA
+
+80-abiertos.md:461 · «Mientras la consulta no conteste, ningún aumento sobre los ya anclados puede pasar del 20 % de su precio.» · sin soporte: la fuente del §6.2, .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:92-94, sólo dice «Riesgo declarado y aceptado por el owner (2026-09-16): avanzar así y corregir si la consulta dice otra cosa … conviene resolverla antes de implementar»; ningún tope porcentual a los aumentos existe en las fuentes (rg «20 %» sólo da el ejemplo de promos de B9). Regla inventada que un implementador de B12 (aumento a anclados por S37/S38, BZ) construiría como tope · BLOQUEA
+
+20-fase-2/B8b.md:704 · «se cumple el criterio de `B8` sin la cláusula de `R1-a` ([LISTA:B8](../10-corte/B8a.md#lista-b8), cláusulas 1 a 7 y 9)» (AC:B8b:23; igual LISTA:B8b, B8b.md:761) · la cláusula 3 que esta salida importa, tal como está en 10-corte/B8a.md:334-335, dice «nunca recortando los **30 días**», y contradice .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1067 («…y nunca recortando los **60 días**») y .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1040-1045 («la ventana de 60 días no se recorta»); contradicción interna con AC:B8b:4 (B8b.md:453, «nunca recortando los 60 días del aviso») y TEST:B8b:4 (B8b.md:1070). El texto de B8b es el correcto; el error vive en B8a:335 (bloque VB-10), pero el criterio de salida de B8b lo hereda por referencia · BLOQUEA
+
+20-fase-2/B8b.md:1328 · «y el diff de la pieza no toca archivos de `B3`, `B5` ni `B7`» (TEST:B8b:24) · más débil que el AC que cubre, B8b.md:723 («el diff de `B8b` no cambia el código de `B3`, `B5`, `B7` ni `B8a`», derivado por BL: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:137); el test omite B8a · MENOR
+
+20-fase-2/B8b.md:1309 · «Fuente: [FILA:B8b] · [DEC-RF-003] · [GATE:FP.3]» (TEST:B8b:23, migración desde cero sin migración estructural) · cita mal apuntada: DEC-RF-003 (.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4397, «La rama 6 entra al listado con el default en DEVOLVER») no tiene relación con lo que el test verifica (columnas de la sucesión, cola y marca presentes; rama sin migración estructural, AD) · MENOR
+
+80-abiertos.md:355 · «**Cerrado**, y precisado por BZ: el aumento a un anclado es una migración por `S37`, y los 3 días del reintento corren desde `S37`, como los de toda mutación nuestra» · sin soporte en BZ (.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:169 y el 📌 BZ de DEC-MP-002, 01-decision-log.md, bloque de DEC-MP-002 línea «Precisada otra vez el 2026-10-02 … BZ», no dicen nada del reintento); contradice la entrada que transcribe, .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:741-742 («los 3 días del reintento de monto de un aumento corren desde su fecha efectiva (§2.4)»). Con BZ, S37 muta 7 días antes de la renovación, así que «desde S37» y «desde la fecha efectiva» son instantes distintos. Inferencia no marcada, en un abierto (no criterio) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-2/B8b.md | 1–52 y 341–1401 (53–340 son g-secciones, excluidas) | 130 | 1 | 2 |
+| 20-fase-3/B10.md | 1–89 y 1198–1925 (90–1197 son g-secciones, excluidas) | 80 | 1 | 0 |
+| 80-abiertos.md | 1–654 | 210 (163 viñetas `archivo:línea` cotejadas por script contra fuentes/; 3 desajustes revisados a mano: 2 eran el ítem vivo tras un tachado, 1 es el MENOR de la línea 355) | 1 | 1 |

@@ -1,0 +1,111 @@
+Contra-adjudicación escéptica — HOS-1352
+
+Resultado: los cinco hallazgos quedan CONFIRMADOS. No encontré evidencia suficiente para declararlos FALSOS ni un error nuevo que obligue a cambiar las correcciones propuestas. Los tres GENERADOR son defectos de señalización histórica, no errores del reparto implementable vigente.
+
+Alcance y método
+- Sólo los dos REAL/BLOQUEA y los tres GENERADOR de adjudicacion/hallazgos.json. No readjudiqué los MENOR restantes.
+- Busqué con rg --hidden en v/fuentes/.specs y contrasté los archivos completos relevantes. Para comprobar vigencia frente a tachados eliminé los intervalos ~~…~~ con coincidencia multilínea, conservando los saltos de línea. Las citas normativas que siguen están fuera de esos intervalos. Estar sin tachar no basta: también contrasté las decisiones posteriores.
+- Las referencias abreviadas se resuelven así:
+  LOG = v/fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md
+  OWNER = v/fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+  V17 = v/fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md
+  B03 = v/fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md
+- Cada bloque «sale» de las cinco correcciones aparece exactamente una vez en pristina/, comenzando en la línea declarada en correccion[]. Las líneas de algunos informes_originales del generador están desplazadas una línea; las de la adjudicación son correctas.
+- El directorio de trabajo confirmado es /home/qazuor/.cache/hos1352/vuelta-5. No es un repositorio Git y no encontré AGENTS.md local ni .qz/project.json; apliqué las instrucciones suministradas. No ejecuté generadores ni modifiqué las specs.
+
+1. H5-VB-06-2 — CONFIRMADO
+
+Regla viva textual:
+V17:143: «**El paso 5 no decide capacidades: decide si hay de dónde resolverlas.**»
+V17:155–159:
+«**El paso 5 pregunta por `fuentes`, no por `cubierto`.** Son dos cosas distintas desde que el
+   contrato tiene tres clases de fuente (`12-contrato…` §2.4): `cubierto` cuenta sólo las de clase
+   `TÍTULO`, y el paso 5 acepta cualquiera — incluido el piso, que toda persona tiene en toda
+   vertical (`12-contrato…` §2.5). **La consecuencia hay que decirla en voz alta: el paso 5 ya no
+   rechaza a nadie, y toda la defensa se apoya en el paso 6.**»
+
+Intento de refutación: «paso 5/6» podría ser una abreviatura de la cadena completa y las referencias del test podrían obligar a interpretarla correctamente. No alcanza: como resultado observable de un test, acepta también el rechazo en 5. La distinción está expresamente exigida en V17:151–154: responder «sin cobertura» a una fuente viva con conjunto vacío da el veredicto de 6 con el mensaje de 5.
+
+Decisiones posteriores: revisé LOG, en particular DEC-AUTH-001:6660–6708, y OWNER hasta CJ. La excepción de LOG:6689 es «**Las lecturas de lo propio —Mi Cuenta, su billing, sus fichas— no consultan el paso 6.**»; no aplica al test de escritura. El 📌 CB (LOG:6703–6708; OWNER:171) cambia el alojamiento y fallback del caché, no devuelve al paso 5 la decisión de capacidad. No encontré una decisión posterior que autorice el rechazo denunciado.
+
+Pristina: 10-corte/V5.md:1356–1357 dice exactamente «un dueño con permiso y sin fuente que / otorgue la capacidad es rechazado en el paso 5/6». Sus líneas 575–594 conservan la separación normativa; no refutan el defecto del test, sino que lo hacen internamente inconsistente.
+
+Corrección: correcta. El caso con BASE y sin la capacidad requerida debe pasar 5 y fallar en 6, sin «sin cobertura». Conserva el alcance por ruta y no fija un error.code nuevo. Al implementar el caso deben satisfacerse las precondiciones y los pasos previos; el test no significa que BASE permita saltar identidad, correo, permiso o propiedad del recurso. No hay que cambiar esos contratos.
+
+2. H5-VB-08-4 — CONFIRMADO
+
+Regla viva textual:
+B03:287: «**Antes de toda cancelación que ejecutamos en el proveedor, nuestro correo tiene que salir**».
+B03:359–362:
+«fila nueva sino que **mira la que ya existe**. Si está `sent`, la llamada sale sin otro correo;
+   si todavía no salió, es la rama transitoria de arriba y la llamada espera a esa misma fila
+   —**y si esa fila quedó `failed`, es la tercera rama: la llamada sale igual y se escala** (owner
+   2026-09-25; FASE 9 completa, decisión 1)—. Sin»
+B03:308–310 permite cancelar sin destinatario y exige registrar y escalar el no-entregable; :315–318 hace lo mismo con failed definitivo.
+
+Intento de refutación: DEC-ENT-004 contiene una excepción aparente, viva tipográficamente: LOG:696 dice «**Conviene —no forma parte de la decisión— avisarle por correo antes de cancelar.**». No gobierna el resultado final: es del 2026-09-15 y quedó precisada por la regla posterior de DEC-MAIL-001 (LOG:1737–1755) y por BP. Tampoco «en el mismo acto» permite invertir correo y llamada: BP exige ambos.
+
+Decisiones posteriores: OWNER:141 (BP) exige «**en `S2`, cuando el plan comercial pasa a `ACTIVE`, con una cláusula nueva que cancela la suscripción de Turista VIP, con el correo antes**». El 📌 BP, LOG:7999–8001, lo incorpora a DEC-ARCH-017. CA, OWNER:170 y LOG:8028–8031, agrega la cláusula espejo en S7, también con correo antes; no reemplaza S2 ni habilita cancelar con correo pendiente. Los 📌 de DEC-MAIL-001:1740–1755 preservan expresamente la excepción de no-entregable/failed y el bloqueo por falla transitoria.
+
+Pristina: 10-corte/B3.md:1268–1271 contiene el bloque exacto denunciado; :1270 exige sólo «con el correo encolado antes de la cancelación en el falso». Una implementación que encola y llama inmediatamente puede cumplir ese test aun con el correo pendiente. La exigencia general de correo previo también está en AC:B3:8 (:318 y siguientes) y AC:B3:27 (:556 y siguientes), pero no convierte el encolado del test en envío.
+
+Corrección: correcta. Exige sent antes de la llamada normal, bloquea durante la falla transitoria, reutiliza la misma fila y conserva las dos excepciones con registro/escalado, sin refund ni corte de cobertura. Se entiende sobre el caso de una llamada necesaria al proveedor: B03:344–350 aclara que bloquea la LLAMADA, no la relectura, y que no corresponde una llamada si ya se ve cancelled o no hay preapproval. La corrección no obliga a añadir llamadas en esos casos ni a esperar confirmación de lectura del correo por el usuario.
+
+3. H5-G1-5 (AP) — CONFIRMADO
+
+Regla viva textual y cambio posterior:
+LOG:7934–7936, 📌 AV:
+«dejaron en conflicto (`41-corte-del-mvp/20-aplicacion.md` §5): **las tablas del modelo de addons
+  pasan de `B4` a `B3`** —precisa el renglón de addons de AP—, y `payment` nace en `B5` con la
+  columna de la instancia; la fuente `ADDON` y `G-R2-C` siguen en `B4`; **`S21` y la orfandad».
+LOG:7957–7958, 📌 BG:
+«`U2`. **BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`, como AV hizo con addons y por
+  el propio criterio de AP (cortesías y redenciones cuelgan de `subscription`): lo leen antes `S3` y».
+OWNER:59 es AP; :73 (AV) y :111 (BG) son las letras posteriores que cambian esas asignaciones. BN (:139; LOG:7991–7996) precisa el nacimiento de las tablas compartidas y mantiene payment en B5; BY y CH/CI no revierten AV/BG.
+
+Intento de refutación: «Precisa AP» podría ser meramente aditivo, y una transcripción histórica debería conservar AP. Es cierto que debe conservarla; no es cierto que las dos asignaciones sigan siendo aplicables. «pasan de» y «pasa de» expresan sustituciones concretas. Además, pristina/01-decisiones-vigentes.md:11077 promete: «Las letras que una fuente posterior dejó sin efecto llevan su marca ⚠️ **Caducada**». No es una exigencia de reescribir el pasado ni de retirar toda AP.
+
+Pristina: 01-decisiones-vigentes.md:13745 mantiene «promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia», sin marca antes de la entrada AQ (:13747). El sale coincide exactamente. Las precisiones implementables están conservadas; el defecto es la marca ausente del registro.
+
+Corrección: correcta como caducidad EN PARTE. Debe afectar las asignaciones del esquema, no mover la fuente ADDON ni G-R2-C de B4, ni las fuentes CORTESÍA/GRANT y operaciones que BG conserva en B9a. El texto propuesto distingue esquema/modelo y preserva el resto. La corrección debe hacerse en el generador y su registro declarativo, como ya propone el hallazgo, no mediante un parche aislado a 01.
+
+4. H5-G1-6 (BN) — CONFIRMADO
+
+Regla viva textual y cambio posterior:
+LOG:8011–8016, 📌 BW:
+«- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BW, la 1)**, sobre la
+  aplicación de BN del 📌 anterior: **`domain_event` la crea `U2`**, y no `V9a`. La premisa de
+  aquella aplicación, *«ninguna pieza anterior la escribe»*, era errónea: `NUCLEO/08` §1.1 registra
+  toda transición y todo acto administrativo, así que la escriben antes `V2`, `V4` y `B3`, y por la
+  regla de BN la crea la primera pieza del grafo que la escribe; `U2` es ancestro de todas ellas y ya
+  lleva la correlación acuñada en el borde hasta el evento (`NUCLEO/08` §2). `V9a` escribe en ella».
+OWNER:139 es BN; :156 (BW) cambia la aplicación a domain_event. BY (:168; LOG:8024–8027) trata la lectura de reconciliation_mark_payment y conserva su nacimiento en B5; no revierte BW. No encontré una letra o 📌 posterior que devuelva domain_event a V9a.
+
+Intento de refutación: BW dice que aplica «la regla de BN», por lo que BN sigue viva. Correcto para la regla general, pero el hallazgo no pretende retirarla: objeta la aplicación basada en una premisa expresamente declarada errónea. Ser sólo citable tampoco excusa omitir la marca prometida en :11077.
+
+Pristina: 01-decisiones-vigentes.md:13989 dice «`V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe)» y termina sin marca; BO comienza en :13991. La línea del campo correccion es exacta; :13988 del informe original es «Recomendada».
+
+Corrección: correcta. Sólo caduca la asignación de creación a V9a y conserva la regla y las otras tablas de BN. V9a sigue ESCRIBIENDO domain_event desde el corte, como LOG:8016–8017 establece; no debe interpretarse la nota como retiro de ese escritor. La propuesta no lo retira.
+
+5. H5-G1-7 (BU) — CONFIRMADO
+
+Regla viva textual y cambio posterior:
+LOG:7446–7449, 📌 BX:
+«- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BX, la 1)**, sobre BU del 📌
+  anterior: **el valor del plazo 19 lo fija el owner antes del merge de `B2`**, y no de `B11`. La
+  versión 1 de los plazos falla si una clave está vacía desde que se mergea la pieza que la
+  escribe, anterior a `B11`; con esto esa regla vale sin excepciones. Dónde: `NUCLEO/02` §1.5;»
+OWNER:146 es BU; :157 (BX) fija explícitamente B2. No encontré en las letras siguientes hasta CJ ni en los 📌 posteriores una excepción que vuelva a permitir esperar a B11.
+
+Intento de refutación: fijar antes de B2 también satisface literalmente «antes de B11», de modo que BU no sería falsa. Esa implicación no salva el criterio como gate: BU sola permite esperar entre los merges de B2 y B11; BX prohíbe esa espera y dice «y no de B11». Sigue siendo una sustitución parcial del plazo, no la caducidad de la configuración versionada.
+
+Pristina: 01-decisiones-vigentes.md:14059 conserva «su valor inicial lo fija el owner antes del merge de `B11`» sin marca; BV comienza en :14061. La línea :14058 del informe original es «Recomendada»; la :14059 adjudicada es exacta.
+
+Corrección: correcta. Cambia únicamente el momento a antes del merge de B2 y conserva la clave versionada y la acción 22. No propone un valor inicial, una excepción de clave vacía ni una migración posterior; no introduce una decisión comercial nueva.
+
+Comprobación común de las tres correcciones GENERADOR
+Verifiqué por lectura v/generadores/g1/gen01.py:376–398: own_render sólo añade la marca si MUERTAS contiene el id. :482–484 excluye expresamente «precisa» de CORRIGE; :530–551 busca sustituciones con ese vocabulario o con tachados. v/generadores/g1/omisiones.py:170–246 no declara los tres ids propuestos. Esto respalda la causa alegada, sin confundir toda precisión con una sustitución.
+
+La propuesta de revisar semánticamente cada «precisa» y registrar las precisiones aditivas es adecuada: BY amplía BL a lecturas y no lo mata. Al implementar, gen01.py:395–397 deberá poder emitir para estos casos «la parte reemplazada no se implementa», tal como pide el entra, en lugar de depender sólo del sufijo genérico actual «no se implementa». Los tres ids coinciden con las anclas y los orígenes de pristina/. No basta con añadirlos al diccionario y dejar sin cumplir la validación de que su ausencia sea detectada: el hallazgo ya incluye ese cambio de verificación.
+
+Verificado: contenido, líneas, ausencia de marcas, reglas fuera de tachados multilínea y decisiones posteriores relevantes. Inferido: que los tests actuales podrían aprobar una implementación incorrecta; se deduce de sus resultados aceptados, no de haber ejecutado una implementación. Pendiente de una futura aplicación: regenerar y demostrar las validaciones de regresión; no lo ejecuté porque esta tarea autoriza sólo el informe. No apliqué ninguna corrección.

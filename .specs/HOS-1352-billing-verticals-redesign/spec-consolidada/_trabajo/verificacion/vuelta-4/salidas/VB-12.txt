@@ -1,0 +1,20 @@
+# VB-12 · spec → fuente · 10-corte/B11.md 10-corte/B13a.md 20-fase-3/B13b.md 20-fase-3/B12.md
+
+## Hallazgos
+
+10-corte/B11.md:1913 · «Una marca de conciliación que lleva siete días sin intervención se cierra automáticamente conservando el estado actual de la suscripción, para que no reaparezca en el resumen.» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:945 («Si sigue abierta pasado su plazo, **escala**») y fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:165 («una persona resuelve»; guarda: «intervención humana registrada, **y ningún pago colgado de esa marca sin resolver**»). Los siete días son el valor inicial del escalamiento, no un vencimiento que cierre el caso; también contradice AC:B11:16 y TEST:B11:15 del mismo archivo. · BLOQUEA
+
+10-corte/B11.md:1733 · «(`B/09` §6, `B/05` §1)» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1083 («## 7. Frecuencia y orden»): la regla del barrido de creaciones sin respuesta y de volver a crear tras una búsqueda vacía está en la fila de la línea 1089, dentro del §7. El §6 citado es «Dos límites que no se pueden correr» (línea 1046). La regla tiene soporte, pero la referencia apunta al apartado equivocado. · MENOR
+
+10-corte/B13a.md:1087 · «un pago colgado ya devuelto por contracargo aparece con el contracargo y no en la vista por defecto.» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:246 («un pago colgado que el banco ya le devolvió a la persona por un contracargo se muestra con el contracargo y fuera del default»; «la persona lo resuelve sin devolver»). El default es la propuesta de devolución, definida en las líneas 241 y 251, no una vista que omita pagos: el listado debe mostrar todos los pagos colgados y excluir éste de la propuesta de devolver. TEST:B13a:8 exige ocultarlo de la vista por defecto, en contradicción también con AC:B13a:9 (líneas 679–683). · BLOQUEA
+
+20-fase-3/B13b.md:108 · «y un admin que no es `SUPER_ADMIN` también la ve y la puede llamar.» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:210 («publicar una versión de complemento»; «sólo `SUPER_ADMIN`») y su línea 216 («el permiso de las siete viene sólo con el rol y no se da suelto»). AC:B13b:3 permite ejecutar la acción 20 sin el rol obligatorio; también contradice Seguridad (línea 179), TEST:B13b:3 (línea 224) y 20-fase-3/B10.md:1635. BH redistribuye la superficie, sin ampliar el permiso. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B11.md | 1–2358 | 480 | 1 | 1 |
+| 10-corte/B13a.md | 1–1299 | 320 | 1 | 0 |
+| 20-fase-3/B13b.md | 1–261 | 65 | 1 | 0 |
+| 20-fase-3/B12.md | 1–831 | 210 | 0 | 0 |

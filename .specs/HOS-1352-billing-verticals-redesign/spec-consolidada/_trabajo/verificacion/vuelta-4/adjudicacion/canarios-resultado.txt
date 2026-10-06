@@ -1,0 +1,145 @@
+# Canarios de la vuelta 4 (HOS-1352): quién detectó cada uno
+
+Copia ciega `v/s/5586fad7/`; 42 canarios. Atribución por el contenido semántico del hallazgo, no por línea ni por CAN?.
+Sólo cuentan los 26 informes finales; no los volcados de rg ni los cotejos auxiliares. Una detección parcial de un canario compuesto cuenta una vez y se aclara.
+
+| # | bloque | tipo | dónde (copia) | detectado por | su bloque |
+|---|---|---|---|---|---|
+| 1 | VB-01 | MODIFICA | 02-nucleo-glosario.md:29 | VB-01 | sí |
+| 2 | VB-02 | MODIFICA | 02-nucleo.md:1637 | VB-02, VA-A1 | sí |
+| 3 | VB-03 | MODIFICA | 02-nucleo-modelo-y-maquinas.md:240 | VB-03, VA-A1, VA-A6 | sí |
+| 4 | VB-04 | MODIFICA | 10-corte/U1.md:80 | VB-04 | sí |
+| 5 | VB-05 | MODIFICA | 10-corte/V2.md:559 | VB-05 | sí |
+| 6 | VB-06 | MODIFICA | 10-corte/V5.md:203 | VB-06 | sí |
+| 7 | VB-07 | MODIFICA | 10-corte/V8a.md:108 | VB-07 | sí |
+| 8 | VB-08 | MODIFICA | 10-corte/B2.md:435 | VB-08 | sí |
+| 9 | VB-09 | MODIFICA | 10-corte/B4.md:130 | VB-09 | sí |
+| 10 | VB-10 | MODIFICA | 10-corte/B8a.md:235 | VB-10 | sí |
+| 11 | VB-11 | MODIFICA | 20-fase-2/B9b.md:177 | VB-11, VA-A10 | sí |
+| 12 | VB-12 | MODIFICA | 20-fase-3/B13b.md:108 | VB-12 | sí |
+| 13 | VB-13 | MODIFICA | 20-fase-2/B8b.md:408 | VB-13 | sí |
+| 14 | VB-14 | MODIFICA | 30-el-corte.md:1312 | VB-14 | sí |
+| 15 | G1 | MODIFICA | 01-decisiones-vigentes.md:589 | G1 | sí |
+| 16 | G1 | MODIFICA | 01-decisiones-vigentes.md:2721 | G1 | sí |
+| 17 | G2 | MODIFICA | 20-fase-2/B8b.md:92 | G2, VB-13 | sí |
+| 18 | G2 | MODIFICA | 04-catalogos.md:6464 | G2, VA-A10 | sí |
+| 19 | VB-01 | AGREGA | 00-indice.md:108 | VB-01 | sí |
+| 20 | VB-02 | AGREGA | 02-nucleo-outbox.md:169 | VB-02 | sí |
+| 21 | VB-03 | AGREGA | 03-contrato-de-cobertura.md:101 | VB-03 | sí |
+| 22 | VB-04 | AGREGA | 10-corte/U3.md:305 | VB-04 | sí |
+| 23 | VB-05 | AGREGA | 10-corte/V3.md:93 | VB-05, VA-A4 | sí |
+| 24 | VB-06 | AGREGA | 10-corte/V6.md:1096 | VB-06, VA-A4 | sí |
+| 25 | VB-07 | AGREGA | 20-fase-4/V7.md:815 | VB-07, VA-A3, VA-A4 | sí |
+| 26 | VB-08 | AGREGA | 10-corte/B1.md:722 | VB-08 | sí |
+| 27 | VB-09 | AGREGA | 10-corte/B5.md:895 | VB-09 | sí |
+| 28 | VB-10 | AGREGA | 10-corte/B7.md:1524 | VB-10 | sí |
+| 29 | VB-11 | AGREGA | 20-fase-1/V9b.md:653 | VB-11, VA-A4 | sí |
+| 30 | VB-12 | AGREGA | 10-corte/B11.md:1913 | VB-12 | sí |
+| 31 | VB-13 | AGREGA | 20-fase-3/B10.md:1674 | VB-13 | sí |
+| 32 | VB-14 | AGREGA | 30-el-corte.md:1555 | VB-14 | sí |
+| 33 | VA-A1 | OMITE | 01-decisiones-vigentes.md:312, 02-nucleo-auditoria.md:56, 10-corte/U2.md:279, 10-corte/V1.md:143, 10-corte/V1.md:259, 10-corte/V9a.md:146 | G1 | no |
+| 34 | VA-A2 | OMITE | 30-el-corte.md:905 | **NO DETECTADO** | no |
+| 35 | VA-A3 | OMITE | 00-indice.md:181, 01-decisiones-vigentes.md:3689, 01-decisiones-vigentes.md:14111, 10-corte/V3.md:30, 10-corte/V3.md:264, 10-corte/V3.md:705, 10-corte/V3.md:736, 10-corte/V3.md:846, 80-abiertos.md:584 | G1, VA-A2, VA-A3 | sí |
+| 36 | VA-A4 | OMITE | 01-decisiones-vigentes.md:10851, 01-decisiones-vigentes.md:13409, 10-corte/V5.md:41, 10-corte/V5.md:164, 10-corte/V5.md:304, 10-corte/V5.md:996, 10-corte/V5.md:1258 | G1, VB-06 | no |
+| 37 | VA-A5 | OMITE | 04-catalogos.md:1351, 10-corte/V8a.md:408 | G2, VB-07 | no |
+| 38 | VA-A6 | OMITE | 10-corte/B5.md:609, 10-corte/B5.md:857 | VA-A6 | sí |
+| 39 | VA-A7 | OMITE | 04-catalogos.md:4553 | G2, VA-A7 | sí |
+| 40 | VA-A8 | OMITE | 10-corte/B1.md:456 | VA-A8 | sí |
+| 41 | VA-A9 | OMITE | 20-fase-3/B12.md:131, 20-fase-3/B12.md:462, 20-fase-3/B12.md:562 | G2 | no |
+| 42 | VA-A10 | OMITE | 01-decisiones-vigentes.md:8536, 04-catalogos.md:6747, 10-corte/B1.md:303 | G1, G2, VA-A10 | sí |
+
+Balance: 41/42 detectados; VB 28/28, G 4/4, VA 9/10. Por su propio bloque: 37/42 (VB 28/28, G 4/4, VA 5/10).
+
+## Evidencia por canario
+
+1. VB-01 / MODIFICA: Equipara al visitante anónimo con el Turista autenticado y cambia su acceso.
+   Hallazgos: [VB-01-2]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:36.
+2. VB-02 / MODIFICA: Adelanta dos días el primer aviso de renovación sin respaldo en el plazo 13.
+   Hallazgos: [VB-02-1], [VA-A1-1]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:185.
+3. VB-03 / MODIFICA: Permite estados fuera del dominio cerrado y debilita la máquina.
+   Hallazgos: [VB-03-2], [VA-A1-2], [VA-A6-4]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:49.
+4. VB-04 / MODIFICA: Deja activo el cron viejo de borradores que debe retirarse.
+   Hallazgos: [VB-04-1]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:754.
+5. VB-05 / MODIFICA: Amplía a ADMIN la publicación de versiones reservada a SUPER_ADMIN.
+   Hallazgos: [VB-05-1]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:208.
+6. VB-06 / MODIFICA: Permite sondear permisos antes de rechazar un correo sin verificar.
+   Hallazgos: [VB-06-1]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:120.
+7. VB-07 / MODIFICA: Conserva favoritos que el criterio de salida exige eliminar al dar de baja.
+   Hallazgos: [VB-07-2]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:719.
+8. VB-08 / MODIFICA: El test exigiría rechazar precios válidos entre ARS 15 y 29.
+   Hallazgos: [VB-08-2]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:209.
+9. VB-09 / MODIFICA: El consumidor podría observar cobertura vieja y perder el cambio.
+   Hallazgos: [VB-09-1]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:907.
+10. VB-10 / MODIFICA: Desplaza un día la fecha de terminación de una suscripción suspendida.
+   Hallazgos: [VB-10-3]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:897.
+11. VB-11 / MODIFICA: Permite cortesías fraccionarias que el mecanismo limita a meses enteros.
+   Hallazgos: [VB-11-3], [VA-A10-1]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:645.
+12. VB-12 / MODIFICA: Abre el editor de complementos a administradores sin el rol requerido.
+   Hallazgos: [VB-12-4]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:210.
+13. VB-13 / MODIFICA: Amplía el cupo de pausas por user y vertical.
+   Hallazgos: [VB-13-2]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:760.
+14. VB-14 / MODIFICA: Permite cerrar una unidad sin comprobar ambos desenlaces UNKNOWN.
+   Hallazgos: [VB-14-2]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1044.
+15. G1 / MODIFICA: Cambia el default vigente del grace de diez a siete días.
+   Hallazgos: [G1-2]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:711.
+16. G1 / MODIFICA: Exige una cuota de trial superior a la de pago, invirtiendo DEC-ENT-001.
+   Hallazgos: [G1-3]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:587.
+17. G2 / MODIFICA: Impide reemplazar un downgrade programado por otro.
+   Hallazgos: [G2-5], [VB-13-1]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:220.
+18. G2 / MODIFICA: El falso aplica mutaciones que el proveedor descarta y deja de comprobar esa defensa.
+   Hallazgos: [G2-3], [VA-A10-2]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:503.
+19. VB-01 / AGREGA: Inventa una condición de apertura y exige una segunda cuenta privilegiada.
+   Hallazgos: [VB-01-1]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:158.
+20. VB-02 / AGREGA: Inventa una ventana horaria de entrega que no forma parte de las reglas de supresión.
+   Hallazgos: [VB-02-2]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:189.
+21. VB-03 / AGREGA: Inventa una cuota de lecturas que puede impedir resolver autorización y cobertura.
+   Hallazgos: [VB-03-1]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:86.
+22. VB-04 / AGREGA: Inventa caducidad y eliminación de evidencia necesaria para operar el corte.
+   Hallazgos: [VB-04-2]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:856.
+23. VB-05 / AGREGA: Inventa un consumo mínimo de diez unidades por operación y agota cuotas antes de lo realmente usado.
+   Hallazgos: [VB-05-2], [VA-A4-3]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:558.
+24. VB-06 / AGREGA: Inventa un bloqueo por dueño y una confirmación de soporte que posterga otras purgas.
+   Hallazgos: [VB-06-4], [VA-A4-1]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797.
+25. VB-07 / AGREGA: Inventa una identidad fiscal obligatoria y una unicidad para postularse.
+   Hallazgos: [VB-07-1], [VA-A3-2], [VA-A4-4]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:206.
+26. VB-08 / AGREGA: Inventa un bloqueo global que impide altas y reembolsos por fallos de lectura.
+   Hallazgos: [VB-08-1]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:161.
+27. VB-09 / AGREGA: Inventa una validación de formato que impide registrar transferencias válidas.
+   Hallazgos: [VB-09-5]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1871.
+28. VB-10 / AGREGA: Inventa una extensión de servicio ligada a la entrega del correo.
+   Hallazgos: [VB-10-1]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:156.
+29. VB-11 / AGREGA: Inventa retención recuperable del contenido que debía borrarse al purgar.
+   Hallazgos: [VB-11-5], [VA-A4-2]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:777.
+30. VB-12 / AGREGA: Inventa un cierre automático que sustituye la resolución humana.
+   Hallazgos: [VB-12-1]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:317.
+31. VB-13 / AGREGA: Inventa una guarda de antigüedad ajena a compatibilidad y título.
+   Hallazgos: [VB-13-3]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:172.
+32. VB-14 / AGREGA: Inventa un gate de cero marcas que condiciona el cierre del corte.
+   Hallazgos: [VB-14-3]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1119.
+33. VA-A1 / OMITE: Desaparece la obligación de restringir los tipos de evento de auditoría a un catálogo cerrado.
+   Hallazgos: [G1-1]. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:57.
+   G1-1 denuncia la cláusula plantada sobre catálogo cerrado del evento de activación; no denuncia por separado todas las ubicaciones de auditoría. Detección parcial del canario compuesto, contada una vez.
+34. VA-A2 / OMITE: Se pierde el recordatorio operativo al owner para que avise a las cinco cuentas antes del corte.
+   Hallazgos: ninguno. Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:268.
+   Ningún informe final denuncia la pérdida del recordatorio al owner. VA-A2 reporta el contador Redis, que es VA-A3, no este canario.
+35. VA-A3 / OMITE: Se elimina el contador de entradas sospechosas del caché, incluso de AC, TEST, CB y abiertos; la implementación dejaría de observar las invalidaciones fallidas con esa métrica.
+   Hallazgos: [G1-4], [VA-A2-1], [VA-A3-1]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:742.
+   VA-A3-1 confirma la omisión aunque la heurística no lo marcó CAN?. VA-A2-1 también la detecta desde otro bloque.
+36. VA-A4 / OMITE: La fábrica ya no exige un identificador propio por job; distintos jobs pueden quedar indistinguibles como actores.
+   Hallazgos: [G1-6], [VB-06-2]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:582.
+37. VA-A5 / OMITE: El panel deja de exigir que se muestre la antigüedad de los pedidos de arreglo pendientes, ocultando cuánto llevan sin resolver.
+   Hallazgos: [G2-1], [VB-07-3]. Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:91.
+38. VA-A6 / OMITE: Se elimina el instante de vinculación de cada pago a una marca; el esquema ya no permite reconstruir cuándo se agregó a conciliación.
+   Hallazgos: [VA-A6-2]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:58.
+39. VA-A7 / OMITE: Desaparece la referencia del panel como evidencia admitida para asentar una devolución externa por RF4; queda exigido sólo un comprobante de transferencia y se bloquearían devoluciones hechas desde el panel.
+   Hallazgos: [G2-2], [VA-A7-1]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1853.
+   VA-A7-1 es mixto: detecta el canario sólo en 04-catalogos; su denuncia de B5 subsiste en pristina y se adjudica por separado.
+40. VA-A8 / OMITE: Se elimina la obligación de registrar las retenciones y comisiones efectivamente liquidadas por el proveedor; el implementador puede omitir ese asiento.
+   Hallazgos: [VA-A8-1]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:299.
+41. VA-A9 / OMITE: Desaparece la prohibición de persistir la extinción de una versión retirada como estado, permitiendo un dato que se desactualice respecto de sus suscripciones.
+   Hallazgos: [G2-6]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:90.
+42. VA-A10 / OMITE: La batería deja de comparar campos y tipos con la corrida anterior, por lo que no detectaría cambios de forma de las respuestas del proveedor.
+   Hallazgos: [G1-5], [G2-4], [VA-A10-3]. Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:659.
+
+El canario VA-A2 no se corrige en la spec real: pristina/30-el-corte.md:905–906 conserva el recordatorio.
+Los canarios no se incorporan al conteo de no-canarios ni generan correcciones contra HEAD.

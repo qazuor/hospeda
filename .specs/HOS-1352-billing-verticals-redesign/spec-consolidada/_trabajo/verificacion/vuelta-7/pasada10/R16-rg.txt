@@ -1,0 +1,6 @@
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-2/B8b.md:488:- **Dado** un cambio hacia una versión de `rank` MAYOR en el que un limit empeora según su
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-2/B8b.md:1112:Con el simulador del contrato contestando `BAJA` para una versión de `rank` mayor, el falso registra
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B8a.md:329:1. **un cambio hacia una versión de `rank` MAYOR con un solo limit menor sigue el camino de
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V2.md:41:   MAYOR y un solo limit menor de estrategia `SUMA` o `MÁXIMO`** —más es mejor— (con una clave
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V2.md:165:- **Dado** (a) un par donde el destino tiene `rank` mayor y un solo limit menor de estrategia `SUMA`
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V2.md:608:**TEST:V2:5** — Con versiones sembradas: `rank` mayor y un limit `SUMA` menor → `BAJA`; sólo una clave

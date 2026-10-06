@@ -1,0 +1,28 @@
+# Brief · pasada 10 · aplicar adjudicación de vuelta 7 (HOS-1352)
+
+Worktree: /home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign
+Branch: spec/HOS-1352-billing-verticals-redesign
+Spec previa: c1c032109b. Fuentes previas: 5381f7579687651df168575c85f144f9b48daea7.
+Precedente: ../vuelta-3/brief-pasada6.txt. Procedimiento: ../codex/RUNBOOK.md.
+Adjudicación: adjudicacion/. Usuario aprueba dos REAL BLOQUEA y FUENTE B/22:87.
+
+F/S/G fase 1 en paralelo sin commits de agentes; integración y commits por orquestador.
+F: B/22:87 y barrido general de todas las reglas modificadas por pasadas 7, 8, 9,
+además de reintento de aumento desde S37 siete días antes y guard sólo mutaciones.
+Fuentes: tachar y agregar; decision log sólo pines nuevos y Estado. Sin PDR/matriz/informes.
+S: aplicar H7-VB-08-2 y H7-VB-13-3 y propagar H7-VB-13-5; barrido en todos los
+.md de consolidada (también 01, 04, 80-abiertos) y g8/src. Generado se regenera.
+G fase 1: auditar copias generadas; no hay GENERADOR adjudicado en vuelta 7.
+Inventariar desde diffs y vuelta-4..6; múltiples formulaciones viejas por regla.
+Artefactos e informes históricos se conservan sin modificar.
+
+Registrar cada candidato del barrido con archivo:línea, resolución y motivo.
+Archivar evidencia original sin modificar. No decisiones OWNER nuevas.
+Tras commits F/S/G: re-congelar al último commit de fuentes; inventario,
+asignar, adjudicar, reanclar citas/cobertura y sellar; revisar fuentes.json de
+secciones aparte; regenerar g1, g3, g8 y secciones. Markdownlint y biome JSON.
+Verificación completa: trazar con posicionales, cinco suites de canarios,
+aristas, contar, cobertura y markdownlint global. Logs y exit codes en pasada10/.
+Commits autorizados: docs(spec): <english lowercase description> (HOS-1352),
+header <=100 caracteres; CI=true, rutas explícitas, un commit por llamada,
+revisión staging. No push, Linear ni archivos ajenos preexistentes.

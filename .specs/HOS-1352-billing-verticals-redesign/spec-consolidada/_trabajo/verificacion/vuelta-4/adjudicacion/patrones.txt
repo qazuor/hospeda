@@ -1,0 +1,25 @@
+# Patrones — adjudicación de vuelta 4
+
+Resultado: 22 únicos no-canarios: 13 REAL BLOQUEA, 5 REAL MENOR, 4 FUENTE, 0 FALSO, 0 GENERADOR y 0 OWNER.
+
+P-F · Fuente fiel con residuo vivo. V/descomposicion:717 conserva la salida incondicional a DRAFT; B/14:311 conserva «sin promos» sin BZ; B/14:742 conserva fecha efectiva; P/16:152 conserva dieciocho plazos. Las decisiones posteriores resuelven los cuatro. No pedir una letra nueva, no corregir a mano g-secciones y no culpar a su limpieza de tachados.
+
+P-AC · La condensación de una transición pierde ramas. S16 distingue predecesora de sucesora; RF3 distingue pago de orden; RF4 admite comprobante o referencia; MP5 avisa al admin incluso sin S4. Mantener estas distinciones en el AC y probar las alternativas, sin tratar la cita al catálogo como reemplazo del criterio.
+
+P-RET · Una corrección anterior también requiere verificación semántica. H3-VB10-4 incorporó guardas a B7, pero el texto resultante mezcla pago retenido con pago que reactiva. El test de vuelta 4 exige S5 donde S19 lo prohíbe y también sobre ACTIVE. Se corrigen AC y test juntos; no se reabre el hallazgo anterior como si no se hubiera atendido.
+
+P-T · Separar instante de escritura, envío y cobro. B4 escribe outbox dentro de la transacción y envía después; B2 muta por S37 siete días antes y cobra desde la fecha efectiva. V9b debe distinguir la ocurrencia de un schedule de la de un evento de purga.
+
+P-REF · Repartos y referencias residuales. BL, BY, BW y BM ya resolvieron avisos, interfaces y creación de domain_event. El alcance resumido y el registro de abiertos deben llevar la misma decisión que los AC. El conteo de trece dependencias y la referencia a §7 no cambian comportamiento, pero deben sincronizarse.
+
+P-G · Archivo generado no equivale a defecto GENERADOR. g8/gen.py: expand() cambia placeholders y prefijos; el contenido errado está en src/B4–B7. secciones/gen.py: limpiar() elimina tachados, no inventa excepciones de decisiones posteriores. Sus dos residuos de B9a están vivos en B/14. G1 y G2 sólo denunciaron canarios en esta vuelta; los defectos GENERADOR de vuelta 3 no se vuelven a contar.
+
+P-C · Medición de canarios. VB: 28/28, todos por su bloque. G: 4/4, todos por su bloque. VA: 9/10, cinco por su bloque. El recordatorio operativo al owner (VA-A2) quedó sin detectar. G1 detectó sólo una cláusula del canario compuesto VA-A1: no prueba que se hayan revisado todas sus ubicaciones. No atribuir VA-A3 a VA-A2 como «propio» porque VA-A2 lo haya reportado.
+
+P-EXT · Extracción no es adjudicación. hallazgos-todos incluye volcados G2-* y VA-A7-cotejo*. Sólo los 26 informes finales definen hallazgos. VA-A3-1 es canario confirmado sin marca CAN?. VA-A7-1 contiene a la vez un canario de catálogo y un REAL en B5; se divide por regla y ubicación, no se descarta entero.
+
+Duplicados: VA-A6-1 + VB-08-3 (precios del corte); VB-09-3 + componente B5 de VA-A7-1 (evidencia de RF4). El componente de catálogo de VA-A7-1 cuenta para VA-A7 y no como otro REAL.
+
+Verificado: lectura de los tres skills de dominio; reglas QZ de estilo/permisos; adapter del proyecto; hallazgos finales, diff de canarios, fuente congelada y copia pristina; decisiones posteriores hasta CJ; adjudicaciones 1–3; clasificación del destino de las correcciones. Todas las propuestas sale/entra coinciden literalmente con sus insumos y sus líneas se calculan sobre pristina o la fuente, no sobre la copia ciega.
+
+Límites: no se verificó implementación del producto ni comportamiento de Mercado Pago. No se ejecutó el build de producto del adapter, porque no valida esta adjudicación documental. No se usaron git, trackers, subagentes ni escrituras externas a adjudicacion. Propuestas no aplicadas; el re-congelado y la regeneración corresponden a la fase de corrección autorizada posteriormente.

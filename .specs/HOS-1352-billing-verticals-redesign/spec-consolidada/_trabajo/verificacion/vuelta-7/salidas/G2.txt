@@ -1,0 +1,99 @@
+# G2 · spec → fuente · 04-catalogos.md, 10-corte/B9a.md, 20-fase-3/B10.md, 10-corte/B11.md, 20-fase-3/B12.md, 10-corte/B13a.md, 20-fase-2/B8b.md
+
+## Hallazgos
+
+04-catalogos.md:201 · «fuentes ajenas al trial** — exclusivamente la suscripción.» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:385 («fuentes ajenas al trial** — la suscripción, la cortesía o el grant.»; excluye cortesía y grant del valor de cubierto que leen T1 y T6) · BLOQUEA
+04-catalogos.md:2241 · «lectura, si da `settled`, dispara su correo de `NUCLEO/07` §6 (`B/09` §3).» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2944 («lectura dispara el correo que corresponde de `NUCLEO/07` §6 (`B/09` §3).»; la fuente abarca settled y reimbursed; la copia condiciona el correo sólo a settled) · BLOQUEA
+04-catalogos.md:4325 · «**La resolución `settled` le avisa a la persona con un correo transaccional**» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1779 («**Las dos resoluciones le avisan a la persona, con un correo transaccional cada una**»; omite el aviso de P7 por reimbursed de 1783–1784; 4332 vuelve a limitar a settled lo que 1788 exige para cada desenlace) · BLOQUEA
+04-catalogos.md:6762 · «**La autorización la custodia el owner**: sin ella, la corrida de producción no arranca» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:670 («**La autorización la custodia el owner y la renueva cada mes**: sin la del mes»; 671 completa «en curso, la corrida de producción no arranca»; desaparece la caducidad mensual, confirmada por el 📌 vigente del decision log:7210) · BLOQUEA
+04-catalogos.md:7170 · «**La clase es un atributo declarado de una clave**» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:316 («**La clase es hoy el cuarto atributo declarado de una clave**»; se pierde la posición explícita del atributo; se conservan su declaración, los dos valores y la lista cerrada, sin cambio práctico demostrado) · MENOR
+04-catalogos.md:8860 · «**Funciona en los DOS tipos de pago**: la conclusión anterior» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:304 («**Funciona en los DOS tipos de pago** y **NO hay monto mínimo**: la conclusión anterior»; omite la conclusión general de que no hay mínimo para el parcial; conservar el ejemplo de ARS 5 no conserva esa restricción contra inventar un piso inferior; decision log:1805 la ratifica) · BLOQUEA
+10-corte/B9a.md:95 · «porcentajes se suman y los fijos se suman» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:49 («porcentajes se multiplican y los fijos se suman»; cambia el cálculo del monto compuesto al apilar descuentos porcentuales) · BLOQUEA
+10-corte/B11.md:854 · «| **`reimbursed`** | **`P7`** (`B/03` §6) |» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:817 («**`P7`** (`B/03` §6), y sale el correo *«la disputa se resolvió a nuestro favor»* (`NUCLEO/07` §6)»; elimina el efecto de notificación al resolver el contracargo a nuestro favor) · BLOQUEA
+10-corte/B13a.md:166 · «**si la disputa se resuelve a favor de la persona sale un correo transaccional**» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:120 («**al resolverse la disputa sale un correo transaccional por cada desenlace**»; también desaparece la rama «si ganamos nosotros (reimbursed, P7)» y su mensaje; el aviso queda sólo para settled) · BLOQUEA
+10-corte/B13a.md:268 · «**sin plazo** (revisión del owner, casos vecinos, 2026-09-29, caso 26)» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:218 («**sin plazo y con su antigüedad**, contada desde el anuncio»; elimina de la pantalla la antigüedad de las migraciones PARA_RESOLVER y su origen de cómputo; decision log:7155–7156 mantiene ambos) · BLOQUEA
+20-fase-3/B12.md:232 · «**Sin plazo** (revisión del owner, casos vecinos, 2026-09-29, caso 26).» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:191 («**Sin plazo**: el listado muestra **su»; 192–193 exige «antigüedad», contada desde anunciada_en, para mostrar cuánto lleva esperando; la copia omite la regla entera) · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 04-catalogos.md | 1–9844 | 3331 | 5 | 1 |
+| 10-corte/B9a.md | 1–1430 | 178 | 1 | 0 |
+| 20-fase-3/B10.md | 1–1942 | 279 | 0 | 0 |
+| 10-corte/B11.md | 1–2355 | 285 | 1 | 0 |
+| 20-fase-3/B12.md | 1–831 | 28 | 1 | 0 |
+| 10-corte/B13a.md | 1–1300 | 120 | 2 | 0 |
+| 20-fase-2/B8b.md | 1–1406 | 47 | 0 | 0 |
+
+Total: **10 BLOQUEA y 1 MENOR**. Las cuatro ubicaciones que pierden el correo de `reimbursed` corresponden a una misma clase de defecto; las dos que pierden la antigüedad de `PARA_RESOLVER`, a otra. Se enumeran por ubicación para poder corregir todas las copias.
+
+Recorrido físico completo de los siete archivos. En las seis piezas, el cotejo normativo se limita al bloque G2: B9a 59–725; B10 90–1211; B11 75–1317; B12 65–268; B13a 54–445; B8b 53–340. Las cifras aproximan unidades de revisión (campos, filas y párrafos), no un conteo formal de requisitos. No quedaron tramos de G2 sin recorrer.
+
+Leídos los generadores g3 y secciones, su mapa de fuentes y las omisiones declaradas; no se ejecutaron. El contraste independiente revisó los 298 ítems del catálogo (1.382 campos primarios), 102 tramos de prosa, seis cuerpos de candados y tres ocurrencias secundarias de guards, además de 94 cuerpos de sección transcritos en las seis piezas. Se quitaron los tachados de la fuente antes de comparar; se neutralizaron links y espacios de formato. Cada divergencia de contenido se volvió a leer en la fuente original para conservar sus números de línea reales.
+
+Clases de error buscadas en toda la salida con `rg --hidden` y contraste con la fuente:
+
+- Tachados completos, parciales y multilínea que sobreviven como vivos: 0 delimitadores `~~` residuales; el cotejo de todos los cuerpos y celdas no detectó resurrecciones. Las cuatro secciones con título retirado conservan el cuerpo vivo; una de ellas contiene la alteración de cobertura informada en 04:201.
+- Filas retiradas con texto vivo: siete notas «fila retirada» conservan el texto vivo de reemplazo; sin pérdida adicional detectada.
+- Separadores de tabla escapados y barras dentro de código: ninguna barra escapada en el texto asignado a G2; cotejados todos los campos y las 34 tablas de origen de los ítems. EX-3 tiene un backtick desbalanceado en la propia fuente; se comprobó que sus siete campos se conservan completos. Sin celdas truncadas detectadas.
+- Texto pegado a otro bloque: los rangos citados se contrastaron dentro de su sección o ítem, no sólo contra la presencia global de una frase. Sin traslado incorrecto detectado. Los tres guards repetidos en B/20 aparecen en sus ítems de V/20, con sus campos completos.
+- Letras del owner o 📌 retirados presentados como vigentes: contrastados los 42 renglones con 📌 del corpus y las letras AH, AM, AN, AV, AX, AZ y BK que usa el catálogo. Sin resurrección detectada. Se buscó cada tema de los hallazgos en el decision log y en 41-corte-del-mvp/10-decisiones-del-owner.md; no se encontró una decisión posterior que autorice las alteraciones.
+- Omisiones de contenido vivo: detectadas en los avisos de disputa, la autorización mensual, la antigüedad de PARA_RESOLVER, la conclusión de RF-2 y el ordinal del atributo. La omisión explícita de EX-46 coincide con BK y con los dos fragmentos declarados en omisiones.json; no se confunde con las omisiones sin marca informadas.
+- Sustituciones/paráfrasis que cambian una regla: detectadas en la suma de porcentajes y la exclusión de cortesías y grants. La comparación fue sobre todo el contenido, no sólo sobre palabras seleccionadas.
+
+Muestra estratificada — 40 ítems del catálogo, distribuidos desde el inicio hasta el final; se cotejaron todos los campos de cada fila o el cuerpo íntegro del candado (además del barrido completo):
+
+- `TRANS:V:T1`: 04-catalogos.md:72 ↔ V/03-maquinas-de-estado.md:52; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:V:PB2`: 04-catalogos.md:790 ↔ V/03-maquinas-de-estado.md:489; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:V:PB9`: 04-catalogos.md:1274 ↔ V/03-maquinas-de-estado.md:496; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:B:S1`: 04-catalogos.md:1618 ↔ B/03-maquinas-de-estado.md:151; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:B:S8`: 04-catalogos.md:2836 ↔ B/03-maquinas-de-estado.md:158; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:B:S16`: 04-catalogos.md:3346 ↔ B/03-maquinas-de-estado.md:166; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:B:S24`: 04-catalogos.md:3976 ↔ B/03-maquinas-de-estado.md:174; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:B:S35`: 04-catalogos.md:4088 ↔ B/03-maquinas-de-estado.md:185; sin diferencia de contenido en sus campos/cuerpo.
+- `PROH:B:5`: 04-catalogos.md:4268 ↔ B/03-maquinas-de-estado.md:1458; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:B:P7`: 04-catalogos.md:4462 ↔ B/03-maquinas-de-estado.md:1773; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:B:MP2`: 04-catalogos.md:4647 ↔ B/03-maquinas-de-estado.md:1872; sin diferencia de contenido en sus campos/cuerpo.
+- `TRANS:B:A3`: 04-catalogos.md:5371 ↔ B/03-maquinas-de-estado.md:2537; sin diferencia de contenido en sus campos/cuerpo.
+- `MOT:3`: 04-catalogos.md:5767 ↔ B/02-modelo-de-datos.md:1025; sin diferencia de contenido en sus campos/cuerpo.
+- `MOT:11`: 04-catalogos.md:5909 ↔ B/02-modelo-de-datos.md:1033; sin diferencia de contenido en sus campos/cuerpo.
+- `MOT:19`: 04-catalogos.md:6022 ↔ B/02-modelo-de-datos.md:1041; sin diferencia de contenido en sus campos/cuerpo.
+- `LOCK:C2`: 04-catalogos.md:6224 ↔ B/05-idempotencia-y-concurrencia.md:129; sin diferencia de contenido en sus campos/cuerpo.
+- `M:M4`: 04-catalogos.md:6590 ↔ B/20-testing.md:506; sin diferencia de contenido en sus campos/cuerpo.
+- `M:M11`: 04-catalogos.md:6674 ↔ B/20-testing.md:513; sin diferencia de contenido en sus campos/cuerpo.
+- `RP:RP6`: 04-catalogos.md:6841 ↔ B/20-testing.md:539; sin diferencia de contenido en sus campos/cuerpo.
+- `GUARD:G2`: 04-catalogos.md:7599 ↔ V/20-testing.md:51; sin diferencia de contenido en sus campos/cuerpo.
+- `GUARD:G14`: 04-catalogos.md:7690 ↔ V/20-testing.md:58; sin diferencia de contenido en sus campos/cuerpo.
+- `GUARD:G-R3-C`: 04-catalogos.md:7793 ↔ V/20-testing.md:66; sin diferencia de contenido en sus campos/cuerpo.
+- `GUARD:G9`: 04-catalogos.md:7922 ↔ B/20-testing.md:51; sin diferencia de contenido en sus campos/cuerpo.
+- `GUARD:G-R1-D`: 04-catalogos.md:8028 ↔ B/20-testing.md:59; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:PA-3`: 04-catalogos.md:8146 ↔ D/06-mp-validation-matrix.md:174; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:FR-4`: 04-catalogos.md:8241 ↔ D/06-mp-validation-matrix.md:186; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:PS-2`: 04-catalogos.md:8357 ↔ D/06-mp-validation-matrix.md:209; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:PC-2`: 04-catalogos.md:8476 ↔ D/06-mp-validation-matrix.md:227; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:CT-2`: 04-catalogos.md:8579 ↔ D/06-mp-validation-matrix.md:252; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:WH-6`: 04-catalogos.md:8691 ↔ D/06-mp-validation-matrix.md:270; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:RC-7`: 04-catalogos.md:8786 ↔ D/06-mp-validation-matrix.md:282; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:RF-6`: 04-catalogos.md:8915 ↔ D/06-mp-validation-matrix.md:313; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:EX-6`: 04-catalogos.md:9027 ↔ D/06-mp-validation-matrix.md:322; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:EX-13`: 04-catalogos.md:9125 ↔ D/06-mp-validation-matrix.md:329; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:EX-21`: 04-catalogos.md:9255 ↔ D/06-mp-validation-matrix.md:358; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:EX-29`: 04-catalogos.md:9367 ↔ D/06-mp-validation-matrix.md:366; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:EX-37`: 04-catalogos.md:9509 ↔ D/06-mp-validation-matrix.md:394; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:EX-45`: 04-catalogos.md:9621 ↔ D/06-mp-validation-matrix.md:402; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:EX-52`: 04-catalogos.md:9720 ↔ D/06-mp-validation-matrix.md:409; sin diferencia de contenido en sus campos/cuerpo.
+- `MP:EX-34`: 04-catalogos.md:9832 ↔ D/06-mp-validation-matrix.md:438; sin diferencia de contenido en sus campos/cuerpo.
+
+Muestra adicional de prosa y tablas de las seis transcripciones (cada cuerpo cotejado línea por línea; los extremos son los encabezados de la sección fuente y su fin):
+
+- 10-corte/B9a.md: 61 ↔ B/14-promos-cortesias-y-grants.md:17–31; 114 ↔ B/14-promos-cortesias-y-grants.md:66–98; 219 ↔ B/14-promos-cortesias-y-grants.md:209–233; 346 ↔ B/14-promos-cortesias-y-grants.md:352–356; 384 ↔ B/14-promos-cortesias-y-grants.md:385–392; 419 ↔ B/14-promos-cortesias-y-grants.md:416–453; 549 ↔ B/14-promos-cortesias-y-grants.md:545–612; 652 ↔ B/14-promos-cortesias-y-grants.md:645–684.
+- 20-fase-3/B10.md: 92 ↔ B/16-addons.md:17–24; 132 ↔ B/16-addons.md:53–70; 241 ↔ B/16-addons.md:172–185; 294 ↔ B/16-addons.md:226–233; 337 ↔ B/16-addons.md:263–336; 482 ↔ B/16-addons.md:402–415; 552 ↔ B/16-addons.md:468–484; 984 ↔ B/16-addons.md:921–1038.
+- 10-corte/B11.md: 77 ↔ B/09-conciliacion.md:12–22; 111 ↔ B/09-conciliacion.md:46–54; 137 ↔ B/09-conciliacion.md:68–82; 241 ↔ B/09-conciliacion.md:176–966; 1051 ↔ B/09-conciliacion.md:1022–1045; 1110 ↔ B/09-conciliacion.md:1083–1114; 1190 ↔ B/09-conciliacion.md:1166–1322.
+- 20-fase-3/B12.md: 69 ↔ B/10-verticales-planes-billing-options.md:32–39; 79 ↔ B/10-verticales-planes-billing-options.md:40–57; 98 ↔ B/10-verticales-planes-billing-options.md:58–74; 117 ↔ B/10-verticales-planes-billing-options.md:75–94; 138 ↔ B/10-verticales-planes-billing-options.md:95–129; 172 ↔ B/10-verticales-planes-billing-options.md:130–145; 188 ↔ B/10-verticales-planes-billing-options.md:146–228.
+- 10-corte/B13a.md: 56 ↔ B/19-superficies.md:12–22; 84 ↔ B/19-superficies.md:40–53; 115 ↔ B/19-superficies.md:69–96; 212 ↔ B/19-superficies.md:161–170; 255 ↔ B/19-superficies.md:204–300; 373 ↔ B/19-superficies.md:327–346; 400 ↔ B/22-lo-legal.md:38–49; 438 ↔ B/22-lo-legal.md:72–78.
+- 20-fase-2/B8b.md: 57 ↔ B/12-suscripcion.md:187–215; 130 ↔ B/12-suscripcion.md:256–274; 163 ↔ B/12-suscripcion.md:288–307; 194 ↔ B/12-suscripcion.md:1021–1029; 217 ↔ B/12-suscripcion.md:1040–1048; 239 ↔ B/12-suscripcion.md:1060–1088; 285 ↔ B/02-modelo-de-datos.md:1179–1233.
+
+La muestra incluye tablas y prosa, apartados con y sin 📌 y fuentes con tachados parciales. Los hallazgos se enumeraron aparte y no se descartaron por estar fuera de la muestra. Las diferencias de espacios, separadores de tablas vacías y encabezados de presentación del generador no se reportaron como fallas.
+
+Evidencia reproducible de la comparación en salidas/G2-catalogo-audit.json, salidas/G2-secciones-audit.json y salidas/G2-complemento-audit.json; barrido de patrones en salidas/G2-patrones.txt y cruces internos en salidas/G2-cruces.txt. Los auxiliares son verificadores independientes: no importan ni ejecutan los generadores. Los skills externos mencionados por el brief no se leyeron porque el mismo brief prohíbe leer fuera de V; tampoco hay AGENTS.md ni .qz/project.json dentro de V. No se usó git, trackers ni subagentes.

@@ -1,0 +1,14 @@
+# VA-A3 · fuente → spec · V/docs/02-modelo-de-datos.md, V/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:708 · «Invalidar es borrar, no recalcular.» y «la próxima lectura lo recalcula sola» (línea 709) · ausente (búsqueda con rg --hidden en toda s/c1c03210/ por invalidar, invalidación, recalcular, recálculo y próxima lectura; 10-corte/V3.md:203, :283, :670 y :818 conservan el borrado posterior al commit, pero no la prohibición de recalcular al invalidar ni el cálculo diferido a la próxima lectura; AC:V3:6 y TEST:V3:8 permiten implementar un recálculo anticipado que la fuente excluye. DEC-AUTH-001 y su 📌 de CB, y la letra CB en P/docs/41-corte-del-mvp/10-decisiones-del-owner.md:171, precisan Redis, alcance y fallback, sin reemplazar esta regla) · BLOQUEA
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:384 · «el valor que leen `T1` y `T6` está decidido enteramente por fuentes ajenas al trial — la suscripción, la cortesía o el grant» (continúa en línea 385) · distinta en s/c1c03210/04-catalogos.md:201 («fuentes ajenas al trial** — exclusivamente la suscripción.»; excluye cortesía y grant de la cobertura usada por las guardas y puede arrancar T1 donde corresponde T6. La propia fuente conserva esas fuentes en T2/T6 y en líneas 133–140; el catálogo conserva también las guardas generales. Revisados DEC-TRIAL-010 y su 📌, y las decisiones del corte —AQ mantiene CORTESÍA y GRANT reales en B9a—, sin decisión que autorice esa exclusión) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md | ≈200 | 1–1032 | 1 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md | ≈230 | 1–1376 | 0 | 1 |

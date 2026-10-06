@@ -1,0 +1,220 @@
+---
+title: Rediseño integral de Verticales, Billing, Trials, Entitlements, Limits y Complementos
+linear: HOS-1352
+statusSource: linear
+created: 2026-09-15
+updated: 2026-09-30
+type: feature
+areas:
+  - billing
+  - api
+  - db
+  - web
+  - admin
+---
+
+# Rediseño integral de Verticales y Billing
+
+> **Esto es el paraguas del programa. Desde el 2026-09-18 no se implementa: se implementan sus dos
+> hijas.** **Salvo ~~una unidad propia, `U1`~~ ~~dos unidades propias~~ tres unidades propias. `U1`, la limpieza del principio: borra el sistema viejo de la
+> rama antes de que arranque ninguna unidad de las dos hijas, y no construye nada del diseño nuevo** *(salvo, desde el lote P-C, la estructura vacía del package del contrato, que llenan `V1` y `B1` en paralelo)*
+> (verificación corta, 2026-09-29, lote O-A; [`docs/16-fase-7-del-paraguas.md`](./docs/16-fase-7-del-paraguas.md) §4.6).
+> **Y `U2`, el outbox común, que las dos hijas usan: depende de `U1` y va antes de las primeras
+> unidades que encolan** (FASE 5, owner 2026-09-30, lote 2 A; el mismo §4.6).
+> **Y `U3`, el script del corte: los pasos 1a, 1b y 2 del corte, sin dependencias de código,
+> mergeado en la rama antes del ensayo** (FASES 6 y 7, owner 2026-09-30, F; el mismo §4.6).
+> ~~**El programa tiene 24 unidades**: nueve de verticales, trece de billing y estas dos.~~
+> **El programa tiene 25 unidades**: nueve de verticales, trece de billing y estas tres (FASES 6 y
+> 7, owner 2026-09-30, F).
+>
+> | | | |
+> |---|---|---|
+> | **HOS-1353 · Verticales** | capacidades, entitlements, limits y autorización | **arranca ya** |
+> | **HOS-1354 · Billing** | cobro, suscripción y proveedor detrás de un adaptador | **arranca: la pasarela se decidió** (`DEC-MP-005`) |
+>
+> El bloqueo que tenía detenido al programa —no saber con qué pasarela vamos a cobrar— **alcanzaba al
+> dinero y no a las capacidades** (`DEC-ARCH-005`), y **se levantó el 2026-09-24**: `DEC-MP-005` fijó
+> Mercado Pago, no por preferirlo sino porque la única alternativa con ventaja medida nunca habilitó
+> la cuenta. Con la misma decisión entró la directriz de que **lo que el proveedor no hace lo suple el
+> diseño**.
+>
+> **Pero autónomas para desarrollar no quiere decir separadas para liberar: las dos llegan a
+> producción juntas y terminadas** (`DEC-ARCH-007`). Ninguna sale sola.
+
+## Cómo se libera: juntas, y el flujo lo hace cumplir
+
+La separación existe **para poder trabajar**, no para poder desplegar. Y no queda librada a que
+alguien se acuerde — misma lógica que la condición A de `DEC-ARCH-004`, convertir *«no lo hagas»*
+en *«no se puede»*:
+
+| | |
+|---|---|
+| **la rama de integración** | `epic/HOS-1352-verticales-billing`, **nace cuando exista el primer código**. Los documentos siguen yendo por su rama de spec, que sí va a `staging`: son documentación y no despliegan nada |
+| **las sub-épicas** | cortan de ella y mergean **a ella**. Nunca a `staging` directamente |
+| **`staging` → paraguas** | periódicamente y **como obligación**, nunca al revés hasta el final |
+| **dónde se revisa** | **en los PRs de sub-épica → paraguas**, no en el PR final |
+
+**Es una excepción declarada** al flujo de 6 pasos del `CLAUDE.md` del repo. Está escrita para que
+el próximo agente que entre no la «corrija».
+
+**«Terminada» para una épica no significa «en producción»**: significa lista y verificada contra el
+contrato, esperando a la otra.
+
+## Por dónde entrar
+
+**Si venís a entender la partición**, tres documentos en este orden:
+
+1. [`docs/11-particion-del-programa.md`](./docs/11-particion-del-programa.md) — por dónde pasa el
+   corte y por qué: la frontera, el reparto capítulo por capítulo, y el punto que no es obvio, que
+   el corte pasa **por dentro** del catálogo de planes.
+2. [`docs/12-contrato-de-cobertura.md`](./docs/12-contrato-de-cobertura.md) — la frontera en sí. Es
+   **el único lugar por donde las dos épicas se tocan**, y ninguna lo puede mutar sola.
+3. [`docs/01-decision-log.md`](./docs/01-decision-log.md), las tres decisiones de arquitectura del
+   owner: `DEC-ARCH-004` (el billing es nuestro, con la pasarela detrás de un adaptador),
+   `DEC-ARCH-005` (las dos épicas autónomas) y `DEC-ARCH-006` (el contrato).
+
+**Si venís a trabajar en una épica**, su spec se lee sola:
+[`HOS-1353-verticales-capacidades-y-autorizacion/spec.md`](../HOS-1353-verticales-capacidades-y-autorizacion/spec.md).
+
+**Si venís a retomar el programa entero**, seguí el orden de abajo.
+
+## Orden de lectura obligatorio
+
+Cualquier agente o persona que entre a este programa lee, en este orden, **antes de hacer
+nada** (§66):
+
+| # | Documento | Qué es |
+|---|---|---|
+| 1 | [`docs/00-PDR.md`](./docs/00-PDR.md) | El PDR rector del owner. **Inmutable.** |
+| 2 | [`docs/01-decision-log.md`](./docs/01-decision-log.md) | Qué se decidió y por qué — ~~**48 decisiones**~~ ~~**126 decisiones**~~ ~~**134 decisiones**~~ ~~**135 decisiones**~~ ~~**139 decisiones**~~ ~~**142 decisiones**~~ **144 decisiones** (al 2026-09-28, con las ocho de la revisión del owner; al 2026-09-29, con `DEC-MP-009`, de las mediciones, lote L; al 2026-09-30, con `DEC-METH-016` y, de la FASE 9 vuelta 3, `DEC-AUTH-004` y `DEC-AUTH-005`; y de la FASE 5, `DEC-METH-017`, `DEC-ARCH-015` y `DEC-MIG-007`; y de las FASES 6 y 7, `DEC-METH-018` y `DEC-ARCH-016`) (FASES 6 y 7, verificación, 2026-09-30, F1) |
+| 3 | [`docs/02-worklog.md`](./docs/02-worklog.md) | Qué se hizo, cronológicamente |
+| 4 | [`docs/03-handoff.md`](./docs/03-handoff.md) | Dónde estamos y cuál es el próximo paso exacto |
+| 5 | [`docs/04-open-decisions.md`](./docs/04-open-decisions.md) | Qué falta decidir |
+| 6 | [`docs/05-phase-1a-domain-analysis.md`](./docs/05-phase-1a-domain-analysis.md) | El análisis de dominio (FASE 1A) |
+| 7 | [`docs/06-mp-validation-matrix.md`](./docs/06-mp-validation-matrix.md) | Qué sabemos de Mercado Pago, medido: **~~98~~ ~~107~~ ~~111~~ ~~112~~ ~~114~~ 117 filas, ~~92~~ ~~93~~ ~~94~~ ~~95~~ ~~100~~ ~~101~~ 103 cerradas, ~~6~~ ~~5~~ ~~4~~ ~~13~~ ~~16~~ ~~17~~ ~~14~~ ~~16~~ 14 `UNKNOWN`** (recontado con el script en los cruces de la aplicación de la FASE 5, 2026-09-30: las mediciones del 30/09 cerraron `EX-57` y `EX-58`, `VERIFIED`, y pasaron `EX-59` a `PARTIALLY_SUPPORTED`) (30/09, FASE 9 vuelta 3: entraron `EX-57` y `EX-59` (`UNKNOWN`) y `EX-58` (`PARTIALLY_SUPPORTED`); 25/09, con `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9`; 26/09, `GR-1` `VERIFIED` y entró `EX-42`; 27/09, entraron `EX-43` a `EX-47`; 28/09, entraron `EX-48` a `EX-50`, FASE 9 vuelta 2, verificación, `V2-y`; 28/09, revisión del owner: entraron `EX-51` (`VERIFIED`), `EX-52`, `EX-53` y `WH-6`, y `WH-5` y `EX-15` se reabrieron a `PARTIALLY_SUPPORTED`; 29/09, entró `EX-54` (revisión del owner, casos vecinos, 2026-09-29, caso 34); 29/09, mediciones de los dos canales (sondas 52 a 57): cerraron `WH-5`, `WH-6`, `EX-15` y `EX-52` (`VERIFIED`) y `EX-53` (`NOT_SUPPORTED`), y entraron `EX-55` y `EX-56`, ya `VERIFIED`; recontado con el script) |
+| 8 | [`docs/07-facts-inventory.md`](./docs/07-facts-inventory.md) | Cuántos clientes reales hay, medido |
+| 9 | [`docs/08-phase-1b-code-discovery.md`](./docs/08-phase-1b-code-discovery.md) | El billing que corre hoy — **132 hallazgos**. **No es fuente de diseño** |
+| 10 | [`docs/10-evaluacion-de-proveedor.md`](./docs/10-evaluacion-de-proveedor.md) | La evaluación de reemplazo de Mercado Pago |
+| 11 | [`docs/11-particion-del-programa.md`](./docs/11-particion-del-programa.md) | Por dónde pasa el corte entre las dos épicas |
+| 12 | [`docs/12-contrato-de-cobertura.md`](./docs/12-contrato-de-cobertura.md) | La frontera entre las dos |
+
+**No confíes en memoria implícita, ni en engram, ni en ningún otro `CLAUDE.md`, ni en
+documentación del repo, ni en un sistema de tracking.** El PDR es explícito al respecto (§3.5):
+reutilizar conocimiento viejo como si siguiera vigente es una de las causas de que estemos acá.
+
+## Dónde vive el diseño
+
+**El diseño de FASE 2 ya no está en un solo lugar.** Se desarmó el 2026-09-18 en tres partes, y
+`09-master-spec/` ya no existe:
+
+| parte | dónde | qué |
+|---|---|---|
+| **El núcleo** | [`docs/nucleo/`](./docs/nucleo/) | **7 capítulos** — reglas de escritura, glosario, invariantes, outbox, auditoría, y el método del modelo de datos y de las máquinas de estado. Lo que las dos épicas comparten y no se puede partir sin romperlo |
+| **Verticales** | `../HOS-1353-…/docs/` | **11 capítulos** |
+| **Billing** | `../HOS-1354-…/docs/` | **13 capítulos** |
+
+El mapa completo, con qué define cada uno, está en
+[`docs/nucleo/00-indice.md`](./docs/nucleo/00-indice.md).
+
+## Reglas del programa
+
+- **`00-PDR.md` no se edita nunca.** Toda desviación se registra como decisión en `01`.
+- **Sólo hay tres fuentes válidas de fundamento**: el PDR, una medición propia fechada, o una
+  respuesta explícita del owner. No el código, no la documentación del repo, no un sistema de
+  tracking, no la memoria de un agente.
+- **Si un documento cita un `§`, el texto se verifica contra el PDR antes de escribirlo.**
+- **Ningún documento de este programa referencia trabajo anterior.** Una referencia así es un
+  defecto, no una fuente.
+- Una decisión `ACCEPTED` no se edita: se crea otra que la marque `SUPERSEDED`.
+- **El decision log y la matriz de Mercado Pago no se tocan sin el OK del owner**, y con las
+  razones por delante.
+- Ninguna decisión sobre Mercado Pago se toma mientras su fila de la matriz diga `UNKNOWN`.
+- **Los conteos se recuentan con script, nunca a mano**: la matriz con
+  [`contar-filas-de-la-matriz.py`](./docs/contar-filas-de-la-matriz.py), las decisiones con
+  `rg -c "^### DEC-"` menos la plantilla del formato.
+- **No se lee código para fundamentar una decisión funcional.**
+- Todo documento declara `status: CURRENT | LEGACY | OBSOLETE | SUPERSEDED` en su frontmatter.
+- El macro-estado del programa vive en **Linear**, no en estos archivos.
+
+## Estado
+
+| Fase | Estado |
+|---|---|
+| FASE 0 — bootstrap de documentación | ✅ completa |
+| FASE 1A — análisis de dominio, sin mirar código | ✅ **25 de 25 preguntas** |
+| FASE 1B — discovery del sistema actual | ✅ **132 hallazgos**; 3 carriles abiertos, ninguno bloquea |
+| FASE 1C — experimentación contra Mercado Pago | 🟡 **~~98~~ ~~107~~ ~~111~~ ~~112~~ ~~114~~ 117 filas · ~~92~~ ~~93~~ ~~94~~ ~~95~~ ~~100~~ ~~101~~ 103 cerradas · ~~6~~ ~~5~~ ~~4~~ ~~13~~ ~~16~~ ~~17~~ ~~14~~ ~~16~~ 14 `UNKNOWN`** (recontado con el script en los cruces de la aplicación de la FASE 5, 2026-09-30: las mediciones del 30/09 cerraron `EX-57` y `EX-58`, `VERIFIED`, y pasaron `EX-59` a `PARTIALLY_SUPPORTED`) (30/09, recontado con el script tras la FASE 9 vuelta 3: entraron `EX-57` a `EX-59`; 29/09, recontado con el script tras las mediciones de los dos canales: cerraron `WH-5`, `WH-6`, `EX-15` y `EX-52` (`VERIFIED`) y `EX-53` (`NOT_SUPPORTED`), y entraron `EX-55` y `EX-56`, ya `VERIFIED`; 29/09, recontado con el script tras los casos vecinos de la revisión del owner: entró `EX-54` (revisión del owner, casos vecinos, 2026-09-29, caso 34); 28/09, recontado con el script tras la revisión del owner: entraron `EX-51` a `EX-53` y `WH-6`, y se reabrieron `WH-5` y `EX-15`; antes entraron `EX-42` el 26/09, `EX-43` a `EX-47` el 27/09 y `EX-48` a `EX-50` el 28/09, FASE 9 vuelta 2, verificación, `V2-y`; 26/09: salió `GR-1`, `VERIFIED`; `EX-40`, `EX-41`, `PA-6`, `RC-8` y `RC-9` sumadas a las 93 recontadas el 2026-09-24 con `contar-filas-de-la-matriz.py`, **después de arreglarlo**: descartaba en silencio cuatro filas cuyo identificador está en negrita) — ~~**tres** son el camino del cobro fallido (`RN-3` en curso, `GR-1`, `GR-2`)~~ (tachado 2026-09-26): `RN-3` salió el 25/09 noche y `GR-1` el 26/09) **del camino del cobro fallido quedan `GR-2` y `PA-6`**, que el proveedor no deja fabricar a voluntad, y `RF-3` necesita un pago de **más de 180 días** que todavía no existe |
+| FASE 1C-bis — evaluación de proveedor | ✅ **cerrada el 2026-09-24 por `DEC-MP-005`** en el paso 4 de 6 — **no se completó, se cerró**: los dos pasos que faltaban dependían de una habilitación de Mobbex y de una respuesta de MP que nunca llegaron |
+| FASE 2 — el diseño | ✅ **22 de 22**, desarmado en tres partes (2026-09-24). El `13` (Pagos) **nunca llegó a existir como archivo**: sus ítems se repartieron entre los capítulos que los reclamaban —`S29` en el `03`, `covered_period` en el `02` y el `05`, la mecánica del reembolso en el `06` §4.6— y uno resultó **un deber mal atribuido**. El reparto completo está en [`nucleo/00-indice.md`](./docs/nucleo/00-indice.md) |
+| FASE 3 · épicas · FASE 4 · spec por épica | ✅ **en su nivel grueso**: partir en dos épicas con su spec cada una *es* la 3 y la 4. Falta la descomposición fina adentro de cada una, y esa se hace por separado |
+| FASE 5 · gap analysis · FASE 6 · rewrite/reuse · FASE 7 · estrategia | ~~⬜ **se parten limpio**: cada épica hace la suya~~ ✅ **FASE 5**: cerrada el 2026-09-30 (`docs/38-fase-5/`; `DEC-METH-017`) · ✅ **FASE 6**: cerrada por absorción en la 5 (`DEC-METH-017`), con el pase sobre las 29 piezas de autorización y base y los tres guards sin destino~~, que corre en paralelo a `U1` y vuelve al owner sólo si sale `REWRITE` o cambia el alcance de una unidad~~ (`DEC-METH-018`): **el pase se hizo** (13 `KEEP` · 11 `ADAPT` · 1 `REWRITE` · 4 ya no se conservan) y lo cerraron H, I y J, con el actor de sistema reescrito en `V5` y un guard nuevo, `G19` (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H a J; `docs/39-fases-6-y-7/20-pase-fase-6.md`) · ✅ **FASE 7**: cada épica la suya en su descomposición, y la del paraguas, cerrada con los gates de aceptación (`docs/16-fase-7-del-paraguas.md` §4.7; `DEC-ARCH-016`) (FASES 6 y 7, owner 2026-09-30) |
+| FASE 8 · revisión adversarial · FASE 9 · diseño final | ~~⬜ cada épica la suya, **más una final sobre el conjunto**~~ ✅ **la final sobre el conjunto se hizo**: la FASE 8 completa corrió *«sobre el núcleo, las dos épicas y el contrato de cobertura»* (`DEC-METH-014`), y la vuelta 3, *«entera y desde cero»* (`DEC-METH-016`), otra vez sobre el conjunto; la revisión de cada épica quedó adentro de esas mismas vueltas, que leyeron las dos a la vez (FASES 6 y 7, verificación, 2026-09-30, F6); en tres vueltas: la completa y las vueltas 1 a 3, con la 3 como excepción declarada al tope (`DEC-METH-013`, `DEC-METH-014`, `DEC-METH-016`); la vuelta 3 cerró el 2026-09-30 (`docs/03-handoff.md`, *«FASE 8 y FASE 9 vuelta 3, cerradas»*; `docs/37-fase-8-vuelta-3/`) |
+| FASE 10 · implementación | ⬜ **se desarrolla en paralelo y despliega una sola vez** |
+
+**La FASE 1C no se parte**: es billing entera y se va con `HOS-1354`.
+
+~~**106 decisiones** — 13 de metodología y 93 funcionales, al 2026-09-24 (`rg -c "^### DEC-"` da 107
+encabezados; el que sobra es la plantilla del formato, en la l. 26).~~ ~~**134 decisiones**, 15 de
+metodología y 119 funcionales, al 2026-09-28 tras la revisión del owner~~ ~~**135 decisiones**, 15 de
+metodología y 120 funcionales, al 2026-09-29 tras las mediciones (`DEC-MP-009`, lote L)~~ ~~**139 decisiones**,
+16 de metodología y 123 funcionales, al 2026-09-30 tras la FASE 9 vuelta 3~~ ~~**142 decisiones**, 17 de
+metodología y 125 funcionales, al 2026-09-30 tras la FASE 5~~ **144 decisiones**, 18 de metodología
+y 126 funcionales, al 2026-09-30 tras las FASES 6 y 7 (`rg -o "^### DEC-[A-Z]+-\d+"`
+sobre el log, sin repetidos, da ~~134~~ ~~135~~ ~~139~~ ~~142~~ 144; la plantilla del formato no matchea). Ninguna pregunta del owner
+queda abierta, y ningún bloqueante de diseño tampoco.
+
+## La decisión que reorientó el programa
+
+**`DEC-ARCH-004`** (2026-09-18): el billing se implementa **de nuestro lado**, en un package
+propio, con la pasarela detrás de un adaptador. Al proveedor se le pide **cobrar, reembolsar, leer
+y avisar**; el ciclo de vida es nuestro. `qzpay` se absorbe. Dos condiciones que la hacen exigible:
+un **guard estático** que prohíba importar el SDK fuera del adaptador, y un **adaptador falso en
+memoria desde el día uno**, que es lo que prueba que la abstracción no miente.
+
+**Es la primera decisión de arquitectura del programa que no sale de una medición sino de un
+criterio del owner**, y trae un riesgo declarado: **traslada los errores caros hacia nosotros** —
+un doble cobro pasa a ser nuestro bug y es plata de un cliente real.
+
+## Prohibiciones vigentes hasta FASE 10
+
+Sin código productivo, sin migraciones, sin borrar código, sin tocar la DB productiva, sin
+modificar la integración con Mercado Pago. Sí se permite investigar, documentar, ejecutar queries
+de lectura, y crear scripts experimentales descartables.
+
+**Excepción autorizada caso por caso: experimentos contra la cuenta productiva de Mercado Pago**,
+con la tarjeta del owner y **presupuesto aprobado de antemano en un número exacto** — las sondas
+abortan si el máximo a cobrar no coincide con la cifra autorizada.
+
+## Al cerrar HOS-1352
+
+**Es una tarea del cierre del programa, no de ahora** (revisión del owner, casos vecinos,
+2026-09-29, caso 41). **Corre cuando el programa se da por aceptado**
+(`docs/16-fase-7-del-paraguas.md` §4.7, momento 5; FASES 6 y 7, owner 2026-09-30, E) (FASES 6 y 7, verificación, 2026-09-30, F11).
+Al cerrar HOS-1352:
+
+1. **Los informes históricos del programa salen del repositorio**: las fases, las vueltas, los
+   registros de la revisión del owner y el resto de lo que no es diseño vigente. Quedan en el
+   historial de git, y **lo que importe se resume en Linear**. **Salvo el decision log y la matriz
+   de validación, que no salen** (punto 3).
+2. **El diseño vigente se reescribe una vez, sin tachados y sin el nombre del agrupamiento viejo
+   de Gastronomía y Experiencia**: el núcleo, el contrato, los capítulos y las specs de las dos
+   sub-specs, y esta spec. Desde ahí `G8` no tiene nada del programa que perdonar salvo el PDR, su
+   única exención por nombre (`V/20` §2).
+3. **El decision log (`docs/01-decision-log.md`) y la matriz de validación
+   (`docs/06-mp-validation-matrix.md`) se quedan en el repositorio y se reescriben una vez, sin el
+   nombre del agrupamiento viejo**, con el OK del owner a esa reescritura: esta spec los manda leer
+   y son el registro de decisiones y de mediciones del programa (revisión del owner, casos vecinos,
+   2026-09-29, caso H-B).
+4. **El mismo commit saca de la lista de pendientes de `G8` su tercera entrada, las carpetas del
+   programa en `.specs/`, y extiende a la lista entera la regla que el paso 6 del corte encendió
+   para las dos historias**: desde ahí, un build destinado a producción con la lista no vacía falla
+   (`V/20` §2; revisión del owner, casos vecinos, 2026-09-29, caso H-A). ~~**Eso incluye el trinquete de archivos de `G8`**, que el cierre exige vacío (verificación corta, 2026-09-29, lote M-E).~~ (El trinquete salió antes de llegar al código: el sistema viejo sale de la rama al principio de la épica, `16-fase-7…` §4.6; verificación corta, 2026-09-29, lote N-A.) Hasta este commit esas
+   carpetas no fallan por `G8`, porque los puntos 1 a 3 todavía no se hicieron.
+
+El `CLAUDE.md` raíz y los archivos de i18n que lo nombran **no esperan al cierre**: entran en la
+limpieza ~~de `V1`~~ del principio (`V/21` §4; `docs/16-fase-7-del-paraguas.md` §4.6; verificación corta, 2026-09-29, lote N-A), que hace `U1`, la ~~unidad~~ primera unidad del paraguas (lote O-A; *«primera»*, FASE 5, lote 2 A).
+
+## Lo que necesita al owner
+
+1. **Enviar los dos textos de la PRUEBA 0** (§5.0 del documento 10) — desbloquea HOS-1354.
+2. **Avisar cuando llegue el mail de habilitación de Mobbex** — ídem.

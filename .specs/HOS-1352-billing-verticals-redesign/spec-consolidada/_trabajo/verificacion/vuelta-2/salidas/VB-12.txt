@@ -1,0 +1,24 @@
+# VB-12 · spec → fuente · 10-corte/B11.md, 10-corte/B13a.md, 20-fase-3/B13b.md, 20-fase-3/B12.md
+
+## Hallazgos
+
+10-corte/B11.md:1342 · «Una suscripción que tres barridos seguidos releyeron sin cambios pasa a releerse una vez por semana, hasta que algo la mueva.» · sin soporte; contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:178 («Por cada fila de nuestro inventario … que no esté en un estado terminal») y :1082 («barrido de la cartera | diario»): ninguna fuente (09, DEC-CONC-002, descomposicion.md:149 y :1069, decisiones del owner) baja la cadencia de relectura de una fila no exenta; además saca del barrido diario filas que las salvedades y la comparación de monto/cobros exigen releer cada día · BLOQUEA
+
+10-corte/B11.md:1570 · «los plazos 16, 17 y 18 se leen del valor de la versión de plazos vigente y no de un número del código» (y TEST:B11:15, B11.md:2093: «Con la versión de plazos cambiada a otro valor, la marca escala con el valor nuevo y no con 7») · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:222 («Cada reloj guarda la versión de plazos con la que arrancó … un cambio vale para los relojes que arrancan después») y :189 (plazo 17: «qué reloj guarda la versión: la marca, al abrirse (`puesta_en`)»); también nucleo/08-auditoria-y-observabilidad.md:212 («los relojes ya arrancados conservan la suya»). Leer la vigente hace que una marca ya abierta escale con el valor nuevo · BLOQUEA
+
+10-corte/B11.md:1506 · «la ventana se lee del valor de la versión de plazos vigente (180 días al inicio)» (AC:B11:12) · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:190 (plazo 18: «qué reloj guarda la versión: el pago, o la instancia, que la comprobación relee») y :222; sin test que fije el comportamiento equivocado · MENOR
+
+10-corte/B11.md:1475 · «sobre las filas de la segunda fila del desempate abre `COBRO_POSTERIOR_AL_GRANT`; sobre las de la tercera, la lápida de recepción incluida, `PAGO_TARDÍO_RECHAZADO`» (AC:B11:10) · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:187 («sobre cualquier otra, el motivo que asigna la tabla de desempate del `B/05` §3») y 05-idempotencia-y-concurrencia.md:356 (primera fila: terminal cancelada por acto nuestro, del cliente o del proveedor → `COBRO_POSTERIOR_A_LA_BAJA`): el AC omite la primera fila del desempate (motivo 2); la regla completa sí está en la misma pieza (FILA, AC:B11:15, Reglas) · MENOR
+
+10-corte/B13a.md:457 · «El reparto por fila de la fuente no la nombra (residuo `H-VA-A7a-14`).» (la rama desde `PAUSED` de la fila 8) · contradice .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:152 («**y la rama desde `PAUSED` (`S22`) de la 8** (BH con AR …; residuo corregido el 2026-10-02), a `B8b`»); la FILA:B13a (B13a.md:433) además omite esa rama en la lista de reparto que transcribe. El destino (B8b) coincide, así que no cambia lo que se construye · MENOR
+
+20-fase-3/B13b.md:37 · «Capítulos: `V/19` §4 filas 24 y 26» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:153 («`V/19` §4 filas 24 y 25») e internamente B13b.md:130 y :259; la fila 26 de .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:73 es otra superficie (el aviso de la acción 15, edición de soporte), no la confirmación de despublicar (fila 25, :72) · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B11.md | 1–71 y 1288–2245 (72–1287 excluidas: g-secciones) | 150 | 2 | 2 |
+| 10-corte/B13a.md | 1–53 y 426–1246 (54–425 excluidas: g-secciones) | 110 | 0 | 1 |
+| 20-fase-3/B13b.md | 1–261 | 30 | 1 | 0 |
+| 20-fase-3/B12.md | 1–64 y 270–818 (65–269 excluidas: g-secciones) | 90 | 0 | 0 |

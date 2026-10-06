@@ -1,0 +1,15 @@
+# VB-02 · spec → fuente · 02-nucleo.md, 02-nucleo-auditoria.md, 02-nucleo-outbox.md
+
+## Hallazgos
+
+02-nucleo.md:1637 · «Mitad: billing · valor inicial: **7 y 1 días antes**» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:185 («| 13 | la renovación por venir | billing | 5 y 1 días antes | `NUCLEO/07` §6 | la suscripción, en cada ciclo |»); también contradice el catálogo interno de 02-nucleo-outbox.md:289 («5 y 1 día antes») y 10-corte/B2.md:198 («el 13 (5 y 1 días antes)») · BLOQUEA
+
+02-nucleo-outbox.md:169 · «Los correos comerciales sólo se entregan entre las 08:00 y las 20:00 del huso del mercado; fuera de esa franja quedan encolados hasta la mañana siguiente.» · sin soporte · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-nucleo.md | 1–1812 | 420 | 1 | 0 |
+| 02-nucleo-auditoria.md | 1–445 | 150 | 0 | 0 |
+| 02-nucleo-outbox.md | 1–417 | 210 | 1 | 0 |

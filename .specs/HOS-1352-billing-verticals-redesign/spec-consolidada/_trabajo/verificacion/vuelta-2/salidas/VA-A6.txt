@@ -1,0 +1,30 @@
+# VA-A6 · fuente → spec · .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md
+
+## Hallazgos
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:579 · «la revocación: `revocado_en`, quién la firmó y su `motivo_de_revocación`, en texto libre (`DEC-GRANT-008`)» (y 02:895-907: «Por qué libre y no de lista cerrada»; DEC-GRANT-008 vivo en el decision log l. 4442 y transcripto igual en 01-decisiones-vigentes.md:7870; DEC-GRANT-014 l. 5258 lo confirma: «sigue rigiendo la revocación manual de un grant, con su motivo en texto libre») · distinta en 10-corte/B9a.md:860 («`motivo_de_revocación`, elegido de un catálogo cerrado») — el AC:B9a:7 manda construir una enumeración cerrada donde la fuente vigente manda texto libre · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:153 · «`V/19` §4 filas 24 y 25» (capítulos de B13b) · distinta en 20-fase-3/B13b.md:37 («Capítulos: `V/19` §4 filas 24 y 26») — la fila 26 es el aviso de «contenido de tu ficha editado por soporte», de V8a (V8a.md:33, 01-decisiones-vigentes.md:3767); el AC y la LISTA de la misma pieza (B13b.md:117, :130) dicen 24 y 25 · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:470 · «`EX-57` … `VERIFIED` desde el 2026-09-30, en sandbox y con ventana: ya no es `UNKNOWN`» · distinta en 10-corte/B11.md:925 («(`EX-57`, `UNKNOWN`): si no lo permite, esa población queda sin detector»), 10-corte/B11.md:1264 («La medición es `EX-57`, `UNKNOWN`»), 10-corte/B1.md:675 (fila `EX-57` en la tabla de filas abiertas) y AC:B11:13 (B11.md:1520-1521, la rama «si no permite la búsqueda, ese caso sale del juego»); contradice además el propio catálogo de la spec (04-catalogos.md:9673, `VERIFIED`) · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:379 · «`payment` … `UNIQUE(proveedor, id_del_hecho)`» (la deduplicación es una restricción de `payment`, y `payment` nace en `B5` por BN, descomposicion.md:811) · distinta en 10-corte/B3.md:876 («**La tabla de deduplicación por id del hecho**, `UNIQUE(proveedor, id_del_hecho)`», listada entre lo que crea B3) — la fuente no tiene tal tabla; B5.md:823 y 02-nucleo.md:306 la ponen en `payment`, bien · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:61-62 · «`plan_migration`: … `anunciada_en`, el plazo del aviso con que se anunció (el valor vigente ese día…), quién la firmó, y `cancelada_en` y quién la canceló, las dos anulables» · «`plan_migration_subscription`: … su fecha de aplicación, su estado, el motivo de un `FUERA` … y `aplicada_en`» · ausente como columnas (buscado `cancelada_en`, `aplicada_en`, «quién la canceló» en toda la spec: cero); B3.md:891-893 (ESQ:5, la pieza que crea las tablas) sólo las nombra con el `UNIQUE … WHERE estado = 'PENDIENTE'`, y B12.md:540-545 sólo enumera los estados. El comportamiento sí está en B12 (§3.7: FUERA «terminó», recálculo de la fecha, misma vertical, mínimo de DEC-MP-002) · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:59 · «`subscription_pause`: suscripción, motivo (`CUSTOMER_REQUEST` o `COURTESY`), meses pedidos, inicio, fin previsto, fin real | a lo sumo una sin `fin_real` por suscripción» · distinta en 10-corte/B3.md:872, la pieza que la crea («`subscription_pause` (`B/02` §2.2), que cuelga de `subscription` y lee el espejo del §10.1»: sin columnas ni restricción); la restricción sólo aparece citada dentro de los efectos de `TRANS:B:S10` (04-catalogos.md:2962), pieza `B8b` · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:575 · «El ancla del título apunta a `permanent_grant_vertical` y sí es anulable» + descomposicion.md:808-810 (BN: «si una FK suya apunta a una tabla que nace después, nace con la dueña de la tabla destino») · distinta en 10-corte/B9a.md:1093-1094 («Lee, sin crearlas: … el título de `addon_instance`, de `B3` (AV)») junto con B9a.md:1084 (B9a crea `permanent_grant_vertical`): la spec deja a B3 creando una columna cuya FK apunta a una tabla que nace después, contra BN; ESQ:8 (B3.md:913-923) tampoco lista la columna · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:60 · «Y no guarda al pagador del proveedor, a propósito: `payer_id` no es una identidad estable … ningún vínculo entre una cuenta nuestra y un pagador del proveedor se apoya en él» · ausente de la definición de `provider_link` en 10-corte/B3.md:868-871 (buscado `payer_id`, «no guarda al pagador», «identidad estable»: sólo una mención lateral en 04-catalogos.md:2292) · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:976, :903, :924, :1077 · las reglas citadas («cada unidad trae la pantalla mínima…», «B2 con B1 (su gate es V2)», el camino crítico del corte, §5) · distinta en las citas por línea dentro del texto: 10-corte/B3.md:949 («§3.1, l. 935-936»: esas líneas son «B4 es el hito de integración»), 10-corte/B1.md:901 y 10-corte/B2.md:506 («§3, l. 842»: es el encabezado de la tabla de transiciones del §2.12), 10-corte/B3.md:18 («§3, l. 883»), 10-corte/B1.md:913, B2.md:529, B3.md:1332 («§5, l. 1048-1050»: caen en el preámbulo del §4). Los `Origen:` de esos bloques sí apuntan bien; sólo las referencias en prosa quedaron desfasadas (~40 líneas) · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| descomposicion.md | ~190 (filas §2 B1–B13b, §1.3, §2.1–§2.12 con las tablas de §2.6, §2.7, §2.8, §2.10, §2.11 y §2.12, §3, §3.1, §4 con sus 16 «lista cuando», §6) | 1–1150 | 0 | 3 (B13b filas 24/26; EX-57; citas en prosa desfasadas) |
+| docs/02-modelo-de-datos.md | ~120 (§2.1–§2.7 todas las entidades y restricciones, el catálogo de 24 motivos, motivo_cierre, §2.6, §4, §5) | 1–1298 | 3 (columnas de plan_migration/_subscription; restricción de subscription_pause en la pieza que la crea; no guardar payer_id) | 3 (motivo de revocación cerrado vs texto libre; tabla de deduplicación en B3; FK del título vs BN) |
+
+Totales: BLOQUEA 1 · MENOR 8.

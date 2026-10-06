@@ -1,0 +1,14 @@
+# VB-01 · spec → fuente · 00-indice.md, 02-nucleo-glosario.md
+
+## Hallazgos
+
+00-indice.md:1248 · «La sesión que abre Mi Suscripción debe ser la única sesión activa de la cuenta; si existe otra, se rechazan las mutaciones de billing hasta cerrarla.» · sin soporte · BLOQUEA
+
+02-nucleo-glosario.md:469 · «`revocado_en` **no nulo**» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:511 («`revocado_en` **nulo**») · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 00-indice.md | 1–1631 | 360 | 1 | 0 |
+| 02-nucleo-glosario.md | 1–959 | 280 | 1 | 0 |

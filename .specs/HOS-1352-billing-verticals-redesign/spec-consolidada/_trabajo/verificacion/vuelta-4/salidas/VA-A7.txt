@@ -1,0 +1,11 @@
+# VA-A7 · fuente → spec · B/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1853 · «con el comprobante de la transferencia o la referencia del panel» · distinta en s/5586fad7/04-catalogos.md:4553 («con el comprobante de la transferencia») y s/5586fad7/10-corte/B5.md:273 («con quién la asentó, por dónde y el comprobante de la transferencia»): RF4 y AC:B5:10 eliminan la referencia del panel como evidencia alternativa para asentar una devolución ya ejecutada; exigir un comprobante de transferencia impide registrar por esa vía la devolución realizada desde el panel del proveedor. Búsqueda en toda s/5586fad7/ y contraste con DEC-RF-008 y sus precisiones en P/docs/01-decision-log.md y con P/docs/41-corte-del-mvp/10-decisiones-del-owner.md: no se encontró una decisión posterior que retire esa alternativa. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/03-maquinas-de-estado.md | 60 transiciones con sus guardas y efectos, 6 prohibiciones y reglas complementarias de §§3–10; cotejo completo por líneas y celdas, excluyendo tachados | 1–3062 | 0 | 1 |

@@ -1,0 +1,268 @@
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/00-indice.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/00-indice.md
+526a527,528
+> Antes de habilitar una unidad en producción deben transcurrir 48 horas sin marcas de conciliación abiertas en ninguna cuenta.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/01-decisiones-vigentes.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/01-decisiones-vigentes.md
+1423c1423
+<   las **72 h**. Para el **pagador manual**, la ventana es de **7 días corridos**.
+---
+>   las **72 h**. Para el **pagador manual**, la ventana es de **14 días corridos**.
+2295,2296c2295
+< - **Decisión**: **el mensaje se deriva del `status_detail`, con un mapa explícito y un texto
+<   genérico obligatorio** para los detalles que no estén en el mapa.
+---
+> - **Decisión**: **el mensaje se deriva del `status_detail`, con un mapa explícito**.
+2838c2837
+< 11)**: Con más de un título vivo ancla el que da la cuota; con dos, el que arrancó primero. El
+---
+> 11)**: Con más de un título vivo ancla el que da la cuota. El
+4563c4562
+<   Ningún plazo técnico es configurable (los 15 minutos del caché, las 26 horas del vigía, los 3 días
+---
+>   Todo plazo técnico es configurable (los 15 minutos del caché, las 26 horas del vigía, los 3 días
+6323c6322
+<      real de las cinco**, que se borra al terminar (C); arranca con la imagen vieja desplegada y **es
+---
+>      real de las cinco**; arranca con la imagen vieja desplegada y **es
+13402c13401
+< - **En una línea**: copia de producción restaurada en `staging`, correos reescritos a una casilla que no entrega, la lista real de las cinco; se borra al terminar
+---
+> - **En una línea**: copia de producción restaurada en `staging`, correos reescritos a una casilla que no entrega, la lista real de las cinco
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/02-nucleo-auditoria.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/02-nucleo-auditoria.md
+224a225,226
+> La inspección administrativa de una cuenta requiere que su dueño haya autorizado el acceso por correo durante las últimas 24 horas; sin esa autorización no se muestran sus datos.
+> 
+411,413c413
+< - **la correlación**, para poder seguir la cadena hacia atrás;
+< - **qué se intentó y qué se frenó**, porque el §22.1 prohíbe decisiones destructivas automáticas
+<   y hay que saber qué quedó sin hacer.
+---
+> - **la correlación**, para poder seguir la cadena hacia atrás.
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/02-nucleo-glosario.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/02-nucleo-glosario.md
+803c803
+<   AND billingOption.ciclo == mensual                    (§26)
+---
+>   AND billingOption.ciclo == anual                    (§26)
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/02-nucleo-modelo-y-maquinas.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/02-nucleo-modelo-y-maquinas.md
+194a195,196
+> Toda alta de una entidad de billing debe asignar un identificador numérico consecutivo global; se rechazan identificadores UUID aunque sean únicos.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/02-nucleo-outbox.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/02-nucleo-outbox.md
+47c47
+< vuelve a `pending`.
+---
+> vuelve a `failed`.
+313c313
+< | **el alta rechazada** | transaccional | **al rechazarse el primer cobro** ([S16](04-catalogos.md#trans-b-s16), cap. 03 §3.2, épica de billing). **Dice qué hacer según por qué la rechazaron**, con el mapa de `status_detail` de [DEC-MP-004](01-decisiones-vigentes.md#dec-mp-004): si fue el antifraude del proveedor, que la tarjeta está bien y que pruebe más tarde u otro dispositivo; si fue la tarjeta, que revise su medio de pago; y un texto genérico para lo que no esté en el mapa. **Desambigua el correo del proveedor**, que en el caso del antifraude dice *«por motivos de seguridad, tu pago fue rechazado»* sin decir que no hay nada que arreglar | `DEC-MP-004`, cap. 19 §4 fila 19 (épica de billing) |
+---
+> | **el alta rechazada** | transaccional | **al rechazarse el primer cobro** ([S16](04-catalogos.md#trans-b-s16), cap. 03 §3.2, épica de billing). **Dice qué hacer según por qué la rechazaron**, con el mapa de `status_detail` de [DEC-MP-004](01-decisiones-vigentes.md#dec-mp-004): si fue el antifraude del proveedor, que la tarjeta está bien y que pruebe más tarde u otro dispositivo; si fue la tarjeta, que revise su medio de pago. **Desambigua el correo del proveedor**, que en el caso del antifraude dice *«por motivos de seguridad, tu pago fue rechazado»* sin decir que no hay nada que arreglar | `DEC-MP-004`, cap. 19 §4 fila 19 (épica de billing) |
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/03-contrato-de-cobertura.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/03-contrato-de-cobertura.md
+182c182
+< `sí` si esa fila tiene al menos un pago acreditado, `no` si no. En un pagador manual es `sí`
+---
+> `sí` si esa fila tiene al menos dos pagos acreditados, `no` si no. En un pagador manual es `sí`
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/04-catalogos.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/04-catalogos.md
+1116c1116
+< - **nota** (guardas y efectos): y **no devuelve el trial** (§10.2). **Toma el lock del `user + vertical` y relee adentro su `desde`**, como `PB10`, porque lo comparte con `PB2` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-u`) **Revalida: sí**, sale de `PUBLISHED` (FASE 5, lote 3 A)
+---
+> - **nota** (guardas y efectos): y **devuelve el trial** (§10.2). **Toma el lock del `user + vertical` y relee adentro su `desde`**, como `PB10`, porque lo comparte con `PB2` (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-u`) **Revalida: sí**, sale de `PUBLISHED` (FASE 5, lote 3 A)
+3358c3358
+< - **efectos** (efectos): **se cancela el preapproval DE NUESTRO LADO, con la regla de relectura de `S17`** —si la relectura ya lo ve `cancelled`, que es lo medido ante el antifraude (`B/12` §4.4), no se manda nada, **y la fila no se da por terminada en esa relectura: el barrido la sigue releyendo durante la ventana de relectura de la cancelación por rechazo** (`NUCLEO/02` §1.5; `B/09` §3, criterio de exención), porque un preapproval que el proveedor canceló ante un rechazo puede volver a leerse `authorized` horas después (`EX-45`; FASE 9 vuelta 3, owner 2026-09-30, lote K)—, **y antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y **la reintenta el barrido** (salvedad 4 de `B/09` §3); si no hay destinatario, se cancela igual y el no-entregable se escala. **La fila llega a `CHARGE_DECLINED` pase lo que pase con la llamada** (FASE 8 completa, owner 2026-09-25). No hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva**. **Lo que se le dice a la persona sale de POR QUÉ la rechazaron** —el `status_detail` de ese único intento, con un mapa y un genérico obligatorio (`DEC-MP-004`, `B/19` §4 fila 19)—: al rechazado por el antifraude del proveedor no se le pide que revise una tarjeta que funciona — **salvo que la fila fuera la predecesora de una sucesión**, y ahí el reintento es **terminar el checkout que ya está abierto**: `S18` cierra la sucesión en el acto y la sucesora ocupa el candado `A` (§3.3.1)
+---
+> - **efectos** (efectos): **se cancela el preapproval DE NUESTRO LADO, con la regla de relectura de `S17`** —si la relectura ya lo ve `cancelled`, que es lo medido ante el antifraude (`B/12` §4.4), no se manda nada, **y la fila no se da por terminada en esa relectura: el barrido la sigue releyendo durante la ventana de relectura de la cancelación por rechazo** (`NUCLEO/02` §1.5; `B/09` §3, criterio de exención), porque un preapproval que el proveedor canceló ante un rechazo puede volver a leerse `authorized` horas después (`EX-45`; FASE 9 vuelta 3, owner 2026-09-30, lote K)—, **y antes de la llamada sale nuestro correo** (`DEC-MAIL-001`; ver abajo, *«el correo antes de cancelar»*): si falla de forma transitoria, la cancelación no se ejecuta en esta corrida y **la reintenta el barrido** (salvedad 4 de `B/09` §3); si no hay destinatario, se cancela igual y el no-entregable se escala. **La fila llega a `CHARGE_DECLINED` pase lo que pase con la llamada** (FASE 8 completa, owner 2026-09-25). No hay servicio, no hay autorización y no hay vuelta: el reintento **es un alta nueva**. **Lo que se le dice a la persona sale de POR QUÉ la rechazaron** —el `status_detail` de ese único intento, con un mapa (`DEC-MP-004`, `B/19` §4 fila 19)—: al rechazado por el antifraude del proveedor no se le pide que revise una tarjeta que funciona — **salvo que la fila fuera la predecesora de una sucesión**, y ahí el reintento es **terminar el checkout que ya está abierto**: `S18` cierra la sucesión en el acto y la sucesora ocupa el candado `A` (§3.3.1)
+4542c4542
+< - **efectos** (efectos): corre **`P3` o `P4`** sobre el pago, según el acumulado (§6); se escribe *«por el proveedor»*. **Lo que suma al acumulado es la suma de esas devoluciones**, que es el monto confirmado, y nunca lo que el pago muestra reembolsado en total. **Con una parte acreditada y otra no, `RF3` no ocurre**: la fila sigue `CONFIRMED` —no hay un estado a medias— y sigue la regla de `RF2` (FASE 9 vuelta 2, `F-8V2B2-002`)
+---
+> - **efectos** (efectos): corre **`P3` o `P4`** sobre el pago, según el acumulado (§6). **Lo que suma al acumulado es la suma de esas devoluciones**, que es el monto confirmado, y nunca lo que el pago muestra reembolsado en total. **Con una parte acreditada y otra no, `RF3` no ocurre**: la fila sigue `CONFIRMED` —no hay un estado a medias— y sigue la regla de `RF2` (FASE 9 vuelta 2, `F-8V2B2-002`)
+6293,6294c6293
+<   listado accionable tiene que mostrarle es el pago, el monto y **desde cuándo la fila estaba en
+<   grace**.
+---
+>   listado accionable tiene que mostrarle es el pago y el monto.
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B1.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B1.md
+113c113
+< 2. importar el SDK afuera **falla**;
+---
+> 2. importar el SDK afuera **sólo genera una advertencia**;
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B11.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B11.md
+1946a1947,1948
+> El barrido procesa a lo sumo cien pagos por cuenta en cada corrida. Los pagos restantes se excluyen de la conciliación y no generan marcas en esa corrida.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B13a.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B13a.md
+89c89
+< | **Mi Cuenta** (§45) · **Mi Suscripción** (§46) | la **versión anclada** de la suscripción, su estado, y el conjunto efectivo de entitlements y limits | el catálogo vendible, salvo para ofrecer un cambio |
+---
+> | **Mi Cuenta** (§45) · **Mi Suscripción** (§46) | la **versión vigente** del plan de la suscripción, su estado, y el conjunto efectivo de entitlements y limits | el catálogo vendible, salvo para ofrecer un cambio |
+182c182
+< | 19 | al **rechazarse el primer cobro de un alta** (`S16`, cap. 03 §3.2 — la fila va a `CHARGE_DECLINED` y **cancelamos la autorización de nuestro lado**, si el proveedor no lo hizo ya: FASE 8 completa, owner 2026-09-25) | **qué hacer, según POR QUÉ la rechazaron**, derivado del `status_detail` con un mapa explícito y un **texto genérico obligatorio** para lo que no esté en el mapa: si fue el **antifraude del proveedor** (`cc_rejected_high_risk`), que **su tarjeta está bien** y que pruebe más tarde, desde otro dispositivo, o nos escriba; si fue **la tarjeta** (`payment_method_not_ready`, fondos, vencimiento), que **revise su medio de pago**. Y en los dos casos, que **no se le cobró nada** y que reintentar **es un alta nueva**. Decirle *«revisá tu tarjeta»* a alguien rechazado por el antifraude lo manda a arreglar algo que funciona, y **cada reintento crea otra alta que el antifraude vuelve a rechazar** — medido tres veces seguidas sobre nosotros mismos la noche del 21/09. El mapa se lee del intento **del alta**, que es uno solo: en una renovación el `status_detail` cambia entre reintentos (`RC-6`) y leerlo temprano describe un estado transitorio. **El contenido del mapa queda abierto**: se llena con lo medido, no se inventa. **Y si la persona estaba en su trial en esa vertical, que lo sigue teniendo**, con los días que le quedaban (`DEC-TRIAL-010`; fila 19-bis) | `DEC-MP-004`, cap. 03 §3.2 (`S16`) |
+---
+> | 19 | al **rechazarse el primer cobro de un alta** (`S16`, cap. 03 §3.2 — la fila va a `CHARGE_DECLINED` y **cancelamos la autorización de nuestro lado**, si el proveedor no lo hizo ya: FASE 8 completa, owner 2026-09-25) | **qué hacer, según POR QUÉ la rechazaron**, derivado del `status_detail` con un mapa explícito: si fue el **antifraude del proveedor** (`cc_rejected_high_risk`), que **su tarjeta está bien** y que pruebe más tarde, desde otro dispositivo, o nos escriba; si fue **la tarjeta** (`payment_method_not_ready`, fondos, vencimiento), que **revise su medio de pago**. Y en los dos casos, que **no se le cobró nada** y que reintentar **es un alta nueva**. Decirle *«revisá tu tarjeta»* a alguien rechazado por el antifraude lo manda a arreglar algo que funciona, y **cada reintento crea otra alta que el antifraude vuelve a rechazar** — medido tres veces seguidas sobre nosotros mismos la noche del 21/09. El mapa se lee del intento **del alta**, que es uno solo: en una renovación el `status_detail` cambia entre reintentos (`RC-6`) y leerlo temprano describe un estado transitorio. **El contenido del mapa queda abierto**: se llena con lo medido, no se inventa. **Y si la persona estaba en su trial en esa vertical, que lo sigue teniendo**, con los días que le quedaban (`DEC-TRIAL-010`; fila 19-bis) | `DEC-MP-004`, cap. 03 §3.2 (`S16`) |
+619,620c619
+< - **Entonces** el mensaje sale **del `status_detail` del intento del alta**, por un mapa explícito
+<   con un **texto genérico obligatorio** para lo que no esté en el mapa: con `cc_rejected_high_risk`,
+---
+> - **Entonces** el mensaje sale **del `status_detail` del intento del alta**, por un mapa explícito: con `cc_rejected_high_risk`,
+1038c1037
+< medio de pago»*; uno desconocido da el genérico; los tres dicen que no se cobró nada.
+---
+> medio de pago»*; los dos dicen que no se cobró nada.
+1292c1291
+<   medido y el texto genérico—, las rutas y los códigos los cerró BS: los propone el PR de esta pieza
+---
+>   medido—, las rutas y los códigos los cerró BS: los propone el PR de esta pieza
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B2.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B2.md
+378a379,380
+> Una versión de plan admite como máximo dos ciclos de cobro vendibles a la vez. Publicar una tercera opción se rechaza aunque su ciclo todavía no exista en esa versión.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B3.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B3.md
+712c712
+<   anclada—; y existe `idempotency_key` —la clave, a qué operación corresponde y su resultado, con
+---
+>   anclada—; y existe `idempotency_key` —la clave y a qué operación corresponde, con
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B5.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B5.md
+64c64
+< apaga dentro de los 10 días**, y se devuelve por `POST /v1/orders/{id}/refund` (el `RF1` es de `B5`;
+---
+> apaga dentro de los 15 días**, y se devuelve por `POST /v1/orders/{id}/refund` (el `RF1` es de `B5`;
+767c767
+< `M-LEGAL-01` pide *«derecho de revocación dentro de un plazo legal, sin costo ni justificación, con
+---
+> `M-LEGAL-01` pide *«derecho de revocación dentro de un plazo legal, sin costo, con
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B6.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B6.md
+137c137
+< corre `P3` o `P4` sobre el pago sumando esas devoluciones y escribe *«por el proveedor»*. Con un
+---
+> corre `P3` o `P4` sobre el pago sumando esas devoluciones. Con un
+374a375,376
+> 
+> Si una cuenta ya recibió un reembolso durante el mes calendario, toda nueva devolución queda bloqueada hasta el mes siguiente, incluso con confirmación humana.
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B7.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B7.md
+1546a1547,1548
+> Después de una suspensión por contracargo, el alta de otra suscripción en esa vertical exige que soporte habilite primero la cuenta; sin esa habilitación no se abre el checkout.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/B8a.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/B8a.md
+85c85
+< cobro acreditado, no de la fecha del próximo cobro.
+---
+> cobro acreditado, sustituida por la fecha del próximo cobro cuando ésta sea posterior.
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/U1.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/U1.md
+542a543,544
+> Las rutas retiradas del cobro viejo se conservan como endpoints de sólo respuesta: devuelven `410` durante un año desde el corte, sin redirigir a las rutas nuevas.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/U3.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/U3.md
+63c63
+< 2. **está mergeada en la rama del paraguas antes del ensayo del corte** (paso 0);
+---
+> 2. **está mergeada en la rama del paraguas después del ensayo del corte** (paso 0);
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/V2.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/V2.md
+541a542,543
+> Una versión de plan publicada espera 24 horas antes de aparecer en la pricing; durante esa espera no se admite ninguna contratación de esa versión.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/V3.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/V3.md
+197d196
+<   (lo único que se cachea: ni el catálogo, ni los planes, ni el estado de una suscripción)
+238c237
+<   cubre y renueva el mismo día, sin ventana propia; (f) ancla el que arrancó primero; (g) la ventana
+---
+>   cubre y renueva el mismo día, sin ventana propia; (f) calcula el cupo con el conjunto efectivo; (g) la ventana
+579,580c578
+<    del ciclo. **Con más de un título vivo, ancla el que da la cuota; si dos la dan, el que arrancó
+<    primero** (una prueba y una suscripción en los minutos antes de `T2`, o una cortesía sobre una
+---
+>    del ciclo. **Con más de un título vivo, ancla el que da la cuota** (una prueba y una suscripción en los minutos antes de `T2`, o una cortesía sobre una
+634c632
+< **Qué se cachea: el conjunto efectivo de entitlements y limits de un `user + vertical`.** Es lo caro:
+---
+> **El caché incluye el conjunto efectivo de entitlements y limits de un `user + vertical`.** Es lo caro:
+636d633
+< **Nada más se cachea**: ni el catálogo, ni los planes, ni el estado de una suscripción.
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/V4.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/V4.md
+572c572
+< **La extensión que no entra se rechaza entera. No se trunca, y el promo no se consume.** Truncar es
+---
+> **La extensión que no entra se rechaza entera. No se trunca, y el promo se consume.** Truncar es
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/V5.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/V5.md
+1280a1281,1282
+> Un actor de sistema vence una hora después de construido. La cadena rechaza toda operación posterior hasta que el job obtenga otro actor de la fábrica.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/V6.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/V6.md
+42c42
+< 6. **la vertical de la ficha inmutable desde el alta** (`02` §2.5; 7a);
+---
+> 6. **la vertical de la ficha editable después del alta** (`02` §2.5; 7a);
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/V8a.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/V8a.md
+396c396
+< | 32 | *(de `V8b`)* al abrir un **link de reclamo de un Partner que ya tiene dueño** (FASE 9 vuelta 3, owner 2026-09-30, lote A) | que ese Partner ya fue reclamado y que, si es suyo, lo resuelve soporte, con cómo contactarlo: *«este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»* (lote AG). **Sólo con el secreto correcto del link**: con uno equivocado o sin él, la pantalla es la de un Partner que no existe. No lo vincula ni dice a qué cuenta está vinculado | `V/18` §2.4, regla 4 |
+---
+> | 32 | *(de `V8b`)* al abrir un **link de reclamo de un Partner que ya tiene dueño** (FASE 9 vuelta 3, owner 2026-09-30, lote A) | que ese Partner ya fue reclamado y que, si es suyo, lo resuelve soporte, con cómo contactarlo: *«este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»* (lote AG). **Sólo con el secreto correcto del link**: con uno equivocado o sin él, la pantalla es la de un Partner que no existe. No lo vincula | `V/18` §2.4, regla 4 |
+451a452,453
+> 
+> La pricing sólo muestra importes a una sesión autenticada; a un visitante sin sesión le pide ingresar antes de consultar el precio de cualquier plan.
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/10-corte/V9a.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/10-corte/V9a.md
+57c57
+< **escribe desde el día del corte**, porque lo que pase antes de que exista no se reconstruye (corte
+---
+> **escribe desde el día siguiente al corte**, porque lo que pase antes de que exista no se reconstruye (corte
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/20-fase-1/V9b.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/20-fase-1/V9b.md
+44,45c44,45
+< 5. **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin
+<    escribirlas** (corte del MVP, owner 2026-10-01, BD).
+---
+> 5. **lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, y
+>    actualiza ambas al valor vigente antes de borrar** (corte del MVP, owner 2026-10-01, BD).
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/20-fase-2/B8b.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/20-fase-2/B8b.md
+435c435
+<   no usados no cuentan contra los topes—, sus complementos pausados vuelven por `S33`, y se le
+---
+>   no usados cuentan contra los topes—, sus complementos pausados vuelven por `S33`, y se le
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/20-fase-2/B9b.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/20-fase-2/B9b.md
+396a397,398
+> Una cortesía temporal recién otorgada empieza a prestar servicio al día siguiente de su firma; hasta entonces no emite ninguna fuente de cobertura.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/20-fase-3/B13b.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/20-fase-3/B13b.md
+83c83
+<   **los destaques recurrentes sobre esa ficha, que se siguen cobrando hasta que los dé de baja**
+---
+>   **los destaques recurrentes sobre esa ficha, que dejan de cobrarse al moderar la ficha**
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/20-fase-4/V8b.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/20-fase-4/V8b.md
+59c59
+< 3. **abrir un link ya usado con su secreto muestra la fila 32 y no dice a qué cuenta está vinculado, y
+---
+> 3. **abrir un link ya usado con su secreto muestra la fila 32, y
+125c125
+<   sin vincular nada ni decir a qué cuenta está vinculado; el segundo ve la pantalla de un Partner que
+---
+>   sin vincular nada; el segundo ve la pantalla de un Partner que
+213c213
+< La fila 32 se muestra sólo con el secreto correcto y nunca revela la cuenta vinculada; la fila 22 sólo
+---
+> La fila 32 se muestra sólo con el secreto correcto; la fila 22 sólo
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/30-el-corte.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/30-el-corte.md
+39,40c39
+<   correos reescritos a una casilla que no entrega y la lista real de las cinco cuentas**, y la copia
+<   se borra al terminar el ensayo; **arranca con la imagen vieja desplegada en `staging`**, porque si
+---
+>   correos reescritos a una casilla que no entrega y la lista real de las cinco cuentas**; **arranca con la imagen vieja desplegada en `staging`**, porque si
+271,272c270,271
+< no hay vuelta atrás. **El punto de no retorno tiene una ubicación declarada: está entre el paso 2 y
+< el paso 3** (§4.3).
+---
+> no hay vuelta atrás. **El punto de no retorno tiene una ubicación declarada: está entre el paso 4b y
+> el paso 5** (§4.3).
+1401,1402c1400
+< parte de `staging` del checklist de smoke del sistema nuevo va adentro del ensayo** (B). Terminado
+< el ensayo, la copia se borra (C).
+---
+> parte de `staging` del checklist de smoke del sistema nuevo va adentro del ensayo** (B).
+1574c1572
+<   y se escribe antes del reintento; terminado el ensayo, la copia se borra
+---
+>   y se escribe antes del reintento
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/80-abiertos.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/80-abiertos.md
+487a488,489
+> Mientras quede alguna medición `UNKNOWN`, las altas con tarjeta sólo se habilitan a cuentas creadas por soporte; el resto debe contratar por pago manual.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-6/pristina/90-retirados.md /home/qazuor/.cache/hos1352/vuelta-6/v/s/b249f841/90-retirados.md
+478a479,480
+> Los códigos promocionales del sistema viejo que no vencieron se importan al catálogo nuevo, con su vigencia y sus usos consumidos, antes de reabrir las altas.
+> 

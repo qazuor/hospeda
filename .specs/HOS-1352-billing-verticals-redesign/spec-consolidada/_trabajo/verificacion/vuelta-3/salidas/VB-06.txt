@@ -1,0 +1,22 @@
+# VB-06 · spec → fuente · 10-corte/V5.md 10-corte/V6.md
+
+## Hallazgos
+
+10-corte/V5.md:1129 · «La única excepción es la cuenta que pasa veinticuatro meses en `SUSPENDED` sin registrar ningún pago: ahí el rol de esa vertical se retira y la cuenta queda como Turista.» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:713 («**Perder el acceso NUNCA revoca un rol.** Ni la suspensión por impago, ni el vencimiento del trial, ni la cancelación, ni la pausa») y :775 («Ninguna transición de la máquina de suscripción ni de la de trial escribe roles», que vigila G4); no hay soporte vivo en ninguna fuente (rg --hidden de «veinticuatro meses» / «queda como Turista» en $V/fuentes: cero hits). Excepción inventada dentro de la reproducción «entera» del §4.1; un implementador construiría una revocación de rol que la fuente prohíbe y que G4 / AC:V5:19 rechazarían · BLOQUEA
+
+10-corte/V6.md:1045 · «`pedido_de_arreglo` (…; índice parcial: a lo sumo tres abiertos por ficha)» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:452 («**A lo sumo uno abierto por ficha** (índice parcial sobre los abiertos)»); contradicción interna con V6.md:392 («a lo sumo una abierta») y V6.md:726 («A lo sumo uno abierto por ficha»). Es la sección «Modelo de datos y migraciones», la que dicta el índice de la migración · BLOQUEA
+
+10-corte/V5.md:277-282 · «en el PR que retira sus lectores, el enum de permisos de la base se recrea sin `USER_IMPERSONATE` y una migración de datos saca las filas de roles y de overrides que lo daban» (repetido en V5.md:1211-1215 y en TEST:V5:29) · más fuerte que .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:544 («el permiso no existe en el enum») y que 17-autorizacion.md:762-768, cuyo principio «salen de la base» se fija sólo para los permisos del cobro viejo, que hace `U1`. La spec lo marca como derivado y lo apoya en un triage propio (`AB-g6-1`), no en la fuente · MENOR
+
+10-corte/V5.md:422 · «se corren los casos de AC:V5:1 a AC:V5:16 y los guards de su columna» · incoherencia interna: AC:V5:24 (la concesión gratuita sólo con `SUPER_ADMIN`, DEC-GRANT-002, con su TEST:V5:28) queda fuera del rango de la salida, y no es un AC de guard · MENOR
+
+10-corte/V5.md:1540 y :1543 · «§4, fila `V5` (l. 709)» · «lista de piezas, l. 943» · cita mal apuntada: la fila V5 del §4 está en descomposicion.md:716 y la fila V5 de la lista de piezas está en 16-fase-7-del-paraguas.md:948 (las líneas `Origen:` del mismo archivo sí apuntan bien) · MENOR
+
+10-corte/V6.md:1468 · «(lista de piezas, l. 944; esquema del corte, l. 979–980)» · cita mal apuntada: la fila V6 está en 16-fase-7-del-paraguas.md:949 y las dos filas del esquema de V7 en :984-985 · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V5.md | 1–1544 | 160 | 1 | 3 |
+| 10-corte/V6.md | 1–1472 | 210 | 1 | 1 |

@@ -1,0 +1,24 @@
+# VB-06 · spec → fuente · 10-corte/V5.md, 10-corte/V6.md
+
+## Hallazgos
+
+10-corte/V5.md:708 · «si no coincide la operación responde *prohibido* (§1.2, precisión 6; FASE 8 completa, `F-8CA1-001`…)» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:302 («y si no coincide la operación responde *no existe* (§1.2, precisión 6; …)»); también choca dentro de la spec con V5.md:493, :580-585 y AC:V5:4 (V5.md:213, «contesta *«no existe»* (`404`, la respuesta del paso 4)»): un implementador que lea el §2.2 contestaría 403 y revelaría que el identificador existe · BLOQUEA
+
+10-corte/V6.md:872 · «**Corre a lo sumo una vez por hora por `user + vertical`**, y los disparos que caen dentro de esa hora se descartan.» · sin soporte: no está en .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:350-357 (§4.2, el pasaje que este bloque copia) ni en ninguna otra fuente (rg «vez por hora» / «dentro de esa hora» no encuentra nada). Además contradice el mismo párrafo de la fuente, 15-entitlements-y-limits.md:356-357 («que falte un disparo es una capacidad regalada o un límite incumplido»): descartar disparos deja excedentes sin aplicar o sin restituir · BLOQUEA
+
+10-corte/V6.md:291-293 · «y cada una de `PB1`, `PB2`, `PB3`, `PB4`, `PB5`, `PB6`, `PB7`, `PB8`, `PB10`, `PB12` y `PB13` toma el lock del `user + vertical` y relee adentro su `desde`» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md, §9 *«Publicar ocupa cupo bajo un lock»* («**`PB11` y `PB13` lo toman** (revisión del owner, 2026-09-28, C10): comparten `MODERATED` con `PB12`…»): el AC enumera las que toman el lock y deja afuera `PB11`, y ni la fila de `PB11` del catálogo de la spec ni el diseño copiado en V6 lo dicen. Así no queda cerrada la carrera `PB11` contra `PB12` sobre una `MODERATED` · BLOQUEA
+
+10-corte/V5.md:277-280 (y :1207-1211, TEST:V5:29 en :1478-1483, Abiertos :1517-1520) · «en el PR que retira sus lectores, el enum de permisos de la base se recrea sin `USER_IMPERSONATE` y una migración de datos saca las filas de roles y de overrides que lo daban, por el principio del lote 1 I» · sin soporte explícito en la fuente: 17-autorizacion.md:476-478 y descomposicion.md:544 sólo dicen «el permiso no existe en el enum», y el lote 1 I (17-autorizacion.md, §4.3, «Y los permisos del cobro viejo salen de la base») habla de los permisos del cobro viejo y los asigna a `U1`. La extensión viene de una decisión interna de la spec («segunda vuelta del triage, `AB-g6-1`») que no está en las fuentes ni va marcada como derivada. Es coherente con el principio, pero agrega una migración de datos · MENOR
+
+10-corte/V5.md:800 · «la decimotercera, moderar una ficha **o la presencia de un Partner** ([ACC:13](../02-nucleo.md#acc-13); …)» · el link lleva a un ítem equivocado: en 02-nucleo.md:1139-1140 `ACC:13` es «**Reembolsar**», y la acción de moderar es `ACC:12` (02-nucleo.md:1112-1116, nota N1: «las fuentes la llaman «acción 13»»). V6 sí apunta a `ACC:12` · MENOR
+
+10-corte/V6.md:534-535 · «la tabla versionada de plazos de verticales con su versión 1 (plazo 1 = 90 días, plazo 2 = 180 días, y los plazos 3, 4, 7, 8 y 9 con el valor que el owner fijó antes del merge de `V6`)» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md, §1.5 (tabla, filas 5 y 6: la campaña previa a la prueba y la de recuperación, «mitad: verticales», con sus valores iniciales), y su «Quién lo construye: la tabla de plazos de cada mitad […] **`V6`** en verticales». La versión 1 de verticales también lleva los plazos 5 y 6, y el «Dado» los omite (en la spec su AC es de `V4`, así que el efecto es acotado) · MENOR
+
+10-corte/V5.md:420-421 · «**Cuando** se corren los casos de [AC:V5:1](#ac-v5-1) a [AC:V5:16](#ac-v5-16) y los guards de su columna» · incoherencia interna: el criterio de salida deja afuera AC:V5:24 (V5.md:329-337, la exclusividad de `SUPER_ADMIN` de `DEC-GRANT-002`, que esta pieza es dueña de cumplir). Los AC 17 a 22 los cubren los guards; el 24 no lo cubre ninguno · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V5.md | 1–1540 (completo; el diseño 453–1197 se comparó palabra por palabra contra 17-autorizacion.md) | 210 | 1 | 3 |
+| 10-corte/V6.md | 1–1424 (completo; el diseño 656–1009 se comparó palabra por palabra contra 02, 15 y 21) | 240 | 2 | 1 |

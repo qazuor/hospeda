@@ -1,0 +1,15 @@
+# VB-05 · spec → fuente · 10-corte/V2.md, 10-corte/V3.md, 10-corte/V4.md
+
+## Hallazgos
+
+10-corte/V2.md:559 · «La acción 18 está permitida a cualquier `ADMIN`» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:208 («publicar una versión de plan […] sólo `SUPER_ADMIN`»). DEC-ARCH-013 mantiene esa exclusividad para las acciones 18 a 22; no hay una decisión posterior que la amplíe a ADMIN. También contradice AC:V2:6 y TEST:V2:9 del mismo archivo, que rechazan los demás roles. · BLOQUEA
+
+10-corte/V3.md:93 · «Cada consumo de una capacidad medida descuenta al menos diez unidades de la cuota; una operación menor se redondea hacia arriba a ese mínimo.» · sin soporte. DEC-ENT-001 y DEC-ENT-002 con sus precisiones, V/docs/15-entitlements-y-limits.md §7 y V/docs/02-modelo-de-datos.md §2.2 regulan cuotas, consumo y ventanas, sin imponer un mínimo ni este redondeo. Tampoco aparece una decisión posterior que lo autorice. Esta regla agotaría la cuota antes de lo que corresponde al consumo real. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V2.md | 1–727 | 170 | 1 | 0 |
+| 10-corte/V3.md | 1–922 | 210 | 1 | 0 |
+| 10-corte/V4.md | 1–1246 | 280 | 0 | 0 |

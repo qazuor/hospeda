@@ -1,0 +1,20 @@
+# VA-A10 · fuente → spec · B/docs/{14-promos-cortesias-y-grants,16-addons,19-superficies,20-testing}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:49 · «porcentajes se multiplican y los fijos se suman» · distinta en s/c1c03210/10-corte/B9a.md:95 («porcentajes se suman y los fijos se suman»). Cambia el importe de las promos apiladas: 15 % y 10 % sobre ARS 9.999 dan 7.649,23 por composición multiplicativa y 7.499,25 sumando los porcentajes. También contradice AC:B9b:1 (s/c1c03210/20-fase-2/B9b.md:108), que conserva el primer resultado. Revisados el decision log y las decisiones posteriores del owner: no reemplazan la composición multiplicativa. · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:120 · «al resolverse la disputa sale un correo transaccional por cada desenlace»; «si ganamos nosotros (`reimbursed`, `P7`), “la disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá”» · distinta en s/c1c03210/10-corte/B13a.md:166 («si la disputa se resuelve a favor de la persona sale un correo transaccional»): se elimina el aviso del desenlace favorable a Hospeda. Búsqueda en toda s/c1c03210/ por “reimbursed”, “disputa se resolvió”, “cargo era correcto” y “ganamos nosotros”: el catálogo de correos (02-nucleo-outbox.md:290) sólo conserva el de settled; TRANS:B:P7 (04-catalogos.md:4472) y AC:B5:8 (10-corte/B5.md:247) tampoco ordenan emitir el de reimbursed. La mención genérica a “los dos de la disputa resuelta” en 02-nucleo-outbox.md:178 no recupera su disparador ni su contenido. No hay decisión posterior que retire este correo. · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:218 · «las que quedan para resolver a mano (`PARA_RESOLVER`: el destino no ofrece su ciclo) a la vista, sin plazo y con su antigüedad, contada desde el anuncio» · distinta en s/c1c03210/10-corte/B13a.md:268 («a la vista, sin plazo»), y en s/c1c03210/20-fase-3/B12.md:558 («sus filas por estado con las `PARA_RESOLVER` a la vista, sin plazo»): desaparece la antigüedad desde el anuncio. Búsqueda en toda s/c1c03210/ por “antigüedad”, “contada desde el anuncio” y “PARA_RESOLVER”: ningún AC, test ni catálogo recoge ese dato del listado; 01-decisiones-vigentes.md:1899 también omite la antigüedad. La regla sigue vigente en el 📌 de DEC-SUB-023, fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7155, y ninguna letra posterior la retira. · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:670 · «La autorización la custodia el owner y la renueva cada mes: sin la del mes en curso, la corrida de producción no arranca» · distinta en s/c1c03210/04-catalogos.md:6762 («La autorización la custodia el owner: sin ella, la corrida de producción no arranca»). AC:B1:15 (10-corte/B1.md:309), TEST:B1:16 (10-corte/B1.md:894) y el 📌 transcrito en 01-decisiones-vigentes.md:8615 también exigen sólo una autorización, sin renovación mensual ni rechazo de la de un mes anterior. Búsqueda en toda s/c1c03210/ por “renueva cada mes”, “mes en curso”, “autorización mensual” y “custodia”: no aparece la guarda temporal. Sigue vigente en el 📌 de DEC-TEST-003, fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7210; ninguna decisión posterior la reemplaza. La spec permitiría ejecutar una corrida con autorización vencida. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/14-promos-cortesias-y-grants.md | ≈90 | 1–742 | 0 | 1 |
+| B/docs/16-addons.md | ≈150 | 1–1160 | 0 | 0 |
+| B/docs/19-superficies.md | ≈120 | 1–346 | 0 | 2 |
+| B/docs/20-testing.md | ≈120 | 1–808 | 0 | 1 |

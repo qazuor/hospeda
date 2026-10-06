@@ -1,0 +1,17 @@
+# VA-A2 · fuente → spec · P/docs/12-contrato-de-cobertura.md P/docs/16-fase-7-del-paraguas.md P/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+
+## Hallazgos
+
+.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1132 · «`S11` manda la cancelación en el acto, pero si el correo previo o la llamada fallan de forma transitoria el barrido la reintenta hasta 3 días con el preapproval `authorized`, y recién ahí abre la marca […] hasta que el barrido la confirme o, pasados los 3 días, abra la marca» · distinta en 03-contrato-de-cobertura.md:1119 («el barrido la reintenta hasta 5 días con el preapproval `authorized`» y «pasados los 5 días, abra la marca»). Ninguna decisión posterior cambia el plazo (rg en 01-decision-log.md y 10-decisiones-del-owner.md: siempre «hasta 3 días», p. ej. decision-log:1619, B/03:298, 37-fase-8-vuelta-3/10-decisiones-del-owner.md:25 lote D). Además contradice a la propia spec: 02-nucleo-auditoria.md:110, 04-catalogos.md:1544 y :1637, 10-corte/B11.md:1415, 01-decisiones-vigentes.md:8795 y :12410, todos «3 días». Cambia cuánto espera la acción 24 y cuándo se abre CANCELACIÓN_SIN_CONFIRMAR · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:154 · «escribir los dos `permanent_grant` de las cortesías del owner (`B/21` §2.4), anclados al vendible de `rank` más alto de Alojamiento, en la vertical en que tenían `comp`» (texto vivo; lo tachado en esa línea son las variantes anteriores, y `R11-3b` confirma «se revierte la corrección») · distinta en 30-el-corte.md:639 («anclados al vendible de `rank` más bajo de Alojamiento, en la vertical en que tenían `comp`»). Contradice además a la propia spec: 30-el-corte.md:1071, 10-corte/B9a.md:36 y :960, 03-contrato-de-cobertura.md:689 y 01-decisiones-vigentes.md:11455 dicen «más alto». Quien opere el paso 3b con este texto anclaría el Free Forever del owner al plan más barato · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1095-1096 · «Antes de arrancarlo: `U3` está mergeada (F); se releyeron las dos situaciones que una restauración no deshace (§4.3); los plazos sin valor tienen el suyo desde el merge de `V6`» · distinta en 30-el-corte.md:1564 (AC:CORTE:1, el AC del momento 3: su «Dado» trae `U3` mergeada, los plazos y la copia, y omite la relectura de las dos situaciones). La condición está en el texto de GATE:M3 (30-el-corte.md:1390) y en el paso 2b (:416), pero ningún AC ni TEST la recoge · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| P/docs/12-contrato-de-cobertura.md | ~150 (comparación palabra por palabra de §1–§7.1, sin tachados, contra 03-contrato-de-cobertura.md §0–§7.1) | 1–1585 | 0 | 1 |
+| P/docs/16-fase-7-del-paraguas.md | ~180 (pasos 0–6, rama de aborto, §4.3–§4.7, U1–U3, piezas, esquema, BN, gates, fases, smoke) | 1–1212 | 0 | 2 |
+| P/docs/41-corte-del-mvp/10-decisiones-del-owner.md | ~75 (letras Y–CI, resultado del corte, lo no verificado; aplicación buscada en las piezas dueñas) | 1–247 | 0 | 0 |
