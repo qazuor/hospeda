@@ -152,7 +152,7 @@ describe('buildCommerceEditorSections — registry shape', () => {
 
     it('should give every section an i18n label key, never a literal', () => {
         for (const section of experience) {
-            expect(section.labelKey).toMatch(/^commerce\.owner\.editor\./);
+            expect(section.labelKey).toMatch(/^listing\.owner\.editor\./);
         }
     });
 
@@ -173,7 +173,7 @@ describe('buildCommerceEditorSections — registry shape', () => {
     it('should label every declared group', () => {
         for (const group of COMMERCE_EDITOR_SECTION_GROUPS) {
             expect(COMMERCE_EDITOR_GROUP_LABEL_KEYS[group]).toMatch(
-                /^commerce\.owner\.editor\.group\./
+                /^listing\.owner\.editor\.group\./
             );
         }
     });
