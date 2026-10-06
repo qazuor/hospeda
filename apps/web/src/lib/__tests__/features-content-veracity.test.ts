@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 import { OWNER_ROWS } from '../../components/billing/plan-comparison-rows';
 import { ANFITRIONES_TABLE_ROWS } from '../features-content';
 
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed plan-catalogue entitlement comparison guard.
 function anfitrionesRow(labelKey: string) {
     const row = ANFITRIONES_TABLE_ROWS.find((r) => r.labelKey === labelKey);
     if (!row) throw new Error(`Row not found: ${labelKey}`);

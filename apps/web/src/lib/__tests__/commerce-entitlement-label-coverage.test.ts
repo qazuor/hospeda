@@ -10,6 +10,7 @@ import {
     COMMERCE_ENTITLEMENT_I18N_SUFFIX
 } from '../commerce/entitlement-labels';
 
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed catalogue-to-commerce-label coverage guard.
 const LOCALES = ['es', 'en', 'pt'] as const;
 const LOCALES_DIR = resolve(__dirname, '../../../../../packages/i18n/src/locales');
 
