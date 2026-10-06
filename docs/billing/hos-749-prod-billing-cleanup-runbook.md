@@ -185,7 +185,7 @@ hops --target=prod db-seed-migrate --allow-destructive
 
 The run aborts, without writing anything, if it meets a state it was not written
 to decide about — an unclassified table still referencing a row it is about to
-soft-delete, a commerce/partner link row still in an entitlement-granting
+soft-delete, a gastronomy, experience or partner link row still in an entitlement-granting
 status, an unexpired pending checkout, an FK-order violation, or a target set
 above the 25-row fuse. An abort is the migration working, not failing: read the
 message, resolve the case deliberately, then re-run.
@@ -485,7 +485,7 @@ free defence:
   safe to leave live. Nobody has analysed that for these three.
 - `partners` is exactly the shape of thing the guard exists to catch. A partner
   row pointing at a swept subscription is the same failure mode as
-  `entity_subscriptions` (then named `commerce_listing_subscriptions`) and
+  `entity_subscriptions` (then named after the retired grouping) and
   `partner_subscriptions`, both of which
   needed a dedicated `assertRetainedTablesAreInert` probe precisely because a
   public surface reads them **without** joining `billing_subscriptions`. Note

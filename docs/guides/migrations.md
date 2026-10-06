@@ -241,7 +241,7 @@ column, and `db:migrate` applies every pending schema change before `db:seed:mig
 any data change. Ship the `CREATE` of the destination and the `DROP` of the source in one
 release and the data-migration executes against a column that is already gone — it moves
 nothing, and the `seed_migrations` ledger records it applied, permanently. HOS-433 is that
-failure, observed in production: `0034-hos-372-commerce-media-to-relational` ran in 18ms
+failure, observed in production: the `0034` media-to-relational data-migration ran in 18ms
 against a dropped `gastronomies.media` and was recorded `ok`.
 
 The split below fixes both. Release N keeps the source column alive, which is exactly what
@@ -262,7 +262,7 @@ pending migration — reads it any more.
    far as the application is concerned.
 
 This is the same **expand/contract** pattern already used elsewhere in this repo for a
-whole-table retirement — see HOS-589 §6.3 (`commerce_leads`), which drops the table only in
+whole-table retirement — see HOS-589 §6.3 (the retired owner-lead funnel table), which drops the table only in
 the release *after* the one that stops writing to it, precisely citing this rule. Use that
 section as a worked example of sequencing a drop across releases, including the one
 non-obvious prerequisite it surfaced (a background cron reading the doomed table has to stop
@@ -373,7 +373,7 @@ After any reset (`hops db-migrate --target=staging --reset`) run
 `pnpm db:apply-extras` to restore it before seeding, or use `hops db-migrate`
 which handles this automatically.
 
-See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](../decisions/ADR-035-commerce-core-gastronomy-separation.md) for the `product_domain` rationale.
+See [`docs/decisions/ADR-035-gastronomy-experience-separation.md`](../decisions/ADR-035-gastronomy-experience-separation.md) for the `product_domain` rationale.
 
 ---
 

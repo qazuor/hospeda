@@ -51,19 +51,19 @@ After SPEC-145, callers without the required entitlement receive:
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `VIEW_ADVANCED_STATS` | tourist-*, owner-basico | Only owner-pro+ can see advanced stats |
 | `GET /api/v1/protected/conversations/me/response-rate` | `VIEW_BASIC_STATS` | tourist-free, tourist-plus, tourist-vip | Tourists cannot see stats |
 | `GET /api/v1/protected/conversations/me/monthly-inquiries` | `VIEW_BASIC_STATS` | tourist-free, tourist-plus, tourist-vip | Tourists cannot see stats |
-| `POST /api/v1/protected/commerce/listings/gastronomy` | `PUBLISH_GASTRONOMY` | **none in practice** | HOS-1074 — see the note below |
-| `POST /api/v1/protected/commerce/listings/experience` | `PUBLISH_EXPERIENCE` | **none in practice** | HOS-1074 — see the note below |
+| `POST /api/v1/protected/gastronomies/` | `PUBLISH_GASTRONOMY` | **none in practice** | HOS-1074 — see the note below |
+| `POST /api/v1/protected/experiences/` | `PUBLISH_EXPERIENCE` | **none in practice** | HOS-1074 — see the note below |
 | `PATCH /api/v1/protected/gastronomies/{id}` | `EDIT_GASTRONOMY_INFO` | **none in practice** | HOS-1074 — see the note below |
 | `PATCH /api/v1/protected/experiences/{id}` | `EDIT_EXPERIENCE_INFO` | **none in practice** | HOS-1074 — see the note below |
 
 ## Key Decisions
 
-### Commerce edit/publish — a new gate that blocks nobody, on purpose (HOS-1074)
+### Gastronomy and experience edit/publish — a new gate that blocks nobody, on purpose (HOS-1074)
 
 Four routes joined the inventory above, and all four list **no blocked tier**.
 That is not an oversight, and the reason is the whole reason the issue exists.
 
-Owner decision (2026-09-01): commerce runs on the same entitlement mechanism
+Owner decision (2026-09-01): the gastronomy and experience verticals run on the same entitlement mechanism
 accommodation does, rather than on a second mechanism of its own. So both
 verticals gained an `EDIT_<VERTICAL>_INFO` / `PUBLISH_<VERTICAL>` pair, granted
 on **all three tiers** — exactly as all six accommodation plans grant
@@ -75,27 +75,27 @@ differentiator, the cap is.
 Two states would nonetheless have been locked out by a naive reading, and both
 are ordinary rather than exotic:
 
-- **The owner mid-funnel.** `commerce/protected/create.ts` makes a listing
+- **The owner mid-funnel.** the owner create routes (`gastronomy/protected/create.ts`, `experience/protected/create.ts`) make a listing
   `PRIVATE`/`DRAFT` and the owner fills it in BEFORE paying. They have no
   subscription at that moment by construction, so gating on a live subscription
   would mean nobody could ever reach the checkout — the HOS-687 lockout shape,
   where the only path to a capability is through the thing that capability
   gates.
-- **Every existing commerce owner, for the length of a deploy window.**
-  `ensureCommercePlan` INSERTS ONLY, so all six commerce plan rows on staging
+- **Every existing gastronomy or experience owner, for the length of a deploy window.**
+  the plan-ensure helper INSERTS ONLY, so all six gastronomy and experience plan rows on staging
   and production carry `entitlements: []` until seed data-migration
-  `0077-hos-1074-commerce-edit-publish-entitlements` runs.
+  `0077` (HOS-1074, edit/publish entitlements) runs.
 
 Both are handled the same way, and it is a deliberate design rather than a
-fallback: `commerceVerticalEntitlementMiddleware` resolves the vertical's
-entitlement FLOOR from `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — from code, in
+fallback: the per-vertical entitlement middleware resolves the vertical's
+entitlement FLOOR from the per-vertical entitlement-key map — from code, in
 the same binary as the gate — and only ever UNIONS the subscription plan row's
 own entitlements on top. That is Model C's capability rule (config wins, the
 database follows), and it means the grant and the gate ship as ONE artifact.
 There is no window in which the gate exists and the grant does not.
 
 The gate is still a real refusal for a plan that genuinely does not grant the
-key, and it is the seam every later commerce capability hangs off. What it is
+key, and it is the seam every later gastronomy or experience capability hangs off. What it is
 not, today, is a behavior change for any customer — which is what this section
 exists to say out loud.
 
