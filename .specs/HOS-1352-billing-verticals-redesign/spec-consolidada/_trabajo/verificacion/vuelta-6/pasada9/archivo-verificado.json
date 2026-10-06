@@ -1,0 +1,350 @@
+[
+    {
+        "archivo": "bloques.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "d5f5e284439133ac25d1d0c59e5c985d9d8186bd716fb1ecf6d2c6ce53e686ff"
+    },
+    {
+        "archivo": "brief-vb.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "55f0369deb67bf329b36ff84c7ac02e92d9ed7ba81a32e28908f6b98679377e8"
+    },
+    {
+        "archivo": "hallazgos-todos.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "ced504a1459db473096d1d9f7f0a5fba6ecacef768a4c18bb9d588c7e4136dad"
+    },
+    {
+        "archivo": "brief-g.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "4364eaa24c0b18679bdc5a6ef390d4f6fdae9108856be392defb36a6aff34fb4"
+    },
+    {
+        "archivo": "brief-va.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "24c779dc1030a4d32e1e030f36047fd446a2dad50202bd75333439b1b198e4f8"
+    },
+    {
+        "archivo": "canarios.diff",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "3a2033fcd8273860260635a387d78fe6dd31efbca88c1ec33b70a7f410a321b5"
+    },
+    {
+        "archivo": "canarios.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "67d0f36cb7ce01e921e9f60e494a6910f485b4657447e80e46d2e70add4d119f"
+    },
+    {
+        "archivo": "adjudicacion/build.py",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "958ce748786cbad4340a243fc3036052c88b68596ebfbb07a32692ef7a4c7772"
+    },
+    {
+        "archivo": "adjudicacion/patrones.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "946b9598e3df7bee9bbf917c622ab126fa19189209e5393186940d893922a147"
+    },
+    {
+        "archivo": "adjudicacion/canarios-resultado.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "8329cbb2d215e65148224cdce2cb5149836fda5ef011f750f3d41e2593481440"
+    },
+    {
+        "archivo": "adjudicacion/hallazgos.json",
+        "identico": false,
+        "json_equivalente": true,
+        "sha256_archivado": "fd3c2a164b954c100027fba8e3dfd968bc48d8e82f9133320e8593a654557bca"
+    },
+    {
+        "archivo": "adjudicacion/correcciones.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "d5c5319812ac887f969505a6da4e423ba53547ecec9c33882492adef011fb54f"
+    },
+    {
+        "archivo": "salidas/G2-completar.py",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "759b514b79e66d11e1708589fb89d89a0c16e33e44699d422bd48b76bc247342"
+    },
+    {
+        "archivo": "salidas/VA-A4.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "edfa6f7f18dfe317010f9d5661a490e595bfda0400b61aba757c84a95a05bf70"
+    },
+    {
+        "archivo": "salidas/VA-A8-verificacion.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "861bdef2f6f0fc74df34fe8a1437724875853ec4cedcfd6341c2406f050f1f06"
+    },
+    {
+        "archivo": "salidas/G2-audit.json",
+        "identico": false,
+        "json_equivalente": true,
+        "sha256_archivado": "b640eaf49e8313cd00d92b06246f4e3c4df4d6ebc09aee62794ae43894c2ac03"
+    },
+    {
+        "archivo": "salidas/G2-muestra.json",
+        "identico": false,
+        "json_equivalente": true,
+        "sha256_archivado": "e2d940f2d43765e3076dd3c74b2c9df58dec5df77c663ecfe1df56b0957cc42e"
+    },
+    {
+        "archivo": "salidas/VB-10.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "8421cb14a1983f8191f6ee7ed1b232631fd2a3322d354590cd0300202e62ad73"
+    },
+    {
+        "archivo": "salidas/VB-02.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "8c924c399bfd7b399d3ada6ac0c5762a886b86751d7908953505dbc3d7f44c8a"
+    },
+    {
+        "archivo": "salidas/VB-05.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "176d57144112fbd3f9c3d49a7e0cd4d558e69d7e1e2a1e1e6a4603ea33909776"
+    },
+    {
+        "archivo": "salidas/VA-A9.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "200e5d6463725691a25534b8c50625a9b636ab090ac35a7cc3f1358304ff8d87"
+    },
+    {
+        "archivo": "salidas/VA-A8-cobertura.json",
+        "identico": false,
+        "json_equivalente": true,
+        "sha256_archivado": "46832d6ecede3b083a6c3e7801e91361b2880b1a25075feed1c70c1dc365f927"
+    },
+    {
+        "archivo": "salidas/G2-decisiones-rg.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "ff8c1b0441ae2a0169de9f59975b59226b6c98c3bfe16c1cca0f66c18fd8934f"
+    },
+    {
+        "archivo": "salidas/G2-audit.py",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "22f1ec0950cf3cf3bffef6a8c0d1edc67511c3af744b4b38ee3fe7592c7f8035"
+    },
+    {
+        "archivo": "salidas/G1-rg-reemplazos.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "0920080a90d49d1b22046fe156de9091b7ddffa3e4891c82c0a8a96ccee35bb0"
+    },
+    {
+        "archivo": "salidas/G1-rg-tachados-pipes.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+        "archivo": "salidas/VB-07.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "350bb38c928270416b43cbbaf200847d749d2d2f0ec15709847b481435de55a2"
+    },
+    {
+        "archivo": "salidas/G2-pines-retirados-fuente.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "b709ad64f9e8ef5c4c7c53f3b0ae8f803313567ce2bfc63395c4967365b2bcd0"
+    },
+    {
+        "archivo": "salidas/VB-04.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "562d050870fa162de1c032bbbd4bfcfc90713d20bfe56df44b0bdf5dd1026b92"
+    },
+    {
+        "archivo": "salidas/VB-11.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "806cc324c23aebd7196ed712165981c9ea4d7ff525f483e2da46a4bc366bd0ca"
+    },
+    {
+        "archivo": "salidas/VB-08.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "71c8d86f578f21c1aaf0759f1a7e7d11b3117e641ae8d3877a7cafbd1f5f10c5"
+    },
+    {
+        "archivo": "salidas/VB-09.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "58e1ac640293ba075e553ddff8987ea03db13b92cf5cbe5211e1123e5998a0bc"
+    },
+    {
+        "archivo": "salidas/VB-14.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "8b94e6522dab3db927664116d053f8b7e80d4540c1417c55ee7aa98ca9de13a6"
+    },
+    {
+        "archivo": "salidas/VB-12.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "89dc087c717204969c3ad9660af0a88908899b225851a300ec4e81b30876d8eb"
+    },
+    {
+        "archivo": "salidas/G2-clases-rg.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "c5e7c48c673ec0d9301ebca47bd587bc77264850d9e2b157004bf0b03c62d3e0"
+    },
+    {
+        "archivo": "salidas/G2-busqueda-reglas.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "bd5b65825be9d92230f877a02eb9320ac11ad16357b5352981468d3ed12fe326"
+    },
+    {
+        "archivo": "salidas/G1-auditoria.json",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "8bcfe054ae4b7c1c8eed83b7025f1fca18cf693e6be3aab0b34d2f05b2c8ddd8"
+    },
+    {
+        "archivo": "salidas/VA-A6.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "c228427d6a8b8cafdd9c3c0d8e237f4a59bc1f25cd02aac2b0a10a239739d5ed"
+    },
+    {
+        "archivo": "salidas/G1.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "8bb4d4d9cfe64dda810d72841f9c485313cd744938c1b416592514da07c758f8"
+    },
+    {
+        "archivo": "salidas/VA-A5.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "5ab8f0e7d071326f5fe896509292e9f00aa6a84ec95b8e6b1e78a814963926e1"
+    },
+    {
+        "archivo": "salidas/VA-A1.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "a30a44f7f244480b8b7777d4289fb398fba802a28927aee094e6106d7859a354"
+    },
+    {
+        "archivo": "salidas/G2-pines.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "abbff92ee4e983997bd456cf35f913b057a7b11972ffbcd495b0912423adab37"
+    },
+    {
+        "archivo": "salidas/G2-cruces-spec.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "aeb5a56374752dc0d75ac33d02627c8f754af586ce076aeb2efd38ded4e53f77"
+    },
+    {
+        "archivo": "salidas/VB-13.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "4d74342a2780989cbaafc7091eaae1e9c6607eb550ced42aced98334e5a1161b"
+    },
+    {
+        "archivo": "salidas/VB-06.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "20f3d6d1ae44189e2cdfe5210967b1f3228ceab551c82d478a95b0f177f4948c"
+    },
+    {
+        "archivo": "salidas/VB-03.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "5cac2ac763f6f8dd385cf9fb1906b7b8afba4c30adfaa6f85992d1ce630a267f"
+    },
+    {
+        "archivo": "salidas/VB-01.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "eab0c653b79c6699272063b52c458f5da81388dc9338a7c79bacdef9357cb548"
+    },
+    {
+        "archivo": "salidas/G2-pipes-fuente.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "776731db2b2f10c5f8e9e1ca8b3e0c928b63e51857261ba8bd27674e4878b233"
+    },
+    {
+        "archivo": "salidas/G1-rg-retiros.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "5def7a9b1243fc809d2f56eb9261180ab73097a88fcaad4886adfc748e229b19"
+    },
+    {
+        "archivo": "salidas/G1-muestra.json",
+        "identico": false,
+        "json_equivalente": true,
+        "sha256_archivado": "fdaef5528efb344219d53b81e18a9e80017e08abf30eed70bbaf3b0a946834c3"
+    },
+    {
+        "archivo": "salidas/VA-A8.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "fc492dce7fc3a8e0d8c5f4ab818f52c7db34774342cf0c1a0e624859219100b8"
+    },
+    {
+        "archivo": "salidas/G2.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "df5b3ca645b03a9beaf0daf6ca2239b5e0d4ebf458d26af3eb842aa3c26e4f5f"
+    },
+    {
+        "archivo": "salidas/VA-A2.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "e5a19863f13a8799f5d6517058b7eee808d1eda254e1513dbd8dd898cf88450d"
+    },
+    {
+        "archivo": "salidas/G1-fuente-no-copiada.json",
+        "identico": false,
+        "json_equivalente": true,
+        "sha256_archivado": "2ba250241afdd136dc81367398bee43a8147b08617d7295b0fce4988da957a6e"
+    },
+    {
+        "archivo": "salidas/G2-informe.py",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "ddc7c5575f2f859aac4d01a1dc36a5b753675f0d36432de235ab1f73b8508562"
+    },
+    {
+        "archivo": "salidas/VA-A10.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "4b2e0cb9ddd49903906397aade0196b2a53c2bcb739313cd51f32944c18a1969"
+    },
+    {
+        "archivo": "salidas/VA-A3.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "9f482ecd44652fe5f4314aff557f738fabb5b70946576e5837d2d93332fd3a5a"
+    },
+    {
+        "archivo": "salidas/VA-A7.txt",
+        "identico": true,
+        "json_equivalente": false,
+        "sha256_archivado": "e8796e81b25e8eb66088d3a04bc44867c32a73108845bebc8751cc8db7fa5571"
+    }
+]

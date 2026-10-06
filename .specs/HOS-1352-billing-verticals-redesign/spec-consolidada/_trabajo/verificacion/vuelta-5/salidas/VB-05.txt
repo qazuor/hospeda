@@ -1,0 +1,15 @@
+# VB-05 · spec → fuente · 10-corte/V2.md, 10-corte/V3.md, 10-corte/V4.md
+
+## Hallazgos
+
+10-corte/V2.md:40 · «**`direcciónDeCambio` contesta `SUBE` sobre un par de versiones donde el destino tiene `rank`» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:713 («`direcciónDeCambio` contesta `BAJA` sobre un par de versiones donde el destino tiene `rank` MAYOR y un solo limit menor» de estrategia SUMA o MÁXIMO). La cláusula 2 de LISTA:V2 exige aprobar como subida una reducción de capacidades; DEC-ARCH-008 mantiene que cualquier baja manda (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3312). También contradice AC:V2:4, línea 168, y TEST:V2:5, línea 608, que exigen BAJA para ese caso. No hay decisión posterior que cambie ese veredicto · BLOQUEA
+
+10-corte/V3.md:505 · «Si dos fuentes aportan la misma capacidad booleana, el pliegue exige que ambas permanezcan vigentes durante veinticuatro horas antes de habilitarla.» · sin soporte. Contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:20 («permanece activo mientras al menos una source exista»). Introduce una espera de 24 horas cuando coexisten dos fuentes y exige que ambas sigan vigentes durante esa espera, aunque una fuente viva ya otorga la capacidad. El capítulo de agregación, el decision log y las decisiones del owner del corte no establecen esa espera; también contradice la regla reproducida en 10-corte/V3.md:291 y 10-corte/V3.md:464 · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V2.md | 1–727 | 180 | 1 | 0 |
+| 10-corte/V3.md | 1–928 | 210 | 1 | 0 |
+| 10-corte/V4.md | 1–1245 | 280 | 0 | 0 |

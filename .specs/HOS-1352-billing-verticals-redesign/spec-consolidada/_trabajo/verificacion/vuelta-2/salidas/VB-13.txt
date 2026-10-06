@@ -1,0 +1,21 @@
+# VB-13 · spec → fuente · 20-fase-2/B8b.md, 20-fase-3/B10.md, 80-abiertos.md
+
+(Excluidos, por instrucción, los tramos g-secciones: B8b.md 53–340 y B10.md 90–1197.)
+
+## Hallazgos
+
+20-fase-3/B10.md:1262 · «**una persona no tiene más de cinco addons `LISTING` vivos por vertical**» · sin soporte (ni la fila A1 de .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2534, ni 16-addons.md, ni 02-modelo-de-datos.md:575, ni ninguna decisión del log o de 10-decisiones-del-owner fijan un tope de cinco; rg sobre todas las fuentes no devuelve nada) · BLOQUEA
+
+20-fase-2/B8b.md:539-540 · «y si la predecesora retiene un pago por `S19`, le abre a ella la marca `REEMBOLSO_POR_CONFIRMAR` con el pago colgado —salvo si murió por `S36`, cuyo `RF1` ya lo devuelve—» (y lo mismo en AC:B8b:24, B8b.md:713-714, en LISTA:B8b, B8b.md:758-759, y en TEST:B8b:10/24, B8b.md:1140-1142 y 1318-1319: «en las ramas 1, 5 y 6 … `S18` apaga la bandera con la marca») · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:711 («**Salvo el pagador manual cuyo pago retenido ya entró al crédito de la sucesora por `DEC-SUB-017`: ahí NO se abre la marca y el pago queda como crédito, no se reembolsa**») y que el 📌 de DEC-SUB-017 (.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5325: «queda como crédito de la sucesora y no se reembolsa por la rama 1»); la excepción está en el AC de B7 (10-corte/B7.md:310) pero `S18` real la implementa B8b, cuyo AC la omite: quien siga B8b abre la marca y el mismo pago se da como crédito y además se propone devolver · BLOQUEA
+
+20-fase-2/B8b.md:664 · «**Dado** una predecesora en `SUSPENDED` que retiene un pago por `S19` y se da de baja ella misma» (AC:B8b:20, y TEST:B8b:20, B8b.md:1265) · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:716 y la tabla de actos (rama 6 «disparado por `S23` **o por `S24`** … —o por `S36` desde `GRACE_PERIOD`—»): la rama 6 cubre también la baja desde `GRACE_PERIOD` (`S24`), y el AC y su test sólo ejercen `SUSPENDED` (el default «devolver» de DEC-RF-003 vale para las dos) · MENOR
+
+80-abiertos.md:14-15 y 19, 25, 32, 40-42 · «*«Lo que la propuesta no pudo verificar (sigue abierto)»* (línea 197)» … «(línea 199)» … «(línea 200)» … «(línea 201)» … «(línea 202)» «(línea 203)» «(línea 204)» · cita mal apuntada: en .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md la sección está en la línea 228 y los seis puntos en 230–235 (las líneas 197–204 son hoy la tabla de CF/CG y el «Resultado del corte»); las demás citas de líneas del mismo archivo en este § (124, 137, 144–146, 157, 168) sí apuntan bien · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-2/B8b.md | 1–1394 (salvo 53–340, g-secciones) | 140 | 1 | 1 |
+| 20-fase-3/B10.md | 1–1923 (salvo 90–1197, g-secciones) | 110 | 1 | 0 |
+| 80-abiertos.md | 1–652 | 230 | 0 | 1 |

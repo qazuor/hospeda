@@ -1,0 +1,58 @@
+Grupo S · pasada 7 · vuelta 4 HOS-1352
+Aplicado en branch spec/HOS-1352-billing-verticals-redesign, worktree autorizado.
+Sin commits, sin git mutante, sin subagentes, sin regenerar salidas.
+
+Corrección por corrección:
+H4-VA-A6-1 APLICADA (BLOQUEA): B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+H4-VA-A6-3 APLICADA (BLOQUEA): ESQ:6 omite el instante del canje de promo_redemption, que debe nacer con su esquema en B3.
+H4-VA-A9-1 APLICADA (BLOQUEA): AC:B8b:7 toma cualquier número menor como downgrade, incluso cuando mejora una clave MÍNIMO.
+H4-VB-03-3 APLICADA (MENOR): 03-contrato conserva «las doce siguen», aunque la fuente ya corrigió el recuento a trece.
+H4-VB-07-4 APLICADA (MENOR): V9a atribuye los tres avisos de retención a V9b; BL asigna «al archivar» a V6.
+H4-VB-08-4 APLICADA (BLOQUEA): B2 aún sitúa la mutación del aumento en la fecha efectiva; BZ y el 📌 de CC la sitúan siete días antes por S37.
+H4-VB-08-5 APLICADA (BLOQUEA): La sección UI de B2 manda los tres correos del aumento a B13a, contradiciendo el reparto vigente a B12.
+H4-VB-08-6 APLICADA (BLOQUEA): AC:B3:17 impone alta nueva al reintentar S16 sin exceptuar la predecesora con checkout de sucesión abierto.
+H4-VB-08-7 APLICADA (MENOR): B3 vuelve a presentar como inferencia abierta el lector de S15 que BY ya resolvió.
+H4-VB-09-2 APLICADA (BLOQUEA): B4 exige encolar el aviso de cobertura después del commit; confunde la escritura atómica del outbox con su envío.
+H4-VB-09-3 APLICADA (BLOQUEA): AC:B5:10 exige comprobante de transferencia y omite la referencia del panel admitida por RF4.
+H4-VB-09-4 APLICADA (BLOQUEA): AC:B5:13 y TEST:B5:7 no exigen el aviso al admin al abrir una cuota sin pago, incluida la primera sin S4.
+H4-VB-09-6 APLICADA (BLOQUEA): AC:B6:5 generaliza la relectura del pago y omite que RF3 confirma UNA_VEZ leyendo su orden por id.
+H4-VB-10-2 APLICADA (BLOQUEA): TEST:B7:6 corre S5 sobre un pago retenido por S19 y sobre ACTIVE; AC:B7:9 arrastra la misma mezcla de ramas.
+H4-VB-11-4 APLICADA (BLOQUEA): V9b usa una clave de schedule para la alerta cerrada por PURGED, que es correo de evento.
+H4-VB-12-2 APLICADA (MENOR): AC:B11:23 remite al §6 de conciliación para una regla del §7.
+H4-VB-12-3 APLICADA (BLOQUEA): TEST:B13a:8 oculta de la vista por defecto un pago contracargado; debe mostrarlo y excluirlo sólo de la propuesta de devolución.
+H4-VB-13-4 APLICADA (MENOR): 80-abiertos cierra el creador de domain_event con BN en lugar de BW, que corrigió expresamente esa asignación.
+H4-VB-09-6: además del comportamiento, TEST:B6:6 agrega AC:B6:5 a Cubre y TRANS:B:RF3 a Fuente, conservando referencias existentes y placeholders.
+H4-VB-06-3 APLICADA parte S: LISTA:V6 alineada al retorno diferenciado y reinicio del reloj.
+H4-VB-14-1 APLICADA parte S: paso3 con diecinueve valores y deadline B2 para clave19.
+H4-VB-11-1 y H4-VB-11-2 FUERA DE GRUPO: fuentes y transcripciones g-secciones a cargo F/recongelado.
+FALSO: ninguno en contra.txt. OWNER: ninguno.
+
+Archivos:
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/03-contrato-de-cobertura.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B11.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B13a.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B2.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B3.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V9a.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-2/B8b.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/30-el-corte.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/80-abiertos.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/scripts/generadores/g8/src/B4.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/scripts/generadores/g8/src/B5.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/scripts/generadores/g8/src/B6.md
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/scripts/generadores/g8/src/B7.md
+
+Verificaciones:
+markdownlint: 15 archivos, 0 issues, exit0. /tmp/hos1352-s-markdownlint.txt
+git diff --check exit0.
+trazar.py con posicionales y cobertura: exit1, RECHAZADO (89), sólo R3b fuente cambió desde SHA; requiere recongelado ya previsto. Avisos R18 no bloqueantes (3). /tmp/hos1352-s-trazar.txt
+Se verificaron reemplazos por contenido único, contexto del diff, citas contra fuentes y respeto de placeholders g8. No se editaron 01, 04 ni tramos g-secciones.
+Primer pnpm falló acceso SQLite; repetición escalada completó autoinstall already up to date y prepare (i18n). Verificado git diff packages/i18n/src/types.ts vacío y ningún archivo de producto modificado. Para próximas llamadas usar pnpm --config.verify-deps-before-run=false exec markdownlint-cli2.
+
+Pendiente de integración: commits por grupo, SHA de fuentes, inventario/adjudicación/cobertura, reanclado y sellado, regenerar g1/g3/g8/secciones y validaciones finales.
+
+## Key Learnings:
+Releer orden UNA_VEZ exige vínculo AC→TEST y Fuente RF3; el texto de la prueba solo no basta.
+Las correcciones S pueden pasar lint mientras trazar rechaza honestamente el congelado previo a F.

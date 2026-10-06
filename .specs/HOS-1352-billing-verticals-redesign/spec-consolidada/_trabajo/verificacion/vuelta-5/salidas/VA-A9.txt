@@ -1,0 +1,16 @@
+# VA-A9 · fuente → spec · B/docs/{10-verticales-planes-billing-options,12-suscripcion,21-migracion,22-lo-legal}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:44 · «sin teléfono, sin formulario de contacto y sin hablar con nadie» · distinta en s/2e9ef99e/10-corte/B13a.md:405 («cancelar es self-service, desde Mi Suscripción, en no más pasos que los que costó suscribirse, sin teléfono y sin hablar con nadie»): desaparece la prohibición de exigir un formulario de contacto. AC:B13a:1, línea 561, sólo exige «los mismos pasos o menos que suscribirse, sin teléfono», y TEST:B13a:1, línea 999, sólo cuenta los pasos y comprueba efectos; no impiden incorporar ese formulario al flujo. Búsqueda con rg --hidden en toda s/2e9ef99e/ por «formulario de contacto», «sin formulario», «sin hablar», «sin teléfono» y revisión de B13a/B8a: ninguna regla recupera la prohibición. El decision log y las decisiones del owner del corte no la reemplazan; es un requisito de diseño vigente, independiente de la consulta legal. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| B/docs/10-verticales-planes-billing-options.md | ≈65 | 1–270 | 0 | 0 |
+| B/docs/12-suscripcion.md | ≈120 | 1–1198 | 0 | 0 |
+| B/docs/21-migracion.md | ≈55 | 1–696 | 0 | 0 |
+| B/docs/22-lo-legal.md | ≈30 | 1–196 | 0 | 1 |
+
+Total: 1 BLOQUEA, 0 MENOR. Las cantidades de reglas son aproximadas; se agruparon reiteraciones de una misma regla. Se recorrieron las 2360 líneas de los cuatro archivos, excluyendo como autoridad los tachados y aplicando las precisiones posteriores del log y del owner. Se contrastó la cobertura en toda la spec, incluidas las piezas posteriores al MVP. No se usaron git, trackers ni subagentes. Las skills externas a V no se leyeron por la prohibición explícita de leer fuera de V.

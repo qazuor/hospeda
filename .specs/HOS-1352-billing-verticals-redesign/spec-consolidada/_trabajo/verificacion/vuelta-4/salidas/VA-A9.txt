@@ -1,0 +1,14 @@
+# VA-A9 · fuente → spec · B/docs/{10-verticales-planes-billing-options,12-suscripcion,21-migracion,22-lo-legal}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:110 · «baja es empeora según la estrategia de la clave», «en `SUMA` y `MÁXIMO`, un número menor; en `MÍNIMO`, uno mayor» · distinta en s/5586fad7/20-fase-2/B8b.md:488 («Dado un cambio hacia una versión de `rank` MAYOR con un solo limit menor»; línea 490: «Entonces sigue el camino de DOWNGRADE»). El AC no restringe la estrategia del límite ni exige que el veredicto sea BAJA: incluye el caso de una clave MÍNIMO que pasa de 24 a 4, sin otro deterioro, para el que la fuente exige SUBE y el camino de upgrade inmediato. AC:V2:4 (s/5586fad7/10-corte/V2.md:165–170) sí recoge esa distinción y devuelve SUBE; cumplir literalmente ambos AC resulta incompatible. DEC-ARCH-008 del decision log mantiene la dirección por veredicto y no se encontró una decisión posterior que elimine la favorabilidad por estrategia en P/docs/41-corte-del-mvp/10-decisiones-del-owner.md. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| B/docs/10-verticales-planes-billing-options.md | ≈65 | 1–270 | 0 | 1 |
+| B/docs/12-suscripcion.md | ≈125 | 1–1198 | 0 | 0 |
+| B/docs/21-migracion.md | ≈55 | 1–696 | 0 | 0 |
+| B/docs/22-lo-legal.md | ≈30 | 1–196 | 0 | 0 |

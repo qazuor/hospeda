@@ -1,0 +1,19 @@
+# VB-08 · spec → fuente · 10-corte/B1.md 10-corte/B2.md 10-corte/B3.md
+
+## Hallazgos
+
+10-corte/B2.md:135 · «la base expone `UNIQUE(id, plan_version_id)` para la FK compuesta de `subscription`» · más débil que fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:31 («`UNIQUE(plan_version_id, ciclo)`»): AC:B2:1 y el modelo de datos (líneas 330–338) omiten la unicidad por versión y ciclo. TEST:B2:1 menciona «sus dos `UNIQUE`», pero no identifica el segundo; ninguna aparición de la restricción omitida se encontró en la spec consolidada. El esquema descrito permitiría dos precios del mismo ciclo en una misma versión. · BLOQUEA
+
+10-corte/B2.md:500 · «Una billing option nueva sólo puede publicarse si su monto es múltiplo de cien pesos; los demás montos se rechazan sin redondearlos.» · sin soporte: fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1063 exige un precio sin decimales y el rechazo por debajo de ARS 15; fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:138 (BM) mantiene ese piso y no impone múltiplos de cien. Tampoco aparece esa exigencia en el log ni en las fuentes congeladas. La regla agregada rechazaría, por ejemplo, un precio entero de ARS 150. · BLOQUEA
+
+10-corte/B3.md:210 · «se acuña y **se persiste en `idempotency_key` después** de llamar al proveedor» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:46 («la clave se acuña y **se persiste antes de la primera llamada**») y fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151 (S1: persistir antes de llamar). BN conserva la tabla y sus restricciones, no invierte el orden. Contradice también AC:B3:6 y TEST:B3:1 del mismo archivo: persistir después deja la llamada sin su candado durable. · BLOQUEA
+
+10-corte/B3.md:1270 · «con el correo encolado antes de la cancelación en el falso» · más débil que fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:359 («Si está `sent`, la llamada sale sin otro correo;») y :360 («si todavía no salió, es la rama transitoria de arriba y la llamada espera a esa misma fila»). TEST:B3:28 sólo exige encolar y permite pasar cancelando con el correo todavía pendiente. La regla vigente exige que salga antes, salvo los casos explícitos de no-entregable o `failed`; BP (:141 de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md) exige el correo antes también para esta cancelación del VIP en S2. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B1.md | 1–991 | 200 | 0 | 0 |
+| 10-corte/B2.md | 1–559 | 110 | 2 | 0 |
+| 10-corte/B3.md | 1–1477 | 280 | 2 | 0 |

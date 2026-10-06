@@ -1,0 +1,43 @@
+# VB-B4 · spec → fuente · qué afirma la zona B4 que las fuentes no dicen
+
+Rutas de fuente relativas a `fuentes/`; `D/` = `.specs/HOS-1352-billing-verticals-redesign/docs/`.
+
+## Hallazgos
+
+00-indice.md:150 · «Y toda medición se corre dos veces, con al menos una hora entre las dos, y vale sólo si las dos dan el mismo número» (regla de BT) · más fuerte que D/41-corte-del-mvp/10-decisiones-del-owner.md:145, D/01-decision-log.md:8115 y D/16-fase-7-del-paraguas.md:1072 (BT dice medir una vez, en sólo lectura, dejar el número en el PR y repetir sólo si la salida viene vacía; «una hora» y «dos veces» no aparecen en ningún lugar del corpus) · BLOQUEA
+
+30-el-corte.md:749 · «Los crons se prenden de a uno, empezando por el barrido diario, y el resto recién al día siguiente, para que una corrida rota no arrastre a las demás» (paso 5) · sin soporte; más fuerte que D/16-fase-7-del-paraguas.md:158 (paso 5: «levantar la regla del 0b y prender los crons (`HOSPEDA_CRON_ADAPTER`), después de verificado el 4b», sin escalonamiento) y D/38-fase-5/10-decisiones-del-owner.md:79 (R5-20: «los crons se prenden al confirmar el corte (paso 5)»). Además choca con 5c, que pide «los horarios de los crons el primer día» (D/16:160) · BLOQUEA
+
+30-el-corte.md:1423 · Momento 5: el programa se acepta «y sin ninguna marca `requiere_conciliación` abierta en esos siete días, explicada o no» · más fuerte que D/16-fase-7-del-paraguas.md:1118 y D/01-decision-log.md:7759 (la condición es «siete días seguidos sin una divergencia sin explicar»; una marca abierta y explicada no impide la aceptación) · BLOQUEA
+
+30-el-corte.md:1774 · AC:CORTE:20 entero: «el paso 5 no levanta la regla del 0b ni prende los crons hasta que el receptor lleva 30 minutos seguidos sin un aviso rechazado; si aparece uno, el reloj vuelve a cero y el aviso se revisa antes de seguir» · sin soporte: sus Fuente (PASO:5 = D/16:158, PASO:4b = D/16:156) no tienen ninguna espera; la única espera de 30 minutos del corte era la previa al 1a y salió (D/16:147, «sale la espera de 30 minutos antes del 1a (S-72)»). Es un AC inventado (posible canario) · BLOQUEA
+
+30-el-corte.md:1864 · TEST:CORTE:10 declara `Cubre: … AC:CORTE:20` · arrastra el AC sin soporte de arriba: el test pasaría a verificar una espera de 30 minutos que ninguna fuente pide (su propia descripción, «el paso 5 se ejecuta sólo con el 4b verificado», sí tiene soporte en D/16:158) · MENOR
+
+30-el-corte.md:1915 · TEST:CORTE:17: «antes de abrir la rama de cada fase: la fase anterior ya entró a `staging`» · más fuerte que D/16-fase-7-del-paraguas.md:1159 y 1169, y que D/41-corte-del-mvp/10-decisiones-del-owner.md:83 (AW fija el orden de las cuatro fases y las dependencias del grafo; la fuente marca que no dice si la fase 4 puede adelantarse, y nada impide abrir la rama de una fase antes de que la anterior entre a `staging`) · BLOQUEA
+
+80-abiertos.md:577 · AB-g5-8: «resuelto por las fuentes: `V1` arma con `db:migrate` las bases de desarrollo y de tests» · sin soporte: el lote 2 C (D/38-fase-5/10-decisiones-del-owner.md:57; D/nucleo/02-modelo-de-datos.md:147; D/16-fase-7-del-paraguas.md:161; D/01-decision-log.md:7311) decide que se armen con `db:migrate` pero no asigna pieza; ninguna fila de `V/descomposicion.md` ni el §4.6 se lo da a `V1`. Declara resuelto por las fuentes algo que asigna trabajo a una pieza · BLOQUEA
+
+80-abiertos.md:582 · AB-g6-1: «resuelto por las fuentes: `V5` lo saca de la base, con el principio del lote 1 I» · más fuerte que V/docs/17-autorizacion.md:762 (el lote 1 I lo ejecuta `U1` sobre los permisos del cobro viejo) y V/descomposicion.md:65 y 544 (`V5` saca `USER_IMPERSONATE`, sin decir el carril). Aplicar el principio a `V5` es una derivación sin marcar · MENOR
+
+30-el-corte.md:135 · «La regla del borde de los pasos 0b y 5 […] no son interruptores» · más débil que D/16-fase-7-del-paraguas.md:54 («la regla del borde de los pasos 0b, 3 y 5») · MENOR
+
+00-indice.md:385 · fila 22 de la partición: «las señales de identidad y el seudónimo del correo a verticales» · difiere de D/11-particion-del-programa.md:198 («el hash del correo»). El cambio es real (V/spec.md:68, `C-1`), pero la nota de diferencias de 00-indice.md:390 no lo declara · MENOR
+
+30-el-corte.md:1818 · TEST:CORTE:5 «en el ensayo y el día del corte», con sólo `Etiqueta: staging` · más débil que D/16-fase-7-del-paraguas.md:151 y 1107 (el backup del 2b también se verifica en producción, y el tipo exige la etiqueta de cada ambiente) · MENOR
+
+30-el-corte.md:1852 · TEST:CORTE:9 «en el ensayo y el día del corte», con sólo `Etiqueta: staging` · más débil que D/16-fase-7-del-paraguas.md:153 (el 3a verifica «contra la base de producción») · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| `00-indice.md` | 1–1604 (todas) | ~160 (reglas generales, letras BL a CB, partición, criterios y orden, épicas V y B, filas UNKNOWN) | 1 | 1 |
+| `30-el-corte.md` | 1–1928 (todas) | ~200 (pasos 0 a 6, rama de aborto y §4.3, cartera vieja `B/21`/`V/21`, momentos 1 a 5, fases, smoke, 20 AC y 18 TEST de `CORTE`) | 4 | 4 |
+| `80-abiertos.md` | 1–649 (todas) | ~130 (§1 a §8; las ~100 citas de «NO cierra» se cotejaron también por script contra su línea fuente) | 1 | 1 |
+| `90-retirados.md` | 1–533 (todas) | 40 ítems muertos más el rastro de `B/descomposicion.md` §2.3 | 0 | 0 |
+| **total** | | **~530** | **6** | **6** |
+
+Por categoría: sin soporte 3 (AC:CORTE:20, los crons de a uno, AB-g5-8) · más fuerte que la fuente 5 (las dos mediciones con una hora entre ellas, el momento 5 sin marcas abiertas, TEST:CORTE:17, AB-g6-1, y el arrastre de TEST:CORTE:10) · más débil 3 (los pasos 0b y 5 sin el 3, y la etiqueta de TEST:CORTE:5 y TEST:CORTE:9) · contradice 0 · diferencia no declarada 1 (hash → seudónimo).
+
+Método: primero cotejé cada bloque contra las líneas de su `Origen:`. Después pasé un script de shingles de 5 palabras de toda la zona contra todo el corpus de fuentes (con `.specs/` oculto incluido) para encontrar frases sin rastro, y revisé a mano cada línea marcada. Las citas de «NO cierra» de `80-abiertos.md` las comparé contra su `archivo:línea`. Todo lo demás está sostenido por su fuente o es relato.

@@ -1,0 +1,24 @@
+# Brief · pasada 7 · vuelta 4 (HOS-1352)
+
+Autorizada por el owner el 2026-10-02, incluyendo commits por grupo.
+Plantilla: ../vuelta-3/brief-pasada6.txt. Procedimiento: ../codex/RUNBOOK.md.
+Fuentes de partida: 9149b84a255efc94473ace4458541f4d2278da8d.
+Spec de partida: 5586fad792. Última letra del owner: CJ; no hay nuevas decisiones.
+Insumos: adjudicacion/hallazgos.json, correcciones.txt y contra.txt.
+
+F: cuatro FUENTE y residuos de fuentes asociados a H4-VA-A6-1. El decision log
+sólo recibe un nuevo 📌 y su remisión Estado; no se reemplaza texto histórico.
+Ampliar H4-VB-11-1 a B/09 y acotar la explicación de versión retirada en B/14.
+S: 13 REAL BLOQUEA, 5 REAL MENOR y las transcripciones manuales de FUENTE.
+B4–B7 se editan en scripts/generadores/g8/src. Para H4-VB-09-6 ampliar también
+Cubre con AC:B6:5 y Fuente con TRANS:B:RF3 en TEST:B6:6.
+G fase 1: no aplica; cero GENERADOR. Contra: cero FALSO; no se descarta ninguno.
+
+F y S trabajan en paralelo, sin regeneración concurrente. Commits separados:
+artefactos, F, S y G fase 2 (re-congelado, anclajes y regeneración).
+Tras F y S: SHA al commit de fuentes; inventario, asignar, adjudicar;
+reanclar citas y cobertura, sellar hashes; reanclar secciones/fuentes.json;
+regenerar g1, g3, g8 y secciones. Markdownlint y biome sobre salidas aplicables.
+Verificar trazar, cinco suites de canarios, aristas, contar y markdownlint
+sobre toda la spec, con logs y exit codes. No push ni Linear.
+Los informes archivados son evidencia inmutable; no se aplican canarios a HEAD.

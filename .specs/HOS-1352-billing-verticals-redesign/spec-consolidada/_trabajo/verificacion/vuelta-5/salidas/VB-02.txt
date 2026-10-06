@@ -1,0 +1,17 @@
+# VB-02 · spec → fuente · 02-nucleo.md, 02-nucleo-auditoria.md, 02-nucleo-outbox.md
+
+## Hallazgos
+
+02-nucleo-auditoria.md:59 · «instante en hora local del mercado» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:60 («instante en UTC (cap. 07 §3)»). Cambia el huso de almacenamiento del evento auditable; también contradice 02-nucleo-outbox.md:150 y 10-corte/U2.md:280, que conservan UTC. No hay una decisión posterior que sustituya esa regla. · BLOQUEA
+
+02-nucleo-auditoria.md:410 · «**los dos estados en conflicto**: el nuestro y el del proveedor;» · más débil que fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:490 («**los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura;»). Omite exigir la fecha de cada lectura en la información de investigación de cada entrada: permite construir un diagnóstico con los estados sin sus fechas. No hay una decisión posterior que retire ese dato. · BLOQUEA
+
+02-nucleo-outbox.md:92 · «El cambio de dirección de correo de una cuenta invalida todos sus avisos comerciales pendientes, aunque su ocurrencia siga vigente.» · sin soporte. La fuente del bloque, fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:42, guarda la dirección al encolar y dispone en :43 que «el envío manda a esa dirección, no a la que la cuenta tenga cuando sale»; su jerarquía de supresión (:180–183) contempla rebote duro, cuenta borrada, opt-out y tope diario, sin invalidación por cambio de correo. Tampoco la respaldan el decision log ni las decisiones posteriores del owner. Agrega una causa de supresión que descarta avisos comerciales todavía vigentes, ausente además de 10-corte/U2.md:190–198. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-nucleo.md | 1–1812 | 400 | 0 | 0 |
+| 02-nucleo-auditoria.md | 1–445 | 120 | 2 | 0 |
+| 02-nucleo-outbox.md | 1–417 | 180 | 1 | 0 |

@@ -1,0 +1,17 @@
+# VA-A4 · fuente → spec · V/descomposicion.md; V/docs/10-verticales-planes-billing-options.md; V/docs/11-trial.md; V/docs/15-entitlements-y-limits.md; V/docs/17-autorizacion.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:163 · «Se rechaza entera. No se trunca, y el promo no se consume.» · distinta en s/b249f841/10-corte/V4.md:572 («La extensión que no entra se rechaza entera. No se trunca, y el promo se consume.»). Se invierte el efecto del rechazo por techo: se gastaría el código sin otorgar días. Además contradice AC:B9b:6 en s/b249f841/20-fase-2/B9b.md:166 («con RECHAZADA el código queda intacto») y su TEST en :510. La búsqueda de techo, truncamiento, canje y consumo en el decision log y en las decisiones del owner no encuentra una decisión posterior que autorice consumir el promo rechazado · BLOQUEA
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:530 · «Con más de un título vivo, ancla el que da la cuota; si dos la dan, el que arrancó primero» · ausente (búsqueda con rg --hidden en toda s/b249f841/ por ancla, cuota, dos títulos, arrancó primero y variantes de antigüedad; AC:V3:8, s/b249f841/10-corte/V3.md:237, reemplaza el resultado del caso de dos títulos por «(f) calcula el cupo con el conjunto efectivo», sin decidir el ancla; su regla en :578 y s/b249f841/01-decisiones-vigentes.md:2837 también omiten el desempate, y TEST:V3:10 en :831 sólo remite a esos ocho casos del AC. La fuente viva lo reitera en V/descomposicion.md:484 y en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:640, DEC-ENT-002, segundo 📌; las decisiones posteriores del owner no lo reemplazan. Sin esta regla puede elegirse otro desde y renovar la cuota en otra fecha. Se cuenta una sola vez, sin duplicar la reiteración de descomposicion.md) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| V/descomposicion.md | ≈260, sin duplicar reiteraciones de sus tablas | 1–768 | 0 | 0 |
+| V/docs/10-verticales-planes-billing-options.md | ≈35 | 1–153 | 0 | 0 |
+| V/docs/11-trial.md | ≈65 | 1–473 | 0 | 1 |
+| V/docs/15-entitlements-y-limits.md | ≈85 | 1–596 | 1 | 0 |
+| V/docs/17-autorizacion.md | ≈120 | 1–816 | 0 | 0 |

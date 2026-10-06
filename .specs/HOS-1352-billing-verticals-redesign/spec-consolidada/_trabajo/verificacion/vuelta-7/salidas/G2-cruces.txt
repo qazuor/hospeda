@@ -1,0 +1,9 @@
+s/c1c03210/01-decisiones-vigentes.md:2773:también se renueva cada mes, desde el día en que arrancó la prueba (contra la recomendación).
+s/c1c03210/01-decisiones-vigentes.md:12347:- **elige**: **2**: también se renueva cada mes, desde el día en que arrancó la prueba
+s/c1c03210/10-corte/B9a.md:95:porcentajes se suman y los fijos se suman, y las dos operaciones conmutan. Con dos reglas
+s/c1c03210/10-corte/V3.md:235:  el 28 o 29 de febrero y el 31 de marzo; (b) renueva cada mes aunque pague una vez por año; (c) hasta
+s/c1c03210/10-corte/V3.md:475:quien lo construyera inventaba la clasificación clave por clave. **La clase es un atributo
+s/c1c03210/10-corte/V3.md:584:2. **La prueba gratis también renueva cada mes, desde el día en que arrancó** (`L2-f1`, contra la
+s/c1c03210/04-catalogos.md:201:fuentes ajenas al trial** — exclusivamente la suscripción.
+s/c1c03210/04-catalogos.md:7170:crítico que el cap. 02 §2.1 cerró. **La clase es un atributo declarado de una clave**
+s/c1c03210/10-corte/V4.md:614:**La cuota del trial se renueva cada mes, desde el día en que arrancó la prueba** (revisión del

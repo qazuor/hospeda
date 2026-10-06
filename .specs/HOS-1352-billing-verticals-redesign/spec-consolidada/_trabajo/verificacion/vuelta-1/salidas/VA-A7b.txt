@@ -1,0 +1,51 @@
+# VA-A7b · fuente → spec · reglas que faltan o difieren
+
+Método: script de comparación por cláusula (texto vivo sin `~~…~~`, partido en oraciones, `;`, `:` y
+celdas de tabla; búsqueda normalizada contra toda la spec salvo `90-retirados.md`, por cláusula
+entera o por ventanas de 6 palabras), y revisión manual de cada cláusula que el script no encontró
+(lectura de la fuente y búsqueda en piezas, catálogos, AC y TEST, no sólo donde apunta el `Origen:`).
+
+## Hallazgos
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:687 · «Ninguna credencial de producción la tiene un agente: la corrida mensual y la manual de la batería en producción las dispara una persona o el programador de la batería, nunca quien implementa» · ausente (AC:B1:15 en 10-corte/B1.md:296 cita la línea 687 en su `Origen:` pero no lo dice; tampoco la sección «Seguridad» de B1 ni DEC-TEST-003 y sus 📌; el texto de §4.1 que copia 04-catalogos.md:6615–6656 salta las líneas 687–688) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:762 · «Cada flujo crítico del §5 (alta con los dos checkouts abandonados; impago por los dos caminos —tarjeta: fallido→grace→suspensión con preapproval cancelado→vuelta como sucesora; manual: cuota impaga→grace→suspensión→MP4— y la pausa del proveedor por mora con la fila en ACTIVE, con la sucesión que la frena; cambio de plan y de ciclo; pausa al vencer y anticipada; cancelación con servicio sostenido; revocación, también desde PAUSED; addon con su excedente; migración de un plan retirado con sus salidas y esperas, el pagador manual y el barrido entre S37 y S38) es una prueba de punta a punta contra los builds, con el falso como servidor, el reloj adelantable y el correo capturado, con aserciones sobre el contenido de B/19 §4 y sobre «nuestro correo antes que el del proveedor»; cada unidad escribe la de su flujo: alta B3, mora B7, cambios/pausa/cancelación B8, revocación B5, addon B10, migración B12» · ausente salvo dos piezas (sólo existen el e2e del alta, 10-corte/B3.md:1213 TEST:B3:35, y el del grace que vence, 10-corte/B7.md:1678 TEST:B7:17; B5 y B8a no tienen ningún e2e, y los e2e de B8b, B10 y B12 —20-fase-2/B8b.md:864/1007, 20-fase-3/B10.md:652, 20-fase-3/B12.md:399— son de pantalla, no del flujo contra el falso como servidor con reloj adelantable; el ciclo de impago por pago manual, la pausa del proveedor por mora y los casos de la migración no tienen e2e; la lista de flujos del §5, l. 711–733, no aparece en la spec) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:713 · «Un registro de cobro sin `expire_date` cierra sólo con `processed`: una terminal con el registro del alta en `recycling` y sin `expire_date` no se exime (B11)» · ausente (AC:B11:15 en 10-corte/B11.md:301 dice sólo que una terminal con el registro de su último ciclo abierto sigue en el barrido; ninguna parte de la spec fija cuándo cierra un registro sin `expire_date`) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:714 · «Un registro que el listado devuelve y que da `404` por id se contesta con el pago que el listado nombra: con `404` sobre el registro y `rejected` sobre su pago, corre `S16` y la corrida queda completa (B11)» · ausente (no está en ningún AC ni TEST de B11, ni en catálogos o decisiones) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:717 · «La comprobación de pagos acreditados relee también los pagos `REFUNDED`; un contracargo sobre uno abre `CONTRACARGO` sin `P6`, y el pago sigue `REFUNDED` (B11)» · ausente (AC:B11:12 en 10-corte/B11.md:263 y TEST:B11:11 sólo cubren un pago `SUCCEEDED` reembolsado por fuera; MOT:17 en 04-catalogos.md dice que la comprobación puede leer `charged_back` en un pago acreditado, pero no que relea los `REFUNDED` ni que en ese caso no corra `P6`) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:74 · «El canal de los avisos de aumento es el correo transaccional, no una notificación dentro del producto, porque ésta no deja constancia de llegada» · ausente como regla explícita (el catálogo de correos de 02-nucleo-outbox.md:175 y :289 pone el aviso de aumento como correo transaccional no suprimible; que no valga una notificación dentro del producto no se dice) · MENOR
+
+## Resumen por archivo
+
+| archivo | cláusulas que recorrió el script | normativas vivas revisadas a mano (aprox.) | líneas recorridas | ausente | distinta |
+|---|---|---|---|---|---|
+| `spec.md` | 336 | ~60 | 1–348 | 0 | 0 |
+| `docs/20-testing.md` | 918 | ~190 | 1–807 | 2 | 0 |
+| `docs/21-migracion.md` | 407 | ~70 | 1–696 | 0 | 0 |
+| `docs/22-lo-legal.md` | 159 | ~35 | 1–196 | 1 (MENOR) | 0 |
+| `descomposicion.md` | 1854 | ~420 | 1–1138 | 3 | 0 |
+| **total** | **3674** | **~775** | | **6** (5 BLOQUEA, 1 MENOR) | **0** |
+
+Notas sobre lo revisado y no reportado:
+
+- `spec.md`: está rendida casi literal en `00-indice.md:1240–1603`. Lo único que se cae es narración
+  histórica (por ejemplo, la batería de Mobbex «escrita y lista», l. 46).
+- `21-migracion.md`: §1–§3 están en `30-el-corte.md:984–1246`, §4 en `10-corte/U1.md:451–532` y el
+  «NO cierra» en `80-abiertos.md:384–394`. Lo vivo está completo.
+- `22-lo-legal.md`: §1.1 está en el AC:B13a:1 y en la US:B13a:1. §1.2 está repartido en el outbox:
+  los campos, la clave con fecha objetivo vigente y los avisos transaccionales no suprimibles. §2.2
+  está en `10-corte/B5.md`. §2.1, §4 y el «NO cierra» están en `80-abiertos.md` §5 y §6.
+- `20-testing.md`: §2 y §2.1 están copiados en `04-catalogos.md:7066–7427` y en las fichas de los
+  guards. §3 está en M1–M13 y RP1–RP12. §4 y §4.1 están en `04-catalogos.md:6593–6656` (salvo
+  l. 687–688). §5.1 puntos 1, 2 y 4 están en B1 y en B13a. §6 está en B1.
+- `descomposicion.md`: las filas del §2 (FILA:B*), el «Lista cuando» del §4 (LISTA:B*), el §2.6
+  (DEP), el §2.9, el §2.12 (TRANS por pieza, que coinciden una por una) y las flechas del §3
+  («Espera a» de cada pieza) están rendidos. El §2.3 lo declara rastro la misma fuente (l. 206),
+  salvo la tabla «Política y forma», que está en `03-contrato-de-cobertura.md` §9.2. Discrepancia
+  menor no listada: la `external_reference` de la orden con el identificador del pedido figura en
+  B1 (`10-corte/B1.md:463`), no en B10 como asigna la tabla del §2.11; la regla está, cambia la
+  pieza.

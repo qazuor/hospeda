@@ -1,0 +1,18 @@
+# VB-07 · spec → fuente · 20-fase-4/V7.md, 10-corte/V8a.md, 20-fase-4/V8b.md, 10-corte/V9a.md
+
+## Hallazgos
+
+10-corte/V8a.md:453 · «La pricing sólo muestra importes a una sesión autenticada; a un visitante sin sesión le pide ingresar antes de consultar el precio de cualquier plan.» · sin soporte: ni el capítulo de superficies del bloque (fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:45), ni la pricing de billing (fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:44 y §7), ni el decision log ni las decisiones posteriores del owner establecen esta restricción. Agrega una condición de autenticación para consultar precios que las fuentes no mandan · BLOQUEA
+
+20-fase-4/V8b.md:59 · «abrir un link ya usado con su secreto muestra la fila 32» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:721 («abrir un link ya usado con su secreto muestra la fila 32 y no dice a qué cuenta está vinculado»): omite la prohibición de revelar la cuenta vinculada. También falta en AC:V8b:3 (líneas 124–126) y en la transcripción de la fila 32 en 10-corte/V8a.md:396, cuya fuente, fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:79, exige «No lo vincula ni dice a qué cuenta está vinculado». El test que dice «sin cuenta» no explicita esta prohibición en el criterio ni en la regla. Una pantalla que identifique al dueño podría cumplir esos criterios truncados. Se cuenta una sola vez esta omisión repetida · BLOQUEA
+
+10-corte/V9a.md:57 · «escribe desde el día siguiente al corte» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:72 («escribe desde el día del corte»), ratificado por su criterio de salida en la línea 723 y por AC/BW del owner. También contradice el objetivo de este mismo archivo (línea 10), LISTA:V9a (líneas 110–111) y AC:V9a:4 (líneas 171–177). Retrasa un día el registro de actos del dueño, que no se reconstruyen, y deja sin esa evidencia la actividad del día del corte · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-4/V7.md | 1–1074 | 280 | 0 | 0 |
+| 10-corte/V8a.md | 1–657 | 210 | 1 | 0 |
+| 20-fase-4/V8b.md | 1–306 | 100 | 1 | 0 |
+| 10-corte/V9a.md | 1–312 | 100 | 1 | 0 |

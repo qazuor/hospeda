@@ -1,0 +1,932 @@
+{
+    "unicos": [
+        {
+            "id": "H7-VB-08-2",
+            "grupo": null,
+            "miembros": ["H7-VB-08-2"],
+            "veredicto": "REAL",
+            "clase_final": "BLOQUEA",
+            "relacionados": ["H2-VA8-11"],
+            "resumen": "AC:B1:20 y Seguridad extienden el guard de entorno a toda sonda, incluidas las de sólo lectura; la fuente lo exige a lo que muta.",
+            "verificadores": ["VB-08"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:214–220: GET /users/me distingue el entorno; «Todo lo que mute algo abre con ese guard».",
+                ".specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:402–408: «toda sonda que mute»; la batería hereda los dos guards de esa tabla, sin ampliar su alcance.",
+                ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:663–664, 672: RP7–RP11 se releen sin mutar; la batería conserva el alcance de los guards del capítulo 06.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7187–7213 (DEC-TEST-003 y su 📌): la batería y la autorización mensual no agregan el guard a toda lectura. Las letras del corte tampoco lo amplían.",
+                "pristina/10-corte/B1.md:357–364, 635, 768–770: el AC y Seguridad difieren de su propia tabla; la inferencia marcada sólo justifica abortar ante una cuenta equivocada.",
+                "Vuelta 2, H2-VA8-11 (REAL MENOR): pidió llevar los guards a un AC, pero su entra introdujo «toda sonda o mutación». Se conserva el AC y se corrige ese alcance. No fue un FALSO anterior.",
+                "pristina/10-corte/B1.md:917–921: TEST:B1:19 ya sitúa el aborto antes de la primera mutación; no exige extenderlo a las lecturas. B1 es manual, no salida g8 ni tramo g-secciones."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/B1.md",
+                    "linea": 357,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "- **Cuando** va a hacer una sonda o una mutación contra el proveedor, y cuando va a hacer una que mueve\n  plata",
+                    "entra": "- **Cuando** va a hacer una operación que muta algo en el proveedor, y cuando va a hacer una sonda\n  que mueve plata"
+                },
+                {
+                    "archivo": "10-corte/B1.md",
+                    "linea": 359,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "- **Entonces** toda sonda o mutación abre con `GET /users/me` y aborta, sin mandar nada, si la cuenta no",
+                    "entra": "- **Entonces** toda operación que muta algo abre con `GET /users/me` y aborta, sin mandar nada, si la cuenta no"
+                },
+                {
+                    "archivo": "10-corte/B1.md",
+                    "linea": 768,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "van como AC propio ([AC:B1:20](#ac-b1-20)): toda sonda o mutación contra el proveedor abre con",
+                    "entra": "van como AC propio ([AC:B1:20](#ac-b1-20)): toda operación que muta algo en el proveedor abre con"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Ampliación de un cuantificador al convertir la regla en AC.",
+            "patron": "P-ALCANCE",
+            "informes_originales": {
+                "VB-08-2": "10-corte/B1.md:359 · «toda sonda o mutación abre con `GET /users/me`» · más fuerte que .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:402 («toda sonda que mute abre con `GET /users/me`»). AC:B1:20 extiende el requisito y su aborto a sondas de sólo lectura; la fuente lo impone a las mutaciones (también en :218) y la batería hereda ese alcance (:408; docs/20-testing.md:672). La propia tabla de B1.md:635 conserva «toda sonda que mute», mientras B1.md:768 repite la ampliación. La inferencia declarada explica abortar ante una cuenta equivocada, pero no sustenta ampliar el conjunto de operaciones sujetas al guard. · BLOQUEA"
+            }
+        },
+        {
+            "id": "H7-VB-13-3",
+            "grupo": null,
+            "miembros": ["H7-VB-13-3"],
+            "veredicto": "REAL",
+            "clase_final": "BLOQUEA",
+            "relacionados": ["H3-VB13-6"],
+            "resumen": "80-abiertos:355 conserva el comienzo del reintento en la fecha efectiva; la fuente congelada actual exige contarlo desde S37, siete días antes.",
+            "verificadores": ["VB-13"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:739–742: la pregunta anterior está tachada y el cierre vivo dice «desde `S37`», siete días antes de la fecha efectiva.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478–1499: BZ define la migración S37/S38; el 📌 de CC precisa expresamente que la mutación es siete días antes y que ningún cobro sale al nuevo precio antes de la fecha efectiva.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:169: BZ remite a S37/S38; se leyó además el 📌 que la aplica, no sólo la fila.",
+                "pristina/10-corte/B11.md:250 y 80-abiertos.md:355: el cuerpo operativo conserva S37, pero el resumen del cierre declara otro origen del plazo.",
+                "Vuelta 3, H3-VB13-6 (REAL MENOR): ordenó copiar «fecha efectiva» porque ésa era entonces la fuente citada. La fuente del SHA actual ya fue corregida a S37; no se reabre la decisión del owner ni se vuelve a juzgar el mismo congelado.",
+                "80-abiertos es redacción manual: no corresponde cambiar g1, g3, g8 ni g-secciones. Aunque no tenga AC propios, el resumen del cierre no debe postergar siete días una regla vigente."
+            ],
+            "correccion": [
+                {
+                    "archivo": "80-abiertos.md",
+                    "linea": 355,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "y los 3 días del reintento de monto corren desde su fecha efectiva (`B/14` §2.4), como dice la fuente",
+                    "entra": "y los 3 días del reintento de monto corren desde `S37`, que muta el monto siete días antes de la fecha efectiva (`B/14`, cierre de «El instante del aumento de precio»; `B/09` §3; `DEC-MP-002` y su 📌 de CC), como dice la fuente"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Resumen que no acompañó la corrección posterior de su fuente.",
+            "patron": "P-CONGELADO",
+            "informes_originales": {
+                "VB-13-3": "80-abiertos.md:355 · «los 3 días del reintento de monto corren desde su fecha efectiva» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:742 («reintento de monto de un aumento corren desde `S37`, la transición que muta el monto siete días antes de la fecha efectiva»). BZ y la precisión de CC en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1495–1498 conservan la mutación anticipada. La frase retrasa siete días el origen del plazo de conciliación; también contradice 10-corte/B11.md:250, que lo cuenta desde S37 · BLOQUEA"
+            }
+        },
+        {
+            "id": "H7-VB-13-5",
+            "grupo": null,
+            "miembros": ["H7-VB-13-5"],
+            "veredicto": "FUENTE",
+            "clase_final": null,
+            "relacionados": ["H4-VB-08-4"],
+            "resumen": "80-abiertos:451 transcribe fielmente el residuo de B/22:87 que sitúa la mutación en la fecha efectiva. El 📌 de CC ya lo reemplaza por S37 siete días antes.",
+            "verificadores": ["VB-13"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:87: contiene literalmente «llegada la fecha efectiva **el monto se muta automáticamente**». El texto está vivo, no tachado.",
+                "pristina/80-abiertos.md:451 (453 en la copia ciega): misma fila, salvo el enlace de DEC-MP-002. La divergencia ya está en la fuente.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1495–1499: precisión expresa de CC sobre la parte 3; se muta por S37 siete días antes, pero el primer cobro al precio nuevo espera la fecha efectiva.",
+                ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:92–94: el riesgo aceptado es la falta de aceptación activa; corregir cuándo se muta no cambia esa decisión ni requiere otra letra.",
+                "Vuelta 4, H4-VB-08-4: corrigió el mismo residuo temporal en B2. Esta ubicación de B/22 es adicional. No es un fallo del generador ni una decisión OWNER pendiente."
+            ],
+            "correccion": [],
+            "correccion_fuente": [
+                {
+                    "archivo": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+                    "linea": 87,
+                    "sale": "llegada la fecha efectiva **el monto se muta automáticamente**; el cliente no acepta nada, puede cancelar antes",
+                    "entra": "**`S37` muta el monto automáticamente siete días antes de la fecha efectiva**, y **ningún cobro sale al precio nuevo antes de esa fecha** (`DEC-MP-002`, 📌 de CC, leído con BZ); el cliente no acepta nada, puede cancelar antes",
+                    "propagacion": {
+                        "archivo": "80-abiertos.md",
+                        "linea": 451,
+                        "generado": false,
+                        "donde_va": "Primero en B/docs/22-lo-legal.md:87; re-congelar y actualizar la transcripción manual.",
+                        "sale": "llegada la fecha efectiva **el monto se muta automáticamente**; el cliente no acepta nada, puede cancelar antes",
+                        "entra": "**`S37` muta el monto automáticamente siete días antes de la fecha efectiva**, y **ningún cobro sale al precio nuevo antes de esa fecha** (`DEC-MP-002`, 📌 de CC, leído con BZ); el cliente no acepta nada, puede cancelar antes"
+                    }
+                }
+            ],
+            "pregunta_owner": null,
+            "causa": "Residuo vivo en una tabla legal anterior al 📌 de CC, copiado fielmente.",
+            "patron": "P-FUENTE",
+            "informes_originales": {
+                "VB-13-5": "80-abiertos.md:453 · «llegada la fecha efectiva **el monto se muta automáticamente**» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1495–1498 («la parte 3, *«llegada esa fecha, el monto se muta»*, se lee con BZ»; «`S37` muta el monto siete días antes de la fecha, y lo que se conserva es que **ningún cobro sale al precio nuevo antes de esa fecha**»). Aunque transcribe la tabla anterior de B/22, presenta como supuesto vigente una mecánica reemplazada por la precisión de CC: confunde la fecha de mutación con la fecha del cobro al nuevo precio · BLOQUEA"
+            }
+        }
+    ],
+    "canarios": [
+        {
+            "numero": 1,
+            "bloque": "VB-01",
+            "tipo": "MODIFICA",
+            "ubicacion": "02-nucleo-glosario.md:469",
+            "detectores": ["VB-01"],
+            "propio": true,
+            "hallazgos": ["VB-01-2"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:511",
+            "confirmacion": "Invierte el predicado de grant vivo y permite tratar grants revocados como vigentes.",
+            "hallazgos_parciales": [],
+            "sale": "**no se enumera con estados: es una columna.** `revocado_en` **nulo**",
+            "entra": "**no se enumera con estados: es una columna.** `revocado_en` **no nulo**",
+            "informes_originales": {
+                "VB-01-2": "02-nucleo-glosario.md:469 · «`revocado_en` **no nulo**» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:511 («`revocado_en` **nulo**») · BLOQUEA"
+            }
+        },
+        {
+            "numero": 2,
+            "bloque": "VB-02",
+            "tipo": "MODIFICA",
+            "ubicacion": "02-nucleo-outbox.md:34",
+            "detectores": ["VB-02"],
+            "propio": true,
+            "hallazgos": ["VB-02-3"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:42",
+            "confirmacion": "Envía avisos pendientes al seudónimo tras la baja en vez de al destinatario original.",
+            "hallazgos_parciales": [],
+            "sale": "el envío manda a esa dirección, no a la que la cuenta tenga cuando sale.",
+            "entra": "el envío manda a la dirección que la cuenta tenga cuando sale, no a la guardada al encolarse.",
+            "informes_originales": {
+                "VB-02-3": "02-nucleo-outbox.md:34 · «el envío manda a la dirección que la cuenta tenga cuando sale, no a la guardada al encolarse.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:43 («el envío manda a esa dirección, no a la que la cuenta tenga cuando sale.»): invierte la dirección de entrega y rompe los correos encolados antes de seudonimizar la cuenta. También contradice 02-nucleo-outbox.md:195 y 10-corte/U2.md:138, que conservan el destinatario guardado al encolar · BLOQUEA"
+            }
+        },
+        {
+            "numero": 3,
+            "bloque": "VB-03",
+            "tipo": "MODIFICA",
+            "ubicacion": "02-nucleo-modelo-y-maquinas.md:276",
+            "detectores": ["VA-A1", "VB-03"],
+            "propio": true,
+            "hallazgos": ["VB-03-2", "VA-A1-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:83",
+            "confirmacion": "Permite ejecutar una transición ambigua en vez de rechazarla y escalar el conflicto.",
+            "hallazgos_parciales": [],
+            "sale": "**Qué pasa si igual se solapan**: el intento **cae en la regla 1** —no se ejecuta, se registra como ↵    evento de dominio y, si tocaba plata o estado, pone la marca—.",
+            "entra": "**Qué pasa si igual se solapan**: el intento **ejecuta la primera fila declarada** y registra el evento de dominio sin poner la marca.",
+            "informes_originales": {
+                "VB-03-2": "02-nucleo-modelo-y-maquinas.md:276 · «el intento **ejecuta la primera fila declarada** y registra el evento de dominio sin poner la marca.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:83 («el intento **cae en la regla 1** —no se ejecuta, se registra como evento de dominio y, si tocaba plata o estado, pone la marca—.») · BLOQUEA",
+                "VA-A1-1": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:83 · «Qué pasa si igual se solapan: el intento cae en la regla 1 —no se ejecuta, se registra como evento de dominio y, si tocaba plata o estado, pone la marca—» · distinta en s/c1c03210/02-nucleo-modelo-y-maquinas.md:276 («el intento **ejecuta la primera fila declarada** y registra el evento de dominio sin poner la marca»). La spec introduce precedencia y permite ejecutar una transición ambigua, mientras la fuente exige detenerla y marcarla. Buscados «solap», «guardas», «precedencia» y «primera fila» en el decision log y las decisiones del owner del corte: no hay reemplazo posterior que autorice este comportamiento. · BLOQUEA"
+            }
+        },
+        {
+            "numero": 4,
+            "bloque": "VB-04",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/V1.md:36",
+            "detectores": ["VB-04"],
+            "propio": true,
+            "hallazgos": ["VB-04-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:61",
+            "confirmacion": "Exige instalar el trigger antes del carril que debe crearlo, alterando la migración.",
+            "hallazgos_parciales": [],
+            "sale": "recibe su trigger de `set_updated_at` después de ↵    `db:apply-extras`",
+            "entra": "recibe su trigger de `set_updated_at` antes de ↵    `db:apply-extras`",
+            "informes_originales": {
+                "VB-04-2": "10-corte/V1.md:36 · «y la prueba de que una tabla recién creada recibe su trigger de `set_updated_at` antes de `db:apply-extras`, con la primera tabla nueva» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:61 («y la prueba de que una tabla recién creada recibe su trigger de `set_updated_at` después de `db:apply-extras`, con la primera tabla nueva»): adelanta la creación exigida del trigger al carril previo a los extras; contradice además LISTA:V1:6 (línea 71), AC:V1:8 (línea 235) y TEST:V1:12 (línea 458) · BLOQUEA"
+            }
+        },
+        {
+            "numero": 5,
+            "bloque": "VB-05",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/V3.md:376",
+            "detectores": ["VB-05"],
+            "propio": true,
+            "hallazgos": ["VB-05-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:140",
+            "confirmacion": "Invierte la elegibilidad del título y otorga complementos durante el trial.",
+            "hallazgos_parciales": [],
+            "sale": "de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que NO sea de",
+            "entra": "de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que sea de",
+            "informes_originales": {
+                "VB-05-2": "10-corte/V3.md:376 · «de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que sea de» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:140 («las de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que NO sea de»), completado en ambos textos por `tipo: TRIAL` en la línea siguiente. La spec invierte el predicado: admitiría complementos con el trial como único título y los descartaría cuando sólo hubiera suscripción, cortesía o grant. También contradice AC:V3:2 (10-corte/V3.md:146), TEST:V3:2 (10-corte/V3.md:773) y la regla de 10-corte/V4.md:651. · BLOQUEA"
+            }
+        },
+        {
+            "numero": 6,
+            "bloque": "VB-06",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/V5.md:430",
+            "detectores": ["VA-A4", "VB-06"],
+            "propio": true,
+            "hallazgos": ["VB-06-1", "VA-A4-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:231",
+            "confirmacion": "Permite enviar mensajes sobre una ficha purgada, que debe ser sólo lectura.",
+            "hallazgos_parciales": [],
+            "sale": "su conversación sobre la `PURGED` se lee entera y no admite ↵   mensajes.",
+            "entra": "su conversación sobre la `PURGED` se lee entera y admite ↵   mensajes.",
+            "informes_originales": {
+                "VB-06-1": "10-corte/V5.md:430 · «su conversación sobre la `PURGED` se lee entera y admite mensajes.» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:231 («sobre una ficha que ya no se publica, y en sólo lectura sobre una `PURGED`») · BLOQUEA",
+                "VA-A4-2": "fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:230 · «Leer la propia conversación sigue siendo una lectura de lo suyo, también sobre una ficha que ya no se publica, y en sólo lectura sobre una `PURGED`» · distinta en s/c1c03210/10-corte/V5.md:430 («su conversación sobre la `PURGED` se lee entera y admite mensajes»), dentro de AC:V5:25. La misma regla de la fuente se repite en V/descomposicion.md:515 («su conversación sobre una `PURGED` se lee entera y no admite mensajes») y la ratifica DEC-DATA-005, 📌 del 2026-09-27, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6092. El AC también contradice TEST:V5:30 (V5.md:1500: «rechaza un mensaje nuevo») y AC:V8a:5 (V8a.md:205: «no admite mensajes nuevos»); no hay una decisión posterior que habilite esa escritura · BLOQUEA"
+            }
+        },
+        {
+            "numero": 7,
+            "bloque": "VB-07",
+            "tipo": "MODIFICA",
+            "ubicacion": "20-fase-4/V8b.md:57",
+            "detectores": ["VA-A5", "VB-07"],
+            "propio": true,
+            "hallazgos": ["VB-07-2", "VA-A5-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:90",
+            "confirmacion": "El panel pierde las aprobaciones pendientes de reclamo y muestra otra población.",
+            "hallazgos_parciales": [],
+            "sale": "las `APROBADA` sin reclamar como un dato, y desde",
+            "entra": "las `APROBADA` ya reclamadas como un dato, y desde",
+            "informes_originales": {
+                "VB-07-2": "20-fase-4/V8b.md:57 · «las `APROBADA` ya reclamadas como un dato» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:90 («las **postulaciones de Partner atrasadas** y las **aprobadas sin reclamar**»), precisado por fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:643 («**El panel lee *«aprobada sin reclamar»* así**: `postulacion.estado = APROBADA` y el `partner` de su»), con `owner_user_id` nulo en la línea siguiente. El criterio de salida sustituye la población que debe hacerse visible; también contradice AC:V8b:2 (líneas 114–116), TEST:V8b:2 (226–227) y 10-corte/V8a.md:407 · BLOQUEA",
+                "VA-A5-1": "fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:90 · «las **postulaciones de Partner atrasadas** y las **aprobadas sin reclamar**» · distinta en s/c1c03210/20-fase-4/V8b.md:57 («las `APROBADA` ya reclamadas como un dato»). LISTA:V8b exige una población distinta de la fuente. AC:V8b:2 (línea 114) y TEST:V8b:2 (línea 226) conservan “sin reclamar”, por lo que queda una contradicción entre el criterio de salida y su aceptación: seguir el primero cambia qué postulaciones debe mostrar el panel. · BLOQUEA"
+            }
+        },
+        {
+            "numero": 8,
+            "bloque": "VB-08",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B2.md:113",
+            "detectores": ["VB-08"],
+            "propio": true,
+            "hallazgos": ["VB-08-3"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1063",
+            "confirmacion": "Admite dinero con decimales cuando el modelo exige enteros en unidad mínima.",
+            "hallazgos_parciales": [],
+            "sale": "2. un precio con decimales **no se puede guardar**;",
+            "entra": "2. un precio con decimales **se puede guardar**;",
+            "informes_originales": {
+                "VB-08-3": "10-corte/B2.md:113 · «un precio con decimales **se puede guardar**» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1063 («un precio con decimales **no se puede guardar**»). Invierte el criterio de salida de B2 y contradice AC:B2:1 (B2.md:137), AC:B2:9 (B2.md:239) y TEST:B2:2 (B2.md:415), que exigen rechazarlo. BM, CC y CF precisan el cambio de precio y su reparto, sin autorizar decimales. · BLOQUEA"
+            }
+        },
+        {
+            "numero": 9,
+            "bloque": "VB-09",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B4.md:51",
+            "detectores": ["VA-A2", "VB-09"],
+            "propio": true,
+            "hallazgos": ["VB-09-1", "VA-A2-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:60",
+            "confirmacion": "Reinicia la ventana de cancelación en cada relectura y puede impedir la baja de cuenta indefinidamente.",
+            "hallazgos_parciales": [],
+            "sale": "el instante de la primera relectura que vio el preapproval",
+            "entra": "el instante de la última relectura que vio el preapproval",
+            "informes_originales": {
+                "VB-09-1": "10-corte/B4.md:51 · «el instante de la última relectura que vio el preapproval» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:271 («el instante de la primera relectura por id que vio el preapproval `cancelled`»; las líneas 272–273 prohíben reescribirlo en las siguientes). Guardar la última relectura reiniciaría el plazo 16 y demoraría indefinidamente la exención y la baja de cuenta. También contradice AC:B4:11, líneas 220–222, y el modelo de B4, líneas 320–326. CH mantiene la regla del capítulo; no autoriza actualizar el instante · BLOQUEA",
+                "VA-A2-1": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1132 · «el instante de la primera relectura que vio el preapproval `cancelled`» · distinta en s/c1c03210/10-corte/B4.md:51 («el instante de la última relectura que vio el preapproval»). Incoherencia interna acotada a la descripción de FILA:B4: AC:B4:11 (líneas 214–222), el modelo (línea 321) y TEST:B4:11 (líneas 483–486) exigen conservar el primer instante y no moverlo en relecturas posteriores, por lo que el comportamiento exigido por los criterios y la prueba sí coincide con la fuente. La precisión CH y el 📌 de DEC-ARCH-017 en el log, línea 8078, no reemplazan esa regla · MENOR"
+            }
+        },
+        {
+            "numero": 10,
+            "bloque": "VB-10",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B7.md:26",
+            "detectores": ["VB-10"],
+            "propio": true,
+            "hallazgos": ["VB-10-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:141",
+            "confirmacion": "Demora la escalada de un cobro indeterminado dos días.",
+            "hallazgos_parciales": [],
+            "sale": "5. **un *«todavía no se sabe»* que dura 3 días abre la marca 21** (3d);",
+            "entra": "5. **un *«todavía no se sabe»* que dura 5 días abre la marca 21** (3d);",
+            "informes_originales": {
+                "VB-10-1": "10-corte/B7.md:26 · «un *«todavía no se sabe»* que dura 5 días abre la marca 21» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:141 («un *«todavía no se sabe»* que dura 3 días abre la marca 21»). La regla vigente de fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1072–1074 exige abrirla a los 3 días desde date_created; DEC-CONC-002, segundo 📌, mantiene los 3 días. La propia spec exige 3 en AC:B7:8 (líneas 192–194), LISTA:B7 (390) y TEST:B7:4 (1598). Aplicar el alcance retrasaría dos días la intervención · BLOQUEA"
+            }
+        },
+        {
+            "numero": 11,
+            "bloque": "VB-11",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B9a.md:48",
+            "detectores": ["VB-11"],
+            "propio": true,
+            "hallazgos": ["VB-11-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:145",
+            "confirmacion": "Consume descuentos no entregados al cliente.",
+            "hallazgos_parciales": [],
+            "sale": "el contador de una promo baja sólo con un cobro que salió con el descuento",
+            "entra": "el contador de una promo baja con cualquier cobro acreditado, aunque haya salido sin el descuento",
+            "informes_originales": {
+                "VB-11-1": "10-corte/B9a.md:48 · «el contador de una promo baja con cualquier cobro acreditado, aunque haya salido sin el descuento» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:145 («el contador de una promo baja sólo con un cobro que salió con el descuento»), confirmado por fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:249 («el contador baja sólo si el importe cobrado no pasa del monto esperado con esa promo aplicada») y el 📌 R20 de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5507. También contradice AC:B9b:4 (20-fase-2/B9b.md:141) y LISTA:B9 (10-corte/B9a.md:1045): consumiría la promo aunque el cliente hubiera pagado el precio entero · BLOQUEA"
+            }
+        },
+        {
+            "numero": 12,
+            "bloque": "VB-12",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B11.md:35",
+            "detectores": ["VA-A8", "VB-12"],
+            "propio": true,
+            "hallazgos": ["VB-12-1", "VA-A8-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:212",
+            "confirmacion": "Excluye terminales antes de conciliar su último ciclo y pierde cobros tardíos.",
+            "hallazgos_parciales": [],
+            "sale": "la exención de una terminal espera a que cierre el registro de cobro de su último ciclo",
+            "entra": "la exención de una terminal espera a que cierre el registro de cobro de su penúltimo ciclo",
+            "informes_originales": {
+                "VB-12-1": "10-corte/B11.md:35 · «la exención de una terminal espera a que cierre el registro de cobro de su penúltimo ciclo» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:149 («la exención de una terminal espera a que cierre el registro de cobro de su último ciclo») y fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:212 («dos, recién cuando cerró el registro de cobro del último ciclo de su preapproval»); contradicción interna con AC:B11:15, 10-corte/B11.md:1597–1599, que exige el último ciclo · BLOQUEA",
+                "VA-A8-1": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:212 · «dos, recién cuando cerró el registro de cobro del último ciclo de su preapproval» · distinta en s/c1c03210/10-corte/B11.md:35 («la exención de una terminal espera a que cierre el registro de cobro de su penúltimo ciclo»). Exime antes de cerrar el último registro, que todavía puede cobrar; contradice además la transcripción de B11.md:277 y AC:B11:15 en B11.md:1597. La búsqueda en el decision log y las decisiones del owner no encontró una precisión que sustituya último por penúltimo · BLOQUEA"
+            }
+        },
+        {
+            "numero": 13,
+            "bloque": "VB-13",
+            "tipo": "MODIFICA",
+            "ubicacion": "20-fase-3/B10.md:41",
+            "detectores": ["VB-13"],
+            "propio": true,
+            "hallazgos": ["VB-13-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2535",
+            "confirmacion": "Deja el addon gratuito esperando una autorización que nunca se generará.",
+            "hallazgos_parciales": [],
+            "sale": "`ACTIVE` en el acto, sin preapproval ni orden, sin `payment` ni comprobante, con el ancla como",
+            "entra": "`PENDING_AUTHORIZATION` en el acto, sin preapproval ni orden, sin `payment` ni comprobante, con el ancla como",
+            "informes_originales": {
+                "VB-13-1": "20-fase-3/B10.md:41 · «`PENDING_AUTHORIZATION` en el acto, sin preapproval ni orden, sin `payment` ni comprobante, con el ancla como» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148 («`ACTIVE` en el acto, sin preapproval ni orden, sin `payment` ni comprobante, con el ancla como título»); CD y CE siguen vigentes en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:183 y :192, y fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2535 dice «No pasa por `PENDING_AUTHORIZATION` porque no hay nada que autorizar». Contradicción interna con AC:B10:12 (línea 1435): la fila de alcance dejaría el addon gratuito esperando una autorización inexistente · BLOQUEA"
+            }
+        },
+        {
+            "numero": 14,
+            "bloque": "G1",
+            "tipo": "MODIFICA",
+            "ubicacion": "01-decisiones-vigentes.md:136",
+            "detectores": ["G1"],
+            "propio": true,
+            "hallazgos": ["G1-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:374",
+            "confirmacion": "Habilita días de prueba para Partner aunque la decisión vigente los fija en cero.",
+            "hallazgos_parciales": [],
+            "sale": "días de trial. **Los planes de Partner lo tienen en ↵   cero hoy.**",
+            "entra": "días de trial. **Los planes de Partner lo tienen en ↵   catorce hoy.**",
+            "informes_originales": {
+                "G1-1": "01-decisiones-vigentes.md:136 · «catorce hoy.**» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:375 («cero hoy.**»); cambia la duración del trial de Partner de 0 a 14 días · BLOQUEA"
+            }
+        },
+        {
+            "numero": 15,
+            "bloque": "G2",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B9a.md:95",
+            "detectores": ["G2", "VA-A10"],
+            "propio": true,
+            "hallazgos": ["G2-7", "VA-A10-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:49",
+            "confirmacion": "Compone porcentajes por suma en vez de multiplicarlos y cobra un importe distinto.",
+            "hallazgos_parciales": [],
+            "sale": "porcentajes se multiplican y los fijos se suman",
+            "entra": "porcentajes se suman y los fijos se suman",
+            "informes_originales": {
+                "G2-7": "10-corte/B9a.md:95 · «porcentajes se suman y los fijos se suman» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:49 («porcentajes se multiplican y los fijos se suman»; cambia el cálculo del monto compuesto al apilar descuentos porcentuales) · BLOQUEA",
+                "VA-A10-1": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:49 · «porcentajes se multiplican y los fijos se suman» · distinta en s/c1c03210/10-corte/B9a.md:95 («porcentajes se suman y los fijos se suman»). Cambia el importe de las promos apiladas: 15 % y 10 % sobre ARS 9.999 dan 7.649,23 por composición multiplicativa y 7.499,25 sumando los porcentajes. También contradice AC:B9b:1 (s/c1c03210/20-fase-2/B9b.md:108), que conserva el primer resultado. Revisados el decision log y las decisiones posteriores del owner: no reemplazan la composición multiplicativa. · BLOQUEA"
+            }
+        },
+        {
+            "numero": 16,
+            "bloque": "VB-01",
+            "tipo": "AGREGA",
+            "ubicacion": "00-indice.md:1248",
+            "detectores": ["VB-01"],
+            "propio": true,
+            "hallazgos": ["VB-01-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:45",
+            "confirmacion": "Inventa exclusividad de sesión que bloquea operaciones legítimas de billing.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ La sesión que abre Mi Suscripción debe ser la única sesión activa de la cuenta; si existe otra, se rechazan las mutaciones de billing hasta cerrarla. ↵",
+            "informes_originales": {
+                "VB-01-1": "00-indice.md:1248 · «La sesión que abre Mi Suscripción debe ser la única sesión activa de la cuenta; si existe otra, se rechazan las mutaciones de billing hasta cerrarla.» · sin soporte · BLOQUEA"
+            }
+        },
+        {
+            "numero": 17,
+            "bloque": "VB-02",
+            "tipo": "AGREGA",
+            "ubicacion": "02-nucleo-auditoria.md:299",
+            "detectores": ["VB-02"],
+            "propio": true,
+            "hallazgos": ["VB-02-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:397",
+            "confirmacion": "Inventa una aprobación adicional para acceder al listado operativo.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Exportar el listado de conciliación requiere la aprobación de un segundo administrador distinto del solicitante, registrada antes de generar el archivo. ↵",
+            "informes_originales": {
+                "VB-02-1": "02-nucleo-auditoria.md:299 · «Exportar el listado de conciliación requiere la aprobación de un segundo administrador distinto del solicitante, registrada antes de generar el archivo.» · sin soporte: el §4 de .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:383–492 no exige esta aprobación para exportar. Tampoco la establece el decision log ni las decisiones posteriores del owner; el 📌 de DEC-AUTH-002 (.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6848–6850) posterga la confirmación por segunda persona hasta que haya otra persona con el permiso. La spec inventa una condición que impide generar el archivo con un único administrador · BLOQUEA"
+            }
+        },
+        {
+            "numero": 18,
+            "bloque": "VB-03",
+            "tipo": "AGREGA",
+            "ubicacion": "03-contrato-de-cobertura.md:1339",
+            "detectores": ["VB-03"],
+            "propio": true,
+            "hallazgos": ["VB-03-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:138",
+            "confirmacion": "Inventa un tope de fuentes que deniega capacidades válidas.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ El contrato admite hasta veinte fuentes simultáneas por persona y vertical; si se supera ese número, la consulta falla y la autorización deniega la operación. ↵",
+            "informes_originales": {
+                "VB-03-1": "03-contrato-de-cobertura.md:1339 · «El contrato admite hasta veinte fuentes simultáneas por persona y vertical; si se supera ese número, la consulta falla y la autorización deniega la operación.» · sin soporte · BLOQUEA"
+            }
+        },
+        {
+            "numero": 19,
+            "bloque": "VB-04",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/U2.md:305",
+            "detectores": ["VB-04"],
+            "propio": true,
+            "hallazgos": ["VB-04-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:166",
+            "confirmacion": "Inventa una supresión persistente de avisos obligatorios.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Un rebote permanente de la casilla desactiva todos los avisos de esa cuenta, incluidos los transaccionales no suprimibles, hasta que el dueño cambie su correo. ↵",
+            "informes_originales": {
+                "VB-04-1": "10-corte/U2.md:305 · «Un rebote permanente de la casilla desactiva todos los avisos de esa cuenta, incluidos los transaccionales no suprimibles, hasta que el dueño cambie su correo.» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1741 («Si no hay a quién mandarlo —rebote duro o cuenta borrada, que `NUCLEO/07` §4.2 suprime para siempre, incluso lo transaccional—»): agrega una rehabilitación automática al cambiar el correo sin soporte vivo; también contradice la «supresión para siempre del rebote duro» de U2.md:74–75 · BLOQUEA"
+            }
+        },
+        {
+            "numero": 20,
+            "bloque": "VB-05",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/V2.md:319",
+            "detectores": ["VB-05"],
+            "propio": true,
+            "hallazgos": ["VB-05-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:94",
+            "confirmacion": "Inventa unicidad por precio que impide publicar planes válidos.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Dos planes vendibles de una misma vertical no pueden ofrecer el mismo precio mensual; publicar una versión que repita ese importe se rechaza aunque sus capacidades sean distintas. ↵",
+            "informes_originales": {
+                "VB-05-1": "10-corte/V2.md:319 · «Dos planes vendibles de una misma vertical no pueden ofrecer el mismo precio mensual; publicar una versión que repita ese importe se rechaza aunque sus capacidades sean distintas.» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:234 («BillingOption (§18), así que un plan tiene cuatro, y dos planes pueden costar lo mismo.»). DEC-ARCH-002 exige unicidad de rank, no de precio; la lista vigente de validaciones en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:129 tampoco agrega esta prohibición. Implementarla rechazaría planes admitidos por la fuente. · BLOQUEA"
+            }
+        },
+        {
+            "numero": 21,
+            "bloque": "VB-06",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/V6.md:1067",
+            "detectores": ["VB-06"],
+            "propio": true,
+            "hallazgos": ["VB-06-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:488",
+            "confirmacion": "Inventa una cuota temporal de publicación separada del cupo contratado.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Cada dueño puede ejecutar hasta cinco publicaciones de fichas por día en una vertical; las siguientes se rechazan hasta el día siguiente aunque tenga cupo disponible. ↵",
+            "informes_originales": {
+                "VB-06-2": "10-corte/V6.md:1067 · «Cada dueño puede ejecutar hasta cinco publicaciones de fichas por día en una vertical; las siguientes se rechazan hasta el día siguiente aunque tenga cupo disponible.» · sin soporte · BLOQUEA"
+            }
+        },
+        {
+            "numero": 22,
+            "bloque": "VB-07",
+            "tipo": "AGREGA",
+            "ubicacion": "20-fase-4/V7.md:830",
+            "detectores": ["VB-07"],
+            "propio": true,
+            "hallazgos": ["VB-07-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:290",
+            "confirmacion": "Inventa incompatibilidad entre Partner y las demás verticales.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ El reclamo de Partner se rechaza si la cuenta tiene una suscripción activa en otra vertical comercial; primero debe terminar esa suscripción. ↵",
+            "informes_originales": {
+                "VB-07-1": "20-fase-4/V7.md:830 · «El reclamo de Partner se rechaza si la cuenta tiene una suscripción activa en otra vertical comercial; primero debe terminar esa suscripción.» · más fuerte que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:290–338 (las cinco reglas del reclamo; la restricción de cantidad es «Una cuenta, un Partner», no una prohibición por suscripciones en otras verticales). Sin soporte en DEC-AUTH-004 ni en las decisiones posteriores del owner; contradice además la independencia por user + vertical de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:60–61 · BLOQUEA"
+            }
+        },
+        {
+            "numero": 23,
+            "bloque": "VB-08",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/B3.md:1020",
+            "detectores": ["VB-08"],
+            "propio": true,
+            "hallazgos": ["VB-08-4"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:153",
+            "confirmacion": "Inventa una espera para volver a contratar después de abandonar.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Después de abandonar un checkout, la cuenta debe esperar una hora para abrir otro en la misma vertical, aun si el anterior ya quedó cancelado en el proveedor. ↵",
+            "informes_originales": {
+                "VB-08-4": "10-corte/B3.md:1020 · «Después de abandonar un checkout, la cuenta debe esperar una hora para abrir otro en la misma vertical, aun si el anterior ya quedó cancelado en el proveedor.» · sin soporte: agrega una guarda temporal de una hora que no existe en S1 (.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151), en la regla de reintento (:1574) ni en las decisiones posteriores del log y del owner. La fuente :1458 dice «Volver a intentar crea una fila nueva, con clave de idempotencia nueva» una vez vencida la ventana y cancelado el preapproval; AC:B3:12 (B3.md:349) y TEST:B3:13 (B3.md:1156) mantienen ese camino sin espera adicional. Implementar la frase bloquearía durante una hora un alta que la fuente admite. · BLOQUEA"
+            }
+        },
+        {
+            "numero": 24,
+            "bloque": "VB-09",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/B6.md:356",
+            "detectores": ["VB-09"],
+            "propio": true,
+            "hallazgos": ["VB-09-3"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1851",
+            "confirmacion": "Inventa una guarda sobre la tarjeta que impide devolver pagos confirmados.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Antes de confirmar una devolución por tarjeta, se exige que el medio de pago original siga vigente; una tarjeta vencida bloquea la confirmación hasta que el cliente la actualice. ↵",
+            "informes_originales": {
+                "VB-09-3": "10-corte/B6.md:356 · «Antes de confirmar una devolución por tarjeta, se exige que el medio de pago original siga vigente; una tarjeta vencida bloquea la confirmación hasta que el cliente la actualice.» · sin soporte. La transición RF2 de fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1851 confirma por una persona con permiso, persiste la clave y relee el pago antes de devolver; no exige vigencia de la tarjeta. El contrato de reembolsos de docs/06-proveedor.md:232–275 tampoco impone esa guarda, y fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2162–2163 registra que la tarjeta la maneja MP y «nosotros no tenemos idea de tarjeta vencida». La condición agregada bloquea devoluciones admitidas por RF2 y por AC:B6:1; no se encontró una decisión posterior que la autorice · BLOQUEA"
+            }
+        },
+        {
+            "numero": 25,
+            "bloque": "VB-10",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/B8a.md:467",
+            "detectores": ["VB-10"],
+            "propio": true,
+            "hallazgos": ["VB-10-2"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161",
+            "confirmacion": "Inventa una dependencia que mantiene cobrando una suscripción cuya baja se pidió.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ La baja se rechaza mientras exista una devolución de la suscripción en estado CONFIRMED sin desenlace; debe resolverse antes de mandar cancelar el cobro. ↵",
+            "informes_originales": {
+                "VB-10-2": "10-corte/B8a.md:467 · «La baja se rechaza mientras exista una devolución de la suscripción en estado CONFIRMED sin desenlace; debe resolverse antes de mandar cancelar el cobro.» · sin soporte: las filas S11, S23 y S24 de fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161,173,174 no tienen esa guarda y ordenan cancelar al pedir la baja («se cancela en el proveedor de inmediato», S11). DEC-SUB-009 y sus precisiones tampoco subordinan la baja a resolver un refund. La nueva condición impide una baja permitida y deja abierto el cobro mientras la devolución siga pendiente · BLOQUEA"
+            }
+        },
+        {
+            "numero": 26,
+            "bloque": "VB-11",
+            "tipo": "AGREGA",
+            "ubicacion": "20-fase-2/B9b.md:341",
+            "detectores": ["VA-A6", "VB-11"],
+            "propio": true,
+            "hallazgos": ["VB-11-2", "VA-A6-2"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:81",
+            "confirmacion": "Inventa una condición de antigüedad de cuenta para canjear promociones.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Un código promocional sólo se puede canjear desde una cuenta creada antes de la publicación del código; las cuentas posteriores reciben un rechazo sin consumirlo. ↵",
+            "informes_originales": {
+                "VB-11-2": "20-fase-2/B9b.md:341 · «Un código promocional sólo se puede canjear desde una cuenta creada antes de la publicación del código; las cuentas posteriores reciben un rechazo sin consumirlo.» · sin soporte: agrega una guarda por antigüedad de la cuenta ausente del modelo de promo_code y promo_redemption (fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:577), del capítulo 14 y de DEC-PROMO-001 (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:814: «Cada código declara cuántos canjes admite en total y entre qué fechas es válido, además del límite por persona»). No hay una decisión posterior en el log ni en docs/41-corte-del-mvp/10-decisiones-del-owner.md que imponga ese rechazo; excluiría cuentas nuevas de canjes que la fuente permite · BLOQUEA",
+                "VA-A6-2": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:577 · «Cada user: máximo un uso de cada código» · distinta en s/c1c03210/20-fase-2/B9b.md:341 («Un código promocional sólo se puede canjear desde una cuenta creada antes de la publicación del código; las cuentas posteriores reciben un rechazo sin consumirlo.»): agrega una condición de elegibilidad por fecha de creación de la cuenta. El modelo de promo_code de la línea 576 establece cupo y ventana de validez del código; DEC-PROMO-001 y sus precisiones (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:806–840) agregan cupo total, fechas y piso del importe, sin esa condición. Se buscó también en toda la fuente congelada y en docs/41-corte-del-mvp/10-decisiones-del-owner.md sin encontrar una decisión que autorice rechazar a las cuentas nuevas. La spec rechaza así un primer canje que cumple las condiciones de la fuente · BLOQUEA"
+            }
+        },
+        {
+            "numero": 27,
+            "bloque": "VB-12",
+            "tipo": "AGREGA",
+            "ubicacion": "20-fase-3/B13b.md:157",
+            "detectores": ["VB-12"],
+            "propio": true,
+            "hallazgos": ["VB-12-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:71",
+            "confirmacion": "Inventa propagación de moderación que oculta fichas sin una decisión sobre ellas.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Al moderar una ficha desde el panel se moderan también todas las fichas publicadas del mismo dueño en esa vertical, con el mismo motivo y en el mismo acto. ↵",
+            "informes_originales": {
+                "VB-12-2": "20-fase-3/B13b.md:157 · «Al moderar una ficha desde el panel se moderan también todas las fichas publicadas del mismo dueño en esa vertical, con el mismo motivo y en el mismo acto.» · más fuerte que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:497 («un admin la modera, con motivo») y fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7098–7105 (DEC-DATA-007: la decisión y sus efectos recaen sobre la ficha); no hay soporte vivo para propagar la moderación a las demás fichas del dueño · BLOQUEA"
+            }
+        },
+        {
+            "numero": 28,
+            "bloque": "VB-13",
+            "tipo": "AGREGA",
+            "ubicacion": "80-abiertos.md:411",
+            "detectores": ["VB-13"],
+            "propio": true,
+            "hallazgos": ["VB-13-4"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:92",
+            "confirmacion": "Inventa una intervención manual para contratar que no condiciona el riesgo aceptado.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Hasta cerrar la consulta sobre el silencio ante un aumento, toda contratación nueva requiere una aceptación firmada fuera de la plataforma y cargada por soporte. ↵",
+            "informes_originales": {
+                "VB-13-4": "80-abiertos.md:411 · «Hasta cerrar la consulta sobre el silencio ante un aumento, toda contratación nueva requiere una aceptación firmada fuera de la plataforma y cargada por soporte.» · sin soporte; fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:92–94 y fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1446–1455 conservan la decisión de «avanzar así y corregir si la consulta legal dice otra cosa». La aceptación activa es una alternativa condicional para aumentos, no un requisito vigente para altas. La búsqueda en las fuentes no encuentra la firma externa ni su carga por soporte; agrega una guarda y un procedimiento que impedirían las contrataciones previstas · BLOQUEA"
+            }
+        },
+        {
+            "numero": 29,
+            "bloque": "VB-14",
+            "tipo": "AGREGA",
+            "ubicacion": "90-retirados.md:247",
+            "detectores": ["VB-14"],
+            "propio": true,
+            "hallazgos": ["VB-14-3"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:495",
+            "confirmacion": "Inventa réplicas operativas de los datos comerciales descartados y obliga a conservar y exponer el sistema retirado.",
+            "hallazgos_parciales": [],
+            "sale": "—",
+            "entra": "↵ Toda tabla comercial retirada conserva una réplica de sólo lectura accesible desde el panel durante noventa días después del corte. ↵",
+            "informes_originales": {
+                "VB-14-3": "90-retirados.md:247 · «Toda tabla comercial retirada conserva una réplica de sólo lectura accesible desde el panel durante noventa días después del corte.» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:495 («Las tablas viejas de billing, con todo lo que tengan adentro, y las columnas que las copian»; «no se conserva nada —ni se transcribe, ni se congela en solo lectura, ni se exporta—»). La réplica, el acceso desde el panel y el plazo de noventa días no tienen soporte; DEC-MIG-005 mantiene la decisión de no conservar el historial · BLOQUEA"
+            }
+        },
+        {
+            "numero": 30,
+            "bloque": "VB-14",
+            "tipo": "MODIFICA",
+            "ubicacion": "30-el-corte.md:778",
+            "detectores": ["VB-14"],
+            "propio": true,
+            "hallazgos": ["VB-14-2"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:159",
+            "confirmacion": "Conserva autorizaciones de calendario de fichas borradas que el corte debe revocar.",
+            "hallazgos_parciales": [],
+            "sale": "**borrar las fotos en el almacenamiento externo y revocar en el proveedor el token de",
+            "entra": "**borrar las fotos en el almacenamiento externo y conservar en el proveedor el token de",
+            "informes_originales": {
+                "VB-14-2": "30-el-corte.md:778 · «conservar en el proveedor el token de calendario de toda ficha que no es de las cinco» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:159 («revocar en el proveedor el token de calendario de toda ficha que no es de las cinco»). También contradice el procedimiento de la propia spec en 30-el-corte.md:793 y AC:V6:19 en 10-corte/V6.md:505: conservar el token deja vigente el acceso que el corte debe revocar · BLOQUEA"
+            }
+        },
+        {
+            "numero": 31,
+            "bloque": "G1",
+            "tipo": "MODIFICA",
+            "ubicacion": "01-decisiones-vigentes.md:317",
+            "detectores": ["G1"],
+            "propio": true,
+            "hallazgos": ["G1-2"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:527",
+            "confirmacion": "Consume el trial de Turista al iniciar sesión en vez de exigir el acto consciente de Empezar.",
+            "hallazgos_parciales": [],
+            "sale": "⎮ turista ⎮ el botón `Empezar` del §47 ⎮",
+            "entra": "⎮ turista ⎮ el primer inicio de sesión del §47 ⎮",
+            "informes_originales": {
+                "G1-2": "01-decisiones-vigentes.md:317 · «| turista | el primer inicio de sesión del §47 |» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:527 («| turista | el botón `Empezar` del §47 |»); adelanta el consumo del trial al inicio de sesión · BLOQUEA"
+            }
+        },
+        {
+            "numero": 32,
+            "bloque": "G2",
+            "tipo": "MODIFICA",
+            "ubicacion": "04-catalogos.md:201",
+            "detectores": ["G2", "VA-A3"],
+            "propio": true,
+            "hallazgos": ["G2-1", "VA-A3-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:385",
+            "confirmacion": "Ignora cortesías y grants al decidir T1 y T6 y puede iniciar pruebas sobre usuarios cubiertos.",
+            "hallazgos_parciales": [],
+            "sale": "fuentes ajenas al trial** — la suscripción, la cortesía o el grant.",
+            "entra": "fuentes ajenas al trial** — exclusivamente la suscripción.",
+            "informes_originales": {
+                "G2-1": "04-catalogos.md:201 · «fuentes ajenas al trial** — exclusivamente la suscripción.» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:385 («fuentes ajenas al trial** — la suscripción, la cortesía o el grant.»; excluye cortesía y grant del valor de cubierto que leen T1 y T6) · BLOQUEA",
+                "VA-A3-2": "fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:384 · «el valor que leen `T1` y `T6` está decidido enteramente por fuentes ajenas al trial — la suscripción, la cortesía o el grant» (continúa en línea 385) · distinta en s/c1c03210/04-catalogos.md:201 («fuentes ajenas al trial** — exclusivamente la suscripción.»; excluye cortesía y grant de la cobertura usada por las guardas y puede arrancar T1 donde corresponde T6. La propia fuente conserva esas fuentes en T2/T6 y en líneas 133–140; el catálogo conserva también las guardas generales. Revisados DEC-TRIAL-010 y su 📌, y las decisiones del corte —AQ mantiene CORTESÍA y GRANT reales en B9a—, sin decisión que autorice esa exclusión) · BLOQUEA"
+            }
+        },
+        {
+            "numero": 33,
+            "bloque": "VA-A6",
+            "tipo": "OMITE",
+            "ubicacion": "10-corte/B5.md:871, 02-nucleo-glosario.md:320, 01-decisiones-vigentes.md:8216",
+            "detectores": ["G1", "VA-A6", "VB-09"],
+            "propio": true,
+            "hallazgos": ["VB-09-2", "VA-A6-1", "G1-6"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:383",
+            "confirmacion": "Desaparece el formato PDF obligatorio del comprobante; se podría entregar sólo un documento web.",
+            "hallazgos_parciales": [],
+            "sale": "número, PDF, `nombre_pagador` — El PDF que se emite por cada cobro — PDF y que **no** se lo llame factura fiscal",
+            "entra": "—",
+            "informes_originales": {
+                "VB-09-2": "10-corte/B5.md:201 · «Entonces el `receipt` —comprobante no fiscal— se escribe en la misma transacción que acredita» · más débil que fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:967 («cada cobro genere un comprobante o recibo PDF», continuado en la línea 968) y fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:383 («número, PDF»). AC:B5:4 omite la generación del PDF; el esquema de `receipt` en B5:870–873 y TEST:B5:1 tampoco la exigen. No aparece PDF en la spec consolidada y su DEC-LEGAL-001:8216 sustituye el formato por «un documento». Permite implementar únicamente el registro del comprobante o emitirlo en otro formato, incumpliendo la fuente viva; ninguna precisión posterior consultada retira el PDF · BLOQUEA",
+                "VA-A6-1": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:383 · «número, PDF» · ausente (búsqueda de `PDF`/`pdf` en toda s/c1c03210/ sin resultados; 10-corte/B5.md:198–207 exige emitir el comprobante y 10-corte/B5.md:869–874 enumera sus campos, pero ninguno exige generar/conservar el PDF. La obligación sigue respaldada por DEC-LEGAL-001 en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:967–978; su precisión y las decisiones del owner no la retiran. Una implementación que sólo escriba el receipt satisface esos AC sin producir el documento exigido) · BLOQUEA",
+                "G1-6": "01-decisiones-vigentes.md:8216 · «un documento y que **no** se lo llame factura fiscal» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:968 («PDF y que **no** se lo llame factura fiscal»); elimina el formato exigido al comprobante · BLOQUEA"
+            }
+        },
+        {
+            "numero": 34,
+            "bloque": "VA-A1",
+            "tipo": "OMITE",
+            "ubicacion": "02-nucleo-auditoria.md:422",
+            "detectores": ["VA-A1", "VB-02"],
+            "propio": true,
+            "hallazgos": ["VB-02-2", "VA-A1-3"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:500",
+            "confirmacion": "Elimina el id de request obligatorio en logs y pierde la unión del incidente con la petición HTTP.",
+            "hallazgos_parciales": [],
+            "sale": "proveedor, id del webhook, id de request, id de correlación, listing y addon. ↵  ↵ **Falta uno, y es el que hace legible un incidente**: el **tipo de actor** (§1.2). Los diez",
+            "entra": "—",
+            "informes_originales": {
+                "VB-02-2": "02-nucleo-auditoria.md:422 · «proveedor, id del webhook, id de correlación, listing y addon.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:500 («proveedor, id del webhook, id de request, id de correlación, listing y addon.»): omite el id de request de los campos mínimos obligatorios y ajusta el conteo a nueve en la línea 424. El PDR también exige «request id» (.specs/HOS-1352-billing-verticals-redesign/docs/00-PDR.md:1878). Seguir esta lista permite logs sin el identificador de la petición · BLOQUEA",
+                "VA-A1-3": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:499 · «El §50 pide como mínimo: userId, vertical, subscriptionId, paymentId, identificadores del proveedor, id del webhook, id de request, id de correlación, listing y addon.» · distinta en s/c1c03210/02-nucleo-auditoria.md:421 («El §50 pide como mínimo: `userId`, vertical, `subscriptionId`, `paymentId`, identificadores del proveedor, id del webhook, id de correlación, listing y addon.»). Desaparece el id de request y la línea 424 reduce explícitamente el total a nueve campos. Buscados «id de request», «id del request», «requestId», «request_id» e «id de solicitud» en toda la spec: no hay obligación equivalente. La mención histórica al contexto de request en §2.4 no exige conservar ese identificador en los logs. El decision log y las decisiones del owner del corte no reemplazan esta regla. · BLOQUEA"
+            }
+        },
+        {
+            "numero": 35,
+            "bloque": "VA-A2",
+            "tipo": "OMITE",
+            "ubicacion": "30-el-corte.md:727, 10-corte/V6.md:518, 10-corte/V6.md:1314",
+            "detectores": ["VB-14"],
+            "propio": false,
+            "hallazgos": ["VB-14-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:157",
+            "confirmacion": "Elimina la purga de la portada en el corte y permite que siga sirviendo su caché anterior.",
+            "hallazgos_parciales": [],
+            "sale": "purgas del plan del borde, y la de la portada (sin destacados desde el lote 1 F de la FASE 5; *la ↵   purga de la portada la fuente la deriva y la marca*). — (`list-accom`, `list-gastro`, `list-exp`) y la de la ↵   portada, y purga — revalidar fichas borradas, tres colecciones, portada y 22",
+            "entra": "—",
+            "informes_originales": {
+                "VB-14-1": "30-el-corte.md:724 · «purga, una vez por tipo de ficha, la etiqueta de colección» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:157 («y la de la portada»; «la purga de la portada la dejo, lo derivé y lo marco»): el paso 4c omite esa purga vigente, además de las colecciones y los destinos; tampoco aparece en otro archivo de la spec · BLOQUEA"
+            }
+        },
+        {
+            "numero": 36,
+            "bloque": "VA-A3",
+            "tipo": "OMITE",
+            "ubicacion": "10-corte/V3.md:283, 10-corte/V3.md:670",
+            "detectores": ["VA-A3"],
+            "propio": true,
+            "hallazgos": ["VA-A3-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:708",
+            "confirmacion": "Se elimina la prohibición de recalcular al invalidar y la recomputación diferida a la próxima lectura; permite recomputar sincrónicamente cada cambio masivo del catálogo.",
+            "hallazgos_parciales": [],
+            "sale": "- Invalidar es borrar, no recalcular; después del commit; por `user` — 1. **Invalidar es borrar, no recalcular.** Recalcular dentro de la transacción que causó el cambio la ↵    vuelve más lenta y más frágil; la próxima lectura lo recalcula sola.",
+            "entra": "—",
+            "informes_originales": {
+                "VA-A3-1": "fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:708 · «Invalidar es borrar, no recalcular.» y «la próxima lectura lo recalcula sola» (línea 709) · ausente (búsqueda con rg --hidden en toda s/c1c03210/ por invalidar, invalidación, recalcular, recálculo y próxima lectura; 10-corte/V3.md:203, :283, :670 y :818 conservan el borrado posterior al commit, pero no la prohibición de recalcular al invalidar ni el cálculo diferido a la próxima lectura; AC:V3:6 y TEST:V3:8 permiten implementar un recálculo anticipado que la fuente excluye. DEC-AUTH-001 y su 📌 de CB, y la letra CB en P/docs/41-corte-del-mvp/10-decisiones-del-owner.md:171, precisan Redis, alcance y fallback, sin reemplazar esta regla) · BLOQUEA"
+            }
+        },
+        {
+            "numero": 37,
+            "bloque": "VA-A5",
+            "tipo": "OMITE",
+            "ubicacion": "02-nucleo.md:1353, 20-fase-1/V9b.md:349, 20-fase-1/V9b.md:601, 10-corte/V4.md:920, 01-decisiones-vigentes.md:4414, 01-decisiones-vigentes.md:12543",
+            "detectores": ["G1"],
+            "propio": false,
+            "hallazgos": ["G1-5", "G1-9"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:123",
+            "confirmacion": "Se elimina que soporte deba ejecutar el borrado legal de seudónimos; queda permitido implementarlo como tarea sin ese actor responsable.",
+            "hallazgos_parciales": [],
+            "sale": "respuesta es en contra, soporte borra todos los seudónimos de las cuentas dadas de baja con una tarea — si contesta en contra lo borra soporte con una tarea puntual — nuevo es una tarea puntual de soporte que los borra todos — soporte borra todos los seudónimos con una tarea puntual — de `V/22`; si contesta en contra, soporte los borra todos con una tarea puntual — si es en contra, soporte los borra todos con una tarea puntual",
+            "entra": "—",
+            "informes_originales": {
+                "G1-5": "01-decisiones-vigentes.md:4414 · «de `V/22`; si contesta en contra, se borran todos con una tarea puntual, y se anota quién» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6135 («de `V/22`; si contesta en contra, soporte los borra todos con una tarea puntual, y se anota quién»); elimina al actor responsable del borrado de seudónimos · BLOQUEA",
+                "G1-9": "01-decisiones-vigentes.md:12543 · «**1**: se conserva hasta la respuesta; si es en contra, se borran todos con una tarea puntual (se anota quién y cuándo)» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:29 («**1**: se conserva hasta la respuesta; si es en contra, soporte los borra todos con una tarea puntual (se anota quién y cuándo)»); la letra H pierde el mismo responsable que su 📌 en la línea 4414 · BLOQUEA"
+            }
+        },
+        {
+            "numero": 38,
+            "bloque": "VA-A8",
+            "tipo": "OMITE",
+            "ubicacion": "10-corte/B6.md:309, 01-decisiones-vigentes.md:9034, 04-catalogos.md:8860",
+            "detectores": ["G1", "G2", "VA-A5"],
+            "propio": false,
+            "hallazgos": ["VA-A5-2", "G1-8", "G2-6"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:253",
+            "confirmacion": "Desaparece la ausencia de mínimo de devolución; se podría imponer un piso e impedir devolver saldos menores a él.",
+            "hallazgos_parciales": [],
+            "sale": "**Y no hay monto mínimo**: ARS 5 entró sobre — **No hay monto mínimo** — ARS 5 entró sobre — **Funciona en los DOS tipos de pago** y **NO hay monto mínimo**:",
+            "entra": "—",
+            "informes_originales": {
+                "VA-A5-2": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:304 · «**Funciona en los DOS tipos de pago** y **NO hay monto mínimo**» · ausente (buscada en toda s/c1c03210/ por reembolso, RF-2, mínimo, piso y sus variantes; contrastadas las decisiones posteriores del log y del owner). MP:RF-2 en s/c1c03210/04-catalogos.md:8860 conserva el ejemplo de ARS 5 y la ausencia de piso del resto, pero elimina la ausencia de mínimo del importe reembolsado. s/c1c03210/10-corte/B6.md:308–310 y s/c1c03210/01-decisiones-vigentes.md:9034 sólo conservan el ejemplo. Aceptar ARS 5 no prohíbe imponer un mínimo de ARS 5 o inferior: falta la regla general vigente, también ratificada en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1805. · BLOQUEA",
+                "G1-8": "01-decisiones-vigentes.md:9034 · «monto original. ARS 5 entró sobre pagos de 5.000 y 7.500.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1805 («monto original. **No hay monto mínimo** — ARS 5 entró sobre pagos de 5.000 y 7.500.»); omite la ausencia de un mínimo para reembolsos parciales, que no se deduce del ejemplo de ARS 5 · BLOQUEA",
+                "G2-6": "04-catalogos.md:8860 · «**Funciona en los DOS tipos de pago**: la conclusión anterior» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:304 («**Funciona en los DOS tipos de pago** y **NO hay monto mínimo**: la conclusión anterior»; omite la conclusión general de que no hay mínimo para el parcial; conservar el ejemplo de ARS 5 no conserva esa restricción contra inventar un piso inferior; decision log:1805 la ratifica) · BLOQUEA"
+            }
+        },
+        {
+            "numero": 39,
+            "bloque": "VA-A10",
+            "tipo": "OMITE",
+            "ubicacion": "10-corte/B1.md:310, 10-corte/B1.md:346, 10-corte/B1.md:762, 10-corte/B1.md:894, 01-decisiones-vigentes.md:8615, 04-catalogos.md:6762",
+            "detectores": ["G1", "G2", "VA-A10", "VB-08"],
+            "propio": true,
+            "hallazgos": ["VB-08-1", "VA-A10-4", "G1-7", "G2-4"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:670",
+            "confirmacion": "Omite renovar mensualmente la autorización de sondas de producción; una aprobación vieja permitiría seguir gastando en corridas posteriores.",
+            "hallazgos_parciales": [],
+            "sale": "sin la autorización del mes en curso, que custodia el owner — la autorización del mes en curso del owner — La autorización mensual de la batería en producción la custodia el owner y la renueva cada mes — con la autorización del mes del ↵ owner — autorización mensual de la batería en producción la custodia el owner y la renueva cada mes. — **La autorización la custodia el owner y la renueva cada mes**: sin la del mes ↵    en curso, la corrida de producción no arranca",
+            "entra": "—",
+            "informes_originales": {
+                "VB-08-1": "10-corte/B1.md:310 · «producción no arranca sin la autorización que custodia el owner» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:670 («La autorización la custodia el owner y la renueva cada mes: sin la del mes en curso, la corrida de producción no arranca»). AC:B1:15 omite la vigencia mensual; AC:B1:18 y TEST:B1:16 tampoco exigen rechazar la autorización de un mes anterior. Permite implementar una autorización permanente para las corridas productivas. La precisión vigente de DEC-TEST-003 conserva la renovación mensual en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7210. · BLOQUEA",
+                "VA-A10-4": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:670 · «La autorización la custodia el owner y la renueva cada mes: sin la del mes en curso, la corrida de producción no arranca» · distinta en s/c1c03210/04-catalogos.md:6762 («La autorización la custodia el owner: sin ella, la corrida de producción no arranca»). AC:B1:15 (10-corte/B1.md:309), TEST:B1:16 (10-corte/B1.md:894) y el 📌 transcrito en 01-decisiones-vigentes.md:8615 también exigen sólo una autorización, sin renovación mensual ni rechazo de la de un mes anterior. Búsqueda en toda s/c1c03210/ por “renueva cada mes”, “mes en curso”, “autorización mensual” y “custodia”: no aparece la guarda temporal. Sigue vigente en el 📌 de DEC-TEST-003, fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7210; ninguna decisión posterior la reemplaza. La spec permitiría ejecutar una corrida con autorización vencida. · BLOQUEA",
+                "G1-7": "01-decisiones-vigentes.md:8615 · «autorización de la batería en producción la custodia el owner. Y» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7210 («autorización mensual de la batería en producción la custodia el owner y la renueva cada mes. Y»); desaparecen la periodicidad y la renovación obligatoria · BLOQUEA",
+                "G2-4": "04-catalogos.md:6762 · «**La autorización la custodia el owner**: sin ella, la corrida de producción no arranca» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:670 («**La autorización la custodia el owner y la renueva cada mes**: sin la del mes»; 671 completa «en curso, la corrida de producción no arranca»; desaparece la caducidad mensual, confirmada por el 📌 vigente del decision log:7210) · BLOQUEA"
+            }
+        },
+        {
+            "numero": 40,
+            "bloque": "VA-A9",
+            "tipo": "OMITE",
+            "ubicacion": "20-fase-3/B12.md:232, 20-fase-3/B12.md:383, 20-fase-3/B12.md:559, 10-corte/B13a.md:268, 01-decisiones-vigentes.md:1899",
+            "detectores": ["G1", "G2", "VA-A10", "VA-A9"],
+            "propio": true,
+            "hallazgos": ["VA-A9-1", "VA-A10-3", "G1-3", "G2-10", "G2-11"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:192",
+            "confirmacion": "El panel deja de exigir la antigüedad desde el anuncio de las migraciones que necesitan resolución humana; puede ocultar esperas indefinidas.",
+            "hallazgos_parciales": [],
+            "sale": "**Sin plazo**: el listado muestra **su ↵    antigüedad**, contada desde el anuncio de su migración (`anunciada_en`), para que se vea cuánto ↵    lleva esperando (revisión del owner, casos vecinos, 2026-09-29, caso 26). — el panel la lista sin plazo y con su antigüedad ↵   desde el anuncio; — vista, sin plazo y con su antigüedad (`B/19` §6). — **sin plazo y con su antigüedad**, contada desde el anuncio — `PARA_RESOLVER` no tiene plazo, y el panel muestra su ↵ antigüedad.",
+            "entra": "—",
+            "informes_originales": {
+                "VA-A9-1": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:191 · «Sin plazo: el listado muestra su antigüedad, contada desde el anuncio de su migración (`anunciada_en`), para que se vea cuánto lleva esperando» · ausente (búsqueda con rg --hidden en toda s/c1c03210/ por «antigüedad», «anunciada_en», «PARA_RESOLVER» y variantes de tiempo de espera desde el anuncio; s/c1c03210/20-fase-3/B12.md:232 sólo conserva «Sin plazo», AC:B12:6 en :383 exige listar sin plazo, y la UI en :558–559 tampoco exige mostrar antigüedad; s/c1c03210/10-corte/B13a.md:268 y s/c1c03210/01-decisiones-vigentes.md:1899 omiten el dato igualmente. La regla sigue viva, ratificada por DEC-SUB-023 en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7155–7156; ninguna decisión posterior del owner la retira. El implementador puede construir el listado sin mostrar cuánto lleva esperando cada caso PARA_RESOLVER) · BLOQUEA",
+                "VA-A10-3": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:218 · «las que quedan para resolver a mano (`PARA_RESOLVER`: el destino no ofrece su ciclo) a la vista, sin plazo y con su antigüedad, contada desde el anuncio» · distinta en s/c1c03210/10-corte/B13a.md:268 («a la vista, sin plazo»), y en s/c1c03210/20-fase-3/B12.md:558 («sus filas por estado con las `PARA_RESOLVER` a la vista, sin plazo»): desaparece la antigüedad desde el anuncio. Búsqueda en toda s/c1c03210/ por “antigüedad”, “contada desde el anuncio” y “PARA_RESOLVER”: ningún AC, test ni catálogo recoge ese dato del listado; 01-decisiones-vigentes.md:1899 también omite la antigüedad. La regla sigue vigente en el 📌 de DEC-SUB-023, fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7155, y ninguna letra posterior la retira. · BLOQUEA",
+                "G1-3": "01-decisiones-vigentes.md:1899 · «`PARA_RESOLVER` no tiene plazo. Una cortesía temporal vigente el día de la migración espera a volver.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7155–7156 («`PARA_RESOLVER` no tiene plazo, y el panel muestra su antigüedad.»); omite la obligación del panel · BLOQUEA",
+                "G2-10": "10-corte/B13a.md:268 · «**sin plazo** (revisión del owner, casos vecinos, 2026-09-29, caso 26)» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:218 («**sin plazo y con su antigüedad**, contada desde el anuncio»; elimina de la pantalla la antigüedad de las migraciones PARA_RESOLVER y su origen de cómputo; decision log:7155–7156 mantiene ambos) · BLOQUEA",
+                "G2-11": "20-fase-3/B12.md:232 · «**Sin plazo** (revisión del owner, casos vecinos, 2026-09-29, caso 26).» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:191 («**Sin plazo**: el listado muestra **su»; 192–193 exige «antigüedad», contada desde anunciada_en, para mostrar cuánto lleva esperando; la copia omite la regla entera) · BLOQUEA"
+            }
+        },
+        {
+            "numero": 41,
+            "bloque": "VA-A7",
+            "tipo": "OMITE",
+            "ubicacion": "02-nucleo-outbox.md:291, 10-corte/B11.md:854, 10-corte/B11.md:1551, 04-catalogos.md:4325, 10-corte/B13a.md:166, 10-corte/B11.md:2286, 80-abiertos.md:252, 04-catalogos.md:2241",
+            "detectores": ["G2", "VA-A1", "VA-A10", "VA-A7", "VA-A8", "VB-02"],
+            "propio": true,
+            "hallazgos": [
+                "VB-02-4",
+                "VA-A1-2",
+                "VA-A7-1",
+                "VA-A8-2",
+                "VA-A10-2",
+                "G2-2",
+                "G2-3",
+                "G2-8",
+                "G2-9"
+            ],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1779",
+            "confirmacion": "Elimina el correo al cliente cuando se gana la disputa por contracargo; el cobro vuelve a valer sin informar el desenlace.",
+            "hallazgos_parciales": [],
+            "sale": "⎮ **la disputa se resolvió a nuestro favor** ⎮ transaccional ⎮ **al correr [P7](04-catalogos.md#trans-b-p7)** —se leyó `reimbursed`— (cap. 03 §6, épica de billing): el cargo era correcto y el cobro vuelve a valer. **Texto base, del owner**: *«La disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá.»* ⎮ FASE 8 completa, pendiente 8, owner 2026-09-25; `DEC-SUB-020`; cap. 19 §4 fila 10-ter (épica de billing) ⎮ ↵ — **`P7`** (`B/03` §6), y sale el correo *«la disputa se resolvió a nuestro favor»* (`NUCLEO/07` §6) — la corrida siguiente; `reimbursed` corre `P7` y sale el correo *«la disputa se resolvió a nuestro ↵   favor»*; `settled` — **Las dos resoluciones le avisan a la persona, con un correo transaccional cada una** (`NUCLEO/07` ↵ §6, `B/19` §4 fila 10-ter; FASE 8 completa, pendiente 8, owner 2026-09-25): al leer `settled`, ↵ *«la disputa se resolvió a tu favor; tu suscripción sigue **suspendida**; podés ↵ volver cuando quieras»* cuando la fila está `SUSPENDED`, y *«sigue cancelada»* cuando está ↵ `CANCELLED` (FASE 8 completa, owner 2026-09-25); al correr `P7` por `reimbursed`, *«la disputa se ↵ resolvió; el cargo era correcto; podés volver a suscribirte desde acá»*. **Cerrado el 2026-09-25 (owner, ↵ FASE 8 completa)**: **el barrido relee también los pagos en `CHARGED_BACK` hasta que su ↵ `status_detail` se resuelva** —`settled` o `reimbursed`—, así que alguien lee el resultado de la ↵ disputa aunque no llegue el aviso del proveedor, y esa lectura dispara el correo que corresponde ↵ (`B/09` §3). ↵ — **al resolverse la disputa sale un correo transaccional por cada desenlace** (`NUCLEO/07` §6): si gana la persona (`settled`) — ; si ganamos nosotros (`reimbursed`, `P7`), *«la disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá»*. — con `reimbursed`, corre `P7` y se encola el correo de la disputa a nuestro favor; con — y esa lectura dispara el correo que corresponde de `NUCLEO/07` §6 — lectura dispara el correo que corresponde de `NUCLEO/07` §6",
+            "entra": "—",
+            "informes_originales": {
+                "VB-02-4": "02-nucleo-outbox.md:290 · «**la disputa se resolvió a favor de la persona**» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:263 («**la disputa se resolvió a nuestro favor**»; «**al correr `P7`** —se leyó `reimbursed`—»): el catálogo conserva el aviso de `settled`, pero pasa directamente a «aumento de precio» en la línea 291 y omite la fila viva del aviso transaccional cuando la disputa se gana. Falta su disparador y el contenido que informa que el cargo era correcto y permite volver a suscribirse. No hay una decisión posterior que retire ese correo; el propio §4.1 de la spec, línea 177, sigue exigiendo los dos avisos de disputa resuelta · BLOQUEA",
+                "VA-A1-2": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:263 · «la disputa se resolvió a nuestro favor | transaccional | al correr P7 —se leyó reimbursed—» y «La disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá.» · ausente (búsqueda con rg --hidden en toda s/c1c03210/ por «disputa», «nuestro favor», «cargo era correcto», «reimbursed» y «P7»; revisados el catálogo de 02-nucleo-outbox.md §6, TRANS:B:P7 en 04-catalogos.md:4464, AC:B5:8 en 10-corte/B5.md:245, la fila 10-ter de 10-corte/B13a.md:166 y el barrido en 10-corte/B11.md:848). Se conserva la transición del pago y el correo para settled, pero ningún catálogo, AC, TEST o transición exige el correo al ganar Hospeda la disputa. DEC-SUB-020 y sus precisiones, y las decisiones del owner del corte, no retiran esta obligación. · BLOQUEA",
+                "VA-A7-1": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1779 · «Las dos resoluciones le avisan a la persona, con un correo transaccional cada una»; líneas 1783–1784: «al correr `P7` por `reimbursed`, “la disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá”» · distinta en s/c1c03210/04-catalogos.md:4325 («La resolución `settled` le avisa a la persona con un correo transaccional»): la transcripción restringe el aviso a `settled` y elimina el de `reimbursed`. La búsqueda en toda s/c1c03210/ por `reimbursed`, `P7`, `cargo era correcto` y las resoluciones de la disputa no encuentra otra regla que ordene ese correo; AC:B5:8 (10-corte/B5.md:245), AC:B11:25 (10-corte/B11.md:1546) y el catálogo de correos (02-nucleo-outbox.md:290) tampoco lo recogen. Un implementador omitiría avisar a la persona cuando la disputa se resuelve a favor del vendedor. Verificados el decision log (DEC-SUB-020 y su 📌) y 41-corte-del-mvp/10-decisiones-del-owner.md: no retiran este aviso. · BLOQUEA",
+                "VA-A8-2": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:817 · «y sale el correo *«la disputa se resolvió a nuestro favor»*» · ausente (búsqueda con rg --hidden en toda s/c1c03210/ por reimbursed, P7, disputa, nuestro favor y ganamos; revisión de 02-nucleo-outbox.md, 04-catalogos.md y B5, B7, B11 y B13a). La fila de B11.md:854 sólo manda P7; AC:B11:25 en B11.md:1551 y TEST:B11:25 en B11.md:2286 tampoco exigen el correo de ese desenlace; TRANS:B:P7 en 04-catalogos.md:4464 carece del efecto y el catálogo de correos sólo conserva el de settled. La mención genérica a «los dos de la disputa resuelta» en 02-nucleo-outbox.md:178 no declara el disparador ni recupera el correo omitido. La regla sigue viva, corroborada por fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:263; sin reemplazo en el decision log ni en las decisiones del owner · BLOQUEA",
+                "VA-A10-2": "fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:120 · «al resolverse la disputa sale un correo transaccional por cada desenlace»; «si ganamos nosotros (`reimbursed`, `P7`), “la disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá”» · distinta en s/c1c03210/10-corte/B13a.md:166 («si la disputa se resuelve a favor de la persona sale un correo transaccional»): se elimina el aviso del desenlace favorable a Hospeda. Búsqueda en toda s/c1c03210/ por “reimbursed”, “disputa se resolvió”, “cargo era correcto” y “ganamos nosotros”: el catálogo de correos (02-nucleo-outbox.md:290) sólo conserva el de settled; TRANS:B:P7 (04-catalogos.md:4472) y AC:B5:8 (10-corte/B5.md:247) tampoco ordenan emitir el de reimbursed. La mención genérica a “los dos de la disputa resuelta” en 02-nucleo-outbox.md:178 no recupera su disparador ni su contenido. No hay decisión posterior que retire este correo. · BLOQUEA",
+                "G2-2": "04-catalogos.md:2241 · «lectura, si da `settled`, dispara su correo de `NUCLEO/07` §6 (`B/09` §3).» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2944 («lectura dispara el correo que corresponde de `NUCLEO/07` §6 (`B/09` §3).»; la fuente abarca settled y reimbursed; la copia condiciona el correo sólo a settled) · BLOQUEA",
+                "G2-3": "04-catalogos.md:4325 · «**La resolución `settled` le avisa a la persona con un correo transaccional**» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1779 («**Las dos resoluciones le avisan a la persona, con un correo transaccional cada una**»; omite el aviso de P7 por reimbursed de 1783–1784; 4332 vuelve a limitar a settled lo que 1788 exige para cada desenlace) · BLOQUEA",
+                "G2-8": "10-corte/B11.md:854 · «| **`reimbursed`** | **`P7`** (`B/03` §6) |» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:817 («**`P7`** (`B/03` §6), y sale el correo *«la disputa se resolvió a nuestro favor»* (`NUCLEO/07` §6)»; elimina el efecto de notificación al resolver el contracargo a nuestro favor) · BLOQUEA",
+                "G2-9": "10-corte/B13a.md:166 · «**si la disputa se resuelve a favor de la persona sale un correo transaccional**» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:120 («**al resolverse la disputa sale un correo transaccional por cada desenlace**»; también desaparece la rama «si ganamos nosotros (reimbursed, P7)» y su mensaje; el aviso queda sólo para settled) · BLOQUEA"
+            }
+        },
+        {
+            "numero": 42,
+            "bloque": "VA-A4",
+            "tipo": "OMITE",
+            "ubicacion": "00-indice.md:1215, 10-corte/V1.md:79, 10-corte/V1.md:154, 10-corte/V1.md:379, 10-corte/V3.md:475, 10-corte/V3.md:896, 10-corte/V6.md:883, 80-abiertos.md:174, 01-decisiones-vigentes.md:2941, 04-catalogos.md:7170",
+            "detectores": ["VA-A4", "VB-04", "VB-13"],
+            "propio": true,
+            "hallazgos": ["VB-04-3", "VB-13-2", "VA-A4-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:574",
+            "confirmacion": "Elimina declarar enforcementStrategy por clave; el catálogo ya no determina cómo hacer cumplir cada límite y el implementador puede omitir esa política.",
+            "hallazgos_parciales": ["G1-4", "G2-5"],
+            "sale": "scope, estrategia de agregación, ↵   `enforcementStrategy` y clase — (la clase de una clave, cuarto atributo ↵ declarado del catálogo) — - **Entonces** declara sus cuatro atributos (`V/15-entitlements-y-limits.md:573-574`): su ↵   **scope** (de vertical o global), su **estrategia de agregación** (de la lista cerrada `SUMA`, ↵   `MÁXIMO`, `MÍNIMO`, `MEJOR_DECLARADO`), su **`enforcementStrategy`** y su **clase**, — declara scope, estrategia, `enforcementStrategy` y clase — quien lo construyera inventaba la clasificación clave por clave. **La clase es el CUARTO atributo ↵ que una clave declara en el catálogo, y la lista de valores es cerrada:** ↵  ↵ ⎮ clase ⎮ qué es ⎮ ejemplos ⎮ ↵ ⎮---⎮---⎮---⎮ ↵ ⎮ **`COMERCIAL`** ⎮ su ejercicio **produce o sostiene presencia pública** en la vertical, o **consume** un limit o la cuota de un entitlement medido ⎮ publicar una ficha (`PB1`), destacarla, las fotos, la prioridad de ordenamiento; **las dos presencias de Partner, la página y el carrusel** (`V/18` §1.6; 7b) ⎮ ↵ ⎮ **`DE_ACCESO`** ⎮ su ejercicio **no** produce presencia pública y **no** consume nada: sólo deja **existir**, **recuperar lo propio** y **volver a contratar** ⎮ *«contratar una suscripción»* y *«recuperar lo suyo»*, las dos claves del piso (`V/02` §2.1) ⎮ ↵  ↵ - **Vive con la clave y no con el plan**, por la razón de la estrategia: si la declarara el plan, ↵   [`G-R3`](../04-catalogos.md#val-g-r3) daría verde y rojo sobre el mismo catálogo según qué plan mire. ↵ - **No contradice *«lo único que vive en código es el conjunto de nombres»*** (`NUCLEO/02` §1.2): ↵   esa frase prohíbe que en código vivan valores, precios y asignaciones —qué plan otorga qué clave, ↵   con qué valor, en qué vertical, a qué precio—, no que una clave declare qué es. El scope y la ↵   estrategia ya viven ahí; la clase es el cuarto del mismo tipo y no dice qué otorga ningún plan. ↵ - **Qué gana el guard y qué NO gana**: gana poder preguntar *«¿esta clave está declarada ↵   `COMERCIAL`?»* sobre el catálogo, como `G-R6` sobre columnas; **no** gana verificar que la ↵   clasificación esté bien juzgada —declarar `DE_ACCESO` la clave de publicar rompe el guard igual ↵   que un scope equivocado, y contra eso el control es la revisión del PR—. Lo que cambia es que la ↵   clasificación se hace UNA vez, en el catálogo, a la vista. ↵ - **El atributo vive donde viven los otros tres, en el catálogo de claves, que es código**, y está ↵   desde `V1`, que deja el catálogo funcionando: [`G-R3`](../04-catalogos.md#val-g-r3) se construye en `V2` y la regla es de `V3`, — cada clave lleva cuatro atributos ↵   declarados: scope, estrategia de agregación, `enforcementStrategy` y clase — antes, dejar elegir, preferir archivar o despublicar antes que borrar, una `enforcementStrategy` por ↵ tipo de limit— — cada clave lleva **cuatro** atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase** (§3.4)—. *(Eran tres hasta esta pasada; la clase entró porque sin ella el predicado de `G-R3` no se podía formar.)* — la **clase** pasa a ser el **cuarto atributo declarado** de cada clave en el catálogo ↵   —junto al scope, la estrategia de agregación y los que ya estaban— — **La clase es hoy el cuarto atributo declarado de una clave**",
+            "entra": "—",
+            "informes_originales": {
+                "VB-04-3": "10-corte/V1.md:154 · «declara sus tres atributos» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:573 («cada clave lleva **cuatro** atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase**»): AC:V1:2 enumera scope, agregación y clase, pero omite `enforcementStrategy`; TEST:V1:2 (línea 379) repite la lista incompleta y permite aceptar un catálogo sin ese atributo. DEC-ENT-005 mantiene la clase como cuarto atributo (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5054) · BLOQUEA",
+                "VB-13-2": "80-abiertos.md:174 · «cada clave lleva **tres** atributos declarados —scope, estrategia de agregación y **clase** (§3.4)—» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:573 («cada clave lleva **cuatro**»), :574 («atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase** (§3.4)—»); omite `enforcementStrategy`. DEC-ENT-005 mantiene la clase como cuarto atributo en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5054; ninguna precisión posterior consultada elimina el atributo omitido · BLOQUEA",
+                "VA-A4-1": "fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:573 · «cada clave lleva **cuatro** atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase**» · distinta en s/c1c03210/10-corte/V1.md:154 («declara sus tres atributos»; enumera scope, estrategia de agregación y clase, omitiendo `enforcementStrategy`). La omisión también está en TEST:V1:2 (V1.md:379) y V3.md:896; la búsqueda en toda s/c1c03210/ no encuentra `enforcementStrategy` ni una declaración equivalente de estrategia de enforcement por clave. DEC-ENT-005, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5054, ratifica que clase es el cuarto atributo; no hay una decisión posterior que retire el otro · BLOQUEA",
+                "G1-4": "01-decisiones-vigentes.md:2941 · «la **clase** pasa a ser un **atributo declarado** de cada clave en el catálogo» · contradice la copia literal de .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5054–5055 («la **clase** pasa a ser el **cuarto atributo declarado**» y «—junto al scope, la estrategia de agregación y los que ya estaban—»); la línea 2942 también omite «y los que ya estaban». Conserva el atributo y sus dos valores, sin cambio concreto de comportamiento demostrado · MENOR",
+                "G2-5": "04-catalogos.md:7170 · «**La clase es un atributo declarado de una clave**» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:316 («**La clase es hoy el cuarto atributo declarado de una clave**»; se pierde la posición explícita del atributo; se conservan su declaración, los dos valores y la lista cerrada, sin cambio práctico demostrado) · MENOR"
+            }
+        }
+    ],
+    "resumen": {
+        "canarios_detectados": 42,
+        "canarios_propios": 39,
+        "REAL BLOQUEA": 2,
+        "REAL MENOR": 0,
+        "FUENTE": 1,
+        "FALSO": 0,
+        "GENERADOR": 0,
+        "OWNER": 0,
+        "por_tipo": {
+            "VB": {
+                "total": 28,
+                "detectados": 28,
+                "propios": 28
+            },
+            "G": {
+                "total": 4,
+                "detectados": 4,
+                "propios": 4
+            },
+            "VA": {
+                "total": 10,
+                "detectados": 10,
+                "propios": 7
+            }
+        }
+    },
+    "alcance": {
+        "fuentes_sha": "5381f7579687651df168575c85f144f9b48daea7",
+        "spec": "pristina",
+        "informes": 26,
+        "hallazgos_reportados": 78,
+        "ocurrencias_canarias": 75,
+        "ocurrencias_no_canarias": 3,
+        "unicos_no_canarios": 3,
+        "exclusiones": "Los auxiliares G1-*, G2-* (corpus, patrones, búsquedas y cotejos) son evidencia de trabajo, no informes finales ni hallazgos adicionales. hallazgos-todos.txt mezcla esos auxiliares con los 26 informes: CAN? no decide nada.",
+        "criterio_semantico": "G1-4 y G2-5 son efectos parciales del canario 42: detectan el ordinal perdido, no la pérdida de enforcementStrategy. Se conservan asociados, pero no se cuentan como detección semántica completa.",
+        "verificacion": "Cotejo documental de informes, diff de canarios, fuente congelada sin tachados vivos, precisiones aplicables y antecedentes. Cada sale y línea de las correcciones se valida literalmente contra pristina; propuestas de fuente contra el congelado. Sin git, tracker, edición de spec, ejecución de generadores ni pruebas de producto."
+    }
+}

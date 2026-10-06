@@ -1,0 +1,682 @@
+# Correcciones propuestas — vuelta 4
+
+No aplicadas. Líneas de la spec: copia pristina (HEAD), nunca la copia con canarios. Cada bloque sale/entra es literal; aplicar por contenido, porque las líneas cambiarán al aplicar correcciones anteriores.
+B4–B7 se corrigen en v/generadores/g8/src y se regeneran. Un error de contenido de src se clasifica REAL: g8/gen.py sólo expande enlaces y prefijos y no introdujo estas reglas.
+Las propuestas en fuentes requieren corregir la fuente, un nuevo congelado y sincronizar/regenerar las salidas; no parchear los tramos g-secciones.
+
+## 03-contrato-de-cobertura.md
+
+H4-VB-03-3 · REAL MENOR · línea 1780
+03-contrato conserva «las doce siguen», aunque la fuente ya corrigió el recuento a trece.
+Destino: 03-contrato-de-cobertura.md
+sale:
+```text
+**El grafo de las dependencias no cambia por esto**: las doce siguen
+```
+entra:
+```text
+**El grafo de las dependencias no cambia por esto**: las trece siguen
+```
+
+## 10-corte/B11.md
+
+H4-VB-12-2 · REAL MENOR · línea 1733
+AC:B11:23 remite al §6 de conciliación para una regla del §7.
+Destino: 10-corte/B11.md
+sale:
+```text
+nueva acuñada y persistida antes de llamar (`B/09` §6, `B/05` §1).
+```
+entra:
+```text
+nueva acuñada y persistida antes de llamar (`B/09` §7, `B/05` §1).
+```
+
+## 10-corte/B13a.md
+
+H4-VB-12-3 · REAL BLOQUEA · línea 1088
+TEST:B13a:8 oculta de la vista por defecto un pago contracargado; debe mostrarlo y excluirlo sólo de la propuesta de devolución.
+Destino: 10-corte/B13a.md
+sale:
+```text
+contracargo y no en la vista por defecto.
+```
+entra:
+```text
+contracargo visible en el listado, excluido de la propuesta de devolución por defecto; se resuelve
+sin devolver.
+```
+
+## 10-corte/B2.md
+
+H4-VA-A6-1 · REAL BLOQUEA · línea 32
+B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+Destino: 10-corte/B2.md
+sale:
+```text
+   carga el paso 3a y no se cambian durante el corte
+```
+entra:
+```text
+   carga la migración estructural del paso 3, los verifica el 3a y no se cambian durante el corte
+```
+
+H4-VB-08-4 · REAL BLOQUEA · línea 66
+B2 aún sitúa la mutación del aumento en la fecha efectiva; BZ y el 📌 de CC la sitúan siete días antes por S37.
+Destino: 10-corte/B2.md
+sale:
+```text
+tres contactos, la fecha efectiva de cada cliente por su ciclo y la mutación del monto en esa fecha—,
+```
+entra:
+```text
+tres contactos, la fecha efectiva de cada cliente por su ciclo y la mutación del monto por `S37`
+  siete días antes de esa fecha—,
+```
+
+H4-VA-A6-1 · REAL BLOQUEA · línea 229
+B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+Destino: 10-corte/B2.md
+sale:
+```text
+precios vigentes hoy, que carga el paso 3a y que no cambian durante el corte.
+```
+entra:
+```text
+precios vigentes hoy, que carga la migración estructural del paso 3, verifica el 3a y no cambian durante el corte.
+```
+
+H4-VB-08-4 · REAL BLOQUEA · línea 296
+B2 aún sitúa la mutación del aumento en la fecha efectiva; BZ y el 📌 de CC la sitúan siete días antes por S37.
+Destino: 10-corte/B2.md
+sale:
+```text
+relectura, en la fecha efectiva y no cuando se decide; un precio nuevo por debajo de ARS 15 no es
+```
+entra:
+```text
+relectura, por `S37` siete días antes de la fecha efectiva; ningún cobro sale al precio nuevo antes
+  de esa fecha (BZ y [DEC-MP-002#📌4](../01-decisiones-vigentes.md#dec-mp-002-p4)); un precio nuevo por debajo de ARS 15 no es
+```
+
+H4-VA-A6-1 · REAL BLOQUEA · línea 300
+B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+Destino: 10-corte/B2.md
+sale:
+```text
+(BM): **los precios del corte son los vigentes hoy**, los carga el paso 3a y no se cambian durante el
+```
+entra:
+```text
+(BM, con el residuo corregido en `B/descomposicion.md` §2): **los precios del corte son los vigentes hoy**, los carga la migración estructural del paso 3, los verifica el 3a y no se cambian durante el
+```
+
+H4-VA-A6-1 · REAL BLOQUEA · línea 345
+B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+Destino: 10-corte/B2.md
+sale:
+```text
+- **Los precios del corte** son los vigentes hoy: las filas de `billing_option` las carga el paso 3a
+  del corte, no esta migración ([DEC-MP-002#📌2](../01-decisiones-vigentes.md#dec-mp-002-p2)).
+```
+entra:
+```text
+- **Los precios del corte** son los vigentes hoy: las filas de `billing_option` las carga la migración
+  estructural del paso 3 con el catálogo; el paso 3a sólo las verifica (`B/descomposicion.md` §2;
+  `16-fase-7-del-paraguas.md` §4.2, pasos 3 y 3a, y §4.7, residuo corregido el 2026-10-02).
+```
+
+H4-VB-08-5 · REAL BLOQUEA · línea 370
+La sección UI de B2 manda los tres correos del aumento a B13a, contradiciendo el reparto vigente a B12.
+Destino: 10-corte/B2.md
+sale:
+```text
+[`B13a`](B13a.md#fila-b13a) (`B/descomposicion.md` §2.10, l. 690 y 693), y los tres correos del aumento también
+([DEC-MP-002](../01-decisiones-vigentes.md#dec-mp-002); `B/19` §4 fila 12).
+```
+entra:
+```text
+[`B13a`](B13a.md#fila-b13a) (`B/descomposicion.md` §2.10); los tres correos del aumento
+los construye [`B12`](../20-fase-3/B12.md#fila-b12), por BM
+([DEC-MP-002#📌2](../01-decisiones-vigentes.md#dec-mp-002-p2); `B/19` §4 fila 12).
+```
+
+H4-VB-08-4 · REAL BLOQUEA · línea 378
+B2 aún sitúa la mutación del aumento en la fecha efectiva; BZ y el 📌 de CC la sitúan siete días antes por S37.
+Destino: 10-corte/B2.md
+sale:
+```text
+El aviso a los ya anclados, sus contactos a 30 y a 7 días y la mutación en la fecha efectiva de cada
+cliente llegan con
+```
+entra:
+```text
+El aviso a los ya anclados, sus contactos a 30 y a 7 días y la mutación por `S37` siete días antes de
+la fecha efectiva de cada cliente llegan con
+```
+
+H4-VA-A6-1 · REAL BLOQUEA · línea 480
+B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+Destino: 10-corte/B2.md
+sale:
+```text
+los valores de los plazos 10 a 19, y carga los precios vigentes hoy en las `billing_option`.
+```
+entra:
+```text
+los valores de los plazos 10 a 19 y los precios vigentes hoy en las `billing_option`, cargados
+por la migración estructural del paso 3.
+```
+
+H4-VA-A6-1 · REAL BLOQUEA · línea 522
+B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+Destino: 10-corte/B2.md
+sale:
+```text
+paso 3a y no se cambian durante el corte; **la acción 19 no se usa
+```
+entra:
+```text
+paso 3 y el paso 3a sólo los verifica; no se cambian durante el corte; **la acción 19 no se usa
+```
+
+## 10-corte/B3.md
+
+H4-VB-08-6 · REAL BLOQUEA · línea 426
+AC:B3:17 impone alta nueva al reintentar S16 sin exceptuar la predecesora con checkout de sucesión abierto.
+Destino: 10-corte/B3.md
+sale:
+```text
+reintento es un alta nueva; y lo que se le dice sale del `status_detail` de ese único intento.
+```
+entra:
+```text
+reintento es un alta nueva, **salvo que la fila fuera la predecesora de una sucesión**: en ese caso
+  `S18` cierra la sucesión en el acto por la interfaz interna que implementa `B8b`, la sucesora ocupa
+  el candado `A` y el reintento es terminar el checkout ya abierto (BL). Lo que se le dice sale del
+  `status_detail` de ese único intento. La prueba incluye ambas poblaciones y verifica la llamada
+  a la interfaz de `S18` con filas sembradas.
+```
+
+H4-VA-A6-3 · REAL BLOQUEA · línea 963
+ESQ:6 omite el instante del canje de promo_redemption, que debe nacer con su esquema en B3.
+Destino: 10-corte/B3.md
+sale:
+```text
+N cobros o forever—, y `promo_redemption` (`UNIQUE(promo_code_id, user_id)`, con `cobros_restantes`
+```
+entra:
+```text
+N cobros o forever—, y `promo_redemption`, que guarda el código, el user, el instante del canje
+y la suscripción sobre la que se canjeó (`UNIQUE(promo_code_id, user_id)`, con `cobros_restantes`
+```
+
+H4-VB-08-7 · REAL MENOR · línea 1442
+B3 vuelve a presentar como inferencia abierta el lector de S15 que BY ya resolvió.
+Destino: 10-corte/B3.md
+sale:
+```text
+Nuevo en esta pasada (`_trabajo/abiertos/pasada2-g7.md`):
+
+- La guarda de `S15` que lee `reconciliation_mark_payment`, una tabla que nace en `B5`: BN habla de la
+  rama que la **escribe**; para la que la **lee**, apliqué BL por inferencia ([AC:B3:15](#ac-b3-15)).
+```
+entra:
+```text
+La duda de `_trabajo/abiertos/pasada2-g7.md` sobre la lectura de `reconciliation_mark_payment`
+por `S15` **quedó cerrada por BY**: BL vale también para leer ([AC:B3:15](#ac-b3-15)); `B3` llama
+a la interfaz interna y `B5` la implementa sobre su tabla.
+```
+
+## 10-corte/B4.md
+
+H4-VB-09-2 · REAL BLOQUEA · línea 349
+B4 exige encolar el aviso de cobertura después del commit; confunde la escritura atómica del outbox con su envío.
+Destino: v/generadores/g8/src/B4.md; regenerar con g8, sin editar la salida
+sale:
+```text
+- **Outbox**: el aviso de que la cobertura cambió se encola en el outbox común de `U2`, después del
+  commit;
+```
+entra:
+```text
+- **Outbox**: el aviso de que la cobertura cambió se encola en el outbox común de `U2` dentro de
+  la misma transacción que el cambio de estado; sólo su envío sale después del commit;
+```
+
+Edición literal a realizar en v/generadores/g8/src/B4.md:349 (la anterior describe la salida esperada):
+sale:
+```text
+- **Outbox**: el aviso de que la cobertura cambió se encola en el outbox común de `U2`, después del
+  commit;
+```
+entra:
+```text
+- **Outbox**: el aviso de que la cobertura cambió se encola en el outbox común de `U2` dentro de
+  la misma transacción que el cambio de estado; sólo su envío sale después del commit;
+```
+
+H4-VB-09-2 · REAL BLOQUEA · línea 391
+B4 exige encolar el aviso de cobertura después del commit; confunde la escritura atómica del outbox con su envío.
+Destino: v/generadores/g8/src/B4.md; regenerar con g8, sin editar la salida
+sale:
+```text
+El primer pago acreditado de una `ACTIVE` sin pagos deja el aviso en el outbox de `U2` sólo después
+del commit; el consumidor que relee al recibirlo ve `cobrada: sí`.
+```
+entra:
+```text
+El primer pago acreditado de una `ACTIVE` sin pagos escribe el estado y el aviso en el outbox de
+`U2` en la misma transacción: un rollback no deja ninguno; un commit deja ambos. El envío ocurre
+sólo después del commit; el consumidor que relee al recibirlo ve `cobrada: sí`.
+```
+
+Edición literal a realizar en v/generadores/g8/src/B4.md:391 (la anterior describe la salida esperada):
+sale:
+```text
+El primer pago acreditado de una `ACTIVE` sin pagos deja el aviso en el outbox de `U2` sólo después
+del commit; el consumidor que relee al recibirlo ve `cobrada: sí`.
+```
+entra:
+```text
+El primer pago acreditado de una `ACTIVE` sin pagos escribe el estado y el aviso en el outbox de
+`U2` en la misma transacción: un rollback no deja ninguno; un commit deja ambos. El envío ocurre
+sólo después del commit; el consumidor que relee al recibirlo ve `cobrada: sí`.
+```
+
+## 10-corte/B5.md
+
+H4-VB-09-3 · REAL BLOQUEA · línea 273
+AC:B5:10 exige comprobante de transferencia y omite la referencia del panel admitida por RF4.
+Destino: v/generadores/g8/src/B5.md; regenerar con g8, sin editar la salida
+sale:
+```text
+Entonces nace el `refund` en `EXECUTED` por `RF4`, con quién la asentó, por dónde y el comprobante de
+la transferencia;
+```
+entra:
+```text
+Entonces nace el `refund` en `EXECUTED` por `RF4`, con quién la asentó, por dónde y el comprobante de
+la transferencia **o la referencia del panel**;
+```
+
+Edición literal a realizar en v/generadores/g8/src/B5.md:273 (la anterior describe la salida esperada):
+sale:
+```text
+Entonces nace el `refund` en `EXECUTED` por `RF4`, con quién la asentó, por dónde y el comprobante de
+la transferencia;
+```
+entra:
+```text
+Entonces nace el `refund` en `EXECUTED` por `RF4`, con quién la asentó, por dónde y el comprobante de
+la transferencia **o la referencia del panel**;
+```
+
+H4-VB-09-4 · REAL BLOQUEA · línea 310
+AC:B5:13 y TEST:B5:7 no exigen el aviso al admin al abrir una cuota sin pago, incluida la primera sin S4.
+Destino: v/generadores/g8/src/B5.md; regenerar con g8, sin editar la salida
+sale:
+```text
+en `SUSPENDED`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` o `PAUSED`.
+```
+entra:
+```text
+en `SUSPENDED`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` o `PAUSED`. Al abrir la cuota sin pago se
+encola el aviso de falta de pago al admin, incluida la primera cuota del alta que no pasa por `S4`.
+```
+
+Edición literal a realizar en v/generadores/g8/src/B5.md:310 (la anterior describe la salida esperada):
+sale:
+```text
+en `SUSPENDED`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` o `PAUSED`.
+```
+entra:
+```text
+en `SUSPENDED`, `GRACE_PERIOD`, `CANCEL_SCHEDULED` o `PAUSED`. Al abrir la cuota sin pago se
+encola el aviso de falta de pago al admin, incluida la primera cuota del alta que no pasa por `S4`.
+```
+
+H4-VB-09-4 · REAL BLOQUEA · línea 1020
+AC:B5:13 y TEST:B5:7 no exigen el aviso al admin al abrir una cuota sin pago, incluida la primera sin S4.
+Destino: v/generadores/g8/src/B5.md; regenerar con g8, sin editar la salida
+sale:
+```text
+cuota lleva a `ACTIVE` por `S29` con un solo avance de fecha.
+```
+entra:
+```text
+cuota lleva a `ACTIVE` por `S29` con un solo avance de fecha. Al abrirse una cuota sin pago, tanto
+la primera del alta como las posteriores, se comprueba un único aviso de falta de pago al admin;
+la deduplicación no encola otro aviso al reintentar `MP5`.
+```
+
+Edición literal a realizar en v/generadores/g8/src/B5.md:1020 (la anterior describe la salida esperada):
+sale:
+```text
+cuota lleva a `ACTIVE` por `S29` con un solo avance de fecha.
+```
+entra:
+```text
+cuota lleva a `ACTIVE` por `S29` con un solo avance de fecha. Al abrirse una cuota sin pago, tanto
+la primera del alta como las posteriores, se comprueba un único aviso de falta de pago al admin;
+la deduplicación no encola otro aviso al reintentar `MP5`.
+```
+
+## 10-corte/B6.md
+
+H4-VB-09-6 · REAL BLOQUEA · línea 134
+AC:B6:5 generaliza la relectura del pago y omite que RF3 confirma UNA_VEZ leyendo su orden por id.
+Destino: v/generadores/g8/src/B6.md; regenerar con g8, sin editar la salida
+sale:
+```text
+Entonces pasa a `EXECUTED` sólo si la relectura por id del pago muestra acreditadas las devoluciones
+```
+entra:
+```text
+Entonces pasa a `EXECUTED` sólo si la relectura por id del pago —o de su orden por id, si es una
+instancia `UNA_VEZ`— muestra acreditadas las devoluciones
+```
+
+Edición literal a realizar en v/generadores/g8/src/B6.md:134 (la anterior describe la salida esperada):
+sale:
+```text
+Entonces pasa a `EXECUTED` sólo si la relectura por id del pago muestra acreditadas las devoluciones
+```
+entra:
+```text
+Entonces pasa a `EXECUTED` sólo si la relectura por id del pago —o de su orden por id, si es una
+instancia `UNA_VEZ`— muestra acreditadas las devoluciones
+```
+
+H4-VB-09-6 · REAL BLOQUEA · línea 461
+AC:B6:5 generaliza la relectura del pago y omite que RF3 confirma UNA_VEZ leyendo su orden por id.
+Destino: v/generadores/g8/src/B6.md; regenerar con g8, sin editar la salida
+sale:
+```text
+queda como error y la fila no pasa a `EXECUTED`.
+```
+entra:
+```text
+queda como error y la fila no pasa a `EXECUTED`. Para `RF3`, el falso exige la relectura de la
+orden por id: sólo con las devoluciones de esa fila acreditadas y sumando el monto confirmado
+pasa a `EXECUTED`; con una parte pendiente sigue en `CONFIRMED`.
+```
+
+Edición literal a realizar en v/generadores/g8/src/B6.md:461 (la anterior describe la salida esperada):
+sale:
+```text
+queda como error y la fila no pasa a `EXECUTED`.
+```
+entra:
+```text
+queda como error y la fila no pasa a `EXECUTED`. Para `RF3`, el falso exige la relectura de la
+orden por id: sólo con las devoluciones de esa fila acreditadas y sumando el monto confirmado
+pasa a `EXECUTED`; con una parte pendiente sigue en `CONFIRMED`.
+```
+
+## 10-corte/B7.md
+
+H4-VB-10-2 · REAL BLOQUEA · línea 205
+TEST:B7:6 corre S5 sobre un pago retenido por S19 y sobre ACTIVE; AC:B7:9 arrastra la misma mezcla de ramas.
+Destino: v/generadores/g8/src/B7.md; regenerar con g8, sin editar la salida
+sale:
+```text
+`S6`**: si hay un pago del período pendiente de `S19`, o la relectura muestra un cobro acreditado del
+período, `S6` no ocurre y corre lo que dice [AC:B7:8](#ac-b7-8) (`S5`, y `P1` sobre una fila `ACTIVE`).
+```
+entra:
+```text
+`S6`**: con un pago del período pendiente de `S19`, `S6` no ocurre y el pago sigue retenido, sin
+reactivar mientras la sucesión siga en curso. Si la relectura muestra un cobro acreditado del período
+que no queda retenido, `S6` no ocurre: corre `S5` con sus condiciones sobre `GRACE_PERIOD`,
+o `P1` sobre `ACTIVE`, como dice [AC:B7:8](#ac-b7-8).
+```
+
+Edición literal a realizar en v/generadores/g8/src/B7.md:205 (la anterior describe la salida esperada):
+sale:
+```text
+`S6`**: si hay un pago del período pendiente de `S19`, o la relectura muestra un cobro acreditado del
+período, `S6` no ocurre y corre lo que dice {{AC:B7:8}} (`S5`, y `P1` sobre una fila `ACTIVE`).
+```
+entra:
+```text
+`S6`**: con un pago del período pendiente de `S19`, `S6` no ocurre y el pago sigue retenido, sin
+reactivar mientras la sucesión siga en curso. Si la relectura muestra un cobro acreditado del período
+que no queda retenido, `S6` no ocurre: corre `S5` con sus condiciones sobre `GRACE_PERIOD`,
+o `P1` sobre `ACTIVE`, como dice {{AC:B7:8}}.
+```
+
+H4-VB-10-2 · REAL BLOQUEA · línea 1614
+TEST:B7:6 corre S5 sobre un pago retenido por S19 y sobre ACTIVE; AC:B7:9 arrastra la misma mezcla de ramas.
+Destino: v/generadores/g8/src/B7.md; regenerar con g8, sin editar la salida
+sale:
+```text
+Un `paused` sin `PUT` nuestro sobre `ACTIVE` y sobre `GRACE_PERIOD` corre `S6`; nunca `S8`; con un
+pago del período pendiente de `S19`, o con un cobro acreditado en la relectura del falso, `S6` no
+ocurre y corre `S5`.
+```
+entra:
+```text
+Un `paused` sin `PUT` nuestro sobre `ACTIVE` y sobre `GRACE_PERIOD`, cumplidas las guardas, corre
+`S6`, nunca `S8`. Con un pago del período pendiente de `S19`, no corre `S6` ni se reactiva:
+el pago sigue retenido mientras la sucesión siga en curso. Con un cobro acreditado en la relectura
+del falso que no queda retenido, no corre `S6`: en `GRACE_PERIOD` corre `S5` con sus condiciones
+y en `ACTIVE` corre `P1`.
+```
+
+Edición literal a realizar en v/generadores/g8/src/B7.md:1614 (la anterior describe la salida esperada):
+sale:
+```text
+Un `paused` sin `PUT` nuestro sobre `ACTIVE` y sobre `GRACE_PERIOD` corre `S6`; nunca `S8`; con un
+pago del período pendiente de `S19`, o con un cobro acreditado en la relectura del falso, `S6` no
+ocurre y corre `S5`.
+```
+entra:
+```text
+Un `paused` sin `PUT` nuestro sobre `ACTIVE` y sobre `GRACE_PERIOD`, cumplidas las guardas, corre
+`S6`, nunca `S8`. Con un pago del período pendiente de `S19`, no corre `S6` ni se reactiva:
+el pago sigue retenido mientras la sucesión siga en curso. Con un cobro acreditado en la relectura
+del falso que no queda retenido, no corre `S6`: en `GRACE_PERIOD` corre `S5` con sus condiciones
+y en `ACTIVE` corre `P1`.
+```
+
+## 10-corte/V9a.md
+
+H4-VB-07-4 · REAL MENOR · línea 74
+V9a atribuye los tres avisos de retención a V9b; BL asigna «al archivar» a V6.
+Destino: 10-corte/V9a.md
+sale:
+```text
+- el reloj, `PB9`, el empuje a billing, la lista cerrada de `PURGED` y los tres avisos: `V9b`
+  ([FILA:V9b](../20-fase-1/V9b.md#fila-v9b)), en la Fase 1;
+```
+entra:
+```text
+- el reloj, `PB9`, el empuje a billing, la lista cerrada de `PURGED` y los dos avisos previos: `V9b`
+  ([FILA:V9b](../20-fase-1/V9b.md#fila-v9b)), en la Fase 1; el aviso «al archivar» lo encola `V6`
+  en `PB4`/`PB5`, con su plantilla (BL);
+```
+
+## 20-fase-1/V9b.md
+
+H4-VB-11-4 · REAL BLOQUEA · línea 637
+V9b usa una clave de schedule para la alerta cerrada por PURGED, que es correo de evento.
+Destino: 20-fase-1/V9b.md
+sale:
+```text
+- Los dos avisos previos y el de la alerta cerrada se encolan en el outbox común de `U2`, con la
+  clave de schedule que lleva la fecha objetivo (`NUCLEO/07` §2); el *«al archivar»* lo encola `V6`
+```
+entra:
+```text
+- Los dos avisos previos se encolan en el outbox común de `U2` con la clave de schedule que lleva
+  la fecha objetivo; el aviso de alerta cerrada por `PURGED` usa como ocurrencia el id del evento
+  de dominio que lo causó (`NUCLEO/07` §2). El *«al archivar»* lo encola `V6`
+```
+
+## 20-fase-2/B8b.md
+
+H4-VA-A9-1 · REAL BLOQUEA · línea 488
+AC:B8b:7 toma cualquier número menor como downgrade, incluso cuando mejora una clave MÍNIMO.
+Destino: 20-fase-2/B8b.md
+sale:
+```text
+- **Dado** un cambio hacia una versión de `rank` MAYOR con un solo limit menor
+```
+entra:
+```text
+- **Dado** un cambio hacia una versión de `rank` MAYOR en el que un limit empeora según su
+  estrategia —menor en `SUMA`/`MÁXIMO`, mayor en `MÍNIMO` o peor en `MEJOR_DECLARADO`—,
+  por lo que `direcciónDeCambio` devuelve `BAJA`
+```
+
+## 80-abiertos.md
+
+H4-VB-13-4 · REAL MENOR · línea 589
+80-abiertos cierra el creador de domain_event con BN en lugar de BW, que corrigió expresamente esa asignación.
+Destino: 80-abiertos.md
+sale:
+```text
+| AB-g6-4 · V9a · Qué pieza crea `domain_event`, el registro donde `V9a` escribe los actos del dueño | `g6-v5-v9.md`:69 | [BN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bn) |
+```
+entra:
+```text
+| AB-g6-4 · V9a · Qué pieza crea `domain_event`, el registro donde `V9a` escribe los actos del dueño | `g6-v5-v9.md`:69 | [BW](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bw): `U2`; precisa la aplicación de BN |
+```
+
+## En las fuentes
+
+Cuatro únicos FUENTE. Además se alinean los dos residuos históricos de BM ligados al REAL de B2, sin contarlos como otro hallazgo.
+
+### H4-VA-A6-1
+
+La consolidación dejó el reparto antiguo en B2 pese a la corrección expresa de la fuente. El log y la fila histórica BM conservan residuos secundarios: se proponen también para evitar su reintroducción.
+
+Archivo fuente: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md
+H4-VA-A6-1 · REAL BLOQUEA · línea 1467
+B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+Destino: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md
+sale:
+```text
+precios del corte son los vigentes hoy**: los carga el paso 3a y no se cambian durante el corte, y
+```
+entra:
+```text
+precios del corte son los vigentes hoy**: los carga la migración estructural del paso 3 y los verifica el 3a; no se cambian durante el corte, y
+```
+
+Archivo fuente: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+H4-VA-A6-1 · REAL BLOQUEA · línea 138
+B2 asigna la carga de precios al paso 3a y excluye la migración estructural del paso 3; también lo exige en el AC y el smoke.
+Destino: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+sale:
+```text
+**Los precios del corte son los vigentes hoy**: los carga el paso 3a y no se cambian durante el corte;
+```
+entra:
+```text
+**Los precios del corte son los vigentes hoy**: los carga la migración estructural del paso 3 y los verifica el 3a; no se cambian durante el corte;
+```
+
+### H4-VB-06-3
+
+Residuo vivo de la descomposición, anterior a DEC-DATA-007; corregir fuente, re-congelar y resincronizar LISTA:V6.
+
+Archivo fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md
+H4-VB-06-3 · FUENTE BLOQUEA · línea 717
+LISTA:V6 copia la salida incondicional de MODERATED a DRAFT que aún conserva la descomposición; DEC-DATA-007 ya la reemplazó.
+Destino: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md
+sale:
+```text
+y levantar la moderación la deja en `DRAFT` con el reloj reiniciado** (`PB11`, hecho 6; 5b)
+```
+entra:
+```text
+y levantar la moderación la devuelve a su estado previo: `DRAFT` si era borrador (`PB11`), `UNPUBLISHED_BY_BILLING` con `PB3` en el mismo acto si estaba publicada o bajada por billing (`PB13`), y si estaba archivada, según el origen de su archivado, como fija el 📌 de `DEC-DATA-007`; se reinicia el reloj**
+```
+
+Salida a sincronizar tras el re-congelado: 10-corte/V6.md:159–160 (LISTA:V6).
+
+### H4-VB-11-1
+
+Residuo del capítulo vivo; secciones/gen.py transcribe fielmente. Corregir fuente, re-congelar y regenerar secciones.
+
+Archivo fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md
+H4-VB-11-1 · FUENTE BLOQUEA · línea 311
+B9a copia «sin promos» para toda ventana S37–S38; el capítulo B/14 no incorporó la excepción del aumento con promo viva de BZ.
+Destino: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md
+sale:
+```text
+**Entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos**
+```
+entra:
+```text
+**Entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos, salvo si el motivo es «aumento»: en ese caso conserva y descuenta la promo viva (BZ; `DEC-MP-002`)**
+```
+
+Salida a sincronizar tras el re-congelado: 10-corte/B9a.md:307 (g-secciones, regenerar secciones/gen.py).
+
+### H4-VB-11-2
+
+El cierre histórico no se sincronizó al corregir §2.4 y B/09.
+
+Archivo fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md
+H4-VB-11-2 · FUENTE BLOQUEA · línea 742
+El cierre de pendientes de B/14 mantiene el reintento de aumento desde fecha efectiva, aunque la regla vigente ya cuenta desde S37.
+Destino: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md
+sale:
+```text
+reintento de monto de un aumento corren desde su fecha efectiva (§2.4).
+```
+entra:
+```text
+reintento de monto de un aumento corren desde `S37`, la transición que muta el monto siete días antes de la fecha efectiva (BZ; `B/09` §3; `DEC-MP-002` y su 📌 de CC).
+```
+
+Salida a sincronizar tras el re-congelado: 10-corte/B9a.md:720–721 (g-secciones, regenerar secciones/gen.py).
+
+### H4-VB-14-1
+
+Residuo vivo del paso 3; no exige una nueva decisión del owner.
+
+Archivo fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md
+H4-VB-14-1 · FUENTE BLOQUEA · línea 152
+30-el-corte copia los dieciocho plazos del paso 3 de la fuente, que no incorporó la clave 19 de BU/BX.
+Destino: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md
+sale:
+```text
+con los ~~quince~~ dieciocho valores
+```
+entra:
+```text
+con los ~~quince~~ ~~dieciocho~~ diecinueve valores
+```
+
+Archivo fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md
+H4-VB-14-1 · FUENTE BLOQUEA · línea 152
+30-el-corte copia los dieciocho plazos del paso 3 de la fuente, que no incorporó la clave 19 de BU/BX.
+Destino: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md
+sale:
+```text
+**antes del merge de `V6`** (FASE 5, owner 2026-09-30, lote 3 D; S-78)
+```
+entra:
+```text
+**antes del merge de `V6`**; **el valor de la clave 19 de billing lo fija antes del merge de `B2` (BU, BX)** (FASE 5, owner 2026-09-30, lote 3 D; S-78)
+```
+
+Salida a sincronizar tras el re-congelado: 30-el-corte.md:452–456 (paso 3).
+
+## FALSO
+
+Ningún único no-canario queda FALSO en esta vuelta. Se revisaron los FALSO de vueltas 1–3; ninguno corresponde a los reclamos actuales.
+VA-A5-1 informa cero hallazgos: no es un FALSO. Los volcados auxiliares tampoco son hallazgos.
+
+## OWNER y GENERADOR
+
+OWNER: 0. Última letra vigente: CJ; no se crea owner.txt.
+GENERADOR: 0. No se detectó una regla del código que introdujera un defecto no-canario: los de B4–B7 ya están en g8/src y los residuos de B9a están en B/14.
+
+## Validación
+
+Se validaron las coincidencias literales únicas y las líneas de todas las propuestas, además de la cobertura de todos los hallazgos finales. No se ejecutaron generadores contra la spec ni tests del producto: este entregable adjudica documentos y no implementa billing.

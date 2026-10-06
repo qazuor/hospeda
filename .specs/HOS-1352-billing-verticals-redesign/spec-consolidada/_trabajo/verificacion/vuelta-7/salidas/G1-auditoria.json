@@ -1,0 +1,101 @@
+{
+    "checked": 8014,
+    "owners": 321,
+    "issues": [
+        {
+            "line": 136,
+            "block": "dec-trial-003",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:361",
+            "text": "  catorce hoy.**",
+            "nearest": ["cero hoy.**"]
+        },
+        {
+            "line": 317,
+            "block": "dec-trial-006",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:511",
+            "text": "  | turista | el primer inicio de sesión del §47 |",
+            "nearest": ["| turista | el botón `Empezar` del §47 |"]
+        },
+        {
+            "line": 1899,
+            "block": "dec-sub-023-p1",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7148",
+            "text": "siete días le sale un correo que lo explica. `PARA_RESOLVER` no tiene plazo. Una cortesía temporal vigente el día de la migración espera a volver. Y que pausados y",
+            "nearest": [
+                "antigüedad. Una cortesía temporal vigente el día de la migración espera a volver. Y que pausados y"
+            ]
+        },
+        {
+            "line": 2941,
+            "block": "dec-ent-005",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5047",
+            "text": "- **Decisión**: la **clase** pasa a ser un **atributo declarado** de cada clave en el catálogo",
+            "nearest": [
+                "- **Decisión**: la **clase** pasa a ser el **cuarto atributo declarado** de cada clave en el catálogo"
+            ]
+        },
+        {
+            "line": 2942,
+            "block": "dec-ent-005",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5047",
+            "text": "  —junto al scope y la estrategia de agregación—, con **lista cerrada de dos",
+            "nearest": [
+                "—junto al scope, la estrategia de agregación y los que ya estaban—, con **lista cerrada de dos"
+            ]
+        },
+        {
+            "line": 4414,
+            "block": "dec-data-005-p7",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6133",
+            "text": "de `V/22`; si contesta en contra, se borran todos con una tarea puntual, y se anota quién",
+            "nearest": [
+                "de `V/22`; si contesta en contra, soporte los borra todos con una tarea puntual, y se anota quién"
+            ]
+        },
+        {
+            "line": 8216,
+            "block": "dec-legal-001",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:964",
+            "text": "  un documento y que **no** se lo llame factura fiscal; §53 difiere ARCA *\"salvo decisión separada\"*.",
+            "nearest": [
+                "PDF y que **no** se lo llame factura fiscal; §53 difiere ARCA *\"salvo decisión separada\"*."
+            ]
+        },
+        {
+            "line": 8615,
+            "block": "dec-test-003-p1",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7203",
+            "text": "autorización de la batería en producción la custodia el owner. Y",
+            "nearest": [
+                "autorización mensual de la batería en producción la custodia el owner y la renueva cada mes. Y"
+            ]
+        },
+        {
+            "line": 8880,
+            "block": "dec-conc-002-p1",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1633",
+            "text": "Terminar una cancelación NUESTRA ya decidida no es reparar una divergencia.** […] Filas de",
+            "nearest": [
+                "Terminar una cancelación NUESTRA ya decidida no es reparar una divergencia.** Once filas de"
+            ]
+        },
+        {
+            "line": 9034,
+            "block": "dec-rf-001",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1796",
+            "text": "    monto original. ARS 5 entró sobre pagos de 5.000 y 7.500.",
+            "nearest": [
+                "monto original. **No hay monto mínimo** — ARS 5 entró sobre pagos de 5.000 y 7.500."
+            ]
+        },
+        {
+            "line": 12543,
+            "block": "own-37-fase-8-vuelta-3-t1-h",
+            "origin": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:29",
+            "text": "- **elige**: **1**: se conserva hasta la respuesta; si es en contra, se borran todos con una tarea puntual (se anota quién y cuándo)",
+            "nearest": [
+                "| H | R10 (`F-8V3A3-006`) | si la baja de cuenta conserva el seudónimo mientras la pregunta 5 al abogado sigue abierta | **1**: se conserva hasta la respuesta; si es en contra, soporte los borra todos con una tarea puntual (se anota quién y cuándo) | sí |"
+            ]
+        }
+    ]
+}

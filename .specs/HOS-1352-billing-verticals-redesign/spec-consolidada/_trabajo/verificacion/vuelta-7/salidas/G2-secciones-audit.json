@@ -1,0 +1,957 @@
+[
+    {
+        "file": "10-corte/B11.md",
+        "line": 77,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [12, 22],
+        "lines": 11,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 88,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [23, 43],
+        "lines": 21,
+        "diffs": [
+            [
+                "OUTPUT",
+                104,
+                "por id (`RC-4`), mientras que leer **por id sí es confiable** (`RC-1`;"
+            ],
+            [
+                "SOURCE",
+                39,
+                "por id (`RC-4`), mientras que leer **por id sí es confiable** ( `RC-1`;"
+            ]
+        ]
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 111,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [46, 54],
+        "lines": 11,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 122,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [55, 67],
+        "lines": 15,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 137,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [68, 82],
+        "lines": 17,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 154,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [83, 175],
+        "lines": 87,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 241,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [176, 966],
+        "lines": 755,
+        "diffs": [
+            [
+                "OUTPUT",
+                350,
+                "| `S3` → `ABANDONED` | **nuestra llamada**: el job que recorre las vencidas *«cancela el preapproval en el proveedor»* (`B/03` §3.4 punto 2), y `B/06` §6 lo subraya con `EX-1` (`PARTIALLY_SUPPORTED` desde el 2026-09-23: un `pending` no vence solo; FASE 9 vuelta 1, `F-8V1D1-005`) — *«es lo único que impide una autorización viva que puede cobrar»* | **no** — **con la misma salvedad de `S23` y `S24`: sobre un pagador manual sí está exenta**, porque ahí no hubo llamada que confirmar (`B/06` §7) y la fila es **la de un alta que nunca pagó su primera cuota** (`B/03` §7.2). No mueve el conteo de la salvedad 4: `S3` sigue siendo una de sus **doce** filas, igual que `S23` y `S24` (con `S36`, FASE 9 vuelta 1, §4 punto 4 de `25-verificado-G5`; **quince** con la lápida de recepción, owner 2026-09-26, `X-1`; **doce** sin `S25`, `S27` ni `S28`, revisión del owner, 2026-09-28, C8) |"
+            ],
+            [
+                "OUTPUT",
+                373,
+                "| 4 | **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** — **once** de las **doce** filas *«no»* de la tabla de arriba (revisión del owner, 2026-09-28, C8: salen `S25`, `S27` y `S28`; FASE 5, simplificación del corte, S-40: sale la lápida del corte): `S12`, `S3`, `S13`, **`S16`**, **`S20`**, **`S22`**, **`S23`**, **`S24`**, **`S31`**, **`S36`** y **la lápida de recepción** (**la de recepción** desde el owner 2026-09-26, `X-1`; **`S36`** desde la FASE 9 vuelta 1, residuo 2 de `17-`; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`** desde la FASE 8 completa, owner 2026-09-25, residuo A de `R12`: pasó de *«sí»* a *«no»* al cancelar de nuestro lado). **La duodécima, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras diez son principales** (la lápida de recepción, con su clase propia, cuenta de este lado), y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y `S3`, `S23`, `S24`, `S31` y `S36` entran sólo cuando hubo llamada** (FASE 9 completa, C-R5-4: la tabla de arriba da la misma salvedad a las cinco; `S36`, FASE 9 vuelta 1; sin `S27` ni `S28` desde la revisión del owner, 2026-09-28, C8): sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe | hasta que la relectura lo vea `cancelled` —**y después, hasta que cierre el registro de cobro del ciclo, por el criterio de la exención** (FASE 9 vuelta 2, `F-8V2B3-006`)—; **sobre la de `S16` que el proveedor ya había cancelado, hasta que pase la ventana de relectura de la cancelación por rechazo** (FASE 9 vuelta 3, lote K). **Sobre la lápida de recepción la relectura mira el estado y los cobros, no el monto** (la ventana del corte salió: FASE 5, simplificación del corte, S-41): no tiene versión contra la cual comparar un monto (`B/02` §2.2; FASE 9 vuelta 1, R6) | es la salvedad 1 aplicada a la suscripción, y por la misma razón exacta: el aviso de cancelación existe **sólo si la cancelación se aplicó** (`EX-15` mide que cancelar sí notifica), así que si la llamada no se aplicó (FASE 9 vuelta 1, `F-8V1B3-007`) **no hay ninguna otra vía de aviso** y el primer aviso es el cobro. El costo está acotado por su condición de corte —deja de barrerse apenas la relectura confirma—, así que no es la cartera terminal entera sino la cola de las que todavía no confirmaron. **Y mientras la relectura lo vea vivo, el barrido vuelve a mandar la cancelación**, con el correo antes y la relectura después; **marca recién a los 3 días de la transición que decidió la cancelación** (ver abajo, *«el reintento de una cancelación nuestra»*; FASE 8 completa, `F-8CB1-013`, owner 2026-09-25) |"
+            ],
+            ["OUTPUT", 406, "   que se escribió (§2.4), (FASE 5,"],
+            ["OUTPUT", 408, "   salió;). **El reintento sobre la lápida de recepción"],
+            ["OUTPUT", 824, "> emitir**, y **lo repara `SUPER_ADMIN` volviendo a otorgar la"],
+            ["OUTPUT", 854, "| **`reimbursed`** | **`P7`** (`B/03` §6) |"],
+            [
+                "SOURCE",
+                286,
+                [
+                    " **no** — **con la misma salvedad de `S23` y `S24`: sobre un pagador manual sí está exenta**, porque ahí no hubo llamada que confirmar (`B/06` §7) y la fila es **la de un alta que nunca pagó su primera cuota** (`B/03` §7.2). No mueve el conteo de la salvedad 4: `S3` sigue siendo una de sus      **doce** filas, igual que `S23` y `S24` ( con `S36`, FASE 9 vuelta 1, §4 punto 4 de `25-verificado-G5`; **quince** con la lápida de recepción, owner 2026-09-26, `X-1`; **doce** sin `S25`, `S27` ni `S28`, revisión del owner, 2026-09-28, C8) "
+                ]
+            ],
+            [
+                "SOURCE",
+                309,
+                [
+                    " **una suscripción terminal cuyo preapproval lo canceló una llamada NUESTRA todavía sin confirmar** —       **once** de las **doce** filas *«no»* de la tabla de arriba (revisión del owner, 2026-09-28, C8: salen `S25`, `S27` y `S28`; FASE 5, simplificación del corte, S-40: sale la lápida del corte): `S12`, `S3`, `S13`, **`S16`**, **`S20`**, **`S22`**, **`S23`**, **`S24`**,  **`S31`**, **`S36`** y   **la lápida de recepción** (**la de recepción** desde el owner 2026-09-26, `X-1`; **`S36`** desde la FASE 9 vuelta 1, residuo 2 de `17-`; `S31` desde la FASE 8 completa, owner 2026-09-25; **`S16`** desde la FASE 8 completa, owner 2026-09-25, residuo A de `R12`: pasó de *«sí»* a *«no»* al cancelar de nuestro lado). **La       duodécima, `S21`, entra por la 1 y no por acá** (ver abajo). **`S20` es de complemento y las otras       diez son principales** ( la lápida de recepción, con su clase propia, cuenta de este lado) , y eso no cambia nada acá: lo que la salvedad mira es **quién canceló**, no de qué clase es la fila. **Y    `S3`, `S23`, `S24`, `S31` y `S36` entran sólo cuando hubo llamada** (FASE 9 completa, C-R5-4: la tabla de arriba da la misma salvedad a las   cinco; `S36`, FASE 9 vuelta 1; sin `S27` ni `S28` desde la revisión del owner, 2026-09-28, C8): sobre un pagador manual no la hubo, así que esa mitad ya está exenta en la tabla de arriba y no vuelve al barrido a esperar una relectura que no existe ",
+                    " hasta que la relectura lo vea `cancelled` —**y después, hasta que cierre el registro de cobro del ciclo, por el criterio de la exención** (FASE 9 vuelta 2, `F-8V2B3-006`)—; **sobre la de `S16` que el proveedor ya había cancelado, hasta que pase la ventana de relectura de la cancelación por rechazo** (FASE 9 vuelta 3, lote K). **Sobre  la lápida de recepción la relectura mira  el estado y los cobros, no el monto** ( la ventana del corte salió: FASE 5, simplificación del corte, S-41): no tiene versión contra la cual comparar un monto (`B/02` §2.2; FASE 9 vuelta 1, R6) "
+                ]
+            ],
+            ["SOURCE", 342, "   que se escribió ( §2.4),  (FASE 5,"],
+            ["SOURCE", 344, "   salió; ). **El reintento sobre la lápida de recepción"],
+            ["SOURCE", 763, "> emitir** , y **lo repara `SUPER_ADMIN` volviendo a otorgar la"],
+            [
+                "SOURCE",
+                793,
+                [
+                    " **`P7`** (`B/03` §6), y sale el correo *«la disputa se resolvió a nuestro favor»* (`NUCLEO/07` §6) "
+                ]
+            ]
+        ]
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 996,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [967, 1021],
+        "lines": 55,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 1051,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [1022, 1045],
+        "lines": 24,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 1075,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [1046, 1082],
+        "lines": 35,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 1110,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [1083, 1114],
+        "lines": 33,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 1143,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [1115, 1165],
+        "lines": 47,
+        "diffs": [
+            ["OUTPUT", 1161, "**no comparte ejecución con el barrido**. Las 26 h son el día del"],
+            ["SOURCE", 1133, "**no comparte ejecución con el barrido** . Las 26 h son el día del"]
+        ]
+    },
+    {
+        "file": "10-corte/B11.md",
+        "line": 1190,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md",
+        "range": [1166, 1322],
+        "lines": 127,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 56,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [12, 22],
+        "lines": 11,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 67,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [23, 39],
+        "lines": 17,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 84,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [40, 53],
+        "lines": 14,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 98,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [54, 68],
+        "lines": 17,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 115,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [69, 96],
+        "lines": 28,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 143,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [97, 160],
+        "lines": 69,
+        "diffs": [
+            [
+                "OUTPUT",
+                155,
+                "| 3-bis | al **pedir la baja** de una suscripción principal teniendo **addons recurrentes que dependen de ella** —de ficha (`LISTING`) en esa vertical, de la suscripción (`VERTICAL_SUBSCRIPTION`), y de cuenta (`USER`/`GLOBAL`) si no les queda otra vertical compatible con una principal que siga (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`)—, antes de confirmar | **qué addons se cancelan y por cuánto**: mueren con la suscripción —cuando deja de ser fila viva, que según el estado desde el que se pide es al fin del servicio o hoy (fila 8)—. **Desde `ACTIVE` su cobro se corta hoy, en el mismo acto que el del plan, y se siguen viendo hasta el fin del servicio** (`S11`, `R1-a`); desde los otros estados se apagan hoy con ella. **Lo que no se promete**: que se corte hoy el cobro de un addon que todavía espera autorización o está en mora, porque ése se apaga recién al fin del servicio (`B/16`, NO cierra). **Si vuelve, los contrata de nuevo**, no se reanudan | FASE 8 completa, `F-8CA2-003` (owner 2026-09-25), cap. 16 §4.2 y §4.4; **cap. 03 §3.2 `S11`** (FASE 9 vuelta 2, `R1-a`, `F-8V2B1-001`) |"
+            ],
+            [
+                "OUTPUT",
+                166,
+                "| 10-ter ✚ | el aviso de **suspensión por contracargo** (`S6` por su tercer evento, cap. 03 §3.2) | **no lo mismo que la 10**, y por eso es otra fila: la 10 habla de un cobro que no entró y le pide *«una tarjeta que funcione»*, y acá **el cobro entró y la persona lo desconoció ante su banco** — decirle que revise su tarjeta es falso. Dice **cuatro** cosas: que la suscripción **se suspendió porque el pago —con su fecha y su monto— fue desconocido ante su banco**; que **ya no se le va a cobrar** —el preapproval se canceló en el mismo acto (`DEC-SUB-020`)—; que **una persona sigue el caso**; y que **para volver, se vuelve a suscribir por el checkout**, como cualquier suspendido con tarjeta (`G-R1-A`). Lo que pierde como turista y los días de addon, igual que la 10. **Es un correo propio del catálogo, *«suspendido por contracargo»*, transaccional y no suprimible** (`NUCLEO/07` §6), con este **texto base del owner**: *«Desconociste el cargo de $X del día Y en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá.»* (FASE 8 completa, pendiente 6, owner 2026-09-25). El texto base dice la primera y la cuarta; ⚠️ **las otras dos —que ya no se le va a cobrar y que una persona sigue el caso— no están en él**, y si el texto final las lleva no está decidido. **Cerrado el 2026-09-25 (owner)**: **si puede volver antes de que la disputa se resuelva lo contesta el texto base**: se lo ofrece en el mismo aviso, *«mientras se resuelve»*. **Cerrado el 2026-09-25 (owner, pendiente 8)**: **si la disputa se resuelve a favor de la persona sale un correo transaccional** (`NUCLEO/07` §6): si gana la persona (`settled`), *«la disputa se resolvió a tu favor; tu suscripción sigue **suspendida**; podés volver cuando quieras»* cuando la fila está `SUSPENDED`, y *«sigue cancelada»* cuando está `CANCELLED` (FASE 8 completa, owner 2026-09-25). **Y el mismo aviso de contracargo vale cuando la fila estaba en `CANCEL_SCHEDULED`** y `S12` la pasa a `CANCELLED` (orquestador, pendiente 8, derivado de `DEC-SUB-020`). **Cerrado el 2026-09-25 (owner, FASE 8 completa)**: **a quien estaba en una `PAUSED` por cortesía** (`S6` por su tercer evento desde la pendiente 8) **el aviso le dice además que la cortesía terminó** | `DEC-SUB-020`, FASE 8 completa (`F-8CB3-009`, owner 2026-09-25; pendientes 6 y 8), cap. 03 §3.2 (`S6`, `S12`) y §6 (`P6`, `P7`), `NUCLEO/07` §6 |"
+            ],
+            [
+                "OUTPUT",
+                173,
+                "| 13-quater | al **elegir un plan no mensual —trimestral, semestral o anual—** —el cambio de plan (el alta nueva con saldo diferido salió con `S25`: revisión del owner, 2026-09-28, C8)— **teniendo una cortesía vigente o un saldo diferido** en esa vertical | **que pierde los N meses de cortesía que le quedan**, porque sobre un plan que no es mensual no hay cortesía temporal, y que decide él: puede seguir en mensual y conservarlos | `DEC-GRANT-003` impl. 6, `B/02` §2.4 (`DESTINO_DE_PLAN_NO_MENSUAL`) (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25; FASE 9 completa, contradicción 1 de `03` §R4.5) |"
+            ],
+            [
+                "SOURCE",
+                109,
+                [
+                    " **qué addons  se cancelan y por cuánto**: mueren con la suscripción —cuando deja de ser fila viva, que según el estado desde el que se pide es al fin del servicio o hoy (fila 8)— . **Desde `ACTIVE` su cobro se corta hoy, en el mismo acto que el del plan, y se siguen viendo hasta el fin del servicio** (`S11`, `R1-a`); desde los otros estados se apagan hoy con ella. **Lo que no se promete**: que se corte hoy el cobro de un addon que todavía espera autorización o está en mora, porque ése se apaga recién al fin del servicio (`B/16`, NO cierra). **Si vuelve, los contrata de nuevo**, no se reanudan "
+                ]
+            ],
+            [
+                "SOURCE",
+                120,
+                [
+                    " **no lo mismo que la 10**, y por eso es otra fila: la 10 habla de un cobro que no entró y le pide *«una tarjeta que funcione»*, y acá **el cobro entró y la persona lo desconoció ante su banco** — decirle que revise su tarjeta es falso. Dice **cuatro** cosas: que la suscripción **se suspendió porque el pago —con su fecha y su monto— fue desconocido ante su banco**; que **ya no se le va a cobrar** —el preapproval se canceló en el mismo acto (`DEC-SUB-020`)—; que **una persona sigue el caso**; y que **para volver, se vuelve a suscribir por el checkout**, como cualquier suspendido con tarjeta (`G-R1-A`). Lo que pierde como turista y los días de addon, igual que la 10. **Es un correo propio del catálogo, *«suspendido por contracargo»*, transaccional y no suprimible** (`NUCLEO/07` §6), con este **texto base del owner**: *«Desconociste el cargo de $X del día Y en tu banco. Mientras se resuelve, suspendimos el servicio. Si fue un error, podés volver a suscribirte desde acá.»* (FASE 8 completa, pendiente 6, owner 2026-09-25). El texto base dice la primera y la cuarta; ⚠️ **las otras dos —que ya no se le va a cobrar y que una persona sigue el caso— no están en él**, y si el texto final las lleva no está decidido.  **Cerrado el 2026-09-25 (owner)**: **si puede volver antes de que la disputa se resuelva lo contesta el texto base**: se lo ofrece en el mismo aviso, *«mientras se resuelve»*.  **Cerrado el 2026-09-25 (owner, pendiente 8)**: **al resolverse la disputa sale un correo transaccional por cada desenlace** (`NUCLEO/07` §6): si gana la persona (`settled`), *«la disputa se resolvió a tu favor; tu suscripción sigue  **suspendida**; podés volver cuando quieras»* cuando la fila está `SUSPENDED`, y *«sigue cancelada»* cuando está `CANCELLED` (FASE 8 completa, owner 2026-09-25); si ganamos nosotros (`reimbursed`, `P7`), *«la disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá»*. **Y el mismo aviso de contracargo vale cuando la fila estaba en `CANCEL_SCHEDULED`** y `S12` la pasa a `CANCELLED` (orquestador, pendiente 8, derivado de `DEC-SUB-020`).  **Cerrado el 2026-09-25 (owner, FASE 8 completa)**: **a quien estaba en una `PAUSED` por cortesía** (`S6` por su tercer evento desde la pendiente 8) **el aviso le dice además que la cortesía terminó** "
+                ]
+            ],
+            [
+                "SOURCE",
+                127,
+                [
+                    " `DEC-GRANT-003` impl. 6, `B/02` §2.4 ( `DESTINO_DE_PLAN_NO_MENSUAL`) (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25; FASE 9 completa, contradicción 1 de `03` §R4.5) "
+                ]
+            ]
+        ]
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 212,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [161, 170],
+        "lines": 10,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 222,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [171, 203],
+        "lines": 33,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 255,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [204, 300],
+        "lines": 97,
+        "diffs": [
+            [
+                "OUTPUT",
+                268,
+                "| **las migraciones de planes retirados** ✚: antes de confirmar, **la previsualización** (cada cliente alcanzado con subida o bajada, su precio actual y el nuevo, y su fecha); y después, por migración, **sus filas por estado**, con **las que quedan para resolver a mano** (`PARA_RESOLVER`: el destino no ofrece su ciclo) a la vista, **sin plazo** (revisión del owner, casos vecinos, 2026-09-29, caso 26); la previsualización muestra también **la cuenta del propio `SUPER_ADMIN`, excluida**, si la cohorte la incluye (caso 24) | es la salida de la acción 17 (`NUCLEO/08` §3; revisión del owner, 2026-09-28, C15; `B/10` §3.7): sin el listado, los que no se pueden mover solos quedan en un plan retirado sin que nadie los mire, y la migración no sirve para vaciarlo |"
+            ],
+            [
+                "SOURCE",
+                218,
+                [
+                    " **las migraciones de planes retirados** ✚: antes de confirmar, **la previsualización** (cada cliente alcanzado con subida o bajada, su precio actual y el nuevo, y su fecha); y después, por migración, **sus filas por estado**, con **las que quedan para resolver a mano** (`PARA_RESOLVER`: el destino no ofrece su ciclo) a la vista, **sin plazo y con su antigüedad**, contada desde el anuncio (revisión del owner, casos vecinos, 2026-09-29, caso 26); la previsualización muestra también **la cuenta del propio `SUPER_ADMIN`, excluida**, si la cohorte la incluye (caso 24) "
+                ]
+            ]
+        ]
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 352,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [301, 326],
+        "lines": 21,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 373,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md",
+        "range": [327, 346],
+        "lines": 20,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 393,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+        "range": [33, 37],
+        "lines": 7,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 400,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+        "range": [38, 49],
+        "lines": 14,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 414,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+        "range": [50, 71],
+        "lines": 24,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B13a.md",
+        "line": 438,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md",
+        "range": [72, 78],
+        "lines": 7,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 61,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [17, 31],
+        "lines": 15,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 78,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [34, 45],
+        "lines": 14,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 92,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [46, 65],
+        "lines": 22,
+        "diffs": [
+            [
+                "OUTPUT",
+                95,
+                "porcentajes se suman y los fijos se suman, y las dos operaciones conmutan. Con dos reglas"
+            ],
+            [
+                "SOURCE",
+                49,
+                "porcentajes se multiplican y los fijos se suman, y las dos operaciones conmutan. Con dos reglas"
+            ]
+        ]
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 114,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [66, 98],
+        "lines": 29,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 145,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [101, 121],
+        "lines": 23,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 168,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [122, 208],
+        "lines": 51,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 219,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [209, 233],
+        "lines": 15,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 234,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [234, 336],
+        "lines": 97,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 331,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [337, 349],
+        "lines": 13,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 346,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [352, 356],
+        "lines": 7,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 353,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [357, 373],
+        "lines": 18,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 371,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [374, 384],
+        "lines": 13,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 384,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [385, 392],
+        "lines": 8,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 394,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [395, 400],
+        "lines": 8,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 402,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [401, 415],
+        "lines": 17,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 419,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [416, 453],
+        "lines": 40,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 459,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [454, 501],
+        "lines": 45,
+        "diffs": [
+            [
+                "OUTPUT",
+                473,
+                "Si el saldo **sobreviviera** al grant, después de `S13` **esa ruta no vuelve a matchear nunca**: la sucesora que el `sucedida_por` nombra la canceló `S13`. Tampoco lo levanta la **sexta** comprobación del `B/09` §3, que resuelve *«la fila que tenía"
+            ],
+            [
+                "SOURCE",
+                468,
+                "Si el saldo **sobreviviera** al grant, después de `S13`  **esa ruta no vuelve a matchear nunca**: la sucesora que el `sucedida_por` nombra la canceló `S13` . Tampoco lo levanta la **sexta** comprobación del `B/09` §3, que resuelve *«la fila que tenía"
+            ]
+        ]
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 504,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [502, 544],
+        "lines": 45,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 549,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [545, 612],
+        "lines": 70,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 619,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [613, 633],
+        "lines": 23,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 642,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [634, 644],
+        "lines": 10,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 652,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [645, 684],
+        "lines": 39,
+        "diffs": []
+    },
+    {
+        "file": "10-corte/B9a.md",
+        "line": 691,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+        "range": [685, 742],
+        "lines": 34,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 57,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [187, 215],
+        "lines": 31,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 88,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [216, 255],
+        "lines": 42,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 130,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [256, 274],
+        "lines": 18,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 150,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [277, 287],
+        "lines": 13,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 163,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [288, 307],
+        "lines": 20,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 185,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [1014, 1020],
+        "lines": 9,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 194,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [1021, 1029],
+        "lines": 11,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 205,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [1030, 1039],
+        "lines": 12,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 217,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [1040, 1048],
+        "lines": 9,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 228,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [1051, 1059],
+        "lines": 11,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 239,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [1060, 1088],
+        "lines": 31,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 270,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "range": [1089, 1103],
+        "lines": 15,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-2/B8b.md",
+        "line": 285,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+        "range": [1179, 1233],
+        "lines": 55,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 92,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [17, 24],
+        "lines": 8,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 102,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [27, 37],
+        "lines": 13,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 115,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [38, 52],
+        "lines": 17,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 132,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [53, 70],
+        "lines": 20,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 152,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [71, 163],
+        "lines": 79,
+        "diffs": [
+            [
+                "OUTPUT",
+                200,
+                ">   proveedor permite** (`EX-57`, **`VERIFIED` el 2026-09-30, en sandbox y con ventana**; residuo corregido el"
+            ],
+            [
+                "SOURCE",
+                119,
+                ">   proveedor permite** ( `EX-57`, **`VERIFIED` el 2026-09-30, en sandbox y con ventana**; residuo corregido el"
+            ]
+        ]
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 233,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [166, 171],
+        "lines": 8,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 241,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [172, 185],
+        "lines": 16,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 257,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [186, 199],
+        "lines": 11,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 268,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [200, 225],
+        "lines": 26,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 294,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [226, 233],
+        "lines": 10,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 304,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [234, 247],
+        "lines": 16,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 320,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [248, 262],
+        "lines": 17,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 337,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [263, 336],
+        "lines": 76,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 413,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [337, 358],
+        "lines": 24,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 437,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [359, 401],
+        "lines": 45,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 482,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [402, 415],
+        "lines": 16,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 498,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [416, 433],
+        "lines": 20,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 518,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [434, 465],
+        "lines": 32,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 552,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [468, 484],
+        "lines": 19,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 571,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [485, 757],
+        "lines": 256,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 827,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [758, 920],
+        "lines": 157,
+        "diffs": [
+            [
+                "OUTPUT",
+                860,
+                "`B/03` §3.2 sacan a una fila principal de las filas vivas —**`S31`**, la"
+            ],
+            [
+                "OUTPUT",
+                869,
+                "2, verificación, owner 2026-09-27, `V2-b`)—; **`S31`**, la sucesora del"
+            ],
+            [
+                "OUTPUT",
+                871,
+                "catorce con ella, once desde la revisión del owner, 2026-09-28, C8); y **`S36`**, la revocación. **`S11` no entra**: manda la fila a `CANCEL_SCHEDULED`, que **sigue siendo fila viva**, y sus"
+            ],
+            [
+                "SOURCE",
+                791,
+                "`B/03` §3.2 sacan a una fila principal de las filas vivas — **`S31`**, la"
+            ],
+            [
+                "SOURCE",
+                800,
+                "2, verificación, owner 2026-09-27, `V2-b`)— ; **`S31`**, la sucesora del"
+            ],
+            [
+                "SOURCE",
+                802,
+                "catorce con ella, once desde la revisión del owner, 2026-09-28, C8); y **`S36`**, la revocación.  **`S11` no entra**: manda la fila a `CANCEL_SCHEDULED`, que **sigue siendo fila viva** , y sus"
+            ]
+        ]
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 984,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [921, 1038],
+        "lines": 112,
+        "diffs": [
+            [
+                "OUTPUT",
+                1042,
+                "el grant que era su título**—. Ahí el cliente no hizo nada y pierde días que pagó. **Y tampoco vale cuando a su"
+            ],
+            [
+                "SOURCE",
+                979,
+                "el grant que era su título**— .  Ahí el cliente no hizo nada y pierde días que pagó. **Y tampoco vale cuando a su"
+            ]
+        ]
+    },
+    {
+        "file": "20-fase-3/B10.md",
+        "line": 1096,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md",
+        "range": [1039, 1160],
+        "lines": 115,
+        "diffs": [
+            ["OUTPUT", 1170, "  sin pasar por `PB9` ni por `PB12`: **desde `G5-2` el"],
+            ["SOURCE", 1113, "  sin pasar por `PB9` ni por `PB12` : **desde `G5-2` el"]
+        ]
+    },
+    {
+        "file": "20-fase-3/B12.md",
+        "line": 69,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "range": [32, 39],
+        "lines": 10,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B12.md",
+        "line": 79,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "range": [40, 57],
+        "lines": 19,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B12.md",
+        "line": 98,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "range": [58, 74],
+        "lines": 19,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B12.md",
+        "line": 117,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "range": [75, 94],
+        "lines": 21,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B12.md",
+        "line": 138,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "range": [95, 129],
+        "lines": 34,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B12.md",
+        "line": 172,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "range": [130, 145],
+        "lines": 16,
+        "diffs": []
+    },
+    {
+        "file": "20-fase-3/B12.md",
+        "line": 188,
+        "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+        "range": [146, 228],
+        "lines": 80,
+        "diffs": [
+            [
+                "OUTPUT",
+                232,
+                "   ciclo exige que autorice de nuevo (`DEC-SUB-006`). **Sin plazo** (revisión del owner, casos vecinos, 2026-09-29, caso 26). **Recibe sólo el correo"
+            ],
+            [
+                "SOURCE",
+                190,
+                "   ciclo exige que autorice de nuevo (`DEC-SUB-006`). **Sin plazo**: el listado muestra **su"
+            ],
+            [
+                "SOURCE",
+                191,
+                "   antigüedad**, contada desde el anuncio de su migración (`anunciada_en`), para que se vea cuánto"
+            ],
+            [
+                "SOURCE",
+                192,
+                "   lleva esperando (revisión del owner, casos vecinos, 2026-09-29, caso 26). **Recibe sólo el correo"
+            ]
+        ]
+    }
+]

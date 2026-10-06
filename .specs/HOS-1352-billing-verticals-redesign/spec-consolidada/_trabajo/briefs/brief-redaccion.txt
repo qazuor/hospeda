@@ -1,0 +1,55 @@
+# Brief común de redacción: spec consolidada de HOS-1352
+
+Sos uno de nueve redactores que trabajan EN PARALELO. Cada uno escribe archivos distintos de la spec consolidada del rediseño integral de Verticales y Billing de Hospeda. Respondé en español rioplatense. La spec también va en español; los identificadores, los nombres de tabla, de columna y de ruta, y el código, van tal cual estén en las fuentes.
+
+## Dónde
+
+- Worktree: `/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign`, branch `spec/HOS-1352-billing-verticals-redesign`. NUNCA leas ni escribas en `/home/qazuor/projects/WEBS/hospeda2`. Usá rutas absolutas.
+- Antes de empezar, leé los skills: `<worktree>/.claude/skills/hospeda-specs/SKILL.md`, `hospeda-billing/SKILL.md` y `hops-linear-workflow/SKILL.md`.
+- `D=.specs/HOS-1352-billing-verticals-redesign/docs` · `V=.specs/HOS-1353-verticales-capacidades-y-autorizacion` · `B=.specs/HOS-1354-billing-cobro-y-proveedor` · `C=.specs/HOS-1352-billing-verticals-redesign/spec-consolidada`.
+- **Fuentes congeladas en `f80c0f27154ca023d97a016707d823ff826cf76a`.** Leelas desde ahí (las herramientas ya lo hacen a través de `$C/scripts/comun.py`). `Origen:` cita `archivo:línea` en ESE SHA.
+
+## Tu contrato (leelo entero antes de escribir)
+
+1. En `$D/01-decision-log.md`: `DEC-METH-019` y `DEC-ARCH-017`, con todos sus 📌. Ahí está el método y la partición del MVP.
+2. `$D/41-corte-del-mvp/10-decisiones-del-owner.md`: las letras Y a BJ, todas decididas. No se relitigan.
+3. `$C/scripts/trazar.py`, `defs.py` y `comun.py`. Las reglas R1 a R17, más R7b y R7c, son las que tu texto tiene que cumplir. Copiá EXACTAMENTE de ahí estas cosas: el formato de ancla (`<a id="...">`), el de `Origen:`, el de las referencias, los encabezados de la plantilla de AO, el formato de las US, el de los AC (`AC:<pieza>:n`, Dado/Cuando/Entonces), el de los tests (`TEST:<pieza>:n`, con los tipos de la lista cerrada y la etiqueta de smoke) y la lista de actores. No inventes formatos.
+4. `$C/_trabajo/asignacion.json`: qué ítem se DEFINE en qué archivo. `$C/_trabajo/cobertura.json`: qué pieza es DUEÑA del AC de cada ítem normativo, quién va en «también» y quién en «provee», y los tipos de test mínimos. También están la lista `solo_citables` y la pseudo-pieza `CORTE`. `$C/_trabajo/adjudicacion.json`: qué partes de las filas MIXTO y de los 📌 están vivas, cuáles parciales y cuáles muertas. `$C/_trabajo/inventario.json`: el texto y la posición de cada ítem.
+
+## Reglas de redacción (no negociables)
+
+- **Nada inventado.** Cada US, AC, test, regla y dato de la spec cita al menos un ítem fuente. Si para que un agente pueda implementar hace falta algo que las fuentes no dicen, NO lo escribas en tu archivo: anotalo en tu archivo de abiertos (ver más abajo).
+- **No se pierde nada.** Tu archivo tiene que DEFINIR, con su ancla y su `Origen:`, cada ítem que `asignacion.json` le asigna, y desarrollar su contenido completo en su forma vigente: el texto sin tachados, con los 📌 vivos ya fundidos y las partes muertas omitidas, según la adjudicación. No resumas reglas. Si una regla tiene diez cláusulas, van las diez.
+- **Se define una vez y se referencia N veces.** Lo que se define en otro archivo se referencia con un link a su ancla, nunca se redefine. Las anclas de otros archivos todavía pueden no existir porque se escriben en paralelo. Usá el formato de ancla de `defs.py`/`trazar.py`, que es determinístico a partir del ID.
+- **Piezas.** Llevan la plantilla completa de AO. Las secciones que no aplican dicen «N/A — <razón con cita>», nunca se borran.
+  - **US** por actor, de la lista cerrada.
+  - **AC** en Dado/Cuando/Entonces, con `AC:<pieza>:n`. Cada AC cita sus ítems. Todo ítem del que la pieza es DUEÑA en `cobertura.json` tiene al menos un AC acá. El «Lista cuando» de la pieza es su AC de salida.
+  - **Mapa AC→test** con los tipos de la lista cerrada y los mínimos de `cobertura.json`:
+    - cada invariante, con al menos un test;
+    - cada transición, con un test de integración con DB (las prohibidas incluidas);
+    - cada guard, con su guard estático y su prueba de mutación;
+    - cada smoke, con su etiqueta `status-needs-smoke-*`.
+  - Los ítems «también» y «provee» se referencian; no llevan AC propio, salvo que la fuente pida algo distinto para esa pieza.
+- **Ejemplos.** Donde un ejemplo concreto aclare un AC, usá a «Juan», anfitrión de una cabaña en Colón que se suscribe al Básico la semana siguiente al corte, sólo si la fuente lo soporta.
+- **Conteos.** Siempre con script, nunca a ojo. `rg` siempre con ruta explícita; `rg -r` es replace, no recursivo.
+
+## Lo que NO podés hacer
+
+- Escribir fuera de TUS archivos. Las únicas excepciones son tu archivo de abiertos y tu reporte.
+- Editar fuentes: el PDR, el log, la matriz, V, B o D. Si encontrás un error en una fuente, va a tu reporte.
+- Correr git, salvo `git show <SHA>:<path>` y `git log`/`diff` de lectura. Nada de add, commit, push ni checkout. Los commits los hace el orquestador.
+- Tocar Linear. Engram puede fallar por sesiones múltiples: no insistas.
+
+## Abiertos y reporte
+
+- **Abiertos:** `$C/_trabajo/abiertos/<tu-grupo>.md`. Una entrada por hueco, con: qué falta, qué ítem o pieza afecta, la cita de por qué las fuentes no lo deciden, y una propuesta de pregunta para el owner (opciones numeradas con costo y riesgo, UNA recomendada, ejemplo con Juan). No le pongas letra: las asigna el orquestador.
+- **Autochequeo:** corré `trazar.py` (mirá cómo se invoca) y filtrá los errores de tus archivos. Las reglas R4 (referencia colgada) y R17 (red de secciones) van a fallar por los archivos que todavía no existen; eso está bien. Todo lo demás de tus archivos tiene que dar cero.
+- **Reporte final:** en markdown compacto y con números de script.
+  - Archivos escritos, con cantidad de líneas.
+  - Ítems definidos contra los asignados.
+  - AC y tests escritos.
+  - Errores de `trazar.py` en tus archivos, por regla, sin contar R4 ni R17.
+  - Abiertos que anotaste.
+  - Errores de fuentes.
+  - Lo inferido, marcado.
+  - Una sección final `## Key Learnings:` numerada.

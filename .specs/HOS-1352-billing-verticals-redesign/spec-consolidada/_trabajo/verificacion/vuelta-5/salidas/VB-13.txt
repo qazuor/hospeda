@@ -1,0 +1,19 @@
+# VB-13 · spec → fuente · 20-fase-2/B8b.md, 20-fase-3/B10.md, 80-abiertos.md
+
+## Hallazgos
+
+20-fase-2/B8b.md:423 · «su motivo es uno del dominio cerrado (`CUSTOMER_REQUEST` o `COURTESY`) y la base admite otro o ninguno» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:130 («Una pausa siempre tiene motivo, y el reloj lee el motivo y nunca al proveedor»; apoyo: «base (dominio cerrado) + servicio»). La enumeración vigente está en fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:59; DEC-MP-008 retira PROVIDER_DUNNING, no abre el dominio (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5884). El AC permite persistir motivos inválidos o ausentes y contradice también TEST:B8b:2, línea 1050, que exige rechazarlos · BLOQUEA
+
+20-fase-3/B10.md:1553 · «La compra de un complemento sólo se habilita si el dueño tiene al menos una reseña pública en una ficha de la vertical compatible.» · sin soporte: fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2534 fija las guardas de A1 —principal válida y compatible o ancla viva, elegibilidad del objetivo e identidad de la compra— sin exigir reseñas; A1-bis, línea 2535, tampoco las exige. Las decisiones CD y CE precisan el nacimiento gratuito y la elegibilidad de LISTING, sin agregar esa condición (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:183 y :192). La búsqueda en las fuentes, incluido el decision log, no aporta soporte para este requisito. Restringe la venta a clientes que las fuentes habilitan y contradice el resultado de AC:B10:1 y TEST:B10:1 · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-2/B8b.md | 1–1406 | 360 | 1 | 0 |
+| 20-fase-3/B10.md | 1–1944 | 460 | 1 | 0 |
+| 80-abiertos.md | 1–653 | 240 | 0 | 0 |
+
+Verificado: recorrido completo de los tres archivos, cotejo con fuentes vivas excluyendo tachados, decisiones posteriores y búsquedas de contradicciones internas. El abierto de 80-abiertos.md:384 conserva una salvedad explícita de B/19:120; no se cuenta como hallazgo.
+
+Limitación de contexto: no se encontraron AGENTS.md, .qz/project.json ni copias de las tres skills de dominio dentro de V. No se leyeron las rutas externas de esas skills para respetar la restricción de lectura del brief. No se usaron git, trackers ni subagentes.

@@ -1,0 +1,39 @@
+# VA-A8 · fuente → spec · 05-idempotencia-y-concurrencia.md, 06-proveedor.md, 09-conciliacion.md
+
+## Hallazgos
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:178 · «Por cada fila de nuestro inventario —suscripción principal o suscripción de complemento— que no esté en un estado terminal […]» (con 09:1082 «barrido de la cartera | diario») · distinta en 10-corte/B11.md:1342 («Una suscripción que tres barridos seguidos releyeron sin cambios pasa a releerse una vez por semana, hasta que algo la mueva») — regla sin soporte en ninguna fuente (`rg --hidden 'una vez por semana|tres barridos'` sólo da la batería de `B/20`), ni en DEC-CONC-002 y sus 📌 · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:261 · «la transición `AWAITING → REGISTERED` del capítulo 03 no es incondicional: antes de registrar se relee si hay un pago del proveedor acreditado o en vuelo para ese período, y si lo hay, no se registra y se le dice al admin por qué» · distinta en 10-corte/B5.md:175-177 (AC:B5:3: «salvo que el último aviso del proveedor sobre esa suscripción tenga menos de diez minutos: entonces se registra sin releer») — excepción inventada, sin soporte en ninguna fuente (`rg --hidden 'diez minutos'`), que debilita la relectura de C5 · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:188 · «el `last_modified` del recurso | el de la última relectura, guardado en `provider_link` | si el del proveedor es posterior, el recurso cambió sin avisarnos: se relee entero» · ausente (la transcripción de la tabla del §3 en 10-corte/B11.md:233-237 salta esta fila; ningún AC ni TEST de B11 la recoge; el Cron de B11.md:1834-1837 enumera «estado, monto, próxima fecha, cobros del período e importe» sin ella; sólo 02-nucleo.md:858 la menciona como nota de INV:D17 y B3.md:869 crea la columna) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:185 · «monto esperado, derivado: el precio de la versión de plan —el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados— menos las promos vivas según su contador —no es una columna—, redondeado una sola vez y hacia abajo, con el mismo cálculo que usa quien muta» · distinta en 10-corte/B11.md:233-237 (la fila del monto falta entera en la transcripción del §3) y más débil en AC:B11:9, B11.md:1446-1447 («monto esperado —derivado, redondeado una sola vez hacia abajo—», sin los aumentos aplicados ni «el mismo cálculo que usa quien muta»); el resto de la fila sí está en AC:B11:9 · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:225 · «El aviso dice que hay un descenso programado para tal fecha y qué parte de lo que está comprando va a quedar fuera del límite a partir de ahí.» · ausente (el texto de LOCK:C4 en 04-catalogos.md:6214-6215 omite la frase aunque no está tachada; AC:B8b:19, 20-fase-2/B8b.md:655-657, y TEST:B8b:19, B8b.md:1254, dicen sólo «se permite, con aviso explícito», sin el contenido del aviso) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:395 · «La tabla la aplican los dos productores: el evento del cobro y la comparación de cobros del barrido […] Sobre cualquier otra abre el motivo que esta tabla asigna, con el cobro colgado» (y 09:227 «si cobra, abre el motivo que le asigna la tabla de desempate del `B/05` §3 —sobre una terminal, `COBRO_POSTERIOR_A_LA_BAJA`—») · distinta en 10-corte/B11.md:1472-1477 (AC:B11:10 enumera los destinos del barrido: «`COBRO_SIN_REGISTRAR` […] sobre las filas de la segunda fila del desempate abre `COBRO_POSTERIOR_AL_GRANT`; sobre las de la tercera […] `PAGO_TARDÍO_RECHAZADO`», sin la primera fila, `COBRO_POSTERIOR_A_LA_BAJA`; TEST:B11:9, B11.md:2016-2018, tampoco la prueba; sólo AC:B11:15 la cubre para el subcaso del plazo 16) · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:272 · «Lo escribe esa relectura, sea del barrido, del handler o de la de una transición, y no lo reescriben las siguientes que lo sigan viendo `cancelled`» · distinta en 10-corte/B4.md:290-291 («La escribe la relectura del barrido de `B11` y la vacía una relectura que lo ve vivo») y B4.md:66; ningún AC dice que la relectura de `S16` o del handler escriba `cancelado_visto_en`, ni que una relectura posterior que la ve `cancelled` no la reescriba · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1153 · «Y vigila la corrida diaria que reintenta los borrados remotos de `PB9` y `PB12` […] ping al terminar una corrida completa, alerta a las 26 h sin ping» · ausente en la pieza dueña de esa corrida (20-fase-1/V9b.md:627 la nombra sin ping ni monitor; ningún AC de V9b); sólo vive en la transcripción de B11.md:1156-1158 · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:809 · «Por cada `payment` en `CHARGED_BACK`, el barrido lo relee por id hasta que su `status_detail` se resuelva —`settled` o `reimbursed`— […] `settled`: el pago queda en `CHARGED_BACK` y sale el correo «la disputa se resolvió a favor de la persona»» · ausente de los AC/TEST (AC:B11:12 selecciona sólo `SUCCEEDED`, `PARTIALLY_REFUNDED` y `REFUNDED`; AC:B5:8 trata la lectura de `reimbursed` pero no quién relee ni la rama `settled`); sólo en la transcripción de B11, en la fila del catálogo de correos de 02-nucleo-outbox.md:288 y en 80-abiertos.md:252 · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1083 · «Tras una búsqueda vacía, la corrida siguiente vuelve a crear, con una clave nueva acuñada y persistida antes de llamar» (también 05:71) · ausente de AC:B11:23 y TEST:B11:23 (B11.md:1669-1676, 2184-2195), que prueban sólo reusar el más reciente y cancelar los duplicados; también falta ahí «sin filtro de estado»; sólo en la transcripción de B11.md:1089 · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:218 · «Todo lo que mute algo abre con ese guard [`GET /users/me`, `tags: ["test_user"]`]. Un handler que filtre por `live_mode` trata los eventos de sandbox como productivos.» · ausente de los AC, los TEST y los GUARD (sólo en la sección Reglas de 10-corte/B1.md:545-550; ningún AC de B1 ni guard del catálogo lo recoge) · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:402 · «el guard de entorno: toda sonda que mute abre con `GET /users/me` | el guard de presupuesto: toda sonda que mueva plata aborta si el máximo a cobrar no da exactamente el número autorizado» (heredados por la batería, 06:407) · ausente de AC:B1:15 y AC:B1:18; sólo en B1.md:618-624 y en el bullet de Seguridad B1.md:745 · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| 05-idempotencia-y-concurrencia.md | ~45 | 1–557 | 1 (BLOQUEA) | 2 (BLOQUEA 2) |
+| 06-proveedor.md | ~55 | 1–570 | 2 (MENOR 2) | 0 |
+| 09-conciliacion.md | ~90 | 1–1311 | 4 (BLOQUEA 1, MENOR 3) | 3 (BLOQUEA 2, MENOR 1) |
+
+Totales: 6 BLOQUEA (2 ausentes y 4 distintas) y 6 MENOR (5 ausentes y 1 distinta).
+
+Método: comparé mecánicamente cada oración viva (sin `~~…~~`) contra el texto de toda la spec y revisé a mano las que faltaban; después contrasté las reglas con los AC, TEST y catálogos de B1, B3, B4, B5, B6, B7, B8a, B8b, B9a, B11 y 04-catalogos. Las omisiones de la transcripción de B11 §3 (filas de monto y `last_modified`) coinciden con filas de la fuente cuya primera celda empieza con un tachado: el generador de secciones probablemente las descarta.

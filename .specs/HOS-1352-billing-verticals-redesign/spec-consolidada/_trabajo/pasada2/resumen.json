@@ -1,0 +1,84 @@
+{
+    "trazar": {
+        "R1 vivo sin definición única fuera de 90-": 1,
+        "R6 Origen no cita la posición del ítem": 20,
+        "R7 ítem normativo vivo sin AC": 7,
+        "R7b el AC del ítem no está en su pieza dueña": 7,
+        "R17 sección sin ninguna línea citada": 284,
+        "R18 falta un tipo de test que AN exige por familia": 7
+    },
+    "por_grupo": {
+        "g1-decisiones": {
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 5
+        },
+        "g2-nucleo-contrato": {
+            "Ítems nuevos a definir (R1)": 1,
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 1,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 12,
+            "Secciones R17 sin citar asignadas": 3,
+            "R17 parcial": 1,
+            "R17 ausente": 2
+        },
+        "g3-catalogos": {
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 5,
+            "Secciones R17 sin citar asignadas": 1,
+            "R17 ausente": 1
+        },
+        "g4-corte-indice": {
+            "AC y tests nuevos (R7 · R7b · R18)": 1,
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 1,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 1,
+            "Secciones R17 sin citar asignadas": 87,
+            "R17 ausente": 57,
+            "R17 parcial": 14,
+            "R17 cubierto": 16
+        },
+        "g5-u-v1-v4": {
+            "AC y tests nuevos (R7 · R7b · R18)": 1,
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 4,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 4,
+            "Secciones R17 sin citar asignadas": 72,
+            "R17 ausente": 51,
+            "R17 cubierto": 14,
+            "R17 parcial": 7
+        },
+        "g6-v5-v9": {
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 8,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 8,
+            "Secciones R17 sin citar asignadas": 58,
+            "R17 ausente": 43,
+            "R17 cubierto": 11,
+            "R17 parcial": 4
+        },
+        "g7-b1-b3": {
+            "AC y tests nuevos (R7 · R7b · R18)": 4,
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 12,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 9,
+            "Secciones R17 sin citar asignadas": 21,
+            "R17 ausente": 17,
+            "R17 cubierto": 2,
+            "R17 parcial": 2
+        },
+        "g8-b4-b7": {
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 6,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 4,
+            "Secciones R17 sin citar asignadas": 24,
+            "R17 ausente": 20,
+            "R17 cubierto": 3,
+            "R17 parcial": 1
+        },
+        "g9-b8-b13": {
+            "AC y tests nuevos (R7 · R7b · R18)": 1,
+            "Ítems con contenido de fuente cambiado desde f80c0f2715": 16,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 19
+        }
+    },
+    "r17": {
+        "ausente": 191,
+        "parcial": 29,
+        "cubierto": 46,
+        "pregunta": 18
+    },
+    "cambiados": 48,
+    "??": {}
+}

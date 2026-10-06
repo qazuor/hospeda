@@ -1,0 +1,23 @@
+# VB-02 · spec → fuente · 02-nucleo.md, 02-nucleo-auditoria.md, 02-nucleo-outbox.md
+
+## Hallazgos
+
+02-nucleo-auditoria.md:225 · «La inspección administrativa de una cuenta requiere que su dueño haya autorizado el acceso por correo durante las últimas 24 horas; sin esa autorización no se muestran sus datos.» · sin soporte: agrega una autorización del dueño, un canal y una caducidad inexistentes en la fuente del bloque. .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:45 exige registrar la inspección; .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:423–430 exige el permiso de inspección por entidad, sin esta autorización por correo. No se encontró una decisión posterior que la agregue en el decision log ni en 41-corte-del-mvp/10-decisiones-del-owner.md. También contradice AC:V5:8, 10-corte/V5.md:257–262, que permite leer al admin con el permiso y el sujeto obtenido del recurso. Implementarla impediría inspecciones que la fuente permite. · BLOQUEA
+
+02-nucleo-auditoria.md:391 · «El §22.1 pide *«generar información suficiente para investigar»*. Cada entrada lleva:» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:492 («**qué se intentó y qué se frenó**, porque el §22.1 prohíbe decisiones destructivas automáticas y hay que saber qué quedó sin hacer»): la enumeración de la spec termina en la correlación, línea 413, y omite ese último dato obligatorio. El diagnóstico implementado a partir de esta lista no tendría que informar las operaciones intentadas y frenadas. No se encontró una decisión posterior que retire este requisito. · BLOQUEA
+
+02-nucleo-outbox.md:47 · «vuelve a `failed`.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:53 («vuelve a `pending`.»): cuando vence la toma de una fila en `processing`, debe volver a estar disponible para otro proceso, no pasar a fallo. También contradice AC:U2:3, 10-corte/U2.md:148, el proceso de recuperación en 10-corte/U2.md:308 y TEST:U2:3 en 10-corte/U2.md:369. No se encontró una decisión posterior que cambie el destino. · BLOQUEA
+
+02-nucleo-outbox.md:313 · «si fue el antifraude del proveedor, que la tarjeta está bien y que pruebe más tarde u otro dispositivo; si fue la tarjeta, que revise su medio de pago.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:286 («si fue la tarjeta, que revise su medio de pago; y un texto genérico para lo que no esté en el mapa»): el catálogo omite la respuesta para un status_detail desconocido. DEC-MP-004 mantiene expresamente ese texto genérico como obligatorio en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4812–4813. Seguir sólo la fila de la spec deja sin comportamiento definido ese rechazo. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-nucleo.md | 1–1812 | 450 | 0 | 0 |
+| 02-nucleo-auditoria.md | 1–445 | 120 | 2 | 0 |
+| 02-nucleo-outbox.md | 1–415 | 190 | 2 | 0 |
+
+Verificado: recorrido completo del bloque, cotejo del texto vivo con las fuentes congeladas, búsqueda de decisiones posteriores para los hallazgos y contraste interno mediante rg --hidden. Los conteos de afirmaciones son aproximados; cuentan reglas y cláusulas, no sólo ítems de inventario. Las rutas .specs/ de los hallazgos se resuelven bajo fuentes/.
+
+Limitación de procedimiento: durante la lectura inicial se leyeron qz-output-style y qz-permissions fuera de V, antes de aplicar la restricción del brief; esto incumplió esa restricción de lectura. Las tres skills de dominio enumeradas por el brief no se leyeron porque sus rutas están fuera de V y no se encontraron copias dentro. No se usaron git, trackers ni subagentes, ni se escribieron archivos fuera de salidas/.

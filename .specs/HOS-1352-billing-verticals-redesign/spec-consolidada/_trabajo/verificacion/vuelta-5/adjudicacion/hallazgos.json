@@ -1,0 +1,1464 @@
+{
+    "unicos": [
+        {
+            "id": "H5-VB-06-2",
+            "grupo": null,
+            "miembros": ["H5-VB-06-2"],
+            "veredicto": "REAL",
+            "clase_final": "BLOQUEA",
+            "relacionados": [],
+            "resumen": "TEST:V5:10 permite rechazar en el paso 5 a quien tiene BASE pero no la capacidad; el rechazo corresponde al paso 6.",
+            "verificadores": ["VB-06"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:143–163: el paso 5 pregunta por fuentes y acepta BASE; ya no rechaza a nadie. El paso 6 decide la capacidad.",
+                "pristina/10-corte/V5.md:575–594 conserva la distinción; :1356–1357 permite 5/6 y por ello puede aprobar una implementación equivocada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/V5.md",
+                    "linea": 1356,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "**TEST:V5:10** — Ruta API, una por ruta de escritura de vertical: un dueño con permiso y sin fuente que\notorgue la capacidad es rechazado en el paso 5/6.",
+                    "entra": "**TEST:V5:10** — Ruta API, una por ruta de escritura de vertical: un dueño con permiso y con BASE,\npero sin fuente que otorgue la capacidad exigida, pasa el paso 5 y es rechazado en el paso 6\npor falta de esa capacidad; no responde «sin cobertura»."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "El test mezcla existencia de fuentes con lo que otorgan; la cita al contrato no desambigua su resultado aceptado.",
+            "patron": "P-TEST",
+            "informes_originales": {
+                "VB-06-2": "10-corte/V5.md:1357 · «otorgue la capacidad es rechazado en el paso 5/6.» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:155 («El paso 5 pregunta por `fuentes`, no por `cubierto`»; líneas 159–160: «el paso 5 ya no rechaza a nadie, y toda la defensa se apoya en el paso 6»). TEST:V5:10 acepta rechazar en el paso 5 a un dueño que tiene BASE pero carece de la capacidad, validando «sin cobertura» donde corresponde el rechazo de capacidad del paso 6. La propia spec conserva la distinción en V5.md:575–594 · BLOQUEA"
+            }
+        },
+        {
+            "id": "H5-VB-08-4",
+            "grupo": null,
+            "miembros": ["H5-VB-08-4"],
+            "veredicto": "REAL",
+            "clase_final": "BLOQUEA",
+            "relacionados": [],
+            "resumen": "TEST:B3:28 sólo exige encolar el correo antes de cancelar el VIP; puede aprobar la llamada mientras el correo sigue pendiente.",
+            "verificadores": ["VB-08"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:290–318 y :355–362: falla transitoria espera la misma fila; sent permite llamar; no-entregable o failed definitivo permiten llamar y escalar.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:141 (BP) y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7998–8003: cancelación del VIP en S2 con correo antes.",
+                "pristina/10-corte/B3.md:1268–1271: el falso sólo exige el encolado; la regla viva distingue encolar de enviar."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/B3.md",
+                    "linea": 1268,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "**TEST:B3:28** — Integración: con una suscripción de Turista VIP paga y un plan que lo hereda en\n`PENDING_AUTHORIZATION`, el VIP sigue vivo; al correr `S2` sobre el plan, el VIP queda cancelado en el\nmismo acto, sin `refund`, con el correo encolado antes de la cancelación en el falso, y la cobertura del\nbeneficio sigue sin corte.",
+                    "entra": "**TEST:B3:28** — Integración: con una suscripción de Turista VIP paga y un plan que lo hereda en\n`PENDING_AUTHORIZATION`, el VIP sigue vivo. Con entrega normal, al correr `S2` sobre el plan se\ncancela el VIP, sin `refund`: el falso recibe la cancelación sólo después de que el correo sale\ny su fila queda `sent`; la cobertura del beneficio sigue sin corte. Con el correo pendiente por\nfalla transitoria, el falso no recibe la cancelación; al salir ese mismo correo se permite la\nllamada, sin encolar otro. Con no-entregable o `failed` definitivo, la llamada sale igual y el\ncaso queda registrado y escalado, según `B/03` §1.1 y `DEC-MAIL-001`."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Encolado durable no demuestra que el correo precedió la llamada externa.",
+            "patron": "P-TEST",
+            "informes_originales": {
+                "VB-08-4": "10-corte/B3.md:1270 · «con el correo encolado antes de la cancelación en el falso» · más débil que fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:359 («Si está `sent`, la llamada sale sin otro correo;») y :360 («si todavía no salió, es la rama transitoria de arriba y la llamada espera a esa misma fila»). TEST:B3:28 sólo exige encolar y permite pasar cancelando con el correo todavía pendiente. La regla vigente exige que salga antes, salvo los casos explícitos de no-entregable o `failed`; BP (:141 de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md) exige el correo antes también para esta cancelación del VIP en S2. · BLOQUEA"
+            }
+        },
+        {
+            "id": "H5-VB-04-1",
+            "grupo": null,
+            "miembros": ["H5-VB-04-1"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "El resumen de smoke de U1 omite la excepción BT: TEST:U1:24 mide producción antes del merge.",
+            "verificadores": ["VB-04"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1076–1082 y owner BT (:145): conteos read-only antes del merge.",
+                "pristina/10-corte/U1.md:780–786 ya lo exige; :790 generaliza que ningún smoke es gate de pieza."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/U1.md",
+                    "linea": 790,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "- Los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza: el ensayo en",
+                    "entra": "- Salvo `TEST:U1:24`, que mide producción en sólo lectura antes del merge y deja el número en el\n  PR (BT), los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza: el ensayo en"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Resumen no actualizado después de agregar el test BT; los AC y el test ya son correctos.",
+            "patron": "P-RESUMEN",
+            "informes_originales": {
+                "VB-04-1": "10-corte/U1.md:790 · «Los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1076 («Las mediciones de producción que una pieza necesita»; «antes de su merge, y deja el número en el PR»). Incoherencia interna con TEST:U1:24 (10-corte/U1.md:777–784), clasificado como smoke de producción y exigido antes del merge; AC:U1:3 y AC:U1:13 sí conservan esa obligación. El resumen omite esta excepción, sin cambiar lo que los AC mandan construir · MENOR"
+            }
+        },
+        {
+            "id": "H5-VB-07-4",
+            "grupo": null,
+            "miembros": ["H5-VB-07-4"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "La cita final de V7 apunta a la fila de otra pieza en la lista del corte.",
+            "verificadores": ["VB-07"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.",
+                "pristina/20-fase-4/V7.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "20-fase-4/V7.md",
+                    "linea": 1067,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "lista de piezas, l. 950",
+                    "entra": "lista de piezas, l. 954"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Número de línea residual; no modifica el reparto normativo.",
+            "patron": "P-REF",
+            "informes_originales": {
+                "VB-07-4": "20-fase-4/V7.md:1067 · «lista de piezas, l. 950» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950 («| `V3` | `V3` | corte |»): la referencia apunta a V3; la fila de V7 está en la línea 954. La cita inicial del archivo sí apunta correctamente · MENOR"
+            }
+        },
+        {
+            "id": "H5-VB-07-5",
+            "grupo": null,
+            "miembros": ["H5-VB-07-5"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "La cita final de V8a apunta a la fila de otra pieza en la lista del corte.",
+            "verificadores": ["VB-07"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.",
+                "pristina/10-corte/V8a.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/V8a.md",
+                    "linea": 648,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "§4.6 (l. 951)",
+                    "entra": "§4.6 (l. 955)"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Número de línea residual; no modifica el reparto normativo.",
+            "patron": "P-REF",
+            "informes_originales": {
+                "VB-07-5": "10-corte/V8a.md:648 · «`16-fase-7-del-paraguas.md` §4.6 (l. 951)» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:951 («| `V4` | `V4` | corte |»): la referencia apunta a V4; la fila de V8a está en la línea 955. La cita inicial del archivo sí apunta correctamente · MENOR"
+            }
+        },
+        {
+            "id": "H5-VB-07-6",
+            "grupo": null,
+            "miembros": ["H5-VB-07-6"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "La cita final de V8b apunta a la fila de otra pieza en la lista del corte.",
+            "verificadores": ["VB-07"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.",
+                "pristina/20-fase-4/V8b.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "20-fase-4/V8b.md",
+                    "linea": 306,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "§4.6 (l. 952,",
+                    "entra": "§4.6 (l. 956,"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Número de línea residual; no modifica el reparto normativo.",
+            "patron": "P-REF",
+            "informes_originales": {
+                "VB-07-6": "20-fase-4/V8b.md:308 · «`16-fase-7-del-paraguas.md` §4.6 (l. 952, nota del esquema l. 994–997)» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:952 («| `V5` | `V5` | corte | entera |»): la referencia a la pieza apunta a V5; la fila de V8b está en la línea 956. La cita inicial del archivo sí apunta correctamente · MENOR"
+            }
+        },
+        {
+            "id": "H5-VB-07-7",
+            "grupo": null,
+            "miembros": ["H5-VB-07-7"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "La cita final de V9a apunta a la fila de otra pieza en la lista del corte.",
+            "verificadores": ["VB-07"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.",
+                "pristina/10-corte/V9a.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/V9a.md",
+                    "linea": 312,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "lista de piezas, l. 953",
+                    "entra": "lista de piezas, l. 957"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Número de línea residual; no modifica el reparto normativo.",
+            "patron": "P-REF",
+            "informes_originales": {
+                "VB-07-7": "10-corte/V9a.md:312 · «lista de piezas, l. 953» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:953 («| `V6` | `V6` | corte |»): la referencia apunta a V6; la fila de V9a está en la línea 957. La cita inicial del archivo sí apunta correctamente · MENOR"
+            }
+        },
+        {
+            "id": "H5-G1-5",
+            "grupo": null,
+            "miembros": ["H5-G1-5"],
+            "veredicto": "GENERADOR",
+            "clase_final": "MENOR",
+            "relacionados": [
+                "H3-G1-3 (vuelta 3, GENERADOR): corrigió otras cinco letras caducadas; AP/BN/BU son casos nuevos del mismo mecanismo, no se readjudican las cinco resueltas.",
+                "La corrección de contenido del DEC/📌 ya está aplicada. Se adjudica sólo la falta de marca del registro histórico, no se reabre ese contenido."
+            ],
+            "resumen": "G1 deja AP sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.",
+            "verificadores": ["G1"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:59, :73 (AV) y :111 (BG).",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7933–7938 (📌 AV) y :7957–7961 (📌 BG): reemplazos expresos de la aplicación de AP.",
+                "pristina/01-decisiones-vigentes.md:13745: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.",
+                "v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id."
+            ],
+            "correccion": [
+                {
+                    "archivo": "01-decisiones-vigentes.md",
+                    "linea": 13745,
+                    "generado": true,
+                    "donde_va": "v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py",
+                    "sale": "- **En una línea**: cada tabla la crea la pieza del corte dueña de la tabla de la que cuelga: el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados, en `V6`; la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`, en `B3`; promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia. Mitigación: el drift guard sobre la rama de cada fase falla si la fase trae una migración estructural",
+                    "entra": "- **En una línea**: cada tabla la crea la pieza del corte dueña de la tabla de la que cuelga: el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados, en `V6`; la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`, en `B3`; promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia. Mitigación: el drift guard sobre la rama de cada fase falla si la fase trae una migración estructural\n- ⚠️ **Caducada en parte**: las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP. Sólo citable; la parte reemplazada no se implementa."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.",
+            "patron": "P-GEN",
+            "informes_originales": {
+                "G1-5": "01-decisiones-vigentes.md:13744 · «promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:73 («las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia») y :111 («**`B3`**, como AV hizo con addons»): AP conserva las dos asignaciones superadas sin la marca «Caducada en parte» prometida por el registro; es incoherencia del registro sólo citable, pues AV, BG y DEC-ARCH-017 sí conservan las asignaciones vigentes · MENOR"
+            },
+            "correccion_generador": {
+                "id_a_declarar": "OWN:41-corte-del-mvp:t3:AP",
+                "alcance": "en parte",
+                "texto": "las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP",
+                "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.",
+                "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."
+            }
+        },
+        {
+            "id": "H5-G1-6",
+            "grupo": null,
+            "miembros": ["H5-G1-6"],
+            "veredicto": "GENERADOR",
+            "clase_final": "MENOR",
+            "relacionados": [
+                "H3-G1-3 (vuelta 3, GENERADOR): corrigió otras cinco letras caducadas; AP/BN/BU son casos nuevos del mismo mecanismo, no se readjudican las cinco resueltas.",
+                "La corrección de contenido del DEC/📌 ya está aplicada. Se adjudica sólo la falta de marca del registro histórico, no se reabre ese contenido."
+            ],
+            "resumen": "G1 deja BN sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.",
+            "verificadores": ["G1"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:139 y :156 (BW).",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8011–8022 (📌 BW): corrige la premisa y asigna domain_event a U2; también precisa BL para la rama 4 de B7.",
+                "pristina/01-decisiones-vigentes.md:13989: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.",
+                "v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id."
+            ],
+            "correccion": [
+                {
+                    "archivo": "01-decisiones-vigentes.md",
+                    "linea": 13989,
+                    "generado": true,
+                    "donde_va": "v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py",
+                    "sale": "- **En una línea**: **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV)",
+                    "entra": "- **En una línea**: **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV)\n- ⚠️ **Caducada en parte**: la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones. Sólo citable; la parte reemplazada no se implementa."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.",
+            "patron": "P-GEN",
+            "informes_originales": {
+                "G1-6": "01-decisiones-vigentes.md:13988 · «`V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe)» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:156 («**`U2`**, que es ancestro de todas las piezas que la escriben»): BN no lleva marca de caducidad parcial aunque BW reemplazó expresamente esa aplicación errónea; es incoherencia del registro sólo citable, mientras DEC-ARCH-017#📌6 ya omite esa misma frase y explica su reemplazo en la línea 6629 · MENOR"
+            },
+            "correccion_generador": {
+                "id_a_declarar": "OWN:41-corte-del-mvp:t9:BN",
+                "alcance": "en parte",
+                "texto": "la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones",
+                "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.",
+                "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."
+            }
+        },
+        {
+            "id": "H5-G1-7",
+            "grupo": null,
+            "miembros": ["H5-G1-7"],
+            "veredicto": "GENERADOR",
+            "clase_final": "MENOR",
+            "relacionados": [
+                "H3-G1-3 (vuelta 3, GENERADOR): corrigió otras cinco letras caducadas; AP/BN/BU son casos nuevos del mismo mecanismo, no se readjudican las cinco resueltas.",
+                "La corrección de contenido del DEC/📌 ya está aplicada. Se adjudica sólo la falta de marca del registro histórico, no se reabre ese contenido."
+            ],
+            "resumen": "G1 deja BU sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.",
+            "verificadores": ["G1"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:146 y :157 (BX).",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7446–7451 (📌 BX): adelanta expresamente el gate a B2.",
+                "pristina/01-decisiones-vigentes.md:14059: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.",
+                "v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id."
+            ],
+            "correccion": [
+                {
+                    "archivo": "01-decisiones-vigentes.md",
+                    "linea": 14059,
+                    "generado": true,
+                    "donde_va": "v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py",
+                    "sale": "- **En una línea**: **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9)",
+                    "entra": "- **En una línea**: **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9)\n- ⚠️ **Caducada en parte**: el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU. Sólo citable; la parte reemplazada no se implementa."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.",
+            "patron": "P-GEN",
+            "informes_originales": {
+                "G1-7": "01-decisiones-vigentes.md:14058 · «su valor inicial lo fija el owner antes del merge de `B11`» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:157 («**el owner fija el valor del plazo 19 antes del merge de `B2`**, y no de `B11`»): BU conserva el plazo superado sin marca de caducidad parcial; es incoherencia del registro sólo citable, porque BX y el 📌8 de DEC-DATA-008 explicitan la corrección vigente · MENOR"
+            },
+            "correccion_generador": {
+                "id_a_declarar": "OWN:41-corte-del-mvp:t9:BU",
+                "alcance": "en parte",
+                "texto": "el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU",
+                "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.",
+                "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."
+            }
+        },
+        {
+            "id": "H5-VA-A2-1",
+            "grupo": null,
+            "miembros": ["H5-VA-A2-1", "H5-VB-03-1"],
+            "veredicto": "OWNER",
+            "clase_final": null,
+            "relacionados": [
+                "H4-VB-09-2 (vuelta 4, REAL BLOQUEA): corrigió en g8/src/B4 el encolado después del commit. Está aplicado. No se vuelve a contar aquel orden; la nueva pregunta es si corresponde un transporte durable en absoluto."
+            ],
+            "resumen": "El contrato y DEC-ARCH-009 dicen aviso de cobertura no durable; B/descomposicion y B4 exigen encolarlo en el outbox de U2.",
+            "verificadores": ["VA-A2", "VB-03"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:835–845: aviso no durable y reconciliador diario; :828–833: el primer pago también avisa, y el reconciliador no corre la máquina de trial.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6149–6171 (DEC-ARCH-009): el owner eligió reconciliador; hacer durable el aviso es la alternativa descartada.",
+                ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:138: exige explícitamente encolar el aviso de cobertura, invocando FASE 5 lote 2 A.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:55 y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2477–2485 (📌 de U2): asignan constructor y correlación del outbox; no cambian expresamente DEC-ARCH-009 ni deciden transporte de eventos.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/00-consolidado.md:228–237 y 12-aplicacion-nucleo-y-contrato.md:32–43: la pregunta y su aplicación refieren a correos, supresión y bitácora.",
+                "pristina/03-contrato-de-cobertura.md:849 y pristina/10-corte/B4.md:129, :349–350 y :391–392 conservan las dos reglas. v/generadores/g8/src/B4.md contiene la misma obligación: no es introducida por g8/gen.py."
+            ],
+            "correccion": [],
+            "correccion_fuente": [],
+            "pregunta_owner": "CK — ¿El aviso de cobertura conserva el transporte no durable de DEC-ARCH-009 o se vuelve durable, con contrato y límites propios? Ver owner.txt; no aplicar cambios normativos hasta la decisión.",
+            "causa": "Dos capítulos vivos mandan transportes incompatibles. La atribución a A no basta para inferir una revocación de DEC-ARCH-009: ni su fila ni el 📌 la deciden. No se puede elegir una política por fecha de la descomposición.",
+            "patron": "P-OWNER",
+            "informes_originales": {
+                "VA-A2-1": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:836 · «El aviso no tiene transporte durable —el outbox del núcleo es de correos—» · distinta en s/2e9ef99e/10-corte/B4.md:129 («Entonces el aviso de que la cobertura cambió queda encolado en el outbox común de `U2`»; también lo exigen las líneas 349 y 391). DEC-ARCH-009, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6149–6175, mantiene el reconciliador diario como red y descarta la alternativa de hacer durable el aviso. El 📌 de U2 del mismo log:2477–2485 asigna la construcción del outbox de correos, sin cambiar esa decisión; las decisiones del owner del MVP no la reemplazan. La propia spec conserva la regla sin transporte durable en s/2e9ef99e/03-contrato-de-cobertura.md:849. Seguir el AC y su test exige construir un transporte de eventos de dominio por el outbox que el contrato excluye. · BLOQUEA",
+                "VB-03-1": "03-contrato-de-cobertura.md:849 · «El aviso no tiene transporte durable —el outbox del núcleo es de correos—» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:138 («el aviso de que la cobertura cambió se encola en el outbox común, que construye `U2`»). La contradicción está también dentro de la spec: 10-corte/B4.md:129 exige encolar ese mismo aviso y :349–350 exige hacerlo en la misma transacción que el cambio de estado. El enunciado revisado tiene soporte vivo en el contrato fuente y en DEC-ARCH-009 (decision log:6149–6167), pero conserva la entrega no durable frente a la obligación posterior de B4 (FASE 5, 2026-09-30). Son dos transportes distintos para el mismo evento; las decisiones posteriores consultadas no los concilian · BLOQUEA"
+            }
+        }
+    ],
+    "por_id": {
+        "H5-VB-06-2": {
+            "id": "H5-VB-06-2",
+            "grupo": null,
+            "miembros": ["H5-VB-06-2"],
+            "veredicto": "REAL",
+            "clase_final": "BLOQUEA",
+            "relacionados": [],
+            "resumen": "TEST:V5:10 permite rechazar en el paso 5 a quien tiene BASE pero no la capacidad; el rechazo corresponde al paso 6.",
+            "verificadores": ["VB-06"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:143–163: el paso 5 pregunta por fuentes y acepta BASE; ya no rechaza a nadie. El paso 6 decide la capacidad.",
+                "pristina/10-corte/V5.md:575–594 conserva la distinción; :1356–1357 permite 5/6 y por ello puede aprobar una implementación equivocada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/V5.md",
+                    "linea": 1356,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "**TEST:V5:10** — Ruta API, una por ruta de escritura de vertical: un dueño con permiso y sin fuente que\notorgue la capacidad es rechazado en el paso 5/6.",
+                    "entra": "**TEST:V5:10** — Ruta API, una por ruta de escritura de vertical: un dueño con permiso y con BASE,\npero sin fuente que otorgue la capacidad exigida, pasa el paso 5 y es rechazado en el paso 6\npor falta de esa capacidad; no responde «sin cobertura»."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "El test mezcla existencia de fuentes con lo que otorgan; la cita al contrato no desambigua su resultado aceptado.",
+            "patron": "P-TEST",
+            "informes_originales": {
+                "VB-06-2": "10-corte/V5.md:1357 · «otorgue la capacidad es rechazado en el paso 5/6.» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:155 («El paso 5 pregunta por `fuentes`, no por `cubierto`»; líneas 159–160: «el paso 5 ya no rechaza a nadie, y toda la defensa se apoya en el paso 6»). TEST:V5:10 acepta rechazar en el paso 5 a un dueño que tiene BASE pero carece de la capacidad, validando «sin cobertura» donde corresponde el rechazo de capacidad del paso 6. La propia spec conserva la distinción en V5.md:575–594 · BLOQUEA"
+            }
+        },
+        "H5-VB-08-4": {
+            "id": "H5-VB-08-4",
+            "grupo": null,
+            "miembros": ["H5-VB-08-4"],
+            "veredicto": "REAL",
+            "clase_final": "BLOQUEA",
+            "relacionados": [],
+            "resumen": "TEST:B3:28 sólo exige encolar el correo antes de cancelar el VIP; puede aprobar la llamada mientras el correo sigue pendiente.",
+            "verificadores": ["VB-08"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:290–318 y :355–362: falla transitoria espera la misma fila; sent permite llamar; no-entregable o failed definitivo permiten llamar y escalar.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:141 (BP) y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7998–8003: cancelación del VIP en S2 con correo antes.",
+                "pristina/10-corte/B3.md:1268–1271: el falso sólo exige el encolado; la regla viva distingue encolar de enviar."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/B3.md",
+                    "linea": 1268,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "**TEST:B3:28** — Integración: con una suscripción de Turista VIP paga y un plan que lo hereda en\n`PENDING_AUTHORIZATION`, el VIP sigue vivo; al correr `S2` sobre el plan, el VIP queda cancelado en el\nmismo acto, sin `refund`, con el correo encolado antes de la cancelación en el falso, y la cobertura del\nbeneficio sigue sin corte.",
+                    "entra": "**TEST:B3:28** — Integración: con una suscripción de Turista VIP paga y un plan que lo hereda en\n`PENDING_AUTHORIZATION`, el VIP sigue vivo. Con entrega normal, al correr `S2` sobre el plan se\ncancela el VIP, sin `refund`: el falso recibe la cancelación sólo después de que el correo sale\ny su fila queda `sent`; la cobertura del beneficio sigue sin corte. Con el correo pendiente por\nfalla transitoria, el falso no recibe la cancelación; al salir ese mismo correo se permite la\nllamada, sin encolar otro. Con no-entregable o `failed` definitivo, la llamada sale igual y el\ncaso queda registrado y escalado, según `B/03` §1.1 y `DEC-MAIL-001`."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Encolado durable no demuestra que el correo precedió la llamada externa.",
+            "patron": "P-TEST",
+            "informes_originales": {
+                "VB-08-4": "10-corte/B3.md:1270 · «con el correo encolado antes de la cancelación en el falso» · más débil que fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:359 («Si está `sent`, la llamada sale sin otro correo;») y :360 («si todavía no salió, es la rama transitoria de arriba y la llamada espera a esa misma fila»). TEST:B3:28 sólo exige encolar y permite pasar cancelando con el correo todavía pendiente. La regla vigente exige que salga antes, salvo los casos explícitos de no-entregable o `failed`; BP (:141 de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md) exige el correo antes también para esta cancelación del VIP en S2. · BLOQUEA"
+            }
+        },
+        "H5-VB-04-1": {
+            "id": "H5-VB-04-1",
+            "grupo": null,
+            "miembros": ["H5-VB-04-1"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "El resumen de smoke de U1 omite la excepción BT: TEST:U1:24 mide producción antes del merge.",
+            "verificadores": ["VB-04"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1076–1082 y owner BT (:145): conteos read-only antes del merge.",
+                "pristina/10-corte/U1.md:780–786 ya lo exige; :790 generaliza que ningún smoke es gate de pieza."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/U1.md",
+                    "linea": 790,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "- Los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza: el ensayo en",
+                    "entra": "- Salvo `TEST:U1:24`, que mide producción en sólo lectura antes del merge y deja el número en el\n  PR (BT), los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza: el ensayo en"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Resumen no actualizado después de agregar el test BT; los AC y el test ya son correctos.",
+            "patron": "P-RESUMEN",
+            "informes_originales": {
+                "VB-04-1": "10-corte/U1.md:790 · «Los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1076 («Las mediciones de producción que una pieza necesita»; «antes de su merge, y deja el número en el PR»). Incoherencia interna con TEST:U1:24 (10-corte/U1.md:777–784), clasificado como smoke de producción y exigido antes del merge; AC:U1:3 y AC:U1:13 sí conservan esa obligación. El resumen omite esta excepción, sin cambiar lo que los AC mandan construir · MENOR"
+            }
+        },
+        "H5-VB-07-4": {
+            "id": "H5-VB-07-4",
+            "grupo": null,
+            "miembros": ["H5-VB-07-4"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "La cita final de V7 apunta a la fila de otra pieza en la lista del corte.",
+            "verificadores": ["VB-07"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.",
+                "pristina/20-fase-4/V7.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "20-fase-4/V7.md",
+                    "linea": 1067,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "lista de piezas, l. 950",
+                    "entra": "lista de piezas, l. 954"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Número de línea residual; no modifica el reparto normativo.",
+            "patron": "P-REF",
+            "informes_originales": {
+                "VB-07-4": "20-fase-4/V7.md:1067 · «lista de piezas, l. 950» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950 («| `V3` | `V3` | corte |»): la referencia apunta a V3; la fila de V7 está en la línea 954. La cita inicial del archivo sí apunta correctamente · MENOR"
+            }
+        },
+        "H5-VB-07-5": {
+            "id": "H5-VB-07-5",
+            "grupo": null,
+            "miembros": ["H5-VB-07-5"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "La cita final de V8a apunta a la fila de otra pieza en la lista del corte.",
+            "verificadores": ["VB-07"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.",
+                "pristina/10-corte/V8a.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/V8a.md",
+                    "linea": 648,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "§4.6 (l. 951)",
+                    "entra": "§4.6 (l. 955)"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Número de línea residual; no modifica el reparto normativo.",
+            "patron": "P-REF",
+            "informes_originales": {
+                "VB-07-5": "10-corte/V8a.md:648 · «`16-fase-7-del-paraguas.md` §4.6 (l. 951)» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:951 («| `V4` | `V4` | corte |»): la referencia apunta a V4; la fila de V8a está en la línea 955. La cita inicial del archivo sí apunta correctamente · MENOR"
+            }
+        },
+        "H5-VB-07-6": {
+            "id": "H5-VB-07-6",
+            "grupo": null,
+            "miembros": ["H5-VB-07-6"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "La cita final de V8b apunta a la fila de otra pieza en la lista del corte.",
+            "verificadores": ["VB-07"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.",
+                "pristina/20-fase-4/V8b.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "20-fase-4/V8b.md",
+                    "linea": 306,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "§4.6 (l. 952,",
+                    "entra": "§4.6 (l. 956,"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Número de línea residual; no modifica el reparto normativo.",
+            "patron": "P-REF",
+            "informes_originales": {
+                "VB-07-6": "20-fase-4/V8b.md:308 · «`16-fase-7-del-paraguas.md` §4.6 (l. 952, nota del esquema l. 994–997)» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:952 («| `V5` | `V5` | corte | entera |»): la referencia a la pieza apunta a V5; la fila de V8b está en la línea 956. La cita inicial del archivo sí apunta correctamente · MENOR"
+            }
+        },
+        "H5-VB-07-7": {
+            "id": "H5-VB-07-7",
+            "grupo": null,
+            "miembros": ["H5-VB-07-7"],
+            "veredicto": "REAL",
+            "clase_final": "MENOR",
+            "relacionados": [],
+            "resumen": "La cita final de V9a apunta a la fila de otra pieza en la lista del corte.",
+            "verificadores": ["VB-07"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.",
+                "pristina/10-corte/V9a.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/V9a.md",
+                    "linea": 312,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "lista de piezas, l. 953",
+                    "entra": "lista de piezas, l. 957"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Número de línea residual; no modifica el reparto normativo.",
+            "patron": "P-REF",
+            "informes_originales": {
+                "VB-07-7": "10-corte/V9a.md:312 · «lista de piezas, l. 953» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:953 («| `V6` | `V6` | corte |»): la referencia apunta a V6; la fila de V9a está en la línea 957. La cita inicial del archivo sí apunta correctamente · MENOR"
+            }
+        },
+        "H5-G1-5": {
+            "id": "H5-G1-5",
+            "grupo": null,
+            "miembros": ["H5-G1-5"],
+            "veredicto": "GENERADOR",
+            "clase_final": "MENOR",
+            "relacionados": [
+                "H3-G1-3 (vuelta 3, GENERADOR): corrigió otras cinco letras caducadas; AP/BN/BU son casos nuevos del mismo mecanismo, no se readjudican las cinco resueltas.",
+                "La corrección de contenido del DEC/📌 ya está aplicada. Se adjudica sólo la falta de marca del registro histórico, no se reabre ese contenido."
+            ],
+            "resumen": "G1 deja AP sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.",
+            "verificadores": ["G1"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:59, :73 (AV) y :111 (BG).",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7933–7938 (📌 AV) y :7957–7961 (📌 BG): reemplazos expresos de la aplicación de AP.",
+                "pristina/01-decisiones-vigentes.md:13745: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.",
+                "v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id."
+            ],
+            "correccion": [
+                {
+                    "archivo": "01-decisiones-vigentes.md",
+                    "linea": 13745,
+                    "generado": true,
+                    "donde_va": "v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py",
+                    "sale": "- **En una línea**: cada tabla la crea la pieza del corte dueña de la tabla de la que cuelga: el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados, en `V6`; la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`, en `B3`; promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia. Mitigación: el drift guard sobre la rama de cada fase falla si la fase trae una migración estructural",
+                    "entra": "- **En una línea**: cada tabla la crea la pieza del corte dueña de la tabla de la que cuelga: el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados, en `V6`; la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`, en `B3`; promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia. Mitigación: el drift guard sobre la rama de cada fase falla si la fase trae una migración estructural\n- ⚠️ **Caducada en parte**: las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP. Sólo citable; la parte reemplazada no se implementa."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.",
+            "patron": "P-GEN",
+            "informes_originales": {
+                "G1-5": "01-decisiones-vigentes.md:13744 · «promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:73 («las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia») y :111 («**`B3`**, como AV hizo con addons»): AP conserva las dos asignaciones superadas sin la marca «Caducada en parte» prometida por el registro; es incoherencia del registro sólo citable, pues AV, BG y DEC-ARCH-017 sí conservan las asignaciones vigentes · MENOR"
+            },
+            "correccion_generador": {
+                "id_a_declarar": "OWN:41-corte-del-mvp:t3:AP",
+                "alcance": "en parte",
+                "texto": "las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP",
+                "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.",
+                "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."
+            }
+        },
+        "H5-G1-6": {
+            "id": "H5-G1-6",
+            "grupo": null,
+            "miembros": ["H5-G1-6"],
+            "veredicto": "GENERADOR",
+            "clase_final": "MENOR",
+            "relacionados": [
+                "H3-G1-3 (vuelta 3, GENERADOR): corrigió otras cinco letras caducadas; AP/BN/BU son casos nuevos del mismo mecanismo, no se readjudican las cinco resueltas.",
+                "La corrección de contenido del DEC/📌 ya está aplicada. Se adjudica sólo la falta de marca del registro histórico, no se reabre ese contenido."
+            ],
+            "resumen": "G1 deja BN sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.",
+            "verificadores": ["G1"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:139 y :156 (BW).",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8011–8022 (📌 BW): corrige la premisa y asigna domain_event a U2; también precisa BL para la rama 4 de B7.",
+                "pristina/01-decisiones-vigentes.md:13989: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.",
+                "v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id."
+            ],
+            "correccion": [
+                {
+                    "archivo": "01-decisiones-vigentes.md",
+                    "linea": 13989,
+                    "generado": true,
+                    "donde_va": "v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py",
+                    "sale": "- **En una línea**: **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV)",
+                    "entra": "- **En una línea**: **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV)\n- ⚠️ **Caducada en parte**: la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones. Sólo citable; la parte reemplazada no se implementa."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.",
+            "patron": "P-GEN",
+            "informes_originales": {
+                "G1-6": "01-decisiones-vigentes.md:13988 · «`V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe)» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:156 («**`U2`**, que es ancestro de todas las piezas que la escriben»): BN no lleva marca de caducidad parcial aunque BW reemplazó expresamente esa aplicación errónea; es incoherencia del registro sólo citable, mientras DEC-ARCH-017#📌6 ya omite esa misma frase y explica su reemplazo en la línea 6629 · MENOR"
+            },
+            "correccion_generador": {
+                "id_a_declarar": "OWN:41-corte-del-mvp:t9:BN",
+                "alcance": "en parte",
+                "texto": "la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones",
+                "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.",
+                "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."
+            }
+        },
+        "H5-G1-7": {
+            "id": "H5-G1-7",
+            "grupo": null,
+            "miembros": ["H5-G1-7"],
+            "veredicto": "GENERADOR",
+            "clase_final": "MENOR",
+            "relacionados": [
+                "H3-G1-3 (vuelta 3, GENERADOR): corrigió otras cinco letras caducadas; AP/BN/BU son casos nuevos del mismo mecanismo, no se readjudican las cinco resueltas.",
+                "La corrección de contenido del DEC/📌 ya está aplicada. Se adjudica sólo la falta de marca del registro histórico, no se reabre ese contenido."
+            ],
+            "resumen": "G1 deja BU sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.",
+            "verificadores": ["G1"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:146 y :157 (BX).",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7446–7451 (📌 BX): adelanta expresamente el gate a B2.",
+                "pristina/01-decisiones-vigentes.md:14059: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.",
+                "v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id."
+            ],
+            "correccion": [
+                {
+                    "archivo": "01-decisiones-vigentes.md",
+                    "linea": 14059,
+                    "generado": true,
+                    "donde_va": "v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py",
+                    "sale": "- **En una línea**: **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9)",
+                    "entra": "- **En una línea**: **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9)\n- ⚠️ **Caducada en parte**: el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU. Sólo citable; la parte reemplazada no se implementa."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.",
+            "patron": "P-GEN",
+            "informes_originales": {
+                "G1-7": "01-decisiones-vigentes.md:14058 · «su valor inicial lo fija el owner antes del merge de `B11`» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:157 («**el owner fija el valor del plazo 19 antes del merge de `B2`**, y no de `B11`»): BU conserva el plazo superado sin marca de caducidad parcial; es incoherencia del registro sólo citable, porque BX y el 📌8 de DEC-DATA-008 explicitan la corrección vigente · MENOR"
+            },
+            "correccion_generador": {
+                "id_a_declarar": "OWN:41-corte-del-mvp:t9:BU",
+                "alcance": "en parte",
+                "texto": "el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU",
+                "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.",
+                "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."
+            }
+        },
+        "H5-VA-A2-1": {
+            "id": "H5-VA-A2-1",
+            "grupo": null,
+            "miembros": ["H5-VA-A2-1", "H5-VB-03-1"],
+            "veredicto": "OWNER",
+            "clase_final": null,
+            "relacionados": [
+                "H4-VB-09-2 (vuelta 4, REAL BLOQUEA): corrigió en g8/src/B4 el encolado después del commit. Está aplicado. No se vuelve a contar aquel orden; la nueva pregunta es si corresponde un transporte durable en absoluto."
+            ],
+            "resumen": "El contrato y DEC-ARCH-009 dicen aviso de cobertura no durable; B/descomposicion y B4 exigen encolarlo en el outbox de U2.",
+            "verificadores": ["VA-A2", "VB-03"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:835–845: aviso no durable y reconciliador diario; :828–833: el primer pago también avisa, y el reconciliador no corre la máquina de trial.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6149–6171 (DEC-ARCH-009): el owner eligió reconciliador; hacer durable el aviso es la alternativa descartada.",
+                ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:138: exige explícitamente encolar el aviso de cobertura, invocando FASE 5 lote 2 A.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:55 y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2477–2485 (📌 de U2): asignan constructor y correlación del outbox; no cambian expresamente DEC-ARCH-009 ni deciden transporte de eventos.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/00-consolidado.md:228–237 y 12-aplicacion-nucleo-y-contrato.md:32–43: la pregunta y su aplicación refieren a correos, supresión y bitácora.",
+                "pristina/03-contrato-de-cobertura.md:849 y pristina/10-corte/B4.md:129, :349–350 y :391–392 conservan las dos reglas. v/generadores/g8/src/B4.md contiene la misma obligación: no es introducida por g8/gen.py."
+            ],
+            "correccion": [],
+            "correccion_fuente": [],
+            "pregunta_owner": "CK — ¿El aviso de cobertura conserva el transporte no durable de DEC-ARCH-009 o se vuelve durable, con contrato y límites propios? Ver owner.txt; no aplicar cambios normativos hasta la decisión.",
+            "causa": "Dos capítulos vivos mandan transportes incompatibles. La atribución a A no basta para inferir una revocación de DEC-ARCH-009: ni su fila ni el 📌 la deciden. No se puede elegir una política por fecha de la descomposición.",
+            "patron": "P-OWNER",
+            "informes_originales": {
+                "VA-A2-1": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:836 · «El aviso no tiene transporte durable —el outbox del núcleo es de correos—» · distinta en s/2e9ef99e/10-corte/B4.md:129 («Entonces el aviso de que la cobertura cambió queda encolado en el outbox común de `U2`»; también lo exigen las líneas 349 y 391). DEC-ARCH-009, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6149–6175, mantiene el reconciliador diario como red y descarta la alternativa de hacer durable el aviso. El 📌 de U2 del mismo log:2477–2485 asigna la construcción del outbox de correos, sin cambiar esa decisión; las decisiones del owner del MVP no la reemplazan. La propia spec conserva la regla sin transporte durable en s/2e9ef99e/03-contrato-de-cobertura.md:849. Seguir el AC y su test exige construir un transporte de eventos de dominio por el outbox que el contrato excluye. · BLOQUEA",
+                "VB-03-1": "03-contrato-de-cobertura.md:849 · «El aviso no tiene transporte durable —el outbox del núcleo es de correos—» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:138 («el aviso de que la cobertura cambió se encola en el outbox común, que construye `U2`»). La contradicción está también dentro de la spec: 10-corte/B4.md:129 exige encolar ese mismo aviso y :349–350 exige hacerlo en la misma transacción que el cambio de estado. El enunciado revisado tiene soporte vivo en el contrato fuente y en DEC-ARCH-009 (decision log:6149–6167), pero conserva la entrega no durable frente a la obligación posterior de B4 (FASE 5, 2026-09-30). Son dos transportes distintos para el mismo evento; las decisiones posteriores consultadas no los concilian · BLOQUEA"
+            }
+        },
+        "H5-VB-03-1": {
+            "id": "H5-VA-A2-1",
+            "grupo": null,
+            "miembros": ["H5-VA-A2-1", "H5-VB-03-1"],
+            "veredicto": "OWNER",
+            "clase_final": null,
+            "relacionados": [
+                "H4-VB-09-2 (vuelta 4, REAL BLOQUEA): corrigió en g8/src/B4 el encolado después del commit. Está aplicado. No se vuelve a contar aquel orden; la nueva pregunta es si corresponde un transporte durable en absoluto."
+            ],
+            "resumen": "El contrato y DEC-ARCH-009 dicen aviso de cobertura no durable; B/descomposicion y B4 exigen encolarlo en el outbox de U2.",
+            "verificadores": ["VA-A2", "VB-03"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:835–845: aviso no durable y reconciliador diario; :828–833: el primer pago también avisa, y el reconciliador no corre la máquina de trial.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6149–6171 (DEC-ARCH-009): el owner eligió reconciliador; hacer durable el aviso es la alternativa descartada.",
+                ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:138: exige explícitamente encolar el aviso de cobertura, invocando FASE 5 lote 2 A.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:55 y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2477–2485 (📌 de U2): asignan constructor y correlación del outbox; no cambian expresamente DEC-ARCH-009 ni deciden transporte de eventos.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/00-consolidado.md:228–237 y 12-aplicacion-nucleo-y-contrato.md:32–43: la pregunta y su aplicación refieren a correos, supresión y bitácora.",
+                "pristina/03-contrato-de-cobertura.md:849 y pristina/10-corte/B4.md:129, :349–350 y :391–392 conservan las dos reglas. v/generadores/g8/src/B4.md contiene la misma obligación: no es introducida por g8/gen.py."
+            ],
+            "correccion": [],
+            "correccion_fuente": [],
+            "pregunta_owner": "CK — ¿El aviso de cobertura conserva el transporte no durable de DEC-ARCH-009 o se vuelve durable, con contrato y límites propios? Ver owner.txt; no aplicar cambios normativos hasta la decisión.",
+            "causa": "Dos capítulos vivos mandan transportes incompatibles. La atribución a A no basta para inferir una revocación de DEC-ARCH-009: ni su fila ni el 📌 la deciden. No se puede elegir una política por fecha de la descomposición.",
+            "patron": "P-OWNER",
+            "informes_originales": {
+                "VA-A2-1": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:836 · «El aviso no tiene transporte durable —el outbox del núcleo es de correos—» · distinta en s/2e9ef99e/10-corte/B4.md:129 («Entonces el aviso de que la cobertura cambió queda encolado en el outbox común de `U2`»; también lo exigen las líneas 349 y 391). DEC-ARCH-009, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6149–6175, mantiene el reconciliador diario como red y descarta la alternativa de hacer durable el aviso. El 📌 de U2 del mismo log:2477–2485 asigna la construcción del outbox de correos, sin cambiar esa decisión; las decisiones del owner del MVP no la reemplazan. La propia spec conserva la regla sin transporte durable en s/2e9ef99e/03-contrato-de-cobertura.md:849. Seguir el AC y su test exige construir un transporte de eventos de dominio por el outbox que el contrato excluye. · BLOQUEA",
+                "VB-03-1": "03-contrato-de-cobertura.md:849 · «El aviso no tiene transporte durable —el outbox del núcleo es de correos—» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:138 («el aviso de que la cobertura cambió se encola en el outbox común, que construye `U2`»). La contradicción está también dentro de la spec: 10-corte/B4.md:129 exige encolar ese mismo aviso y :349–350 exige hacerlo en la misma transacción que el cambio de estado. El enunciado revisado tiene soporte vivo en el contrato fuente y en DEC-ARCH-009 (decision log:6149–6167), pero conserva la entrega no durable frente a la obligación posterior de B4 (FASE 5, 2026-09-30). Son dos transportes distintos para el mismo evento; las decisiones posteriores consultadas no los concilian · BLOQUEA"
+            }
+        }
+    },
+    "duplicados": {
+        "H5-VA-A2-1": ["H5-VA-A2-1", "H5-VB-03-1"]
+    },
+    "canarios": [
+        {
+            "numero": 1,
+            "bloque": "VB-01",
+            "donde": "00-indice.md:723",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-01"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-01-1"],
+            "regla": "Inventa un requisito de teléfono que bloquea contrataciones autorizadas por la cadena.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:120",
+            "sale": "—",
+            "entra": "Cada cuenta debe tener un teléfono verificado antes de iniciar cualquier contratación, incluso cuando ya tenga el correo verificado. ↵  ↵"
+        },
+        {
+            "numero": 2,
+            "bloque": "VB-01",
+            "donde": "02-nucleo-glosario.md:244",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-01", "VA-A1"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-01-2", "VA-A1-1"],
+            "regla": "Permite elegir el plan de trial como oferta comercial, aunque la fuente lo asigna automáticamente y prohíbe elegirlo.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:301",
+            "sale": "02-nucleo-glosario.md: **No es elegible** por el User.",
+            "entra": "02-nucleo-glosario.md: **Es elegible** por el User."
+        },
+        {
+            "numero": 3,
+            "bloque": "VB-02",
+            "donde": "02-nucleo-outbox.md:92",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-02"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-02-3"],
+            "regla": "Inventa una causa de descarte de avisos distinta de la jerarquía de supresión.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:176",
+            "sale": "—",
+            "entra": "El cambio de dirección de correo de una cuenta invalida todos sus avisos comerciales pendientes, aunque su ocurrencia siga vigente. ↵  ↵"
+        },
+        {
+            "numero": 4,
+            "bloque": "VB-02",
+            "donde": "02-nucleo-auditoria.md:59",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-02", "VA-A1"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-02-1", "VA-A1-3"],
+            "regla": "Cambia la representación persistida del instante de auditoría y rompe su correlación temporal.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:60",
+            "sale": "02-nucleo-auditoria.md: ¦ **cuándo** ¦ instante en UTC",
+            "entra": "02-nucleo-auditoria.md: ¦ **cuándo** ¦ instante en hora local del mercado"
+        },
+        {
+            "numero": 5,
+            "bloque": "VB-03",
+            "donde": "03-contrato-de-cobertura.md:1509",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-03"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-03-2"],
+            "regla": "Introduce una dependencia de disponibilidad remota para arrancar y consultar cobertura local.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1576",
+            "sale": "—",
+            "entra": "La raíz de composición debe rechazar el arranque de la API cuando no pueda abrir una conexión con Mercado Pago, antes de atender cualquier lectura de cobertura. ↵  ↵"
+        },
+        {
+            "numero": 6,
+            "bloque": "VB-03",
+            "donde": "02-nucleo-modelo-y-maquinas.md:251",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-03", "VA-A1"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-03-3", "VA-A1-2"],
+            "regla": "Mete efectos remotos dentro de la transacción local, acoplando el fallo remoto al dominio.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:59",
+            "sale": "02-nucleo-modelo-y-maquinas.md: correo— nunca están dentro de esa transacción",
+            "entra": "02-nucleo-modelo-y-maquinas.md: correo— siempre están dentro de esa transacción"
+        },
+        {
+            "numero": 7,
+            "bloque": "VB-04",
+            "donde": "10-corte/V1.md:471",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-04"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-04-3"],
+            "regla": "Inventa un reinicio transversal de cuotas al agregar una vertical.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:316",
+            "sale": "—",
+            "entra": "Agregar una vertical al catálogo requiere reiniciar todas las cuotas medidas de los usuarios existentes, para que el nuevo catálogo comience con contadores homogéneos. ↵  ↵"
+        },
+        {
+            "numero": 8,
+            "bloque": "VB-04",
+            "donde": "10-corte/U2.md:220",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-04"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-04-2"],
+            "regla": "Expone la correlación interna al proveedor cuando la fuente la mantiene local.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:144",
+            "sale": "10-corte/U2.md: de la fila del outbox; no viaja hacia el proveedor",
+            "entra": "10-corte/U2.md: de la fila del outbox; también viaja hacia el proveedor"
+        },
+        {
+            "numero": 9,
+            "bloque": "VB-05",
+            "donde": "10-corte/V3.md:505",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-05"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-05-2"],
+            "regla": "Inventa una demora para otorgar una capacidad que las fuentes vigentes ya conceden.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:20",
+            "sale": "—",
+            "entra": "Si dos fuentes aportan la misma capacidad booleana, el pliegue exige que ambas permanezcan vigentes durante veinticuatro horas antes de habilitarla. ↵  ↵"
+        },
+        {
+            "numero": 10,
+            "bloque": "VB-05",
+            "donde": "10-corte/V2.md:40",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-05"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-05-1"],
+            "regla": "Clasifica como upgrade un cambio que reduce un límite de estrategia SUMA o MÁXIMO.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:713",
+            "sale": "10-corte/V2.md: **`direcciónDeCambio` contesta `BAJA` sobre un par de versiones donde el destino tiene `rank`",
+            "entra": "10-corte/V2.md: **`direcciónDeCambio` contesta `SUBE` sobre un par de versiones donde el destino tiene `rank`"
+        },
+        {
+            "numero": 11,
+            "bloque": "VB-06",
+            "donde": "10-corte/V6.md:218",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-06"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-06-3"],
+            "regla": "Inventa un bloqueo de edición que impide al dueño subsanar una ficha.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:704",
+            "sale": "—",
+            "entra": "Una ficha con un pedido de arreglo abierto no puede cambiar sus fotos hasta que un administrador cierre ese pedido. ↵  ↵"
+        },
+        {
+            "numero": 12,
+            "bloque": "VB-06",
+            "donde": "10-corte/V5.md:353",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-06", "VA-A4"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-06-1", "VA-A4-2"],
+            "regla": "Permite modificar el propio rol SUPER_ADMIN, prohibido por la acción 26.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:216",
+            "sale": "10-corte/V5.md: sobre la propia cuenta lo rechaza el paso 3, y sin motivo no se ejecuta",
+            "entra": "10-corte/V5.md: sobre la propia cuenta lo admite el paso 3, y sin motivo no se ejecuta"
+        },
+        {
+            "numero": 13,
+            "bloque": "VB-07",
+            "donde": "20-fase-4/V8b.md:96",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-07", "VA-A5"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-07-3", "VA-A5-1"],
+            "regla": "Inventa una exclusión de postulantes por dominio de correo.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:278",
+            "sale": "—",
+            "entra": "El formulario de postulación sólo admite direcciones de correo de dominios corporativos; rechaza las de proveedores de correo personal antes de crear la postulación. ↵  ↵"
+        },
+        {
+            "numero": 14,
+            "bloque": "VB-07",
+            "donde": "20-fase-4/V7.md:617",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-07"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-07-1"],
+            "regla": "Asigna el Partner a la cuenta del correo en vez de a la sesión que reclama.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:290",
+            "sale": "20-fase-4/V7.md: y a la cuenta con que la inició** (owner 2026-09-27, FASE 9 vuelta 2, `R7`)",
+            "entra": "20-fase-4/V7.md: y a la cuenta que ya tenía ese correo** (owner 2026-09-27, FASE 9 vuelta 2, `R7`)"
+        },
+        {
+            "numero": 15,
+            "bloque": "VB-08",
+            "donde": "10-corte/B2.md:500",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-08", "VA-A6"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-08-2", "VA-A6-1"],
+            "regla": "Inventa una granularidad de precios de cien pesos.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:386",
+            "sale": "—",
+            "entra": "Una billing option nueva sólo puede publicarse si su monto es múltiplo de cien pesos; los demás montos se rechazan sin redondearlos. ↵  ↵"
+        },
+        {
+            "numero": 16,
+            "bloque": "VB-08",
+            "donde": "10-corte/B3.md:210",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-08"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-08-3"],
+            "regla": "Una caída entre llamada y persistencia permite duplicar la operación remota.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:46",
+            "sale": "10-corte/B3.md: se acuña y **se persiste en `idempotency_key` antes** de llamar al proveedor",
+            "entra": "10-corte/B3.md: se acuña y **se persiste en `idempotency_key` después** de llamar al proveedor"
+        },
+        {
+            "numero": 17,
+            "bloque": "VB-09",
+            "donde": "10-corte/B4.md:480",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-09"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-09-1"],
+            "regla": "Inventa un corte de lecturas de cobertura por acumulación de marcas.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:93",
+            "sale": "—",
+            "entra": "La consulta de cobertura de una cuenta con más de veinte marcas abiertas debe devolver un error hasta que soporte reduzca ese número. ↵  ↵"
+        },
+        {
+            "numero": 18,
+            "bloque": "VB-09",
+            "donde": "10-corte/B6.md:24",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-09"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-09-2"],
+            "regla": "Permite devolver más dinero que el monto confirmado por una persona.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:140",
+            "sale": "10-corte/B6.md: sin monto que reintentar, y un `2084` se reintenta con otro monto **que nunca pasa del ↵    confirmado**",
+            "entra": "10-corte/B6.md: sin monto que reintentar, y un `2084` se reintenta con otro monto **que puede superar el ↵    confirmado**"
+        },
+        {
+            "numero": 19,
+            "bloque": "VB-10",
+            "donde": "10-corte/B8a.md:681",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-10"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-10-2"],
+            "regla": "Inventa una exportación obligatoria que bloquea la baja del cobro.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:43",
+            "sale": "—",
+            "entra": "Antes de aceptar una cancelación se exige que el cliente haya exportado al menos una vez todas sus fichas con contenido; si falta alguna, se rechaza la solicitud. ↵  ↵"
+        },
+        {
+            "numero": 20,
+            "bloque": "VB-10",
+            "donde": "10-corte/B7.md:294",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-10"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-10-1"],
+            "regla": "Deja el pago de S19 pendiente después de resolver la sucesión, bloqueando su cierre.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1068",
+            "sale": "10-corte/B7.md: sucesión, y cada una de las seis ramas de `12` §5.3 tiene un acto que apaga la bandera",
+            "entra": "10-corte/B7.md: sucesión, y cada una de las seis ramas de `12` §5.3 tiene un acto que conserva la bandera"
+        },
+        {
+            "numero": 21,
+            "bloque": "VB-11",
+            "donde": "20-fase-1/V9b.md:460",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-11"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-11-3"],
+            "regla": "Inventa una cuota que impide recuperar contenido antes de su purga.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:920",
+            "sale": "—",
+            "entra": "Cada exportación de contenido consume una unidad de una cuota mensual fija de tres exportaciones por cuenta; agotarla impide exportar hasta el mes siguiente. ↵  ↵"
+        },
+        {
+            "numero": 22,
+            "bloque": "VB-11",
+            "donde": "20-fase-2/B9b.md:239",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-11", "VA-A10"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-11-2", "VA-A10-2"],
+            "regla": "Agrega una devolución automática al revocar la cortesía temporal que la fuente termina sin reembolso.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:160",
+            "sale": "20-fase-2/B9b.md: la ↵   termina en el acto por `S10`, con `fin_real` escrito y la relectura, sin reembolso",
+            "entra": "20-fase-2/B9b.md: la ↵   termina en el acto por `S10`, con `fin_real` escrito y la relectura, con reembolso proporcional"
+        },
+        {
+            "numero": 23,
+            "bloque": "VB-12",
+            "donde": "20-fase-3/B13b.md:226",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-12"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-12-1"],
+            "regla": "Inventa un bloqueo de retirada del catálogo por ventas anteriores.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:219",
+            "sale": "—",
+            "entra": "El editor debe rechazar la retirada de un complemento mientras exista al menos una instancia comprada de ese producto. ↵  ↵"
+        },
+        {
+            "numero": 24,
+            "bloque": "VB-12",
+            "donde": "20-fase-3/B12.md:673",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-12"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-12-2"],
+            "regla": "Exige mutar un mandato que no está autorizado, violando la guarda de S37.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:187",
+            "sale": "20-fase-3/B12.md: y la cola sigue vacía; con el preapproval no `authorized`, `S37` no corre.",
+            "entra": "20-fase-3/B12.md: y la cola sigue vacía; con el preapproval no `authorized`, `S37` corre igualmente."
+        },
+        {
+            "numero": 25,
+            "bloque": "VB-13",
+            "donde": "20-fase-3/B10.md:1553",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-13"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-13-2"],
+            "regla": "Inventa una guarda de reputación para adquirir complementos.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:172",
+            "sale": "—",
+            "entra": "La compra de un complemento sólo se habilita si el dueño tiene al menos una reseña pública en una ficha de la vertical compatible. ↵  ↵"
+        },
+        {
+            "numero": 26,
+            "bloque": "VB-13",
+            "donde": "20-fase-2/B8b.md:424",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-13"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-13-1"],
+            "regla": "Elimina la restricción que impide pausas sin motivo interpretable por su reloj.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:59",
+            "sale": "20-fase-2/B8b.md: **Entonces** su motivo es uno del dominio cerrado (`CUSTOMER_REQUEST` o `COURTESY`) y la base ↵   rechaza otro o ninguno",
+            "entra": "20-fase-2/B8b.md: **Entonces** su motivo es uno del dominio cerrado (`CUSTOMER_REQUEST` o `COURTESY`) y la base ↵   admite otro o ninguno"
+        },
+        {
+            "numero": 27,
+            "bloque": "VB-14",
+            "donde": "30-el-corte.md:1193",
+            "tipo": "AGREGA",
+            "detectado_por": ["VB-14"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-14-3"],
+            "regla": "Inventa un gate de respuesta de usuarios que mantiene el sitio bloqueado.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:158",
+            "sale": "—",
+            "entra": "El paso de cierre exige que cada una de las cinco cuentas confirme por correo que ingresó al sistema nuevo; mientras falte una respuesta, las escrituras permanecen cerradas. ↵  ↵"
+        },
+        {
+            "numero": 28,
+            "bloque": "VB-14",
+            "donde": "30-el-corte.md:150",
+            "tipo": "MODIFICA",
+            "detectado_por": ["VB-14"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-14-1"],
+            "regla": "Reduce el censo de planes al registro local y deja links de compra remotos activos.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:148",
+            "sale": "30-el-corte.md: —todo `preapproval_plan` de la cuenta que no esté `cancelled`— y no de `billing_mp_plan`",
+            "entra": "30-el-corte.md: —todo `preapproval_plan` registrado en `billing_mp_plan` que no esté `cancelled`—"
+        },
+        {
+            "numero": 29,
+            "bloque": "G1",
+            "donde": "01-decisiones-vigentes.md:2649",
+            "tipo": "MODIFICA",
+            "detectado_por": ["G1"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["G1-3"],
+            "regla": "Reduce a la mitad la retención técnica de entregas del proveedor.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7471",
+            "sale": "01-decisiones-vigentes.md: con una retención técnica, no configurable, de 180 días; procesa sólo la entrega `payment`",
+            "entra": "01-decisiones-vigentes.md: con una retención técnica, no configurable, de 90 días; procesa sólo la entrega `payment`"
+        },
+        {
+            "numero": 30,
+            "bloque": "G1",
+            "donde": "01-decisiones-vigentes.md:2416",
+            "tipo": "MODIFICA",
+            "detectado_por": ["G1"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["G1-2"],
+            "regla": "Permite reutilizar un token de tarjeta consumido, haciendo fallar nuevas autorizaciones.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5673",
+            "sale": "01-decisiones-vigentes.md: `card_token` es **de un solo uso** (`EX-12`, re-verificado en producción con tarjeta real).",
+            "entra": "01-decisiones-vigentes.md: `card_token` es **reutilizable entre suscripciones** (`EX-12`, re-verificado en producción con tarjeta real)."
+        },
+        {
+            "numero": 31,
+            "bloque": "G2",
+            "donde": "10-corte/B11.md:1160",
+            "tipo": "MODIFICA",
+            "detectado_por": ["G2"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["G2-7"],
+            "regla": "Demora casi un día la alerta del barrido detenido.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1132",
+            "sale": "10-corte/B11.md: **Si pasan 26 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**",
+            "entra": "10-corte/B11.md: **Si pasan 48 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**"
+        },
+        {
+            "numero": 32,
+            "bloque": "G2",
+            "donde": "04-catalogos.md:420",
+            "tipo": "MODIFICA",
+            "detectado_por": ["G2"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["G2-1"],
+            "regla": "Impide vencer un trial por fecha cuando todavía hay cobertura, pese a que T3 no tiene guarda.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:54",
+            "sale": "04-catalogos.md: - **evento** (disparador): llega la fecha de fin ↵ - **hacia** (estado destino): `TRIAL_EXPIRED` ↵ - **condición** (guardas): **—**",
+            "entra": "04-catalogos.md: - **evento** (disparador): llega la fecha de fin ↵ - **hacia** (estado destino): `TRIAL_EXPIRED` ↵ - **condición** (guardas): **`cubierto` es falso**"
+        },
+        {
+            "numero": 33,
+            "bloque": "VA-A1",
+            "donde": "02-nucleo-auditoria.md:410",
+            "tipo": "OMITE",
+            "detectado_por": ["VB-02", "VA-A1"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-02-2", "VA-A1-4"],
+            "regla": "El diagnóstico deja de exigir la fecha de cada lectura de los estados en conflicto, impidiendo distinguir una divergencia actual de lecturas desfasadas.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:490",
+            "sale": "02-nucleo-auditoria.md: el nuestro y el del proveedor, con la fecha de cada lectura;",
+            "entra": "02-nucleo-auditoria.md: el nuestro y el del proveedor;"
+        },
+        {
+            "numero": 34,
+            "bloque": "VA-A2",
+            "donde": "30-el-corte.md:810, 30-el-corte.md:1481, 30-el-corte.md:1739, 30-el-corte.md:1911, 01-decisiones-vigentes.md:6314, 20-fase-1/V9b.md:773, 10-corte/B13a.md:746, 10-corte/B13a.md:1179, 10-corte/U1.md:750",
+            "tipo": "OMITE",
+            "detectado_por": ["G1", "VB-14"],
+            "detectado": true,
+            "por_su_bloque": false,
+            "nota": "VA-A2 denunció el transporte de cobertura, no el monto del smoke. G1 y VB-14 sí denuncian la aprobación previa perdida.",
+            "hallazgos": ["G1-4", "VB-14-2"],
+            "regla": "El smoke de producción deja de requerir un monto aprobado previamente por el owner, habilitando cobros de prueba con importes no autorizados.",
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:160",
+            "sale": "20-fase-1/V9b.md: y un monto aprobado de antemano ; 10-corte/U1.md: y un monto aprobado de antemano ; 10-corte/B13a.md: y un monto aprobado de antemano ; 30-el-corte.md: y un monto aprobado de antemano ; 01-decisiones-vigentes.md: con la tarjeta del owner y un monto ↵   aprobado de antemano",
+            "entra": "20-fase-1/V9b.md: — ; 10-corte/U1.md: — ; 10-corte/B13a.md: — ; 30-el-corte.md: — ; 01-decisiones-vigentes.md: con la tarjeta del owner"
+        },
+        {
+            "numero": 35,
+            "bloque": "VA-A3",
+            "donde": "01-decisiones-vigentes.md:222, 10-corte/V4.md:222, 10-corte/V4.md:874, 10-corte/V4.md:975, 10-corte/V4.md:1019",
+            "tipo": "OMITE",
+            "detectado_por": ["G1", "VA-A3"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["G1-1", "VA-A3-1"],
+            "regla": "Se elimina la elección obligatoria de SHA-256 para el seudónimo: otro hash no reconocerá los correos de los trials ya consumidos.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:369",
+            "sale": "01-decisiones-vigentes.md: seudónimo del correo es SHA-256 sin clave sobre el correo normalizado ; 10-corte/V4.md: **AC:V4:2** — El seudónimo: SHA-256 sin clave sobre la normalización por proveedor ; 10-corte/V4.md: **La función es SHA-256 sin clave** sobre el correo normalizado. ; 10-corte/V4.md: El seudónimo es SHA-256 sin clave sobre el correo normalizado ; 10-corte/V4.md: los seudónimos esperados, la función es ↵ SHA-256 sin clave y el resultado no cambia",
+            "entra": "01-decisiones-vigentes.md: seudónimo del correo se calcula con un hash sin clave sobre el correo normalizado ; 10-corte/V4.md: **AC:V4:2** — El seudónimo: un hash sin clave sobre la normalización por proveedor ; 10-corte/V4.md: **La función usa un hash sin clave** sobre el correo normalizado. ; 10-corte/V4.md: El seudónimo se calcula con un hash sin clave sobre el correo normalizado ; 10-corte/V4.md: los seudónimos esperados, la función es ↵ un hash sin clave y el resultado no cambia"
+        },
+        {
+            "numero": 36,
+            "bloque": "VA-A4",
+            "donde": "10-corte/V4.md:611, 10-corte/V8a.md:409",
+            "tipo": "OMITE",
+            "detectado_por": ["VA-A4"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VA-A4-1"],
+            "regla": "Desaparece la obligación de mostrar el costo máximo agregado al configurar cuotas de trial; se permite publicar cuotas sin advertir el costo total que conceden.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:220",
+            "sale": "10-corte/V4.md: agregación para acotar un peor caso que ya está acotado y es chico. Lo que sí hace falta es que ↵ **ese número sea visible para quien fija la cuota**. ; 10-corte/V8a.md: ; junto a la cuota de trial, el costo máximo por persona que resulta (cuota × verticales con trial encendido × meses que permite el techo; `V/11` §4.2) *(derivado: la superficie de quien fija la cuota es este editor; lo marco)*",
+            "entra": "10-corte/V4.md: agregación para acotar un peor caso que ya está acotado y es chico. ; 10-corte/V8a.md: —"
+        },
+        {
+            "numero": 37,
+            "bloque": "VA-A5",
+            "donde": "20-fase-4/V7.md:253, 20-fase-4/V7.md:664",
+            "tipo": "OMITE",
+            "detectado_por": ["VB-07"],
+            "detectado": true,
+            "por_su_bloque": false,
+            "nota": "VA-A5 detectó el filtro corporativo de VB-07, no la aleatoriedad del secreto. VB-07-2 sí detecta este canario.",
+            "hallazgos": ["VB-07-2"],
+            "regla": "Se elimina la obligación de generar al azar el secreto de reclamo; una implementación podría derivarlo del id o del correo y permitir apropiarse de un Partner.",
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:320",
+            "sale": "20-fase-4/V7.md: (secreto al azar, sólo su hash en la base) ; 20-fase-4/V7.md: genera el acto que manda el aviso, al azar y sin derivarse del id del Partner ni del correo, y la",
+            "entra": "20-fase-4/V7.md: (sólo el hash del secreto en la base) ; 20-fase-4/V7.md: genera el acto que manda el aviso, y la"
+        },
+        {
+            "numero": 38,
+            "bloque": "VA-A6",
+            "donde": "03-contrato-de-cobertura.md:1755, 03-contrato-de-cobertura.md:1801, 10-corte/V1.md:303, 10-corte/B2.md:135, 10-corte/B2.md:331, 10-corte/B2.md:414",
+            "tipo": "OMITE",
+            "detectado_por": ["VB-08", "VA-A6"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["VB-08-1", "VA-A6-2"],
+            "regla": "Se elimina la unicidad de billing_option por versión y ciclo; la base puede admitir dos precios para el mismo ciclo de una versión.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:31",
+            "sale": "10-corte/B2.md: Restricciones: `UNIQUE(plan_version_id, ciclo)` y `UNIQUE(id, ; 10-corte/V1.md: (`V/02` §2.1, `UNIQUE(plan_version_id, ciclo)`) ; 03-contrato-de-cobertura.md: cuelga de ella con `UNIQUE(plan_version_id, ciclo)`. ; 03-contrato-de-cobertura.md: es la tabla misma (la FK de `billing_option` a `plan_version`, con ↵ `UNIQUE(plan_version_id, ciclo)`). ; 10-corte/B2.md: moneda; la base rechaza un segundo ciclo igual en la misma versión (`UNIQUE(plan_version_id, ↵   ciclo)`), expone `UNIQUE(id, plan_version_id)` ; 10-corte/B2.md: un monto con decimales y un segundo ciclo igual en la misma versión los ↵ rechaza la base;",
+            "entra": "10-corte/B2.md: Restricciones: `UNIQUE(id, ; 10-corte/V1.md: (`V/02` §2.1) ; 03-contrato-de-cobertura.md: cuelga de ella. ; 03-contrato-de-cobertura.md: es la tabla misma (la FK de `billing_option` a `plan_version`). ; 10-corte/B2.md: moneda; la base expone `UNIQUE(id, plan_version_id)` ; 10-corte/B2.md: un monto con decimales lo ↵ rechaza la base;"
+        },
+        {
+            "numero": 39,
+            "bloque": "VA-A7",
+            "donde": "04-catalogos.md:5307",
+            "tipo": "OMITE",
+            "detectado_por": ["G2"],
+            "detectado": true,
+            "por_su_bloque": false,
+            "nota": "VA-A7 declaró cero hallazgos. G2-3 detecta exactamente la prohibición de comprobante omitida en MP6.",
+            "hallazgos": ["G2-3"],
+            "regla": "Se pierde la prohibición de emitir comprobante al asentar por MP6 una transferencia duplicada o posterior a la baja; puede documentarse como un nuevo período cobrado.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1876",
+            "sale": "04-catalogos.md: **No mueve la suscripción, no avanza la fecha del próximo cobro y no emite comprobante**",
+            "entra": "04-catalogos.md: **No mueve la suscripción ni avanza la fecha del próximo cobro**"
+        },
+        {
+            "numero": 40,
+            "bloque": "VA-A8",
+            "donde": "10-corte/B3.md:270, 10-corte/B3.md:793, 04-catalogos.md:755, 04-catalogos.md:6146, 10-corte/B5.md:973",
+            "tipo": "OMITE",
+            "detectado_por": ["G2", "VA-A8"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["G2-2", "G2-4", "VA-A8-1"],
+            "regla": "Desaparece la prohibición de locks distribuidos en billing; se permite agregar bloqueos remotos que pueden quedar tomados tras una caída.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:35",
+            "sale": "04-catalogos.md: - **No es el lock distribuido que `B/05` §1 descarta.** Ese § lo descarta por *«el que lo toma y ↵   muere»*; éste vive dentro de la transacción que escribe y se suelta con ella. Con qué primitiva ↵   de la base se implementa es libertad de implementación. ; 04-catalogos.md: **No hay locks distribuidos en este diseño.** Cada caso de abajo se resuelve con una restricción ↵ de la base o con una relectura; un lock agrega un modo de falla —el que lo toma y muere— sin ↵ resolver ninguno de los seis cruces. ; 10-corte/B3.md: sin crear otra; y no hay lock distribuido: lo resuelve una ↵   restricción de la base. ; 10-corte/B3.md: del hecho) y el cruce [LOCK:C6](../04-catalogos.md#lock-c6); sin locks distribuidos. ; 10-corte/B5.md: sobre ella y el segundo encuentra el `SUCCEEDED`; sin lock distribuido.",
+            "entra": "04-catalogos.md: - El lock vive dentro de la transacción que escribe y se suelta con ella. Con qué primitiva ↵   de la base se implementa es libertad de implementación. ; 04-catalogos.md: Cada caso de abajo se resuelve con una restricción de la base o con una relectura. ; 10-corte/B3.md: sin crear otra; lo resuelve una ↵   restricción de la base. ; 10-corte/B3.md: del hecho) y el cruce [LOCK:C6](../04-catalogos.md#lock-c6). ; 10-corte/B5.md: sobre ella y el segundo encuentra el `SUCCEEDED`."
+        },
+        {
+            "numero": 41,
+            "bloque": "VA-A9",
+            "donde": "10-corte/B13a.md:225, 10-corte/B13a.md:406, 10-corte/B13a.md:561",
+            "tipo": "OMITE",
+            "detectado_por": ["G2", "VA-A9", "VA-A10"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["G2-8", "G2-9", "VA-A9-1", "VA-A10-3"],
+            "regla": "Se elimina la prohibición de exigir un formulario de contacto para la baja; la implementación podría interponer ese trámite en la cancelación.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:43",
+            "sale": "10-corte/B13a.md: sin teléfono, sin formulario de contacto y sin hablar con nadie ; 10-corte/B13a.md: sin teléfono ni formulario;",
+            "entra": "10-corte/B13a.md: sin teléfono y sin hablar con nadie ; 10-corte/B13a.md: sin teléfono;"
+        },
+        {
+            "numero": 42,
+            "bloque": "VA-A10",
+            "donde": "20-fase-2/B9b.md:106, 10-corte/B11.md:250, 10-corte/B11.md:1477, 10-corte/B9a.md:46, 10-corte/B9a.md:98",
+            "tipo": "OMITE",
+            "detectado_por": ["G2", "VA-A10", "VB-11"],
+            "detectado": true,
+            "por_su_bloque": true,
+            "nota": "",
+            "hallazgos": ["G2-5", "G2-6", "VA-A10-1", "VB-11-1"],
+            "regla": "Se elimina la dirección hacia abajo del redondeo de descuentos; otra política puede cobrar de más y alterar la conciliación del monto esperado.",
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:55",
+            "sale": "20-fase-2/B9b.md: redondea una sola vez, hacia abajo ; 10-corte/B11.md: redondeado una sola vez y hacia abajo ; 10-corte/B11.md: vez hacia abajo y con el mismo cálculo ; 10-corte/B9a.md: el monto compuesto se redondea una sola vez, hacia abajo, ; 10-corte/B9a.md: **Y el redondeo es uno, al final** (FASE 9 vuelta 2, `F-8V2B3-008`). Los montos son enteros en la ↵ unidad mínima de la moneda (`B/02` §2.3), y dos porcentajes apilados dan fracciones de centavo. ↵ La composición se calcula sin redondear sobre el precio en la unidad mínima, y **el resultado se ↵ redondea una sola vez, hacia abajo**, a la unidad mínima. Así las dos operaciones siguen ↵ conmutando, que con un redondeo por paso dejaba de ser cierto. **Con ese mismo cálculo derivan el ↵ monto quien muta** —el canje, `S30`, el aumento de `DEC-MP-002`— **y quien compara** —el barrido ↵ (`B/09` §3)—: si redondearan distinto, la divergencia de medio centavo sería permanente y abriría ↵ `DIVERGENCIA_DE_MONTO` en el acto. Hacia abajo por la misma razón que el porcentaje va primero: a ↵ favor del cliente. ↵  ↵",
+            "entra": "20-fase-2/B9b.md: redondea una sola vez ; 10-corte/B11.md: redondeado una sola vez ; 10-corte/B11.md: vez y con el mismo cálculo ; 10-corte/B9a.md: el monto compuesto se redondea una sola vez, ; 10-corte/B9a.md: —"
+        }
+    ],
+    "metadatos": {
+        "vuelta": 5,
+        "fuente_congelada": "8a1d8902c2f1c6cd50de18affee40a6d5b3dd56b",
+        "referencia_lineas": "pristina/",
+        "ultima_letra_owner": "CJ",
+        "siguiente_letra_propuesta": "CK",
+        "resumen": {
+            "REAL BLOQUEA": 2,
+            "REAL MENOR": 5,
+            "GENERADOR": 3,
+            "OWNER": 1,
+            "FUENTE": 0,
+            "FALSO": 0
+        },
+        "informes_finales": 26,
+        "hallazgos_finales": 73,
+        "excluidos": "Archivos auxiliares G1/G2: barridos, muestras, cruces y comparaciones no son informes finales. VA-A7 declara cero hallazgos. CAN? no decide la clasificación.",
+        "validacion": "Cada sale existe una sola vez y la línea se calculó contra pristina. Informes finales particionados exhaustivamente en canarios o no-canarios, sin doble conteo. Propuestas no aplicadas. Revisión documental: no se ejecutó build de producto ni generadores."
+    }
+}

@@ -1,0 +1,4 @@
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/00-indice.md !node_modules/** !**/node_modules/** !dist/** !build/** !.claude/**
+Linting: 1 file
+Summary: 0 issues in 0 files

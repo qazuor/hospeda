@@ -1,0 +1,176 @@
+---
+title: Master Spec 03 — Las máquinas de estado
+linear: HOS-1352
+statusSource: linear
+created: 2026-09-17
+updated: 2026-09-25
+status: CURRENT
+fase: 2
+capitulo: 3
+cierra:
+  - M-SUB-01
+  - M-CONC-02
+---
+
+# 03 · Las máquinas de estado
+
+La mitad de núcleo del capítulo 03 del programa: las siete reglas de lectura que valen para todas las máquinas. Las máquinas mismas viven en la épica de verticales (Trial, Publicación, Postulación de Partner) o en la de billing (Suscripción, Grace, Pausa, Pago, Pago manual, Addon, **Reembolso**, la regla de no-retroceso).
+
+El §63 pide ocho explícitamente: Trial, Subscription, Payment, Manual Payment, Addon,
+Publication, Grace y Pause, *«aunque finalmente no utilicemos librería de state machines»*. Acá
+son ~~**nueve**~~ **diez**: la postulación de Partner (§11) se agregó al escribir el capítulo 18 (épica de
+verticales), con su razón escrita, **y el reembolso —`REQUESTED → CONFIRMED → EXECUTED | FAILED`—
+en la FASE 9 completa** (owner 2026-09-25, decisión 5a; los estados, cap. 01 §2.2).
+
+Los nombres salen del capítulo 01 (núcleo) y **no se redefinen acá**. Lo que este capítulo agrega
+son las **transiciones**: qué evento mueve de dónde a dónde, bajo qué condición, y con qué efecto.
+
+---
+
+## 1. Cómo se leen estas máquinas
+
+Siete reglas que valen para todas. Están acá arriba porque son la diferencia entre una
+máquina de estados y una convención.
+
+1. **La tabla de transiciones es exhaustiva.** Lo que no está, no pasa. Un intento de
+   transición que la tabla no declara **no se ejecuta**: se registra como evento de dominio y,
+   si tocaba plata o estado, **abre una marca `requiere_conciliación` con motivo
+   `TRANSICIÓN_NO_DECLARADA`** (cap. 02 (billing) §2.5) y emite el §22.1.
+   **La marca no es un estado, y tampoco un booleano**: es una fila con motivo y reloj, y el
+   predicado *«tiene una marca abierta»* está definido en el capítulo 01 §2.5. Nombrar el motivo
+   es obligatorio —`G-R1-F`—, porque sobre esa misma casilla el corpus escribe ~~**quince**~~
+   ~~**diecinueve**~~ ~~**veinte**~~ ~~**veintidós**~~ ~~**veintitrés**~~ **veinticuatro** cosas distintas (cap. 02 (billing) §2.5, recontadas en la FASE 8 completa:
+   `F-8CB1-013`, `F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, y la pendiente 6, owner 2026-09-25; el 21 y el 22, FASE 9 completa; el 23 y el 24, FASE 9 vuelta 2, `R4` y `R20`) y
+   ~~**seis**~~ ~~**siete**~~ ~~**ocho**~~ **nueve** de ellas significan *«hay plata del cliente que devolver»*.
+   Que no sea un estado es la otra diferencia que la hace correcta: la fila conserva el
+   estado que tenía, así que quien resuelve el caso no tiene que adivinar a dónde volver, y
+   escribirla no es en sí misma una decisión destructiva automática — que es lo que el §22.1
+   prohíbe.
+2. **El estado vive en una columna con dominio restringido** —el §63 pide máquinas explícitas; una
+   columna que acepta cualquier cadena no tiene máquina, tiene una costumbre, y el capítulo 02 fija
+   la restricción— **y el estado inicial de una máquina cuya fila nace en su primera transición
+   vive afuera de la columna.** Que viva afuera no lo vuelve la ausencia de un estado: **es un
+   estado porque tiene reglas declaradas y una salida declarada, no porque tenga fila.** Es lo que
+   la máquina de suscripción ya hace con su renglón `(sin fila)`, y lo que la de trial hace con
+   `PRE_TRIAL`. **Y la máquina cuya fila nace ya en su estado inicial —la de publicación, cuya ficha
+   nace en `DRAFT` al crearla— tampoco tiene fila de nacimiento**: crear la fila no es una
+   transición sino el hecho 1 del cap. 01 §1.2, y la regla 1 no la alcanza (FASE 9 completa, `B-9`).
+3. **Una transición es atómica junto con sus efectos locales.** Los efectos remotos —el
+   proveedor, el correo— nunca están dentro de esa transacción: el §43 lo ordena para el correo
+   (*«Si falla mail: acción de dominio permanece»*) y el capítulo 05 (épica de billing) lo desarrolla para el
+   proveedor.
+4. **Toda transición deja un evento de dominio** (§49), con quién la causó y qué la disparó.
+5. **Ninguna máquina consulta el estado del proveedor para decidir.** Consulta el suyo. Lo que
+   el proveedor dice entra siempre por §10, la regla de no-retroceso. ~~**Salvo un job que actúa
+   por nuestro reloj** sobre algo que depende del estado del proveedor: ése **le pregunta antes de
+   actuar**, releyendo por id, y esa relectura es parte de la condición de `S3` y `S6`~~
+   **Salvo una condición que depende del estado del proveedor**: la de un job que actúa por
+   nuestro reloj (`S3`, `S6`, `A3`) y la de un acto del cliente que no puede declararse sobre un
+   preapproval que no cobra (`S1`, sobre su predecesora **y sobre la `CHARGE_DECLINED` de ese `user + vertical`, cuyo preapproval relee hasta verlo `cancelled`** —`B/03` §3.2, FASE 9 vuelta 1, `F-8V1B1-003`; el alcance, §4 punto 2 de `25-verificado-G5-y-registro`—). Ésas **le preguntan antes**, releyendo
+   por id, y la relectura es parte de la condición (FASE 9 vuelta 1, `F-8V1D1-003`)
+   (`D17`, cap. 04, pedido del owner del 2026-09-24; FASE 8 completa, `F-8CD1-005`).
+6. **Grace y Pause no son máquinas independientes**, y el §63 las nombra igual. Son sub-estados
+   de Suscripción **con reloj propio y datos propios**, y se modelan aparte por eso: un estado
+   sin reloj no puede vencer solo, y los dos vencen. Se describen en §4 y §5.
+7. **Dos filas que comparten `(desde, evento)` tienen guardas disjuntas.** La regla 1 dice qué
+   pasa con lo que **falta** en una tabla y no decía nada de lo que **sobra**: dos filas que
+   aplican a la vez sobre el mismo par dejan el desenlace en manos del **orden en que una
+   implementación recorra la tabla**, que es exactamente la diferencia entre una máquina de
+   estados y una convención. **No se dirime por precedencia**, porque una precedencia es una
+   séptima cosa que hay que acordarse de leer: se exige que **las condiciones no se puedan
+   satisfacer las dos a la vez**, y una tabla que no lo cumpla es un defecto de la tabla.
+
+   **Qué pasa si igual se solapan**: el intento **cae en la regla 1** —no se ejecuta, se registra
+   como evento de dominio y, si tocaba plata o estado, pone la marca—. Elegir una de las dos sería
+   convertir un defecto de diseño en un comportamiento, y convertirlo **en silencio**.
+
+   **Es una propiedad del texto, no de una ejecución, así que la vigila un guard**: `G-R4`, sobre
+   las tablas de transiciones de las ~~nueve~~ **diez** máquinas, en las dos épicas. Los pares con dos filas y
+   dos destinos distintos que el diseño declara hoy son ~~**cuatro**~~ ~~**tres**~~ **cuatro** (revisión del owner, 2026-09-28, C8: sale `S10`/`S25`; C10: entra `PB11`/`PB13`), en ~~dos~~ tres tablas:
+
+   | par | las dos filas | qué las separa |
+   |---|---|---|
+   | `(PRE_TRIAL, evento de activación de la vertical)` | `T1` / `T6` (`V/03` §2) | el booleano `cubierto`: una exige que **no** haya fuente viva de clase `TÍTULO` y la otra que **sí** |
+   | `(GRACE_PERIOD, entra el pago)` | `S5` / `S19` (`B/03` §3.2) | si la fila **es la predecesora de una sucesión en curso**: `S5` exige que no, `S19` que sí |
+   | `(SUSPENDED, entra el pago)` | `S7` / `S19` | el mismo booleano |
+   | ~~`(PAUSED, llega el fin de la pausa o la persona vuelve antes)`~~ | ~~`S10` / `S25` (`B/03` §3.2)~~ | **sale** (revisión del owner, 2026-09-28, C8): `S25` era la pausa que termina sobre una vertical discontinuada; `S10` queda sola en su par |
+   | `(MODERATED, un admin levanta la baja)` ✚ | `PB11` / `PB13` (`V/03` §9) | **el estado de origen que guardó el evento de `PB10`**: `PB11` exige que la ficha viniera de `DRAFT` y `PB13` que viniera de `PUBLISHED` o `UNPUBLISHED_BY_BILLING` (un `ARCHIVED` cuenta por el origen de su archivado). Un valor, no un booleano, pero sus dos lados no se solapan (revisión del owner, 2026-09-28, C10, `L2-i`) |
+
+   **Los ~~cuatro~~ ~~tres~~ cuatro son disjuntos por construcción y no por acuerdo**, que es la única forma en que la
+   regla se cumple sin una precedencia: difieren en el valor de **un booleano** (el cuarto, en el de
+   un estado de origen guardado: revisión del owner, 2026-09-28, C10), no en una
+   combinación que alguien tenga que evaluar en orden. **Que sean ~~cuatro y no cinco~~ ~~tres y no cuatro~~ cuatro y no cinco no es una
+   afirmación de este capítulo: es lo que `G-R4` cuenta en cada PR**, y por eso la regla no
+   depende de que alguien vuelva a recorrer las ~~nueve~~ diez tablas a mano. ~~**Y el cuarto es la prueba de
+   que el guard hace falta**: entró en la FASE 9-bis-4 por una decisión del owner sobre planes
+   retirados, no por nadie que estuviera mirando esta tabla.~~ (El cuarto, `S10`/`S25`, salió con la
+   revisión del owner, 2026-09-28, C8.)
+
+   **Compartir el `desde` no es compartir el par, y hay ~~ocho~~ ~~nueve~~ ~~diez~~ nueve casos vivos que lo piden dicho**
+   (el noveno, FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; el décimo, FASE 9 completa, 6c).
+   ~~`T7` (`V/03` §2) sale también de `PRE_TRIAL`, pero su evento es **el encendido de los días de
+   trial de la vertical** —un cambio de catálogo— y no el evento de activación de la persona. Su
+   par, `(PRE_TRIAL, encendido)`, tiene **una sola** fila.~~ (`T7` salió: revisión del owner,
+   2026-09-28, N7, y con él el primero de los casos: quedan nueve, y los demás conservan su ordinal.) `S18` (`B/03` §3.2) sale desde la
+   FASE 9-bis-3 también de `PENDING_AUTHORIZATION`, que comparte `desde` con `S2` y con `S3`: su
+   evento es **que la predecesora dejó de ser fila viva sin `S17`**, y ninguna otra fila lo
+   declara, así que sus dos pares tienen **una sola** fila cada uno. **Y `A5` (`B/03` §8) sale
+   desde la misma pasada también de `PENDING_AUTHORIZATION`**, que en la máquina de addon comparte
+   `desde` con `A2` y con `A3`: sus eventos son **los tres** que declara desde `DEC-ADDON-003`
+   —darse de baja, **quedar huérfano** y **que se revoque el grant del que cuelga el ancla que era
+   su título**—, y ninguna
+   otra fila de esa tabla declara ninguno de los tres, así que **cada uno de sus pares tiene una
+   sola fila**. **Que el tercero y el segundo se cumplan a la vez —lo que pasa al revocar, en el
+   scope `VERTICAL_SUBSCRIPTION`— no es lo que esta regla prohíbe**: son dos eventos de la misma
+   fila y con el mismo destino, no dos filas sobre un par. **Y `PB7` y `PB8` (`V/03` §9)
+   salen las dos de `ARCHIVED`**, que desde la FASE 9-bis-3 dejó de ser un estado sin salida: los
+   eventos de `PB7` son **dos** desde `DEC-DATA-003` —**el cambio de `cubierto`** y **que el cupo
+   vuelva a alcanzar sin que `cubierto` cambie**— y el de `PB8` es **el acto del dueño de
+   reactivarla**; ~~los **tres** son distintos entre sí y de todo lo demás, así que cada uno de esos
+   **tres** pares tiene **una sola** fila~~ **y desde la FASE 8 completa sale de ahí también `PB9`**,
+   el hard delete, cuyo evento es **el día 180 de inactividad** (`F-8CA2-008`, owner 2026-09-25):
+   los **cuatro** son distintos entre sí y de todo lo demás, así que cada uno de esos **cuatro**
+   pares tiene **una sola** fila. **Las dos ramas de `PB7` tampoco compiten entre ellas**:
+   son dos eventos de la misma fila con el mismo destino, igual que las dos de `PB2` y las dos de
+   `PB3`. **Y `S20` y
+   `S21` (`B/03` §3.2) salen las dos de *«toda fila viva de complemento»***, que es el mismo
+   `desde` escrito con las mismas palabras: sus eventos son **otorgar o anclar un grant** y **que
+   su instancia llegue a `CANCELLED`**, distintos entre sí y de todo lo demás, y además **no se
+   pueden satisfacer a la vez** —`S20` declara que la instancia **no** cambia de estado—, así que
+   cada uno de esos dos pares tiene **una sola** fila. **Y las tres filas de la baja que la
+   FASE 9-bis-4 agregó (`B/03` §3.2) son los casos sexto, séptimo y octavo**: `S22` sale de
+   `PAUSED`, que comparte `desde` con `S10` y con `S13`; `S23` sale de `SUSPENDED`, que lo comparte
+   con `S7`, con `S19` y con `S13`; y `S24` sale de `GRACE_PERIOD` (`DEC-SUB-014`), que lo comparte
+   con `S5`, con `S6`, con `S19` y con `S13`.
+   **Su evento es el de la baja** —*«pide la baja»*, el mismo de `S11`—, que
+   ninguna de esas filas declara: el de `S10` es *«llega el fin, o la persona vuelve antes»*, el de
+   `S5`, `S7` y `S19` es *«entra el pago»*, el de `S6` es *«se agota el reloj»* —o, desde `DEC-MP-008`, *«se lee `paused` en el proveedor sin haberlo pedido»*, que tampoco es una baja— y el de `S13` es el
+   otorgamiento de un grant. Así que cada uno
+   de esos tres pares tiene **una sola** fila. **Y el octavo es el que más cerca estuvo de agregar
+   una entrada a la tabla de arriba**: `GRACE_PERIOD` ya figura ahí, con el par
+   `(GRACE_PERIOD, entra el pago)` — pero el par de `S24` es **otro**, porque su evento es otro, y
+   un `desde` que ya aparece en la tabla no arrastra a las filas nuevas que salen de él. **Y el
+   noveno son `PB10`, `PB11` y `PB12` (`V/03` §9)**: `PB10` —un admin modera la ficha— y `PB12`
+   —el dueño la borra— salen de `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` y `ARCHIVED`, que
+   comparten `desde` con casi toda esa tabla, pero sus eventos no los declara ninguna otra fila;
+   y ~~`PB11` —un admin levanta la moderación— es la única que sale de `MODERATED`. Así que cada
+   uno de sus pares tiene **una sola** fila.~~ **`PB11` ya no es la única que sale de `MODERATED`**
+   (revisión del owner, 2026-09-28, C10): la acompaña `PB13` en el mismo par, que es el cuarto de la tabla de arriba, y `PB12`
+   con otro evento. Así que cada uno de los pares de `PB10` y `PB12` tiene **una sola** fila. **Y el décimo es `T8` (`V/03` §2)**: sale de `PRE_TRIAL`,
+   que comparte `desde` con `T1` ~~, `T6` y `T7`~~ y `T6` (`T7` salió: revisión del owner, 2026-09-28, N7), pero su evento —*«aparece un título que convierte»*—
+   no lo declara ninguna otra fila de ese `desde`; `T2` declara el mismo evento, pero desde
+   `TRIAL_ACTIVE`, que es otro par (owner 2026-09-25; FASE 9 completa, decisión 6c). En los
+   ~~ocho~~ ~~nueve~~ ~~diez~~ nueve casos (revisión del owner, 2026-09-28, N7: sale `T7`) no hay guardas que
+   dirimir. ~~**La tabla de arriba sí ganó una entrada, y no por ninguno de estos diez**: la ganó
+   `S25`, que **sí** comparte el par entero —`desde` y evento— con `S10`.~~ Lo que este guard cuenta
+   son **pares**, no estados de origen, ~~y esa es exactamente la diferencia entre los diez casos de
+   este párrafo y la cuarta fila de la tabla~~ (la cuarta fila, `S10`/`S25`, salió con la revisión
+   del owner, 2026-09-28, C8).
+
+---
+
+## Lo que esta mitad NO cierra
+
+- **Las restricciones de base** que hacen cumplir estas máquinas son del capítulo 02.
+- **Qué correo sale en cada transición** es del capítulo 07 (núcleo).
+- **Los relojes**, como jobs concretos con su horario y su idempotencia, son de cada subdominio.

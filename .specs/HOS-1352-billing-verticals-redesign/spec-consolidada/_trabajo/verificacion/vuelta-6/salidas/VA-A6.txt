@@ -1,0 +1,12 @@
+# VA-A6 · fuente → spec · B/descomposicion.md B/docs/02-modelo-de-datos.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:384 · «la clave, a qué operación corresponde, su resultado» · ausente (el resultado persistido de `idempotency_key`: búsqueda con `rg --hidden` en toda `s/b249f841/` por `idempotency_key` y por asociaciones entre resultado, operación, clave y persistencia. `s/b249f841/10-corte/B3.md:712`, AC:B3:38, enumera «la clave y a qué operación corresponde», omitiendo el resultado; su esquema y TEST:B3:38 tampoco lo exigen, y `10-corte/B5.md:875` y `10-corte/B6.md:346` sólo recogen la clave y su persistencia anterior a la llamada. Un esquema implementado con esos campos pierde el resultado que la fuente manda guardar. Revisados `P/docs/01-decision-log.md`, DEC-CONC-001 y sus precisiones, y `P/docs/41-corte-del-mvp/10-decisiones-del-owner.md`, BN: trasladan la creación de la tabla a B3, sin retirar el resultado) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/descomposicion.md | ≈350, incluidas reiteraciones de alcance y criterios | 1–1157 | 0 | 0 |
+| B/docs/02-modelo-de-datos.md | ≈240, incluidas restricciones, efectos y filas de catálogos | 1–1298 | 1 | 0 |
