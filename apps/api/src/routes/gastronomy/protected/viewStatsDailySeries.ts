@@ -44,7 +44,7 @@ export const protectedGastronomyViewStatsDailySeriesRoute = createProtectedRoute
         const actor = getActorFromContext(ctx);
         const typedQuery = query as { window: '7d' | '30d' };
 
-        const result = await entityViewService.getDailySeriesForOwnCommerceListings({
+        const result = await entityViewService.getDailySeriesForOwnListings({
             actor,
             entityType: EntityTypeEnum.GASTRONOMY,
             window: typedQuery.window

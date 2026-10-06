@@ -87,7 +87,7 @@ describe('IndexNow visibility sources', () => {
      * All four conditions are load-bearing: `slug` addresses the row,
      * `lifecycleState` + `visibility` are the pair that makes a page public
      * (the same pair `AccommodationService._isPubliclyVisible` and
-     * `isCommerceListingPubliclyVisible` use), and `deletedAt` catches a soft
+     * `isListingPubliclyVisible` use), and `deletedAt` catches a soft
      * delete those two never see because their callers hold a live row.
      */
     it.each(

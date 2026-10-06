@@ -16,8 +16,8 @@ import { createAdminRoute } from '../../../utils/route-factory';
  *
  * Permanently removes the experience listing from the database.
  * Requires EXPERIENCE_DELETE permission (reusing the same gate used for
- * hard deletes of other commerce entities until a dedicated
- * COMMERCE_HARD_DELETE permission is defined).
+ * hard deletes of other gastronomy/experience entities until a dedicated
+ * GASTRONOMY_HARD_DELETE / EXPERIENCE_HARD_DELETE permission is defined).
  */
 export const adminHardDeleteExperienceRoute = createAdminRoute({
     method: 'delete',

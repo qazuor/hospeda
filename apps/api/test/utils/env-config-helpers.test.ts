@@ -9,7 +9,7 @@
  * its absence broke EVERY cross-origin browser mutation (not just locale
  * resolution) — a non-simple header missing from the preflight allowlist
  * fails the whole request, silently, before it reaches the API. Caught by the
- * E2E commerce-editor suite (`commerce-03`/`commerce-05`), not by a unit test,
+ * E2E listing-editor suite (`listing-owner-03`/`listing-owner-05`), not by a unit test,
  * which is exactly why this file now asserts it directly.
  */
 

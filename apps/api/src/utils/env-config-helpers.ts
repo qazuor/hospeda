@@ -122,7 +122,7 @@ export const getCorsConfig = () => {
             //   list doesn't just degrade locale resolution — since it is a
             //   NON-simple header, ANY absent entry here fails the whole
             //   preflight for EVERY mutating cross-origin request, not just
-            //   the ones that read it (verified against the E2E commerce
+            //   the ones that read it (verified against the E2E listing-owner
             //   editor suite, which broke entirely until this was added).
             const parsed = parseCommaSeparated(
                 _safe.get(

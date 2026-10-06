@@ -10,8 +10,8 @@
  * ---
  * ONE ROUTE, THREE VERTICALS — AND THE CAP THAT ALMOST BROKE IT
  *
- * The obvious way to read a commerce cap is to mount
- * `commerceVerticalEntitlementMiddleware(vertical)`, which is what puts the
+ * The obvious way to read a gastronomy or experience cap is to mount
+ * the retired per-vertical entitlement middleware, which is what puts the
  * vertical's key into `userLimits`. That middleware takes its vertical at
  * CONSTRUCTION time, so it cannot serve a route whose vertical arrives as a path
  * param — and mounting the wrong one, or none, is silent: `getRemainingLimit`
@@ -19,7 +19,7 @@
  * precheck would report "you have room" to every owner at their cap, forever,
  * with nothing raised.
  *
- * So the cap is resolved by CALLING `resolveCommerceVerticalCap` — the same
+ * So the cap is resolved by CALLING the retired per-vertical cap resolver — the same
  * function that middleware calls, exported for exactly this reason (its own doc:
  * "Two independent readings of 'the cap' would let the two disagree, and the
  * disagreement would look like a working checkout"). The resolved value is then

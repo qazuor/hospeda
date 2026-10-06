@@ -14,7 +14,7 @@
  * insertion order. Verified by mutation on the post/event twin of these routes
  * (registering the DELETE first leaves
  * `test/routes/post-protected-media.test.ts` green). There is no equivalent
- * commerce-side route test to re-run that mutation against here, but it is the
+ * gastronomy/experience-side route test to re-run that mutation against here, but it is the
  * same Hono router. The other two entries are very likely the same, but were
  * not verified — do not read them as proven.
  */
@@ -23,7 +23,9 @@ import { protectedAddGastronomyFaqRoute } from './addFaq';
 import { protectedAddGastronomyFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddGastronomyMediaRoute } from './addMedia';
 import { protectedGetGastronomyBrochureRoute } from './brochure';
+import { protectedCreateGastronomyListingRoute } from './create';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
+import { protectedDeleteGastronomyDraftRoute } from './deleteDraft';
 import { protectedDeleteGastronomyMenuFileRoute } from './deleteMenuFile';
 import { protectedGetGastronomyByIdRoute } from './getById';
 import { protectedGetGastronomyDailySpecialsRoute } from './getDailySpecials';
@@ -52,6 +54,14 @@ import { protectedGastronomyViewStatsRoute } from './viewStats';
 import { protectedGastronomyViewStatsDailySeriesRoute } from './viewStatsDailySeries';
 
 const app = createRouter();
+
+// POST / — Owner self-service create (HOS-166 §7.2). Root path, so it cannot
+// collide with any /{id}/... route.
+app.route('/', protectedCreateGastronomyListingRoute);
+
+// DELETE /{id} — Owner discards one of their own DRAFTs (HOS-1156 AC-14).
+// Only DELETE registered on /{id} itself; the /{id}/... DELETEs are longer.
+app.route('/', protectedDeleteGastronomyDraftRoute);
 
 // PUT /{id}/faqs/reorder — Must be before /{id}/faqs/{faqId} (PUT).
 app.route('/', protectedReorderGastronomyFaqsRoute);

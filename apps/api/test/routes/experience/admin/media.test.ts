@@ -70,7 +70,7 @@ const ADMIN_HEADERS = {
     'x-mock-actor-role': 'ADMIN',
     'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'experience.editAll'])
 };
-const NO_COMMERCE_PERMS_HEADERS = {
+const NO_PERMS_HEADERS = {
     ...USER_AGENT,
     'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
     'x-mock-actor-role': 'ADMIN',
@@ -122,7 +122,7 @@ describe('Experience media routes — Admin tier (HOS-372)', () => {
         it('POST /media — returns 403 when actor lacks EXPERIENCE_EDIT_ALL', async () => {
             const res = await app.request(BASE, {
                 method: 'POST',
-                headers: { ...NO_COMMERCE_PERMS_HEADERS, 'Content-Type': 'application/json' },
+                headers: { ...NO_PERMS_HEADERS, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url: 'https://example.com/photo.jpg' })
             });
             expect(res.status).toBe(403);

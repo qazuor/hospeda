@@ -4,9 +4,9 @@
  *
  * ## What was wrong
  *
- * The platform used to have five public acquisition forms — one for commerce
+ * The platform used to have five public acquisition forms — one for gastronomy/experience
  * and four for "aliados" — and none of them told anybody when a submission
- * arrived. Commerce had the hook written (`LeadNotificationPort.notifyNewLead`)
+ * arrived. Gastronomy and experience had the hook written (`LeadNotificationPort.notifyNewLead`)
  * and it was never injected at any of its five construction sites, so the
  * `else` branch ran every time and logged at `debug`, which production does
  * not emit. Alliance did not model the idea at all: its two ports write to the
@@ -17,14 +17,14 @@
  * mode of that is invisible from the outside: no error, no bounce, no
  * complaint. Nobody knows they did not find out.
  *
- * ## Commerce is gone (HOS-695, release C)
+ * ## Gastronomy and experience intake is gone (HOS-695, release C)
  *
- * The commerce lead-intake funnel accepted no new submissions well before this
+ * The gastronomy/experience lead-intake funnel accepted no new submissions well before this
  * — HOS-693 retired its public form and admin provisioning flow, HOS-690
  * unmounted the form from the landing pages — and its admin review surface
  * only ever served three smoke-test fixtures with nothing worth preserving.
- * HOS-695 removed that surface and the `commerce_leads` table itself, and this
- * module's commerce branch went with it. `alliance` is the only funnel left;
+ * HOS-695 removed that surface and the retired gastronomy/experience leads table itself, and this
+ * module's gastronomy/experience branch went with it. `alliance` is the only funnel left;
  * this module is kept (not inlined into the alliance service) because a
  * future funnel would want the exact same ops-alert plumbing, and the
  * `announceLeadToOps` / `stampOpsNotified` shape stays funnel-agnostic on

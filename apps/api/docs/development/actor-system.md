@@ -258,7 +258,7 @@ at once (HOS-296), e.g. `HOST` + `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`:
 - **`CLIENT_MANAGER`** - Client accounts, billing, subscriptions, analytics
 - **`EDITOR`** - Create/edit/publish events and posts only
 - **`HOST`** - Owner of an accommodation, can only edit their own
-- **`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`** - Owner of a commerce listing (gastronomy, experience, etc.)
+- **`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`** - Owner of a gastronomy or experience listing (gastronomy, experience, etc.)
 - **`SPONSOR`** - External sponsor of events/posts, limited dashboard access
 - **`USER`** - Default role for all logged-in users of the public portal
 - **`GUEST`** - Public, not logged in

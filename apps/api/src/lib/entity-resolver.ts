@@ -63,7 +63,7 @@ export function createEntityResolver(): EntityResolver {
                         return await resolvePostById({ entityId });
                     case 'gastronomy':
                     case 'experience':
-                        return await resolveCommerceListingById({ entityType, entityId });
+                        return await resolveGastronomyOrExperienceById({ entityType, entityId });
                     case 'accommodation_review':
                     case 'destination_review':
                     case 'tag':
@@ -167,18 +167,18 @@ async function resolveEventById(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Commerce listing resolvers
+// Gastronomy and experience listing resolvers
 // ---------------------------------------------------------------------------
 
 /**
- * Resolves a single commerce listing (gastronomy or experience) by ID.
+ * Resolves a single gastronomy or experience listing (gastronomy or experience) by ID.
  *
  * One function for both verticals because they are the same shape to the cache:
  * a detail page, a listing page, and an optional parent destination whose page
  * surfaces them. The tag mapper already treats them as one arm for exactly that
  * reason, so splitting them here would be two copies of one query.
  *
- * `id` is returned alongside `slug` because the commerce cache tags are built
+ * `id` is returned alongside `slug` because the gastronomy and experience cache tags are built
  * from both — the same pair the automatic purge path emits, so a manual
  * revalidation evicts precisely what a photo upload would have.
  *
@@ -186,7 +186,7 @@ async function resolveEventById(params: {
  * @param params.entityId - The listing's UUID.
  * @returns The change data for the listing, or `null` when no such row exists.
  */
-async function resolveCommerceListingById(params: {
+async function resolveGastronomyOrExperienceById(params: {
     readonly entityType: 'gastronomy' | 'experience';
     readonly entityId: string;
 }): Promise<EntityChangeData | null> {
@@ -205,7 +205,7 @@ async function resolveCommerceListingById(params: {
         default: {
             const exhaustiveCheck: never = params.entityType;
             throw new Error(
-                `resolveCommerceListingById: unsupported entityType '${exhaustiveCheck}'`
+                `resolveGastronomyOrExperienceById: unsupported entityType '${exhaustiveCheck}'`
             );
         }
     }

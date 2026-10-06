@@ -10,9 +10,9 @@
  * `mine` path segment as an `:id` param.
  */
 import {
-    CommerceEntityTypeEnum,
-    CommerceOwnerListingListSchema,
     LifecycleStatusEnum,
+    OwnerListingListSchema,
+    ProductDomainEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
@@ -33,7 +33,7 @@ export const protectedListMyGastronomyRoute = createProtectedRoute({
     summary: 'List my gastronomy listings (protected)',
     description: "Returns the authenticated owner's own gastronomy listings as summaries",
     tags: ['Gastronomy'],
-    responseSchema: CommerceOwnerListingListSchema,
+    responseSchema: OwnerListingListSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.listOwn(actor);
@@ -46,7 +46,7 @@ export const protectedListMyGastronomyRoute = createProtectedRoute({
 
         const listings = ownListings.map((listing) => ({
             id: listing.id,
-            vertical: CommerceEntityTypeEnum.GASTRONOMY,
+            vertical: ProductDomainEnum.GASTRONOMY,
             name: listing.name,
             slug: listing.slug,
             type: listing.type,

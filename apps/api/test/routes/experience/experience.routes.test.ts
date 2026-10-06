@@ -133,7 +133,7 @@ const touristHeaders: Record<string, string> = {
     'x-mock-actor-permissions': JSON.stringify([])
 };
 
-/** Admin with full commerce permissions. */
+/** Admin with full gastronomy or experience permissions. */
 const adminHeaders: Record<string, string> = {
     'content-type': 'application/json',
     ...USER_AGENT,
@@ -163,7 +163,7 @@ const adminNoPanelHeaders: Record<string, string> = {
 // minimalExperience: satisfies ExperiencePublicSchema.
 //   - type: 'TOUR_GUIDE' (UPPERCASE enum value)
 //   - priceUnit: 'per_person' (lowercase enum value from ExperiencePriceUnitEnum)
-//   - rating omitted (CommerceRatingSchema.optional() — no null allowed)
+//   - rating omitted (ExperienceRatingSchema.optional() — no null allowed)
 //   - tags/openingHours omitted (TagsFields/OpeningHoursFields.optional() — no null)
 //
 // adminExperienceFixture: extends minimalExperience to satisfy ExperienceAdminSchema.

@@ -10,9 +10,9 @@
  * `mine` path segment as an `:id` param.
  */
 import {
-    CommerceEntityTypeEnum,
-    CommerceOwnerListingListSchema,
     LifecycleStatusEnum,
+    OwnerListingListSchema,
+    ProductDomainEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
@@ -33,7 +33,7 @@ export const protectedListMyExperienceRoute = createProtectedRoute({
     summary: 'List my experience listings (protected)',
     description: "Returns the authenticated owner's own experience listings as summaries",
     tags: ['Experience'],
-    responseSchema: CommerceOwnerListingListSchema,
+    responseSchema: OwnerListingListSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
         const result = await experienceService.listOwn(actor);
@@ -46,7 +46,7 @@ export const protectedListMyExperienceRoute = createProtectedRoute({
 
         const listings = ownListings.map((listing) => ({
             id: listing.id,
-            vertical: CommerceEntityTypeEnum.EXPERIENCE,
+            vertical: ProductDomainEnum.EXPERIENCE,
             name: listing.name,
             slug: listing.slug,
             type: listing.type,

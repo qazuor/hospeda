@@ -13,7 +13,7 @@
  * `MANAGE_EXPERIENCE_DIRECTIONS` from `-pro` upward — HOS-1049 drew that line
  * deliberately. This assembler honours it from the entitlement set the ROUTE
  * resolved, for the reason the gastronomy assembler gates the carta: today every
- * commerce tier granting `AI_CHAT` also grants the directions, and that is a
+ * gastronomy or experience tier granting `AI_CHAT` also grants the directions, and that is a
  * property of the current catalogue rather than a guarantee.
  *
  * @module apps/api/services/ai-context/experience-ai-context

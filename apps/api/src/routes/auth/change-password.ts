@@ -2,7 +2,7 @@
  * Change Password Endpoint
  * Allows authenticated users to change their password.
  * Also clears the passwordChangeRequired flag and the mustChangePassword
- * column (SPEC-239 T-041: commerce owner forced-password-change gate).
+ * column (SPEC-239 T-041: gastronomy or experience owner forced-password-change gate).
  */
 import { accounts, getDb, UserModel, users } from '@repo/db';
 import {
@@ -80,7 +80,7 @@ export const changePasswordRoute = createSimpleRoute({
                 .where(eq(accounts.id, account.id));
 
             // 5. Clear legacy passwordChangeRequired flag (adminInfo) + SPEC-239
-            //    mustChangePassword column so the commerce owner gate is lifted.
+            //    mustChangePassword column so the gastronomy or experience owner gate is lifted.
             try {
                 const userModel = new UserModel();
                 const dbUser = await userModel.findById(user.id, tx);

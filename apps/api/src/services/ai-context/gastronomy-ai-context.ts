@@ -13,7 +13,7 @@
  * them too, from the entitlement set the ROUTE resolved (see
  * `AssembleChatContextInput.ownerEntitlements`).
  *
- * Today that gate never fires — every commerce tier that grants `AI_CHAT` also
+ * Today that gate never fires — every gastronomy or experience tier that grants `AI_CHAT` also
  * grants the carta keys — and it is written anyway, because "today's catalogue
  * happens to bundle them" is not a guarantee. The day the keys are split across
  * tiers differently, an assembler that trusted the coincidence would put paid

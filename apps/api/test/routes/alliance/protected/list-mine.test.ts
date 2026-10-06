@@ -2,7 +2,7 @@
  * Unit tests for `handleListMyAllianceLeads` (HOS-278 AC-5), the applicant
  * self-service "my applications" endpoint.
  *
- * Mirrors the mocking style of `commerce/protected/my-lead.test.ts`:
+ * Mirrors the mocking style of the retired owner-lead route test:
  * `AllianceLeadService` is mocked at the `@repo/service-core` module boundary,
  * so this suite asserts the ROUTE's shaping and failure behaviour, not the
  * service's scoping logic (that has its own suite —

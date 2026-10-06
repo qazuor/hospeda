@@ -51,7 +51,7 @@ export const protectedExperienceViewStatsRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const typedQuery = query as { window: '7d' | '30d' };
 
-        const result = await entityViewService.getStatsForOwnCommerceListings({
+        const result = await entityViewService.getStatsForOwnListings({
             actor,
             entityType: EntityTypeEnum.EXPERIENCE,
             window: typedQuery.window

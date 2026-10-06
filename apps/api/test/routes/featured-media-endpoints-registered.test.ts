@@ -80,7 +80,7 @@ const COVER_ENDPOINTS: ReadonlyArray<{
     },
     {
         path: `/api/v1/admin/gastronomies/${ID}/media/featured`,
-        caller: 'apps/admin — useCommerceMediaAddFeatured, vertical gastronomy'
+        caller: 'apps/admin — useListingMediaAddFeatured, vertical gastronomy'
     },
     {
         path: `/api/v1/protected/experiences/${ID}/media/featured`,
@@ -88,7 +88,7 @@ const COVER_ENDPOINTS: ReadonlyArray<{
     },
     {
         path: `/api/v1/admin/experiences/${ID}/media/featured`,
-        caller: 'apps/admin — useCommerceMediaAddFeatured, vertical experience'
+        caller: 'apps/admin — useListingMediaAddFeatured, vertical experience'
     }
 ];
 

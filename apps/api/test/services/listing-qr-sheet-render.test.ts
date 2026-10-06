@@ -374,7 +374,7 @@ describe('the QR sheet file (HOS-982)', () => {
  * WHY A SUITE ABOUT WHERE LINES BREAK
  *
  * The sheet does not own its text mechanics: `wrapText` and `toDrawableText`
- * are imported from `services/commerce-brochure/brochure-render.ts`, which is
+ * are imported from `services/listing-brochure/brochure-render.ts`, which is
  * correct — both are pure, generic and would drift if copied — but directional.
  * The brochure has no idea a second document depends on it, and until this
  * suite existed the sheet had no assertion that could notice a change to it:

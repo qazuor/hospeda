@@ -34,7 +34,7 @@ export interface FilterEntriesByRoleInput {
  * Audience-targeting rules (per SPEC-175 §6.4, D4):
  * - An entry with an absent or empty `roles` array is visible to **all** roles.
  * - An entry with a non-empty `roles` array is visible to an actor holding
- *   **any** of those roles. HOS-296: a host who is also a commerce owner sees
+ *   **any** of those roles. HOS-296: a host who is also a gastronomy or experience owner sees
  *   the union of both audiences rather than whichever hat happened to be the
  *   scalar — this widens what such an account sees, which is the intended
  *   behaviour for a content feed (it is explicitly not authorization).

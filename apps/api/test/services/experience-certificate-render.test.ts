@@ -4,7 +4,7 @@
  * ---
  * WHY THIS FILE EXISTS
  *
- * The brochure had `commerce-brochure-render.test.ts` watching its QR; the
+ * The brochure had `listing-brochure-render.test.ts` watching its QR; the
  * certificate had nothing looking inside its symbol at all. The e2e
  * (`experience-certificate-entitlement-allow.e2e.test.ts`) reaches the handler
  * and asserts 200, `application/pdf` and the `%PDF-` magic bytes — none of

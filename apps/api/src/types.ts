@@ -49,7 +49,7 @@ export interface AuthUser {
     banExpires: Date | null;
     /**
      * Mirrors `users.must_change_password`, exposed by Better Auth as an
-     * `additionalField` (see `lib/auth.ts`). `true` for commerce-owner accounts
+     * `additionalField` (see `lib/auth.ts`). `true` for gastronomy/experience owner accounts
      * provisioned with a server-generated password (SPEC-239 T-041).
      *
      * Declared here — rather than being cast at each read site — because

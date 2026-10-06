@@ -60,7 +60,7 @@ describe('Admin GastronomyReview List — moderation status filter (SPEC-259 reg
     // with an inner `path: '/'`, so the full path resolves as `/reviews/`.
     const base = '/api/v1/admin/gastronomies/reviews/';
 
-    // Grant the full commerce admin permission set so the route middleware
+    // Grant the full gastronomy and experience admin permission set so the route middleware
     // pipeline (sibling routes share the gastronomy admin router) does not
     // block before the handler runs. The endpoint itself requires
     // GASTRONOMY_MODERATE_REVIEW.

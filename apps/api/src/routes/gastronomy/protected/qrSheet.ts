@@ -17,7 +17,7 @@
  * answers NOT_FOUND to every non-owner on a `lifecycleState !== ACTIVE` row, and
  * `public/list.ts` states the public contract as
  * `lifecycleState=ACTIVE AND visibility=PUBLIC`. The normal publish path writes
- * the two columns together (`reconcileCommerceListingVisibility`), but the admin
+ * the two columns together, but the admin
  * schemas accept `lifecycleState` on its own — so a listing PATCHed to INACTIVE
  * with its visibility untouched would otherwise pass this route, mint a code and
  * be printed, and every scan of that paper would 404 permanently. Paper is not

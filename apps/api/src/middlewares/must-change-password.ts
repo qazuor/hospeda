@@ -3,7 +3,7 @@
  *
  * Enforces a password-change requirement on ALL protected routes when the
  * authenticated user has `mustChangePassword = true` in their user record.
- * Commerce owner accounts are provisioned with this flag set to force the
+ * Gastronomy or experience owner accounts are provisioned with this flag set to force the
  * owner to choose a personal password before accessing any protected feature.
  *
  * ## Behaviour

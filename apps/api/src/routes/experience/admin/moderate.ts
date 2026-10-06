@@ -3,7 +3,7 @@
  *
  * The experience twin of `routes/gastronomy/admin/moderate.ts`. Both delegate
  * to the SAME implementation: `moderate()` lives on
- * `BaseCommerceListingService`, which `ExperienceService` and
+ * `BaseListingService`, which `ExperienceService` and
  * `GastronomyService` both extend, so the two verticals cannot drift apart
  * (HOS-589 G-2). Only the service instance, the response schema and the OpenAPI
  * copy differ here.
@@ -44,7 +44,7 @@ export const adminModerateExperienceRoute = createAdminRoute({
     summary: 'Moderate an experience listing (admin)',
     description:
         'Sets the experience listing moderation state (PENDING | APPROVED | REJECTED). ' +
-        'Does not touch visibility directly — the commerce visibility reconciler reacts to ' +
+        'Does not touch visibility directly — the listing visibility reconciler reacts to ' +
         'REJECTED by flipping the listing to PRIVATE/INACTIVE. Rejecting schedules an edge ' +
         'cache purge so the destination page stops serving it. Requires EXPERIENCE_MODERATION_CHANGE.',
     tags: ['Experiences', 'Admin'],

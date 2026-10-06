@@ -208,7 +208,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         //
         // The request schema already accepts `entityType: 'gastronomy' |
         // 'experience'`, but this route's per-vertical context assemblers and
-        // commerce owner-quota lookup are NOT wired yet. A commerce target is
+        // gastronomy or experience owner-quota lookup are NOT wired yet. A gastronomy or experience target is
         // therefore refused explicitly rather than falling through into the
         // accommodation lookup below, which would 404 while talking about an
         // accommodation nobody asked about. This branch is the seam the

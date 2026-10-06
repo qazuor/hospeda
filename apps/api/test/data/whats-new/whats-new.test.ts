@@ -235,7 +235,7 @@ describe('whats-new data file', () => {
             const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
 
             const trialEntry = whatsNewEntries.find(
-                (entry) => entry.id === '2026-09-05-commerce-publish-free-trial'
+                (entry) => entry.id === '2026-09-05-gastronomy-experience-publish-free-trial'
             );
             expect(trialEntry).toBeDefined();
 
