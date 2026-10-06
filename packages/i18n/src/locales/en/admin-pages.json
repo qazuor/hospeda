@@ -628,7 +628,7 @@
                 "POST_COMMENT": "Post Comments",
                 "RECOMMENDATION": "Recommendations",
                 "MODERATION": "Moderation",
-                "COMMERCE": "Commerce",
+                "COMMERCE": "Listings",
                 "GASTRONOMY": "Gastronomy",
                 "EXPERIENCE": "Experiences",
                 "HOST_TRADE": "Host Trade",
@@ -656,7 +656,7 @@
             "permissionModel": "Permission model",
             "groupContentManagement": "Content Management",
             "groupUserAccess": "User & Access",
-            "groupCommerceBilling": "Commerce & Billing",
+            "groupListingsBilling": "Listings & Billing",
             "groupMarketingAdvertising": "Marketing & Advertising",
             "groupServicesListings": "Services & Listings",
             "groupSystemConfiguration": "System & Configuration",
@@ -741,17 +741,6 @@
                         "cap3": "Save favorites",
                         "cap4": "Update profile",
                         "cap5": "Contact hosts"
-                    }
-                },
-                "COMMERCE_OWNER": {
-                    "name": "Commerce Owner",
-                    "description": "Owner of a commerce listing who manages their own business profile",
-                    "capabilities": {
-                        "cap1": "Manage their commerce listing",
-                        "cap2": "Update opening hours and contact details",
-                        "cap3": "Upload photos",
-                        "cap4": "Reply to reviews",
-                        "cap5": "View their commerce analytics"
                     }
                 },
                 "GASTRONOMY_OWNER": {

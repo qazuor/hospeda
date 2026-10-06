@@ -75,7 +75,7 @@
             "title": "Seu perfil",
             "body": "Atualize suas informações pessoais, preferências e configurações da conta."
         },
-        "commerce": {
+        "listing": {
             "title": "Seu negócio",
             "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
         },
@@ -83,10 +83,10 @@
             "title": "Bem-vindo ao seu painel de gastronomia",
             "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento gastronômico."
         },
-        "commerceGastronomy": {
+        "listingGastronomy": {
             "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento gastronômico."
         },
-        "commerceListings": {
+        "myListings": {
             "title": "Seus negócios",
             "body": "Revise o status de cada um dos seus negócios e edite-os."
         },
@@ -94,7 +94,7 @@
             "title": "QR do seu cardápio",
             "body": "Gere o código QR do seu cardápio e veja quantas vezes seus clientes o escanearam."
         },
-        "commerceViews": {
+        "listingViews": {
             "title": "Visitas à sua ficha",
             "body": "Acompanhe quantas pessoas visualizaram a ficha pública do seu negócio."
         },
@@ -102,7 +102,7 @@
             "title": "Bem-vindo ao seu painel de experiências",
             "body": "Daqui você pode gerenciar sua conta e o conteúdo público da sua experiência."
         },
-        "commerceExperience": {
+        "listingExperience": {
             "body": "Edite a descrição, os horários e os dados visíveis da sua experiência."
         },
         "greetingEditor": {
@@ -128,7 +128,7 @@
         "groupAccount": "Minha conta",
         "groupTourist": "Área do turista",
         "groupHost": "Área do anfitrião",
-        "groupCommerce": "Área comercial",
+        "groupListings": "Área comercial",
         "groupEditorial": "Área editorial",
         "groupProvider": "Área do fornecedor",
         "dashboard": "Minha conta",
@@ -666,8 +666,8 @@
                 "promotions": "Minhas promoções",
                 "recommendations": "Sugestões",
                 "recommendationsDesc": "Acomodações escolhidas para você",
-                "myCommerceDesc": "Gerencie sua ficha, suas fotos e sua assinatura",
-                "myMessagesCommerceDesc": "Consultas que você recebe sobre seu comércio"
+                "myListingDesc": "Gerencie sua ficha, suas fotos e sua assinatura",
+                "myMessagesListingDesc": "Consultas que você recebe sobre seu comércio"
             },
             "stats": {
                 "favorites": "Meus favoritos",
@@ -724,7 +724,7 @@
         },
         "subscription": {
             "title": "Minha assinatura",
-            "titleCommerce": "Assinatura de comércio",
+            "titleListing": "Assinatura de comércio",
             "description": "Gerencie seu plano e assinatura no Hospeda",
             "heading": "Minha assinatura",
             "headingDesc": "Gerencie seu plano e preferencias de pagamento",

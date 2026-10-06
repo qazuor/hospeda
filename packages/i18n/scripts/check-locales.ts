@@ -44,10 +44,10 @@ const SPEC_096_REQUIRED_NAMESPACES = [
     'contact',
     'ui',
     'account',
-    // Gastronomy commerce listings (SPEC-239)
+    // Gastronomy listing listings (SPEC-239)
     'gastronomy',
-    // Commerce shared — lead form, change-password, visibility (SPEC-239)
-    'commerce',
+    // Listing shared — lead form, change-password, visibility (SPEC-239)
+    'listing',
     // Legal cookies page + partners directory — registered as runtime
     // namespaces in HOS-163; enforce cross-locale parity so en/pt never drift.
     'cookies',

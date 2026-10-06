@@ -656,7 +656,7 @@
             "permissionModel": "Modelo de permisos",
             "groupContentManagement": "Gestión de Contenido",
             "groupUserAccess": "Usuarios y Acceso",
-            "groupCommerceBilling": "Comercio y Facturación",
+            "groupListingsBilling": "Comercio y Facturación",
             "groupMarketingAdvertising": "Marketing y Publicidad",
             "groupServicesListings": "Servicios y Listados",
             "groupSystemConfiguration": "Sistema y Configuración",
@@ -741,17 +741,6 @@
                         "cap3": "Guardar favoritos",
                         "cap4": "Actualizar perfil",
                         "cap5": "Contactar anfitriones"
-                    }
-                },
-                "COMMERCE_OWNER": {
-                    "name": "Dueño de Comercio",
-                    "description": "Titular de un comercio que gestiona su propia ficha comercial",
-                    "capabilities": {
-                        "cap1": "Gestionar su ficha comercial",
-                        "cap2": "Actualizar horarios y contacto",
-                        "cap3": "Subir fotos",
-                        "cap4": "Responder reseñas",
-                        "cap5": "Ver analíticas de su comercio"
                     }
                 },
                 "GASTRONOMY_OWNER": {

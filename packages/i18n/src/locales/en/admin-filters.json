@@ -257,7 +257,7 @@
     },
     "partnerType": {
         "label": "Partner type",
-        "commerce": "Commerce",
+        "business": "Business",
         "ngo": "NGO",
         "institution": "Institution"
     },

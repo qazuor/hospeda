@@ -1,6 +1,6 @@
 /**
- * @file commerce-landing-promise.guard.test.ts
- * @description HOS-819 — the two commerce landings must not promise a callback
+ * @file listing-landing-promise.guard.test.ts
+ * @description HOS-819 — the two listing landings must not promise a callback
  * that no code performs.
  *
  * ## What broke, and why a list of assertions would not have caught it
@@ -21,11 +21,11 @@
  *
  * ## Scope, deliberately narrow
  *
- * Only `commerce.lead.subtitle` and `commerce.lead.experience.subtitle` — the
+ * Only `listing.lead.subtitle` and `listing.lead.experience.subtitle` — the
  * hero line of each landing, which is also the page's meta description. These
  * two are read server-side by the two `.astro` landing pages themselves and
- * are the only surviving reason the `commerce.lead` namespace still exists;
- * the actual lead-collecting form (`CommerceLead.client.tsx`) was deleted by
+ * are the only surviving reason the `listing.lead` namespace still exists;
+ * the actual lead-collecting form (`ListingLead.client.tsx`) was deleted by
  * HOS-693, and its process/success-detail explainer sub-keys were removed
  * with the last component that read them (HOS-1081).
  *
@@ -37,14 +37,14 @@
  * put it in CI either (see `partner-mention-copy.guard.test.ts`'s note on that
  * distinction). The test suite is the path that executes it.
  *
- * @module test/commerce-landing-promise.guard
+ * @module test/listing-landing-promise.guard
  */
 
 import { describe, expect, it } from 'vitest';
 
-import commerceEn from '../src/locales/en/commerce.json';
-import commerceEs from '../src/locales/es/commerce.json';
-import commercePt from '../src/locales/pt/commerce.json';
+import listingEn from '../src/locales/en/listing.json';
+import listingEs from '../src/locales/es/listing.json';
+import listingPt from '../src/locales/pt/listing.json';
 
 /**
  * The six hero subtitles under guard: two landings × three locales.
@@ -54,12 +54,12 @@ import commercePt from '../src/locales/pt/commerce.json';
  * stops guarding is the failure this exists to prevent.
  */
 const SUBTITLES: ReadonlyArray<{ readonly label: string; readonly text: string }> = [
-    { label: 'es commerce.lead.subtitle', text: commerceEs.lead.subtitle },
-    { label: 'en commerce.lead.subtitle', text: commerceEn.lead.subtitle },
-    { label: 'pt commerce.lead.subtitle', text: commercePt.lead.subtitle },
-    { label: 'es commerce.lead.experience.subtitle', text: commerceEs.lead.experience.subtitle },
-    { label: 'en commerce.lead.experience.subtitle', text: commerceEn.lead.experience.subtitle },
-    { label: 'pt commerce.lead.experience.subtitle', text: commercePt.lead.experience.subtitle }
+    { label: 'es listing.lead.subtitle', text: listingEs.lead.subtitle },
+    { label: 'en listing.lead.subtitle', text: listingEn.lead.subtitle },
+    { label: 'pt listing.lead.subtitle', text: listingPt.lead.subtitle },
+    { label: 'es listing.lead.experience.subtitle', text: listingEs.lead.experience.subtitle },
+    { label: 'en listing.lead.experience.subtitle', text: listingEn.lead.experience.subtitle },
+    { label: 'pt listing.lead.experience.subtitle', text: listingPt.lead.experience.subtitle }
 ];
 
 /**
@@ -79,7 +79,7 @@ const BANNED: ReadonlyArray<{ readonly label: string; readonly pattern: RegExp }
     { label: 'pt: preencha o formulário', pattern: /preencha\s+o\s+formul/i }
 ];
 
-describe('HOS-819 — commerce landing heroes describe self-service', () => {
+describe('HOS-819 — listing landing heroes describe self-service', () => {
     it('has all six subtitles to check', () => {
         // Non-vacuity: an empty or short list would satisfy every loop below.
         expect(SUBTITLES).toHaveLength(6);

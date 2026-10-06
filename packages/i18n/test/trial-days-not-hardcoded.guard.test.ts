@@ -4,8 +4,8 @@
  *
  * ## What broke, and why it looked fine
  *
- * The two commerce landings promised their free trial with the number written
- * out: `commerce.landing.gastronomy.price.trial` read literally
+ * The two listing landings promised their free trial with the number written
+ * out: `listing.landing.gastronomy.price.trial` read literally
  * "30 días de prueba gratis", `…faq.a1` repeated the same 30 inside a sentence,
  * and the experience vertical carried both again — twelve strings across two
  * verticals and three locales, none of which anything compared against
@@ -44,7 +44,7 @@
  * the 30-day data-deletion window in the FAQ. A repo-wide version of this rule
  * would fail on all of them, and the pressure to add an exemption list is
  * exactly how a guard turns into a fail-open one. `pricing.json` and
- * `commerce.json` are the two files that describe what a subscription costs and
+ * `listing.json` are the two files that describe what a subscription costs and
  * grants, and in those a number of days is always a claim about the catalogue.
  *
  * Widening the scope, or excusing a string inside it, is meant to be a
@@ -57,7 +57,7 @@
  * - It says nothing about the RENDERED page. A page that interpolates a
  *   hardcoded `30` into a `{{count}}` placeholder satisfies every assertion
  *   here; that is held by the page guards and by the unit tests over
- *   `resolveCommerceLandingOffer`.
+ *   `resolveListingLandingOffer`.
  * - It says nothing about the database. Whether `trialDays` is 30 or 14 is not
  *   a source-level fact.
  *
@@ -66,11 +66,11 @@
 
 import { describe, expect, it } from 'vitest';
 
-import commerceEn from '../src/locales/en/commerce.json';
+import listingEn from '../src/locales/en/listing.json';
 import pricingEn from '../src/locales/en/pricing.json';
-import commerceEs from '../src/locales/es/commerce.json';
+import listingEs from '../src/locales/es/listing.json';
 import pricingEs from '../src/locales/es/pricing.json';
-import commercePt from '../src/locales/pt/commerce.json';
+import listingPt from '../src/locales/pt/listing.json';
 import pricingPt from '../src/locales/pt/pricing.json';
 
 /** The catalogue-describing locale files, per locale. */
@@ -78,9 +78,9 @@ const GUARDED_FILES: ReadonlyArray<{
     readonly label: string;
     readonly dict: Record<string, unknown>;
 }> = [
-    { label: 'es/commerce.json', dict: commerceEs as Record<string, unknown> },
-    { label: 'en/commerce.json', dict: commerceEn as Record<string, unknown> },
-    { label: 'pt/commerce.json', dict: commercePt as Record<string, unknown> },
+    { label: 'es/listing.json', dict: listingEs as Record<string, unknown> },
+    { label: 'en/listing.json', dict: listingEn as Record<string, unknown> },
+    { label: 'pt/listing.json', dict: listingPt as Record<string, unknown> },
     { label: 'es/pricing.json', dict: pricingEs as Record<string, unknown> },
     { label: 'en/pricing.json', dict: pricingEn as Record<string, unknown> },
     { label: 'pt/pricing.json', dict: pricingPt as Record<string, unknown> }
@@ -142,31 +142,31 @@ describe('HOS-941 R-2 — no locale string states a trial length', () => {
 
             expect(
                 offenders.map(({ path, text }) => `${label}:${path} — "${text}"`),
-                `A number of days written into ${label} is a claim about billing_plans.metadata.trialDays that nothing verifies. Interpolate it from the plan with tPlural (see lib/billing/commerce-landing-plan.ts), or, if the number genuinely is not a catalogue value, move the string to a locale file this guard does not cover.`
+                `A number of days written into ${label} is a claim about billing_plans.metadata.trialDays that nothing verifies. Interpolate it from the plan with tPlural (see lib/billing/listing-landing-plan.ts), or, if the number genuinely is not a catalogue value, move the string to a locale file this guard does not cover.`
             ).toEqual([]);
         });
     }
 });
 
-/** The two commerce verticals whose landings advertise a trial. */
-const COMMERCE_VERTICALS = ['gastronomy', 'experience'] as const;
+/** The two listing verticals whose landings advertise a trial. */
+const LISTING_VERTICALS = ['gastronomy', 'experience'] as const;
 
-/** The commerce locale files, per locale. */
-const COMMERCE_FILES: ReadonlyArray<{
+/** The listing locale files, per locale. */
+const LISTING_FILES: ReadonlyArray<{
     readonly label: string;
     readonly dict: Record<string, unknown>;
 }> = [
-    { label: 'es/commerce.json', dict: commerceEs as Record<string, unknown> },
-    { label: 'en/commerce.json', dict: commerceEn as Record<string, unknown> },
-    { label: 'pt/commerce.json', dict: commercePt as Record<string, unknown> }
+    { label: 'es/listing.json', dict: listingEs as Record<string, unknown> },
+    { label: 'en/listing.json', dict: listingEn as Record<string, unknown> },
+    { label: 'pt/listing.json', dict: listingPt as Record<string, unknown> }
 ];
 
-describe('HOS-941 R-2 — the commerce landings interpolate the trial length', () => {
+describe('HOS-941 R-2 — the listing landings interpolate the trial length', () => {
     // The rule above is satisfied by DELETING the promise. These assertions are
     // the other half: the copy still exists, and it is still shaped to receive a
     // number from the plan.
-    for (const { label, dict } of COMMERCE_FILES) {
-        for (const vertical of COMMERCE_VERTICALS) {
+    for (const { label, dict } of LISTING_FILES) {
+        for (const vertical of LISTING_VERTICALS) {
             for (const key of [`landing.${vertical}.price.trial`, `landing.${vertical}.faq.a1`]) {
                 for (const plural of ['one', 'other'] as const) {
                     it(`${label}:${key}_${plural} interpolates {{count}}`, () => {

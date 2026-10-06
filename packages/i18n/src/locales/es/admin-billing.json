@@ -269,7 +269,7 @@
                 "complex": "Complejo",
                 "tourist": "Turista",
                 "ai": "Inteligencia artificial",
-                "commerce": "Comercio"
+                "listing": "Comercio"
             },
             "cancelButton": "Cancelar",
             "saveButton": "Guardar cambios",
@@ -1346,7 +1346,7 @@
         "planDomainFilter": "Producto",
         "productDomainLabels": {
             "accommodation": "Alojamiento",
-            "commerce": "Comercio",
+            "listing": "Comercio",
             "gastronomy": "Gastronomía",
             "experience": "Experiencia",
             "partner": "Partner",

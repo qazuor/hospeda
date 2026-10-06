@@ -1,5 +1,5 @@
 /**
- * Regression guard for the review-count header shared by commerce listing
+ * Regression guard for the review-count header shared by listing listing
  * detail pages (gastronomy + experience).
  *
  * `GastronomyDetailHeader.astro` and `ExperienceHero.astro` render the review

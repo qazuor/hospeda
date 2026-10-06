@@ -75,7 +75,7 @@
             "title": "Your profile",
             "body": "Update your personal information, preferences and account settings."
         },
-        "commerce": {
+        "listing": {
             "title": "Your business",
             "body": "Edit the public content, opening hours and visible details of your business."
         },
@@ -83,10 +83,10 @@
             "title": "Welcome to your restaurant dashboard",
             "body": "From here you can manage your account and the public content of your restaurant."
         },
-        "commerceGastronomy": {
+        "listingGastronomy": {
             "body": "Edit the menu, opening hours and visible details of your restaurant."
         },
-        "commerceListings": {
+        "myListings": {
             "title": "Your businesses",
             "body": "Review the status of each of your businesses and edit them."
         },
@@ -94,7 +94,7 @@
             "title": "Your menu QR code",
             "body": "Generate your menu's QR code and check how many times your customers scanned it."
         },
-        "commerceViews": {
+        "listingViews": {
             "title": "Views on your listing",
             "body": "Track how many people viewed your business's public listing."
         },
@@ -102,7 +102,7 @@
             "title": "Welcome to your experience dashboard",
             "body": "From here you can manage your account and the public content of your experience."
         },
-        "commerceExperience": {
+        "listingExperience": {
             "body": "Edit the description, schedule and visible details of your experience."
         },
         "greetingEditor": {
@@ -128,7 +128,7 @@
         "groupAccount": "My account",
         "groupTourist": "Traveler area",
         "groupHost": "Host area",
-        "groupCommerce": "Business area",
+        "groupListings": "Business area",
         "groupEditorial": "Editorial area",
         "groupProvider": "Provider area",
         "dashboard": "My account",
@@ -666,8 +666,8 @@
                 "promotions": "My Promotions",
                 "recommendations": "Suggestions",
                 "recommendationsDesc": "Accommodations picked for you",
-                "myCommerceDesc": "Manage your listing, photos and subscription",
-                "myMessagesCommerceDesc": "Enquiries you receive about your business"
+                "myListingDesc": "Manage your listing, photos and subscription",
+                "myMessagesListingDesc": "Enquiries you receive about your business"
             },
             "stats": {
                 "favorites": "My Favorites",
@@ -724,7 +724,7 @@
         },
         "subscription": {
             "title": "My Subscription",
-            "titleCommerce": "Commerce Subscription",
+            "titleListing": "Listing Subscription",
             "description": "Manage your plan and subscription on Hospeda",
             "heading": "My Subscription",
             "headingDesc": "Manage your plan and payment preferences",
