@@ -26,7 +26,7 @@ function partnerFixture(): typeof partners.$inferInsert {
         id: crypto.randomUUID(),
         slug: `pm-partner-${uid}`,
         name: `PM Partner ${uid}`,
-        type: 'commerce' as const,
+        type: 'business' as const,
         tier: 'gold' as const
     };
 }
