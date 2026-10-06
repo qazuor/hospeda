@@ -20,9 +20,9 @@
  * `PERMISSION_ROLE_MAP` is the ONLY place that maps a permission to the
  * roles that grant it for account-nav gating purposes. HOS-296 completed the
  * migration HOS-131 deferred: the scattered `isHostRole` /
- * `isCommerceOwnerRole` predicates are gone and every `/mi-cuenta` page gate
+ * `isOwnerRole` predicates are gone and every `/mi-cuenta` page gate
  * now evaluates through {@link hasAccommodationsNavAccess} /
- * {@link hasCommerceNavAccess}, so `apps/web` has ONE gating mechanism.
+ * {@link hasListingNavAccess}, so `apps/web` has ONE gating mechanism.
  *
  * HOS-296: the SSR evaluator takes the actor's whole role SET, not a scalar.
  * A node is visible when ANY held role grants the permission — that is what
@@ -51,7 +51,7 @@ export interface GatedNavNode {
  * - `ACCOMMODATION_CREATE` ← `ROLES_WITH_ACCOMMODATIONS_NAV`
  *   (HOST, ADMIN, SUPER_ADMIN).
  * - `GASTRONOMY_EDIT_OWN` and `EXPERIENCE_EDIT_OWN` together mirror
- *   `ROLES_WITH_COMMERCE_NAV`.
+ *   `ROLES_WITH_LISTING_NAV`.
  *
  * These sets APPROXIMATE the seed, so an entry that names a role the seed does
  * not actually grant is a silent divergence between the two surfaces — the SSR
@@ -101,7 +101,7 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ]),
-    // Editors + admins hold POST_CREATE; hosts/tourists/commerce-owners do
+    // Editors + admins hold POST_CREATE; hosts/tourists/gastronomy/experience-owners do
     // not. This is the editor discovery-door "acquired" signal (HOS-134
     // §5.3/§5.4) — it drives both the "Ya lo tenés" state on the aliados hub
     // and the stateful partner-door label.
@@ -125,7 +125,7 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
     // The only entry here whose permission was created FOR the nav rather than
     // borrowed from an existing domain (HOS-726). The add-on catalog gates per
     // product domain — accommodation, gastronomy or experience — so its audience
-    // is the union of the host and commerce tiers, and `requiredPermission` holds
+    // is the union of the host and gastronomy/experience tiers, and `requiredPermission` holds
     // exactly one permission with no OR. `ACCOMMODATION_CREATE` would have left
     // out the GASTRONOMY_OWNER or EXPERIENCE_OWNER who buys `extra-gastronomies-1`; the two
     // billing-shaped permissions that read like a fit (`SUBSCRIPTION_VIEW_OWN`,
@@ -235,19 +235,19 @@ export function hasAccommodationsNavAccess({
 }
 
 /**
- * Does the user hold a role that grants the commerce-owner self-service area
+ * Does the user hold a role that grants the gastronomy/experience-owner self-service area
  * (`/mi-cuenta/comercio/*`)?
  *
  * Companion to {@link hasAccommodationsNavAccess}, keyed on
  * on either vertical EDIT_OWN permission. A plain accommodation HOST does not
- * get the commerce area, while a vertical owner also holding HOST sees both
+ * get the listing area, while a vertical owner also holding HOST sees both
  * navigation groups.
  *
  * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
  *   for unauthenticated visitors.
- * @returns `true` when at least one held role carries commerce-owner access.
+ * @returns `true` when at least one held role carries gastronomy/experience-owner access.
  */
-export function hasCommerceNavAccess({
+export function hasListingNavAccess({
     roles
 }: {
     readonly roles: readonly string[] | null;

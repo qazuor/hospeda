@@ -1,7 +1,7 @@
 ---
 /**
  * @file traducciones.astro
- * @description Translations section of the commerce editor (HOS-1080).
+ * @description Translations section of the gastronomy/experience editor (HOS-1080).
  *
  * The four i18n fields travel as ONE unit through the listing PATCH — the panel
  * edits them together and `buildPatchPayload` emits all four whenever any of
@@ -11,14 +11,14 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({
+const resolution = await resolveListingEditorPage({
 	astro: Astro,
 	sectionSlug: 'traducciones',
 });
@@ -29,7 +29,7 @@ const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
@@ -38,7 +38,7 @@ const { t } = createTranslations(locale);
 	currentSectionSlug="traducciones"
 	title={t('listing.owner.editor.sectionNav.translations', 'Traducciones')}
 >
-	<CommerceListingEditor
+	<ListingEditor
 		client:load
 		sectionId="translations"
 		vertical={vertical}
@@ -46,4 +46,4 @@ const { t } = createTranslations(locale);
 		locale={locale}
 		initialData={detail}
 	/>
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>

@@ -44,7 +44,7 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
         expect(source).toMatch(/locale={locale}/);
         // HOS-689 item 2: the island receives `visibleAddons` (the catalog
         // filtered per-domain), never the raw `availableAddons` — a
-        // commerce-only owner must not be offered accommodation-only addons
+        // gastronomy/experience-only owner must not be offered accommodation-only addons
         // (and vice versa).
         expect(source).toMatch(/addons={visibleAddons}/);
         expect(source).toMatch(/ownedAddonSlugs={ownedAddonSlugs}/);
@@ -58,10 +58,10 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
             /targetListingsByDomain=\{\{[\s\S]*?accommodation:\s*accommodations/
         );
         expect(source).toMatch(
-            /targetListingsByDomain=\{\{[\s\S]*?gastronomy:\s*commerceListings\.gastronomy/
+            /targetListingsByDomain=\{\{[\s\S]*?gastronomy:\s*ownerListingsByVertical\.gastronomy/
         );
         expect(source).toMatch(
-            /targetListingsByDomain=\{\{[\s\S]*?experience:\s*commerceListings\.experience/
+            /targetListingsByDomain=\{\{[\s\S]*?experience:\s*ownerListingsByVertical\.experience/
         );
     });
 
@@ -81,7 +81,7 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
         // shape rather than duplicating that guard's stricter regex checks.
         // HOS-689 item 2 additionally scopes the gate per product domain via
         // `filterAddonsByHeldDomains` (`@/lib/billing/addon-domain`), so a
-        // commerce-only owner sees gastronomy/experience addons without an
+        // gastronomy/experience-only owner sees gastronomy/experience addons without an
         // accommodation subscription.
         expect(source).toContain("from '@repo/billing'");
         expect(source).toContain('isEntitlementGrantingStatus');
@@ -94,7 +94,7 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
     });
 
     it('resolves the gate per product domain, not one accommodation-only boolean (HOS-689 item 2)', () => {
-        // A commerce-only owner (who is exactly who buys
+        // A gastronomy/experience-only owner (who is exactly who buys
         // extra-gastronomies-1/extra-experiences-1) must see those addons
         // offered — the gate can no longer be a single subscription lookup
         // scoped to accommodation by default.

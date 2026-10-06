@@ -11,7 +11,7 @@
  *   class, tagged `CACHE_TAG_PRICING` (HOS-941 R-5).
  *
  * The one thing that is NOT shared with its twin: `gastronomy` and `experience`
- * are separate product domains, and `'commerce'` is a RETIRED `ProductDomainEnum`
+ * are separate product domains, and the old shared umbrella is a RETIRED `ProductDomainEnum`
  * value that survives only on legacy rows (HOS-941 R-3). The two pages fetch
  * different catalogues and render different comparison rows; nothing here may
  * group them under one "Comercio".
@@ -34,7 +34,7 @@ import {
     resolvePricingPageContent
 } from '@/lib/billing/pricing-page-content';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { buildCommerceStartUrl } from '@/lib/commerce/start-url';
+import { buildListingStartUrl } from '@/lib/listing/start-url';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -69,7 +69,7 @@ const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
  * (`getPlanName` / `getPlanDescription`) and not from the raw config values.
  *
  * `plan.name` / `plan.description` off the API are the billing package's
- * internal strings — for the commerce verticals, English engineering prose
+ * internal strings — for the gastronomy/experience verticals, English engineering prose
  * carrying issue IDs. Publishing those as structured data would put them in the
  * field a search result quotes, while the visible card said something else.
  */
@@ -81,7 +81,7 @@ const jsonLdPlans = plans.map((plan) => ({
     url: `${siteOrigin}${pagePath}`
 }));
 
-const ctaHref = buildCommerceStartUrl({ locale, vertical: 'experience' });
+const ctaHref = buildListingStartUrl({ locale, vertical: 'experience' });
 
 const title = t(`${copyRoot}.pageTitle`);
 const description = t(`${copyRoot}.pageDescription`);
@@ -94,7 +94,7 @@ const description = t(`${copyRoot}.pageDescription`);
 const breadcrumbs = buildPricingBreadcrumbs({
     homeLabel: t('nav.home', 'Inicio'),
     homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
-    salesLabel: t('listing.lead.experience.title'),
+    salesLabel: t('experience.landing.lead.title'),
     salesPath: 'planes/experiencias',
     salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/experiencias' })}`,
     pageLabel: title,

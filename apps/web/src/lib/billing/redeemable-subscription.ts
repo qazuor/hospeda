@@ -7,7 +7,7 @@
  *
  * Both redeem-page routes used to call `userApi.getSubscription({ cookieHeader })`
  * with NO `productDomain`, and the endpoint defaults to `'accommodation'`
- * server-side when the param is omitted. A commerce-only owner (a
+ * server-side when the param is omitted. A gastronomy/experience-only owner (a
  * `GASTRONOMY_OWNER`/`EXPERIENCE_OWNER` with no accommodation subscription)
  * therefore always resolved `subscription: null`, so `subscriptionId` reached
  * `RedeemCodeSection` as `undefined` and a DISCOUNT code could never be
@@ -15,7 +15,7 @@
  * accommodation-only restriction (see `packages/service-core`'s promo-code
  * module). Trial-extension codes were unaffected (the endpoint resolves those
  * from the session on its own), which is why the bug went unnoticed: only the
- * discount path was silently broken for commerce owners.
+ * discount path was silently broken for gastronomy/experience owners.
  *
  * ## The fix
  *
@@ -44,7 +44,7 @@ import { webLogger as logger } from '@/lib/logger';
  * Accommodation first — preserves the exact pre-fix behaviour for every host,
  * who is still the large majority of subscribers. Gastronomy before
  * experience is an arbitrary but deterministic tie-break for the rare account
- * that somehow holds an active subscription in both commerce verticals and
+ * that somehow holds an active subscription in both gastronomy/experience verticals and
  * none in accommodation; only one of them can be "the" subscription this page
  * names. Tourist last: a paying `tourist-vip` redeeming a code is a real case
  * (HOS-1233 gave tourist plans their own domain) but a much smaller audience

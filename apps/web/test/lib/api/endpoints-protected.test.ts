@@ -75,12 +75,12 @@ describe('userApi.getSubscription productDomain param (HOS-259)', () => {
         });
     });
 
-    it('forwards productDomain=commerce as a query param', async () => {
-        await userApi.getSubscription({ productDomain: 'commerce' });
+    it('forwards productDomain=gastronomy as a query param', async () => {
+        await userApi.getSubscription({ productDomain: 'gastronomy' });
 
         expect(getProtected).toHaveBeenCalledWith({
             path: '/api/v1/protected/users/me/subscription',
-            params: { productDomain: 'commerce' },
+            params: { productDomain: 'gastronomy' },
             cookieHeader: undefined
         });
     });

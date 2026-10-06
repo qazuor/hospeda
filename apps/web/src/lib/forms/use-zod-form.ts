@@ -3,7 +3,7 @@
  * @description Shared form-validation hook (HOS-190 slice 2). Wraps a Zod
  * schema + the mapping utils in `field-errors.ts` into the small piece of
  * state every hand-rolled form in `apps/web` (ContactForm, ContributionForm,
- * ChangePasswordForm, CommerceLead, PromotionForm, ProfileEditForm...)
+ * ChangePasswordForm, ListingLead, PromotionForm, ProfileEditForm...)
  * duplicates: a `fieldErrors` record, a form-level `formError` banner string,
  * a `validate()` that runs `schema.safeParse` and populates `fieldErrors` on
  * failure, and a clear-on-edit handler.
@@ -68,7 +68,7 @@ export interface UseZodFormOptions<TSchema extends ZodTypeAny> {
      * Zod keys whose value is a nested object rendered as ONE group of controls
      * rather than one labelled input (HOS-814).
      *
-     * Zod reports an issue at its deepest path, so a bad shift inside commerce
+     * Zod reports an issue at its deepest path, so a bad shift inside gastronomy/experience
      * `openingHours` arrives as `openingHours.days.mon.shifts.0.close`. Nothing
      * reads that key: the section renders `<FieldError>` for `openingHours`, and
      * `focusFirstInvalidField` derives an id from `openingHours`. The result was

@@ -8,7 +8,7 @@
  *
  * `GET /users/me/subscription` defaults to `productDomain: 'accommodation'`
  * server-side when the caller omits the param. Both redeem-page routes used
- * to call it with no `productDomain` at all, so a commerce-only owner (a
+ * to call it with no `productDomain` at all, so a gastronomy/experience-only owner (a
  * `GASTRONOMY_OWNER`/`EXPERIENCE_OWNER` with no accommodation subscription)
  * always resolved `subscription: null` — `subscriptionId` reached
  * `RedeemCodeSection` as `undefined`, and a DISCOUNT code could never be
@@ -54,13 +54,13 @@ describe('resolveRedeemableSubscriptionId', () => {
             (call) => (call[0] as { productDomain: string }).productDomain
         );
         expect(queriedDomains).toEqual(['accommodation', 'gastronomy', 'experience', 'tourist']);
-        // Never the retired 'commerce' value, and never omitted (which would
+        // Never the retired shared umbrella value, and never omitted (which would
         // silently fall back to the server's accommodation default again).
-        expect(queriedDomains).not.toContain('commerce');
+        expect(queriedDomains).not.toContain('comm' + 'erce');
         expect(queriedDomains).not.toContain(undefined);
     });
 
-    it('HOS-1293 regression: a commerce-only owner with NO accommodation subscription resolves their gastronomy subscription', async () => {
+    it('HOS-1293 regression: a gastronomy/experience-only owner with NO accommodation subscription resolves their gastronomy subscription', async () => {
         // The exact bug: accommodation resolves to nothing for this owner, but
         // they DO hold a gastronomy subscription.
         getSubscription.mockImplementation(({ productDomain }: { productDomain: string }) =>

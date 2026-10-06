@@ -205,7 +205,7 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
 
     // Redirect-only since HOS-1032. The five pricing URLs the `/planes/`
     // namespace replaced (HOS-941 D-8), plus the two comparison pages whose
-    // table moved onto the pricing page itself (D-11) and the two commerce
+    // table moved onto the pricing page itself (D-11) and the two gastronomy/experience
     // landings whose price block moved down a level (D-9 for the slug).
     //
     // All seven leave the sitemap in the SAME change that turns them into

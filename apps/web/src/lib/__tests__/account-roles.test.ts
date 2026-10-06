@@ -1,15 +1,15 @@
 /**
  * @file account-roles.test.ts
  * @description Tests for the account dashboard role-set helpers: the
- * commerce-owner navigation gate (SPEC-249 T-001, migrated onto `nav-gating`
+ * gastronomy/experience-owner navigation gate (SPEC-249 T-001, migrated onto `nav-gating`
  * by HOS-296 §6.5) and the roles → subscription-plans-page decision
  * (`resolveSubscriptionPlansPath`, BETA-201).
  *
- * Verifies that `hasCommerceNavAccess` grants access to GASTRONOMY_OWNER and
+ * Verifies that `hasListingNavAccess` grants access to GASTRONOMY_OWNER and
  * platform staff, denies plain tourists, accommodation-only hosts, and
- * unauthenticated visitors, that the commerce set stays distinct from the
+ * unauthenticated visitors, that the gastronomy/experience set stays distinct from the
  * accommodations set, and that `resolveSubscriptionPlansPath` routes
- * host-level role sets to the owner pricing page, commerce-only role sets
+ * host-level role sets to the owner pricing page, gastronomy/experience-only role sets
  * (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`/legacy `GASTRONOMY_OWNER`, HOS-1293) to
  * their own vertical's pricing page, and everyone else (tourists, anonymous)
  * to the tourist pricing page.
@@ -23,43 +23,43 @@ import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     ROLES_WITH_ACCOMMODATIONS_NAV,
-    ROLES_WITH_COMMERCE_NAV,
+    ROLES_WITH_LISTING_NAV,
     resolveSubscriptionPlansPath,
     resolveSubscriptionPlansPathForAudience
 } from '../account-roles';
-import { hasAccommodationsNavAccess, hasCommerceNavAccess } from '../nav-gating';
+import { hasAccommodationsNavAccess, hasListingNavAccess } from '../nav-gating';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../pricing-plans';
 
-describe('hasCommerceNavAccess', () => {
+describe('hasListingNavAccess', () => {
     it('returns true for GASTRONOMY_OWNER', () => {
-        expect(hasCommerceNavAccess({ roles: [RoleEnum.GASTRONOMY_OWNER] })).toBe(true);
+        expect(hasListingNavAccess({ roles: [RoleEnum.GASTRONOMY_OWNER] })).toBe(true);
     });
 
     it('returns true for platform staff (ADMIN, SUPER_ADMIN)', () => {
-        expect(hasCommerceNavAccess({ roles: [RoleEnum.ADMIN] })).toBe(true);
-        expect(hasCommerceNavAccess({ roles: [RoleEnum.SUPER_ADMIN] })).toBe(true);
+        expect(hasListingNavAccess({ roles: [RoleEnum.ADMIN] })).toBe(true);
+        expect(hasListingNavAccess({ roles: [RoleEnum.SUPER_ADMIN] })).toBe(true);
     });
 
     it('returns false for a plain tourist USER', () => {
-        expect(hasCommerceNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
+        expect(hasListingNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
     });
 
     it('returns false for an accommodation-only HOST', () => {
-        expect(hasCommerceNavAccess({ roles: [RoleEnum.USER, RoleEnum.HOST] })).toBe(false);
+        expect(hasListingNavAccess({ roles: [RoleEnum.USER, RoleEnum.HOST] })).toBe(false);
     });
 
     it('returns false for null / empty (unauthenticated)', () => {
-        expect(hasCommerceNavAccess({ roles: null })).toBe(false);
-        expect(hasCommerceNavAccess({ roles: [] })).toBe(false);
+        expect(hasListingNavAccess({ roles: null })).toBe(false);
+        expect(hasListingNavAccess({ roles: [] })).toBe(false);
     });
 
     it('returns false for an unknown role string', () => {
-        expect(hasCommerceNavAccess({ roles: ['NOT_A_ROLE'] })).toBe(false);
+        expect(hasListingNavAccess({ roles: ['NOT_A_ROLE'] })).toBe(false);
     });
 
-    it('returns true when the commerce hat is one of several held roles', () => {
+    it('returns true when the gastronomy/experience hat is one of several held roles', () => {
         expect(
-            hasCommerceNavAccess({
+            hasListingNavAccess({
                 roles: [RoleEnum.USER, RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER]
             })
         ).toBe(true);
@@ -75,20 +75,20 @@ describe('AC-1 — a HOST who is also a GASTRONOMY_OWNER gets BOTH nav groups', 
         expect(hasAccommodationsNavAccess({ roles })).toBe(true);
     });
 
-    it('grants the commerce navigation', () => {
-        expect(hasCommerceNavAccess({ roles })).toBe(true);
+    it('grants the listing navigation', () => {
+        expect(hasListingNavAccess({ roles })).toBe(true);
     });
 
     it('is order-independent', () => {
         const reversed = [...roles].reverse();
         expect(hasAccommodationsNavAccess({ roles: reversed })).toBe(true);
-        expect(hasCommerceNavAccess({ roles: reversed })).toBe(true);
+        expect(hasListingNavAccess({ roles: reversed })).toBe(true);
     });
 });
 
-describe('ROLES_WITH_COMMERCE_NAV', () => {
-    it('is distinct from the accommodations nav set (HOST is not a commerce role)', () => {
-        expect(ROLES_WITH_COMMERCE_NAV.has('HOST')).toBe(false);
+describe('ROLES_WITH_LISTING_NAV', () => {
+    it('is distinct from the accommodations nav set (HOST is not a gastronomy/experience role)', () => {
+        expect(ROLES_WITH_LISTING_NAV.has('HOST')).toBe(false);
         expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('GASTRONOMY_OWNER')).toBe(false);
     });
 });
@@ -122,9 +122,9 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
     });
 
     it('routes a GASTRONOMY_OWNER (not an accommodation host) to the gastronomy plans page (HOS-1293)', () => {
-        // HOS-1293 regression: before this fix, commerce is a separate billing
+        // HOS-1293 regression: before this fix, gastronomy/experience is a separate billing
         // domain and this function only knew host-vs-everyone-else, so a
-        // commerce-only owner fell all the way through to the tourist page —
+        // gastronomy/experience-only owner fell all the way through to the tourist page —
         // from `/mi-cuenta/addons/`'s gate CTA and the bare
         // `/suscriptores/checkout/` root redirect. The legacy GASTRONOMY_OWNER
         // role predates the per-vertical split and carries no vertical of its
@@ -158,7 +158,7 @@ describe('resolveSubscriptionPlansPath (BETA-201)', () => {
     it('routes a GASTRONOMY_OWNER who is ALSO a HOST to the owner page', () => {
         // Holding the host hat is the stronger signal about which catalog the
         // user can actually buy from (HOS-296), and HOS-1293 keeps that
-        // precedence: host beats commerce beats tourist.
+        // precedence: host beats gastronomy/experience beats tourist.
         expect(
             resolveSubscriptionPlansPath({ roles: [RoleEnum.GASTRONOMY_OWNER, RoleEnum.HOST] })
         ).toBe(PRICING_PAGE_PATH_BY_AUDIENCE.owner);
@@ -214,7 +214,7 @@ describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
         );
     });
 
-    // HOS-1293 — the two commerce audiences, unreachable from the API's
+    // HOS-1293 — the two gastronomy/experience audiences, unreachable from the API's
     // `upgradeAudience` field (which only ever sends 'host'/'tourist') but
     // needed by callers that already know the vertical directly, e.g.
     // `AddonsPurchasePanel.client.tsx` resolving one CTA per add-on card from
@@ -233,7 +233,7 @@ describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HOS-1077 — the per-vertical owner roles reach the same commerce area
+// HOS-1077 — the per-vertical owner roles reach the same listing area
 //
 // The gate is a SET membership check, so the failure mode is silent and total:
 // a role missing from the set makes every `/mi-cuenta/comercio/*` page redirect
@@ -241,32 +241,32 @@ describe('resolveSubscriptionPlansPathForAudience (HOS-283)', () => {
 // roles are in, without disturbing what was already out.
 // ---------------------------------------------------------------------------
 
-describe('HOS-1077 vertical owner roles and the commerce nav', () => {
-    it('a GASTRONOMY_OWNER holding no other commerce hat reaches the commerce nav', () => {
-        expect(hasCommerceNavAccess({ roles: [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER] })).toBe(
+describe('HOS-1077 vertical owner roles and the listing nav', () => {
+    it('a GASTRONOMY_OWNER holding no other gastronomy/experience hat reaches the listing nav', () => {
+        expect(hasListingNavAccess({ roles: [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER] })).toBe(
             true
         );
     });
 
-    it('an EXPERIENCE_OWNER holding no other commerce hat reaches the commerce nav', () => {
-        expect(hasCommerceNavAccess({ roles: [RoleEnum.USER, RoleEnum.EXPERIENCE_OWNER] })).toBe(
+    it('an EXPERIENCE_OWNER holding no other gastronomy/experience hat reaches the listing nav', () => {
+        expect(hasListingNavAccess({ roles: [RoleEnum.USER, RoleEnum.EXPERIENCE_OWNER] })).toBe(
             true
         );
     });
 
     it('neither vertical owner reaches the ACCOMMODATIONS nav', () => {
-        // The commerce and accommodation sets stay disjoint for the new roles
+        // The gastronomy/experience and accommodation sets stay disjoint for the new roles
         // exactly as they were for GASTRONOMY_OWNER.
         expect(hasAccommodationsNavAccess({ roles: [RoleEnum.GASTRONOMY_OWNER] })).toBe(false);
         expect(hasAccommodationsNavAccess({ roles: [RoleEnum.EXPERIENCE_OWNER] })).toBe(false);
     });
 
-    it('ROLES_WITH_COMMERCE_NAV names both new roles alongside the legacy one', () => {
-        expect(ROLES_WITH_COMMERCE_NAV.has('GASTRONOMY_OWNER')).toBe(true);
-        expect(ROLES_WITH_COMMERCE_NAV.has('EXPERIENCE_OWNER')).toBe(true);
+    it('ROLES_WITH_LISTING_NAV names both new roles alongside the legacy one', () => {
+        expect(ROLES_WITH_LISTING_NAV.has('GASTRONOMY_OWNER')).toBe(true);
+        expect(ROLES_WITH_LISTING_NAV.has('EXPERIENCE_OWNER')).toBe(true);
         // Expand, not contract: the legacy role must still be in the set, or
-        // every existing commerce owner loses the area on deploy.
-        expect(ROLES_WITH_COMMERCE_NAV.has('GASTRONOMY_OWNER')).toBe(true);
+        // every existing gastronomy/experience owner loses the area on deploy.
+        expect(ROLES_WITH_LISTING_NAV.has('GASTRONOMY_OWNER')).toBe(true);
     });
 
     it('ROLES_WITH_ACCOMMODATIONS_NAV gained neither', () => {
@@ -274,9 +274,9 @@ describe('HOS-1077 vertical owner roles and the commerce nav', () => {
         expect(ROLES_WITH_ACCOMMODATIONS_NAV.has('EXPERIENCE_OWNER')).toBe(false);
     });
 
-    it('a plain tourist still does not reach the commerce nav', () => {
+    it('a plain tourist still does not reach the listing nav', () => {
         // Instrument check: if the set had been widened to everyone, every
         // assertion above would pass while measuring nothing.
-        expect(hasCommerceNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
+        expect(hasListingNavAccess({ roles: [RoleEnum.USER] })).toBe(false);
     });
 });

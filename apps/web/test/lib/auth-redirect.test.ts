@@ -34,7 +34,7 @@ describe('buildLoginRedirect', () => {
 
 describe('resolveSafeReturnPath', () => {
     describe('accepts a same-origin relative path', () => {
-        it('returns the commerce create form verbatim (HOS-810)', () => {
+        it('returns the listing create form verbatim (HOS-810)', () => {
             expect(
                 resolveSafeReturnPath({
                     rawReturn: '/es/mi-cuenta/comercio/nuevo/experience/',

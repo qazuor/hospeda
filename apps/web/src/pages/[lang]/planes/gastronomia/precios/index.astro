@@ -38,9 +38,8 @@
  *
  * ## Why the CTA is a link and not a checkout button
  *
- * A commerce subscription is not started from a marketing page: the buyer
- * creates the listing first and picks the tier inside that flow, where
- * `CommercePlanPicker` lives. `buildCommerceStartUrl` is the same constant href
+ * A gastronomy/experience subscription is not started from a marketing page: the buyer
+ * creates the listing first and picks the tier inside that flow. `buildListingStartUrl` is the same constant href
  * `/publicar-restaurante/` used — constant because this page is edge-cached and
  * parses no session, so it cannot know who is reading it; the signed-in vs
  * signed-out branch happens one hop later on `/auth/signup/`.
@@ -63,7 +62,7 @@ import {
     resolvePricingPageContent
 } from '@/lib/billing/pricing-page-content';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { buildCommerceStartUrl } from '@/lib/commerce/start-url';
+import { buildListingStartUrl } from '@/lib/listing/start-url';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -98,7 +97,7 @@ const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
  * (`getPlanName` / `getPlanDescription`) and not from the raw config values.
  *
  * `plan.name` / `plan.description` off the API are the billing package's
- * internal strings — for the commerce verticals, English engineering prose
+ * internal strings — for the gastronomy/experience verticals, English engineering prose
  * carrying issue IDs. Publishing those as structured data would put them in the
  * field a search result quotes, while the visible card said something else.
  */
@@ -111,7 +110,7 @@ const jsonLdPlans = plans.map((plan) => ({
     url: `${siteOrigin}${pagePath}`
 }));
 
-const ctaHref = buildCommerceStartUrl({ locale, vertical: 'gastronomy' });
+const ctaHref = buildListingStartUrl({ locale, vertical: 'gastronomy' });
 
 const title = t(`${copyRoot}.pageTitle`);
 const description = t(`${copyRoot}.pageDescription`);
@@ -124,7 +123,7 @@ const description = t(`${copyRoot}.pageDescription`);
 const breadcrumbs = buildPricingBreadcrumbs({
     homeLabel: t('nav.home', 'Inicio'),
     homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
-    salesLabel: t('listing.lead.title'),
+    salesLabel: t('gastronomy.landing.lead.title'),
     salesPath: 'planes/gastronomia',
     salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/gastronomia' })}`,
     pageLabel: title,

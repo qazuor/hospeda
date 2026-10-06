@@ -71,7 +71,7 @@ export type FetchPlansResult =
  *   (HOS-685 widened `GET /api/v1/public/plans` to accept `?domain=`).
  *   Omitted entirely when absent, which the endpoint defaults to
  *   `'accommodation'` — the byte-for-byte behaviour every existing caller
- *   still gets. Pass `'gastronomy'` / `'experience'` to fetch a commerce
+ *   still gets. Pass `'gastronomy'` / `'experience'` to fetch a gastronomy/experience
  *   vertical's plan instead (HOS-690).
  *
  * The function never throws; network or parse errors are returned as

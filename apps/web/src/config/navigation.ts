@@ -106,7 +106,7 @@ export interface NavGroup {
  * Both desktop surfaces (`sidebar`, `mobile`) render the full navigation.
  * The `avatar` dropdown curates a subset (spec §6.4) — only `dashboard`,
  * `favorites`, and `subscription` opt into it via `CURATED_SURFACES` below.
- * The single business-panel shortcut (`hostDashboard` / `commerce`, spec
+ * The single business-panel shortcut (`hostDashboard` / `comercio-listings`, spec
  * §6.4 "one, by priority") is NOT selected via surface membership — it's
  * picked at render time by `pickBusinessShortcut` (`src/lib/nav-avatar.ts`),
  * so those two items intentionally keep `FULL_SURFACES` here.
@@ -335,12 +335,12 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
         suppressHeaderWhenSingle: true,
         items: [
             {
-                id: 'commerce',
+                id: 'comercio-listings',
                 i18nKey: 'listing.owner.nav',
                 href: 'mi-cuenta/comercio',
                 icon: BriefcaseIcon,
                 surfaces: FULL_SURFACES,
-                tourTarget: 'commerce'
+                tourTarget: 'comercio-listings'
             }
         ]
     },

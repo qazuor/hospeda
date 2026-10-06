@@ -129,7 +129,7 @@ export function resolveTrialScopeForAudience({
  * fail-safe direction is inverted here — the dangerous outcome is not a
  * blocked purchase but an unannounced one, because real money moves and the
  * trial days are gone before the visitor can object. So an absent reading
- * warns rather than proceeding, matching `fetchCommerceTrialVerdict`'s own
+ * warns rather than proceeding, matching `fetchListingTrialVerdict`'s own
  * asymmetry (it falls back to `payment_required`, never `trial_available`:
  * undersell, never over-promise free).
  *

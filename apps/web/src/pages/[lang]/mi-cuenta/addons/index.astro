@@ -26,7 +26,7 @@ import { AddonsPurchasePanel } from '@/components/account/AddonsPurchasePanel.cl
 import type { AddonCardData } from '@/components/account/AddonsPurchasePanel.client';
 import {
     billingApi,
-    commerceListingsApi,
+    ownerListingsApi,
     hostAnalyticsApi,
     userApi
 } from '@/lib/api/endpoints-protected';
@@ -69,9 +69,9 @@ const description = t(
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
 /**
- * Every domain the addon catalog can be gated by (HOS-689 item 2). Commerce
- * addons are gated per VERTICAL (`gastronomy`/`experience`), never by the
- * transitional `'commerce'` umbrella — `resolveAddonProductDomain` never
+ * Every domain the addon catalog can be gated by (HOS-689 item 2). Listing
+ * addons are gated per VERTICAL (`gastronomy`/`experience`), never by a
+ * transitional shared umbrella — `resolveAddonProductDomain` never
  * resolves to it.
  */
 const ADDON_GATE_DOMAINS: readonly ProductDomainScope[] = [
@@ -83,11 +83,11 @@ const ADDON_GATE_DOMAINS: readonly ProductDomainScope[] = [
 let availableAddons: AddonCardData[] = [];
 let ownedAddonSlugs: string[] = [];
 let accommodations: { readonly id: string; readonly name: string }[] = [];
-// HOS-1286: the caller's own commerce listings, per vertical. A failed fetch
+// HOS-1286: the caller's own listings, per vertical. A failed fetch
 // leaves the vertical empty, which renders the card's "you need a listing
 // first" state — never a page-level failure, the same degradation the
 // accommodation fetch above has always had.
-const commerceListings: Record<'gastronomy' | 'experience', { readonly id: string; readonly name: string }[]> = {
+const ownerListingsByVertical: Record<'gastronomy' | 'experience', { readonly id: string; readonly name: string }[]> = {
     gastronomy: [],
     experience: []
 };
@@ -122,7 +122,7 @@ if (ownedResult.ok) {
 }
 
 // HOS-689 item 2: the gate is per-domain, not one page-wide boolean scoped
-// to the accommodation subscription. A commerce-only owner (who is exactly
+// to the accommodation subscription. A gastronomy/experience-only owner (who is exactly
 // who buys `extra-gastronomies-1`) must see that addon offered even with no
 // accommodation subscription at all — see `filterAddonsByHeldDomains` /
 // `resolveAddonProductDomain` in `@/lib/billing/addon-domain`.
@@ -178,9 +178,9 @@ if (targetDomains.has('accommodation')) {
 
 for (const vertical of ['gastronomy', 'experience'] as const) {
     if (!targetDomains.has(vertical)) continue;
-    const listingsResult = await commerceListingsApi.listMine({ vertical, cookieHeader });
+    const listingsResult = await ownerListingsApi.listMine({ vertical, cookieHeader });
     if (listingsResult.ok) {
-        commerceListings[vertical] = listingsResult.data.listings.map((listing) => ({
+        ownerListingsByVertical[vertical] = listingsResult.data.listings.map((listing) => ({
             id: listing.id,
             name: listing.name
         }));
@@ -268,8 +268,8 @@ const upgradeUrl = buildUrl({
             ownedAddonSlugs={ownedAddonSlugs}
             targetListingsByDomain={{
                 accommodation: accommodations,
-                gastronomy: commerceListings.gastronomy,
-                experience: commerceListings.experience
+                gastronomy: ownerListingsByVertical.gastronomy,
+                experience: ownerListingsByVertical.experience
             }}
             focusSlug={focusSlugParam}
             newPaidSignupsFrozen={newPaidSignupsFrozen}

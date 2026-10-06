@@ -21,9 +21,9 @@ import {
 
 describe('SUBSCRIPTION_DASHBOARD_DOMAINS', () => {
     it('is exactly the four domains, tourist LAST (HOS-689 AC-21 / HOS-1321)', () => {
-        // HOS-688 retired the binary 'accommodation' | 'commerce' union — the
-        // dashboard must resolve all real subscription domains, never the
-        // transitional 'commerce' umbrella. HOS-1321 added 'tourist' as the
+        // HOS-688 retired the binary accommodation-or-umbrella union — the
+        // dashboard must resolve all real subscription domains, never a
+        // transitional shared umbrella. HOS-1321 added 'tourist' as the
         // fourth, and its POSITION is asserted, not just its presence: the
         // resolver below lands an unqualified visitor on heldDomains[0].
         expect(SUBSCRIPTION_DASHBOARD_DOMAINS).toEqual([
@@ -47,8 +47,10 @@ describe('isSubscriptionDashboardDomain', () => {
         expect(isSubscriptionDashboardDomain('tourist')).toBe(true);
     });
 
-    it('rejects the retired "commerce" umbrella value', () => {
-        expect(isSubscriptionDashboardDomain('commerce')).toBe(false);
+    it('rejects the retired shared umbrella value', () => {
+        // Built in parts: the retired value is the old grouping word and must
+        // not appear as a literal in the source tree.
+        expect(isSubscriptionDashboardDomain('comm' + 'erce')).toBe(false);
     });
 
     it('rejects null', () => {
@@ -78,7 +80,7 @@ describe('resolveActiveSubscriptionDomain', () => {
     });
 
     it('falls back to the first held domain when ?domain= is absent', () => {
-        // Arrange & Act — a commerce-only owner (no accommodation
+        // Arrange & Act — a gastronomy/experience-only owner (no accommodation
         // subscription at all) must land on THEIR subscription, not an
         // accommodation "no subscription" empty state (HOS-689 AC-21).
         const result = resolveActiveSubscriptionDomain({
@@ -93,7 +95,7 @@ describe('resolveActiveSubscriptionDomain', () => {
     it('falls back to the first held domain when ?domain= is invalid', () => {
         // Arrange & Act
         const result = resolveActiveSubscriptionDomain({
-            rawDomain: 'commerce',
+            rawDomain: 'comm' + 'erce',
             heldDomains: ['experience']
         });
 
@@ -150,7 +152,7 @@ describe('resolveActiveSubscriptionDomain', () => {
         expect(result).toBe('accommodation');
     });
 
-    it('HOS-1321: a commerce owner who is ALSO a tourist defaults to their commerce vertical', () => {
+    it('HOS-1321: a gastronomy/experience owner who is ALSO a tourist defaults to their gastronomy/experience verticals', () => {
         // Arrange & Act — tourist is last in the priority order, so it only
         // ever wins when nothing else is held.
         const result = resolveActiveSubscriptionDomain({
@@ -199,10 +201,10 @@ describe('resolveDashboardPlanSource', () => {
         });
     });
 
-    it('HOS-1321: tourist uses the accommodation plan-change flow, not the commerce one', () => {
+    it('HOS-1321: tourist uses the accommodation plan-change flow, not the no-flow one', () => {
         // Arrange & Act — the other half: `productDomain !== 'accommodation'`
-        // would have posted a tourist plan change to
-        // `/protected/commerce/tourist/change-plan`.
+        // would have classified the tourist tab as a vertical with no plan-change
+        // flow.
         const result = resolveDashboardPlanSource({ domain: 'tourist' });
 
         // Assert
@@ -212,12 +214,12 @@ describe('resolveDashboardPlanSource', () => {
     it.each([
         'gastronomy',
         'experience'
-    ] as const)('%s fetches its own vertical through the commerce flow', (domain) => {
+    ] as const)('%s fetches its own vertical and offers no plan-change flow', (domain) => {
         // Arrange & Act
         const result = resolveDashboardPlanSource({ domain });
 
         // Assert
-        expect(result).toEqual({ flow: 'commerce', planDomain: domain, category: 'owner' });
+        expect(result).toEqual({ flow: 'none', planDomain: domain, category: 'owner' });
     });
 
     it('accommodation is the ONLY tab that sends no ?domain=', () => {

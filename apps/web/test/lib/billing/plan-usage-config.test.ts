@@ -190,9 +190,9 @@ describe('needsUpgradePrompt', () => {
     });
 });
 
-describe('audienceForLimit — commerce verticals (HOS-688)', () => {
-    it('should group both commerce caps with the host block', () => {
-        // A commerce owner is a host of a different kind, and is sent to a
+describe('audienceForLimit — gastronomy/experience verticals (HOS-688)', () => {
+    it('should group both gastronomy/experience caps with the host block', () => {
+        // A gastronomy/experience owner is a host of a different kind, and is sent to a
         // subscription/add-on surface rather than a traveller plan.
         expect(audienceForLimit('max_gastronomies')).toBe('host');
         expect(audienceForLimit('max_experiences')).toBe('host');
@@ -218,7 +218,7 @@ describe('addonSlugForLimit', () => {
         expect(addonSlugForLimit('max_ai_search_per_month')).toBeUndefined();
     });
 
-    it('should link each commerce vertical to its OWN extra-listing add-on (HOS-688 AC-34)', () => {
+    it('should link each gastronomy/experience verticals to its OWN extra-listing add-on (HOS-688 AC-34)', () => {
         // Without these entries each add-on exists, is purchasable and grants
         // the cap increase — and the usage panel never links to it from the
         // at-cap row, which is the only place anybody would go looking for it.

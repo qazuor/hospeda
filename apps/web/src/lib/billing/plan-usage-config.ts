@@ -42,7 +42,7 @@ const AUDIENCE_BY_LIMIT_KEY: Readonly<Record<string, UsageAudience>> = {
     max_ai_translate_per_month: 'host',
     max_ai_accommodation_import_per_month: 'host',
     max_ai_support_per_month: 'host',
-    // A commerce owner is a host of a different kind, but the same upgrade path
+    // A gastronomy/experience owner is a host of a different kind, but the same upgrade path
     // (HOS-688). An absent entry falls back to 'host' anyway — these are
     // explicit so the fallback is not what is being relied on.
     max_gastronomies: 'host',

@@ -5,7 +5,7 @@
  *
  * WHAT THIS GUARDS. The dashboard is not a static page — it already branches on
  * whether the visitor is a host, prepending "Mis propiedades" and "Panel del
- * anfitrión" to the nav grid. The commerce owner was the one role the branch had
+ * anfitrión" to the nav grid. The gastronomy/experience owner was the one role the branch had
  * never heard of: a merchant whose listing exists and is sitting in DRAFT saw a
  * page that mentioned their business nowhere, while the sidebar right next to it
  * showed "Mi comercio". The dashboard is the first screen they land on, so it is
@@ -15,7 +15,7 @@
  * are string-level assertions on the .astro source (the same pattern as
  * `mi-cuenta-comercio-nuevo.astro.test.ts`). They prove the branch is DECLARED,
  * not that it RENDERS — that second question was answered by hand against the
- * running server, with a commerce-owner session and a tourist session.
+ * running server, with a gastronomy/experience-owner session and a tourist session.
  */
 
 import { readFileSync } from 'node:fs';
@@ -28,8 +28,8 @@ const source = readFileSync(
 );
 
 describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
-    it('resolves commerce access through the shared gating predicate, not a role literal', () => {
-        expect(source).toContain('hasCommerceNavAccess');
+    it('resolves gastronomy/experience access through the shared gating predicate, not a role literal', () => {
+        expect(source).toContain('hasListingNavAccess');
         // The repo's rule since HOS-296: gate on the role SET via the shared
         // predicate, never by comparing against a role string here.
         expect(source).not.toMatch(/roles.*includes\(\s*['"]GASTRONOMY_OWNER['"]\s*\)/);
@@ -47,11 +47,11 @@ describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
         expect(source).toContain("t('listing.owner.nav'");
     });
 
-    it('keeps the commerce entry conditional, so a tourist never sees it', () => {
-        expect(source).toMatch(/isCommerceOwner\s*\n?\s*\?/);
+    it('keeps the listings entry conditional, so a tourist never sees it', () => {
+        expect(source).toMatch(/isOwner\s*\n?\s*\?/);
     });
 
-    it('still gates the host entries independently of commerce', () => {
+    it('still gates the host entries independently of the listings entry', () => {
         // HOS-296: an account can hold BOTH roles, so the two branches must be
         // separate conditions rather than one either/or.
         expect(source).toContain('hasAccommodationsNavAccess');

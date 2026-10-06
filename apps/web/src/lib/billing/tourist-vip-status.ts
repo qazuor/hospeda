@@ -20,7 +20,7 @@
  * caller's ACCOMMODATION subscription and, since HOS-1233's API half, falls
  * back to their tourist one. Both halves of that default are wrong here: the
  * fallback would count a tourist's own subscription as a reason to disable
- * their tourist purchase, and one read cannot see the commerce verticals at
+ * their tourist purchase, and one read cannot see the gastronomy/experience verticals at
  * all. Naming each domain keeps every read strict — an explicit
  * `?productDomain=X` never picks up the fallback.
  *

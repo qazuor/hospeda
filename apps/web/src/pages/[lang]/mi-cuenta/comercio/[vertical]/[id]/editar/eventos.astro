@@ -1,18 +1,18 @@
 ---
 /**
  * @file eventos.astro
- * @description Venue-events (agenda) section of the commerce editor
+ * @description Venue-events (agenda) section of the gastronomy/experience editor
  * (HOS-1042).
  *
  * Gastronomy only, same as `carta.astro`. The section is absent from the
  * experience registry rather than hidden from its nav, so
- * `resolveCommerceEditorPage` sends an experience request for this slug to
+ * `resolveListingEditorPage` sends an experience request for this slug to
  * the hub — the same mechanism that refuses `punto-de-encuentro` to a
  * restaurant, pointing the other way.
  *
- * `CommerceVenueEventsManager` owns its own endpoints — `GET`/`PUT
+ * `GastronomyVenueEventsManager` owns its own endpoints — `GET`/`PUT
  * .../events` — so this page mounts it directly, with no form and no save
- * button, exactly as `carta.astro` mounts `CommerceMenuManager`. Nothing here
+ * button, exactly as `carta.astro` mounts `GastronomyMenuManager`. Nothing here
  * reaches the listing PATCH or its dirty tracking.
  *
  * ## Why the agenda is NOT preloaded server-side
@@ -26,15 +26,15 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { CommerceVenueEventsManager } from '@/components/commerce/CommerceVenueEventsManager.client';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { WEEKDAY_I18N_KEYS } from '@/lib/commerce/venue-event-draft';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { GastronomyVenueEventsManager } from '@/components/gastronomy/GastronomyVenueEventsManager.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { WEEKDAY_I18N_KEYS } from '@/lib/gastronomy/venue-event-draft';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({ astro: Astro, sectionSlug: 'eventos' });
+const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'eventos' });
 
 if (resolution.redirect) return resolution.redirect;
 
@@ -60,7 +60,7 @@ const weekdayLabels = WEEKDAY_I18N_KEYS.map((dayKey) =>
 );
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
@@ -69,10 +69,10 @@ const weekdayLabels = WEEKDAY_I18N_KEYS.map((dayKey) =>
 	currentSectionSlug="eventos"
 	title={t('listing.owner.editor.sectionNav.venueEvents', 'Eventos')}
 >
-	<CommerceVenueEventsManager
+	<GastronomyVenueEventsManager
 		client:load
 		listingId={listingId}
 		locale={locale}
 		weekdayLabels={weekdayLabels}
 	/>
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>

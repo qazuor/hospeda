@@ -7,7 +7,7 @@
  * experiences already holds every tourist-VIP entitlement — `plans.config.ts`
  * records HOS-975 D-A (owner, 2026-09-01): every one of those tiers spreads
  * `TOURIST_VIP_ENTITLEMENTS` and `TOURIST_VIP_LIMITS` whole, "because a
- * commerce owner is a tourist on this platform too". Selling them the tourist
+ * gastronomy/experience owner is a tourist on this platform too". Selling them the tourist
  * plan takes money for an empty delta, so the card says they already have it
  * and the button is disabled.
  *

@@ -7,7 +7,7 @@
  * dialog (`PayerEmailConfirmDialog`) only has an effect on the own-preapproval
  * checkout path, gated server-side (api-only) by
  * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED`. With the flag on, all four
- * checkouts (accommodation monthly/annual, commerce, partner) create their
+ * checkouts (accommodation monthly/annual, gastronomy/experience, partner) create their
  * own `POST /preapproval` and bind `payer_email` server-side (HOS-937 step
  * 4); with it off (the default — production today) every path falls back to
  * MercadoPago's hosted share-link checkout, which silently discards
@@ -48,7 +48,7 @@ export interface CheckoutConfig {
     /**
      * Whether an admin paused new self-service paid signups (billing
      * settings). When `true`, the checkout CTAs for a NEW plan, an owner
-     * commerce checkout and an add-on purchase render a "paused" notice
+     * gastronomy/experience checkout and an add-on purchase render a "paused" notice
      * instead. Existing subscribers' actions (plan change, etc.) are untouched.
      */
     readonly newPaidSignupsFrozen: boolean;

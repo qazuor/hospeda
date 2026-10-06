@@ -148,9 +148,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // renders with an inline Spanish fallback, so a missing prefix does not
     // print a raw key on an /en/ or /pt/ page: it silently prints Spanish
     // instead, which is the failure this list exists to prevent.
-    'listing.certificate',
-    'listing.changePassword',
+    'experience.certificate',
+    'account.changePassword',
     'listing.owner',
+    // The gastronomy-only editor panels (menu, daily specials, venue events)
+    // live under their own namespace since the shared `listing` one was split.
+    'gastronomy.owner.editor',
     'common.anonymous',
     // Named directly by the review islands' network-failure branch. It is also
     // listed in EXTERNAL_I18N_KEY_PREFIXES, which covers the copy built inside
@@ -185,11 +188,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-957 — the rich-text toolbar's link dialog, which replaced
     // `window.prompt('URL del enlace', …)`. Named by `LinkUrlDialog.client.tsx`
     // through `RichTextEditor.client.tsx`, so it is reachable from all four
-    // editors that mount it (accommodation, commerce, event, post).
+    // editors that mount it (accommodation, gastronomy/experience, event, post).
     'common.richText',
     'common.saving',
     'common.untitled',
-    // HOS-734 — `CommerceViewsWidget.client.tsx` names `common.window.7d` /
+    // HOS-734 — `ListingViewsWidget.client.tsx` names `common.window.7d` /
     // `.30d` / `.ariaLabel` for its time-window toggle, reusing the same keys
     // admin's `WindowToggle` already used (admin ships its own bundle, so this
     // entry is new here specifically because a WEB client island now names it).
@@ -225,12 +228,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'experience.aiChat',
     'experience.editOwn',
     'experience.reviews',
-    // HOS-822 — the commerce owner form and the public listing page now name
+    // HOS-822 — the gastronomy/experience owner form and the public listing page now name
     // the SAME listing-type key (`experience.type.*` / `gastronomy.types.*`,
-    // via `resolveCommerceTypeLabel`). The form is a client island, so both
-    // prefixes have to ship: they replace `commerce.owner.editor.typeOption.*`,
+    // via `resolveGastronomyTypeLabel` / `resolveExperienceTypeLabel`). The form is a client island, so both
+    // prefixes have to ship: they replace `listing.owner.editor.typeOption.*`,
     // the editor-private duplicate that was reachable here under
-    // `commerce.owner` and has been deleted.
+    // `listing.owner` and has been deleted.
     'experience.type',
     'external-reputation.aggregate',
     'external-reputation.errors',

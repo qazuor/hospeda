@@ -116,7 +116,7 @@ const BANNED_PHRASES: readonly string[] = [
     // local trial row in the same transaction as the lifecycle flip — so the
     // stated reason is no longer true. They stay banned for a narrower one: an
     // inline fallback is context-free, and the sentence is still false for
-    // commerce verticals, whose listings go live through a checkout that
+    // gastronomy/experience verticals, whose listings go live through a checkout that
     // charges (HOS-1184). Copy that IS shown only to an eligible accommodation
     // owner belongs in a locale file gated on the server's verdict — see
     // `host.properties.card.actions.publishConfirmTrialNote`, rendered only when

@@ -3,7 +3,7 @@
  * @description Source-read tests for the "accepts events" CTA (HOS-1055).
  *
  * Same pattern and same caveat as its HOS-1072 sibling
- * (`commerce-amenities-render.test.ts`): Vitest cannot render `.astro` here
+ * (`listing-amenities-render.test.ts`): Vitest cannot render `.astro` here
  * (no Astro vite plugin in the test pipeline), so these assertions read the
  * comment-stripped SOURCE — accurate for "is this branch declared", blind to
  * "is this branch reached".

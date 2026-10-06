@@ -1,7 +1,7 @@
 ---
 /**
  * @file servicios.astro
- * @description Amenities and features section of the commerce editor (HOS-1080).
+ * @description Amenities and features section of the gastronomy/experience editor (HOS-1080).
  *
  * The only route that fetches the amenity/feature catalogs, scoped to the
  * listing's vertical (SPEC-266). When BOTH come back empty — a genuinely empty
@@ -13,14 +13,14 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({
+const resolution = await resolveListingEditorPage({
 	astro: Astro,
 	sectionSlug: 'servicios',
 	need: ['catalog']
@@ -38,7 +38,7 @@ const { t } = createTranslations(locale);
 const hasCatalogs = resolution.amenities.length > 0 || resolution.features.length > 0;
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
@@ -49,7 +49,7 @@ const hasCatalogs = resolution.amenities.length > 0 || resolution.features.lengt
 >
 	{
 		hasCatalogs ? (
-			<CommerceListingEditor
+			<ListingEditor
 				client:load
 				sectionId="amenities"
 				vertical={vertical}
@@ -60,7 +60,7 @@ const hasCatalogs = resolution.amenities.length > 0 || resolution.features.lengt
 				features={resolution.features}
 			/>
 		) : (
-			<p class="commerce-editor-empty">
+			<p class="listing-editor-empty">
 				{t(
 					'listing.owner.editor.amenities.catalogUnavailable',
 					'No pudimos cargar el listado de servicios y características. Recargá la página para reintentar.',
@@ -68,10 +68,10 @@ const hasCatalogs = resolution.amenities.length > 0 || resolution.features.lengt
 			</p>
 		)
 	}
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>
 
 <style>
-	.commerce-editor-empty {
+	.listing-editor-empty {
 		margin: 0;
 		padding: var(--space-4, 1rem);
 		border: 1px solid var(--border);

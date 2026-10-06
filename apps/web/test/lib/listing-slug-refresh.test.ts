@@ -38,7 +38,7 @@ describe('listing-slug-refresh', () => {
     // HOS-879: the slug is generated from `type` + `name`, so a type-only
     // change needs the same opt-in as a rename does — but ONLY for callers
     // that actually pass `initialType`/`currentType`. A caller that omits
-    // them (e.g. commerce, whose slug is name-only) must keep its exact
+    // them (e.g. gastronomy/experience, whose slug is name-only) must keep its exact
     // pre-HOS-879 behavior.
     it('offers the opt-in for a published listing whose type changed, name untouched', () => {
         expect(
@@ -76,8 +76,8 @@ describe('listing-slug-refresh', () => {
         ).toBe(false);
     });
 
-    it('ignores type entirely when the caller omits initialType/currentType (commerce parity)', () => {
-        // Simulates the commerce call site, which never passes these two
+    it('ignores type entirely when the caller omits initialType/currentType (gastronomy/experience parity)', () => {
+        // Simulates the gastronomy/experience call site, which never passes these two
         // fields because its slug does not depend on `type` at all.
         expect(
             shouldOfferPublishedSlugRefresh({
@@ -295,7 +295,7 @@ describe('isListingPublished (HOS-834)', () => {
     });
 });
 
-describe('the commerce editor states ONE address rule (HOS-834)', () => {
+describe('the gastronomy/experience editor states ONE address rule (HOS-834)', () => {
     // HOS-1080: the notice moved with the name field, onto the basic-info
     // section's own route. It belongs wherever renaming happens and nowhere
     // else — a page that cannot change the name has nothing to say about what
