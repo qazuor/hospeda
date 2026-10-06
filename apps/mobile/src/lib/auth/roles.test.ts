@@ -49,8 +49,8 @@ describe('hasHostRole', () => {
     });
 
     it('returns true when a host role is held alongside non-host roles', () => {
-        // The multi-hat case HOS-296 exists for: USER + COMMERCE_OWNER + HOST.
-        expect(hasHostRole(['USER', 'COMMERCE_OWNER', 'HOST'])).toBe(true);
+        // The multi-hat case HOS-296 exists for: USER + GASTRONOMY_OWNER + HOST.
+        expect(hasHostRole(['USER', 'GASTRONOMY_OWNER', 'HOST'])).toBe(true);
     });
 
     it('returns false for USER alone', () => {
@@ -69,8 +69,8 @@ describe('hasHostRole', () => {
         expect(hasHostRole(['SPONSOR'])).toBe(false);
     });
 
-    it('returns false for COMMERCE_OWNER', () => {
-        expect(hasHostRole(['COMMERCE_OWNER'])).toBe(false);
+    it('returns false for GASTRONOMY_OWNER', () => {
+        expect(hasHostRole(['GASTRONOMY_OWNER'])).toBe(false);
     });
 
     it('returns false for GUEST', () => {
@@ -165,10 +165,10 @@ describe('resolveAuthGroup — HOS-296 AC-9 (a host must not land in (tourist))'
         expect(resolveAuthGroup(input({ roles: ['SUPER_ADMIN'] })).group).toBe('(host)');
     });
 
-    it('returns (host) for a multi-hat host (HOST + COMMERCE_OWNER)', () => {
+    it('returns (host) for a multi-hat host (HOST + GASTRONOMY_OWNER)', () => {
         // OQ-2 is deferred: dual-hat navigation does not exist, and the
         // 1-of-3 mapping resolves a multi-hat user to (host).
-        expect(resolveAuthGroup(input({ roles: ['USER', 'HOST', 'COMMERCE_OWNER'] })).group).toBe(
+        expect(resolveAuthGroup(input({ roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'] })).group).toBe(
             '(host)'
         );
     });
@@ -218,8 +218,8 @@ describe('resolveAuthGroup — authenticated non-host', () => {
         expect(resolveAuthGroup(input({ roles: ['SPONSOR'] })).group).toBe('(tourist)');
     });
 
-    it('returns (tourist) for COMMERCE_OWNER without a host role', () => {
-        expect(resolveAuthGroup(input({ roles: ['USER', 'COMMERCE_OWNER'] })).group).toBe(
+    it('returns (tourist) for GASTRONOMY_OWNER without a host role', () => {
+        expect(resolveAuthGroup(input({ roles: ['USER', 'GASTRONOMY_OWNER'] })).group).toBe(
             '(tourist)'
         );
     });
