@@ -153,7 +153,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'listing.owner',
     // The gastronomy-only editor panels (menu, daily specials, venue events)
     // live under their own namespace since the shared `listing` one was split.
-    'gastronomy.owner.editor',
+    'gastronomy.owner',
     'common.anonymous',
     // Named directly by the review islands' network-failure branch. It is also
     // listed in EXTERNAL_I18N_KEY_PREFIXES, which covers the copy built inside
