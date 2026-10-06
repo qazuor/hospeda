@@ -5,12 +5,12 @@
  * 1. Unit tests for the pure `resolveWhatsAppPayload` gating resolver — the
  *    authoritative fail-closed logic (number leaks NEVER happen for unentitled
  *    callers; the `wa.me` direct link requires both a number and DIRECT).
- * 2. Integration tests for route registration, authentication, and method
- *    restrictions (mirrors the sibling `contact.test.ts`; the mock DB returns no
- *    accommodation, so the gating branches are covered by the unit layer above).
+ * 2. Route tests for registration, authentication, method restrictions, and
+ *    fail-closed response for a non-owner with a stored number.
  */
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { AccommodationService } from '@repo/service-core';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import { resolveWhatsAppPayload } from '../../../../src/routes/accommodation/protected/getWhatsApp.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
@@ -111,6 +111,35 @@ describe('GET /api/v1/protected/accommodations/:id/whatsapp', () => {
             });
             expect(res.status).toBe(401);
         });
+    });
+
+    it('does not reveal a stored number to an authenticated non-owner', async () => {
+        const getById = vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: VALID_UUID,
+                ownerId: 'owner-other',
+                lifecycleState: 'ACTIVE',
+                visibility: 'PUBLIC',
+                contactInfo: { whatsapp: '+5493442123456' }
+            },
+            error: undefined
+        } as Awaited<ReturnType<AccommodationService['getById']>>);
+        try {
+            const res = await app.request(`${BASE}/${VALID_UUID}/whatsapp`, {
+                headers: {
+                    'user-agent': 'vitest',
+                    accept: 'application/json',
+                    'x-mock-actor-role': 'USER',
+                    'x-mock-actor-id': 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+                    'x-mock-actor-permissions': JSON.stringify([])
+                }
+            });
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data).toEqual({ number: null, direct: false, entitled: false });
+        } finally {
+            getById.mockRestore();
+        }
     });
 
     describe('Response Shape', () => {

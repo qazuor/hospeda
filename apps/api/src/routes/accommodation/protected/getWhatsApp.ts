@@ -1,25 +1,7 @@
 /**
- * GET /api/v1/protected/accommodations/:id/whatsapp
- *
- * Returns the accommodation's WhatsApp contact number, gated by the CALLER's
- * (viewer's) billing plan (HOS-19):
- * - `CAN_CONTACT_WHATSAPP_DISPLAY` (owner-basico+; HOS-1224 retired the
- *   tourist-plus tier that used to be its entry point) → the number.
- * - `CAN_CONTACT_WHATSAPP_DIRECT` (tourist-vip+ / owner-pro+) → `direct: true`,
- *   which authorizes the web to render a one-click `wa.me` deep link.
- *
- * Why a dedicated per-user endpoint (not the public detail payload): the public
- * `GET /public/accommodations/:id` response is shared-cached by the CDN (cache
- * key carries no auth), so a per-viewer field there would leak the first
- * viewer's plan result to everyone. This route is on the protected tier
- * (no-store / per-user), so the viewer gate is cache-safe. The number is NEVER
- * returned to an unentitled caller.
- *
- * Uses a manual Hono route (not createProtectedRoute) to avoid the ownership
- * middleware that other protected accommodation routes apply via app.use() —
- * mirrors the sibling `contact.ts` route. The number is a VIEWER capability, so
- * ownership is intentionally NOT required: any authenticated tourist on the
- * right plan may read it.
+ * GET /api/v1/protected/accommodations/:id/whatsapp.
+ * Per-viewer response stays uncached; legacy paid contact data is hidden
+ * during the billing transition.
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
@@ -119,13 +101,11 @@ app.get('/:id/whatsapp', async (c) => {
             ? contactInfo.whatsapp.trim()
             : null;
 
-    // The per-plan WhatsApp gates (CAN_CONTACT_WHATSAPP_DISPLAY / _DIRECT) were
-    // removed with the legacy billing system (HOS-1416): any authenticated
-    // caller now reaches the number, still fail-closed on the number itself.
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — hide the former paid WhatsApp number.
     const payload = resolveWhatsAppPayload({
         rawNumber,
-        entitled: true,
-        canDirect: true
+        entitled: false,
+        canDirect: false
     });
 
     apiLogger.debug(
