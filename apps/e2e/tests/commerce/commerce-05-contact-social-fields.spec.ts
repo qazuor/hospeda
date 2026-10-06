@@ -10,14 +10,14 @@
  *   3. A value entered in the linkedIn input is saved (PATCH succeeds) and
  *      persists (re-opening the editor shows the pre-filled value).
  *
- * Actor: gastro-owner-julieta@local.test (role COMMERCE_OWNER).
+ * Actor: gastro-owner-julieta@local.test (role GASTRONOMY_OWNER).
  * Listing: la-parrilla-del-puerto (gastronomy).
  *
  * Tags: @p0 @commerce
  *
  * Preconditions:
  *   - e2e:seed has run.
- *   - gastro-owner-julieta@local.test exists with role COMMERCE_OWNER.
+ *   - gastro-owner-julieta@local.test exists with role GASTRONOMY_OWNER.
  *   - la-parrilla-del-puerto is seeded and ACTIVE/PUBLIC.
  *   - Web and API servers are running (playwright.config webServer).
  *

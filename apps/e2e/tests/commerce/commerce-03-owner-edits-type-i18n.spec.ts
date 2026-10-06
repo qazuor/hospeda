@@ -2,7 +2,7 @@
  * COMMERCE-03 — Owner edits type select and i18n fields (TranslationPanel),
  * saves, and changes persist on the public ficha (SPEC-253 T-028).
  *
- * Actor: gastro-owner-julieta@local.test (role COMMERCE_OWNER).
+ * Actor: gastro-owner-julieta@local.test (role GASTRONOMY_OWNER).
  *
  * Listings under test:
  *   - la-parrilla-del-puerto (gastronomy, seeded type = PARRILLA)
@@ -23,7 +23,7 @@
  *
  * Preconditions:
  *   - e2e:seed has run (pnpm --filter hospeda-e2e e2e:seed).
- *   - gastro-owner-julieta@local.test exists with role COMMERCE_OWNER.
+ *   - gastro-owner-julieta@local.test exists with role GASTRONOMY_OWNER.
  *   - Listings la-parrilla-del-puerto + excursion-rio-uruguay-concepcion
  *     are ACTIVE/PUBLIC and owned by Julieta.
  *   - Web and API servers are running (playwright.config webServer).
@@ -176,7 +176,7 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         page,
         context
     }) => {
-        // ── Sign in as Julieta (COMMERCE_OWNER) ─────────────────────────────
+        // ── Sign in as Julieta (GASTRONOMY_OWNER) ─────────────────────────────
         const sessionCookie = await signInExistingUser(
             { email: JULIETA.email, password: JULIETA.password },
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
@@ -247,7 +247,7 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         page,
         context
     }) => {
-        // ── Sign in as Julieta (COMMERCE_OWNER) ─────────────────────────────
+        // ── Sign in as Julieta (GASTRONOMY_OWNER) ─────────────────────────────
         const sessionCookie = await signInExistingUser(
             { email: JULIETA.email, password: JULIETA.password },
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
@@ -322,7 +322,7 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         page,
         context
     }) => {
-        // ── Sign in as Julieta (COMMERCE_OWNER) ─────────────────────────────
+        // ── Sign in as Julieta (GASTRONOMY_OWNER) ─────────────────────────────
         const sessionCookie = await signInExistingUser(
             { email: JULIETA.email, password: JULIETA.password },
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
