@@ -197,7 +197,7 @@ const CASES: ReadonlyArray<{
         accepted: buildExperience({ isPriceOnRequest: false, priceUnit: 'per_person' })
     },
     {
-        route: 'commerce/protected/create.ts',
+        route: 'experience/protected/create.ts',
         rule: 'priceUnit is required unless the price is on request',
         schema: ExperienceOwnerCreateInputCheckedSchema,
         violating: buildOwnerExperience({ isPriceOnRequest: false, priceUnit: undefined }),

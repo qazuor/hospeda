@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../../common/audit.schema.js';
-import { CommerceRatingSchema } from '../../../common/commerce-rating.schema.js';
+import { GastronomyRatingSchema } from '../../../common/gastronomy-rating.schema.js';
 import { UserIdSchema } from '../../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../../common/lifecycle.schema.js';
 import { BaseModerationFields } from '../../../common/moderation.schema.js';
@@ -9,7 +9,7 @@ import { BaseModerationFields } from '../../../common/moderation.schema.js';
  * Gastronomy Review Schema — User review for a gastronomy listing.
  *
  * Mirrors the accommodation review subtype pattern but uses
- * {@link CommerceRatingSchema} for the rating breakdown (food / service /
+ * {@link GastronomyRatingSchema} for the rating breakdown (food / service /
  * ambiance / value) instead of accommodation-specific dimensions.
  *
  * Columns match the `gastronomy_reviews` DB table exactly:
@@ -55,13 +55,13 @@ export const GastronomyReviewSchema = z.object({
         .optional(),
 
     /**
-     * Granular rating breakdown using commerce-specific dimensions:
+     * Granular rating breakdown using the dimensions of this vertical:
      * food / service / ambiance / value.
      * Nullish: the reviewer may submit an overall rating without breakdown,
      * so the underlying `rating` column is nullable and reads back NULL when
      * absent — the entity schema must accept both `null` and `undefined`.
      */
-    rating: CommerceRatingSchema.nullish(),
+    rating: GastronomyRatingSchema.nullish(),
 
     /**
      * Computed average of all granular rating categories (0.00–5.00).
@@ -131,7 +131,7 @@ export const GastronomyReviewCreateInputSchema = z.object({
         .number({ message: 'zodError.gastronomy.review.overallRating.required' })
         .min(1, { message: 'zodError.gastronomy.review.overallRating.min' })
         .max(5, { message: 'zodError.gastronomy.review.overallRating.max' }),
-    rating: CommerceRatingSchema.optional(),
+    rating: GastronomyRatingSchema.optional(),
     /** Optional review headline (mirrors `title` DB column). */
     title: z
         .string()

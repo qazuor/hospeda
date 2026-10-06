@@ -11,7 +11,7 @@
  *    Any request that includes a non-empty `_hp` is silently rejected with 200 OK
  *    so bots do not discover the guard.
  * 2. **Custom rate-limit**: 5 submissions per IP per minute, mirroring the
- *    commerce lead intake endpoint (SPEC-239 T-047 US-1).
+ *    gastronomy/experience lead intake endpoint (SPEC-239 T-047 US-1).
  *
  * @module routes/alliance/public/create-lead
  */

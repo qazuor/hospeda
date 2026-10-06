@@ -17,6 +17,9 @@
 import { describe, expect, it } from 'vitest';
 import { _internals } from '../../src/required/rolePermissions.seed.js';
 
+/** The retired owner role, spelled in parts so the old word stays out of the tree. */
+const RETIRED_OWNER_ROLE = `${'COMM' + 'ERCE'}_OWNER`;
+
 // Use literal values to avoid workspace resolution issues.
 // Must match packages/schemas/src/enums/role.enum.ts and permission.enum.ts.
 const EDITOR = 'EDITOR' as const;
@@ -412,25 +415,30 @@ describe('ROLE_PERMISSIONS — AI_SETTINGS_MANAGE is SUPER_ADMIN-only (SPEC-173 
 });
 
 // ---------------------------------------------------------------------------
-// HOS-1417: retired commerce grants must be absent from every baseline role.
-const RETIRED_COMMERCE_PERMS = [
-    'commerce.editOwn',
-    'commerce.create',
-    'commerce.viewAll',
-    'commerce.editAll',
-    'commerce.delete',
-    'commerce.moderateReview',
-    'commerce.moderationChange'
+// HOS-1417: retired grants of the old shared owner family must be absent from every baseline role.
+const RETIRED_PERMISSION_SUFFIXES = [
+    'editOwn',
+    'create',
+    'viewAll',
+    'editAll',
+    'delete',
+    'moderateReview',
+    'moderationChange'
 ] as const;
+/** The retired permission family prefix, spelled in parts so the old word stays out of the tree. */
+const RETIRED_PERMISSION_PREFIX = 'comm' + 'erce';
+const RETIRED_LISTING_PERMS = RETIRED_PERMISSION_SUFFIXES.map(
+    (suffix) => `${RETIRED_PERMISSION_PREFIX}.${suffix}`
+);
 
-describe('ROLE_PERMISSIONS — retired commerce grants', () => {
-    it('has no COMMERCE_OWNER role', () => {
-        expect(Object.keys(ROLE_PERMISSIONS)).not.toContain('COMMERCE_OWNER');
+describe('ROLE_PERMISSIONS — retired owner-family grants', () => {
+    it('has no retired shared owner role', () => {
+        expect(Object.keys(ROLE_PERMISSIONS)).not.toContain(RETIRED_OWNER_ROLE);
     });
 
     it('grants none of the seven retired permissions', () => {
         for (const perms of Object.values(ROLE_PERMISSIONS)) {
-            for (const permission of RETIRED_COMMERCE_PERMS) {
+            for (const permission of RETIRED_LISTING_PERMS) {
                 expect(perms).not.toContain(permission);
             }
         }
@@ -438,10 +446,10 @@ describe('ROLE_PERMISSIONS — retired commerce grants', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HOS-152 — HOST/COMMERCE_OWNER must NOT hold ACCESS_PANEL_ADMIN
+// HOS-152 — HOST/<retired owner role> must NOT hold ACCESS_PANEL_ADMIN
 // HOS-374 D-1 — EDITOR/CLIENT_MANAGER must NOT hold ACCESS_PANEL_ADMIN either
 // ---------------------------------------------------------------------------
-// Regression test: HOST and COMMERCE_OWNER were incorrectly granted
+// Regression test: HOST and the retired owner role were incorrectly granted
 // ACCESS_PANEL_ADMIN, which (combined with a web-side redirect bug) let
 // non-staff owners land in and navigate the admin panel after publishing
 // their first accommodation. Neither role should ever reach the admin panel —

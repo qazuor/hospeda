@@ -2,7 +2,7 @@
  * @file experience-consolidated.config.ts
  * Consolidated section configuration for the experience entity (SPEC-240 T-028).
  *
- * Assembles the shared commerce sections (identity + operational) and injects
+ * Assembles the shared listing sections (identity + operational) and injects
  * an experience-specific section in between that covers:
  *   - type (ExperienceTypeEnum SELECT)
  *   - priceFrom (NUMBER, optional — base price in centavos)
@@ -33,10 +33,7 @@ import type {
     ConsolidatedEntityConfig,
     ConsolidatedSectionConfig
 } from '@/features/accommodations/types/consolidated-config.types';
-import {
-    createCommerceIdentitySection,
-    createCommerceOperationalSection
-} from '@/features/commerce';
+import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
 
 // ---------------------------------------------------------------------------
 // Experience-specific field options
@@ -191,7 +188,7 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
  * meeting point in words and never pin it. Null is "no coordinate", not an
  * error — the columns are nullable all the way down.
  *
- * The permissions are the ordinary commerce ones. There is NO entitlement gate
+ * The permissions are the ordinary listing ones. There is NO entitlement gate
  * here and there must not be one: the owner decided (2026-09-01) that the
  * meeting point is ficha data available from the basic tier. Only the map that
  * draws these coordinates is paid (HOS-1049).
@@ -291,7 +288,7 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
  * owner editor, because staff correcting a value are reading the stored number
  * and a split control would hide it. The hint says so.
  *
- * The permissions are the ordinary commerce ones. There is NO entitlement gate
+ * The permissions are the ordinary listing ones. There is NO entitlement gate
  * here and there must not be one: the owner decided (2026-09-01) that all of
  * this is ficha data available from the basic tier.
  *
@@ -370,11 +367,11 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
  * Creates the complete consolidated configuration for the experience entity.
  *
  * Section order:
- *  1. Commerce identity section (shared — name, slug, summary, description, …)
+ *  1. Listing identity section (shared — name, slug, summary, description, …)
  *  2. Experience-specific section (type, priceUnit, priceFrom, isPriceOnRequest)
  *  3. Meeting-point section (HOS-1048 — meetingPoint + optional lat/long)
  *  4. Practical-details section (HOS-898 / HOS-1047 / HOS-1056)
- *  5. Commerce operational section (shared — contact, social, media, hours, …)
+ *  5. Listing operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
  * (view/edit flow).
@@ -386,11 +383,11 @@ export const createExperienceConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedEntityConfig => ({
     sections: [
-        createCommerceIdentitySection('experience'),
+        createListingIdentitySection('experience'),
         createExperienceSpecificSection(),
         createMeetingPointSection(),
         createPracticalDetailsSection(),
-        createCommerceOperationalSection('experience')
+        createListingOperationalSection('experience')
     ],
     metadata: {
         title: t('admin-entities.entities.experience.singular'),

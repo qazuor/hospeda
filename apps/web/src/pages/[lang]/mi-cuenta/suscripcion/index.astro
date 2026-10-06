@@ -16,7 +16,6 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
-import { toCommercePlanOption } from '@/lib/commerce/plan-options';
 import { userApi } from '@/lib/api/endpoints-protected';
 import {
 	type AccommodationSubscriptionReading,
@@ -41,15 +40,15 @@ const { t } = createTranslations(locale);
  * HOS-259 / HOS-689 / HOS-1321: `?domain=<domain>` scopes the dashboard to one
  * of the caller's (up to four) independent subscriptions — accommodation,
  * gastronomy, experience, tourist (HOS-688 retired the old binary
- * `'accommodation' | 'commerce'` union: commerce billing is per-VERTICAL
- * now, so `'commerce'` is no longer a real subscription scope). Used by the
- * commerce SUSPENDED recover CTA (`CommerceListingActions.client.tsx`,
+ * accommodation/umbrella union: gastronomy/experience billing is per-VERTICAL
+ * now, so the old shared umbrella is no longer a real subscription scope). Used by the
+ * gastronomy/experience SUSPENDED recover CTA (`ListingActions.client.tsx`,
  * `?domain=<listing.vertical>`) for an owner who holds several subscriptions
  * under one billing customer.
  *
  * Server-side pre-check: which domains does the caller actually hold a
  * subscription in? Drives two things — the default domain when no/invalid
- * `?domain=` is given (HOS-689 AC-21: a commerce-only owner must land on
+ * `?domain=` is given (HOS-689 AC-21: a gastronomy/experience-only owner must land on
  * THEIR subscription, not an accommodation "no subscription" empty state),
  * and the domain switcher rendered below when the owner holds more than one.
  *
@@ -170,15 +169,15 @@ const islandUser = {
  * This page resolved `productDomain` fifty lines up and then fetched the plan
  * catalogue with NO `?domain=` at all, so the endpoint served its
  * `accommodation` default — for all three dashboards. The category was then
- * picked by ROLE, and a commerce owner has no accommodation nav access, so it
+ * picked by ROLE, and a gastronomy/experience owner has no accommodation nav access, so it
  * resolved to `'tourist'`: the "Cambiar plan" dialog of a $30.000 gastronomy
  * subscription offered `tourist-free` ($0) and `tourist-vip` ($15.000), both
  * labelled as upgrades. Choosing either scheduled a real downgrade of a paid
- * commerce subscription onto a tourist plan.
+ * gastronomy/experience subscription onto a tourist plan.
  *
  * The role-based split is still right for the accommodation dashboard, and only
  * there: a host sees owner plans, a tourist sees tourist plans (BETA-173,
- * matching the "Ver planes" CTA of BETA-165). It has no meaning in a commerce
+ * matching the "Ver planes" CTA of BETA-165). It has no meaning in a gastronomy/experience
  * vertical, whose tiers are all `category: 'owner'` and are separated from every
  * other catalogue by their product domain instead.
  *
@@ -191,11 +190,11 @@ const islandUser = {
  * with NO tourist tiers in it: `filterPlansByCategory(…, 'tourist')` yields `[]`
  * and the tab renders no "Cambiar plan" button at all. This replaced a
  * `productDomain !== 'accommodation'` negation, which had the opposite failure —
- * it classified the tourist tab as a COMMERCE vertical and posted to
- * `/protected/commerce/tourist/change-plan`.
+ * it classified the tourist tab as a gastronomy/experience vertical, which has
+ * no plan-change flow of its own.
  */
 const planSource = resolveDashboardPlanSource({ domain: productDomain });
-const isCommerceDomain = planSource.flow === 'commerce';
+const hasNoPlanChangeFlow = planSource.flow === 'none';
 /**
  * The tourist dashboard PINS its category instead of deferring to roles: the
  * owner's 2026-09-10 ruling is that a `tourist-vip` holder's "Cambiar plan"
@@ -232,24 +231,12 @@ const canOfferPlanChange = !planChangeWouldResolveAnotherSubscription({
 	accommodationSubscription
 });
 
-/** Accommodation-catalogue tiers for `PlanChangeFlow` — empty on a commerce dashboard. */
+/** Accommodation-catalogue tiers for `PlanChangeFlow` — empty on a gastronomy/experience dashboard. */
 const availablePlans =
-	!isCommerceDomain && canOfferPlanChange && plansResult.ok
+	!hasNoPlanChangeFlow && canOfferPlanChange && plansResult.ok
 		? filterPlansByCategory(plansResult.plans, planCategory)
 		: [];
 
-/**
- * This vertical's tiers for `CommercePlanChange` — empty on the accommodation
- * dashboard.
- *
- * Selected exactly the way `mi-cuenta/comercio/index.astro` selects them (the
- * other surface that mounts this component), so the two cannot offer different
- * catalogues for the same vertical.
- */
-const commercePlans =
-	isCommerceDomain && plansResult.ok
-		? filterPlansByCategory(plansResult.plans, 'owner').map(toCommercePlanOption)
-		: [];
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
@@ -292,7 +279,6 @@ const commercePlans =
 		locale={locale}
 		user={islandUser}
 		plans={availablePlans}
-		commercePlans={commercePlans}
 		productDomain={productDomain}
 		client:load
 	/>

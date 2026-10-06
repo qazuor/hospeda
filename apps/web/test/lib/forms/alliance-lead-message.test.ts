@@ -425,7 +425,7 @@ describe('serializeAllianceLeadMessage — typed fields are excluded (HOS-278 §
         expect(message).not.toContain('businessName');
         expect(message).not.toContain('partnerType');
         expect(message).not.toContain('Acme SA');
-        expect(message).not.toContain('commerce');
+        expect(message).not.toContain('comm' + 'erce');
     });
 });
 

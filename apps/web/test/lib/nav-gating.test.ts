@@ -1,14 +1,11 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
-import {
-    ROLES_WITH_ACCOMMODATIONS_NAV,
-    ROLES_WITH_COMMERCE_NAV
-} from '../../src/lib/account-roles';
+import { ROLES_WITH_ACCOMMODATIONS_NAV, ROLES_WITH_LISTING_NAV } from '../../src/lib/account-roles';
 import {
     hasAccommodationsNavAccess,
-    hasCommerceNavAccess,
     hasEventsNavAccess,
+    hasListingNavAccess,
     hasPostsNavAccess,
     isDoorVisible,
     isVisibleByPermissions,
@@ -25,7 +22,7 @@ describe('PERMISSION_ROLE_MAP', () => {
         expect(new Set(mapped)).toEqual(ROLES_WITH_ACCOMMODATIONS_NAV);
     });
 
-    it('mirrors ROLES_WITH_COMMERCE_NAV for GASTRONOMY_EDIT_OWN', () => {
+    it('mirrors ROLES_WITH_LISTING_NAV for GASTRONOMY_EDIT_OWN', () => {
         const mapped = PERMISSION_ROLE_MAP[PermissionEnum.GASTRONOMY_EDIT_OWN];
         expect(mapped).toBeDefined();
         expect(
@@ -33,7 +30,7 @@ describe('PERMISSION_ROLE_MAP', () => {
                 ...(mapped ?? []),
                 ...(PERMISSION_ROLE_MAP[PermissionEnum.EXPERIENCE_EDIT_OWN] ?? [])
             ])
-        ).toEqual(ROLES_WITH_COMMERCE_NAV);
+        ).toEqual(ROLES_WITH_LISTING_NAV);
     });
 
     it('grants a navigation any-of to either vertical and denies unrelated roles', () => {
@@ -51,7 +48,7 @@ describe('PERMISSION_ROLE_MAP', () => {
         expect(isVisibleByRoles(node, [RoleEnum.HOST])).toBe(false);
     });
 
-    it('keeps the two role sets distinct (HOST is not a commerce role, GASTRONOMY_OWNER is not a host role)', () => {
+    it('keeps the two role sets distinct (HOST is not a gastronomy/experience role, GASTRONOMY_OWNER is not a host role)', () => {
         expect(PERMISSION_ROLE_MAP[PermissionEnum.GASTRONOMY_EDIT_OWN]?.has(RoleEnum.HOST)).toBe(
             false
         );
@@ -226,11 +223,11 @@ describe('isVisibleByRoles (server SSR, approximate evaluation)', () => {
 
     it('is visible for platform staff (ADMIN, SUPER_ADMIN) on both gated permissions', () => {
         const hostNode = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
-        const commerceNode = { requiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN };
+        const listingNode = { requiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN };
         expect(isVisibleByRoles(hostNode, [RoleEnum.ADMIN])).toBe(true);
-        expect(isVisibleByRoles(commerceNode, [RoleEnum.ADMIN])).toBe(true);
+        expect(isVisibleByRoles(listingNode, [RoleEnum.ADMIN])).toBe(true);
         expect(isVisibleByRoles(hostNode, [RoleEnum.SUPER_ADMIN])).toBe(true);
-        expect(isVisibleByRoles(commerceNode, [RoleEnum.SUPER_ADMIN])).toBe(true);
+        expect(isVisibleByRoles(listingNode, [RoleEnum.SUPER_ADMIN])).toBe(true);
     });
 
     it('is hidden for an empty role set (guest / unresolved) on a gated node', () => {
@@ -250,21 +247,21 @@ describe('AC-1 — HOST + GASTRONOMY_OWNER sees BOTH nav groups (HOS-296)', () =
     // construction: whichever hat the column happened to hold won, and the
     // other group vanished from the sidebar entirely.
     const hostNode = { requiredPermission: PermissionEnum.ACCOMMODATION_CREATE };
-    const commerceNode = { requiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN };
+    const listingNode = { requiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN };
     const multiHatRoles = [RoleEnum.USER, RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER];
 
     it('shows the accommodations/host group', () => {
         expect(isVisibleByRoles(hostNode, multiHatRoles)).toBe(true);
     });
 
-    it('shows the commerce group', () => {
-        expect(isVisibleByRoles(commerceNode, multiHatRoles)).toBe(true);
+    it('shows the listings group', () => {
+        expect(isVisibleByRoles(listingNode, multiHatRoles)).toBe(true);
     });
 
     it('shows both regardless of the order the roles arrive in', () => {
         const reversed = [...multiHatRoles].reverse();
         expect(isVisibleByRoles(hostNode, reversed)).toBe(true);
-        expect(isVisibleByRoles(commerceNode, reversed)).toBe(true);
+        expect(isVisibleByRoles(listingNode, reversed)).toBe(true);
     });
 
     it('still hides a group neither hat grants (POST_CREATE stays editor-only)', () => {
@@ -278,7 +275,7 @@ describe('AC-1 — HOST + GASTRONOMY_OWNER sees BOTH nav groups (HOS-296)', () =
         // The `/mi-cuenta/*` page guards call these, so they must agree with
         // the sidebar evaluator above (HOS-296 §6.5: one gating mechanism).
         expect(hasAccommodationsNavAccess({ roles: multiHatRoles })).toBe(true);
-        expect(hasCommerceNavAccess({ roles: multiHatRoles })).toBe(true);
+        expect(hasListingNavAccess({ roles: multiHatRoles })).toBe(true);
     });
 });
 
@@ -392,7 +389,7 @@ describe('isDoorVisible (HOS-131 §6.3 door lifecycle)', () => {
     const listingDoor = {
         options: [
             { id: 'accommodation', acquiredPermission: PermissionEnum.ACCOMMODATION_CREATE },
-            { id: 'commerce', acquiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN }
+            { id: 'comercio-listings', acquiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN }
         ]
     };
 

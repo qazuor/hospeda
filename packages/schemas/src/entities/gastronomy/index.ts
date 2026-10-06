@@ -1,5 +1,5 @@
 /**
- * Gastronomy entity schemas — all schema files for the Gastronomía commerce listing.
+ * Gastronomy entity schemas — all schema files for the Gastronomía listing.
  *
  * Mirrors the accommodation barrel: each sub-file has a single responsibility.
  */

@@ -441,10 +441,3 @@ export type BaseQuery = z.infer<typeof BaseQuerySchema>;
 export const ExtendedQuerySchema =
     BaseQuerySchema.merge(DateRangeQuerySchema).merge(LocationQuerySchema);
 export type ExtendedQuery = z.infer<typeof ExtendedQuerySchema>;
-
-/**
- * Commerce query schema with price filtering
- * For entities related to commerce and pricing
- */
-export const CommerceQuerySchema = ExtendedQuerySchema.merge(PriceRangeQuerySchema);
-export type CommerceQuery = z.infer<typeof CommerceQuerySchema>;

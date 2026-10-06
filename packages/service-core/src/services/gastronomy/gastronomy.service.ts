@@ -1,11 +1,11 @@
 /**
  * gastronomy.service.ts
  *
- * Concrete service for gastronomy commerce listings (SPEC-239 T-035 / T-036).
+ * Concrete service for gastronomy listings (SPEC-239 T-035 / T-036).
  *
  * ## Architecture
  *
- * `GastronomyService` extends {@link BaseCommerceListingService} and satisfies its
+ * `GastronomyService` extends {@link BaseListingService} and satisfies its
  * abstract contract by wiring the gastronomy-specific DB models.  All shared
  * behaviors (slug auto-generation, junction sync, owner-scoping, rating recompute,
  * destination validation) are inherited from the base — zero shared logic is
@@ -65,12 +65,9 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
-import type {
-    CommerceCatalogModel,
-    CommerceJunctionModel
-} from '../commerce/base-commerce-listing.service';
-import { BaseCommerceListingService } from '../commerce/base-commerce-listing.service';
 import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
+import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
+import { BaseListingService } from '../listing/base-listing.service';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import {
     attachComposedGastronomyMedia,
@@ -97,9 +94,9 @@ import {
 } from './gastronomy-qr';
 
 /**
- * Business-logic service for gastronomy commerce listings.
+ * Business-logic service for gastronomy listings.
  *
- * Extends {@link BaseCommerceListingService} with gastronomy-specific model
+ * Extends {@link BaseListingService} with gastronomy-specific model
  * wiring and operational-update gate.  All shared lifecycle behaviors (slug,
  * junction sync, owner-scoping, rating recompute) are provided by the base class.
  *
@@ -123,7 +120,7 @@ import {
  * );
  * ```
  */
-export class GastronomyService extends BaseCommerceListingService<
+export class GastronomyService extends BaseListingService<
     Gastronomy,
     GastronomyModel,
     typeof GastronomyAdminCreateInputSchema,
@@ -144,13 +141,13 @@ export class GastronomyService extends BaseCommerceListingService<
     // -----------------------------------------------------------------------
 
     /** @internal Overrideable in unit tests. */
-    private _amenityModelInstance: CommerceCatalogModel;
+    private _amenityModelInstance: ListingCatalogModel;
     /** @internal Overrideable in unit tests. */
-    private _featureModelInstance: CommerceCatalogModel;
+    private _featureModelInstance: ListingCatalogModel;
     /** @internal Overrideable in unit tests. */
-    private _amenityJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
+    private _amenityJunctionModelInstance: ListingJunctionModel<Record<string, unknown>>;
     /** @internal Overrideable in unit tests. */
-    private _featureJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
+    private _featureJunctionModelInstance: ListingJunctionModel<Record<string, unknown>>;
     /**
      * Relational media model used by the read-composition hooks (HOS-372).
      * @internal Overrideable in unit tests.
@@ -178,12 +175,12 @@ export class GastronomyService extends BaseCommerceListingService<
         this.adminSearchSchema = GastronomyAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
-        // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic CommerceJunctionModel contract
+        // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic ListingJunctionModel contract
         this._amenityJunctionModelInstance =
-            rGastronomyAmenityModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
-        // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic CommerceJunctionModel contract
+            rGastronomyAmenityModel as unknown as ListingJunctionModel<Record<string, unknown>>;
+        // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic ListingJunctionModel contract
         this._featureJunctionModelInstance =
-            rGastronomyFeatureModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
+            rGastronomyFeatureModel as unknown as ListingJunctionModel<Record<string, unknown>>;
         this.qrCodeService = qrCodeService ?? new QrCodeService(config);
     }
 
@@ -193,7 +190,7 @@ export class GastronomyService extends BaseCommerceListingService<
 
     /**
      * FK column name on junction tables that references this entity.
-     * Used by `syncCommerceAmenityJunction` / `syncCommerceFeatureJunction`.
+     * Used by `syncListingAmenityJunction` / `syncListingFeatureJunction`.
      */
     protected override get _entityFkColumn(): string {
         return 'gastronomyId';
@@ -210,23 +207,23 @@ export class GastronomyService extends BaseCommerceListingService<
         return 'gastronomy';
     }
 
-    /** Gastronomy-amenity junction model (satisfies {@link CommerceJunctionModel}). */
-    protected override get _amenityJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
+    /** Gastronomy-amenity junction model (satisfies {@link ListingJunctionModel}). */
+    protected override get _amenityJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._amenityJunctionModelInstance;
     }
 
     /** Gastronomy-feature junction model. */
-    protected override get _featureJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
+    protected override get _featureJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._featureJunctionModelInstance;
     }
 
     /** Amenity catalog model — validates supplied amenity IDs before sync. */
-    protected override get _amenityModel(): CommerceCatalogModel {
+    protected override get _amenityModel(): ListingCatalogModel {
         return this._amenityModelInstance;
     }
 
     /** Feature catalog model — validates supplied feature IDs before sync. */
-    protected override get _featureModel(): CommerceCatalogModel {
+    protected override get _featureModel(): ListingCatalogModel {
         return this._featureModelInstance;
     }
 
@@ -265,7 +262,7 @@ export class GastronomyService extends BaseCommerceListingService<
     //
     // WITHOUT this wiring the relational rows are written but never read: the
     // owner persists photos successfully and they appear nowhere. Any new
-    // commerce vertical must wire the same three hooks.
+    // listing vertical must wire the same three hooks.
     //
     // Composition is batched (`findByGastronomies`, one IN query) so a list
     // page does not go N+1.
@@ -390,7 +387,7 @@ export class GastronomyService extends BaseCommerceListingService<
 
     /**
      * Admin-list gate: verifies admin-panel access (base class) then checks
-     * entity-specific commerce permission.
+     * entity-specific listing permission.
      *
      * @param actor - The actor performing the action.
      * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.

@@ -26,7 +26,7 @@
  * that keeps owner-private fields out of the document is done explicitly, by
  * parsing the entity through `GastronomyBrochureSourceSchema`, whose every key
  * is proven to exist in `GastronomyPublicSchema` by
- * `test/services/commerce-brochure.test.ts`.
+ * `test/services/listing-brochure.test.ts`.
  *
  * @module routes/gastronomy/protected/brochure
  */
@@ -46,9 +46,9 @@ import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
-import { buildGastronomyBrochureContent } from '../../../services/commerce-brochure/brochure-content';
-import { buildBrochureResponse } from '../../../services/commerce-brochure/brochure-response';
-import { GastronomyBrochureSourceSchema } from '../../../services/commerce-brochure/brochure-source';
+import { buildGastronomyBrochureContent } from '../../../services/listing-brochure/brochure-content';
+import { buildBrochureResponse } from '../../../services/listing-brochure/brochure-response';
+import { GastronomyBrochureSourceSchema } from '../../../services/listing-brochure/brochure-source';
 import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
@@ -131,7 +131,7 @@ export async function handleGetGastronomyBrochure(
  *
  * Premium, in both verticals (owner decision, 2026-09-01). The grant lives on
  * each vertical's premium plan row rather than in
- * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, because that map is the floor EVERY
+ * `the retired per-vertical entitlement-key map`, because that map is the floor EVERY
  * tier of the vertical gets.
  */
 export const protectedGetGastronomyBrochureRoute = createProtectedRoute({

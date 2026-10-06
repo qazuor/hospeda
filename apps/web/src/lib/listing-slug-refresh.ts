@@ -46,7 +46,7 @@ interface SlugRefreshChangeInput {
      * is just as capable of invalidating a published slug as a rename is.
      * Both `initialType`/`currentType` are optional and only participate in
      * the check when BOTH are provided — a caller whose listing kind never
-     * feeds `type` into its slug (e.g. commerce listings, whose slug is
+     * feeds `type` into its slug (e.g. listings, whose slug is
      * name-only) can simply omit them and keep today's name-only behavior.
      */
     readonly initialType?: string | null;

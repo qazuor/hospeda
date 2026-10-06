@@ -1,14 +1,14 @@
 ---
 /**
  * @file mi-cuenta/comercio/index.astro
- * @description Commerce owner self-service listing index (SPEC-249 Part A,
+ * @description Gastronomy/experience owner self-service listing index (SPEC-249 Part A,
  * extended in HOS-166 PR-C with the create CTA and the per-listing state
  * machine — badge, completeness checklist, and publish+pay CTA).
  * Lists the authenticated GASTRONOMY_OWNER's own listings across both verticals
  * (gastronomy + experiences) and deep-links each to its operational editor.
  *
  * Auth: middleware protects /mi-cuenta/* (session required). This page adds a
- * role gate so only commerce owners (and staff) reach it.
+ * role gate so only gastronomy/experience owners (and staff) reach it.
  *
  * @route     /[lang]/mi-cuenta/comercio/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
@@ -16,22 +16,11 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
-import { CommerceListingActions } from '@/components/commerce/CommerceListingActions.client';
-import { CommercePlanChange } from '@/components/commerce/CommercePlanChange.client';
-import { CommerceViewsWidget } from '@/components/commerce/CommerceViewsWidget.client';
-import { GastronomyMenuQrWidget } from '@/components/commerce/GastronomyMenuQrWidget.client';
-import { hasCommerceNavAccess } from '@/lib/nav-gating';
-import type { CommerceVertical } from '@/lib/commerce/owner-listings';
-import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
-import {
-    fetchCommerceTrialVerdictByVertical,
-    readTrialVerdict
-} from '@/lib/commerce/trial-verdict';
-import { fetchCommerceUsageByVertical } from '@/lib/commerce/usage-badge';
-import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
-import { toCommercePlanOption, type CommercePlanOption } from '@/lib/commerce/plan-options';
-import { userApi } from '@/lib/api/endpoints-protected';
+import { ListingActions } from '@/components/listing/ListingActions.client';
+import { ListingViewsWidget } from '@/components/listing/ListingViewsWidget.client';
+import { GastronomyMenuQrWidget } from '@/components/gastronomy/GastronomyMenuQrWidget.client';
+import { hasListingNavAccess } from '@/lib/nav-gating';
+import { fetchOwnerListingsWithState } from '@/lib/listing/owner-listings';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -39,17 +28,17 @@ import { createTranslations } from '@/lib/i18n';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t, tPlural } = createTranslations(locale);
+const { t } = createTranslations(locale);
 
 const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
 
-// Role gate: only commerce owners (and staff) may manage commerce listings.
+// Role gate: only gastronomy/experience owners (and staff) may manage listings.
 // HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-// so a GASTRONOMY_OWNER who is ALSO a HOST keeps commerce access (AC-1).
-if (!hasCommerceNavAccess({ roles: user.roles })) {
+// so a GASTRONOMY_OWNER who is ALSO a HOST keeps gastronomy/experience access (AC-1).
+if (!hasListingNavAccess({ roles: user.roles })) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
 }
 
@@ -57,79 +46,7 @@ const title = t('listing.owner.list.title', 'Mi comercio');
 const subtitle = t('listing.owner.list.subtitle', '');
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const listings = await fetchOwnerCommerceListingsWithState({ cookieHeader });
-
-// ── HOS-689 item 1: one usage/limit badge PER VERTICAL the owner actually
-// holds a listing in. Two verticals are two INDEPENDENT readings — never a
-// merged number (§6.8 already refused a pooled cap for the same reason). ──
-const verticalsWithListings = [...new Set(listings.map((listing) => listing.vertical))];
-const usageByVertical = await fetchCommerceUsageByVertical({
-    verticals: verticalsWithListings,
-    cookieHeader
-});
-
-// HOS-689 item 4: a resolved (non-null) usage reading for a vertical IS
-// proof the owner already holds a subscription there (see
-// `fetchCommerceVerticalUsage`'s doc) — the signal that decides whether a
-// listing's CTA is "Publicar y pagar" (first listing, real checkout) or a
-// plain "Publicar" (later listings, silently attached, no payment — HOS-688
-// §6.8 branch 2).
-const verticalsWithSubscription = new Set<CommerceVertical>(
-    verticalsWithListings.filter((vertical) => usageByVertical.get(vertical) !== null)
-);
-
-// HOS-1184: what publishing would actually DO, per vertical — which the usage
-// reading above cannot answer any more. Its `null` means "no subscription", and
-// since commerce got its trial back that covers two opposite outcomes: starting
-// a free trial, or opening a checkout. The set above is still exactly right for
-// the three other questions it answers on this page (the plan-change CTA and
-// the tier catalogue), so it stays; only the publish CTA moved off it.
-const trialVerdictByVertical = await fetchCommerceTrialVerdictByVertical({
-    verticals: verticalsWithListings,
-    cookieHeader
-});
-
-// HOS-1008: gates the payer-email confirmation screen on the commerce
-// checkout. Same source and same fail-closed default the pricing pages use for
-// `PlanPurchaseButton` — on any fetch error this resolves `false`, which is
-// the flag being off, which is today's behavior.
-// `newPaidSignupsFrozen`: an admin paused new self-service paid signups — a
-// listing whose publish would START a subscription shows a "paused" notice.
-const { ownPreapprovalEnabled, newPaidSignupsFrozen } = await fetchCheckoutConfig();
-
-// ── HOS-1119: the tier catalogue, ONE fetch per vertical the owner actually
-// holds a listing in (never per listing) — feeds BOTH the checkout-time
-// picker (`CommerceListingActions.availablePlans`, only relevant for a
-// vertical with no subscription yet) and the tier-upgrade CTA
-// (`CommercePlanChange`, only relevant for a vertical that already has one).
-// On a failed fetch this degrades to `[]` for that vertical — with 0 or 1
-// tiers neither the picker nor the upgrade CTA render, so checkout and the
-// page both behave exactly as they did before HOS-1119. ──
-const plansByVertical = new Map<CommerceVertical, readonly CommercePlanOption[]>(
-    await Promise.all(
-        verticalsWithListings.map(async (vertical) => {
-            const result = await fetchPublicPlans({ domain: vertical });
-            const plans = result.ok
-                ? filterPlansByCategory(result.plans, 'owner').map(toCommercePlanOption)
-                : [];
-            return [vertical, plans] as const;
-        })
-    )
-);
-
-// One subscription read per vertical the owner already subscribes to —
-// needed for `CommercePlanChange`'s current-plan slug + display name. Kept
-// separate from `usageByVertical` (which only proves a subscription EXISTS,
-// via a non-null reading) because that endpoint does not carry the plan
-// itself.
-const subscriptionByVertical = new Map(
-    await Promise.all(
-        [...verticalsWithSubscription].map(async (vertical) => {
-            const result = await userApi.getSubscription({ productDomain: vertical, cookieHeader });
-            return [vertical, result.ok ? result.data.subscription : null] as const;
-        })
-    )
-);
+const listings = await fetchOwnerListingsWithState({ cookieHeader });
 
 // HOS-1156 retired `/mi-cuenta/comercio/nuevo/`, the vertical picker this
 // button used to open. Its replacement for a SIGNED-IN owner is the publish hub,
@@ -138,15 +55,8 @@ const subscriptionByVertical = new Map(
 //
 // The retired URL's own 301 goes to `/publicar/` per D-6; that is the right
 // landing for an old inbound link and the wrong one for this button, which a
-// commerce owner presses expecting to choose a commerce vertical.
+// gastronomy/experience owner presses expecting to choose a vertical.
 const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
-const addonsUrl = buildUrl({ locale, path: 'mi-cuenta/addons' });
-
-/** Usage badges to render — pre-filtered so the template stays a plain `.map()`. */
-const usageBadges = verticalsWithListings.flatMap((vertical) => {
-    const usage = usageByVertical.get(vertical);
-    return usage && usage.maxAllowed > 0 ? [{ vertical, usage }] : [];
-});
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
@@ -160,66 +70,11 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
         </a>
     </div>
 
-    {usageBadges.length > 0 && (
-        <div class="mc-usage-row">
-            {usageBadges.map(({ vertical, usage }) => (
-                <div class={`mc-usage mc-usage--${usage.threshold}`} role="status">
-                    <span class="mc-usage__label">
-                        {tPlural(`listing.owner.list.usage.${vertical}.label`, usage.maxAllowed, {
-                            current: usage.currentUsage,
-                            max: usage.maxAllowed
-                        })}
-                    </span>
-                    {usage.threshold !== 'ok' && (
-                        <a href={addonsUrl} class="mc-usage__upgrade">
-                            {t('listing.owner.list.usage.upgrade', 'Ampliar cupo')}
-                        </a>
-                    )}
-                </div>
-            ))}
-        </div>
-    )}
-
-    {
-        /*
-         * HOS-1119: one "cambiar de plan" CTA per vertical the owner already
-         * subscribes to. `CommercePlanChange` itself renders nothing when
-         * there is no OTHER tier to move to (a single-tier vertical, or a
-         * catalogue whose every other tier costs exactly the same) — so this
-         * loop can render it unconditionally for every subscribed vertical
-         * without duplicating that check here.
-         *
-         * HOS-1122 passes `currentPeriodEnd` because a downgrade takes effect
-         * THEN, not now, and a screen that does not say when leaves the owner
-         * believing their plan already changed. `null` is a legitimate value
-         * here (the subscription read can omit it) and the component degrades
-         * to date-less copy rather than guessing.
-         */
-        [...verticalsWithSubscription].map((vertical) => {
-            const subscription = subscriptionByVertical.get(vertical);
-            const plans = plansByVertical.get(vertical) ?? [];
-            if (!subscription) {
-                return null;
-            }
-            return (
-                <CommercePlanChange
-                    client:visible
-                    vertical={vertical}
-                    currentPlanSlug={subscription.planSlug}
-                    currentPlanName={subscription.planName}
-                    plans={plans}
-                    currentPeriodEnd={subscription.currentPeriodEnd}
-                    locale={locale}
-                />
-            );
-        })
-    }
-
     {/* HOS-788: welcome-tour anchor shared by the gastronomy and experience
         welcome tours — both verticals get `VIEW_BASIC_STATS`. See
         `src/config/tours.ts`. */}
-    <div data-tour="commerce-views">
-        <CommerceViewsWidget
+    <div data-tour="listing-views">
+        <ListingViewsWidget
             client:visible
             locale={locale}
             listings={listings.map((listing) => ({
@@ -247,7 +102,7 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
 
     {/* HOS-788: welcome-tour anchor for the listings list, shared by the
         gastronomy and experience welcome tours. */}
-    <div data-tour="commerce-listings">
+    <div data-tour="listings">
     <AccountSectionCard>
         {
             listings.length === 0 ? (
@@ -276,15 +131,10 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
                                 </span>
                             </div>
 
-                            <CommerceListingActions
+                            <ListingActions
                                 client:visible
                                 listing={listing}
                                 locale={locale}
-                                trialVerdict={readTrialVerdict(trialVerdictByVertical, listing.vertical).verdict}
-                                trialDays={readTrialVerdict(trialVerdictByVertical, listing.vertical).trialDays}
-                                ownPreapprovalEnabled={ownPreapprovalEnabled}
-                                newPaidSignupsFrozen={newPaidSignupsFrozen}
-                                availablePlans={plansByVertical.get(listing.vertical) ?? []}
                             />
 
                             <a
@@ -408,69 +258,5 @@ const usageBadges = verticalsWithListings.flatMap((vertical) => {
 
     .mc-list__edit:hover {
         text-decoration: underline;
-    }
-
-    /* ── HOS-689 item 1: per-vertical usage/limit badges ── */
-    .mc-usage-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-3, 0.75rem);
-        margin-bottom: var(--space-6, 1.5rem);
-    }
-
-    .mc-usage {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-3, 0.75rem);
-        padding: 0.5rem 1rem;
-        border-radius: var(--radius-pill, 9999px);
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        font-weight: 500;
-        background-color: var(--surface-warm, oklch(0.96 0.02 60));
-        color: var(--core-foreground);
-        border: 1px solid var(--border);
-    }
-
-    .mc-usage--ok {
-        background-color: oklch(0.95 0.04 145);
-        color: oklch(0.35 0.12 145);
-        border-color: oklch(0.85 0.08 145);
-    }
-
-    .mc-usage--warning {
-        background-color: oklch(0.95 0.05 65);
-        color: oklch(0.4 0.12 65);
-        border-color: oklch(0.85 0.1 65);
-    }
-
-    .mc-usage--critical,
-    .mc-usage--exceeded {
-        background-color: oklch(0.95 0.04 25);
-        color: oklch(0.45 0.15 25);
-        border-color: oklch(0.85 0.1 25);
-    }
-
-    .mc-usage__label {
-        white-space: nowrap;
-    }
-
-    .mc-usage__upgrade {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.25rem 0.75rem;
-        border-radius: var(--radius-pill, 9999px);
-        background-color: var(--brand-primary);
-        color: var(--primary-foreground, #ffffff);
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: 0.75rem;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: opacity 150ms ease-out;
-    }
-
-    .mc-usage__upgrade:hover {
-        opacity: 0.88;
     }
 </style>

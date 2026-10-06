@@ -54,7 +54,7 @@ export const GastronomyMenuFileKindPgEnum = pgEnum('gastronomy_menu_file_kind_en
 ]);
 
 /**
- * Gastronomy table — commerce listings for food and beverage venues (SPEC-239).
+ * Gastronomy table — listings for food and beverage venues (SPEC-239).
  *
  * Mirrors the accommodation table shape as closely as possible:
  * - Same audit columns (createdById, updatedById, deletedById)
@@ -153,11 +153,11 @@ export const gastronomies = pgTable(
          * disjunction `isFeatured OR featuredByEntitlement`, ORed in the PUBLIC
          * routes only (`resolvePublicIsFeatured`).
          *
-         * **Only one source feeds it, unlike accommodation.** No commerce plan
-         * grants FEATURED_LISTING (`commerce-entitlements.config.ts` grants
+         * **Only one source feeds it, unlike accommodation.** No gastronomy plan
+         * grants FEATURED_LISTING (the gastronomy entitlement config grants
          * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
          * column has exactly one writer — the addon — where accommodation has
-         * two (plan owner-wide + addon per-listing). A future commerce plan that
+         * two (plan owner-wide + addon per-listing). A future gastronomy plan that
          * grants featuring must add the plan-driven half; it does not exist yet
          * and is not stubbed here.
          *
@@ -179,7 +179,7 @@ export const gastronomies = pgTable(
          * included, whereas the join would put a new query on a hot public path
          * with no precedent to consult when it misbehaves.
          *
-         * If this is ever unified for real, the question is not "should commerce
+         * If this is ever unified for real, the question is not "should gastronomy
          * derive?" but "should BOTH derive?" — recorded here so whoever asks it
          * knows the alternative was considered and why it lost.
          */

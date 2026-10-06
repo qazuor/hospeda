@@ -3,7 +3,7 @@
  * @description Tests for the shared post/event media editor (HOS-374 2D / HOS-390).
  *
  * Covers the per-operation persistence contract, ported from
- * `test/components/commerce/editor/MediaSection.test.tsx`:
+ * `test/components/listing/editor/MediaSection.test.tsx`:
  * - On mount: hydrates from `contentMediaApi.listMedia` and splits featured vs
  *   gallery, per entity.
  * - Adding a gallery photo calls `addMedia` immediately (NOT deferred to the
@@ -18,7 +18,7 @@
  * - Gallery cap enforcement, per entity (post 15, event 10 — different caps are
  *   the reason the cap assertions are derived from `getGalleryCap`, not typed in).
  * - The moderation lock (`disabled`) closes every write affordance. This is the
- *   one behavior with no commerce counterpart: commerce listings have no
+ *   one behavior with no gastronomy/experience counterpart: listings have no
  *   author-edit lock, posts and events do (HOS-374 §7.6.3).
  *
  * @module test/components/account/editor/ContentMediaSection

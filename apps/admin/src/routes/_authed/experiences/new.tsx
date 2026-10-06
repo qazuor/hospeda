@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_authed/experiences/new')({
 /**
  * Create page for a new experience listing.
  *
- * The create form includes all commerce identity fields, experience-specific
+ * The create form includes all listing identity fields, experience-specific
  * fields (type, priceUnit, priceFrom, isPriceOnRequest), and operational fields.
  * An optional owner can be assigned on creation via the ownerId field in the
  * identity section (backed by OwnerSelect in the consolidated config).

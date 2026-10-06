@@ -17,7 +17,7 @@
  *   (HOS-1048), which is what makes it printable at all.
  *
  * R-1: the grant is on the experience premium plan, separately from
- * gastronomy's. There is no shared "commerce" plan to grant it once.
+ * gastronomy's. There is no shared umbrella plan to grant it once.
  *
  * @module routes/experience/protected/brochure
  */
@@ -37,9 +37,9 @@ import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
-import { buildExperienceBrochureContent } from '../../../services/commerce-brochure/brochure-content';
-import { buildBrochureResponse } from '../../../services/commerce-brochure/brochure-response';
-import { ExperienceBrochureSourceSchema } from '../../../services/commerce-brochure/brochure-source';
+import { buildExperienceBrochureContent } from '../../../services/listing-brochure/brochure-content';
+import { buildBrochureResponse } from '../../../services/listing-brochure/brochure-response';
+import { ExperienceBrochureSourceSchema } from '../../../services/listing-brochure/brochure-source';
 import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';

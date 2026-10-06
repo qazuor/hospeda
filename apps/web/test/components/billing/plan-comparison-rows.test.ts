@@ -201,9 +201,9 @@ describe('resolveRowCells — column set changes (HOS-329 regression)', () => {
     });
 
     it('renders a plan with no entitlements as not-included, never as a borrowed yes', () => {
-        const empty = plan('commerce-listing', []);
-        expect(cellsBySlug('branding', [empty])).toEqual({ 'commerce-listing': 'no' });
-        expect(cellsBySlug('advancedStats', [empty])).toEqual({ 'commerce-listing': 'no' });
+        const empty = plan('gastronomy-listing', []);
+        expect(cellsBySlug('branding', [empty])).toEqual({ 'gastronomy-listing': 'no' });
+        expect(cellsBySlug('advancedStats', [empty])).toEqual({ 'gastronomy-listing': 'no' });
     });
 });
 

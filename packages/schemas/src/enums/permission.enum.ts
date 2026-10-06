@@ -988,11 +988,11 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
 
     // GASTRONOMY / EXPERIENCE: the per-vertical replacement for the retired
-    // `commerce.*` family (HOS-1077 / HOS-1417).
+    // shared permission family that named both verticals at once (HOS-1077 / HOS-1417).
     //
     // ## Why these exist
     //
-    // `commerce.*` named TWO product verticals at once, so it was impossible to
+    // That family named TWO product verticals at once, so it was impossible to
     // grant edit rights over gastronomy without also granting them over
     // experiences: a restaurant moderator could moderate excursions too.
     // Accommodation never had that problem — it is one vertical with its own
@@ -1004,7 +1004,7 @@ export enum PermissionEnum {
     // Roughly 14 of accommodation's 64 are per-SECTION listing permissions
     // (`amenities.edit`, `basicInfo.edit`, `faqs.edit`, `gallery.manage`, …)
     // that SPEC-253 D2=b deliberately collapsed into one owner permission.
-    // Others correspond to functionality commerce does not have
+    // Others correspond to functionality gastronomy and experience do not have
     // (`occupancy.manage`, `iaContent.approve`, `location.exact.view`), and a
     // permission no route ever demands is dead letter.
     //

@@ -108,7 +108,7 @@ como evidencia de riesgo.
 - [x] T4 — `apps/api`: routes/billing + webhooks/mercadopago + test/qzpay-control +
       services/billing + servicios del cobro + middlewares (billing, billingCustomer, entitlement,
       owner-entitlement, limit/ai-quota...) + create-app/routes index + crons (22 jobs, registry,
-      manifest) + rutas user/protected subscription & entitlements + commerce change-plan + host
+      manifest) + rutas user/protected subscription & entitlements + listing change-plan + host
       dashboard + utils + tests. Commit: `refactor(api): remove legacy billing routes, webhooks, crons and middlewares`.
 - [x] T5 — plomería del repo: 5 `package.json` + `pnpm-lock.yaml` (pnpm install),
       `pnpm-workspace.yaml` (líneas qzpay), `check:guards` + guard scripts que anclan archivos

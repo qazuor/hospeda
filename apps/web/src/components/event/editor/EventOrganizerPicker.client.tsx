@@ -16,7 +16,7 @@
  *  - **Loaded with items** — a `<select>` of existing organizers plus a link to
  *    switch into create mode.
  *  - **Load FAILED** (`loadFailed`) — an explicit error, AND the inline-create
- *    block. This deliberately diverges from `CommerceCreateForm`, which only
+ *    block. This deliberately diverges from `ListingCreateForm`, which only
  *    shows an error: its `destinationId` is optional, so a dead catalog is
  *    survivable. `organizerId` is a hard-required UUID on
  *    `EventCreateHttpSchema`, so leaving the editor with an error and no path

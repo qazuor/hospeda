@@ -221,7 +221,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                     userId,
                     role,
                     grantedBy: null,
-                    grantReason: RoleGrantReason.COMMERCE_LISTING_CREATED
+                    grantReason: RoleGrantReason.LISTING_CREATED
                 }))
             )
             .onConflictDoNothing()

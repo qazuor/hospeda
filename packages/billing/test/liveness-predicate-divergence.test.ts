@@ -33,10 +33,9 @@
  * ## What this file does NOT prove
  *
  * That each call site picked the right predicate. These are pure functions with
- * no notion of a product domain, so nothing here can see that the commerce
- * visibility reconciler and the accommodation publish gate resolve the same
- * question through different ones. That asymmetry lives at the call sites and is
- * asserted there (`liveness-predicate-call-site.guard.test.ts`).
+ * no notion of a product domain, so nothing here can see that the entity-subscription
+ * reconcilers and the accommodation publish gate resolve the same question
+ * through different ones. That asymmetry lives at the call sites.
  */
 
 import { SubscriptionStatusEnum } from '@repo/schemas';

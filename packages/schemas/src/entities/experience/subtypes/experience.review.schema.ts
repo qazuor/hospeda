@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../../common/audit.schema.js';
-import { CommerceRatingSchema } from '../../../common/commerce-rating.schema.js';
+import { ExperienceRatingSchema } from '../../../common/experience-rating.schema.js';
 import { UserIdSchema } from '../../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../../common/lifecycle.schema.js';
 import { BaseModerationFields } from '../../../common/moderation.schema.js';
@@ -9,7 +9,7 @@ import { BaseModerationFields } from '../../../common/moderation.schema.js';
  * Experience Review Schema — User review for an experience listing.
  *
  * Mirrors the `GastronomyReviewSchema` pattern exactly, including
- * {@link CommerceRatingSchema} for the rating breakdown (food / service /
+ * {@link ExperienceRatingSchema} for the rating breakdown (food / service /
  * ambiance / value) — the same dimensions gastronomy uses.
  *
  * Columns match the `experience_reviews` DB table exactly:
@@ -55,10 +55,10 @@ export const ExperienceReviewSchema = z.object({
         .optional(),
 
     /**
-     * Granular rating breakdown using commerce-specific dimensions.
+     * Granular rating breakdown using the dimensions of this vertical.
      * Optional: the reviewer may submit an overall rating without breakdown.
      */
-    rating: CommerceRatingSchema.optional(),
+    rating: ExperienceRatingSchema.optional(),
 
     /**
      * Computed average of all granular rating categories (0.00–5.00).
@@ -127,7 +127,7 @@ export const ExperienceReviewCreateInputSchema = z.object({
         .number({ message: 'zodError.experience.review.overallRating.required' })
         .min(1, { message: 'zodError.experience.review.overallRating.min' })
         .max(5, { message: 'zodError.experience.review.overallRating.max' }),
-    rating: CommerceRatingSchema.optional(),
+    rating: ExperienceRatingSchema.optional(),
     /** Optional review headline. */
     title: z
         .string()

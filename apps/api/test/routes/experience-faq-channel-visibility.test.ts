@@ -32,7 +32,7 @@ vi.mock('@repo/service-core', async () => {
 const mockActor = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     roles: ['HOST'],
-    permissions: ['commerce.edit.own', 'access.panelProtected']
+    permissions: ['experience.editOwn', 'access.panelProtected']
 };
 vi.mock('../../src/utils/actor.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../src/utils/actor.js')>();

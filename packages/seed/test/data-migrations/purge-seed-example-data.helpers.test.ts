@@ -1,7 +1,7 @@
 /**
  * @fileoverview
  * Unit tests for the purge helpers shared by `0058-purge-seed-example-data` and
- * `0059-purge-test-and-commerce-example`.
+ * migration 0059.
  *
  * The infrastructure guard carries most of the weight here. It exists because of
  * a near miss found on 2026-08-19: `EXAMPLE_USER_EMAILS` listed

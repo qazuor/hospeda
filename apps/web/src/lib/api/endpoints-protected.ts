@@ -45,13 +45,13 @@ import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse, ProductDomainScope } from './types';
 
 /**
- * The two commerce verticals that share the granular media endpoint shape
- * (HOS-372). Duplicated (not imported) from `@/lib/commerce/owner-listings`
+ * The two gastronomy/experience verticals that share the granular media endpoint shape
+ * (HOS-372). Duplicated (not imported) from `@/lib/listing/owner-listings`
  * to avoid this low-level endpoints module depending on a higher-level
  * feature module — mirrors how other entity-scoped unions in this file are
  * hand-declared rather than imported (see `CalendarProviderToken` above).
  */
-export type CommerceMediaVertical = 'gastronomy' | 'experience';
+export type ListingMediaVertical = 'gastronomy' | 'experience';
 
 const BASE = '/api/v1/public';
 const PROTECTED = '/api/v1/protected';
@@ -423,7 +423,7 @@ export const userApi = {
      *   plus an optional `productDomain` (HOS-259) to scope which of the
      *   caller's subscriptions to resolve when they hold more than one under
      *   the same billing customer (e.g. an accommodation host who also owns
-     *   a commerce listing). Defaults to `'accommodation'` server-side when
+     *   a listing). Defaults to `'accommodation'` server-side when
      *   omitted — matches every pre-existing caller's behaviour.
      * @returns Current subscription data or null if no active subscription
      *
@@ -432,7 +432,7 @@ export const userApi = {
      * const result = await userApi.getSubscription();
      * if (result.ok && result.data.subscription) { ... }
      *
-     * // Scope to one commerce vertical instead — 'commerce' itself is a
+     * // Scope to one vertical instead — the old shared umbrella is a
      * // RETIRED ProductDomainEnum value (HOS-695) and must never be passed:
      * const gastronomy = await userApi.getSubscription({ productDomain: 'gastronomy' });
      * ```
@@ -833,14 +833,14 @@ export const billingApi = {
      * Pause the authenticated user's own subscription (SPEC-143 #29).
      *
      * Always stops billing. For an accommodation-domain subscription it also
-     * hides/edit-locks the owner's accommodations until resume; for a commerce
+     * hides/edit-locks the owner's accommodations until resume; for a gastronomy/experience
      * (gastronomy/experience) subscription, the linked listing's visibility is
      * instead handled by the shared subscription-linked-entities bridge —
      * `accommodationsUpdated` stays `0` in that case (HOS-1278).
      *
      * `subscriptionId` is REQUIRED (HOS-1278): the route no longer guesses the
      * caller's "current" subscription — a customer can legitimately hold more
-     * than one (a dual host/commerce owner, or a host auto-promoted from a
+     * than one (a dual host/gastronomy/experience owner, or a host auto-promoted from a
      * paying tourist), so the caller must name the exact one.
      *
      * @param params - The id of the subscription to pause.
@@ -1275,7 +1275,7 @@ export const billingApi = {
      *
      * @example
      * ```ts
-     * const result = await billingApi.getUsage({ productDomain: 'commerce' });
+     * const result = await billingApi.getUsage({ productDomain: 'gastronomy' });
      * if (result.ok) {
      *   const shown = result.data.limits.filter((l) => l.maxAllowed !== 0);
      * }
@@ -3568,22 +3568,22 @@ export const hostAnalyticsApi = {
     }
 };
 
-// --- Commerce Analytics (Protected — HOS-734) ---
+// --- Listing Analytics (Protected — HOS-734) ---
 
-/** The two commerce verticals — matches `CommerceVertical` in `@repo/billing`. */
-type CommerceAnalyticsVertical = 'gastronomy' | 'experience';
+/** The two gastronomy/experience verticals — matches `GastronomyOrExperience` in `@repo/billing`. */
+type ListingAnalyticsVertical = 'gastronomy' | 'experience';
 
 /** Path segment each vertical mounts its protected routes under. */
-const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>> = {
+const LISTING_VERTICAL_PATH: Readonly<Record<ListingAnalyticsVertical, string>> = {
     gastronomy: 'gastronomies',
     experience: 'experiences'
 };
 
 /**
- * Protected commerce (gastronomy/experience) basic-stats API endpoints
+ * Protected gastronomy/experience basic-stats API endpoints
  * (HOS-734). Mirrors `hostAnalyticsApi`'s accommodation views shape — same
  * `entity_views` telemetry table, same `view_basic_stats` entitlement,
- * applied to the two commerce verticals instead of ACCOMMODATION.
+ * applied to the two gastronomy/experience verticals instead of ACCOMMODATION.
  *
  * Gastronomy's menu QR and its scan analytics (HOS-1044) are no longer out of
  * scope: `getMenuQr` and `getMenuQrScans` below, gated by the
@@ -3593,18 +3593,18 @@ const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>
  * destinations.
  */
 /**
- * Protected commerce listing endpoints the OWNER reads about their own listings
+ * Protected listing endpoints the OWNER reads about their own listings
  * (HOS-1286).
  *
- * Separate from {@link commerceAnalyticsApi} on purpose: that object is the
+ * Separate from {@link listingAnalyticsApi} on purpose: that object is the
  * `view_basic_stats` surface and everything on it is entitlement-gated
  * telemetry. This is "which listings do I own", which the add-on purchase panel
  * needs to offer a per-listing visibility boost a target to point at, and which
  * no entitlement gates.
  */
-export const commerceListingsApi = {
+export const ownerListingsApi = {
     /**
-     * List the caller's own listings in one commerce vertical.
+     * List the caller's own listings in one gastronomy/experience verticals.
      *
      * @param params - `{ vertical }`
      * @returns `{ listings }` — the owner's listing summaries for that vertical.
@@ -3613,7 +3613,7 @@ export const commerceListingsApi = {
         vertical,
         cookieHeader
     }: {
-        readonly vertical: CommerceAnalyticsVertical;
+        readonly vertical: ListingAnalyticsVertical;
         /** Forwarded when called from SSR, as `hostAnalyticsApi.listOwnAccommodations` does. */
         readonly cookieHeader?: string;
     }): Promise<
@@ -3626,16 +3626,16 @@ export const commerceListingsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine`,
+            path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/mine`,
             cookieHeader
         });
     }
 };
 
-export const commerceAnalyticsApi = {
+export const listingAnalyticsApi = {
     /**
      * Get view stats (cumulative) for every listing the caller owns in one
-     * commerce vertical, over a rolling window.
+     * gastronomy/experience verticals, over a rolling window.
      *
      * @param params - `{ vertical, window }`
      * @returns One `{ entityId, unique, total }` entry per owned listing.
@@ -3644,7 +3644,7 @@ export const commerceAnalyticsApi = {
         vertical,
         window: windowParam
     }: {
-        readonly vertical: CommerceAnalyticsVertical;
+        readonly vertical: ListingAnalyticsVertical;
         readonly window: AnalyticsWindow;
     }): Promise<
         ApiResult<
@@ -3656,14 +3656,14 @@ export const commerceAnalyticsApi = {
         >
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views`,
+            path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/mine/views`,
             params: { window: windowParam }
         });
     },
 
     /**
      * Get the gap-filled daily view-count series for every listing the
-     * caller owns in one commerce vertical, over a rolling window. Not
+     * caller owns in one gastronomy/experience verticals, over a rolling window. Not
      * currently rendered by any web UI (the `mi-cuenta/comercio` widget shows
      * cumulative totals only, HOS-734) — kept here so a future daily chart
      * does not need a new backend round-trip.
@@ -3675,7 +3675,7 @@ export const commerceAnalyticsApi = {
         vertical,
         window: windowParam
     }: {
-        readonly vertical: CommerceAnalyticsVertical;
+        readonly vertical: ListingAnalyticsVertical;
         readonly window: AnalyticsWindow;
     }): Promise<
         ApiResult<{
@@ -3684,7 +3684,7 @@ export const commerceAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views/daily-series`,
+            path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/mine/views/daily-series`,
             params: { window: windowParam }
         });
     },
@@ -4138,8 +4138,8 @@ export const publishApi = {
      *
      * The two halves land on different routes on purpose. Accommodation keeps
      * `DELETE /protected/accommodations/{id}`, which has accepted its owner
-     * since BETA-197 and is live in production; routing it through the commerce
-     * endpoint would move a working flow for no gain (HOS-1156 R-2). Commerce
+     * since BETA-197 and is live in production; routing it through the gastronomy/experience
+     * endpoints would move a working flow for no gain (HOS-1156 R-2). Listing
      * had no owner-facing delete at all before this change, so it gets the new
      * one. The branch lives here, in the API layer that already knows about
      * endpoints, rather than inside the island that renders the button.
@@ -4164,7 +4164,8 @@ export const publishApi = {
         if (vertical === 'accommodation') {
             return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
         }
-        return apiClient.delete({ path: `${PROTECTED}/commerce/listings/${vertical}/${id}` });
+        const segment = vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
+        return apiClient.delete({ path: `${PROTECTED}/${segment}/${id}` });
     },
 
     /**
@@ -4187,7 +4188,7 @@ export const publishApi = {
      * disagree — which is the bug this endpoint was built to close. Use
      * `eligibility` and `startsTrial` for COPY, `canPublish` for the affordance.
      *
-     * Accommodation-only for now: commerce listings go live through a checkout
+     * Accommodation-only for now: listings go live through a checkout
      * and resolve their own verdict (HOS-1184), so a `vertical` parameter here
      * would promise a generality the endpoint does not have.
      *
@@ -6142,25 +6143,25 @@ export const priceAlertsApi = {
     }
 };
 
-// --- Commerce Listing Media (Protected — HOS-372) ---
+// --- Listing Media (Protected — HOS-372) ---
 
 /**
- * Maps a commerce vertical to its URL path segment.
+ * Maps a gastronomy/experience verticals to its URL path segment.
  */
-function commerceMediaPathSegment(vertical: CommerceMediaVertical): 'gastronomies' | 'experiences' {
+function listingMediaPathSegment(vertical: ListingMediaVertical): 'gastronomies' | 'experiences' {
     return vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
 }
 
 /**
  * Row shape returned by the gastronomy_media / experience_media relational
  * endpoints. Field-for-field identical between both verticals (they share
- * `BaseCommerceMediaSchema`) — one client, parameterized by `vertical`, reads
+ * `BaseListingMediaSchema`) — one client, parameterized by `vertical`, reads
  * cleanly instead of two near-identical objects.
  *
  * The `id` is the DB UUID needed for removeMedia / setFeaturedMedia /
  * reorderMedia.
  */
-export interface CommerceMediaRow {
+export interface ListingMediaRow {
     readonly id: string;
     readonly url: string;
     readonly publicId?: string | null;
@@ -6181,30 +6182,30 @@ export interface CommerceMediaRow {
 }
 
 /**
- * Granular per-operation protected endpoints for commerce listing (gastronomy
+ * Granular per-operation protected endpoints for listing (gastronomy
  * / experience) photo management (HOS-372).
  *
  * Mirrors `accommodationMediaApi` (SPEC-204): each operation persists
  * immediately to the vertical's relational media table — the parent
- * `CommerceListingEditor` PATCH no longer carries photo data. Unlike the
+ * `ListingEditor` PATCH no longer carries photo data. Unlike the
  * accommodation endpoint, `removeMedia` here does NOT delete the Cloudinary
  * asset server-side (see `removeMedia`'s JSDoc) — callers must also call
  * `protectedMediaApi.deleteMedia` for cleanup.
  *
  * @example
  * ```ts
- * const list = await commerceMediaApi.listMedia({ vertical: 'gastronomy', id: 'listing-uuid' });
- * const added = await commerceMediaApi.addMedia({ vertical: 'gastronomy', id: 'listing-uuid', body: { url, publicId } });
- * await commerceMediaApi.setFeaturedMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
- * await commerceMediaApi.removeMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * const list = await listingMediaApi.listMedia({ vertical: 'gastronomy', id: 'listing-uuid' });
+ * const added = await listingMediaApi.addMedia({ vertical: 'gastronomy', id: 'listing-uuid', body: { url, publicId } });
+ * await listingMediaApi.setFeaturedMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * await listingMediaApi.removeMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
  * ```
  */
-export const commerceMediaApi = {
+export const listingMediaApi = {
     /**
-     * List media rows for a commerce listing.
+     * List media rows for a listing.
      *
      * @param params - Vertical, listing ID, optional state filter, optional SSR cookie
-     * @returns `{ media: CommerceMediaRow[] }`
+     * @returns `{ media: ListingMediaRow[] }`
      */
     listMedia({
         vertical,
@@ -6212,31 +6213,31 @@ export const commerceMediaApi = {
         state = 'visible',
         cookieHeader
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly state?: 'visible' | 'archived';
         readonly cookieHeader?: string;
-    }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
+    }): Promise<ApiResult<{ readonly media: readonly ListingMediaRow[] }>> {
         return apiClient.getProtected({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media`,
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media`,
             params: { state },
             cookieHeader
         });
     },
 
     /**
-     * Add a new media row for a commerce listing.
+     * Add a new media row for a listing.
      * `sortOrder` and `isFeatured` are server-controlled.
      *
      * @param params - Vertical, listing ID, and media body
-     * @returns `{ media: CommerceMediaRow }` — the newly created row (with DB id)
+     * @returns `{ media: ListingMediaRow }` — the newly created row (with DB id)
      */
     addMedia({
         vertical,
         id,
         body
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly body: {
             readonly url: string;
@@ -6246,9 +6247,9 @@ export const commerceMediaApi = {
             readonly alt?: string;
             readonly moderationState?: string;
         };
-    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+    }): Promise<ApiResult<{ readonly media: ListingMediaRow }>> {
         return apiClient.postProtected({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media`,
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media`,
             body
         });
     },
@@ -6270,12 +6271,12 @@ export const commerceMediaApi = {
         id,
         mediaId
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly mediaId: string;
     }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.delete({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}`
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/${mediaId}`
         });
     },
 
@@ -6285,40 +6286,40 @@ export const commerceMediaApi = {
      * automatically unmarked by the server and becomes a normal visible row.
      *
      * @param params - Vertical, listing ID, and media row ID (DB UUID) to feature
-     * @returns `{ media: CommerceMediaRow }` — the updated row
+     * @returns `{ media: ListingMediaRow }` — the updated row
      */
     setFeaturedMedia({
         vertical,
         id,
         mediaId
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly mediaId: string;
-    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+    }): Promise<ApiResult<{ readonly media: ListingMediaRow }>> {
         return apiClient.put({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}/featured`
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/${mediaId}/featured`
         });
     },
 
     /**
-     * Reorder the visible gallery photos of a commerce listing.
+     * Reorder the visible gallery photos of a listing.
      *
      * @param params - Vertical, listing ID, and the full ordered list of
      *   visible media UUIDs (must match the current visible set exactly).
-     * @returns `{ media: CommerceMediaRow[] }` — the rows in their new order
+     * @returns `{ media: ListingMediaRow[] }` — the rows in their new order
      */
     reorderMedia({
         vertical,
         id,
         orderedIds
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly orderedIds: readonly string[];
-    }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
+    }): Promise<ApiResult<{ readonly media: readonly ListingMediaRow[] }>> {
         return apiClient.patch({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/reorder`,
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/reorder`,
             body: { orderedIds }
         });
     },
@@ -6336,7 +6337,7 @@ export const commerceMediaApi = {
      * `VALIDATION_ERROR`, not silently accepted.
      *
      * @param params - Vertical, listing ID, media row ID (DB UUID), and the fields to update
-     * @returns `{ media: CommerceMediaRow }` — the updated row
+     * @returns `{ media: ListingMediaRow }` — the updated row
      */
     updateMedia({
         vertical,
@@ -6344,7 +6345,7 @@ export const commerceMediaApi = {
         mediaId,
         body
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly mediaId: string;
         readonly body: {
@@ -6354,9 +6355,9 @@ export const commerceMediaApi = {
             /** Whole credit object, or `null` to clear it. */
             readonly attribution?: MediaAttribution | null;
         };
-    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+    }): Promise<ApiResult<{ readonly media: ListingMediaRow }>> {
         return apiClient.patch({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}`,
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/${mediaId}`,
             body
         });
     }
@@ -6409,7 +6410,7 @@ export interface ContentMediaRow {
  * Granular per-operation protected endpoints for post / event photo management
  * (HOS-390).
  *
- * Mirrors `commerceMediaApi` (HOS-372), with ONE behavioral difference worth
+ * Mirrors `listingMediaApi` (HOS-372), with ONE behavioral difference worth
  * knowing: `removeMedia` here DOES delete the Cloudinary asset server-side (the
  * route passes the media provider down, so the binary is removed before the
  * row and a storage failure aborts the whole operation). Callers must NOT also

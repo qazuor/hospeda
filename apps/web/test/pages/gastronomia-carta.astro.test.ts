@@ -101,7 +101,7 @@ describe('carta.astro — stays out of QR and entitlement scope', () => {
     it('never references an entitlement gate', () => {
         expect(cartaSrc).not.toContain('requireEntitlement');
         expect(cartaSrc).not.toContain('EntitlementKey');
-        expect(cartaSrc).not.toContain('commerceVerticalEntitlementMiddleware');
+        expect(cartaSrc).not.toContain('VerticalEntitlementMiddleware');
     });
 });
 

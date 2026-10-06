@@ -365,7 +365,7 @@ describe('ChangePasswordForm', () => {
         });
 
         it('lands on the interrupted destination instead of /mi-cuenta/ (HOS-838)', async () => {
-            // A commerce owner provisioned with a temporary password is bounced
+            // A gastronomy/experience owner provisioned with a temporary password is bounced
             // here from whatever they were trying to reach. Finishing must take
             // them back there, not to the account dashboard.
             // Arrange

@@ -51,7 +51,7 @@ export interface AddonDefinition {
      *
      * ## Why `targetCategories` was never enough
      *
-     * `PlanCategory` has no commerce member, so every commerce add-on declares
+     * `PlanCategory` has no gastronomy or experience member, so every gastronomy and experience add-on declares
      * `targetCategories: ['owner']` — the same value the accommodation ones
      * carry. `EXTRA_GASTRONOMIES_ADDON`'s own comment has said since HOS-688
      * that *"product_domain is the real discriminator"*, while no add-on

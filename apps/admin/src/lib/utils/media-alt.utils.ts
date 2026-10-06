@@ -13,7 +13,7 @@
  */
 
 /**
- * Upper bound shared by every commerce-media `alt` schema
+ * Upper bound shared by every listing-media `alt` schema
  * (`GastronomyMediaAddPayloadSchema`, `ExperienceMediaAddPayloadSchema`,
  * `AccommodationMediaAddPayloadSchema` — see `packages/schemas`). Kept as a
  * named constant here so the truncation below stays obviously in sync with

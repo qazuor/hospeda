@@ -13,7 +13,7 @@
  * because we want typed props (slug, post_id / event_id, locale) that funnels
  * can filter against without parsing the URL. GASTRONOMY and EXPERIENCE do
  * NOT get a dedicated PostHog event here (owner decision, HOS-734): a
- * marketing-analytics funnel for commerce views is out of scope for the
+ * marketing-analytics funnel for gastronomy and experience views is out of scope for the
  * "básicas" this issue covers — only the `entity_views` capture (which feeds
  * the real owner-facing stat) is wired for them.
  *
@@ -121,7 +121,7 @@ export function EntityViewTracker({
                 break;
             default:
                 // GASTRONOMY / EXPERIENCE (HOS-734): entity_views capture only.
-                // No dedicated PostHog funnel event yet — advanced commerce
+                // No dedicated PostHog funnel event yet — advanced gastronomy/experience
                 // analytics (QR scans, dish views, origin destinations) will
                 // define their own event catalog in a follow-up spec.
                 break;

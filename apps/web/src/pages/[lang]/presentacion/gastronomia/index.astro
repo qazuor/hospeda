@@ -17,15 +17,15 @@
  * present tense, without hedging, ON PURPOSE — do NOT "correct" any back to today's behaviour; shipping the issue is what
  * closes the gap. Each names WHERE it appears, so a later reader can tell a deliberate promise from a mistake:
  *  1. THE 30-DAY TRIAL — masthead factsheet, steps 03 and 04, the "prueba es una sola" bullet in "Para ser justos",
- *     and the closing paragraph. Commerce has no trial: `startCommerceCheckout` passes a literal `trialDays: 0` and
- *     the first charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave commerce the trial,
+ *     and the closing paragraph. Listing has no trial: `startListingCheckout` passes a literal `trialDays: 0` and
+ *     the first charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave gastronomy/experience the trial,
  *     HOS-1012 removed it when it rebuilt the local trial for accommodation only. Tracked as HOS-1184.
  *  2. ANNUAL PRICING — the paragraph above the tier table ("pagás diez meses y tenés doce") and the table's "Por año"
  *     row ($300.000 / $650.000 / $800.000). **MOSTLY SHIPPED by HOS-1285.** The six figures are now the catalogue's own
- *     (`commerceVerticalTier` takes `annualPriceArs` per tier instead of sealing `null` for all six), the seed writes
- *     the `'year'` `billing_prices` row, and the checkout — renamed `initiateCommerceSubscription` because the old name
+ *     (`listingVerticalTier` takes `annualPriceArs` per tier instead of sealing `null` for all six), the seed writes
+ *     the `'year'` `billing_prices` row, and the checkout — renamed `initiateListingSubscription` because the old name
  *     said otherwise — accepts `billingInterval: 'annual'` and resolves that row. What is NOT shipped is the owner-facing
- *     PICKER: `CommercePlanPicker.client.tsx` still emits a slug and nothing else, so nothing in the web app sends the
+ *     PICKER: the old picker was retired with the old billing flow and no replacement sends the
  *     field yet. So this row is true about the price and still ahead of the code about the gesture.
  *  3. THE PHOTO LADDER 15 / 30 / 50 — the tier table's "Fotos por local" row. Today all three tiers get a flat 30. HOS-1108; the
  *     owner fixed those three numbers in a comment on it on 2026-09-05. Note 50 also implies raising the per-entity ceiling.
@@ -37,20 +37,20 @@
  *     say it must not return through that field. HOS-1088 is where the owner decided (2026-09-05) that gastronomy DOES get
  *     contact, the way accommodation has it.
  *  5. AI TRANSLATION TO ENGLISH AND PORTUGUESE — the "en el idioma del que la lee" panel of "La carta, en serio" and the
- *     multi-language line in "Qué más podés mostrar". Commerce listings have the FOUR multilang columns but no AI translation
+ *     multi-language line in "Qué más podés mostrar". Gastronomy and experience listings have the FOUR multilang columns but no AI translation
  *     path, so the owner types every locale by hand. HOS-1192. NOTE what the page claims about the
  *     Premium CARTA specifically (owner decision, 2026-09-05): the AI PROPOSES each dish's translation and the owner ACCEPTS OR
  *     CORRECTS it before it goes live — a review step the rest of the listing does not have. That review is the product stance
  *     and it is deliberate: a dish name is not prose to trust a machine with unwatched. So the carta needs BOTH the translation
  *     path and a per-item approval UI; shipping only the former leaves this page's promise half-kept.
- *  6. STATISTICS BY DAY — "Los números que ves". VERIFIED against the code, not inherited: `CommerceViewsWidget.client.tsx`
+ *  6. STATISTICS BY DAY — "Los números que ves". VERIFIED against the code, not inherited: `ListingViewsWidget.client.tsx`
  *     renders uniques and totals over a rolling 7d/30d window and plots no series; its own JSDoc says so ("What's explicitly
  *     NOT here (owner decision, HOS-734): the daily-series chart"). The route exists (`getViewsDailySeries`) with no caller in
  *     `apps/web`. So the per-day figure is a promise — same shared widget as experiences. HOS-1193.
  *  7. MOVING DOWN A PLAN — the line under the tier table. The plan-change route answers 422 on a
  *     downgrade today (HOS-1122); the change is about to land.
  *
- * THREE STRINGS HERE ARE FROZEN BY A TEST. `test/pages/commerce-amenities-render.test.ts` (HOS-1071/1072) asserts this page
+ * THREE STRINGS HERE ARE FROZEN BY A TEST. `test/pages/listing-amenities-render.test.ts` (HOS-1071/1072) asserts this page
  * contains "Lo que ofrece el local" and "delivery o take away", and that the FIRST row of "Quién manda sobre qué" carries this
  * markup VERBATIM, on one line:
  *     lo que ofrece el local, contacto y redes</td><td><strong>Vos, cuando quieras</strong>
@@ -59,9 +59,9 @@
  * THE REST OF THAT TABLE IS VERIFIED PERMISSIONS, NOT PROSE — DO NOT "RESTORE" THE OLD ROW. Until 2026-09-05 the table ended
  * with one row handing "Nombre del local, tipo y ciudad" to the team ("Escribinos y lo cambiamos"). It was wrong in all three
  * fields: `GastronomyOwnerUpdateInputSchema` includes `name`, `type` and `destinationId` — carrying the comment "Previously
- * owner-editable (SPEC-253 §3)" — and the commerce editor renders `name` editable with an opt-in slug-refresh checkbox beside
+ * owner-editable (SPEC-253 §3)" — and the gastronomy/experience editor renders `name` editable with an opt-in slug-refresh checkbox beside
  * it (`BasicInfoSection.client.tsx`; the form flag is `refreshSlugFromName`, which reaches the schema and
- * `base-commerce-listing.service.ts`, gated by `shouldOfferSlugRefresh`). So the owner changes all three alone. It is now three rows: those fields as the owner's,
+ * `base-listing.service.ts`, gated by `shouldOfferSlugRefresh`). So the owner changes all three alone. It is now three rows: those fields as the owner's,
  * the listing URL as the owner's (it follows the new name, with the warning that this moves the page for Google and for links
  * already shared), and featuring as the team's. The same false row was corrected on the experiences page, which these three
  * mirror — "fixing" this back to one team-owned row reintroduces a bug that has now been fixed twice.

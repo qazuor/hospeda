@@ -11,14 +11,14 @@ describe('pickBusinessShortcut', () => {
         expect(item?.id).toBe('hostDashboard');
     });
 
-    it('picks commerce for a user with only GASTRONOMY_EDIT_OWN', () => {
+    it('picks the listings shortcut for a user with only GASTRONOMY_EDIT_OWN', () => {
         const { item } = pickBusinessShortcut({
             permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
         });
-        expect(item?.id).toBe('commerce');
+        expect(item?.id).toBe('comercio-listings');
     });
 
-    it('prioritizes hostDashboard over commerce when the user has both permissions', () => {
+    it('prioritizes hostDashboard over the listings shortcut when the user has both permissions', () => {
         const { item } = pickBusinessShortcut({
             permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.GASTRONOMY_EDIT_OWN]
         });
@@ -58,13 +58,13 @@ describe('getCuratedAccountNav', () => {
         ]);
     });
 
-    it('inserts the commerce shortcut for a commerce-only owner', () => {
+    it('inserts the listings shortcut for a gastronomy/experience-only owner', () => {
         const { shortcutItems } = getCuratedAccountNav({
             permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
         });
         expect(shortcutItems.map((item) => item.id)).toEqual([
             'favorites',
-            'commerce',
+            'comercio-listings',
             'subscription'
         ]);
     });
@@ -74,7 +74,7 @@ describe('getCuratedAccountNav', () => {
             permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.GASTRONOMY_EDIT_OWN]
         });
         expect(shortcutItems.filter((item) => item.id === 'hostDashboard')).toHaveLength(1);
-        expect(shortcutItems.filter((item) => item.id === 'commerce')).toHaveLength(0);
+        expect(shortcutItems.filter((item) => item.id === 'comercio-listings')).toHaveLength(0);
     });
 
     it('never leaks non-curated items (e.g. properties, reviews, newsletter)', () => {

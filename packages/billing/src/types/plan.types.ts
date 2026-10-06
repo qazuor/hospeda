@@ -55,9 +55,9 @@ export enum LimitKey {
     /**
      * Maximum number of gastronomy listings an owner may hold (HOS-688).
      *
-     * Commerce billing is per-OWNER and per-VERTICAL: a gastronomy plan caps
+     * Gastronomy and experience billing is per-OWNER and per-VERTICAL: a gastronomy plan caps
      * gastronomy listings and says nothing about experiences. A single pooled
-     * commerce cap was considered and rejected — it cannot express "one
+     * cap across both was considered and rejected — it cannot express "one
      * restaurant and one excursion", since both slots could be spent on
      * restaurants.
      *
@@ -78,8 +78,8 @@ export enum LimitKey {
      *
      * The gastronomy twin of {@link MAX_AI_CHAT_PER_MONTH}, which stays
      * accommodation-only. The caps are separate for the same reason
-     * {@link MAX_GASTRONOMIES} and {@link MAX_EXPERIENCES} are: commerce
-     * billing is per-OWNER and per-VERTICAL, and SPEC-239 isolates the domains
+     * {@link MAX_GASTRONOMIES} and {@link MAX_EXPERIENCES} are: gastronomy and
+     * experience billing is per-OWNER and per-VERTICAL, and SPEC-239 isolates the domains
      * on purpose. A single pooled AI-chat cap would let an owner who is at once
      * a host and a restaurateur spend their accommodation plan's chat budget on
      * gastronomy traffic (and the reverse) — exactly the cross-domain leak
@@ -123,8 +123,8 @@ export enum LimitKey {
      *
      * `PRODUCT_DOMAIN_BY_LIMIT_KEY` maps it to the EXPERIENCE domain, so an
      * accommodation or gastronomy subscription never supplies its base value.
-     * Even so, all six commerce tiers declare it — gastronomy at `0` — for the
-     * reason `commerceVerticalTier` states about `aiChatPerMonth`: an ABSENT key
+     * Even so, all six gastronomy and experience tiers declare it — gastronomy at `0` — for the
+     * reason the shared vertical tier factory states about `aiChatPerMonth`: an ABSENT key
      * is resolved as UNLIMITED through five layers without raising, so "nobody
      * thought about this tier" and "deliberately uncapped" would be the same
      * row.
@@ -246,7 +246,7 @@ export interface PlanDefinition {
      * line of code was wrong, the value was simply never stated.
      *
      * NOT derivable from {@link category}, which answers a different question
-     * (who the plan is sold to). The three commerce verticals all sit in one
+     * (who the plan is sold to). The gastronomy, experience and partner verticals all sit in one
      * category and hold three distinct domains.
      */
     productDomain: ProductDomainValue;

@@ -18,7 +18,7 @@
  *
  * ## Fields with no single input
  *
- * Some fields carry one aggregate error over a group (commerce `openingHours`
+ * Some fields carry one aggregate error over a group (gastronomy/experience `openingHours`
  * is 7 day checkboxes × N shift inputs). They are handled by rendering the
  * derived id on the group's first control — no special case here (HOS-373
  * OQ-3).

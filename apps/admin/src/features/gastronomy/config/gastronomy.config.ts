@@ -2,7 +2,7 @@
  * @file gastronomy.config.ts
  * Entity list configuration for the gastronomy admin list page.
  *
- * Uses `createCommerceListConfig` from the generic commerce layer so that the
+ * Uses `createListingListConfig` from the generic listing layer so that the
  * shared filter scaffold (destination, featured, ownerId, includeDeleted) is
  * applied automatically.  Gastronomy-specific filters (type, priceRange) are
  * injected via `extraFilters`.
@@ -17,7 +17,7 @@ import {
 import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import { EntityType } from '@/components/table/DataTable';
-import { createCommerceListConfig } from '@/features/commerce';
+import { createListingListConfig } from '@/features/listing';
 import { createGastronomyColumns } from './gastronomy.columns';
 
 // ---------------------------------------------------------------------------
@@ -89,12 +89,12 @@ const PRICE_RANGE_OPTIONS = [
 
 /**
  * Full entity list configuration for the gastronomy admin list page.
- * Built on top of the shared commerce layer via `createCommerceListConfig`.
+ * Built on top of the shared listing layer via `createListingListConfig`.
  *
  * Endpoint: `GET /api/v1/admin/gastronomies`
  * Permissions gate: GASTRONOMY_VIEW_ALL
  */
-export const gastronomyListConfig = createCommerceListConfig<GastronomyListItem>({
+export const gastronomyListConfig = createListingListConfig<GastronomyListItem>({
     entityName: 'gastronomies',
     entityKey: 'gastronomy',
     entityType: EntityType.GASTRONOMY,

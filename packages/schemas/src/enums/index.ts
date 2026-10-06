@@ -16,9 +16,6 @@ export * from './calendar-sync-status.enum.js';
 export * from './calendar-sync-status.schema.js';
 export * from './client-type.enum.js';
 export * from './client-type.schema.js';
-// Commerce enums (SPEC-239)
-export * from './commerce-entity-type.enum.js';
-export * from './commerce-entity-type.schema.js';
 export * from './contact-preference.enum.js';
 export * from './contact-preference.schema.js';
 export * from './conversation-status.enum.js';

@@ -7,7 +7,7 @@
  *
  * What these guard, specifically: the page addresses five audiences, and three
  * of them (experience, gastronomy, partner) render copy that LIVES IN ANOTHER
- * PAGE'S NAMESPACE on purpose — `commerce.landing.*` for the two verticals
+ * PAGE'S NAMESPACE on purpose — `gastronomy.landing.*` / `experience.landing.*` for the two verticals
  * whose landings already publish the same claims, `alliance-leads.partner.*`
  * for the ally sentences. Two distinct regressions are possible there and
  * neither is caught by an existing guard:
@@ -82,20 +82,20 @@ describe('beneficios/index.astro — the five audience sections', () => {
 
 describe('beneficios/index.astro — copy stays single-sourced', () => {
     const REUSED_KEYS = [
-        'listing.landing.experience.benefits.title',
-        'listing.landing.experience.benefits.item1.title',
-        'listing.landing.experience.benefits.item1.desc',
-        'listing.landing.experience.benefits.item2.title',
-        'listing.landing.experience.benefits.item2.desc',
-        'listing.landing.experience.benefits.item3.title',
-        'listing.landing.experience.benefits.item3.desc',
-        'listing.landing.gastronomy.benefits.title',
-        'listing.landing.gastronomy.benefits.item1.title',
-        'listing.landing.gastronomy.benefits.item1.desc',
-        'listing.landing.gastronomy.benefits.item2.title',
-        'listing.landing.gastronomy.benefits.item2.desc',
-        'listing.landing.gastronomy.benefits.item3.title',
-        'listing.landing.gastronomy.benefits.item3.desc',
+        'experience.landing.benefits.title',
+        'experience.landing.benefits.item1.title',
+        'experience.landing.benefits.item1.desc',
+        'experience.landing.benefits.item2.title',
+        'experience.landing.benefits.item2.desc',
+        'experience.landing.benefits.item3.title',
+        'experience.landing.benefits.item3.desc',
+        'gastronomy.landing.benefits.title',
+        'gastronomy.landing.benefits.item1.title',
+        'gastronomy.landing.benefits.item1.desc',
+        'gastronomy.landing.benefits.item2.title',
+        'gastronomy.landing.benefits.item2.desc',
+        'gastronomy.landing.benefits.item3.title',
+        'gastronomy.landing.benefits.item3.desc',
         // `item1` retired by HOS-1228 (HOS-941 D-13): it promised access to a
         // network of verified stays and businesses, which nothing implements.
         // The survivors keep their original numbers — they pair with
@@ -111,11 +111,12 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
 
     it.each(LOCALES)('resolves every reused key in %s', (locale) => {
         const trees = {
-            listing: readLocale(locale, 'listing'),
+            gastronomy: readLocale(locale, 'gastronomy'),
+            experience: readLocale(locale, 'experience'),
             'alliance-leads': readLocale(locale, 'alliance-leads')
         };
         for (const key of REUSED_KEYS) {
-            const namespace = key.startsWith('listing.') ? 'listing' : 'alliance-leads';
+            const namespace = key.split('.')[0] as keyof typeof trees;
             const value = lookup(trees[namespace], key);
             expect(typeof value, `${locale}: ${key}`).toBe('string');
             expect((value as string).length, `${locale}: ${key} is empty`).toBeGreaterThan(0);

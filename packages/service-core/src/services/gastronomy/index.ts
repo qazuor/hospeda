@@ -11,7 +11,7 @@
  *   reorderGastronomyMedia / getGastronomyMedia / setFeaturedGastronomyMedia,
  *   plus the composed-media read attach helpers
  * - Projection utilities — projectGastronomyPublic / projectGastronomyOwnerAvatar
- * - Permission helpers — granular COMMERCE_* gate wrappers
+ * - Permission helpers — granular per-vertical gate wrappers
  * - Types — GastronomyHookState
  */
 

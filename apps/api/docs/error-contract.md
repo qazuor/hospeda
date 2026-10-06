@@ -168,7 +168,7 @@ Three rules follow:
    oracle.** `user/protected/getById.ts` now refuses a foreign id without
    touching the database. Same body, and no timing difference either.
 3. **A refusal names neither the permission nor the id** (rule R5 applied to
-   4xx): `'You may only start a subscription for your own commerce listing.'`
+   4xx): `'You may only start a subscription for your own gastronomy or experience listing.'`
    and `` `Entity not found: ${entityType} with id ${entityId}` `` were both
    replaced by a single constant shared by the two branches.
 

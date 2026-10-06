@@ -49,7 +49,7 @@ const capturedWhere: unknown[] = [];
  * Stubs the drizzle query chain, returning `rows` for each successive call.
  *
  * The job runs a single alliance-leads query per tick (HOS-693 dropped the
- * commerce-leads half), so the queue is drained in call order.
+ * gastronomy/experience-leads half), so the queue is drained in call order.
  */
 function stubQueries(batches: readonly (readonly Record<string, unknown>[])[]): void {
     const queue = [...batches];

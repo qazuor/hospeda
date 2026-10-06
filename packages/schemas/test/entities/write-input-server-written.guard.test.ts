@@ -4,7 +4,7 @@
  *
  * ## The mechanism
  *
- * Every content/commerce entity derives its write schemas from ONE base, and
+ * Every content/listing entity derives its write schemas from ONE base, and
  * not all of them the same way:
  *
  * ```

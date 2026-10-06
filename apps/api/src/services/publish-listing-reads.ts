@@ -5,7 +5,7 @@
  * ---
  * WHY THE COUNT LIVES HERE AND NOT IN THE MIDDLEWARE THAT OWNS THE CAP
  *
- * {@link countOwnListings} was private to `commerce-limit-enforcement.ts`, which
+ * {@link countOwnListings} was private to the retired per-vertical limit middleware, which
  * is the middleware that actually REFUSES an over-cap create. The precheck needs
  * the same number to decide whether to show a form or an upgrade panel — and if
  * the two counted differently, the precheck would tell an owner "you have room"
@@ -46,13 +46,13 @@ import { apiLogger } from '../utils/logger';
 /**
  * The publish verticals an owner-side precheck can read.
  *
- * `@repo/billing` used to own this type and the commerce guard below; both came
+ * `@repo/billing` used to own this type and the gastronomy/experience guard below; both came
  * down with the legacy billing system (HOS-1416). The definitions are local now
  * — same values, same guard, no billing semantics attached.
  */
 export type PublishVertical = 'accommodation' | 'gastronomy' | 'experience';
 
-export const isCommercePublishVertical = (
+export const isGastronomyOrExperienceVertical = (
     vertical: PublishVertical
 ): vertical is Exclude<PublishVertical, 'accommodation'> =>
     vertical === 'gastronomy' || vertical === 'experience';
@@ -61,7 +61,7 @@ export const isCommercePublishVertical = (
  * The three services are built on FIRST USE, never at module load.
  *
  * A service constructor reaches into `@repo/db` for its model, and this module
- * is imported by `middlewares/commerce-limit-enforcement.ts` — a middleware, so
+ * is imported by the retired per-vertical limit middleware — a middleware, so
  * the import lands in a large share of the API's test files. Constructing at
  * module load therefore ran a real `@repo/db` read inside every one of them,
  * against the whole-module `vi.mock('@repo/db')` that `test/setup.ts` installs:
@@ -145,16 +145,16 @@ function serviceFor(vertical: PublishVertical) {
  * ## The two verticals reach that guarantee by DIFFERENT calls (HOS-1247)
  *
  * This used to be one `service.count(actor, { ownerId: actor.id })` for all
- * three verticals, and the sentence above was FALSE for two of them. A commerce
+ * three verticals, and the sentence above was FALSE for two of them. A gastronomy or experience
  * `_executeCount` mirrors its `_executeSearch` and forces `visibility: PUBLIC` +
  * `lifecycleState: ACTIVE` (`gastronomy.service.ts:550`,
  * `experience.service.ts:510`) so a public-search total matches the page it
  * paginates. Every owner-created listing starts `PRIVATE`/`DRAFT`
- * (`commerce/protected/create.ts` D-3) — so this function returned ZERO for
+ * (`gastronomy/protected/create.ts` and `experience/protected/create.ts` D-3) — so this function returned ZERO for
  * precisely the rows the cap exists to count, `checkLimit` compared `0 <
  * maxAllowed`, and three listings went onto a plan of one with nothing raised.
  *
- * So commerce now reads through `countOwn`, the counting twin of the `listOwn`
+ * So gastronomy and experience now read through `countOwn`, the counting twin of the `listOwn`
  * that backs `GET /{vertical}/mine` — hard-scoped to `ownerId = actor.id`,
  * across every visibility and lifecycle state. Accommodation keeps calling
  * `count()`: its `_executeCount` already drops `activeOnly` when
@@ -169,7 +169,7 @@ function serviceFor(vertical: PublishVertical) {
  *
  * ## A PLAN-RESTRICTED listing still counts (HOS-1122) — undecided, not chosen
  *
- * This counts every listing the owner holds, including one a commerce downgrade
+ * This counts every listing the owner holds, including one a plan downgrade
  * took private (`entity_subscriptions.plan_restricted = true`). So an owner cut
  * from three listings to one cannot create a replacement for either of the two
  * now hidden: their quota is full of listings nobody can see.
@@ -182,9 +182,9 @@ function serviceFor(vertical: PublishVertical) {
  * owner decision, not a refactor. Recorded rather than fixed so the next person
  * finds a note instead of inferring intent from the absence of one. The
  * owner-facing copy states the current behaviour plainly
- * (`commerce.owner.planChange.keepPanel.quotaNote`).
+ * (`the retired plan-change keep panel`).
  *
- * HOS-1122 wrote this against `commerce-limit-enforcement`, which owned the count
+ * HOS-1122 wrote this against the retired per-vertical limit middleware, which owned the count
  * at the time; HOS-1156 moved the count here, and the note came with it. It now
  * also governs the publish precheck, which is a WIDENING of its scope: an owner
  * whose quota is full of hidden listings is told so before the form, instead of
@@ -206,14 +206,14 @@ export async function countOwnListings(input: {
         return null;
     }
 
-    // The split the docblock above explains: a commerce vertical MUST NOT go
+    // The split the docblock above explains: a gastronomy or experience vertical MUST NOT go
     // through `count()`, whose forced PUBLIC+ACTIVE filter reports zero for
     // every owner-created draft.
     // TYPE-WORKAROUND: BaseCrudService.count() takes z.infer<TSearchSchema> and
     // TypeScript cannot narrow the generic at a call site that is polymorphic
     // over three services. Mirrors the assertion the enforcement middleware and
     // the accommodation precheck both already make.
-    const result = isCommercePublishVertical(vertical)
+    const result = isGastronomyOrExperienceVertical(vertical)
         ? await (service as GastronomyService | ExperienceService).countOwn(actor)
         : await service.count(actor, { ownerId: actor.id } as never);
 
@@ -233,7 +233,7 @@ export async function countOwnListings(input: {
  *
  * ## Why this reads through `list()` and not the vertical's `/mine` endpoint
  *
- * `CommerceOwnerListingSummarySchema` — what `GET /{vertical}/mine` returns —
+ * `OwnerListingSummarySchema` — what `GET /{vertical}/mine` returns —
  * carries `isPublic` and NOT `lifecycleState` (HOS-1156 F-1). Those are not the
  * same question: a finished listing waiting on checkout is non-public and is not
  * a draft. Deriving "half-finished" from that projection would count listings the
@@ -288,7 +288,7 @@ export async function listOwnDraftListings(input: {
     }));
 }
 
-// NOTE: `isCommercePublishVertical` is deliberately NOT re-exported from here
+// NOTE: `isGastronomyOrExperienceVertical` is deliberately NOT re-exported from here
 // for callers in this module's orbit. This module is MOCKED by the precheck's
 // test, which rebuilds it as `{ ...actual, ...stubs }`, and spreading an ESM
 // namespace copies values rather than live bindings — a re-export through it

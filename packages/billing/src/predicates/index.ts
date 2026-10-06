@@ -28,20 +28,16 @@
  * grant access?" — and disagree whenever a date has elapsed. An `active` row
  * 7 h past `currentPeriodEnd` grants entitlements through the first and is
  * refused by the third. Today that split runs along a vertical boundary
- * (commerce visibility reconciles through the first, the accommodation publish
- * gate through the third), which is what makes it an epic-level asymmetry rather
+ * (the entity-subscription reconcilers reconcile through the first, the
+ * accommodation publish gate through the third), which is what makes it an epic-level asymmetry rather
  * than a local inconsistency. Closing it is a product decision about whether
  * cron lag may extend access, not a refactor.
  *
  * All three normalize their input through
  * {@link normalizeStoredSubscriptionStatus} first, because the column they read
  * holds two vocabularies. A fourth predicate added to this directory must do the
- * same, and must BIND the result rather than merely calling it:
- * `packages/billing/test/liveness-predicate-call-site.guard.test.ts` fails CI
- * otherwise — on the source AND on the answers the predicate gives for every
- * qzpay alias. (That path was wrong here until HOS-1310's review caught it: it
- * named a file that has never existed, so anyone grepping it would have
- * concluded there was no guard at all.)
+ * same, and must BIND the result rather than merely calling it, so the answers
+ * the predicate gives hold for every qzpay alias.
  *
  * @module predicates
  */

@@ -6,7 +6,7 @@
  * `"air_conditioning"`), not human-readable display text. The canonical display
  * strings live in `accommodations.amenityNames.<key>` across all locales. This
  * mirrors the resolution already done by `AmenitiesGrid.astro` so the host and
- * commerce editors render translated amenity labels instead of the raw key.
+ * gastronomy/experience editors render translated amenity labels instead of the raw key.
  *
  * Falls back to a humanized key (underscores → spaces, title-cased) when no
  * translation exists, matching the grid's behavior.

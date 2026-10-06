@@ -24,7 +24,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { buildPublicListingUrl } from '../../src/services/commerce-brochure/brochure-content.js';
+import { buildPublicListingUrl } from '../../src/services/listing-brochure/brochure-content.js';
 import {
     buildListingPublicUrl,
     buildListingQrSheetContent
@@ -33,7 +33,7 @@ import {
 const SITE = 'https://hospeda.com.ar';
 
 describe('where the printed code lands (HOS-982)', () => {
-    it('agrees with the brochure on both commerce verticals, segment for segment', () => {
+    it('agrees with the brochure on both gastronomy and experience verticals, segment for segment', () => {
         for (const vertical of ['gastronomy', 'experience'] as const) {
             expect(
                 buildListingPublicUrl({ vertical, slug: 'el-fogon', locale: 'es', siteUrl: SITE })

@@ -8,11 +8,11 @@
 >
 > - "14-day trial for all HOST users" — `OWNER_TRIAL_DAYS = 30`
 >   (`packages/billing/src/constants/billing.constants.ts:17`). 14 is
->   `COMPLEX_TRIAL_DAYS`, a different tier. Tourist and the commerce verticals
+>   `COMPLEX_TRIAL_DAYS`, a different tier. Tourist and the gastronomy and experience verticals
 >   have trials too, so it is not HOST-only either.
 > - "Auto-start on registration (via Better Auth user.create hook)" — the trial
 >   starts at FIRST PUBLISH. `createTrialSubscription` is called from
->   `accommodation-publish-deps.ts:254` and `commerce-trial-start.service.ts:335`,
+>   `accommodation-publish-deps.ts:254` and the gastronomy and experience trial-start service (`:335`),
 >   never from an auth hook.
 > - "Expired trials are cancelled" — the `trial-reconcile` cron CONVERTS
 >   (HOS-171): it converts paid ones, routes failed charges to dunning and

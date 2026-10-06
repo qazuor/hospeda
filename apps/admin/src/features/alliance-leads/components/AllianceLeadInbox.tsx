@@ -9,8 +9,8 @@
  *  - Status filter (all / pending / reviewing / approved / rejected).
  *  - Per-row "Handle" dialog: approve/reject radio + optional admin note.
  *
- * Deliberately has NO "Approve & provision" action (unlike `CommerceLeadInbox`,
- * its clone source): provisioning the corresponding partner/sponsor/editor/
+ * Deliberately has NO "Approve & provision" action (unlike the retired owner-lead inbox,
+ * which it was cloned from): provisioning the corresponding partner/sponsor/editor/
  * HostTrade entry is a MANUAL admin step in V1 (HOS-277 §6.4 / NG-1). Only the
  * "Handle" action (approve/reject + note) exists here.
  *

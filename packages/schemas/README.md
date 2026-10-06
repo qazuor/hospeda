@@ -157,7 +157,6 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 |---|---|---|---|---|
 | src/common/admin.schema.ts | common | AdminInfoSchema | AdminInfo |  |
 | src/common/api.schema.ts | common | BaseQuerySchema | BaseQuery | Base query schema combining common query parameters Can be extended by specific entity query schemas |
-| src/common/api.schema.ts | common | CommerceQuerySchema | CommerceQuery | Commerce query schema with price filtering For entities related to commerce and pricing |
 | src/common/api.schema.ts | common | DateRangeQuerySchema | DateRangeQuery | Schema for date range query parameters Used for filtering by date ranges across all entities |
 | src/common/api.schema.ts | common | ExtendedQuerySchema | ExtendedQuery | Extended query schema with date and location filters For entities that need comprehensive filtering capabilities |
 | src/common/api.schema.ts | common | LocationQuerySchema | LocationQuery | Schema for location-based query parameters Used for filtering by location across accommodations, destinations, and events |

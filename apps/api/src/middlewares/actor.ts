@@ -337,7 +337,7 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 // It is a Better Auth `additionalField`, so it only ever
                 // existed on the native `get-session` response. Once `apps/web`
                 // stopped reading that endpoint (it no longer carries the role
-                // set), the commerce-owner password gate would either have died
+                // set), the gastronomy/experience owner password gate would either have died
                 // silently or cost a second round-trip on every protected
                 // route. Forwarding it here makes `/auth/me` the single source
                 // for everything the middleware needs.

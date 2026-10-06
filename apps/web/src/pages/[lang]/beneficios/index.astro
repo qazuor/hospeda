@@ -73,7 +73,7 @@ const ownerBenefits = [
 
 /*
  * Experience and gastronomy benefits deliberately point at the
- * `commerce.landing.*` keys that already back `/publicar-experiencia/` and
+ * `{experience,gastronomy}.landing.*` keys that already back `/publicar-experiencia/` and
  * `/publicar-restaurante/` instead of getting a copy of their own. The claim a
  * vertical makes about itself has one home; a price or policy change edits one
  * string and both the landing and this page follow. Only the section chrome
@@ -85,36 +85,36 @@ const ownerBenefits = [
 const experienceBenefits = [
 	{
 		Icon: MapIcon,
-		titleKey: 'listing.landing.experience.benefits.item1.title',
-		descKey: 'listing.landing.experience.benefits.item1.desc'
+		titleKey: 'experience.landing.benefits.item1.title',
+		descKey: 'experience.landing.benefits.item1.desc'
 	},
 	{
 		Icon: SettingsIcon,
-		titleKey: 'listing.landing.experience.benefits.item2.title',
-		descKey: 'listing.landing.experience.benefits.item2.desc'
+		titleKey: 'experience.landing.benefits.item2.title',
+		descKey: 'experience.landing.benefits.item2.desc'
 	},
 	{
 		Icon: ShieldIcon,
-		titleKey: 'listing.landing.experience.benefits.item3.title',
-		descKey: 'listing.landing.experience.benefits.item3.desc'
+		titleKey: 'experience.landing.benefits.item3.title',
+		descKey: 'experience.landing.benefits.item3.desc'
 	}
 ] as const;
 
 const gastronomyBenefits = [
 	{
 		Icon: MapIcon,
-		titleKey: 'listing.landing.gastronomy.benefits.item1.title',
-		descKey: 'listing.landing.gastronomy.benefits.item1.desc'
+		titleKey: 'gastronomy.landing.benefits.item1.title',
+		descKey: 'gastronomy.landing.benefits.item1.desc'
 	},
 	{
 		Icon: SettingsIcon,
-		titleKey: 'listing.landing.gastronomy.benefits.item2.title',
-		descKey: 'listing.landing.gastronomy.benefits.item2.desc'
+		titleKey: 'gastronomy.landing.benefits.item2.title',
+		descKey: 'gastronomy.landing.benefits.item2.desc'
 	},
 	{
 		Icon: ShieldIcon,
-		titleKey: 'listing.landing.gastronomy.benefits.item3.title',
-		descKey: 'listing.landing.gastronomy.benefits.item3.desc'
+		titleKey: 'gastronomy.landing.benefits.item3.title',
+		descKey: 'gastronomy.landing.benefits.item3.desc'
 	}
 ] as const;
 
@@ -152,8 +152,8 @@ const splitLastWord = (full: string): { main: string; accent: string } => {
 
 const touristHeading = splitLastWord(t('benefits.tourist.title'));
 const ownerHeading = splitLastWord(t('benefits.owner.title'));
-const experienceHeading = splitLastWord(t('listing.landing.experience.benefits.title'));
-const gastronomyHeading = splitLastWord(t('listing.landing.gastronomy.benefits.title'));
+const experienceHeading = splitLastWord(t('experience.landing.benefits.title'));
+const gastronomyHeading = splitLastWord(t('gastronomy.landing.benefits.title'));
 const partnerHeading = splitLastWord(t('benefits.partner.title'));
 
 const benefitsTitle = t('benefits.title', 'Beneficios');

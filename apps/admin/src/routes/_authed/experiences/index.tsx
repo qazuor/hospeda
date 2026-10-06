@@ -1,5 +1,5 @@
 /**
- * Experiences list page — admin directory of tourism and activity commerce listings.
+ * Experiences list page — admin directory of tourism and activity listings.
  *
  * Uses the generic `createEntityListPage` system via the experience feature config.
  * The route and component are generated from `ExperiencesRoute` /

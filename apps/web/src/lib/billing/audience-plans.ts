@@ -30,9 +30,9 @@
  *
  * ## Why five cards and not four
  *
- * Gastronomy and experience are SEPARATE audiences, never a joint "commerce"
- * one. `ProductDomainEnum` holds four domains and `'commerce'` is a RETIRED
- * value (HOS-692); a surface that grouped the two verticals would reintroduce
+ * Gastronomy and experience are SEPARATE audiences, never a joint
+ * card. `ProductDomainEnum` holds the separate per-vertical domains and the old
+ * shared umbrella value is RETIRED (HOS-692); a surface that grouped the two verticals would reintroduce
  * the vocabulary the product-domain split exists to remove.
  *
  * ## Why the price and the trial can each be absent
@@ -140,8 +140,8 @@ export const CARD_ID_BY_PRICING_AUDIENCE: Readonly<Record<PricingAudience, Audie
  * the two accommodation audiences, which share the default domain and are
  * separated by `category` instead.
  *
- * `'commerce'` is a RETIRED `ProductDomainEnum` value (HOS-941 R-3) and appears
- * nowhere here: gastronomy and experience are separate domains and no surface
+ * The old shared umbrella is a RETIRED `ProductDomainEnum` value (HOS-941 R-3)
+ * and appears nowhere here: gastronomy and experience are separate domains and no surface
  * may group them.
  */
 const PLAN_DOMAIN_BY_CARD_ID: Readonly<Record<AudienceCardId, ProductDomainValue | undefined>> = {

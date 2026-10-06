@@ -199,7 +199,7 @@ export default defineConfig({
      *
      * That was not merely wasteful, it was corrupting. The duplicate runs hit
      * the SAME e2e database concurrently (`fullyParallel` + 4 workers), so a
-     * spec raced ITSELF on the same rows. `commerce-03` is the worked example:
+     * spec raced ITSELF on the same rows. `listing-owner-03` is the worked example:
      * `beforeAll` reads the current gastronomy type as "the original", the test
      * switches it to a hardcoded `BAR`, `afterAll` restores. Interleaved, copy B
      * reads copy A's `BAR` as its original, then tries to set `BAR` on a row

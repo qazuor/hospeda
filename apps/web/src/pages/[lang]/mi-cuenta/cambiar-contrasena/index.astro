@@ -3,7 +3,7 @@
  * @file cambiar-contrasena/index.astro
  * @description Forced or voluntary change-password page (SPEC-239 T-055).
  *
- * Commerce owners provisioned with a server-generated password land here on
+ * Gastronomy/experience owners provisioned with a server-generated password land here on
  * first login (middleware gate redirects them automatically when
  * `mustChangePassword = true`). Regular users can also reach this page
  * voluntarily from their account settings.
@@ -38,9 +38,9 @@ if (!user) {
 
 const t = createT(locale);
 
-const title = t('listing.changePassword.title', 'Cambiar contraseña');
+const title = t('account.changePassword.title', 'Cambiar contraseña');
 const description = t(
-    'listing.changePassword.subtitle',
+    'account.changePassword.subtitle',
     'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
 );
 

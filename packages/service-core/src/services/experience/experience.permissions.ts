@@ -3,7 +3,7 @@
  *
  * Thin experience permission helpers (SPEC-240 T-015 / SPEC-253 T-007).
  *
- * All real logic lives in the generic `commerce.permissions.ts` helpers that
+ * All real logic lives in the generic `listing.permissions.ts` helpers that
  * resolve the experience permission family. This file re-exports or delegates to
  * those helpers with experience context, keeping the experience service layer
  * consistent with gastronomy's pattern while avoiding permission-logic
@@ -22,18 +22,18 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
-import type { CommerceVertical } from '../commerce/commerce.permissions';
+import type { GastronomyOrExperience } from '../listing/listing.permissions';
 import {
-    checkCanAdminListCommerce,
-    checkCanCreateCommerce,
-    checkCanDeleteCommerce,
+    checkCanAdminListListings,
+    checkCanCreateListing,
+    checkCanDeleteListing,
     checkCanEditAll,
     checkCanEditOwn,
     checkCanEditOwnOrAll,
     checkCanModerateReview,
     checkCanViewAll,
-    hasCommercePermission
-} from '../commerce/commerce.permissions';
+    hasListingPermission
+} from '../listing/listing.permissions';
 
 /**
  * The vertical every check in this file resolves against (HOS-1077).
@@ -41,14 +41,14 @@ import {
  * Passing it is what makes `experience.*` permissions pass here while the
  * other vertical's do not.
  */
-const VERTICAL: CommerceVertical = 'experience';
+const VERTICAL: GastronomyOrExperience = 'experience';
 
 // Re-export generic helpers under experience-scoped names so callers inside
 // the experience directory can import from one place.
 
 /**
  * Checks if the actor may create a new experience listing.
- * Delegates to {@link checkCanCreateCommerce} — an authenticated account and
+ * Delegates to {@link checkCanCreateListing} — an authenticated account and
  * nothing more (HOS-687 / HOS-589 §6.1).
  *
  * @param actor - The actor performing the action.
@@ -56,7 +56,7 @@ const VERTICAL: CommerceVertical = 'experience';
  * @throws {ServiceError} UNAUTHORIZED when the actor is anonymous / a guest.
  */
 export function checkExperienceCanCreate(actor: Actor, data: unknown): void {
-    checkCanCreateCommerce(actor, data);
+    checkCanCreateListing(actor, data);
 }
 
 /**
@@ -109,14 +109,14 @@ export function checkExperienceCanEditOwn(actor: Actor, entity: { ownerId?: stri
 
 /**
  * Checks if the actor may soft-delete an experience listing.
- * Delegates to {@link checkCanDeleteCommerce} (`EXPERIENCE_DELETE`).
+ * Delegates to {@link checkCanDeleteListing} (`EXPERIENCE_DELETE`).
  *
  * @param actor - The actor performing the action.
  * @param entity - The entity being deleted (unused; accepted for signature parity).
  * @throws {ServiceError} FORBIDDEN when the actor lacks `EXPERIENCE_DELETE`.
  */
 export function checkExperienceCanDelete(actor: Actor, entity: unknown): void {
-    checkCanDeleteCommerce(actor, entity, VERTICAL);
+    checkCanDeleteListing(actor, entity, VERTICAL);
 }
 
 /**
@@ -135,13 +135,13 @@ export function checkExperienceCanViewAll(actor: Actor): void {
  *
  * Requires `experience.viewAll`.
  *
- * Delegates to {@link checkCanAdminListCommerce}.
+ * Delegates to {@link checkCanAdminListListings}.
  *
  * @param actor - The actor performing the action.
  * @throws {ServiceError} FORBIDDEN when the actor lacks that permission.
  */
 export function checkExperienceCanAdminList(actor: Actor): void {
-    checkCanAdminListCommerce(actor, VERTICAL);
+    checkCanAdminListListings(actor, VERTICAL);
 }
 
 /**
@@ -159,7 +159,7 @@ export function checkExperienceCanModerateReview(actor: Actor): void {
  * Checks if the actor may create or edit FAQs on an experience listing they own.
  *
  * Accepts either `EXPERIENCE_EDIT_ALL` (staff) or `EXPERIENCE_EDIT_OWN` when the
- * actor is the listing owner (SPEC-253 D2=b: replaces COMMERCE_FAQS_EDIT_OWN).
+ * actor is the listing owner (SPEC-253 D2=b: replaces the per-section FAQ permission).
  *
  * @param actor - The actor performing the action.
  * @param entity - The experience entity whose FAQs are being edited.
@@ -209,14 +209,14 @@ export function checkExperienceCanView(_actor: Actor): void {
 /**
  * Checks if the actor may perform a hard-delete on an experience listing.
  * Requires `EXPERIENCE_DELETE` (no separate hard-delete permission exists yet;
- * follows the same pattern as commerce delete gate).
+ * follows the same pattern as listing delete gate).
  *
  * @param actor - The actor performing the action.
  * @param _entity - The entity being hard-deleted (unused; accepted for signature parity).
  * @throws {ServiceError} FORBIDDEN when the actor lacks `EXPERIENCE_DELETE`.
  */
 export function checkExperienceCanHardDelete(actor: Actor, _entity: unknown): void {
-    if (!hasCommercePermission(actor, 'delete', VERTICAL)) {
+    if (!hasListingPermission(actor, 'delete', VERTICAL)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to permanently delete experience listing'
@@ -226,7 +226,7 @@ export function checkExperienceCanHardDelete(actor: Actor, _entity: unknown): vo
 
 /**
  * Checks if the actor may restore a soft-deleted experience listing.
- * Requires `EXPERIENCE_EDIT_ALL` (mirrors commerce restore gate).
+ * Requires `EXPERIENCE_EDIT_ALL` (mirrors listing restore gate).
  *
  * @param actor - The actor performing the action.
  * @param _entity - The entity being restored (unused; accepted for signature parity).

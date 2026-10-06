@@ -87,7 +87,7 @@ const isAccommodationAudience = audience === 'owner' || audience === 'tourist';
 // passed; we render a teaser for the complex plans below instead.
 //
 // That helper filters on `category`, which only discriminates the two
-// accommodation audiences — every commerce and partner plan carries
+// accommodation audiences — every gastronomy/experience and partner plan carries
 // `category: 'owner'` to satisfy `PlanCategory`'s type, and their real
 // discriminator is `product_domain`, applied server-side by `?domain=` before
 // the rows ever reach this component (HOS-1032). Running them through
@@ -143,7 +143,7 @@ function formatPriceArs(cents: number): string {
 						<span class="comparison-table__plan-cta">
 							{/*
 								Same rule as `PricingCardsGrid`'s `ctaMode` (HOS-1032): a
-								commerce tier is not bought from a marketing page — the
+								gastronomy or experience tier is not bought from a marketing page — the
 								checkout runs through the listing create flow, and its tier
 								picker lives there. Mounting the purchase island here would
 								put a "pay now" control on a plan whose payment does not
@@ -354,7 +354,7 @@ function formatPriceArs(cents: number): string {
 		margin-top: var(--space-3);
 	}
 
-	/* The commerce-audience CTA (HOS-1032): a plain link where the
+	/* The gastronomy/experience-audience CTA (HOS-1032): a plain link where the
 	   accommodation audiences mount the purchase island. Styled to read as the
 	   same control so a column does not look unfinished next to one that has a
 	   button — the difference is where it goes, not how important it is. */

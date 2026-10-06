@@ -1,0 +1,355 @@
+/**
+ * listing-completeness.ts
+ *
+ * Publish-readiness ("complete") contract for listings (HOS-166 §6.6).
+ *
+ * "Complete" is deliberately NOT "passes the Create schema" — the create
+ * schemas are permissive by design (`slug`, `ownerId`, `destinationId` are all
+ * `.optional()` on `GastronomyAdminCreateInputSchema`), so a listing that
+ * satisfies Create can still be unpublishable garbage. This module defines a
+ * separate, explicit, per-vertical publish-readiness contract, evaluated by a
+ * single pure function with THREE intended callers (§6.6):
+ *
+ * 1. The protected checkout route (`apps/api/.../start-subscription.ts`) — 422
+ *    with `missing` when incomplete.
+ * 2. The visibility reconciler (`@repo/service-core`'s
+ *    `listing-visibility.ts` via `listing-reconcile.service.ts`) — keeps an
+ *    incomplete-but-paid listing `PRIVATE` (G-3 defense in depth).
+ * 3. The web owner surface (`apps/web`) — renders the "what's missing"
+ *    checklist.
+ *
+ * One definition, three consumers. A second definition anywhere is a bug
+ * (R-5). This function is PURE — no DB access, no I/O — which is exactly why
+ * it lives in `@repo/schemas` rather than `@repo/service-core`: the web app
+ * cannot import service-core (that would pull DB access into the client
+ * bundle), but every layer — web, service-core, apps/api — can already import
+ * `@repo/schemas`. `@repo/schemas` is therefore the only home all three
+ * callers can share.
+ *
+ * D-4 compliance: this module has never heard of any lead-intake table and must
+ * never import lead-related types or reference lead data — see spec §6.1's
+ * anti-pattern table and the AC-14 static guard.
+ *
+ * @module common/listing-completeness
+ */
+
+import { type GastronomyOrExperience, ProductDomainEnum } from '../enums/product-domain.enum.js';
+import type { ContactInfo } from './contact.schema.js';
+import type { Media } from './media.schema.js';
+import type { OpeningHours } from './opening-hours.schema.js';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimum `summary` length required for publish. Mirrors the WRITE-side
+ * minimum enforced by `ListingIdentityFields.summary` in
+ * `packages/schemas/src/common/listing-identity.schema.ts` — kept as a
+ * separate named constant here because that schema module does not export a
+ * bare numeric constant to import.
+ */
+const SUMMARY_MIN_LENGTH = 10;
+
+/**
+ * Minimum `description` length required for publish. Mirrors
+ * `ListingIdentityFields.description`'s WRITE-side minimum — see
+ * {@link SUMMARY_MIN_LENGTH} for why this is a local constant rather than an
+ * import.
+ */
+const DESCRIPTION_MIN_LENGTH = 20;
+
+/** The seven day keys of {@link OpeningHours.days}, in schema order. */
+const OPENING_HOURS_DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/**
+ * The subset of a listing's fields `resolveListingCompleteness`
+ * reads. Deliberately a standalone structural type rather than the full
+ * `Gastronomy` / `Experience` entity type: at draft time a real DB row can
+ * legitimately violate those schemas' non-nullish invariants (e.g.
+ * `destinationId` is `.optional()` at create — spec §6.6), so every field
+ * here is nullable/optional to match what a genuinely incomplete draft looks
+ * like on the wire, independent of how the full entity schema types it.
+ *
+ * Callers pass whatever listing shape they have (a service read result, a
+ * DB row, a partial form payload) — only the fields below are read.
+ */
+export interface ListingCompletenessListing {
+    /** Listing display name. Required, non-empty. */
+    readonly name?: string | null;
+    /** Short marketing summary. Required, ≥ {@link SUMMARY_MIN_LENGTH} chars. */
+    readonly summary?: string | null;
+    /** Full description. Required, ≥ {@link DESCRIPTION_MIN_LENGTH} chars. */
+    readonly description?: string | null;
+    /** Linked destination UUID. Required (optional at create; required to publish). */
+    readonly destinationId?: string | null;
+    /** Owning user UUID. Required — ownership + billing anchor. */
+    readonly ownerId?: string | null;
+    /** Vertical-specific sub-category (e.g. `RESTAURANT`, `TOUR_GUIDE`). Required. */
+    readonly type?: string | null;
+    /** Media block. Required to carry a `featuredImage`. */
+    readonly media?: Pick<Media, 'featuredImage'> | null;
+    /** Contact channels. Required: at least one phone OR email field set. */
+    readonly contactInfo?: ContactInfo | null;
+    /** Weekly opening hours. Gastronomy-only requirement. */
+    readonly openingHours?: OpeningHours | null;
+    /** Price-range tier. Gastronomy-only requirement. */
+    readonly priceRange?: string | null;
+    /**
+     * Starting price in integer centavos. Experience-only requirement (see
+     * {@link resolveListingCompleteness}'s experience-specific block): must be
+     * a positive integer unless {@link isPriceOnRequest} is `true`. Mirrors
+     * gastronomy's `priceRange` requirement — a listing with no real price
+     * information is not viable to publish.
+     */
+    readonly priceFrom?: number | null;
+    /**
+     * When `true`, the experience shows "Consultar precio" instead of a
+     * numeric price, so {@link priceFrom} being `0` is expected and not a
+     * completeness gap. Experience-only requirement.
+     */
+    readonly isPriceOnRequest?: boolean | null;
+}
+
+/** Input to {@link resolveListingCompleteness}. */
+export interface ResolveListingCompletenessInput {
+    /** Which gastronomy or experience vertical the listing belongs to. Drives per-vertical rules. */
+    readonly entityType: GastronomyOrExperience;
+    /** The listing snapshot to evaluate. See {@link ListingCompletenessListing}. */
+    readonly listing: ListingCompletenessListing;
+}
+
+/** Result of {@link resolveListingCompleteness}. */
+export interface ResolveListingCompletenessResult {
+    /** `true` only when `missing` is empty. */
+    readonly complete: boolean;
+    /**
+     * Field names (in the shared/spec §6.6 vocabulary — e.g. `'name'`,
+     * `'media.featuredImage'`, `'contactInfo'`) that are missing or invalid.
+     * Empty when `complete` is `true`. Order is deterministic (declaration
+     * order below), so UI checklists render consistently.
+     */
+    readonly missing: readonly string[];
+}
+
+// ---------------------------------------------------------------------------
+// Field-level predicates
+// ---------------------------------------------------------------------------
+
+/** `true` when `value` is a non-empty (after trim) string. */
+function isNonEmptyString(value: string | null | undefined): value is string {
+    return typeof value === 'string' && value.trim().length > 0;
+}
+
+/** `true` when `value` is a non-empty string at least `minLength` characters long. */
+function meetsMinLength(value: string | null | undefined, minLength: number): boolean {
+    return isNonEmptyString(value) && value.trim().length >= minLength;
+}
+
+/** The `contactInfo` keys this module can read as a reachable channel. */
+type ReachableContactChannel =
+    | 'homePhone'
+    | 'workPhone'
+    | 'mobilePhone'
+    | 'whatsapp'
+    | 'personalEmail'
+    | 'workEmail';
+
+/**
+ * Which contact channels count as "reachable" for publish, PER VERTICAL.
+ *
+ * The rule the list encodes: a channel only makes the listing reachable if the
+ * vertical's PUBLIC page actually renders it. "Reachable" that the visitor
+ * cannot see is not reachable — it is a paid listing with no way to contact it
+ * (HOS-924).
+ *
+ * - `experience` — exactly the phone/email keys
+ *   `ExperiencePublicContactInfoSchema` publishes
+ *   (`packages/schemas/src/entities/experience/experience.access.schema.ts`),
+ *   which is what `ExperienceContactBlock.astro` renders. The three keys that
+ *   used to satisfy this gate and never reached the page are deliberately out:
+ *   `whatsapp` (gated by the VIEWER's plan on a separate protected endpoint —
+ *   HOS-19 — and this payload is shared-cached with no auth in the cache key),
+ *   `homePhone` and `personalEmail` (collected as personal/administrative
+ *   contact, not as the listing's published channel). `website` is published
+ *   too but is deliberately NOT accepted here: it was never accepted before
+ *   and a site is not a channel that reaches a person.
+ *
+ * - `gastronomy` — keeps the original six. Applying the experience rule here
+ *   would make EVERY gastronomy listing unpublishable, because
+ *   `GastronomyPublicSchema` publishes no `contactInfo` at all: its hole is
+ *   wider than a mis-calibrated gate and is tracked separately (HOS-924
+ *   "Relacionado"). Narrowing this row is the follow-up to exposing contact
+ *   there, not something to do first.
+ */
+const REACHABLE_CONTACT_CHANNELS: Readonly<
+    Record<GastronomyOrExperience, readonly ReachableContactChannel[]>
+> = {
+    [ProductDomainEnum.EXPERIENCE]: ['workPhone', 'mobilePhone', 'workEmail'],
+    [ProductDomainEnum.GASTRONOMY]: [
+        'homePhone',
+        'workPhone',
+        'mobilePhone',
+        'whatsapp',
+        'personalEmail',
+        'workEmail'
+    ]
+};
+
+/**
+ * `true` when `contactInfo` carries at least one channel the vertical's public
+ * page actually publishes — see {@link REACHABLE_CONTACT_CHANNELS}.
+ *
+ * Fails CLOSED on a vertical the map does not know. TypeScript makes that
+ * unreachable, but this function is fed rows read out of a database, and the
+ * wrong answer here publishes an unreachable listing — cheaper to refuse.
+ */
+function hasReachableContactChannel(
+    entityType: GastronomyOrExperience,
+    contactInfo: ContactInfo | null | undefined
+): boolean {
+    if (!contactInfo) {
+        return false;
+    }
+    const channels = REACHABLE_CONTACT_CHANNELS[entityType] ?? [];
+    return channels.some((key) => isNonEmptyString(contactInfo[key]));
+}
+
+/**
+ * `true` when `openingHours.days` has at least one day with at least one
+ * shift defined (spec §6.6: "≥ 1 day with ≥ 1 shift defined").
+ */
+function hasAtLeastOneOpeningShift(openingHours: OpeningHours | null | undefined): boolean {
+    if (!openingHours?.days) {
+        return false;
+    }
+    return OPENING_HOURS_DAY_KEYS.some((day) => {
+        const schedule = openingHours.days[day];
+        return (schedule?.shifts?.length ?? 0) > 0;
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/**
+ * Evaluates whether a listing is complete enough to publish.
+ *
+ * Pure function — no DB access, no I/O. Evaluates the SHARED required-field
+ * block (both verticals: `name`, `summary`, `description`, `destinationId`,
+ * `ownerId`, `type`, `media.featuredImage`, `contactInfo`), then applies
+ * per-vertical additions.
+ *
+ * `contactInfo` is in the shared block but its accepted channels are NOT
+ * shared: a channel only counts where the vertical's public page renders it
+ * (HOS-924). See {@link REACHABLE_CONTACT_CHANNELS}.
+ *
+ * Per-vertical additions:
+ *
+ * - `gastronomy` — additionally requires `openingHours` (≥ 1 day with ≥ 1
+ *   shift) and `priceRange`.
+ * - `experience` — additionally requires real price information: `priceFrom`
+ *   must be a positive integer unless `isPriceOnRequest` is `true` (HOS-166
+ *   PR-B). `openingHours` is deliberately NOT required for experience — see
+ *   the NOTE below the experience-specific block for why that one field was
+ *   left as a judgment call rather than a hard rule.
+ *
+ * Deliberately does NOT require: `menuUrl`, `richDescription`,
+ * `socialNetworks`, `amenityIds`, `featureIds`, gallery beyond the featured
+ * image, SEO fields, or i18n variants — those are quality, not viability
+ * (spec §6.6).
+ *
+ * @param input - {@link ResolveListingCompletenessInput}
+ * @returns {@link ResolveListingCompletenessResult}
+ *
+ * @example
+ * ```ts
+ * const { complete, missing } = resolveListingCompleteness({
+ *   entityType: 'gastronomy',
+ *   listing: gastronomyRow,
+ * });
+ * if (!complete) {
+ *   throw new HTTPException(422, { message: 'Listing incomplete', cause: { missing } });
+ * }
+ * ```
+ */
+export function resolveListingCompleteness(
+    input: ResolveListingCompletenessInput
+): ResolveListingCompletenessResult {
+    const { entityType, listing } = input;
+    const missing: string[] = [];
+
+    // ── Shared required-field block (both verticals) ─────────────────────
+    if (!isNonEmptyString(listing.name)) {
+        missing.push('name');
+    }
+    if (!meetsMinLength(listing.summary, SUMMARY_MIN_LENGTH)) {
+        missing.push('summary');
+    }
+    if (!meetsMinLength(listing.description, DESCRIPTION_MIN_LENGTH)) {
+        missing.push('description');
+    }
+    if (!isNonEmptyString(listing.destinationId)) {
+        missing.push('destinationId');
+    }
+    if (!isNonEmptyString(listing.ownerId)) {
+        missing.push('ownerId');
+    }
+    if (!isNonEmptyString(listing.type)) {
+        missing.push('type');
+    }
+    if (!listing.media?.featuredImage) {
+        missing.push('media.featuredImage');
+    }
+    if (!hasReachableContactChannel(entityType, listing.contactInfo)) {
+        missing.push('contactInfo');
+    }
+
+    // ── Gastronomy-specific required fields ───────────────────────────────
+    if (entityType === ProductDomainEnum.GASTRONOMY) {
+        if (!hasAtLeastOneOpeningShift(listing.openingHours)) {
+            missing.push('openingHours');
+        }
+        if (!isNonEmptyString(listing.priceRange)) {
+            missing.push('priceRange');
+        }
+    }
+
+    // ── Experience-specific required fields ───────────────────────────────
+    // HOS-166 PR-B resolution of the PR-A TODO. `priceFrom` is non-nullable on
+    // `ExperienceSchema`, so a listing that satisfies the Create schema always
+    // has SOME price data — but "some" is not "meaningful": `priceFrom: 0` with
+    // `isPriceOnRequest: false` reads as "$0", a broken listing. This mirrors
+    // gastronomy's `priceRange` requirement (real price information is
+    // viability, not quality).
+    //
+    // `priceUnit` is deliberately NOT checked here. It became nullable in H-156
+    // — an experience with no price has no unit to bill it in — and the rule
+    // that a REAL price still needs one lives on the create schemas, where both
+    // fields are present. Requiring it here too would block publishing exactly
+    // the "a consultar" listings the nullability exists to allow. (This comment
+    // used to assert both fields were non-nullable; that stopped being true.)
+    //
+    // NOTE (deferred, not decided here): `openingHours` was deliberately NOT
+    // added as a required field for experience, unlike gastronomy. A
+    // restaurant has a fixed weekly schedule by nature; an "experience" (tour,
+    // rental, on-demand activity) may legitimately run on flexible or
+    // by-request hours with no weekly shift pattern to fill in. Whether
+    // experience listings should require SOME availability signal to publish
+    // is a real product question the spec did not answer (§6.6 explicitly
+    // left experience-specific fields to the implementer's judgment) — flagged
+    // for the orchestrator/product owner rather than guessed at here.
+    if (entityType === ProductDomainEnum.EXPERIENCE) {
+        const hasRealPrice = typeof listing.priceFrom === 'number' && listing.priceFrom > 0;
+        if (listing.isPriceOnRequest !== true && !hasRealPrice) {
+            missing.push('priceFrom');
+        }
+    }
+
+    return { complete: missing.length === 0, missing };
+}

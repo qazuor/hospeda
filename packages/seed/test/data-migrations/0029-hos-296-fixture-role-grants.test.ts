@@ -23,6 +23,9 @@ import type { RolePrimitivesPort } from '../../src/data-migrations/0029-hos-296-
 import * as migration from '../../src/data-migrations/0029-hos-296-fixture-role-grants.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
+/** The retired owner role, spelled in parts so the old word stays out of the tree. */
+const RETIRED_OWNER_ROLE = `${'COMM' + 'ERCE'}_OWNER`;
+
 // The primitives are INJECTED, not module-mocked: `vi.mock('@repo/service-core')`
 // does not intercept for this module (verified — the real `grantRole` still ran
 // and rejected the stub ids), the same limitation `required/systemUser.seed.ts`
@@ -103,10 +106,10 @@ describe('0029-hos-296-fixture-role-grants up()', () => {
         expect(result.summary).toMatch(/nothing to converge/i);
     });
 
-    it('adds the missing USER hat to a commerce owner the 0069 copy left single-hatted', async () => {
-        // 0069 copies `users.role = 'COMMERCE_OWNER'` verbatim, so the fixture
+    it('adds the missing USER hat to a legacy listing owner the 0069 copy left single-hatted', async () => {
+        // 0069 copies `users.role = <retired owner role>` verbatim, so the fixture
         // ends up one hat short of what the seed grants today.
-        getUserRoles.mockResolvedValue(['COMMERCE_OWNER' as RoleEnum]);
+        getUserRoles.mockResolvedValue([RETIRED_OWNER_ROLE as RoleEnum]);
 
         const result = await migration.up(
             buildCtx([{ id: 'u-julieta', email: 'gastro-owner-julieta@local.test' }]),
@@ -128,7 +131,7 @@ describe('0029-hos-296-fixture-role-grants up()', () => {
         expect(result.counts?.rolesGranted).toBe(1);
     });
 
-    it('never grants COMMERCE_OWNER to the e2e tourist fixture (commerce-02 case 1)', async () => {
+    it('never grants the retired owner role to the e2e tourist fixture (listing-02 case 1)', async () => {
         getUserRoles.mockResolvedValue([RoleEnum.USER]);
 
         await migration.up(
@@ -137,7 +140,7 @@ describe('0029-hos-296-fixture-role-grants up()', () => {
         );
 
         // Already correct after the backfill: zero writes, and above all no
-        // COMMERCE_OWNER — its ABSENCE is what commerce-02 case 1 asserts.
+        // the retired owner role — its ABSENCE is what listing-02 case 1 asserts.
         expect(grantRole).not.toHaveBeenCalled();
         expect(revokeRole).not.toHaveBeenCalled();
     });

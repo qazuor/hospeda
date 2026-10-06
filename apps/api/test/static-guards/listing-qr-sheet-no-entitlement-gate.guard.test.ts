@@ -138,7 +138,7 @@ describe('the listing QR is ungated, on both surfaces of all three verticals (HO
     it.each(SHEET_ROUTES)('$vertical $surface: also refuses a listing that is not ACTIVE', ({
         path
     }) => {
-        // BOTH halves of "published", in all three verticals. The commerce two
+        // BOTH halves of "published", in all three verticals. The gastronomy and experience two
         // checked visibility alone until this was found: their services answer
         // NOT_FOUND to every non-owner on a non-ACTIVE row, so a listing PATCHed
         // to INACTIVE with PUBLIC visibility left standing would have minted a

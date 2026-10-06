@@ -28,7 +28,7 @@ import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
  * Each vertical's publish page, as a `buildUrl` path (no locale, no slashes at
  * the ends).
  *
- * The two commerce segments are Spanish, like every other public route in this
+ * The two gastronomy/experience segments are Spanish, like every other public route in this
  * app: the URL is a user-facing surface, not an identifier.
  */
 export const PUBLISH_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
@@ -41,7 +41,7 @@ export const PUBLISH_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug,
  * Where an owner manages the listings of one vertical — "Ver mis fichas" on the
  * precheck panel, and where the "pick among several drafts" branch sends them.
  *
- * The two commerce verticals share one page: `/mi-cuenta/comercio/` lists both,
+ * The two gastronomy/experience verticals share one page: `/mi-cuenta/comercio/` lists both,
  * which is correct here because an owner who has drafts in both verticals still
  * finds each of them there.
  */

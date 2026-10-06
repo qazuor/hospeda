@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-import { buildCommerceStartUrl } from '../../src/lib/commerce/start-url';
+import { buildListingStartUrl } from '../../src/lib/listing/start-url';
 
 const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../src');
 
@@ -103,10 +103,10 @@ describe('HOS-1233 T-026 / AC-12 â€” the three link pages still link to signup â
     it('gastronomia and experiencias point at their own vertical create form', () => {
         // The real builder, not a copy of its output: this asserts the href a
         // visitor actually gets, through the function the page calls.
-        expect(buildCommerceStartUrl({ locale: 'es', vertical: 'gastronomy' })).toBe(
+        expect(buildListingStartUrl({ locale: 'es', vertical: 'gastronomy' })).toBe(
             '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fgastronomia%2F'
         );
-        expect(buildCommerceStartUrl({ locale: 'es', vertical: 'experience' })).toBe(
+        expect(buildListingStartUrl({ locale: 'es', vertical: 'experience' })).toBe(
             '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F'
         );
 
@@ -116,7 +116,7 @@ describe('HOS-1233 T-026 / AC-12 â€” the three link pages still link to signup â
         ] as const) {
             const source = readSrc(PRICING_PAGES[audience]);
             expect(source, audience).toContain(
-                `buildCommerceStartUrl({ locale, vertical: '${vertical}' })`
+                `buildListingStartUrl({ locale, vertical: '${vertical}' })`
             );
             expect(source, audience).toContain('ctaHref={ctaHref}');
         }

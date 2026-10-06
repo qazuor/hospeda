@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { CommerceIdentityFields } from '../../common/commerce-identity.schema.js';
-import { CommerceRatingSchema } from '../../common/commerce-rating.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
+import { ExperienceRatingSchema } from '../../common/experience-rating.schema.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { ListingIdentityFields } from '../../common/listing-identity.schema.js';
 import { BaseMediaFields, BaseVideosFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { OpeningHoursFields } from '../../common/opening-hours.schema.js';
@@ -108,11 +108,11 @@ function experienceChecklistSchema(input: {
 }
 
 /**
- * Experience Entity Schema — commerce listing for tourism services and experiences.
+ * Experience Entity Schema — listing for tourism services and experiences.
  *
  * Composed by spreading shared base-field const objects (same composition pattern
  * as `GastronomySchema`) plus experience-specific fields:
- * - Identity: name/slug/summary/description/richDescription + i18n via `CommerceIdentityFields`
+ * - Identity: name/slug/summary/description/richDescription + i18n via `ListingIdentityFields`
  * - Schedule: weekly opening hours via `OpeningHoursFields`
  * - Contact: phone/email/website via `BaseContactFields`
  * - Social: social network links via `SocialNetworkFields`
@@ -158,7 +158,7 @@ export const ExperienceSchema = z.object({
     id: ExperienceIdSchema,
 
     // Core identity fields (name/slug/summary/description/richDescription + i18n)
-    ...CommerceIdentityFields,
+    ...ListingIdentityFields,
 
     // Experience-specific fields
     /** Experience sub-category (CAR_RENTAL, TOUR_GUIDE, EXCURSION, etc.). */
@@ -434,7 +434,7 @@ export const ExperienceSchema = z.object({
      * Aggregate of individual `ExperienceReview` records. Null when no
      * reviews have been submitted yet.
      */
-    rating: CommerceRatingSchema.nullish()
+    rating: ExperienceRatingSchema.nullish()
 });
 
 /** TypeScript type inferred from {@link ExperienceSchema}. */

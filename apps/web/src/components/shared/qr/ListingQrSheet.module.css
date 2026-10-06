@@ -3,7 +3,7 @@
  *
  * Plain CSS modules per the web app's conventions (Tailwind is admin-only). The
  * panel is rendered inside two very different cards — `PropertyCard.astro`'s
- * action row and `CommerceListingActions`' published branch — so it owns no
+ * action row and `ListingActions`' published branch — so it owns no
  * background, border or radius of its own: it inherits the card it sits in and
  * only lays its own three rows out.
  */

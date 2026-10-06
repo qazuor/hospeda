@@ -1,0 +1,324 @@
+/**
+ * @file createListingEntityHooks.ts
+ * Factory that extends the generic `createEntityHooks` CRUD suite with
+ * listing-domain mutations:
+ *
+ *   - `useAssignOwnerMutation`    — POST  `${endpoint}/${id}/assign-owner`
+ *   - `useModerateReviewMutation` — POST  `${endpoint}/reviews/${reviewId}/moderate`
+ *   - `usePendingReviewsQuery`    — GET   `${endpoint}/reviews?status=PENDING&…`
+ *
+ * The factory delegates standard CRUD (list, detail, create, update, patch,
+ * delete, softDelete, restore) to `createEntityHooks` and adds only the
+ * listing-specific hooks on top.
+ *
+ * Response unwrapping follows the verified gastronomy/accommodation API shape:
+ *   GET detail   →  `{ success, data: <entity> }`          → unwrap `response.data.data`
+ *   GET list     →  `{ success, data: { items, pagination } }` → handled by createEntityHooks
+ *   POST mutate  →  `{ success, data: <entity | null> }`   → unwrap `response.data.data`
+ *
+ * @module createListingEntityHooks
+ */
+
+import type { ModerationStatusEnum } from '@repo/schemas';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
+import { createEntityHooks } from '@/lib/factories/createEntityHooks';
+import { createEntityQueryKeys } from '@/lib/query-keys/factory';
+
+// ---------------------------------------------------------------------------
+// Input types
+// ---------------------------------------------------------------------------
+
+/**
+ * Parameters required to instantiate the listing entity hooks factory.
+ *
+ * @typeParam TData - Entity shape; must have an `id: string` field.
+ */
+export type ListingEntityHooksConfig = {
+    /**
+     * Entity name used as the TanStack Query root cache key (e.g. `'gastronomy'`).
+     * Must match the `entityName` passed to `createListingListConfig`.
+     */
+    readonly entityName: string;
+
+    /**
+     * Base admin API endpoint (e.g. `'/api/v1/admin/gastronomy'`).
+     */
+    readonly apiEndpoint: string;
+};
+
+// ---------------------------------------------------------------------------
+// Mutation/query input shapes
+// ---------------------------------------------------------------------------
+
+/** Input for the assign-owner mutation. */
+export type AssignOwnerInput = {
+    /** ID of the listing entity to update. */
+    readonly id: string;
+    /** ID of the user who will become the new owner. */
+    readonly ownerId: string;
+};
+
+/** Decision values for review moderation. */
+export type ReviewModerationDecision = 'APPROVED' | 'REJECTED';
+
+/** Input for the moderate-review mutation. */
+export type ModerateReviewInput = {
+    /** ID of the review to moderate. */
+    readonly reviewId: string;
+    /** Moderation decision. */
+    readonly decision: ReviewModerationDecision;
+    /** Optional reason (required when decision is `'REJECTED'`). */
+    readonly reason?: string;
+};
+
+/**
+ * Body of the LISTING moderation endpoint (HOS-686).
+ *
+ * Declared as a type alias, not an interface, on purpose: `InlineStateSelectCell`
+ * is generic over `TPatch extends Record<string, unknown>`, and an interface has
+ * no implicit index signature, so it would not satisfy that bound.
+ *
+ * Note the subject: this moderates the LISTING, whereas {@link ModerateReviewInput}
+ * above moderates a review written about it. Two endpoints, two permissions.
+ */
+export type ListingModerationPatch = { moderationState: ModerationStatusEnum };
+
+/** Query params for pending reviews. */
+export type PendingReviewsQueryParams = {
+    /** Page number (1-based). */
+    readonly page?: number;
+    /** Items per page. */
+    readonly pageSize?: number;
+    /** Additional arbitrary filters forwarded to the API. */
+    readonly filters?: Readonly<Record<string, string | number | boolean>>;
+};
+
+// ---------------------------------------------------------------------------
+// Factory
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a full set of CRUD + listing-specific hooks for a listing entity.
+ *
+ * The returned object contains all hooks from `createEntityHooks` plus:
+ *   - `useAssignOwnerMutation` — reassign the entity owner.
+ *   - `useModerateReviewMutation` — approve or reject a review.
+ *   - `usePendingReviewsQuery` — query reviews awaiting moderation.
+ *
+ * @typeParam TData - Entity shape (must extend `{ id: string }`).
+ * @param config - Entity name and API endpoint.
+ * @returns Object containing all entity hooks.
+ *
+ * @example
+ * ```ts
+ * // In the gastronomy feature (SPEC-240):
+ * const gastronomyHooks = createListingEntityHooks<GastronomyEntity>({
+ *   entityName: 'gastronomy',
+ *   apiEndpoint: '/api/v1/admin/gastronomy',
+ * });
+ *
+ * // In a component:
+ * const assignOwner = gastronomyHooks.useAssignOwnerMutation();
+ * const moderateReview = gastronomyHooks.useModerateReviewMutation();
+ * const { data: pendingReviews } = gastronomyHooks.usePendingReviewsQuery({ page: 1 });
+ * ```
+ */
+export function createListingEntityHooks<TData extends { id: string }>(
+    config: ListingEntityHooksConfig
+) {
+    const { entityName, apiEndpoint } = config;
+
+    // ------------------------------------------------------------------
+    // Standard CRUD hooks (list, detail, create, update, patch, delete, …)
+    // ------------------------------------------------------------------
+    const crudHooks = createEntityHooks<TData>({ entityName, apiEndpoint });
+    const queryKeys = createEntityQueryKeys(entityName);
+
+    // ------------------------------------------------------------------
+    // Listing-specific: assign owner
+    // ------------------------------------------------------------------
+
+    /**
+     * Mutation hook that reassigns the owner of a listing entity.
+     *
+     * Calls `POST ${apiEndpoint}/${id}/assign-owner` with `{ ownerId }`.
+     * Invalidates the entity detail and list caches on success.
+     *
+     * @returns A TanStack Query `UseMutationResult`.
+     */
+    function useAssignOwnerMutation() {
+        const queryClient = useQueryClient();
+
+        return useMutation({
+            mutationFn: async ({ id, ownerId }: AssignOwnerInput) => {
+                const response = await fetchApi<{ data: TData }>({
+                    path: `${apiEndpoint}/${id}/assign-owner`,
+                    method: 'POST',
+                    body: { ownerId }
+                });
+
+                // Response shape: { success, data: <entity> }
+                return (response.data as { data?: TData }).data as TData;
+            },
+            onSuccess: (_data, variables) => {
+                queryClient.invalidateQueries({ queryKey: queryKeys.detail(variables.id) });
+                queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+            }
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Listing-specific: review moderation
+    // ------------------------------------------------------------------
+
+    /**
+     * Mutation hook that approves or rejects a review for a listing entity.
+     *
+     * Calls `POST ${apiEndpoint}/reviews/${reviewId}/moderate`
+     * with `{ decision, reason? }`.
+     * Invalidates all review-related queries for this entity on success.
+     *
+     * @returns A TanStack Query `UseMutationResult`.
+     */
+    function useModerateReviewMutation() {
+        const queryClient = useQueryClient();
+
+        return useMutation({
+            mutationFn: async ({ reviewId, decision, reason }: ModerateReviewInput) => {
+                const body: Record<string, unknown> = { decision };
+                if (reason !== undefined) {
+                    body.reason = reason;
+                }
+
+                const response = await fetchApi<{ data: unknown }>({
+                    path: `${apiEndpoint}/reviews/${reviewId}/moderate`,
+                    method: 'POST',
+                    body
+                });
+
+                return (response.data as { data?: unknown }).data;
+            },
+            onSuccess: () => {
+                // Invalidate all queries that involve reviews for this entity
+                queryClient.invalidateQueries({
+                    queryKey: [...queryKeys.all, 'reviews']
+                });
+            }
+        });
+    }
+
+    /**
+     * Mutation hook that applies the moderation verdict to the LISTING itself
+     * (HOS-686).
+     *
+     * Calls `POST ${apiEndpoint}/${id}/moderate` with `{ moderationState }`,
+     * gated server-side by the vertical's `MODERATION_CHANGE`.
+     *
+     * ## Not `useModerateReviewMutation`
+     *
+     * That one posts to `${apiEndpoint}/reviews/${reviewId}/moderate` and
+     * decides whether a REVIEW is published. This one decides whether the
+     * listing stays up: `REJECTED` is what the listing visibility reconciler
+     * reads to flip a listing to `PRIVATE`/`INACTIVE`. Anyone searching
+     * "moderate" under listing meets the review hook first.
+     *
+     * Shaped as `(id) => mutation` so `InlineStateSelectCell` drives it
+     * unchanged — the cell calls `mutateAsync({ [field]: value })` and the
+     * endpoint body is named after the same column.
+     *
+     * @param id - The listing being moderated.
+     * @returns A TanStack Query `UseMutationResult`.
+     */
+    function useModerateListingMutation(id: string) {
+        const queryClient = useQueryClient();
+
+        return useMutation({
+            mutationFn: async (body: ListingModerationPatch) => {
+                const response = await fetchApi<{ data: TData }>({
+                    path: `${apiEndpoint}/${id}/moderate`,
+                    method: 'POST',
+                    body
+                });
+
+                // Response shape: { success, data: <entity> }
+                return (response.data as { data?: TData }).data as TData;
+            },
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: queryKeys.detail(id) });
+                queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+            }
+        });
+    }
+
+    /**
+     * Query hook that fetches reviews pending moderation for a listing entity.
+     *
+     * Calls `GET ${apiEndpoint}/reviews?status=PENDING&page=…&pageSize=…`.
+     * Response unwrapped as `response.data.data`.
+     *
+     * @param params - Optional pagination and filter params.
+     * @returns A TanStack Query `UseQueryResult`.
+     */
+    function usePendingReviewsQuery(params: PendingReviewsQueryParams = {}) {
+        const { page = 1, pageSize = 20, filters = {} } = params;
+
+        return useQuery({
+            queryKey: [...queryKeys.all, 'reviews', 'pending', { page, pageSize, filters }],
+            queryFn: async () => {
+                const searchParams = new URLSearchParams();
+                searchParams.set('status', 'PENDING');
+                searchParams.set('page', String(page));
+                searchParams.set('pageSize', String(pageSize));
+
+                for (const [key, value] of Object.entries(filters)) {
+                    searchParams.set(key, String(value));
+                }
+
+                const response = await fetchApi<unknown>({
+                    path: `${apiEndpoint}/reviews?${searchParams.toString()}`
+                });
+
+                // Response shape: { success, data: { items, pagination } }
+                const body = response.data as {
+                    data?: {
+                        items?: unknown[];
+                        pagination?: { page: number; pageSize: number; total: number };
+                    };
+                };
+
+                return {
+                    items: body.data?.items ?? [],
+                    pagination: body.data?.pagination ?? { page, pageSize, total: 0 }
+                };
+            },
+            staleTime: 2 * 60 * 1000 // 2 minutes — reviews stale faster than entity data
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Composite return
+    // ------------------------------------------------------------------
+    return {
+        // Standard CRUD (forwarded from createEntityHooks)
+        ...crudHooks,
+
+        // Listing-specific hooks
+        useAssignOwnerMutation,
+        useModerateListingMutation,
+        useModerateReviewMutation,
+        usePendingReviewsQuery,
+
+        // Expose query keys for external invalidation
+        queryKeys
+    };
+}
+
+/**
+ * Type helper to extract the full hook set produced by `createListingEntityHooks`.
+ *
+ * @typeParam TData - Entity shape used when calling the factory.
+ */
+export type ListingEntityHooks<TData extends { id: string }> = ReturnType<
+    typeof createListingEntityHooks<TData>
+>;

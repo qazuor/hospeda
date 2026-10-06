@@ -64,13 +64,13 @@ const OWNER_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.owner;
 const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
 
 /**
- * Set of roles that grant access to commerce-owner navigation
- * (sidebar "Mi comercio" entry, the commerce listing self-service area).
+ * Set of roles that grant access to gastronomy/experience-owner navigation
+ * (sidebar "Mi comercio" entry, the listing self-service area).
  *
- * Commerce listings (gastronomy, experiences) are a separate domain from
+ * Gastronomy and experience listings (gastronomy, experiences) are a separate domain from
  * accommodation hosting, so this set is intentionally distinct from
  * `ROLES_WITH_ACCOMMODATIONS_NAV` — a plain accommodation HOST does NOT
- * get the commerce area, and a plain GASTRONOMY_OWNER or EXPERIENCE_OWNER does NOT get the host
+ * get the listing area, and a plain GASTRONOMY_OWNER or EXPERIENCE_OWNER does NOT get the host
  * nav. Since HOS-296 an account can hold both hats at once and then gets
  * BOTH areas (AC-1).
  *
@@ -84,7 +84,7 @@ const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
  *   from losing the nav when the account holds only one vertical role.
  * - ADMIN / SUPER_ADMIN: platform staff (can reach every area).
  */
-export const ROLES_WITH_COMMERCE_NAV = new Set<string>([
+export const ROLES_WITH_LISTING_NAV = new Set<string>([
     'GASTRONOMY_OWNER',
     'EXPERIENCE_OWNER',
     'ADMIN',
@@ -92,9 +92,9 @@ export const ROLES_WITH_COMMERCE_NAV = new Set<string>([
 ]);
 
 /**
- * Which commerce-vertical pricing page a COMMERCE-only account (no
+ * Which per-vertical pricing page a gastronomy/experience-only account (no
  * accommodation "host" hat) belongs on, or `null` when it holds neither
- * commerce role (HOS-1293).
+ * gastronomy/experience role (HOS-1293).
  *
  * Checked only AFTER {@link hasAccommodationsNavAccess} has already failed in
  * both callers below — a dual-hat host who also runs a restaurant still lands
@@ -109,9 +109,9 @@ export const ROLES_WITH_COMMERCE_NAV = new Set<string>([
  * @param params.roles - Every role the user holds, or `null` for
  *   unauthenticated visitors.
  * @returns `'gastronomy'` or `'experience'`, or `null` when the account holds
- *   no commerce role.
+ *   no gastronomy/experience role.
  */
-function resolveCommercePricingAudience({
+function resolveListingPricingAudience({
     roles
 }: {
     readonly roles: readonly string[] | null;
@@ -132,7 +132,7 @@ function resolveCommercePricingAudience({
 /**
  * Resolves which subscription pricing page a role-aware upsell or redirect
  * should target: a user holding any host-level hat belongs on the owner plans
- * page, a commerce-only owner (gastronomy or experience, HOS-1293) belongs on
+ * page, a gastronomy/experience-only owner (gastronomy or experience, HOS-1293) belongs on
  * their own vertical's plans page, and tourists / unauthenticated visitors
  * belong on the tourist plans page.
  *
@@ -144,8 +144,8 @@ function resolveCommercePricingAudience({
  * HOS-296: a user who is BOTH a host and a tourist-tier subscriber lands on
  * the owner page, because holding the host hat is the stronger signal about
  * which catalog they can actually buy from. HOS-1293 extends the same
- * precedence one level: host beats commerce beats tourist — before this fix a
- * commerce-only owner (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role)
+ * precedence one level: host beats gastronomy/experience beats tourist — before this fix a
+ * gastronomy/experience-only owner (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role)
  * fell all the way through to the tourist page from `/mi-cuenta/addons/` and
  * the bare `/suscriptores/checkout/` root, because this function recognized
  * only the host-vs-everyone-else split.
@@ -164,9 +164,9 @@ export function resolveSubscriptionPlansPath({
     if (hasAccommodationsNavAccess({ roles })) {
         return OWNER_PLANS_PATH;
     }
-    const commerceAudience = resolveCommercePricingAudience({ roles });
-    if (commerceAudience !== null) {
-        return PRICING_PAGE_PATH_BY_AUDIENCE[commerceAudience];
+    const listingAudience = resolveListingPricingAudience({ roles });
+    if (listingAudience !== null) {
+        return PRICING_PAGE_PATH_BY_AUDIENCE[listingAudience];
     }
     return TOURIST_PLANS_PATH;
 }

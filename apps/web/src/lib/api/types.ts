@@ -25,9 +25,9 @@ import type { MediaAttribution } from '../media';
  * `tourist` widened in (HOS-1282), mirroring the API's own widening of
  * `SUBSCRIPTION_SCOPE_DOMAINS` — see that schema's doc for why.
  *
- * `gastronomy` / `experience` scope to one commerce vertical each. The
- * transitional `commerce` umbrella is retired (HOS-695) — there is no longer
- * a way to scope a read to "any commerce vertical" here.
+ * `gastronomy` / `experience` scope to one vertical each. The transitional
+ * shared umbrella domain is retired (HOS-695) — there is no longer a way to
+ * scope a read to "either of the two verticals" here.
  */
 export type ProductDomainScope = Exclude<ProductDomainValue, 'partner' | 'addon'>;
 
@@ -76,7 +76,7 @@ export interface ApiErrorResponse {
          * List of missing/invalid field names, sent as a SIBLING of
          * `code`/`message` (NOT nested under `details`) by
          * `LISTING_INCOMPLETE` 422 responses — e.g.
-         * `POST /commerce/listings/:entityType/:entityId/start-subscription`
+         * `POST /protected/{gastronomies,experiences}/:id/start-subscription`
          * (HOS-166 §7.1). `resolveListingCompleteness`'s `missing` vocabulary.
          */
         readonly missing?: readonly string[];

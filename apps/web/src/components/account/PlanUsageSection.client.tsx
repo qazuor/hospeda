@@ -36,7 +36,7 @@ export interface PlanUsageSectionProps {
     readonly roles: readonly string[];
     /**
      * Which subscription's limits to report on (HOS-259). A dual-role owner
-     * can hold both an accommodation and a commerce subscription under one
+     * can hold both an accommodation and a gastronomy or experience subscription under one
      * billing customer, and each grants a different set of limits.
      */
     readonly productDomain?: ProductDomainScope;

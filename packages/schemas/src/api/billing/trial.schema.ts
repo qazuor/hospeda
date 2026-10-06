@@ -224,7 +224,7 @@ export type ExtendTrialRequest = z.infer<typeof ExtendTrialRequestSchema>;
  * `productDomain` is optional and scopes the verdict to ONE vertical, mirroring
  * `GET /trial/status`'s own `?productDomain=` (HOS-1282). Eligibility has been
  * per-domain since HOS-1012 D-2 — `resolveTrialEligibility` in
- * `apps/api` REQUIRES the caller to pass one, precisely so a commerce call site
+ * `apps/api` REQUIRES the caller to pass one, precisely so a gastronomy or experience call site
  * cannot forget and silently consume the accommodation trial instead — but the
  * route itself only ever pinned `'accommodation'` until HOS-1293 gave it a
  * second real caller (the gastronomy/experience publish pages) that needed its

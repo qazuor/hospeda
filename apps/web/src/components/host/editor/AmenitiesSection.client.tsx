@@ -18,7 +18,7 @@
  * as a single flat grid under their existing heading.
  *
  * HOS-371: the grouping itself (canonical order, label mapping, bucketing) now
- * lives in `lib/catalog-categories.ts` — the commerce owner editor renders the
+ * lives in `lib/catalog-categories.ts` — the gastronomy/experience owner editor renders the
  * same accordions and must not carry a second copy of those tables.
  */
 

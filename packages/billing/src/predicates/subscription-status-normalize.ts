@@ -8,7 +8,7 @@
  * vocabularies depending on which layer last wrote the row:
  *
  * - **qzpay vocabulary** — written by qzpay-core / qzpay-drizzle when a row is
- *   created through the `mode: 'paid'` flow (monthly/commerce/partner recurring
+ *   created through the `mode: 'paid'` flow (monthly/gastronomy/experience/partner recurring
  *   subscriptions). These land on qzpay's internal creation-time values such as
  *   `incomplete`, `incomplete_expired`, `unpaid`, and `canceled` (American, 1 L).
  * - **Hospeda vocabulary** — written by Hospeda's own code (the annual upfront

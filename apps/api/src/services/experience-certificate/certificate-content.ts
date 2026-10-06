@@ -4,7 +4,7 @@
  * ---
  * WHY THE CONTENT IS SEPARATE FROM THE LAYOUT
  *
- * Same split `commerce-brochure` uses and for the same reason: what a
+ * Same split `listing-brochure` uses and for the same reason: what a
  * certificate SAYS is translated, auditable copy, and where it sits on the page
  * is typography. Keeping them apart means a test can assert the sentence
  * without rendering a PDF, and the renderer can be swapped without touching a
@@ -101,7 +101,7 @@ function i18nText(input: {
 /**
  * Absolute URL of the experience's public ficha.
  *
- * Mirrors `buildPublicListingUrl` in `commerce-brochure`, deliberately not
+ * Mirrors `buildPublicListingUrl` in `listing-brochure`, deliberately not
  * imported from it: the two modules answer to different features and a shared
  * helper would tie the certificate's QR to whatever the brochure's URL shape
  * becomes. The segment is asserted literally by this module's test, which is

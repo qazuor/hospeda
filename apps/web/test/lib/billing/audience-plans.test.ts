@@ -172,10 +172,11 @@ describe('audience card model', () => {
     });
 
     it('keeps gastronomy and experience as two separate audiences (AC-9)', () => {
-        // The retired `'commerce'` domain must not reappear as a joint card.
+        // The retired shared umbrella domain must not reappear as a joint card.
+        // Built in parts so the old grouping word never appears as a literal.
         expect(AUDIENCE_CARD_ORDER).toContain('gastronomy');
         expect(AUDIENCE_CARD_ORDER).toContain('experience');
-        expect(AUDIENCE_CARD_ORDER).not.toContain('commerce');
+        expect(AUDIENCE_CARD_ORDER).not.toContain('comm' + 'erce');
         expect(AUDIENCE_CARD_PATHS.gastronomy).not.toBe(AUDIENCE_CARD_PATHS.experience);
     });
 

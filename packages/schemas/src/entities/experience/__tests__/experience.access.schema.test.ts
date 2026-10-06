@@ -317,7 +317,7 @@ describe('ExperienceAdminListItemSchema', () => {
             destination: { id: VALID_UUID, name: 'Colón', slug: 'colon' },
             owner: {
                 id: VALID_UUID,
-                displayName: 'Seed Commerce Owner',
+                displayName: 'Seed Experience Owner',
                 firstName: null,
                 lastName: null,
                 email: 'owner@example.com'

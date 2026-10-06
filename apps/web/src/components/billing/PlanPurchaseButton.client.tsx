@@ -1502,10 +1502,10 @@ export function PlanPurchaseButton({
      * 4 extended the own-preapproval path to accommodation ANNUAL too (same
      * `HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED` flag), so restricting the
      * gate to monthly left an annual checkout binding a payer_email the user
-     * never got to see or edit. Commerce and partner checkouts do not go
-     * through this component (see `CommerceListingActions.client.tsx` and
-     * `apps/api/src/routes/partners/admin/send-link.ts` respectively), so
-     * they are unaffected by this gate either way.
+     * never got to see or edit. Gastronomy, experience and partner
+     * checkouts do not go through this component (partners are billed from
+     * `apps/api/src/routes/partners/admin/send-link.ts`), so they are
+     * unaffected by this gate either way.
      *
      * Reached from `handleClick`, the only checkout path this component has
      * since HOS-1012 T-027 removed the trial-warning dialog that used to sit

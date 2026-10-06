@@ -169,7 +169,7 @@ const guestActor: Actor = {
 };
 
 // Multi-role actor (HOS-296) — holds two hats at once
-const hostAndCommerceOwnerActor: Actor = {
+const hostAndListingOwnerActor: Actor = {
   id: 'user-789',
   roles: [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER],
   permissions: [PermissionEnum.ARTICLE_CREATE]

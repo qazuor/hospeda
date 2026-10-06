@@ -1,12 +1,12 @@
 ---
 /**
  * @file punto-de-encuentro.astro
- * @description Meeting-point section of the commerce editor (HOS-1048, routed in
+ * @description Meeting-point section of the gastronomy/experience editor (HOS-1048, routed in
  * HOS-1080).
  *
  * EXPERIENCE ONLY, and the gate is the SHAPE of the schema rather than an
  * entitlement: `meetingPoint` lives on `ExperienceOwnerUpdateInputSchema` and
- * not on the gastronomy one. `buildCommerceEditorSections` leaves this section
+ * not on the gastronomy one. `buildListingEditorSections` leaves this section
  * out of a gastronomy registry entirely, so the shared resolver's unknown-slug
  * branch sends a restaurant here straight back to its hub.
  *
@@ -14,14 +14,14 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({
+const resolution = await resolveListingEditorPage({
 	astro: Astro,
 	sectionSlug: 'punto-de-encuentro',
 });
@@ -32,7 +32,7 @@ const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
@@ -41,7 +41,7 @@ const { t } = createTranslations(locale);
 	currentSectionSlug="punto-de-encuentro"
 	title={t('listing.owner.editor.sectionNav.meetingPoint', 'Punto de encuentro')}
 >
-	<CommerceListingEditor
+	<ListingEditor
 		client:load
 		sectionId="meetingPoint"
 		vertical={vertical}
@@ -49,4 +49,4 @@ const { t } = createTranslations(locale);
 		locale={locale}
 		initialData={detail}
 	/>
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>

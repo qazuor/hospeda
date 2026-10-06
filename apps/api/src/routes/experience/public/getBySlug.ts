@@ -12,8 +12,8 @@ import { getActorFromContext } from '../../../utils/actor';
 import {
     fetchExperienceAmenities,
     fetchExperienceFeatures
-} from '../../../utils/commerce-catalog-relations';
-import { withPublicVisibleFaqs } from '../../../utils/commerce-faq-visibility';
+} from '../../../utils/listing-catalog-relations';
+import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 import { applyExperienceDirectionsGate } from './directions-projection';

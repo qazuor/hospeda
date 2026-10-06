@@ -1,7 +1,7 @@
 /**
  * @file mi-cuenta-comercio-nuevo.astro.test.ts
  * @description Source-level assertions for what became of the owner
- * self-service commerce create path (HOS-687, then HOS-1156 D-6).
+ * self-service gastronomy/experience create path (HOS-687, then HOS-1156 D-6).
  *
  * Astro pages cannot be rendered via Vitest, so these are string-level
  * assertions on the `.astro` source — the same pattern used elsewhere in this
@@ -19,9 +19,9 @@
  * along with the login it required: the page they now point at is public (D-1).
  *
  * The HOS-687 property did not disappear, it MOVED. It is asserted where the
- * form lives now (`publicar-commerce-pages.test.ts`: no `buildLoginRedirect`,
+ * form lives now (`publicar-listing-pages.test.ts`: no `buildLoginRedirect`,
  * no role gate) and on the API route that grants the role
- * (`commerce/protected/create.ts` declares no `requiredPermissions`). What stays
+ * (`routes/{gastronomy,experience}/protected/create.ts` declare no `requiredPermissions`). What stays
  * here is its companion half — that only the CREATE path was ever opened.
  */
 
@@ -47,16 +47,16 @@ const createRedirectSource = readStripped(resolve(PAGES_ROOT, 'nuevo/[vertical].
 const pickerRedirectSource = readStripped(resolve(PAGES_ROOT, 'nuevo/index.astro'));
 const listingIndexSource = readFileSync(resolve(PAGES_ROOT, 'index.astro'), 'utf8');
 /**
- * The commerce editor's shared front door.
+ * The gastronomy/experience editor's shared front door.
  *
  * HOS-1080 split the single `[vertical]/[id]/editar.astro` into eleven routes,
- * and the commerce-role gate moved into the resolver every one of them calls —
+ * and the listing-role gate moved into the resolver every one of them calls —
  * which is the point of having one. That each route really goes through it is
- * asserted in `commerce-editor-routes.test.ts`; that the gate is still IN it is
+ * asserted in `listing-editor-routes.test.ts`; that the gate is still IN it is
  * asserted below.
  */
 const editorResolverSource = readFileSync(
-    resolve(__dirname, '../../src/lib/editor/resolve-commerce-editor-page.ts'),
+    resolve(__dirname, '../../src/lib/editor/resolve-listing-editor-page.ts'),
     'utf8'
 );
 
@@ -80,11 +80,11 @@ describe('mi-cuenta/comercio/nuevo — both URLs are now 301s (HOS-1156 D-6)', (
     ])('%s carries nothing of the page it replaced', (_label, read) => {
         const src = read();
         expect(src).not.toContain('AccountLayout');
-        expect(src).not.toContain('CommerceCreateForm');
+        expect(src).not.toContain('ListingCreateForm');
         expect(src).not.toContain('destinationsApi');
         // HOS-693 §6.2 removed the lead pre-fill; nothing may bring it back
         // through a redirect page either.
-        expect(src).not.toContain('fetchMyCommerceLead');
+        expect(src).not.toContain('fetchMyListingLead');
         expect(src).not.toContain('prefill');
     });
 
@@ -105,10 +105,10 @@ describe('mi-cuenta/comercio/nuevo — both URLs are now 301s (HOS-1156 D-6)', (
 });
 
 describe('only the CREATE path was ever opened (HOS-687 companion half)', () => {
-    it('the listing index and the editor KEEP their commerce-role gate', () => {
+    it('the listing index and the editor KEEP their listing-role gate', () => {
         // The pages that READ and WRITE existing listings still require the
         // role. If a later change strips the gate from either, this fails.
-        expect(listingIndexSource).toContain('hasCommerceNavAccess');
-        expect(editorResolverSource).toContain('hasCommerceNavAccess');
+        expect(listingIndexSource).toContain('hasListingNavAccess');
+        expect(editorResolverSource).toContain('hasListingNavAccess');
     });
 });

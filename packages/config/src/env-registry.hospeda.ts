@@ -645,7 +645,7 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_ADMIN_NOTIFICATION_EMAILS',
         description:
-            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks, newsletter campaigns that close with failed deliveries (SPEC-108), AND new acquisition leads from the commerce and alliance funnels (H-62 / H-148).',
+            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks, newsletter campaigns that close with failed deliveries (SPEC-108), AND new acquisition leads from the gastronomy, experience and alliance funnels (H-62 / H-148).',
         descriptionEs:
             'Emails de admin separados por comas para alertas operativas: disputas/webhooks de MercadoPago, campañas de newsletter que cierran con entregas fallidas (SPEC-108) Y leads nuevos de los embudos de comercio y aliados (H-62 / H-148).',
         type: 'string',
@@ -655,7 +655,7 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'email',
         howToObtain:
-            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0, and every new commerce/alliance lead. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped, which for leads means an acquisition funnel nobody hears — the API logs a WARN per dropped lead and the lead-intake-backstop cron keeps retrying it.',
+            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0, and every new gastronomy/experience/alliance lead. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped, which for leads means an acquisition funnel nobody hears — the API logs a WARN per dropped lead and the lead-intake-backstop cron keeps retrying it.',
         howToObtainEs:
             'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, campañas de newsletter que cierran con failed > 0, y cada lead nuevo de comercio/aliados. Ejemplo: alice@hospeda.ar,bob@hospeda.ar. Si queda sin setear, esas alertas se omiten: para los leads eso significa un embudo de captación que nadie escucha — la API loguea un WARN por lead descartado y el cron lead-intake-backstop lo sigue reintentando.'
     },
@@ -948,9 +948,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'billing',
         howToObtain:
-            'Leave unset or "false" to keep the shared share-link checkout (safe default, unchanged behavior). Set "true" ONLY after a staging smoke of the accommodation-monthly checkout against the real MP sandbox has passed. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it. Scoped to accommodation monthly only (HOS-937 step 1) — annual, commerce and partner checkouts are unaffected regardless of this flag.',
+            'Leave unset or "false" to keep the shared share-link checkout (safe default, unchanged behavior). Set "true" ONLY after a staging smoke of the accommodation-monthly checkout against the real MP sandbox has passed. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it. Scoped to accommodation monthly only (HOS-937 step 1) — annual, gastronomy, experience and partner checkouts are unaffected regardless of this flag.',
         howToObtainEs:
-            'Dejalo sin setear o en "false" para mantener el checkout con share link compartido (default seguro, sin cambio de comportamiento). Poné "true" SOLO después de que un smoke en staging del checkout de accommodation mensual contra el sandbox real de MP haya pasado. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa. Alcanza sólo a accommodation mensual (HOS-937 paso 1) — anual, commerce y partner no se ven afectados por este flag.'
+            'Dejalo sin setear o en "false" para mantener el checkout con share link compartido (default seguro, sin cambio de comportamiento). Poné "true" SOLO después de que un smoke en staging del checkout de accommodation mensual contra el sandbox real de MP haya pasado. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa. Alcanza sólo a accommodation mensual (HOS-937 paso 1) — anual, gastronomía, experiencias y partner no se ven afectados por este flag.'
     },
 
     // -------------------------------------------------------------------------
@@ -1303,7 +1303,7 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api', 'seed'],
         category: 'integrations',
         howToObtain:
-            'Cap on a single entity photo (accommodation, destination, event, post, commerce listing) in MB. Default 10, which is also the hard maximum the schema accepts: Cloudinary rejects a larger image outright on the current plan, so a higher value would let an upload burn the full transfer time and only then fail as a generic upstream error. The upload routes carry their own body-size ceiling derived from this value, so a photo exactly at the cap is not killed by the multipart envelope pushing it past the global body limit (HOS-322). Keep it in sync with DEFAULT_ENTITY_MAX_FILE_SIZE_MB in @repo/media, which is what the web and admin clients pre-validate against. Raising it requires a Cloudinary plan change first.',
+            'Cap on a single entity photo (accommodation, destination, event, post, gastronomy or experience listing) in MB. Default 10, which is also the hard maximum the schema accepts: Cloudinary rejects a larger image outright on the current plan, so a higher value would let an upload burn the full transfer time and only then fail as a generic upstream error. The upload routes carry their own body-size ceiling derived from this value, so a photo exactly at the cap is not killed by the multipart envelope pushing it past the global body limit (HOS-322). Keep it in sync with DEFAULT_ENTITY_MAX_FILE_SIZE_MB in @repo/media, which is what the web and admin clients pre-validate against. Raising it requires a Cloudinary plan change first.',
         howToObtainEs:
             'Tope en MB para una foto de entidad (alojamiento, destino, evento, post, listado de comercio). Por defecto 10, que además es el máximo que acepta el schema: Cloudinary rechaza una imagen más grande en el plan actual, así que un valor mayor haría que la subida consuma todo el tiempo de transferencia y recién ahí falle con un error genérico de upstream. Las rutas de subida tienen su propio techo de body derivado de este valor, para que una foto justo en el tope no muera porque el sobre multipart la pasa del límite global (HOS-322). Mantenelo sincronizado con DEFAULT_ENTITY_MAX_FILE_SIZE_MB en @repo/media, que es lo que validan los clientes de web y admin antes de subir. Subirlo requiere primero cambiar el plan de Cloudinary.'
     },

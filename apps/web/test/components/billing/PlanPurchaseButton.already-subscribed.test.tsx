@@ -199,7 +199,7 @@ describe('PlanPurchaseButton — a refused checkout says what to do (HOS-1321)',
     // Both audiences this component sells to. `owner` is the host funnel; a
     // `tourist-vip` holder standing on it is exactly who HOS-1260 started
     // refusing. `tourist` is the traveller funnel, refused for a host or
-    // commerce owner who already holds a live subscription.
+    // gastronomy/experience owner who already holds a live subscription.
     it.each([
         'owner',
         'tourist'

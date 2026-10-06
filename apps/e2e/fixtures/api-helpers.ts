@@ -380,7 +380,7 @@ export async function createUser(
  * Forces the user's set of hats to be exactly `{USER, role}` in `user_role`.
  *
  * Bypasses any business rule that would normally produce the hat (host
- * promotion on publish, commerce-lead approval, admin grant) — use only when
+ * promotion on publish, lead approval, admin grant) — use only when
  * the test doesn't care about the path that produced it.
  *
  * **Semantics (HOS-296).** Before multi-role this wrote a scalar, so it was a
@@ -775,7 +775,7 @@ export async function resolvePlanIdBySlug(options: { readonly slug: string }): P
 /**
  * Signs in an already-existing user (seeded or previously created) and
  * returns their session cookie. Use this for tests that authenticate as a
- * known seeded account (e.g. the commerce-owner Julieta) rather than
+ * known seeded account (e.g. the gastronomy/experience owner Julieta) rather than
  * creating a fresh user per test.
  *
  * The underlying mechanism is identical to the sign-in step inside

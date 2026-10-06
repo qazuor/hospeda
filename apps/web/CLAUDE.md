@@ -433,20 +433,20 @@ Only `/mi-cuenta/*` routes require authentication. Middleware checks the session
 
 All other routes (including `/suscriptores/*`) are public.
 
-### Commerce owner self-service (`/mi-cuenta/comercio`, SPEC-249)
+### Gastronomy/experience owner self-service (`/mi-cuenta/comercio`, SPEC-249)
 
 `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` users edit the **operational** fields of their own gastronomy /
 experience listings under `/[lang]/mi-cuenta/comercio`. Identity/core fields
 (name, slug, type, destination, lifecycle/visibility) are read-only and
 server-stripped — owners only maintain content (description, contact, hours,
 media, amenities, price). **Owners create their own listings** since HOS-166 §7.2:
-`POST /api/v1/protected/commerce/listings/{gastronomy,experience}`
-(`apps/api/src/routes/commerce/protected/create.ts`) declares NO
+`POST /api/v1/protected/gastronomies` / `POST /api/v1/protected/experiences`
+(`apps/api/src/routes/{gastronomy,experience}/protected/create.ts`) declares NO
 `requiredPermissions` (HOS-687), creates the listing for `actor.id`, and grants
 `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` in the same transaction via `createForOwner`. The admin
 create/provision path still exists in parallel — it is no longer the only way in.
 Full reference:
-[docs/commerce-owner-self-service.md](docs/commerce-owner-self-service.md).
+[docs/listing-owner-self-service.md](docs/listing-owner-self-service.md).
 
 ### Auth UI
 
@@ -1179,7 +1179,7 @@ would otherwise re-derive wrongly:
   called `buildLoginRedirect` in their frontmatter).
 - **Every publish path lives exactly once**, in
   `src/lib/publish/publish-page-paths.ts`, read by the pages, the header's
-  `PUBLISH_CTA_OPTIONS`, the footer, the five 301s and `buildCommerceStartUrl`.
+  `PUBLISH_CTA_OPTIONS`, the footer, the five 301s and `buildListingStartUrl`.
   This exists because the issue was CAUSED by a stale link: HOS-1032 repointed
   eighteen call sites at a 301 whose target had changed meaning, and one of them
   was the "Publicar" button. **A link to a redirect is a link whose destination
@@ -1201,7 +1201,7 @@ would otherwise re-derive wrongly:
 The per-vertical cap, the six-cell decision matrix and the delete-draft action
 are shared with the API: see `LIMIT_KEY_BY_PUBLISH_VERTICAL` (`@repo/billing`),
 `GET /api/v1/protected/publish/precheck/{vertical}` and
-`DELETE /api/v1/protected/commerce/listings/{vertical}/{id}`. Accommodation keeps
+`DELETE /api/v1/protected/{gastronomies,experiences}/{id}`. Accommodation keeps
 its own delete (`DELETE /protected/accommodations/{id}`), which already accepted
 its owner; `publishApi.deleteDraft` owns that branch so the island does not.
 

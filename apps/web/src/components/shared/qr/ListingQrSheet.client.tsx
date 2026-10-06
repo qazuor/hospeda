@@ -98,7 +98,7 @@ export interface ListingQrSheetProps {
      *
      * Resolved by the CALLER from the listing state it already holds — an
      * accommodation is `lifecycleState === ACTIVE && visibility === PUBLIC`, a
-     * commerce listing is `isPublic`. It is deliberately not derived from a failed
+     * listing is `isPublic`. It is deliberately not derived from a failed
      * request: see the module docblock.
      */
     readonly isPublished: boolean;

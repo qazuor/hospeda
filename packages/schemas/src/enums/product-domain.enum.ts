@@ -25,13 +25,14 @@
  *   domain would silently be counted as the owner's accommodation subscription
  *   — the exact contamination this member exists to prevent.
  *
- * **`commerce` is retired (HOS-695, release C).** It used to be the single
- * pre-HOS-685 transitional value covering both gastronomy and experience,
- * kept alive through releases A (HOS-685, widened the vocabulary) and B
- * (HOS-692, rewrote every commerce row to its own vertical) so the old and
+ * **The old shared gastronomy-and-experience value is retired (HOS-695,
+ * release C).** It used to be the single pre-HOS-685 transitional value
+ * covering both verticals, kept alive through releases A (HOS-685, widened
+ * the vocabulary) and B (HOS-692, rewrote every such row to its own
+ * vertical) so the old and
  * new vocabularies could overlap while the data migration was still
  * reversible. Release C removes the member itself: nothing may compare or
- * assign `product_domain = 'commerce'` anywhere in production source,
+ * assign that retired `product_domain` value anywhere in production source,
  * including raw SQL and seed files (AC-33). This is the last of the three
  * releases and, unlike A and B, it is NOT reversible past B — see
  * `subscription-product-domain.ts` for the narrowed predicates.
@@ -39,18 +40,16 @@
  * **Nothing in the type system defends this enum.** There is no
  * `Record<ProductDomainEnum, …>`, no exhaustive `switch` and no `satisfies`
  * over it, so adding or removing a member compiles clean and every failure is a
- * string comparison that silently stops matching. Two checks stand in for the
- * compiler: the frozen member count in `test/enums/product-domain.enum.test.ts`
- * and `scripts/check-product-domain-vocabulary.sh` in CI's Guards job (plus
- * `scripts/check-product-domain-raw-sql.sh` for raw-string / seed-file
- * comparisons the symbol-based guard cannot see).
+ * string comparison that silently stops matching. The frozen member count in
+ * `test/enums/product-domain.enum.test.ts` stands in for the compiler, and the
+ * retired shared value is kept out of production source by G8
+ * (`scripts/check-old-grouping-word.sh`).
  *
- * The `gastronomy` / `experience` values collide by name with
- * `CommerceEntityTypeEnum`, which uses the same two strings for
- * `entity_subscriptions.entity_type`. That is deliberate: it makes a
- * link row's `product_domain` a pure function of its own `entity_type`. The
- * hazard is querying the wrong column and getting plausible results, so any
- * hand-written SQL touching either column names it explicitly.
+ * The `gastronomy` / `experience` values coincide by name with the two
+ * non-accommodation values of `entity_subscriptions.entity_type`. That is
+ * deliberate: it makes a link row's `product_domain` a pure function of its own
+ * `entity_type`. The hazard is querying the wrong column and getting plausible
+ * results, so any hand-written SQL touching either column names it explicitly.
  */
 export enum ProductDomainEnum {
     ACCOMMODATION = 'accommodation',
@@ -60,6 +59,22 @@ export enum ProductDomainEnum {
     TOURIST = 'tourist',
     ADDON = 'addon'
 }
+
+/**
+ * The two {@link ProductDomainEnum} members that own self-service listings
+ * besides accommodation: gastronomy and experience.
+ *
+ * This names the PAIR; it is not an umbrella term and not a third domain.
+ * Widening it to the three listing verticals would be new code (every
+ * `Record<GastronomyOrExperience, …>` would then demand an accommodation
+ * entry), so it stays exactly two members.
+ *
+ * Spelled as the members' string values so a plain `'gastronomy'` literal and
+ * a `ProductDomainEnum.GASTRONOMY` member are both assignable to it.
+ */
+export type GastronomyOrExperience =
+    | `${ProductDomainEnum.GASTRONOMY}`
+    | `${ProductDomainEnum.EXPERIENCE}`;
 
 /**
  * The subset of {@link ProductDomainEnum} members that represent an actual

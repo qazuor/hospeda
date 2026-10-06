@@ -7,7 +7,7 @@
  * reads identically in both apps even when a translation is missing.
  *
  * Extracted from `components/host/editor/AmenitiesSection.client.tsx` (BETA-133)
- * when the commerce editor adopted the same collapsible accordions (HOS-371) —
+ * when the gastronomy/experience editor adopted the same collapsible accordions (HOS-371) —
  * two copies of the order/label tables would drift the moment a new
  * `AmenitiesTypeEnum` value lands.
  *

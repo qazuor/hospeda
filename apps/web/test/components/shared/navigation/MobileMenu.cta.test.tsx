@@ -164,8 +164,8 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
             '/es/publicar/experiencias/'
         );
 
-        // HOS-1156: the two commerce entries used to read `/es/planes/…/` here,
-        // and that was the defect — a "Publicar" menu whose two commerce options
+        // HOS-1156: the two gastronomy and experience entries used to read `/es/planes/…/` here,
+        // and that was the defect — a "Publicar" menu whose two gastronomy and experience options
         // opened SALES pages. The literals above are deliberately spelled out
         // rather than derived from `PUBLISH_CTA_OPTIONS`: deriving them would
         // make this case pass for any value the config happened to hold, which
@@ -203,7 +203,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
 
     it('renders the submenu for an existing GASTRONOMY_OWNER (HOS-691 AC-12)', () => {
         renderMenu({
-            initialUser: { id: 'u1', name: 'Commerce Owner', email: 'owner@example.com' },
+            initialUser: { id: 'u1', name: 'Listing Owner', email: 'owner@example.com' },
             initialRoles: ['USER', 'GASTRONOMY_OWNER']
         });
         openMenu();

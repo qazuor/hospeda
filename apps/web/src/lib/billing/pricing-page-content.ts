@@ -14,7 +14,7 @@
  * difference between five pages that agree today and five pages that stay in
  * agreement.
  *
- * The precedent is exact and recent: `commerce.json` used to spell
+ * The precedent is exact and recent: the old shared two-vertical locale file used to spell
  * "30 días de prueba gratis" by hand in twelve strings across two verticals and
  * three locales. It matched the database by coincidence and would have kept
  * promising 30 the day an operator edited the plan — which is HOS-525 verbatim,
@@ -73,7 +73,7 @@ export interface BillingFaqItem {
  * `'checkout'` starts a MercadoPago subscription from the card itself — the two
  * accommodation audiences, and the only ones whose checkout begins on a pricing
  * page. `'link'` sends the visitor somewhere else to complete it: the listing
- * create flow for the commerce verticals (whose tier picker lives there, not
+ * create flow for the gastronomy/experience verticals (whose tier picker lives there, not
  * here), and the lead form for aliados, whose partnership is agreed in a
  * conversation rather than bought (HOS-941 D-13).
  */
@@ -304,7 +304,7 @@ export function buildPricingBreadcrumbs({
  *
  * Built from the SAME resolved items the page renders, never from the keys, so
  * the JSON-LD cannot advertise a trial the visible answer omits — the failure
- * mode both commerce landings were built to avoid.
+ * mode both gastronomy/experience landings were built to avoid.
  *
  * @param params.faqs - The already-resolved questions and answers.
  * @returns A `schema.org` `FAQPage` object, ready for `<JsonLd>`.

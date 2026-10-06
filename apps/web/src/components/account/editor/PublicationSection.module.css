@@ -59,7 +59,7 @@
 }
 
 /* Literal oklch, same hue as the REJECTED badge in `EditableContentCard.astro`:
-   this app defines no `--destructive` token (the commerce editor's
+   this app defines no `--destructive` token (the listing editor's
    `var(--destructive, …)` resolves to its fallback everywhere). */
 .deleteButton {
     border: 1px solid oklch(0.55 0.22 25 / 0.45);

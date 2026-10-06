@@ -5,7 +5,7 @@
  * canonical names expected by the task manifest (SPEC-240 T-028).
  *
  * IMPORTANT: Do NOT duplicate business logic here.  All real implementation
- * lives in `createCommerceEntityHooks` → `experienceHooks` in
+ * lives in `createListingEntityHooks` → `experienceHooks` in
  * `useExperienceQuery.ts`.  This file simply re-exports so that callers that
  * import from `useExperiences` get a stable public surface.
  */

@@ -5,8 +5,8 @@
  *
  * ## The bug these reproduce
  *
- * `canPause` / `canResume` were gated on `commerceVertical === null` (HOS-1278).
- * That is a NEGATION, and `isCommerceVertical('tourist')` is `false`, so the
+ * `canPause` / `canResume` were gated on a NEGATION ("not a gastronomy or
+ * experience domain", HOS-1278), so the
  * fourth domain walked straight through it: a `tourist-vip` holder was offered
  * "Pausar suscripción" and a confirm modal reading «tus alojamientos se ocultan
  * del sitio y no podrás editarlos» — about accommodation they do not have.
@@ -57,12 +57,6 @@ vi.mock('../../../src/components/account/PlanPicker.module.css', () => ({
 
 vi.mock('../../../src/components/account/DowngradePreviewPanel.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, p) => String(p) })
-}));
-
-vi.mock('../../../src/components/commerce/CommercePlanChange.client', () => ({
-    CommercePlanChange: (props: { vertical: string }) => (
-        <div data-testid="commerce-plan-change">{props.vertical}</div>
-    )
 }));
 
 vi.mock('@repo/icons', () => ({
@@ -226,7 +220,6 @@ describe('SubscriptionDashboard — the tourist domain (HOS-1321)', () => {
                 locale="es"
                 user={TOURIST}
                 plans={TOURIST_PLANS}
-                commercePlans={[]}
                 productDomain="tourist"
             />
         );
@@ -247,7 +240,6 @@ describe('SubscriptionDashboard — the tourist domain (HOS-1321)', () => {
                 locale="es"
                 user={TOURIST}
                 plans={TOURIST_PLANS}
-                commercePlans={[]}
                 productDomain="tourist"
             />
         );
@@ -269,7 +261,6 @@ describe('SubscriptionDashboard — the tourist domain (HOS-1321)', () => {
                 locale="es"
                 user={HOST}
                 plans={[]}
-                commercePlans={[]}
                 productDomain="accommodation"
             />
         );
@@ -279,11 +270,11 @@ describe('SubscriptionDashboard — the tourist domain (HOS-1321)', () => {
         expect(screen.getByRole('button', { name: PAUSE_LABEL })).toBeInTheDocument();
     });
 
-    it('offers the ACCOMMODATION plan-change flow, never the commerce one', async () => {
+    it('offers the ACCOMMODATION plan-change flow, never a per-vertical one', async () => {
         // Arrange — the sweep that closed pause must not have closed this:
         // `plan-domains.config.ts` files the tourist tiers under the
         // accommodation plan-change route, and there is no per-vertical route
-        // for travellers the way commerce has one.
+        // for travellers.
         mockSubscription(TOURIST_VIP_SUBSCRIPTION);
 
         // Act
@@ -292,7 +283,6 @@ describe('SubscriptionDashboard — the tourist domain (HOS-1321)', () => {
                 locale="es"
                 user={TOURIST}
                 plans={TOURIST_PLANS}
-                commercePlans={[]}
                 productDomain="tourist"
             />
         );
@@ -300,7 +290,6 @@ describe('SubscriptionDashboard — the tourist domain (HOS-1321)', () => {
 
         // Assert
         expect(screen.getByRole('button', { name: CHANGE_PLAN_LABEL })).toBeInTheDocument();
-        expect(screen.queryByTestId('commerce-plan-change')).not.toBeInTheDocument();
     });
 });
 
@@ -314,7 +303,7 @@ describe('dashboard domain classification is by INCLUSION (HOS-1321)', () => {
      *
      * The point of writing it out is that a FIFTH dashboard domain has no entry
      * here and fails the sweep below — which is the whole ask: a gate written as
-     * "not commerce" widens itself silently with every new value, and that is
+     * "not gastronomy or experience" widens itself silently with every new value, and that is
      * exactly how `tourist` acquired a pause button nobody chose to give it.
      */
     const EXPECTED: Readonly<
@@ -337,7 +326,7 @@ describe('dashboard domain classification is by INCLUSION (HOS-1321)', () => {
                 expected,
                 `No classification for dashboard domain '${domain}'. A new domain must be ` +
                     'classified here AND in the predicates it reaches — it does not inherit ' +
-                    "another domain's actions by not being commerce."
+                    "another domain's actions by not being another domain."
             ).toBeDefined();
             expect(isAccommodationDashboard(domain)).toBe(expected?.canPause);
             expect(isAccommodationPlanChangeDashboard(domain)).toBe(

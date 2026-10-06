@@ -71,8 +71,8 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'gastronomy.editAll'])
     };
 
-    /** Actor with admin-panel access but NO commerce permissions */
-    const headersNoCommercePerms = {
+    /** Actor with admin-panel access but NO gastronomy or experience permissions */
+    const headersNoPerms = {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
@@ -137,7 +137,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         it('returns 403 when actor lacks GASTRONOMY_CREATE', async () => {
             const res = await app.request('/api/v1/admin/gastronomies', {
                 method: 'POST',
-                headers: { ...headersNoCommercePerms, 'Content-Type': 'application/json' },
+                headers: { ...headersNoPerms, 'Content-Type': 'application/json' },
                 body: validBody
             });
             expect(res.status).toBe(403);
@@ -175,7 +175,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         it('returns 403 when actor lacks GASTRONOMY_MODERATE_REVIEW', async () => {
             const res = await app.request(moderatePath, {
                 method: 'POST',
-                headers: { ...headersNoCommercePerms, 'Content-Type': 'application/json' },
+                headers: { ...headersNoPerms, 'Content-Type': 'application/json' },
                 body: validBody
             });
             expect(res.status).toBe(403);
@@ -213,7 +213,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         it('returns 403 when actor lacks GASTRONOMY_EDIT_ALL', async () => {
             const res = await app.request(assignOwnerPath, {
                 method: 'POST',
-                headers: { ...headersNoCommercePerms, 'Content-Type': 'application/json' },
+                headers: { ...headersNoPerms, 'Content-Type': 'application/json' },
                 body: validBody
             });
             expect(res.status).toBe(403);

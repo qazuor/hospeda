@@ -124,7 +124,7 @@ export async function uploadEntityImage({
         // HOS-201: use the absolute API base URL, NOT a relative path. In prod
         // web (hospeda.com.ar) and API (api.hospeda.com.ar) are separate origins,
         // so a relative '/api/...' resolves against the web origin (Astro SSR),
-        // which has no such route → 404. Mirrors commerce MediaField.tsx.
+        // which has no such route → 404. Mirrors listing MediaField.tsx.
         // `withCredentials` keeps sending the session cookie cross-origin (CORS
         // already allows it for the other protected calls).
         xhr.open('POST', `${getApiUrl()}/api/v1/protected/media/upload-entity`);

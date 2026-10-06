@@ -3,7 +3,7 @@
  * @description Featured image + photo gallery section shared by the post and
  * event editors under `/mi-cuenta` (HOS-374 2D, unblocked by HOS-390).
  *
- * Ported from the commerce owner editor's `MediaSection` (HOS-372), which is
+ * Ported from the gastronomy/experience owner editor's `MediaSection` (HOS-372), which is
  * itself the accommodation editor's migration (SPEC-204). One component serves
  * both entities: `post_media` and `event_media` share a row shape, so the only
  * difference is the `entity` discriminator that picks the endpoint path and the
@@ -21,12 +21,12 @@
  *
  * `contentMediaApi.removeMedia` deletes the binary BEFORE dropping the row, so
  * a successful response already means the asset is gone. Do NOT pair it with
- * `protectedMediaApi.deleteMedia` — unlike the commerce caller, which has to,
+ * `protectedMediaApi.deleteMedia` — unlike the gastronomy/experience caller, which has to,
  * that would be a second delete of an already-deleted asset.
  *
  * ## No SSR placeholders
  *
- * Unlike the commerce editor, `PostEditDetail` / `EventEditDetail` do not carry
+ * Unlike the listing editor, `PostEditDetail` / `EventEditDetail` do not carry
  * a `media` field, so there is nothing to paint before the fetch resolves and
  * this section hydrates purely from `listMedia` on mount. That is acceptable
  * here and only here: `/mi-cuenta/*` is behind auth and `noindex`, so the
@@ -162,7 +162,7 @@ async function uploadEntityImage({
     formData.append('entityId', entityId);
     formData.append('role', role);
 
-    // Bounded like the accommodation and commerce editors (BETA-134). Without a
+    // Bounded like the accommodation and listing editors (BETA-134). Without a
     // signal this `fetch` waits forever, so a stalled connection leaves the
     // author on a spinner with no error and no way out but a reload.
     //

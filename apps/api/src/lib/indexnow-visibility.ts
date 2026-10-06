@@ -53,7 +53,7 @@ type VisibilityLookup = (slug: string) => Promise<boolean>;
  * and not soft-deleted.
  *
  * The first two conditions are the same pair `AccommodationService._isPubliclyVisible`
- * and `isCommerceListingPubliclyVisible` already use. The third is added here
+ * and `isListingPubliclyVisible` already use. The third is added here
  * because those two receive a live row and never have to ask.
  */
 const ACTIVE = LifecycleStatusEnum.ACTIVE;

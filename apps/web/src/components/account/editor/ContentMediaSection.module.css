@@ -1,7 +1,7 @@
 /**
  * Featured image + gallery layout for the post and event editors (HOS-390).
  *
- * Ported from the commerce editor's `MediaSection.module.css`. The upload error
+ * Ported from the listing editor's `MediaSection.module.css`. The upload error
  * banner uses the shared `.error` primitive from `content-editor-fields.module.css`.
  */
 

@@ -74,10 +74,10 @@ describe('slugifyTitle', () => {
     it('should truncate at a word boundary, not mid-word', () => {
         // A real case: HOS-1008's title used to yield `...no-tiene-pantall`.
         const slug = slugifyTitle({
-            title: 'El checkout de commerce no tiene pantalla de confirmacion del email'
+            title: 'El checkout de listing no tiene pantalla de confirmacion del email'
         });
 
-        expect(slug).toBe('el-checkout-de-commerce-no-tiene');
+        expect(slug).toBe('el-checkout-de-listing-no-tiene');
         expect(slug.split('-').at(-1)).not.toBe('pantall');
     });
 

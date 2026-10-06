@@ -10,7 +10,7 @@
  * moved to where the fact is now decided — `packages/billing`'s
  * `productDomainForAddonSlug` and `addon-catalog.mapper`.
  *
- * The domain-resolution/filtering logic that makes a commerce-only owner see
+ * The domain-resolution/filtering logic that makes a gastronomy/experience-only owner see
  * gastronomy/experience addons without an accommodation subscription. The
  * HOS-594 "must use the canonical entitlement predicate, never a hand-rolled
  * status list" regression is covered separately by the static guard
@@ -102,7 +102,7 @@ describe('filterAddonsByHeldDomains', () => {
         // Act
         const result = filterAddonsByHeldDomains({ addons, domainsWithSubscription });
 
-        // Assert — a commerce-only (gastronomy) owner sees ONLY the
+        // Assert — a gastronomy/experience-only (gastronomy) owner sees ONLY the
         // gastronomy addon, not accommodation-scoped ones.
         expect(result).toEqual([gastronomyAddon]);
     });

@@ -22,7 +22,7 @@
  */
 
 import { type Color, PageSizes, type PDFFont, type PDFPage } from 'pdf-lib';
-import { toDrawableText } from '../commerce-brochure/brochure-render.js';
+import { toDrawableText } from '../listing-brochure/brochure-render.js';
 
 /** A4 in points, as PDF measures it. */
 export const [A4_WIDTH, A4_HEIGHT] = PageSizes.A4;

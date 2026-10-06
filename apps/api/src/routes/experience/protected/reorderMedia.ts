@@ -14,7 +14,7 @@
  * That is defensive, not required — Hono resolves the static `reorder` segment
  * ahead of the `{mediaId}` param regardless of insertion order (verified by
  * mutation on the post/event twin, `test/routes/post-protected-media.test.ts`;
- * there is no commerce-side route test to re-run it against).
+ * there is no gastronomy/experience-side route test to re-run it against).
  */
 
 import {

@@ -38,7 +38,7 @@ export interface DeleteButtonProps {
     /**
      * Which vertical the listing belongs to (HOS-1156 T-015). Decides which
      * endpoint answers. Defaults to `'accommodation'`, so every caller that
-     * predates the commerce verticals keeps its exact previous behaviour.
+     * predates the gastronomy and experience verticals keeps its exact previous behaviour.
      */
     readonly vertical?: PublishVerticalSlug;
     /** Current locale — accepted for consistency with sibling islands. */

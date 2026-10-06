@@ -2,7 +2,7 @@
  * junction-sync.ts
  *
  * Primitives shared by every "sync a many-to-many junction table to an EXACT
- * target set" implementation (accommodation amenities/features, commerce
+ * target set" implementation (accommodation amenities/features, gastronomy and experience
  * amenities/features, ...).
  *
  * They live in `utils/` rather than under one domain's `services/` folder

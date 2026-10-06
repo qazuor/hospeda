@@ -314,7 +314,7 @@ Plus nine **inline-constant seeders** whose fixtures live in a TS constant (no `
 folder to path-match), guarded on any diff to the whole file:
 
 ```
-packages/seed/src/example/experiences.seed.ts             (prod-content commerce listings)
+packages/seed/src/example/experiences.seed.ts             (prod-content gastronomy and experience listings)
 packages/seed/src/example/entityTagAssignments.seed.ts    (tags GUARDED destination catalog rows)
 packages/seed/src/example/userTags.seed.ts                (tags the GUARDED required admin-user)
 packages/seed/src/required/{rolePermissions,aiPrompts,aiSettings,socialAutomation,contentModeration,systemUser}.seed.ts
@@ -378,8 +378,8 @@ value should be X" (a plan's limit, a catalog entry's existence), it belongs in
 Three pre-existing hand-written extras files were exactly this kind of DATA change wearing
 the wrong carril's clothes:
 
-- `extras/023-billing-plans-ai-consumer-search-limits.plan.sql` → `data-migrations/0001-billing-plans-ai-consumer-search-limits.ts`
-- `extras/024-billing-plans-collections-limit.plan.sql` → `data-migrations/0002-billing-plans-collections-limit.ts`
+- `extras/023-billing-plans-ai-consumer-search-limits.plan.sql` → `data-migrations/0001-billing-plans-ai-consumer-search-limits.ts` (the `023` file was later deleted, see below)
+- `extras/024-billing-plans-collections-limit.plan.sql` → `data-migrations/0002-billing-plans-collections-limit.ts` (the `024` file was later deleted, see below)
 - `extras/025-hos16-deactivate-complex-plans.plan.sql` → `data-migrations/0003-hos16-deactivate-complex-plans.ts`
 
 They were ported into the new carril, keeping their exact business logic (same
@@ -401,6 +401,10 @@ the other a no-op:
 
 Do not delete a superseded `extras/*.plan.sql` file just because its logic moved — leave the
 header marker as the historical record and let both guards keep each other honest.
+
+The one exception so far: HOS-1418 deleted `023` and `024`. Both target `billing_plans`, a
+table the HOS-1352 program removed, so they no longer describe anything to change; `025`
+is still in place.
 
 ### Example migrations and deterministic fixture ids
 
@@ -546,7 +550,7 @@ disappear — in practice, any backfill that moves data OUT of a column headed f
 
 ```ts
 export const meta = {
-    name: '0034-hos-372-commerce-media-to-relational',
+    name: '0034-hos-372-example-media-to-relational',
     group: 'required',
     requiresColumns: [
         { table: 'gastronomies', column: 'media' },

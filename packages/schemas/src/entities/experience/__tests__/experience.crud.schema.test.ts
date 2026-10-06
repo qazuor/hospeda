@@ -106,7 +106,7 @@ describe('ExperienceAdminCreateInputSchema', () => {
         // refinement when the schema is sliced — it THROWS, and TypeScript does
         // not catch it because `.superRefine()` returns `this`. Attaching the
         // rule directly to `ExperienceOwnerCreateInputSchema` therefore compiles
-        // and then crashes on module load in `CommerceCreateForm.client.tsx`,
+        // and then crashes on module load in `ListingCreateForm.client.tsx`,
         // which picks a subset of that schema.
         it('keeps the plain create schemas slice-able (Zod 4 throws on .pick() over refinements)', () => {
             expect(() =>

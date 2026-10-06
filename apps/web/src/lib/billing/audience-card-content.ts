@@ -18,7 +18,7 @@
  *
  * Every line is audience-specific and describes something the vertical actually
  * has: the host bullets come from the owner plans' entitlements (publishing,
- * WhatsApp contact, review replies, stats, promotions), the two commerce ones
+ * WhatsApp contact, review replies, stats, promotions), the two gastronomy/experience ones
  * restate the benefit blocks the vertical's own landing already publishes, and
  * the partner ones are worded after `alliance-leads.partner.benefits.*`. No
  * bullet mentions a trial length or a payment method — those are the pricing

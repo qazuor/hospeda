@@ -68,8 +68,8 @@ interface Props {
 	 *
 	 * `'link'` renders a plain link to {@link ctaHref} instead. The three
 	 * audiences HOS-1032 added both need it, for different reasons that happen
-	 * to want the same markup: a commerce tier is bought through the listing
-	 * create flow (`buildCommerceStartUrl` → signup → the vertical's form → the
+	 * to want the same markup: a gastronomy or experience tier is bought through the listing
+	 * create flow (`buildListingStartUrl` → signup → the vertical's form → the
 	 * tier picker), not by charging a card from a marketing page; and a
 	 * partnership is agreed in a conversation, so aliados links to the lead form
 	 * (HOS-941 D-13). Rendering `<PlanPurchaseButton>` for either would put a
@@ -79,7 +79,7 @@ interface Props {
 	/**
 	 * Destination of every card's CTA when `ctaMode` is `'link'`. One href for
 	 * the whole grid, not one per card: neither linking audience routes by tier
-	 * (commerce picks the tier further down its own flow; partner has no tier to
+	 * (gastronomy/experience picks the tier further down its own flow; partner has no tier to
 	 * pick before talking to someone). Ignored under `'checkout'`.
 	 */
 	readonly ctaHref?: string;
@@ -176,7 +176,7 @@ const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
  * already-usable input, with no JavaScript required for either half.
  *
  * Gated on `ctaMode === 'checkout' && priceMode === 'amount'`: the `'link'`
- * grids (commerce, partner) never mount `PlanPurchaseButton` at all, and
+ * grids (gastronomy/experience, partner) never mount `PlanPurchaseButton` at all, and
  * `'consult'` cards (aliados) show no amount to discount — an anchor to a
  * field that is not there would be a dead link.
  */

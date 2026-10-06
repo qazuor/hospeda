@@ -716,13 +716,13 @@ describe('PlanUsageSection', () => {
             <PlanUsageSection
                 locale="es"
                 roles={['HOST']}
-                productDomain="commerce"
+                productDomain="gastronomy"
             />
         );
 
         // Assert
         await waitFor(() => {
-            expect(mockGetUsage).toHaveBeenCalledWith({ productDomain: 'commerce' });
+            expect(mockGetUsage).toHaveBeenCalledWith({ productDomain: 'gastronomy' });
         });
     });
 

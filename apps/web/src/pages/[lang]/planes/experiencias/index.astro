@@ -23,8 +23,7 @@
  * Built from the same `SalesSection`-based components as
  * `/planes/gastronomia/` (HOS-985 H6) — see that file's docblock for the
  * shared-component rationale. This page reuses the existing
- * `commerce.landing.experience.*` i18n namespace and
- * `resolveCommerceLandingOffer` used by `/publicar-experiencia/` unchanged;
+ * `experience.landing.*` i18n namespace unchanged;
  * only the page shell moved from a hand-rolled `pub-exp__*` layout to the
  * shared sales-page components.
  */
@@ -40,15 +39,13 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import JsonLd from '@/components/seo/JsonLd.astro';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
-import { resolveCommerceLandingOffer } from '@/lib/billing/commerce-landing-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t, tPlural } = createTranslations(locale);
+const { t } = createTranslations(locale);
 
 applyCacheHeaders({
     locals: Astro.locals,
@@ -59,54 +56,45 @@ applyCacheHeaders({
 });
 
 /**
- * The trial length, read from the plan catalogue and never from a string.
- *
- * HOS-941 R-2 — see `planes/gastronomia/index.astro` for the full rationale
- * (HOS-525). `null` renders NOTHING. Never "0 días", never a number borrowed
- * from the other vertical: a failed fetch and a plan with no trial must be
- * indistinguishable to a visitor.
+ * The price FAQ answer carries no trial length: the old plan catalogue the
+ * length used to be read from no longer exists, and promising a number we
+ * cannot read from the source of truth is worse than staying quiet (HOS-525).
  */
-const plansResult = await fetchPublicPlans({ domain: 'experience' });
-const { trialDays } = resolveCommerceLandingOffer({ plansResult });
-
-const priceFaqAnswer =
-    trialDays === null
-        ? t('listing.landing.experience.faq.a1NoTrial')
-        : tPlural('listing.landing.experience.faq.a1', trialDays);
+const priceFaqAnswer = t('experience.landing.faq.a1NoTrial');
 
 const benefits = [
     {
         Icon: MapIcon,
-        title: t('listing.landing.experience.benefits.item1.title'),
-        desc: t('listing.landing.experience.benefits.item1.desc')
+        title: t('experience.landing.benefits.item1.title'),
+        desc: t('experience.landing.benefits.item1.desc')
     },
     {
         Icon: SettingsIcon,
-        title: t('listing.landing.experience.benefits.item2.title'),
-        desc: t('listing.landing.experience.benefits.item2.desc')
+        title: t('experience.landing.benefits.item2.title'),
+        desc: t('experience.landing.benefits.item2.desc')
     },
     {
         Icon: ShieldIcon,
-        title: t('listing.landing.experience.benefits.item3.title'),
-        desc: t('listing.landing.experience.benefits.item3.desc')
+        title: t('experience.landing.benefits.item3.title'),
+        desc: t('experience.landing.benefits.item3.desc')
     }
 ] as const;
 
 const steps = [
     {
         num: '01',
-        title: t('listing.landing.experience.howItWorks.step1.title'),
-        desc: t('listing.landing.experience.howItWorks.step1.desc')
+        title: t('experience.landing.howItWorks.step1.title'),
+        desc: t('experience.landing.howItWorks.step1.desc')
     },
     {
         num: '02',
-        title: t('listing.landing.experience.howItWorks.step2.title'),
-        desc: t('listing.landing.experience.howItWorks.step2.desc')
+        title: t('experience.landing.howItWorks.step2.title'),
+        desc: t('experience.landing.howItWorks.step2.desc')
     },
     {
         num: '03',
-        title: t('listing.landing.experience.howItWorks.step3.title'),
-        desc: t('listing.landing.experience.howItWorks.step3.desc')
+        title: t('experience.landing.howItWorks.step3.title'),
+        desc: t('experience.landing.howItWorks.step3.desc')
     }
 ] as const;
 
@@ -119,9 +107,9 @@ const steps = [
  * each, so the JSON-LD can never advertise a trial the visible answer omits.
  */
 const faqs = [
-    { q: t('listing.landing.experience.faq.q1'), a: priceFaqAnswer },
-    { q: t('listing.landing.experience.faq.q2'), a: t('listing.landing.experience.faq.a2') },
-    { q: t('listing.landing.experience.faq.q3'), a: t('listing.landing.experience.faq.a3') }
+    { q: t('experience.landing.faq.q1'), a: priceFaqAnswer },
+    { q: t('experience.landing.faq.q2'), a: t('experience.landing.faq.a2') },
+    { q: t('experience.landing.faq.q3'), a: t('experience.landing.faq.a3') }
 ] as const;
 
 const faqJsonLd = {
@@ -134,8 +122,8 @@ const faqJsonLd = {
     }))
 };
 
-const title = t('listing.lead.experience.title');
-const subtitle = t('listing.lead.experience.subtitle');
+const title = t('experience.landing.lead.title');
+const subtitle = t('experience.landing.lead.subtitle');
 /**
  * This vertical's own pricing page — see the same block in
  * `/planes/gastronomia/index.astro`. HOS-1032 built it and retired
@@ -155,7 +143,7 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.exper
     <Breadcrumbs locale={locale} items={[{ label: title }]} />
 
     <MarketingHero
-        tagline={t('listing.landing.experience.benefits.tagline')}
+        tagline={t('experience.landing.benefits.tagline')}
         titleAccent={title}
         subtitle={subtitle}
     >
@@ -169,29 +157,29 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.exper
     </MarketingHero>
 
     <BenefitsSection
-        tagline={t('listing.landing.experience.benefits.tagline')}
-        title={t('listing.landing.experience.benefits.title')}
+        tagline={t('experience.landing.benefits.tagline')}
+        title={t('experience.landing.benefits.title')}
         items={benefits}
         columns={3}
     />
 
     <StepsSection
-        tagline={t('listing.landing.experience.howItWorks.tagline')}
-        title={t('listing.landing.experience.howItWorks.title')}
+        tagline={t('experience.landing.howItWorks.tagline')}
+        title={t('experience.landing.howItWorks.title')}
         items={steps}
         columns={3}
         warm
     />
 
     <FaqSection
-        tagline={t('listing.landing.experience.faq.tagline')}
-        title={t('listing.landing.experience.faq.title')}
+        tagline={t('experience.landing.faq.tagline')}
+        title={t('experience.landing.faq.title')}
         items={faqs}
     />
 
     <section class="sales-cta section section--warm">
         <div class="sales-cta__container section__container">
-            <h2 class="sales-cta__title">{t('listing.landing.experience.price.title')}</h2>
+            <h2 class="sales-cta__title">{t('experience.landing.price.title')}</h2>
             <GradientButton
                 href={pricingHref}
                 label={t('pricing.nav.seePlans')}

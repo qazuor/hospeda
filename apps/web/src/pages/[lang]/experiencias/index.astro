@@ -25,7 +25,7 @@ import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import {
     buildExperienceListingSummary,
     DEFAULT_EXPERIENCE_TYPES
-} from '@/lib/commerce-listing-summary';
+} from '@/lib/listing-summary';
 import { experiencesApi, destinationsApi } from '@/lib/api/endpoints';
 import { toExperienceCardProps } from '@/lib/api/transforms';
 import { getExperienceTypeIcon } from '@/lib/experience-type-icons';
@@ -222,7 +222,7 @@ initialParams.sortBy = sortKey;
  * Build a human-readable summary like "Mostrando 3 de 4 experiencias..." to
  * replace the generic "N resultados encontrados" line (BETA-119). Mirrors
  * the accommodations/events/posts pattern via the shared
- * `commerce-listing-summary` module. `pt` maps to `es` because the builder
+ * `listing-summary` module. `pt` maps to `es` because the builder
  * only ships es/en phrase dictionaries, same as the other listing pages.
  */
 const summaryLocale: 'es' | 'en' = locale === 'pt' ? 'es' : locale;

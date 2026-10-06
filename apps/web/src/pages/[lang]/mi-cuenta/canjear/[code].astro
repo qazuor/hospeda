@@ -57,7 +57,7 @@ const initialCode = normalizePromoCodeParam(Astro.params.code ?? null);
  * HOS-1293: tries every real subscribable domain (accommodation, gastronomy,
  * experience, tourist), not accommodation alone — see
  * `resolveRedeemableSubscriptionId`'s doc for why the old accommodation-only
- * read left every commerce-only owner unable to redeem a discount code at all.
+ * read left every gastronomy/experience-only owner unable to redeem a discount code at all.
  *
  * Degrades to `undefined` on ANY failure. The primary job of this surface is
  * trial-extension codes, which the endpoint resolves from the session on its

@@ -55,7 +55,6 @@ import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
-import { adminCommerceRoutes, protectedCommerceRoutes, publicCommerceRoutes } from './commerce';
 import { contactRoutes } from './contact';
 import { adminContentModerationRoutes } from './content-moderation/admin';
 import {
@@ -314,14 +313,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Mounted at /api/v1/public/accommodations so routes resolve as:
         //   GET /api/v1/public/accommodations/:id/external-reputation
         app.route('/api/v1/public/accommodations', publicExternalReputationRoutes);
-        // Commerce listings: gastronomy (SPEC-239 T-042)
+        // Gastronomy listings (SPEC-239 T-042)
         app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
-        // Commerce listings: experience (SPEC-240 T-019)
+        // Experience listings (SPEC-240 T-019)
         app.route('/api/v1/public/experiences', publicExperienceRoutes);
         // Partners program public listing (SPEC-271)
         app.route('/api/v1/public/partners', publicPartnersRoutes);
-        // Commerce lead intake — public acquisition form (SPEC-239 T-047 US-1)
-        app.route('/api/v1/public/commerce', publicCommerceRoutes);
         // Alliance lead intake — public "aliados" acquisition forms (HOS-277)
         app.route('/api/v1/public/alliance', publicAllianceRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
@@ -410,7 +407,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // ═══════════════════════════════════════════════════════════════════════
 
         // SPEC-239 T-041: Force-password-change gate on ALL protected routes.
-        // Commerce owner accounts are provisioned with mustChangePassword=true.
+        // Gastronomy and experience owner accounts are provisioned with mustChangePassword=true.
         // Any protected request from such a user returns 403 PASSWORD_CHANGE_REQUIRED
         // until they change their password via /api/v1/protected/auth/change-password.
         // The exempt path list is maintained inside the middleware itself.
@@ -462,12 +459,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         //   PATCH    /api/v1/protected/accommodations/:id/external-reputation/master-toggle
         //   POST     /api/v1/protected/accommodations/:id/external-reputation/refresh
         app.route('/api/v1/protected/accommodations', protectedExternalReputationRoutes);
-        // Commerce listings: gastronomy (SPEC-239 T-043 / T-044)
+        // Gastronomy listings (SPEC-239 T-043 / T-044)
         app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
-        // Commerce listings: experience (SPEC-240 T-020)
+        // Experience listings (SPEC-240 T-020)
         app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
-        // Commerce owner self-checkout: create + start-subscription (HOS-166 §6.3, §7.2)
-        app.route('/api/v1/protected/commerce', protectedCommerceRoutes);
         // Alliance applicant self-service: my own applications (HOS-278 AC-5)
         app.route('/api/v1/protected/alliance', protectedAllianceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
@@ -539,9 +534,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Mounted at /api/v1/admin/accommodations so routes resolve as:
         //   POST /api/v1/admin/accommodations/:id/external-reputation/disable
         app.route('/api/v1/admin/accommodations', adminExternalReputationRoutes);
-        // Commerce listings: gastronomy (SPEC-239 T-045 / T-046)
+        // Gastronomy listings (SPEC-239 T-045 / T-046)
         app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
-        // Commerce listings: experience (SPEC-240 T-021)
+        // Experience listings (SPEC-240 T-021)
         app.route('/api/v1/admin/experiences', adminExperienceRoutes);
         // Partners program admin management (SPEC-271)
         app.route('/api/v1/admin/partners', adminListPartnersRoute);
@@ -559,8 +554,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminCreatePartnerMentionsRoute);
         app.route('/api/v1/admin/partners', adminUpdatePartnerMentionRoute);
         app.route('/api/v1/admin/partners', adminDeletePartnerMentionRoute);
-        // Commerce leads admin management (SPEC-239 T-047)
-        app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         // Alliance leads admin inbox (HOS-277)
         app.route('/api/v1/admin/alliance', adminAllianceRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);

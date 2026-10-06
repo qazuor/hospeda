@@ -7,7 +7,7 @@
  * `organizerId` — then redirects to the real editor
  * (`EventEditor.client.tsx`) where the author fills in everything else.
  * Mirrors `PostCreateForm.client.tsx`'s "collect the minimum, redirect to the
- * editor" shape, which itself mirrors `CommerceCreateForm.client.tsx` (HOS-374
+ * editor" shape, which itself mirrors `ListingCreateForm.client.tsx` (HOS-374
  * §5.2.1/§5.2.2 — that form is the explicit mold for both).
  *
  * Deliberately excluded from this form:
@@ -41,7 +41,7 @@
  *
  * All of that — the select, the three catalog states, and the inline create —
  * lives in `EventOrganizerPicker.client.tsx`, not here. See its module doc for
- * why the load-failed branch diverges from `CommerceCreateForm` and why
+ * why the load-failed branch diverges from `ListingCreateForm` and why
  * creation is a separate call rather than part of this form's submit.
  *
  * This form keeps ONLY the selected `organizerId`, because it needs it to
@@ -131,7 +131,7 @@ export interface EventCreateFormProps {
      * `true` when the SSR organizer catalog fetch failed (as opposed to
      * succeeding with a genuinely empty catalog). Defaults to `false` so
      * existing callers/tests that omit it keep the base behaviour — see the
-     * module doc for why this branch differs from `CommerceCreateForm`'s.
+     * module doc for why this branch differs from `ListingCreateForm`'s.
      */
     readonly organizersLoadFailed?: boolean;
 }

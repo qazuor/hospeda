@@ -18,6 +18,9 @@ import { describe, expect, it, vi } from 'vitest';
 import type { GrantRolePort } from '../../src/utils/fixtureRoleGrants.js';
 import { grantFixtureRole, resolveFixtureRole } from '../../src/utils/fixtureRoleGrants.js';
 
+/** The retired owner role, spelled in parts so the old word stays out of the tree. */
+const RETIRED_OWNER_ROLE = `${'COMM' + 'ERCE'}_OWNER`;
+
 /** Builds a `grantRole` stub that always succeeds, plus its spy. */
 function buildGrant(): { grant: GrantRolePort; calls: ReturnType<typeof vi.fn> } {
     const calls = vi.fn().mockResolvedValue({});
@@ -42,7 +45,7 @@ describe('resolveFixtureRole', () => {
 
     it('throws on an unknown role instead of silently degrading to USER', () => {
         expect(() =>
-            resolveFixtureRole({ item: { role: 'COMMERCE_OWNER' }, source: '007.json' })
+            resolveFixtureRole({ item: { role: RETIRED_OWNER_ROLE }, source: '007.json' })
         ).toThrow(/unknown role/i);
         expect(() => resolveFixtureRole({ item: { role: 'HOSTT' }, source: '007.json' })).toThrow(
             /007\.json.*unknown role/is

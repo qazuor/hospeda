@@ -61,7 +61,7 @@ This forces explicit error handling and provides type safety.
 
 ## Your First Service
 
-Let's create a `ProductService` that manages products in an e-commerce platform.
+Let's create a `ProductService` that manages products in an online store platform.
 
 ### Step 1: Define Zod Schemas
 

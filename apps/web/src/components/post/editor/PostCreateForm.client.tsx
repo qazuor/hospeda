@@ -5,7 +5,7 @@
  * Collects ONLY the minimum fields `PostCreateHttpSchema` genuinely requires
  * at create time — `title`, `summary`, `content`, `category` — then redirects
  * to the real editor (`PostEditor.client.tsx`) where the author fills in
- * everything else. Mirrors `CommerceCreateForm.client.tsx`'s "collect the
+ * everything else. Mirrors `ListingCreateForm.client.tsx`'s "collect the
  * minimum, redirect to the editor" shape (HOS-374 §5.2.1/§5.2.2 — that form is
  * the explicit mold for this one).
  *
@@ -19,7 +19,7 @@
  *  - `destinationId` — optional per the schema, and already editable
  *    afterward via `DetailsSection.client.tsx` in the real editor. Wiring an
  *    SSR destination-catalog fetch (with its own load-failed/empty-catalog
- *    branches, as `CommerceCreateForm` does for its REQUIRED `destinationId`)
+ *    branches, as `ListingCreateForm` does for its REQUIRED `destinationId`)
  *    into this minimal create form would duplicate a select the very next
  *    page already has, for a field nothing here actually requires.
  *  - `readingTimeMinutes` — optional, defaults server-side, editable in the

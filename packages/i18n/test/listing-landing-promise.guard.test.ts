@@ -21,13 +21,13 @@
  *
  * ## Scope, deliberately narrow
  *
- * Only `listing.lead.subtitle` and `listing.lead.experience.subtitle` — the
- * hero line of each landing, which is also the page's meta description. These
- * two are read server-side by the two `.astro` landing pages themselves and
- * are the only surviving reason the `listing.lead` namespace still exists;
+ * Only `gastronomy.landing.lead.subtitle` and `experience.landing.lead.subtitle`
+ * — the hero line of each landing, which is also the page's meta description.
+ * These two are read server-side by the two `.astro` landing pages themselves;
  * the actual lead-collecting form (`ListingLead.client.tsx`) was deleted by
  * HOS-693, and its process/success-detail explainer sub-keys were removed
- * with the last component that read them (HOS-1081).
+ * with the last component that read them (HOS-1081). Until HOS-1418 they lived
+ * under `listing.lead`; they now sit with the vertical each one describes.
  *
  * ## Where this runs
  *
@@ -42,9 +42,12 @@
 
 import { describe, expect, it } from 'vitest';
 
-import listingEn from '../src/locales/en/listing.json';
-import listingEs from '../src/locales/es/listing.json';
-import listingPt from '../src/locales/pt/listing.json';
+import experienceEn from '../src/locales/en/experience.json';
+import gastronomyEn from '../src/locales/en/gastronomy.json';
+import experienceEs from '../src/locales/es/experience.json';
+import gastronomyEs from '../src/locales/es/gastronomy.json';
+import experiencePt from '../src/locales/pt/experience.json';
+import gastronomyPt from '../src/locales/pt/gastronomy.json';
 
 /**
  * The six hero subtitles under guard: two landings × three locales.
@@ -54,12 +57,12 @@ import listingPt from '../src/locales/pt/listing.json';
  * stops guarding is the failure this exists to prevent.
  */
 const SUBTITLES: ReadonlyArray<{ readonly label: string; readonly text: string }> = [
-    { label: 'es listing.lead.subtitle', text: listingEs.lead.subtitle },
-    { label: 'en listing.lead.subtitle', text: listingEn.lead.subtitle },
-    { label: 'pt listing.lead.subtitle', text: listingPt.lead.subtitle },
-    { label: 'es listing.lead.experience.subtitle', text: listingEs.lead.experience.subtitle },
-    { label: 'en listing.lead.experience.subtitle', text: listingEn.lead.experience.subtitle },
-    { label: 'pt listing.lead.experience.subtitle', text: listingPt.lead.experience.subtitle }
+    { label: 'es gastronomy.landing.lead.subtitle', text: gastronomyEs.landing.lead.subtitle },
+    { label: 'en gastronomy.landing.lead.subtitle', text: gastronomyEn.landing.lead.subtitle },
+    { label: 'pt gastronomy.landing.lead.subtitle', text: gastronomyPt.landing.lead.subtitle },
+    { label: 'es experience.landing.lead.subtitle', text: experienceEs.landing.lead.subtitle },
+    { label: 'en experience.landing.lead.subtitle', text: experienceEn.landing.lead.subtitle },
+    { label: 'pt experience.landing.lead.subtitle', text: experiencePt.landing.lead.subtitle }
 ];
 
 /**

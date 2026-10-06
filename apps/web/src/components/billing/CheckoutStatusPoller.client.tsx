@@ -177,7 +177,7 @@ export function CheckoutStatusPoller({
          * subscription was linked server-side by the heuristic linker.
          *
          * Domain note: this resolves the ACCOMMODATION subscription (the
-         * endpoint's server-side default). A commerce checkout that also lost
+         * endpoint's server-side default). A gastronomy or experience checkout that also lost
          * its stashed id therefore stays unresolved rather than resolving
          * against the wrong domain — the conservative failure, deliberately
          * chosen over a confident wrong answer.

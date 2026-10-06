@@ -6,7 +6,7 @@
  *
  * Before HOS-689 the whole catalog was gated behind ONE check — the caller's
  * ACCOMMODATION subscription (`userApi.getSubscription()` with no
- * `productDomain`, defaulting to accommodation) — so a commerce-only owner,
+ * `productDomain`, defaulting to accommodation) — so a gastronomy/experience-only owner,
  * exactly who buys `extra-gastronomies-1`/`extra-experiences-1`, saw the
  * upgrade CTA instead of the product they hold a subscription for. The gate is
  * per-addon: each addon resolves to its product domain and is offered only when
@@ -28,7 +28,7 @@
  * - an addon whose `affectsLimitKey` is `null` (`visibility-boost-7d`/`-30d`)
  *   had nothing to derive from, so it was coerced to accommodation BY HAND — a
  *   guess that happens to be right for those two and would be silently wrong
- *   for the first commerce addon that grants an entitlement without raising a
+ *   for the first gastronomy/experience addon that grants an entitlement without raising a
  *   cap;
  * - two addons raising the SAME cap for different verticals collided;
  * - it lived in the presentation layer, so a direct API call never passed

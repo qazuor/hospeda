@@ -51,7 +51,7 @@ export class RequiredSeedStepsFailedError extends Error {
  * - `continueOnError: true`: EACH step is isolated. A failure is recorded and
  *   the next step still runs. Before this, the whole chain shared one
  *   `try/catch`, so a failure at step 5 cancelled the 18 after it (among them
- *   the commerce plans) and the flag only suppressed the final re-throw.
+ *   the gastronomy and experience plans) and the flag only suppressed the final re-throw.
  *
  * The caller decides what to do with the returned failures; this function
  * never throws in continue mode.

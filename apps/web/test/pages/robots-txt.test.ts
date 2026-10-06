@@ -556,7 +556,7 @@ describe('robots.txt — GET handler', () => {
             ['/es/alojamientos/', 'clean listing'],
             ['/es/alojamientos/page/2/', 'path-based pagination'],
             ['/pt/destinos/concepcion-del-uruguay/', 'destination detail'],
-            ['/es/gastronomia/', 'clean commerce listing']
+            ['/es/gastronomia/', 'clean listing']
         ])('does not block %s (%s)', async (pathAndQuery) => {
             const body = await getPermissiveBody();
             expect(isDisallowedForAllAgents({ body, pathAndQuery })).toBe(false);

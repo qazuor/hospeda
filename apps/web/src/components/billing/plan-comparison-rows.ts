@@ -307,18 +307,18 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Commerce-vertical rows (HOS-1032)
+// Gastronomy and experience rows (HOS-1032)
 // ---------------------------------------------------------------------------
 //
 // The two verticals get their own rows rather than reusing the owner ones,
 // because they grant entirely different keys: `EDIT_GASTRONOMY_INFO` is not
 // `EDIT_ACCOMMODATION_INFO`, and a row asking for the accommodation key would
-// render every commerce tier as "not included". They are also kept apart from
+// render every gastronomy or experience tier as "not included". They are also kept apart from
 // EACH OTHER — `gastronomy` and `experience` are separate product domains and
 // no surface may group them under a shared "Comercio" (HOS-941 R-3).
 //
 // Every cell names a real key off `plans.config.ts`, so a tier the owner
-// activates later (or a key added to `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`)
+// activates later (or a key added to a plan's entitlements)
 // is reflected with no edit here — the same property that keeps the owner and
 // tourist tables honest.
 
@@ -444,7 +444,7 @@ export const EXPERIENCE_SERVICE_ROWS: readonly RowConfig[] = [
  * @param params.aiChatLimitKey - The vertical's own monthly AI-chat cap key.
  * @returns The shared rows, bound to that vertical's cap.
  */
-function commerceExtrasRows({
+function listingExtrasRows({
     aiChatLimitKey
 }: {
     readonly aiChatLimitKey: LimitKey;
@@ -457,7 +457,7 @@ function commerceExtrasRows({
             status: 'available'
         },
         {
-            id: 'aiChatCommerce',
+            id: 'aiChatListing',
             labelKey: 'billing.comparison.row.aiChatListing',
             cell: { kind: 'limit', key: aiChatLimitKey },
             status: 'available'
@@ -470,7 +470,7 @@ export const GASTRONOMY_GROUPS: readonly GroupConfig[] = [
     { id: 'gastronomyMenu', rows: GASTRONOMY_MENU_ROWS },
     {
         id: 'listingExtras',
-        rows: commerceExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH })
+        rows: listingExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH })
     }
 ];
 
@@ -479,7 +479,7 @@ export const EXPERIENCE_GROUPS: readonly GroupConfig[] = [
     { id: 'experienceService', rows: EXPERIENCE_SERVICE_ROWS },
     {
         id: 'listingExtras',
-        rows: commerceExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH })
+        rows: listingExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH })
     }
 ];
 

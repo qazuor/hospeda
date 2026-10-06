@@ -76,7 +76,7 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
      * Deliberately NOT defaulted to the acting admin: the documented flow is
      * "admins create the listing and provision the owner", so the owner is a
      * real merchant account rather than whoever filled in the form. The owner
-     * self-create route (`routes/commerce/protected/create.ts`) already supplies
+     * self-create route (`routes/gastronomy/protected/create.ts`) already supplies
      * `ownerId: actor.id` explicitly and is unaffected.
      */
     ownerId: UserIdSchema,
@@ -225,7 +225,7 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
 
 /**
  * Schema for a `GASTRONOMY_OWNER` self-service listing create
- * (`POST /api/v1/protected/commerce/listings/:entityType`, HOS-166 §7.2).
+ * (`POST /api/v1/protected/gastronomies/`, HOS-166 §7.2).
  *
  * Unlike {@link GastronomyAdminCreateInputSchema} (which trusts the caller for
  * `ownerId`/`slug`/lifecycle/visibility because only staff can reach it), this
@@ -235,7 +235,7 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
  * - `ownerId` — never accepted from the body; the route always sets it to
  *   `actor.id` (D-3 — an owner can only ever create a listing for themselves).
  * - `slug` — never accepted from the body; derived server-side from `name` at
- *   create time by `BaseCommerceListingService._beforeCreate` (HOS-166 OQ-3).
+ *   create time by `BaseListingService._beforeCreate` (HOS-166 OQ-3).
  * - `lifecycleState`, `visibility`, `isFeatured`, `moderationState` — control
  *   fields; the route always forces `visibility: PRIVATE` and
  *   `lifecycleState: DRAFT` on create (HOS-166 D-3 — complete first, pay

@@ -24,12 +24,12 @@ export enum EntitlementKey {
     HAS_VERIFICATION_BADGE = 'has_verification_badge',
 
     /**
-     * Commerce vertical entitlements (HOS-1074).
+     * Gastronomy and experience entitlements (HOS-1074).
      *
      * One PAIR PER VERTICAL, deliberately NOT a reuse of
      * `EDIT_ACCOMMODATION_INFO` / `PUBLISH_ACCOMMODATIONS`. `loadEntitlements`
      * resolves the ACCOMMODATION subscription, so an accommodation key asked on
-     * a commerce route breaks in both directions: a commerce owner with no
+     * a gastronomy or experience route breaks in both directions: a gastronomy or experience owner with no
      * accommodation plan is always refused, and an owner who happens to hold
      * both is always allowed — for the wrong reason.
      *
@@ -44,12 +44,12 @@ export enum EntitlementKey {
     PUBLISH_EXPERIENCE = 'publish_experience',
 
     /**
-     * The printable PDF ficha of a commerce listing (HOS-1058).
+     * The printable PDF ficha of a gastronomy or experience listing (HOS-1058).
      *
      * ONE key for both verticals, where the four above are one pair per
      * vertical — and the difference is not an inconsistency. Those four are
      * asked on routes reached through
-     * `commerceVerticalEntitlementMiddleware(vertical)`, which REPLACES the
+     * the per-vertical entitlement middleware, which REPLACES the
      * request's entitlement set with the one resolved from the subscription of
      * THAT vertical. A gastronomy owner's set is built from their gastronomy
      * subscription and nothing else, so a single key cannot be satisfied by the
@@ -58,9 +58,9 @@ export enum EntitlementKey {
      *
      * Unlike those four it is a TIER differentiator — premium, in both
      * verticals (owner decision, 2026-09-01) — so it is deliberately NOT in
-     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, whose contract is "every tier of
+     * the vertical-wide floor, whose contract is "every tier of
      * this vertical grants this". It is granted by the premium plan rows and
-     * reaches the gate through the union `resolveCommerceVerticalGrants`
+     * reaches the gate through the union the per-vertical grants resolver
      * already performs over the subscribed plan's `entitlements` column — the
      * path HOS-1074 called "how a future premium tier earns its name".
      */
@@ -72,7 +72,7 @@ export enum EntitlementKey {
      *
      * A TIER differentiator, like {@link EntitlementKey.DOWNLOAD_LISTING_PDF}
      * and unlike the four keys above it, so it is NOT in
-     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * the vertical-wide floor — the set EVERY
      * tier of a vertical receives, and putting a paid capability there would
      * hand it to `-basico` as well. Granted from `gastronomy-pro` UPWARDS
      * (owner decision): `-pro` and `-premium` both carry it, because a premium
@@ -107,7 +107,7 @@ export enum EntitlementKey {
      *
      * A TIER differentiator like {@link EntitlementKey.MANAGE_GASTRONOMY_MENU}
      * and {@link EntitlementKey.DOWNLOAD_LISTING_PDF}, so it stays OUT of
-     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * the vertical-wide floor — the set EVERY
      * tier of a vertical receives, and a paid capability placed there is handed
      * to `-basico` as well. Granted by `gastronomy-premium` ONLY (owner
      * decision, 2026-09-01): where `-pro` earns the right to type a carta at
@@ -152,11 +152,11 @@ export enum EntitlementKey {
      *
      * A TIER differentiator — `experience-pro` and UPWARDS (owner decision,
      * 2026-09-01) — so, like the two keys above it, it is deliberately NOT in
-     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`. That map is the floor
-     * `commerceVerticalEntitlementMiddleware` hands EVERY tier of a vertical at
+     * the vertical-wide floor. That floor is the set
+     * the per-vertical entitlement middleware hands EVERY tier of a vertical at
      * once, and a paid capability listed there would be given to
      * `experience-basico` as well. It reaches the gate through the union
-     * `resolveCommerceVerticalGrants` already performs over the subscribed
+     * the per-vertical grants resolver already performs over the subscribed
      * plan's own `entitlements` column.
      *
      * `-premium` repeats the grant rather than inheriting it, for the reason
@@ -182,7 +182,7 @@ export enum EntitlementKey {
      *
      * A TIER differentiator on the same terms as
      * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU}, and therefore NOT in
-     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * the vertical-wide floor — the set EVERY
      * tier of a vertical receives. Granted from `experience-pro` UPWARDS
      * (owner decision, 2026-09-01): `-pro` and `-premium` both carry it,
      * because a premium subscriber missing a capability their cheaper
@@ -234,7 +234,7 @@ export enum EntitlementKey {
      * Granted from `gastronomy-pro` UPWARDS (owner decision, 2026-09-01): a
      * daily operational feature, used every day by whoever uses it and paid for
      * by nobody else. Deliberately ABSENT from
-     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` — that map is the floor EVERY
+     * the vertical-wide floor — the set EVERY
      * tier receives, and a paid capability there would be handed to `-basico`.
      * `-premium` repeats it literally rather than inheriting it, for the reason
      * `plans.config.ts` states: nothing composes a tier out of the one below.
@@ -261,7 +261,7 @@ export enum EntitlementKey {
      * A TIER differentiator granted from `gastronomy-pro` UPWARDS (owner
      * decision, 2026-09-01), on exactly the terms
      * {@link EntitlementKey.MANAGE_GASTRONOMY_MENU} is: NOT in
-     * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (that map is the floor every tier
+     * the vertical-wide floor (the set every tier
      * of a vertical receives), and carried by `-pro` and `-premium` alike so a
      * premium subscriber never loses a capability their cheaper neighbour has.
      *
@@ -296,7 +296,7 @@ export enum EntitlementKey {
      *
      * A TIER differentiator granted by `gastronomy-premium` ALONE, on exactly
      * the terms {@link EntitlementKey.MENU_ITEM_PHOTOS} is: deliberately NOT
-     * in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (that map is the floor every
+     * in the vertical-wide floor (the set every
      * tier of a vertical receives, and a paid capability there would be handed
      * to `-basico` and `-pro` as well).
      *
@@ -315,7 +315,7 @@ export enum EntitlementKey {
      * ## Manual, not `AI_TRANSLATE`
      *
      * `AI_TRANSLATE` (SPEC-212) resolves accommodation/destination/event/post
-     * content only; extending it to a commerce entity is separate work, out of
+     * content only; extending it to a gastronomy or experience entity is separate work, out of
      * scope here. `nameI18n`/`descriptionI18n` are typed by hand by the owner
      * — the same way `gastronomy_faqs.question_i18n` was before any AI path
      * touched it.
@@ -348,8 +348,8 @@ export enum EntitlementKey {
      *
      * A TIER differentiator granted by `gastronomy-premium` ALONE, on
      * exactly the terms {@link EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU}
-     * is: deliberately NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (that
-     * map is the floor every tier of a vertical receives, and a paid
+     * is: deliberately NOT in the vertical-wide floor (the
+     * set every tier of a vertical receives, and a paid
      * capability there would be handed to `-basico` and `-pro` as well).
      *
      * ## One key covers both the code and its measurement, on purpose
@@ -380,12 +380,12 @@ export enum EntitlementKey {
      *
      * ## Two independent sources, which is what makes it unlike its neighbours
      *
-     * Every other commerce tier differentiator in this enum is granted by a plan
+     * Every other gastronomy or experience tier differentiator in this enum is granted by a plan
      * row and by nothing else. This one is granted by TWO things (owner
      * decision, 2026-09-04):
      *
      * - `experience-premium`, through `extraEntitlements` — so it is deliberately
-     *   NOT in `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`, which is the floor every
+     *   NOT in the vertical-wide floor, which is the set every
      *   tier of a vertical receives and would hand it to `-basico` too;
      * - the three `private-galleries-+N` add-ons, through
      *   `AddonDefinition.grantsEntitlement` — which is how an owner on `-basico`

@@ -344,7 +344,7 @@ export const PHOTO_PHOTOGRAPHER_MAX_LENGTH = 200;
  * The minimum a photo row must expose to be edited by `PhotoMetadataEditor`.
  *
  * Widened out of `AccommodationMediaItem` by HOS-1036, when the same panel had
- * to serve post/event galleries (`ContentMediaSection`) and commerce galleries
+ * to serve post/event galleries (`ContentMediaSection`) and listing galleries
  * (`MediaSection`) as well. Those three local item shapes agree on exactly
  * these five fields and disagree on everything else (`publicId` required vs
  * optional, `width`/`height`, `isFeatured`), so the panel depends on the

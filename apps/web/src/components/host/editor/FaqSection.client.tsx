@@ -2,7 +2,7 @@
  * @file FaqSection.client.tsx
  * @description Self-contained FAQ manager for the accommodation editor (HOS-393).
  *
- * Modeled on `CommerceFaqManager.client.tsx` (SPEC-253) but styled as a card
+ * Modeled on `ListingFaqManager.client.tsx` (SPEC-253) but styled as a card
  * of `src/components/host/editor/` (fieldset + legend, matching
  * `AmenitiesSection.client.tsx`), and wired against the accommodation-scoped
  * FAQ endpoints:
@@ -20,7 +20,7 @@
  *
  * Accessibility: the reorder/edit/delete buttons are per-item and would
  * otherwise share an identical accessible name across every row (a real bug
- * already hit in `CommerceFaqManager` — four action pairs all named "Subir" /
+ * already hit in `ListingFaqManager` — four action pairs all named "Subir" /
  * "Bajar" / "Editar" / "Eliminar" with nothing to tell rows apart). Every
  * action button's `aria-label` here embeds a truncated snippet of the FAQ's
  * own question so each row's controls stay uniquely named.

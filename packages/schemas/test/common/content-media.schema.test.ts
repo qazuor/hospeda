@@ -1,17 +1,17 @@
 /**
  * @file content-media.schema.test.ts
  * @description Tests for the editorial-content media row shape (HOS-390) and,
- * more importantly, a drift guard against its commerce twin.
+ * more importantly, a drift guard against its listing twin.
  *
- * `BaseContentMediaSchema` is deliberately a copy of `BaseCommerceMediaSchema`
+ * `BaseContentMediaSchema` is deliberately a copy of `BaseListingMediaSchema`
  * (see that file's doc for why it is not shared yet). A copy with no guard is a
  * copy that diverges silently, so the parity test below is the point of this
  * file — the validation cases are the easy part.
  */
 
 import { describe, expect, it } from 'vitest';
-import { BaseCommerceMediaSchema } from '../../src/common/commerce-media.schema';
 import { BaseContentMediaSchema } from '../../src/common/content-media.schema';
+import { BaseListingMediaSchema } from '../../src/common/listing-media.schema';
 import { EventMediaSchema } from '../../src/entities/event/subtypes/event.media.schema';
 import { PostMediaSchema } from '../../src/entities/post/subtypes/post.media.schema';
 
@@ -29,18 +29,18 @@ const validRow = {
     updatedAt: new Date('2026-08-05T00:00:00.000Z')
 };
 
-describe('BaseContentMediaSchema — parity with the commerce twin', () => {
+describe('BaseContentMediaSchema — parity with the listing twin', () => {
     it('carries exactly the same field set', () => {
         const contentKeys = Object.keys(BaseContentMediaSchema.shape).sort();
-        const commerceKeys = Object.keys(BaseCommerceMediaSchema.shape).sort();
+        const listingKeys = Object.keys(BaseListingMediaSchema.shape).sort();
 
         // If this fails, one of the two shapes grew or lost a field. Change
         // both, or collapse them into one base (the follow-up documented in
         // `content-media.schema.ts`) — do not just update this expectation.
-        expect(contentKeys).toEqual(commerceKeys);
+        expect(contentKeys).toEqual(listingKeys);
     });
 
-    it('accepts and rejects the same rows as the commerce twin', () => {
+    it('accepts and rejects the same rows as the listing twin', () => {
         const cases: Array<{ label: string; row: Record<string, unknown> }> = [
             { label: 'valid row', row: validRow },
             { label: 'bad url', row: { ...validRow, url: 'not-a-url' } },
@@ -56,8 +56,8 @@ describe('BaseContentMediaSchema — parity with the commerce twin', () => {
         for (const { label, row } of cases) {
             expect(
                 BaseContentMediaSchema.safeParse(row).success,
-                `content vs commerce disagreed on: ${label}`
-            ).toBe(BaseCommerceMediaSchema.safeParse(row).success);
+                `content vs listing disagreed on: ${label}`
+            ).toBe(BaseListingMediaSchema.safeParse(row).success);
         }
     });
 });

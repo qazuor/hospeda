@@ -1,9 +1,9 @@
 ---
 /**
  * @file preguntas.astro
- * @description FAQ section of the commerce editor (HOS-1080).
+ * @description FAQ section of the gastronomy/experience editor (HOS-1080).
  *
- * `CommerceFaqManager` owns its own endpoints (HOS-811) — nothing here reaches
+ * `ListingFaqManager` owns its own endpoints (HOS-811) — nothing here reaches
  * the listing PATCH or its dirty tracking — so this page mounts it directly,
  * with no form and no save button, exactly as the accommodation editor's
  * `preguntas` route does.
@@ -15,25 +15,25 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { CommerceFaqManager } from '@/components/commerce/CommerceFaqManager.client';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { readCommerceListingFaqs } from '@/lib/commerce/commerce-editor-detail';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { ListingFaqManager } from '@/components/listing/ListingFaqManager.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { readListingFaqs } from '@/lib/listing/listing-editor-detail';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({ astro: Astro, sectionSlug: 'preguntas' });
+const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'preguntas' });
 
 if (resolution.redirect) return resolution.redirect;
 
 const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);
 
-const initialFaqs = readCommerceListingFaqs({ detail });
+const initialFaqs = readListingFaqs({ detail });
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
@@ -42,11 +42,11 @@ const initialFaqs = readCommerceListingFaqs({ detail });
 	currentSectionSlug="preguntas"
 	title={t('listing.owner.editor.sectionNav.faqs', 'Preguntas frecuentes')}
 >
-	<CommerceFaqManager
+	<ListingFaqManager
 		client:load
 		vertical={vertical}
 		listingId={listingId}
 		locale={locale}
 		initialFaqs={initialFaqs}
 	/>
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>

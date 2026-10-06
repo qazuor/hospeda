@@ -426,7 +426,7 @@ export interface SessionUser {
      * mapping (spec §7.1, OQ-4).
      *
      * Empty only when the payload was unexpectedly malformed; consumers must
-     * treat that as the lowest-privilege case (no host/commerce access).
+     * treat that as the lowest-privilege case (no host/gastronomy/experience access).
      */
     readonly roles: readonly string[];
     /**
@@ -454,7 +454,7 @@ export interface SessionUser {
     /**
      * SPEC-239 T-041: Force-password-change flag.
      * `true` when the user was provisioned with a server-generated password
-     * (commerce owner accounts) and must rotate it before using protected
+     * (gastronomy/experience owner accounts) and must rotate it before using protected
      * routes. Mirrors `users.mustChangePassword`.
      *
      * HOS-296: read from `data.actor.mustChangePassword` on the SAME
@@ -464,7 +464,7 @@ export interface SessionUser {
      * started forwarding it onto the actor. Note the `/auth/me` payload ALSO
      * carries a top-level `passwordChangeRequired`; that is a DIFFERENT flag
      * (`adminInfo`-scoped, computed only for actors with `ACCESS_PANEL_ADMIN`)
-     * and is NOT a substitute — it is always false for the commerce owners
+     * and is NOT a substitute — it is always false for the gastronomy/experience owners
      * this gate exists for.
      */
     readonly mustChangePassword: boolean;
@@ -620,7 +620,7 @@ export async function parseSessionUser({
                             // gating", see `apps/api/src/routes/auth/me.ts`) —
                             // the middleware simply discarded it until now.
                             permissions?: readonly string[];
-                            // SPEC-239 commerce-owner password gate. Lives on
+                            // SPEC-239 gastronomy/experience-owner password gate. Lives on
                             // the actor since HOS-296 — see `SessionUser`.
                             mustChangePassword?: boolean;
                         };

@@ -277,7 +277,7 @@ function buildAuth() {
                 },
                 /**
                  * SPEC-239 T-041: Force-password-change flag.
-                 * Set to true when a commerce owner account is provisioned so the
+                 * Set to true when a gastronomy or experience owner account is provisioned so the
                  * owner must choose a personal password on first login. Cleared by
                  * the change-password endpoint once the new password is accepted.
                  * Exposed here as an additionalField so the session user object

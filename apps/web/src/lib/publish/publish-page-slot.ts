@@ -116,7 +116,7 @@ function buildDraftEditUrl(input: {
  * The subscription page, scoped to the vertical's own billing domain.
  *
  * `/mi-cuenta/suscripcion/` defaults to the accommodation subscription and takes
- * `?domain=` for the others (HOS-689). Sending a commerce owner to the bare URL
+ * `?domain=` for the others (HOS-689). Sending a gastronomy/experience owner to the bare URL
  * would show them a page about a subscription they may not even hold.
  */
 function buildSubscriptionUrl(input: {

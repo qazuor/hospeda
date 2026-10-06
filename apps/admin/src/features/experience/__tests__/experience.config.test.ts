@@ -39,7 +39,7 @@ describe('experienceListConfig', () => {
     });
 
     it('should have a type filter in filterBarConfig.filters', () => {
-        // extraFilters are merged into filterBarConfig.filters by createCommerceListConfig
+        // extraFilters are merged into filterBarConfig.filters by createListingListConfig
         const filters = experienceListConfig.filterBarConfig?.filters ?? [];
         const typeFilter = filters.find((f) => f.paramKey === 'type');
         expect(typeFilter).toBeDefined();
@@ -48,7 +48,7 @@ describe('experienceListConfig', () => {
         expect(opts.length).toBeGreaterThan(0);
     });
 
-    it('should have shared commerce filters (destinationId, ownerId, isFeatured, includeDeleted)', () => {
+    it('should have shared listing filters (destinationId, ownerId, isFeatured, includeDeleted)', () => {
         const filters = experienceListConfig.filterBarConfig?.filters ?? [];
         const paramKeys = filters.map((f) => f.paramKey);
         expect(paramKeys).toContain('destinationId');

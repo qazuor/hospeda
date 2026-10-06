@@ -83,7 +83,7 @@ function makeFaq(overrides: Partial<GastronomyFaq> = {}): GastronomyFaq {
 const ownerActor: Actor = {
     id: OWNER_ID,
     roles: [RoleEnum.GASTRONOMY_OWNER],
-    // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces COMMERCE_FAQS_EDIT_OWN
+    // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces the per-section FAQ permission
     permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 

@@ -28,7 +28,7 @@ const AssignOwnerBodySchema = z.object({
  *
  * Delegates to `ExperienceService.update(actor, id, { ownerId })`.
  * No dedicated service method exists for assign-owner; using `update` with a
- * narrow payload is the established commerce-entity pattern.
+ * narrow payload is the established gastronomy/experience entity pattern.
  * Requires EXPERIENCE_EDIT_ALL permission.
  */
 export const adminAssignExperienceOwnerRoute = createAdminRoute({

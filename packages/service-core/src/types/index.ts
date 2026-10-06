@@ -71,7 +71,7 @@ export type Actor = {
      *
      * Replaces the former single `role: RoleEnum` scalar: `users.role` no
      * longer exists and one account can wear several hats at once (host and
-     * commerce owner, say). Effective permissions are the union over these
+     * listing owner, say). Effective permissions are the union over these
      * roles, then the per-user overrides:
      * `(⋃ perms(role_i) ∪ grants) \ denies`.
      *
@@ -122,7 +122,7 @@ export type Actor = {
     /**
      * Whether the account must rotate a server-generated password before it can
      * use protected routes — mirrors `users.must_change_password`, set when a
-     * commerce-owner account is provisioned (SPEC-239 T-041).
+     * listing-owner account is provisioned (SPEC-239 T-041).
      *
      * Carried on the actor since HOS-296 so `GET /auth/me` surfaces it. Before
      * that, the flag existed ONLY as a Better Auth `additionalField`, which
@@ -132,7 +132,7 @@ export type Actor = {
      * NOT the same flag as `AuthMeResponse.passwordChangeRequired`: that one is
      * `users.adminInfo.passwordChangeRequired`, is computed only for actors
      * holding `ACCESS_PANEL_ADMIN`, and is therefore always `false` for the
-     * commerce owners this field exists to gate. Optional because guests and
+     * listing owner this field exists to gate. Optional because guests and
      * system actors have no password; callers MUST treat `undefined` as
      * "no rotation required" (fail-open, matching the pre-existing gate).
      */

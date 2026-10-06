@@ -1,7 +1,7 @@
 /**
  * @file catalog-names.test.ts
  * @description Tests for the amenity catalog display-name resolver
- * (SPEC-249 commerce editor refinement). Verifies that `translateAmenityName`
+ * (SPEC-249 gastronomy/experience editor refinement). Verifies that `translateAmenityName`
  * resolves the i18n label for a catalog key, and falls back to a humanized key
  * when the translation is missing (the `[MISSING:` sentinel from `createTranslations`).
  */

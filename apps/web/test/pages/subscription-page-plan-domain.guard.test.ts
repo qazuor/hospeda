@@ -18,16 +18,16 @@
  * which for a one-call file would be exactly the bug.
  *
  * The behaviour these protect is exercised for real in
- * `test/components/account/SubscriptionDashboard.commerce-domain.test.tsx`.
+ * `test/components/account/SubscriptionDashboard.domain.test.tsx`.
  *
  * ## Re-anchored on the property, not on the expression (HOS-1321)
  *
  * Three of these used to quote the page's exact expressions —
- * `productDomain !== 'accommodation'`, `fetchPublicPlans(isCommerceDomain ? …)`.
+ * `productDomain !== 'accommodation'`, `fetchPublicPlans(isListingDomain ? …)`.
  * That froze one spelling of a decision instead of guarding the decision, and it
  * fired on the change that made the page MORE correct: adding `tourist` to
  * `SUBSCRIPTION_DASHBOARD_DOMAINS` turned that negation into a live bug (it
- * classifies the tourist dashboard as a commerce vertical), so removing it was
+ * classifies the tourist dashboard as a gastronomy/experience verticals), so removing it was
  * the fix, and the guard called the fix a regression.
  *
  * They now assert what HOS-1213 actually needs — the catalogue follows the
@@ -95,18 +95,18 @@ describe('mi-cuenta/suscripcion — plan catalogue is fetched per product domain
     it('derives the catalogue choice from the resolved domain, not from the caller roles', () => {
         // `hasAccommodationsNavAccess` still decides the accommodation
         // audience's category (owner vs tourist) and must not decide the domain:
-        // a commerce owner holds no accommodation nav access, which is what
+        // a gastronomy/experience owner holds no accommodation nav access, which is what
         // resolved the whole catalogue to `'tourist'` (HOS-1213).
         //
         // Asserted as "comes from `resolveDashboardPlanSource`, given the
         // resolved domain" rather than by quoting an expression: that helper is
         // the exhaustive mapping, unit-tested per domain, and it is what makes a
-        // fifth domain a compile error instead of a silent commerce dashboard.
+        // fifth domain a compile error instead of a silent gastronomy/experience dashboard.
         expect(FRONTMATTER).toMatch(
             /const\s+planSource\s*=\s*resolveDashboardPlanSource\(\{\s*domain:\s*productDomain\s*\}\)/
         );
         expect(FRONTMATTER).toMatch(
-            /const\s+isCommerceDomain\s*=\s*planSource\.flow\s*===\s*'commerce'/
+            /const\s+hasNoPlanChangeFlow\s*=\s*planSource\.flow\s*===\s*'none'/
         );
 
         // And the roles are nowhere in that decision — only in the category.
@@ -119,11 +119,11 @@ describe('mi-cuenta/suscripcion — plan catalogue is fetched per product domain
         expect(domainDecision).not.toContain('roles');
     });
 
-    it('HOS-1321: tourist is never treated as a commerce vertical', () => {
+    it('HOS-1321: tourist is never treated as a gastronomy/experience verticals', () => {
         // The negation this replaced (`productDomain !== 'accommodation'`) sent
-        // the tourist dashboard down the commerce path: a `?domain=tourist`
+        // the tourist dashboard down the gastronomy/experience path: a `?domain=tourist`
         // catalogue that does not exist, and a POST to
-        // `/protected/commerce/tourist/change-plan`. The page must not grow a
+        // a plan-change route that does not exist for tourists. The page must not grow a
         // second, hand-rolled domain comparison alongside the helper.
         expect(FRONTMATTER_CODE).not.toMatch(/productDomain\s*!==\s*'accommodation'/);
         expect(FRONTMATTER_CODE).not.toMatch(/productDomain\s*===\s*'tourist'/);
@@ -133,17 +133,11 @@ describe('mi-cuenta/suscripcion — plan catalogue is fetched per product domain
         expect(FRONTMATTER_CODE).toContain('const planSource');
     });
 
-    it('keeps the accommodation catalogue empty on a commerce dashboard', () => {
-        const slice = FRONTMATTER.slice(
-            FRONTMATTER.indexOf('const availablePlans'),
-            FRONTMATTER.indexOf('const commercePlans')
-        );
+    it('keeps the accommodation catalogue empty on a gastronomy/experience dashboard', () => {
+        const slice = FRONTMATTER.slice(FRONTMATTER.indexOf('const availablePlans'));
         expect(slice).not.toHaveLength(0);
-        expect(slice).toMatch(/!isCommerceDomain\s*&&/);
+        expect(slice).toMatch(/!hasNoPlanChangeFlow\s*&&/);
         expect(slice).toMatch(/plansResult\.ok/);
-        // Proves the slice actually cut — otherwise the assertion above could be
-        // satisfied by a line belonging to the commerce branch.
-        expect(slice).not.toContain('toCommercePlanOption');
     });
 
     it('HOS-1321: the accommodation catalogue is also gated on the plan-change guard', () => {
@@ -152,10 +146,7 @@ describe('mi-cuenta/suscripcion — plan catalogue is fetched per product domain
         // tourist subscription must not be offered tourist tiers on their
         // tourist tab — the call would mutate the owner subscription. An empty
         // list is what degrades the dashboard to the "Ver planes" link.
-        const slice = FRONTMATTER.slice(
-            FRONTMATTER.indexOf('const availablePlans'),
-            FRONTMATTER.indexOf('const commercePlans')
-        );
+        const slice = FRONTMATTER.slice(FRONTMATTER.indexOf('const availablePlans'));
         expect(slice).toMatch(/canOfferPlanChange/);
         expect(FRONTMATTER).toMatch(
             /const\s+canOfferPlanChange\s*=\s*!planChangeWouldResolveAnotherSubscription\(/
@@ -174,18 +165,10 @@ describe('mi-cuenta/suscripcion — plan catalogue is fetched per product domain
         expect(guardCall).not.toContain('heldDomains');
     });
 
-    it('builds the commerce catalogue only on a commerce dashboard', () => {
-        const slice = FRONTMATTER.slice(FRONTMATTER.indexOf('const commercePlans'));
-        expect(slice).not.toHaveLength(0);
-        expect(slice).toMatch(/isCommerceDomain\s*&&\s*plansResult\.ok/);
-        expect(slice).toMatch(/filterPlansByCategory\(\s*plansResult\.plans,\s*'owner'\s*\)/);
-        expect(slice).toContain('toCommercePlanOption');
-    });
-
-    it('hands both catalogues to the dashboard island', () => {
+    it('hands the catalogue to the dashboard island', () => {
         const markup = SOURCE.slice(SOURCE.indexOf('<SubscriptionDashboard'));
         expect(markup).toMatch(/plans=\{availablePlans\}/);
-        expect(markup).toMatch(/commercePlans=\{commercePlans\}/);
+        expect(markup).not.toContain('listingPlans');
         expect(markup).toMatch(/productDomain=\{productDomain\}/);
     });
 });

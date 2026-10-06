@@ -19,7 +19,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { CommerceEntityTypeEnum, resolveListingCompleteness } from '@repo/schemas';
+import { ProductDomainEnum, resolveListingCompleteness } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -64,11 +64,11 @@ describe('HOS-924 — the experiences pitch page describes the contact rule it e
         };
 
         const whatsappOnly = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityType: ProductDomainEnum.EXPERIENCE,
             listing: { ...listing, contactInfo: { whatsapp: '+5493447412233' } }
         });
         const withMobile = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityType: ProductDomainEnum.EXPERIENCE,
             listing: { ...listing, contactInfo: { mobilePhone: '+5493447412233' } }
         });
 

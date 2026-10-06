@@ -260,7 +260,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
             // per content type, so an acquired editor lands on the listing for
             // the thing they clicked instead of a shared dashboard they then
             // have to navigate out of. Matches the convention `accommodation`
-            // and the two commerce verticals already follow above.
+            // and the two gastronomy/experience verticals already follow above.
             //
             // Both keep `href: 'colaborar/editores'` — there is ONE application
             // form and one manual promotion to RoleEnum.EDITOR (HOS-134 §2);

@@ -14,7 +14,7 @@
  *
  * A slug that is not in the table gets {@link PLAN_WATERMARK_FALLBACK_ICON}, not
  * `undefined`. The catalogue is editable from admin, so a tier this file has
- * never heard of is an ORDINARY event, not an error: `commerce`-domain plans and
+ * never heard of is an ORDINARY event, not an error: gastronomy- and experience-domain plans and
  * anything an operator adds tomorrow all land here. Returning `undefined` would
  * make the card render `<undefined />` — an Astro build error on a page that is
  * otherwise fine — which is a far worse outcome than a generic sparkle.

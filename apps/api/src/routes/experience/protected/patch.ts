@@ -13,7 +13,7 @@
  *   `moderationState`, `isFeatured`, `ownerId`) are ABSENT from the schema,
  *   so any forged keys for those are silently stripped by Zod.
  * - ExperienceService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
- *   per-section COMMERCE_*_EDIT_OWN permission checks.
+ *   per-section GASTRONOMY_/EXPERIENCE_EDIT_OWN permission checks.
  * Owner updates run without the former route and directions-field plan entitlements during the billing transition.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */

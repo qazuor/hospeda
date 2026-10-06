@@ -8,7 +8,7 @@
  *   result is mapped to owner-listing summaries (vertical = 'experience',
  *   isPublic derived from visibility)
  */
-import { CommerceEntityTypeEnum, LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, ProductDomainEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
@@ -47,27 +47,10 @@ const MOCK_LISTINGS = [
     }
 ];
 
-// HOS-166 W1: the route now batch-resolves each listing's commerce
-// subscription status via `getCommerceListingSubscriptionStatuses`. The real
-// implementation queries `@repo/db` directly (not through a service class),
-// and this suite's generic `@repo/db` mock does not resolve a bare
-// `select().from().where()` chain to an array — so it must be overridden
-// here rather than exercised for real, mirroring how DB-touching
-// service-core helpers are always overridden in route-level tests. Declared
-// via `vi.hoisted` (not a bare `mock`-prefixed const) to match this
-// codebase's established convention for referencing a mock inside a
-// `vi.mock` factory — see `start-subscription.test.ts`.
-const { mockGetCommerceListingSubscriptionStatuses } = vi.hoisted(() => ({
-    mockGetCommerceListingSubscriptionStatuses: vi
-        .fn()
-        .mockResolvedValue(new Map([['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'active']]))
-}));
-
 vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
-        getCommerceListingSubscriptionStatuses: mockGetCommerceListingSubscriptionStatuses,
         ExperienceService: class MockExperienceService extends orig.ExperienceService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
             constructor(...args: ConstructorParameters<typeof orig.ExperienceService>) {
@@ -146,7 +129,7 @@ describe('GET /api/v1/protected/experiences/mine', () => {
             };
             const listings = body.data.listings;
             expect(listings).toHaveLength(3);
-            expect(listings[0]?.vertical).toBe(CommerceEntityTypeEnum.EXPERIENCE);
+            expect(listings[0]?.vertical).toBe(ProductDomainEnum.EXPERIENCE);
             expect(listings[0]?.slug).toBe('kayak-al-atardecer');
             expect(listings[0]?.isPublic).toBe(true);
             expect(listings[1]?.isPublic).toBe(false);
@@ -162,7 +145,7 @@ describe('GET /api/v1/protected/experiences/mine', () => {
             // headers, so the guard returns first and every assertion in this
             // test is skipped — measured: `toHaveLength(99)` here passes. The
             // predicate that actually fails on a wrong mapping lives in
-            // `test/routes/commerce-owner-listing-public-page.test.ts`, which
+            // `test/routes/listing-owner-listing-public-page.test.ts`, which
             // mounts the route directly. These lines are kept so they start
             // asserting the day that guard is fixed; they are not coverage
             // today, and reading them as coverage is the trap.

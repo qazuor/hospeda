@@ -1,7 +1,7 @@
 ---
 /**
  * @file datos-practicos.astro
- * @description Practical-info section of the commerce editor (HOS-898 / HOS-1046 /
+ * @description Practical-info section of the gastronomy/experience editor (HOS-898 / HOS-1046 /
  * HOS-1047 / HOS-1056, routed in HOS-1080).
  *
  * EXPERIENCE ONLY on the same schema-shape gate as the meeting point. NOT an
@@ -12,14 +12,14 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({
+const resolution = await resolveListingEditorPage({
 	astro: Astro,
 	sectionSlug: 'datos-practicos',
 });
@@ -30,7 +30,7 @@ const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
@@ -39,7 +39,7 @@ const { t } = createTranslations(locale);
 	currentSectionSlug="datos-practicos"
 	title={t('listing.owner.editor.sectionNav.practicalInfo', 'Datos prácticos')}
 >
-	<CommerceListingEditor
+	<ListingEditor
 		client:load
 		sectionId="practicalInfo"
 		vertical={vertical}
@@ -47,4 +47,4 @@ const { t } = createTranslations(locale);
 		locale={locale}
 		initialData={detail}
 	/>
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>

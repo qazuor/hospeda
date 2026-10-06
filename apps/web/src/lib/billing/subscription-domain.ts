@@ -4,8 +4,8 @@
  * dashboard (HOS-689 item 3, widened to `tourist` by HOS-1321).
  *
  * `mi-cuenta/suscripcion/index.astro` used to accept only
- * `'accommodation' | 'commerce'` for its `?domain=` query param (HOS-259).
- * That is not enough now that commerce billing is per-vertical (HOS-688):
+ * an `'accommodation'`-or-vertical union for its `?domain=` query param (HOS-259).
+ * That is not enough now that gastronomy/experience billing is per-vertical (HOS-688):
  * an owner can hold up to three independent subscriptions —
  * accommodation, gastronomy, experience — and the page has to resolve
  * whichever one is relevant, not silently default to accommodation for an
@@ -65,11 +65,11 @@ export function isSubscriptionDashboardDomain(
  * Resolves which domain the dashboard should render on this request.
  *
  * An explicit, valid `?domain=` always wins — it is how another surface
- * (e.g. the commerce SUSPENDED-listing recover CTA, HOS-259/HOS-689) links
+ * (e.g. the gastronomy/experience SUSPENDED-listing recover CTA, HOS-259/HOS-689) links
  * directly to the domain that actually needs attention, even one the owner
  * does not otherwise hold (a lapsed/cancelled subscription still needs a
  * page to land on). Absent that, the first domain the owner actually holds
- * a subscription in wins — so a commerce-only owner (no accommodation
+ * a subscription in wins — so a gastronomy/experience-only owner (no accommodation
  * subscription at all) lands on THEIR subscription instead of an
  * accommodation "no subscription" empty state. With no explicit domain and
  * no held subscription at all, `'accommodation'` is the default, matching
@@ -107,9 +107,10 @@ export interface DashboardPlanSource {
     /**
      * Which plan-change component this tab renders. `'accommodation'` is
      * `PlanChangeFlow` + `POST /billing/subscriptions/change-plan`;
-     * `'commerce'` is `CommercePlanChange` + that vertical's own route.
+     * `'none'` means the tab offers no in-dashboard plan change (the gastronomy
+     * and experience verticals, whose own plan-change flow was retired).
      */
-    readonly flow: 'accommodation' | 'commerce';
+    readonly flow: 'accommodation' | 'none';
     /**
      * The `?domain=` the catalogue is fetched with. `undefined` means "send no
      * domain", which `GET /public/plans` answers with its `accommodation`
@@ -152,9 +153,9 @@ export interface DashboardPlanSource {
  * ## The mapping is exhaustive on purpose
  *
  * A `Record` over every dashboard domain, not `domain !== 'accommodation'`.
- * That negation is what classified the tourist tab as a COMMERCE vertical — it
- * would render `CommercePlanChange` and post to
- * `POST /protected/commerce/tourist/change-plan`. A fifth domain fails to
+ * That negation is what classified the tourist tab as a gastronomy/experience
+ * vertical, which has no `PlanChangeFlow` and would have posted a plan change
+ * to a route that does not exist for tourists. A fifth domain fails to
  * compile here instead of inheriting a flow nobody chose for it.
  *
  * Tourist is pinned to `category: 'tourist'` rather than following the
@@ -175,8 +176,8 @@ export function resolveDashboardPlanSource({
     const BY_DOMAIN: Readonly<Record<SubscriptionDashboardDomain, DashboardPlanSource>> = {
         accommodation: { flow: 'accommodation', planDomain: undefined, category: null },
         tourist: { flow: 'accommodation', planDomain: 'tourist', category: 'tourist' },
-        gastronomy: { flow: 'commerce', planDomain: 'gastronomy', category: 'owner' },
-        experience: { flow: 'commerce', planDomain: 'experience', category: 'owner' }
+        gastronomy: { flow: 'none', planDomain: 'gastronomy', category: 'owner' },
+        experience: { flow: 'none', planDomain: 'experience', category: 'owner' }
     };
     return BY_DOMAIN[domain];
 }

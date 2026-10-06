@@ -39,7 +39,7 @@ describe('gastronomyListConfig', () => {
     });
 
     it('should have a type filter in filterBarConfig.filters', () => {
-        // extraFilters are merged into filterBarConfig.filters by createCommerceListConfig
+        // extraFilters are merged into filterBarConfig.filters by createListingListConfig
         const filters = gastronomyListConfig.filterBarConfig?.filters ?? [];
         const typeFilter = filters.find((f) => f.paramKey === 'type');
         expect(typeFilter).toBeDefined();

@@ -48,8 +48,8 @@ import { SITEMAP_LOCALES } from './sitemap-xml';
  *
  * `gastronomy` and `experience` qualify on the same terms as the original four:
  * a plain detail page, a slug on the event, and a publisher
- * (`scheduleCommerceListingRevalidation`) that already refuses to schedule
- * anything `isCommerceListingPubliclyVisible` rejects.
+ * (`scheduleListingRevalidation`) that already refuses to schedule
+ * anything `isListingPubliclyVisible` rejects.
  */
 export const NOTIFIABLE_ENTITY_TYPES = [
     'accommodation',

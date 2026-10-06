@@ -2755,7 +2755,7 @@ export function toGastronomyCardProps({
 }
 
 /**
- * Maps the catalog-joined `amenities` array a commerce detail payload carries
+ * Maps the catalog-joined `amenities` array a gastronomy/experience detail payload carries
  * into the item shape `AmenitiesGrid.astro` renders (HOS-1072).
  *
  * Two deliberate coercions, both matching what the accommodation transform
@@ -2765,11 +2765,11 @@ export function toGastronomyCardProps({
  *   (`accommodations.amenityNames.<slug>`). SPEC-266 dropped the catalog's
  *   `name` column, so a slug is the only identifier there is.
  * - `isOptional` / `additionalCost` / `displayWeight` are filled with inert
- *   values. The commerce junction tables have no such columns (see
- *   `CommerceListingAmenityPublicSchema`), so there is nothing to read; the
+ *   values. The gastronomy/experience junction tables have no such columns (see
+ *   `ListingAmenityPublicSchema`), so there is nothing to read; the
  *   constants keep one grid component serving three verticals instead of
  *   forking it. `additionalCost: null` is what stops the grid from printing a
- *   "(costo adicional)" tag no commerce owner could have set.
+ *   "(costo adicional)" tag no gastronomy/experience owner could have set.
  *
  * Server order is PRESERVED — the API already sorts by the catalog's
  * `displayWeight` — so the flat `50` here re-sorts nothing.
@@ -2777,7 +2777,7 @@ export function toGastronomyCardProps({
  * @param raw - The payload's `amenities` value, of unknown shape.
  * @returns Grid-ready amenity items; empty when absent or malformed.
  */
-function mapCommerceAmenities(raw: unknown): readonly DetailAmenity[] {
+function mapListingAmenities(raw: unknown): readonly DetailAmenity[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((item) => ({
@@ -2792,18 +2792,18 @@ function mapCommerceAmenities(raw: unknown): readonly DetailAmenity[] {
 }
 
 /**
- * Maps the catalog-joined `features` array a commerce detail payload carries
+ * Maps the catalog-joined `features` array a gastronomy/experience detail payload carries
  * into the item shape `FeaturesGrid.astro` renders (HOS-1072).
  *
  * Unlike the amenity twin, `hostReWriteName` and `comments` are REAL here: the
- * commerce feature junction tables carry both columns and the owner writes
+ * gastronomy/experience feature junction tables carry both columns and the owner writes
  * them, so they are read straight through. `name` holds the slug for the same
  * i18n reason as above.
  *
  * @param raw - The payload's `features` value, of unknown shape.
  * @returns Grid-ready feature items; empty when absent or malformed.
  */
-function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
+function mapListingFeatures(raw: unknown): readonly DetailFeature[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((item) => ({
@@ -3009,8 +3009,8 @@ export function toGastronomyDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
-        amenities: mapCommerceAmenities(item.amenities),
-        features: mapCommerceFeatures(item.features),
+        amenities: mapListingAmenities(item.amenities),
+        features: mapListingFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
@@ -3269,8 +3269,8 @@ export function toExperienceDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
-        amenities: mapCommerceAmenities(item.amenities),
-        features: mapCommerceFeatures(item.features),
+        amenities: mapListingAmenities(item.amenities),
+        features: mapListingFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),

@@ -975,7 +975,7 @@ export interface EventDetailData {
 
 /**
  * A single operating shift within a day: an open time and a close time, both
- * in `"HH:mm"` 24-hour format. Mirrors `ShiftSchema` from the commerce
+ * in `"HH:mm"` 24-hour format. Mirrors `ShiftSchema` from the gastronomy/experience
  * opening-hours schema (`@repo/schemas`).
  */
 export interface GastronomyOpeningHoursShift {
@@ -1250,7 +1250,7 @@ export interface GastronomyDetailData extends GastronomyCardData {
     /**
      * Amenities the owner ticked, catalog-joined (HOS-1072).
      *
-     * Reuses {@link DetailAmenity} on purpose rather than declaring a commerce
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a gastronomy/experience
      * twin: both verticals read the SAME `amenities` catalog as accommodations
      * and render through the same `AmenitiesGrid`, so `name` carries the slug
      * here too (SPEC-266). Empty when the payload carried none.
@@ -1285,7 +1285,7 @@ export type ExperienceOpeningHoursEntry = GastronomyOpeningHoursEntry;
 
 /**
  * Social networks map for an experience listing.
- * Mirrors GastronomySocialNetworks — same fields from the commerce-listing core.
+ * Mirrors GastronomySocialNetworks — same fields from the shared listing core.
  */
 export interface ExperienceSocialNetworks {
     readonly facebook?: string | null;
@@ -1517,7 +1517,7 @@ export interface ExperienceDetailData extends ExperienceCardData {
     /**
      * Amenities the owner ticked, catalog-joined (HOS-1072).
      *
-     * Reuses {@link DetailAmenity} on purpose rather than declaring a commerce
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a gastronomy/experience
      * twin: both verticals read the SAME `amenities` catalog as accommodations
      * and render through the same `AmenitiesGrid`, so `name` carries the slug
      * here too (SPEC-266). Empty when the payload carried none.

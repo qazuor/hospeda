@@ -126,7 +126,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
         const experience = listing?.options.find((option) => option.id === 'experience');
 
-        // This case used to assert the opposite — that the two commerce options
+        // This case used to assert the opposite — that the two gastronomy/experience options
         // led AWAY from a self-service publish flow — and that reading survived
         // one URL rename too many. HOS-1032 repointed both at the 301 target of
         // the URL they used to name, and the target was a SALES page, so the
@@ -308,7 +308,7 @@ describe('getNavForSurface (selector)', () => {
     it('returns only the always-curated items (dashboard, favorites, subscription) for the avatar surface', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
         // cuenta -> dashboard + subscription; turista -> favorites. hostDashboard
-        // and commerce are picked by priority via pickBusinessShortcut, NOT
+        // and gastronomy/experience are picked by priority via pickBusinessShortcut, NOT
         // surface membership, so anfitrion/comercio contribute nothing here.
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista']);
         const cuenta = findGroup(groups, 'cuenta');
@@ -317,11 +317,11 @@ describe('getNavForSurface (selector)', () => {
         expect(turista?.items.map((item) => item.id)).toEqual(['favorites']);
     });
 
-    it('does not surface hostDashboard/commerce on the avatar surface (business shortcut is priority-picked, not surface-membership-based)', () => {
+    it('does not surface hostDashboard/comercio-listings on the avatar surface (business shortcut is priority-picked, not surface-membership-based)', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
         const allIds = groups.flatMap((group) => group.items.map((item) => item.id));
         expect(allIds).not.toContain('hostDashboard');
-        expect(allIds).not.toContain('commerce');
+        expect(allIds).not.toContain('comercio-listings');
     });
 
     it('drops a group entirely once all of its items are filtered out by visibility', () => {
@@ -358,14 +358,14 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         ]);
     });
 
-    it('adds comercio (with its "commerce" item) when the user has GASTRONOMY_EDIT_OWN', () => {
+    it('adds comercio (with its "comercio-listings" item) when the user has GASTRONOMY_EDIT_OWN', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.GASTRONOMY_EDIT_OWN])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
         const comercio = findGroup(groups, 'comercio');
-        expect(comercio?.items.map((item) => item.id)).toEqual(['commerce']);
+        expect(comercio?.items.map((item) => item.id)).toEqual(['comercio-listings']);
     });
 
     it('shows comercio with only the experience permission', () => {
@@ -443,14 +443,14 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(anfitrion?.items.some((item) => item.id === 'properties')).toBe(true);
     });
 
-    it('adds comercio (with its "commerce" item) for a GASTRONOMY_OWNER role', () => {
+    it('adds comercio (with its "comercio-listings" item) for a GASTRONOMY_OWNER role', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByRoles(node, [RoleEnum.GASTRONOMY_OWNER])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
         const comercio = findGroup(groups, 'comercio');
-        expect(comercio?.items.map((item) => item.id)).toEqual(['commerce']);
+        expect(comercio?.items.map((item) => item.id)).toEqual(['comercio-listings']);
     });
 
     it('adds anfitrion, comercio and editorial for platform staff (ADMIN)', () => {
@@ -575,7 +575,7 @@ describe('addons nav item (HOS-726)', () => {
         expect(roles?.has(RoleEnum.USER)).toBe(false);
     });
 
-    it('does NOT gate the item on ACCOMMODATION_CREATE — that would exclude the commerce owner', () => {
+    it('does NOT gate the item on ACCOMMODATION_CREATE — that would exclude the gastronomy/experience owner', () => {
         // The regression this whole permission exists to prevent. Asserted
         // separately from the positive check above so a future edit that swaps
         // the gate back cannot pass by coincidence of role-set overlap.

@@ -64,7 +64,7 @@
 #    pure logic refactor also trips the guard and needs the opt-out marker;
 #    accepted because these files change rarely and the alternative is a silent
 #    data escape). INLINE_CONSTANT_FILES (prod-content only):
-#      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 commerce
+#      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 gastronomy and experience
 #        listings — deterministic inline array, no data/ folder at all)
 #      - packages/seed/src/example/entityTagAssignments.seed.ts  (inline
 #        r_entity_tag assignments that attach tags to GUARDED destination
@@ -78,7 +78,7 @@
 #      - packages/seed/src/required/socialAutomation.seed.ts
 #      - packages/seed/src/required/contentModeration.seed.ts
 #      - packages/seed/src/required/systemUser.seed.ts
-#    (The `required/billing*.seed.ts` and `required/partnerPlan/commercePlan`
+#    (The `required/billing*.seed.ts` and `required/partnerPlan` and the gastronomy and experience plan
 #    seeders are NOT here: their data lives in `packages/billing/src/config/
 #    *.config.ts`, already guarded below — the seeders only read it.)
 #
@@ -152,7 +152,7 @@
 #         Extracting the helper to an unwatched file is NOT the preferred exit:
 #         it shrinks the guard's coverage to make a false positive disappear.
 #         Added by HOS-1119 (PR #3177), the marker's first use in this repo,
-#         for COMMERCE_PLANS_BY_VERTICAL + findCommercePlanForVertical. The
+#         for the per-vertical plan lookup helpers (since removed). The
 #         predicate did not change with it — only this list of reasons review
 #         will accept, which until then did not describe a case the guard
 #         structurally produces.

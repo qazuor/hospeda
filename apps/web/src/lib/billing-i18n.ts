@@ -18,7 +18,7 @@ type Translator = (key: string, fallback?: string) => string;
  *
  * FIVE values since HOS-1032, one per audience Hospeda sells to, because
  * `/planes/<audiencia>/precios/` renders all five through the same
- * `PricingCardsGrid` (AC-44). The three added here are the commerce verticals
+ * `PricingCardsGrid` (AC-44). The three added here are the gastronomy/experience verticals
  * and partner; they never take the owner branch of {@link getDisplayFeatures},
  * so widening the type changed no existing behaviour.
  *

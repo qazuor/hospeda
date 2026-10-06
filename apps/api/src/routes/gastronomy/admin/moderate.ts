@@ -3,17 +3,17 @@
  *
  * Applies the platform's moderation verdict to one gastronomy listing.
  * Delegates to `GastronomyService.moderate()`, inherited unchanged from
- * `BaseCommerceListingService` so this route and its experience twin resolve to
+ * `BaseListingService` so this route and its experience twin resolve to
  * ONE implementation (HOS-589 G-2).
  *
  * ## Why this route did not exist
  *
- * The commerce visibility reconciler already reads
+ * The listing visibility reconciler already reads
  * `moderationState === REJECTED` and flips the listing to `PRIVATE` /
  * `INACTIVE`, but nothing could write that value: the owner update schemas
- * strip the field on purpose (and a test freezes that), and no commerce service
+ * strip the field on purpose (and a test freezes that), and no gastronomy or experience service
  * exposed a moderate action. Removing the pre-publication admin gate without
- * this route would leave commerce with no control in either direction.
+ * this route would leave these verticals with no control in either direction.
  *
  * ## Not to be confused with the review route
  *
@@ -51,7 +51,7 @@ export const adminModerateGastronomyRoute = createAdminRoute({
     summary: 'Moderate a gastronomy listing (admin)',
     description:
         'Sets the gastronomy listing moderation state (PENDING | APPROVED | REJECTED). ' +
-        'Does not touch visibility directly — the commerce visibility reconciler reacts to ' +
+        'Does not touch visibility directly — the listing visibility reconciler reacts to ' +
         'REJECTED by flipping the listing to PRIVATE/INACTIVE. Rejecting schedules an edge ' +
         'cache purge so the destination page stops serving it. Requires GASTRONOMY_MODERATION_CHANGE.',
     tags: ['Gastronomy', 'Admin'],

@@ -330,12 +330,12 @@ Always run `db:apply-extras` after `db:migrate` on a fresh environment.
 > `src/migrations/extras/`, even though both carriles are hand-written and idempotent-by-intent.
 > See [docs/guides/seed-data-migrations.md](../../docs/guides/seed-data-migrations.md) for the
 > full boundary and worked examples. The pre-HOS-25 billing data files
-> `023-billing-plans-ai-consumer-search-limits.plan.sql`,
-> `024-billing-plans-collections-limit.plan.sql`, and
-> `025-hos16-deactivate-complex-plans.plan.sql` below are **superseded** by the ported
-> `data-migrations/0001`-`0003-*.ts` modules — left in place (not deleted) since they may
-> already have applied on a live environment; each carril's own ledger makes the other a
-> no-op wherever it already ran.
+> `023-billing-plans-ai-consumer-search-limits.plan.sql` and
+> `024-billing-plans-collections-limit.plan.sql` were **superseded** by the ported
+> `data-migrations/0001`/`0002-*.ts` modules and have been deleted; the
+> `025-hos16-deactivate-complex-plans.plan.sql` file below is likewise superseded by
+> `data-migrations/0003-*.ts` and left in place, since it may already have applied on a live
+> environment; each carril's own ledger makes the other a no-op wherever it already ran.
 
 ### Dev vs VPS comparison
 

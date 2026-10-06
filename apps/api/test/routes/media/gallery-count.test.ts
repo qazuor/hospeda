@@ -9,9 +9,9 @@
  * type. A duplicated limit check fails OPEN when someone updates one side only
  * — the cap silently stops applying instead of breaking loudly.
  *
- * Commerce verticals had ZERO cap coverage before this file.
+ * Gastronomy and experience verticals had ZERO cap coverage before this file.
  *
- * Note on why counting the JSONB would be wrong for commerce: once photos live
+ * Note on why counting the JSONB would be wrong for gastronomy and experience: once photos live
  * in `gastronomy_media` / `experience_media`, `media.gallery` stops being
  * written and eventually the column is dropped — so a JSONB-based count reads 0
  * forever, and the cap never fires no matter how many photos are uploaded.
@@ -159,7 +159,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
     }
 
     // HOS-1164: the composed `media.gallery` on a service-loaded entity only holds
-    // APPROVED rows (composeCommerceMedia moderation gate), while the register
+    // APPROVED rows (composeListingMedia moderation gate), while the register
     // path (`addPostMedia`/`addEventMedia`) counts rows in EVERY moderation
     // state. Counting the composed blob here let a caller who had registered 15
     // PENDING rows keep uploading to Cloudinary. Both paths must count the rows.

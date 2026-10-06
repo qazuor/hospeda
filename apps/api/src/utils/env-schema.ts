@@ -522,7 +522,7 @@ export const ApiEnvBaseSchema = z.object({
      * string `'true'` to create a per-user `POST /preapproval` instead, whose
      * `external_reference` (the local subscription id) survives in the body
      * of the server-to-server call. Scoped to accommodation monthly only —
-     * annual, commerce and partner checkouts are unaffected regardless of
+     * annual, gastronomy/experience and partner checkouts are unaffected regardless of
      * this flag.
      */
     HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED: z
@@ -574,7 +574,7 @@ export const ApiEnvBaseSchema = z.object({
         .default('HOSPEDA'),
 
     /**
-     * Commerce vertical → billing-plan-slug mapping (HOS-688), in the form
+     * Gastronomy or experience vertical → billing-plan-slug mapping (HOS-688), in the form
      * `gastronomy:<slug>,experience:<slug>`.
      *
      * ONE variable rather than one per vertical: two variables can be left
@@ -583,7 +583,7 @@ export const ApiEnvBaseSchema = z.object({
      *
      * The SHAPE is validated in `env.ts`'s `.superRefine`, not here, because
      * this file is import-pure (zod only) and the parser lives in
-     * `utils/commerce-plan-config.ts`. A malformed value fails startup — AC-35's
+     * the retired per-vertical plan-config helper. A malformed value fails startup — AC-35's
      * "an unset or unknown slug stops the container, it does not 503 a
      * checkout". Unset falls back to the shipped catalogue defaults.
      */

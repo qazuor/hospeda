@@ -19,7 +19,6 @@ import { OwnerSelect } from '@/components/selects/OwnerSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
-import { CommerceListingModerationCard } from '@/features/commerce/components/CommerceListingModerationCard';
 import {
     useAssignGastronomyOwnerMutation,
     useDeleteGastronomyMutation,
@@ -28,6 +27,7 @@ import {
     useModerateGastronomyMutation,
     useModerateGastronomyReviewMutation
 } from '@/features/gastronomy';
+import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -251,7 +251,7 @@ function GastronomyViewPage() {
                 {/* HOS-686 AC-26: the reject action, where an admin can reach
                     it. `POST /:id/moderate` without this control would only be
                     callable by hand. */}
-                <CommerceListingModerationCard
+                <ListingModerationCard
                     entityId={id}
                     entityName={gastronomy?.name ?? id}
                     entityLabelKey="admin-entities.entities.gastronomy.singular"

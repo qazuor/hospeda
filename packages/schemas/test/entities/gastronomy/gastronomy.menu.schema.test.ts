@@ -175,7 +175,7 @@ describe('the menu-file columns are not writable from a listing body (HOS-895)',
      *    media provider, so a body that sets it to another listing's Cloudinary
      *    id turns that route into a cross-tenant asset delete.
      *
-     * The render-side gate in `CommerceMenuManager` covers the first no matter
+     * The render-side gate in `GastronomyMenuManager` covers the first no matter
      * how the row was written; this covers both at the boundary.
      */
     const HOSTILE = {

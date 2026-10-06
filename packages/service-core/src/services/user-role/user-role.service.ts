@@ -158,7 +158,7 @@ const toErrorOutput = (params: {
  * Granting never removes another hat — that is the whole point of the change.
  * If the user already holds the role the call succeeds without writing
  * anything, so callers can invoke it unconditionally on every accommodation
- * activation, commerce approval or host signup.
+ * activation, listing approval or host signup.
  *
  * @param params.userId - User receiving the hat.
  * @param params.role - Role to grant.

@@ -4,8 +4,8 @@
  * Unit tests for experience permission helpers (SPEC-240 T-015).
  *
  * Verifies that each helper throws FORBIDDEN (via ServiceError) when the actor
- * lacks the required COMMERCE_* permission, and does NOT throw when the actor
- * has it.  All helpers delegate to the shared commerce.permissions helpers — we
+ * lacks the required per-vertical permission, and does NOT throw when the actor
+ * has it.  All helpers delegate to the shared listing.permissions helpers — we
  * test the delegation contract, not re-test the underlying implementation.
  *
  * DB interactions: none — pure function tests.
@@ -80,7 +80,7 @@ describe('checkExperienceCanCreate', () => {
     });
 
     // HOS-687 / HOS-589 AC-27 (service predicate, experience vertical).
-    it('allows a signed-in account holding NO commerce permission (AC-27)', () => {
+    it('allows a signed-in account holding NO listing permission (AC-27)', () => {
         expect(() => checkExperienceCanCreate(noPermActor, {})).not.toThrow();
     });
 
@@ -219,7 +219,7 @@ describe('checkExperienceCanModerateReview', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkExperienceCanEditFaqs (SPEC-253 D2=b: COMMERCE_FAQS_EDIT_OWN -> EXPERIENCE_EDIT_OWN)
+// checkExperienceCanEditFaqs (SPEC-253 D2=b: the per-section FAQ permission -> EXPERIENCE_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
 describe('checkExperienceCanEditFaqs', () => {

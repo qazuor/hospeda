@@ -1,6 +1,6 @@
 /**
  * @file editors-upload-refusal.i18n.test.tsx
- * @description HOS-1218 — the content (post/event) and commerce media editors
+ * @description HOS-1218 — the content (post/event) and listing media editors
  * render an `upload-entity` refusal in the user's language, with the real
  * limit, and never the API's English message.
  *
@@ -11,7 +11,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContentMediaSection } from '@/components/account/editor/ContentMediaSection.client';
-import { MediaSection } from '@/components/commerce/editor/MediaSection.client';
+import { MediaSection } from '@/components/listing/editor/MediaSection.client';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { clearToasts } from '@/store/toast-store';
 
@@ -28,7 +28,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         removeMedia: vi.fn(),
         setFeaturedMedia: vi.fn()
     },
-    commerceMediaApi: {
+    listingMediaApi: {
         listMedia: mockListMedia,
         addMedia: vi.fn(),
         removeMedia: vi.fn(),
@@ -111,7 +111,7 @@ describe('HOS-1218 — editor upload refusals are localized', () => {
         expect(screen.queryByText(ENGLISH)).not.toBeInTheDocument();
     });
 
-    it('commerce editor: renders the Spanish limit sentence, not the English message', async () => {
+    it('listing editor: renders the Spanish limit sentence, not the English message', async () => {
         render(
             <>
                 <MediaSection

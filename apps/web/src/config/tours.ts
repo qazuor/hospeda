@@ -40,8 +40,8 @@ export interface TourConfig {
  * any of them, never after.
  *
  * The role-specific tours that follow are ordered by how they were rolled out
- * (host first, then the two commerce verticals split out of the old shared
- * `web.commerce.welcome` by HOS-788, then editor, then sponsor) — there is no
+ * (host first, then the two gastronomy/experience verticals split out of the old shared
+ * two-vertical tour by HOS-788, then editor, then sponsor) — there is no
  * product reason to prefer one business hat's tour over another's, so ANY
  * stable order is fine here; this one is just the one that needed the least
  * churn to existing tests.
@@ -177,16 +177,16 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
                 align: 'center'
             },
             {
-                id: 'commerce',
-                target: '[data-tour="commerce"]',
+                id: 'comercio-listings',
+                target: '[data-tour="comercio-listings"]',
                 title: 'account.welcomeTour.listing.title',
                 body: 'account.welcomeTour.listingGastronomy.body',
                 side: 'right',
                 align: 'start'
             },
             {
-                id: 'commerce-listings',
-                target: '[data-tour="commerce-listings"]',
+                id: 'listings',
+                target: '[data-tour="listings"]',
                 title: 'account.welcomeTour.myListings.title',
                 body: 'account.welcomeTour.myListings.body',
                 side: 'top',
@@ -201,8 +201,8 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
                 align: 'start'
             },
             {
-                id: 'commerce-views',
-                target: '[data-tour="commerce-views"]',
+                id: 'listing-views',
+                target: '[data-tour="listing-views"]',
                 title: 'account.welcomeTour.listingViews.title',
                 body: 'account.welcomeTour.listingViews.body',
                 side: 'top',
@@ -213,17 +213,17 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
     {
         id: 'web.experience.welcome',
         version: 1,
-        // HOS-788: split out of the old shared `web.commerce.welcome`, same
+        // HOS-788: split out of the old shared two-vertical tour, same
         // reasoning as `web.gastronomy.welcome` above — gated on
         // `EXPERIENCE_OWNER` only, so gastronomy owners do not see this tour.
         //
         // No experience-exclusive step: `ExperienceCertificatePanel`
-        // (`CommerceListingActions.client.tsx`) is real and experience-only,
+        // (`ListingActions.client.tsx`) is real and experience-only,
         // but it only mounts once a listing reaches the `published` state —
         // never guaranteed on a brand-new EXPERIENCE_OWNER's first visit,
         // which is exactly when this tour runs. Anchoring a step to it would
         // sometimes point at nothing, so this tour stays on the same
-        // guaranteed-present commerce elements the gastronomy tour also uses,
+        // guaranteed-present gastronomy/experience elements the gastronomy tour also uses,
         // minus the gastronomy-only QR step.
         roles: ['EXPERIENCE_OWNER'],
         trigger: 'auto-first-visit',
@@ -237,24 +237,24 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
                 align: 'center'
             },
             {
-                id: 'commerce',
-                target: '[data-tour="commerce"]',
+                id: 'comercio-listings',
+                target: '[data-tour="comercio-listings"]',
                 title: 'account.welcomeTour.listing.title',
                 body: 'account.welcomeTour.listingExperience.body',
                 side: 'right',
                 align: 'start'
             },
             {
-                id: 'commerce-listings',
-                target: '[data-tour="commerce-listings"]',
+                id: 'listings',
+                target: '[data-tour="listings"]',
                 title: 'account.welcomeTour.myListings.title',
                 body: 'account.welcomeTour.myListings.body',
                 side: 'top',
                 align: 'start'
             },
             {
-                id: 'commerce-views',
-                target: '[data-tour="commerce-views"]',
+                id: 'listing-views',
+                target: '[data-tour="listing-views"]',
                 title: 'account.welcomeTour.listingViews.title',
                 body: 'account.welcomeTour.listingViews.body',
                 side: 'top',
@@ -375,7 +375,7 @@ export function getWelcomeToursForRoles({
  * completes (or is skipped) and `WEB_TOURS` still holds a later match that is
  * still unseen, this function starts returning THAT tour on the very next
  * render, and `TourController` launches it automatically. A user with several
- * pending tours (e.g. the seeded `host-commerce@local.test` dual-role
+ * pending tours (e.g. the seeded `host-gastronomy@local.test` dual-role
  * fixture, or anybody who held multiple roles before this feature shipped)
  * therefore sees them run back-to-back, each ending with its own "Finalizar"
  * click, rather than ten steps flattened into one mega-tour — and rather
