@@ -1,5 +1,40 @@
 /**
  * Accommodation import-from-URL route (SPEC-222 T-020).
+ *
+ * `POST /api/v1/protected/accommodations/import-from-url`
+ *
+ * Accepts an external listing URL, runs the stateless import pipeline
+ * ({@link AccommodationImportService}), and returns a per-field draft for the
+ * host to review before saving. Nothing is persisted here — the import is a
+ * pure read/extract operation.
+ *
+ * ## Authorization (OR semantics)
+ *
+ * The route is for both NEW listings and EDITS, so a host may reach it with
+ * either `ACCOMMODATION_CREATE`, `ACCOMMODATION_UPDATE_OWN`, or (admins)
+ * `ACCOMMODATION_UPDATE_ANY`. `createProtectedRoute.requiredPermissions` uses
+ * AND semantics (`hasAllPermissions`), which cannot express this OR, so the
+ * factory only enforces authentication and the handler performs the OR check
+ * explicitly. (Documented in `docs/billing/endpoint-gate-matrix.md`.)
+ *
+ * ## Legal confirmation (defense-in-depth)
+ *
+ * `AccommodationImportRequestSchema` already requires `legalConfirmed: true`
+ * (the factory rejects anything else with 400). The handler re-asserts it
+ * server-side so the guarantee does not depend solely on schema wiring.
+ *
+ * ## Rate limit
+ *
+ * A per-user sliding window of `HOSPEDA_IMPORT_RATE_LIMIT_RPH` requests/hour
+ * (default 10) returns 429 + `Retry-After` on excess.
+ *
+ * ## AI extraction
+ *
+ * Strategy B (AI-assisted extraction) only runs for sparse generic pages.
+ * AI extraction runs without a plan entitlement or monthly quota during the
+ * billing transition.
+ *
+ * @module apps/api/routes/accommodation/protected/import-from-url
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

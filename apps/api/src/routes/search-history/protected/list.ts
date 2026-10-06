@@ -1,5 +1,13 @@
 /**
  * GET /api/v1/protected/search-history
+ *
+ * Returns the authenticated user's search history entries, newest first,
+ * without the former `MAX_SEARCH_HISTORY_ENTRIES` plan cap during the billing transition.
+ *
+ * Search history reads run without the former plan entitlement or entry cap.
+ *
+ * @route GET /api/v1/protected/search-history
+ * @module routes/search-history/protected/list
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

@@ -1,5 +1,18 @@
 /**
  * PUT /api/v1/protected/accommodations/:id/faqs/reorder
+ * Reorder FAQs on an accommodation — Protected (owner-facing) endpoint
+ *
+ * The caller supplies an explicit { faqId, displayOrder }[] array. The
+ * service validates that all faqId values belong to the specified
+ * accommodation before applying the new order in a single transaction.
+ *
+ * IMPORTANT: Must be mounted BEFORE `/{id}/faqs/{faqId}` so that Hono does
+ * not resolve the literal path segment "reorder" as a `faqId` UUID param.
+ * index.ts registers it first.
+ *
+ * NOTE: the admin tier uses PATCH for the equivalent route (preexisting
+ * inconsistency between tiers). This protected route intentionally mirrors
+ * gastronomy/experience protected FAQ reorder (PUT), not the admin tier.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

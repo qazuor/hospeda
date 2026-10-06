@@ -14,11 +14,12 @@
  * ---
  * THE ORDER OF THE CHECKS, WHICH IS THE WHOLE SECURITY MODEL
  *
+ * 1. `protectedAuthMiddleware` — a session, or 401.
+ * 2. Certificate issuance and reads run without the former plan entitlement
+ *    during the billing transition.
+ * 3. Ownership, inside the handler — 404, never 403, because a 403 would
+ *    confirm that the experience id exists (`docs/error-contract.md`).
  * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
- *
- * Steps 2 and 3 are middlewares so they run BEFORE the handler touches the
- * database: the e2e tests assert exactly that by spying on
- * `ExperienceService.getById` and requiring it never ran on the refusal path.
  *
  * ## Who may read a certificate
  *

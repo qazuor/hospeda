@@ -1,5 +1,21 @@
 /**
  * GET /api/v1/protected/recommendations
+ *
+ * Returns the authenticated user's personalized recommendations feed —
+ * a ranked list of accommodations scored against the user's behavioral
+ * preference profile (favorites, recently-viewed, search history), or the
+ * popular/featured cold-start fallback when that profile has no signal yet
+ * (`isColdStart: true`).
+ *
+ * Recommendations run without the former plan entitlement during the billing transition.
+ * The service still enforces `PermissionEnum.RECOMMENDATION_VIEW` (role axis) —
+ * see `RecommendationService.getFeed` for the authorization breakdown.
+ *
+ * No query params: the feed is always scoped to the actor's own id and the
+ * feed has no pagination.
+ *
+ * @route GET /api/v1/protected/recommendations
+ * @module routes/recommendations/protected/get
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 import { RecommendationFeedResponseSchema } from '@repo/schemas';

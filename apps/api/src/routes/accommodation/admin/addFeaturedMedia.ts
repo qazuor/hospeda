@@ -1,5 +1,27 @@
 /**
  * POST /api/v1/admin/accommodations/:id/media/featured
+ * Register an already-uploaded URL as the accommodation's COVER — Admin
+ * endpoint (HOS-803).
+ *
+ * The admin mirror of `routes/accommodation/protected/addFeaturedMedia.ts`, and
+ * the one the admin panel's gallery manager actually calls — its hooks address
+ * `/api/v1/admin/...`, never the protected tier.
+ *
+ * ## Why this exists next to `POST /:id/media`
+ *
+ * Setting a cover used to be two requests: register an ordinary gallery row,
+ * then promote it. During the billing transition, a cover can be registered
+ * directly without a gallery photo cap.
+ *
+ * The swap cannot move the gallery: the replaced cover is DELETED
+ * (soft-deleted) in the same transaction, so one row enters the featured slot
+ * and one leaves the table.
+ *
+ * The replaced photo is NOT kept. It does not fall back into the gallery; it
+ * disappears from the listing. Its stored file is deliberately left in place, so
+ * the deletion is reversible at the row level, but callers must not present the
+ * old cover as still available.
+ *
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

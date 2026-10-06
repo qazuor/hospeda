@@ -1,5 +1,12 @@
 /**
  * POST /api/v1/admin/accommodations/:id/media
+ * Add a photo to an accommodation gallery - Admin endpoint (SPEC-204)
+ *
+ * This is a URL-receiver endpoint: the caller has already uploaded the file to
+ * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
+ * returned URL + metadata as a new `accommodation_media` row.
+ *
+ * Gallery registration runs without the former plan photo cap during the billing transition.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

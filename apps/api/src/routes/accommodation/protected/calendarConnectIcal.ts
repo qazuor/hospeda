@@ -8,6 +8,10 @@
  * it, playing the combined role `calendarConnectGoogle.ts` + the OAuth
  * callback play together for Google.
  *
+ * Gate model (mirrors `calendarConnectGoogle.ts`): ownership +
+ * `ACCOMMODATION_OCCUPANCY_MANAGE` are enforced inline via
+ * `assertOccupancyManageAccess`; external calendar connections run without
+ * the former billing entitlement during the transition.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * ## Probe-before-save

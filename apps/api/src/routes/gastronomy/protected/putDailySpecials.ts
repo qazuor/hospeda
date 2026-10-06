@@ -1,5 +1,26 @@
 /**
  * PUT /api/v1/protected/gastronomies/:id/daily-specials
+ *
+ * Replaces the venue's menú del día with the submitted document (HOS-1041).
+ *
+ * ## What it answers, and in what order
+ *
+ * 1. **Authentication** — `createCRUDRoute` over the protected router.
+ * 2. **Billing transition** — the menú del día write runs without the former plan
+ *    entitlement or payload-specific billing gates.
+ * 3. **Ownership** — inside `replaceGastronomyDailySpecials`, via the same
+ *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the sibling writes use.
+ *
+ * The menú del día read and write have no plan entitlement gate during the billing transition.
+ *
+ * ## Whole document, one transaction
+ *
+ * The body is the ENTIRE menú del día, and an empty `specials` array is a
+ * legitimate submission meaning "take it down" — the manual escape hatch beside
+ * the automatic expiry, for the venue that sold out at 13:00. See
+ * `packages/service-core/src/services/gastronomy/gastronomy.daily-specials.ts`.
+ *
+ * @module routes/gastronomy/protected/putDailySpecials
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

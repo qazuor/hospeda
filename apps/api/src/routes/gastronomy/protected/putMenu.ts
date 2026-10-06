@@ -1,5 +1,25 @@
 /**
  * PUT /api/v1/protected/gastronomies/:id/menu
+ *
+ * Replaces the venue's structured carta with the submitted document (HOS-895).
+ *
+ * ## What it answers, and in what order
+ *
+ * 1. **Authentication** — `createCRUDRoute` over the protected router.
+ * 2. **Billing transition** — the carta write runs without the former plan
+ *    entitlement or payload-specific billing gates.
+ * 3. **Ownership** — inside `replaceGastronomyMenu`, via the same
+ *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the sibling writes use.
+ *
+ * The carta read and write have no plan entitlement gate during the billing transition.
+ *
+ * ## Whole document, one transaction
+ *
+ * The body is the ENTIRE carta, and an empty `sections` array is a legitimate
+ * submission meaning "delete it". See `packages/service-core/src/services/gastronomy/gastronomy.menu.ts`
+ * for why the carta is written whole where `gastronomy_media` is written per row.
+ *
+ * @module routes/gastronomy/protected/putMenu
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

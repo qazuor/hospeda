@@ -16,6 +16,11 @@
  * so the existing web client keeps working unchanged until Phase F adds
  * provider selection to the UI.
  *
+ * Gate model: ownership + `ACCOMMODATION_OCCUPANCY_MANAGE` inline via
+ * `assertOccupancyManageAccess`; external sync runs without the former plan
+ * entitlement. Neither sync service throws for operational failures — each
+ * returns a discriminated result and records ERROR state — so a failed sync
+ * surfaces as a 200 with `status: 'error'`, not a 5xx.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * @module routes/accommodation/protected/calendarSync

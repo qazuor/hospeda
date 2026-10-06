@@ -1,5 +1,20 @@
 /**
  * Protected owner-operational PATCH endpoint for experience listings (T-020)
+ * Applies a partial operational update (schedule, contact, media, etc.) to a listing.
+ *
+ * ## Enforcement contract
+ *
+ * - Validates the payload through ExperienceOwnerUpdateInputSchema. Since
+ *   HOS-166 D-1, `name`, `description`, and `destinationId` are
+ *   owner-editable identity fields (SPEC-239 decision #5 reversed — see the
+ *   schema's docstring). Only `slug` (never owner-editable directly; it now
+ *   auto-follows draft renames server-side, HOS-784 stage 1)
+ *   plus the control fields (`lifecycleState`, `visibility`,
+ *   `moderationState`, `isFeatured`, `ownerId`) are ABSENT from the schema,
+ *   so any forged keys for those are silently stripped by Zod.
+ * - ExperienceService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
+ *   per-section COMMERCE_*_EDIT_OWN permission checks.
+ * Owner updates run without the former route and directions-field plan entitlements during the billing transition.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
@@ -26,6 +41,13 @@ const experienceService = new ExperienceService({ logger: apiLogger });
 /** Former paid-field marker retained for compatibility with the existing route shape. */
 const _GATED_FIELD = 'meetingPointDirections' as const;
 
+/**
+ * The field key remains available to the existing route shape; its plan gate is disabled during the billing transition.
+ *
+ * @param ctx - The request context.
+ * @param body - The already-validated owner-update body.
+ * @throws {ServiceError} Plan entitlement refusal is disabled during the billing transition.
+ */
 /** HOS-1352: transitional until V3 (HOS-1357), see PR — field-level directions gate is removed. */
 /**
  * PATCH /api/v1/protected/experiences/:id

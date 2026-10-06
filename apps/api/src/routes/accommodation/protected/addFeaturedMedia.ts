@@ -1,5 +1,32 @@
 /**
  * POST /api/v1/protected/accommodations/:id/media/featured
+ * Register an already-uploaded URL as the accommodation's COVER — Protected
+ * (owner-facing) endpoint (HOS-803).
+ *
+ * ## Why this exists next to `POST /:id/media`
+ *
+ * Setting a cover used to be two requests against that endpoint: register an
+ * ordinary gallery row, then promote it via
+ * `PUT /:id/media/:mediaId/featured`. During the billing transition, this
+ * route registers the cover directly without a gallery photo cap.
+ *
+ * ## Why a separate route rather than a flag on the existing one
+ *
+ * Here the service creates the row already featured, in one transaction,
+ * and `uq_accommodation_media_single_featured` permits exactly one such row
+ * per accommodation.
+ *
+ * ## What this route does and does not waive
+ *
+ * The swap cannot move the gallery at all: the replaced cover is DELETED
+ * (soft-deleted) in the same transaction, so one row enters the featured slot
+ * and one leaves the table.
+ *
+ * The replaced photo is NOT kept. It does not fall back into the gallery; it
+ * disappears from the listing. Its stored file is deliberately left in place, so
+ * the deletion is reversible at the row level, but callers must not present the
+ * old cover as still available.
+ *
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
@@ -84,6 +111,7 @@ export const protectedAddFeaturedMediaRoute = createCRUDRoute({
         return result.data;
     },
     options: {
+        // Gallery mutation gate, same as every sibling media route.
         // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

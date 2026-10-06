@@ -12,6 +12,9 @@
  * the field to be present, so instead of requiring a second round-trip 400
  * on mismatch, the path value simply always wins).
  *
+ * No declarative `ownership:` config — MANAGE permission + ownership are
+ * enforced inside `addOccupancy`. Calendar operations run without the former
+ * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  */
 

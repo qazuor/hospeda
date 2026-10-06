@@ -4,6 +4,10 @@
  * Owner self-service: start the Google Calendar connect (OAuth) flow for an
  * accommodation (HOS-157 Phase 2 — Layer 4, spec section 6).
  *
+ * Gate model (mirrors the manual occupancy write routes): ownership +
+ * `ACCOMMODATION_OCCUPANCY_MANAGE` are enforced inline via
+ * `assertOccupancyManageAccess`; external calendar connections run without
+ * the former billing entitlement during the transition.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * The handler does NOT redirect the browser itself — it returns the Google

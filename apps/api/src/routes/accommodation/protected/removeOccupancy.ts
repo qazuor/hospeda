@@ -3,6 +3,10 @@
  *
  * Owner self-service: unblock a single day (HOS-43 Phase 1, spec section 6).
  *
+ * No declarative `ownership:` config — MANAGE permission + ownership are
+ * enforced inside `removeOccupancy`. Only removes a `source=MANUAL` row; a
+ * sync-sourced row for the same date is untouched. Calendar operations run without the former
+ * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  */
 

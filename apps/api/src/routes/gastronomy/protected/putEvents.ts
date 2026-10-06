@@ -1,5 +1,27 @@
 /**
  * PUT /api/v1/protected/gastronomies/:id/events
+ *
+ * Replaces the venue's own agenda with the submitted document (HOS-1042).
+ *
+ * ## What it answers, and in what order
+ *
+ * 1. **Authentication** — `createCRUDRoute` over the protected router.
+ * 2. **Billing transition** — the agenda write runs without the former plan
+ *    entitlement or payload-specific billing gates.
+ * 3. **Ownership** — inside `replaceGastronomyEvents`, via the same
+ *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the sibling writes use.
+ *
+ * The agenda read and write have no plan entitlement gate during the billing transition.
+ *
+ * ## Whole document, one transaction
+ *
+ * The body is the ENTIRE agenda, and an empty `events` array is a legitimate
+ * submission meaning "take it down" — a venue that stopped doing live music
+ * needs a way to say so. See
+ * `packages/service-core/src/services/gastronomy/gastronomy.events.ts` for why
+ * the agenda is written whole where `gastronomy_media` is written per row.
+ *
+ * @module routes/gastronomy/protected/putEvents
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

@@ -1,5 +1,22 @@
 /**
  * PUT /api/v1/protected/accommodations/:id/media/:mediaId/featured
+ * Set the featured photo for an accommodation gallery — Protected (owner-facing) endpoint (SPEC-204)
+ *
+ * Promotes the target `accommodation_media` row to `is_featured = true` and
+ * demotes the previous featured row (if any) back to `is_featured = false`.
+ * Both operations run in a single DB transaction — clear-then-set order is
+ * mandatory to avoid transiently violating the partial unique index on
+ * (accommodation_id) WHERE is_featured = true AND deleted_at IS NULL.
+ *
+ * DB invariants (018-accommodation-media.constraints.sql):
+ *   1. Partial UNIQUE index: at most ONE is_featured=true row per accommodation.
+ *   2. CHECK: NOT (is_featured AND state = 'archived') — archived photos cannot
+ *      be featured. The service rejects archived targets before reaching the DB.
+ *
+ * No request body — accommodationId and mediaId come from URL params.
+ *
+ * IMPORTANT: Must be mounted BEFORE `/:id/media/:mediaId` (DELETE) routes so
+ * Hono does not resolve the fixed suffix "/featured" as a `mediaId` UUID param.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

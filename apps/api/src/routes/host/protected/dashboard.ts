@@ -1,5 +1,12 @@
 /**
  * Host Dashboard Protected Endpoint
+ *
+ * Single aggregation endpoint returning property counts, null plan info,
+ * and unread conversation count for the authenticated host user.
+ *
+ * Dashboard reads run without the former stats plan entitlement during the billing transition.
+ *
+ * GET /api/v1/protected/host/dashboard
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

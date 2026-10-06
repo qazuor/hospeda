@@ -1,5 +1,23 @@
 /**
  * DELETE /api/v1/protected/gastronomies/:id/menu-file
+ *
+ * Removes the uploaded photo/PDF of the venue's menu (HOS-895).
+ *
+ * Deletes the ASSET as well as the columns, which is the point: forgetting the
+ * URL and leaving the file in Cloudinary is exactly the orphan HOS-372 built
+ * `gastronomy_media` to stop, and `menu_file_public_id` exists so this route
+ * has the handle it needs to do it properly.
+ *
+ * The provider deletion is best-effort and does NOT fail the request. If
+ * Cloudinary is unreachable we still clear the columns: the owner asked for the
+ * menu to stop being shown, and refusing them that because a third party is
+ * down would be the wrong way round. The cost of the two failing together is a
+ * single orphaned asset, which is recoverable; leaving a withdrawn menu on the
+ * public page is not.
+ *
+ * Menu file deletion runs without the former plan entitlement during the billing transition.
+ *
+ * @module routes/gastronomy/protected/deleteMenuFile
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 

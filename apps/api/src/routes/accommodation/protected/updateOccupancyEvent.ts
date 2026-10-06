@@ -7,6 +7,9 @@
  * `accommodationId` is derived from the URL path, never trusted from the
  * request body — same rationale as `addOccupancy.ts` / `batchOccupancy.ts`.
  *
+ * No declarative `ownership:` config — MANAGE permission + ownership are
+ * enforced inside `updateOccupancyEvent`. Calendar operations run without the former
+ * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
  * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  */
 
