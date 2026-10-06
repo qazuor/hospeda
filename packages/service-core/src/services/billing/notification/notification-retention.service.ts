@@ -1,7 +1,7 @@
 /**
  * Notification Log Retention Service
  *
- * Manages lifecycle of billing notification log entries.
+ * Manages lifecycle of notification log entries for all email types.
  * - Marks entries older than 90 days as expired (sets expired_at)
  * - Deletes entries that have been expired for more than 30 days
  *

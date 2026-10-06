@@ -21,14 +21,12 @@
  * Hono resolves the static `featured` segment regardless of insertion order
  * (mirrors the reorder-route note).
  */
-import { EntitlementKey } from '@repo/billing';
-import { GastronomyMediaSingleOutputSchema, ProductDomainEnum } from '@repo/schemas';
+
+import { GastronomyMediaSingleOutputSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -56,6 +54,7 @@ export const protectedSetFeaturedGastronomyMediaRoute = createCRUDRoute({
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: GastronomyMediaSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_GASTRONOMY_INFO entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
@@ -77,12 +76,6 @@ export const protectedSetFeaturedGastronomyMediaRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
-        // `addFaq.ts` for why the vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

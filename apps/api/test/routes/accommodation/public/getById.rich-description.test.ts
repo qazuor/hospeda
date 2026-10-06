@@ -171,11 +171,10 @@ describe('publicGetAccommodationByIdRoute — SPEC-187 richDescription gate', ()
         expect(body.data).not.toHaveProperty('richDescription');
         expect(body.data).not.toHaveProperty('richDescriptionI18n');
         expect(body.data).toHaveProperty('description', 'Plain description text');
-        // resolveOwnerEntitlementsForOwnerId must have been called with the right owner
-        expect(mockResolveOwnerEntitlementsForOwnerId).toHaveBeenCalledWith(OWNER_ID);
+        expect(mockResolveOwnerEntitlementsForOwnerId).not.toHaveBeenCalled();
     });
 
-    it('exposes richDescription when the owning host has CAN_USE_RICH_DESCRIPTION', async () => {
+    it('hides richDescription while the old entitlement is retired', async () => {
         // Arrange
         mockGetById.mockResolvedValue({ data: ACCOMMODATION_WITH_RICH, error: null });
         // Owner has the premium entitlement → richDescription must reach the payload.
@@ -188,15 +187,8 @@ describe('publicGetAccommodationByIdRoute — SPEC-187 richDescription gate', ()
         // Assert
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.data.richDescription).toBe(
-            '## Premium\n\nThis must be gated by owner entitlements.'
-        );
-        // The i18n sibling rides the SAME gate — an entitled owner keeps both.
-        expect(body.data.richDescriptionI18n).toEqual({
-            es: '## Premium ES\n\nGateado por entitlements del owner.',
-            en: '## Premium EN\n\nThis must be gated by owner entitlements.',
-            pt: '## Premium PT\n\nBloqueado pelos entitlements do owner.'
-        });
+        expect(body.data).not.toHaveProperty('richDescription');
+        expect(body.data).not.toHaveProperty('richDescriptionI18n');
     });
 
     it('omits richDescription when the accommodation has no ownerId (fail-closed)', async () => {

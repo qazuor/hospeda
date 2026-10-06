@@ -6,21 +6,12 @@
  * ## What it answers, and in what order
  *
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
- * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
- *    loads the caller's gastronomy grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `MANAGE_GASTRONOMY_DAILY_SPECIAL`. The
- *    loader MUST stay ahead of the gate: the global `entitlementMiddleware` has
- *    already put the ACCOMMODATION set in the context, and that set never
- *    carries a commerce key (HOS-1074).
+ * 2. **Billing transition** — the menú del día write runs without the former plan
+ *    entitlement or payload-specific billing gates.
  * 3. **Ownership** — inside `replaceGastronomyDailySpecials`, via the same
- *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the carta, FAQ and media
- *    writes use.
+ *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the sibling writes use.
  *
- * ## The gate is on THIS route and not on the read
- *
- * `MANAGE_GASTRONOMY_DAILY_SPECIAL` gates publishing a menú del día, not seeing
- * one. See `getDailySpecials.ts` for the two ordinary situations that make the
- * difference matter.
+ * The menú del día read and write have no plan entitlement gate during the billing transition.
  *
  * ## Whole document, one transaction
  *
@@ -30,8 +21,9 @@
  * `packages/service-core/src/services/gastronomy/gastronomy.daily-specials.ts`.
  *
  * @module routes/gastronomy/protected/putDailySpecials
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     GastronomyDailySpecialsOutputSchema,
     type GastronomyDailySpecialsReplacePayload,
@@ -43,8 +35,7 @@ import { GastronomyService, replaceGastronomyDailySpecials } from '@repo/service
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -96,12 +87,8 @@ export const protectedPutGastronomyDailySpecialsRoute = createCRUDRoute({
     },
     requestBody: GastronomyDailySpecialsReplacePayloadSchema,
     responseSchema: GastronomyDailySpecialsOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_DAILY_SPECIAL entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyDailySpecials(ctx, params, body),
-    options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL)
-        ]
-    }
+    options: {}
 });

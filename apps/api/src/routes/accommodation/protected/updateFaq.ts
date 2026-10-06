@@ -3,20 +3,17 @@
  * Update an existing FAQ for an accommodation
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationFaqIdSchema,
     AccommodationFaqSingleOutputSchema,
     type AccommodationFaqUpdateInput,
     AccommodationIdSchema,
     FaqWithChannelVisibilityUpdatePayloadSchema,
-    type FaqWithChannelVisibilityUpdatePayloadType,
-    ProductDomainEnum
+    type FaqWithChannelVisibilityUpdatePayloadType
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -39,6 +36,7 @@ export const updateFaqRoute = createCRUDRoute({
     },
     requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
     responseSchema: AccommodationFaqSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (c: Context, params, body) => {
         // Get actor from context (authenticated user for protected endpoint)
         const actor = getActorFromContext(c);
@@ -60,12 +58,7 @@ export const updateFaqRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-004: FAQ mutation is accommodation content; same entitlement
-        // gate as update/patch (EDIT_ACCOMMODATION_INFO — granted on all host plans).
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });
 

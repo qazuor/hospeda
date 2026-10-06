@@ -4,7 +4,6 @@
  * Manages special promotions offered by accommodation owners
  */
 
-import { EntitlementKey, LimitKey } from '@repo/billing';
 import { AddIcon } from '@repo/icons';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
@@ -29,9 +28,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { PlanEntitlementGate } from '@/features/billing/PlanEntitlementGate';
-import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
-import { useActiveOwnerPromotionCount } from '@/features/billing/use-limit-counts';
 import { PromotionDetailDialog } from '@/features/owner-promotions/components/PromotionDetailDialog';
 import { PromotionFormDialog } from '@/features/owner-promotions/components/PromotionFormDialog';
 import {
@@ -44,6 +40,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
 import { formatCalendarShortDate } from '@/lib/format-helpers';
 
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed CREATE_PROMOTIONS entitlement gate.
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingOwnerPromotionsPage
@@ -65,7 +62,6 @@ function BillingOwnerPromotionsPage() {
     // `selectedPromotion` (shared by the edit/detail dialogs) so a delete
     // request can't be clobbered by an edit/view click on another row.
     const [promotionToDelete, setPromotionToDelete] = useState<OwnerPromotion | null>(null);
-    const { count: activePromotionCount } = useActiveOwnerPromotionCount();
 
     const { data, isLoading, error } = useOwnerPromotionsQuery({
         page,
@@ -362,36 +358,13 @@ function BillingOwnerPromotionsPage() {
                         </select>
                     </div>
 
-                    <PlanEntitlementGate
-                        entitlementKey={EntitlementKey.CREATE_PROMOTIONS}
-                        fallback={
-                            <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
-                                <p className="font-medium text-foreground">
-                                    {t('admin-billing.ownerPromotions.entitlementGate')}
-                                </p>
-                            </div>
-                        }
-                    >
-                        <PlanLimitGate
-                            limitKey={LimitKey.MAX_ACTIVE_PROMOTIONS}
-                            currentCount={activePromotionCount}
-                            fallback={
-                                <div className="rounded-md border border-warning/30 bg-warning/10 p-3 text-sm">
-                                    <p className="font-medium text-foreground">
-                                        {t('admin-billing.ownerPromotions.limitGateTitle')}
-                                    </p>
-                                    <p className="mt-1 text-muted-foreground text-xs">
-                                        {t('admin-billing.ownerPromotions.limitGateDescription')}
-                                    </p>
-                                </div>
-                            }
-                        >
-                            <Button onClick={() => setCreateDialogOpen(true)}>
-                                <AddIcon className="mr-2 h-4 w-4" />
-                                {t('admin-billing.ownerPromotions.createButton')}
-                            </Button>
-                        </PlanLimitGate>
-                    </PlanEntitlementGate>
+                    {/* HOS-1416: the PlanEntitlementGate/PlanLimitGate wrapper
+                        (CREATE_PROMOTIONS entitlement + MAX_ACTIVE_PROMOTIONS
+                        limit) was removed with the legacy billing surface. */}
+                    <Button onClick={() => setCreateDialogOpen(true)}>
+                        <AddIcon className="mr-2 h-4 w-4" />
+                        {t('admin-billing.ownerPromotions.createButton')}
+                    </Button>
                 </div>
 
                 {/* Table */}

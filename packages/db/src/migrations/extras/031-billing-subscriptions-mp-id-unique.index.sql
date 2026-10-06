@@ -40,6 +40,14 @@
 --   CONCURRENTLY cannot run inside a transaction.
 -- =============================================================================
 
-CREATE UNIQUE INDEX IF NOT EXISTS billing_subscriptions_mp_id_uniq
-    ON billing_subscriptions (mp_subscription_id)
-    WHERE mp_subscription_id IS NOT NULL;
+DO $legacy$
+BEGIN
+    IF to_regclass('public.billing_subscriptions') IS NOT NULL THEN
+        EXECUTE $index$
+            CREATE UNIQUE INDEX IF NOT EXISTS billing_subscriptions_mp_id_uniq
+                ON billing_subscriptions (mp_subscription_id)
+                WHERE mp_subscription_id IS NOT NULL
+        $index$;
+    END IF;
+END
+$legacy$;

@@ -42,6 +42,9 @@
 --   run). CREATE UNIQUE INDEX IF NOT EXISTS is itself idempotent.
 -- =============================================================================
 
+DO $legacy$
+BEGIN
+IF to_regclass('public.billing_subscription_events') IS NOT NULL THEN
 DELETE FROM billing_subscription_events
 WHERE id IN (
     SELECT id
@@ -61,3 +64,6 @@ WHERE id IN (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_subscription_events_trial_pre_end
     ON billing_subscription_events (subscription_id, event_type)
     WHERE event_type IN ('TRIAL_PRE_END_NOTIF_D3', 'TRIAL_PRE_END_NOTIF_D1');
+END IF;
+END
+$legacy$;

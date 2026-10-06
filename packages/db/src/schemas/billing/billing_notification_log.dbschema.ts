@@ -1,5 +1,4 @@
 import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { billingCustomers } from '../../billing/index.ts';
 
 /**
  * Billing notification log table
@@ -11,14 +10,14 @@ import { billingCustomers } from '../../billing/index.ts';
  *
  * The `idempotencyKey` field is stored inside the JSONB `metadata` column as
  * `metadata->>'idempotencyKey'` for deduplication queries in the addon-expiry cron job.
+ *
+ * The former `customer_id` column (FK to `billing_customers`) was removed together
+ * with the legacy qzpay billing schema it referenced (HOS-1416).
  */
 export const billingNotificationLog = pgTable(
     'billing_notification_log',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        customerId: uuid('customer_id').references(() => billingCustomers.id, {
-            onDelete: 'set null'
-        }),
         type: varchar('type', { length: 100 }).notNull(),
         channel: varchar('channel', { length: 50 }).notNull(),
         recipient: varchar('recipient', { length: 255 }).notNull(),
@@ -32,16 +31,9 @@ export const billingNotificationLog = pgTable(
         expiredAt: timestamp('expired_at', { withTimezone: true })
     },
     (table) => ({
-        notificationLog_customerId_idx: index('notificationLog_customerId_idx').on(
-            table.customerId
-        ),
         notificationLog_type_idx: index('notificationLog_type_idx').on(table.type),
         notificationLog_status_idx: index('notificationLog_status_idx').on(table.status),
         notificationLog_createdAt_idx: index('notificationLog_createdAt_idx').on(table.createdAt),
-        notificationLog_customer_type_idx: index('notificationLog_customer_type_idx').on(
-            table.customerId,
-            table.type
-        ),
         notificationLog_status_created_idx: index('notificationLog_status_created_idx').on(
             table.status,
             table.createdAt

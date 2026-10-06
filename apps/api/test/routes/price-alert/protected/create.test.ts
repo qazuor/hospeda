@@ -1,42 +1,6 @@
-/**
- * @file create.test.ts
- * @description Regression test for `populateActiveAlertsCount` on
- * `POST /api/v1/protected/price-alerts` (prod follow-up: "stop the wasted DB
- * count query on denied price-alert attempts").
- *
- * Before the fix, `populateActiveAlertsCount` ran `AlertSubscriptionService
- * .countActive()` unconditionally, BEFORE `gateAlerts()` checked the
- * `PRICE_ALERTS` entitlement — so an actor about to be rejected still paid
- * for the count query. The fix short-circuits `populateActiveAlertsCount`
- * with an entitlement check so the query is skipped entirely when the actor
- * lacks `PRICE_ALERTS`, while still running (and being consumed by
- * `gateAlerts`'s limit check) for entitled actors.
- *
- * `hasEntitlement` / `getRemainingLimit` are mocked directly (rather than
- * seeding real billing/DB state), following the module-mock convention used
- * across this suite (see `owner-promotion/protected/exclusive-deals-gate.test.ts`).
- */
-
-import { EntitlementKey, LimitKey } from '@repo/billing';
+/** Price-alert route regression after removal of the legacy plan gate. */
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// ---------------------------------------------------------------------------
-// Entitlement/limit control
-// ---------------------------------------------------------------------------
-
-let mockEntitlements: Set<EntitlementKey>;
-let mockMaxActiveAlerts: number;
-
-vi.mock('../../../../src/middlewares/entitlement', async (importOriginal) => {
-    const orig = await importOriginal<typeof import('../../../../src/middlewares/entitlement')>();
-    return {
-        ...orig,
-        hasEntitlement: (_c: unknown, key: EntitlementKey) => mockEntitlements.has(key),
-        getRemainingLimit: (_c: unknown, key: LimitKey) =>
-            key === LimitKey.MAX_ACTIVE_ALERTS ? mockMaxActiveAlerts : -1
-    };
-});
 
 // ---------------------------------------------------------------------------
 // Service mocks
@@ -99,38 +63,12 @@ function makeBody(): string {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/protected/price-alerts — populateActiveAlertsCount short-circuit', () => {
+describe('POST /api/v1/protected/price-alerts — legacy plan removed', () => {
     let app: AppOpenAPI;
 
     beforeEach(() => {
         app = initApp() as unknown as AppOpenAPI;
         vi.clearAllMocks();
-        mockEntitlements = new Set();
-        mockMaxActiveAlerts = -1;
-    });
-
-    it('skips the countActive query and returns 403 ENTITLEMENT_REQUIRED when the actor lacks PRICE_ALERTS', async () => {
-        mockEntitlements = new Set();
-
-        const res = await app.request(BASE, {
-            method: 'POST',
-            headers: makeHeaders(),
-            body: makeBody()
-        });
-
-        expect(res.status).toBe(403);
-        const body = await res.json();
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-
-        // The core regression: no wasted DB query for a request about to be rejected.
-        expect(countActiveMock).not.toHaveBeenCalled();
-        expect(createAlertMock).not.toHaveBeenCalled();
-    });
-
-    it('runs the countActive query and creates the alert when the actor has PRICE_ALERTS and is under the limit', async () => {
-        mockEntitlements = new Set([EntitlementKey.PRICE_ALERTS]);
-        mockMaxActiveAlerts = 5;
-        countActiveMock.mockResolvedValue({ data: { count: 1 } });
         createAlertMock.mockResolvedValue({
             data: {
                 id: ALERT_ID,
@@ -145,7 +83,9 @@ describe('POST /api/v1/protected/price-alerts — populateActiveAlertsCount shor
             }
         });
         getByIdMock.mockResolvedValue({ data: { name: 'Test Accommodation' } });
+    });
 
+    it('creates the alert without querying an obsolete plan counter', async () => {
         const res = await app.request(BASE, {
             method: 'POST',
             headers: makeHeaders(),
@@ -153,29 +93,19 @@ describe('POST /api/v1/protected/price-alerts — populateActiveAlertsCount shor
         });
 
         expect([200, 201]).toContain(res.status);
-
-        // Entitled path: gateAlerts needs the count for its limit check, so it
-        // must still be populated.
-        expect(countActiveMock).toHaveBeenCalledTimes(1);
+        expect(countActiveMock).not.toHaveBeenCalled();
         expect(createAlertMock).toHaveBeenCalledTimes(1);
+        const body = await res.json();
+        expect(body.data.accommodationName).toBe('Test Accommodation');
     });
 
-    it('runs the countActive query but returns 403 LIMIT_REACHED when the actor has PRICE_ALERTS but is already at the limit', async () => {
-        mockEntitlements = new Set([EntitlementKey.PRICE_ALERTS]);
-        mockMaxActiveAlerts = 2;
-        countActiveMock.mockResolvedValue({ data: { count: 2 } });
-
+    it('still requires a valid accommodation id', async () => {
         const res = await app.request(BASE, {
             method: 'POST',
             headers: makeHeaders(),
-            body: makeBody()
+            body: JSON.stringify({ accommodationId: 'invalid' })
         });
-
-        expect(res.status).toBe(403);
-        const body = await res.json();
-        expect(body.error.code).toBe('LIMIT_REACHED');
-
-        expect(countActiveMock).toHaveBeenCalledTimes(1);
+        expect(res.status).toBe(400);
         expect(createAlertMock).not.toHaveBeenCalled();
     });
 });

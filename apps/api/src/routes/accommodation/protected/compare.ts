@@ -1,7 +1,6 @@
 /**
  * Protected accommodation comparison endpoint
- * Requires authentication + CAN_COMPARE_ACCOMMODATIONS entitlement
- * (SPEC-288 T-003)
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 import {
     AccommodationComparisonRequestSchema,
@@ -9,8 +8,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { entitlementMiddleware } from '../../../middlewares/entitlement';
-import { gateComparator } from '../../../middlewares/tourist-entitlements';
+
 import type { AppMiddleware } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -85,6 +83,7 @@ export const compareAccommodationsRoute = createProtectedRoute({
     requestBody: AccommodationComparisonRequestSchema,
     responseSchema: AccommodationComparisonResponseSchema,
     successStatusCode: 200,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed comparator gate.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -102,6 +101,6 @@ export const compareAccommodationsRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        middlewares: [entitlementMiddleware(), setCompareCount, gateComparator()]
+        middlewares: [setCompareCount]
     }
 });

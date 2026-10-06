@@ -8,12 +8,9 @@
 import {
     accommodationReviews,
     accommodations,
-    billingCustomers,
-    billingSubscriptions,
     type DrizzleClient,
     destinationReviews,
     destinations,
-    entitySubscriptions,
     eq,
     eventLocations,
     eventOrganizers,
@@ -32,7 +29,6 @@ import {
     sponsorshipLevels,
     sponsorshipPackages,
     sponsorships,
-    sql,
     tags,
     userBookmarks,
     users
@@ -845,82 +841,6 @@ export async function seedGastronomy(
     return { ownerId, destinationId, gastronomyId };
 }
 
-interface SeedCommerceListingSubscriptionOverrides {
-    readonly linkId?: string;
-    readonly gastronomyId: string;
-    readonly status: string;
-}
-
-/**
- * Seeds an `entity_subscriptions` link row tying a gastronomy
- * listing to a stub billing subscription row.
- *
- * Because the billing subscription table (`billing_subscriptions`) is managed
- * by `@qazuor/qzpay-drizzle`, we insert a minimal stub billing subscription
- * row first so the FK constraint is satisfied.
- *
- * @param tx - Drizzle transaction client.
- * @param options - Required `gastronomyId` and `status`; optional `linkId`.
- * @returns Object containing `{ linkId, subscriptionId }`.
- */
-export async function seedCommerceListingSubscription(
-    tx: DrizzleClient,
-    options: SeedCommerceListingSubscriptionOverrides
-): Promise<{
-    readonly linkId: string;
-    readonly subscriptionId: string;
-}> {
-    const linkId = options.linkId ?? crypto.randomUUID();
-    const subscriptionId = crypto.randomUUID();
-
-    // Insert a minimal billing_customers stub row first (billing_subscriptions
-    // has a FK to billing_customers.id ON DELETE RESTRICT).
-    const customerId = crypto.randomUUID();
-    const uid = customerId.slice(0, 8);
-    await tx.execute(sql`
-        INSERT INTO billing_customers (
-            id, external_id, email, livemode
-        ) VALUES (
-            ${customerId},
-            ${`ext-${uid}`},
-            ${`billing-stub-${uid}@test.local`},
-            false
-        )
-    `);
-
-    // Insert a minimal billing_subscriptions stub row to satisfy the FK from
-    // entity_subscriptions.  Uses raw SQL to ensure billing_interval
-    // (NOT NULL in the qzpay-drizzle schema) is provided without relying on
-    // Drizzle client-side $defaultFn which does not fire inside raw tx contexts.
-    await tx.execute(sql`
-        INSERT INTO billing_subscriptions (
-            id, customer_id, plan_id, status, billing_interval,
-            current_period_start, current_period_end, product_domain, livemode
-        ) VALUES (
-            ${subscriptionId},
-            ${customerId},
-            ${crypto.randomUUID()},
-            ${options.status},
-            'month',
-            now(),
-            now() + interval '30 days',
-            'gastronomy',
-            false
-        )
-    `);
-
-    await tx.insert(entitySubscriptions).values({
-        id: linkId,
-        subscriptionId,
-        entityType: 'gastronomy',
-        entityId: options.gastronomyId,
-        status: options.status,
-        productDomain: 'commerce'
-    } as typeof entitySubscriptions.$inferInsert);
-
-    return { linkId, subscriptionId };
-}
-
 interface SeedGastronomyReviewOverrides {
     readonly reviewId?: string;
     readonly gastronomyId: string;
@@ -1052,98 +972,6 @@ export async function seedExperience(
     } as typeof experiences.$inferInsert);
 
     return { ownerId, destinationId, experienceId };
-}
-
-interface SeedExperienceListingSubscriptionOverrides {
-    readonly linkId?: string;
-    readonly experienceId: string;
-    readonly status: string;
-}
-
-/**
- * Seeds an `entity_subscriptions` link row tying an experience listing to a
- * REAL stub billing subscription row (HOS-1269 method note).
- *
- * Mirrors `seedCommerceListingSubscription` (gastronomy), with one deliberate
- * fix: both the `billing_subscriptions` stub and the `entity_subscriptions`
- * link row are stamped `product_domain='experience'` — never the retired
- * `'commerce'` umbrella value gastronomy's helper still writes, and never left
- * to `billing_subscriptions`' own `'accommodation'` column default. The issue
- * this ticket tracks called out the anti-pattern by name: a fixture that only
- * flips a denormalized boolean (`has_active_subscription`) with no real
- * `billing_subscriptions` row proves nothing about the reconciliation path
- * this suite exists to cover.
- *
- * Both billing rows are written via typed Drizzle inserts (HOS-73/HOS-75),
- * NOT raw SQL — `billingCustomers` / `billingSubscriptions` are ordinary
- * typed tables from `@qazuor/qzpay-drizzle`, confirmed by compiling
- * `tx.insert(billingSubscriptions).values(...)` against
- * `typeof billingSubscriptions.$inferInsert` before writing this.
- *
- * @param tx - Drizzle transaction client.
- * @param options - Required `experienceId` and `status`; optional `linkId`.
- * @returns Object containing `{ linkId, subscriptionId }`.
- */
-export async function seedExperienceListingSubscription(
-    tx: DrizzleClient,
-    options: SeedExperienceListingSubscriptionOverrides
-): Promise<{
-    readonly linkId: string;
-    readonly subscriptionId: string;
-}> {
-    const linkId = options.linkId ?? crypto.randomUUID();
-    const subscriptionId = crypto.randomUUID();
-    const customerId = crypto.randomUUID();
-    const uid = customerId.slice(0, 8);
-
-    // Insert a minimal billing_customers stub row first (billing_subscriptions
-    // has a FK to billing_customers.id ON DELETE RESTRICT).
-    //
-    // Typed Drizzle insert (HOS-73/HOS-75) — NOT raw SQL. `billingCustomers`
-    // and `billingSubscriptions` are ordinary typed Drizzle tables re-exported
-    // from `@qazuor/qzpay-drizzle` via `@repo/db`'s `src/billing/index.ts`;
-    // verified against `typeof billingCustomers.$inferInsert` /
-    // `typeof billingSubscriptions.$inferInsert` before writing this — both
-    // compile cleanly through `tx.insert(...).values(...)`. An earlier version
-    // of this helper (mirroring `seedCommerceListingSubscription` below, which
-    // still does this) used raw SQL under the belief that Drizzle's
-    // client-side `$defaultFn` does not fire inside a raw tx context — that
-    // reasoning is irrelevant here because every column below is supplied
-    // explicitly, not left to a default.
-    await tx.insert(billingCustomers).values({
-        id: customerId,
-        externalId: `ext-${uid}`,
-        email: `billing-stub-${uid}@test.local`,
-        livemode: false
-    } as typeof billingCustomers.$inferInsert);
-
-    // Insert a minimal billing_subscriptions stub row to satisfy the FK from
-    // entity_subscriptions. product_domain is stated explicitly (HOS-1233):
-    // the column carries a NOT NULL DEFAULT 'accommodation', so an omitted
-    // insert would silently file this row under the wrong vertical instead of
-    // failing loudly.
-    await tx.insert(billingSubscriptions).values({
-        id: subscriptionId,
-        customerId,
-        planId: crypto.randomUUID(),
-        status: options.status,
-        billingInterval: 'month',
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        livemode: false,
-        productDomain: 'experience'
-    } as typeof billingSubscriptions.$inferInsert);
-
-    await tx.insert(entitySubscriptions).values({
-        id: linkId,
-        subscriptionId,
-        entityType: 'experience',
-        entityId: options.experienceId,
-        status: options.status,
-        productDomain: 'experience'
-    } as typeof entitySubscriptions.$inferInsert);
-
-    return { linkId, subscriptionId };
 }
 
 interface SeedExperienceReviewOverrides {

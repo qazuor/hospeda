@@ -70,7 +70,6 @@ import {
     closeServiceTestPool,
     getServiceTestDb,
     isServiceTestDbAvailable,
-    seedCommerceListingSubscription,
     seedGastronomy,
     withServiceTestTransaction
 } from './helpers';
@@ -296,10 +295,9 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                     visibility: 'PRIVATE',
                     lifecycleState: 'INACTIVE'
                 });
-                await seedCommerceListingSubscription(tx, {
-                    gastronomyId,
-                    status: 'active'
-                });
+                // HOS-1416: the entity_subscriptions link table was dropped with
+                // the legacy billing schema; the reconciler receives the status
+                // directly, so no subscription row is seeded here.
                 const { gastronomyModel } = await import('@repo/db');
                 const ctx: ServiceContext = { tx };
 

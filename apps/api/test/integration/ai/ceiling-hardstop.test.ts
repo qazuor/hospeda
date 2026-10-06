@@ -78,7 +78,6 @@ vi.mock('../../../src/utils/notification-helper.js', () => ({
         const db = getDb();
 
         await db.insert(billingNotificationLog).values({
-            customerId: null,
             type: String(payload.type ?? 'ai_cost_threshold_alert'),
             channel: 'email',
             recipient: String(payload.recipientEmail ?? 'mock@test.invalid'),
@@ -91,7 +90,7 @@ vi.mock('../../../src/utils/notification-helper.js', () => ({
                 userId: payload.userId ?? null,
                 recipientName: payload.recipientName ?? null,
                 messageId: null,
-                category: 'billing'
+                category: 'system'
             }
         });
 

@@ -322,18 +322,18 @@ Two rules specific to this surface:
   correction HOS-682 made on the outbound side, where a 404 or a business-rule
   refusal was being logged as a program fault.
 
-The classifier is
-[`src/routes/webhooks/mercadopago/error-classification.ts`](../src/routes/webhooks/mercadopago/error-classification.ts);
+The retired HOS-1416 classifier was
+`src/routes/webhooks/mercadopago/error-classification.ts`;
 the statuses are asserted end-to-end through the real `@qazuor/qzpay-hono`
 router in
-[`test/webhooks/webhook-error-disposition.test.ts`](../test/webhooks/webhook-error-disposition.test.ts).
+`test/webhooks/webhook-error-disposition.test.ts`.
 
-## Known exception
+## Historical exception (retired in HOS-1416)
 
 The `@qazuor/qzpay-hono` admin tier under `/api/v1/admin/billing/*` builds its
 own routes and does not pass through `createAdminRoute`, so the boot assertion
 and the ownership guard do not reach it. Its authentication ordering is covered
 directly by
-[`test/middlewares/billing-admin-auth.middleware.test.ts`](../test/middlewares/billing-admin-auth.middleware.test.ts),
+`test/middlewares/billing-admin-auth.middleware.test.ts`,
 and its error bodies still land in `createErrorHandler`, so R1 and R4 hold. What
 is NOT enforced there is R3-style param validation.

@@ -17,7 +17,9 @@
  *                         it via the topbar avatar dropdown. Routes: /me/*
  *   - `misAlojamientos` — HOST-specific. Routes: /me/accommodations, /accommodations/new
  *   - `consultas`       — HOST-specific. Routes: /conversations
- *   - `miFacturacion`   — HOST-specific. Routes: /billing/subscriptions
+ *
+ * (HOS-1416: the `miFacturacion` HOST billing section was removed with the
+ * legacy billing surface.)
  *
  * @see apps/admin/src/config/ia/sidebars.ts  — sidebar definitions referenced here
  * @see apps/admin/src/config/ia/schema.ts    — Section type contract
@@ -91,15 +93,16 @@ export const sections: Record<string, Section> = {
     },
 
     /**
-     * Comercial — Billing, plans, subscriptions, invoices, promos, sponsorships, sponsors.
-     * Everything related to monetization and commercial operations.
+     * Comercial — Promotions, sponsorships, sponsors, exchange rates.
+     * (HOS-1416: the billing plans/subscriptions/invoices surface was removed;
+     * the section now lands on the surviving owner-promotions page.)
      */
     comercial: {
         id: 'comercial',
         label: { es: 'Comercial', en: 'Commercial', pt: 'Comercial' },
         icon: 'CreditCardIcon',
-        route: '/billing/plans',
-        defaultRoute: '/billing/plans',
+        route: '/billing/owner-promotions',
+        defaultRoute: '/billing/owner-promotions',
         sidebar: 'comercialSidebar'
     },
 
@@ -192,24 +195,5 @@ export const sections: Record<string, Section> = {
         route: '/social',
         defaultRoute: '/social',
         sidebar: 'marketingSidebar'
-    },
-
-    /**
-     * Mi facturación — HOST's own subscription and billing view.
-     *
-     * Pointed at /billing/subscriptions — the only billing page that makes sense
-     * for a HOST with SUBSCRIPTION_VIEW / PRICING_PLAN_VIEW scope. The usage widget
-     * is deferred to SPEC-155; there is no dedicated HOST billing page today.
-     * The usage/metrics pages (/billing/metrics) require BILLING_METRICS_READ which
-     * HOSTs do not hold; /billing/plans (read-only plan catalog) is accessible but
-     * /billing/subscriptions (the host's own sub) is the most actionable landing.
-     */
-    miFacturacion: {
-        id: 'miFacturacion',
-        label: { es: 'Mi facturación', en: 'My billing', pt: 'Minha cobrança' },
-        icon: 'CreditCardIcon',
-        route: '/billing/subscriptions',
-        defaultRoute: '/billing/subscriptions',
-        sidebar: 'miFacturacionSidebar'
     }
 } as const;

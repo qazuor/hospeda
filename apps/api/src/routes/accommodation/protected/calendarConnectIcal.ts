@@ -10,9 +10,9 @@
  *
  * Gate model (mirrors `calendarConnectGoogle.ts`): ownership +
  * `ACCOMMODATION_OCCUPANCY_MANAGE` are enforced inline via
- * `assertOccupancyManageAccess`; the `CAN_SYNC_EXTERNAL_CALENDAR` billing
- * entitlement is enforced HERE at the route via `requireEntitlement`, never
- * re-checked in a service resolver.
+ * `assertOccupancyManageAccess`; external calendar connections run without
+ * the former billing entitlement during the transition.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * ## Probe-before-save
  *
@@ -42,7 +42,6 @@
  * @module routes/accommodation/protected/calendarConnectIcal
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { accommodationCalendarSyncModel } from '@repo/db';
 import {
     AccommodationIdSchema,
@@ -54,7 +53,7 @@ import {
 } from '@repo/schemas';
 import { assertOccupancyManageAccess, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
 import { syncAccommodationIcalCalendar } from '../../../services/ical-calendar/ical-calendar-sync.service';
 import type { IcalProvider } from '../../../services/ical-calendar/ical-credential.repository';
@@ -93,6 +92,7 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
     },
     requestBody: ConnectIcalBodySchema,
     responseSchema: CalendarConnectionResponseSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_SYNC_EXTERNAL_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -168,7 +168,5 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
             }
         };
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)]
-    }
+    options: {}
 });

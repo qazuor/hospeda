@@ -29,7 +29,6 @@
  * suite red — see the mutation note in HOS-700's report.
  */
 
-import { LimitKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import { describe, expect, it, vi } from 'vitest';
@@ -44,7 +43,6 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-import { buildLimitReachedDetails } from '../../src/middlewares/limit-enforcement';
 import { createSimpleRoute } from '../../src/utils/route-factory';
 
 const FACTORY_OPTS = { skipAuth: true, skipValidation: true } as const;
@@ -54,12 +52,12 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
     it('LIMIT_REACHED: details.limitKey reaches the client with HOSPEDA_API_DEBUG_ERRORS off', async () => {
         // Arrange — the real structured details shape the limit-enforcement
         // middleware builds for an accommodation-limit refusal.
-        const details = buildLimitReachedDetails({
-            limitKey: LimitKey.MAX_ACCOMMODATIONS,
+        const details = {
+            limitKey: 'max_accommodations',
             currentCount: 3,
             maxAllowed: 3,
             usagePercent: 100
-        });
+        };
 
         const app = createSimpleRoute({
             method: 'get',
@@ -88,7 +86,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
             error: { code: string; details?: { limitKey?: string } };
         };
         expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
-        expect(body.error.details?.limitKey).toBe(LimitKey.MAX_ACCOMMODATIONS);
+        expect(body.error.details?.limitKey).toBe('max_accommodations');
     });
 
     it('LIMIT_REACHED: details.limitKey reaches the client for a non-accommodation key (HOS-690 AC-24)', async () => {
@@ -97,12 +95,12 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
         // proves that generality directly for the gastronomy vertical cap
         // (HOS-690 AC-24), rather than trusting it by inference from the
         // MAX_ACCOMMODATIONS case above.
-        const details = buildLimitReachedDetails({
-            limitKey: LimitKey.MAX_GASTRONOMIES,
+        const details = {
+            limitKey: 'max_gastronomies',
             currentCount: 1,
             maxAllowed: 1,
             usagePercent: 100
-        });
+        };
 
         const app = createSimpleRoute({
             method: 'get',
@@ -131,7 +129,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
             error: { code: string; details?: { limitKey?: string } };
         };
         expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
-        expect(body.error.details?.limitKey).toBe(LimitKey.MAX_GASTRONOMIES);
+        expect(body.error.details?.limitKey).toBe('max_gastronomies');
     });
 
     it('ENTITLEMENT_REQUIRED: details reaches the client with HOSPEDA_API_DEBUG_ERRORS off', async () => {

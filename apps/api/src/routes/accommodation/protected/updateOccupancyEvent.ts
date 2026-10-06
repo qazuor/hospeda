@@ -8,13 +8,11 @@
  * request body — same rationale as `addOccupancy.ts` / `batchOccupancy.ts`.
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
- * enforced inside `updateOccupancyEvent`. The `CAN_USE_CALENDAR` entitlement
- * is enforced HERE at the route via `requireEntitlement` — see the module
- * doc in `addOccupancy.ts` for the full rationale (route-level gate reads
- * the same `loadEntitlements` path the frontend trusts, unlike a
- * service-level DB-driven resolver).
+ * enforced inside `updateOccupancyEvent`. Calendar operations run without the former
+ * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationIdSchema,
     AccommodationOccupancyEventUpdateSchema,
@@ -23,7 +21,7 @@ import {
 import { updateOccupancyEvent } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -58,6 +56,7 @@ export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
     },
     requestBody: AccommodationOccupancyEventUpdateSchema,
     responseSchema: UpdateOccupancyEventResponseSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -85,7 +84,5 @@ export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
 
         return { occupancy };
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
-    }
+    options: {}
 });

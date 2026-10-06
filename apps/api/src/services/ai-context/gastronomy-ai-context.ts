@@ -23,7 +23,6 @@
  * @module apps/api/services/ai-context/gastronomy-ai-context
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     gastronomies,
     gastronomyFaqs,
@@ -51,6 +50,7 @@ import type { AssembleChatContextInput, AssembleChatContextOutput } from './type
 // ---------------------------------------------------------------------------
 
 /** Hard cap on the description length in the context block. */
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
 export const GASTRONOMY_DESCRIPTION_MAX_CHARS = 800;
 
 /** Maximum FAQs included in the context block. */
@@ -266,7 +266,7 @@ function formatOpeningHours(openingHours: Record<string, unknown> | null): strin
 export async function assembleGastronomyContext(
     input: AssembleChatContextInput
 ): Promise<AssembleChatContextOutput> {
-    const { entityId, resolvedPrompt, locale, ownerEntitlements } = input;
+    const { entityId, resolvedPrompt, locale } = input;
     const db = getDb();
 
     const rows = await db
@@ -293,12 +293,7 @@ export async function assembleGastronomyContext(
 
     const [faqs, menuItems] = await Promise.all([
         safeLoadFaqs(entityId),
-        // The carta is gated. `ownerEntitlements` is what the ROUTE resolved for
-        // this owner in the same request — see the module docblock for why the
-        // gate exists even though today's tiers make it unreachable.
-        ownerEntitlements.has(EntitlementKey.MANAGE_GASTRONOMY_MENU)
-            ? safeLoadMenuItems(entityId)
-            : Promise.resolve([] as GastronomyContextMenuItem[])
+        safeLoadMenuItems(entityId)
     ]);
 
     const contextBlock = buildGastronomyMarkdownContext(venue, faqs, menuItems);

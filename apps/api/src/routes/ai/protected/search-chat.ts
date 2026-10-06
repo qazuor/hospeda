@@ -9,15 +9,11 @@
  * `createProtectedStreamingRoute` prepends `protectedAuthMiddleware`, so the
  * effective order is:
  *
- *   auth → entitlement (loads context) → rateLimit-perUser → rateLimit-perIP
- *     → quota (per-plan monthly, consumer-keyed)
+ *   auth → rateLimit-perUser → rateLimit-perIP
  *
- * `entitlementMiddleware()` runs first so billing context (limits) is populated
- * for the quota middleware. `ai_search` is auth-baseline (SPEC-283 OQ-1): it has
- * a graduated per-plan monthly quota keyed on the requesting user but NO plan
- * entitlement, so `createAiQuotaMiddleware('search', { skipEntitlementGate: true })`
- * enforces the quota without the entitlement gate. The USD cost ceiling and
- * metering remain inside the AI engine via `createConfiguredAiService()`.
+ * During the billing transition, `ai_search` is available to authenticated
+ * users without a monthly quota. Burst limits, the USD cost ceiling, and usage
+ * metering remain active.
  *
  * ## Handler status (T-007 implemented)
  *
@@ -93,9 +89,9 @@ import {
 } from '@repo/schemas';
 import { DEFAULT_POI_PROXIMITY_RADIUS_KM, DestinationService } from '@repo/service-core';
 import { isUsableEntityId } from '@repo/utils';
-import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota.js';
+
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit.js';
-import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
+
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { meterAiUsage } from '../../../utils/ai-usage-metering.js';
@@ -459,23 +455,19 @@ async function resolveDestinationIdFromCity(city: string): Promise<string | unde
  * ## Governance model (SPEC-211 §7.7, revised by SPEC-283)
  *
  * `ai_search` is **auth-baseline**: available to every authenticated user with
- * a graduated per-plan monthly quota, but NO plan entitlement gate. The route is:
+ * no monthly quota during the billing transition. The route is:
  *
  * - Authenticated-only (handled by `createProtectedStreamingRoute`'s
  *   `protectedAuthMiddleware`).
  * - Rate-limited by `createAiRateLimitMiddlewares('search')` (per-user + per-IP
  *   burst guard). Same rate-limit configuration as the sibling search-intent
  *   route (SPEC-199) — they share the `search` feature key.
- * - Quota-gated by `createAiQuotaMiddleware('search', { skipEntitlementGate: true })`
- *   — a per-plan MAX_AI_SEARCH_PER_MONTH keyed on the requesting user
- *   (SPEC-283, reverting SPEC-211 G-4).
  * - Cost-backstopped by the `ai_settings` per-feature USD ceiling enforced
  *   inside `createConfiguredAiService()` — NOT as a middleware.
  * - Metered by this route via `meterAiUsage` after the reply stream drains
  *   (HOS-328). The engine itself does NOT write to `ai_usage` — see the
  *   engine module JSDoc, which states that decision explicitly — so this route
- *   is the only writer, and the monthly `search` counter depends entirely on
- *   it. One row is written per request, aggregating BOTH provider calls the
+ *   is the only writer. One row is written per request, aggregating BOTH provider calls the
  *   handler makes (intent extraction + reply).
  *
  * ## SSE event sequence (SPEC-212 §5)
@@ -533,26 +525,14 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         'Multi-turn conversational search that extracts filter parameters from natural language ' +
         'and streams a natural-language reply via Server-Sent Events. ' +
         'Requires authentication and is subject to per-user/IP rate limits and a USD cost ceiling. ' +
-        'Gated by a graduated per-plan monthly quota keyed on the requesting user (SPEC-283); ' +
-        'ai_search remains auth-baseline (no plan entitlement gate).',
+        'Available to authenticated users with burst rate limits and usage metering.',
     tags: ['AI Search'],
     requestSchema: AiSearchChatRequestSchema,
     options: {
         middlewares: [
-            // Layer 0: load billing context into Hono context vars (entitlements, limits,
-            // billingLoadFailed). Does NOT gate AI_SEARCH — search is platform-governed.
-            // Runs first so downstream middleware / handler always has a populated context.
-            entitlementMiddleware(),
-            // Layer 1: burst control (perUser + perIP sliding-window rate limits).
+            // Burst control (perUser + perIP sliding-window rate limits).
             // Uses the same 'search' feature key as the sibling search-intent route (SPEC-199).
-            ...createAiRateLimitMiddlewares('search'),
-            // Layer 2: per-plan monthly quota keyed on the requesting (consuming)
-            // user (SPEC-283 §2.2, reverting SPEC-211 G-4 / §7.7). skipEntitlementGate
-            // is true because ai_search is auth-baseline (OQ-1): no plan grants
-            // AI_SEARCH, so only the graduated per-plan quota applies — the
-            // entitlement gate would otherwise 403 every request. The USD cost
-            // ceiling + metering stay inside the AI engine as a backstop.
-            createAiQuotaMiddleware('search', { skipEntitlementGate: true })
+            ...createAiRateLimitMiddlewares('search')
         ]
     },
     streamHandler: async ({ c }) => {

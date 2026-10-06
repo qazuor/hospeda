@@ -24,6 +24,12 @@
 
 BEGIN;
 
+-- Skip this historical repair after the legacy billing tables are removed.
+DO $legacy$
+BEGIN
+IF to_regclass('public.billing_plans') IS NOT NULL
+   AND to_regclass('public.billing_entitlements') IS NOT NULL THEN
+
 -- ──────────────────────────────────────────────────────────────────────────────
 -- 1. Restore the vip_promotions_access catalog row if 024 renamed it away.
 --    Mirrors the seed (packages/seed/src/required/billingEntitlements.seed.ts):
@@ -49,5 +55,9 @@ UPDATE billing_plans
 SET entitlements = entitlements || ARRAY['vip_promotions_access']
 WHERE entitlements @> ARRAY['vip_visibility_access']
   AND NOT (entitlements @> ARRAY['vip_promotions_access']);
+
+END IF;
+END
+$legacy$;
 
 COMMIT;

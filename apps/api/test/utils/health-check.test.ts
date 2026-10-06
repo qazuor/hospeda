@@ -59,22 +59,6 @@ vi.mock('../../src/middlewares/response-validator', () => ({
     responseValidatorMiddleware: vi.fn(() => vi.fn())
 }));
 
-vi.mock('../../src/middlewares/billing', () => ({
-    billingMiddleware: vi.fn(() => vi.fn())
-}));
-
-vi.mock('../../src/middlewares/billing-customer', () => ({
-    billingCustomerMiddleware: vi.fn(() => vi.fn())
-}));
-
-vi.mock('../../src/middlewares/entitlement', () => ({
-    entitlementMiddleware: vi.fn(() => vi.fn())
-}));
-
-vi.mock('../../src/middlewares/trial', () => ({
-    trialMiddleware: vi.fn(() => vi.fn())
-}));
-
 import { createApp } from '../../src/utils/create-app';
 
 describe('Health Check Route', () => {

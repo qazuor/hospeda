@@ -38,7 +38,6 @@
     },
     "dependencies": {
         "@repo/ai-core": "workspace:*",
-        "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",

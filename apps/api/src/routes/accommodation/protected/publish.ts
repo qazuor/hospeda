@@ -7,20 +7,15 @@ import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } f
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { captureServerAnalyticsEvent } from '../../../lib/posthog';
-import { getQZPayBilling } from '../../../middlewares/billing';
-import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const accommodationService = new AccommodationService(
-    { logger: apiLogger },
-    undefined,
-    null,
-    undefined,
-    buildAccommodationPublishDeps(() => getQZPayBilling())
-);
+// The publish-deps (trial eligibility + local trial) went down with the legacy
+// billing system (HOS-1416); `publishDeps` is optional in `AccommodationService`.
+const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * POST /api/v1/protected/accommodations/:id/publish

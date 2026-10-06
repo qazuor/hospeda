@@ -130,7 +130,6 @@ describe('Notification Pipeline Integration Tests', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_456',
                     type: NotificationType.PAYMENT_SUCCESS,
                     channel: 'email',
                     recipient: 'user@example.com',
@@ -165,7 +164,6 @@ describe('Notification Pipeline Integration Tests', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_456',
                     type: NotificationType.PAYMENT_SUCCESS,
                     channel: 'email',
                     recipient: 'user@example.com',
@@ -200,7 +198,6 @@ describe('Notification Pipeline Integration Tests', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_premium_001',
                     type: NotificationType.SUBSCRIPTION_PURCHASE,
                     recipient: 'premium@example.com',
                     templateId: NotificationType.SUBSCRIPTION_PURCHASE,

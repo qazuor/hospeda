@@ -15,17 +15,11 @@
  * THE ORDER OF THE CHECKS, WHICH IS THE WHOLE SECURITY MODEL
  *
  * 1. `protectedAuthMiddleware` — a session, or 401.
- * 2. `commerceVerticalEntitlementMiddleware('experience')` — REPLACES the
- *    request's entitlement set with the one resolved from the caller's
- *    EXPERIENCE subscription. Without it the next line reads the ACCOMMODATION
- *    set, which never carries a commerce key, and every caller is refused.
- * 3. `requireEntitlement(ISSUE_EXPERIENCE_CERTIFICATE)` — the plan gate, 403.
- * 4. Ownership, inside the handler — 404, never 403, because a 403 would
+ * 2. Certificate issuance and reads run without the former plan entitlement
+ *    during the billing transition.
+ * 3. Ownership, inside the handler — 404, never 403, because a 403 would
  *    confirm that the experience id exists (`docs/error-contract.md`).
- *
- * Steps 2 and 3 are middlewares so they run BEFORE the handler touches the
- * database: the e2e tests assert exactly that by spying on
- * `ExperienceService.getById` and requiring it never ran on the refusal path.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * ## Who may read a certificate
  *
@@ -37,7 +31,6 @@
  * @module routes/experience/protected/certificates
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     EntityTypeEnum,
     ExperienceCertificateCreateInputSchema,
@@ -62,24 +55,24 @@ import {
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { buildCertificateContent } from '../../../services/experience-certificate/certificate-content';
 import { buildCertificateResponse } from '../../../services/experience-certificate/certificate-response';
 import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
-/** The gate every route in this module carries, spelled once. */
-const CERTIFICATE_GATE = [
-    commerceVerticalEntitlementMiddleware('experience'),
-    requireEntitlement(EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE)
-];
+/**
+ * The gate every route in this module carries, spelled once. The vertical
+ * entitlement + ISSUES_EXPERIENCE_CERTIFICATE gates were removed with the
+ * legacy billing system (HOS-1416); only burst rate limits remain per route.
+ */
+const CERTIFICATE_GATE: never[] = [];
 
 /**
  * TYPE-WORKAROUND: the service-core certificate helpers take the model, and the
@@ -164,6 +157,7 @@ export const protectedIssueExperienceCertificateRoute = createProtectedRoute({
     },
     requestBody: ExperienceCertificateCreateInputSchema,
     responseSchema: z.object({ certificate: ExperienceCertificateOutputSchema }),
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed ISSUE_EXPERIENCE_CERTIFICATE entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

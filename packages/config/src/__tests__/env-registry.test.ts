@@ -295,7 +295,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * web only) — Dailymotion's geo host 403s a third-party embed without a Player
  * ID in the URL. 285 + 1 = 286.
  */
-const EXPECTED_VAR_COUNT = 286;
+const EXPECTED_VAR_COUNT = 285;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

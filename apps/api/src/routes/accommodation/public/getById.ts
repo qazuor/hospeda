@@ -12,10 +12,11 @@
 import { AccommodationIdSchema, AccommodationPublicSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
+
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import { filterAccommodationByEntitlements } from '../../../utils/entitlement-filter';
+import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -41,7 +42,7 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
         id: AccommodationIdSchema
     },
     responseSchema: AccommodationPublicSchema.nullable(),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
         // HOS-353: resolve visibility against a GUEST actor, never the caller.
         //
         // `checkCanView` consults the reader through four mechanisms — `isOwner`,
@@ -76,16 +77,7 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
             isFeatured: resolvePublicIsFeatured(result.data)
         };
 
-        // SPEC-187 owner-entitlement gate: resolve the owning host's entitlements
-        // and pass them to filterAccommodationByEntitlements. When the owner lacks
-        // CAN_USE_RICH_DESCRIPTION, richDescription is omitted from the payload.
-        // Fail-closed: no ownerId → empty entitlements → field omitted.
-        const ownerEntitlements = accommodation.ownerId
-            ? await resolveOwnerEntitlementsForOwnerId(accommodation.ownerId)
-            : [];
-        const filtered = filterAccommodationByEntitlements(accommodation, ownerEntitlements);
-
-        return filtered;
+        return maskLegacyPremiumFields(accommodation);
     },
     options: {
         cacheTTL: 300,

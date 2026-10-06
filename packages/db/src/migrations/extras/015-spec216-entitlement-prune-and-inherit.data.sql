@@ -25,6 +25,13 @@
 
 BEGIN;
 
+-- Keep this historical extra replayable after the legacy billing tables are removed.
+DO $legacy$
+BEGIN
+IF to_regclass('public.billing_plans') IS NOT NULL
+   AND to_regclass('public.billing_entitlements') IS NOT NULL
+   AND to_regclass('public.billing_customer_entitlements') IS NOT NULL THEN
+
 -- Owner & complex plans become a superset of tourist-VIP:
 --   new entitlements = (own entitlements ∪ tourist-VIP) minus the pruned keys.
 UPDATE billing_plans p
@@ -76,5 +83,9 @@ WHERE entitlement_key = ANY (ARRAY[
     'multi_channel_integration', 'social_media_integration',
     'early_access_events', 'dedicated_manager', 'api_access'
 ]::text[]);
+
+END IF;
+END
+$legacy$;
 
 COMMIT;

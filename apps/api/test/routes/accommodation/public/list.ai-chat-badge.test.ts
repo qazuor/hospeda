@@ -155,7 +155,7 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         vi.clearAllMocks();
     });
 
-    it('marks hasAiChat true only for accommodations whose owner has AI_CHAT', async () => {
+    it('marks hasAiChat true while AI chat remains available without the old plan', async () => {
         mockResolveOwnerEntitlementsBatch.mockResolvedValue(
             new Map([
                 [OWNER_WITH_AI, [EntitlementKey.AI_CHAT]],
@@ -180,7 +180,7 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
         expect(items.find((i) => i.id === 'acc-1')?.hasAiChat).toBe(true);
-        expect(items.find((i) => i.id === 'acc-2')?.hasAiChat).toBe(false);
+        expect(items.find((i) => i.id === 'acc-2')?.hasAiChat).toBe(true);
     });
 
     it('resolves the whole page in ONE call, with owners deduped', async () => {
@@ -203,12 +203,11 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
 
-        expect(mockResolveOwnerEntitlementsBatch).toHaveBeenCalledTimes(1);
-        expect(mockResolveOwnerEntitlementsBatch).toHaveBeenCalledWith([OWNER_WITH_AI]);
+        expect(mockResolveOwnerEntitlementsBatch).not.toHaveBeenCalled();
         expect(items.every((i) => i.hasAiChat === true)).toBe(true);
     });
 
-    it('fails closed (hasAiChat false) when the resolver reports nothing for the owner', async () => {
+    it('keeps AI chat available when old plan entitlements are absent', async () => {
         // The batch resolver never throws: a billing failure surfaces as an
         // EMPTY entitlement array for that owner. So fail-closed here means the
         // badge is absent, not that the request errors.
@@ -224,10 +223,10 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
 
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
-        expect(items[0]?.hasAiChat).toBe(false);
+        expect(items[0]?.hasAiChat).toBe(true);
     });
 
-    it('fails closed when the owner is absent from the resolver map entirely', async () => {
+    it('keeps AI chat available when the owner is absent from the old resolver', async () => {
         mockResolveOwnerEntitlementsBatch.mockResolvedValue(new Map());
         mockSearch.mockResolvedValue({
             data: { items: [accommodation({ id: 'acc-1', ownerId: OWNER_WITH_AI })], total: 1 },
@@ -238,6 +237,6 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         const res = await app.request('/');
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
-        expect(items[0]?.hasAiChat).toBe(false);
+        expect(items[0]?.hasAiChat).toBe(true);
     });
 });

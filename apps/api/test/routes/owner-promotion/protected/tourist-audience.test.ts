@@ -18,33 +18,6 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../../../src/middlewares/entitlement', async (importOriginal) => {
-    const orig = await importOriginal<typeof import('../../../../src/middlewares/entitlement')>();
-    return {
-        ...orig,
-        entitlementMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        },
-        requireEntitlement: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        },
-        requireLimit: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
-
-vi.mock('../../../../src/middlewares/limit-enforcement', async (importOriginal) => {
-    const orig =
-        await importOriginal<typeof import('../../../../src/middlewares/limit-enforcement')>();
-    return {
-        ...orig,
-        enforcePromotionLimit: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
-
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PROMOTION_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 

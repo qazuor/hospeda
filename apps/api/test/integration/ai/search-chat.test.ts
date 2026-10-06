@@ -428,26 +428,7 @@ vi.mock('../../../src/services/ai-service.factory', () => ({
 // Mirrors the exact pattern used by search-intent.test.ts and chat-route.test.ts.
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        entitlementMiddleware: () => {
-            return async (
-                c: Parameters<AppMiddleware>[0],
-                next: Parameters<AppMiddleware>[1]
-            ): Promise<void> => {
-                c.set(
-                    'userEntitlements',
-                    currentEntitlementsForTest.current as Set<EntitlementKey>
-                );
-                c.set('userLimits', currentLimitsForTest.current as Map<LimitKey, number>);
-                c.set('billingLoadFailed', currentBillingLoadFailedForTest.current);
-                await next();
-            };
-        }
-    };
-});
+// Legacy entitlement loader mock removed with the billing middleware (HOS-1416).
 
 // ---------------------------------------------------------------------------
 // Mock: @repo/db
@@ -592,7 +573,7 @@ import {
     PROMPT_FEATURED_POI_SLUGS
 } from '../../../src/routes/ai/protected/poi-allowlist';
 import { protectedAiSearchChatRoute } from '../../../src/routes/ai/protected/search-chat';
-import type { AppBindings, AppMiddleware } from '../../../src/types';
+import type { AppBindings } from '../../../src/types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -1010,11 +991,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(res.status).toBe(200);
         });
 
-        it('returns 503 when billingLoadFailed is true (quota middleware fail-closed — SPEC-283)', async () => {
-            // SPEC-283: the quota middleware mounts on this route and is fail-closed.
-            // When billingLoadFailed=true the limits Map is empty; treating absence as
-            // unlimited during a billing outage would be a privilege escalation, so the
-            // middleware returns 503 SERVICE_UNAVAILABLE instead of passing the request.
+        it('continues serving search when the retired billing loader is unavailable', async () => {
+            // HOS-1352: transitional until V3 (HOS-1357), see PR.
             currentBillingLoadFailedForTest.current = true;
 
             const res = await app.request(ENDPOINT, {
@@ -1023,8 +1001,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 body: makeValidBody()
             });
 
-            // Quota middleware is fail-closed — billing outage blocks search.
-            expect(res.status).toBe(503);
+            expect(res.status).toBe(200);
+            expect((await readSseFrames(res)).some((frame) => frame.event === 'done')).toBe(true);
         });
 
         it('accepts a valid multi-turn conversation body with conversationId', async () => {
@@ -1643,7 +1621,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(doneFrames).toHaveLength(1);
         });
 
-        it('(b) quota reached: returns 403 LIMIT_REACHED when call count equals the limit', async () => {
+        it('(b) keeps serving when the retired monthly count reaches its former limit', async () => {
             // Arrange: plan allows 50 searches/month; user has used all 50.
             currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
             nextSearchCallCount.current = 50;
@@ -1654,14 +1632,11 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 body: makeValidBody()
             });
 
-            expect(res.status).toBe(403);
-
-            const body = (await res.json()) as JsonErrorBody;
-            expect(body.success).toBe(false);
-            expect(body.error?.code).toBe('LIMIT_REACHED');
+            expect(res.status).toBe(200);
+            expect((await readSseFrames(res)).some((frame) => frame.event === 'done')).toBe(true);
         });
 
-        it('(c) limit = 0 (disabled): returns 403 LIMIT_REACHED without querying usage count', async () => {
+        it('(c) keeps serving when a retired plan limit is zero', async () => {
             // Arrange: plan has MAX_AI_SEARCH_PER_MONTH = 0 (feature disabled in plan).
             // The quota middleware short-circuits at the limit-value gate (step 4) —
             // getMonthlyCallCount is NEVER called (no DB query needed).
@@ -1677,11 +1652,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 body: makeValidBody()
             });
 
-            expect(res.status).toBe(403);
-
-            const body = (await res.json()) as JsonErrorBody;
-            expect(body.success).toBe(false);
-            expect(body.error?.code).toBe('LIMIT_REACHED');
+            expect(res.status).toBe(200);
+            expect((await readSseFrames(res)).some((frame) => frame.event === 'done')).toBe(true);
         });
 
         it('(d) skipEntitlementGate verified: returns 200 for a user with NO AI_SEARCH entitlement when under quota', async () => {
@@ -3520,7 +3492,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(recorded?.completionTokens).toBe(9);
         });
 
-        it('does not record success usage when the request is rejected at quota', async () => {
+        it('still records success usage after the former quota is reached', async () => {
             currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
             nextSearchCallCount.current = 50;
 
@@ -3530,11 +3502,12 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
                 body: makeValidBody()
             });
 
-            expect(res.status).toBe(403);
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
             const successRows = mockRecordAiUsage.mock.calls.filter(
                 (call) => call[0]?.status === 'success'
             );
-            expect(successRows).toHaveLength(0);
+            expect(successRows).toHaveLength(1);
         });
 
         it('still emits the done frame when metering fails (metering is never fatal)', async () => {

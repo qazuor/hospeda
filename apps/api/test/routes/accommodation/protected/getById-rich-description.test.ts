@@ -1,26 +1,4 @@
-/**
- * BETA-199 / HOS-317 — GET /api/v1/protected/accommodations/:id must expose the
- * premium rich-description pair to an ENTITLED owner, and withhold it otherwise.
- *
- * The bug: `AccommodationProtectedSchema` declared neither `richDescription` nor
- * `richDescriptionI18n`, so `stripWithSchema` deleted both from the owner's GET.
- * The web TranslationPanel derives its `richDescription` row entirely from
- * `richDescriptionI18n`, so that row showed "—" for every locale forever, and
- * because `hasMissingTranslations` walks all four fields, the "generate missing
- * translations" button never disappeared even with everything else translated.
- *
- * The pair is PREMIUM (`CAN_USE_RICH_DESCRIPTION`), and unlike the public detail
- * routes this one never ran an entitlement strip — which is exactly why the field
- * could not simply be declared. This route now resolves the OWNING host's
- * entitlements (never the reader's) and drops both fields when the owner lacks
- * the key.
- *
- * Mount strategy mirrors `getById-junctions.test.ts`: the real
- * `createProtectedRoute` output is mounted into a bare Hono app with the actor
- * injected, so the response passes through the real fail-closed `stripWithSchema`
- * pipeline — the same pipeline that was deleting these fields.
- */
-
+/** Protected accommodation editor retains rich content after the old plan gate. */
 import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -227,7 +205,7 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
         expect(body.data.richDescription).toBe(RICH_HTML);
     });
 
-    it('omits both rich-description fields when the owner is NOT entitled', async () => {
+    it('keeps both fields available to the editor without the old plan entitlement', async () => {
         mockResolveOwnerEntitlements.mockResolvedValue([EntitlementKey.CAN_EMBED_VIDEO]);
 
         const app = buildApp(ownerActor);
@@ -235,17 +213,13 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
 
         expect(res.status).toBe(200);
         const body = await res.json();
-        // Absent as KEYS, not merely null: the panel distinguishes "not entitled"
-        // (row hidden) from "entitled but never written" (row shown, no content),
-        // and it can only do that if the key itself is missing.
-        expect(body.data).not.toHaveProperty('richDescriptionI18n');
-        expect(body.data).not.toHaveProperty('richDescription');
-        // Everything else survives — this is a field gate, not a 404.
+        expect(body.data.richDescriptionI18n).toEqual(RICH_I18N);
+        expect(body.data.richDescription).toBe(RICH_HTML);
         expect(body.data.id).toBe(ACCOMMODATION_ID);
         expect(body.data.nameI18n).toEqual(ACCOMMODATION.nameI18n);
     });
 
-    it('gates on the OWNER of the row, not on the reader', async () => {
+    it('serves an authorized admin reading another owner’s row', async () => {
         // An admin holding ACCOMMODATION_UPDATE_ANY reads someone else's row. The
         // entitlement lookup must be keyed by that row's ownerId — keying it by
         // the reader would hand out (or withhold) premium content according to
@@ -263,10 +237,10 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
         expect(res.status).toBe(200);
-        expect(mockResolveOwnerEntitlements).toHaveBeenCalledWith(OTHER_USER_ID);
+        expect(mockResolveOwnerEntitlements).not.toHaveBeenCalled();
     });
 
-    it('withholds the pair — but still serves the editor — when the lookup throws', async () => {
+    it('serves the editor independently of the retired entitlement lookup', async () => {
         // The entitlement lookup hits billing. Letting it throw would 500 the GET,
         // and `editar.astro` redirects the owner away on a failed fetch: a billing
         // hiccup would lock the host out of editing their own accommodation
@@ -280,8 +254,8 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
 
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.data).not.toHaveProperty('richDescriptionI18n');
-        expect(body.data).not.toHaveProperty('richDescription');
+        expect(body.data.richDescriptionI18n).toEqual(RICH_I18N);
+        expect(body.data.richDescription).toBe(RICH_HTML);
         expect(body.data.name).toBe('Casa BETA-199');
     });
 

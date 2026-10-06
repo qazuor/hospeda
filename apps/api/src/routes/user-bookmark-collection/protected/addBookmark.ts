@@ -11,7 +11,7 @@ import {
 import { ServiceError, UserBookmarkCollectionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
-import { gateCollections } from '../../../middlewares/tourist-entitlements';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -28,7 +28,8 @@ export const addBookmarkToCollectionRoute = createProtectedRoute({
     requestParams: UserBookmarkCollectionBookmarkParamsSchema.shape,
     responseSchema: UserBookmarkSchema,
     successStatusCode: 200,
-    options: { middlewares: [gateCollections()] },
+    options: {},
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed collections gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const { id, bookmarkId } = params as { id: string; bookmarkId: string };

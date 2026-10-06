@@ -5,20 +5,17 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * displayOrder is auto-assigned by addExperienceFaq() as max(existing)+1.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type ExperienceFaqAddInput,
     ExperienceFaqSingleOutputSchema,
     FaqWithChannelVisibilityCreatePayloadSchema,
-    type FaqWithChannelVisibilityCreatePayloadType,
-    ProductDomainEnum
+    type FaqWithChannelVisibilityCreatePayloadType
 } from '@repo/schemas';
 import { addExperienceFaq, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -42,6 +39,7 @@ export const protectedAddExperienceFaqRoute = createCRUDRoute({
     },
     requestBody: FaqWithChannelVisibilityCreatePayloadSchema,
     responseSchema: ExperienceFaqSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_EXPERIENCE_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -67,17 +65,6 @@ export const protectedAddExperienceFaqRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // HOS-1275: mirrors the gastronomy twin (`gastronomy/protected/addFaq.ts`)
-        // and the gate `gastronomy/protected/patch.ts` mounted under HOS-1074.
-        // The vertical loader MUST come first — the global `entitlementMiddleware`
-        // has already put the ACCOMMODATION set in the context, and that set
-        // never carries an experience key, so a gate mounted without this ahead
-        // of it refuses every caller, including the ones whose plan grants
-        // exactly this.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

@@ -18,7 +18,7 @@
  * modules fully mocked.
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+import type { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError, setCalendarConnectionRevocationPort } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -158,12 +158,7 @@ function buildApp(
     attachTestErrorHandler(app);
     app.use((c, next) => {
         c.set('actor', actor);
-        c.set(
-            'userEntitlements',
-            new Set(options?.entitlements ?? [EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR])
-        );
-        c.set('userLimits', new Map<LimitKey, number>());
-        c.set('billingLoadFailed', false);
+        void options;
         return next();
     });
     for (const route of routes) {
@@ -371,7 +366,7 @@ describe('POST /:id/calendar-sync/connect-ical (protected)', () => {
         expect(mockFetchAndParseIcsFeed).not.toHaveBeenCalled();
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the owner lacks CAN_SYNC_EXTERNAL_CALENDAR', async () => {
+    it('preserves iCal connection without the old plan entitlement', async () => {
         const app = buildApp(ownerActor, [protectedCalendarConnectIcalRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/connect-ical`, {
             method: 'POST',
@@ -381,10 +376,8 @@ describe('POST /:id/calendar-sync/connect-ical (protected)', () => {
                 feedUrl: 'https://example.com/cal.ics'
             })
         });
-        expect(res.status).toBe(403);
-        const body = await res.json();
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-        expect(mockAssertOccupancyManageAccess).not.toHaveBeenCalled();
+        expect(res.status).toBe(201);
+        expect(mockAssertOccupancyManageAccess).toHaveBeenCalled();
     });
 
     it('propagates a FORBIDDEN from assertOccupancyManageAccess as HTTP 403 (non-owner)', async () => {
@@ -444,15 +437,15 @@ describe('POST /:id/calendar-sync/sync (protected, widened)', () => {
         expect(mockSyncAccommodationCalendar).not.toHaveBeenCalled();
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the owner lacks CAN_SYNC_EXTERNAL_CALENDAR', async () => {
+    it('preserves iCal sync without the old plan entitlement', async () => {
         const app = buildApp(ownerActor, [protectedCalendarSyncRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/sync`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ provider: 'booking' })
         });
-        expect(res.status).toBe(403);
-        expect(mockSyncAccommodationIcalCalendar).not.toHaveBeenCalled();
+        expect(res.status).toBe(201);
+        expect(mockSyncAccommodationIcalCalendar).toHaveBeenCalled();
     });
 });
 

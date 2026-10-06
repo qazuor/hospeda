@@ -11,34 +11,9 @@
  *                          node). All AI routes require login, so per-user is the
  *                          primary identity; per-IP is secondary.
  *
- * **Three-layer model** (outer-to-inner, cheapest first):
- *
- *   Layer 1 — Burst / rate-limit  (this file)
- *     Anti-burst guard operating in a seconds-to-minutes window.
- *     No DB access. Runs BEFORE the quota middleware.
- *
- *   Layer 2 — Monthly quota  (`middlewares/ai-quota.ts`)
- *     Counts successful AI calls per user per month against the plan limit.
- *     Requires a DB read (`ai_usage` table). Runs AFTER the rate-limit layer
- *     so cheap burst checks fire first.
- *
- *   Layer 3 — Cost ceiling  (future, USD-based hard stop)
- *     Aborts when accumulated token spend for the month would exceed a
- *     configured USD ceiling. Not yet implemented.
- *
- * **Mounting order in `options.middlewares`**:
- * ```ts
- * import { createAiRateLimitMiddlewares } from '../middlewares/ai-rate-limit';
- * import { createAiQuotaMiddleware }      from '../middlewares/ai-quota';
- *
- * const handler = createProtectedStreamingRoute({
- *   middlewares: [
- *     ...createAiRateLimitMiddlewares('text_improve'),  // Layer 1 (burst)
- *     createAiQuotaMiddleware('text_improve'),           // Layer 2 (monthly quota)
- *   ],
- *   streamHandler: async (c) => { ... },
- * });
- * ```
+ * During the billing transition, these burst guards remain active while the
+ * per-plan monthly quota is suspended. The configured USD cost ceiling and
+ * usage metering are enforced separately by each AI route and service.
  *
  * @module middlewares/ai-rate-limit
  */
@@ -47,6 +22,8 @@ import type { AiFeature } from '@repo/schemas';
 import type { MiddlewareHandler } from 'hono';
 import type { AppBindings } from '../types';
 import { createSlidingWindowPerUserRateLimit, getClientIp } from './rate-limit';
+
+// HOS-1352: transitional until V3 (HOS-1357), see PR: AI has burst limits and metering without a monthly plan quota.
 
 // ---------------------------------------------------------------------------
 // AiRateLimitOptions
@@ -57,7 +34,7 @@ import { createSlidingWindowPerUserRateLimit, getClientIp } from './rate-limit';
  *
  * All fields are optional. When omitted the anti-burst technical defaults
  * apply. These are intentionally conservative for burst protection and are
- * NOT product-visible quotas (those live in Layer 2 — `createAiQuotaMiddleware`).
+ * NOT product-visible monthly quotas.
  *
  * Routes that need different burst characteristics (e.g. a streaming endpoint
  * that naturally takes longer and must allow lower concurrency) may override
@@ -150,7 +127,6 @@ const DEFAULT_MAX_PER_IP = 60;
  * const handler = createProtectedStreamingRoute({
  *   middlewares: [
  *     ...createAiRateLimitMiddlewares('chat', { maxPerUser: 10, maxPerIp: 30 }),
- *     createAiQuotaMiddleware('chat'),
  *   ],
  *   streamHandler: async (c) => { ... },
  * });

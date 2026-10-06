@@ -16,7 +16,7 @@
  *
  * @see apps/api/src/routes/recommendations/protected/get.ts
  */
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+import { EntitlementKey } from '@repo/billing';
 import type { RecommendationFeedResponse } from '@repo/schemas';
 import { AccommodationTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -161,22 +161,13 @@ function injectActor(
     });
 }
 
-/** Inject entitlement set (billing healthy). */
-function injectEntitlements(app: Hono<AppBindings>, keys: EntitlementKey[]): void {
-    app.use((c, next) => {
-        c.set('userEntitlements', new Set(keys));
-        c.set('userLimits', new Map<LimitKey, number>());
-        c.set('billingLoadFailed', false);
-        return next();
-    });
-}
-
 /**
  * Build a test app for an authenticated actor with the given entitlement keys.
  * Middleware order: error handler → actor → entitlements → route (which itself
  * runs `protectedAuthMiddleware()` then `gateRecommendations()` before the handler).
  */
 function buildApp(entitlementKeys: EntitlementKey[]): Hono<AppBindings> {
+    void entitlementKeys;
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);
     injectActor(app, {
@@ -184,7 +175,6 @@ function buildApp(entitlementKeys: EntitlementKey[]): Hono<AppBindings> {
         roles: [RoleEnum.USER],
         permissions: [PermissionEnum.RECOMMENDATION_VIEW]
     });
-    injectEntitlements(app, entitlementKeys);
     app.route('/', getRecommendationsRoute);
     return app;
 }
@@ -194,7 +184,6 @@ function buildUnauthenticatedApp(): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);
     injectActor(app, createGuestActor());
-    injectEntitlements(app, [EntitlementKey.CAN_VIEW_RECOMMENDATIONS]);
     app.route('/', getRecommendationsRoute);
     return app;
 }
@@ -225,7 +214,7 @@ describe('GET /api/v1/protected/recommendations (SPEC-284 T-015)', () => {
     });
 
     describe('entitlement gate (CAN_VIEW_RECOMMENDATIONS)', () => {
-        it('returns 403 ENTITLEMENT_REQUIRED when the actor lacks the entitlement, without calling the service', async () => {
+        it('keeps recommendations available without the old plan entitlement', async () => {
             // Arrange
             const app = buildApp([]);
 
@@ -234,9 +223,9 @@ describe('GET /api/v1/protected/recommendations (SPEC-284 T-015)', () => {
             const body = await res.json();
 
             // Assert
-            expect(res.status).toBe(403);
-            expect(body.error.code).toBe(ServiceErrorCode.ENTITLEMENT_REQUIRED);
-            expect(getFeedMock).not.toHaveBeenCalled();
+            expect(res.status).toBe(200);
+            expect(body.data.items).toHaveLength(1);
+            expect(getFeedMock).toHaveBeenCalledTimes(1);
         });
     });
 

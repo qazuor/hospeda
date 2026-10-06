@@ -1,24 +1,4 @@
-/**
- * SPEC-205: Tests for the Host Dashboard API endpoint.
- *
- * Tests the protected aggregation endpoint `GET /api/v1/protected/host/dashboard`
- * including:
- * - Entitlement gate (VIEW_BASIC_STATS) — gate matrix (200 / 403 / 503 / staff)
- * - Mapped response shape (properties grouped by lifecycleState, plan info, unread)
- * - Plan fail-safe (billing disabled / no subscription → null)
- * - Plan populated + status/isTrial mapping for a trialing subscription
- * - Graceful degradation (getByOwner rejects → 200 with zeroed properties)
- *
- * The route wires REAL services (AccommodationService.getByOwner,
- * ConversationService.getUnreadCount) and the billing provider
- * (getQZPayBilling). Those are mocked here so the test asserts the
- * MAPPED shape, not stubbed defaults.
- *
- * Layer: Integration (minimal Hono app with entitlement middleware)
- *
- * @see apps/api/src/routes/host/protected/dashboard.ts
- */
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+/** Host dashboard property counts and unread conversations after plan removal. */
 import { LifecycleStatusEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -27,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../src/types';
 
 // ---------------------------------------------------------------------------
-// Mocks — the route calls real services + billing provider. We mock those
+// Mocks — the route calls real services. We mock those
 // so we can assert the MAPPED dashboard shape. `@repo/service-core` keeps its
 // real exports (ServiceError / RoleEnum are used by the entitlement middleware
 // and the route's error path) and only overrides the two service classes.
@@ -35,7 +15,6 @@ import type { AppBindings } from '../../../src/types';
 
 const getByOwnerMock = vi.fn();
 const getUnreadCountMock = vi.fn();
-const getQZPayBillingMock = vi.fn();
 
 vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
@@ -47,14 +26,6 @@ vi.mock('@repo/service-core', async (importActual) => {
         ConversationService: class {
             getUnreadCount = getUnreadCountMock;
         }
-    };
-});
-
-vi.mock('../../../src/middlewares/billing', async (importActual) => {
-    const actual = await importActual<typeof import('../../../src/middlewares/billing')>();
-    return {
-        ...actual,
-        getQZPayBilling: getQZPayBillingMock
     };
 });
 
@@ -73,12 +44,10 @@ function ok(accommodations: Array<{ id: string; lifecycleState: LifecycleStatusE
 beforeEach(() => {
     getByOwnerMock.mockReset();
     getUnreadCountMock.mockReset();
-    getQZPayBillingMock.mockReset();
 
-    // Default: no accommodations, no unread, billing disabled (null plan).
+    // Default: no accommodations and no unread conversations.
     getByOwnerMock.mockResolvedValue(ok([]));
     getUnreadCountMock.mockResolvedValue({ data: { count: 0 }, error: undefined });
-    getQZPayBillingMock.mockReturnValue(null);
 });
 
 afterEach(() => {
@@ -140,46 +109,15 @@ function injectHostActor(app: Hono<AppBindings>): void {
     });
 }
 
-/** Inject entitlement set (billing healthy). */
-function injectEntitlements(app: Hono<AppBindings>, keys: EntitlementKey[]): void {
-    app.use((c, next) => {
-        c.set('userEntitlements', new Set(keys));
-        c.set('userLimits', new Map<LimitKey, number>());
-        c.set('billingLoadFailed', false);
-        return next();
-    });
-}
-
-/** Inject billing failure state. */
-function injectBillingFailure(app: Hono<AppBindings>): void {
-    app.use((c, next) => {
-        c.set('billingLoadFailed', true);
-        return next();
-    });
-}
-
 /**
  * Build a test app with the given entitlement keys.
  * Middleware order: error handler → actor → entitlements → route.
  * Entitlements are set BEFORE the route is mounted so they run first.
  */
-function buildApp(entitlementKeys: EntitlementKey[]): Hono<AppBindings> {
+function buildApp(): Hono<AppBindings> {
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);
     injectHostActor(app);
-    injectEntitlements(app, entitlementKeys);
-    app.route('/', hostDashboardRoute);
-    return app;
-}
-
-/**
- * Build a test app with billing failure.
- */
-function buildBillingFailureApp(): Hono<AppBindings> {
-    const app = new Hono<AppBindings>();
-    attachTestErrorHandler(app);
-    injectHostActor(app);
-    injectBillingFailure(app);
     app.route('/', hostDashboardRoute);
     return app;
 }
@@ -189,77 +127,6 @@ function buildBillingFailureApp(): Hono<AppBindings> {
 // ---------------------------------------------------------------------------
 
 describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
-    describe('entitlement gate (VIEW_BASIC_STATS)', () => {
-        it('returns 200 when actor has VIEW_BASIC_STATS entitlement', async () => {
-            // Arrange
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-
-            // Assert
-            expect(res.status).toBe(200);
-            const body = await res.json();
-            expect(body.data).toBeDefined();
-            expect(body.data.properties).toBeDefined();
-            expect(body.data.properties.total).toBe(0);
-        });
-
-        it('returns 403 when actor lacks VIEW_BASIC_STATS entitlement', async () => {
-            // Arrange
-            const app = buildApp([EntitlementKey.PUBLISH_ACCOMMODATIONS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-
-            // Assert
-            expect(res.status).toBe(403);
-            const body = await res.json();
-            expect(body.error.code).toBe(ServiceErrorCode.ENTITLEMENT_REQUIRED);
-        });
-
-        it('returns 403 when actor has empty entitlements', async () => {
-            // Arrange
-            const app = buildApp([]);
-
-            // Act
-            const res = await app.request('/dashboard');
-
-            // Assert
-            expect(res.status).toBe(403);
-            const body = await res.json();
-            expect(body.error.code).toBe(ServiceErrorCode.ENTITLEMENT_REQUIRED);
-        });
-
-        it('returns 503 when billing service is unavailable', async () => {
-            // Arrange
-            const app = buildBillingFailureApp();
-
-            // Act
-            const res = await app.request('/dashboard');
-
-            // Assert
-            expect(res.status).toBe(503);
-            const body = await res.json();
-            expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
-        });
-    });
-
-    describe('staff bypass', () => {
-        it('allows staff actors through (entitlementMiddleware injects all keys)', async () => {
-            // When entitlementMiddleware runs with staff role, it injects ALL keys.
-            // We simulate that by injecting VIEW_BASIC_STATS.
-            // Arrange
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-
-            // Assert
-            expect(res.status).toBe(200);
-        });
-    });
-
     describe('properties mapping (grouped by lifecycleState)', () => {
         it('groups counts: 2 ACTIVE + 1 DRAFT + 1 ARCHIVED → total 4', async () => {
             // Arrange
@@ -271,7 +138,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                     { id: 'ar1', lifecycleState: LifecycleStatusEnum.ARCHIVED }
                 ])
             );
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -295,7 +162,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                     { id: 'i1', lifecycleState: LifecycleStatusEnum.INACTIVE }
                 ])
             );
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -312,7 +179,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
 
         it('scopes the owner query to the authenticated actor id', async () => {
             // Arrange
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             await app.request('/dashboard');
@@ -325,164 +192,6 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
         });
     });
 
-    describe('plan info (fail-safe)', () => {
-        it('returns plan = null when billing is disabled', async () => {
-            // Arrange — default mock has getQZPayBilling → null
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            // Assert
-            expect(body.data.plan).toBeNull();
-        });
-
-        it('returns plan = null when the customer has no active subscription', async () => {
-            // Arrange
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi.fn().mockResolvedValue([{ status: 'cancelled' }])
-                },
-                plans: { get: vi.fn() }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            // Assert
-            expect(body.data.plan).toBeNull();
-        });
-
-        it('populates plan for a COMPLIMENTARY subscription (H-70)', async () => {
-            // Arrange — a comp subscription is a real, entitlement-granting plan
-            // (SubscriptionStatusEnum.COMP). It was dropped by a hardcoded
-            // `status === 'active' || status === 'trialing'` find, so the panel
-            // reported plan: null and the dashboard read "Plan Gratuito" to an
-            // owner on a comped $18.000 plan.
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi
-                        .fn()
-                        .mockResolvedValue([{ status: 'comp', planId: 'plan-owner-premium' }])
-                },
-                plans: { get: vi.fn().mockResolvedValue({ name: 'Premium' }) }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            // Assert — a comp is live, so it maps to `active`; `isTrial` is false
-            // because a complimentary grant is not a trial.
-            expect(body.data.plan).toEqual({
-                slug: 'Premium',
-                name: 'Premium',
-                status: 'active',
-                isTrial: false
-            });
-        });
-
-        it('still returns plan = null for a genuinely non-granting status (H-70 does not over-reach)', async () => {
-            // Arrange — widening the find to include `comp` must not resurrect
-            // statuses that legitimately grant nothing.
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi
-                        .fn()
-                        .mockResolvedValue([{ status: 'expired', planId: 'plan-owner-premium' }])
-                },
-                plans: { get: vi.fn().mockResolvedValue({ name: 'Premium' }) }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            // Assert
-            expect(body.data.plan).toBeNull();
-        });
-
-        it('populates plan with mapped status + isTrial for a trialing subscription', async () => {
-            // Arrange
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi
-                        .fn()
-                        .mockResolvedValue([{ status: 'trialing', planId: 'plan-host-pro' }])
-                },
-                plans: { get: vi.fn().mockResolvedValue({ name: 'host-pro' }) }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            // Assert
-            expect(body.data.plan).toEqual({
-                slug: 'host-pro',
-                name: 'host-pro',
-                status: 'trial',
-                isTrial: true
-            });
-        });
-
-        it('maps an active subscription to status active / isTrial false', async () => {
-            // Arrange
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi
-                        .fn()
-                        .mockResolvedValue([{ status: 'active', planId: 'plan-host-basic' }])
-                },
-                plans: { get: vi.fn().mockResolvedValue({ name: 'host-basic' }) }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            // Assert
-            expect(body.data.plan).toEqual({
-                slug: 'host-basic',
-                name: 'host-basic',
-                status: 'active',
-                isTrial: false
-            });
-        });
-
-        it('degrades plan to null when the billing provider throws', async () => {
-            // Arrange
-            getQZPayBillingMock.mockReturnValue({
-                customers: {
-                    getByExternalId: vi.fn().mockRejectedValue(new Error('billing down'))
-                },
-                subscriptions: { getByCustomerId: vi.fn() },
-                plans: { get: vi.fn() }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            // Assert
-            expect(res.status).toBe(200);
-            expect(body.data.plan).toBeNull();
-        });
-    });
-
     describe('unread conversations', () => {
         it('returns the mapped count from getUnreadCount when accommodations exist', async () => {
             // Arrange
@@ -490,7 +199,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                 ok([{ id: 'a1', lifecycleState: LifecycleStatusEnum.ACTIVE }])
             );
             getUnreadCountMock.mockResolvedValue({ data: { count: 7 }, error: undefined });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -506,7 +215,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
 
         it('returns 0 without calling getUnreadCount when there are no accommodations', async () => {
             // Arrange — default getByOwner returns empty list
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -523,7 +232,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                 ok([{ id: 'a1', lifecycleState: LifecycleStatusEnum.ACTIVE }])
             );
             getUnreadCountMock.mockRejectedValue(new Error('conversation service down'));
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -539,7 +248,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
         it('returns 200 with zeroed properties when getByOwner rejects', async () => {
             // Arrange
             getByOwnerMock.mockRejectedValue(new Error('db down'));
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -562,7 +271,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
                 data: undefined,
                 error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'boom' }
             });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -582,7 +291,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
     describe('response shape', () => {
         it('returns the full HostDashboardResponse shape', async () => {
             // Arrange
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -615,7 +324,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
 
         it('returns non-negative integers for all numeric fields', async () => {
             // Arrange
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -633,7 +342,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
     describe('route registration', () => {
         it('route is mountable at the real API path', async () => {
             // Arrange
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+            const app = buildApp();
 
             // Act
             const res = await app.request('/dashboard');
@@ -642,177 +351,6 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             expect(res.status).toBe(200);
             const body = await res.json();
             expect(body.data.properties).toBeDefined();
-        });
-    });
-
-    // -----------------------------------------------------------------------
-    // HOS-1160 — the HOST dashboard reports the HOST's plan, not any plan
-    // -----------------------------------------------------------------------
-    //
-    // Found while measuring which sites treat `comp` specially. This resolver
-    // took the FIRST entitlement-granting subscription of ANY vertical, with no
-    // hydration and no domain filter — the only one of the four "which plan am
-    // I on" surfaces that did (`entitlements.ts`, `subscription.ts` and
-    // `trial.service.ts` all hydrate and match).
-    //
-    // It was reachable before this issue, with a paid commerce subscription.
-    // Opening comp to gastronomy and experiences adds a second way to reach it
-    // in the same release, which is why it is fixed here rather than filed as
-    // pre-existing.
-    //
-    // Rows carry `productDomain` explicitly so `hydrateSubscriptionProductDomains`
-    // short-circuits and the cases stay hermetic.
-    describe('HOS-1160: plan resolution is scoped to the host vertical', () => {
-        it("does NOT report a gastronomy subscription as the host's plan", async () => {
-            // Arrange — a dual owner: a comped restaurant, no accommodation plan.
-            // The honest answer is "no owner plan", which the frontend renders as
-            // Plan Gratuito. Reporting the restaurant here would tell a host they
-            // hold owner entitlements they never bought.
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi.fn().mockResolvedValue([
-                        {
-                            id: 'sub-gastro',
-                            status: 'comp',
-                            planId: 'plan-gastronomy-pro',
-                            productDomain: 'gastronomy'
-                        }
-                    ])
-                },
-                plans: { get: vi.fn().mockResolvedValue({ name: 'gastronomy-pro' }) }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            // Act
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            // Assert
-            expect(body.data.plan).toBeNull();
-        });
-
-        it("does NOT report an experience or partner subscription as the host's plan", async () => {
-            // Both remaining commerce-side verticals, so a fix that happens to
-            // exclude only gastronomy does not pass.
-            for (const domain of ['experience', 'partner'] as const) {
-                getQZPayBillingMock.mockReturnValue({
-                    customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                    subscriptions: {
-                        getByCustomerId: vi.fn().mockResolvedValue([
-                            {
-                                id: `sub-${domain}`,
-                                status: 'comp',
-                                planId: `plan-${domain}`,
-                                productDomain: domain
-                            }
-                        ])
-                    },
-                    plans: { get: vi.fn().mockResolvedValue({ name: domain }) }
-                });
-                const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-                const res = await app.request('/dashboard');
-                const body = await res.json();
-
-                expect(body.data.plan).toBeNull();
-            }
-        });
-
-        it("picks the accommodation subscription over another vertical's, whatever the order", async () => {
-            // The gastronomy row is FIRST, so a resolver that merely takes the
-            // first entitlement-granting row returns the wrong one. This is the
-            // shape the bug actually had.
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi.fn().mockResolvedValue([
-                        {
-                            id: 'sub-gastro',
-                            status: 'active',
-                            planId: 'plan-gastronomy-pro',
-                            productDomain: 'gastronomy'
-                        },
-                        {
-                            id: 'sub-accom',
-                            status: 'comp',
-                            planId: 'plan-owner-premium',
-                            productDomain: 'accommodation'
-                        }
-                    ])
-                },
-                plans: { get: vi.fn().mockResolvedValue({ name: 'owner-premium' }) }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            expect(body.data.plan).toEqual({
-                slug: 'owner-premium',
-                name: 'owner-premium',
-                status: 'active',
-                isTrial: false
-            });
-        });
-
-        it('still reports a legacy row with a NULL product_domain (accommodation fails OPEN)', async () => {
-            // The asymmetry has to survive the fix: the column post-dates most
-            // rows, so a null domain still counts as accommodation. Narrowing
-            // this to an equality check would blank the plan for every host whose
-            // subscription predates the column.
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi.fn().mockResolvedValue([
-                        {
-                            id: 'sub-legacy',
-                            status: 'comp',
-                            planId: 'plan-owner-premium',
-                            productDomain: null
-                        }
-                    ])
-                },
-                plans: { get: vi.fn().mockResolvedValue({ name: 'owner-premium' }) }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            expect(body.data.plan).toEqual({
-                slug: 'owner-premium',
-                name: 'owner-premium',
-                status: 'active',
-                isTrial: false
-            });
-        });
-
-        it('still reports a tourist subscription (HOS-1233 reclassification)', async () => {
-            // `tourist` is the customer's own consumer plan and resolves here on
-            // purpose — the same pair `entitlements.ts` and `loadEntitlements`
-            // use. A fix that narrowed this to accommodation alone would hand a
-            // paying tourist-VIP subscriber a null plan.
-            getQZPayBillingMock.mockReturnValue({
-                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
-                subscriptions: {
-                    getByCustomerId: vi.fn().mockResolvedValue([
-                        {
-                            id: 'sub-tourist',
-                            status: 'active',
-                            planId: 'plan-tourist-vip',
-                            productDomain: 'tourist'
-                        }
-                    ])
-                },
-                plans: { get: vi.fn().mockResolvedValue({ name: 'tourist-vip' }) }
-            });
-            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
-
-            const res = await app.request('/dashboard');
-            const body = await res.json();
-
-            expect(body.data.plan?.slug).toBe('tourist-vip');
         });
     });
 });

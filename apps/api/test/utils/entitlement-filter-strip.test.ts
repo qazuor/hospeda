@@ -17,7 +17,36 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { stripMarkdown } from '../../src/utils/entitlement-filter';
+import { maskLegacyPremiumFields, stripMarkdown } from '../../src/utils/entitlement-filter';
+
+describe('public fields during the billing transition', () => {
+    it('hides formerly plan-gated content without mutating the stored listing', () => {
+        const listing = {
+            id: 'listing-1',
+            description: 'Visit https://youtube.com/watch?v=abc123 today',
+            richDescription: '<p>Premium</p>',
+            richDescriptionI18n: { es: '<p>Premium</p>' },
+            isVerified: true,
+            hasWhatsapp: true,
+            contactInfo: { whatsapp: '123', email: 'owner@example.test' },
+            videos: [{ url: 'https://vimeo.com/123' }],
+            media: { featuredImage: 'photo', videos: [{ url: 'https://vimeo.com/123' }] }
+        };
+
+        const result = maskLegacyPremiumFields(listing);
+
+        expect(result).not.toHaveProperty('richDescription');
+        expect(result).not.toHaveProperty('richDescriptionI18n');
+        expect(result).not.toHaveProperty('videos');
+        expect(result.description).toBe('Visit today');
+        expect(result.isVerified).toBe(false);
+        expect(result.hasWhatsapp).toBe(false);
+        expect(result.contactInfo).toEqual({ email: 'owner@example.test' });
+        expect(result.media).toEqual({ featuredImage: 'photo', videos: [] });
+        expect(listing.isVerified).toBe(true);
+        expect(listing.media.videos).toHaveLength(1);
+    });
+});
 
 describe('stripMarkdown', () => {
     describe('canonical fixture (tasks.md:48)', () => {

@@ -16,19 +16,16 @@
  * mutation on the post/event twin, `test/routes/post-protected-media.test.ts`;
  * there is no commerce-side route test to re-run it against).
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     GastronomyMediaListOutputSchema,
     type GastronomyMediaReorderPayload,
-    GastronomyMediaReorderPayloadSchema,
-    ProductDomainEnum
+    GastronomyMediaReorderPayloadSchema
 } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -55,6 +52,7 @@ export const protectedReorderGastronomyMediaRoute = createCRUDRoute({
     },
     requestBody: GastronomyMediaReorderPayloadSchema,
     responseSchema: GastronomyMediaListOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_GASTRONOMY_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -78,12 +76,6 @@ export const protectedReorderGastronomyMediaRoute = createCRUDRoute({
         return { media: result.data?.media ?? [] };
     },
     options: {
-        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
-        // `addFaq.ts` for why the vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.EDIT_GASTRONOMY_INFO),
-            requireLiveSubscription(ProductDomainEnum.GASTRONOMY)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

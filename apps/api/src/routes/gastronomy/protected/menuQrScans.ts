@@ -5,9 +5,7 @@
  * GET /api/v1/protected/gastronomies/{id}/menu-qr/scans
  * ```
  *
- * Same gate, same middleware order, and the same ownership rule as
- * `menuQr.ts` in this directory — read that file's module doc for the full
- * rationale, which is not repeated here.
+ * The same ownership rule as `menuQr.ts` applies; the former plan gate is disabled during the billing transition.
  *
  * ## The one thing this route does differently from `menuQr.ts`: it never mints
  *
@@ -19,9 +17,9 @@
  * (`buildEmptyQrCodeScanStats`), never a 404 and never a freshly minted row.
  *
  * @module routes/gastronomy/protected/menuQrScans
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, QrCodeScanStatsSchema, QrCodeScanWindowSchema } from '@repo/schemas';
 import {
     buildEmptyQrCodeScanStats,
@@ -34,8 +32,7 @@ import {
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -104,8 +101,7 @@ export async function handleGetGastronomyMenuQrScans(
 /**
  * GET /api/v1/protected/gastronomies/:id/menu-qr/scans
  *
- * Premium-only: gated on `MENU_QR_SCAN_METRICS`, granted by `gastronomy-premium`
- * alone (HOS-1044 §6.5), same as `menuQr.ts`.
+ * Owner-only. The former plan entitlement was removed with HOS-1416.
  */
 export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
     method: 'get',
@@ -114,8 +110,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
     description:
         'Returns the total scans, a gap-filled daily series, and device/OS/language breakdowns ' +
         'for the venue’s menu QR over a rolling window (7d or 30d, default 30d). A venue with no ' +
-        'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only, ' +
-        'and requires the menu_qr_scan_metrics entitlement granted by the premium gastronomy plan.',
+        'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only.',
     tags: ['Gastronomy', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -124,6 +119,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
         window: QrCodeScanWindowSchema.default('30d')
     },
     responseSchema: QrCodeScanStatsSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MENU_QR_SCAN_METRICS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, _body, query) =>
         handleGetGastronomyMenuQrScans(ctx, params, query as Record<string, unknown>),
     options: {
@@ -132,10 +128,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
                 windowMs: 60_000,
                 max: MENU_QR_SCANS_RATE_LIMIT_MAX,
                 keyPrefix: 'menu-qr-scans:gastronomy'
-            }),
-            // Loader before checker (HOS-1074) — same as `menuQr.ts`.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MENU_QR_SCAN_METRICS)
+            })
         ]
     }
 });

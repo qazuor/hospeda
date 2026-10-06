@@ -21,8 +21,7 @@
  *   - The provider response is validated with `UploadResponseDataSchema.parse()`
  *     before being returned — malformed provider output fails with 500.
  */
-import { LimitKey } from '@repo/billing';
-import { accommodationMediaModel } from '@repo/db';
+
 import { generateGalleryId, MULTIPART_ENVELOPE_SLACK_BYTES } from '@repo/media';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import {
@@ -30,7 +29,6 @@ import {
     ENTITY_FOLDER_MAP,
     getGalleryCap,
     PermissionEnum,
-    ServiceErrorCode,
     UploadResponseDataSchema
 } from '@repo/schemas';
 import {
@@ -41,19 +39,18 @@ import {
     ExperienceService,
     GastronomyService,
     PostService,
-    PostSponsorService,
-    ServiceError
+    PostSponsorService
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { Sentry } from '../../../lib/sentry';
-import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
+
 import { incrementDomainCounter } from '../../../middlewares/metrics';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import { getEntityMaxFileSizeMb } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
-import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
+
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -149,6 +146,7 @@ export const adminUploadMediaRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.MEDIA_UPLOAD],
     responseSchema: UploadResponseDataSchema,
     successStatusCode: 200,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -425,64 +423,14 @@ export const adminUploadMediaRoute = createAdminRoute({
         //     no plan, or plan that doesn't cap photos) — that resolves naturally
         //     to "unlimited" via the standard `checkLimit` helper.
         if (entityType === 'accommodation' && role === 'gallery') {
-            const accommodation = entityResult.data as {
+            const _accommodation = entityResult.data as {
                 ownerId?: string | null;
             };
 
             // Only enforce when the actor is the owner. Admin override is by
             // design — see semantic note above.
-            if (accommodation.ownerId && accommodation.ownerId === actor.id) {
-                // SPEC-204 T-014: count accommodation_media rows from the
-                // relational table rather than composing the media object.
-                // The count is GALLERY-ONLY (`isFeatured: false`, HOS-791): the
-                // featured image is not a gallery item and does not consume a
-                // plan photo slot, so an owner on a 15-photo plan keeps 15
-                // gallery photos plus their featured one.
-                const { total: currentGalleryPhotoCount } =
-                    await accommodationMediaModel.findByAccommodation({
-                        accommodationId: entityId,
-                        state: 'visible',
-                        isFeatured: false
-                    });
-
-                const planLimitCheck = checkLimit({
-                    context: ctx,
-                    limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                    currentCount: currentGalleryPhotoCount
-                });
-
-                const threshold = calculateThreshold(
-                    currentGalleryPhotoCount,
-                    planLimitCheck.maxAllowed
-                );
-                const usagePercent = calculateUsagePercent(
-                    currentGalleryPhotoCount,
-                    planLimitCheck.maxAllowed
-                );
-
-                if (threshold === 'warning' || threshold === 'critical') {
-                    ctx.header(
-                        'X-Usage-Warning',
-                        `limitKey=${LimitKey.MAX_PHOTOS_PER_ACCOMMODATION};usage=${currentGalleryPhotoCount};max=${planLimitCheck.maxAllowed};threshold=${threshold}`
-                    );
-                }
-
-                if (!planLimitCheck.allowed) {
-                    apiLogger.warn(
-                        `Plan photo limit reached for accommodation ${entityId} (owner ${actor.id}): ${planLimitCheck.currentCount}/${planLimitCheck.maxAllowed}`
-                    );
-                    throw new ServiceError(
-                        ServiceErrorCode.LIMIT_REACHED,
-                        planLimitCheck.upgradeMessage ?? 'Photo limit reached',
-                        buildLimitReachedDetails({
-                            limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                            currentCount: planLimitCheck.currentCount,
-                            maxAllowed: planLimitCheck.maxAllowed,
-                            usagePercent
-                        })
-                    );
-                }
-            }
+            // The per-plan gallery photo cap (MAX_PHOTOS_PER_ACCOMMODATION) was
+            // removed with the legacy billing system (HOS-1416).
         }
 
         // ── 3d. Enforce per-entity gallery cap (SPEC-078-GAPS T-033 / GAP-078-071).

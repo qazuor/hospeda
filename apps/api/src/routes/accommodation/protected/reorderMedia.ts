@@ -9,20 +9,18 @@
  *
  * IMPORTANT: Must be mounted BEFORE `/:id/media/:mediaId` routes so Hono does
  * not resolve the literal path segment "reorder" as a `mediaId` UUID param.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationMediaListOutputSchema,
     type AccommodationMediaReorderPayload,
-    AccommodationMediaReorderPayloadSchema,
-    ProductDomainEnum
+    AccommodationMediaReorderPayloadSchema
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -56,6 +54,7 @@ export const protectedReorderMediaRoute = createCRUDRoute({
     },
     requestBody: AccommodationMediaReorderPayloadSchema,
     responseSchema: AccommodationMediaListOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -76,9 +75,5 @@ export const protectedReorderMediaRoute = createCRUDRoute({
     },
     options: {
         // SPEC-145 T-004 / SPEC-204: gallery mutation requires EDIT_ACCOMMODATION_INFO.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

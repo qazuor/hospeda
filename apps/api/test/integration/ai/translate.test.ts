@@ -2,7 +2,6 @@
  * Integration test for POST /api/v1/protected/ai/translate (SPEC-212 T-018).
  *
  * Architecture: same as text-improve.test.ts — sub-app envelope, stubbed
- * entitlement middleware (injects entitlements/limits/uo billingLoadFailed),
  * stubbed @repo/ai-core (records generateText calls, returns controlled data),
  * real actorMiddleware reading mock headers,
  * real createErrorHandler mapping ServiceError → HTTP status,
@@ -10,9 +9,7 @@
  *
  * ## Middleware chain exercised
  *
- *   actorMiddleware → protectedAuthMiddleware → entitlementMiddleware (stub)
- *   → rateLimitMiddlewares (real, disabled by HOSPEDA_TESTING_RATE_LIMIT='')
- *   → createAiQuotaMiddleware('translate') (real, uses stub context)
+ *   actorMiddleware → protectedAuthMiddleware → rateLimitMiddlewares
  *   → route handler (calls stubbed generateText, returns JSON)
  *
  * @module test/integration/ai/translate.test
@@ -66,18 +63,9 @@ const {
 }));
 
 /**
- * getMonthlyCallCount mock — controlled per-test.
- */
-const { getMonthlyCallCountReturn } = vi.hoisted(() => ({
-    getMonthlyCallCountReturn: { current: 0 as number }
-}));
-
-/**
  * Hoisted `recordAiUsage` spy (HOS-328).
  *
- * The route must write one `ai_usage` row per request — that row is the ONLY
- * thing `getMonthlyCallCount` counts, so without it the monthly counter can
- * never advance and `MAX_AI_TRANSLATE_PER_MONTH` is unenforceable.
+ * The route must write one `ai_usage` row per request so provider spend remains visible.
  */
 const { mockRecordAiUsage } = vi.hoisted(() => ({
     mockRecordAiUsage: vi.fn(async (_input: Record<string, unknown>) => undefined)
@@ -87,7 +75,7 @@ const { mockRecordAiUsage } = vi.hoisted(() => ({
  * When set, `persistTranslations` throws it. Drives the HOS-328 catch path:
  * the provider calls were already paid for, so the spend must still be recorded
  * — as `status: 'error'`, which keeps it visible to the cost ceiling without
- * charging the caller a quota unit for a request that visibly 500s.
+ * incorrectly reporting a successful translation.
  */
 const { nextPersistThrow } = vi.hoisted(() => ({
     nextPersistThrow: { current: undefined as unknown }
@@ -155,7 +143,6 @@ vi.mock('@repo/ai-core', () => {
             }),
             streamText: vi.fn()
         })),
-        getMonthlyCallCount: vi.fn(async () => getMonthlyCallCountReturn.current),
         recordAiUsage: mockRecordAiUsage,
         checkCostCeiling: vi.fn(async () => ({ allowed: true })),
         resolveFeatureConfig: vi.fn(async () => ({ enabled: true })),
@@ -175,31 +162,6 @@ vi.mock('@repo/ai-core', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Entitlement stub (same pattern as text-improve.test.ts)
-// ---------------------------------------------------------------------------
-
-const { currentEntitlementsForTest, currentLimitsForTest, currentBillingLoadFailedForTest } =
-    vi.hoisted(() => ({
-        currentEntitlementsForTest: { current: new Set<string>() },
-        currentLimitsForTest: { current: new Map<string, number>() },
-        currentBillingLoadFailedForTest: { current: false }
-    }));
-
-vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        entitlementMiddleware: () => {
-            return async (c: any, next: () => Promise<void>) => {
-                c.set('userEntitlements', currentEntitlementsForTest.current);
-                c.set('userLimits', currentLimitsForTest.current);
-                c.set('billingLoadFailed', currentBillingLoadFailedForTest.current);
-                await next();
-            };
-        }
-    };
-});
-
 /**
  * Holds the entity row that the mocked `getDb()` query builder resolves to.
  * `null` makes the builder resolve to `[]` (entity-not-found path); a row object
@@ -293,7 +255,6 @@ vi.mock('@repo/db', async () => {
 // ---------------------------------------------------------------------------
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { EntitlementKey, LimitKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
@@ -378,10 +339,6 @@ function resetMockState() {
         model: 'stub-model',
         finishReason: 'stop'
     };
-    getMonthlyCallCountReturn.current = 0;
-    currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TRANSLATE]);
-    currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200]]);
-    currentBillingLoadFailedForTest.current = false;
     // Happy-path default: the entity exists. The 404 test overrides to null.
     entityRowHolder.current = makeEntityRow();
     nextGenerateTextThrow.current = undefined;
@@ -429,69 +386,6 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
         });
 
         expect(res.status).toBe(401);
-    });
-
-    // -----------------------------------------------------------------------
-    // 403 ENTITLEMENT_REQUIRED — no translate entitlement
-    // -----------------------------------------------------------------------
-
-    it('returns 403 ENTITLEMENT_REQUIRED when user lacks ai_translate', async () => {
-        currentEntitlementsForTest.current = new Set<EntitlementKey>();
-        currentLimitsForTest.current = new Map<LimitKey, number>();
-
-        const res = await testApp.request(`${TEST_PATH}`, {
-            method: 'POST',
-            headers: makeMockActorHeaders(),
-            body: JSON.stringify({
-                entityType: 'accommodation',
-                entityId: '00000000-0000-4000-8000-000000000001'
-            })
-        });
-
-        expect(res.status).toBe(403);
-        const body = (await res.json()) as Record<string, unknown>;
-        expect(body.error).toBeDefined();
-    });
-
-    // -----------------------------------------------------------------------
-    // 403 LIMIT_REACHED — over monthly quota
-    // -----------------------------------------------------------------------
-
-    it('returns 403 LIMIT_REACHED when over monthly quota', async () => {
-        getMonthlyCallCountReturn.current = 200; // limit is 200
-
-        const res = await testApp.request(`${TEST_PATH}`, {
-            method: 'POST',
-            headers: makeMockActorHeaders(),
-            body: JSON.stringify({
-                entityType: 'accommodation',
-                entityId: '00000000-0000-4000-8000-000000000001'
-            })
-        });
-
-        expect(res.status).toBe(403);
-        const body = (await res.json()) as Record<string, unknown>;
-        const error = body.error as Record<string, unknown>;
-        expect(error?.code).toBe('LIMIT_REACHED');
-    });
-
-    // -----------------------------------------------------------------------
-    // 503 SERVICE_UNAVAILABLE — billing outage
-    // -----------------------------------------------------------------------
-
-    it('returns 503 SERVICE_UNAVAILABLE when billing load fails', async () => {
-        currentBillingLoadFailedForTest.current = true;
-
-        const res = await testApp.request(`${TEST_PATH}`, {
-            method: 'POST',
-            headers: makeMockActorHeaders(),
-            body: JSON.stringify({
-                entityType: 'accommodation',
-                entityId: '00000000-0000-4000-8000-000000000001'
-            })
-        });
-
-        expect(res.status).toBe(503);
     });
 
     // -----------------------------------------------------------------------
@@ -796,13 +690,8 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
     // -----------------------------------------------------------------------
     // HOS-328 — usage metering.
     //
-    // Regression guard: before HOS-328 this route never called `recordAiUsage`,
-    // so no `ai_usage` row was ever written for `translate`. Because
-    // `getMonthlyCallCount` derives the monthly counter by counting exactly
-    // those rows, the counter stayed at 0 forever and
-    // `MAX_AI_TRANSLATE_PER_MONTH` could never be reached. This route is the
-    // worst case of the three: one request fans out to one provider call per
-    // (field × target locale), so all of that spend was invisible.
+    // A request fans out to one provider call per field and target locale.
+    // Record the aggregate spend exactly once.
     // -----------------------------------------------------------------------
 
     describe('HOS-328 — records AI usage', () => {
@@ -821,9 +710,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             // The fan-out is real: this request made several provider calls.
             expect(generateTextCalls.length).toBeGreaterThan(1);
 
-            // ...and still cost the caller exactly ONE quota unit. The counter
-            // counts rows, so one row per provider call would make a request
-            // cost an unpredictable 1..N units.
+            // One row represents the entire request despite multiple provider calls.
             expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
 
             const recorded = mockRecordAiUsage.mock.calls[0]?.[0];
@@ -841,21 +728,14 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             expect(recorded?.completionTokens).toBe(30 * generateTextCalls.length);
         });
 
-        it('does not record usage when the request is rejected before the handler', async () => {
-            // At quota → the middleware rejects. The only row it may write is
-            // its own `quota_exceeded` bookkeeping row, never a success row.
-            getMonthlyCallCountReturn.current = 200;
-
+        it('does not record usage when validation rejects the request', async () => {
             const res = await testApp.request(`${TEST_PATH}`, {
                 method: 'POST',
                 headers: makeMockActorHeaders(),
-                body: JSON.stringify({
-                    entityType: 'accommodation',
-                    entityId: '00000000-0000-4000-8000-000000000001'
-                })
+                body: JSON.stringify({ entityType: 'accommodation' })
             });
 
-            expect(res.status).toBe(403);
+            expect(res.status).toBe(400);
             const successRows = mockRecordAiUsage.mock.calls.filter(
                 (call) => call[0]?.status === 'success'
             );
@@ -1013,8 +893,7 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
             // The provider calls are already paid for at this point, so the cost
             // must stay visible. But status must be 'error', not 'success':
             // HOS-190's Zod gate fails deterministically for a given entity, so
-            // charging a quota unit here would burn the caller's whole monthly
-            // quota on retries of the same poisoned entity.
+            // Failed persistence must still retain the provider spend record.
             nextPersistThrow.current = new Error('translationMeta failed validation');
 
             const res = await testApp.request(`${TEST_PATH}`, {

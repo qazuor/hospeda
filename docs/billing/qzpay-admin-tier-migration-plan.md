@@ -628,11 +628,13 @@ Realistic with debugging: **8-10h**. Single session feasible if focused.
 
 ## 9. Cross-references
 
+The billing implementation paths below are historical; HOS-1416 removed them.
+
 - [`docs/billing/ui-audit-2026.md`](./ui-audit-2026.md) — original Phase 1-4 plan (Phase 3 superseded by this doc)
-- [`apps/api/src/routes/billing/admin/index.ts`](../../apps/api/src/routes/billing/admin/index.ts) — current admin mount
+- `apps/api/src/routes/billing/admin/index.ts` — former admin mount
 - `apps/api/src/routes/billing/admin/subscription-cancel.ts` — deleted; lifecycle was moved to `qzpay-admin-hooks.ts`
-- [`apps/api/src/middlewares/billing-ownership.middleware.ts`](../../apps/api/src/middlewares/billing-ownership.middleware.ts) — stays for `/protected/`
-- [`apps/api/src/middlewares/billing-admin-guard.middleware.ts`](../../apps/api/src/middlewares/billing-admin-guard.middleware.ts) — stays for `/protected/`; new `/admin/` mount uses its own simpler check
+- `apps/api/src/middlewares/billing-ownership.middleware.ts` — former `/protected/` ownership guard
+- `apps/api/src/middlewares/billing-admin-guard.middleware.ts` — former `/protected/` admin guard
 - qzpay-hono repo: `/home/qazuor/projects/PACKAGES/qzpay/packages/hono/src/routes/admin.routes.ts`
 - qzpay-hono barrel: `/home/qazuor/projects/PACKAGES/qzpay/packages/hono/src/index.ts` (line 90 — missing `createAdminRoutes`)
 - PR #1204 — Phase 1 of UI remediation (already merged or open at time of writing)

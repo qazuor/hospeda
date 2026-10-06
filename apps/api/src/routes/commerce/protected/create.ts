@@ -68,7 +68,6 @@
  * @module routes/commerce/protected/create
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     ExperienceAdminCreateInputCheckedSchema,
     type ExperienceOwnerCreateInput,
@@ -84,12 +83,7 @@ import {
 } from '@repo/schemas';
 import { ExperienceService, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import {
-    enforceExperienceLimit,
-    enforceGastronomyLimit
-} from '../../../middlewares/commerce-limit-enforcement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -150,6 +144,7 @@ export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     requestBody: GastronomyOwnerCreateInputSchema,
     responseSchema: GastronomyProtectedSchema,
     successStatusCode: 201,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed PUBLISH_GASTRONOMY entitlement gate.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -160,25 +155,9 @@ export const protectedCreateGastronomyListingRoute = createProtectedRoute({
         // entitlement middleware and no limit enforcement at all, so seeding
         // `max_gastronomies: 1` would have done nothing whatsoever.
         //
-        // The order is load-bearing. The first middleware REPLACES `userLimits`
-        // with the gastronomy domain's limits — the global `entitlementMiddleware`
-        // loaded the accommodation domain's, which never carries this key — and
-        // the second one reads it. Drop the first, or reverse them, and the key
-        // is absent: `getRemainingLimit` answers `-1`, i.e. unlimited, and
-        // nothing anywhere raises.
-        //
-        // HOS-1074 closed the one gap this stack had against accommodation's:
-        // `requireEntitlement(PUBLISH_GASTRONOMY)` now sits between the loader
-        // and the limit check, mirroring
-        // `requireEntitlement(PUBLISH_ACCOMMODATIONS)` + `enforceAccommodationLimit()`
-        // (SPEC-145 T-004). The entitlement gate precedes the limit check on
-        // purpose: a caller who lacks the feature entirely gets a clean 403
-        // without the limit counter ever being queried for them.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.PUBLISH_GASTRONOMY),
-            enforceGastronomyLimit()
-        ]
+        // The per-plan listing cap and the PUBLISH_GASTRONOMY gate were removed
+        // with the legacy billing system (HOS-1416); the permission gate on the
+        // route factory remains.
     }
 });
 
@@ -262,16 +241,8 @@ export const protectedCreateExperienceListingRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => handleCreateExperienceListing(ctx, body),
     options: {
-        // See the gastronomy route above for why this trio exists and why the
-        // order matters. The two verticals are independent by construction in
-        // BOTH halves: this route only ever loads and reads `max_experiences`,
-        // so an owner sitting at their gastronomy cap is still allowed an
-        // experience (AC-13) — and it gates on `PUBLISH_EXPERIENCE`, so a
-        // gastronomy-only subscription grants nothing here (HOS-1074).
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.PUBLISH_EXPERIENCE),
-            enforceExperienceLimit()
-        ]
+        // The per-plan listing cap and the PUBLISH_EXPERIENCE gate were removed
+        // with the legacy billing system (HOS-1416); the permission gate on the
+        // route factory remains.
     }
 });

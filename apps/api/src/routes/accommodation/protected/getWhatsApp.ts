@@ -1,30 +1,12 @@
 /**
- * GET /api/v1/protected/accommodations/:id/whatsapp
- *
- * Returns the accommodation's WhatsApp contact number, gated by the CALLER's
- * (viewer's) billing plan (HOS-19):
- * - `CAN_CONTACT_WHATSAPP_DISPLAY` (owner-basico+; HOS-1224 retired the
- *   tourist-plus tier that used to be its entry point) → the number.
- * - `CAN_CONTACT_WHATSAPP_DIRECT` (tourist-vip+ / owner-pro+) → `direct: true`,
- *   which authorizes the web to render a one-click `wa.me` deep link.
- *
- * Why a dedicated per-user endpoint (not the public detail payload): the public
- * `GET /public/accommodations/:id` response is shared-cached by the CDN (cache
- * key carries no auth), so a per-viewer field there would leak the first
- * viewer's plan result to everyone. This route is on the protected tier
- * (no-store / per-user), so the viewer gate is cache-safe. The number is NEVER
- * returned to an unentitled caller.
- *
- * Uses a manual Hono route (not createProtectedRoute) to avoid the ownership
- * middleware that other protected accommodation routes apply via app.use() —
- * mirrors the sibling `contact.ts` route. The number is a VIEWER capability, so
- * ownership is intentionally NOT required: any authenticated tourist on the
- * right plan may read it.
+ * GET /api/v1/protected/accommodations/:id/whatsapp.
+ * Per-viewer response stays uncached; legacy paid contact data is hidden
+ * during the billing transition.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
-import { hasEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
@@ -103,11 +85,7 @@ app.get('/:id/whatsapp', async (c) => {
     const accommodation = result.data;
 
     // Guard: only expose contact data for active public accommodations.
-    if (
-        !accommodation ||
-        accommodation.lifecycleState !== 'ACTIVE' ||
-        accommodation.visibility !== 'PUBLIC'
-    ) {
+    if (accommodation?.lifecycleState !== 'ACTIVE' || accommodation.visibility !== 'PUBLIC') {
         return c.json(
             {
                 success: false,
@@ -123,10 +101,11 @@ app.get('/:id/whatsapp', async (c) => {
             ? contactInfo.whatsapp.trim()
             : null;
 
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — hide the former paid WhatsApp number.
     const payload = resolveWhatsAppPayload({
         rawNumber,
-        entitled: hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY),
-        canDirect: hasEntitlement(c, EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT)
+        entitled: false,
+        canDirect: false
     });
 
     apiLogger.debug(

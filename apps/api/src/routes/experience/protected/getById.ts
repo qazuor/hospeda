@@ -6,12 +6,7 @@
  * lifecycleState, richDescription, audit dates) are never leaked.
  */
 import { ExperienceProtectedSchema, PermissionEnum } from '@repo/schemas';
-import {
-    ExperienceService,
-    entityNotFoundError,
-    resolveOwnerGrantsExperienceDirections,
-    ServiceError
-} from '@repo/service-core';
+import { ExperienceService, entityNotFoundError, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -80,10 +75,9 @@ export const protectedGetExperienceByIdRoute = createProtectedRoute({
         // typed, or the form re-opens blank and the next save erases it. The
         // PUBLIC tier is where the value is withheld; this tier is the owner
         // reading their own row.
-        const [{ amenityIds, featureIds }, meetingPointDirectionsEnabled] = await Promise.all([
-            experienceService.loadJunctionIds(entity.id),
-            resolveOwnerGrantsExperienceDirections({ ownerId: entity.ownerId })
-        ]);
-        return { ...entity, amenityIds, featureIds, meetingPointDirectionsEnabled };
+        const { amenityIds, featureIds } = await experienceService.loadJunctionIds(entity.id);
+        // meetingPointDirectionsEnabled was a per-plan gate removed with the
+        // legacy billing system (HOS-1416); always enabled now.
+        return { ...entity, amenityIds, featureIds, meetingPointDirectionsEnabled: true };
     }
 });

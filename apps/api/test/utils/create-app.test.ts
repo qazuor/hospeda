@@ -59,22 +59,6 @@ vi.mock('../../src/middlewares/response-validator', () => ({
     responseValidatorMiddleware: vi.fn(() => vi.fn())
 }));
 
-vi.mock('../../src/middlewares/billing', () => ({
-    billingMiddleware: vi.fn(() => vi.fn())
-}));
-
-vi.mock('../../src/middlewares/billing-customer', () => ({
-    billingCustomerMiddleware: vi.fn(() => vi.fn())
-}));
-
-vi.mock('../../src/middlewares/entitlement', () => ({
-    entitlementMiddleware: vi.fn(() => vi.fn())
-}));
-
-vi.mock('../../src/middlewares/trial', () => ({
-    trialMiddleware: vi.fn(() => vi.fn())
-}));
-
 vi.mock('../../src/utils/logger.js', () => ({
     apiLogger: {
         log: vi.fn(),
@@ -216,12 +200,13 @@ describe('Create App Utility', () => {
             module.createApp();
 
             // Verify middleware registration order
-            // 24 middlewares: requestId, requestContext, visitorId, favicon, sentry, logger,
+            // 20 middlewares: requestId, requestContext, visitorId, favicon, sentry, logger,
             // cors, originVerification, securityHeaders, rateLimit, bodyLimit, compression,
             // validation, cache, metrics, responseFormatting, responseValidator,
-            // mockAuth (test env), authMiddleware, actor, billing, billingCustomer,
-            // entitlement, trial
-            expect(mockApp.use).toHaveBeenCalledTimes(24);
+            // mockAuth (test env), authMiddleware, actor.
+            // (billing, billingCustomer, entitlement and trial were removed with
+            // the legacy billing system, HOS-1416.)
+            expect(mockApp.use).toHaveBeenCalledTimes(20);
         });
 
         it('should register notFound handler', async () => {

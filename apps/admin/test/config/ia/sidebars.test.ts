@@ -16,7 +16,7 @@ import { sidebars } from '@/config/ia/sidebars';
 /** Input type for sidebar items (fields with .default() are optional). */
 type SidebarItemInput = z.input<typeof SidebarItemSchema>;
 
-// All canonical sidebar IDs (7 original + 4 HOST + 1 Marketing)
+// All canonical sidebar IDs (7 original + 3 HOST + 1 Marketing; HOS-1416 removed miFacturacionSidebar)
 const CANONICAL_SIDEBAR_IDS = [
     'inicioSidebar',
     'catalogoSidebar',
@@ -28,8 +28,7 @@ const CANONICAL_SIDEBAR_IDS = [
     'analisisSidebar',
     'miCuentaSidebar',
     'misAlojamientosSidebar',
-    'consultasSidebar',
-    'miFacturacionSidebar'
+    'consultasSidebar'
 ] as const;
 
 // All real PermissionEnum keys for gate validation
@@ -99,8 +98,8 @@ function collectHiddenItems(items: SidebarItemInput[]): SidebarItemInput[] {
 
 describe('sidebars', () => {
     describe('registry shape', () => {
-        it('should export exactly 12 sidebars (7 original + 4 HOST + 1 Marketing)', () => {
-            expect(Object.keys(sidebars)).toHaveLength(12);
+        it('should export exactly 11 sidebars (7 original + 3 HOST + 1 Marketing)', () => {
+            expect(Object.keys(sidebars)).toHaveLength(11);
         });
 
         it('should contain all canonical sidebar IDs', () => {
@@ -268,11 +267,6 @@ describe('sidebars', () => {
             expect(allLinks.map((l) => l.route)).toContain('/access/users');
         });
 
-        it('should contain /billing/plans somewhere', () => {
-            const allLinks = Object.values(sidebars).flatMap((s) => collectAllLinks(s.items));
-            expect(allLinks.map((l) => l.route)).toContain('/billing/plans');
-        });
-
         it('should contain /analytics/usage somewhere', () => {
             const allLinks = Object.values(sidebars).flatMap((s) => collectAllLinks(s.items));
             expect(allLinks.map((l) => l.route)).toContain('/analytics/usage');
@@ -289,13 +283,8 @@ describe('sidebars', () => {
     // -------------------------------------------------------------------------
 
     describe('miCuentaSidebar (T-039 / SPEC-156 T-026 + T-033)', () => {
-        it('should have exactly 7 items (profile, preferences, notifications, security, data, billing, tags)', () => {
-            expect(sidebars.miCuentaSidebar.items).toHaveLength(7);
-        });
-
-        it('should contain /account/billing link (SPEC-156 T-033)', () => {
-            const links = collectAllLinks(sidebars.miCuentaSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/account/billing');
+        it('should have exactly 6 items (profile, preferences, notifications, security, data, tags)', () => {
+            expect(sidebars.miCuentaSidebar.items).toHaveLength(6);
         });
 
         it('should parse against SidebarSchema', () => {
@@ -433,59 +422,6 @@ describe('sidebars', () => {
                         expect(
                             ALL_PERMISSION_KEYS,
                             `consultasSidebar references unknown permission key '${perm}'`
-                        ).toContain(perm);
-                    }
-                }
-            }
-        });
-    });
-
-    describe('miFacturacionSidebar (T-039)', () => {
-        it('should have exactly 2 items', () => {
-            expect(sidebars.miFacturacionSidebar.items).toHaveLength(2);
-        });
-
-        it('should parse against SidebarSchema', () => {
-            const result = SidebarSchema.safeParse(sidebars.miFacturacionSidebar);
-            expect(
-                result.success,
-                `miFacturacionSidebar failed: ${JSON.stringify(result.error?.issues)}`
-            ).toBe(true);
-        });
-
-        it('should contain /billing/subscriptions link', () => {
-            const links = collectAllLinks(sidebars.miFacturacionSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/billing/subscriptions');
-        });
-
-        it('should contain /billing/plans link', () => {
-            const links = collectAllLinks(sidebars.miFacturacionSidebar.items);
-            expect(links.map((l) => l.route)).toContain('/billing/plans');
-        });
-
-        it('should gate /billing/subscriptions with SUBSCRIPTION_VIEW', () => {
-            const first = sidebars.miFacturacionSidebar.items[0];
-            expect(first?.type).toBe('link');
-            if (first?.type === 'link' && first.permissions) {
-                expect(first.permissions).toContain('SUBSCRIPTION_VIEW');
-            }
-        });
-
-        it('should gate /billing/plans with PRICING_PLAN_VIEW', () => {
-            const second = sidebars.miFacturacionSidebar.items[1];
-            expect(second?.type).toBe('link');
-            if (second?.type === 'link' && second.permissions) {
-                expect(second.permissions).toContain('PRICING_PLAN_VIEW');
-            }
-        });
-
-        it('should have all permission gates using real PermissionEnum keys', () => {
-            for (const item of sidebars.miFacturacionSidebar.items) {
-                if ('permissions' in item && item.permissions !== undefined) {
-                    for (const perm of item.permissions) {
-                        expect(
-                            ALL_PERMISSION_KEYS,
-                            `miFacturacionSidebar references unknown permission key '${perm}'`
                         ).toContain(perm);
                     }
                 }

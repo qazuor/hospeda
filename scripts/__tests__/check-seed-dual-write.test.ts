@@ -131,17 +131,10 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         expect(result.stdout).toContain('OK (opt-out)');
     });
 
-    it('guards billing plan/limit config constants (023-025 precedent)', () => {
-        // Arrange
-        const changed = 'M\tpackages/billing/src/config/plans.config.ts';
-
-        // Act
-        const result = runGuard({ CHANGED_FILES_OVERRIDE: changed, MARKER_TEXT_OVERRIDE: '' });
-
-        // Assert
-        expect(result.exitCode).toBe(1);
-        expect(result.stdout).toContain('plans.config.ts');
-    });
+    // The "guards billing plan/limit config constants" case was retired with
+    // HOS-1416: `packages/billing/src/config` (the plan catalog those paths
+    // pointed at) was demolished, so BILLING_CONFIG_FILES is empty and a diff
+    // there can no longer occur.
 
     it('guards pointOfInterest JSON changes (HOS-113 T-027, R-5)', () => {
         // Arrange

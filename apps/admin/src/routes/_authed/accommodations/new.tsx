@@ -130,13 +130,11 @@ function AccommodationCreatePage() {
                                                 >
                                                     {t('admin-entities.actions.back')}
                                                 </Button>
-                                                <Button
-                                                    onClick={() =>
-                                                        navigate({ to: '/billing/plans' })
-                                                    }
-                                                >
-                                                    {t('admin-entities.actions.viewPlans')}
-                                                </Button>
+                                                {/* HOS-1416: the "Ver planes" CTA
+                                                    navigated to the deleted
+                                                    /billing/plans page and was
+                                                    removed with the legacy
+                                                    billing surface. */}
                                             </div>
                                         </div>
                                     </CardContent>

@@ -33,7 +33,7 @@
  * override this explicitly.
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -135,12 +135,7 @@ function buildApp(
     attachTestErrorHandler(app);
     app.use((c, next) => {
         c.set('actor', actor);
-        c.set(
-            'userEntitlements',
-            new Set(options?.entitlements ?? [EntitlementKey.CAN_USE_CALENDAR])
-        );
-        c.set('userLimits', new Map<LimitKey, number>());
-        c.set('billingLoadFailed', false);
+        void options;
         return next();
     });
     for (const route of routes) {
@@ -292,17 +287,15 @@ describe('POST /:id/occupancy (protected)', () => {
         expect(res.status).toBe(403);
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the owner lacks CAN_USE_CALENDAR (real route-level gate)', async () => {
+    it('preserves occupancy editing without the old plan entitlement', async () => {
         const app = buildApp(ownerActor, [protectedAddOccupancyRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({ accommodationId: ACCOMMODATION_ID, date: '2026-07-10' })
         });
-        expect(res.status).toBe(403);
-        const body = await res.json();
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-        expect(mockAddOccupancy).not.toHaveBeenCalled();
+        expect(res.status).toBe(201);
+        expect(mockAddOccupancy).toHaveBeenCalled();
     });
 
     it('succeeds when the owner holds CAN_USE_CALENDAR via HOST draft defaults (real route-level gate)', async () => {
@@ -391,7 +384,7 @@ describe('PATCH /:id/occupancy/batch (protected)', () => {
         expect(mockBatchToggleOccupancy).not.toHaveBeenCalled();
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the owner lacks CAN_USE_CALENDAR (real route-level gate)', async () => {
+    it('preserves occupancy editing without the old plan entitlement', async () => {
         const app = buildApp(ownerActor, [protectedBatchOccupancyRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/batch`, {
             method: 'PATCH',
@@ -402,10 +395,8 @@ describe('PATCH /:id/occupancy/batch (protected)', () => {
                 isBlocked: true
             })
         });
-        expect(res.status).toBe(403);
-        const body = await res.json();
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-        expect(mockBatchToggleOccupancy).not.toHaveBeenCalled();
+        expect(res.status).toBe(200);
+        expect(mockBatchToggleOccupancy).toHaveBeenCalled();
     });
 
     it('succeeds when the owner holds CAN_USE_CALENDAR (real route-level gate)', async () => {
@@ -479,15 +470,13 @@ describe('DELETE /:id/occupancy/:date (protected)', () => {
         expect(res.status).toBe(403);
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the owner lacks CAN_USE_CALENDAR (real route-level gate)', async () => {
+    it('preserves occupancy editing without the old plan entitlement', async () => {
         const app = buildApp(ownerActor, [protectedRemoveOccupancyRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/2026-07-10`, {
             method: 'DELETE'
         });
-        expect(res.status).toBe(403);
-        const body = await res.json();
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-        expect(mockRemoveOccupancy).not.toHaveBeenCalled();
+        expect(res.status).toBe(200);
+        expect(mockRemoveOccupancy).toHaveBeenCalled();
     });
 
     it('succeeds when the owner holds CAN_USE_CALENDAR (real route-level gate)', async () => {

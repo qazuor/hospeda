@@ -41,7 +41,6 @@ vi.mock(
 );
 
 import { LifecycleStatusEnum, type PermissionEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
-import * as serviceCore from '@repo/service-core';
 import { ExperienceService, GastronomyService } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { AppBindings } from '../../src/types';
@@ -123,10 +122,6 @@ const CASES = [
 
 beforeEach(() => {
     vi.restoreAllMocks();
-    // Reads `@repo/db` directly, which `test/setup.ts`'s generic mock cannot
-    // resolve — overridden rather than exercised, as every route-level test of
-    // this family does.
-    vi.spyOn(serviceCore, 'getCommerceListingSubscriptionStatuses').mockResolvedValue(new Map());
 });
 
 describe.each(CASES)('GET /protected/$label/mine — hasPublicPage', ({ service, importRoute }) => {

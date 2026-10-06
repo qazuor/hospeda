@@ -30,21 +30,12 @@
  * `validateFile`; only the PDF branch is new, and it is deliberately small:
  * a size cap plus a magic-byte check.
  *
- * ## Gated on `MANAGE_GASTRONOMY_MENU` (HOS-895 PR2)
- *
- * PR1 shipped this route ungated: the uploaded menu was how a `-basico` venue
- * showed a menu at all, and only the STRUCTURED carta (`PUT .../menu`) was the
- * paid capability. Owner decision (2026-09-02) reversed that — the attachment
- * is now gated the same as the structured carta, `-pro`/`-premium` only. A
- * `-basico` owner's fallback is now `menuUrl` alone; an already-uploaded file
- * from before this change is not deleted, but the PUBLIC page stops rendering
- * it for a non-entitled owner (see
- * `resolveOwnerGrantsGastronomyMenuManagement` in `@repo/service-core`) and
- * this route now refuses to REPLACE it.
+ * Menu file uploads run without the former plan entitlement during the billing transition.
  *
  * @module routes/gastronomy/protected/uploadMenuFile
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type GastronomyMenuFileKind,
     GastronomyMenuFileUploadOutputSchema,
@@ -53,8 +44,7 @@ import {
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import {
@@ -134,6 +124,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     },
     responseSchema: GastronomyMenuFileUploadOutputSchema,
     successStatusCode: 200,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         ctx.header('Cache-Control', 'no-store');
 
@@ -291,13 +282,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
                 windowMs: 60_000,
                 max: MENU_FILE_UPLOAD_RATE_LIMIT_MAX,
                 keyPrefix: 'upload:gastronomy-menu-file'
-            }),
-            // Loader before checker (HOS-1074) — the global entitlement
-            // middleware resolves the ACCOMMODATION set, which never carries a
-            // commerce key, so `commerceVerticalEntitlementMiddleware` MUST run
-            // before `requireEntitlement` on every commerce route.
-            commerceVerticalEntitlementMiddleware('gastronomy'),
-            requireEntitlement(EntitlementKey.MANAGE_GASTRONOMY_MENU)
+            })
         ]
     }
 });

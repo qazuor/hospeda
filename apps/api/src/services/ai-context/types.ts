@@ -35,26 +35,6 @@ export interface AssembleChatContextInput {
     readonly resolvedPrompt: string;
     /** The visitor's locale. */
     readonly locale: 'es' | 'en' | 'pt';
-    /**
-     * The entitlement keys the listing OWNER's plan grants, for the verticals
-     * whose context includes entitlement-gated content (HOS-400).
-     *
-     * Passed IN rather than resolved here so the assembler performs no billing
-     * lookup of its own: the route already resolved the owner's grants to decide
-     * whether the chat runs at all, and reading them twice would let the two
-     * answers come from different instants if a plan change landed mid-request.
-     *
-     * An assembler whose vertical has no gated content ignores it. An assembler
-     * that needs it MUST fail closed on an empty set — see
-     * `gastronomy-ai-context.ts`, where the carta, the menú del día and the venue
-     * agenda are each withheld unless the owner's plan grants them. Today every
-     * commerce tier that grants `AI_CHAT` happens to grant those too, but that is
-     * a fact about the current catalogue, not a guarantee: the day somebody
-     * splits the keys across tiers differently, an assembler that trusted the
-     * coincidence would put paid content in the prompt of an owner who is not
-     * paying for it.
-     */
-    readonly ownerEntitlements: ReadonlySet<string>;
 }
 
 /** Output contract shared by every context assembler. */

@@ -267,20 +267,11 @@ EXTERNAL_BASELINE_FILES=(
 )
 
 # Billing plan/limit/entitlement/addon/promo-code TS constants (023-025
-# precedent).
-BILLING_CONFIG_FILES=(
-    'packages/billing/src/config/plans.config.ts'
-    # HOS-1012 D-5: the three composed trial plans live in their own file (the
-    # 500-line rule; plans.config.ts is already well past it). Their rows are
-    # seeded exactly like every other plan's, so leaving this path off the list
-    # would reproduce the HOS-789 shape — a baseline edit that moves nothing in
-    # the guarded surface while staging and prod keep the old rows.
-    'packages/billing/src/config/trial-plans.config.ts'
-    'packages/billing/src/config/limits.config.ts'
-    'packages/billing/src/config/entitlements.config.ts'
-    'packages/billing/src/config/addons.config.ts'
-    'packages/billing/src/config/promo-codes.config.ts'
-)
+# precedent) — RETIRED with HOS-1416: the whole `packages/billing/src/config`
+# plan-catalog they guarded was demolished, and the plan source of truth is
+# now the database. The list is kept as an empty array so the shared loop in
+# is_guarded_path keeps one shape.
+BILLING_CONFIG_FILES=()
 
 # Matches make.ts / discover.ts's own NNNN-slug.ts convention.
 MIGRATION_FILE_PATTERN='^packages/seed/src/data-migrations/[0-9]{4}-.+\.ts$'
@@ -314,9 +305,11 @@ compute_changed_files() {
 
     # Diff roots: `data` (default-guarded surface + mixed folders), the two
     # inline-constant orchestrator dirs (`example`, `required` — so the named
-    # INLINE_CONSTANT_FILES show up in the diff), `billing/config`,
+    # INLINE_CONSTANT_FILES show up in the diff),
     # `ai-core/src/engine` (so EXTERNAL_BASELINE_FILES show up), and
     # `data-migrations` (to detect the accompanying migration).
+    # (The `packages/billing/src/config` root was retired with the demolished
+    # plan catalog in HOS-1416.)
     #
     # A path missing from this list is invisible to the guard NO MATTER what
     # is_guarded_path says about it — the diff never emits it, so the predicate
@@ -332,7 +325,6 @@ compute_changed_files() {
         'packages/seed/src/data' \
         'packages/seed/src/example' \
         'packages/seed/src/required' \
-        'packages/billing/src/config' \
         'packages/ai-core/src/engine' \
         'packages/seed/src/data-migrations'
 }

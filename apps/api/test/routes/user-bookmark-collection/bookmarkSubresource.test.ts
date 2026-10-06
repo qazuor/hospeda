@@ -53,16 +53,6 @@ vi.mock('../../../src/utils/logger', () => ({
  * Uses importOriginal so every OTHER gate exported by this module (imported
  * by unrelated routes in the app graph loaded via initApp()) stays real.
  */
-vi.mock('../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import('../../../src/middlewares/tourist-entitlements')>();
-    return {
-        ...actual,
-        gateCollections: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const COLLECTION_BASE = '/api/v1/protected/user-bookmark-collections';

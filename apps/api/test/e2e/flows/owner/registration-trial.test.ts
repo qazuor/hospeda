@@ -19,10 +19,8 @@
  * - Vitest (describe/it/expect patterns)
  */
 
-import { EntitlementKey, LimitKey } from '@repo/billing';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
-import { getQZPayBilling } from '../../../../src/middlewares/billing.js';
 import { TrialService } from '../../../../src/services/trial.service.js';
 import { testDb } from '../../setup/test-database.js';
 

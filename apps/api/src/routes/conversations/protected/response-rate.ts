@@ -12,10 +12,9 @@
  * @see SPEC-155 T-006
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { HostConversationResponseRateSchema, PermissionEnum } from '@repo/schemas';
 import { ConversationService, ServiceError } from '@repo/service-core';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -51,6 +50,7 @@ export const hostConversationResponseRateRoute = createProtectedRoute({
     tags: ['Conversations'],
     requiredPermissions: [PermissionEnum.CONVERSATION_VIEW_OWN],
     responseSchema: HostConversationResponseRateSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx) => {
         const actor = getActorFromContext(ctx);
 
@@ -63,10 +63,7 @@ export const hostConversationResponseRateRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-006: VIEW_BASIC_STATS gate — response-rate KPI is a basic
-        // stats feature granted on owner-basico (and above) and complex-basico
-        // (and above). Tourists never see this route.
-        middlewares: [requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)],
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

@@ -3,14 +3,13 @@
  * Returns a single gastronomy listing projected through GastronomyPublicSchema.
  * Returns null (404) when the listing is not found or not publicly visible.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { GastronomyPublicSchema } from '@repo/schemas';
 import {
     GastronomyService,
     getGastronomyDailySpecials,
     getGastronomyEvents,
     getGastronomyMenu,
-    resolveOwnerGastronomyPlanEntitlementSet,
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -49,6 +48,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         slug: z.string().min(1).max(255)
     },
     responseSchema: GastronomyPublicSchema.nullable(),
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.getBySlug(actor, params.slug as string);
@@ -118,46 +118,33 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // reads of the same subscription if a plan change landed mid-render,
         // publishing one paid feature while withholding another for no reason a
         // reader could see. See `resolveOwnerGastronomyPlanEntitlements`.
-        const [
-            amenitiesData,
-            featuresData,
-            menuResult,
-            eventsResult,
-            dailySpecialsResult,
-            ownerPlanEntitlements
-        ] = await Promise.all([
-            fetchGastronomyAmenities(gastronomy.id),
-            fetchGastronomyFeatures(gastronomy.id),
-            getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
-            getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
-            getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today }),
-            resolveOwnerGastronomyPlanEntitlementSet({ ownerId: gastronomy.ownerId })
-        ]);
+        const [amenitiesData, featuresData, menuResult, eventsResult, dailySpecialsResult] =
+            await Promise.all([
+                fetchGastronomyAmenities(gastronomy.id),
+                fetchGastronomyFeatures(gastronomy.id),
+                getGastronomyMenu(model, { gastronomyId: gastronomy.id }),
+                getGastronomyEvents(model, { gastronomyId: gastronomy.id }),
+                getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today })
+            ]);
 
+        // Until replacement coverage is available, formerly plan-gated menu,
+        // events and daily-specials data stay hidden on public reads.
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_MENU
-            ),
-            ownerGrantsMenuItemPhotos: ownerPlanEntitlements.has(EntitlementKey.MENU_ITEM_PHOTOS),
-            ownerGrantsMenuTranslations: ownerPlanEntitlements.has(
-                EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU
-            )
+            ownerGrantsMenuManagement: false,
+            ownerGrantsMenuItemPhotos: false,
+            ownerGrantsMenuTranslations: false
         });
 
         const eventsGate = applyGastronomyVenueEventsGate({
             events: eventsResult.error ? [] : eventsResult.data.events,
-            ownerGrantsVenueEvents: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_EVENTS
-            )
+            ownerGrantsVenueEvents: false
         });
 
         const dailySpecialsGate = applyGastronomyDailySpecialsGate({
             dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
-            ownerGrantsDailySpecial: ownerPlanEntitlements.has(
-                EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL
-            )
+            ownerGrantsDailySpecial: false
         });
 
         return {

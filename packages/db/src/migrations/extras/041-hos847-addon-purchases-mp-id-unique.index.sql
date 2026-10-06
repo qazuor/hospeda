@@ -80,6 +80,14 @@
 --   true — it just is not true today.
 -- =============================================================================
 
-CREATE UNIQUE INDEX IF NOT EXISTS billing_addon_purchases_mp_id_uniq
-    ON billing_addon_purchases (mp_subscription_id)
-    WHERE mp_subscription_id IS NOT NULL;
+DO $legacy$
+BEGIN
+    IF to_regclass('public.billing_addon_purchases') IS NOT NULL THEN
+        EXECUTE $index$
+            CREATE UNIQUE INDEX IF NOT EXISTS billing_addon_purchases_mp_id_uniq
+                ON billing_addon_purchases (mp_subscription_id)
+                WHERE mp_subscription_id IS NOT NULL
+        $index$;
+    END IF;
+END
+$legacy$;

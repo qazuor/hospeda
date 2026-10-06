@@ -42,6 +42,9 @@
 --   writer. CREATE UNIQUE INDEX IF NOT EXISTS is itself idempotent.
 -- =============================================================================
 
+DO $legacy$
+BEGIN
+IF to_regclass('public.billing_subscription_events') IS NOT NULL THEN
 CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_subscription_events_trial_series
     ON billing_subscription_events (subscription_id, event_type)
     WHERE event_type IN (
@@ -55,3 +58,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_subscription_events_trial_series
         'TRIAL_SERIES_NOTIF_POST_30D',
         'TRIAL_SERIES_NOTIF_POST_60D'
     );
+END IF;
+END
+$legacy$;

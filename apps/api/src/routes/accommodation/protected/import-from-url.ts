@@ -28,24 +28,18 @@
  * A per-user sliding window of `HOSPEDA_IMPORT_RATE_LIMIT_RPH` requests/hour
  * (default 10) returns 429 + `Retry-After` on excess.
  *
- * ## AI quota (Strategy B only — degrade-clean)
+ * ## AI extraction
  *
- * Strategy B (AI-assisted extraction) only runs for sparse generic pages. The
- * AI entitlement/quota gate is therefore applied lazily INSIDE the injected
- * `aiExtract` port — not as a blanket route middleware — so imports from
- * official APIs (Airbnb/Booking/Google/MercadoLibre) and JSON-LD-rich pages
- * are never blocked for hosts on AI-less plans. When the host lacks the
- * `accommodation_import` entitlement or has exhausted the monthly quota, the
- * port returns `null` (the pipeline degrades to a structured-only partial) and
- * the handler appends an informational notice so the host knows AI extraction
- * was skipped for plan/quota reasons. Successful AI calls are metered via
- * `recordAiUsage` so the monthly quota actually increments.
+ * Strategy B (AI-assisted extraction) only runs for sparse generic pages.
+ * AI extraction runs without a plan entitlement or monthly quota during the
+ * billing transition.
  *
  * @module apps/api/routes/accommodation/protected/import-from-url
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import type { AiService } from '@repo/ai-core';
-import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
+import { recordAiUsage } from '@repo/ai-core';
 import { AnalyticsEvents } from '@repo/analytics';
 import { ExchangeRateModel } from '@repo/db';
 import {
@@ -53,6 +47,7 @@ import {
     type AccommodationImportRequest,
     AccommodationImportRequestSchema,
     AccommodationImportResponseSchema,
+    type AiFeature,
     type LanguageEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -70,16 +65,7 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { captureServerAnalyticsEvent } from '../../../lib/posthog';
-import {
-    AI_ENTITLEMENT_BY_FEATURE,
-    AI_LIMIT_BY_FEATURE,
-    type QuotaGatedAiFeature
-} from '../../../middlewares/ai-quota';
-import {
-    entitlementMiddleware,
-    getRemainingLimit,
-    hasEntitlement
-} from '../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { createConfiguredAiService } from '../../../services/ai-service.factory';
 import { getValidMercadoLibreToken } from '../../../services/mercadolibre-oauth/ml-token.service';
@@ -100,8 +86,8 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-/** AI feature key for prompt resolution, provider routing, and quota metering. */
-const FEATURE: QuotaGatedAiFeature = 'accommodation_import';
+/** AI feature key for prompt resolution, provider routing, and usage metering. */
+const FEATURE: AiFeature = 'accommodation_import';
 
 /** Locale applied when the request omits one (Argentine market default). */
 const DEFAULT_LOCALE: LanguageEnum = 'es';
@@ -135,18 +121,17 @@ type GenerateObjectSchema = Parameters<AiService['generateObject']>[1];
 // ---------------------------------------------------------------------------
 
 /**
- * Builds the `aiExtract` port wired with the lazy AI entitlement/quota gate.
+ * Builds the `aiExtract` port.
  *
  * The returned function is invoked by `GenericAdapter` ONLY when Strategy B is
  * needed (sparse structured extraction). It:
- *   1. Degrades silently if billing context failed to load (cannot account for
- *      the spend) — no host-facing blame.
- *   2. Sets `gate.blockedReason` and returns `null` when the host lacks the
- *      `accommodation_import` entitlement or the monthly quota is exhausted.
- *   3. Otherwise calls the AI provider, meters the successful call, and maps the
+ *   1. Calls the AI provider, meters the successful call, and maps the
  *      structured output into a {@link RawExtraction}.
- *   4. Returns `null` (degrading) on any provider/model error — that is a
- *      server-side condition, not the host's plan.
+ *   2. Returns `null` (degrading) on any provider/model error — that is a
+ *      server-side condition.
+ *
+ * (The lazy entitlement/quota gate was removed with the legacy billing system,
+ * HOS-1416.)
  *
  * @param deps - The Hono context, the authenticated actor, and the gate flag.
  * @returns The `aiExtract` port for {@link ImportContext}.
@@ -156,45 +141,9 @@ export function buildImportAiExtract(deps: {
     actor: Actor;
     gate: AiGateState;
 }): (input: { text: string; locale?: string }) => Promise<RawExtraction | null> {
-    const { c, actor, gate } = deps;
+    const { actor } = deps;
 
     return async ({ text, locale }) => {
-        // 1. Cannot verify billing → do not spend AI we cannot account for.
-        if (c.get('billingLoadFailed')) {
-            return null;
-        }
-
-        // 2a. Entitlement gate (degrade clean + inform the host).
-        if (!hasEntitlement(c, AI_ENTITLEMENT_BY_FEATURE[FEATURE])) {
-            gate.blockedReason = 'entitlement';
-            return null;
-        }
-
-        // 2b. Plan limit value: 0 = disabled, -1 = unlimited, N = monthly cap.
-        // limit === 0 means the entitlement is present but the plan grants zero
-        // AI imports — from the host's point of view their plan does not enable
-        // AI extraction, so the entitlement notice ("not included in your plan")
-        // is the correct user-facing message (same as lacking the entitlement).
-        const limit = getRemainingLimit(c, AI_LIMIT_BY_FEATURE[FEATURE]);
-        if (limit === 0) {
-            gate.blockedReason = 'entitlement';
-            return null;
-        }
-
-        // 2c. Monthly quota check (skip the count query when unlimited).
-        if (limit !== -1) {
-            const count = await getMonthlyCallCount({
-                userId: actor.id,
-                feature: FEATURE,
-                now: new Date()
-            });
-            if (count >= limit) {
-                gate.blockedReason = 'quota';
-                return null;
-            }
-        }
-
-        // 3. Cleared to call the model.
         const startedAt = Date.now();
         try {
             const aiService = await createConfiguredAiService();
@@ -328,8 +277,6 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
     successStatusCode: 200,
     options: {
         middlewares: [
-            // Load entitlements/limits/billingLoadFailed so the lazy AI gate can read them.
-            entitlementMiddleware(),
             // Per-user 10/h (configurable) sliding window → 429 + Retry-After on excess.
             createSlidingWindowPerUserRateLimit({
                 windowMs: RATE_LIMIT_WINDOW_MS,
@@ -338,6 +285,7 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             })
         ]
     },
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed quota check.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

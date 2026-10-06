@@ -102,7 +102,7 @@ The example file documents which command needs which value.
 binary. The active target is resolved using the following policy:
 
 **Write/destructive commands** (`explicit-required` policy — redeploy,
-exec, psql, billing-test-link, billing-test-reset, db-restore, db-migrate,
+exec, psql, db-restore, db-migrate,
 db-seed, db-seed-test-users, db-superadmin-pass, app-restart, restart,
 r2-lifecycle, env-set, env-delete, cron-trigger):
 

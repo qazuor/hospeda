@@ -47,7 +47,6 @@ const CANONICAL_MODULE = join('lib', 'billing', 'limit-addon-offer.ts');
  */
 const LIMIT_DRIVEN_SURFACES = [
     join('lib', 'billing-limit-error.ts'),
-    join('lib', 'host', 'publish-precheck-panel-content.ts'),
     join('components', 'account', 'PlanUsageSection.client.tsx')
 ] as const;
 
@@ -135,4 +134,11 @@ describe('HOS-723 guard — one limit → add-on resolution, not one per surface
             ).toContain('resolveLimitAddonOffer');
         });
     }
+
+    it('the publish precheck offers no add-on until effective limits exist', () => {
+        const source = readCode(join('lib', 'host', 'publish-precheck-panel-content.ts'));
+        expect(source).not.toContain('addonSlugForLimit');
+        expect(source).not.toContain('buildAddonFocusUrl');
+        expect(source).not.toContain('resolveLimitAddonOffer');
+    });
 });

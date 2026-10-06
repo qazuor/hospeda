@@ -190,7 +190,7 @@ describe('publicListAccommodationsRoute — SPEC-291 Phase 3b isVerified badge g
         mockResolveSingle.mockResolvedValue([]);
     });
 
-    it('preserves isVerified=true when owner HAS HAS_VERIFICATION_BADGE', async () => {
+    it('hides isVerified=true even when owner HAS HAS_VERIFICATION_BADGE', async () => {
         mockResolveBatch.mockResolvedValue(
             new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
         );
@@ -211,7 +211,7 @@ describe('publicListAccommodationsRoute — SPEC-291 Phase 3b isVerified badge g
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
         expect(items).toHaveLength(1);
-        expect(items[0]?.isVerified).toBe(true);
+        expect(items[0]?.isVerified).toBe(false);
     });
 
     it('forces isVerified=false when owner LACKS HAS_VERIFICATION_BADGE', async () => {
@@ -294,53 +294,12 @@ describe('publicListAccommodationsRoute — SPEC-291 Phase 3b isVerified badge g
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
         expect(items).toHaveLength(3);
-        // acc-a: owner has badge + verified → true
-        expect(items.find((i) => i.id === 'acc-a')?.isVerified).toBe(true);
+        // acc-a: formerly entitled badge is hidden until new coverage exists
+        expect(items.find((i) => i.id === 'acc-a')?.isVerified).toBe(false);
         // acc-b: owner lacks badge + verified → false
         expect(items.find((i) => i.id === 'acc-b')?.isVerified).toBe(false);
         // acc-c: owner has badge but not verified → false
         expect(items.find((i) => i.id === 'acc-c')?.isVerified).toBe(false);
-    });
-
-    it('calls the batch resolver ONCE per request with the unique owner IDs', async () => {
-        mockResolveBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
-        );
-        // Three items that share the same owner
-        mockSearch.mockResolvedValue({
-            data: {
-                items: [
-                    makeAccommodation({
-                        id: 'acc-x1',
-                        ownerId: OWNER_WITH_BADGE,
-                        isVerified: true
-                    }),
-                    makeAccommodation({
-                        id: 'acc-x2',
-                        ownerId: OWNER_WITH_BADGE,
-                        isVerified: true
-                    }),
-                    makeAccommodation({
-                        id: 'acc-x3',
-                        ownerId: OWNER_WITH_BADGE,
-                        isVerified: false
-                    })
-                ],
-                total: 3
-            },
-            error: null
-        });
-
-        const app = await buildApp();
-        const res = await app.request('/');
-        expect(res.status).toBe(200);
-
-        // The batch resolver must be called exactly once
-        expect(mockResolveBatch).toHaveBeenCalledTimes(1);
-        // And with the unique owner IDs (deduplicated)
-        const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
-        expect(calledWith).toHaveLength(1);
-        expect(calledWith[0]).toBe(OWNER_WITH_BADGE);
     });
 
     it('forces isVerified=false when batch resolver returns empty map (all owners absent — fail-closed)', async () => {

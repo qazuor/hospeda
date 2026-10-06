@@ -75,6 +75,7 @@ const FAIL_CLOSED_CONFIG: CheckoutConfig = {
  */
 export async function fetchCheckoutConfig(): Promise<CheckoutConfig> {
     try {
+        // HOS-1352: transitional until V2 (HOS-1356), see PR — public checkout-config endpoint no longer exists.
         const response = await fetch(`${getApiUrl()}/api/v1/public/billing/checkout-config`, {
             headers: { Accept: 'application/json' }
             // No credentials needed — this is a public, unauthenticated endpoint.

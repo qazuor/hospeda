@@ -3,17 +3,10 @@
  * Remove an existing FAQ from an accommodation
  */
 
-import { EntitlementKey } from '@repo/billing';
-import {
-    AccommodationFaqIdSchema,
-    AccommodationIdSchema,
-    DeleteResultSchema,
-    ProductDomainEnum
-} from '@repo/schemas';
+import { AccommodationFaqIdSchema, AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -35,6 +28,7 @@ export const removeFaqRoute = createCRUDRoute({
         faqId: AccommodationFaqIdSchema
     },
     responseSchema: DeleteResultSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const { id, faqId } = params;
         const actor = getActorFromContext(ctx);
@@ -54,15 +48,6 @@ export const removeFaqRoute = createCRUDRoute({
         };
     },
     options: {
-        // HOS-1275: DELETING content is mutating it. These two routes carried no
-        // entitlement gate at all — not in commerce, and not in accommodation
-        // either, which PR #3299's own write-up missed because it only surveyed
-        // commerce. Wired here with the same pair every sibling content route
-        // carries, so the six of them stop being the exception that the next
-        // change to the EDIT_* keys would silently leave behind.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

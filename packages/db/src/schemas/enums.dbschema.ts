@@ -3,7 +3,6 @@ import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
     AuthProviderEnum,
-    BillingIntervalEnum,
     CalendarSyncStatusEnum,
     ClientTypeEnum,
     ConversationStatusEnum,
@@ -22,7 +21,6 @@ import {
     HostTradeUsageChannelEnum,
     HostTradeUsageDeclaredByEnum,
     HostTradeUsageStatusEnum,
-    InvoiceStatusEnum,
     LifecycleStatusEnum,
     MessageSenderTypeEnum,
     MessageStatusEnum,
@@ -44,7 +42,6 @@ import {
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum,
-    PaymentStatusEnum,
     PermissionCategoryEnum,
     PermissionEffectEnum,
     PermissionEnum,
@@ -60,7 +57,6 @@ import {
     QrScanDeviceTypeEnum,
     QrScanOsEnum,
     RecurrenceTypeEnum,
-    RefundStatusEnum,
     RoleEnum,
     RoleGrantActionEnum,
     SocialApprovalStatusEnum,
@@ -75,7 +71,6 @@ import {
     SponsorshipStatusEnum,
     SponsorshipTargetTypeEnum,
     SponsorshipTierEnum,
-    SubscriptionStatusEnum,
     TagColorEnum,
     TagTypeEnum,
     TouristAudienceEnum,
@@ -293,21 +288,9 @@ export const TouristAudiencePgEnum = pgEnum(
     enumToTuple(TouristAudienceEnum)
 );
 
-export const BillingIntervalPgEnum = pgEnum(
-    'billing_interval_enum',
-    enumToTuple(BillingIntervalEnum)
-);
-
-export const SubscriptionStatusPgEnum = pgEnum(
-    'subscription_status_enum',
-    enumToTuple(SubscriptionStatusEnum)
-);
-
-export const PaymentStatusPgEnum = pgEnum('payment_status_enum', enumToTuple(PaymentStatusEnum));
-
-export const InvoiceStatusPgEnum = pgEnum('invoice_status_enum', enumToTuple(InvoiceStatusEnum));
-
-export const RefundStatusPgEnum = pgEnum('refund_status_enum', enumToTuple(RefundStatusEnum));
+// HOS-1416: the legacy qzpay billing pg enums (billing_interval_enum,
+// subscription_status_enum, payment_status_enum, invoice_status_enum,
+// refund_status_enum) were removed together with the billing tables they typed.
 
 export const ConversationStatusPgEnum = pgEnum(
     'conversation_status_enum',

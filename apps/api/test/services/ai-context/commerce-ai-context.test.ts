@@ -3,10 +3,9 @@
  *
  * Exercises the PURE builders only — no DB, no billing. The async wrappers are
  * thin I/O around these, and the properties worth defending (the owner-data
- * fence, the entitlement gates, the list rendering) all live in the pure half.
+ * fence and list rendering) all live in the pure half.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { describe, expect, it } from 'vitest';
 import {
     buildExperienceMarkdownContext,
@@ -100,46 +99,7 @@ function expectMarkersAlternate(block: string): void {
 // ---------------------------------------------------------------------------
 
 describe('buildGastronomyMarkdownContext', () => {
-    describe('when the owner plan grants the carta', () => {
-        it('should render menu items with their section and price', () => {
-            const block = buildGastronomyMarkdownContext(
-                VENUE,
-                [],
-                [
-                    {
-                        sectionName: 'Principales',
-                        name: 'Bife de chorizo',
-                        description: 'Con guarnición',
-                        priceCents: 1250000,
-                        isAvailable: true
-                    }
-                ]
-            );
-
-            expect(block).toContain('#### Principales');
-            expect(block).toContain('**Bife de chorizo** — $12500');
-        });
-
-        it('should mark an unavailable dish rather than omitting it', () => {
-            // "is X on the menu?" and "can I order X tonight?" are different
-            // questions; dropping the dish answers the first one wrong.
-            const block = buildGastronomyMarkdownContext(
-                VENUE,
-                [],
-                [
-                    {
-                        sectionName: 'Postres',
-                        name: 'Flan',
-                        description: null,
-                        priceCents: null,
-                        isAvailable: false
-                    }
-                ]
-            );
-
-            expect(block).toContain('**Flan** (no disponible)');
-        });
-
+    describe('carta rendering', () => {
         it(`should cap the carta at ${GASTRONOMY_CONTEXT_MENU_ITEM_MAX} items`, () => {
             const many = Array.from({ length: GASTRONOMY_CONTEXT_MENU_ITEM_MAX + 5 }, (_, i) => ({
                 sectionName: 'Principales',
@@ -153,17 +113,6 @@ describe('buildGastronomyMarkdownContext', () => {
 
             expect(block).toContain(`Plato ${GASTRONOMY_CONTEXT_MENU_ITEM_MAX - 1}`);
             expect(block).not.toContain(`Plato ${GASTRONOMY_CONTEXT_MENU_ITEM_MAX}`);
-        });
-    });
-
-    describe('when the owner plan does NOT grant the carta', () => {
-        it('should contain no carta section at all', () => {
-            // The route passes an empty array when the gate is closed; this is
-            // the rendering half of that contract.
-            const block = buildGastronomyMarkdownContext(VENUE, [], []);
-
-            expect(block).not.toContain('### Carta');
-            expect(block).not.toContain('Bife de chorizo');
         });
     });
 
@@ -258,28 +207,6 @@ describe('buildExperienceMarkdownContext', () => {
         });
     });
 
-    describe('when the owner plan grants the meeting-point directions', () => {
-        it('should render them as an ordered list', () => {
-            const block = buildExperienceMarkdownContext(EXPERIENCE, [], true);
-
-            expect(block).toContain('**Cómo llegar**:');
-            expect(block).toContain('1. Cruzá el puente');
-            expect(block).toContain('2. Doblá a la izquierda');
-        });
-    });
-
-    describe('when the owner plan does NOT grant the directions', () => {
-        it('should omit them while keeping the meeting point itself', () => {
-            // HOS-1049 draws the line here: WHERE it is stays on básico, HOW to
-            // get there is a -pro capability.
-            const block = buildExperienceMarkdownContext(EXPERIENCE, [], false);
-
-            expect(block).toContain('Muelle municipal');
-            expect(block).not.toContain('**Cómo llegar**:');
-            expect(block).not.toContain('Cruzá el puente');
-        });
-    });
-
     describe('list-shaped owner fields', () => {
         it('should render requirements and what-to-bring as bullets', () => {
             const block = buildExperienceMarkdownContext(EXPERIENCE, [], true);
@@ -361,17 +288,3 @@ describe('buildExperienceMarkdownContext', () => {
 });
 
 // ---------------------------------------------------------------------------
-// The entitlement keys the assemblers gate on
-// ---------------------------------------------------------------------------
-
-describe('commerce context entitlement gates', () => {
-    it('should gate the carta on MANAGE_GASTRONOMY_MENU', () => {
-        // Freezes the key the async assembler tests against, so renaming the
-        // entitlement without revisiting the assembler fails here.
-        expect(EntitlementKey.MANAGE_GASTRONOMY_MENU).toBe('manage_gastronomy_menu');
-    });
-
-    it('should gate the directions on MANAGE_EXPERIENCE_DIRECTIONS', () => {
-        expect(EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS).toBe('manage_experience_directions');
-    });
-});

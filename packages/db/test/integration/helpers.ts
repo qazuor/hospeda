@@ -1,4 +1,3 @@
-import { qzpaySchema } from '@qazuor/qzpay-drizzle';
 /**
  * Shared helpers for database integration tests (SPEC-061).
  *
@@ -26,7 +25,7 @@ import type { DrizzleClient } from '../../src/types.ts';
  * Combined schema that mirrors `packages/db/src/client.ts` so model and
  * relational queries used in tests resolve types identically to runtime code.
  */
-const schema = { ...hospedaSchema, ...qzpaySchema };
+const schema = { ...hospedaSchema };
 
 /**
  * Sentinel error used to force a transaction rollback without surfacing as a

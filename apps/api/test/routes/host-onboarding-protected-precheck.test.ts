@@ -14,7 +14,6 @@
  *
  * @module test/routes/host-onboarding-protected-precheck
  */
-import { LimitKey } from '@repo/billing';
 import { type PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,22 +36,6 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 list: mockList
             };
         })
-    };
-});
-
-/** MAX_ACCOMMODATIONS cap used across these tests. */
-const MAX_ACCOMMODATIONS = 3;
-
-vi.mock('../../src/middlewares/entitlement.js', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../src/middlewares/entitlement.js')>();
-    return {
-        ...actual,
-        getRemainingLimit: (_c: unknown, limitKey: string) => {
-            if (limitKey === LimitKey.MAX_ACCOMMODATIONS) {
-                return MAX_ACCOMMODATIONS;
-            }
-            return -1;
-        }
     };
 });
 
@@ -125,7 +108,7 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
         expect(body.success).toBe(true);
         expect(body.data).toEqual({
             currentCount: 0,
-            maxAllowed: MAX_ACCOMMODATIONS,
+            maxAllowed: -1,
             hasQuota: true,
             draftCount: 0,
             drafts: [],
@@ -152,13 +135,12 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
         expect(body.data.currentCount).toBe(1);
     });
 
-    it('>1 drafts + limit reached -> pick_draft_delete_or_upgrade', async () => {
+    it('>1 drafts -> pick_draft_delete_or_upgrade (quota is always available since HOS-1416)', async () => {
         const drafts = [
             makeDraft({ id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', slug: 'draft-1' }),
             makeDraft({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', slug: 'draft-2' })
         ];
-        // Total accommodations already at the cap.
-        mockCount.mockResolvedValue({ data: { count: MAX_ACCOMMODATIONS }, error: undefined });
+        mockCount.mockResolvedValue({ data: { count: 2 }, error: undefined });
         mockList.mockResolvedValue({
             data: { items: drafts, total: drafts.length },
             error: undefined
@@ -168,10 +150,12 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
 
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.data.decision).toBe('pick_draft_delete_or_upgrade');
+        expect(body.data.decision).toBe('pick_draft_or_create');
         expect(body.data.draftCount).toBe(2);
-        expect(body.data.hasQuota).toBe(false);
-        expect(body.data.maxAllowed).toBe(MAX_ACCOMMODATIONS);
+        // The per-plan cap was removed with the legacy billing system
+        // (HOS-1416); hasQuota is always true and -1 means unlimited.
+        expect(body.data.hasQuota).toBe(true);
+        expect(body.data.maxAllowed).toBe(-1);
         expect(body.data.drafts).toHaveLength(2);
     });
 

@@ -15,11 +15,7 @@ import {
     LifecycleStatusEnum,
     VisibilityEnum
 } from '@repo/schemas';
-import {
-    GastronomyService,
-    getCommerceListingSubscriptionStatuses,
-    ServiceError
-} from '@repo/service-core';
+import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -48,14 +44,6 @@ export const protectedListMyGastronomyRoute = createProtectedRoute({
 
         const ownListings = result.data?.listings ?? [];
 
-        // HOS-166 W1: batch-resolve each listing's commerce subscription
-        // status (dunning/suspended surfacing) — one query for the whole
-        // page instead of one per listing.
-        const subscriptionStatuses = await getCommerceListingSubscriptionStatuses({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
-            entityIds: ownListings.map((listing) => listing.id)
-        });
-
         const listings = ownListings.map((listing) => ({
             id: listing.id,
             vertical: CommerceEntityTypeEnum.GASTRONOMY,
@@ -71,8 +59,9 @@ export const protectedListMyGastronomyRoute = createProtectedRoute({
             // downloads that cannot work and render a code that cannot scan.
             hasPublicPage:
                 listing.lifecycleState === LifecycleStatusEnum.ACTIVE &&
-                listing.visibility === VisibilityEnum.PUBLIC,
-            subscriptionStatus: subscriptionStatuses.get(listing.id) ?? null
+                listing.visibility === VisibilityEnum.PUBLIC
+            // subscriptionStatus was removed with the legacy billing system
+            // (HOS-1416).
         }));
 
         return { listings };

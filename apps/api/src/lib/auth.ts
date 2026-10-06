@@ -35,8 +35,6 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
 import { admin, createAccessControl } from 'better-auth/plugins';
-import { getQZPayBilling } from '../middlewares/billing';
-import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
 import { resolveCookieDomain } from './auth-cookie-domain';
@@ -849,35 +847,6 @@ function buildAuth() {
                         // Non-blocking — see captureSignupCompleted.
                         captureSignupCompleted({ userId: user.id, context });
 
-                        // Billing customer sync (non-blocking).
-                        // We create the billing_customers row eagerly here so
-                        // the first-publish flow has a customer record ready
-                        // when it queries eligibility. We DO NOT auto-start a
-                        // trial here anymore: the trial is created atomically
-                        // by AccommodationService.publish() on the user's first
-                        // publish. Role promotion to HOST already happened in
-                        // the onboarding draft flow.
-                        try {
-                            // HOS-596: the customer-sync facade, never the strict
-                            // one — a MercadoPago failure must not roll back the
-                            // local billing_customers row.
-                            const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
-                            const syncService = new BillingCustomerSyncService(customerSyncBilling);
-                            await syncService.ensureCustomerExists({
-                                userId: user.id,
-                                email: user.email,
-                                name: user.name || undefined
-                            });
-                        } catch (error) {
-                            logger.error(
-                                {
-                                    userId: user.id,
-                                    error: error instanceof Error ? error.message : String(error)
-                                },
-                                'Failed to sync billing customer on user creation'
-                            );
-                        }
-
                         // Anonymous conversation linking (non-blocking)
                         // Links all verified anonymous conversations where anonymousEmail matches
                         // the newly registered user's email, setting userId on each unlinked row.
@@ -983,31 +952,6 @@ function buildAuth() {
                                     userId: user.id
                                 },
                                 'Failed to link anonymous newsletter subscribers on user registration'
-                            );
-                        }
-                    }
-                },
-                update: {
-                    after: async (user) => {
-                        // Sync billing customer data when user is updated
-                        try {
-                            // HOS-596: the customer-sync facade, never the strict
-                            // one — a MercadoPago failure must not roll back the
-                            // local billing_customers row.
-                            const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
-                            const syncService = new BillingCustomerSyncService(customerSyncBilling);
-                            await syncService.syncCustomerData({
-                                userId: user.id,
-                                email: user.email,
-                                name: user.name || undefined
-                            });
-                        } catch (error) {
-                            logger.error(
-                                {
-                                    userId: user.id,
-                                    error: error instanceof Error ? error.message : String(error)
-                                },
-                                'Failed to sync billing customer on user update'
                             );
                         }
                     }

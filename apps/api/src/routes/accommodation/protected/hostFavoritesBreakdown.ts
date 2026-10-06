@@ -7,11 +7,11 @@
  *
  * @route GET /api/v1/protected/accommodations/my/favorites-breakdown
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { EntityTypeEnum, HostFavoritesBreakdownSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -42,6 +42,7 @@ export const hostFavoritesBreakdownRoute = createProtectedRoute({
         'dashboard (SPEC-155 T-005).',
     tags: ['Accommodations'],
     responseSchema: HostFavoritesBreakdownSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_ADVANCED_STATS entitlement gate.
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
 
@@ -84,10 +85,7 @@ export const hostFavoritesBreakdownRoute = createProtectedRoute({
         return breakdown;
     },
     options: {
-        // SPEC-145 T-006: VIEW_ADVANCED_STATS gate — per-accommodation bookmark
-        // analytics are an advanced stats feature gated behind owner-pro / owner-premium
-        // / complex-pro / complex-premium plans.
-        middlewares: [requireEntitlement(EntitlementKey.VIEW_ADVANCED_STATS)],
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

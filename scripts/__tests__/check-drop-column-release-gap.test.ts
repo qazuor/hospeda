@@ -122,6 +122,29 @@ describe('check-drop-column-release-gap.sh (HOS-601)', () => {
             expect(result.exitCode).toBe(0);
         });
 
+        it('allows only the named HOS-1352 cutover column on the epic branch', () => {
+            const marker =
+                '[cutover-drop-column: billing_notification_log.customer_id]: HOS-1352 step 3';
+            const allowed = runGuard({
+                DROPPED_COLUMNS_OVERRIDE: 'billing_notification_log.customer_id',
+                MARKER_TEXT_OVERRIDE: marker,
+                PR_BASE_REF: 'epic/HOS-1352-verticales-billing'
+            });
+            const wrongBranch = runGuard({
+                DROPPED_COLUMNS_OVERRIDE: 'billing_notification_log.customer_id',
+                MARKER_TEXT_OVERRIDE: marker,
+                PR_BASE_REF: 'staging'
+            });
+            const wrongColumn = runGuard({
+                DROPPED_COLUMNS_OVERRIDE: 'accommodations.schedule',
+                MARKER_TEXT_OVERRIDE: marker,
+                PR_BASE_REF: 'epic/HOS-1352-verticales-billing'
+            });
+            expect(allowed.exitCode).toBe(0);
+            expect(wrongBranch.exitCode).toBe(1);
+            expect(wrongColumn.exitCode).toBe(1);
+        });
+
         it('reports ONLY the still-missing column when a multi-column PR partially covers markers', () => {
             // Arrange: two tables both drop a column literally named "media"
             // (0072_wealthy_kingpin.sql's real shape) — only one is covered.

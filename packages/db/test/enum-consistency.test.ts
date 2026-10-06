@@ -2,21 +2,18 @@ import path from 'node:path';
 import {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
-    BillingIntervalEnum,
     ClientTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
-    PaymentStatusEnum,
     PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
     RecurrenceTypeEnum,
     RoleEnum,
-    SubscriptionStatusEnum,
     TagColorEnum,
     VisibilityEnum
 } from '@repo/schemas';
@@ -35,24 +32,25 @@ envConfig({
 // but DB pgEnum not yet migrated. Will be synced via generate-enum-migrations.
 // NOTE: BillingCycleEnum and PaymentMethodEnum excluded - these exist in old
 // migration snapshots but are not currently implemented in TypeScript schemas.
+// NOTE: BillingIntervalEnum, PaymentStatusEnum and SubscriptionStatusEnum
+// excluded since HOS-1416 — their pg enums (billing_interval_enum,
+// payment_status_enum, subscription_status_enum) were dropped together with
+// the legacy qzpay billing schema they typed.
 const AllEnums = {
     AccommodationTypeEnum,
     AmenitiesTypeEnum,
-    BillingIntervalEnum,
     ClientTypeEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
     LifecycleStatusEnum,
     ModerationStatusEnum,
-    PaymentStatusEnum,
     PermissionEnum,
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
     RecurrenceTypeEnum,
     RoleEnum,
-    SubscriptionStatusEnum,
     TagColorEnum,
     VisibilityEnum
 };

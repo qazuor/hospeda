@@ -2,7 +2,7 @@
  * Global setup for `packages/seed` real-DB integration tests (HOS-25).
  *
  * The versioned seed data-migration tests (runner, ledger, fkGuard,
- * safeDelete, baselineStamp, billing-plans-port, lifecycle) exercise the real
+ * safeDelete, baselineStamp, lifecycle) exercise the real
  * migration runner + `seed_migrations` ledger against a live PostgreSQL
  * database. They MUST NOT run in the sharded unit-test job (which has no
  * database), so they live in the integration carril and are provisioned here.
@@ -131,55 +131,13 @@ export async function setup(): Promise<void> {
         );
     }
 
-    // 6. Seed the required billing plans. The billing-plans-port data-migration
-    //    tests operate on already-seeded plan rows (they mutate the seeded rows
-    //    then roll back), mirroring the deployed environments these ported
-    //    migrations actually target. The other data-migration tests are
-    //    self-contained (they create their own scratch data) and need no
-    //    baseline seed.
-    //
-    //    The plan rows are inserted via `ensurePlan` with an EXPLICIT Drizzle
-    //    client rather than the seeder's `getDb()` singleton. globalSetup and
-    //    the seed source can resolve `@repo/db` to two distinct module copies
-    //    (the classic dist-vs-src double-instance) whose singletons don't share
-    //    state — so seeding through the singleton silently fails with "Database
-    //    not initialized". Passing the client explicitly sidesteps that: the
-    //    table objects are plain pgTable metadata and work with any pg client.
-    //    Only `billing_plans` is needed (the tests never read `billing_prices`).
-    //
-    //    `TEST_DAILY_PLAN` (`owner-test-daily`) is seeded here too, on top of
-    //    `ALL_PLANS` — it is deliberately EXCLUDED from `ALL_PLANS` (see
-    //    `packages/billing/src/config/plans.config.ts`), so the loop above
-    //    alone never creates its row. The HOS-110
-    //    `0006-owner-test-daily-trial` data-migration test operates on this
-    //    row exactly like the billing-plans-port tests operate on the
-    //    `ALL_PLANS` rows: it needs the row to already exist. `ensurePlan`
-    //    works for any `PlanDefinition`, including this test-only one — the
-    //    dedicated `seedTestDailyPlan` production seed is NOT used here
-    //    because it resolves `getDb()` internally (the same double-instance
-    //    pitfall this comment already documents), and the trial-migration
-    //    test never reads `billing_prices`, so the price row it would also
-    //    create is unnecessary.
-    const { initializeDb, resetDb, getDb } = await import('@repo/db');
-    const { ALL_PLANS, TEST_DAILY_PLAN } = await import('@repo/billing');
-    const { _internals } = await import('../../src/required/billingPlans.seed.js');
-    const seedPool = new Pool({ connectionString: getTestConnectionString() });
-    resetDb();
-    initializeDb(seedPool);
-    try {
-        const seedDb = getDb();
-        for (const plan of ALL_PLANS) {
-            await _internals.ensurePlan(plan, false, seedDb);
-        }
-        await _internals.ensurePlan(TEST_DAILY_PLAN, false, seedDb);
-    } finally {
-        await seedPool.end();
-        resetDb();
-    }
-
-    // 7. Export connection string for worker forks to inherit via fork() env.
+    // 6. Export connection string for worker forks to inherit via fork() env.
     //    Each data-migration test bootstraps its own `new Pool(...)` from
     //    HOSPEDA_DATABASE_URL, so BOTH names must point at the test DB.
+    //    (HOS-1416: the former billing-plan seeding step was removed — the
+    //    billing-plans-port and other billing tests were deleted along with
+    //    the legacy billing schema; the remaining data-migration tests are
+    //    self-contained.)
     process.env.HOSPEDA_DATABASE_URL = getTestConnectionString();
     process.env.HOSPEDA_TEST_DATABASE_URL = getTestConnectionString();
 

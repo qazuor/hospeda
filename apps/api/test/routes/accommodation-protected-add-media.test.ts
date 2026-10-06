@@ -18,7 +18,6 @@
  * @module test/routes/accommodation-protected-add-media
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
 import { ModerationStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -74,23 +73,6 @@ vi.mock('../../src/utils/logger.js', () => ({
         warn: vi.fn(),
         error: vi.fn()
     }
-}));
-
-// Mock limit-enforcement: preserve real exports, override only what we need.
-vi.mock('../../src/middlewares/limit-enforcement.js', async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import('../../src/middlewares/limit-enforcement.js')>();
-    return {
-        ...actual,
-        buildLimitReachedDetails: vi.fn(() => ({}))
-    };
-});
-
-// Mock limit-check utils — plan cap allowed by default.
-vi.mock('../../src/utils/limit-check.js', () => ({
-    checkLimit: vi.fn(() => ({ allowed: true, currentCount: 2, maxAllowed: 20, remaining: 18 })),
-    calculateThreshold: vi.fn(() => 'ok'),
-    calculateUsagePercent: vi.fn(() => 10)
 }));
 
 // ---------------------------------------------------------------------------
@@ -243,34 +225,6 @@ describe('POST /api/v1/protected/accommodations/:id/media — addMedia (SPEC-204
         });
     });
 
-    // ── Plan cap enforcement ───────────────────────────────────────────────────
-
-    describe('Plan cap enforcement', () => {
-        it('should return 4xx when plan photo limit is reached', async () => {
-            // Override checkLimit to simulate cap reached.
-            const { checkLimit } = await import('../../src/utils/limit-check.js');
-            vi.mocked(checkLimit).mockReturnValueOnce({
-                allowed: false,
-                currentCount: 20,
-                maxAllowed: 20,
-                remaining: 0,
-                upgradeMessage: 'Upgrade your plan to add more photos'
-            });
-
-            const res = await app.request(BASE_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: 'Bearer test-protected-token'
-                },
-                body: JSON.stringify(VALID_BODY)
-            });
-
-            // LIMIT_REACHED maps to 4xx; must not be 201.
-            expect(res.status).not.toBe(201);
-        });
-    });
-
     // ── Route registration sanity ─────────────────────────────────────────────
 
     describe('Route registration', () => {
@@ -287,8 +241,3 @@ describe('POST /api/v1/protected/accommodations/:id/media — addMedia (SPEC-204
         });
     });
 });
-
-// Suppress unused import warning — EntitlementKey is referenced for context clarity.
-void EntitlementKey.EDIT_ACCOMMODATION_INFO;
-// Suppress unused type warning for LimitKey (used in type annotation above).
-type _LimitKeyRef = LimitKey;

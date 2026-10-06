@@ -2,7 +2,7 @@
  * Protected create accommodation endpoint
  * Requires authentication
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type AccommodationCreateHttp,
     AccommodationCreateHttpSchema,
@@ -12,8 +12,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -34,6 +33,7 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
     requiredPermissions: [PermissionEnum.ACCOMMODATION_CREATE],
     requestBody: AccommodationCreateHttpSchema,
     responseSchema: AccommodationProtectedSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed PUBLISH_ACCOMMODATIONS entitlement gate.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -59,12 +59,6 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
         return stripRichDescriptionFields(result.data);
     },
     options: {
-        // SPEC-145 T-004: entitlement gate BEFORE limit check — host must have the
-        // PUBLISH_ACCOMMODATIONS entitlement (granted on all owner/complex plans)
-        // before we even consult the accommodation-count limit.
-        middlewares: [
-            requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS),
-            enforceAccommodationLimit()
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

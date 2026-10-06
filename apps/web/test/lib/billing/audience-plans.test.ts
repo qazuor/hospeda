@@ -15,7 +15,6 @@
  * `fetch-plans.test.ts` established.
  */
 
-import { PARTNER_TIER_PLAN_SLUG } from '@repo/billing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     AUDIENCE_CARD_ORDER,
@@ -315,10 +314,10 @@ describe('resolveAudienceStartingPrices', () => {
         expect(AUDIENCE_CARD_ORDER.filter((id) => prices[id] === null)).toEqual(['partner']);
     });
 
-    it('reads the sellable partner slugs from the canonical tier map', () => {
-        const sellable = Object.values(PARTNER_TIER_PLAN_SLUG);
-        expect(sellable).toContain('partner-silver');
-        expect(sellable).not.toContain('partner-listing');
+    it('excludes only the unsellable pre-tier without copying the retired tier map', () => {
+        const selected = selectAudiencePlans(ALL_OK).partner.map((plan) => plan.slug);
+        expect(selected).toContain('partner-silver');
+        expect(selected).not.toContain('partner-listing');
     });
 
     it('never surfaces a complex-tier price on the host card', () => {

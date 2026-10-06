@@ -9,9 +9,8 @@
  * @module utils/entitlement-filter
  */
 
-import { EntitlementKey } from '@repo/billing';
 import type { Accommodation, I18nText } from '@repo/schemas';
-import { apiLogger } from './logger';
+import { stripVideoEmbeds } from '../lib/content-detection.js';
 
 /**
  * Accommodation data that may contain premium features
@@ -118,6 +117,38 @@ export function stripRichDescriptionFields<T extends object>(
 }
 
 /**
+ * Hides public fields that previously required an owner's paid plan until the
+ * replacement coverage contract is available. The result is independent of
+ * the viewer, so it is safe to put in the shared public response cache.
+ */
+export function maskLegacyPremiumFields<T extends object>(item: T): T {
+    // HOS-1352: transitional until V3 (HOS-1357), see PR: hide formerly paid public fields until effective capabilities resolve.
+    const filtered = {
+        ...stripRichDescriptionFields(item),
+        isVerified: false,
+        hasWhatsapp: false
+    } as Record<string, unknown>;
+
+    if (typeof filtered.description === 'string') {
+        filtered.description = stripVideoEmbeds(filtered.description);
+    }
+    delete filtered.videos;
+
+    const media = filtered.media;
+    if (media && typeof media === 'object' && !Array.isArray(media) && 'videos' in media) {
+        filtered.media = { ...media, videos: [] };
+    }
+
+    const contactInfo = filtered.contactInfo;
+    if (contactInfo && typeof contactInfo === 'object' && !Array.isArray(contactInfo)) {
+        const { whatsapp: _whatsapp, ...remaining } = contactInfo as Record<string, unknown>;
+        filtered.contactInfo = remaining;
+    }
+
+    return filtered as T;
+}
+
+/**
  * Compile-time pin for the two premium field names this module strips by string
  * literal. The strip is a destructure over a cast, so the names carry no type link
  * to the entity — renaming the column would leave every call site compiling while
@@ -147,7 +178,7 @@ void _richFieldNamesExist;
  * @param value - Arbitrary value read out of a JSONB column.
  * @returns The trimmed string, or `''` when the value is not a string.
  */
-function readTrimmedString(value: unknown): string {
+function _readTrimmedString(value: unknown): string {
     return typeof value === 'string' ? value.trim() : '';
 }
 
@@ -191,277 +222,6 @@ function readTrimmedString(value: unknown): string {
  * });
  * ```
  */
-export function filterAccommodationByEntitlements(
-    accommodation: AccommodationData,
-    ownerEntitlements?: readonly EntitlementKey[]
-): AccommodationData {
-    // Create a copy to avoid mutating the original
-    const filtered = { ...accommodation };
-
-    // Defence in depth, in three layers — none of which is "statement order":
-    //
-    // 1. The `catch` re-applies the OWNER gates (see the end of this function), so a
-    //    throw anywhere in this body cannot emit a non-entitled owner's premium
-    //    content. That is the structural guarantee; everything else is belt.
-    // 2. The known hazard is totalized: `contactInfo.whatsapp` is an unvalidated JSONB
-    //    value that `.trim()` throws on when it is not a string, so it is read through
-    //    `readTrimmedString`.
-    // 3. The owner gates still run first.
-    //
-    // Statements that remain non-total, named rather than glossed over: the video
-    // strip calls `.replace` on `description`, which is typed but not validated. A
-    // throw there is bounded to VIDEO content, and the catch re-applies that gate
-    // too. Do not add a blanket "nothing here can throw" claim without making it
-    // true — an earlier revision asserted exactly that while these statements were
-    // reachable. The `hasEntitlement` dereference this list used to name is gone:
-    // the function no longer receives the request context at all.
-    try {
-        // OWNER-gated richDescription omission (FR-3b): when ownerEntitlements
-        // are provided, presence of CAN_USE_RICH_DESCRIPTION is the ONLY signal
-        // that the public payload may include richDescription. The viewer's
-        // entitlements are deliberately ignored here.
-        //
-        // Both the plain field and its SPEC-212 i18n sibling are gated together.
-        // Gating only the plain one is equivalent to not gating at all: the web
-        // transform (apps/web/src/lib/api/transforms.ts) resolves the visitor's
-        // locale from `richDescriptionI18n` in PREFERENCE to `richDescription`,
-        // so a surviving i18n value is rendered as HTML on the public detail page
-        // even when the plain field was correctly omitted.
-        //
-        // `delete`, not `= undefined`: assigning undefined leaves the KEY present.
-        // That happens to serialize correctly today (JSON.stringify drops
-        // undefined-valued keys) but it is a property of the serializer, not of
-        // this gate — anything that inspects the object instead of its wire form
-        // (`'richDescriptionI18n' in obj`, `Object.keys()`, `structuredClone`, an
-        // in-process response cache) would still see it. Deleting makes the
-        // omission true at the object level and matches `stripRichDescriptionFields`.
-        if (
-            ownerEntitlements &&
-            !ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION)
-        ) {
-            // UNCONDITIONAL deletes. Guarding them on truthiness would leave the key
-            // present whenever the DB value is `null` (the column default) or `''` —
-            // so `'richDescription' in payload` would still be true for a gated
-            // accommodation, which is exactly the object-level check the comment above
-            // invokes as the reason for using `delete` at all. The log stays gated on
-            // whether anything was actually carrying content.
-            const omitted: string[] = [];
-            if (filtered.richDescription) omitted.push('richDescription');
-            if (filtered.richDescriptionI18n) omitted.push('richDescriptionI18n');
-            delete filtered.richDescription;
-            delete filtered.richDescriptionI18n;
-            if (omitted.length > 0) {
-                apiLogger.debug(
-                    `Omitted ${omitted.join(' + ')} from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_USE_RICH_DESCRIPTION}`
-                );
-            }
-        }
-
-        // OWNER-gated isVerified badge: when ownerEntitlements are provided,
-        // the badge is only surfaced when the owning host has HAS_VERIFICATION_BADGE.
-        // This mirrors the richDescription pattern — the viewer's entitlements are
-        // NOT consulted. When ownerEntitlements are omitted (admin/internal call sites),
-        // isVerified is left as-is.
-        if (
-            ownerEntitlements &&
-            !ownerEntitlements.includes(EntitlementKey.HAS_VERIFICATION_BADGE)
-        ) {
-            filtered.isVerified = false;
-            apiLogger.debug(
-                `Forced isVerified=false for accommodation ${filtered.id} - owner lacks ${EntitlementKey.HAS_VERIFICATION_BADGE}`
-            );
-        }
-
-        // OWNER-gated video content. Same rule as richDescription and isVerified
-        // above, and for a reason that is not stylistic: this payload is served
-        // from `/api/v1/public/accommodations`, which sits in
-        // `PUBLIC_CACHE_ENDPOINTS` with the cache key `public:${path}${query}` —
-        // no authorization component. A field derived from the REQUESTING user's
-        // plan is therefore computed once, by whoever warms the cache, and
-        // replayed to everyone else for the TTL. HOS-19 documents that for the
-        // WhatsApp number and HOS-353 for visibility; the video strip read
-        // `hasEntitlement(c, …)` until now, so the cached description varied with
-        // the first viewer's plan. Whether a listing may publish video is a
-        // property of the OWNER's plan anyway — the viewer never bought it.
-        const ownerCanEmbedVideo =
-            !ownerEntitlements || ownerEntitlements.includes(EntitlementKey.CAN_EMBED_VIDEO);
-
-        // HOS-19: WhatsApp display is VIEWER-gated, but `/public/accommodations`
-        // is shared-cached (cache key has no auth), so the number MUST NOT ride
-        // this payload — a per-viewer field would leak the first viewer's plan
-        // result to everyone. Instead we emit only a cache-safe, owner-derived
-        // boolean here; the actual number is gated by the viewer's plan on the
-        // per-user protected endpoint GET /protected/accommodations/:id/whatsapp.
-        // Trim to stay consistent with that endpoint's own non-empty check —
-        // a whitespace-only legacy value must NOT flip hasWhatsapp true (it would
-        // otherwise surface a misleading upsell for a listing with no real number).
-        //
-        // `readTrimmedString`, not `?.trim()`: `contactInfo` is an unvalidated JSONB
-        // blob, so a legacy non-string `whatsapp` (a number, an object) leaves `.trim`
-        // undefined and throws — which the fail-open catch below would turn into an
-        // ungated payload.
-        filtered.hasWhatsapp = readTrimmedString(filtered.contactInfo?.whatsapp).length > 0;
-
-        // Remove video content when the owner is not entitled to publish it.
-        if (!ownerCanEmbedVideo) {
-            stripVideoContent(filtered);
-            apiLogger.debug(
-                `Stripped video content from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
-            );
-        }
-    } catch (error) {
-        apiLogger.error(
-            `Error filtering accommodation ${accommodation.id} by entitlements: ${error instanceof Error ? error.message : String(error)}`
-        );
-        // FAIL CLOSED. This catch used to return `filtered` untouched, which meant any
-        // throw above shipped the premium fields — and made the gate's safety depend on
-        // statement ORDER (gates first, hazards after). Order is not a guarantee: the
-        // next edit that inserts a non-total read above the gates silently reopens it,
-        // and no test can see that coming.
-        //
-        // Re-applying the owner gates here makes the property structural instead:
-        // whatever throws, and wherever, a non-entitled owner's premium content cannot
-        // leave this function. Only the OWNER gates are re-applied — the viewer-gated
-        // video strip needs `c`, whose failure is what may have thrown in the first place.
-        if (
-            ownerEntitlements &&
-            !ownerEntitlements.includes(EntitlementKey.CAN_USE_RICH_DESCRIPTION)
-        ) {
-            delete filtered.richDescription;
-            delete filtered.richDescriptionI18n;
-        }
-        if (
-            ownerEntitlements &&
-            !ownerEntitlements.includes(EntitlementKey.HAS_VERIFICATION_BADGE)
-        ) {
-            filtered.isVerified = false;
-        }
-        // Video joins the re-applied set now that it is owner-gated. The old
-        // comment here explained its absence by the strip needing `c` — that
-        // reason is gone, and leaving it out would mean a throw mid-body ships a
-        // non-entitled owner's videos.
-        if (ownerEntitlements && !ownerEntitlements.includes(EntitlementKey.CAN_EMBED_VIDEO)) {
-            stripVideoContent(filtered);
-        }
-    }
-
-    return filtered;
-}
-
-// `filterAccommodationListByEntitlements` was REMOVED on purpose — do not restore it.
-//
-// It mapped `filterAccommodationByEntitlements(accommodation)` over a list WITHOUT
-// passing `ownerEntitlements`, which means it gated nothing: neither rich-description
-// field, nor `isVerified`. Its JSDoc advertised it as "filter list by entitlements" and
-// gave no hint of that. It had zero call sites, so it was pure latent risk — wiring it
-// into a future listing route would have silently reproduced the exact bug this module
-// was hardened to close.
-//
-// For listings, use `stripRichDescriptionFields` (both premium fields) plus
-// `filterAccommodationListByOwnerEntitlements` (the `isVerified` gate), which is what
-// every card route already does.
-
-/**
- * Filter a list of accommodations based on the OWNER's billing entitlements.
- *
- * Pure and synchronous. Applies the owner-gated `isVerified` logic to a whole
- * page at once, driven by the pre-resolved {@link Map} returned by
- * `resolveOwnerEntitlementsForOwnerIds` (one DB query per page, parallel
- * billing calls). Counterpart to {@link filterAccommodationByEntitlements} but
- * designed for listing endpoints where the Hono context is not needed (listing
- * cards apply no viewer-gated stripping — video/WhatsApp are detail-only).
- *
- * Gate rules (applied per item):
- * - Owner absent from map → `isVerified` forced to `false` (fail-closed).
- * - Owner present but lacks `HAS_VERIFICATION_BADGE` → `isVerified` forced
- *   to `false`.
- * - Owner present and has `HAS_VERIFICATION_BADGE` → `isVerified` unchanged.
- * - Item already has `isVerified = false` → returned as-is (no allocation).
- *
- * Does NOT apply the viewer-gated fields (video, WhatsApp). `richDescription` is
- * OWNER-gated, not viewer-gated — an earlier version of this line listed it here,
- * which is the wrong mental model to hand a reader standing next to the gate.
- * Card listings drop both rich fields via `stripRichDescriptionFields` instead.
- * Those are handled by {@link filterAccommodationByEntitlements} on the detail
- * view and are stripped at the data level in listing handlers.
- *
- * @param items - Raw accommodation items from the service or DB layer.
- * @param ownerEntitlementsByOwnerId - Map keyed by `ownerId`, returned by
- *   `resolveOwnerEntitlementsForOwnerIds`.
- * @returns New array with `isVerified` gated per item. Input is NOT mutated.
- *
- * @example
- * ```typescript
- * const ownerIds = [...new Set(items.map((i) => i.ownerId).filter(Boolean))];
- * const entMap = await resolveOwnerEntitlementsForOwnerIds(ownerIds);
- * const gated = filterAccommodationListByOwnerEntitlements(items, entMap);
- * return c.json({ data: gated });
- * ```
- */
-export function filterAccommodationListByOwnerEntitlements(
-    items: AccommodationData[],
-    ownerEntitlementsByOwnerId: Map<string, readonly EntitlementKey[]>
-): AccommodationData[] {
-    return items.map((item) => {
-        // Already false — nothing to gate; return the same reference (no allocation).
-        if (!item.isVerified) return item;
-
-        const ownerId = typeof item.ownerId === 'string' ? item.ownerId : undefined;
-        const ownerEntitlements = ownerId ? ownerEntitlementsByOwnerId.get(ownerId) : undefined;
-
-        if (!ownerEntitlements?.includes(EntitlementKey.HAS_VERIFICATION_BADGE)) {
-            apiLogger.debug(
-                `filterAccommodationListByOwnerEntitlements: forced isVerified=false for item ${item.id} — owner ${ownerId ?? 'unknown'} lacks ${EntitlementKey.HAS_VERIFICATION_BADGE}`
-            );
-            return { ...item, isVerified: false };
-        }
-
-        return item;
-    });
-}
-
-/**
- * Strip markdown formatting from text
- *
- * Removes common markdown syntax while preserving the text content.
- *
- * This function is the JS source of truth for the SPEC-187 PL/pgSQL
- * strip-markdown migrations in `packages/db/src/migrations/` (the original
- * `0008_strip_accommodation_description_markdown.sql` and the follow-up
- * `0011_restrip_accommodation_description_markdown.sql`). All three surfaces
- * — this function, the SQL `strip_markdown()` function, and the web mirror
- * `apps/web/src/lib/render-plain.ts#STRIP_MARKDOWN_REGEX_SET` — MUST stay in
- * lockstep (PD-1). A divergence lets stale markdown slip into the public web
- * render and creates an XSS surface that the strip was designed to close.
- *
- * Canonical transformation order (identical in JS and SQL):
- *   1. `**bold**`        -> inner text
- *   2. `*italic*`        -> inner text
- *   3. `__bold__`        -> inner text   (underscore emphasis, SPEC-187 follow-up)
- *   4. `_italic_`        -> inner text   (underscore emphasis, SPEC-187 follow-up)
- *   5. `~~strike~~`      -> inner text
- *   6. `` `code` ``      -> inner text
- *   7. `![alt](url)`     -> alt text     (image BEFORE link — order is load-bearing)
- *   8. `[text](url)`     -> link text
- *   9. `^#+ ` headings   -> removed
- *  10. `^[-*+] ` bullets -> removed
- *  11. `^> ` blockquotes -> removed
- *  12. `\n{3,}`          -> `\n\n`       (collapse excess blank lines)
- *  13. trim
- *
- * SPEC-187 follow-up fixes (relative to the original 0008 strip):
- *   (a) underscore emphasis (`_x_` / `__x__`) is now stripped — 0008's gate
- *       predicate selected rows containing `_` but never removed the marker;
- *   (b) the image rule now runs BEFORE the link rule, so `![alt](url)` yields
- *       `alt` instead of the orphan `!alt` the old order produced;
- *   (c) the `\n{3,}` collapse is mirrored here so JS matches SQL output.
- *
- * Exported so a unit test (apps/api/test/utils/entitlement-filter-strip.test.ts)
- * can pin the JS-side behavior against the PL/pgSQL canonical fixture.
- *
- * @param text - Text with potential markdown
- * @returns Plain text without markdown
- */
 export function stripMarkdown(text: string): string {
     return text
         .replace(/\*\*(.+?)\*\*/g, '$1') // Bold **text**
@@ -479,210 +239,9 @@ export function stripMarkdown(text: string): string {
         .trim();
 }
 
-/**
- * Remove every trace of video content from an accommodation payload, in place.
- *
- * THREE surfaces carry video, and all of them must be cleared together — the
- * same "one gate, several fields" rule `richDescription` and its i18n sibling
- * follow, for the same reason: clearing a proper subset clears nothing.
- *
- * - `videos` — the top-level column. This is where the data actually lives:
- *   HOS-372 moved photos into `accommodation_media` but left videos in their own
- *   `accommodation.videos` column, and it is writable through the PATCH body.
- * - `media.videos` — a COPY of that column, spliced into the composed `media`
- *   object by `composeAccommodationMedia`. `AccommodationPublicSchema` picks both
- *   `media` and `videos`, so both reach the wire; stripping one leaves the other
- *   serving the same URLs.
- * - `description` — free text where an owner can paste a YouTube link, cleared by
- *   {@link stripVideoUrls}. This half always worked.
- *
- * The branch this replaces missed all of the above: it tested
- * `Array.isArray(filtered.media)` and filtered `item.type !== 'video'`, a shape
- * that stopped existing when media went relational. `media` is an OBJECT, so the
- * `isArray` test was permanently false and the branch never ran on real data.
- *
- * The removed `filtered.videoUrl` branch is not reproduced here: that field
- * exists in no accommodation schema (zero occurrences under
- * `packages/schemas/src/entities/accommodation/`), so it only ever deleted a key
- * that was never present.
- *
- * `media` is unvalidated JSONB, so nothing about its shape is assumed: a
- * non-object `media`, or a `videos` that is not an array, both end as an empty
- * list rather than as a survivor.
- *
- * @param filtered - Accommodation payload, mutated in place
- */
-function stripVideoContent(filtered: AccommodationData): void {
-    if (filtered.description) {
-        filtered.description = stripVideoUrls(filtered.description);
-    }
-
-    // The column itself. `delete`, not `= []`, matching the rich-description
-    // strip: assigning leaves the key present for anything inspecting the object
-    // rather than its serialized form.
-    if ('videos' in filtered) {
-        delete filtered.videos;
-    }
-
-    const media = filtered.media;
-    if (media && typeof media === 'object' && !Array.isArray(media) && 'videos' in media) {
-        // Rebuilt rather than mutated: `media` may be shared with the caller's
-        // object, and the whole point of this module is that it does not mutate
-        // what it was handed.
-        filtered.media = { ...(media as Record<string, unknown>), videos: [] };
-    }
-}
-
-/**
- * Whether an accommodation carries video content at all.
- *
- * Reads the same two surfaces {@link stripVideoContent} clears, so "what the
- * gate removes" and "what analytics counts" cannot drift apart: the dedicated
- * `media.videos` array, and a video URL pasted into the free-text description.
- *
- * `media` is unvalidated JSONB — a non-object value, or a `videos` that is not
- * an array, both answer `false` rather than throwing.
- *
- * @param accommodation - Accommodation data to inspect
- * @returns `true` when any video is present
- */
-function hasVideoContent(accommodation: AccommodationData): boolean {
-    if (Array.isArray(accommodation.videos) && accommodation.videos.length > 0) {
-        return true;
-    }
-
-    const media = accommodation.media;
-    if (media && typeof media === 'object' && !Array.isArray(media)) {
-        const videos = (media as { videos?: unknown }).videos;
-        if (Array.isArray(videos) && videos.length > 0) {
-            return true;
-        }
-    }
-
-    const description = accommodation.description;
-    return typeof description === 'string' && stripVideoUrls(description) !== description.trim();
-}
-
-/**
- * Strip video URLs from text
- *
- * Removes embedded video URLs from common platforms (YouTube, Vimeo, etc.)
- *
- * @param text - Text with potential video URLs
- * @returns Text without video URLs
- */
-function stripVideoUrls(text: string): string {
-    const videoUrlPatterns = [
-        /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/[\w-]+/gi,
-        /(?:https?:\/\/)?(?:www\.)?vimeo\.com\/[\d]+/gi,
-        /(?:https?:\/\/)?(?:www\.)?dailymotion\.com\/video\/[\w-]+/gi,
-        /(?:https?:\/\/)?(?:www\.)?twitch\.tv\/[\w-]+/gi
-    ];
-
-    let result = text;
-    for (const pattern of videoUrlPatterns) {
-        result = result.replace(pattern, '');
-    }
-
-    return result.trim();
-}
-
-/**
- * Check if accommodation has premium features
- *
- * Determines if an accommodation uses any premium features that require
- * specific entitlements. Useful for analytics or upgrade prompts.
- *
- * @param accommodation - Accommodation data to check
- * @returns Object indicating which premium features are used
- *
- * @example
- * ```typescript
- * const premiumFeatures = checkPremiumFeatures(accommodation);
- * if (premiumFeatures.hasRichDescription) {
- *   console.log('This accommodation uses rich description (Pro+ feature)');
- * }
- * ```
- */
-export function checkPremiumFeatures(accommodation: AccommodationData): {
-    hasRichDescription: boolean;
-    hasVideo: boolean;
-    hasWhatsApp: boolean;
-    isVerified: boolean;
-} {
-    // Rich-description usage. The markdown heuristic on the plain `description`
-    // is a legacy signal for rows that predate the dedicated column; an explicit
-    // value in `richDescription` — or in its i18n sibling, which may carry the
-    // only premium content when the plain field was never filled — is a direct
-    // one. Omitting the sibling here under-reports exactly the field this module
-    // gates, which would skew upgrade prompts and analytics against it.
-    const hasRichDescription = Boolean(
-        accommodation.richDescription ||
-            (accommodation.richDescriptionI18n &&
-                Object.values(accommodation.richDescriptionI18n).some(
-                    (value) => typeof value === 'string' && value.length > 0
-                )) ||
-            (accommodation.description && /[*#`[\]>~]/.test(accommodation.description))
-    );
-
-    // Check for video content. Same dead-shape bug the gate itself carried: this
-    // read `videoUrl` (a field no accommodation schema declares) and treated
-    // `media` as an array, so it answered `false` for every real accommodation
-    // and silently under-reported the feature it exists to measure.
-    const hasVideo = hasVideoContent(accommodation);
-
-    // Check for WhatsApp (HOS-19: the number lives at contactInfo.whatsapp;
-    // there is no stored "direct link" flag — DIRECT is a VIEWER capability).
-    // Same total read as the gate above — `contactInfo` is an unvalidated JSONB blob
-    // and `?.trim()` throws on a legacy non-string value.
-    const hasWhatsApp = readTrimmedString(accommodation.contactInfo?.whatsapp).length > 0;
-
-    // Check for verification badge (owner-gated, derived from isVerified column)
-    const isVerified = Boolean(accommodation.isVerified);
-
-    return {
-        hasRichDescription,
-        hasVideo,
-        hasWhatsApp,
-        isVerified
-    };
-}
-
-/**
- * Get required entitlements for accommodation features
- *
- * Returns a list of entitlements needed to access all features
- * in the given accommodation.
- *
- * @param accommodation - Accommodation data to analyze
- * @returns Array of required entitlement keys
- *
- * @example
- * ```typescript
- * const required = getRequiredEntitlements(accommodation);
- * console.log('This accommodation requires:', required);
- * // ['can_use_rich_description', 'can_embed_video', 'has_verification_badge']  (HAS_VERIFICATION_BADGE when isVerified=true)
- * ```
- */
-export function getRequiredEntitlements(accommodation: AccommodationData): EntitlementKey[] {
-    const required: EntitlementKey[] = [];
-    const premiumFeatures = checkPremiumFeatures(accommodation);
-
-    if (premiumFeatures.hasRichDescription) {
-        required.push(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
-    }
-
-    if (premiumFeatures.hasVideo) {
-        required.push(EntitlementKey.CAN_EMBED_VIDEO);
-    }
-
-    if (premiumFeatures.hasWhatsApp) {
-        required.push(EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY);
-    }
-
-    if (premiumFeatures.isVerified) {
-        required.push(EntitlementKey.HAS_VERIFICATION_BADGE);
-    }
-
-    return required;
-}
+// The entitlement-gating functions that used to live here
+// (filterAccommodationByEntitlements, filterAccommodationListByOwnerEntitlements,
+// checkPremiumFeatures, getRequiredEntitlements and the video-strip helpers) were
+// removed with the legacy billing system (HOS-1416). What remains is the
+// entitlement-independent surface: unconditional strips and the markdown
+// canonicalizer shared with the SQL migrations.

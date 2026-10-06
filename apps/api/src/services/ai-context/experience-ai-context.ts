@@ -19,7 +19,6 @@
  * @module apps/api/services/ai-context/experience-ai-context
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { experienceFaqs, experiences, getDb } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -41,6 +40,7 @@ import type { AssembleChatContextInput, AssembleChatContextOutput } from './type
 // ---------------------------------------------------------------------------
 
 /** Hard cap on the description length in the context block. */
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_EXPERIENCE_DIRECTIONS entitlement gate.
 export const EXPERIENCE_DESCRIPTION_MAX_CHARS = 800;
 
 /** Maximum FAQs included in the context block. */
@@ -280,7 +280,7 @@ function formatDuration(minutes: number): string {
 export async function assembleExperienceContext(
     input: AssembleChatContextInput
 ): Promise<AssembleChatContextOutput> {
-    const { entityId, resolvedPrompt, locale, ownerEntitlements } = input;
+    const { entityId, resolvedPrompt, locale } = input;
     const db = getDb();
 
     const rows = await db
@@ -314,11 +314,7 @@ export async function assembleExperienceContext(
 
     const faqs = await safeLoadFaqs(entityId);
 
-    const contextBlock = buildExperienceMarkdownContext(
-        experience,
-        faqs,
-        ownerEntitlements.has(EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS)
-    );
+    const contextBlock = buildExperienceMarkdownContext(experience, faqs, true);
 
     return {
         contextBlock,

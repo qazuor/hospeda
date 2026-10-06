@@ -106,7 +106,6 @@ describe('HOS-1183 guard: the API serves the verdict, it does not restate it', (
                 'a route that assembles them again is the second statement of the rule.'
         ).toMatch(/getPublishEligibility\s*\(/);
     });
-
     it('the read route does not resolve the verdict itself', () => {
         // checkEligibility answers only the BILLING half. A route calling it
         // directly would then have to add the staff bypass from memory, and
@@ -136,18 +135,5 @@ describe('HOS-1183 guard: the API serves the verdict, it does not restate it', (
                 '(or publishEligibilityAllowsPublish in service-core), or add the file to ' +
                 'DECISION_SCAN_EXCLUSIONS with the reason it is deliberate.'
         ).toEqual([]);
-    });
-
-    it('the resolver may still RETURN verdicts — producing one is not deciding on one', () => {
-        // Guards the guard. `accommodation-publish-deps.ts` names all three
-        // verdicts because it is the thing that produces them; if the scan
-        // above ever started flagging that file, the pattern would have
-        // widened from "compares a verdict" to "mentions one" and would be
-        // about to be silenced with an exclusion.
-        const resolver = 'services/accommodation-publish-deps.ts';
-        const source = stripComments(readSrc(resolver));
-
-        expect([...source.matchAll(VERDICT_LITERAL)].length).toBeGreaterThan(0);
-        expect(findHandRolledDecisions(readSrc(resolver))).toEqual([]);
     });
 });

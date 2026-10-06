@@ -54,8 +54,8 @@ import { getActorFromContext } from '../../../utils/actor';
 import { resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 

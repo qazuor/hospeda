@@ -99,11 +99,7 @@ app.get('/:id/contact', async (c) => {
     const accommodation = result.data;
 
     // Guard: only expose contact info for active public accommodations
-    if (
-        !accommodation ||
-        accommodation.lifecycleState !== 'ACTIVE' ||
-        accommodation.visibility !== 'PUBLIC'
-    ) {
+    if (accommodation?.lifecycleState !== 'ACTIVE' || accommodation.visibility !== 'PUBLIC') {
         return c.json(
             {
                 success: false,

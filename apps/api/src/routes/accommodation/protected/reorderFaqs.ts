@@ -13,20 +13,18 @@
  * NOTE: the admin tier uses PATCH for the equivalent route (preexisting
  * inconsistency between tiers). This protected route intentionally mirrors
  * gastronomy/experience protected FAQ reorder (PUT), not the admin tier.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     type FaqReorderPayload,
     FaqReorderPayloadSchema,
-    ProductDomainEnum,
     SuccessSchema
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -40,8 +38,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * Permission model (SPEC-177): service layer `accommodationService.reorderFaqs`
  * calls `_canUpdate(actor, accommodation)` which enforces
  * `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN` + ownership).
- * Route requires `EDIT_ACCOMMODATION_INFO` entitlement — same gate as the
- * sibling FAQ mutation routes (addFaq / updateFaq / removeFaq).
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former FAQ plan gate is removed.
  */
 export const protectedReorderFaqsRoute = createCRUDRoute({
     method: 'put',
@@ -57,6 +54,7 @@ export const protectedReorderFaqsRoute = createCRUDRoute({
     },
     requestBody: FaqReorderPayloadSchema,
     responseSchema: SuccessSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -76,11 +74,6 @@ export const protectedReorderFaqsRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-004: FAQ mutation is accommodation content; same entitlement
-        // gate as addFaq/updateFaq/removeFaq (EDIT_ACCOMMODATION_INFO).
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

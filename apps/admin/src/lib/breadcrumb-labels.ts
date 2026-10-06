@@ -12,20 +12,13 @@
  * via the `t()` translator.
  */
 export const breadcrumbLabels: Readonly<Record<string, string>> = {
-    // Billing section
+    // Billing section (HOS-1416: the plans/subscriptions/addons/payments/
+    // reconciliation/invoices/promo-codes/metrics/settings entries were
+    // removed with the deleted billing pages)
     '/billing': 'admin-menu.billing.title',
-    '/billing/plans': 'admin-menu.billing.plans',
-    '/billing/subscriptions': 'admin-menu.billing.subscriptions',
-    '/billing/addons': 'admin-menu.billing.addons',
-    '/billing/payments': 'admin-menu.billing.payments',
-    '/billing/reconciliation': 'admin-menu.billing.reconciliation',
-    '/billing/invoices': 'admin-menu.billing.invoices',
-    '/billing/promo-codes': 'admin-menu.billing.promoCodes',
     '/billing/sponsorships': 'admin-menu.billing.sponsorships',
     '/billing/owner-promotions': 'admin-menu.billing.ownerPromotions',
     '/billing/exchange-rates': 'admin-menu.billing.exchangeRates',
-    '/billing/metrics': 'admin-menu.billing.metrics',
-    '/billing/settings': 'admin-menu.billing.settings',
     '/platform/ops/cron': 'admin-menu.billing.cron',
     '/platform/ops/logs': 'admin-menu.billing.appLogs',
     '/platform/email/logs': 'admin-menu.billing.notificationLogs',

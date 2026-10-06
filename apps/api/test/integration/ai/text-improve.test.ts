@@ -191,23 +191,7 @@ vi.mock('@repo/ai-core', () => {
  * The function returns a Hono middleware; the factory does `entitlementMiddleware()`,
  * so we must export a function that returns the middleware.
  */
-vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        entitlementMiddleware: () => {
-            return async (
-                c: Parameters<AppMiddleware>[0],
-                next: Parameters<AppMiddleware>[1]
-            ): Promise<void> => {
-                c.set('userEntitlements', currentEntitlementsForTest.current);
-                c.set('userLimits', currentLimitsForTest.current);
-                c.set('billingLoadFailed', currentBillingLoadFailedForTest.current);
-                await next();
-            };
-        }
-    };
-});
+// Legacy entitlement loader mock removed with the billing middleware (HOS-1416).
 
 /**
  * Per-test injectable values for the entitlement stub above. Each test sets
@@ -236,7 +220,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
 import { protectedAiTextImproveRoute } from '../../../src/routes/ai/protected/text-improve';
-import type { AppBindings, AppMiddleware } from '../../../src/types';
+import type { AppBindings } from '../../../src/types';
 import { testDb } from '../../e2e/setup/test-database';
 
 // ---------------------------------------------------------------------------
@@ -401,8 +385,8 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
     // the user does not have `ai_text_improve` in their entitlement set.
     // =========================================================================
 
-    describe('403 ENTITLEMENT_REQUIRED — tourist plan', () => {
-        it('returns 403 with ENTITLEMENT_REQUIRED when the user lacks ai_text_improve', async () => {
+    describe('temporary access without the retired plan entitlement', () => {
+        it('streams for an authenticated user without ai_text_improve', async () => {
             // Tourist plan: no AI entitlements at all
             currentEntitlementsForTest.current = new Set<EntitlementKey>();
             currentLimitsForTest.current = new Map<LimitKey, number>();
@@ -416,16 +400,10 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
                 })
             });
 
-            expect(res.status).toBe(403);
-            const body = (await res.json()) as {
-                success: boolean;
-                error: { code: string; message: string };
-            };
-            expect(body.success).toBe(false);
-            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-
-            // The handler must NOT have been reached
-            expect(streamTextCalls).toHaveLength(0);
+            // HOS-1352: transitional until V3 (HOS-1357), see PR.
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
         });
     });
 
@@ -447,7 +425,7 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
     // =========================================================================
 
     describe('HOS-1075 — entityType routes the entitlement gate to the right vertical', () => {
-        it('blocks a gastronomy request even though the actor holds AI_TEXT_IMPROVE from their accommodation plan', async () => {
+        it('streams a gastronomy request without consulting the retired accommodation plan', async () => {
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
             currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
 
@@ -462,20 +440,12 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
                 })
             });
 
-            expect(res.status).toBe(403);
-            const body = (await res.json()) as {
-                success: boolean;
-                error: { code: string; message: string };
-            };
-            expect(body.success).toBe(false);
-            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-
-            // The handler must NOT have been reached — no free AI use off the
-            // wrong vertical's plan.
-            expect(streamTextCalls).toHaveLength(0);
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
         });
 
-        it('blocks an experience request under the identical actor state', async () => {
+        it('streams an experience request without consulting the retired accommodation plan', async () => {
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
             currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
 
@@ -490,11 +460,9 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
                 })
             });
 
-            expect(res.status).toBe(403);
-            const body = (await res.json()) as { success: boolean; error: { code: string } };
-            expect(body.success).toBe(false);
-            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(streamTextCalls).toHaveLength(0);
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
         });
 
         it('still grants access for an explicit accommodation request under the same actor state', async () => {
@@ -543,8 +511,8 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
     // quota middleware's monthly-count comparison fires.
     // =========================================================================
 
-    describe('403 LIMIT_REACHED — at-quota user', () => {
-        it('returns 403 with LIMIT_REACHED when monthly count >= limit', async () => {
+    describe('temporary access without the retired monthly quota', () => {
+        it('streams when the old monthly count reaches its former limit', async () => {
             // Entitled, with a limit of 20
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
             currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
@@ -560,16 +528,9 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
                 })
             });
 
-            expect(res.status).toBe(403);
-            const body = (await res.json()) as {
-                success: boolean;
-                error: { code: string; message: string };
-            };
-            expect(body.success).toBe(false);
-            expect(body.error.code).toBe('LIMIT_REACHED');
-
-            // Handler must NOT have been reached
-            expect(streamTextCalls).toHaveLength(0);
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
         });
     });
 
@@ -579,8 +540,8 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
     // entitlement check runs.
     // =========================================================================
 
-    describe('503 SERVICE_UNAVAILABLE — billing outage', () => {
-        it('returns 503 with SERVICE_UNAVAILABLE when billingLoadFailed is true', async () => {
+    describe('temporary access during retired billing outages', () => {
+        it('streams when the old billing loader is unavailable', async () => {
             // Even entitled + under quota — the billing-load guard fires first.
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
             currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
@@ -595,16 +556,9 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
                 })
             });
 
-            expect(res.status).toBe(503);
-            const body = (await res.json()) as {
-                success: boolean;
-                error: { code: string; message: string };
-            };
-            expect(body.success).toBe(false);
-            expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
-
-            // Handler must NOT have been reached
-            expect(streamTextCalls).toHaveLength(0);
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+            expect(streamTextCalls).toHaveLength(1);
         });
     });
 
@@ -847,7 +801,7 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
             expect(typeof recorded?.latencyMs).toBe('number');
         });
 
-        it('does not record usage when the request is rejected before the handler', async () => {
+        it('records successful usage even when the old monthly quota is exhausted', async () => {
             // At quota → the middleware rejects. The only row it may write is
             // its own `quota_exceeded` bookkeeping row, never a success row.
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
@@ -863,11 +817,12 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
                 })
             });
 
-            expect(res.status).toBe(403);
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
             const successRows = mockRecordAiUsage.mock.calls.filter(
                 (call) => call[0]?.status === 'success'
             );
-            expect(successRows).toHaveLength(0);
+            expect(successRows).toHaveLength(1);
         });
 
         it('still streams the reply when metering fails (metering is never fatal)', async () => {

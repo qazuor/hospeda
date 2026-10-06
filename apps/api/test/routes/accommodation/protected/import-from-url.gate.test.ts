@@ -1,14 +1,4 @@
-/**
- * Unit tests for the lazy AI entitlement/quota gate of the import route
- * (SPEC-222 T-021 — covers review note N2).
- *
- * `buildImportAiExtract` is the highest-bug-density part of the route: it decides
- * whether Strategy B runs, sets the degrade-clean `blockedReason`, meters usage,
- * and maps the model output. These branches are exercised here deterministically
- * with the entitlement helpers, the AI service factory, and the metering
- * functions mocked — no Hono app, no network.
- */
-
+/** AI import extraction and metering without the retired monthly plan quota. */
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,15 +16,6 @@ const {
     mockRecordAiUsage: vi.fn(),
     mockGenerateObject: vi.fn()
 }));
-
-vi.mock('../../../../src/middlewares/entitlement', async (importActual) => {
-    const actual = await importActual<typeof import('../../../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        hasEntitlement: mockHasEntitlement,
-        getRemainingLimit: mockGetRemainingLimit
-    };
-});
 
 vi.mock('@repo/ai-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/ai-core')>();
@@ -84,64 +65,48 @@ describe('buildImportAiExtract gate', () => {
         vi.clearAllMocks();
     });
 
-    it('degrades silently (null, no blockedReason) when billing context failed to load', async () => {
-        // Arrange
+    it('ignores an obsolete billing-load failure', async () => {
+        mockGenerateObject.mockResolvedValue(GOOD_AI_RESULT);
         const { gate, port } = runPort({ billingLoadFailed: true });
-
-        // Act
         const result = await port({ text: 'page', locale: 'es' });
-
-        // Assert
-        expect(result).toBeNull();
+        expect(result?.name).toEqual({ value: 'Cabaña del Río', source: 'ai' });
         expect(gate.blockedReason).toBeNull();
+        expect(mockGetMonthlyCallCount).not.toHaveBeenCalled();
+    });
+
+    it('extracts without an obsolete AI entitlement', async () => {
+        mockHasEntitlement.mockReturnValue(false);
+        mockGenerateObject.mockResolvedValue(GOOD_AI_RESULT);
+        const { gate, port } = runPort({});
+        const result = await port({ text: 'page', locale: 'es' });
+        expect(result?.name).toEqual({ value: 'Cabaña del Río', source: 'ai' });
+        expect(gate.blockedReason).toBeNull();
+        expect(mockGetMonthlyCallCount).not.toHaveBeenCalled();
         expect(mockHasEntitlement).not.toHaveBeenCalled();
     });
 
-    it('blocks with reason "entitlement" when the plan lacks the AI entitlement', async () => {
-        // Arrange
-        mockHasEntitlement.mockReturnValue(false);
-        const { gate, port } = runPort({});
-
-        // Act
-        const result = await port({ text: 'page', locale: 'es' });
-
-        // Assert
-        expect(result).toBeNull();
-        expect(gate.blockedReason).toBe('entitlement');
-        expect(mockGenerateObject).not.toHaveBeenCalled();
-    });
-
-    it('blocks with reason "entitlement" when the plan limit is 0 (disabled)', async () => {
-        // Arrange
-        mockHasEntitlement.mockReturnValue(true);
+    it('extracts without an obsolete zero plan limit', async () => {
         mockGetRemainingLimit.mockReturnValue(0);
+        mockGenerateObject.mockResolvedValue(GOOD_AI_RESULT);
         const { gate, port } = runPort({});
-
-        // Act
         const result = await port({ text: 'page', locale: 'es' });
-
-        // Assert
-        expect(result).toBeNull();
-        expect(gate.blockedReason).toBe('entitlement');
+        expect(result?.name).toEqual({ value: 'Cabaña del Río', source: 'ai' });
+        expect(gate.blockedReason).toBeNull();
+        expect(mockGetMonthlyCallCount).not.toHaveBeenCalled();
+        expect(mockGetRemainingLimit).not.toHaveBeenCalled();
     });
 
-    it('blocks with reason "quota" when the monthly count has reached the limit', async () => {
-        // Arrange
-        mockHasEntitlement.mockReturnValue(true);
-        mockGetRemainingLimit.mockReturnValue(5);
-        mockGetMonthlyCallCount.mockResolvedValue(5);
+    it('extracts even when historical monthly usage is high', async () => {
+        mockGetMonthlyCallCount.mockResolvedValue(999);
+        mockGenerateObject.mockResolvedValue(GOOD_AI_RESULT);
         const { gate, port } = runPort({});
-
-        // Act
         const result = await port({ text: 'page', locale: 'es' });
-
-        // Assert
-        expect(result).toBeNull();
-        expect(gate.blockedReason).toBe('quota');
-        expect(mockGenerateObject).not.toHaveBeenCalled();
+        expect(result?.name).toEqual({ value: 'Cabaña del Río', source: 'ai' });
+        expect(gate.blockedReason).toBeNull();
+        expect(mockGetMonthlyCallCount).not.toHaveBeenCalled();
     });
 
-    it('extracts and meters usage on the happy path (unlimited plan)', async () => {
+    it('extracts and meters usage without a monthly quota', async () => {
         // Arrange
         mockHasEntitlement.mockReturnValue(true);
         mockGetRemainingLimit.mockReturnValue(-1);
@@ -155,7 +120,7 @@ describe('buildImportAiExtract gate', () => {
         expect(gate.blockedReason).toBeNull();
         expect(result?.sourcePlatform).toBe('generic');
         expect(result?.name).toEqual({ value: 'Cabaña del Río', source: 'ai' });
-        expect(mockGetMonthlyCallCount).not.toHaveBeenCalled(); // -1 skips the count query
+        expect(mockGetMonthlyCallCount).not.toHaveBeenCalled();
         expect(mockRecordAiUsage).toHaveBeenCalledWith(
             expect.objectContaining({
                 userId: 'user-1',
@@ -169,11 +134,11 @@ describe('buildImportAiExtract gate', () => {
         );
     });
 
-    it('proceeds when under the monthly quota', async () => {
+    it('proceeds regardless of the retired monthly quota', async () => {
         // Arrange
         mockHasEntitlement.mockReturnValue(true);
         mockGetRemainingLimit.mockReturnValue(5);
-        mockGetMonthlyCallCount.mockResolvedValue(2);
+        mockGetMonthlyCallCount.mockResolvedValue(999);
         mockGenerateObject.mockResolvedValue(GOOD_AI_RESULT);
         const { gate, port } = runPort({});
 

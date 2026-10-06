@@ -51,7 +51,6 @@ export {
     publishEligibilityAllowsPublish,
     publishEligibilityStartsLocalTrial
 } from './accommodation/accommodation.types';
-export * from './accommodation/featured-entitlement.resolver';
 export * from './accommodation-external-reputation/index.js';
 export * from './accommodation-import/index.js';
 // HOS-25 T-025: pure per-review average helper, reused by seed factories that
@@ -65,7 +64,10 @@ export * from './amenity/amenity.service';
 export * from './appLog/index.js';
 export * from './attraction/attraction.service';
 export * from './auditLog/index.js';
-export * from './billing';
+export {
+    NotificationRetentionService,
+    type RetentionSummary
+} from './billing/notification/notification-retention.service.js';
 export * from './commerce';
 export type { CommerceListingHookState } from './commerce/commerce.types';
 export * from './contentModeration';

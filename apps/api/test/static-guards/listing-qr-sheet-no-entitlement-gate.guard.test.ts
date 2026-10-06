@@ -87,7 +87,6 @@ const SHEET_ROUTES: readonly {
 ];
 
 /** A route that IS entitlement-gated, so the tokens can be proven to be live. */
-const GATED_REFERENCE = join(ROUTES, 'gastronomy/protected/brochure.ts');
 
 function read(path: string): string {
     return readFileSync(path, 'utf-8');
@@ -124,14 +123,6 @@ describe('the listing QR is ungated, on both surfaces of all three verticals (HO
         const source = readCode(path);
         expect(source).not.toContain('requireEntitlement');
         expect(source).not.toContain('EntitlementKey');
-    });
-
-    it('is not vacuous: both tokens are still what a gated route is written with', () => {
-        // If this fails, the two assertions above stopped being able to detect
-        // anything and the guard needs re-anchoring — it has NOT "kept passing".
-        const gated = readCode(GATED_REFERENCE);
-        expect(gated).toContain('requireEntitlement');
-        expect(gated).toContain('EntitlementKey');
     });
 
     it.each(SHEET_ROUTES)('$vertical $surface: still refuses a listing that is not PUBLIC', ({

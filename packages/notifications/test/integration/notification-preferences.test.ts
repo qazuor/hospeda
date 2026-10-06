@@ -162,7 +162,6 @@ describe('Notification Preferences Integration Tests', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_opted_out',
                     type: NotificationType.RENEWAL_REMINDER,
                     status: 'skipped',
                     errorMessage: 'User has opted out of this notification type'
@@ -556,7 +555,6 @@ describe('Notification Preferences Integration Tests', () => {
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    customerId: 'cus_admin_log',
                     type: NotificationType.ADMIN_PAYMENT_FAILURE,
                     channel: 'email',
                     recipient: 'admin@hospeda.com',

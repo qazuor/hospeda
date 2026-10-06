@@ -43,5 +43,11 @@
 --   other extras file in this directory.
 -- =============================================================================
 
-ALTER TABLE billing_customers
-    ADD COLUMN IF NOT EXISTS mp_payer_email varchar;
+DO $legacy$
+BEGIN
+    IF to_regclass('public.billing_customers') IS NOT NULL THEN
+        ALTER TABLE billing_customers
+            ADD COLUMN IF NOT EXISTS mp_payer_email varchar;
+    END IF;
+END
+$legacy$;

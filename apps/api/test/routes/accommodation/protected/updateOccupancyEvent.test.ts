@@ -18,7 +18,7 @@
  * concern, not a re-test of the gate logic.
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -91,12 +91,7 @@ function buildApp(
     attachTestErrorHandler(app);
     app.use((c, next) => {
         c.set('actor', actor);
-        c.set(
-            'userEntitlements',
-            new Set(options?.entitlements ?? [EntitlementKey.CAN_USE_CALENDAR])
-        );
-        c.set('userLimits', new Map<LimitKey, number>());
-        c.set('billingLoadFailed', false);
+        void options;
         return next();
     });
     app.route('/', protectedUpdateOccupancyEventRoute);
@@ -290,20 +285,18 @@ describe('PATCH /:id/occupancy/event (protected)', () => {
         expect(res.status).toBe(404);
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the owner lacks CAN_USE_CALENDAR (real route-level gate)', async () => {
+    it('preserves calendar editing when the old plan entitlement is absent', async () => {
         const app = buildApp(ownerActor, { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/event`, {
             method: 'PATCH',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(validBody)
         });
-        expect(res.status).toBe(403);
-        const body = await res.json();
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-        expect(mockUpdateOccupancyEvent).not.toHaveBeenCalled();
+        expect(res.status).toBe(200);
+        expect(mockUpdateOccupancyEvent).toHaveBeenCalled();
     });
 
-    it('succeeds when the owner holds CAN_USE_CALENDAR (real route-level gate)', async () => {
+    it('preserves calendar editing for a previously entitled owner', async () => {
         const app = buildApp(ownerActor, { entitlements: [EntitlementKey.CAN_USE_CALENDAR] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/event`, {
             method: 'PATCH',

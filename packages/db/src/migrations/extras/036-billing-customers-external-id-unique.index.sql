@@ -127,6 +127,14 @@ BEGIN
 END
 $do$;
 
-CREATE UNIQUE INDEX IF NOT EXISTS billing_customers_external_id_livemode_uniq
-    ON billing_customers (external_id, livemode)
-    WHERE deleted_at IS NULL;
+DO $legacy$
+BEGIN
+    IF to_regclass('public.billing_customers') IS NOT NULL THEN
+        EXECUTE $index$
+            CREATE UNIQUE INDEX IF NOT EXISTS billing_customers_external_id_livemode_uniq
+                ON billing_customers (external_id, livemode)
+                WHERE deleted_at IS NULL
+        $index$;
+    END IF;
+END
+$legacy$;

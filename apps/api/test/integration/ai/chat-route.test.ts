@@ -203,26 +203,7 @@ vi.mock('../../../src/middlewares/owner-entitlement', () => ({
     resolveOwnerLimitsForOwnerId: vi.fn(async () => mockOwnerLimits.current as Map<string, number>)
 }));
 
-vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        entitlementMiddleware: () => {
-            return async (
-                c: Parameters<AppMiddleware>[0],
-                next: Parameters<AppMiddleware>[1]
-            ): Promise<void> => {
-                c.set(
-                    'userEntitlements',
-                    currentEntitlementsForTest.current as Set<EntitlementKey>
-                );
-                c.set('userLimits', currentLimitsForTest.current as Map<LimitKey, number>);
-                c.set('billingLoadFailed', currentBillingLoadFailedForTest.current);
-                await next();
-            };
-        }
-    };
-});
+// Legacy entitlement loader mock removed with the billing middleware (HOS-1416).
 
 vi.mock('../../../src/services/ai-service.factory', () => ({
     createConfiguredAiService: vi.fn(async () => ({
@@ -298,7 +279,7 @@ vi.mock('../../../src/utils/logger', () => ({
 }));
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
+import { recordAiUsage } from '@repo/ai-core';
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -306,7 +287,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
 import { protectedAiChatRoute } from '../../../src/routes/ai/protected/chat';
-import type { AppBindings, AppMiddleware } from '../../../src/types';
+import type { AppBindings } from '../../../src/types';
 
 const TEST_PATH = '/test-chat';
 const STREAM_PATH = `${TEST_PATH}/`;
@@ -463,7 +444,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(streamTextCalls).toHaveLength(0);
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the listing owner lacks ai_chat (SPEC-211)', async () => {
+    it('keeps streaming when the retired owner entitlement is absent', async () => {
         // SPEC-211 Phase 1: the gate is now against the OWNER, not the tourist.
         // Set owner's entitlements to empty — tourist entitlement is irrelevant.
         mockOwnerEntitlements.current = [];
@@ -478,13 +459,13 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             })
         });
 
-        expect(res.status).toBe(403);
-        const body = (await res.json()) as { error: { code: string } };
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-        expect(streamTextCalls).toHaveLength(0);
+        // HOS-1352: transitional until V3 (HOS-1357), see PR.
+        expect(res.status).toBe(200);
+        await readSseFrames(res);
+        expect(streamTextCalls).toHaveLength(1);
     });
 
-    it("returns 403 LIMIT_REACHED when the listing owner's monthly count >= plan limit (SPEC-211)", async () => {
+    it("keeps streaming when the retired owner's monthly count reaches its former limit", async () => {
         // SPEC-211 Phase 1: quota counted against the OWNER, not the tourist.
         // Owner limit is 20 and has already used 20 calls this month.
         mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
@@ -499,10 +480,9 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             })
         });
 
-        expect(res.status).toBe(403);
-        const body = (await res.json()) as { error: { code: string } };
-        expect(body.error.code).toBe('LIMIT_REACHED');
-        expect(streamTextCalls).toHaveLength(0);
+        expect(res.status).toBe(200);
+        await readSseFrames(res);
+        expect(streamTextCalls).toHaveLength(1);
     });
 
     it('returns 400 VALIDATION_ERROR when messages exceed the 20-message cap', async () => {
@@ -873,7 +853,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
     // =========================================================================
 
     describe('SPEC-283 — consumer-side chat quota gate', () => {
-        it('owner-block 403 carries the owner copy, NOT the consumer copy (ENTITLEMENT_REQUIRED)', async () => {
+        it('serves a listing whose retired owner entitlement is absent', async () => {
             // Owner lacks AI_CHAT — gate fires on the owner side.
             mockOwnerEntitlements.current = [];
             // Consumer has headroom — irrelevant; owner gate fires first.
@@ -890,16 +870,11 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
                 })
             });
 
-            expect(res.status).toBe(403);
-            const body = (await res.json()) as { error: { code: string; message: string } };
-            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-            // Must be the owner-side copy.
-            expect(body.error.message).toBe('accommodations.aiChat.unavailable');
-            // Must NOT be the consumer-side copy.
-            expect(body.error.message).not.toBe('accommodations.aiChat.consumerLimitReached');
+            expect(res.status).toBe(200);
+            expect((await readSseFrames(res)).some((frame) => frame.event === 'done')).toBe(true);
         });
 
-        it('consumer 403 LIMIT_REACHED when consumer monthly count >= plan limit', async () => {
+        it('keeps streaming when the retired consumer monthly count reaches its former limit', async () => {
             // Owner passes: limit 300, usage 200 (200 < 300 → passes).
             mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 300]]);
             getMonthlyCallCountReturn.current = 200;
@@ -919,20 +894,9 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
                 })
             });
 
-            expect(res.status).toBe(403);
-            const body = (await res.json()) as { error: { code: string; message: string } };
-            expect(body.error.code).toBe('LIMIT_REACHED');
-            // Must be the consumer-side copy, NOT the owner-side copy.
-            expect(body.error.message).toBe('accommodations.aiChat.consumerLimitReached');
-            expect(body.error.message).not.toBe('accommodations.aiChat.unavailable');
-            // No stream was opened.
-            expect(streamTextCalls).toHaveLength(0);
-            // Critical: the consumer gate must count against the REQUESTING user's bucket
-            // (actor.id = UNIQUE_USER_ID), not the owner's. A bug that forwarded ownerId
-            // to the consumer gate would not produce a call with userId=UNIQUE_USER_ID.
-            expect(vi.mocked(getMonthlyCallCount)).toHaveBeenCalledWith(
-                expect.objectContaining({ userId: UNIQUE_USER_ID, feature: 'chat' })
-            );
+            expect(res.status).toBe(200);
+            expect((await readSseFrames(res)).some((frame) => frame.event === 'done')).toBe(true);
+            expect(streamTextCalls).toHaveLength(1);
         });
 
         it('200 SSE stream proceeds when both owner and consumer have headroom', async () => {
@@ -957,7 +921,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
         });
 
-        it('consumer 403 immediately when consumer limit is 0 (feature disabled, no count query)', async () => {
+        it('keeps streaming when the retired consumer limit is zero', async () => {
             // Consumer limit exactly 0 → short-circuit block before getMonthlyCallCount for actor.id.
             currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 0]]);
 
@@ -970,12 +934,9 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
                 })
             });
 
-            expect(res.status).toBe(403);
-            const body = (await res.json()) as { error: { code: string; message: string } };
-            expect(body.error.code).toBe('LIMIT_REACHED');
-            expect(body.error.message).toBe('accommodations.aiChat.consumerLimitReached');
-            // Gate fires pre-stream — no AI call was made.
-            expect(streamTextCalls).toHaveLength(0);
+            expect(res.status).toBe(200);
+            expect((await readSseFrames(res)).some((frame) => frame.event === 'done')).toBe(true);
+            expect(streamTextCalls).toHaveLength(1);
         });
 
         // Pre-SPEC-283 / mid-rollout path: plans predating SPEC-283 will not carry

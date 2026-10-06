@@ -30,7 +30,6 @@
  * @module test/routes/accommodation/public/actor-blind-cache
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types';
@@ -307,12 +306,6 @@ describe('HOS-353 — the per-caller side effect keeps the REAL actor', () => {
             '../../../../src/routes/accommodation/public/list'
         );
         const app = new Hono<AppBindings>();
-        // The recording branch also requires the viewer entitlement, which the real
-        // `hasEntitlement` reads off the context — so it has to be set here.
-        app.use('*', async (c, next) => {
-            c.set('userEntitlements', new Set([EntitlementKey.CAN_VIEW_SEARCH_HISTORY]));
-            await next();
-        });
         app.route('/', publicListAccommodationsRoute);
 
         expect((await app.request('/')).status).toBe(200);

@@ -39,6 +39,14 @@
 --   needed.
 -- =============================================================================
 
-CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_subscription_events_supersession_pairing
-    ON billing_subscription_events (subscription_id, (metadata ->> 'supersededSubscriptionId'))
-    WHERE metadata ->> 'supersededSubscriptionId' IS NOT NULL;
+DO $legacy$
+BEGIN
+    IF to_regclass('public.billing_subscription_events') IS NOT NULL THEN
+        EXECUTE $index$
+            CREATE UNIQUE INDEX IF NOT EXISTS uq_billing_subscription_events_supersession_pairing
+                ON billing_subscription_events (subscription_id, (metadata ->> 'supersededSubscriptionId'))
+                WHERE metadata ->> 'supersededSubscriptionId' IS NOT NULL
+        $index$;
+    END IF;
+END
+$legacy$;

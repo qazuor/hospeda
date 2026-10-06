@@ -1,20 +1,12 @@
 /**
  * Admin webhook routes
- * Routes that require admin-level access for webhook operations
+ *
+ * The legacy billing webhook event log and dead-letter queue were removed
+ * with the legacy billing system (HOS-1416). The router is kept as the mount
+ * point in case a webhook admin surface returns for the new system.
  */
 import { createRouter } from '../../../utils/create-app';
-import { listDeadLetterQueueRoute, retryDeadLetterRoute } from './dead-letter';
-import { listWebhookEventsRoute } from './events';
-
-const eventsRouter = createRouter();
-eventsRouter.route('/', listWebhookEventsRoute);
-
-const deadLetterRouter = createRouter();
-deadLetterRouter.route('/', listDeadLetterQueueRoute);
-deadLetterRouter.route('/', retryDeadLetterRoute);
 
 const adminWebhookRouter = createRouter();
-adminWebhookRouter.route('/events', eventsRouter);
-adminWebhookRouter.route('/dead-letter', deadLetterRouter);
 
 export { adminWebhookRouter };

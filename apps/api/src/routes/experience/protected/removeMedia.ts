@@ -13,14 +13,12 @@
  * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
  * enforced inside `removeExperienceMedia` via `checkExperienceCanEditMedia`.
  */
-import { EntitlementKey } from '@repo/billing';
-import { ProductDomainEnum, SuccessSchema } from '@repo/schemas';
+
+import { SuccessSchema } from '@repo/schemas';
 import { ExperienceService, removeExperienceMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -47,6 +45,7 @@ export const protectedRemoveExperienceMediaRoute = createCRUDRoute({
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: SuccessSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_EXPERIENCE_INFO entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
@@ -71,16 +70,6 @@ export const protectedRemoveExperienceMediaRoute = createCRUDRoute({
         return result.data ?? { success: true };
     },
     options: {
-        // HOS-1275: DELETING content is mutating it. These two routes carried no
-        // entitlement gate at all — not in commerce, and not in accommodation
-        // either, which PR #3299's own write-up missed because it only surveyed
-        // commerce. Wired here with the same pair every sibling content route
-        // carries, so the six of them stop being the exception that the next
-        // change to the EDIT_* keys would silently leave behind.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

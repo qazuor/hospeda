@@ -32,7 +32,6 @@
  * @module test/routes/accommodation/protected/patch-persistence
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -73,14 +72,6 @@ function buildApp(): Hono<AppBindings> {
             roles: [RoleEnum.HOST],
             permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
-        c.set('billingLoadFailed', false);
-        c.set(
-            'userEntitlements',
-            new Set([
-                EntitlementKey.EDIT_ACCOMMODATION_INFO,
-                EntitlementKey.CAN_USE_RICH_DESCRIPTION
-            ])
-        );
         return next();
     });
 

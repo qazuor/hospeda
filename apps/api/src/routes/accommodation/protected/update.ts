@@ -2,7 +2,7 @@
  * Protected update accommodation endpoint
  * Requires authentication and ownership
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
@@ -10,27 +10,19 @@ import {
     AccommodationUpdateHttpSchema,
     type AccommodationUpdateInput,
     httpToDomainAccommodationUpdate,
-    PermissionEnum,
-    ProductDomainEnum
+    PermissionEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getQZPayBilling } from '../../../middlewares/billing';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
-import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const accommodationService = new AccommodationService(
-    { logger: apiLogger },
-    undefined,
-    null,
-    undefined,
-    buildAccommodationPublishDeps(() => getQZPayBilling())
-);
+// The publish-deps (trial eligibility + local trial) went down with the legacy
+// billing system (HOS-1416); `publishDeps` is optional in `AccommodationService`.
+const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/protected/accommodations/:id
@@ -53,6 +45,7 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
         ownershipFields: ['ownerId', 'createdById'],
         bypassPermission: PermissionEnum.ACCOMMODATION_UPDATE_ANY
     },
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -89,11 +82,6 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
         return stripRichDescriptionFields(result.data);
     },
     options: {
-        // SPEC-145 T-004: full-replace mutation requires EDIT_ACCOMMODATION_INFO
-        // (granted on all owner/complex plans). Runs before the handler.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

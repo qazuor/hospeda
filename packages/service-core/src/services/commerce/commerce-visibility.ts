@@ -4,10 +4,10 @@
  * Visibility reconciler for commerce listing entities (SPEC-239 T-032,
  * predicate widened HOS-166 §6.5).
  *
- * `reconcileCommerceListingVisibility` reads the `entity_subscriptions`
- * link table to find the associated entity, then flips its `visibility` and
- * `lifecycleState` based on the subscription status **and** (HOS-166 G-3) the
- * listing's publish-readiness ("complete") and moderation state:
+ * `reconcileCommerceListingVisibility` flips a listing's `visibility` and
+ * `lifecycleState` based on the caller-supplied subscription status **and**
+ * (HOS-166 G-3) the listing's publish-readiness ("complete") and moderation
+ * state:
  *
  * ```
  * shouldBePublic = subscriptionActive AND NOT planRestricted
@@ -33,7 +33,6 @@
 
 import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { and, entitySubscriptions, eq, getDb, inArray } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { createLogger } from '@repo/logger';
 import {
@@ -389,92 +388,4 @@ export async function reconcileCommerceListingVisibility(
     }
 
     return { updated: true, visibility: desiredVisibility, lifecycleState: desiredLifecycleState };
-}
-
-// ---------------------------------------------------------------------------
-// Lookup helper (reads the link table)
-// ---------------------------------------------------------------------------
-
-/**
- * Resolves a commerce entity's current subscription status from the
- * `entity_subscriptions` link table.
- *
- * Returns `null` when no link row exists for the given entity.  This is a
- * pure read with no side effects and is suitable for use in scheduled jobs
- * that need to reconcile all active entities.
- *
- * @param input - Entity discriminator.
- * @param tx - Optional transaction client.
- * @returns The subscription status string, or `null` when no link row exists.
- */
-export async function getCommerceListingSubscriptionStatus(
-    input: { entityType: string; entityId: string },
-    tx?: DrizzleClient
-): Promise<string | null> {
-    const db = tx ?? getDb();
-    const rows = await db
-        .select({ status: entitySubscriptions.status })
-        .from(entitySubscriptions)
-        // The link table's unique index is (entity_type, entity_id) — filtering
-        // on entityId alone would match a different entityType's row that
-        // happens to reuse the same UUID (a real risk since gastronomy and
-        // experience ids are drawn from independent primary key spaces).
-        .where(
-            and(
-                eq(entitySubscriptions.entityType, input.entityType),
-                eq(entitySubscriptions.entityId, input.entityId)
-            )
-        )
-        .limit(1);
-
-    const row = rows[0];
-    return row === undefined ? null : row.status;
-}
-
-/**
- * Batched variant of {@link getCommerceListingSubscriptionStatus} — resolves
- * the current subscription status for MULTIPLE commerce entities of the same
- * `entityType` in a single query (HOS-166 judgment-day W1: surfaces
- * dunning/suspended state on the owner's listing index without an N+1 query
- * per listing).
- *
- * The `entity_subscriptions` link table only ever links commerce
- * entities (its rows are always `product_domain = 'commerce'` by
- * construction — see the table's own doc comment), so this naturally never
- * leaks accommodation or partner billing state.
- *
- * @param input.entityType - Commerce entity discriminator shared by every id
- *   in `entityIds` (the link table's unique index is on `(entityType,
- *   entityId)`, so a batched lookup must stay within one entity type).
- * @param input.entityIds - UUIDs of the commerce entities to resolve. An
- *   empty array short-circuits to an empty map without querying.
- * @param tx - Optional transaction client.
- * @returns A `Map` from `entityId` to its current subscription status.
- *   Entities with no link row (never subscribed) are simply absent from the
- *   map — callers should treat a missing key as "no subscription".
- */
-export async function getCommerceListingSubscriptionStatuses(
-    input: { entityType: string; entityIds: readonly string[] },
-    tx?: DrizzleClient
-): Promise<Map<string, string>> {
-    const { entityType, entityIds } = input;
-    if (entityIds.length === 0) {
-        return new Map();
-    }
-
-    const db = tx ?? getDb();
-    const rows = await db
-        .select({
-            entityId: entitySubscriptions.entityId,
-            status: entitySubscriptions.status
-        })
-        .from(entitySubscriptions)
-        .where(
-            and(
-                eq(entitySubscriptions.entityType, entityType),
-                inArray(entitySubscriptions.entityId, [...entityIds])
-            )
-        );
-
-    return new Map(rows.map((row) => [row.entityId, row.status]));
 }

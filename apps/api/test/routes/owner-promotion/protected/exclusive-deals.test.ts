@@ -1,89 +1,14 @@
-/**
- * HOS-21 T-008: GET /api/v1/protected/owner-promotions/exclusive-deals
- *
- * The EXCLUSIVE_DEALS entitlement gate (`gateExclusiveDeals`, wired in T-009)
- * is mocked as pass-through here so these tests stay focused on T-008's own
- * concerns: the route exists, is reachable by any authenticated actor,
- * forwards pagination/accommodationId, and reuses
- * `OwnerPromotionService.findExclusiveDeals` (T-005/T-006) rather than the
- * public `search()` path. Gate behavior itself (403 without the entitlement,
- * plus-vs-plus+vip tier resolution) is covered by `exclusive-deals-gate.test.ts`.
- *
- * Mounted at a distinct sub-path (`/exclusive-deals`), NOT at `/`, so it does
- * not fall into the sibling-route middleware-union gotcha that affects
- * `/` and `/:id` (see `tourist-audience.test.ts`).
- */
-
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
-    const orig =
-        await importOriginal<typeof import('../../../../src/middlewares/tourist-entitlements')>();
-    return {
-        ...orig,
-        gateExclusiveDeals: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
-
-const findExclusiveDealsCaptures: Array<{
-    actor: unknown;
-    params: unknown;
-    audienceScope: unknown;
-}> = [];
+const findExclusiveDeals = vi.fn();
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
         OwnerPromotionService: class MockOwnerPromotionService extends orig.OwnerPromotionService {
-            // biome-ignore lint/complexity/noUselessConstructor: need to call super
-            constructor(...args: ConstructorParameters<typeof orig.OwnerPromotionService>) {
-                super(...args);
-            }
-
-            override async findExclusiveDeals(
-                actor: Parameters<
-                    typeof orig.OwnerPromotionService.prototype.findExclusiveDeals
-                >[0],
-                params: Parameters<
-                    typeof orig.OwnerPromotionService.prototype.findExclusiveDeals
-                >[1],
-                audienceScope: Parameters<
-                    typeof orig.OwnerPromotionService.prototype.findExclusiveDeals
-                >[2]
-            ): ReturnType<typeof orig.OwnerPromotionService.prototype.findExclusiveDeals> {
-                findExclusiveDealsCaptures.push({ actor, params, audienceScope });
-                return {
-                    data: {
-                        items: [
-                            {
-                                id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-                                slug: 'summer-deal',
-                                ownerId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-                                accommodationId: null,
-                                title: 'Summer Deal',
-                                discountType: 'percentage',
-                                discountValue: 15,
-                                lifecycleState: 'ACTIVE',
-                                validFrom: new Date('2025-01-01').toISOString(),
-                                validUntil: null,
-                                currentRedemptions: 0,
-                                maxRedemptions: null,
-                                touristAudience: 'plus',
-                                createdAt: new Date('2025-01-01').toISOString(),
-                                updatedAt: new Date('2025-01-01').toISOString()
-                            }
-                        ],
-                        total: 1
-                    },
-                    error: undefined
-                } as unknown as ReturnType<
-                    typeof orig.OwnerPromotionService.prototype.findExclusiveDeals
-                >;
-            }
+            override findExclusiveDeals = findExclusiveDeals;
         }
     };
 });
@@ -109,7 +34,7 @@ describe('GET /api/v1/protected/owner-promotions/exclusive-deals (HOS-21 T-008)'
 
     beforeEach(() => {
         app = initApp() as unknown as AppOpenAPI;
-        findExclusiveDealsCaptures.length = 0;
+        findExclusiveDeals.mockClear();
     });
 
     it('is registered and reachable (not 404)', async () => {
@@ -124,41 +49,32 @@ describe('GET /api/v1/protected/owner-promotions/exclusive-deals (HOS-21 T-008)'
         expect(res.status).toBe(401);
     });
 
-    it('returns 200 with items + pagination for an authenticated actor', async () => {
+    // HOS-1352: transitional until V3 (HOS-1357), see PR
+    it('returns 200 with an empty collection', async () => {
         const res = await app.request(BASE, { headers: makeHeaders() });
-
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.success).toBe(true);
-        expect(Array.isArray(body.data.items)).toBe(true);
-        expect(body.data.items).toHaveLength(1);
-        expect(body.data.items[0]).toHaveProperty('touristAudience', 'plus');
-        expect(body.data).toHaveProperty('pagination');
+        expect(body.data.items).toEqual([]);
+        expect(body.data.pagination.total).toBe(0);
     });
 
-    it('calls findExclusiveDeals (not the public search path)', async () => {
+    it('preserves requested pagination', async () => {
+        const res = await app.request(`${BASE}?page=2&pageSize=5`, { headers: makeHeaders() });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.pagination.page).toBe(2);
+        expect(body.data.pagination.pageSize).toBe(5);
+    });
+
+    it('does not query exclusive deals', async () => {
         await app.request(BASE, { headers: makeHeaders() });
-
-        expect(findExclusiveDealsCaptures).toHaveLength(1);
+        expect(findExclusiveDeals).not.toHaveBeenCalled();
     });
 
-    it('forwards accommodationId from the query string', async () => {
-        const accommodationId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
-        await app.request(`${BASE}?accommodationId=${accommodationId}`, {
+    it('rejects an invalid accommodationId', async () => {
+        const res = await app.request(`${BASE}?accommodationId=invalid`, {
             headers: makeHeaders()
         });
-
-        expect(findExclusiveDealsCaptures).toHaveLength(1);
-        const captured = findExclusiveDealsCaptures[0]?.params as Record<string, unknown>;
-        expect(captured.accommodationId).toBe(accommodationId);
-    });
-
-    it('forwards page/pageSize from the query string', async () => {
-        await app.request(`${BASE}?page=2&pageSize=5`, { headers: makeHeaders() });
-
-        expect(findExclusiveDealsCaptures).toHaveLength(1);
-        const captured = findExclusiveDealsCaptures[0]?.params as Record<string, unknown>;
-        expect(captured.page).toBe(2);
-        expect(captured.pageSize).toBe(5);
+        expect(res.status).toBe(400);
     });
 });

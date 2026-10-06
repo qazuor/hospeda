@@ -3,7 +3,6 @@
  * Requires authentication
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     DestinationIdSchema,
     DestinationReviewCreateBodySchema,
@@ -12,7 +11,7 @@ import {
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
@@ -48,6 +47,7 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
     },
     requestBody: DestinationReviewCreateBodySchema,
     responseSchema: DestinationReviewProtectedSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed WRITE_REVIEWS entitlement gate.
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
         const input = body as z.infer<typeof DestinationReviewCreateBodySchema>;
@@ -62,12 +62,7 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // writeReviewRateLimit runs first (fast in-memory check, no DB hit) before
-        // requireEntitlement (which does a DB lookup for the user's plan tier).
-        // SPEC-145 T-005 / SPEC-216: WRITE_REVIEWS gate — granted on all tourist
-        // plans (tourist-free, tourist-vip — HOS-1224 retired tourist-plus) and on all owner/complex
-        // plans via tourist-VIP entitlement inheritance (SPEC-216). Same gate as
-        // accommodation reviews.
-        middlewares: [writeReviewRateLimit, requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
+        middlewares: [writeReviewRateLimit]
     }
 });

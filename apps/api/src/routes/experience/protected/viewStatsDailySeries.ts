@@ -5,18 +5,16 @@
  * the authenticated owner, over a rolling window (7d or 30d) — HOS-734.
  *
  * Mirrors `views/protected/daily-series.ts` (the accommodation twin). See
- * `viewStats.ts` in this same directory for the full gate-order rationale.
+ * `viewStats.ts` in this same directory for the shared stats read.
  *
  * @module routes/experience/protected/viewStatsDailySeries
  * @see HOS-734
  */
 
-import { EntitlementKey } from '@repo/billing';
 import type { ServiceErrorCode } from '@repo/schemas';
 import { EntityTypeEnum, EntityViewWindowSchema, HostViewDailySeriesSchema } from '@repo/schemas';
 import { entityViewService, ServiceError } from '@repo/service-core';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -25,8 +23,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  *
  * Authenticated owner endpoint that returns a gap-filled daily view-count
  * series aggregated across all of the caller's own experience listings.
- * Requires the `view_basic_stats` entitlement (same gate as `viewStats.ts`,
- * so both widgets are consistently accessible on the same plan tier).
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the stats plan gate is removed.
  */
 export const protectedExperienceViewStatsDailySeriesRoute = createProtectedRoute({
     method: 'get',
@@ -42,6 +39,7 @@ export const protectedExperienceViewStatsDailySeriesRoute = createProtectedRoute
         window: EntityViewWindowSchema.default('30d')
     },
     responseSchema: HostViewDailySeriesSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const typedQuery = query as { window: '7d' | '30d' };
@@ -62,10 +60,6 @@ export const protectedExperienceViewStatsDailySeriesRoute = createProtectedRoute
         };
     },
     options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)
-        ],
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

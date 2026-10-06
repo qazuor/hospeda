@@ -490,9 +490,9 @@ then ported its two robustness properties into `notification-schedule.job.ts` an
 > **Superseded by HOS-1012 (point 1 only).** The two-variant scheme above was replaced
 > by a nine-send series at FIXED offsets (−10, −5, −1, 0, +1, +5, +10, +30, +60), each
 > with its own template, its own `NotificationType` and its own
-> `TRIAL_SERIES_NOTIF_*` ledger row — see
-> [`services/billing/trial-notification-offsets.ts`](../src/services/billing/trial-notification-offsets.ts)
-> and [`cron/jobs/trial-series-dispatch.ts`](../src/cron/jobs/trial-series-dispatch.ts).
+> `TRIAL_SERIES_NOTIF_*` ledger row — historically implemented in
+> `services/billing/trial-notification-offsets.ts`
+> and `cron/jobs/trial-series-dispatch.ts` (both retired by HOS-1416).
 > `billingSettings.trialExpiryReminderDays` and its admin UI are **retired**: every email
 > in the series names its own distance in its copy, so an admin able to move the distance
 > is an admin able to make the copy lie.

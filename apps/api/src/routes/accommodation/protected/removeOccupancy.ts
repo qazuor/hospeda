@@ -5,16 +5,16 @@
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
  * enforced inside `removeOccupancy`. Only removes a `source=MANUAL` row; a
- * sync-sourced row for the same date is untouched. The `CAN_USE_CALENDAR`
- * entitlement is enforced HERE at the route via `requireEntitlement` — see
- * the module doc in `addOccupancy.ts` for the full rationale.
+ * sync-sourced row for the same date is untouched. Calendar operations run without the former
+ * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import { AccommodationIdSchema, OccupancyDateSchema } from '@repo/schemas';
 import { removeOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -41,6 +41,7 @@ export const protectedRemoveOccupancyRoute = createProtectedRoute({
         date: OccupancyDateSchema
     },
     responseSchema: RemoveOccupancyResponseSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_CALENDAR entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
@@ -48,7 +49,5 @@ export const protectedRemoveOccupancyRoute = createProtectedRoute({
 
         return await removeOccupancy({ actor, accommodationId, date });
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
-    }
+    options: {}
 });

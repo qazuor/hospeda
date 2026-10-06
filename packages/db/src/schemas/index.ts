@@ -1,5 +1,3 @@
-// QZPay billing schemas (schema only - exported via billing module)
-export { qzpaySchema } from '@qazuor/qzpay-drizzle';
 export * from './accommodation/index.ts';
 export * from './accommodation-external/index.ts';
 export * from './ai/index.ts';

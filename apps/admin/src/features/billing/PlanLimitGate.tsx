@@ -1,9 +1,10 @@
 /**
  * PlanLimitGate — plan-aware numeric limit gate for the admin app.
  *
- * Replaces the `@qazuor/qzpay-react` `LimitGate` for fields and pages whose
- * availability depends on the **currently-logged-in user's** plan limits
- * (e.g. `LimitKey.MAX_ACCOMMODATIONS`, `LimitKey.MAX_ACTIVE_PROMOTIONS`).
+ * (HOS-1416: replaced the retired qzpay-react `LimitGate` for fields and
+ * pages whose availability depends on the **currently-logged-in user's**
+ * plan limits — e.g. `LimitKey.MAX_ACCOMMODATIONS`,
+ * `LimitKey.MAX_ACTIVE_PROMOTIONS`.)
  *
  * Unlike `LimitGate`, this component does NOT require a `customerId` prop or
  * a customer wired into the `QZPayContext`. It reads limit values from

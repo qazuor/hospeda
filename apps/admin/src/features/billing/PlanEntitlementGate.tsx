@@ -1,9 +1,9 @@
 /**
  * PlanEntitlementGate — plan-aware feature gate for the admin app.
  *
- * Replaces the `@qazuor/qzpay-react` `EntitlementGate` for fields whose
- * visibility depends on the **currently-logged-in user's** plan entitlements
- * (e.g. `can_use_rich_description`, `can_embed_video`).
+ * (HOS-1416: replaced the retired qzpay-react `EntitlementGate` for fields
+ * whose visibility depends on the **currently-logged-in user's** plan
+ * entitlements — e.g. `can_use_rich_description`, `can_embed_video`.)
  *
  * Unlike `EntitlementGate`, this component does NOT require a `customerId`
  * prop or a customer wired into the `QZPayContext`. It reads entitlements

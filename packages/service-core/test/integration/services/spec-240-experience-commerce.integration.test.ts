@@ -72,7 +72,6 @@ import {
     getServiceTestDb,
     isServiceTestDbAvailable,
     seedExperience,
-    seedExperienceListingSubscription,
     withServiceTestTransaction
 } from './helpers';
 
@@ -307,13 +306,9 @@ describe('HOS-1269 — Experience commerce admin-sells lifecycle (integration)',
                     visibility: 'PRIVATE',
                     lifecycleState: 'INACTIVE'
                 });
-                // Real rows, not a bare boolean flip — see helpers.ts docblock.
-                const { subscriptionId } = await seedExperienceListingSubscription(tx, {
-                    experienceId,
-                    status: 'active'
-                });
-                expect(subscriptionId).toBeTruthy();
-
+                // HOS-1416: the entity_subscriptions link table was dropped with
+                // the legacy billing schema; the reconciler receives the status
+                // directly, so no subscription row is seeded here.
                 const { experienceModel } = await import('@repo/db');
                 const ctx: ServiceContext = { tx };
 
@@ -826,50 +821,16 @@ describe('HOS-1269 — Experience commerce admin-sells lifecycle (integration)',
                     visibility: 'PRIVATE',
                     lifecycleState: 'INACTIVE'
                 });
-                const uid = dualOwnerId.slice(0, 8);
 
-                // Seed an unrelated ACCOMMODATION-domain entity_subscriptions row
-                // for an arbitrary accommodation (not this owner's real portfolio —
-                // the point is only that a same-owner, different-domain row exists
-                // in the same table the experience reconciler could, in principle,
-                // be pointed at).
-                // Typed Drizzle inserts (HOS-73/HOS-75), not raw SQL — see
-                // helpers.ts' seedExperienceListingSubscription docblock for
-                // why raw SQL is unnecessary for these two tables.
-                const { billingCustomers, billingSubscriptions, entitySubscriptions } =
-                    await import('@repo/db');
-                const accommodationSubscriptionId = crypto.randomUUID();
-                const customerId = crypto.randomUUID();
-                await tx.insert(billingCustomers).values({
-                    id: customerId,
-                    externalId: `ext-${uid}`,
-                    email: `billing-${uid}@test.local`,
-                    livemode: false
-                } as typeof billingCustomers.$inferInsert);
-                await tx.insert(billingSubscriptions).values({
-                    id: accommodationSubscriptionId,
-                    customerId,
-                    planId: crypto.randomUUID(),
-                    status: 'active',
-                    billingInterval: 'month',
-                    currentPeriodStart: new Date(),
-                    currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                    livemode: false,
-                    productDomain: 'accommodation'
-                } as typeof billingSubscriptions.$inferInsert);
-                await tx.insert(entitySubscriptions).values({
-                    id: crypto.randomUUID(),
-                    subscriptionId: accommodationSubscriptionId,
-                    entityType: 'accommodation',
-                    entityId: crypto.randomUUID(),
-                    status: 'active',
-                    productDomain: 'accommodation'
-                } as typeof entitySubscriptions.$inferInsert);
+                // HOS-1416: the entity_subscriptions / billing_customers /
+                // billing_subscriptions tables were dropped with the legacy
+                // billing schema. The reconciler takes `subscriptionStatus` as
+                // an explicit input, so there is no subscription row to seed
+                // and no same-table leak path left to pin.
 
                 // Act: reconcile the EXPERIENCE listing with NO subscription of its
                 // own (subscriptionStatus explicitly 'canceled') — it must stay
-                // PRIVATE regardless of the owner's unrelated accommodation
-                // subscription being 'active'.
+                // PRIVATE.
                 const { experienceModel } = await import('@repo/db');
                 const modelAdapter: CommerceEntityModel = {
                     findById: (id, tx2) => experienceModel.findById(id, tx2),

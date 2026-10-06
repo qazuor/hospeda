@@ -22,7 +22,6 @@
  * @module routes/experience/protected/brochure
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     EntityTypeEnum,
     PermissionEnum,
@@ -37,8 +36,7 @@ import { ExperienceService, entityNotFoundError } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { buildExperienceBrochureContent } from '../../../services/commerce-brochure/brochure-content';
 import { buildBrochureResponse } from '../../../services/commerce-brochure/brochure-response';
 import { ExperienceBrochureSourceSchema } from '../../../services/commerce-brochure/brochure-source';
@@ -46,8 +44,8 @@ import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -128,13 +126,10 @@ export const protectedGetExperienceBrochureRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: z.null(),
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed DOWNLOAD_LISTING_PDF entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetExperienceBrochure(ctx, params),
     options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.DOWNLOAD_LISTING_PDF)
-        ],
         customRateLimit: { requests: 20, windowMs: 60_000 }
     }
 });

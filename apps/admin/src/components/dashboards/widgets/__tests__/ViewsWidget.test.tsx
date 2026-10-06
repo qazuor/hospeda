@@ -11,7 +11,7 @@
  *
  * Covers (SPEC-197 ACs):
  * - AC-2: clicking 7d toggle re-fetches with ?window=7d and counts update.
- * - AC-3: locked state renders lock icon + description + CTA href /billing/plans.
+ * - AC-3: locked state renders lock icon + description (CTA removed by HOS-1416).
  * - AC-6: when resolver returns { locked: true } (403 path), widget shows locked UI.
  * - AC-9: editor-posts variant window toggle is independent.
  * - AC-12: editor-events variant window toggle is independent.
@@ -256,10 +256,9 @@ describe('ViewsWidget — HOST locked state (AC-3/AC-6)', () => {
         expect(screen.getByTestId('lock-icon')).toBeInTheDocument();
         expect(screen.getByText('Disponible con un plan activo')).toBeInTheDocument();
 
-        const cta = screen.getByTestId('views-widget-locked-cta');
-        expect(cta).toBeInTheDocument();
-        expect(cta).toHaveAttribute('href', '/billing/plans');
-        expect(cta).toHaveAttribute('aria-label', 'Ver planes');
+        // HOS-1416: the locked-state CTA (href /billing/plans) was removed
+        // with the deleted billing plans page.
+        expect(screen.queryByTestId('views-widget-locked-cta')).not.toBeInTheDocument();
     });
 
     it('renders locked state and NOT an error callout when views endpoint returns 403 (AC-6)', async () => {

@@ -34,7 +34,6 @@
  * @module services/publish-listing-reads
  */
 
-import { isCommercePublishVertical, type PublishVertical } from '@repo/billing';
 import { LifecycleStatusEnum } from '@repo/schemas';
 import {
     AccommodationService,
@@ -43,6 +42,20 @@ import {
     GastronomyService
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger';
+
+/**
+ * The publish verticals an owner-side precheck can read.
+ *
+ * `@repo/billing` used to own this type and the commerce guard below; both came
+ * down with the legacy billing system (HOS-1416). The definitions are local now
+ * — same values, same guard, no billing semantics attached.
+ */
+export type PublishVertical = 'accommodation' | 'gastronomy' | 'experience';
+
+export const isCommercePublishVertical = (
+    vertical: PublishVertical
+): vertical is Exclude<PublishVertical, 'accommodation'> =>
+    vertical === 'gastronomy' || vertical === 'experience';
 
 /**
  * The three services are built on FIRST USE, never at module load.
@@ -54,8 +67,8 @@ import { apiLogger } from '../utils/logger';
  * against the whole-module `vi.mock('@repo/db')` that `test/setup.ts` installs:
  * the mock declares no `AccommodationModel`, so the import itself threw before
  * any test body ran (CI shard 5/5). Same reasoning as
- * `buildAccommodationPublishDeps`, which takes a billing *getter* rather than a
- * client so a route module instantiated at boot resolves lazily.
+ * the lazy service readers here, which defer model construction until the
+ * route actually needs the service.
  *
  * Memoised, so the request path still pays one construction per process.
  */
@@ -275,14 +288,13 @@ export async function listOwnDraftListings(input: {
     }));
 }
 
-// `isCommercePublishVertical` used to be re-exported from here, so that callers
-// in this module's orbit had one import rather than two. That saved an import
-// line and cost a day: this module is MOCKED by the precheck's test, which
-// rebuilds it as `{ ...actual, ...stubs }`, and spreading an ESM namespace
-// copies values rather than live bindings — so the re-export reached the
-// consumer as `undefined` depending on module evaluation order, and the
-// precheck's fail-open turned that into six wrong decisions with no error
-// anywhere. Its one consumer now imports it from `@repo/billing` directly.
+// NOTE: `isCommercePublishVertical` is deliberately NOT re-exported from here
+// for callers in this module's orbit. This module is MOCKED by the precheck's
+// test, which rebuilds it as `{ ...actual, ...stubs }`, and spreading an ESM
+// namespace copies values rather than live bindings — a re-export through it
+// reached the consumer as `undefined` depending on module evaluation order,
+// and the precheck's fail-open turned that into six wrong decisions with no
+// error anywhere. Consumers import the guard from its defining module directly.
 //
 // The rule this leaves behind: a module that any test mocks wholesale must
 // export only what it OWNS. A re-export through it is a binding whose validity

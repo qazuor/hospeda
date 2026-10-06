@@ -496,9 +496,9 @@ describe('endpoint-gate-matrix snapshot guard (SPEC-145 T-022)', () => {
 
         it('deduplicated: same file appearing multiple times counts once in Set', () => {
             const matrixFiles = parseMatrixHandlerFiles();
-            // billing/index.ts appears many times in the matrix (all QZPay routes)
+            // partner manual-payment.ts appears multiple times in the matrix
             // but the Set should contain it exactly once
-            expect(matrixFiles.has('billing/index.ts')).toBe(true);
+            expect(matrixFiles.has('partners/admin/manual-payment.ts')).toBe(true);
         });
     });
 

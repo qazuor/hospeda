@@ -8,23 +8,15 @@
  * accommodation field (`description`, `summary`, or `faq_answer`) or,
  * since HOS-1075, a comercio (gastronomy/experience) field.
  *
- * ## Middleware order (CRITICAL — wrong order = 503 on every request)
+ * ## Middleware order
  *
  * `createProtectedStreamingRoute` PREPENDS `protectedAuthMiddleware` to
  * whatever we pass in `options.middlewares`, so the final chain is:
  *
- *   auth → entitlement → entitlementRouter → rateLimit-perUser → rateLimit-perIP → quota
+ *   auth → rateLimit-perUser → rateLimit-perIP
  *
- * `entitlementMiddleware` MUST run before `entitlementRouter`
- * ({@link aiTextImproveEntitlementRouter}), which must in turn run before
- * `createAiQuotaMiddleware` — the quota middleware reads
- * `c.get('userEntitlements')`/`c.get('userLimits')`, which are populated by
- * whichever of the two ran last for this request (see
- * {@link aiTextImproveEntitlementRouter}'s docblock for why the choice is
- * per-request, not per-mount). Reordering causes 503 on every request (the
- * quota middleware's billing-load guard trips first) or, worse, silently
- * re-exposes the HOS-1075 leak by leaving the accommodation set in place for
- * a comercio request.
+ * The old entitlement and monthly quota middleware are suspended during the
+ * billing transition. Burst rate limits and usage metering remain active.
  *
  * ## Per-request service
  *
@@ -42,16 +34,12 @@
  * @module apps/api/routes/ai/protected/text-improve
  */
 
-import type { CommerceVertical } from '@repo/billing';
 import type { AiFeature, AiTextImprove, LanguageEnum } from '@repo/schemas';
 import { AiTextImproveRequestSchema } from '@repo/schemas';
-import type { MiddlewareHandler } from 'hono';
-import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota';
+
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { entitlementMiddleware } from '../../../middlewares/entitlement';
+
 import { createConfiguredAiService } from '../../../services/ai-service.factory';
-import type { AppBindings } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
 import { meterAiUsage } from '../../../utils/ai-usage-metering';
 import { apiLogger } from '../../../utils/logger';
@@ -79,87 +67,6 @@ const FEATURE: AiFeature = 'text_improve';
  * generated language.
  */
 const DEFAULT_LOCALE: LanguageEnum = 'es';
-
-// ---------------------------------------------------------------------------
-// Per-request entitlement routing (HOS-1075)
-// ---------------------------------------------------------------------------
-
-/**
- * Narrows a raw, unvalidated `entityType` request-body value to a
- * {@link CommerceVertical}, or `null` for `'accommodation'` / absent /
- * anything else.
- *
- * Deliberately loose (reads `unknown`, never throws): this runs BEFORE
- * `AiTextImproveRequestSchema` validates the body, purely to decide which
- * entitlement set to load. A malformed value falls through to `null` here
- * and is rejected properly by the schema a moment later — this function is
- * not the source of truth for what a valid `entityType` is.
- *
- * @param entityType - The raw `entityType` field from the parsed JSON body.
- * @returns The commerce vertical, or `null` when the text belongs to an
- *   accommodation (or the value could not be read as a commerce vertical).
- */
-function commerceVerticalFromRawEntityType(entityType: unknown): CommerceVertical | null {
-    switch (entityType) {
-        case 'gastronomy':
-        case 'experience':
-            return entityType;
-        default:
-            return null;
-    }
-}
-
-/**
- * Routes the request to the correct entitlement source, per-request
- * (HOS-1075).
- *
- * `text-improve` is ONE shared endpoint across every vertical — unlike the
- * gastronomy/experience PATCH routes, which are mounted once per vertical
- * and can hang `commerceVerticalEntitlementMiddleware(vertical)` statically
- * off their own route registration. Here the vertical is only knowable from
- * the REQUEST BODY (`entityType`), so the branch has to happen per request
- * rather than per mount.
- *
- * - `entityType` absent or `'accommodation'` → no-op. The context already
- *   carries the ACCOMMODATION entitlements loaded by the global
- *   `entitlementMiddleware()` mounted ahead of this one — exactly today's
- *   behaviour, unchanged.
- * - `entityType` is `'gastronomy'` / `'experience'` → delegates to
- *   {@link commerceVerticalEntitlementMiddleware}, which REPLACES
- *   `userEntitlements` / `userLimits` with that vertical's grants (read
- *   from the actor's commerce subscription for THAT vertical, never the
- *   accommodation one). This is what closes HOS-1075: a host who is ALSO a
- *   comercio owner can no longer spend their accommodation plan's
- *   `AI_TEXT_IMPROVE` entitlement on comercio text, because the entitlement
- *   set checked downstream is swapped out entirely before
- *   `createAiQuotaMiddleware` reads it.
- *
- * Reads the body via `c.req.json()` — safe to call more than once, Hono
- * caches the parsed result (the `streamHandler` below reads it again for
- * the same reason). A body that fails to parse as JSON is left for the
- * factory's own `requestSchema.safeParse` step to reject with the standard
- * 400 envelope; this middleware just falls through to the accommodation
- * default in that case.
- */
-function aiTextImproveEntitlementRouter(): MiddlewareHandler<AppBindings> {
-    return async (c, next) => {
-        let rawEntityType: unknown;
-        try {
-            const body = (await c.req.json()) as { entityType?: unknown };
-            rawEntityType = body?.entityType;
-        } catch {
-            rawEntityType = undefined;
-        }
-
-        const vertical = commerceVerticalFromRawEntityType(rawEntityType);
-        if (vertical) {
-            await commerceVerticalEntitlementMiddleware(vertical)(c, next);
-            return;
-        }
-
-        await next();
-    };
-}
 
 // ---------------------------------------------------------------------------
 // Prompt builder
@@ -219,29 +126,15 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
     summary: 'AI text improvement (streaming SSE)',
     description:
         'Improves an accommodation or comercio (gastronomy/experience) text field using the ' +
-        '`text_improve` AI feature. Streams the suggestion token-by-token via Server-Sent Events. ' +
-        'Gated by the `ai_text_improve` billing entitlement and per-plan monthly quota, resolved ' +
-        'against the vertical named by `entityType` (HOS-1075).',
+        '`text_improve` AI feature. Streams the suggestion token-by-token via Server-Sent Events.',
     tags: ['AI - Text Improve'],
     requestSchema: AiTextImproveRequestSchema,
     options: {
         middlewares: [
-            // 1. Load ACCOMMODATION entitlements + limits + billingLoadFailed flag.
-            //    MUST be first — the router below and createAiQuotaMiddleware both
-            //    read c.get('userEntitlements').
-            entitlementMiddleware(),
-            // 2. HOS-1075: for a comercio request (entityType 'gastronomy' /
-            //    'experience'), REPLACE the entitlements/limits set above with
-            //    that vertical's own grants, so the feature is gated on the
-            //    right subscription instead of always the accommodation one.
-            //    No-ops for accommodation requests (the default).
-            aiTextImproveEntitlementRouter(),
-            // 3. Per-user burst rate limit + per-IP rate limit (defaults from SPEC-173).
-            ...createAiRateLimitMiddlewares(FEATURE),
-            // 4. Entitlement gate (403 ENTITLEMENT_REQUIRED) + monthly quota
-            //    (403 LIMIT_REACHED) + billing-outage guard (503 SERVICE_UNAVAILABLE).
-            //    Reads whichever entitlement set step 1 or step 2 last set.
-            createAiQuotaMiddleware(FEATURE)
+            // Per-user burst rate limit + per-IP rate limit (defaults from SPEC-173).
+            // The per-vertical entitlement router was removed with the legacy
+            // billing system (HOS-1416).
+            ...createAiRateLimitMiddlewares(FEATURE)
         ]
     },
     streamHandler: async ({ c }) => {

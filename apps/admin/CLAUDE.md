@@ -744,12 +744,6 @@ BETA-81 and accepted — they are **not defects**. Do NOT "fix" them by swapping
 `@vitejs/plugin-react-oxc` or removing `vite-tsconfig-paths`: those are explicitly
 out of scope (SPEC-117 CE-6, CE-8).
 
-- **`Module "crypto" has been externalized for browser compatibility`** (imported by
-  `@qazuor/qzpay-mercadopago/dist/index.js`). The MercadoPago SDK is pulled in
-  transitively via `@repo/billing` / `@repo/service-core` (aliased to `src/`); no
-  admin client code imports it directly. Its `crypto` usage is server-side (MP
-  webhook signing) and is never invoked from the browser — Vite stubs it to empty
-  in the client bundle. Benign; accepted.
 - **`"import.meta" is not available in the configured target environment ("es2019") and will be empty`**
   (Nitro server build, e.g. `components-entity-*.js`). These are all
   `import.meta.env.DEV` debug gates (EntityCreateContent, VirtualizedEntityList,

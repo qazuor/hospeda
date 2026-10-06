@@ -6,16 +6,10 @@
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
  * returned URL + metadata as a new `accommodation_media` row.
  *
- * Plan cap enforcement follows the same semantics as the upload route:
- *   - Only enforces when the actor IS the owner (`actor.id === accommodation.ownerId`).
- *   - Admins with `ACCOMMODATION_UPDATE_ANY` bypass the plan limit (trusted manual
- *     intervention / support scenario).
- *   - Enforcement happens in this route handler (not in the service) because
- *     `checkLimit` requires the Hono `Context` populated by `entitlementMiddleware`.
+ * Gallery registration runs without the former plan photo cap during the billing transition.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { LimitKey } from '@repo/billing';
-import { accommodationMediaModel } from '@repo/db';
 import {
     AccommodationIdSchema,
     type AccommodationMediaAddInput,
@@ -26,9 +20,9 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
+
 import { getActorFromContext } from '../../../utils/actor';
-import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
+
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -62,6 +56,7 @@ export const adminAddMediaRoute = createAdminRoute({
     },
     requestBody: AccommodationMediaAddPayloadSchema,
     responseSchema: AccommodationMediaSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -84,53 +79,8 @@ export const adminAddMediaRoute = createAdminRoute({
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
 
-        const ownerId = (accommodation.data as { ownerId?: string | null }).ownerId;
-        if (ownerId && ownerId === actor.id) {
-            const { total: currentGalleryPhotoCount } =
-                await accommodationMediaModel.findByAccommodation({
-                    accommodationId,
-                    state: 'visible',
-                    isFeatured: false
-                });
-
-            const planLimitCheck = checkLimit({
-                context: ctx,
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                currentCount: currentGalleryPhotoCount
-            });
-
-            const threshold = calculateThreshold(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-            const usagePercent = calculateUsagePercent(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-
-            if (threshold === 'warning' || threshold === 'critical') {
-                ctx.header(
-                    'X-Usage-Warning',
-                    `limitKey=${LimitKey.MAX_PHOTOS_PER_ACCOMMODATION};usage=${currentGalleryPhotoCount};max=${planLimitCheck.maxAllowed};threshold=${threshold}`
-                );
-            }
-
-            if (!planLimitCheck.allowed) {
-                apiLogger.warn(
-                    `Plan photo limit reached for accommodation ${accommodationId} (owner ${actor.id}): ${planLimitCheck.currentCount}/${planLimitCheck.maxAllowed}`
-                );
-                throw new ServiceError(
-                    ServiceErrorCode.LIMIT_REACHED,
-                    planLimitCheck.upgradeMessage ?? 'Photo limit reached',
-                    buildLimitReachedDetails({
-                        limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                        currentCount: planLimitCheck.currentCount,
-                        maxAllowed: planLimitCheck.maxAllowed,
-                        usagePercent
-                    })
-                );
-            }
-        }
+        // The per-plan gallery photo cap (MAX_PHOTOS_PER_ACCOMMODATION) was
+        // removed with the legacy billing system (HOS-1416).
 
         // ── Delegate to service ───────────────────────────────────────────────
         const input: AccommodationMediaAddInput = {

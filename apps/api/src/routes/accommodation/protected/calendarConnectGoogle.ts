@@ -6,10 +6,9 @@
  *
  * Gate model (mirrors the manual occupancy write routes): ownership +
  * `ACCOMMODATION_OCCUPANCY_MANAGE` are enforced inline via
- * `assertOccupancyManageAccess`; the `CAN_SYNC_EXTERNAL_CALENDAR` billing
- * entitlement is enforced HERE at the route via `requireEntitlement` (reading
- * the same `userEntitlements` context the frontend gate trusts), never
- * re-checked in a service resolver.
+ * `assertOccupancyManageAccess`; external calendar connections run without
+ * the former billing entitlement during the transition.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * The handler does NOT redirect the browser itself — it returns the Google
  * authorization URL so the web app (which made an authenticated fetch) can
@@ -20,14 +19,13 @@
  * @module routes/accommodation/protected/calendarConnectGoogle
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { AccommodationIdSchema } from '@repo/schemas';
 import { assertOccupancyManageAccess } from '@repo/service-core';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import {
     CALENDAR_OAUTH_STATE_COOKIE,
     CALENDAR_OAUTH_STATE_COOKIE_MAX_AGE_S,
@@ -99,6 +97,7 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
     },
     requestBody: ConnectGoogleBodySchema,
     responseSchema: ConnectGoogleResponseSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_SYNC_EXTERNAL_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -151,7 +150,5 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
 
         return { authorizeUrl: authorizeUrl.toString() };
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)]
-    }
+    options: {}
 });

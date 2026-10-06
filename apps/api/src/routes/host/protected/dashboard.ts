@@ -1,27 +1,20 @@
 /**
  * Host Dashboard Protected Endpoint
  *
- * Single aggregation endpoint returning property counts, plan info,
+ * Single aggregation endpoint returning property counts, null plan info,
  * and unread conversation count for the authenticated host user.
  *
- * Gated by `VIEW_BASIC_STATS` entitlement (SPEC-205).
+ * Dashboard reads run without the former stats plan entitlement during the billing transition.
  *
  * GET /api/v1/protected/host/dashboard
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
-import { EntitlementKey, isEntitlementGrantingStatus } from '@repo/billing';
-import { LifecycleStatusEnum, ProductDomainEnum, ServiceErrorCode } from '@repo/schemas';
+
+import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import {
-    AccommodationService,
-    ConversationService,
-    hydrateSubscriptionProductDomains,
-    isAccommodationSubscription,
-    ServiceError,
-    subscriptionMatchesDomain
-} from '@repo/service-core';
+import { AccommodationService, ConversationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getQZPayBilling } from '../../../middlewares/billing';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -65,45 +58,6 @@ const ZERO_PROPERTIES: HostDashboardProperties = {
     draft: 0,
     archived: 0
 };
-
-/**
- * Map a raw QZPay subscription status to the dashboard plan status enum.
- *
- * The dashboard exposes a deliberately small lowercase set
- * (`active | trial | cancelled | expired | past_due`). QZPay uses
- * `trialing`/`canceled` (1 L) and richer states; everything outside the
- * supported set degrades to `null` plan upstream, so this mapper only
- * needs to cover the statuses that reach it.
- *
- * `comp` maps to `active` rather than getting its own variant: a
- * complimentary grant IS a live plan, and the response enum is a published
- * contract that other clients parse. What the owner is not charged for is
- * surfaced by the plan name and by the subscription page, not by widening
- * this enum (H-70).
- *
- * @param status - Raw QZPay subscription status string.
- * @returns The mapped dashboard status, or `null` when unsupported.
- */
-function mapQZPayStatusToDashboard(status: string): HostDashboardPlan['status'] | null {
-    switch (status) {
-        case 'active':
-        case 'comp':
-            return 'active';
-        case 'trialing':
-            return 'trial';
-        case 'canceled':
-        case 'cancelled':
-            return 'cancelled';
-        case 'expired':
-        case 'incomplete_expired':
-            return 'expired';
-        case 'past_due':
-        case 'unpaid':
-            return 'past_due';
-        default:
-            return null;
-    }
-}
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -160,97 +114,11 @@ async function resolveProperties(input: {
 }
 
 /**
- * Resolve the host's current plan info.
- *
- * FAIL-SAFE: any failure (billing disabled, no customer record, no active
- * subscription, thrown error, unsupported status) resolves to `null` —
- * the schema permits a null plan. Only an active or trialing subscription
- * with a supported status produces a populated plan.
- *
- * @param input - `{ actor }` whose `id` is the billing externalId.
- * @returns The plan info, or `null`.
+ * The plan section was removed with the legacy billing system (HOS-1416);
+ * the response field stays (nullable) so the client contract does not break
+ * and always reads null now.
  */
-async function resolvePlan(input: { actor: Actor }): Promise<HostDashboardPlan | null> {
-    const { actor } = input;
-    try {
-        // Billing-enabled detection: `getQZPayBilling()` returns null when
-        // billing is not configured in env. Short-circuit to null plan.
-        const billing = getQZPayBilling();
-        if (!billing) {
-            return null;
-        }
-
-        const customer = await billing.customers.getByExternalId(actor.id);
-        if (!customer) {
-            return null;
-        }
-
-        const rawSubscriptions = await billing.subscriptions.getByCustomerId(customer.id);
-        // HOS-1160: hydrate before comparing. `getByCustomerId()` never populates
-        // `productDomain` (QZPay's mapper drops it — HOS-934), so every row would
-        // reach the domain check below reading `undefined` and fail OPEN to
-        // accommodation, which is the exact condition the filter is here to stop.
-        const subscriptions = await hydrateSubscriptionProductDomains(rawSubscriptions ?? []);
-        // H-70: use the canonical predicate rather than a hand-written
-        // `active || trialing` pair. `comp` is entitlement-granting too, and
-        // omitting it here is what made a comped owner's dashboard report
-        // `plan: null` — which the frontend renders as "Plan Gratuito".
-        //
-        // HOS-1160: the domain filter is new, and measuring it is what found the
-        // gap. This `find` took the FIRST entitlement-granting subscription of any
-        // vertical, so a dual owner's gastronomy plan could be reported as the
-        // plan on their HOST dashboard. It was reachable before this issue (a paid
-        // gastronomy subscription would do it), and opening comp to gastronomy and
-        // experiences puts a second way to reach it in the same release, so it is
-        // fixed here rather than left as pre-existing.
-        //
-        // Accommodation OR tourist, written as two explicit calls, mirroring
-        // `entitlements.ts` and `loadEntitlements` — the sibling endpoints that
-        // answer the same "which plan am I on" question. Accommodation still fails
-        // OPEN for the legacy rows predating the column; tourist, like every other
-        // named domain, fails CLOSED. There is deliberately no union helper
-        // (HOS-1081 deleted `isCommerceSubscription()` for having no callers).
-        const activeSubscription = subscriptions.find(
-            (sub: { status: string }) =>
-                isEntitlementGrantingStatus(sub.status) &&
-                (isAccommodationSubscription(sub) ||
-                    subscriptionMatchesDomain(sub, ProductDomainEnum.TOURIST))
-        );
-        if (!activeSubscription) {
-            return null;
-        }
-
-        const status = mapQZPayStatusToDashboard(activeSubscription.status);
-        if (status === null) {
-            return null;
-        }
-
-        // Resolve the plan slug + display name. Fall back to the planId as
-        // both slug and name when the plan lookup fails.
-        let slug = activeSubscription.planId;
-        let name = activeSubscription.planId;
-        try {
-            const plan = await billing.plans.get(activeSubscription.planId);
-            if (plan?.name) {
-                slug = plan.name;
-                name = plan.name;
-            }
-        } catch (planError) {
-            apiLogger.warn(
-                { actorId: actor.id, error: String(planError) },
-                'Host dashboard: plan lookup failed — falling back to planId'
-            );
-        }
-
-        return { slug, name, status, isTrial: status === 'trial' };
-    } catch (error) {
-        apiLogger.warn(
-            { actorId: actor.id, error: String(error) },
-            'Host dashboard: plan resolution failed — degrading plan to null'
-        );
-        return null;
-    }
-}
+const DASHBOARD_PLAN: HostDashboardPlan | null = null;
 
 /**
  * Resolve the coarse unread-conversations count for the owner.
@@ -311,11 +179,8 @@ async function resolveUnreadConversations(input: {
  *
  * Returns aggregated host dashboard data:
  * - Property counts (total, published, draft, archived) scoped to the owner
- * - Active plan info (slug, name, status, isTrial), or null
+ * - Plan info: always null since HOS-1416 (legacy billing removed)
  * - Unread conversations count (coarse approximation)
- *
- * Gated by VIEW_BASIC_STATS entitlement.
- * Staff roles bypass via entitlementMiddleware (INV-6).
  *
  * Robustness: each of the three sections is independently guarded and
  * degrades to safe defaults rather than failing the whole request. The
@@ -339,16 +204,17 @@ export const hostDashboardRoute = createProtectedRoute({
             // accommodation IDs the conversations count needs).
             const { properties, accommodationIds } = await resolveProperties({ actor });
 
-            // Sections 2 & 3 are independent and can run in parallel; each
-            // self-guards to a safe default.
-            const [plan, unreadConversations] = await Promise.all([
-                resolvePlan({ actor }),
-                resolveUnreadConversations({ actor, accommodationIds })
-            ]);
+            // Section 2 (plan) was removed with the legacy billing system
+            // (HOS-1416); the field always reads null now.
+            const unreadConversations = await resolveUnreadConversations({
+                actor,
+                accommodationIds
+            });
 
             const response: HostDashboardResponse = {
                 properties,
-                plan,
+                // HOS-1352: transitional until V3 (HOS-1357), see PR — dashboard plan stays null.
+                plan: DASHBOARD_PLAN,
                 unreadConversations
             };
 
@@ -364,7 +230,5 @@ export const hostDashboardRoute = createProtectedRoute({
             );
         }
     },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)]
-    }
+    options: {}
 });

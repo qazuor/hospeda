@@ -8,15 +8,9 @@
  * when no translation is provided.
  */
 
-import type { LimitKey } from '@repo/billing';
-import {
-    ENTITLEMENT_DEFINITIONS as DEFINITIONS,
-    EntitlementKey as EK,
-    LIMIT_METADATA,
-    TOURIST_VIP_ENTITLEMENTS
-} from '@repo/billing';
+import { EntitlementKey as EK } from '@repo/billing';
 
-export type EntitlementKey = (typeof DEFINITIONS)[number]['key'];
+export type EntitlementKey = EK;
 type Translator = (key: string, fallback?: string) => string;
 
 /**
@@ -66,10 +60,6 @@ interface PlanLike {
     readonly description: string;
 }
 
-const ENTITLEMENT_BY_KEY: Map<string, (typeof DEFINITIONS)[number]> = new Map(
-    DEFINITIONS.map((def) => [def.key as string, def])
-);
-
 /**
  * Get the localized human-readable name for a plan.
  *
@@ -101,9 +91,8 @@ export function getPlanDescription(input: { plan: PlanLike; t: Translator }): st
  */
 export function getEntitlementName(input: { key: EntitlementKey; t: Translator }): string {
     const { key, t } = input;
-    const def = ENTITLEMENT_BY_KEY.get(key as string);
-    const fallback = def?.name ?? humanizeKey(key as string);
-    return t(`billing.entitlement.${key}`, fallback);
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: locale labels replace the demolished plan-definition fallback.
+    return t(`billing.entitlement.${key}`, humanizeKey(key));
 }
 
 /**
@@ -132,25 +121,11 @@ export function getDisplayFeatures(input: {
         }));
     }
 
-    const touristSet = new Set<string>(TOURIST_VIP_ENTITLEMENTS as readonly string[]);
     const aiSet = new Set<string>(AI_OWNER_ENTITLEMENTS);
-    // Only collapse the tourist tier when the plan actually grants all of it.
-    const hasFullTouristTier = [...touristSet].every((k) => keys.includes(k));
 
     const out: DisplayFeature[] = [];
-    let touristEmitted = false;
     let aiEmitted = false;
     for (const key of keys) {
-        if (hasFullTouristTier && touristSet.has(key)) {
-            if (!touristEmitted) {
-                out.push({
-                    id: 'group-tourist',
-                    label: t('pricing.group.tourist', 'Todas las funciones de turista')
-                });
-                touristEmitted = true;
-            }
-            continue;
-        }
         if (aiSet.has(key)) {
             if (!aiEmitted) {
                 out.push({
@@ -178,9 +153,8 @@ export function getDisplayFeatures(input: {
  */
 export function getLimitName(input: { key: string; t: Translator }): string {
     const { key, t } = input;
-    const meta = LIMIT_METADATA[key as LimitKey];
-    const fallback = meta?.name ?? humanizeKey(key);
-    return t(`billing.comparison.limitLabel.${key}`, fallback);
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: locale labels replace the demolished limit metadata fallback.
+    return t(`billing.comparison.limitLabel.${key}`, humanizeKey(key));
 }
 
 /**
@@ -192,15 +166,16 @@ export function getLimitName(input: { key: string; t: Translator }): string {
  * `billing.limitHelp.<key>` answers both, and every limit key in the catalogue
  * has one.
  *
- * Falls back to `LIMIT_METADATA`'s English description rather than to an empty
- * string on purpose: the explanation is the accessible name the value hangs
- * off, so an unexplained number is the one output this must never produce.
+ * Falls back to a readable generic explanation until localized copy is
+ * restored; an unexplained number must never be rendered.
  */
 export function getLimitHelp(input: { key: string; t: Translator }): string {
     const { key, t } = input;
-    const meta = LIMIT_METADATA[key as LimitKey];
-    const fallback = meta?.description ?? humanizeKey(key);
-    return t(`billing.limitHelp.${key}`, fallback);
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: localized limit explanations replace this generic fallback.
+    return t(
+        `billing.limitHelp.${key}`,
+        `Allowed maximum for ${humanizeKey(key).replace(/^Max /, '')}.`
+    );
 }
 
 /**

@@ -79,11 +79,6 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerIds: (...args: readonly string[][]) =>
-        mockResolveOwnerEntitlementsForOwnerIds(...args)
-}));
-
 vi.mock('../../../../src/utils/actor', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../../src/utils/actor')>();
     return {

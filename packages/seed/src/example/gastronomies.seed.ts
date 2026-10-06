@@ -1,11 +1,5 @@
-import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
-import type { DrizzleClient } from '@repo/db';
 import {
     accounts,
-    billingCustomers,
-    billingPlans,
-    billingSubscriptions,
-    entitySubscriptions,
     eq,
     GastronomyMediaModel,
     gastronomies,
@@ -15,13 +9,7 @@ import {
     sql,
     users
 } from '@repo/db';
-import {
-    LifecycleStatusEnum,
-    ProductDomainEnum,
-    RoleEnum,
-    RoleGrantReason,
-    VisibilityEnum
-} from '@repo/schemas';
+import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
@@ -227,117 +215,6 @@ interface GastronomyReviewFile {
 }
 
 /**
- * Ensures a `billing_customers` row exists for the given owner and returns the
- * customer id.
- */
-async function ensureBillingCustomer(
-    userId: string,
-    email: string,
-    db: DrizzleClient
-): Promise<string> {
-    const existing = await db
-        .select({ id: billingCustomers.id })
-        .from(billingCustomers)
-        .where(eq(billingCustomers.externalId, userId))
-        .limit(1);
-
-    const existingRow = existing[0];
-    if (existingRow) {
-        return existingRow.id;
-    }
-
-    const inserted = await db
-        .insert(billingCustomers)
-        .values({
-            email,
-            externalId: userId,
-            livemode: false,
-            metadata: { source: 'gastronomy-example-seed' }
-        })
-        .returning({ id: billingCustomers.id });
-
-    const insertedRow = inserted[0];
-    if (!insertedRow) {
-        throw new Error(`Insert into billing_customers returned no row for userId=${userId}`);
-    }
-    return insertedRow.id;
-}
-
-/**
- * Ensures a `billing_subscriptions` row (status=active) exists for the given
- * customer + commerce plan.  Returns the subscription id.
- *
- * Uses a 30-day window from seed time — period accuracy does not matter for
- * local dev; only `status = 'active'` drives visibility reconciliation.
- */
-async function ensureCommerceSubscription(
-    customerId: string,
-    planId: string,
-    db: DrizzleClient
-): Promise<string> {
-    const existing = await db
-        .select({ id: billingSubscriptions.id })
-        .from(billingSubscriptions)
-        .where(eq(billingSubscriptions.customerId, customerId))
-        .limit(1);
-
-    const existingRow = existing[0];
-    if (existingRow) {
-        return existingRow.id;
-    }
-
-    const now = new Date();
-    const periodEnd = new Date(now);
-    periodEnd.setDate(periodEnd.getDate() + 30);
-
-    const inserted = await db
-        .insert(billingSubscriptions)
-        .values({
-            customerId,
-            planId,
-            status: 'active',
-            billingInterval: 'month',
-            livemode: false,
-            currentPeriodStart: now,
-            currentPeriodEnd: periodEnd,
-            // HOS-692: this fixture is always a gastronomy listing (see
-            // `ensureListingSubscriptionLink` below, which hardcodes
-            // entityType: 'gastronomy' for the same reason) — stamp the typed
-            // vertical directly instead of the pre-HOS-685 'commerce' umbrella,
-            // or a fresh seed run would keep recreating rows Bloque B's rewrite
-            // has to clean up again.
-            //
-            // HOS-1233 T-035: written HERE, in the insert. It used to be a raw
-            // `UPDATE ... SET product_domain` issued a statement later, on the
-            // grounds that the column lived in the extras carril and not in the
-            // TS schema — true when that comment was written, and untrue since
-            // HOS-73 promoted it to a typed Drizzle column. The row therefore
-            // spent a moment filed under the column default, which is the exact
-            // shape that stops working once the default is dropped (T-036):
-            // this insert would be rejected before its correction ever ran.
-            productDomain: ProductDomainEnum.GASTRONOMY
-        })
-        .returning({ id: billingSubscriptions.id });
-
-    const insertedRow = inserted[0];
-    if (!insertedRow) {
-        throw new Error(
-            `Insert into billing_subscriptions returned no row for customerId=${customerId}`
-        );
-    }
-
-    return insertedRow.id;
-}
-
-/**
- * Ensures a `entity_subscriptions` link row exists for the given
- * entity + subscription.  Idempotent via onConflictDoNothing on the
- * UNIQUE(entityType, entityId) index.
- *
- * This link is what makes a listing publicly visible: the public-read layer
- * checks `entity_subscriptions` status for each listing returned.
- */
-/**
  * Inserts a listing's fixture photos as `gastronomy_media` rows (HOS-372).
  *
  * Photos used to be written into the `gastronomy` row's `media` JSONB column.
@@ -380,47 +257,23 @@ async function seedGastronomyMediaRows({
     }
 }
 
-async function ensureListingSubscriptionLink(
-    subscriptionId: string,
-    entityId: string,
-    db: DrizzleClient
-): Promise<void> {
-    await db
-        .insert(entitySubscriptions)
-        .values({
-            subscriptionId,
-            // HOS-692: matches entityType below — this fixture is always a
-            // gastronomy listing, never the pre-HOS-685 'commerce' umbrella.
-            productDomain: ProductDomainEnum.GASTRONOMY,
-            entityType: 'gastronomy',
-            entityId,
-            status: 'active'
-        })
-        .onConflictDoNothing();
-}
-
 /**
- * Seeds the three COMMERCE_OWNER users, their billing subscriptions, the
- * gastronomy listings (via Drizzle insert), gastronomy FAQs, gastronomy
- * reviews, and the `entity_subscriptions` link rows.
+ * Seeds the three COMMERCE_OWNER users, the gastronomy listings (via Drizzle
+ * insert), gastronomy FAQs, and gastronomy reviews.
  *
  * ### Ordering constraint
- * MUST run after destinations, example users, and the required `commercePlan`
- * seeds so that:
+ * MUST run after destinations and example users so that:
  * - `idMapper` already holds `destinations.*` and `users.*` mappings.
- * - The commerce billing plan exists in `billing_plans`.
  *
  * ### Visibility model
- * - Listings 001–005: `visibility=PUBLIC` + `lifecycleState=ACTIVE` +
- *   active `entity_subscriptions` link → publicly visible on /gastronomia.
- * - Listing 006: `visibility=PRIVATE` + `lifecycleState=DRAFT` + NO link →
+ * - Listings 001–005: `visibility=PUBLIC` + `lifecycleState=ACTIVE` →
+ *   publicly visible on /gastronomia.
+ * - Listing 006: `visibility=PRIVATE` + `lifecycleState=DRAFT` →
  *   intentionally NOT visible; demonstrates the gating.
  *
  * ### Idempotency
  * - Gastronomy rows: idempotent via `onConflictDoNothing` on the unique `slug`.
  * - Commerce owner users: idempotent via pre-check on `email`.
- * - Billing rows: idempotent via pre-check on `externalId` / `customerId`.
- * - Subscription links: idempotent via `onConflictDoNothing` on UNIQUE(entityType, entityId).
  * - FAQ rows: idempotent via `onConflictDoNothing` on the (now explicit,
  *   deterministic) primary key.
  * - Review rows: idempotent via `onConflictDoNothing` on UNIQUE(userId, gastronomyId).
@@ -466,28 +319,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
     let successCount = 0;
     let errorCount = 0;
 
-    // ── Step 1: Resolve the gastronomy-vertical commerce plan id ────────────
-    // HOS-695 (release C): the pre-HOS-688 'commerce-listing' plan is retired
-    // and no longer seeded — resolve the per-vertical slug from the catalogue
-    // default map instead (the same slug `seedCommercePlan` stamps with
-    // `product_domain = 'gastronomy'`).
-    const gastronomyPlanSlug = DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy;
-    const commercePlanRows = await db
-        .select({ id: billingPlans.id })
-        .from(billingPlans)
-        .where(eq(billingPlans.name, gastronomyPlanSlug))
-        .limit(1);
-
-    const commercePlanRow = commercePlanRows[0];
-    if (!commercePlanRow) {
-        throw new Error(
-            `Gastronomy plan "${gastronomyPlanSlug}" not found in billing_plans. ` +
-                'Run the required seed (seedCommercePlan) before seedGastronomies.'
-        );
-    }
-    const commercePlanId = commercePlanRow.id;
-
-    // ── Step 2: Seed COMMERCE_OWNER users + billing customers ───────────────
+    // ── Step 1: Seed COMMERCE_OWNER users ───────────────────────────────────
     const passwordHash = await hash(DEV_PW, SALT_ROUNDS);
 
     for (const owner of COMMERCE_OWNERS) {
@@ -612,9 +444,6 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
         // Register in idMapper so gastronomy JSON files can resolve ownerId
         context.idMapper.setMapping('users', owner.seedId, realUserId, owner.displayName);
-
-        // Ensure billing customer row (idempotent)
-        await ensureBillingCustomer(realUserId, owner.email, db);
 
         summaryTracker.trackSuccess('CommerceOwners');
     }
@@ -815,28 +644,6 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     media: item.media as FixtureMediaBlock | undefined,
                     label: item.name
                 });
-
-                // ── Step 4: Subscription link (PUBLIC/ACTIVE only) ─────────────
-                // Listings 001–005 (PUBLIC + ACTIVE) get a `entity_subscriptions`
-                // link so the public read layer considers them visible.
-                // Listing 006 (PRIVATE + DRAFT) is intentionally skipped.
-                if (item.visibility === 'PUBLIC' && item.lifecycleState === 'ACTIVE') {
-                    const ownerCustomerRows = await db
-                        .select({ id: billingCustomers.id })
-                        .from(billingCustomers)
-                        .where(eq(billingCustomers.externalId, realOwnerId))
-                        .limit(1);
-
-                    const ownerCustomerRow = ownerCustomerRows[0];
-                    if (ownerCustomerRow) {
-                        const subscriptionId = await ensureCommerceSubscription(
-                            ownerCustomerRow.id,
-                            commercePlanId,
-                            db
-                        );
-                        await ensureListingSubscriptionLink(subscriptionId, realId, db);
-                    }
-                }
 
                 logger.debug(
                     `  ${STATUS_ICONS.Success} [${index + 1}/${items.length}] "${item.name}" (${item.type}) → ${item.destinationId} [${item.visibility}/${item.lifecycleState}]`

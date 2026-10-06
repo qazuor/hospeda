@@ -21,14 +21,12 @@
  * Hono resolves the static `featured` segment regardless of insertion order
  * (mirrors the reorder-route note).
  */
-import { EntitlementKey } from '@repo/billing';
-import { ExperienceMediaSingleOutputSchema, ProductDomainEnum } from '@repo/schemas';
+
+import { ExperienceMediaSingleOutputSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError, setFeaturedExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -56,6 +54,7 @@ export const protectedSetFeaturedExperienceMediaRoute = createCRUDRoute({
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: ExperienceMediaSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_EXPERIENCE_INFO entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
@@ -77,13 +76,6 @@ export const protectedSetFeaturedExperienceMediaRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // HOS-1275: mirrors the gastronomy twin. See
-        // `gastronomy/protected/addFaq.ts` for why the vertical loader must be
-        // first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });
