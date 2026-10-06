@@ -47,7 +47,7 @@ Model in one line: **a sponsor brand (not a system user) sponsors a specific pos
 
 | Layer | State | Location |
 |-------|-------|----------|
-| DB | `sponsorships` (sponsorUserId→users, targetType `event|post`, targetId, levelId→sponsorship_levels, packageId→sponsorship_packages, `sponsorshipStatus` `pending|active|expired|cancelled` default `pending`, lifecycleState, startsAt/endsAt, `paymentId` free text, logoUrl, linkUrl, couponCode/couponDiscountPercent, analytics jsonb {impressions,clicks,couponsUsed}) + `sponsorship_levels` (bronze/silver/gold/standard/premium, targetType, price, benefits[], isActive) + `sponsorship_packages` (includedPosts, includedEvents, eventLevelId, price) | `packages/db/src/schemas/sponsorship/*.dbschema.ts`; `0000_baseline.sql:747,774,795`; enums `enums.dbschema.ts:39-41` |
+| DB | `sponsorships` (sponsorUserId→users, targetType `event\|post`, targetId, levelId→sponsorship_levels, packageId→sponsorship_packages, `sponsorshipStatus` `pending\|active\|expired\|cancelled` default `pending`, lifecycleState, startsAt/endsAt, `paymentId` free text, logoUrl, linkUrl, couponCode/couponDiscountPercent, analytics jsonb {impressions,clicks,couponsUsed}) + `sponsorship_levels` (bronze/silver/gold/standard/premium, targetType, price, benefits[], isActive) + `sponsorship_packages` (includedPosts, includedEvents, eventLevelId, price) | `packages/db/src/schemas/sponsorship/*.dbschema.ts`; `0000_baseline.sql:747,774,795`; enums `enums.dbschema.ts:39-41` |
 | Schemas | Full set + dedicated enums | `packages/schemas/src/entities/sponsorship/`; `enums/sponsorship-status.enum.ts`, `sponsorship-target-type.enum.ts`, `sponsorship-tier.enum.ts` |
 | Services | CRUD + real ownership logic | `packages/service-core/src/services/sponsorship/sponsorship.service.ts` (`_beforeCreate` auto-slug + validates `level.targetType === data.targetType`; `_beforeUpdate` blocks `sponsorshipStatus` change without `SPONSORSHIP_STATUS_MANAGE`; `_executeSearch`/`_executeCount` force `lifecycleState = ACTIVE`), `sponsorship.permissions.ts` (`isSponsor(actor, entity) = entity.sponsorUserId === actor.id`) |
 | API | Admin CRUD + **protected self-facing** | admin: `/api/v1/admin/sponsorships`, `/sponsorship-levels`, `/sponsorship-packages`; protected: `/api/v1/protected/sponsorships` (create, getById, list, getAnalytics, update, softDelete); public: only level/package catalogs |
@@ -66,7 +66,7 @@ System B is where we're consolidating, but it is **not finished**. Everything be
 - **F-3 — no real billing link.** `ProductTypeEnum.SPONSORSHIP` exists as an enum value but is **not consumed anywhere** (only its own test references it). `packages/billing/src/` has zero references to sponsorship. `sponsorships.paymentId` is free `text`, not a FK to `billing_payments`/`billing_subscriptions`. Per HOS-38 Q4 the owner deferred "how a sponsor is charged" to a later spec; this spec does NOT build billing integration.
 - **F-4 — no seed for the entity.** The `sponsorships` table has no example fixtures, so it is empty on a fresh DB and the future dashboard/banner can't be exercised without hand-creating rows. Add example seed in Phase 3 (mirror the partner seed pattern just added in PR #2181).
 - **F-5 — SPONSOR role already half-built (more than HOS-38 assumed).** `RoleEnum.SPONSOR` exists (`packages/schemas/src/enums/role.enum.ts:25`) with a full permission block (`rolePermissions.seed.ts:1141-1168`: SPONSORSHIP_VIEW/UPDATE/SOFT_DELETE/RESTORE/UPDATE_VISIBILITY `_OWN`, USER_BOOKMARK_COLLECTION_*, BILLING_VIEW_OWN, SUBSCRIPTION_VIEW_OWN) — inherited from SPEC-156. A test user `sponsor@local.test` is documented. But the role is `enabled: false` in admin IA (`apps/admin/src/config/ia/roles/sponsor.ts`, T-014), and no route guard/login wiring is active. So the role scaffolding exists; only activation + the F-1 fix are missing.
-- **F-6 — entitlement isolation not considered.** Accommodation billing filters entitlements by `product_domain` (SPEC-239). Sponsorship is a separate commercial domain; confirm during implementation that turning a user into a sponsor does NOT pollute their accommodation/commerce entitlements (may need a `product_domain`-style guard or simply that sponsorship never touches `loadEntitlements`). Validate, don't assume.
+- **F-6 — entitlement isolation not considered.** Accommodation billing filters entitlements by `product_domain` (SPEC-239). Sponsorship is a separate commercial domain; confirm during implementation that turning a user into a sponsor does NOT pollute their accommodation/gastronomy and experience entitlements (may need a `product_domain`-style guard or simply that sponsorship never touches `loadEntitlements`). Validate, don't assume.
 
 ## 4. Decisions
 
@@ -102,26 +102,31 @@ These emerged from the audit and are **not yet decided**. Resolve them in Phase 
 Each phase is a separate PR (or PR set) and gates on the prior. Worktree created at Phase 1 start (branch `spec/HOS-107-...`).
 
 ### Phase 0 — Decisions + spec (this pass) ✅
+
 Direction chosen (B), findings + open questions recorded. No code.
 
 ### Phase 1 — Validate model + resolve OQ-1..OQ-4 (design)
+
 - Confirm live schema: `sponsorUserId` nullability, exact columns on `sponsorships`, whether `message`/`isHighlighted` have homes.
 - Resolve OQ-1..OQ-4 with the owner. Adjust the schema plan (nullable `sponsorUserId`, or new columns, or a `SponsorBrand` entity) accordingly. Any schema change → Drizzle migration (`db:generate`) + follow the three-carril rules.
 - Deliverable: a finalized data-migration mapping table (A columns → B columns), ready to code.
 
 ### Phase 2 — Data migration + web banner on B
+
 - Write the seed data-migration / SQL to move `post_sponsors` + `post_sponsorships` → `sponsorships` per the Phase-1 mapping (three-carril rules; this is seed DATA → `packages/seed/src/data-migrations/` if it touches live rows, plus baseline edits).
 - Migrate the public banner: `PostSponsorshipBanner.astro` + `publicaciones/[slug].astro:478` + `PostService` (`post.service.ts:99`) to read the sponsorship from System B instead of `post_sponsorship`. **Add a `transforms.ts` function** for it — the current code casts raw (`as Record<string, unknown>`), violating the project's own transform convention (fix while here).
 - Keep A running in parallel until the banner is verified on B (no big-bang cutover).
 
 ### Phase 3 — Deprecate/remove A + pay down B's debt
+
 - Remove System A end to end: `post_sponsors`/`post_sponsorships` tables (drop migration), schemas, services (`postSponsor/`, `postSponsorship/`), admin routes (`/admin/post-sponsors`), `apps/admin/src/features/sponsors/`, and the A seed (`data/postSponsor/`, `data/postSponsorship/`). Update the drift guard / dual-write ledger as needed.
 - **F-1 fix (security):** force `sponsorUserId = actor.id` in `_executeSearch`/`_executeCount` for `VIEW_OWN`-only actors (mirror the existing `lifecycleState = ACTIVE` force). Add a regression test.
 - **F-2:** write `sponsorship-expiry.job.ts` (copy `partner-expiry.job.ts`), register in cron registry + manifest; moves `sponsorshipStatus active→expired` when `endsAt` passes. Uses the existing anticipatory index.
 - **F-4:** add example `sponsorships` seed (mirror the partner seed from PR #2181; non-deterministic ids unless a fixture is referenced by id).
-- **F-6:** verify entitlement isolation (sponsorship must not pollute accommodation/commerce `loadEntitlements`).
+- **F-6:** verify entitlement isolation (sponsorship must not pollute accommodation/gastronomy and experience `loadEntitlements`).
 
 ### Phase 4 — Sponsor self-service dashboard (absorbs HOS-38)
+
 - Activate the `SPONSOR` role (flip `enabled`, add web route guard + login wiring; admin-driven assignment, no self-signup — F-5).
 - Build the **read-only** dashboard in `apps/web` (summary, my-sponsorships, metrics, invoices-or-"coming soon") consuming `/api/v1/protected/sponsorships/*` (now correctly owner-scoped after F-1). i18n + CSS Modules (web conventions).
 - Remove the dead admin scaffolding `apps/admin/_authed/sponsor/*` + `features/sponsor-dashboard/` (HOS-38 Phase 3).

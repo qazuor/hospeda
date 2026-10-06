@@ -68,7 +68,7 @@ invalidation on write, and an editable UI.
 ### Enums & source of truth
 
 - `RoleEnum` — `packages/schemas/src/enums/role.enum.ts` (10 roles:
-  `SUPER_ADMIN, ADMIN, CLIENT_MANAGER, EDITOR, HOST, COMMERCE_OWNER, SPONSOR,
+  `SUPER_ADMIN, ADMIN, CLIENT_MANAGER, EDITOR, HOST, GASTRONOMY_OWNER and EXPERIENCE_OWNER, SPONSOR,
   USER, GUEST, SYSTEM`).
 - `PermissionEnum` — `packages/schemas/src/enums/permission.enum.ts` (~660
   members) + `PermissionCategoryEnum` for grouping.

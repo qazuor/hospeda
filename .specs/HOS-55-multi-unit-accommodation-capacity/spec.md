@@ -51,7 +51,7 @@ its own capacity / price / availability".
 - The interim cap (PR #1733) keeps the data enterable but encodes a wrong mental
   model; the longer it stays, the more downstream code (search filters, pricing,
   availability, AI search `maxGuests`) hardens around "one accommodation = one unit".
-- Commerce/experiences specs (SPEC-239/240) are expanding the catalog; getting the
+- Gastronomy and experience/experiences specs (SPEC-239/240) are expanding the catalog; getting the
   unit model right for accommodations before more surfaces consume it reduces rework.
 - Search and booking UX for hotels/complexes is currently degraded (a 10-cabin
   complex shows as one listing with a confusing aggregate capacity).

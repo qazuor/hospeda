@@ -13,7 +13,7 @@ areas:
 # Feature Flags Audit & Toggle System
 
 > Migrated from `.qtm/specs/SPEC-296-feature-flags-audit-and-toggles/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-11.
-
+>
 > Audit every current platform feature, classify which ones should be gated
 > behind a flag, and wire those flags into the relevant code paths. The flag
 > infrastructure is already built (SPEC-276). This spec is about using it
@@ -167,11 +167,11 @@ entitlements. This is the clearest dual-layer use case — see OQ-1.
 | What's new / novedades | none | Low |
 | Price alerts | `PRICE_ALERTS` | Low — entitlement |
 
-### 6.5 Commerce listings
+### 6.5 Gastronomy and experience listings
 
 | Feature | Notes | Flag candidate? |
 |---------|-------|-----------------|
-| Commerce listing (`/mi-cuenta/comercio/`) | SPEC-239, separate domain | Yes — dark launch |
+| Gastronomy and experience listing (`/mi-cuenta/comercio/`) | SPEC-239, separate domain | Yes — dark launch |
 | Restaurant publishing (`/publicar-restaurante/`) | | Yes |
 
 ## 7. First Steps / Discovery Plan
@@ -202,6 +202,7 @@ written before the audit output is reviewed.
 ### Phase 2 — Wire flag checks into code paths
 
 For each flagged feature:
+
 - Server-side route: add `evaluateFlag(key, { userId, role })` and return
   appropriate HTTP status (404 or 503) when disabled.
 - Optionally: client-side `useFeatureFlag(key)` hook in admin/web components.
