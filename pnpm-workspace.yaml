@@ -189,7 +189,9 @@ overrides:
   # GHSA-6j4f-fj2g-mc7p (<5.0.10) + GHSA-qhr7-859c-m2p7 (<5.0.11), 2026-09:
   # same story, the floor moves again.
   brace-expansion: ">=5.0.11"
-  shell-quote: ">=1.8.5"
+  # GHSA-pqg4-j6r4-53mv: react-devtools-core (mobile, via expo) resolved
+  # shell-quote >=1.8.4 <1.11.0. Keep the 1.x line.
+  shell-quote: ">=1.11.0 <2"
   mdast-util-to-hast: ">=13.2.1"
   preact: ">=10.26.10"
   h3: ">=1.15.6"
@@ -315,7 +317,8 @@ overrides:
   "@vitejs/plugin-react": "^6.0.3"
   turbo-stream: ">=3.0.0"
   linkify-it: ">=5.0.2 <6"
-  sharp: ">=0.35.3 <0.36"
+  # GHSA-wq5f-xc86-pv6w: sharp <0.35.5.
+  sharp: ">=0.35.5 <0.36"
   fast-xml-parser: ">=5.10.1 <6"
   # GHSA-7w5x-hrqm-74c2 (high): Denial of Service via malformed TOML documents,
   # covers <=1.7.0. Transitive only, via astro (astro>smol-toml,
