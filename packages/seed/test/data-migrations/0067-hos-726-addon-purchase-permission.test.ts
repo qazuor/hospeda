@@ -89,19 +89,14 @@ describe('0067-hos-726 addon purchase permission — exported lists shape', () =
         expect(ADDON_PURCHASE_PERMISSION).toBe('billing.addon.purchase');
     });
 
-    it('targets the two paying tiers plus the two staff roles', () => {
+    it('targets HOST plus the two staff roles (COMMERCE_OWNER retired by HOS-1417)', () => {
         expect([...GRANTED_ROLES].sort()).toEqual(
-            [
-                RoleEnum.SUPER_ADMIN,
-                RoleEnum.ADMIN,
-                RoleEnum.HOST,
-                'COMMERCE_OWNER' as RoleEnum
-            ].sort()
+            [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN, RoleEnum.HOST].sort()
         );
     });
 
-    it('GRANTS is 1 permission x 4 roles = 4 pairs', () => {
-        expect(GRANTS).toHaveLength(4);
+    it('GRANTS is 1 permission x 3 roles = 3 pairs', () => {
+        expect(GRANTS).toHaveLength(3);
         for (const role of GRANTED_ROLES) {
             expect(GRANTS.filter((grant) => grant.role === role)).toHaveLength(1);
         }
@@ -109,8 +104,8 @@ describe('0067-hos-726 addon purchase permission — exported lists shape', () =
 });
 
 describe('0067-hos-726 addon purchase permission — current baseline', () => {
-    it('keeps the historical migration payload and grants current owner roles', () => {
-        expect(GRANTED_ROLES).toContain('COMMERCE_OWNER');
+    it('drops the retired COMMERCE_OWNER role and grants current owner roles', () => {
+        expect(GRANTED_ROLES).not.toContain('COMMERCE_OWNER');
         expect(Object.keys(ROLE_PERMISSIONS)).not.toContain('COMMERCE_OWNER');
         for (const role of [RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER]) {
             expect(ROLE_PERMISSIONS[role]).toContain(ADDON_PURCHASE_PERMISSION);
@@ -119,7 +114,7 @@ describe('0067-hos-726 addon purchase permission — current baseline', () => {
 });
 
 describe('0067-hos-726 addon purchase permission — up()', () => {
-    it('inserts all four (role, permission) pairs', async () => {
+    it('inserts all three (role, permission) pairs', async () => {
         const insertedRows = GRANTS.map((grant) => ({ ...grant }));
         const { ctx, readInsertValues } = buildCtx(insertedRows);
 
@@ -128,9 +123,9 @@ describe('0067-hos-726 addon purchase permission — up()', () => {
         // Assert the payload actually handed to `.values()`, not just the count
         // the mocked `.returning()` echoed back.
         expect(readInsertValues()).toEqual(GRANTS);
-        expect(result.counts?.granted).toBe(4);
+        expect(result.counts?.granted).toBe(3);
         expect(result.counts?.alreadyPresent).toBe(0);
-        expect(result.summary).toMatch(/Granted 4 of 4/);
+        expect(result.summary).toMatch(/Granted 3 of 3/);
     });
 
     it('is idempotent: does NOT throw and reports 0 inserted on the second run', async () => {
@@ -141,7 +136,7 @@ describe('0067-hos-726 addon purchase permission — up()', () => {
         const result = await migration.up(ctxSecond);
 
         expect(result.counts?.granted).toBe(0);
-        expect(result.counts?.alreadyPresent).toBe(4);
-        expect(result.summary).toMatch(/Granted 0 of 4/);
+        expect(result.counts?.alreadyPresent).toBe(3);
+        expect(result.summary).toMatch(/Granted 0 of 3/);
     });
 });
