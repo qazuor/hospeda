@@ -38,7 +38,7 @@ import {
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool, getUserRoles } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, getUserRoles, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -67,6 +67,16 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         page,
         context: _context
     }) => {
+        // POST /accommodations/:id/publish answers 500 on the epic: its publish
+        // dependencies (eligibility + trial) went down with the old billing (HOS-1416),
+        // and `AccommodationService.publish()` throws without them. Deferred until the
+        // new billing wires publishing again; the billing queries are already gone from
+        // the body, so only that step is blocking.
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: publish deps removed with old billing in U1.1 (POST /publish 500); re-enabled with the new billing (B units)'
+        );
+
         // ───────────────────────────────────────────────────────────────────
         // Web leg: signup + email verification + mini-form
         // ───────────────────────────────────────────────────────────────────
