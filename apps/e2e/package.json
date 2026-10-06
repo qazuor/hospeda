@@ -31,15 +31,15 @@
         "@repo/seed": "workspace:*",
         "@repo/service-core": "workspace:*",
         "@repo/utils": "workspace:*",
-        "drizzle-orm": "^0.45.2",
-        "pg": "^8.22.0",
+        "drizzle-orm": "^0.45.3",
+        "pg": "^8.23.0",
         "zod": "^4.0.8"
     },
     "devDependencies": {
         "@playwright/test": "^1.63.0",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.6.1",
-        "@types/pg": "^8.21.0",
+        "@types/pg": "^8.23.1",
         "@vitest/coverage-v8": "^4.1.10",
         "tsx": "^4.23.13",
         "typescript": "6.0.3",
