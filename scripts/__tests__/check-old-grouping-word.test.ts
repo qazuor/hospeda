@@ -237,4 +237,26 @@ describe('TEST:U1:9 time rules of the grouping word guard', () => {
         mutateScript((source) => closureOn(step6On(source)).replace(EMPTY_LIST, 'ALLOWLIST=()'));
         expect(run().code).toBe(1);
     });
+
+    describe('the PDR exemption with the program folders out of the list', () => {
+        const emptyList = (source: string): string =>
+            closureOn(step6On(source)).replace(EMPTY_LIST, 'ALLOWLIST=()');
+
+        it('the word in the PDR is green by name alone', () => {
+            tracked(PDR, `${word} was the retired grouping\n`);
+            mutateScript(emptyList);
+            expect(run().code).toBe(0);
+        });
+
+        it('the word in a sibling of the PDR is red and names the sibling', () => {
+            const sibling = '.specs/HOS-1352-billing-verticals-redesign/docs/foo.md';
+            tracked(PDR, word);
+            tracked(sibling, word);
+            mutateScript(emptyList);
+            const result = run();
+            expect(result.code).toBe(1);
+            expect(result.output).toContain(sibling);
+            expect(result.output).not.toContain(`${PDR} (`);
+        });
+    });
 });
