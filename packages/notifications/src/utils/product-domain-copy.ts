@@ -65,7 +65,7 @@ const ACCOMMODATION_TRIAL_COPY: TrialSeriesVerticalCopy = {
     expiredSavedLine: 'fotos, descripción, servicios, ubicación y datos de contacto'
 };
 
-/** Vocabulary matches the gastronomy landing page (`commerce.json`'s `landing.gastronomy`). */
+/** Vocabulary matches the gastronomy landing page (`gastronomy.json`'s `landing`). */
 const GASTRONOMY_TRIAL_COPY: TrialSeriesVerticalCopy = {
     possessive: 'tu local',
     searchIntent: 'dónde comer',
@@ -77,7 +77,7 @@ const GASTRONOMY_TRIAL_COPY: TrialSeriesVerticalCopy = {
     expiredSavedLine: 'fotos, menú, horarios, ubicación y datos de contacto'
 };
 
-/** Vocabulary matches the experience landing page (`commerce.json`'s `landing.experience`). */
+/** Vocabulary matches the experience landing page (`experience.json`'s `landing`). */
 const EXPERIENCE_TRIAL_COPY: TrialSeriesVerticalCopy = {
     possessive: 'tu experiencia',
     searchIntent: 'qué experiencias hacer',

@@ -38,7 +38,7 @@ import { ExperienceSchema } from './experience.schema.js';
  * TypeScript does not catch it (`.superRefine()` returns `this`, so `.pick()`
  * still type-checks), so attaching this rule directly to
  * {@link ExperienceOwnerCreateInputSchema} compiles cleanly and then blows up on
- * module load in `CommerceCreateForm.client.tsx`, which picks a subset of it.
+ * module load in `ListingCreateForm.client.tsx`, which picks a subset of it.
  *
  * So the plain create schemas stay slice-able and the rule lives in the
  * `*CheckedSchema` variants, which the API routes validate against. Do NOT move
@@ -114,7 +114,7 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
      * Deliberately NOT defaulted to the acting admin: the documented flow is
      * "admins create the listing and provision the owner", so the owner is a
      * real merchant account rather than whoever filled in the form. The owner
-     * self-create route (`routes/commerce/protected/create.ts`) already supplies
+     * self-create route (`routes/experience/protected/create.ts`) already supplies
      * `ownerId: actor.id` explicitly and is unaffected.
      */
     ownerId: UserIdSchema,
@@ -316,7 +316,7 @@ export type ExperienceOwnerUpdateInput = z.infer<typeof ExperienceOwnerUpdateInp
 
 /**
  * Schema for a `EXPERIENCE_OWNER` self-service listing create
- * (`POST /api/v1/protected/commerce/listings/:entityType`, HOS-166 §7.2).
+ * (`POST /api/v1/protected/experiences/`, HOS-166 §7.2).
  * Mirrors {@link GastronomyOwnerCreateInputSchema} — see that schema's JSDoc
  * for the full rationale on why each field is omitted.
  *
@@ -377,7 +377,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     //   this entity, and create is the one write path that cannot check the
     //   entitlement honestly: a listing is created `PRIVATE`/`DRAFT` BEFORE the
     //   owner has any subscription at all (the normal mid-funnel state
-    //   `commerce-entitlement.ts` is written around), so a gate here would
+    //   the per-vertical entitlement middleware is written around), so a gate here would
     //   refuse every legitimate provider, while no gate at all would let an
     //   unentitled one write the field through this schema's `.omit()`
     //   inheritance, in silence. Omitting removes the dilemma: the field is
@@ -410,7 +410,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
  * (see {@link requirePriceUnitUnlessOnRequest}). The owner create route
  * validates against THIS one.
  *
- * The plain schema above must stay refinement-free: `CommerceCreateForm`
+ * The plain schema above must stay refinement-free: `ListingCreateForm`
  * `.pick()`s a subset of it, and Zod 4 throws on `.pick()` over a refined
  * object schema.
  */

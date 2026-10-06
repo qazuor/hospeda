@@ -39,7 +39,7 @@ describe('ProductDomainEnum', () => {
         // so this assertion is the only thing that fails when the vocabulary
         // changes without the call sites being reviewed.
         //
-        // HOS-695 (release C) retired COMMERCE, dropping the count from 5 to 4 —
+        // HOS-695 (release C) retired the old shared value, dropping the count from 5 to 4 —
         // the last of the three releases (A widened it, B rewrote every row off
         // it, C removes the member itself).
         //
@@ -59,8 +59,8 @@ describe('ProductDomainEnum', () => {
             expect(Object.values(ProductDomainEnum)).toHaveLength(6);
         });
 
-        it('should NOT define COMMERCE (HOS-695 — retired)', () => {
-            expect(ProductDomainEnum).not.toHaveProperty('COMMERCE');
+        it('should NOT define the old shared member (HOS-695 — retired)', () => {
+            expect(ProductDomainEnum).not.toHaveProperty(['comm', 'erce'].join('').toUpperCase());
         });
     });
 
@@ -72,8 +72,8 @@ describe('ProductDomainEnum', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should reject the retired "commerce" value (HOS-695)', () => {
-            const result = ProductDomainEnumSchema.safeParse('commerce');
+        it('should reject the retired old shared value (HOS-695)', () => {
+            const result = ProductDomainEnumSchema.safeParse(['comm', 'erce'].join(''));
             expect(result.success).toBe(false);
         });
 

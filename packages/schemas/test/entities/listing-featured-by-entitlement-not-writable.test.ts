@@ -10,7 +10,7 @@
  *
  * `write-input-server-written.guard.test.ts` already froze the accepted field
  * set of every write schema, and it is what caught this: adding the column to
- * the two commerce base schemas landed it in `GastronomyUpdateInputSchema`
+ * the two vertical base schemas landed it in `GastronomyUpdateInputSchema`
  * automatically, because those schemas are built with `.omit()` and a field is
  * accepted unless it is named. An owner could have sent
  * `featuredByEntitlement: true` in their own PATCH and featured their listing
@@ -18,11 +18,11 @@
  *
  * That guard is a frozen-set diff, so it phrases the failure as "this set
  * changed". These cases phrase it as the thing that must never be true —
- * **a hostile body cannot set this field** — and they name the two commerce
+ * **a hostile body cannot set this field** — and they name the two
  * verticals explicitly, so removing the omit from ONE of them fails with the
  * vertical in the message rather than as a set delta.
  *
- * @module test/entities/commerce-featured-by-entitlement-not-writable
+ * @module test/entities/listing-featured-by-entitlement-not-writable
  */
 
 import { describe, expect, it } from 'vitest';
@@ -76,7 +76,7 @@ const FAKE_DESTINATION_ID = '11111111-1111-4111-8111-111111111111';
 const FAKE_OWNER_ID = '22222222-2222-4222-8222-222222222222';
 
 /**
- * Every write schema a REQUEST BODY can reach, per commerce vertical.
+ * Every write schema a REQUEST BODY can reach, per gastronomy or experience vertical.
  *
  * Both verticals are listed for all four tiers on purpose. The bug this file
  * guards was present in exactly one of the eight (gastronomy's generic update)

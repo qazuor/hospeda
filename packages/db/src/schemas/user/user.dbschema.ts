@@ -139,7 +139,7 @@ export const users = pgTable(
         /**
          * SPEC-239: Flag indicating the user must change their password on next
          * login. Set to true by admins after a manual password reset or when a
-         * commerce owner account is provisioned. Cleared to false once the user
+         * gastronomy or experience owner account is provisioned. Cleared to false once the user
          * successfully changes their password.
          */
         mustChangePassword: boolean('must_change_password').notNull().default(false),

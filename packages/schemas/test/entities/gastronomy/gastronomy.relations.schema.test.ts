@@ -39,7 +39,7 @@ describe('GastronomyWithOwnerSchema', () => {
             owner: {
                 id: faker.string.uuid(),
                 email: 'owner@example.com',
-                role: 'COMMERCE_OWNER',
+                role: 'HOST',
                 isActive: true
             }
         };
@@ -55,7 +55,7 @@ describe('GastronomyWithBasicRelationsSchema', () => {
             owner: {
                 id: faker.string.uuid(),
                 email: 'owner@example.com',
-                role: 'COMMERCE_OWNER',
+                role: 'HOST',
                 isActive: true
             }
         };
@@ -71,7 +71,7 @@ describe('GastronomyWithFullRelationsSchema', () => {
             owner: {
                 id: faker.string.uuid(),
                 email: 'owner@example.com',
-                role: 'COMMERCE_OWNER',
+                role: 'HOST',
                 isActive: true
             },
             features: [{ id: faker.string.uuid(), slug: 'wifi', name: 'WiFi' }],

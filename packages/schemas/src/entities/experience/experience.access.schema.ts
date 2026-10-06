@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import {
-    CommerceListingAmenityPublicSchema,
-    CommerceListingFeaturePublicSchema
-} from '../../common/commerce-catalog.schema.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
+import {
+    ListingAmenityPublicSchema,
+    ListingFeaturePublicSchema
+} from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { ExperienceSchema } from './experience.schema.js';
 
@@ -229,9 +229,9 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
      * `.optional()` rather than defaulted: a list payload that never ran the
      * join must say "not loaded", not "this experience includes nothing".
      */
-    amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
+    amenities: z.array(ListingAmenityPublicSchema).optional(),
     /** Features the provider ticked, joined with the shared catalog (HOS-1072). */
-    features: z.array(CommerceListingFeaturePublicSchema).optional(),
+    features: z.array(ListingFeaturePublicSchema).optional(),
     /**
      * How to GET to the meeting point (HOS-1049) — the paid half.
      *

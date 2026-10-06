@@ -73,7 +73,7 @@ export enum NotificationType {
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
     /**
-     * H-62 / H-148 — sent to the ops mailbox the moment a partner or commerce
+     * H-62 / H-148 — sent to the ops mailbox the moment a partner or gastronomy/experience
      * application arrives through one of the five public acquisition forms.
      *
      * Both funnels are served by ONE type rather than two. What ops needs to

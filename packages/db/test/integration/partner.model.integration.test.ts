@@ -41,7 +41,7 @@ function partnerFixture(
         id: crypto.randomUUID(),
         slug: `partner-${uid}`,
         name: `Partner ${uid}`,
-        type: 'commerce' as const,
+        type: 'business' as const,
         tier: 'gold' as const,
         subscriptionStatus: 'active' as const,
         lifecycleState: 'ACTIVE' as const,

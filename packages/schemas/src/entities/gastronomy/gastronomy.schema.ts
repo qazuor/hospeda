@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { CommerceIdentityFields } from '../../common/commerce-identity.schema.js';
-import { CommerceRatingSchema } from '../../common/commerce-rating.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
+import { GastronomyRatingSchema } from '../../common/gastronomy-rating.schema.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { ListingIdentityFields } from '../../common/listing-identity.schema.js';
 import { BaseMediaFields, BaseVideosFields } from '../../common/media.schema.js';
 import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { OpeningHoursFields } from '../../common/opening-hours.schema.js';
@@ -19,11 +19,11 @@ import { GastronomyFaqSchema } from './subtypes/gastronomy.faq.schema.js';
 import { GastronomyMenuFileKindSchema } from './subtypes/gastronomy.menu.schema.js';
 
 /**
- * Gastronomy Entity Schema — commerce listing for food and beverage venues.
+ * Gastronomy Entity Schema — listing for food and beverage venues.
  *
  * Composed by spreading shared base-field const objects (same composition pattern
  * as `AccommodationSchema`) plus gastronomy-specific fields:
- * - Identity: name/slug/summary/description/richDescription + i18n via `CommerceIdentityFields`
+ * - Identity: name/slug/summary/description/richDescription + i18n via `ListingIdentityFields`
  * - Schedule: weekly opening hours via `OpeningHoursFields`
  * - Contact: phone/email/website via `BaseContactFields`
  * - Social: social network links via `SocialNetworkFields`
@@ -47,7 +47,7 @@ export const GastronomySchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     // Core identity fields (name/slug/summary/description/richDescription + i18n)
-    ...CommerceIdentityFields,
+    ...ListingIdentityFields,
 
     // Gastronomy-specific fields
     /** Gastronomy sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
@@ -153,7 +153,7 @@ export const GastronomySchema = z.object({
      * Aggregate of individual `GastronomyReview` records. Null when no
      * reviews have been submitted yet.
      */
-    rating: CommerceRatingSchema.nullish()
+    rating: GastronomyRatingSchema.nullish()
 });
 
 /** TypeScript type inferred from {@link GastronomySchema}. */

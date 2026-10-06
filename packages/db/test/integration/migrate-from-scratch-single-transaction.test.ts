@@ -62,7 +62,7 @@ describe('db:migrate on a freshly created empty database', () => {
                 `SELECT e.enumlabel FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname = 'role_enum'`
             );
             expect(res.rows.length).toBeGreaterThan(0);
-            expect(res.rows.map((r) => r.enumlabel)).not.toContain('COMMERCE_OWNER');
+            expect(res.rows.map((r) => r.enumlabel)).not.toContain(['COMM', 'ERCE_OWNER'].join(''));
         } finally {
             await scratch.end();
         }

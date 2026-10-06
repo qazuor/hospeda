@@ -28,13 +28,13 @@ src/
 - Default currency: ARS (Argentine Peso)
 - Config names and descriptions always in English (UI localization handled by i18n)
 - Plans use UUID for `id`
-- Trial: **30 days on almost everything, and NOT host-only.** The four literals live
+- Trial: **30 days on almost everything, and NOT host-only.** The three literals live
   in `src/constants/billing.constants.ts`: `OWNER_TRIAL_DAYS = 30` (owner-basico /
   -pro / -premium), `TOURIST_TRIAL_DAYS = 30` (`tourist-vip`; `tourist-free` has
-  none), `COMMERCE_TRIAL_DAYS = 30` (the six gastronomy-*/ experience-* plans),
+  none),
   and `COMPLEX_TRIAL_DAYS = 14` — `complex-*` is the ONLY tier still at 14.
   All three partner plans (`partner-listing`, `partner-silver`, `partner-gold`) are
-  `hasTrial: false`. They are deliberately four separate
+  `hasTrial: false`. They are deliberately three separate
   literals, not aliases, so one tier can move without dragging the others; do not
   re-alias them. Ground truth is `src/config/plans.config.ts`, not this line.
 - AFIP invoicing deferred to v2 (manual via accountant)

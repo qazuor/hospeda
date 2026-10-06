@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 // ============================================================================
-// Commerce listing catalog projections — the amenity / feature rows a public
+// Listing catalog projections — the amenity / feature rows a public
 // gastronomy or experience detail page renders (HOS-1072).
 // ============================================================================
 
 /**
- * One amenity attached to a commerce listing, as published on the PUBLIC tier.
+ * One amenity attached to a listing, as published on the PUBLIC tier.
  *
  * The shape is a merge of the junction row and the shared `amenities` catalog
  * row it points at, exactly like `AccommodationPublicSchema.amenities` — the
@@ -23,7 +23,7 @@ import { z } from 'zod';
  * (`accommodations.amenityNames.<slug>`) — SPEC-266 dropped the catalog `name`
  * column, so there is no display text to read from the row.
  */
-export const CommerceListingAmenityPublicSchema = z.object({
+export const ListingAmenityPublicSchema = z.object({
     /** Catalog row id (junction FK). */
     amenityId: z.string().uuid(),
     /** Catalog slug — the i18n key used to render the label. */
@@ -32,11 +32,11 @@ export const CommerceListingAmenityPublicSchema = z.object({
     icon: z.string().nullable()
 });
 
-/** TypeScript type for {@link CommerceListingAmenityPublicSchema}. */
-export type CommerceListingAmenityPublic = z.infer<typeof CommerceListingAmenityPublicSchema>;
+/** TypeScript type for {@link ListingAmenityPublicSchema}. */
+export type ListingAmenityPublic = z.infer<typeof ListingAmenityPublicSchema>;
 
 /**
- * One feature attached to a commerce listing, as published on the PUBLIC tier.
+ * One feature attached to a listing, as published on the PUBLIC tier.
  *
  * Unlike the amenity twin above, the feature junction tables DO carry
  * owner-authored columns (`host_rewrite_name`, `comments`), and both are
@@ -44,7 +44,7 @@ export type CommerceListingAmenityPublic = z.infer<typeof CommerceListingAmenity
  * are the owner's own words about that feature on that listing, and dropping
  * them would silently discard text the owner typed.
  */
-export const CommerceListingFeaturePublicSchema = z.object({
+export const ListingFeaturePublicSchema = z.object({
     /** Catalog row id (junction FK). */
     featureId: z.string().uuid(),
     /** Catalog slug — the i18n key used to render the label. */
@@ -57,5 +57,5 @@ export const CommerceListingFeaturePublicSchema = z.object({
     comments: z.string().nullable()
 });
 
-/** TypeScript type for {@link CommerceListingFeaturePublicSchema}. */
-export type CommerceListingFeaturePublic = z.infer<typeof CommerceListingFeaturePublicSchema>;
+/** TypeScript type for {@link ListingFeaturePublicSchema}. */
+export type ListingFeaturePublic = z.infer<typeof ListingFeaturePublicSchema>;

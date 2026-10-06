@@ -2319,6 +2319,11 @@
         "isAuthenticated": {
             "required": "Authentication state is required"
         },
+        "listingStats": {
+            "entityType": {
+                "invalid": "The entity type is not valid for listing statistics"
+            }
+        },
         "stats": {
             "total": {
                 "integer": "Total visits must be an integer",

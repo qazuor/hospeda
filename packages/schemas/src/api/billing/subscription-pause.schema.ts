@@ -10,8 +10,8 @@
  * A self-pause always stops billing (MercadoPago preapproval paused). The
  * SERVICE-suspension side effect is domain-dependent (HOS-1278): an
  * ACCOMMODATION-domain subscription hides/edit-locks the owner's
- * accommodations (`accommodationsUpdated` below); a commerce
- * (gastronomy/experience) subscription instead flips its linked listing's
+ * accommodations (`accommodationsUpdated` below); a gastronomy or
+ * experience subscription instead flips its linked listing's
  * visibility through the shared `reconcileSubscriptionLinkedEntities` bridge,
  * which does not touch `accommodationsUpdated` at all. Resume reverts
  * whichever effect applied.
@@ -19,7 +19,7 @@
  * `subscriptionId` is REQUIRED in the request body (HOS-1278). Before this,
  * the route had no body at all and guessed the caller's "current" subscription
  * via `getByCustomerId().find()` — ambiguous for anyone holding more than one
- * subscription (a dual host/commerce owner, or a host auto-promoted from
+ * subscription (a dual host/gastronomy owner, or a host auto-promoted from
  * tourist), and unable to tell a partner's own subscription apart from
  * anything else. The id makes the target explicit; the route still verifies
  * it belongs to the caller.

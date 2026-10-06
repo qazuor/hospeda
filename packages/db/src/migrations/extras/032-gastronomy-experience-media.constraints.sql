@@ -1,5 +1,5 @@
 -- =============================================================================
--- 032-commerce-media.constraints.sql (carril 2, idempotent)
+-- 032-gastronomy-experience-media.constraints.sql (carril 2, idempotent)
 -- DB-level invariants for gastronomy_media and experience_media (HOS-372).
 --
 -- Drizzle cannot emit a partial unique index nor a cross-column CHECK, so they
@@ -18,8 +18,8 @@
 --   2. A featured photo can never be archived
 --      -> CHECK NOT (is_featured AND state = 'archived').
 --
--- Note on invariant 2 for commerce: no commerce flow archives photos today (the
--- commerce plan carries `limits: []`, so there is no downgrade-over-limit
+-- Note on invariant 2 for gastronomy and experience: no flow of either archives
+-- photos today (their plans carry `limits: []`, so there is no downgrade-over-limit
 -- remediation like the accommodation one). The CHECK is still declared so the
 -- three verticals share one shape and an archive flow added later cannot
 -- silently violate the featured invariant.

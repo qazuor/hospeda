@@ -1,7 +1,7 @@
 /**
- * commerce-completeness.ts
+ * listing-completeness.ts
  *
- * Publish-readiness ("complete") contract for commerce listings (HOS-166 §6.6).
+ * Publish-readiness ("complete") contract for listings (HOS-166 §6.6).
  *
  * "Complete" is deliberately NOT "passes the Create schema" — the create
  * schemas are permissive by design (`slug`, `ownerId`, `destinationId` are all
@@ -13,7 +13,7 @@
  * 1. The protected checkout route (`apps/api/.../start-subscription.ts`) — 422
  *    with `missing` when incomplete.
  * 2. The visibility reconciler (`@repo/service-core`'s
- *    `commerce-visibility.ts` via `commerce-reconcile.service.ts`) — keeps an
+ *    `listing-visibility.ts` via `listing-reconcile.service.ts`) — keeps an
  *    incomplete-but-paid listing `PRIVATE` (G-3 defense in depth).
  * 3. The web owner surface (`apps/web`) — renders the "what's missing"
  *    checklist.
@@ -26,15 +26,14 @@
  * `@repo/schemas`. `@repo/schemas` is therefore the only home all three
  * callers can share.
  *
- * D-4 compliance: this module has never heard of `commerce_leads` and must
+ * D-4 compliance: this module has never heard of any lead-intake table and must
  * never import lead-related types or reference lead data — see spec §6.1's
  * anti-pattern table and the AC-14 static guard.
  *
- * @module common/commerce-completeness
+ * @module common/listing-completeness
  */
 
-import { CommerceEntityTypeEnum } from '../enums/commerce-entity-type.enum.js';
-import type { CommerceEntityType } from '../enums/commerce-entity-type.schema.js';
+import { type GastronomyOrExperience, ProductDomainEnum } from '../enums/product-domain.enum.js';
 import type { ContactInfo } from './contact.schema.js';
 import type { Media } from './media.schema.js';
 import type { OpeningHours } from './opening-hours.schema.js';
@@ -45,8 +44,8 @@ import type { OpeningHours } from './opening-hours.schema.js';
 
 /**
  * Minimum `summary` length required for publish. Mirrors the WRITE-side
- * minimum enforced by `CommerceIdentityFields.summary` in
- * `packages/schemas/src/common/commerce-identity.schema.ts` — kept as a
+ * minimum enforced by `ListingIdentityFields.summary` in
+ * `packages/schemas/src/common/listing-identity.schema.ts` — kept as a
  * separate named constant here because that schema module does not export a
  * bare numeric constant to import.
  */
@@ -54,7 +53,7 @@ const SUMMARY_MIN_LENGTH = 10;
 
 /**
  * Minimum `description` length required for publish. Mirrors
- * `CommerceIdentityFields.description`'s WRITE-side minimum — see
+ * `ListingIdentityFields.description`'s WRITE-side minimum — see
  * {@link SUMMARY_MIN_LENGTH} for why this is a local constant rather than an
  * import.
  */
@@ -68,7 +67,7 @@ const OPENING_HOURS_DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 // ---------------------------------------------------------------------------
 
 /**
- * The subset of a commerce listing's fields `resolveListingCompleteness`
+ * The subset of a listing's fields `resolveListingCompleteness`
  * reads. Deliberately a standalone structural type rather than the full
  * `Gastronomy` / `Experience` entity type: at draft time a real DB row can
  * legitimately violate those schemas' non-nullish invariants (e.g.
@@ -79,7 +78,7 @@ const OPENING_HOURS_DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
  * Callers pass whatever listing shape they have (a service read result, a
  * DB row, a partial form payload) — only the fields below are read.
  */
-export interface CommerceListingCompletenessListing {
+export interface ListingCompletenessListing {
     /** Listing display name. Required, non-empty. */
     readonly name?: string | null;
     /** Short marketing summary. Required, ≥ {@link SUMMARY_MIN_LENGTH} chars. */
@@ -118,10 +117,10 @@ export interface CommerceListingCompletenessListing {
 
 /** Input to {@link resolveListingCompleteness}. */
 export interface ResolveListingCompletenessInput {
-    /** Which commerce vertical the listing belongs to. Drives per-vertical rules. */
-    readonly entityType: CommerceEntityType;
-    /** The listing snapshot to evaluate. See {@link CommerceListingCompletenessListing}. */
-    readonly listing: CommerceListingCompletenessListing;
+    /** Which gastronomy or experience vertical the listing belongs to. Drives per-vertical rules. */
+    readonly entityType: GastronomyOrExperience;
+    /** The listing snapshot to evaluate. See {@link ListingCompletenessListing}. */
+    readonly listing: ListingCompletenessListing;
 }
 
 /** Result of {@link resolveListingCompleteness}. */
@@ -188,10 +187,10 @@ type ReachableContactChannel =
  *   there, not something to do first.
  */
 const REACHABLE_CONTACT_CHANNELS: Readonly<
-    Record<CommerceEntityType, readonly ReachableContactChannel[]>
+    Record<GastronomyOrExperience, readonly ReachableContactChannel[]>
 > = {
-    [CommerceEntityTypeEnum.EXPERIENCE]: ['workPhone', 'mobilePhone', 'workEmail'],
-    [CommerceEntityTypeEnum.GASTRONOMY]: [
+    [ProductDomainEnum.EXPERIENCE]: ['workPhone', 'mobilePhone', 'workEmail'],
+    [ProductDomainEnum.GASTRONOMY]: [
         'homePhone',
         'workPhone',
         'mobilePhone',
@@ -210,7 +209,7 @@ const REACHABLE_CONTACT_CHANNELS: Readonly<
  * wrong answer here publishes an unreachable listing — cheaper to refuse.
  */
 function hasReachableContactChannel(
-    entityType: CommerceEntityType,
+    entityType: GastronomyOrExperience,
     contactInfo: ContactInfo | null | undefined
 ): boolean {
     if (!contactInfo) {
@@ -239,7 +238,7 @@ function hasAtLeastOneOpeningShift(openingHours: OpeningHours | null | undefined
 // ---------------------------------------------------------------------------
 
 /**
- * Evaluates whether a commerce listing is complete enough to publish.
+ * Evaluates whether a listing is complete enough to publish.
  *
  * Pure function — no DB access, no I/O. Evaluates the SHARED required-field
  * block (both verticals: `name`, `summary`, `description`, `destinationId`,
@@ -312,7 +311,7 @@ export function resolveListingCompleteness(
     }
 
     // ── Gastronomy-specific required fields ───────────────────────────────
-    if (entityType === CommerceEntityTypeEnum.GASTRONOMY) {
+    if (entityType === ProductDomainEnum.GASTRONOMY) {
         if (!hasAtLeastOneOpeningShift(listing.openingHours)) {
             missing.push('openingHours');
         }
@@ -345,7 +344,7 @@ export function resolveListingCompleteness(
     // is a real product question the spec did not answer (§6.6 explicitly
     // left experience-specific fields to the implementer's judgment) — flagged
     // for the orchestrator/product owner rather than guessed at here.
-    if (entityType === CommerceEntityTypeEnum.EXPERIENCE) {
+    if (entityType === ProductDomainEnum.EXPERIENCE) {
         const hasRealPrice = typeof listing.priceFrom === 'number' && listing.priceFrom > 0;
         if (listing.isPriceOnRequest !== true && !hasRealPrice) {
             missing.push('priceFrom');

@@ -22,7 +22,7 @@ interface ExperienceSearchInput {
 }
 
 /**
- * ExperienceModel — all DB access for experience commerce listings (SPEC-240).
+ * ExperienceModel — all DB access for experience listings (SPEC-240).
  *
  * Mirrors GastronomyModel structure: extends BaseModelImpl, provides search()
  * override with experience-specific filters (type, hasActiveSubscription).
@@ -152,8 +152,8 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
     /**
      * Returns the IDs of every non-deleted experience listing owned by the
      * given owner. Mirrors `AccommodationModel.findIdsByOwnerId` — used by
-     * `EntityViewService.getStatsForOwnCommerceListings` /
-     * `getDailySeriesForOwnCommerceListings` (HOS-734) to resolve which
+     * `EntityViewService.getStatsForOwnListings` /
+     * `getDailySeriesForOwnListings` (HOS-734) to resolve which
      * `entity_views` rows belong to the caller without accepting an ownerId
      * param at the route layer (anti-peeking).
      *

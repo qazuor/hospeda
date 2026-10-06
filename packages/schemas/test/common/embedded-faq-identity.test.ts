@@ -11,7 +11,7 @@
  * made Zod strip the `id` off every FAQ on the way out, even though the FAQ rows
  * carry a real UUID and the service loads it.
  *
- * What that broke downstream (observed, not hypothetical): the commerce owner's
+ * What that broke downstream (observed, not hypothetical): the listing owner's
  * FAQ manager keys its rows and its "edit this one" state off `faq.id`, so with
  * every id blank, clicking Edit opened ALL FAQs at once, the generated DOM ids
  * collided, and save/delete posted an empty id. React also logged one duplicate

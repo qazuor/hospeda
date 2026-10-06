@@ -225,7 +225,7 @@ export const HttpQueryFields = {
     endDateBefore: () =>
         z.coerce.date().optional().describe('Filter events ending before this date'),
 
-    // Price fields (common in commerce entities)
+    // Price fields (common in priced entities)
     minPrice: () => z.coerce.number().min(0).optional().describe('Minimum price filter'),
     maxPrice: () => z.coerce.number().min(0).optional().describe('Maximum price filter'),
     price: () => z.coerce.number().min(0).optional().describe('Exact price filter'),

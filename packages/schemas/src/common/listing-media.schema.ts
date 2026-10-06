@@ -3,16 +3,16 @@ import { ModerationStatusEnumSchema } from '../enums/index.js';
 import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
 
 // ============================================================================
-// CommerceMediaSchema — shared relational media row shape for commerce
-// listings (gastronomy, experience). Mirrors `accommodation_media` (HOS-372).
+// ListingMediaSchema — shared relational media row shape for gastronomy and
+// experience listings. Mirrors `accommodation_media` (HOS-372).
 // ============================================================================
 
 /**
- * Enum schema for the visibility state of a single commerce-listing media row.
+ * Enum schema for the visibility state of a single listing media row.
  *
  * - `visible`  — photo is part of the active gallery (or is the featured image).
- * - `archived` — photo was moved out of the gallery. No commerce flow archives
- *   photos today (the commerce plan carries `limits: []`, so there is no
+ * - `archived` — photo was moved out of the gallery. No gastronomy or experience flow archives
+ *   photos today (their plans carry `limits: []`, so there is no
  *   downgrade-over-limit remediation like the accommodation one — SPEC-167).
  *   The state is modeled anyway so gastronomy and experience share ONE table
  *   shape (and therefore one composition/service implementation) with
@@ -20,18 +20,18 @@ import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
  *
  * Mirrors `AccommodationMediaStateSchema`
  * (`packages/schemas/src/entities/accommodation/subtypes/accommodation.media.schema.ts`)
- * by value, but is intentionally a SEPARATE schema instance: commerce
- * (gastronomy/experience) media is its own domain per ADR-035, and importing
+ * by value, but is intentionally a SEPARATE schema instance: gastronomy and
+ * experience media is its own domain per ADR-035, and importing
  * from the accommodation entity file would couple two verticals that must be
  * able to evolve independently.
  */
-export const CommerceMediaStateSchema = z.enum(['visible', 'archived'], {
+export const ListingMediaStateSchema = z.enum(['visible', 'archived'], {
     message: 'zodError.common.listingMedia.state.invalid'
 });
-export type CommerceMediaState = z.infer<typeof CommerceMediaStateSchema>;
+export type ListingMediaState = z.infer<typeof ListingMediaStateSchema>;
 
 /**
- * Shared base shape for a single row in a commerce-listing media table
+ * Shared base shape for a single row in a listing media table
  * (`gastronomy_media`, `experience_media`).
  *
  * Deliberately EXCLUDES `id` and the parent foreign key — those are the only
@@ -39,7 +39,7 @@ export type CommerceMediaState = z.infer<typeof CommerceMediaStateSchema>;
  * base with its own `id` id field and `<vertical>Id` FK:
  *
  * ```ts
- * export const GastronomyMediaSchema = BaseCommerceMediaSchema.extend({
+ * export const GastronomyMediaSchema = BaseListingMediaSchema.extend({
  *   id: z.string().uuid(),
  *   gastronomyId: z.string().uuid(),
  * });
@@ -58,7 +58,7 @@ export type CommerceMediaState = z.infer<typeof CommerceMediaStateSchema>;
  * @see packages/db/src/schemas/experience/experience_media.dbschema.ts
  * @see packages/schemas/src/common/media.schema.ts — `ImageSchema` (the media-item shape this mirrors)
  */
-export const BaseCommerceMediaSchema = z.object({
+export const BaseListingMediaSchema = z.object({
     // ── Image fields (mirrors ImageSchema EXACTLY) ────────────────────────────
     /**
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
@@ -119,7 +119,7 @@ export const BaseCommerceMediaSchema = z.object({
      * Visibility state within the listing's media collection.
      * `visible` = active gallery; `archived` = moved out of the gallery.
      */
-    state: CommerceMediaStateSchema,
+    state: ListingMediaStateSchema,
     /**
      * When `true` this row is the featured / cover image for the listing.
      * At most one non-deleted row per listing can be featured (enforced by a
@@ -148,8 +148,8 @@ export const BaseCommerceMediaSchema = z.object({
     deletedAt: z.coerce.date().nullable().optional()
 });
 
-/** Type inferred from `BaseCommerceMediaSchema` (row fields, no id/FK). */
-export type BaseCommerceMedia = z.infer<typeof BaseCommerceMediaSchema>;
+/** Type inferred from `BaseListingMediaSchema` (row fields, no id/FK). */
+export type BaseListingMedia = z.infer<typeof BaseListingMediaSchema>;
 
 // ============================================================================
 // Command payload — shared text-metadata PATCH input (HOS-1036)
@@ -158,11 +158,11 @@ export type BaseCommerceMedia = z.infer<typeof BaseCommerceMediaSchema>;
 /**
  * Shared HTTP payload for `PATCH /<gastronomies|experiences>/:id/media/:mediaId`.
  *
- * The commerce twin of `AccommodationMediaUpdatePayloadSchema` (HOS-388) and of
+ * The gastronomy/experience twin of `AccommodationMediaUpdatePayloadSchema` (HOS-388) and of
  * `ContentMediaUpdatePayloadSchema` (`common/content-media.schema.ts`). The
  * three are field-for-field identical and differ only in the `zodError.*`
  * namespace their messages carry — same reason the three ROW schemas are
- * separate copies today (see {@link BaseCommerceMediaSchema}'s JSDoc: collapse
+ * separate copies today (see {@link BaseListingMediaSchema}'s JSDoc: collapse
  * all of them together, payloads included, once that follow-up lands).
  *
  * Text metadata ONLY. `url`, `publicId`, `moderationState`, `state`,
@@ -176,7 +176,7 @@ export type BaseCommerceMedia = z.infer<typeof BaseCommerceMediaSchema>;
  * `.shape` gotcha. The "at least one field" rule is refined on the per-vertical
  * service INPUT schemas, via `hasAtLeastOneMediaTextField`.
  */
-export const CommerceMediaUpdatePayloadSchema = z.object({
+export const ListingMediaUpdatePayloadSchema = z.object({
     /** Short display caption (max 100 chars). `null` clears it; omit to leave unchanged. */
     caption: z
         .string()
@@ -202,5 +202,5 @@ export const CommerceMediaUpdatePayloadSchema = z.object({
     attribution: ImageAttributionSchema.nullable().optional()
 });
 
-/** Inferred type for the shared commerce text-metadata PATCH payload. */
-export type CommerceMediaUpdatePayload = z.infer<typeof CommerceMediaUpdatePayloadSchema>;
+/** Inferred type for the shared listing text-metadata PATCH payload. */
+export type ListingMediaUpdatePayload = z.infer<typeof ListingMediaUpdatePayloadSchema>;

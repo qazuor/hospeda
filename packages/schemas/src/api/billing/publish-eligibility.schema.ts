@@ -15,16 +15,6 @@
  * nothing else — and hid itself from exactly the owner whose accommodation
  * trial was still intact.
  *
- * ## Sibling of, not shared with, the commerce verdict
- *
- * `CommerceTrialVerdictKindSchema` answers the same question for commerce
- * verticals and deliberately spells its states differently
- * (`trial_available` / `payment_required`), because publishing a commerce
- * listing opens a MercadoPago checkout where publishing an accommodation starts
- * a local trial. Two enums rather than one: merging them would force one name
- * onto two different mechanisms, and the next change to either would have to
- * decide which vertical it meant.
- *
  * @module api/billing/publish-eligibility
  */
 

@@ -15,7 +15,7 @@ import { z } from 'zod';
  * surface that DOES was blind to those types. The admin log filter could not
  * filter them, "revalidate by type" could not name them, and
  * `POST /revalidate/entity` rejected them at validation, which is what made the
- * commerce revalidate button impossible to add (HOS-389 §4b).
+ * gastronomy and experience revalidate button impossible to add (HOS-389 §4b).
  */
 export const RevalidationEntityTypeEnum = z.enum([
     'accommodation',

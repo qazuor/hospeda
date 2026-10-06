@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-    CommerceOwnerListingListSchema,
-    CommerceOwnerListingSummarySchema
-} from '../commerce-owner-listing.schema.js';
+    OwnerListingListSchema,
+    OwnerListingSummarySchema
+} from '../listing-owner-listing.schema.js';
 
 // ============================================================================
-// CommerceOwnerListingSummarySchema (SPEC-249 T-003)
+// OwnerListingSummarySchema (SPEC-249 T-003)
 // ============================================================================
 
 const gastronomyRow = {
@@ -26,19 +26,19 @@ const experienceRow = {
     isPublic: false
 };
 
-describe('CommerceOwnerListingSummarySchema', () => {
+describe('OwnerListingSummarySchema', () => {
     it('parses a gastronomy listing row', () => {
-        const result = CommerceOwnerListingSummarySchema.safeParse(gastronomyRow);
+        const result = OwnerListingSummarySchema.safeParse(gastronomyRow);
         expect(result.success).toBe(true);
     });
 
     it('parses an experience listing row', () => {
-        const result = CommerceOwnerListingSummarySchema.safeParse(experienceRow);
+        const result = OwnerListingSummarySchema.safeParse(experienceRow);
         expect(result.success).toBe(true);
     });
 
     it('rejects an unknown vertical', () => {
-        const result = CommerceOwnerListingSummarySchema.safeParse({
+        const result = OwnerListingSummarySchema.safeParse({
             ...gastronomyRow,
             vertical: 'lodging'
         });
@@ -46,7 +46,7 @@ describe('CommerceOwnerListingSummarySchema', () => {
     });
 
     it('rejects a non-uuid id', () => {
-        const result = CommerceOwnerListingSummarySchema.safeParse({
+        const result = OwnerListingSummarySchema.safeParse({
             ...gastronomyRow,
             id: 'not-a-uuid'
         });
@@ -54,16 +54,16 @@ describe('CommerceOwnerListingSummarySchema', () => {
     });
 });
 
-describe('CommerceOwnerListingListSchema', () => {
+describe('OwnerListingListSchema', () => {
     it('parses a mixed-vertical list under `listings`', () => {
-        const result = CommerceOwnerListingListSchema.safeParse({
+        const result = OwnerListingListSchema.safeParse({
             listings: [gastronomyRow, experienceRow]
         });
         expect(result.success).toBe(true);
     });
 
     it('parses an empty list', () => {
-        const result = CommerceOwnerListingListSchema.safeParse({ listings: [] });
+        const result = OwnerListingListSchema.safeParse({ listings: [] });
         expect(result.success).toBe(true);
     });
 });

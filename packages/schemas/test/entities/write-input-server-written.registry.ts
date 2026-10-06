@@ -108,10 +108,10 @@ const AUDIT_COLUMNS: Readonly<Record<string, string>> = {
 
 /**
  * Ownership, control and aggregate fields no merchant-reachable schema may take
- * from a body. Shared by the two commerce verticals, which run the same
+ * from a body. Shared by the two verticals, which run the same
  * owner-create / owner-patch pair.
  */
-const COMMERCE_OWNER_DENIED: Readonly<Record<string, string>> = {
+const LISTING_OWNER_DENIED: Readonly<Record<string, string>> = {
     ownerId: 'the owner-create route forces actor.id (HOS-166 D-3)',
     slug: 'derived server-side from name; a free rename enables slug-squatting',
     lifecycleState: 'control field — the route forces DRAFT on owner create',
@@ -243,7 +243,7 @@ export const ENTITIES: readonly EntityEntry[] = [
         writableProbe: 'name',
         neverFromBody: { ...AUDIT_COLUMNS },
         neverFromOwnerBody: {
-            ...COMMERCE_OWNER_DENIED,
+            ...LISTING_OWNER_DENIED,
             hasActiveSubscription: 'mirrors the billing subscription state; never client input'
         },
         writeSchemas: [
@@ -319,7 +319,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 'the provider-side asset handle the delete route destroys — a body-writable value deletes another venue’s file (HOS-895)',
             menuFileKind: 'derived from the uploaded file, alongside menuFileUrl (HOS-895)'
         },
-        neverFromOwnerBody: { ...COMMERCE_OWNER_DENIED },
+        neverFromOwnerBody: { ...LISTING_OWNER_DENIED },
         writeSchemas: [
             {
                 name: 'GastronomyAdminCreateInputSchema',

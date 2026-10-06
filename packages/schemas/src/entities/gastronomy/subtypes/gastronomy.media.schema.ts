@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import {
-    BaseCommerceMediaSchema,
-    CommerceMediaStateSchema,
-    CommerceMediaUpdatePayloadSchema
-} from '../../../common/commerce-media.schema.js';
 import { PreviousFeaturedOutcomeSchema } from '../../../common/featured-media.schema.js';
+import {
+    BaseListingMediaSchema,
+    ListingMediaStateSchema,
+    ListingMediaUpdatePayloadSchema
+} from '../../../common/listing-media.schema.js';
 import {
     hasAtLeastOneMediaTextField,
     ImageAttributionSchema,
@@ -14,25 +14,25 @@ import { ModerationStatusEnumSchema } from '../../../enums/index.js';
 
 /**
  * Enum schema for the visibility state of a single gastronomy media row.
- * Re-exports the shared {@link CommerceMediaStateSchema} under the
+ * Re-exports the shared {@link ListingMediaStateSchema} under the
  * per-vertical name used by gastronomy media endpoints/services.
  *
  * @see packages/db/src/schemas/gastronomy/gastronomy_media.dbschema.ts
  */
-export const GastronomyMediaStateSchema = CommerceMediaStateSchema;
+export const GastronomyMediaStateSchema = ListingMediaStateSchema;
 export type GastronomyMediaState = z.infer<typeof GastronomyMediaStateSchema>;
 
 /**
  * Zod schema for a single row in the `gastronomy_media` table.
  *
- * Extends {@link BaseCommerceMediaSchema} (shared with `experience_media`)
+ * Extends {@link BaseListingMediaSchema} (shared with `experience_media`)
  * with the two fields that differ per vertical: `id` and the parent FK
  * (`gastronomyId`). See the base schema's JSDoc for the full field-level
- * documentation shared by both commerce verticals.
+ * documentation shared by both verticals.
  *
  * @see packages/db/src/schemas/gastronomy/gastronomy_media.dbschema.ts
  */
-export const GastronomyMediaSchema = BaseCommerceMediaSchema.extend({
+export const GastronomyMediaSchema = BaseListingMediaSchema.extend({
     /** UUID primary key for this media row. */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the parent gastronomy listing (FK → gastronomies.id). */
@@ -153,7 +153,7 @@ export type GastronomyMediaAddInput = z.infer<typeof GastronomyMediaAddInputSche
  * verbatim is what keeps `isFeatured` unreachable from a request body: the
  * caller never states the outcome, the endpoint does.
  *
- * There is no `planGalleryCap` here, unlike the accommodation twin. Commerce
+ * There is no `planGalleryCap` here, unlike the accommodation twin. Gastronomy
  * listings have no per-plan photo allowance — only the fixed per-entity cap
  * from `getGalleryCap`, which the service reads itself.
  */
@@ -370,8 +370,8 @@ export type GastronomyMediaRestoreInput = z.infer<typeof GastronomyMediaRestoreI
 // Update Text Metadata (HOS-1036 — PATCH /gastronomies/:id/media/:mediaId)
 // ----------------------------------------------------------------------------
 
-/** HTTP payload for `PATCH /gastronomies/:id/media/:mediaId`. Alias of the shared commerce payload. */
-export const GastronomyMediaUpdatePayloadSchema = CommerceMediaUpdatePayloadSchema;
+/** HTTP payload for `PATCH /gastronomies/:id/media/:mediaId`. Alias of the shared listing payload. */
+export const GastronomyMediaUpdatePayloadSchema = ListingMediaUpdatePayloadSchema;
 /** Inferred type for the update-media HTTP payload. */
 export type GastronomyMediaUpdatePayload = z.infer<typeof GastronomyMediaUpdatePayloadSchema>;
 

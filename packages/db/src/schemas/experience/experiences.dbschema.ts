@@ -34,7 +34,7 @@ import { rExperienceAmenity } from './r_experience_amenity.dbschema.ts';
 import { rExperienceFeature } from './r_experience_feature.dbschema.ts';
 
 /**
- * Experiences table — commerce listings for tourism services and experiences (SPEC-240).
+ * Experiences table — listings for tourism services and experiences (SPEC-240).
  *
  * Mirrors the gastronomy table shape as closely as possible:
  * - Same audit columns (createdById, updatedById, deletedById)
@@ -280,8 +280,8 @@ export const experiences = pgTable(
          * disjunction `isFeatured OR featuredByEntitlement`, ORed in the PUBLIC
          * routes only (`resolvePublicIsFeatured`).
          *
-         * **Only one source feeds it, unlike accommodation.** No commerce plan
-         * grants FEATURED_LISTING (`commerce-entitlements.config.ts` grants
+         * **Only one source feeds it, unlike accommodation.** No experience plan
+         * grants FEATURED_LISTING (the experience entitlement config grants
          * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
          * column has exactly one writer — the addon — where accommodation has
          * two (plan owner-wide + addon per-listing).

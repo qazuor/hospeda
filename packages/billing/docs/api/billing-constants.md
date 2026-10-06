@@ -127,13 +127,13 @@ Owner and complex plans inherit all tourist-VIP entitlements (SPEC-216).
 | `AI_TRANSLATE` | `'ai_translate'` |
 | `AI_ACCOMMODATION_IMPORT` | `'ai_accommodation_import'` |
 
-### Commerce Entitlements (HOS-1074, HOS-1058)
+### Gastronomy and Experience Entitlements (HOS-1074, HOS-1058)
 
 The first four are **vertical-wide**: every tier of a vertical grants its own
-pair, and the gate reads them from `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`
-(code), so a lagging plan row can never take them away. The fifth is a **tier
+pair, and the gate reads them from the vertical-wide floor kept
+in code, so a lagging plan row can never take them away. The fifth is a **tier
 differentiator** — granted by each vertical's premium plan row only, and
-deliberately absent from that map.
+deliberately absent from that floor.
 
 | Key | Value | Granted by |
 |-----|-------|------------|

@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError, z } from 'zod';
-import { CommerceIdentityFields } from '../../src/common/commerce-identity.schema.js';
+import { ListingIdentityFields } from '../../src/common/listing-identity.schema.js';
 
 // ============================================================================
-// CommerceIdentityFields — SPEC-239 T-006
+// ListingIdentityFields — SPEC-239 T-006
 // ============================================================================
 
 /** Inline schema built from the spread const, as entity schemas do. */
-const CommerceIdentitySchema = z.object({
-    ...CommerceIdentityFields
+const ListingIdentitySchema = z.object({
+    ...ListingIdentityFields
 });
 
 /** A fully valid identity payload. */
@@ -20,11 +20,11 @@ const validIdentity = {
         'A family-run parrilla offering the finest cuts of Argentine beef, served with classic chimichurri and salads.'
 };
 
-describe('CommerceIdentityFields', () => {
+describe('ListingIdentityFields', () => {
     describe('valid inputs', () => {
         it('should parse a valid identity with required fields only', () => {
             // Arrange / Act
-            const result = CommerceIdentitySchema.safeParse(validIdentity);
+            const result = ListingIdentitySchema.safeParse(validIdentity);
             // Assert
             expect(result.success).toBe(true);
         });
@@ -53,7 +53,7 @@ describe('CommerceIdentityFields', () => {
                 translationMeta: {}
             };
             // Act
-            const result = CommerceIdentitySchema.safeParse(input);
+            const result = ListingIdentitySchema.safeParse(input);
             // Assert
             expect(result.success).toBe(true);
         });
@@ -62,7 +62,7 @@ describe('CommerceIdentityFields', () => {
             // Arrange
             const input = { ...validIdentity, richDescription: null };
             // Act
-            const result = CommerceIdentitySchema.safeParse(input);
+            const result = ListingIdentitySchema.safeParse(input);
             // Assert
             expect(result.success).toBe(true);
         });
@@ -73,7 +73,7 @@ describe('CommerceIdentityFields', () => {
             // Arrange
             const { name: _n, ...inputWithoutName } = validIdentity;
             // Act
-            const result = CommerceIdentitySchema.safeParse(inputWithoutName);
+            const result = ListingIdentitySchema.safeParse(inputWithoutName);
             // Assert
             expect(result.success).toBe(false);
             if (!result.success) {
@@ -85,7 +85,7 @@ describe('CommerceIdentityFields', () => {
             // Arrange
             const { slug: _s, ...inputWithoutSlug } = validIdentity;
             // Act
-            const result = CommerceIdentitySchema.safeParse(inputWithoutSlug);
+            const result = ListingIdentitySchema.safeParse(inputWithoutSlug);
             // Assert
             expect(result.success).toBe(false);
         });
@@ -94,7 +94,7 @@ describe('CommerceIdentityFields', () => {
             // Arrange
             const { summary: _s, ...inputWithoutSummary } = validIdentity;
             // Act
-            const result = CommerceIdentitySchema.safeParse(inputWithoutSummary);
+            const result = ListingIdentitySchema.safeParse(inputWithoutSummary);
             // Assert
             expect(result.success).toBe(false);
         });
@@ -103,7 +103,7 @@ describe('CommerceIdentityFields', () => {
             // Arrange
             const { description: _d, ...inputWithoutDescription } = validIdentity;
             // Act
-            const result = CommerceIdentitySchema.safeParse(inputWithoutDescription);
+            const result = ListingIdentitySchema.safeParse(inputWithoutDescription);
             // Assert
             expect(result.success).toBe(false);
         });
@@ -111,12 +111,12 @@ describe('CommerceIdentityFields', () => {
 
     describe('field length constraints', () => {
         it('should reject name shorter than 2 characters', () => {
-            const result = CommerceIdentitySchema.safeParse({ ...validIdentity, name: 'A' });
+            const result = ListingIdentitySchema.safeParse({ ...validIdentity, name: 'A' });
             expect(result.success).toBe(false);
         });
 
         it('should reject name longer than 100 characters', () => {
-            const result = CommerceIdentitySchema.safeParse({
+            const result = ListingIdentitySchema.safeParse({
                 ...validIdentity,
                 name: 'A'.repeat(101)
             });
@@ -124,7 +124,7 @@ describe('CommerceIdentityFields', () => {
         });
 
         it('should reject summary shorter than 10 characters', () => {
-            const result = CommerceIdentitySchema.safeParse({
+            const result = ListingIdentitySchema.safeParse({
                 ...validIdentity,
                 summary: 'Short'
             });
@@ -132,7 +132,7 @@ describe('CommerceIdentityFields', () => {
         });
 
         it('should reject description shorter than 20 characters', () => {
-            const result = CommerceIdentitySchema.safeParse({
+            const result = ListingIdentitySchema.safeParse({
                 ...validIdentity,
                 description: 'Too short'
             });

@@ -1,21 +1,21 @@
 /**
- * commerce-completeness.test.ts
+ * listing-completeness.test.ts
  *
  * Unit tests for the publish-readiness ("complete") contract (HOS-166 §6.6).
  * Pure function — no DB, no mocks needed.
  *
- * Moved from `packages/service-core/test/services/commerce/commerce-completeness.test.ts`
+ * Moved from `packages/service-core/test/services/listing/listing-completeness.test.ts`
  * (HOS-166 R-5) alongside the function's relocation to `@repo/schemas`.
  */
 
 import { describe, expect, it } from 'vitest';
 import { ExperiencePublicContactInfoSchema } from '../../entities/experience/experience.access.schema.js';
-import { CommerceEntityTypeEnum } from '../../enums/commerce-entity-type.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
+import { ProductDomainEnum } from '../../enums/product-domain.enum.js';
 import {
-    type CommerceListingCompletenessListing,
+    type ListingCompletenessListing,
     resolveListingCompleteness
-} from '../commerce-completeness.js';
+} from '../listing-completeness.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -25,7 +25,7 @@ const OWNER_ID = '00000000-0000-4000-a000-000000000001';
 const DESTINATION_ID = '00000000-0000-4000-a000-000000000002';
 
 /** A fully-complete gastronomy listing snapshot. */
-function makeCompleteGastronomyListing(): CommerceListingCompletenessListing {
+function makeCompleteGastronomyListing(): ListingCompletenessListing {
     return {
         name: 'La Parrilla del Puerto',
         summary: 'A riverside parrilla with fresh grilled fish and steak.',
@@ -58,7 +58,7 @@ function makeCompleteGastronomyListing(): CommerceListingCompletenessListing {
 }
 
 /** A fully-complete experience listing snapshot (shared block + experience-specific price). */
-function makeCompleteExperienceListing(): CommerceListingCompletenessListing {
+function makeCompleteExperienceListing(): ListingCompletenessListing {
     return {
         name: 'Kayak tour on the Uruguay river',
         summary: 'A guided two-hour kayak tour along the riverside.',
@@ -89,7 +89,7 @@ function makeCompleteExperienceListing(): CommerceListingCompletenessListing {
 describe('resolveListingCompleteness — gastronomy', () => {
     it('should return complete=true and missing=[] for a fully-complete listing', () => {
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing: makeCompleteGastronomyListing()
         });
 
@@ -100,7 +100,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "name" missing when name is empty', () => {
         const listing = { ...makeCompleteGastronomyListing(), name: '' };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -111,7 +111,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "name" missing when name is null', () => {
         const listing = { ...makeCompleteGastronomyListing(), name: null };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -121,7 +121,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "summary" missing when summary is below the minimum length', () => {
         const listing = { ...makeCompleteGastronomyListing(), summary: 'too short' };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -131,7 +131,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "description" missing when description is below the minimum length', () => {
         const listing = { ...makeCompleteGastronomyListing(), description: 'too short' };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -141,7 +141,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "destinationId" missing when destinationId is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), destinationId: undefined };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -151,7 +151,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "ownerId" missing when ownerId is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), ownerId: null };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -161,7 +161,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "type" missing when type is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), type: undefined };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -171,7 +171,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "media.featuredImage" missing when media is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), media: undefined };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -181,7 +181,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "media.featuredImage" missing when featuredImage is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), media: {} };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -194,7 +194,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
             contactInfo: { website: 'https://example.com' }
         };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -207,7 +207,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
             contactInfo: { personalEmail: 'owner@example.com' }
         };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -231,7 +231,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
             }
         };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -241,7 +241,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "openingHours" missing when openingHours is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), openingHours: undefined };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -251,7 +251,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     it('should report "priceRange" missing when priceRange is absent', () => {
         const listing = { ...makeCompleteGastronomyListing(), priceRange: null };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing
         });
 
@@ -259,11 +259,11 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should NOT require menuUrl, richDescription, or socialNetworks', () => {
-        // These fields do not even exist on CommerceListingCompletenessListing —
+        // These fields do not even exist on ListingCompletenessListing —
         // this test documents the deliberate exclusion (spec §6.6) by asserting
         // a listing missing them entirely is still complete.
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing: makeCompleteGastronomyListing()
         });
 
@@ -272,7 +272,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
 
     it('should accumulate every missing field, not stop at the first', () => {
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing: {}
         });
 
@@ -299,7 +299,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
 describe('resolveListingCompleteness — experience', () => {
     it('should return complete=true and missing=[] for a fully-complete listing', () => {
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityType: ProductDomainEnum.EXPERIENCE,
             listing: makeCompleteExperienceListing()
         });
 
@@ -314,7 +314,7 @@ describe('resolveListingCompleteness — experience', () => {
             priceRange: undefined
         };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityType: ProductDomainEnum.EXPERIENCE,
             listing
         });
 
@@ -326,7 +326,7 @@ describe('resolveListingCompleteness — experience', () => {
     it('should report shared-block fields missing the same way as gastronomy', () => {
         const listing = { ...makeCompleteExperienceListing(), name: '' };
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityType: ProductDomainEnum.EXPERIENCE,
             listing
         });
 
@@ -346,7 +346,7 @@ describe('resolveListingCompleteness — experience', () => {
                 isPriceOnRequest: false
             };
             const result = resolveListingCompleteness({
-                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                entityType: ProductDomainEnum.EXPERIENCE,
                 listing
             });
 
@@ -361,7 +361,7 @@ describe('resolveListingCompleteness — experience', () => {
                 isPriceOnRequest: false
             };
             const result = resolveListingCompleteness({
-                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                entityType: ProductDomainEnum.EXPERIENCE,
                 listing
             });
 
@@ -375,7 +375,7 @@ describe('resolveListingCompleteness — experience', () => {
                 isPriceOnRequest: false
             };
             const result = resolveListingCompleteness({
-                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                entityType: ProductDomainEnum.EXPERIENCE,
                 listing
             });
 
@@ -389,7 +389,7 @@ describe('resolveListingCompleteness — experience', () => {
                 isPriceOnRequest: true
             };
             const result = resolveListingCompleteness({
-                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                entityType: ProductDomainEnum.EXPERIENCE,
                 listing
             });
 
@@ -399,7 +399,7 @@ describe('resolveListingCompleteness — experience', () => {
 
         it('should NOT report "priceFrom" missing when priceFrom is a positive integer', () => {
             const result = resolveListingCompleteness({
-                entityType: CommerceEntityTypeEnum.EXPERIENCE,
+                entityType: ProductDomainEnum.EXPERIENCE,
                 listing: makeCompleteExperienceListing()
             });
 
@@ -414,7 +414,7 @@ describe('resolveListingCompleteness — experience', () => {
                 isPriceOnRequest: false
             };
             const result = resolveListingCompleteness({
-                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                entityType: ProductDomainEnum.GASTRONOMY,
                 listing
             });
 
@@ -466,7 +466,7 @@ describe('HOS-924 — an experience cannot publish on a channel its page never s
     /** Resolves an experience whose ONLY contact channel is `key`. */
     function resolveWithOnlyChannel(key: (typeof ALL_CONTACT_CHANNELS)[number]) {
         return resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityType: ProductDomainEnum.EXPERIENCE,
             listing: {
                 ...makeCompleteExperienceListing(),
                 contactInfo: { [key]: SAMPLE_VALUE[key] }
@@ -511,7 +511,7 @@ describe('HOS-924 — an experience cannot publish on a channel its page never s
         // Unchanged by HOS-924: it is published, but a site is not a channel
         // that reaches a person, and it never counted before either.
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityType: ProductDomainEnum.EXPERIENCE,
             listing: {
                 ...makeCompleteExperienceListing(),
                 contactInfo: { website: 'https://kayakaventura.com.ar' }
@@ -527,7 +527,7 @@ describe('HOS-924 — an experience cannot publish on a channel its page never s
         // no `contactInfo` at all. That hole is wider than a mis-calibrated
         // gate and is tracked separately.
         const result = resolveListingCompleteness({
-            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityType: ProductDomainEnum.GASTRONOMY,
             listing: {
                 ...makeCompleteGastronomyListing(),
                 contactInfo: { whatsapp: SAMPLE_VALUE.whatsapp }

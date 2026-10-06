@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 // ============================================================================
-// CommerceRatingSchema — granular rating breakdown for commerce listings.
+// ExperienceRatingSchema — granular rating breakdown for experience listings.
 // ============================================================================
 
 /**
- * Granular rating breakdown for a commerce listing (gastronomy, experience, etc.).
+ * Granular rating breakdown for an experience listing.
  * Each dimension is scored from 0 to 5 (inclusive), where 0 is the worst and 5 is the best.
  *
  * Dimensions:
@@ -16,7 +16,7 @@ import { z } from 'zod';
  *
  * @example
  * ```ts
- * const rating: CommerceRating = {
+ * const rating: ExperienceRating = {
  *   food: 4.5,
  *   service: 5,
  *   ambiance: 4,
@@ -24,7 +24,7 @@ import { z } from 'zod';
  * };
  * ```
  */
-export const CommerceRatingSchema = z.object({
+export const ExperienceRatingSchema = z.object({
     /**
      * Food/product quality score.
      * @minimum 0
@@ -74,20 +74,20 @@ export const CommerceRatingSchema = z.object({
         .max(5, { message: 'zodError.common.listingRating.value.max' })
 });
 
-export type CommerceRating = z.infer<typeof CommerceRatingSchema>;
+export type ExperienceRating = z.infer<typeof ExperienceRatingSchema>;
 
 /**
- * Spread const for embedding the commerce rating block into entity schemas.
+ * Spread const for embedding the experience rating block into entity schemas.
  *
  * @example
  * ```ts
  * const GastronomySchema = z.object({
  *   id: z.string().uuid(),
- *   ...CommerceRatingFields,
+ *   ...ExperienceRatingFields,
  * });
  * ```
  */
-export const CommerceRatingFields = {
-    /** Granular rating breakdown for this commerce listing. */
-    rating: CommerceRatingSchema.optional()
+export const ExperienceRatingFields = {
+    /** Granular rating breakdown for this experience listing. */
+    rating: ExperienceRatingSchema.optional()
 } as const;

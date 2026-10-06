@@ -1,6 +1,6 @@
 /**
- * @file commerce-catalog.schema.test.ts
- * @description HOS-1072 — the amenity/feature projections a commerce listing
+ * @file listing-catalog.schema.test.ts
+ * @description HOS-1072 — the amenity/feature projections a listing
  * publishes, asserted THROUGH the two access schemas that gate them.
  *
  * Asserting the item schemas alone would be vacuous for the bug this covers.

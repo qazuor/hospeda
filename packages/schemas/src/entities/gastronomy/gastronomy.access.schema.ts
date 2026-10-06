@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import {
-    CommerceListingAmenityPublicSchema,
-    CommerceListingFeaturePublicSchema
-} from '../../common/commerce-catalog.schema.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
+import {
+    ListingAmenityPublicSchema,
+    ListingFeaturePublicSchema
+} from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { GastronomySchema } from './gastronomy.schema.js';
 import { GastronomyDailySpecialPublicSchema } from './subtypes/gastronomy.daily-special.schema.js';
@@ -161,9 +161,9 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
      * join must say "not loaded", not "this venue has none". Absent and empty
      * are different facts and the card grid renders nothing for either.
      */
-    amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
+    amenities: z.array(ListingAmenityPublicSchema).optional(),
     /** Features the owner ticked, joined with the shared catalog (HOS-1072). */
-    features: z.array(CommerceListingFeaturePublicSchema).optional(),
+    features: z.array(ListingFeaturePublicSchema).optional(),
     /**
      * The structured carta's sections and dishes (HOS-895 PR2), joined from
      * `gastronomy_menu_sections` / `gastronomy_menu_items`.

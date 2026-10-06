@@ -2,14 +2,14 @@ import { z } from 'zod';
 import { I18nTextSchema, TranslationMetaSchema } from './i18n.schema.js';
 
 // ============================================================================
-// CommerceIdentityFields — spread const for commerce listing identity fields.
+// ListingIdentityFields — spread const for listing identity fields.
 //
 // Mirrors the name/slug/summary/description/richDescription + *I18n + translationMeta
 // pattern used in the accommodation entity schema (SPEC-239).
 // ============================================================================
 
 /**
- * Spread const containing the core identity fields for a commerce listing.
+ * Spread const containing the core identity fields for a listing.
  *
  * Includes:
  * - `name` / `slug` / `summary` / `description` — required string fields.
@@ -24,14 +24,14 @@ import { I18nTextSchema, TranslationMetaSchema } from './i18n.schema.js';
  * ```ts
  * const GastronomySchema = z.object({
  *   id: z.string().uuid(),
- *   ...CommerceIdentityFields,
+ *   ...ListingIdentityFields,
  *   // ... other fields
  * });
  * ```
  */
-export const CommerceIdentityFields = {
+export const ListingIdentityFields = {
     /**
-     * Display name of the commerce listing.
+     * Display name of the listing.
      * Required; between 2 and 100 characters.
      */
     name: z
@@ -40,7 +40,7 @@ export const CommerceIdentityFields = {
         .max(100, { message: 'zodError.listing.name.max' }),
 
     /**
-     * URL-safe identifier for the commerce listing.
+     * URL-safe identifier for the listing.
      * Required; between 2 and 100 characters; must follow slug format.
      */
     slug: z
@@ -49,7 +49,7 @@ export const CommerceIdentityFields = {
         .max(100, { message: 'zodError.listing.slug.max' }),
 
     /**
-     * Short marketing summary of the commerce listing.
+     * Short marketing summary of the listing.
      * Required; between 10 and 300 characters.
      */
     summary: z
@@ -58,7 +58,7 @@ export const CommerceIdentityFields = {
         .max(300, { message: 'zodError.listing.summary.max' }),
 
     /**
-     * Full description of the commerce listing.
+     * Full description of the listing.
      * Required; between 20 and 2000 characters.
      */
     description: z

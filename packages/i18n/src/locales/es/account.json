@@ -1729,5 +1729,30 @@
     },
     "description": "Gestioná tu cuenta en Hospeda",
     "menu": "Menú de cuenta",
-    "title": "Mi cuenta"
+    "title": "Mi cuenta",
+    "changePassword": {
+        "title": "Cambiar contraseña",
+        "subtitle": "Por seguridad, necesitás actualizar tu contraseña antes de continuar.",
+        "fields": {
+            "currentPassword": "Contraseña actual",
+            "newPassword": "Nueva contraseña",
+            "confirmNewPassword": "Confirmá la nueva contraseña"
+        },
+        "submit": "Cambiar contraseña",
+        "submitting": "Guardando...",
+        "success": "Tu contraseña fue actualizada correctamente.",
+        "error": "Ocurrió un error al actualizar la contraseña. Por favor, intentá de nuevo.",
+        "mismatch": "Las contraseñas no coinciden.",
+        "currentIncorrect": "La contraseña actual es incorrecta.",
+        "currentRequired": "La contraseña actual es requerida.",
+        "hidePassword": "Ocultar contraseña",
+        "showPassword": "Mostrar contraseña",
+        "strength": {
+            "medium": "Media",
+            "strong": "Segura",
+            "weak": "Débil"
+        },
+        "strengthLabel": "Seguridad de la contraseña",
+        "accountNotice": "Vas a cambiar la contraseña de esta cuenta:"
+    }
 }

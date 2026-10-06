@@ -22,8 +22,8 @@ import { experiences } from './experiences.dbschema.ts';
  *               `is_featured` MUST be false when state is `archived` (enforced by
  *               the extras-carril CHECK constraint).
  *
- * Mirrors `AccommodationMediaStatePgEnum` deliberately. No commerce flow archives
- * photos today — the commerce plan carries `limits: []`, so there is no
+ * Mirrors `AccommodationMediaStatePgEnum` deliberately. No experience flow archives
+ * photos today — the experience plan carries `limits: []`, so there is no
  * downgrade-over-limit remediation like the accommodation one (SPEC-167). The
  * state is modeled anyway so all three verticals share ONE table shape and can
  * therefore share one composition/service implementation instead of diverging
@@ -107,7 +107,7 @@ export const experienceMedia = pgTable(
         /**
          * Visibility state within the listing's media collection.
          * `visible`  → in the active gallery (or is the featured image).
-         * `archived` → moved out of the gallery. No commerce flow writes this today.
+         * `archived` → moved out of the gallery. No experience flow writes this today.
          */
         state: ExperienceMediaStatePgEnum('state').notNull().default('visible'),
         /**

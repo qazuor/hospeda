@@ -22,7 +22,7 @@ interface GastronomySearchInput {
 }
 
 /**
- * GastronomyModel — all DB access for gastronomy commerce listings (SPEC-239).
+ * GastronomyModel — all DB access for gastronomy listings (SPEC-239).
  *
  * Mirrors AccommodationModel structure: extends BaseModelImpl, provides search()
  * and findWithRelations() overrides. Expand with domain-specific query methods
@@ -155,8 +155,8 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     /**
      * Returns the IDs of every non-deleted gastronomy listing owned by the
      * given owner. Mirrors `AccommodationModel.findIdsByOwnerId` — used by
-     * `EntityViewService.getStatsForOwnCommerceListings` /
-     * `getDailySeriesForOwnCommerceListings` (HOS-734) to resolve which
+     * `EntityViewService.getStatsForOwnListings` /
+     * `getDailySeriesForOwnListings` (HOS-734) to resolve which
      * `entity_views` rows belong to the caller without accepting an ownerId
      * param at the route layer (anti-peeking).
      *

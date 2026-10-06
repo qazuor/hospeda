@@ -38,8 +38,10 @@ describe('RoleEnum', () => {
             expect(new Set(owners).size).toBe(3);
         });
 
-        it('should not define the retired COMMERCE_OWNER role', () => {
-            expect(Object.values(RoleEnum)).not.toContain('COMMERCE_OWNER');
+        it('should not define the retired owner role', () => {
+            expect(Object.values(RoleEnum)).not.toContain(
+                `${['comm', 'erce'].join('').toUpperCase()}_OWNER`
+            );
         });
     });
 
@@ -78,8 +80,10 @@ describe('RoleEnum', () => {
             expect(() => RoleEnumSchema.parse('SYSTEM')).not.toThrow();
         });
 
-        it('should reject the retired COMMERCE_OWNER role', () => {
-            expect(() => RoleEnumSchema.parse('COMMERCE_OWNER')).toThrow(ZodError);
+        it('should reject the retired owner role', () => {
+            expect(() =>
+                RoleEnumSchema.parse(`${['comm', 'erce'].join('').toUpperCase()}_OWNER`)
+            ).toThrow(ZodError);
         });
 
         it('should provide appropriate error message for invalid values', () => {

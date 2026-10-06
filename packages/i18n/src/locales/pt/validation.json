@@ -2319,6 +2319,11 @@
         "isAuthenticated": {
             "required": "O estado de autenticação é obrigatório"
         },
+        "listingStats": {
+            "entityType": {
+                "invalid": "O tipo de entidade não é válido para as estatísticas de anúncios"
+            }
+        },
         "stats": {
             "total": {
                 "integer": "O total de visitas deve ser um número inteiro",

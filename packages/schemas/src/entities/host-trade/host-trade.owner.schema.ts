@@ -13,7 +13,7 @@ import { HostTradeSchema } from './host-trade.schema.js';
  * @description What a service provider may change on their OWN directory
  * listing from `/mi-cuenta` (HOS-278 AC-8, AC-9).
  *
- * Follows SPEC-249's commerce-owner precedent: the identity fields are not
+ * Follows SPEC-249's listing-owner precedent: the identity fields are not
  * "validated as forbidden", they are ABSENT FROM THE SCHEMA. Zod strips keys an
  * object schema does not declare, so a payload carrying `name`, `slug`,
  * `category`, `destinationId` or `isActive` loses them at parse time and the

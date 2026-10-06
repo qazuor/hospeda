@@ -66,7 +66,7 @@ export const UserPublicBatchResponseSchema = z.array(
  * `POST /api/v1/admin/users/batch`, where `stripWithSchema` FAIL-CLOSES to HTTP
  * 500, and the handler force-includes `displayName`/`firstName`/`lastName` even
  * when the caller passes `fields`, so field selection cannot dodge it. Reached
- * from every `USER_SELECT` field (posts, accommodations, commerce configs).
+ * from every `USER_SELECT` field (posts, accommodations, gastronomy and experience configs).
  */
 export const UserBatchItemSchema = UserReadSchema.partial().required({
     id: true

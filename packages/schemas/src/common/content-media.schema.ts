@@ -5,7 +5,7 @@ import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
 // ============================================================================
 // ContentMediaSchema — shared relational media row shape for EDITORIAL content
 // (posts, events). Mirrors `accommodation_media` (SPEC-204) and
-// `commerce-media.schema.ts` (HOS-372). HOS-390.
+// `listing-media.schema.ts` (HOS-372). HOS-390.
 // ============================================================================
 
 /**
@@ -17,7 +17,7 @@ import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
  * No editorial flow archives photos today: `archivedGallery` is written only by
  * the accommodation plan-downgrade remediation (SPEC-167), and posts/events
  * have no plan at all. The state is modeled anyway so that posts, events,
- * commerce listings and accommodations share ONE table shape — and therefore
+ * gastronomy, experience and accommodation listings share ONE table shape — and therefore
  * one sync/compose implementation — instead of diverging on a column that costs
  * nothing to carry.
  */
@@ -42,25 +42,25 @@ export type ContentMediaState = z.infer<typeof ContentMediaStateSchema>;
  *
  * ## Why this is a third copy of the same shape
  *
- * `BaseCommerceMediaSchema` (`common/commerce-media.schema.ts`) is already this
- * exact object, and `AccommodationMediaSchema` is a fourth. Reusing the commerce
+ * `BaseListingMediaSchema` (`common/listing-media.schema.ts`) is already this
+ * exact object, and `AccommodationMediaSchema` is a fourth. Reusing the listing
  * one here was the obvious move and was deliberately NOT taken: that file is
- * mid-change under HOS-382 (the relational MediaField port to the commerce admin
- * form), and widening a schema another in-flight branch is editing trades a
+ * mid-change under HOS-382 (the relational MediaField port to the gastronomy and experience admin
+ * forms), and widening a schema another in-flight branch is editing trades a
  * duplicate for a merge conflict on the shape every media table depends on.
  *
- * Its error-message keys are also commerce-namespaced
- * (`zodError.common.commerceMedia.*`), which a post would surface verbatim.
+ * Its error-message keys are also listing-namespaced
+ * (`zodError.common.listingMedia.*`), which a post would surface verbatim.
  *
  * **Follow-up, on purpose, not forgotten**: once HOS-382 lands, collapse all
  * three into a single `BaseEntityMediaSchema` here and keep the per-entity
  * schemas as thin `.extend({ id, <entity>Id })` calls. Nothing below should
- * diverge from the commerce copy in the meantime — if you change a rule here,
+ * diverge from the listing copy in the meantime — if you change a rule here,
  * change it there too.
  *
  * @see packages/db/src/schemas/post/post_media.dbschema.ts
  * @see packages/db/src/schemas/event/event_media.dbschema.ts
- * @see packages/schemas/src/common/commerce-media.schema.ts — the commerce twin
+ * @see packages/schemas/src/common/listing-media.schema.ts — the listing twin
  * @see packages/schemas/src/common/media.schema.ts — `ImageSchema`, the shape this mirrors
  */
 export const BaseContentMediaSchema = z.object({

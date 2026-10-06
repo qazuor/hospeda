@@ -1,8 +1,8 @@
 /**
- * Guard: the owner-facing commerce update payload must never carry a control
+ * Guard: the owner-facing listing update payload must never carry a control
  * field (HOS-589 AC-11, HOS-166 §6.2).
  *
- * HOS-686 gives commerce listings a `moderate()` action and a dedicated admin
+ * HOS-686 gives listings a `moderate()` action and a dedicated admin
  * route. That makes the owner side of the boundary load-bearing rather than
  * incidental: if `moderationState` ever became owner-writable, an owner could
  * clear their own rejection through an ordinary PATCH and the reconciler would
@@ -31,13 +31,13 @@ const OWNER_SCHEMAS = [
     { name: 'ExperienceOwnerUpdateInputSchema', schema: ExperienceOwnerUpdateInputSchema }
 ] as const;
 
-describe('commerce owner update payload excludes the control fields (AC-11)', () => {
+describe('listing owner update payload excludes the control fields (AC-11)', () => {
     for (const { name, schema } of OWNER_SCHEMAS) {
         for (const field of CONTROL_FIELDS) {
             it(`${name} does not declare ${field}`, () => {
                 expect(
                     Object.keys(schema.shape),
-                    `${field} is back in ${name}. Control fields move through their dedicated admin action — moderationState through POST /api/v1/admin/{gastronomies|experiences}/:id/moderate, which is where COMMERCE_MODERATION_CHANGE is enforced.`
+                    `${field} is back in ${name}. Control fields move through their dedicated admin action — moderationState through POST /api/v1/admin/{gastronomies|experiences}/:id/moderate, which is where GASTRONOMY_MODERATION_CHANGE / EXPERIENCE_MODERATION_CHANGE is enforced.`
                 ).not.toContain(field);
             });
         }
