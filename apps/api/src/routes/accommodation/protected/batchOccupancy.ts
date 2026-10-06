@@ -7,12 +7,7 @@
  * `accommodationId` is derived from the URL path, never trusted from the
  * request body — same rationale as `addOccupancy.ts`.
  *
- * No declarative `ownership:` config — MANAGE permission + ownership are
- * enforced inside `batchToggleOccupancy`. The `CAN_USE_CALENDAR` entitlement
- * is enforced HERE at the route via `requireEntitlement` — see the module
- * doc in `addOccupancy.ts` for the full rationale (route-level gate reads
- * the same `loadEntitlements` path the frontend trusts, unlike the removed
- * service-level `resolveOwnerCanUseCalendar` check).
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  */
 
 import {
@@ -54,6 +49,7 @@ export const protectedBatchOccupancyRoute = createProtectedRoute({
     },
     requestBody: AccommodationOccupancyBatchInputSchema,
     responseSchema: BatchOccupancyResponseSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

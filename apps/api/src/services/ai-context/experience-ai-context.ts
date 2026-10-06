@@ -40,6 +40,7 @@ import type { AssembleChatContextInput, AssembleChatContextOutput } from './type
 // ---------------------------------------------------------------------------
 
 /** Hard cap on the description length in the context block. */
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_EXPERIENCE_DIRECTIONS entitlement gate.
 export const EXPERIENCE_DESCRIPTION_MAX_CHARS = 800;
 
 /** Maximum FAQs included in the context block. */

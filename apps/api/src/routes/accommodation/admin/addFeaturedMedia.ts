@@ -1,41 +1,6 @@
 /**
  * POST /api/v1/admin/accommodations/:id/media/featured
- * Register an already-uploaded URL as the accommodation's COVER — Admin
- * endpoint (HOS-803).
- *
- * The admin mirror of `routes/accommodation/protected/addFeaturedMedia.ts`, and
- * the one the admin panel's gallery manager actually calls — its hooks address
- * `/api/v1/admin/...`, never the protected tier.
- *
- * ## Why this exists next to `POST /:id/media`
- *
- * Setting a cover used to be two requests: register an ordinary gallery row,
- * then promote it. The first runs the plan photo cap, which counts the gallery
- * ALONE because a cover is not a gallery item (HOS-791) — so an owner whose
- * gallery sat at their plan limit was refused at step 1 and never reached step
- * 2, and the one action exempt from the quota became the only one they could
- * not perform.
- *
- * ## Plan cap semantics — identical to the sibling add-media route
- *
- * The plan allowance is resolved ONLY when the actor is the owner. Staff acting
- * on someone else's listing bypass it, exactly as `addMedia` and
- * `media/admin/upload.ts` do: an admin intervening on a host's behalf is a
- * support action, not a consumption of that host's plan.
- *
- * Unlike `addMedia` this route never answers `LIMIT_REACHED` for a full
- * gallery — that refusal is the bug. The swap cannot move the gallery: the
- * replaced cover is DELETED (soft-deleted) in the same transaction, so one row
- * enters the featured slot and one leaves the table. The allowance is read for
- * one thing only — a plan of zero photos grants no cover either.
- *
- * The replaced photo is NOT kept. It does not fall back into the gallery; it
- * disappears from the listing. Its stored file is deliberately left in place, so
- * the deletion is reversible at the row level, but callers must not present the
- * old cover as still available.
- *
- * The cap is read from the entitlement context and never from the request body:
- * a caller able to state its own allowance would have none.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -85,6 +50,7 @@ export const adminAddFeaturedMediaRoute = createAdminRoute({
     // `isFeatured` nor the cap is reachable from this body.
     requestBody: AccommodationMediaAddPayloadSchema,
     responseSchema: AccommodationFeaturedMediaAddOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

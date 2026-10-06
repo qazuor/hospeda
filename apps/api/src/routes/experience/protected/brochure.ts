@@ -126,6 +126,7 @@ export const protectedGetExperienceBrochureRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: z.null(),
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed DOWNLOAD_LISTING_PDF entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetExperienceBrochure(ctx, params),
     options: {

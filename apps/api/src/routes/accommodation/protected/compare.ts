@@ -1,7 +1,6 @@
 /**
  * Protected accommodation comparison endpoint
- * Requires authentication + CAN_COMPARE_ACCOMMODATIONS entitlement
- * (SPEC-288 T-003)
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 import {
     AccommodationComparisonRequestSchema,
@@ -84,6 +83,7 @@ export const compareAccommodationsRoute = createProtectedRoute({
     requestBody: AccommodationComparisonRequestSchema,
     responseSchema: AccommodationComparisonResponseSchema,
     successStatusCode: 200,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed comparator gate.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

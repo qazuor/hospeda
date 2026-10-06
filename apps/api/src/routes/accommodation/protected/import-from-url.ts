@@ -1,47 +1,6 @@
 /**
  * Accommodation import-from-URL route (SPEC-222 T-020).
- *
- * `POST /api/v1/protected/accommodations/import-from-url`
- *
- * Accepts an external listing URL, runs the stateless import pipeline
- * ({@link AccommodationImportService}), and returns a per-field draft for the
- * host to review before saving. Nothing is persisted here — the import is a
- * pure read/extract operation.
- *
- * ## Authorization (OR semantics)
- *
- * The route is for both NEW listings and EDITS, so a host may reach it with
- * either `ACCOMMODATION_CREATE`, `ACCOMMODATION_UPDATE_OWN`, or (admins)
- * `ACCOMMODATION_UPDATE_ANY`. `createProtectedRoute.requiredPermissions` uses
- * AND semantics (`hasAllPermissions`), which cannot express this OR, so the
- * factory only enforces authentication and the handler performs the OR check
- * explicitly. (Documented in `docs/billing/endpoint-gate-matrix.md`.)
- *
- * ## Legal confirmation (defense-in-depth)
- *
- * `AccommodationImportRequestSchema` already requires `legalConfirmed: true`
- * (the factory rejects anything else with 400). The handler re-asserts it
- * server-side so the guarantee does not depend solely on schema wiring.
- *
- * ## Rate limit
- *
- * A per-user sliding window of `HOSPEDA_IMPORT_RATE_LIMIT_RPH` requests/hour
- * (default 10) returns 429 + `Retry-After` on excess.
- *
- * ## AI quota (Strategy B only — degrade-clean)
- *
- * Strategy B (AI-assisted extraction) only runs for sparse generic pages. The
- * AI entitlement/quota gate is therefore applied lazily INSIDE the injected
- * `aiExtract` port — not as a blanket route middleware — so imports from
- * official APIs (Airbnb/Booking/Google/MercadoLibre) and JSON-LD-rich pages
- * are never blocked for hosts on AI-less plans. When the host lacks the
- * `accommodation_import` entitlement or has exhausted the monthly quota, the
- * port returns `null` (the pipeline degrades to a structured-only partial) and
- * the handler appends an informational notice so the host knows AI extraction
- * was skipped for plan/quota reasons. Successful AI calls are metered via
- * `recordAiUsage` so the monthly quota actually increments.
- *
- * @module apps/api/routes/accommodation/protected/import-from-url
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import type { AiService } from '@repo/ai-core';
@@ -291,6 +250,7 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             })
         ]
     },
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed quota check.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

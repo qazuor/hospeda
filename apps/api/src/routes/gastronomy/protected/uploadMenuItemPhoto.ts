@@ -1,50 +1,6 @@
 /**
  * POST /api/v1/protected/gastronomies/:id/menu-item-photo
- *
- * Uploads ONE dish photo and hands back the URL for the client to attach to a
- * dish in the carta document (HOS-1045).
- *
- * ## Why this route does NOT write a row, when `menu-file` does
- *
- * `POST .../menu-file` persists in the same request, and its docblock explains
- * why: an asset that lands in Cloudinary while the association waits for a form
- * Save is an asset that bills with nothing pointing at it (HOS-372). That rule
- * is right, and this route cannot follow it — not because the cost is smaller,
- * but because there is nothing to write TO. The menu-file's target is a column
- * on the listing, which exists. A dish photo's target is a `gastronomy_menu_items`
- * row whose id is minted afresh on every `PUT .../menu` (the carta is replaced
- * as a whole document), so at upload time the dish may not exist at all and,
- * if it does, its id will not survive the next save.
- *
- * What that costs is bounded and named rather than hidden: an owner who uploads
- * a dish photo and then abandons the editor without saving leaves one orphaned
- * Cloudinary asset. The same window already exists for the listing gallery,
- * where the shared upload endpoint runs before `POST .../media` persists the
- * row. It is narrowed here the same way that path narrows it — an ownership
- * check and an entitlement check BEFORE a single byte is read, plus a small
- * per-user rate limit — and `photo_public_id` is round-tripped into the row so
- * a sweeper can destroy what it finds instead of merely forgetting it.
- *
- * ## Order of refusals
- *
- * 1. **Authentication** — `createProtectedRoute`.
- * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
- *    loads the caller's GASTRONOMY grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `MENU_ITEM_PHOTOS`. The loader MUST stay
- *    ahead of the gate: the global `entitlementMiddleware` has already put the
- *    ACCOMMODATION set in the context, and that set never carries a commerce key
- *    (HOS-1074).
- * 3. **Ownership**, as a 404 — before the body is parsed, so a caller who does
- *    not own the listing cannot spend our Cloudinary quota, and so no 403 ever
- *    confirms that the id exists.
- *
- * Only `MENU_ITEM_PHOTOS` is required, not `MANAGE_GASTRONOMY_MENU` alongside
- * it, even though today the one plan granting the first also grants the second.
- * Stacking both would make this route dead the day a plan is defined that
- * grants photos without the carta — a catalogue decision this route has no
- * business pre-empting.
- *
- * @module routes/gastronomy/protected/uploadMenuItemPhoto
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import { GastronomyMenuItemPhotoUploadOutputSchema, PermissionEnum } from '@repo/schemas';
@@ -89,6 +45,7 @@ export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute(
     },
     responseSchema: GastronomyMenuItemPhotoUploadOutputSchema,
     successStatusCode: 200,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MENU_ITEM_PHOTOS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         ctx.header('Cache-Control', 'no-store');
 

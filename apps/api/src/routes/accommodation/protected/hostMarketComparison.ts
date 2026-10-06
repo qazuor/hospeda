@@ -61,6 +61,7 @@ export const hostMarketComparisonRoute = createProtectedRoute({
         'accommodation in the same destination. Used by HOST card J.',
     tags: ['Accommodations'],
     responseSchema: HostMarketComparisonSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_ADVANCED_STATS entitlement gate.
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
 
@@ -73,9 +74,7 @@ export const hostMarketComparisonRoute = createProtectedRoute({
         return { comparisons: result.data ?? [] };
     },
     options: {
-        // SPEC-145 T-006: VIEW_ADVANCED_STATS gate — market comparison analytics
-        // are an advanced stats feature gated behind owner-pro / owner-premium
-        // / complex-pro / complex-premium plans.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

@@ -41,6 +41,7 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
     requiredPermissions: [PermissionEnum.ACCOMMODATION_CREATE],
     requestBody: AccommodationCreateDraftHttpSchema,
     responseSchema: AccommodationProtectedSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed PUBLISH_ACCOMMODATIONS entitlement gate.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -68,8 +69,6 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
         return stripRichDescriptionFields(result.data);
     },
     options: {
-        // SPEC-145 T-004: entitlement gate BEFORE limit check — host must have the
-        // PUBLISH_ACCOMMODATIONS entitlement (granted on all owner/complex plans)
-        // before we even consult the accommodation-count limit.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

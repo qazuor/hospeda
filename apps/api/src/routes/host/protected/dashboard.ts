@@ -1,12 +1,6 @@
 /**
  * Host Dashboard Protected Endpoint
- *
- * Single aggregation endpoint returning property counts, plan info,
- * and unread conversation count for the authenticated host user.
- *
- * Gated by `VIEW_BASIC_STATS` entitlement (SPEC-205).
- *
- * GET /api/v1/protected/host/dashboard
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
@@ -212,6 +206,7 @@ export const hostDashboardRoute = createProtectedRoute({
 
             const response: HostDashboardResponse = {
                 properties,
+                // HOS-1352: transitional until V3 (HOS-1357), see PR — dashboard plan stays null.
                 plan: DASHBOARD_PLAN,
                 unreadConversations
             };

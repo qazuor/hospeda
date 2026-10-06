@@ -1,14 +1,6 @@
 /**
  * PATCH /api/v1/protected/accommodations/:id/media/reorder
- * Reorder photos in an accommodation gallery — Protected (owner-facing) endpoint (SPEC-204)
- *
- * The caller supplies the full ordered list of visible media UUIDs. The service
- * validates that the supplied set matches the current visible rows exactly (no
- * extras, no missing entries) and then applies the new `sortOrder` positions in
- * a single transaction.
- *
- * IMPORTANT: Must be mounted BEFORE `/:id/media/:mediaId` routes so Hono does
- * not resolve the literal path segment "reorder" as a `mediaId` UUID param.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -53,6 +45,7 @@ export const protectedReorderMediaRoute = createCRUDRoute({
     },
     requestBody: AccommodationMediaReorderPayloadSchema,
     responseSchema: AccommodationMediaListOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

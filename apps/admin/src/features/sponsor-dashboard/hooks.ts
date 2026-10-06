@@ -91,6 +91,7 @@ async function fetchSponsorAnalytics(): Promise<SponsorAnalytics[]> {
  */
 async function fetchSponsorInvoices(): Promise<SponsorInvoice[]> {
     const result = await fetchApi<{ success: boolean; data: { items?: SponsorInvoice[] } }>({
+        // HOS-1352: transitional until U1.4 — protected billing invoices endpoint no longer exists.
         path: '/api/v1/protected/billing/invoices'
     });
     return result.data.data?.items || [];

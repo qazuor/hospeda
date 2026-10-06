@@ -1,30 +1,6 @@
 /**
  * DELETE /api/v1/protected/gastronomies/:id/menu-file
- *
- * Removes the uploaded photo/PDF of the venue's menu (HOS-895).
- *
- * Deletes the ASSET as well as the columns, which is the point: forgetting the
- * URL and leaving the file in Cloudinary is exactly the orphan HOS-372 built
- * `gastronomy_media` to stop, and `menu_file_public_id` exists so this route
- * has the handle it needs to do it properly.
- *
- * The provider deletion is best-effort and does NOT fail the request. If
- * Cloudinary is unreachable we still clear the columns: the owner asked for the
- * menu to stop being shown, and refusing them that because a third party is
- * down would be the wrong way round. The cost of the two failing together is a
- * single orphaned asset, which is recoverable; leaving a withdrawn menu on the
- * public page is not.
- *
- * Gated on `MANAGE_GASTRONOMY_MENU`, same as the upload (HOS-895 PR2) — see
- * `uploadMenuFile.ts` for why. Deleting is refused the same as replacing: a
- * `-basico` owner cannot clear an attachment that predates the gate any more
- * than they can upload a new one. That is intentional, not an oversight — the
- * withdraw path they DO have is downgrading to `menuUrl` only being what the
- * public page already renders for them (it stops showing the file the moment
- * `resolveOwnerGrantsGastronomyMenuManagement` returns `false`, regardless of
- * whether the row is deleted).
- *
- * @module routes/gastronomy/protected/deleteMenuFile
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import { PermissionEnum, SuccessSchema } from '@repo/schemas';
@@ -51,6 +27,7 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: SuccessSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const gastronomyId = params.id as string;

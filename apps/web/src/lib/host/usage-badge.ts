@@ -200,6 +200,7 @@ export async function fetchHostUsageBadge({
         };
     }
 
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — protected billing usage endpoint no longer exists.
     const usageResponse = await fetchImpl(
         `${apiUrl}/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
         {

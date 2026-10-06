@@ -51,6 +51,7 @@ export const listUserBookmarkCollectionsRoute = createProtectedRoute({
     },
     responseSchema: ListCollectionsResponseSchema,
     options: {},
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_COLLECTIONS plan limit.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

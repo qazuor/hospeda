@@ -1,35 +1,6 @@
 /**
  * PUT /api/v1/protected/gastronomies/:id/daily-specials
- *
- * Replaces the venue's menú del día with the submitted document (HOS-1041).
- *
- * ## What it answers, and in what order
- *
- * 1. **Authentication** — `createCRUDRoute` over the protected router.
- * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
- *    loads the caller's gastronomy grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `MANAGE_GASTRONOMY_DAILY_SPECIAL`. The
- *    loader MUST stay ahead of the gate: the global `entitlementMiddleware` has
- *    already put the ACCOMMODATION set in the context, and that set never
- *    carries a commerce key (HOS-1074).
- * 3. **Ownership** — inside `replaceGastronomyDailySpecials`, via the same
- *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the carta, FAQ and media
- *    writes use.
- *
- * ## The gate is on THIS route and not on the read
- *
- * `MANAGE_GASTRONOMY_DAILY_SPECIAL` gates publishing a menú del día, not seeing
- * one. See `getDailySpecials.ts` for the two ordinary situations that make the
- * difference matter.
- *
- * ## Whole document, one transaction
- *
- * The body is the ENTIRE menú del día, and an empty `specials` array is a
- * legitimate submission meaning "take it down" — the manual escape hatch beside
- * the automatic expiry, for the venue that sold out at 13:00. See
- * `packages/service-core/src/services/gastronomy/gastronomy.daily-specials.ts`.
- *
- * @module routes/gastronomy/protected/putDailySpecials
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -95,6 +66,7 @@ export const protectedPutGastronomyDailySpecialsRoute = createCRUDRoute({
     },
     requestBody: GastronomyDailySpecialsReplacePayloadSchema,
     responseSchema: GastronomyDailySpecialsOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_DAILY_SPECIAL entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyDailySpecials(ctx, params, body),
     options: {}

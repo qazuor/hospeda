@@ -179,6 +179,7 @@ function getLastUserTurn(messages: ReadonlyArray<AiChatMessage>): string {
     return lastUserMessage?.content ?? messages[messages.length - 1]?.content ?? '';
 }
 
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed AI_CHAT entitlement gate.
 export const protectedAiChatRoute = createProtectedStreamingRoute({
     path: '/',
     summary: 'AI accommodation chat (streaming SSE)',
@@ -188,9 +189,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
     tags: ['AI - Chat'],
     requestSchema: AiChatRequestSchema,
     options: {
-        // Burst control only. The AI_CHAT gate + owner quota used to be enforced
-        // inline in the handler (§7.3, BEFORE streaming started); the quota
-        // machinery was removed with the legacy billing system (HOS-1416).
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         middlewares: [...createAiRateLimitMiddlewares(RATE_LIMIT_FEATURE)]
     },
     streamHandler: async ({ c }) => {

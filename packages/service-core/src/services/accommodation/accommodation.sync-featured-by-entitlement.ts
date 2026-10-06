@@ -1,3 +1,4 @@
+// HOS-1352: transitional until V3 (HOS-1357), see PR — no caller now synchronizes featuredByEntitlement; the cron and featured-listing-sync were removed.
 /**
  * Featured-by-entitlement sync primitives (SPEC-292 T-004, renamed + hardened
  * SPEC-309 T-005; billing-source guards removed with the legacy billing

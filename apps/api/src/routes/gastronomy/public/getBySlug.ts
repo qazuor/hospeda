@@ -48,6 +48,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         slug: z.string().min(1).max(255)
     },
     responseSchema: GastronomyPublicSchema.nullable(),
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.getBySlug(actor, params.slug as string);

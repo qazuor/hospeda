@@ -37,6 +37,7 @@ export const protectedPatchOwnerPromotionRoute = createProtectedRoute({
     requestParams: { id: OwnerPromotionIdSchema },
     requestBody: OwnerPromotionUpdateInputSchema,
     responseSchema: OwnerPromotionProtectedSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CREATE_PROMOTIONS entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -59,7 +60,6 @@ export const protectedPatchOwnerPromotionRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-005: CREATE_PROMOTIONS gate on partial-update mutation —
-        // same plan requirement as create.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

@@ -5,8 +5,7 @@
  * listings, over a rolling window (7d or 30d) — HOS-734.
  *
  * Mirrors `views/protected/accommodations-me.ts`: same `entity_views`
- * telemetry table, same `view_basic_stats` entitlement, applied to the
- * EXPERIENCE vertical instead of ACCOMMODATION. Advanced experience analytics
+ * telemetry table, applied to the EXPERIENCE vertical instead of ACCOMMODATION. Advanced experience analytics
  * (origin destinations) are explicitly OUT of scope — owner decision,
  * HOS-734 — and will define their own event catalog and entitlement key in a
  * follow-up spec.
@@ -14,13 +13,7 @@
  * **Scope isolation:** `actor.id` resolves owned listing IDs internally — no
  * `ownerId` param is accepted (anti-peeking), same as the accommodation route.
  *
- * **Entitlement gate order (load-bearing):**
- * `commerceVerticalEntitlementMiddleware('experience')` MUST run before
- * `requireEntitlement` — the global `entitlementMiddleware` has already put
- * the ACCOMMODATION entitlement set in the request context, which never
- * carries a commerce key (HOS-1074). `view_basic_stats` lives in
- * `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL` (the floor every tier gets), not on
- * a specific plan row.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * @module routes/experience/protected/viewStats
  * @see HOS-734
@@ -38,7 +31,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  *
  * Authenticated owner endpoint that returns view stats for all of the
  * caller's own experience listings over the specified rolling window.
- * Requires the `view_basic_stats` entitlement (every experience tier).
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the stats plan gate is removed.
  */
 export const protectedExperienceViewStatsRoute = createProtectedRoute({
     method: 'get',
@@ -53,6 +46,7 @@ export const protectedExperienceViewStatsRoute = createProtectedRoute({
         window: EntityViewWindowSchema.default('30d')
     },
     responseSchema: EntityViewStatsListSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const typedQuery = query as { window: '7d' | '30d' };

@@ -146,6 +146,7 @@ export const adminUploadMediaRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.MEDIA_UPLOAD],
     responseSchema: UploadResponseDataSchema,
     successStatusCode: 200,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

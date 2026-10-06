@@ -63,6 +63,7 @@ export const protectedUpdateMediaRoute = createCRUDRoute({
     },
     requestBody: AccommodationMediaUpdatePayloadSchema,
     responseSchema: AccommodationMediaSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

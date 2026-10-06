@@ -45,6 +45,7 @@ export const protectedAddExperienceMediaRoute = createCRUDRoute({
     },
     requestBody: ExperienceMediaAddPayloadSchema,
     responseSchema: ExperienceMediaSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_EXPERIENCE_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -70,8 +71,6 @@ export const protectedAddExperienceMediaRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // HOS-1275: mirrors the gastronomy twin. See
-        // `gastronomy/protected/addFaq.ts` for why the vertical loader must be
-        // first.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

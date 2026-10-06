@@ -60,6 +60,7 @@ async function fetchNotificationLogs(filters: Record<string, unknown> = {}) {
         success: boolean;
         data: { data: Record<string, unknown>[]; total: number; limit: number; offset: number };
     }>({
+        // HOS-1352: transitional until U1.4 — admin billing notifications endpoint no longer exists.
         path: `/api/v1/admin/billing/notifications?${params.toString()}`
     });
     // API returns { success, data: { data: [], total, limit, offset } }
@@ -71,6 +72,7 @@ async function fetchNotificationLogs(filters: Record<string, unknown> = {}) {
  */
 async function fetchNotificationLog(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+        // HOS-1352: transitional until U1.4 — admin billing notification detail endpoint no longer exists.
         path: `/api/v1/admin/billing/notifications/${id}`
     });
     return result.data.data;

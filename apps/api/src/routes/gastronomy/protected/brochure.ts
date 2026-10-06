@@ -7,19 +7,7 @@
  *
  * ## What it answers, and in what order
  *
- * 1. **Authentication** — `createProtectedRoute`, before anything else.
- * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
- *    loads the caller's gastronomy grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `DOWNLOAD_LISTING_PDF`. The loader MUST
- *    stay ahead of the gate: the global `entitlementMiddleware` has already put
- *    the ACCOMMODATION set in the context, and that set never carries a commerce
- *    key (HOS-1074).
- * 3. **Ownership** — the service's owner-tier read, then the same explicit
- *    `ownerId === actor.id || COMMERCE_VIEW_ALL` check `protected/getById.ts`
- *    makes, answering NOT_FOUND for a listing that is not the caller's. A 403
- *    would confirm the id exists.
- * 4. **Is there a public ficha at all** — a listing that is not `PUBLIC` has no
- *    public page to print, and the QR would point at a 404. NOT_FOUND.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * ## Why the response is a raw `Response`
  *
@@ -151,6 +139,7 @@ export const protectedGetGastronomyBrochureRoute = createProtectedRoute({
     // the factory requires a concrete schema, and `z.null()` is the honest
     // description of "this route answers with a file, not with JSON".
     responseSchema: z.null(),
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed DOWNLOAD_LISTING_PDF entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetGastronomyBrochure(ctx, params),
     options: {

@@ -61,6 +61,7 @@ export interface AuthUser {
 }
 
 export interface AppBindings {
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — billing entitlement and limit context was removed.
     Variables: {
         logger: ApiLogger;
         actor: Actor;

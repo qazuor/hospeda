@@ -117,6 +117,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
     tags: ['Accommodations'],
     requestQuery: AccommodationSearchHttpSchema.shape,
     responseSchema: AccommodationPublicSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_VIEW_SEARCH_HISTORY entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

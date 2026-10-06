@@ -55,8 +55,7 @@ export const addFaqRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-004: FAQ mutation is accommodation content; same entitlement
-        // gate as update/patch (EDIT_ACCOMMODATION_INFO — granted on all host plans).
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — removed FAQ entitlement gate.
     }
 });
 

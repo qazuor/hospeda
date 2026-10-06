@@ -274,6 +274,7 @@ registerDataSource('host.accommodations.drafts', (ctx) => ({
 }));
 
 // ============================================================================
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed host.billing.plan source and subscription/usage reads.
 // CARD C — Consultas: pending inquiries KPI + list
 // ============================================================================
 

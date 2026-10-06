@@ -39,6 +39,7 @@ export const protectedAddGastronomyFaqRoute = createCRUDRoute({
     },
     requestBody: FaqWithChannelVisibilityCreatePayloadSchema,
     responseSchema: GastronomyFaqSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_GASTRONOMY_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -64,11 +65,6 @@ export const protectedAddGastronomyFaqRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. The
-        // vertical loader MUST come first — the global `entitlementMiddleware`
-        // has already put the ACCOMMODATION set in the context, and that set
-        // never carries a gastronomy key, so a gate mounted without this ahead
-        // of it refuses every caller, including the ones whose plan grants
-        // exactly this.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

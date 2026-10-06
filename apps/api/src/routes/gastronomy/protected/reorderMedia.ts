@@ -52,6 +52,7 @@ export const protectedReorderGastronomyMediaRoute = createCRUDRoute({
     },
     requestBody: GastronomyMediaReorderPayloadSchema,
     responseSchema: GastronomyMediaListOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_GASTRONOMY_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -75,7 +76,6 @@ export const protectedReorderGastronomyMediaRoute = createCRUDRoute({
         return { media: result.data?.media ?? [] };
     },
     options: {
-        // HOS-1275: mirrors the gate `patch.ts` mounted under HOS-1074. See
-        // `addFaq.ts` for why the vertical loader must be first.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

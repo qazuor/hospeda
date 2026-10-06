@@ -34,6 +34,7 @@ export const protectedRemoveGastronomyFaqRoute = createCRUDRoute({
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: GastronomyFaqRemoveOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_GASTRONOMY_INFO entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
@@ -53,11 +54,6 @@ export const protectedRemoveGastronomyFaqRoute = createCRUDRoute({
         return result.data ?? { success: true };
     },
     options: {
-        // HOS-1275: DELETING content is mutating it. These two routes carried no
-        // entitlement gate at all — not in commerce, and not in accommodation
-        // either, which PR #3299's own write-up missed because it only surveyed
-        // commerce. Wired here with the same pair every sibling content route
-        // carries, so the six of them stop being the exception that the next
-        // change to the EDIT_* keys would silently leave behind.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

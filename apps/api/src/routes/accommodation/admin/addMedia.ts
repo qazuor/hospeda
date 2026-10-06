@@ -1,17 +1,6 @@
 /**
  * POST /api/v1/admin/accommodations/:id/media
- * Add a photo to an accommodation gallery - Admin endpoint (SPEC-204)
- *
- * This is a URL-receiver endpoint: the caller has already uploaded the file to
- * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
- * returned URL + metadata as a new `accommodation_media` row.
- *
- * Plan cap enforcement follows the same semantics as the upload route:
- *   - Only enforces when the actor IS the owner (`actor.id === accommodation.ownerId`).
- *   - Admins with `ACCOMMODATION_UPDATE_ANY` bypass the plan limit (trusted manual
- *     intervention / support scenario).
- *   - Enforcement happens in this route handler (not in the service) because
- *     `checkLimit` requires the Hono `Context` populated by `entitlementMiddleware`.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -60,6 +49,7 @@ export const adminAddMediaRoute = createAdminRoute({
     },
     requestBody: AccommodationMediaAddPayloadSchema,
     responseSchema: AccommodationMediaSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

@@ -12,16 +12,7 @@
  * the field to be present, so instead of requiring a second round-trip 400
  * on mismatch, the path value simply always wins).
  *
- * No declarative `ownership:` config — MANAGE permission + ownership are
- * enforced inside `addOccupancy`. The `CAN_USE_CALENDAR` entitlement is
- * enforced HERE at the route via `requireEntitlement`, reading
- * `userEntitlements` (populated by the same `loadEntitlements` path the
- * frontend trusts, including HOST draft defaults and the staff bypass) —
- * mirroring `views/protected/accommodations-me.ts`. This is deliberately
- * NOT re-checked in the service: gating the owner's own billing entitlement
- * via `resolveOwnerCanUseCalendar` would fail closed for a brand-new HOST
- * with no subscription yet, even though the frontend gate (which trusts
- * `loadEntitlements`'s host-draft-defaults fallback) already let them in.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  */
 
 import {
@@ -55,6 +46,7 @@ export const protectedAddOccupancyRoute = createProtectedRoute({
     },
     requestBody: AccommodationOccupancyCreateInputSchema,
     responseSchema: AccommodationOccupancySchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

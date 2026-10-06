@@ -4,12 +4,7 @@
  * Owner self-service: start the Google Calendar connect (OAuth) flow for an
  * accommodation (HOS-157 Phase 2 — Layer 4, spec section 6).
  *
- * Gate model (mirrors the manual occupancy write routes): ownership +
- * `ACCOMMODATION_OCCUPANCY_MANAGE` are enforced inline via
- * `assertOccupancyManageAccess`; the `CAN_SYNC_EXTERNAL_CALENDAR` billing
- * entitlement is enforced HERE at the route via `requireEntitlement` (reading
- * the same `userEntitlements` context the frontend gate trusts), never
- * re-checked in a service resolver.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * The handler does NOT redirect the browser itself — it returns the Google
  * authorization URL so the web app (which made an authenticated fetch) can
@@ -98,6 +93,7 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
     },
     requestBody: ConnectGoogleBodySchema,
     responseSchema: ConnectGoogleResponseSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_SYNC_EXTERNAL_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

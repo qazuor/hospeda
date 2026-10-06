@@ -45,6 +45,7 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
         ownershipFields: ['ownerId', 'createdById'],
         bypassPermission: PermissionEnum.ACCOMMODATION_UPDATE_ANY
     },
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -81,7 +82,6 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
         return stripRichDescriptionFields(result.data);
     },
     options: {
-        // SPEC-145 T-004: full-replace mutation requires EDIT_ACCOMMODATION_INFO
-        // (granted on all owner/complex plans). Runs before the handler.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

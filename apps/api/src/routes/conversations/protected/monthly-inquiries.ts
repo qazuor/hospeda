@@ -61,6 +61,7 @@ export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
     requiredPermissions: [PermissionEnum.CONVERSATION_VIEW_OWN],
     requestQuery: queryParamsSchema.shape,
     responseSchema: HostMonthlyInquiriesSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const months = (query as { months?: number } | undefined)?.months ?? 6;
@@ -74,9 +75,7 @@ export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
         return { months: result.data ?? [] };
     },
     options: {
-        // SPEC-145 T-006: VIEW_BASIC_STATS gate — monthly-inquiries trend KPI is
-        // a basic stats feature granted on owner-basico (and above) and
-        // complex-basico (and above). Tourists never see this route.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

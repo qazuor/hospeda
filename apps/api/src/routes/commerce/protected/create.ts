@@ -144,6 +144,7 @@ export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     requestBody: GastronomyOwnerCreateInputSchema,
     responseSchema: GastronomyProtectedSchema,
     successStatusCode: 201,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed PUBLISH_GASTRONOMY entitlement gate.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

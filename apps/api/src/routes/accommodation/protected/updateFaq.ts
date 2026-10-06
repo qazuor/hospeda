@@ -36,6 +36,7 @@ export const updateFaqRoute = createCRUDRoute({
     },
     requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
     responseSchema: AccommodationFaqSingleOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (c: Context, params, body) => {
         // Get actor from context (authenticated user for protected endpoint)
         const actor = getActorFromContext(c);
@@ -57,8 +58,7 @@ export const updateFaqRoute = createCRUDRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-004: FAQ mutation is accommodation content; same entitlement
-        // gate as update/patch (EDIT_ACCOMMODATION_INFO — granted on all host plans).
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });
 

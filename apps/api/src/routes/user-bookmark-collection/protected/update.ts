@@ -31,6 +31,7 @@ export const updateUserBookmarkCollectionRoute = createProtectedRoute({
     requestBody: UserBookmarkCollectionUpdateInputSchema,
     responseSchema: UserBookmarkCollectionSchema,
     options: {},
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed collections gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

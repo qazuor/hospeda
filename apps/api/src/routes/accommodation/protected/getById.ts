@@ -158,6 +158,7 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
         id: AccommodationIdSchema
     },
     responseSchema: AccommodationProtectedSchema.nullable(),
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_RICH_DESCRIPTION entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 

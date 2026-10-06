@@ -1,48 +1,6 @@
 /**
  * POST /api/v1/protected/gastronomies/:id/menu-file
- *
- * Uploads a photo or a PDF of the venue's printed menu (HOS-895) — the
- * alternative for the restaurant that will not type its carta dish by dish.
- *
- * ## Why the row is written HERE, in the upload request
- *
- * This is the one part of HOS-895 that is a real uploaded asset, so it inherits
- * `gastronomy_media`'s rule rather than the carta's. HOS-372's finding: the
- * file used to land in Cloudinary immediately while the DB association waited
- * for the form's Save, so an owner who uploaded and walked away left the asset
- * billing with nothing pointing at it. The upload and the
- * `gastronomies.menu_file_*` write are therefore ONE request, and the menu
- * document (`PUT .../menu`) does not carry the file at all.
- *
- * ## Why NOT the shared `media/upload-entity` endpoint
- *
- * Three reasons, and the third is the decisive one:
- *
- *  - `validateMediaFile` allowlists IMAGE MIME types; a PDF is rejected as
- *    `INVALID_FILE_TYPE`.
- *  - It then parses dimensions with `image-size`, and a PDF has none.
- *  - `UploadResponseDataSchema` requires `width`/`height`, so even a successful
- *    PDF upload could not be described by that endpoint's response.
- *
- * Widening the shared validator would change the contract for every existing
- * image caller — including the avatar path — to accommodate one route. The
- * image branch below therefore still goes through the shared, battle-tested
- * `validateFile`; only the PDF branch is new, and it is deliberately small:
- * a size cap plus a magic-byte check.
- *
- * ## Gated on `MANAGE_GASTRONOMY_MENU` (HOS-895 PR2)
- *
- * PR1 shipped this route ungated: the uploaded menu was how a `-basico` venue
- * showed a menu at all, and only the STRUCTURED carta (`PUT .../menu`) was the
- * paid capability. Owner decision (2026-09-02) reversed that — the attachment
- * is now gated the same as the structured carta, `-pro`/`-premium` only. A
- * `-basico` owner's fallback is now `menuUrl` alone; an already-uploaded file
- * from before this change is not deleted, but the PUBLIC page stops rendering
- * it for a non-entitled owner (see
- * `resolveOwnerGrantsGastronomyMenuManagement` in `@repo/service-core`) and
- * this route now refuses to REPLACE it.
- *
- * @module routes/gastronomy/protected/uploadMenuFile
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -133,6 +91,7 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     },
     responseSchema: GastronomyMenuFileUploadOutputSchema,
     successStatusCode: 200,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         ctx.header('Cache-Control', 'no-store');
 

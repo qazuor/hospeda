@@ -1,24 +1,6 @@
 /**
  * The owner's menu QR scan aggregate (HOS-1044 §6.4).
- *
- * ```
- * GET /api/v1/protected/gastronomies/{id}/menu-qr/scans
- * ```
- *
- * Same gate, same middleware order, and the same ownership rule as
- * `menuQr.ts` in this directory — read that file's module doc for the full
- * rationale, which is not repeated here.
- *
- * ## The one thing this route does differently from `menuQr.ts`: it never mints
- *
- * `menuQr.ts` provisions the code on first read (§6.2). This route must not:
- * a venue that has never asked to SEE its QR has no `qrCodeId` to aggregate
- * scans for, and creating one here — as a side effect of opening the panel —
- * would be exactly the orphan-row failure mode §6.2 exists to prevent. So a
- * venue with no `MENU` code yet gets the all-zero aggregate
- * (`buildEmptyQrCodeScanStats`), never a 404 and never a freshly minted row.
- *
- * @module routes/gastronomy/protected/menuQrScans
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import { PermissionEnum, QrCodeScanStatsSchema, QrCodeScanWindowSchema } from '@repo/schemas';
@@ -120,6 +102,7 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
         window: QrCodeScanWindowSchema.default('30d')
     },
     responseSchema: QrCodeScanStatsSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MENU_QR_SCAN_METRICS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, _body, query) =>
         handleGetGastronomyMenuQrScans(ctx, params, query as Record<string, unknown>),
     options: {

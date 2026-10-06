@@ -50,6 +50,7 @@ export const hostAccommodationDailySeriesRoute = createProtectedRoute({
         window: EntityViewWindowSchema.default('30d')
     },
     responseSchema: HostViewDailySeriesSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const typedQuery = query as { window: '7d' | '30d' };
@@ -69,9 +70,7 @@ export const hostAccommodationDailySeriesRoute = createProtectedRoute({
         };
     },
     options: {
-        // Gated by VIEW_BASIC_STATS — same entitlement as accommodations/me stats
-        // (SPEC-145 gate matrix: host Card G), ensuring both widgets are consistently
-        // accessible on the same plan tier.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

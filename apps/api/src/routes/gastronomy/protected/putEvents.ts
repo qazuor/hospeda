@@ -1,37 +1,6 @@
 /**
  * PUT /api/v1/protected/gastronomies/:id/events
- *
- * Replaces the venue's own agenda with the submitted document (HOS-1042).
- *
- * ## What it answers, and in what order
- *
- * 1. **Authentication** — `createCRUDRoute` over the protected router.
- * 2. **The plan's terms** — `commerceVerticalEntitlementMiddleware('gastronomy')`
- *    loads the caller's gastronomy grants and `requireEntitlement` refuses a
- *    caller whose plan does not carry `MANAGE_GASTRONOMY_EVENTS`. The loader
- *    MUST stay ahead of the gate: the global `entitlementMiddleware` has already
- *    put the ACCOMMODATION set in the context, and that set never carries a
- *    commerce key (HOS-1074). Mounted the other way round, or omitted, the gate
- *    refuses everyone.
- * 3. **Ownership** — inside `replaceGastronomyEvents`, via the same
- *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the FAQ, media and menu
- *    writes use.
- *
- * ## The gate is on THIS route and not on the read
- *
- * `MANAGE_GASTRONOMY_EVENTS` gates keeping an agenda, not looking at one an
- * owner already typed. See `getEvents.ts` for why that read stays open even
- * though — unlike the carta — there is no free fallback shape here.
- *
- * ## Whole document, one transaction
- *
- * The body is the ENTIRE agenda, and an empty `events` array is a legitimate
- * submission meaning "take it down" — a venue that stopped doing live music
- * needs a way to say so. See
- * `packages/service-core/src/services/gastronomy/gastronomy.events.ts` for why
- * the agenda is written whole where `gastronomy_media` is written per row.
- *
- * @module routes/gastronomy/protected/putEvents
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -95,6 +64,7 @@ export const protectedPutGastronomyEventsRoute = createCRUDRoute({
     },
     requestBody: GastronomyEventsReplacePayloadSchema,
     responseSchema: GastronomyEventsOutputSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_EVENTS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
         handlePutGastronomyEvents(ctx, params, body),
     options: {}

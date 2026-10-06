@@ -1,25 +1,6 @@
 /**
  * Protected owner-operational PATCH endpoint for gastronomy listings (T-043)
- * Applies a partial operational update (schedule, contact, media, etc.) to a listing.
- *
- * ## Enforcement contract
- *
- * - Validates the payload through GastronomyOwnerUpdateInputSchema. Since
- *   HOS-166 D-1, `name`, `description`, and `destinationId` are
- *   owner-editable identity fields (SPEC-239 decision #5 reversed — see the
- *   schema's docstring). Only `slug` (never owner-editable directly; it now
- *   auto-follows draft renames server-side, HOS-784 stage 1)
- *   plus the control fields (`lifecycleState`, `visibility`,
- *   `moderationState`, `isFeatured`, `ownerId`) are ABSENT from the schema,
- *   so any forged keys for those are silently stripped by Zod.
- * - GastronomyService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
- *   per-section COMMERCE_*_EDIT_OWN permission checks.
- * - HOS-1074: gated on `EDIT_GASTRONOMY_INFO`, the gastronomy mirror of the
- *   `requireEntitlement(EDIT_ACCOMMODATION_INFO)` gate on
- *   `accommodation/protected/patch.ts`. The permission check above and this
- *   entitlement gate answer different questions and both stay: the permission
- *   says WHO may touch this row, the entitlement says whether their PLAN
- *   includes editing at all.
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -58,6 +39,7 @@ export const protectedPatchGastronomyRoute = createProtectedRoute({
     },
     requestBody: GastronomyOwnerUpdateInputSchema,
     responseSchema: GastronomyProtectedSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_GASTRONOMY_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -77,10 +59,6 @@ export const protectedPatchGastronomyRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // HOS-1074. The loader MUST come first: the global
-        // `entitlementMiddleware` has already put the ACCOMMODATION set in the
-        // context, and that set never carries a gastronomy key — so a gate
-        // mounted without this ahead of it refuses every caller, including the
-        // ones whose plan grants exactly this.
+        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

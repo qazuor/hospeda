@@ -1,14 +1,6 @@
 /**
  * GET /api/v1/protected/search-history
- *
- * Returns the authenticated user's search history entries, newest first,
- * capped to the plan's `MAX_SEARCH_HISTORY_ENTRIES` limit.
- *
- * Entitlement gate: `CAN_VIEW_SEARCH_HISTORY` — handled by gateSearchHistory.
- * The actual capping is performed by `SearchHistoryService.list()`.
- *
- * @route GET /api/v1/protected/search-history
- * @module routes/search-history/protected/list
+ * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import { UserSearchHistoryListItemSchema } from '@repo/schemas';
@@ -45,6 +37,7 @@ export const listSearchHistoryRoute = createProtectedRoute({
     options: {
         customRateLimit: { requests: 120, windowMs: 60000 }
     },
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_SEARCH_HISTORY_ENTRIES plan limit.
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
 

@@ -160,6 +160,7 @@ export const protectedGetGastronomyMenuQrRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: GastronomyMenuQrResponseSchema,
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MENU_QR_SCAN_METRICS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetGastronomyMenuQr(ctx, params),
     options: {

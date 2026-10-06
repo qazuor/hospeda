@@ -30,6 +30,7 @@ export const removeBookmarkFromCollectionRoute = createProtectedRoute({
     requestParams: UserBookmarkCollectionBookmarkParamsSchema.shape,
     responseSchema: UserBookmarkSchema,
     options: {},
+    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed collections gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         // id (collection) is present in URL for REST semantics; service only uses bookmarkId

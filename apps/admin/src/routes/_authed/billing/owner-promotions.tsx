@@ -40,6 +40,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
 import { formatCalendarShortDate } from '@/lib/format-helpers';
 
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed CREATE_PROMOTIONS entitlement gate.
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
     component: BillingOwnerPromotionsPage
