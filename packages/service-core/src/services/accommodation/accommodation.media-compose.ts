@@ -10,7 +10,7 @@
  *  - `videos` are NOT migrated to the table (SPEC-204 D1 decision). Since HOS-372
  *    dropped the `media` JSONB column they live in a dedicated `videos` column on
  *    `accommodations`, and are supplied by the caller as an explicit parameter —
- *    same contract as `composeCommerceMedia`, which serves the two commerce
+ *    same contract as `composeListingMedia`, which serves the gastronomy and experience
  *    verticals.
  *  - The output shape is byte-identical to what consumers received while reads
  *    came from JSONB, so the ~21 downstream read-sites stay untouched (T-013).
@@ -115,7 +115,7 @@ function bySortOrder(a: AccommodationMedia, b: AccommodationMedia): number {
  * @returns The composed {@link Media} object (possibly empty `{}`).
  */
 export function composeAccommodationMedia({ rows, videos }: ComposeAccommodationMediaInput): Media {
-    // H-23: mirrors the gate in `commerce-media-compose.ts`. `moderationState`
+    // H-23: mirrors the gate in `listing-media-compose.ts`. `moderationState`
     // was carried into the output but never consulted, so a photo nobody had
     // approved was composed — and served — exactly like an approved one.
     // Unconditional on purpose: an opt-in flag would be fail-open at the next

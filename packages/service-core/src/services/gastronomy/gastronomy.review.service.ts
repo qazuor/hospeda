@@ -67,7 +67,7 @@ export interface GastronomyReviewModerateInput {
 /**
  * Computes the effective scalar rating (0–5, 2-decimal) for a review submission.
  *
- * - With a granular `rating` breakdown → mean of the four commerce dimensions
+ * - With a granular `rating` breakdown → mean of the four rating dimensions
  *   (food / service / ambiance / value), all required when the breakdown is
  *   present.
  * - Without a breakdown → the required scalar `overallRating`.

@@ -54,7 +54,7 @@ export interface TestUserSpec {
  * was removed along with the billing machinery it drove).
  *
  * What survives is what is still exercised without billing: staff role gates,
- * tourist/host/commerce/complex role fixtures, the HOST accommodation,
+ * tourist/host/gastronomy/experience/complex role fixtures, the HOST accommodation,
  * promotion and provider-listing attachments, and multi-role grants.
  *
  * NOTE: super-admin@local.test and admin@local.test are intentionally
@@ -97,12 +97,12 @@ export const TEST_USERS: readonly TestUserSpec[] = [
     },
     // Each fixture owns only its own listing vertical.
     {
-        email: 'commerce-gastronomy@local.test',
+        email: 'gastronomy-owner@local.test',
         displayName: 'Comercio Gastronomía',
         role: RoleEnum.GASTRONOMY_OWNER
     },
     {
-        email: 'commerce-experience@local.test',
+        email: 'experience-owner@local.test',
         displayName: 'Comercio Experiencia',
         role: RoleEnum.EXPERIENCE_OWNER
     },
@@ -114,7 +114,7 @@ export const TEST_USERS: readonly TestUserSpec[] = [
     // with no backing listing, since role possession alone is what the nav
     // gate and the header control read (HOS-1417 retired the shared owner role).
     {
-        email: 'host-commerce@local.test',
+        email: 'host-gastronomy@local.test',
         displayName: 'Host y Comercio',
         role: RoleEnum.HOST,
         extraRoles: [RoleEnum.GASTRONOMY_OWNER]
@@ -170,7 +170,7 @@ function splitDisplayName(displayName: string): { firstName: string; lastName: s
  * hit `revokeRole`'s last-role guard.
  *
  * `extraRoles` (HOS-694) lets a single fixture declare more than one
- * non-USER hat at once — used by `host-commerce@local.test` (HOST +
+ * non-USER hat at once — used by `host-gastronomy@local.test` (HOST +
  * GASTRONOMY_OWNER) to exercise HOS-296's multi-role invariant end-to-end
  * without needing a second `role` field on `TestUserSpec`.
  *

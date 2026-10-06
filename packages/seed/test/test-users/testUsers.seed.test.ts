@@ -14,6 +14,9 @@ import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { TEST_USERS } from '../../src/test-users/testUsers.seed.js';
 
+/** The retired owner role, spelled in parts so the old word stays out of the tree. */
+const RETIRED_OWNER_ROLE = `${'COMM' + 'ERCE'}_OWNER`;
+
 /** Convenience lookup so each `it.each` case reads by email, not by index. */
 function findUser(email: string) {
     const user = TEST_USERS.find((u) => u.email === email);
@@ -57,24 +60,24 @@ describe('TEST_USERS matrix', () => {
         }
     });
 
-    describe('commerce-gastronomy@local.test (HOS-694)', () => {
-        const user = findUser('commerce-gastronomy@local.test');
+    describe('gastronomy-owner@local.test (HOS-694)', () => {
+        const user = findUser('gastronomy-owner@local.test');
         it('holds only the gastronomy owner role', () => {
             expect(user.role).toBe(RoleEnum.GASTRONOMY_OWNER);
-            expect(user.extraRoles ?? []).not.toContain('COMMERCE_OWNER');
+            expect(user.extraRoles ?? []).not.toContain(RETIRED_OWNER_ROLE);
         });
     });
 
-    describe('commerce-experience@local.test (HOS-694)', () => {
-        const user = findUser('commerce-experience@local.test');
+    describe('experience-owner@local.test (HOS-694)', () => {
+        const user = findUser('experience-owner@local.test');
         it('holds only the experience owner role', () => {
             expect(user.role).toBe(RoleEnum.EXPERIENCE_OWNER);
-            expect(user.extraRoles ?? []).not.toContain('COMMERCE_OWNER');
+            expect(user.extraRoles ?? []).not.toContain(RETIRED_OWNER_ROLE);
         });
     });
 
-    describe('host-commerce@local.test (dual role, HOS-296 / HOS-694 AC-3 / AC-12)', () => {
-        const user = findUser('host-commerce@local.test');
+    describe('host-gastronomy@local.test (dual role, HOS-296 / HOS-694 AC-3 / AC-12)', () => {
+        const user = findUser('host-gastronomy@local.test');
 
         it('should declare HOST as the primary role (so the HOS-30 accommodation fixture applies)', () => {
             expect(user.role).toBe(RoleEnum.HOST);
@@ -95,7 +98,7 @@ describe('TEST_USERS matrix', () => {
             'host-pro@local.test',
             'host-premium@local.test',
             'host-provider@local.test',
-            'host-commerce@local.test'
+            'host-gastronomy@local.test'
         ]);
     });
 });

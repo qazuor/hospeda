@@ -112,7 +112,7 @@ const HOOK = 'getSearchableColumns';
 const ABSTRACT_BASES: readonly string[] = [
     'BaseCrudService',
     'BaseCrudRelatedService',
-    'BaseCommerceListingService'
+    'BaseListingService'
 ];
 
 /**

@@ -2,7 +2,7 @@
  * @fileoverview
  * Unit tests for the `0038-hos-374-cut-editor-panel-access` data migration,
  * using a fully mocked `ctx.models.RRolePermissionModel` (for the deletion
- * half, same style as `0010-remove-panel-admin-from-host-commerce-owner.test.ts`)
+ * half, same style as `0010.data-migration.test.ts`)
  * plus a mocked `ctx.db.insert(...).values(...).onConflictDoNothing().returning()`
  * chain (for the insertion half) — no real database connection.
  *

@@ -756,7 +756,7 @@ export async function seedEvent(
 }
 
 // ---------------------------------------------------------------------------
-// SPEC-239 seed helpers — gastronomy commerce lifecycle
+// SPEC-239 seed helpers — gastronomy lifecycle
 // ---------------------------------------------------------------------------
 
 interface SeedGastronomyOverrides {
@@ -878,11 +878,11 @@ export async function seedGastronomyReview(
 }
 
 // ---------------------------------------------------------------------------
-// HOS-1269 seed helpers — experience commerce lifecycle
+// HOS-1269 seed helpers — experience lifecycle
 // ---------------------------------------------------------------------------
 //
 // Mirrors the SPEC-239 gastronomy helpers above ("seedGastronomy" /
-// "seedCommerceListingSubscription" / "seedGastronomyReview") so the
+// "seedGastronomyReview") so the
 // experience vertical gets the same real-DB integration coverage. Until this
 // ticket, `experiences` had NO integration-test fixture at all — every helper
 // below is net-new.

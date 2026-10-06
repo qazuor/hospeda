@@ -1,11 +1,11 @@
 /**
  * experience.service.ts
  *
- * Concrete service for experience commerce listings (SPEC-240 T-017).
+ * Concrete service for experience listings (SPEC-240 T-017).
  *
  * ## Architecture
  *
- * `ExperienceService` extends {@link BaseCommerceListingService} and satisfies its
+ * `ExperienceService` extends {@link BaseListingService} and satisfies its
  * abstract contract by wiring the experience-specific DB models.  All shared
  * behaviors (slug auto-generation, junction sync, owner-scoping, rating recompute,
  * destination validation) are inherited from the base — zero shared logic is
@@ -64,11 +64,8 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
-import type {
-    CommerceCatalogModel,
-    CommerceJunctionModel
-} from '../commerce/base-commerce-listing.service';
-import { BaseCommerceListingService } from '../commerce/base-commerce-listing.service';
+import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
+import { BaseListingService } from '../listing/base-listing.service';
 import {
     attachComposedExperienceMedia,
     attachComposedExperienceMediaList
@@ -88,9 +85,9 @@ import { projectExperienceOwnerAvatar, projectExperiencePublic } from './experie
 import type { ExperienceHookState } from './experience.types';
 
 /**
- * Business-logic service for experience commerce listings.
+ * Business-logic service for experience listings.
  *
- * Extends {@link BaseCommerceListingService} with experience-specific model
+ * Extends {@link BaseListingService} with experience-specific model
  * wiring and operational-update gate.  All shared lifecycle behaviors (slug,
  * junction sync, owner-scoping, rating recompute) are provided by the base class.
  *
@@ -114,7 +111,7 @@ import type { ExperienceHookState } from './experience.types';
  * );
  * ```
  */
-export class ExperienceService extends BaseCommerceListingService<
+export class ExperienceService extends BaseListingService<
     Experience,
     ExperienceModel,
     typeof ExperienceAdminCreateInputSchema,
@@ -135,13 +132,13 @@ export class ExperienceService extends BaseCommerceListingService<
     // -----------------------------------------------------------------------
 
     /** @internal Overrideable in unit tests. */
-    private _amenityModelInstance: CommerceCatalogModel;
+    private _amenityModelInstance: ListingCatalogModel;
     /** @internal Overrideable in unit tests. */
-    private _featureModelInstance: CommerceCatalogModel;
+    private _featureModelInstance: ListingCatalogModel;
     /** @internal Overrideable in unit tests. */
-    private _amenityJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
+    private _amenityJunctionModelInstance: ListingJunctionModel<Record<string, unknown>>;
     /** @internal Overrideable in unit tests. */
-    private _featureJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
+    private _featureJunctionModelInstance: ListingJunctionModel<Record<string, unknown>>;
 
     /**
      * Relational media model used by the read-composition hooks (HOS-372).
@@ -156,12 +153,12 @@ export class ExperienceService extends BaseCommerceListingService<
         this.adminSearchSchema = ExperienceAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
-        // TYPE-WORKAROUND: concrete experience junction model bridged to the generic CommerceJunctionModel contract
+        // TYPE-WORKAROUND: concrete experience junction model bridged to the generic ListingJunctionModel contract
         this._amenityJunctionModelInstance =
-            rExperienceAmenityModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
-        // TYPE-WORKAROUND: concrete experience junction model bridged to the generic CommerceJunctionModel contract
+            rExperienceAmenityModel as unknown as ListingJunctionModel<Record<string, unknown>>;
+        // TYPE-WORKAROUND: concrete experience junction model bridged to the generic ListingJunctionModel contract
         this._featureJunctionModelInstance =
-            rExperienceFeatureModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
+            rExperienceFeatureModel as unknown as ListingJunctionModel<Record<string, unknown>>;
     }
 
     // -----------------------------------------------------------------------
@@ -170,7 +167,7 @@ export class ExperienceService extends BaseCommerceListingService<
 
     /**
      * FK column name on junction tables that references this entity.
-     * Used by `syncCommerceAmenityJunction` / `syncCommerceFeatureJunction`.
+     * Used by `syncListingAmenityJunction` / `syncListingFeatureJunction`.
      */
     protected override get _entityFkColumn(): string {
         return 'experienceId';
@@ -187,23 +184,23 @@ export class ExperienceService extends BaseCommerceListingService<
         return 'experience';
     }
 
-    /** Experience-amenity junction model (satisfies {@link CommerceJunctionModel}). */
-    protected override get _amenityJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
+    /** Experience-amenity junction model (satisfies {@link ListingJunctionModel}). */
+    protected override get _amenityJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._amenityJunctionModelInstance;
     }
 
     /** Experience-feature junction model. */
-    protected override get _featureJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
+    protected override get _featureJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._featureJunctionModelInstance;
     }
 
     /** Amenity catalog model — validates supplied amenity IDs before sync. */
-    protected override get _amenityModel(): CommerceCatalogModel {
+    protected override get _amenityModel(): ListingCatalogModel {
         return this._amenityModelInstance;
     }
 
     /** Feature catalog model — validates supplied feature IDs before sync. */
-    protected override get _featureModel(): CommerceCatalogModel {
+    protected override get _featureModel(): ListingCatalogModel {
         return this._featureModelInstance;
     }
 
@@ -224,7 +221,7 @@ export class ExperienceService extends BaseCommerceListingService<
     //
     // WITHOUT this wiring the relational rows are written but never read: the
     // owner persists photos successfully and they appear nowhere. Any new
-    // commerce vertical must wire the same three hooks.
+    // listing vertical must wire the same three hooks.
     //
     // Composition is batched (`findByExperiences`, one IN query) so a list page
     // does not go N+1.
@@ -367,7 +364,7 @@ export class ExperienceService extends BaseCommerceListingService<
 
     /**
      * Admin-list gate: verifies admin-panel access (base class) then checks
-     * entity-specific commerce permission.
+     * entity-specific listing permission.
      *
      * @param actor - The actor performing the action.
      * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.

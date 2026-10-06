@@ -56,7 +56,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
-import { scheduleCommerceMediaRevalidation } from '../commerce/commerce-revalidation.js';
+import { scheduleListingMediaRevalidation } from '../listing/listing-revalidation.js';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildMediaTextPatch } from '../media/media-text-patch';
@@ -194,8 +194,8 @@ export async function addGastronomyMedia(
         const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
         // HOS-389 §4: the gallery IS the public page's content, so a photo
         // change has to purge it. Shares one implementation with the service's
-        // create/update path — see `commerce-revalidation.ts`.
-        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+        // create/update path — see `listing-revalidation.ts`.
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { media: createdMedia } };
     } catch (err) {
@@ -303,8 +303,8 @@ export async function removeGastronomyMedia(
 
         // HOS-389 §4: the gallery IS the public page's content, so a photo
         // change has to purge it. Shares one implementation with the service's
-        // create/update path — see `commerce-revalidation.ts`.
-        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+        // create/update path — see `listing-revalidation.ts`.
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { success: true } };
     } catch (err) {
@@ -434,7 +434,7 @@ export async function reorderGastronomyMedia(
             .filter((r): r is NonNullable<typeof r> => r !== null);
 
         // HOS-389 §4 — see `addGastronomyMedia` for the rationale.
-        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { media: reordered } };
     } catch (err) {
@@ -603,7 +603,7 @@ export async function setFeaturedGastronomyMedia(
             );
         }
         // HOS-389 §4 — see `addGastronomyMedia` for the rationale.
-        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { media: updated } };
     } catch (err) {
@@ -622,7 +622,7 @@ export async function setFeaturedGastronomyMedia(
 /**
  * Corrects the TEXT metadata of a single photo in a gastronomy listing gallery (HOS-1036).
  *
- * The commerce twin of `AccommodationService.updateMedia` (HOS-388) and of
+ * The gastronomy/experience twin of `AccommodationService.updateMedia` (HOS-388) and of
  * `updatePostMedia`. Before this existed the only way to fix — or write for the
  * first time — a photo's `alt` was to delete it and re-upload, burning a second
  * Cloudinary asset and losing the row's gallery position.
@@ -703,7 +703,7 @@ export async function updateGastronomyMedia(
             );
         }
 
-        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { media: updated } };
     } catch (err) {
@@ -796,7 +796,7 @@ export async function addGastronomyFeaturedMedia(
 
         // HOS-389 §4 — see `addGastronomyMedia` for the rationale. Loudest case: the
         // cover is what every listing card and social preview renders.
-        await scheduleCommerceMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
+        await scheduleListingMediaRevalidation({ entityType: 'gastronomy', listing: gastronomy });
 
         return { data: { media, previousFeatured } };
     } catch (err) {

@@ -64,7 +64,7 @@ import { seedUserTags } from './userTags.seed.js';
  * // 6. Partners (brand/business directory)
  * // 7. Reviews
  * // 8. Host trades
- * // 9. Experiences (commerce listings — SPEC-240)
+ * // 9. Experiences (experience listings — SPEC-240)
  * // 10. Bookmarks and tags
  * // 11. Tag relations (connecting tags to entities)
  * ```
@@ -98,9 +98,9 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedAccommodationExternalReputation();
         await seedHostTrades(context);
         context.actor = oldContextActor;
-        // SPEC-239 — gastronomy commerce listings
+        // SPEC-239 — gastronomy listings
         await seedGastronomies(context);
-        // SPEC-240 T-014 — experience commerce listing seed data
+        // SPEC-240 T-014 — experience listing seed data
         await seedExperiences(context);
         context.actor = oldContextActor;
         await seedUserBookmarkCollections(context);

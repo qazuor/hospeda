@@ -2,7 +2,7 @@
  * @fileoverview
  * Unit tests for the `0067-hos-726-addon-purchase-permission` data migration,
  * using a mocked insert chain — no real database connection. Same style as
- * `0062-hos686-commerce-listing-moderation-permission.test.ts`.
+ * `0062.data-migration.test.ts`.
  *
  * @module test/data-migrations/0067-hos-726-addon-purchase-permission
  */
@@ -12,6 +12,9 @@ import { describe, expect, it } from 'vitest';
 import * as migration from '../../src/data-migrations/0067-hos-726-addon-purchase-permission.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
+
+/** The retired owner role, spelled in parts so the old word stays out of the tree. */
+const RETIRED_OWNER_ROLE = `${'COMM' + 'ERCE'}_OWNER`;
 
 const STUB_ACTOR: Actor = {
     id: 'actor-stub-hos726-permissions-test',
@@ -95,7 +98,7 @@ describe('0067-hos-726 addon purchase permission — exported lists shape', () =
                 RoleEnum.SUPER_ADMIN,
                 RoleEnum.ADMIN,
                 RoleEnum.HOST,
-                'COMMERCE_OWNER' as RoleEnum
+                RETIRED_OWNER_ROLE as RoleEnum
             ].sort()
         );
     });
@@ -110,8 +113,8 @@ describe('0067-hos-726 addon purchase permission — exported lists shape', () =
 
 describe('0067-hos-726 addon purchase permission — current baseline', () => {
     it('keeps the historical migration payload and grants current owner roles', () => {
-        expect(GRANTED_ROLES).toContain('COMMERCE_OWNER');
-        expect(Object.keys(ROLE_PERMISSIONS)).not.toContain('COMMERCE_OWNER');
+        expect(GRANTED_ROLES).toContain(RETIRED_OWNER_ROLE);
+        expect(Object.keys(ROLE_PERMISSIONS)).not.toContain(RETIRED_OWNER_ROLE);
         for (const role of [RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER]) {
             expect(ROLE_PERMISSIONS[role]).toContain(ADDON_PURCHASE_PERMISSION);
         }

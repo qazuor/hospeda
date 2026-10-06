@@ -1,5 +1,5 @@
 /**
- * experiences.seed.ts — Experience commerce listing seeder (SPEC-240 T-014).
+ * experiences.seed.ts — Experience listing seeder (SPEC-240 T-014).
  *
  * Inserts 5 experience listings covering different types, price units, and
  * visibility states.  Mirrors the gastronomy seeder pattern from SPEC-239
@@ -41,8 +41,8 @@ import { ExperienceMediaModel } from '@repo/db';
 import { RoleEnum, RoleGrantReason } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { Pool } from 'pg';
-import { buildExperienceMediaRows } from '../utils/commerce-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
+import { buildExperienceMediaRows } from '../utils/listing-media-builder.js';
 import { logger } from '../utils/logger.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -85,7 +85,7 @@ interface ExperienceInsertInput {
 }
 
 /**
- * Derives the deterministic UUIDv5 id for an `example` experience commerce
+ * Derives the deterministic UUIDv5 id for an `example` experience
  * listing (HOS-25 T-026).
  *
  * Unlike other `example` entities (accommodations, events, destinations…),
@@ -121,7 +121,7 @@ type ExperienceInsertInputDraft = Omit<ExperienceInsertInput, 'id'>;
  */
 function buildExperienceInputs(
     superAdminId: string,
-    commerceOwnerId: string,
+    listingOwnerId: string,
     destinations: Record<string, string>
 ): ExperienceInsertInput[] {
     const concepcion = destinations['concepcion-del-uruguay'];
@@ -152,7 +152,7 @@ function buildExperienceInputs(
             lifecycleState: 'ACTIVE',
             moderationState: 'APPROVED',
             isFeatured: true,
-            ownerId: commerceOwnerId,
+            ownerId: listingOwnerId,
             destinationId: concepcion,
             createdById: superAdminId,
             media: {
@@ -190,7 +190,7 @@ function buildExperienceInputs(
             lifecycleState: 'ACTIVE',
             moderationState: 'APPROVED',
             isFeatured: false,
-            ownerId: commerceOwnerId,
+            ownerId: listingOwnerId,
             destinationId: colon,
             createdById: superAdminId,
             media: {
@@ -228,7 +228,7 @@ function buildExperienceInputs(
             lifecycleState: 'ACTIVE',
             moderationState: 'APPROVED',
             isFeatured: false,
-            ownerId: commerceOwnerId,
+            ownerId: listingOwnerId,
             destinationId: gualeguaychu,
             createdById: superAdminId,
             media: {
@@ -266,7 +266,7 @@ function buildExperienceInputs(
             lifecycleState: 'DRAFT',
             moderationState: 'PENDING',
             isFeatured: false,
-            ownerId: commerceOwnerId,
+            ownerId: listingOwnerId,
             destinationId: concordia,
             createdById: superAdminId,
             media: {
@@ -305,7 +305,7 @@ function buildExperienceInputs(
             lifecycleState: 'DRAFT',
             moderationState: 'PENDING',
             isFeatured: false,
-            ownerId: commerceOwnerId,
+            ownerId: listingOwnerId,
             destinationId: concepcion,
             createdById: superAdminId,
             media: {
@@ -384,7 +384,7 @@ async function seedExperienceMediaRows({
 }
 
 /**
- * Seeds experience commerce listings using a raw pg.Pool connection.
+ * Seeds experience listings using a raw pg.Pool connection.
  *
  * `hasActiveSubscription` is a server-managed field excluded from the
  * service-level ExperienceUpdateInputSchema, so direct SQL insertion is
@@ -441,12 +441,12 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
 
         // ------------------------------------------------------------------
         // 3. Resolve the user who owns the experiences.
-        //    We reuse gastro-owner-julieta@local.test — the first commerce owner
+        //    We reuse gastro-owner-julieta@local.test — the first listing owner
         //    seeded by gastronomies.seed.ts (which runs before experiences in the
         //    pipeline).  That user already has:
         //      • a Better Auth `accounts` credential row (password = Password123!)
         //      • profile_completed = true (set by gastronomies.seed.ts)
-        //    so E2E tests can sign in and reach the commerce area without hitting
+        //    so E2E tests can sign in and reach the listing-owner area without hitting
         //    the profile-completion middleware gate.
         // ------------------------------------------------------------------
         const ownerEmail = 'gastro-owner-julieta@local.test';
@@ -459,9 +459,9 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                 `[experiences] Owner "${ownerEmail}" not found. seedGastronomies() must run before seedExperiences() — check the seed pipeline order.`
             );
         }
-        const commerceOwnerId = ownerRows[0].id;
+        const listingOwnerId = ownerRows[0].id;
         const grantedExperienceRole = await grantRole({
-            userId: commerceOwnerId,
+            userId: listingOwnerId,
             role: RoleEnum.EXPERIENCE_OWNER,
             grantedBy: null,
             reason: RoleGrantReason.SEED
@@ -471,12 +471,12 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                 `Failed to grant EXPERIENCE_OWNER to ${ownerEmail}: ${grantedExperienceRole.error.message}`
             );
         }
-        logger.info(`[experiences] Using EXPERIENCE_OWNER: ${ownerEmail} (${commerceOwnerId})`);
+        logger.info(`[experiences] Using EXPERIENCE_OWNER: ${ownerEmail} (${listingOwnerId})`);
 
         // ------------------------------------------------------------------
         // 4. Insert experiences (idempotent — ON CONFLICT DO NOTHING)
         // ------------------------------------------------------------------
-        const inputs = buildExperienceInputs(superAdminId, commerceOwnerId, destinations);
+        const inputs = buildExperienceInputs(superAdminId, listingOwnerId, destinations);
         let inserted = 0;
         let skipped = 0;
 

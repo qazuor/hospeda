@@ -13,7 +13,7 @@
  *
  * ## Design decisions
  * - Extends `BaseService` (not `BaseCrudService`), mirroring
- *   `CommerceLeadService`: create is public, list/mark-handled are
+ *   the retired owner-lead service: create is public, list/mark-handled are
  *   admin-only workflow actions rather than standard CRUD.
  * - Permission checks use `ALLIANCE_LEAD_*` `PermissionEnum` values only;
  *   no `RoleEnum` checks (HOS-277 §7.5).
@@ -21,7 +21,7 @@
  *   row: the submitting actor is anonymous/public (`createGuestActor()`),
  *   whose sentinel id is not a real `users` row, so writing it would violate
  *   the table's `created_by_id` → `users.id` FK. The column stays NULL for
- *   every public submission, same as `commerce_leads`' `createdById`-less
+ *   every public submission, same as the retired lead table's `createdById`-less
  *   design achieves by omitting the column entirely (`alliance_leads` keeps
  *   it, per HOS-277 §7.2's full BaseModel audit convention, but it is only
  *   ever populated for admin-driven mutations like `markHandled`).
@@ -654,7 +654,7 @@ export class AllianceLeadService extends BaseService {
      * No permission gate, deliberately: the read is scoped to the actor's own
      * `applicantUserId`, so there is nothing an elevated permission could
      * unlock. Requiring one would turn a self-service read into an accidental
-     * gate — the same reasoning as `CommerceLeadService.getMyLead`.
+     * gate — the same reasoning as the retired owner-lead service's `getMyLead`.
      *
      * Having no applications is the COMMON case (`/mi-cuenta/aliados` is a
      * discovery hub most visitors reach without ever having applied), so it

@@ -203,13 +203,13 @@ describe('getAffectedCacheTags', () => {
             'experience'
         ] as const)('does NOT purge the home page for %s', (entityType) => {
             // Unlike accommodations, events and posts, the home surfaces no
-            // commerce listings. Adding `home` here would evict it on every
+            // gastronomy and experience listings. Adding `home` here would evict it on every
             // restaurant edit for nothing.
             const tags = getAffectedCacheTags({ entityType, slug: 'x', id: 'y' });
             expect(tags).not.toContain('home');
         });
 
-        it('does not cross the two commerce collections', () => {
+        it('does not cross the gastronomy and experience collections', () => {
             // A gastronomy write must not evict the experiences listing.
             const tags = getAffectedCacheTags({ entityType: 'gastronomy', slug: 'x' });
             expect(tags).not.toContain('list-exp');

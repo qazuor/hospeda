@@ -85,7 +85,7 @@ export type UserBookmarkWithEntityInfo = UserBookmark & BookmarkEntityInfo;
  *    - ACCOMMODATION / EXPERIENCE / GASTRONOMY: `SELECT id, name, slug WHERE id
  *      IN (...)` plus one batched call to that vertical's relational media table
  *      for the featured image URL. Their photos are rows, not JSONB (SPEC-204
- *      for accommodations, HOS-372 for commerce), and the `media` blob is being
+ *      for accommodations, HOS-372 for gastronomy and experience), and the `media` blob is being
  *      dropped — reading it here returned nothing on a freshly seeded database.
  *    - DESTINATION / EVENT / POST: `SELECT id, name|title, slug, media WHERE id
  *      IN (...)`. These three still keep their whole media object in JSONB.
@@ -233,7 +233,7 @@ export async function enrichBookmarksWithEntityInfo(
      * Featured image URL for an entity, read from a relational media map.
      *
      * Shared by the three verticals whose photos live in per-vertical media
-     * tables (SPEC-204 for accommodations, HOS-372 for commerce). Entities with
+     * tables (SPEC-204 for accommodations, HOS-372 for gastronomy and experience). Entities with
      * no featured row are simply absent from the map.
      */
     const featuredUrlFrom = (map: unknown, entityId: string): string | null => {

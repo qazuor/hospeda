@@ -22,8 +22,8 @@ export {
 // HOS-963: pure media-composition helper reused by raw-query public routes
 // (e.g. `similar.ts`) that bypass `AccommodationService.search()` and therefore
 // never hit `_afterSearch`, the chokepoint that normally composes `media` from
-// the relational `accommodation_media` table. Mirrors commerce's
-// `composeCommerceMedia` export below.
+// the relational `accommodation_media` table. Mirrors gastronomy and experience's
+// `composeListingMedia` export below.
 export {
     type ComposeAccommodationMediaInput,
     composeAccommodationMedia
@@ -68,8 +68,6 @@ export {
     NotificationRetentionService,
     type RetentionSummary
 } from './billing/notification/notification-retention.service.js';
-export * from './commerce';
-export type { CommerceListingHookState } from './commerce/commerce.types';
 export * from './contentModeration';
 export * from './conversation/index.js';
 export * from './cronRun/index.js';
@@ -113,6 +111,8 @@ export * from './hostTrade/host-trade-review.service';
 export * from './hostTrade/host-trade-review-reply.service';
 export * from './hostTrade/host-trade-usage.permissions';
 export * from './hostTrade/host-trade-usage.service';
+export * from './listing';
+export type { ListingHookState } from './listing/listing.types';
 export * from './media';
 export * from './moderation';
 export * from './newsletter';

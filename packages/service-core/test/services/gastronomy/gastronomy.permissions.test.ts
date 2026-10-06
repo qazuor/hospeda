@@ -65,7 +65,7 @@ describe('checkGastronomyCanCreate', () => {
     });
 
     // HOS-687 / HOS-589 AC-27 (service predicate, gastronomy vertical).
-    it('allows a signed-in account holding NO commerce permission (AC-27)', () => {
+    it('allows a signed-in account holding NO listing permission (AC-27)', () => {
         const plainUser: Actor = { id: 'actor-plain', roles: [RoleEnum.USER], permissions: [] };
         expect(() => checkGastronomyCanCreate(plainUser, {})).not.toThrow();
     });
@@ -217,7 +217,7 @@ describe('checkGastronomyCanModerateReview', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkGastronomyCanEditFaqs (SPEC-253 D2=b: COMMERCE_FAQS_EDIT_OWN replaced by GASTRONOMY_EDIT_OWN)
+// checkGastronomyCanEditFaqs (SPEC-253 D2=b: the per-section FAQ permission replaced by GASTRONOMY_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanEditFaqs', () => {
@@ -251,7 +251,7 @@ describe('checkGastronomyCanEditFaqs', () => {
         );
     });
 
-    it('should forbid actor with no commerce permissions', () => {
+    it('should forbid actor with no listing permission', () => {
         expectForbidden(() => checkGastronomyCanEditFaqs(makeActor([]), entity));
     });
 });

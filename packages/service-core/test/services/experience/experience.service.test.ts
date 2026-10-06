@@ -143,7 +143,7 @@ function makeJunctionModel() {
 }
 
 /**
- * HOS-321: `CommerceCatalogModel` validates the whole set through `findByIds`
+ * HOS-321: `ListingCatalogModel` validates the whole set through `findByIds`
  * in one query. These stubs are injected onto an `any`-typed field, so nothing
  * would flag a stale `findById`-only shape until it blew up at runtime.
  */
@@ -749,7 +749,7 @@ describe('ExperienceService.ENTITY_NAME', () => {
 });
 
 // ---------------------------------------------------------------------------
-// listOwn — owner-tier read inherited from BaseCommerceListingService (SPEC-249 T-005)
+// listOwn — owner-tier read inherited from BaseListingService (SPEC-249 T-005)
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService.listOwn', () => {

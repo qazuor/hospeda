@@ -13,9 +13,9 @@ import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
-import { buildGastronomyMediaRows } from '../utils/commerce-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { STATUS_ICONS } from '../utils/icons.js';
+import { buildGastronomyMediaRows } from '../utils/listing-media-builder.js';
 import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import { logger } from '../utils/logger.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
@@ -79,7 +79,7 @@ export const getGastronomyReviewFixtureId = (input: {
 const SALT_ROUNDS = 12;
 
 /**
- * Shared password for all dev commerce-owner accounts.
+ * Shared password for all dev listing-owner accounts.
  * Dev-only convenience — these accounts never exist on staging/prod.
  */
 const DEV_PW = 'Password123!';
@@ -87,7 +87,7 @@ const DEV_PW = 'Password123!';
 /**
  * Spec of a GASTRONOMY_OWNER user to seed.
  */
-interface CommerceOwnerSpec {
+interface ListingOwnerSpec {
     readonly seedId: string;
     readonly email: string;
     readonly displayName: string;
@@ -97,15 +97,15 @@ interface CommerceOwnerSpec {
 }
 
 /**
- * E2E tourist user seeded alongside the commerce-owner block.
+ * E2E tourist user seeded alongside the listing-owner block.
  *
  * Role: USER — intentionally NOT GASTRONOMY_OWNER and NOT staff, so the
- * `hasCommerceNavAccess` gate in `/mi-cuenta/comercio/index.astro` redirects
- * this user to `/mi-cuenta/`.  Used by SPEC-252 COMMERCE-02 test case 1.
+ * listing-area nav gate in `/mi-cuenta/comercio/index.astro` redirects
+ * this user to `/mi-cuenta/`.  Used by SPEC-252 listing-02 test case 1.
  *
  * `profileCompleted: true` is required because the profile-completion
  * middleware guard (Step 7.5 in middleware.ts) intercepts incomplete profiles
- * before the commerce role gate runs — an incomplete profile would redirect
+ * before the listing-owner role gate runs — an incomplete profile would redirect
  * to `/mi-cuenta/completar-perfil/` instead, breaking the test assertion.
  *
  * Password: Password123! (same shared dev constant as GASTRONOMY_OWNER accounts).
@@ -126,9 +126,9 @@ const E2E_TOURIST = {
  * - Rodrigo: listings 003 (cerveceria-del-rio, Gualeguaychú) + 004 (heladeria-luna, Concordia)
  * - Valentina: listings 005 (restaurant-termas, Federación) + 006 (bar-rinconcito, CdU — DRAFT/PRIVATE)
  */
-const COMMERCE_OWNERS: readonly CommerceOwnerSpec[] = [
+const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
     {
-        seedId: '041-user-commerce-owner-julieta',
+        seedId: '041-user-gastronomy-owner-julieta',
         email: 'gastro-owner-julieta@local.test',
         displayName: 'Julieta Ferreyra',
         firstName: 'Julieta',
@@ -136,7 +136,7 @@ const COMMERCE_OWNERS: readonly CommerceOwnerSpec[] = [
         slug: 'julieta-ferreyra-gastro'
     },
     {
-        seedId: '042-user-commerce-owner-rodrigo',
+        seedId: '042-user-gastronomy-owner-rodrigo',
         email: 'gastro-owner-rodrigo@local.test',
         displayName: 'Rodrigo Casas',
         firstName: 'Rodrigo',
@@ -144,7 +144,7 @@ const COMMERCE_OWNERS: readonly CommerceOwnerSpec[] = [
         slug: 'rodrigo-casas-gastro'
     },
     {
-        seedId: '043-user-commerce-owner-valentina',
+        seedId: '043-user-gastronomy-owner-valentina',
         email: 'gastro-owner-valentina@local.test',
         displayName: 'Valentina Ríos',
         firstName: 'Valentina',
@@ -273,7 +273,7 @@ async function seedGastronomyMediaRows({
  *
  * ### Idempotency
  * - Gastronomy rows: idempotent via `onConflictDoNothing` on the unique `slug`.
- * - Commerce owner users: idempotent via pre-check on `email`.
+ * - Listing owner users: idempotent via pre-check on `email`.
  * - FAQ rows: idempotent via `onConflictDoNothing` on the (now explicit,
  *   deterministic) primary key.
  * - Review rows: idempotent via `onConflictDoNothing` on UNIQUE(userId, gastronomyId).
@@ -322,7 +322,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
     // ── Step 1: Seed GASTRONOMY_OWNER users ───────────────────────────────────
     const passwordHash = await hash(DEV_PW, SALT_ROUNDS);
 
-    for (const owner of COMMERCE_OWNERS) {
+    for (const owner of LISTING_OWNERS) {
         // Idempotent: check by email before inserting
         const existingUser = await db
             .select({ id: users.id })
@@ -336,10 +336,10 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
         if (existingUserRow) {
             realUserId = existingUserRow.id;
             logger.debug(
-                `  ${STATUS_ICONS.Info} COMMERCE_OWNER "${owner.displayName}" already exists — skipped`
+                `  ${STATUS_ICONS.Info} Listing owner "${owner.displayName}" already exists — skipped`
             );
             // Heal: ensure profile_completed = true on existing rows so the
-            // profile-completion middleware gate does not block the commerce area.
+            // profile-completion middleware gate does not block the listing-owner area.
             await db.execute(
                 sql`UPDATE users SET profile_completed = true WHERE id = ${realUserId} AND profile_completed = false`
             );
@@ -384,7 +384,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             realUserId = insertedUserRow.id;
 
             // HOS-296: hats are rows in `user_role`, not a column on `users`.
-            // AC-11's `commerce-02-access-control` and `commerce-04-permission-gate`
+            // AC-11's `listing-02-access-control` and `listing-04-permission-gate`
             // e2e specs sign in as exactly this fixture, so the grant here is
             // what makes those suites pass — sweeping raw SQL in `apps/e2e`
             // does not cover it.
@@ -417,22 +417,22 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             });
 
             logger.debug(
-                `  ${STATUS_ICONS.Success} Created COMMERCE_OWNER "${owner.displayName}" (${owner.email})`
+                `  ${STATUS_ICONS.Success} Created Listing owner "${owner.displayName}" (${owner.email})`
             );
         }
 
         // Register in idMapper so gastronomy JSON files can resolve ownerId
         context.idMapper.setMapping('users', owner.seedId, realUserId, owner.displayName);
 
-        summaryTracker.trackSuccess('CommerceOwners');
+        summaryTracker.trackSuccess('ListingOwners');
     }
 
     // ── Step 2b: Seed E2E tourist user (role USER, credential account) ────────
-    // Needed by SPEC-252 COMMERCE-02 test case 1: a logueable non-commerce,
-    // non-staff user that the `hasCommerceNavAccess` gate redirects away from
+    // Needed by SPEC-252 listing-02 test case 1: a logueable non-listing-owner,
+    // non-staff user that the listing-area nav gate redirects away from
     // /mi-cuenta/comercio/. The example seed's regular users are created via
     // UserService and never get a Better Auth `accounts` row, so sign-in fails
-    // for them. This user is seeded here alongside the commerce owners because
+    // for them. This user is seeded here alongside the listing owners because
     // this function already owns the credential-creation infrastructure.
     {
         const existingTourist = await db
@@ -447,7 +447,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 `  ${STATUS_ICONS.Info} E2E tourist "${E2E_TOURIST.displayName}" already exists — skipped`
             );
             // Heal: ensure profile_completed = true so the profile-completion gate
-            // does not intercept before the commerce role gate runs.
+            // does not intercept before the listing-owner role gate runs.
             await db.execute(
                 sql`UPDATE users SET profile_completed = true WHERE id = ${existingTouristRow.id} AND profile_completed = false`
             );
@@ -487,7 +487,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             }
 
             // HOS-296: the tourist fixture's single `USER` hat, as a row.
-            // `commerce-02` case 1 asserts that this account is REDIRECTED away
+            // `listing-02` case 1 asserts that this account is REDIRECTED away
             // from `/mi-cuenta/comercio/`, so the absence of GASTRONOMY_OWNER is
             // as load-bearing as the presence of USER.
             const grantedTourist = await grantRole({

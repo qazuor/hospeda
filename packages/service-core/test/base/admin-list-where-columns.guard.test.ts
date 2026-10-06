@@ -121,7 +121,7 @@ const MODEL_READS = {
 const ABSTRACT_BASES: readonly string[] = [
     'BaseCrudService',
     'BaseCrudRelatedService',
-    'BaseCommerceListingService'
+    'BaseListingService'
 ];
 
 /**

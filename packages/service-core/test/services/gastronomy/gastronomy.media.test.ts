@@ -793,7 +793,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HOS-389 §2 + §4 — the commerce half
+// HOS-389 §2 + §4 — the gastronomy and experience half
 // ---------------------------------------------------------------------------
 
 describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {

@@ -528,7 +528,7 @@ export class ExperienceReviewService extends BaseCrudService<
      *
      * Called after create, moderation decision, and soft-delete.
      *
-     * Experience reviews use the CommerceRatingSchema breakdown (food / service /
+     * Experience reviews use the ExperienceRatingSchema breakdown (food / service /
      * ambiance / value) — identical to gastronomy. The identity mapping below
      * passes each dimension through unchanged.
      *
@@ -552,7 +552,7 @@ export class ExperienceReviewService extends BaseCrudService<
             );
 
             // Extract the rating breakdown from each APPROVED review row.
-            // Experience reviews use CommerceRatingSchema: food/service/ambiance/value.
+            // Experience reviews use ExperienceRatingSchema: food/service/ambiance/value.
             const ratingRows = approvedReviews.map((r) => {
                 const raw = r as Record<string, unknown>;
                 const rating = raw.rating as Record<string, number | null> | null | undefined;
