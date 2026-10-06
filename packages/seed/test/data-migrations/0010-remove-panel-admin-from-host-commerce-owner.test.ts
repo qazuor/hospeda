@@ -8,8 +8,8 @@
  *
  * The migration constructs exactly ONE `RRolePermissionModel` instance and
  * calls `.hardDelete({ role, permission }, ctx.db)` on it once per targeted
- * role (HOST, COMMERCE_OWNER), so this test spies on a single shared
- * `hardDelete` mock across both calls rather than building a per-instance
+ * role (HOST only; the retired role is cleaned by migration 0126), so this test
+ * spies on a shared `hardDelete` mock rather than building a per-instance
  * store.
  *
  * @module test/data-migrations/0010-remove-panel-admin-from-host-commerce-owner
@@ -65,7 +65,7 @@ describe('0010-remove-panel-admin-from-host-commerce-owner', () => {
         });
     });
 
-    it('calls RRolePermissionModel.hardDelete exactly twice, once per role, with ACCESS_PANEL_ADMIN', async () => {
+    it('calls RRolePermissionModel.hardDelete exactly once, for HOST, with ACCESS_PANEL_ADMIN', async () => {
         // Arrange — first run against an environment that still has the bad grant.
         const { ctx, hardDelete } = buildCtx(1);
 
@@ -73,20 +73,14 @@ describe('0010-remove-panel-admin-from-host-commerce-owner', () => {
         const result = await removePanelAdminMigration.up(ctx);
 
         // Assert
-        expect(hardDelete).toHaveBeenCalledTimes(2);
+        expect(hardDelete).toHaveBeenCalledTimes(1);
         expect(hardDelete).toHaveBeenNthCalledWith(
             1,
             { role: RoleEnum.HOST, permission: PermissionEnum.ACCESS_PANEL_ADMIN },
             FAKE_DB
         );
-        expect(hardDelete).toHaveBeenNthCalledWith(
-            2,
-            { role: 'COMMERCE_OWNER' as RoleEnum, permission: PermissionEnum.ACCESS_PANEL_ADMIN },
-            FAKE_DB
-        );
         expect(result.counts).toEqual({
-            [`${RoleEnum.HOST}-deleted`]: 1,
-            [`${'COMMERCE_OWNER' as RoleEnum}-deleted`]: 1
+            [`${RoleEnum.HOST}-deleted`]: 1
         });
         expect(result.summary).toMatch(/Removed ACCESS_PANEL_ADMIN/);
     });
@@ -102,10 +96,9 @@ describe('0010-remove-panel-admin-from-host-commerce-owner', () => {
         const result = await removePanelAdminMigration.up(ctx);
 
         // Assert
-        expect(hardDelete).toHaveBeenCalledTimes(4); // 2 calls x 2 up() invocations above
+        expect(hardDelete).toHaveBeenCalledTimes(2); // 1 call x 2 up() invocations above
         expect(result.counts).toEqual({
-            [`${RoleEnum.HOST}-deleted`]: 0,
-            [`${'COMMERCE_OWNER' as RoleEnum}-deleted`]: 0
+            [`${RoleEnum.HOST}-deleted`]: 0
         });
         expect(result.summary).toMatch(/already absent \(idempotent no-op\)/);
     });
