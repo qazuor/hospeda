@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
 # check-no-binary-vertical-ternary.sh
 #
-# HOS-1079 — eleven sites across apps/api decided a commerce vertical with a
-# binary ternary: `x === 'gastronomy' ? A : B`. `ProductDomainEnum` had FOUR
+# HOS-1079 — eleven sites across apps/api decided a gastronomy-or-experience
+# vertical with a binary ternary: `x === 'gastronomy' ? A : B`. `ProductDomainEnum` had FOUR
 # members at the time (accommodation, gastronomy, experience, partner; HOS-847
 # later added a fifth, 'addon', for a recurring add-on's own MercadoPago
-# preapproval — irrelevant to this guard, which is about commerce verticals
-# specifically); every one of those eleven silently answered `B` — `ProductDomainEnum.EXPERIENCE`,
+# preapproval — irrelevant to this guard, which is about the gastronomy and
+# experience verticals specifically); every one of those eleven silently answered `B` — `ProductDomainEnum.EXPERIENCE`,
 # `experienceService`, `experienceModel`, … — for ANY value that was not the
 # literal string 'gastronomy', including 'accommodation' and 'partner'. None
 # of the eleven raised.
 #
-# HOS-1079's fix replaced every one of them with either the shared,
-# exhaustive `commerceVerticalToProductDomain` / `parseCommerceVertical`
-# helpers (`@repo/billing`, `packages/billing/src/config/commerce-limits.config.ts`)
-# or a local `switch` whose `default` branch fails loudly instead of
-# defaulting.
+# HOS-1079's fix replaced every one of them with a `switch` that is
+# exhaustive over the verticals and whose `default` branch fails loudly
+# instead of defaulting.
 #
 # WHAT IT PROVES
 #   No line of production TypeScript in apps/api/src compares an identifier
@@ -67,9 +65,8 @@ if [ -n "$MATCHES" ]; then
     echo ""
     echo "  A ternary of the shape \`x === 'gastronomy' ? A : B\` silently answers"
     echo "  B for EVERY other value — 'accommodation' and 'partner' included"
-    echo "  (HOS-1079). Replace it with:"
-    echo "    - a product domain      -> commerceVerticalToProductDomain() / parseCommerceVertical() (@repo/billing)"
-    echo "    - a model/service/table -> a local exhaustive switch with a defensive default"
+    echo "  (HOS-1079). Replace it with an exhaustive \`switch\` whose \`default\`"
+    echo "  branch fails (throws) instead of defaulting to one of the verticals."
     exit 1
 fi
 

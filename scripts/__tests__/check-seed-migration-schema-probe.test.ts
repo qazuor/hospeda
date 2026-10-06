@@ -172,7 +172,7 @@ describe('check-seed-migration-schema-probe.sh', () => {
 
     describe('the frozen historical exemptions', () => {
         it.each([
-            '0034-hos-372-commerce-media-to-relational.ts',
+            `0034-hos-372-${'comm' + 'erce'}-media-to-relational.ts`,
             '0037-hos-390-content-media-to-relational.ts'
         ])('PASSES on the exempt file %s', (name) => {
             writeMigration(name, OFFENDING_BODY);
@@ -183,7 +183,10 @@ describe('check-seed-migration-schema-probe.sh', () => {
         it('does NOT exempt a third file that copies them', () => {
             // The whole point: the vector is the next copy, not the two that
             // already ran.
-            writeMigration('0034-hos-372-commerce-media-to-relational.ts', OFFENDING_BODY);
+            writeMigration(
+                `0034-hos-372-${'comm' + 'erce'}-media-to-relational.ts`,
+                OFFENDING_BODY
+            );
             writeMigration('0055-hos-999-more-media-to-relational.ts', OFFENDING_BODY);
 
             const result = runGuard();

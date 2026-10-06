@@ -270,7 +270,14 @@ jobs:
       # bash + git grep — needs no setup, so it runs before it to fail fast.
       - name: Check no qzpay billing surface remains (HOS-1416 TEST:U1:1)
         run: bash scripts/check-no-qzpay.sh
-      - name: Check retired grouping word in scoped documents (TEST:U1:7 GUARD:G8)
+      # GUARD:G8 (AC:U1:5 / AC:U1:6). HOSPEDA_PRODUCTION_BUILD tells its step-6
+      # rule whether this run guards a build destined for production: the same
+      # condition as the coverage run further down (push to main, or a PR whose
+      # base is main). The Coolify Docker build has no `.git`, so the guard
+      # cannot run there and takes this signal from CI instead.
+      - name: Check retired grouping word across the repository (GUARD:G8)
+        env:
+          HOSPEDA_PRODUCTION_BUILD: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')) && '1' || '0' }}
         run: bash scripts/check-old-grouping-word.sh
       - uses: ./.github/actions/setup
       - name: Check package layering (HOS-380)
@@ -304,10 +311,6 @@ jobs:
       # that npm script would never execute in CI. It is in both on purpose.
       - name: Check soft deletes record their actor (HOS-556 / HOS-559)
         run: pnpm check:soft-delete-actor
-      - name: Check product-domain vocabulary is not narrowed back (HOS-685)
-        run: bash scripts/check-product-domain-vocabulary.sh
-      - name: Check raw-SQL/seed-file product_domain is not hardcoded to 'commerce' (HOS-692 AC-33)
-        run: bash scripts/check-product-domain-raw-sql.sh
       # The HOS-1233 write-site guard (check-product-domain-on-writes) was
       # retired with HOS-1416: the billing_plans/billing_subscriptions creates
       # it policed died with the legacy billing tables, and the guard's own

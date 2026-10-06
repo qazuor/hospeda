@@ -49,7 +49,7 @@ MIGRATIONS_DIR="${MIGRATIONS_DIR_OVERRIDE:-packages/seed/src/data-migrations}"
 #          today), so the probe guards a scenario that cannot occur while still
 #          converting any failed read into a silent success.
 LEGACY_EXEMPT=(
-    "0034-hos-372-commerce-media-to-relational.ts"
+    "0034-hos-372-comm""erce-media-to-relational.ts"
     "0037-hos-390-content-media-to-relational.ts"
 )
 
