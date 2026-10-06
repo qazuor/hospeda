@@ -122,6 +122,29 @@ describe('evaluateMergeGate', () => {
         ).toBe('ready');
     });
 
+    it('should accept a leaf PR aimed at an umbrella epic/** branch (DEC-CI-001)', () => {
+        // Measured shape of PR #3466: a HOS-1352 leaf whose base is the umbrella.
+        const result = evaluateMergeGate({
+            pr: makePr({ baseRefName: 'epic/HOS-1352-verticales-billing' }),
+            expectedBase: 'develop'
+        });
+        expect(result.verdict).toBe('ready');
+    });
+
+    it('should not mistake a name that merely starts with "epic" for an umbrella', () => {
+        for (const baseRefName of ['epic', 'epic/', 'epics/HOS-1', 'feat/epic/HOS-1']) {
+            expect(evaluateMergeGate({ pr: makePr({ baseRefName }) }).verdict).toBe('blocked');
+        }
+    });
+
+    it('should still block an umbrella-bound PR on every other rule', () => {
+        const result = evaluateMergeGate({
+            pr: makePr({ baseRefName: 'epic/HOS-1352-verticales-billing', checks: [failed] })
+        });
+        expect(result.verdict).toBe('blocked');
+        expect(result.reason).toContain('E2E P0 Suite');
+    });
+
     it('should tell a merged PR that new commits need a new branch', () => {
         const result = evaluateMergeGate({ pr: makePr({ state: 'MERGED' }) });
 
