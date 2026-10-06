@@ -773,22 +773,6 @@ export async function resolvePlanIdBySlug(options: { readonly slug: string }): P
 }
 
 /**
- * Resolves the id of the first active billing plan, or `null` when the retired
- * billing schema no longer exists (dropped by migration 0125, HOS-1416) or no plan
- * is seeded. Specs that exercise the old billing engine use it as their runtime
- * precondition: `test.fixme(!planId, ...)` defers them until the new billing lands.
- *
- * @returns The plan id, or `null` when there is nothing to subscribe to.
- */
-export async function resolveActivePlanId(): Promise<string | null> {
-    if (!(await hasOldBillingSchema())) return null;
-    const rows = await execSQL<{ id: string }>(
-        'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
-    );
-    return rows[0]?.id ?? null;
-}
-
-/**
  * Signs in an already-existing user (seeded or previously created) and
  * returns their session cookie. Use this for tests that authenticate as a
  * known seeded account (e.g. the commerce-owner Julieta) rather than
