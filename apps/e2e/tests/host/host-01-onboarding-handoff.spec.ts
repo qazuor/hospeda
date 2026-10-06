@@ -38,7 +38,12 @@ import {
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool, getUserRoles, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
+import {
+    execSQL,
+    getDbPool,
+    getUserRoles,
+    hasOldBillingSchema
+} from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
