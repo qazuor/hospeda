@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { execSQL } from './db-helpers.ts';
+import { execSQL, hasOldBillingSchema } from './db-helpers.ts';
 
 /**
  * API helpers for E2E tests (SPEC-092 T-031).
@@ -759,6 +759,10 @@ export async function resolvePlanIdBySlug(options: { readonly slug: string }): P
     readonly planId: string | null;
     readonly limits: Readonly<Record<string, number>> | null;
 }> {
+    // The billing tables were dropped by migration 0125 (HOS-1416). Answer "not
+    // seeded" instead of throwing, so the callers' existing `test.fixme(!planId)`
+    // guards defer the spec rather than failing it in a hook.
+    if (!(await hasOldBillingSchema())) return { planId: null, limits: null };
     const rows = await execSQL<{ id: string; limits: Record<string, number> | null }>(
         'SELECT id, limits FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
         [options.slug]
@@ -766,6 +770,22 @@ export async function resolvePlanIdBySlug(options: { readonly slug: string }): P
     const row = rows[0];
     if (!row) return { planId: null, limits: null };
     return { planId: row.id, limits: row.limits ?? {} };
+}
+
+/**
+ * Resolves the id of the first active billing plan, or `null` when the retired
+ * billing schema no longer exists (dropped by migration 0125, HOS-1416) or no plan
+ * is seeded. Specs that exercise the old billing engine use it as their runtime
+ * precondition: `test.fixme(!planId, ...)` defers them until the new billing lands.
+ *
+ * @returns The plan id, or `null` when there is nothing to subscribe to.
+ */
+export async function resolveActivePlanId(): Promise<string | null> {
+    if (!(await hasOldBillingSchema())) return null;
+    const rows = await execSQL<{ id: string }>(
+        'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
+    );
+    return rows[0]?.id ?? null;
 }
 
 /**
