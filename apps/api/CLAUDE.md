@@ -193,7 +193,7 @@ export const handler = async (c: Context) => {
 
   // Check permissions — NEVER check roles directly, even for admin-only
   // routes. `actor.roles` (HOS-296) holds every role the actor wears at
-  // once (a user can be HOST and COMMERCE_OWNER simultaneously); routing
+  // once (a user can be HOST and GASTRONOMY_OWNER / EXPERIENCE_OWNER simultaneously); routing
   // logic must always ask "does the actor hold permission X".
   if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
     return c.json({ error: 'Insufficient permissions' }, 403);

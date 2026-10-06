@@ -40,7 +40,7 @@ An **actor** represents the user or system performing an action:
 ```typescript
 type Actor = {
   id: string;                             // User ID
-  roles: readonly RoleEnum[];             // Every role the actor holds at once (HOS-296) — GUEST, USER, HOST, COMMERCE_OWNER, EDITOR, SPONSOR, CLIENT_MANAGER, ADMIN, SUPER_ADMIN, SYSTEM
+  roles: readonly RoleEnum[];             // Every role the actor holds at once (HOS-296) — GUEST, USER, HOST, GASTRONOMY_OWNER / EXPERIENCE_OWNER, EDITOR, SPONSOR, CLIENT_MANAGER, ADMIN, SUPER_ADMIN, SYSTEM
   permissions: readonly PermissionEnum[]; // Union of permissions across all held roles + overrides
 };
 ```

@@ -84,7 +84,8 @@ enum RoleEnum {
   GUEST = 'GUEST',                     // Non-authenticated users
   USER = 'USER',                       // Authenticated regular users
   HOST = 'HOST',                       // Accommodation owner
-  COMMERCE_OWNER = 'COMMERCE_OWNER',   // Commerce listing owner
+  GASTRONOMY_OWNER = 'GASTRONOMY_OWNER', // Gastronomy listing owner
+  EXPERIENCE_OWNER = 'EXPERIENCE_OWNER', // Experience listing owner
   EDITOR = 'EDITOR',                   // Events/posts content editor
   SPONSOR = 'SPONSOR',                 // External sponsor
   CLIENT_MANAGER = 'CLIENT_MANAGER',   // Client accounts, billing, analytics
@@ -170,7 +171,7 @@ const guestActor: Actor = {
 // Multi-role actor (HOS-296) — holds two hats at once
 const hostAndCommerceOwnerActor: Actor = {
   id: 'user-789',
-  roles: [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER],
+  roles: [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER],
   permissions: [PermissionEnum.ARTICLE_CREATE]
 };
 ```
