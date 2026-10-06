@@ -41,7 +41,7 @@ import {
     markProfileCompleted
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { execSQL, getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -59,6 +59,8 @@ type OwnerPromotionRow = { id: string; tourist_audience: string } & Record<strin
  * with livemode = false, so the QZPay adapter only sees livemode = false rows.
  */
 async function resolvePlanIdBySlug(slug: string): Promise<string | null> {
+    // The billing tables were dropped by migration 0125 (HOS-1416): report "not seeded".
+    if (!(await hasOldBillingSchema())) return null;
     const rows = await execSQL<PlanRow>(
         'SELECT id FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
         [slug]
@@ -224,6 +226,11 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     test('free tourist: 403 ENTITLEMENT_REQUIRED on the API, upgrade CTA in the UI', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         const free = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(free.id);
         // /mi-cuenta/* bounces users with profile_completed = false to the profile
@@ -252,6 +259,11 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     test('tourist-vip: sees plus + vip deals with the VIP badge, restricted deal still excluded', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         if (!vipPlanId) return;
 
@@ -286,6 +298,11 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     });
 
     test('owner: can mark a new promotion VIP-only via the form', async ({ page }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         test.fixme(!ownerProPlanId, 'owner-pro plan not seeded — cannot run');
         if (!ownerProPlanId) return;
 

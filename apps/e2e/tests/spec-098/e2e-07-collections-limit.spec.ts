@@ -32,7 +32,7 @@
 
 import { expect, test } from '@playwright/test';
 import { createSubscription, createUser, resolvePlanIdBySlug } from '../../fixtures/api-helpers.ts';
-import { getDbPool } from '../../fixtures/db-helpers.ts';
+import { getDbPool, hasOldBillingSchema } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -88,6 +88,11 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
     test('AC-03.4 — creating one collection beyond the plan limit is rejected with 403', async ({
         page
     }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // Arrange
         test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         if (!vipPlanId) return;
@@ -150,6 +155,11 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
     });
 
     test('AC-03.4 — deleting a collection frees up a slot (re-entrant quota)', async ({ page }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // Arrange: fill to the limit
         test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         if (!vipPlanId) return;
@@ -207,6 +217,11 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
     });
 
     test('AC-03.4 — usage block in GET list shows current/max ratio', async ({ page }) => {
+        test.fixme(
+            !(await hasOldBillingSchema()),
+            'HOS-1352: old billing removed in U1.1; re-enabled with the new billing (B units)'
+        );
+
         // Arrange
         test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         if (!vipPlanId) return;
