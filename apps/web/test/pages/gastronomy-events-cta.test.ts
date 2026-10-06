@@ -25,13 +25,24 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+/** Removes every match of `pattern`, repeating until none is left so nested fragments cannot re-form a marker. */
+function stripUntilStable(source: string, pattern: RegExp): string {
+    let current = source;
+    let previous: string;
+    do {
+        previous = current;
+        current = current.replace(pattern, '');
+    } while (current !== previous);
+    return current;
+}
+
 /** Strips comments so an assertion reads MARKUP, not the prose about it. */
 function withoutComments(source: string): string {
-    return source
+    const withoutCode = source
         .replace(/^\s*\/\/.*$/gm, '')
         .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, '')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/<!--[\s\S]*?-->/g, '');
+        .replace(/\/\*[\s\S]*?\*\//g, '');
+    return stripUntilStable(withoutCode, /<!--[\s\S]*?-->/g);
 }
 
 const read = (relativePath: string): string =>

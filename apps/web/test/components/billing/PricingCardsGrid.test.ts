@@ -563,7 +563,7 @@ describe('PricingCardsGrid.astro', () => {
                 'pricing-card__btn-wrapper'
             ];
             for (const block of blocks) {
-                expect(src, block).toContain(`class="${block.replace('"', '')}"`);
+                expect(src, block).toContain(`class="${block.replaceAll('"', '')}"`);
             }
 
             const rows = src.match(/grid-template-rows: ((?:auto |1fr )+auto);/);

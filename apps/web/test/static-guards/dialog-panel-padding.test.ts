@@ -90,7 +90,7 @@ const PANEL_RULE = /^\.panel\s*\{([^}]*)\}/m;
 const NONZERO_PADDING = /\bpadding\s*:\s*(?!0\s*[;}])[^;}]+/;
 
 /** The opt-out rule: a `:has()` selector on `.panel` that zeroes padding. */
-const HAS_OPTOUT_RULE = /((?:\.panel:has\([^)]*\)\s*,?\s*)+)\{([^}]*)\}/m;
+const HAS_OPTOUT_RULE = /((?:\.panel:has\([^)]*\)[\s,]*)+)\{([^}]*)\}/m;
 
 /** Strips `/* … *\/` comments so commented-out CSS cannot satisfy a check. */
 function stripComments(css: string): string {

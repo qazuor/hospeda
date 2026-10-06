@@ -19,6 +19,17 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+/** Removes every match of `pattern`, repeating until none is left so nested fragments cannot re-form a marker. */
+function stripUntilStable(source: string, pattern: RegExp): string {
+    let current = source;
+    let previous: string;
+    do {
+        previous = current;
+        current = current.replace(pattern, '');
+    } while (current !== previous);
+    return current;
+}
+
 /**
  * Reads a page with its block comments removed.
  *
@@ -28,9 +39,11 @@ import { describe, expect, it } from 'vitest';
  * `not.toContain` would read the explanation as the thing itself.
  */
 function readStripped(relativePath: string): string {
-    return readFileSync(resolve(__dirname, relativePath), 'utf8')
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/<!--[\s\S]*?-->/g, '');
+    const withoutBlockComments = readFileSync(resolve(__dirname, relativePath), 'utf8').replace(
+        /\/\*[\s\S]*?\*\//g,
+        ''
+    );
+    return stripUntilStable(withoutBlockComments, /<!--[\s\S]*?-->/g);
 }
 
 const PAGES = [
