@@ -107,6 +107,8 @@ def main() -> None:
             seen = set(files)
         if not allow_in_tree.exists() or allow_in_tree.read_text() != allow_text:
             stop(2, "FUERA DE ALCANCE: el agente modificó o borró .hoja/permitidas.txt")
+        # argv list, no shell: wt and snapshot are operator-supplied paths to a local worktree, not untrusted input
+        # nosemgrep: python.lang.security.audit.dangerous-subprocess-use-tainted-env-args.dangerous-subprocess-use-tainted-env-args
         r = subprocess.run([sys.executable, str(HERE / "alcance.py"), str(wt), str(snapshot)],
                            capture_output=True, text=True)
         if r.returncode != 0:  # any failure of the check counts as a violation (fail closed)
