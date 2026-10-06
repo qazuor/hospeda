@@ -1,19 +1,19 @@
 /**
- * @file commerceSections.ts
- * Builder functions for the SHARED commerce consolidated section configs.
+ * @file listingSections.ts
+ * Builder functions for the SHARED listing consolidated section configs.
  *
- * These sections are reused verbatim by every concrete commerce entity
+ * These sections are reused verbatim by every concrete listing entity
  * (gastronomy via SPEC-240, experiences later) — they contain ZERO entity-
  * specific fields or values.
  *
  * Two sections are exported:
  *
- *   - `createCommerceIdentitySection()` — admin-only core fields:
+ *   - `createListingIdentitySection()` — admin-only core fields:
  *       name, slug, summary, description, richDescription,
  *       destinationId, ownerId, isFeatured,
  *       lifecycleStatus, moderationStatus, moderationNotes, rejectionReason.
  *
- *   - `createCommerceOperationalSection()` — owner-editable operational fields:
+ *   - `createListingOperationalSection()` — owner-editable operational fields:
  *       contactInfo (phone, email, website, whatsapp),
  *       socialNetworks (facebook, instagram, twitter),
  *       videos,
@@ -28,7 +28,7 @@
  * photo uploaded through those fields was orphaned in Cloudinary with no DB
  * row ever created. Photos are now managed exclusively via the relational
  * `gastronomy_media` / `experience_media` tables through the dedicated
- * Gallery tab (`CommerceGalleryManager`, mirroring accommodations'
+ * Gallery tab (`ListingGalleryManager`, mirroring accommodations'
  * `GalleryManager`). `videos` is unaffected — it is its own top-level
  * column, not nested under `media`.
  *
@@ -40,7 +40,12 @@
  * available type is used with a `// TODO(SPEC-239)` comment.
  */
 
-import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
+import {
+    type GastronomyOrExperience,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum
+} from '@repo/schemas';
 import {
     FieldTypeEnum,
     LayoutTypeEnum,
@@ -53,7 +58,7 @@ import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/
 // ---------------------------------------------------------------------------
 
 /**
- * Lifecycle status options shared across commerce entities.
+ * Lifecycle status options shared across listing entities.
  * Values mirror `LifecycleStatusEnum` from @repo/schemas.
  */
 const LIFECYCLE_OPTIONS = [
@@ -63,7 +68,7 @@ const LIFECYCLE_OPTIONS = [
 ] as const;
 
 /**
- * Moderation status options shared across commerce entities.
+ * Moderation status options shared across listing entities.
  * Values mirror `ModerationStatusEnum` from @repo/schemas.
  */
 const MODERATION_OPTIONS = [
@@ -72,9 +77,7 @@ const MODERATION_OPTIONS = [
     { value: ModerationStatusEnum.REJECTED, label: 'Rechazado' }
 ] as const;
 
-type CommerceVertical = 'gastronomy' | 'experience';
-
-function permissionsForVertical(vertical: CommerceVertical) {
+function permissionsForVertical(vertical: GastronomyOrExperience) {
     return vertical === 'gastronomy'
         ? {
               view: PermissionEnum.GASTRONOMY_VIEW_ALL,
@@ -95,7 +98,7 @@ function permissionsForVertical(vertical: CommerceVertical) {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the SHARED admin-identity section for any commerce listing.
+ * Returns the SHARED admin-identity section for any listing.
  *
  * Contains: name, slug, summary, description, richDescription, destinationId,
  * ownerId, isFeatured, lifecycleStatus, moderationStatus, moderationNotes,
@@ -108,14 +111,14 @@ function permissionsForVertical(vertical: CommerceVertical) {
  * Permissions: the vertical's VIEW_ALL to view and EDIT_ALL to edit admin-only
  * fields.
  *
- * @returns A `ConsolidatedSectionConfig` for the commerce identity section.
+ * @returns A `ConsolidatedSectionConfig` for the listing identity section.
  */
-export function createCommerceIdentitySection(
+export function createListingIdentitySection(
     vertical: 'gastronomy' | 'experience'
 ): ConsolidatedSectionConfig {
     const permissions = permissionsForVertical(vertical);
     return {
-        id: 'commerce-identity',
+        id: 'listing-identity',
         title: 'Identidad',
         description: 'Datos de identidad del comercio / listado',
         layout: LayoutTypeEnum.GRID,
@@ -365,7 +368,7 @@ export function createCommerceIdentitySection(
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the SHARED operational section for any commerce listing.
+ * Returns the SHARED operational section for any listing.
  *
  * Contains owner-editable fields:
  *   - Contact info: phone, email, website, whatsapp.
@@ -380,14 +383,14 @@ export function createCommerceIdentitySection(
  * Permissions: the vertical's VIEW_ALL to view; EDIT_OWN (owner) or
  * EDIT_ALL (admin) to edit.
  *
- * @returns A `ConsolidatedSectionConfig` for the commerce operational section.
+ * @returns A `ConsolidatedSectionConfig` for the listing operational section.
  */
-export function createCommerceOperationalSection(
+export function createListingOperationalSection(
     vertical: 'gastronomy' | 'experience'
 ): ConsolidatedSectionConfig {
     const permissions = permissionsForVertical(vertical);
     return {
-        id: 'commerce-operational',
+        id: 'listing-operational',
         title: 'Información Operacional',
         description: 'Datos de contacto, redes sociales, medios y horarios del comercio',
         layout: LayoutTypeEnum.GRID,
@@ -515,7 +518,7 @@ export function createCommerceOperationalSection(
             // used to live here but were REMOVED — see the file-level HOS-382 note
             // in this file's header JSDoc (top of file). Photos are now
             // managed exclusively via the relational gallery tab
-            // (`CommerceGalleryManager`), never through this form.
+            // (`ListingGalleryManager`), never through this form.
             // ------------------------------------------------------------------
             {
                 // HOS-372: the field id is `videos`, NOT `media.videos`. The `media`

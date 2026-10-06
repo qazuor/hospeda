@@ -1,5 +1,5 @@
 /**
- * Guard: the commerce detail routes must actually render the reject control
+ * Guard: the listing detail routes must actually render the reject control
  * (HOS-589 AC-26).
  *
  * The endpoint and the widget can both be perfect while nobody can reach them:
@@ -37,14 +37,14 @@ const ROUTES = [
 const readRoute = (relativePath: string): string =>
     readFileSync(join(__dirname, relativePath), 'utf8');
 
-describe('the reject control is present on both commerce detail routes (AC-26)', () => {
+describe('the reject control is present on both listing detail routes (AC-26)', () => {
     for (const { vertical, path, listingHook, reviewHook, labelKey } of ROUTES) {
         describe(vertical, () => {
-            it('renders CommerceListingModerationCard', () => {
+            it('renders ListingModerationCard', () => {
                 expect(
                     readRoute(path),
-                    `The ${vertical} detail route no longer renders CommerceListingModerationCard. Without it POST /:id/moderate is only callable by hand, which is precisely what AC-26 forbids.`
-                ).toContain('<CommerceListingModerationCard');
+                    `The ${vertical} detail route no longer renders ListingModerationCard. Without it POST /:id/moderate is only callable by hand, which is precisely what AC-26 forbids.`
+                ).toContain('<ListingModerationCard');
             });
 
             it('wires the LISTING moderation hook into that card, not the review one', () => {
@@ -54,7 +54,7 @@ describe('the reject control is present on both commerce detail routes (AC-26)',
                 // renders a reviews panel driven by `useModerate*ReviewMutation`,
                 // so a whole-file `toContain` would pass on either hook and this
                 // guard would be blind to the exact confusion it exists to catch.
-                const start = source.indexOf('<CommerceListingModerationCard');
+                const start = source.indexOf('<ListingModerationCard');
                 expect(start, 'card not found').toBeGreaterThan(-1);
                 const block = source.slice(start, source.indexOf('/>', start));
 
@@ -67,7 +67,7 @@ describe('the reject control is present on both commerce detail routes (AC-26)',
 
             it('feeds the card the listing name, current state and entity label', () => {
                 const source = readRoute(path);
-                const start = source.indexOf('<CommerceListingModerationCard');
+                const start = source.indexOf('<ListingModerationCard');
                 const block = source.slice(start, source.indexOf('/>', start));
 
                 // `currentValue` is the one that fails silently: without it the

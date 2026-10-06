@@ -1,7 +1,7 @@
 /**
- * @file createCommerceEntityHooks.ts
+ * @file createListingEntityHooks.ts
  * Factory that extends the generic `createEntityHooks` CRUD suite with
- * commerce-domain mutations:
+ * listing-domain mutations:
  *
  *   - `useAssignOwnerMutation`    — POST  `${endpoint}/${id}/assign-owner`
  *   - `useModerateReviewMutation` — POST  `${endpoint}/reviews/${reviewId}/moderate`
@@ -9,14 +9,14 @@
  *
  * The factory delegates standard CRUD (list, detail, create, update, patch,
  * delete, softDelete, restore) to `createEntityHooks` and adds only the
- * commerce-specific hooks on top.
+ * listing-specific hooks on top.
  *
  * Response unwrapping follows the verified gastronomy/accommodation API shape:
  *   GET detail   →  `{ success, data: <entity> }`          → unwrap `response.data.data`
  *   GET list     →  `{ success, data: { items, pagination } }` → handled by createEntityHooks
  *   POST mutate  →  `{ success, data: <entity | null> }`   → unwrap `response.data.data`
  *
- * @module createCommerceEntityHooks
+ * @module createListingEntityHooks
  */
 
 import type { ModerationStatusEnum } from '@repo/schemas';
@@ -30,14 +30,14 @@ import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 // ---------------------------------------------------------------------------
 
 /**
- * Parameters required to instantiate the commerce entity hooks factory.
+ * Parameters required to instantiate the listing entity hooks factory.
  *
  * @typeParam TData - Entity shape; must have an `id: string` field.
  */
-export type CommerceEntityHooksConfig = {
+export type ListingEntityHooksConfig = {
     /**
      * Entity name used as the TanStack Query root cache key (e.g. `'gastronomy'`).
-     * Must match the `entityName` passed to `createCommerceListConfig`.
+     * Must match the `entityName` passed to `createListingListConfig`.
      */
     readonly entityName: string;
 
@@ -53,7 +53,7 @@ export type CommerceEntityHooksConfig = {
 
 /** Input for the assign-owner mutation. */
 export type AssignOwnerInput = {
-    /** ID of the commerce entity to update. */
+    /** ID of the listing entity to update. */
     readonly id: string;
     /** ID of the user who will become the new owner. */
     readonly ownerId: string;
@@ -99,7 +99,7 @@ export type PendingReviewsQueryParams = {
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a full set of CRUD + commerce-specific hooks for a commerce entity.
+ * Creates a full set of CRUD + listing-specific hooks for a listing entity.
  *
  * The returned object contains all hooks from `createEntityHooks` plus:
  *   - `useAssignOwnerMutation` — reassign the entity owner.
@@ -113,7 +113,7 @@ export type PendingReviewsQueryParams = {
  * @example
  * ```ts
  * // In the gastronomy feature (SPEC-240):
- * const gastronomyHooks = createCommerceEntityHooks<GastronomyEntity>({
+ * const gastronomyHooks = createListingEntityHooks<GastronomyEntity>({
  *   entityName: 'gastronomy',
  *   apiEndpoint: '/api/v1/admin/gastronomy',
  * });
@@ -124,8 +124,8 @@ export type PendingReviewsQueryParams = {
  * const { data: pendingReviews } = gastronomyHooks.usePendingReviewsQuery({ page: 1 });
  * ```
  */
-export function createCommerceEntityHooks<TData extends { id: string }>(
-    config: CommerceEntityHooksConfig
+export function createListingEntityHooks<TData extends { id: string }>(
+    config: ListingEntityHooksConfig
 ) {
     const { entityName, apiEndpoint } = config;
 
@@ -136,11 +136,11 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
     const queryKeys = createEntityQueryKeys(entityName);
 
     // ------------------------------------------------------------------
-    // Commerce-specific: assign owner
+    // Listing-specific: assign owner
     // ------------------------------------------------------------------
 
     /**
-     * Mutation hook that reassigns the owner of a commerce entity.
+     * Mutation hook that reassigns the owner of a listing entity.
      *
      * Calls `POST ${apiEndpoint}/${id}/assign-owner` with `{ ownerId }`.
      * Invalidates the entity detail and list caches on success.
@@ -169,11 +169,11 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
     }
 
     // ------------------------------------------------------------------
-    // Commerce-specific: review moderation
+    // Listing-specific: review moderation
     // ------------------------------------------------------------------
 
     /**
-     * Mutation hook that approves or rejects a review for a commerce entity.
+     * Mutation hook that approves or rejects a review for a listing entity.
      *
      * Calls `POST ${apiEndpoint}/reviews/${reviewId}/moderate`
      * with `{ decision, reason? }`.
@@ -219,9 +219,9 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
      *
      * That one posts to `${apiEndpoint}/reviews/${reviewId}/moderate` and
      * decides whether a REVIEW is published. This one decides whether the
-     * listing stays up: `REJECTED` is what the commerce visibility reconciler
+     * listing stays up: `REJECTED` is what the listing visibility reconciler
      * reads to flip a listing to `PRIVATE`/`INACTIVE`. Anyone searching
-     * "moderate" under commerce meets the review hook first.
+     * "moderate" under listing meets the review hook first.
      *
      * Shaped as `(id) => mutation` so `InlineStateSelectCell` drives it
      * unchanged — the cell calls `mutateAsync({ [field]: value })` and the
@@ -252,7 +252,7 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
     }
 
     /**
-     * Query hook that fetches reviews pending moderation for a commerce entity.
+     * Query hook that fetches reviews pending moderation for a listing entity.
      *
      * Calls `GET ${apiEndpoint}/reviews?status=PENDING&page=…&pageSize=…`.
      * Response unwrapped as `response.data.data`.
@@ -303,7 +303,7 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
         // Standard CRUD (forwarded from createEntityHooks)
         ...crudHooks,
 
-        // Commerce-specific hooks
+        // Listing-specific hooks
         useAssignOwnerMutation,
         useModerateListingMutation,
         useModerateReviewMutation,
@@ -315,10 +315,10 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
 }
 
 /**
- * Type helper to extract the full hook set produced by `createCommerceEntityHooks`.
+ * Type helper to extract the full hook set produced by `createListingEntityHooks`.
  *
  * @typeParam TData - Entity shape used when calling the factory.
  */
-export type CommerceEntityHooks<TData extends { id: string }> = ReturnType<
-    typeof createCommerceEntityHooks<TData>
+export type ListingEntityHooks<TData extends { id: string }> = ReturnType<
+    typeof createListingEntityHooks<TData>
 >;

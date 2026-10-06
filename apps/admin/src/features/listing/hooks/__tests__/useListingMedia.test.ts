@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Tests for useCommerceMedia hooks (HOS-382).
+ * Tests for useListingMedia hooks (HOS-382).
  *
  * Mirrors the useAccommodationMedia test pattern, plus vertical-specific
  * assertions to guard the singular→plural route-segment mapping
@@ -19,18 +19,18 @@ import * as React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchApi } from '@/lib/api/client';
 import {
-    commerceMediaQueryKeys,
-    useCommerceMediaAdd,
-    useCommerceMediaList,
-    useCommerceMediaRemove,
-    useCommerceMediaSetFeatured
-} from '../useCommerceMedia';
+    listingMediaQueryKeys,
+    useListingMediaAdd,
+    useListingMediaList,
+    useListingMediaRemove,
+    useListingMediaSetFeatured
+} from '../useListingMedia';
 
 vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));
 
 const mockedFetchApi = vi.mocked(fetchApi);
 
-/** Builds a minimal valid CommerceMedia fixture. */
+/** Builds a minimal valid ListingMedia fixture. */
 function makeMedia(overrides: Partial<Record<string, unknown>> = {}) {
     return {
         id: 'media-1',
@@ -61,10 +61,10 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// useCommerceMediaList
+// useListingMediaList
 // ---------------------------------------------------------------------------
 
-describe('useCommerceMediaList — response envelope parsing', () => {
+describe('useListingMediaList — response envelope parsing', () => {
     it('calls GET on the gastronomies endpoint for vertical="gastronomy"', async () => {
         const items = [makeMedia({ id: 'media-1' }), makeMedia({ id: 'media-2' })];
         mockedFetchApi.mockResolvedValue({
@@ -72,7 +72,7 @@ describe('useCommerceMediaList — response envelope parsing', () => {
             status: 200
         });
 
-        const { result } = renderHook(() => useCommerceMediaList('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaList('gastronomy', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -92,7 +92,7 @@ describe('useCommerceMediaList — response envelope parsing', () => {
             status: 200
         });
 
-        const { result } = renderHook(() => useCommerceMediaList('experience', 'ent-2'), {
+        const { result } = renderHook(() => useListingMediaList('experience', 'ent-2'), {
             wrapper: createWrapper()
         });
 
@@ -111,7 +111,7 @@ describe('useCommerceMediaList — response envelope parsing', () => {
             status: 200
         });
 
-        const { result } = renderHook(() => useCommerceMediaList('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaList('gastronomy', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -120,7 +120,7 @@ describe('useCommerceMediaList — response envelope parsing', () => {
     });
 
     it('is disabled when entityId is empty', () => {
-        const { result } = renderHook(() => useCommerceMediaList('gastronomy', ''), {
+        const { result } = renderHook(() => useListingMediaList('gastronomy', ''), {
             wrapper: createWrapper()
         });
 
@@ -130,10 +130,10 @@ describe('useCommerceMediaList — response envelope parsing', () => {
 });
 
 // ---------------------------------------------------------------------------
-// useCommerceMediaAdd
+// useListingMediaAdd
 // ---------------------------------------------------------------------------
 
-describe('useCommerceMediaAdd', () => {
+describe('useListingMediaAdd', () => {
     it('POSTs to the vertical-specific media endpoint and returns the created row', async () => {
         const newRow = makeMedia({ id: 'new-1', url: 'https://example.com/new.jpg' });
         mockedFetchApi.mockResolvedValue({
@@ -141,7 +141,7 @@ describe('useCommerceMediaAdd', () => {
             status: 201
         });
 
-        const { result } = renderHook(() => useCommerceMediaAdd('experience', 'ent-2'), {
+        const { result } = renderHook(() => useListingMediaAdd('experience', 'ent-2'), {
             wrapper: createWrapper()
         });
 
@@ -167,7 +167,7 @@ describe('useCommerceMediaAdd', () => {
             status: 201
         });
 
-        const { result } = renderHook(() => useCommerceMediaAdd('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaAdd('gastronomy', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -190,7 +190,7 @@ describe('useCommerceMediaAdd', () => {
         const wrapper = ({ children }: { readonly children: React.ReactNode }) =>
             React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-        const { result } = renderHook(() => useCommerceMediaAdd('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaAdd('gastronomy', 'ent-1'), {
             wrapper
         });
 
@@ -200,17 +200,17 @@ describe('useCommerceMediaAdd', () => {
 
         expect(invalidateSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                queryKey: commerceMediaQueryKeys.list('gastronomy', 'ent-1')
+                queryKey: listingMediaQueryKeys.list('gastronomy', 'ent-1')
             })
         );
     });
 });
 
 // ---------------------------------------------------------------------------
-// useCommerceMediaRemove
+// useListingMediaRemove
 // ---------------------------------------------------------------------------
 
-describe('useCommerceMediaRemove', () => {
+describe('useListingMediaRemove', () => {
     it('calls DELETE on the correct vertical endpoint and invalidates list', async () => {
         mockedFetchApi.mockResolvedValue({ data: {}, status: 200 });
 
@@ -222,7 +222,7 @@ describe('useCommerceMediaRemove', () => {
         const wrapper = ({ children }: { readonly children: React.ReactNode }) =>
             React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-        const { result } = renderHook(() => useCommerceMediaRemove('experience', 'ent-2'), {
+        const { result } = renderHook(() => useListingMediaRemove('experience', 'ent-2'), {
             wrapper
         });
 
@@ -238,17 +238,17 @@ describe('useCommerceMediaRemove', () => {
         );
         expect(invalidateSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                queryKey: commerceMediaQueryKeys.list('experience', 'ent-2')
+                queryKey: listingMediaQueryKeys.list('experience', 'ent-2')
             })
         );
     });
 });
 
 // ---------------------------------------------------------------------------
-// useCommerceMediaSetFeatured
+// useListingMediaSetFeatured
 // ---------------------------------------------------------------------------
 
-describe('useCommerceMediaSetFeatured', () => {
+describe('useListingMediaSetFeatured', () => {
     it('PUTs to /featured on the correct vertical endpoint and returns the updated row', async () => {
         const updatedRow = makeMedia({ id: 'media-7', isFeatured: true });
         mockedFetchApi.mockResolvedValue({
@@ -256,7 +256,7 @@ describe('useCommerceMediaSetFeatured', () => {
             status: 200
         });
 
-        const { result } = renderHook(() => useCommerceMediaSetFeatured('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaSetFeatured('gastronomy', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -277,7 +277,7 @@ describe('useCommerceMediaSetFeatured', () => {
             status: 200
         });
 
-        const { result } = renderHook(() => useCommerceMediaSetFeatured('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaSetFeatured('gastronomy', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -300,7 +300,7 @@ describe('useCommerceMediaSetFeatured', () => {
         const wrapper = ({ children }: { readonly children: React.ReactNode }) =>
             React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-        const { result } = renderHook(() => useCommerceMediaSetFeatured('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaSetFeatured('gastronomy', 'ent-1'), {
             wrapper
         });
 
@@ -310,7 +310,7 @@ describe('useCommerceMediaSetFeatured', () => {
 
         expect(invalidateSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                queryKey: commerceMediaQueryKeys.list('gastronomy', 'ent-1')
+                queryKey: listingMediaQueryKeys.list('gastronomy', 'ent-1')
             })
         );
     });
@@ -331,7 +331,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
         {
             name: 'add',
             run: (vertical: 'gastronomy' | 'experience', id: string) =>
-                renderHook(() => useCommerceMediaAdd(vertical, id), { wrapper: makeWrapper() }),
+                renderHook(() => useListingMediaAdd(vertical, id), { wrapper: makeWrapper() }),
             args: { url: 'https://example.com/x.jpg' } as never
         }
     ] as const;
@@ -362,7 +362,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
             await result.current.mutateAsync(args);
         });
 
-        // 'gastronomies' is the entityName the commerce entity hooks are created
+        // 'gastronomies' is the entityName the listing entity hooks are created
         // with — asserting the resolved key, not the helper, is what proves the
         // media hook and the entity hook agree on where the cache lives.
         expect(invalidateSpy).toHaveBeenCalledWith(
@@ -373,7 +373,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
     it('maps the experience vertical to its own entity key', async () => {
         // The vertical→entityName mapping is the part that can silently point at
         // a key nobody reads; both branches have to be exercised.
-        const { result } = renderHook(() => useCommerceMediaAdd('experience', 'ent-2'), {
+        const { result } = renderHook(() => useListingMediaAdd('experience', 'ent-2'), {
             wrapper: makeWrapper()
         });
 
@@ -387,7 +387,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
     });
 
     it('still invalidates the media list — the entity key is an addition, not a swap', async () => {
-        const { result } = renderHook(() => useCommerceMediaAdd('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaAdd('gastronomy', 'ent-1'), {
             wrapper: makeWrapper()
         });
 
@@ -397,7 +397,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
 
         expect(invalidateSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                queryKey: commerceMediaQueryKeys.list('gastronomy', 'ent-1')
+                queryKey: listingMediaQueryKeys.list('gastronomy', 'ent-1')
             })
         );
         expect(invalidateSpy).toHaveBeenCalledTimes(2);

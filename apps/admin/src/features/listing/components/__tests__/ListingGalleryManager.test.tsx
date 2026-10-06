@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Component tests for CommerceGalleryManager (HOS-382).
+ * Component tests for ListingGalleryManager (HOS-382).
  *
  * Mirrors the accommodation GalleryManager component tests. Tests:
  *  1. Splits list into featured (portada) slot and gallery grid
@@ -15,7 +15,7 @@
  *     (HOS-382-specific: this is the vertical-agnostic wiring the
  *     accommodation precedent doesn't need to cover)
  *
- * Mocking strategy: the four useCommerceMedia* hooks and useMediaUpload are
+ * Mocking strategy: the four useListingMedia* hooks and useMediaUpload are
  * mocked at the module level so we can control their return values
  * (mutations and query state) without any network calls.
  */
@@ -49,27 +49,27 @@ const mockUploadEntityImageMutateAsync = vi.fn();
  * error naming neither the hook nor this file; the explicit form fails with
  * vitest's own "No <name> export is defined on the mock" instead.
  */
-vi.mock('@/features/commerce/hooks/useCommerceMedia', () => ({
-    useCommerceMediaList: () => mockListData,
-    useCommerceMediaAdd: () => ({
+vi.mock('@/features/listing/hooks/useListingMedia', () => ({
+    useListingMediaList: () => mockListData,
+    useListingMediaAdd: () => ({
         mutateAsync: mockAddMutateAsync,
         isPending: false,
         isError: false
     }),
-    useCommerceMediaRemove: () => ({
+    useListingMediaRemove: () => ({
         mutateAsync: mockRemoveMutateAsync,
         isPending: false,
         isError: false,
         variables: undefined
     }),
-    useCommerceMediaSetFeatured: () => ({
+    useListingMediaSetFeatured: () => ({
         mutateAsync: mockSetFeaturedMutateAsync,
         isPending: false,
         isError: false
     }),
     // HOS-803: the portada uploader now registers the cover in ONE request
     // instead of add + setFeatured, so the tree reaches this hook too.
-    useCommerceMediaAddFeatured: () => ({
+    useListingMediaAddFeatured: () => ({
         mutateAsync: mockAddFeaturedMutateAsync,
         isPending: false,
         isError: false
@@ -96,7 +96,7 @@ vi.mock('@repo/schemas', () => ({
 // Import component AFTER mocks
 // ---------------------------------------------------------------------------
 
-import { CommerceGalleryManager } from '../CommerceGalleryManager';
+import { ListingGalleryManager } from '../ListingGalleryManager';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -136,7 +136,7 @@ function makeGalleryRow(id: string, sortOrder = 1) {
 
 function renderGalleryManager() {
     return render(
-        <CommerceGalleryManager
+        <ListingGalleryManager
             vertical="gastronomy"
             entityId="ent-1"
         />
@@ -161,7 +161,7 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-describe('CommerceGalleryManager — split: featured vs gallery', () => {
+describe('ListingGalleryManager — split: featured vs gallery', () => {
     it('renders the portada empty state when no featured row', () => {
         mockListData.data = [makeGalleryRow('g1'), makeGalleryRow('g2', 2)];
 
@@ -193,7 +193,7 @@ describe('CommerceGalleryManager — split: featured vs gallery', () => {
     });
 });
 
-describe('CommerceGalleryManager — add gallery photo', () => {
+describe('ListingGalleryManager — add gallery photo', () => {
     it('calls upload then addMedia when a file is selected for the gallery, with entityType matching the vertical prop', async () => {
         const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
@@ -234,7 +234,7 @@ describe('CommerceGalleryManager — add gallery photo', () => {
     });
 });
 
-describe('CommerceGalleryManager — remove gallery photo', () => {
+describe('ListingGalleryManager — remove gallery photo', () => {
     it('calls removeMedia with the correct mediaId', async () => {
         const row = makeGalleryRow('g-del');
         mockListData.data = [row];
@@ -258,7 +258,7 @@ describe('CommerceGalleryManager — remove gallery photo', () => {
     });
 });
 
-describe('CommerceGalleryManager — remove portada', () => {
+describe('ListingGalleryManager — remove portada', () => {
     it('calls removeMedia with the featured row id', async () => {
         const featured = makeFeaturedRow('feat-del');
         mockListData.data = [featured];
@@ -283,7 +283,7 @@ describe('CommerceGalleryManager — remove portada', () => {
     });
 });
 
-describe('CommerceGalleryManager — grid remove button uses its own accessible name', () => {
+describe('ListingGalleryManager — grid remove button uses its own accessible name', () => {
     it('gives the grid remove button a DIFFERENT accessible name than the portada remove button', () => {
         const featured = makeFeaturedRow('feat-1');
         const gallery = makeGalleryRow('g1');
@@ -314,7 +314,7 @@ describe('CommerceGalleryManager — grid remove button uses its own accessible 
     });
 });
 
-describe('CommerceGalleryManager — alt derived from entity name', () => {
+describe('ListingGalleryManager — alt derived from entity name', () => {
     it('sends a non-empty alt on addMedia when entityName is provided', async () => {
         const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
@@ -329,7 +329,7 @@ describe('CommerceGalleryManager — alt derived from entity name', () => {
 
         mockListData.data = [];
         render(
-            <CommerceGalleryManager
+            <ListingGalleryManager
                 vertical="gastronomy"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
@@ -376,7 +376,7 @@ describe('CommerceGalleryManager — alt derived from entity name', () => {
     });
 });
 
-describe('CommerceGalleryManager — set portada (upload → add → setFeatured)', () => {
+describe('ListingGalleryManager — set portada (upload → add → setFeatured)', () => {
     it('calls upload → addFeaturedMedia in ONE request for portada upload', async () => {
         const file = new File(['data'], 'portada.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
@@ -444,7 +444,7 @@ describe('CommerceGalleryManager — set portada (upload → add → setFeatured
 
         mockListData.data = [];
         render(
-            <CommerceGalleryManager
+            <ListingGalleryManager
                 vertical="gastronomy"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
@@ -494,7 +494,7 @@ describe('CommerceGalleryManager — set portada (upload → add → setFeatured
     });
 });
 
-describe('CommerceGalleryManager — gated on entity-detail loading too (race regression guard)', () => {
+describe('ListingGalleryManager — gated on entity-detail loading too (race regression guard)', () => {
     it('keeps the loading skeleton (no upload controls) while isEntityLoading is true, even though the media query already settled', () => {
         // Reproduces the race: the media list resolves fast (few rows), while
         // the parallel entity-detail query (source of `entityName`, e.g.
@@ -507,7 +507,7 @@ describe('CommerceGalleryManager — gated on entity-detail loading too (race re
         mockListData.data = [];
 
         render(
-            <CommerceGalleryManager
+            <ListingGalleryManager
                 vertical="gastronomy"
                 entityId="ent-1"
                 isEntityLoading={true}
@@ -528,7 +528,7 @@ describe('CommerceGalleryManager — gated on entity-detail loading too (race re
         mockListData.data = [];
 
         render(
-            <CommerceGalleryManager
+            <ListingGalleryManager
                 vertical="gastronomy"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
@@ -543,7 +543,7 @@ describe('CommerceGalleryManager — gated on entity-detail loading too (race re
     });
 });
 
-describe('CommerceGalleryManager — load error', () => {
+describe('ListingGalleryManager — load error', () => {
     it('shows a load error alert when isError is true', () => {
         mockListData.isError = true;
         mockListData.data = [];
@@ -556,7 +556,7 @@ describe('CommerceGalleryManager — load error', () => {
     });
 });
 
-describe('CommerceGalleryManager — vertical prop wiring', () => {
+describe('ListingGalleryManager — vertical prop wiring', () => {
     it('passes entityType="experience" to the upload mutation when vertical="experience"', async () => {
         const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
@@ -571,7 +571,7 @@ describe('CommerceGalleryManager — vertical prop wiring', () => {
 
         mockListData.data = [];
         render(
-            <CommerceGalleryManager
+            <ListingGalleryManager
                 vertical="experience"
                 entityId="ent-2"
             />
@@ -598,7 +598,7 @@ describe('CommerceGalleryManager — vertical prop wiring', () => {
 // HOS-389 §1 — promote an existing gallery photo to portada
 // ---------------------------------------------------------------------------
 
-describe('CommerceGalleryManager — make cover', () => {
+describe('ListingGalleryManager — make cover', () => {
     /**
      * Scoped to the grid region so the portada slot's own controls can never
      * be mistaken for a tile action.

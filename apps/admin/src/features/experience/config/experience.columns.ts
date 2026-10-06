@@ -106,7 +106,7 @@ export const createExperienceColumns = (
         header: t('admin-entities.columns.owner'),
         // Show a readable owner label from the eager-loaded relation, not the raw
         // FK UUID. The users table has no single `name` column, so compose from
-        // displayName → firstName+lastName → email (an admin-provisioned commerce
+        // displayName → firstName+lastName → email (an admin-provisioned listing
         // owner may only have an email until they complete their profile).
         accessorKey: 'ownerId',
         enableSorting: false,

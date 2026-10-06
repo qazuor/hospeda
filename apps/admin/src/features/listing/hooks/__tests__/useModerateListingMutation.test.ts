@@ -6,7 +6,7 @@
  * button hits. Two ways it can be wrong and still look right in the browser:
  *
  *  1. It posts to `${endpoint}/reviews/${id}/moderate` — the review endpoint,
- *     the one anybody grepping "moderate" under commerce meets first. A stale
+ *     the one anybody grepping "moderate" under listing meets first. A stale
  *     id in that path answers 404, not "wrong endpoint".
  *  2. It posts the right body to the right path for the WRONG vertical, because
  *     both hooks are built by the same factory.
@@ -20,7 +20,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fetchApi } from '@/lib/api/client';
-import { createCommerceEntityHooks } from '../createCommerceEntityHooks';
+import { createListingEntityHooks } from '../createListingEntityHooks';
 
 vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));
 
@@ -28,12 +28,12 @@ const mockedFetchApi = vi.mocked(fetchApi);
 
 const LISTING_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
-const gastronomyHooks = createCommerceEntityHooks<{ id: string }>({
+const gastronomyHooks = createListingEntityHooks<{ id: string }>({
     entityName: 'gastronomies',
     apiEndpoint: '/api/v1/admin/gastronomies'
 });
 
-const experienceHooks = createCommerceEntityHooks<{ id: string }>({
+const experienceHooks = createListingEntityHooks<{ id: string }>({
     entityName: 'experiences',
     apiEndpoint: '/api/v1/admin/experiences'
 });

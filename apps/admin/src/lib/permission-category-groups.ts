@@ -49,7 +49,7 @@ import { PermissionCategoryEnum } from '@repo/schemas';
 export const PERMISSION_CATEGORY_GROUPS = [
     'Content Management',
     'User & Access',
-    'Commerce & Billing',
+    'Listing & Billing',
     'Marketing & Advertising',
     'Services & Listings',
     'System & Configuration',
@@ -75,7 +75,7 @@ export const UNGROUPED_CATEGORY_GROUP: PermissionCategoryGroup = 'Other';
 export const GROUP_TRANSLATION_KEYS: Record<PermissionCategoryGroup, TranslationKey> = {
     'Content Management': 'admin-pages.access.permissions.groupContentManagement',
     'User & Access': 'admin-pages.access.permissions.groupUserAccess',
-    'Commerce & Billing': 'admin-pages.access.permissions.groupListingsBilling',
+    'Listing & Billing': 'admin-pages.access.permissions.groupListingsBilling',
     'Marketing & Advertising': 'admin-pages.access.permissions.groupMarketingAdvertising',
     'Services & Listings': 'admin-pages.access.permissions.groupServicesListings',
     'System & Configuration': 'admin-pages.access.permissions.groupSystemConfiguration',
@@ -126,20 +126,20 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
     [PermissionCategoryEnum.PERMISSION]: 'User & Access',
     [PermissionCategoryEnum.CLIENT_ACCESS_RIGHT]: 'User & Access',
 
-    // ---- Commerce & Billing ------------------------------------------------
-    [PermissionCategoryEnum.INVOICE]: 'Commerce & Billing',
-    [PermissionCategoryEnum.INVOICE_LINE]: 'Commerce & Billing',
-    [PermissionCategoryEnum.PAYMENT]: 'Commerce & Billing',
-    [PermissionCategoryEnum.PAYMENT_METHOD]: 'Commerce & Billing',
-    [PermissionCategoryEnum.PURCHASE]: 'Commerce & Billing',
-    [PermissionCategoryEnum.REFUND]: 'Commerce & Billing',
-    [PermissionCategoryEnum.CREDIT_NOTE]: 'Commerce & Billing',
-    [PermissionCategoryEnum.SUBSCRIPTION]: 'Commerce & Billing',
-    [PermissionCategoryEnum.SUBSCRIPTION_ITEM]: 'Commerce & Billing',
-    [PermissionCategoryEnum.PRODUCT]: 'Commerce & Billing',
-    [PermissionCategoryEnum.CLIENT]: 'Commerce & Billing',
-    [PermissionCategoryEnum.BILLING]: 'Commerce & Billing',
-    [PermissionCategoryEnum.EXCHANGE_RATE]: 'Commerce & Billing',
+    // ---- Listing & Billing ------------------------------------------------
+    [PermissionCategoryEnum.INVOICE]: 'Listing & Billing',
+    [PermissionCategoryEnum.INVOICE_LINE]: 'Listing & Billing',
+    [PermissionCategoryEnum.PAYMENT]: 'Listing & Billing',
+    [PermissionCategoryEnum.PAYMENT_METHOD]: 'Listing & Billing',
+    [PermissionCategoryEnum.PURCHASE]: 'Listing & Billing',
+    [PermissionCategoryEnum.REFUND]: 'Listing & Billing',
+    [PermissionCategoryEnum.CREDIT_NOTE]: 'Listing & Billing',
+    [PermissionCategoryEnum.SUBSCRIPTION]: 'Listing & Billing',
+    [PermissionCategoryEnum.SUBSCRIPTION_ITEM]: 'Listing & Billing',
+    [PermissionCategoryEnum.PRODUCT]: 'Listing & Billing',
+    [PermissionCategoryEnum.CLIENT]: 'Listing & Billing',
+    [PermissionCategoryEnum.BILLING]: 'Listing & Billing',
+    [PermissionCategoryEnum.EXCHANGE_RATE]: 'Listing & Billing',
 
     // ---- Marketing & Advertising -------------------------------------------
     [PermissionCategoryEnum.CAMPAIGN]: 'Marketing & Advertising',

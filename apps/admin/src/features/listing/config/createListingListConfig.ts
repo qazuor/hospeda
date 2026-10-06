@@ -1,8 +1,8 @@
 /**
- * @file createCommerceListConfig.ts
- * Factory that produces a fully-typed `EntityConfig` for any commerce entity.
+ * @file createListingListConfig.ts
+ * Factory that produces a fully-typed `EntityConfig` for any listing entity.
  *
- * The shared commerce filter scaffold (destination, featured, ownerId) is
+ * The shared listing filter scaffold (destination, featured, ownerId) is
  * always prepended to the filter bar.  The calling entity may inject extra
  * filters (e.g. gastronomy's type / priceRange) via `extraFilters`.
  *
@@ -11,10 +11,10 @@
  */
 
 import type { EntityConfig } from '@/components/entity-list/types';
-import type { CommerceEntityConfigParams } from '../types';
+import type { ListingEntityConfigParams } from '../types';
 
 /**
- * Shared commerce filter order offsets.
+ * Shared listing filter order offsets.
  * Concrete entities using `extraFilters` should assign `order >= 10`
  * to appear after the shared scaffold.
  */
@@ -26,9 +26,9 @@ const SHARED_FILTER_ORDER = {
 } as const;
 
 /**
- * Builds a complete `EntityConfig` for a commerce-domain entity.
+ * Builds a complete `EntityConfig` for a listing-domain entity.
  *
- * Commerce defaults applied:
+ * Listing defaults applied:
  * - Pagination: `[10, 20, 50, 100]`, default page size `20`.
  * - Search: `minChars: 2`, `debounceMs: 300`, enabled.
  * - View: table, no toggle.
@@ -40,13 +40,13 @@ const SHARED_FILTER_ORDER = {
  * `params.extraFilters` are merged AFTER the shared filters (use `order >= 10`).
  *
  * @typeParam TListItem - The list-row entity type validated by `listItemSchema`.
- * @param params - Commerce entity registration params.
+ * @param params - Listing entity registration params.
  * @returns A fully-typed `EntityConfig` ready for `createEntityListPage()`.
  *
  * @example
  * ```ts
  * // In the gastronomy feature (SPEC-240):
- * const gastronomyListConfig = createCommerceListConfig({
+ * const gastronomyListConfig = createListingListConfig({
  *   entityName: 'gastronomy',
  *   entityKey: 'gastronomy',
  *   entityType: EntityType.GASTRONOMY,
@@ -62,8 +62,8 @@ const SHARED_FILTER_ORDER = {
  * });
  * ```
  */
-export function createCommerceListConfig<TListItem extends { id: string }>(
-    params: CommerceEntityConfigParams<TListItem>
+export function createListingListConfig<TListItem extends { id: string }>(
+    params: ListingEntityConfigParams<TListItem>
 ): EntityConfig<TListItem> {
     const {
         entityName,
@@ -79,7 +79,7 @@ export function createCommerceListConfig<TListItem extends { id: string }>(
     } = params;
 
     // ------------------------------------------------------------------
-    // Shared commerce filter scaffold (no gastronomy values here)
+    // Shared listing filter scaffold (no gastronomy values here)
     // ------------------------------------------------------------------
     const sharedFilters = [
         {
@@ -119,7 +119,7 @@ export function createCommerceListConfig<TListItem extends { id: string }>(
     const mergedFilters = [...sharedFilters, ...extraFilters];
 
     // ------------------------------------------------------------------
-    // Commerce defaults — overrideable via extraListConfig
+    // Listing defaults — overrideable via extraListConfig
     // ------------------------------------------------------------------
     const defaultSearchConfig = {
         minChars: 2,
@@ -164,7 +164,7 @@ export function createCommerceListConfig<TListItem extends { id: string }>(
         // Schema
         listItemSchema,
 
-        // Configuration with commerce defaults (entity can override)
+        // Configuration with listing defaults (entity can override)
         searchConfig: extraListConfig.searchConfig ?? defaultSearchConfig,
         paginationConfig: extraListConfig.paginationConfig ?? defaultPaginationConfig,
         viewConfig: extraListConfig.viewConfig ?? defaultViewConfig,

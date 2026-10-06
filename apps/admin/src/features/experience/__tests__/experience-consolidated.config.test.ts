@@ -11,8 +11,8 @@
  *  - type field has SELECT options for all ExperienceTypeEnum values
  *  - priceUnit field has SELECT options for all billing units
  *  - Metadata includes entityName and entityNamePlural from i18n
- *  - Commerce identity section is first (identity-gating: ownerId is view/edit only, not create)
- *  - Commerce operational section is last
+ *  - Listing identity section is first (identity-gating: ownerId is view/edit only, not create)
+ *  - Listing operational section is last
  *
  * Owner field-gating validation: ownerId field in the identity section is
  * constrained to modes ['view', 'edit'] (not 'create') — only admins can
@@ -46,9 +46,9 @@ describe('createExperienceConsolidatedConfig — sections', () => {
         expect(config.sections).toHaveLength(5);
     });
 
-    it('should have commerce-identity as the first section', () => {
+    it('should have listing-identity as the first section', () => {
         const config = createExperienceConsolidatedConfig(t as never);
-        expect(config.sections[0]?.id).toBe('commerce-identity');
+        expect(config.sections[0]?.id).toBe('listing-identity');
     });
 
     it('should have experience-specific as the second section', () => {
@@ -66,9 +66,9 @@ describe('createExperienceConsolidatedConfig — sections', () => {
         expect(config.sections[3]?.id).toBe('experience-practical-details');
     });
 
-    it('should have commerce-operational as the last section', () => {
+    it('should have listing-operational as the last section', () => {
         const config = createExperienceConsolidatedConfig(t as never);
-        expect(config.sections[4]?.id).toBe('commerce-operational');
+        expect(config.sections[4]?.id).toBe('listing-operational');
     });
 });
 
@@ -300,7 +300,7 @@ describe('createExperienceConsolidatedConfig — practical-details section', () 
         expect(flag?.type).toBe(FieldTypeEnum.SWITCH);
     });
 
-    it('should carry ordinary commerce permissions and NO entitlement gate', () => {
+    it('should carry ordinary listing permissions and NO entitlement gate', () => {
         // Owner decision (2026-09-01): all of this ships from the basic tier.
         // The HOS-974 audit found three entitlements granted and demanded by no
         // route; a key per ficha field manufactures exactly that problem.

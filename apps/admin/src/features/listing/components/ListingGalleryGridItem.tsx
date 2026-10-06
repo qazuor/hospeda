@@ -1,15 +1,15 @@
 /**
- * CommerceGalleryGridItem
+ * ListingGalleryGridItem
  *
- * One photo tile in the commerce gallery grid, extracted from
- * `CommerceGalleryManager` (HOS-389 §1) for the same reason its accommodation
+ * One photo tile in the listing gallery grid, extracted from
+ * `ListingGalleryManager` (HOS-389 §1) for the same reason its accommodation
  * twin `GalleryGridItem` was: adding the make-cover action pushed that file
  * against the project's 500-line limit.
  *
  * Purely presentational — every mutation lives in the parent and arrives as a
  * handler, so this file holds no query state and duplicates no logic.
  *
- * It carries two actions where the accommodation tile carries three: commerce
+ * It carries two actions where the accommodation tile carries three: listing
  * listings have no per-photo text editor (that arrived with HOS-388 on the
  * accommodation side only), so there is no edit button to forward.
  *
@@ -19,19 +19,19 @@
  */
 
 import { LoaderIcon, StarIcon, XCircleIcon } from '@repo/icons';
-import type { CommerceMedia } from '@/features/commerce/hooks/useCommerceMedia';
+import type { ListingMedia } from '@/features/listing/hooks/useListingMedia';
 import type { useTranslations } from '@/hooks/use-translations';
 
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
-/** Props for CommerceGalleryGridItem. */
-export interface CommerceGalleryGridItemProps {
+/** Props for ListingGalleryGridItem. */
+export interface ListingGalleryGridItemProps {
     /** Translation function, forwarded by the parent so every key stays identical. */
     readonly t: ReturnType<typeof useTranslations>['t'];
     /** The photo this tile renders. */
-    readonly item: CommerceMedia;
+    readonly item: ListingMedia;
     /** True while ANY gallery mutation is in flight — disables the actions. */
     readonly anyMutationPending: boolean;
     /** True while the active set-featured mutation targets THIS tile. */
@@ -49,9 +49,9 @@ export interface CommerceGalleryGridItemProps {
 // ---------------------------------------------------------------------------
 
 /**
- * A single commerce gallery tile with its make-cover and remove actions.
+ * A single listing gallery tile with its make-cover and remove actions.
  */
-export function CommerceGalleryGridItem({
+export function ListingGalleryGridItem({
     t,
     item,
     anyMutationPending,
@@ -59,7 +59,7 @@ export function CommerceGalleryGridItem({
     isRemoving,
     onMakeCover,
     onRemove
-}: CommerceGalleryGridItemProps) {
+}: ListingGalleryGridItemProps) {
     return (
         <div className="group relative aspect-square">
             <img

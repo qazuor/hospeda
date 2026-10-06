@@ -9,7 +9,7 @@
  * PATCH, but the `media` JSONB column was dropped (HOS-372) and the update
  * schema silently strips that key — every photo uploaded through this form
  * was orphaned in Cloudinary with no DB row. Photos are now managed via the
- * dedicated Gallery tab (`/gastronomies/:id/gallery`, `CommerceGalleryManager`),
+ * dedicated Gallery tab (`/gastronomies/:id/gallery`, `ListingGalleryManager`),
  * reachable from the `PageTabs` bar below, mirroring accommodations.
  */
 

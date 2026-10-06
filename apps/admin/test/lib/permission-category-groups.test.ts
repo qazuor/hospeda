@@ -6,7 +6,7 @@
  * branches that named each group's members by hand and ended without a final
  * `else`. A category no branch claimed was not collected anywhere — it simply
  * never rendered. Thirty-four of the enum's eighty-one categories were in that
- * state, `HOST_TRADE`, `PARTNER`, `MEDIA`, `MODERATION`, `COMMERCE` and every
+ * state, `HOST_TRADE`, `PARTNER`, `MEDIA`, `MODERATION`, `LISTING` and every
  * `SOCIAL_*` among them, and this page is the only place an operator can see
  * what a role may be granted.
  *

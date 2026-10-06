@@ -52,7 +52,7 @@ export const useExperiencePage = (entityId: string) => {
         () => ({
             // HOS-1077 dual-read: these arrays are evaluated with `.some(...)`,
             // so naming both families IS the dual-read — no new mechanism.
-            // Release 2 drops the COMMERCE_* entries.
+            // Release 2 drops the LISTING_* entries.
             view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
             edit: [PermissionEnum.EXPERIENCE_EDIT_ALL],
             create: [PermissionEnum.EXPERIENCE_CREATE],
@@ -105,7 +105,7 @@ export const useExperiencePage = (entityId: string) => {
 
         updateMutation: {
             // EntityPageBase.handleSave calls mutateAsync with the FLAT form
-            // payload (the field values), but the commerce factory's useUpdate()
+            // payload (the field values), but the listing factory's useUpdate()
             // mutationFn expects `{ id, data }`. Bind the entity id here and wrap
             // the payload — mirrors the host-trade `useUpdate*(id)` pattern.
             // (Calling it directly silently no-ops: id/data come through

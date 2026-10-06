@@ -1,5 +1,5 @@
 /**
- * CommerceGalleryManager
+ * ListingGalleryManager
  *
  * Dedicated gallery management UI for gastronomy/experience listing photos
  * (HOS-382). Vertical-agnostic mirror of accommodations' `GalleryManager` —
@@ -31,7 +31,7 @@
  * - role:'gallery' for ALL uploads (role:'featured' would collide publicId for multiple rows)
  * - No reorder / no dnd-kit
  * - No archive/restore (the admin API exposes no such routes for either
- *   commerce vertical — see `useCommerceMedia` module docs)
+ *   listing vertical — see `useListingMedia` module docs)
  * - Replacing portada is non-destructive (upload → add → setFeatured; backend clears old)
  */
 
@@ -39,17 +39,17 @@ import { AddIcon, LoaderIcon } from '@repo/icons';
 import { ENTITY_GALLERY_CAPS, ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
-import { CommerceGalleryGridItem } from '@/features/commerce/components/CommerceGalleryGridItem';
-import { CommerceGalleryPortadaSection } from '@/features/commerce/components/CommerceGalleryPortadaSection';
+import { ListingGalleryGridItem } from '@/features/listing/components/ListingGalleryGridItem';
+import { ListingGalleryPortadaSection } from '@/features/listing/components/ListingGalleryPortadaSection';
 import {
-    type CommerceMedia,
-    type CommerceMediaVertical,
-    useCommerceMediaAdd,
-    useCommerceMediaAddFeatured,
-    useCommerceMediaList,
-    useCommerceMediaRemove,
-    useCommerceMediaSetFeatured
-} from '@/features/commerce/hooks/useCommerceMedia';
+    type ListingMedia,
+    type ListingMediaVertical,
+    useListingMediaAdd,
+    useListingMediaAddFeatured,
+    useListingMediaList,
+    useListingMediaRemove,
+    useListingMediaSetFeatured
+} from '@/features/listing/hooks/useListingMedia';
 import { useMediaUpload } from '@/hooks/use-media-upload';
 import { useTranslations } from '@/hooks/use-translations';
 import { deriveAltFromEntityName } from '@/lib/utils/media-alt.utils';
@@ -59,11 +59,11 @@ import { deriveAltFromEntityName } from '@/lib/utils/media-alt.utils';
 // ---------------------------------------------------------------------------
 
 /**
- * Props for CommerceGalleryManager.
+ * Props for ListingGalleryManager.
  */
-export interface CommerceGalleryManagerProps {
-    /** Which commerce vertical this gallery belongs to. */
-    readonly vertical: CommerceMediaVertical;
+export interface ListingGalleryManagerProps {
+    /** Which listing vertical this gallery belongs to. */
+    readonly vertical: ListingMediaVertical;
     /** UUID of the gastronomy/experience listing whose gallery is being managed. */
     readonly entityId: string;
     /**
@@ -130,12 +130,12 @@ function useFileInput(onFile: (file: File) => void) {
  *   - One optional `featured` row (the "Portada" slot).
  *   - The remaining non-featured `visible` rows (the gallery grid).
  */
-export function CommerceGalleryManager({
+export function ListingGalleryManager({
     vertical,
     entityId,
     entityName,
     isEntityLoading = false
-}: CommerceGalleryManagerProps) {
+}: ListingGalleryManagerProps) {
     const { t, tPlural } = useTranslations();
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -143,15 +143,15 @@ export function CommerceGalleryManager({
         data: allMedia = [],
         isLoading: isMediaLoading,
         isError
-    } = useCommerceMediaList(vertical, entityId);
+    } = useListingMediaList(vertical, entityId);
     // Gate on BOTH queries — see `isEntityLoading` JSDoc above for why.
     const isLoading = isMediaLoading || isEntityLoading;
 
-    const addMutation = useCommerceMediaAdd(vertical, entityId);
+    const addMutation = useListingMediaAdd(vertical, entityId);
     // HOS-803: the portada uploader has its own one-shot mutation — see below.
-    const addFeaturedMutation = useCommerceMediaAddFeatured(vertical, entityId);
-    const removeMutation = useCommerceMediaRemove(vertical, entityId);
-    const setFeaturedMutation = useCommerceMediaSetFeatured(vertical, entityId);
+    const addFeaturedMutation = useListingMediaAddFeatured(vertical, entityId);
+    const removeMutation = useListingMediaRemove(vertical, entityId);
+    const setFeaturedMutation = useListingMediaSetFeatured(vertical, entityId);
 
     const { uploadEntityImage } = useMediaUpload();
 
@@ -160,8 +160,8 @@ export function CommerceGalleryManager({
     const derivedAlt = deriveAltFromEntityName(entityName);
 
     // ── Derived state ─────────────────────────────────────────────────────────
-    const featuredRow: CommerceMedia | undefined = allMedia.find((m) => m.isFeatured);
-    const galleryRows: CommerceMedia[] = allMedia.filter((m) => !m.isFeatured);
+    const featuredRow: ListingMedia | undefined = allMedia.find((m) => m.isFeatured);
+    const galleryRows: ListingMedia[] = allMedia.filter((m) => !m.isFeatured);
 
     const galleryCap = ENTITY_GALLERY_CAPS[vertical];
 
@@ -370,7 +370,7 @@ export function CommerceGalleryManager({
             {!isLoading && !isError && (
                 <>
                     {/* ── Portada slot ─────────────────────────────────────── */}
-                    <CommerceGalleryPortadaSection
+                    <ListingGalleryPortadaSection
                         t={t}
                         featuredRow={featuredRow}
                         anyMutationPending={anyMutationPending}
@@ -429,7 +429,7 @@ export function CommerceGalleryManager({
                         ) : (
                             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                                 {galleryRows.map((item) => (
-                                    <CommerceGalleryGridItem
+                                    <ListingGalleryGridItem
                                         key={item.id}
                                         t={t}
                                         item={item}

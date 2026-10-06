@@ -1,7 +1,7 @@
 /**
- * CommerceGalleryPortadaSection
+ * ListingGalleryPortadaSection
  *
- * Portada (featured slot) block extracted from `CommerceGalleryManager`
+ * Portada (featured slot) block extracted from `ListingGalleryManager`
  * (HOS-382) to keep both files under the project's 500-line-per-file limit.
  * Purely presentational: all data, mutation state, and handlers are owned by
  * the parent and forwarded as props — this component holds no state of its
@@ -15,7 +15,7 @@
 import { LoaderIcon, UploadIcon, XCircleIcon } from '@repo/icons';
 import type * as React from 'react';
 import { Button } from '@/components/ui/button';
-import type { CommerceMedia } from '@/features/commerce/hooks/useCommerceMedia';
+import type { ListingMedia } from '@/features/listing/hooks/useListingMedia';
 import type { useTranslations } from '@/hooks/use-translations';
 
 // ---------------------------------------------------------------------------
@@ -23,13 +23,13 @@ import type { useTranslations } from '@/hooks/use-translations';
 // ---------------------------------------------------------------------------
 
 /**
- * Props for CommerceGalleryPortadaSection.
+ * Props for ListingGalleryPortadaSection.
  */
-export interface CommerceGalleryPortadaSectionProps {
+export interface ListingGalleryPortadaSectionProps {
     /** Translation function from `useTranslations()`, forwarded by the parent so every i18n key stays identical. */
     readonly t: ReturnType<typeof useTranslations>['t'];
     /** The current featured media row, or `undefined` when no portada is set. */
-    readonly featuredRow: CommerceMedia | undefined;
+    readonly featuredRow: ListingMedia | undefined;
     /** True while any gallery mutation (add/remove/setFeatured) or the upload itself is in flight — disables the portada controls. */
     readonly anyMutationPending: boolean;
     /** True while the underlying upload request is in flight — swaps the trigger icon for a spinner. */
@@ -51,10 +51,10 @@ export interface CommerceGalleryPortadaSectionProps {
 // ---------------------------------------------------------------------------
 
 /**
- * Renders the "Portada" (featured slot) section of the commerce gallery
+ * Renders the "Portada" (featured slot) section of the listing gallery
  * manager. See module docs for the empty-state vs. populated-state split.
  */
-export function CommerceGalleryPortadaSection({
+export function ListingGalleryPortadaSection({
     t,
     featuredRow,
     anyMutationPending,
@@ -64,7 +64,7 @@ export function CommerceGalleryPortadaSection({
     onFileInputChange,
     fileInputRef,
     onRemovePortada
-}: CommerceGalleryPortadaSectionProps) {
+}: ListingGalleryPortadaSectionProps) {
     return (
         <section aria-label={t('admin-pages.gallery.portada.title')}>
             <div className="mb-3 flex items-center justify-between">

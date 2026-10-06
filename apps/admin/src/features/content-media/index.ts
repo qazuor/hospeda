@@ -2,7 +2,7 @@
  * Relational media management for editorial content (posts and events) in the
  * admin panel — HOS-390.
  *
- * Entity-agnostic port of `features/commerce` (HOS-382): `post_media` and
+ * Entity-agnostic port of `features/listing` (HOS-382): `post_media` and
  * `event_media` share a row shape, so one hook file and one manager component
  * serve both, parameterized by the `entity` discriminator.
  */

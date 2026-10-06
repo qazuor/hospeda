@@ -2,30 +2,30 @@
  * @file useGastronomyQuery.ts
  * TanStack Query hooks for gastronomy CRUD operations.
  *
- * These hooks are produced by `createCommerceEntityHooks` — they cover all
+ * These hooks are produced by `createListingEntityHooks` — they cover all
  * standard CRUD mutations (create, update, delete, restore) plus the
- * commerce-specific extras (assign-owner, moderate-review, pending-reviews).
+ * listing-specific extras (assign-owner, moderate-review, pending-reviews).
  *
  * Individual named exports are provided for import ergonomics in components
  * and column factories.
  */
 
 import type { GastronomyAdmin } from '@repo/schemas';
-import { createCommerceEntityHooks } from '@/features/commerce';
+import { createListingEntityHooks } from '@/features/listing';
 
 // ---------------------------------------------------------------------------
-// Factory — produces all CRUD + commerce hooks for the gastronomy entity
+// Factory — produces all CRUD + listing hooks for the gastronomy entity
 // ---------------------------------------------------------------------------
 
 /**
- * Full set of CRUD + commerce hooks for gastronomy listings.
+ * Full set of CRUD + listing hooks for gastronomy listings.
  *
  * @example
  * ```ts
  * const { useGetById, useCreate, useUpdate } = gastronomyHooks;
  * ```
  */
-export const gastronomyHooks = createCommerceEntityHooks<GastronomyAdmin>({
+export const gastronomyHooks = createListingEntityHooks<GastronomyAdmin>({
     entityName: 'gastronomies',
     apiEndpoint: '/api/v1/admin/gastronomies'
 });
@@ -54,7 +54,7 @@ export const useCreateGastronomyMutation = () => gastronomyHooks.useCreate();
 /**
  * Mutation hook to update (PATCH) an existing gastronomy listing.
  *
- * `useUpdate` on the base factory is a full PUT.  Commerce entities use PATCH,
+ * `useUpdate` on the base factory is a full PUT.  Listing entities use PATCH,
  * so we delegate to `useUpdate` — the generic factory routes to PATCH when the
  * API endpoint uses PATCH.  The naming follows the host-trade convention.
  *
@@ -96,7 +96,7 @@ export const useModerateGastronomyReviewMutation = () =>
  *
  * NOT {@link useModerateGastronomyReviewMutation}, which moderates reviews
  * written *about* a listing. This one writes `moderationState` on the listing —
- * the verdict the commerce visibility reconciler reads to take a rejected
+ * the verdict the listing visibility reconciler reads to take a rejected
  * listing off the public site.
  *
  * Shaped as `(id) => mutation` so `InlineStateSelectCell` can drive it.

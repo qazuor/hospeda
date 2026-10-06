@@ -28,7 +28,7 @@ export const Route = createFileRoute('/_authed/gastronomies/new')({
 /**
  * Create page for a new gastronomy listing.
  *
- * The create form includes all commerce identity fields, gastronomy-specific
+ * The create form includes all listing identity fields, gastronomy-specific
  * fields (type, priceRange, menuUrl), and operational fields.  An optional
  * owner can be assigned on creation via the ownerId field in the identity
  * section (backed by OwnerSelect in the consolidated config).

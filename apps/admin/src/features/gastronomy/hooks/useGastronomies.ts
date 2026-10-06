@@ -5,7 +5,7 @@
  * canonical names expected by the task manifest.
  *
  * IMPORTANT: Do NOT duplicate business logic here.  All real implementation
- * lives in `createCommerceEntityHooks` → `gastronomyHooks` in
+ * lives in `createListingEntityHooks` → `gastronomyHooks` in
  * `useGastronomyQuery.ts`.  This file simply re-exports so that callers that
  * import from `useGastronomies` get a stable public surface.
  */

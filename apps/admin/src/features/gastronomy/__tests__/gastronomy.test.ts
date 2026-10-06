@@ -4,8 +4,8 @@
  * Verifies:
  * - Column factory produces the expected columns with correct IDs, types, and
  *   badge options covering all enum values.
- * - `gastronomyListConfig` (built on `createCommerceListConfig`) points to the
- *   correct endpoint, includes shared commerce filters, and appends
+ * - `gastronomyListConfig` (built on `createListingListConfig`) points to the
+ *   correct endpoint, includes shared listing filters, and appends
  *   gastronomy-specific filters (type, priceRange) AFTER the shared ones.
  * - `createGastronomyConsolidatedConfig` assembles exactly 3 sections in the
  *   correct order with the expected field IDs and FieldTypeEnum values.
@@ -114,7 +114,7 @@ describe('gastronomyListConfig', () => {
         expect(gastronomyListConfig.layoutConfig?.createButtonPath).toBe('/gastronomies/new');
     });
 
-    it('always includes the four shared commerce filter params', () => {
+    it('always includes the four shared listing filter params', () => {
         const paramKeys = (gastronomyListConfig.filterBarConfig?.filters ?? []).map(
             (f) => f.paramKey
         );
@@ -183,12 +183,12 @@ describe('createGastronomyConsolidatedConfig', () => {
 
     it('has exactly 3 sections in the correct order', () => {
         expect(config.sections).toHaveLength(3);
-        expect(config.sections[0]?.id).toBe('commerce-identity');
+        expect(config.sections[0]?.id).toBe('listing-identity');
         expect(config.sections[1]?.id).toBe('gastronomy-specific');
-        expect(config.sections[2]?.id).toBe('commerce-operational');
+        expect(config.sections[2]?.id).toBe('listing-operational');
     });
 
-    it('commerce-identity section contains required core text fields', () => {
+    it('listing-identity section contains required core text fields', () => {
         const ids = config.sections[0]?.fields.map((f) => f.id) ?? [];
         expect(ids).toContain('name');
         expect(ids).toContain('slug');
@@ -230,14 +230,14 @@ describe('createGastronomyConsolidatedConfig', () => {
         expect(section?.modes).toContain('create');
     });
 
-    it('commerce-operational section contains contact and social fields', () => {
+    it('listing-operational section contains contact and social fields', () => {
         const ids = config.sections[2]?.fields.map((f) => f.id) ?? [];
         expect(ids).toContain('contactInfo.phone');
         expect(ids).toContain('contactInfo.email');
         expect(ids).toContain('socialNetworks.instagram');
     });
 
-    it('commerce-identity section does NOT contain gastronomy-specific fields', () => {
+    it('listing-identity section does NOT contain gastronomy-specific fields', () => {
         const ids = config.sections[0]?.fields.map((f) => f.id) ?? [];
         expect(ids).not.toContain('type');
         expect(ids).not.toContain('priceRange');

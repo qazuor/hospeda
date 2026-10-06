@@ -1,6 +1,6 @@
 /**
- * @file CommerceListingModerationCard.tsx
- * The admin's reject control for a commerce listing (HOS-686, AC-26).
+ * @file ListingModerationCard.tsx
+ * The admin's reject control for a listing (HOS-686, AC-26).
  *
  * A route with no control is reachable only by a hand-crafted request, so
  * `POST /:id/moderate` is not a rejection action until an admin can click it.
@@ -10,7 +10,7 @@
  * ## Why one component instead of two panels
  *
  * Gastronomy and experience inherit ONE `moderate()` from
- * `BaseCommerceListingService` (HOS-589 G-2). Giving each vertical its own
+ * `BaseListingService` (HOS-589 G-2). Giving each vertical its own
  * copy of the widget would reintroduce, in the panel, exactly the per-domain
  * divergence the shared base exists to prevent — the two would drift on copy,
  * on confirm behaviour, or on which permission gates them. Each route passes
@@ -34,10 +34,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CONTENT_MODERATION_OPTIONS } from '@/features/content/config/content-state-options';
 import { useTranslations } from '@/hooks/use-translations';
-import type { ListingModerationPatch } from '../hooks/createCommerceEntityHooks';
+import type { ListingModerationPatch } from '../hooks/createListingEntityHooks';
 
-/** Props for {@link CommerceListingModerationCard}. RO-RO pattern. */
-export interface CommerceListingModerationCardProps {
+/** Props for {@link ListingModerationCard}. RO-RO pattern. */
+export interface ListingModerationCardProps {
     /** UUID of the listing being moderated. */
     readonly entityId: string;
     /** Human-readable listing name, interpolated into the success toast. */
@@ -61,18 +61,18 @@ export interface CommerceListingModerationCardProps {
  *
  * @param props - Listing identity plus the vertical's moderate mutation hook.
  */
-export function CommerceListingModerationCard({
+export function ListingModerationCard({
     entityId,
     entityName,
     entityLabelKey,
     currentValue,
     permission,
     useModerateMutation
-}: CommerceListingModerationCardProps) {
+}: ListingModerationCardProps) {
     const { t } = useTranslations();
 
     return (
-        <Card data-testid="commerce-listing-moderation">
+        <Card data-testid="listing-moderation">
             <CardHeader>
                 <CardTitle className="font-medium text-sm">
                     {t('admin-entities.columns.moderation')}

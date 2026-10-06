@@ -10,7 +10,7 @@
  * All fetchers unwrap the `{success, data: {items, pagination}}` API envelope.
  * Gate: ALLIANCE_LEAD_VIEW_ALL (list) / ALLIANCE_LEAD_MANAGE (mutation).
  *
- * Unlike `useCommerceLeads`, there is deliberately NO provision-owner or
+ * Unlike the retired owner-lead hooks, there is deliberately NO provision-owner or
  * approve-and-provision mutation here — approving an alliance lead never
  * auto-provisions any role/entity in V1 (HOS-277 NG-1); the admin follows up
  * manually.

@@ -1,19 +1,19 @@
 /**
- * useCommerceMedia — TanStack Query hooks for granular gallery CRUD on the
+ * useListingMedia — TanStack Query hooks for granular gallery CRUD on the
  * relational `gastronomy_media` / `experience_media` tables (HOS-372 → HOS-382).
  *
  * Vertical-agnostic: every hook takes a `vertical` argument (`'gastronomy'` or
  * `'experience'`) and resolves the correct admin endpoint from it. This
- * mirrors `useFaqs`'s `(entityType, parentId)` shape — the same two commerce
+ * mirrors `useFaqs`'s `(entityType, parentId)` shape — the same two listing
  * verticals already share that hook — rather than duplicating one hook file
  * per vertical.
  *
  * Exposes:
- *  - useCommerceMediaList(vertical, entityId)        → list query (GET)
- *  - useCommerceMediaAdd(vertical, entityId)         → add mutation (POST)
- *  - useCommerceMediaAddFeatured(vertical, entityId) → cover upload (POST, HOS-803)
- *  - useCommerceMediaRemove(vertical, entityId)      → remove mutation (DELETE)
- *  - useCommerceMediaSetFeatured(vertical, entityId) → set-featured mutation (PUT)
+ *  - useListingMediaList(vertical, entityId)        → list query (GET)
+ *  - useListingMediaAdd(vertical, entityId)         → add mutation (POST)
+ *  - useListingMediaAddFeatured(vertical, entityId) → cover upload (POST, HOS-803)
+ *  - useListingMediaRemove(vertical, entityId)      → remove mutation (DELETE)
+ *  - useListingMediaSetFeatured(vertical, entityId) → set-featured mutation (PUT)
  *
  * All mutations invalidate BOTH the list query and the cached entity on success
  * via the shared query key factories (HOS-389 §3). Reorder is intentionally omitted, mirroring the accommodation
@@ -25,9 +25,9 @@
  * reorder exist, and reorder is deliberately unused here too).
  *
  * Response envelope shape (mirrors the accommodation media endpoints):
- *   GET  → { success: true, data: { media: CommerceMedia[] } }
- *   POST → { success: true, data: { media: CommerceMedia } }
- *   PUT  → { success: true, data: { media: CommerceMedia } }
+ *   GET  → { success: true, data: { media: ListingMedia[] } }
+ *   POST → { success: true, data: { media: ListingMedia } }
+ *   PUT  → { success: true, data: { media: ListingMedia } }
  */
 
 import type {
@@ -44,39 +44,39 @@ import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 // Types
 // ---------------------------------------------------------------------------
 
-/** Commerce verticals whose gallery is managed via the relational media tables. */
-export type CommerceMediaVertical = 'gastronomy' | 'experience';
+/** Listing verticals whose gallery is managed via the relational media tables. */
+export type ListingMediaVertical = 'gastronomy' | 'experience';
 
 /**
- * A single gallery photo row, from either commerce vertical.
+ * A single gallery photo row, from either listing vertical.
  *
  * `GastronomyMedia` and `ExperienceMedia` differ only in their parent FK
  * field (`gastronomyId` vs `experienceId`) — every field the UI reads
  * (`id`, `url`, `isFeatured`, `caption`, `alt`, `state`, `sortOrder`, …) is
- * shared via `BaseCommerceMediaSchema`, so a union is safe to consume here.
+ * shared via `BaseListingMediaSchema`, so a union is safe to consume here.
  */
-export type CommerceMedia = GastronomyMedia | ExperienceMedia;
+export type ListingMedia = GastronomyMedia | ExperienceMedia;
 
 /**
- * Payload for adding a single photo to a commerce listing gallery.
+ * Payload for adding a single photo to a listing gallery.
  * Identical shape across both verticals (both extend the same base schema).
  */
-export type CommerceMediaAddPayload = GastronomyMediaAddPayload | ExperienceMediaAddPayload;
+export type ListingMediaAddPayload = GastronomyMediaAddPayload | ExperienceMediaAddPayload;
 
 // ---------------------------------------------------------------------------
 // Query key factory
 // ---------------------------------------------------------------------------
 
 /**
- * Centralised query key factory for commerce media queries.
+ * Centralised query key factory for listing media queries.
  * Using a factory keeps all invalidations consistent and avoids typo-driven
  * stale-data bugs.
  */
-export const commerceMediaQueryKeys = {
-    all: (vertical: CommerceMediaVertical, entityId: string) =>
-        ['commerceMedia', vertical, entityId] as const,
-    list: (vertical: CommerceMediaVertical, entityId: string) =>
-        [...commerceMediaQueryKeys.all(vertical, entityId), 'list'] as const
+export const listingMediaQueryKeys = {
+    all: (vertical: ListingMediaVertical, entityId: string) =>
+        ['listingMedia', vertical, entityId] as const,
+    list: (vertical: ListingMediaVertical, entityId: string) =>
+        [...listingMediaQueryKeys.all(vertical, entityId), 'list'] as const
 };
 
 // ---------------------------------------------------------------------------
@@ -84,12 +84,12 @@ export const commerceMediaQueryKeys = {
 // ---------------------------------------------------------------------------
 
 /** Maps the singular vertical name to its plural admin route segment. */
-const VERTICAL_ROUTE_SEGMENT: Record<CommerceMediaVertical, string> = {
+const VERTICAL_ROUTE_SEGMENT: Record<ListingMediaVertical, string> = {
     gastronomy: 'gastronomies',
     experience: 'experiences'
 };
 
-const mediaEndpoint = (vertical: CommerceMediaVertical, entityId: string) =>
+const mediaEndpoint = (vertical: ListingMediaVertical, entityId: string) =>
     `/api/v1/admin/${VERTICAL_ROUTE_SEGMENT[vertical]}/${entityId}/media`;
 
 /**
@@ -102,7 +102,7 @@ const mediaEndpoint = (vertical: CommerceMediaVertical, entityId: string) =>
  * happened to refresh it.
  *
  * The entity key is built from the same `VERTICAL_ROUTE_SEGMENT` map the
- * endpoint uses, which is also the `entityName` the commerce entity hooks are
+ * endpoint uses, which is also the `entityName` the listing entity hooks are
  * created with (`'gastronomies'` / `'experiences'`) — so the two cannot drift
  * apart into invalidating a key nobody reads.
  *
@@ -112,11 +112,11 @@ const mediaEndpoint = (vertical: CommerceMediaVertical, entityId: string) =>
  */
 function invalidateAfterMediaMutation(
     queryClient: ReturnType<typeof useQueryClient>,
-    vertical: CommerceMediaVertical,
+    vertical: ListingMediaVertical,
     entityId: string
 ): void {
     queryClient.invalidateQueries({
-        queryKey: commerceMediaQueryKeys.list(vertical, entityId)
+        queryKey: listingMediaQueryKeys.list(vertical, entityId)
     });
     queryClient.invalidateQueries({
         queryKey: createEntityQueryKeys(VERTICAL_ROUTE_SEGMENT[vertical]).detail(entityId)
@@ -128,24 +128,24 @@ function invalidateAfterMediaMutation(
 // ---------------------------------------------------------------------------
 
 /**
- * Fetches the list of visible media rows for a given commerce listing.
+ * Fetches the list of visible media rows for a given listing.
  *
  * The endpoint defaults to `state=visible` when no filter is supplied, which
- * is what `CommerceGalleryManager` always uses (archive management is out of
+ * is what `ListingGalleryManager` always uses (archive management is out of
  * scope for the admin panel's gallery tab — see module docs above).
  *
  * @param vertical - `'gastronomy'` or `'experience'`.
  * @param entityId - UUID of the gastronomy/experience listing.
  */
-export function useCommerceMediaList(vertical: CommerceMediaVertical, entityId: string) {
+export function useListingMediaList(vertical: ListingMediaVertical, entityId: string) {
     return useQuery({
-        queryKey: commerceMediaQueryKeys.list(vertical, entityId),
+        queryKey: listingMediaQueryKeys.list(vertical, entityId),
         queryFn: async () => {
             const response = await fetchApi<unknown>({
                 path: `${mediaEndpoint(vertical, entityId)}?state=visible`
             });
-            // API returns { success: true, data: { media: CommerceMedia[] } }
-            const body = response.data as { data?: { media?: CommerceMedia[] } };
+            // API returns { success: true, data: { media: ListingMedia[] } }
+            const body = response.data as { data?: { media?: ListingMedia[] } };
             return body.data?.media ?? [];
         },
         enabled: Boolean(entityId),
@@ -158,11 +158,11 @@ export function useCommerceMediaList(vertical: CommerceMediaVertical, entityId: 
 // ---------------------------------------------------------------------------
 
 /**
- * Mutation to add a new photo to a commerce listing gallery.
+ * Mutation to add a new photo to a listing gallery.
  *
  * The caller must first upload the file via `uploadEntityImage.mutateAsync`
  * (from `useMediaUpload`) to get the `{ url, publicId }` pair, then pass
- * both to this mutation as part of the `CommerceMediaAddPayload`.
+ * both to this mutation as part of the `ListingMediaAddPayload`.
  *
  * On success the list query is invalidated so the UI refetches the updated
  * gallery from the server.
@@ -170,17 +170,17 @@ export function useCommerceMediaList(vertical: CommerceMediaVertical, entityId: 
  * @param vertical - `'gastronomy'` or `'experience'`.
  * @param entityId - UUID of the gastronomy/experience listing.
  */
-export function useCommerceMediaAdd(vertical: CommerceMediaVertical, entityId: string) {
+export function useListingMediaAdd(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (payload: CommerceMediaAddPayload) => {
+        mutationFn: async (payload: ListingMediaAddPayload) => {
             const response = await fetchApi<unknown>({
                 path: mediaEndpoint(vertical, entityId),
                 method: 'POST',
                 body: payload
             });
-            const body = response.data as { data?: { media?: CommerceMedia } };
+            const body = response.data as { data?: { media?: ListingMedia } };
             const media = body.data?.media;
             if (!media) {
                 throw new Error(
@@ -219,11 +219,11 @@ export function useCommerceMediaAdd(vertical: CommerceMediaVertical, entityId: s
  * @param vertical - `'gastronomy'` or `'experience'`.
  * @param entityId - UUID of the listing.
  */
-export function useCommerceMediaAddFeatured(vertical: CommerceMediaVertical, entityId: string) {
+export function useListingMediaAddFeatured(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (payload: CommerceMediaAddPayload) => {
+        mutationFn: async (payload: ListingMediaAddPayload) => {
             const response = await fetchApi<unknown>({
                 path: `${mediaEndpoint(vertical, entityId)}/featured`,
                 method: 'POST',
@@ -231,7 +231,7 @@ export function useCommerceMediaAddFeatured(vertical: CommerceMediaVertical, ent
             });
             const body = response.data as {
                 data?: {
-                    media?: CommerceMedia;
+                    media?: ListingMedia;
                     previousFeatured?: { readonly id: string } | null;
                 };
             };
@@ -262,7 +262,7 @@ export function useCommerceMediaAddFeatured(vertical: CommerceMediaVertical, ent
  * @param vertical - `'gastronomy'` or `'experience'`.
  * @param entityId - UUID of the gastronomy/experience listing.
  */
-export function useCommerceMediaRemove(vertical: CommerceMediaVertical, entityId: string) {
+export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -294,7 +294,7 @@ export function useCommerceMediaRemove(vertical: CommerceMediaVertical, entityId
  * @param vertical - `'gastronomy'` or `'experience'`.
  * @param entityId - UUID of the gastronomy/experience listing.
  */
-export function useCommerceMediaSetFeatured(vertical: CommerceMediaVertical, entityId: string) {
+export function useListingMediaSetFeatured(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -303,7 +303,7 @@ export function useCommerceMediaSetFeatured(vertical: CommerceMediaVertical, ent
                 path: `${mediaEndpoint(vertical, entityId)}/${mediaId}/featured`,
                 method: 'PUT'
             });
-            const body = response.data as { data?: { media?: CommerceMedia } };
+            const body = response.data as { data?: { media?: ListingMedia } };
             const media = body.data?.media;
             if (!media) {
                 throw new Error(

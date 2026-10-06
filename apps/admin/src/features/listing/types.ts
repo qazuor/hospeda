@@ -1,14 +1,14 @@
 /**
  * @file types.ts
- * Generic commerce admin config-layer types.
+ * Generic listing admin config-layer types.
  *
- * These types are ZERO-gastronomy-specific.  A concrete commerce entity
+ * These types are ZERO-gastronomy-specific.  A concrete listing entity
  * (gastronomy, experiences, …) registers its list page and form layer by
  * instantiating these parameter objects and passing them to the builder
  * functions in this feature.
  *
  * The types are THIN wrappers over the existing shell types (`EntityConfig`,
- * `ConsolidatedEntityConfig`) — they add only the commerce-domain contract
+ * `ConsolidatedEntityConfig`) — they add only the listing-domain contract
  * (shared filters, assign-owner, review moderation) without duplicating the
  * shell's field definitions.
  */
@@ -24,14 +24,14 @@ import type { ConsolidatedEntityConfig } from '@/features/accommodations/types/c
 // ---------------------------------------------------------------------------
 
 /**
- * Parameters required to register a commerce entity's list page.
+ * Parameters required to register a listing entity's list page.
  *
- * Pass this to `createCommerceListConfig()` to get a fully typed `EntityConfig`
+ * Pass this to `createListingListConfig()` to get a fully typed `EntityConfig`
  * that can be handed directly to `createEntityListPage()`.
  *
  * @typeParam TListItem - The list-row shape validated by `listItemSchema`.
  */
-export type CommerceEntityConfigParams<TListItem extends { id: string }> = {
+export type ListingEntityConfigParams<TListItem extends { id: string }> = {
     /**
      * Human-readable entity name key (e.g. `'gastronomy'`).
      * Used as the `name` field in `EntityConfig` and as the TanStack Query root key.
@@ -45,7 +45,7 @@ export type CommerceEntityConfigParams<TListItem extends { id: string }> = {
     readonly entityKey: string;
 
     /**
-     * Discriminant value from the `EntityType` enum for this commerce entity.
+     * Discriminant value from the `EntityType` enum for this listing entity.
      * Each concrete entity must supply its own registered `EntityType` value.
      */
     readonly entityType: EntityType;
@@ -81,7 +81,7 @@ export type CommerceEntityConfigParams<TListItem extends { id: string }> = {
 
     /**
      * Additional entity-specific filter controls appended to the shared
-     * commerce filters (destination, featured, ownerId).
+     * listing filters (destination, featured, ownerId).
      *
      * For example, gastronomy adds `gastronomyType` and `priceRange`.
      * Evaluated as ordered-AFTER the shared filters; set `order` accordingly.
@@ -89,11 +89,11 @@ export type CommerceEntityConfigParams<TListItem extends { id: string }> = {
     readonly extraFilters?: ReadonlyArray<FilterControlConfig>;
 
     /**
-     * Optional overrides applied on top of the shared commerce `EntityConfig`
+     * Optional overrides applied on top of the shared listing `EntityConfig`
      * defaults (pagination, search, view, layout).
      *
      * Only the fields provided here are overridden; omitted fields keep the
-     * shared commerce defaults.
+     * shared listing defaults.
      */
     readonly extraListConfig?: Partial<
         Pick<
@@ -109,16 +109,16 @@ export type CommerceEntityConfigParams<TListItem extends { id: string }> = {
 
 /**
  * Parameters required to build the consolidated form configuration for a
- * commerce entity.
+ * listing entity.
  *
- * Pass this to the builder in `createCommerceEntityHooks` (or use directly)
- * to extend the shared `createCommerceIdentitySection()` /
- * `createCommerceOperationalSection()` with entity-specific sections.
+ * Pass this to the builder in `createListingEntityHooks` (or use directly)
+ * to extend the shared `createListingIdentitySection()` /
+ * `createListingOperationalSection()` with entity-specific sections.
  *
  * The result is a `ConsolidatedEntityConfig` suitable for `EntityPageBase`
  * (view/edit flow) and `EntityCreateContent` (create flow).
  */
-export type CommerceConsolidatedConfigParams = {
+export type ListingConsolidatedConfigParams = {
     /**
      * Translated singular label for the entity (e.g. `'Gastronomía'`).
      * Becomes `ConsolidatedEntityConfig.metadata.entityName`.
@@ -132,7 +132,7 @@ export type CommerceConsolidatedConfigParams = {
     readonly entityNamePlural: string;
 
     /**
-     * Entity-specific sections to inject AFTER the shared commerce sections
+     * Entity-specific sections to inject AFTER the shared listing sections
      * (`identity` and `operational`).
      *
      * Pass an empty array when no extra sections are needed.

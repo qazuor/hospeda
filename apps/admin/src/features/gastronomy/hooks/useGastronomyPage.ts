@@ -4,7 +4,7 @@
  *
  * Centralises data loading, mode switching, and navigation so route components
  * stay thin.  Mirrors the `useHostTradePage` pattern adapted for the full
- * commerce entity scope (COMMERCE_* permissions).
+ * listing entity scope (LISTING_* permissions).
  */
 
 import { PermissionEnum } from '@repo/schemas';
@@ -52,7 +52,7 @@ export const useGastronomyPage = (entityId: string) => {
         () => ({
             // HOS-1077 dual-read: these arrays are evaluated with `.some(...)`,
             // so naming both families IS the dual-read — no new mechanism.
-            // Release 2 drops the COMMERCE_* entries.
+            // Release 2 drops the LISTING_* entries.
             view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
             edit: [PermissionEnum.GASTRONOMY_EDIT_ALL],
             create: [PermissionEnum.GASTRONOMY_CREATE],
@@ -105,7 +105,7 @@ export const useGastronomyPage = (entityId: string) => {
 
         updateMutation: {
             // EntityPageBase.handleSave calls mutateAsync with the FLAT form
-            // payload (the field values), but the commerce factory's useUpdate()
+            // payload (the field values), but the listing factory's useUpdate()
             // mutationFn expects `{ id, data }`. Bind the entity id here and wrap
             // the payload — mirrors the host-trade `useUpdate*(id)` pattern.
             // (Calling it directly silently no-ops: id/data come through

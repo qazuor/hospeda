@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 /**
- * Tests for `CommerceListingModerationCard` (HOS-686, AC-26).
+ * Tests for `ListingModerationCard` (HOS-686, AC-26).
  *
  * "A route with no control is reachable only by a hand-crafted request", so the
  * things worth asserting are the ones that would silently make the button do
@@ -22,7 +22,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { CommerceListingModerationCard } from '../CommerceListingModerationCard';
+import { ListingModerationCard } from '../ListingModerationCard';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -46,7 +46,7 @@ const LISTING_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
 function renderCard() {
     return render(
-        React.createElement(CommerceListingModerationCard, {
+        React.createElement(ListingModerationCard, {
             entityId: LISTING_ID,
             entityName: 'Bar del Puerto',
             entityLabelKey: 'admin-entities.entities.gastronomy.singular',
@@ -67,7 +67,7 @@ beforeEach(() => {
 // With the permission
 // ---------------------------------------------------------------------------
 
-describe('CommerceListingModerationCard — an authorised admin can reject (AC-26)', () => {
+describe('ListingModerationCard — an authorised admin can reject (AC-26)', () => {
     beforeEach(() => {
         permissions.mockReturnValue([PermissionEnum.GASTRONOMY_MODERATION_CHANGE]);
     });
@@ -118,7 +118,7 @@ describe('CommerceListingModerationCard — an authorised admin can reject (AC-2
 // Without the permission
 // ---------------------------------------------------------------------------
 
-describe('CommerceListingModerationCard — an unauthorised admin cannot (AC-26)', () => {
+describe('ListingModerationCard — an unauthorised admin cannot (AC-26)', () => {
     it('does not let an experience moderator change a gastronomy listing', () => {
         permissions.mockReturnValue([PermissionEnum.EXPERIENCE_MODERATION_CHANGE]);
         renderCard();
@@ -126,7 +126,7 @@ describe('CommerceListingModerationCard — an unauthorised admin cannot (AC-26)
     });
 
     it('renders read-only when the actor lacks GASTRONOMY_MODERATION_CHANGE', () => {
-        // Holding every OTHER commerce permission, including the review one, is
+        // Holding every OTHER listing permission, including the review one, is
         // still not enough — the panel mirrors the server-side gate.
         permissions.mockReturnValue([
             PermissionEnum.GASTRONOMY_EDIT_ALL,

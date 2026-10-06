@@ -12,7 +12,7 @@ import * as mod from '../../../../src/routes/_authed/experiences/$id_.edit';
  * HOS-372), so the schema silently stripped it on every PATCH. Every photo
  * uploaded through those fields reached Cloudinary but never got a DB row —
  * a permanently-billed orphan. Photos are now managed exclusively via the
- * relational Gallery tab (`CommerceGalleryManager`,
+ * relational Gallery tab (`ListingGalleryManager`,
  * `/experiences/:id/gallery`), so this test now guards the opposite: the
  * edit page must NEVER forward `fieldHandlers` to `EntityEditContent` again.
  */
