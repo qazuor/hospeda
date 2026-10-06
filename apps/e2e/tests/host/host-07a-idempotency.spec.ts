@@ -34,7 +34,6 @@
 
 import { expect, test } from '@playwright/test';
 import {
-    createSubscription,
     forceVerifyEmail,
     getAnyCityDestinationId,
     signupUser,
@@ -69,29 +68,6 @@ test.describe('HOST-07a: onboarding create-always + re-promotion @p0 @host @onbo
             type: 'house',
             cityDestinationId: cityId
         };
-
-        // ── Pre-seed premium subscription BEFORE Call 1 ───────────────────
-        // The default owner-basico plan has max_accommodations=1. Since BETA-197
-        // each /start CREATES a draft and drafts count against the limit, so with
-        // owner-basico Call 2 would be blocked by enforceAccommodationLimit
-        // (LIMIT_REACHED). Pre-seeding owner-premium (max_accommodations=10) before
-        // Call 1 populates the entitlement cache with premium limits on the first
-        // API call, so Calls 2 and 3 pass the limit check and each create a draft.
-        // Note: createSubscription uses SELECT-or-INSERT for the billing_customers
-        // row, so it works correctly even before the onboarding endpoint creates any
-        // billing state.
-        const premiumPlanRows = await execSQL<{ id: string }>(
-            `SELECT id FROM billing_plans
-             WHERE name = 'owner-premium' AND active = true
-             LIMIT 1`
-        );
-        if (premiumPlanRows[0]?.id) {
-            await createSubscription({
-                userId: user.id,
-                planId: premiumPlanRows[0].id,
-                status: 'active'
-            });
-        }
 
         // ── Call 1: created ────────────────────────────────────────────────
         // In local dev (NODE_ENV !== 'test'), the rate limiter may fire 429 after

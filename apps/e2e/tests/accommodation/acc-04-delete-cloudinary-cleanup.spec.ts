@@ -27,12 +27,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createAccommodation,
-    createSubscription,
-    createUser,
-    forceVerifyEmail
-} from '../../fixtures/api-helpers.ts';
+import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import {
     buildE2eFolderRoot,
     getCloudinaryEnv,
@@ -69,21 +64,6 @@ test.describe('ACC-04: soft delete + Cloudinary cleanup contract @p0 @accommodat
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
         await forceVerifyEmail(host.id);
-
-        const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
-        );
-        const planId = planRows[0]?.id;
-        if (!planId) {
-            test.fixme(true, 'No billing plan in seed — ACC-04 cannot run');
-            return;
-        }
-
-        await createSubscription({
-            userId: host.id,
-            planId,
-            status: 'active'
-        });
 
         const accommodation = await createAccommodation({
             ownerId: host.id,
