@@ -955,9 +955,6 @@ function buildAuth() {
                             );
                         }
                     }
-                },
-                update: {
-                    after: async (_user) => {}
                 }
             }
         },

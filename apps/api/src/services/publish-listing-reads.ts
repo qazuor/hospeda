@@ -67,8 +67,8 @@ export const isCommercePublishVertical = (
  * against the whole-module `vi.mock('@repo/db')` that `test/setup.ts` installs:
  * the mock declares no `AccommodationModel`, so the import itself threw before
  * any test body ran (CI shard 5/5). Same reasoning as
- * `buildAccommodationPublishDeps`, which takes a billing *getter* rather than a
- * client so a route module instantiated at boot resolves lazily.
+ * the lazy service readers here, which defer model construction until the
+ * route actually needs the service.
  *
  * Memoised, so the request path still pays one construction per process.
  */
