@@ -289,13 +289,13 @@ past-due dunning grace (7 days, `past_due` status), cron-lag grace (6h, `active`
 
 For MP sandbox setup, webhook configuration, sandbox test-user creation, and rollback: see [`docs/migration/mercadopago-sandbox-runbook.md`](docs/migration/mercadopago-sandbox-runbook.md). For incident response: [`docs/billing/billing-runbooks.md`](docs/billing/billing-runbooks.md). For entitlement gate decisions: [`docs/billing/endpoint-gate-matrix.md`](docs/billing/endpoint-gate-matrix.md).
 
-#### Commerce subscription isolation (SPEC-239)
+#### Gastronomy and experience subscription isolation (SPEC-239)
 
-Commerce listings use a **separate billing domain** that must never pollute the
+Gastronomy and experience listings use a **separate billing domain** that must never pollute the
 accommodation entitlement engine:
 
 - `billing_subscriptions.product_domain` — **one domain per vertical**, not a single
-  `'commerce'` bucket. `ProductDomainEnum` holds six values:
+  shared legacy bucket. `ProductDomainEnum` holds six values:
   `'accommodation'` (host subscriptions), `'gastronomy'`, `'experience'`,
   `'partner'`, `'tourist'` (HOS-1233 — the tourist tiers, which own no listings
   at all; before that spec they were filed as `'accommodation'`, so every read
@@ -307,9 +307,9 @@ accommodation entitlement engine:
   "the plan this person pays for". It counts no other domain, so a user who is at
   once a host, a restaurant owner and a partner keeps correct accommodation
   entitlements regardless of the other subscriptions' state.
-- **`'commerce'` is a RETIRED value** (release B / HOS-692) that survives only on
+- **The former shared domain value is RETIRED** (release B / HOS-692) that survives only on
   legacy rows. HOS-695 narrowed the match on purpose: a row still carrying
-  `'commerce'` satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
+  that retired value satisfies **neither** `'gastronomy'` **nor** `'experience'`, so it
   goes dark rather than silently matching a vertical it was never resolved to. Do
   not "fix" that by widening the comparison — a dark listing is the intended
   failure mode.
@@ -319,9 +319,9 @@ accommodation entitlement engine:
   reads asymmetrically by design: **`accommodation` fails open** (a missing object,
   or a `null`/`undefined` column, counts as accommodation, because the column
   post-dates most rows), while **every other domain fails closed**. To test
-  membership across all commerce verticals at once, call it once per domain —
+  membership across all gastronomy and experience verticals at once, call it once per domain —
   there is no union helper, and there deliberately is not one: `HOS-1081`
-  (`ebfd413e0`) deleted `isCommerceSubscription()` because it had zero callers
+  (`ebfd413e0`) deleted the removed shared-domain subscription helper because it had zero callers
   outside its own file and tests. Do not reintroduce it without a consumer, and
   do not reach for `isAccommodationSubscription()` as a substitute — it answers
   a different question and, unlike the rest, fails OPEN.
@@ -367,24 +367,24 @@ accommodation entitlement engine:
   errors. Call `hydrateSubscriptionProductDomains()` first, or read the column
   straight from Drizzle. `scripts/check-subscription-domain-hydration.sh` (HOS-1176)
   fails CI on a comparison whose file does neither.
-- The commerce-vertical plans in `billing_plans` carry their own
+- The gastronomy and experience plans in `billing_plans` carry their own
   `product_domain` and are intentionally kept OUT of `ALL_PLANS`, so the
   accommodation seed loop, `GET /api/v1/public/plans` and the grant-matrix
   snapshot tests all stay accommodation-only.
-- `entity_subscriptions` (renamed from `commerce_listing_subscriptions` by
+- `entity_subscriptions` (renamed from the former listing-subscription table by
   HOS-1084) — **ONE subscription-status cache for the three verticals**, not a
-  commerce-only link table. One row per LISTING, `UNIQUE(entity_type, entity_id)`,
+  vertical-specific link table. One row per LISTING, `UNIQUE(entity_type, entity_id)`,
   where `entity_type` is `'accommodation' | 'gastronomy' | 'experience'`. It does
   two jobs and not every vertical needs both: it maps a subscription to the
-  listings it covers (commerce needs this; accommodation resolves its listings
+  listings it covers (gastronomy and experience need this; accommodation resolves its listings
   from `accommodations.owner_id`), and it lets a public request read the status
-  without joining `billing_subscriptions` (both need this). The commerce
+  without joining `billing_subscriptions` (both need this). The listing
   visibility reconciler reads it to decide whether a listing is public;
   `owner-entitlement.ts` reads it to resolve a host's entitlements without
   walking QZPay.
   Three things not to break:
   - the UNIQUE is per **listing**, never per subscription — one subscription
-    legitimately owns many rows (a host's whole portfolio, a commerce owner's
+    legitimately owns many rows (a host's whole portfolio, a gastronomy or experience owner's
     1/3/10 cap), and a unique on `subscription_id` would reject the second
     property of every multi-property host;
   - a row with `subscription_id = NULL` and `status = 'none'` is a **negative
@@ -395,7 +395,7 @@ accommodation entitlement engine:
     live resolution. Only a row that is present AND wrong can lie, which is what
     the write-through path and the reconcile cron defend.
 - **TWO reconcilers, and the second one is partners.** `reconcileSubscriptionLinkedEntities`
-  (`apps/api/src/services/subscription-linked-entities.service.ts`) drives commerce
+  (`apps/api/src/services/subscription-linked-entities.service.ts`) drives listing
   visibility AND the accommodation `entity_subscriptions` cache. It does **not**
   touch partners: `reconcilePartnerForSubscription`
   (`apps/api/src/services/partner-reconcile.service.ts`) is a separate bridge
@@ -412,8 +412,8 @@ accommodation entitlement engine:
   call site cannot be born with the gap silently.
   HOS-1306 measured the four then-unwired sites and found **zero real gaps** —
   `subscription-comp-grant` had already been wired by HOS-1160, and a partner
-  subscription cannot reach the other three (the commerce attach path is closed by
-  `CommerceVertical = 'gastronomy' | 'experience'` plus `subscriptionMatchesDomain`'s
+  subscription cannot reach the other three (the listing attach path is closed by
+  the two listing vertical types plus `subscriptionMatchesDomain`'s
   fail-closed; `trial-local-expiry` because no partner plan has a trial;
   `preapproval-less-expiry` because no writer produces an `active` partner row with
   a null preapproval). That last one is the fragile one: it holds by the ABSENCE of
@@ -433,7 +433,7 @@ accommodation entitlement engine:
   typed Drizzle columns as of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73) — accessed via
   normal typed queries (HOS-75), not raw SQL or the extras carril. The old
   extras/017 column-creation file was deleted once the typed columns landed.
-  See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](docs/decisions/ADR-035-commerce-core-gastronomy-separation.md).
+  See ADR-035, the gastronomy/experience separation decision, under `docs/decisions/`.
 
 #### Promo code effect engine (SPEC-262)
 
@@ -497,13 +497,13 @@ eight route families omits `planes` entirely; the spec's AC-10 named that one an
 was therefore satisfiable by construction (witness case on HOS-1311).
 
 AC-16's claim — "you already hold the VIP benefits" — rests on every
-accommodation and commerce tier spreading `TOURIST_VIP_ENTITLEMENTS` and
+accommodation and gastronomy/experience tier spreading `TOURIST_VIP_ENTITLEMENTS` and
 `TOURIST_VIP_LIMITS` whole (HOS-975 D-A). That invariant is already guarded, in
 two places, so do not write a third: `packages/billing/test/owner-inherits-tourist.test.ts`
-(the six accommodation tiers) and `packages/billing/test/commerce-vertical-plans.test.ts`
-(all six commerce tiers, plus the limit VALUES — the entitlement engine reads an
-absent key as UNLIMITED, so keys alone would not prove it). The six commerce
-tiers receive that spread from **one** factory, `commerceVerticalTier()` in
+(the six accommodation tiers) and the billing plan tests for gastronomy and experience
+(all six gastronomy and experience tiers, plus the limit VALUES — the entitlement engine reads an
+absent key as UNLIMITED, so keys alone would not prove it). The six gastronomy and experience
+tiers receive that spread from **one** factory, the shared vertical tier factory in
 `packages/billing/src/config/plans.config.ts` — a single point of failure worth
 knowing before editing it. Partner plans spread neither, which is why `partner`
 is absent from `TOURIST_VIP_BLOCKING_DOMAINS`.
@@ -545,7 +545,7 @@ flag driven by **two independent sources** (SPEC-309 OQ-3):
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
 
-`pnpm db:fresh-dev` creates 42 dev-only test users covering every role × plan × billing-state combination (17 pre-HOS-1268: 2 staff + 2 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 1 dual-role host/provider + 4 commerce-owner fixtures, HOS-694 + 3 complex tiers + 1 dual-role host/commerce; plus 25 from HOS-1268: gastronomy/experience trial + addon + at-cap parity fixtures, and a past_due/cancelled/paused/comp/courtesy fixture per vertical — accommodation, gastronomy, experience, tourist). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1) and its [Billing-state matrix](packages/seed/CLAUDE.md#billing-state-matrix-hos-1268) section. To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`. These users are seeded **ready to use** (no profile/welcome-tour/what's-new/password-change friction — SPEC-264); to ready a manually-created user, run `pnpm db:seed:ready-user <email>`.
+`pnpm db:fresh-dev` creates 42 dev-only test users covering every role × plan × billing-state combination (17 pre-HOS-1268: 2 staff + 2 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 1 dual-role host/provider + 4 gastronomy/experience owner fixtures, HOS-694 + 3 complex tiers + 1 dual-role host/provider; plus 25 from HOS-1268: gastronomy/experience trial + addon + at-cap parity fixtures, and a past_due/cancelled/paused/comp/courtesy fixture per vertical — accommodation, gastronomy, experience, tourist). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1) and its [Billing-state matrix](packages/seed/CLAUDE.md#billing-state-matrix-hos-1268) section. To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`. These users are seeded **ready to use** (no profile/welcome-tour/what's-new/password-change friction — SPEC-264); to ready a manually-created user, run `pnpm db:seed:ready-user <email>`.
 
 Staging is still required for: MercadoPago checkout (`/start-paid`, polling fallback, webhook signature verification), Cloudflare cache revalidation, and cron behavior in production-like timing. Everything else goes local.
 
