@@ -38,7 +38,8 @@
  * gate does not apply.
  */
 import { rolePermission } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { type PermissionEnum, RoleEnum } from '@repo/schemas';
+// Ledgered migration: retain historical values as loose string assertions after enum retirement.
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -55,7 +56,7 @@ export const meta = {
  * compare its own copy to the seed and stay green while THIS constant drifted.
  */
 export const STAFF_PERMISSIONS: readonly PermissionEnum[] = [
-    PermissionEnum.COMMERCE_MODERATION_CHANGE
+    'commerce.moderationChange' as PermissionEnum
 ];
 
 /** The roles that receive it. Deliberately only the two staff roles. */

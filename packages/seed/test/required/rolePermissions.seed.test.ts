@@ -412,44 +412,27 @@ describe('ROLE_PERMISSIONS — AI_SETTINGS_MANAGE is SUPER_ADMIN-only (SPEC-173 
 });
 
 // ---------------------------------------------------------------------------
-// SPEC-239 — Admin-tier commerce permissions granted to ADMIN and SUPER_ADMIN
-// ---------------------------------------------------------------------------
-// Literal permission values from packages/schemas/src/enums/permission.enum.ts.
-
-const COMMERCE_CREATE = 'commerce.create' as const;
-const COMMERCE_VIEW_ALL = 'commerce.viewAll' as const;
-const COMMERCE_EDIT_ALL = 'commerce.editAll' as const;
-const COMMERCE_DELETE = 'commerce.delete' as const;
-const COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview' as const;
-
-const ADMIN_TIER_COMMERCE_PERMS = [
-    COMMERCE_CREATE,
-    COMMERCE_VIEW_ALL,
-    COMMERCE_EDIT_ALL,
-    COMMERCE_DELETE,
-    COMMERCE_MODERATE_REVIEW
+// HOS-1417: retired commerce grants must be absent from every baseline role.
+const RETIRED_COMMERCE_PERMS = [
+    'commerce.editOwn',
+    'commerce.create',
+    'commerce.viewAll',
+    'commerce.editAll',
+    'commerce.delete',
+    'commerce.moderateReview',
+    'commerce.moderationChange'
 ] as const;
 
-describe('ROLE_PERMISSIONS — Admin-tier commerce permissions (SPEC-239)', () => {
-    type RoleKey = keyof typeof ROLE_PERMISSIONS;
-    const superAdminPerms = ROLE_PERMISSIONS[
-        SUPER_ADMIN as unknown as RoleKey
-    ] as readonly string[];
-    const adminPerms = ROLE_PERMISSIONS[ADMIN as unknown as RoleKey] as readonly string[];
-
-    describe('SUPER_ADMIN holds all 5 admin commerce permissions', () => {
-        for (const perm of ADMIN_TIER_COMMERCE_PERMS) {
-            it(`grants "${perm}" to SUPER_ADMIN`, () => {
-                expect(superAdminPerms).toContain(perm);
-            });
-        }
+describe('ROLE_PERMISSIONS — retired commerce grants', () => {
+    it('has no COMMERCE_OWNER role', () => {
+        expect(Object.keys(ROLE_PERMISSIONS)).not.toContain('COMMERCE_OWNER');
     });
 
-    describe('ADMIN holds all 5 admin commerce permissions', () => {
-        for (const perm of ADMIN_TIER_COMMERCE_PERMS) {
-            it(`grants "${perm}" to ADMIN`, () => {
-                expect(adminPerms).toContain(perm);
-            });
+    it('grants none of the seven retired permissions', () => {
+        for (const perms of Object.values(ROLE_PERMISSIONS)) {
+            for (const permission of RETIRED_COMMERCE_PERMS) {
+                expect(perms).not.toContain(permission);
+            }
         }
     });
 });
@@ -481,7 +464,8 @@ const ALL_ROLES = [
     'CLIENT_MANAGER',
     'EDITOR',
     'HOST',
-    'COMMERCE_OWNER',
+    'GASTRONOMY_OWNER',
+    'EXPERIENCE_OWNER',
     'SPONSOR',
     'USER',
     'GUEST',
@@ -495,10 +479,6 @@ describe('ROLE_PERMISSIONS — ACCESS_PANEL_ADMIN restricted to staff roles (HOS
 
     it('does NOT grant ACCESS_PANEL_ADMIN to HOST', () => {
         expect(get('HOST')).not.toContain(ACCESS_PANEL_ADMIN);
-    });
-
-    it('does NOT grant ACCESS_PANEL_ADMIN to COMMERCE_OWNER', () => {
-        expect(get('COMMERCE_OWNER')).not.toContain(ACCESS_PANEL_ADMIN);
     });
 
     describe('audit: only staff roles may hold ACCESS_PANEL_ADMIN', () => {

@@ -6,7 +6,7 @@
  *
  * @module test/data-migrations/0062-hos686-commerce-listing-moderation-permission
  */
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { type PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
 import * as migration from '../../src/data-migrations/0062-hos686-commerce-listing-moderation-permission.js';
@@ -26,11 +26,6 @@ const STUB_ACTOR: Actor = {
  * job is to prove seed and migration cannot drift — would stay green.
  */
 const { STAFF_PERMISSIONS, GRANTED_ROLES, GRANTS } = migration;
-
-/** Every role that must NOT receive the grant. */
-const EXCLUDED_ROLES: readonly RoleEnum[] = Object.values(RoleEnum).filter(
-    (role) => !GRANTED_ROLES.includes(role)
-);
 
 function buildFakeDb(insertedRows: unknown[]): {
     db: SeedMigrationCtx['db'];
@@ -83,13 +78,13 @@ describe('0062-hos686 commerce listing moderation — meta', () => {
 
 describe('0062-hos686 commerce listing moderation — exported lists shape', () => {
     it('grants exactly COMMERCE_MODERATION_CHANGE', () => {
-        expect(STAFF_PERMISSIONS).toEqual([PermissionEnum.COMMERCE_MODERATION_CHANGE]);
+        expect(STAFF_PERMISSIONS).toEqual(['commerce.moderationChange' as PermissionEnum]);
     });
 
     it('does NOT grant COMMERCE_MODERATE_REVIEW — that is a different authority', () => {
         // The naming trap named in HOS-589 §6.7: `commerce.moderateReview`
         // moderates reviews ABOUT a listing, not the listing.
-        expect(STAFF_PERMISSIONS).not.toContain(PermissionEnum.COMMERCE_MODERATE_REVIEW);
+        expect(STAFF_PERMISSIONS).not.toContain('commerce.moderateReview' as PermissionEnum);
     });
 
     it('targets only SUPER_ADMIN and ADMIN', () => {
@@ -103,28 +98,12 @@ describe('0062-hos686 commerce listing moderation — exported lists shape', () 
     });
 });
 
-describe('0062-hos686 commerce listing moderation — no drift against the seed', () => {
-    it.each([RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN])('seed %s holds the grant', (role) => {
-        const perms = ROLE_PERMISSIONS[role] ?? [];
-        for (const permission of STAFF_PERMISSIONS) {
-            expect(perms, `seed ${role} must hold ${permission}`).toContain(permission);
+describe('0062-hos686 commerce listing moderation — historical grant retired', () => {
+    it('preserves the historical migration payload but removes the baseline grant', () => {
+        expect(STAFF_PERMISSIONS).toEqual(['commerce.moderationChange']);
+        for (const perms of Object.values(ROLE_PERMISSIONS)) {
+            expect(perms).not.toContain('commerce.moderationChange');
         }
-    });
-
-    it('no other role holds it in the seed — a listing owner must not clear their own rejection', () => {
-        expect(EXCLUDED_ROLES.length).toBeGreaterThan(0);
-        for (const role of EXCLUDED_ROLES) {
-            const perms = ROLE_PERMISSIONS[role] ?? [];
-            expect(perms, `seed ${role} must NOT hold COMMERCE_MODERATION_CHANGE`).not.toContain(
-                PermissionEnum.COMMERCE_MODERATION_CHANGE
-            );
-        }
-    });
-
-    it('COMMERCE_OWNER is explicitly among the roles that do not hold it', () => {
-        // Instrument check: if COMMERCE_OWNER ever left RoleEnum, the loop above
-        // would still pass while asserting nothing about the case that matters.
-        expect(EXCLUDED_ROLES).toContain(RoleEnum.COMMERCE_OWNER);
     });
 });
 

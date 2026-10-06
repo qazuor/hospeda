@@ -29,7 +29,8 @@
  * destructive-migration gate does not apply.
  */
 import { rolePermission } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { PermissionEnum, RoleEnum } from '@repo/schemas';
+// Ledgered migration: retain historical values as loose string assertions after enum retirement.
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -40,7 +41,7 @@ export const meta = {
 
 /** Role → permission grant this migration ensures exists. */
 const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = [
-    { role: RoleEnum.COMMERCE_OWNER, permission: PermissionEnum.COMMERCE_CREATE }
+    { role: 'COMMERCE_OWNER' as RoleEnum, permission: 'commerce.create' as PermissionEnum }
 ];
 
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {

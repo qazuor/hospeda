@@ -59,33 +59,17 @@ describe('TEST_USERS matrix', () => {
 
     describe('commerce-gastronomy@local.test (HOS-694)', () => {
         const user = findUser('commerce-gastronomy@local.test');
-
-        it('should hold the COMMERCE_OWNER role', () => {
-            expect(user.role).toBe(RoleEnum.COMMERCE_OWNER);
-        });
-
-        // HOS-964 follow-up (2026-09-07 smoke finding): production's
-        // `createForOwner` grants GASTRONOMY_OWNER alongside the legacy
-        // COMMERCE_OWNER in the same transaction. Without this extra role,
-        // this fixture never matched a What's New (or any other) audience
-        // gated on GASTRONOMY_OWNER, because COMMERCE_OWNER is deliberately
-        // excluded from that enum (it is retiring).
-        it('should ALSO hold GASTRONOMY_OWNER, matching what createForOwner grants in production', () => {
-            expect(user.extraRoles).toContain(RoleEnum.GASTRONOMY_OWNER);
+        it('holds only the gastronomy owner role', () => {
+            expect(user.role).toBe(RoleEnum.GASTRONOMY_OWNER);
+            expect(user.extraRoles ?? []).not.toContain('COMMERCE_OWNER');
         });
     });
 
     describe('commerce-experience@local.test (HOS-694)', () => {
         const user = findUser('commerce-experience@local.test');
-
-        it('should hold the COMMERCE_OWNER role', () => {
-            expect(user.role).toBe(RoleEnum.COMMERCE_OWNER);
-        });
-
-        // HOS-964 follow-up (2026-09-07 smoke finding) — see the gastronomy
-        // fixture's equivalent test above for the full rationale.
-        it('should ALSO hold EXPERIENCE_OWNER, matching what createForOwner grants in production', () => {
-            expect(user.extraRoles).toContain(RoleEnum.EXPERIENCE_OWNER);
+        it('holds only the experience owner role', () => {
+            expect(user.role).toBe(RoleEnum.EXPERIENCE_OWNER);
+            expect(user.extraRoles ?? []).not.toContain('COMMERCE_OWNER');
         });
     });
 
@@ -96,8 +80,8 @@ describe('TEST_USERS matrix', () => {
             expect(user.role).toBe(RoleEnum.HOST);
         });
 
-        it('should declare COMMERCE_OWNER as an extra role', () => {
-            expect(user.extraRoles).toContain(RoleEnum.COMMERCE_OWNER);
+        it('should declare GASTRONOMY_OWNER as an extra role (HOS-1417 retired the shared owner role)', () => {
+            expect(user.extraRoles).toContain(RoleEnum.GASTRONOMY_OWNER);
         });
     });
 

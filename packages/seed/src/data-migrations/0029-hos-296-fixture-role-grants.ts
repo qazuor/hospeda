@@ -88,6 +88,7 @@
 import { inArray, users } from '@repo/db';
 import { RoleEnum, RoleGrantReason } from '@repo/schemas';
 import { getUserRoles, grantRole, revokeRole } from '@repo/service-core';
+// Ledgered migration: retain historical values as loose string assertions after enum retirement.
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -170,17 +171,17 @@ const FIXTURE_ROLE_TARGETS: readonly FixtureRoleTarget[] = [
     // ── example/gastronomies.seed.ts — commerce owners (AC-11) ───────────────
     {
         email: 'gastro-owner-julieta@local.test',
-        roles: [RoleEnum.USER, RoleEnum.COMMERCE_OWNER],
+        roles: [RoleEnum.USER, 'COMMERCE_OWNER' as RoleEnum],
         mode: 'grant-only'
     },
     {
         email: 'gastro-owner-rodrigo@local.test',
-        roles: [RoleEnum.USER, RoleEnum.COMMERCE_OWNER],
+        roles: [RoleEnum.USER, 'COMMERCE_OWNER' as RoleEnum],
         mode: 'grant-only'
     },
     {
         email: 'gastro-owner-valentina@local.test',
-        roles: [RoleEnum.USER, RoleEnum.COMMERCE_OWNER],
+        roles: [RoleEnum.USER, 'COMMERCE_OWNER' as RoleEnum],
         mode: 'grant-only'
     },
     // ── example/gastronomies.seed.ts — the e2e tourist ───────────────────────

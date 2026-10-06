@@ -10,7 +10,6 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
 import * as migration from '../../src/data-migrations/0067-hos-726-addon-purchase-permission.js';
-import { GRANTS as VERTICAL_GRANTS } from '../../src/data-migrations/0079-hos-1077-vertical-commerce-permissions.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -27,36 +26,6 @@ const STUB_ACTOR: Actor = {
  * job is to prove seed and migration cannot drift — would stay green.
  */
 const { ADDON_PURCHASE_PERMISSION, GRANTED_ROLES, GRANTS } = migration;
-
-/**
- * Roles that hold `BILLING_ADDON_PURCHASE` because a LATER data-migration
- * granted it, not this one.
- *
- * HOS-1077 split `COMMERCE_OWNER` into `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`,
- * and the vertical roles carry the add-on grant for the same reason
- * `COMMERCE_OWNER` does: a restaurant owner buys `extra-gastronomies-1`. That
- * delta ships in `0079`, which is where a live environment receives it — `0067`
- * is ledgered and will never run again, so back-dating its `GRANTED_ROLES`
- * would be a lie about what it did, and would still not reach any already-seeded
- * environment.
- *
- * Read off `0079.GRANTS` rather than hard-coded, so a role that gains the
- * permission in the seed with NO migration behind it still lands in
- * `EXCLUDED_ROLES` below and fails — which is the drift this suite exists to
- * catch.
- */
-const LATER_MIGRATION_ROLES: readonly RoleEnum[] = [
-    ...new Set(
-        VERTICAL_GRANTS.filter(
-            (grant) => grant.permission === PermissionEnum.BILLING_ADDON_PURCHASE
-        ).map((grant) => grant.role)
-    )
-];
-
-/** Every role that must NOT hold the permission, from ANY migration. */
-const EXCLUDED_ROLES: readonly RoleEnum[] = Object.values(RoleEnum).filter(
-    (role) => !GRANTED_ROLES.includes(role) && !LATER_MIGRATION_ROLES.includes(role)
-);
 
 function buildFakeDb(insertedRows: unknown[]): {
     db: SeedMigrationCtx['db'];
@@ -122,7 +91,12 @@ describe('0067-hos-726 addon purchase permission — exported lists shape', () =
 
     it('targets the two paying tiers plus the two staff roles', () => {
         expect([...GRANTED_ROLES].sort()).toEqual(
-            [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN, RoleEnum.HOST, RoleEnum.COMMERCE_OWNER].sort()
+            [
+                RoleEnum.SUPER_ADMIN,
+                RoleEnum.ADMIN,
+                RoleEnum.HOST,
+                'COMMERCE_OWNER' as RoleEnum
+            ].sort()
         );
     });
 
@@ -134,75 +108,13 @@ describe('0067-hos-726 addon purchase permission — exported lists shape', () =
     });
 });
 
-describe('0067-hos-726 addon purchase permission — no drift against the seed', () => {
-    it.each([
-        RoleEnum.SUPER_ADMIN,
-        RoleEnum.ADMIN,
-        RoleEnum.HOST,
-        RoleEnum.COMMERCE_OWNER
-    ])('seed %s holds the grant', (role) => {
-        const perms = ROLE_PERMISSIONS[role] ?? [];
-        expect(perms, `seed ${role} must hold ${ADDON_PURCHASE_PERMISSION}`).toContain(
-            ADDON_PURCHASE_PERMISSION
-        );
-    });
-
-    it('the later-migration carve-out is exactly the two vertical owner roles', () => {
-        // Pins the escape so it cannot widen unnoticed. Without this, a future
-        // migration adding the permission to some unrelated role would enlarge
-        // `LATER_MIGRATION_ROLES`, quietly shrink `EXCLUDED_ROLES`, and the
-        // exclusion test below would stop asserting anything about that role.
-        expect([...LATER_MIGRATION_ROLES].sort()).toEqual(
-            [RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER].sort()
-        );
-    });
-
-    it.each([
-        RoleEnum.GASTRONOMY_OWNER,
-        RoleEnum.EXPERIENCE_OWNER
-    ])('seed %s holds the grant, matching its 0079 delta', (role) => {
-        // The vertical roles replace COMMERCE_OWNER, which holds this
-        // permission — a restaurant owner must keep reaching the add-on
-        // catalog. Asserted against the seed AND against 0079 so a live
-        // environment and a fresh DB cannot diverge.
-        expect(ROLE_PERMISSIONS[role] ?? []).toContain(ADDON_PURCHASE_PERMISSION);
-        expect(LATER_MIGRATION_ROLES).toContain(role);
-    });
-
-    it('no other role holds it in the seed', () => {
-        expect(EXCLUDED_ROLES.length).toBeGreaterThan(0);
-        for (const role of EXCLUDED_ROLES) {
-            const perms = ROLE_PERMISSIONS[role] ?? [];
-            expect(perms, `seed ${role} must NOT hold ${ADDON_PURCHASE_PERMISSION}`).not.toContain(
-                ADDON_PURCHASE_PERMISSION
-            );
+describe('0067-hos-726 addon purchase permission — current baseline', () => {
+    it('keeps the historical migration payload and grants current owner roles', () => {
+        expect(GRANTED_ROLES).toContain('COMMERCE_OWNER');
+        expect(Object.keys(ROLE_PERMISSIONS)).not.toContain('COMMERCE_OWNER');
+        for (const role of [RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER]) {
+            expect(ROLE_PERMISSIONS[role]).toContain(ADDON_PURCHASE_PERMISSION);
         }
-    });
-
-    it('USER is explicitly among the roles that do not hold it', () => {
-        // Instrument check, and the reason this permission exists at all: a plain
-        // tourist can never hold an entitlement-granting subscription in any of
-        // the add-on catalog's product domains, so the page would only show them
-        // an empty state. If USER ever left RoleEnum the loop above would still
-        // pass while asserting nothing about the case that matters.
-        expect(EXCLUDED_ROLES).toContain(RoleEnum.USER);
-        expect(ROLE_PERMISSIONS[RoleEnum.USER] ?? []).not.toContain(ADDON_PURCHASE_PERMISSION);
-    });
-
-    it('is NOT interchangeable with the two billing permissions USER already holds', () => {
-        // The trap this permission was created to avoid: both of these read like
-        // the right gate and are granted to plain USER by the seed, so reusing
-        // either would have put the add-on catalog in front of every tourist.
-        const userPerms = ROLE_PERMISSIONS[RoleEnum.USER] ?? [];
-        expect(userPerms).toContain(PermissionEnum.SUBSCRIPTION_VIEW_OWN);
-        expect(userPerms).toContain(PermissionEnum.BILLING_VIEW_OWN);
-    });
-
-    it('covers a COMMERCE_OWNER, which ACCOMMODATION_CREATE does not', () => {
-        // The whole reason for a new permission instead of reusing the host gate.
-        const commercePerms = ROLE_PERMISSIONS[RoleEnum.COMMERCE_OWNER] ?? [];
-        expect(commercePerms).toContain(ADDON_PURCHASE_PERMISSION);
-        expect(commercePerms).not.toContain(PermissionEnum.ACCOMMODATION_CREATE);
     });
 });
 

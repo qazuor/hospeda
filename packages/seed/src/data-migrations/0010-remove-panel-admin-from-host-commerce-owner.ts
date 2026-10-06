@@ -44,6 +44,7 @@
  * removal — even a well-understood, security-motivated one.
  */
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+// Ledgered migration: retain historical values as loose string assertions after enum retirement.
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -53,7 +54,7 @@ export const meta = {
 } as const satisfies SeedMigrationModule['meta'];
 
 /** The two roles the ACCESS_PANEL_ADMIN grant must never be assigned to (HOS-152). */
-const ROLES_TO_STRIP = [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER] as const;
+const ROLES_TO_STRIP = [RoleEnum.HOST, 'COMMERCE_OWNER' as RoleEnum] as const;
 
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const rolePermissionModel = new ctx.models.RRolePermissionModel();

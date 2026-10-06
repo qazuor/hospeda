@@ -55,6 +55,7 @@
  */
 import { rolePermission } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+// Ledgered migration: retain historical values as loose string assertions after enum retirement.
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -80,7 +81,7 @@ export const GRANTED_ROLES: readonly RoleEnum[] = [
     RoleEnum.SUPER_ADMIN,
     RoleEnum.ADMIN,
     RoleEnum.HOST,
-    RoleEnum.COMMERCE_OWNER
+    'COMMERCE_OWNER' as RoleEnum
 ];
 
 /** `(role, permission)` pairs this migration ensures exist. */

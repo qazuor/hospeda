@@ -81,12 +81,12 @@ describe('0010-remove-panel-admin-from-host-commerce-owner', () => {
         );
         expect(hardDelete).toHaveBeenNthCalledWith(
             2,
-            { role: RoleEnum.COMMERCE_OWNER, permission: PermissionEnum.ACCESS_PANEL_ADMIN },
+            { role: 'COMMERCE_OWNER' as RoleEnum, permission: PermissionEnum.ACCESS_PANEL_ADMIN },
             FAKE_DB
         );
         expect(result.counts).toEqual({
             [`${RoleEnum.HOST}-deleted`]: 1,
-            [`${RoleEnum.COMMERCE_OWNER}-deleted`]: 1
+            [`${'COMMERCE_OWNER' as RoleEnum}-deleted`]: 1
         });
         expect(result.summary).toMatch(/Removed ACCESS_PANEL_ADMIN/);
     });
@@ -105,7 +105,7 @@ describe('0010-remove-panel-admin-from-host-commerce-owner', () => {
         expect(hardDelete).toHaveBeenCalledTimes(4); // 2 calls x 2 up() invocations above
         expect(result.counts).toEqual({
             [`${RoleEnum.HOST}-deleted`]: 0,
-            [`${RoleEnum.COMMERCE_OWNER}-deleted`]: 0
+            [`${'COMMERCE_OWNER' as RoleEnum}-deleted`]: 0
         });
         expect(result.summary).toMatch(/already absent \(idempotent no-op\)/);
     });

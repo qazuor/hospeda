@@ -23,7 +23,7 @@
         },
         "type": {
             "type": "string",
-            "enum": ["commerce", "ngo", "institution"],
+            "enum": ["business", "ngo", "institution"],
             "description": "Partner type (PartnerTypeEnum)"
         },
         "tier": {

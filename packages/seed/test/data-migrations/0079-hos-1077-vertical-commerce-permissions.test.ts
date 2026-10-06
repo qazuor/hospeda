@@ -204,15 +204,8 @@ describe('0079-hos-1077 vertical commerce permissions — no drift against the s
         }
     });
 
-    it('COMMERCE_OWNER keeps its legacy permissions and gains none of the new ones', () => {
-        // Expand, not contract: the legacy role is untouched, which is what
-        // stops anyone losing access before release 2 runs.
-        const perms: readonly string[] = ROLE_PERMISSIONS[RoleEnum.COMMERCE_OWNER] ?? [];
-        expect(perms).toContain(PermissionEnum.COMMERCE_EDIT_OWN);
-        expect(perms).toContain(PermissionEnum.COMMERCE_CREATE);
-        for (const permission of ALL_VERTICAL_PERMISSIONS) {
-            expect(perms).not.toContain(permission);
-        }
+    it('current baseline has no retired owner role', () => {
+        expect(Object.keys(ROLE_PERMISSIONS)).not.toContain('COMMERCE_OWNER');
     });
 });
 

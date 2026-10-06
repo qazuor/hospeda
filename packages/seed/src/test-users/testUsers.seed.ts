@@ -42,7 +42,7 @@ export interface TestUserSpec {
     /**
      * Additional roles to grant alongside `role`, so a single test user can
      * hold more than one hat at once (HOS-296 multi-role). Used for the
-     * HOST + COMMERCE_OWNER dual-role fixture (HOS-694 AC-3 / AC-12).
+     * HOST + vertical-owner dual-role fixture (HOS-694 AC-3 / AC-12).
      */
     readonly extraRoles?: readonly (typeof RoleEnum)[keyof typeof RoleEnum][];
 }
@@ -95,36 +95,29 @@ export const TEST_USERS: readonly TestUserSpec[] = [
         displayName: 'Host Provider',
         role: RoleEnum.HOST
     },
-    // Commerce owner tier (COMMERCE_OWNER role, HOS-694).
-    // HOS-964 follow-up (2026-09-07 smoke finding): `extraRoles` grants the
-    // per-vertical role (GASTRONOMY_OWNER / EXPERIENCE_OWNER) alongside the
-    // legacy `role: COMMERCE_OWNER` above, matching what production's
-    // `createForOwner` (base-commerce-listing.service.ts) actually grants in
-    // the same transaction as the listing (HOS-1077).
+    // Each fixture owns only its own listing vertical.
     {
         email: 'commerce-gastronomy@local.test',
         displayName: 'Comercio Gastronomía',
-        role: RoleEnum.COMMERCE_OWNER,
-        extraRoles: [RoleEnum.GASTRONOMY_OWNER]
+        role: RoleEnum.GASTRONOMY_OWNER
     },
     {
         email: 'commerce-experience@local.test',
         displayName: 'Comercio Experiencia',
-        role: RoleEnum.COMMERCE_OWNER,
-        extraRoles: [RoleEnum.EXPERIENCE_OWNER]
+        role: RoleEnum.EXPERIENCE_OWNER
     },
     // Dual-role fixture (HOS-296 multi-role, HOS-694). AC-3 asserts a HOST
-    // retains the role after being granted COMMERCE_OWNER; AC-12 asserts the
-    // header's three-option publish control renders for an account already
+    // retains the role after being granted a listing-owner role; AC-12 asserts
+    // the header's three-option publish control renders for an account already
     // holding either role. HOS-30's accommodation fixture still applies
-    // (triggered by `role === HOST`); COMMERCE_OWNER is granted directly,
+    // (triggered by `role === HOST`); GASTRONOMY_OWNER is granted directly,
     // with no backing listing, since role possession alone is what the nav
-    // gate and the header control read.
+    // gate and the header control read (HOS-1417 retired the shared owner role).
     {
         email: 'host-commerce@local.test',
         displayName: 'Host y Comercio',
         role: RoleEnum.HOST,
-        extraRoles: [RoleEnum.COMMERCE_OWNER]
+        extraRoles: [RoleEnum.GASTRONOMY_OWNER]
     },
     // Complex / CLIENT_MANAGER tier
     {
