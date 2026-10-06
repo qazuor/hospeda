@@ -15,7 +15,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
  * Hard delete experience listing — Admin endpoint.
  *
  * Permanently removes the experience listing from the database.
- * Requires EXPERIENCE_DELETE (or the legacy COMMERCE_DELETE) permission (reusing the same gate used for
+ * Requires EXPERIENCE_DELETE permission (reusing the same gate used for
  * hard deletes of other commerce entities until a dedicated
  * COMMERCE_HARD_DELETE permission is defined).
  */
@@ -24,9 +24,9 @@ export const adminHardDeleteExperienceRoute = createAdminRoute({
     path: '/{id}/hard',
     summary: 'Hard delete experience listing (admin)',
     description:
-        'Permanently deletes an experience listing. Requires EXPERIENCE_DELETE (or the legacy COMMERCE_DELETE) permission.',
+        'Permanently deletes an experience listing. Requires EXPERIENCE_DELETE permission.',
     tags: ['Experience'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_DELETE, PermissionEnum.COMMERCE_DELETE]],
+    anyOfPermissions: [[PermissionEnum.EXPERIENCE_DELETE]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -59,7 +59,7 @@ declare namespace App {
             /** User's email address */
             readonly email: string;
             /**
-             * Every role the user holds (USER, HOST, COMMERCE_OWNER, ADMIN,
+             * Every role the user holds (USER, HOST, GASTRONOMY_OWNER, ADMIN,
              * SUPER_ADMIN, CLIENT_MANAGER, EDITOR, SPONSOR).
              *
              * HOS-296 replaced the former single `role` scalar with this set:

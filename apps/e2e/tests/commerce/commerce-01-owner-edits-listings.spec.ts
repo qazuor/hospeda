@@ -2,14 +2,14 @@
  * COMMERCE-01 — Commerce owner edits operational fields on both verticals
  * (gastronomy + experience) and changes are visible on the public ficha.
  *
- * Actors: gastro-owner-julieta@local.test (role COMMERCE_OWNER, seeded by
+ * Actors: gastro-owner-julieta@local.test (role GASTRONOMY_OWNER, seeded by
  *   @repo/seed example pipeline: gastronomies.seed + experiences.seed).
  * Tags: @p0 @commerce
  *
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
  *   - Julieta's account (gastro-owner-julieta@local.test / Password123!)
- *     exists with role COMMERCE_OWNER and profileCompleted=true.
+ *     exists with role GASTRONOMY_OWNER and profileCompleted=true.
  *   - She owns PUBLIC/ACTIVE gastronomies:
  *       - la-parrilla-del-puerto (slug)
  *       - cafe-del-palacio       (slug)
@@ -22,7 +22,7 @@
  * What this test validates (SPEC-249 T-025 / SPEC-252 T-003):
  *  1. Julieta can sign in and reach /es/mi-cuenta/comercio/.
  *  2. The listing index shows ONLY her own entries (both verticals)
- *     and no listing owned by another COMMERCE_OWNER (rodrigo, valentina).
+ *     and no listing owned by another GASTRONOMY_OWNER (rodrigo, valentina).
  *  3. She opens the gastronomy editor for "la-parrilla-del-puerto",
  *     changes the menuUrl field, saves; the new value is reflected on the
  *     public gastronomy ficha (/.../gastronomia/la-parrilla-del-puerto/).
@@ -158,7 +158,7 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         }
         originalRichDescription = experienceRows[0]?.rich_description ?? null;
 
-        // ── Step 1: sign in as Julieta (COMMERCE_OWNER) ───────────────────────
+        // ── Step 1: sign in as Julieta (GASTRONOMY_OWNER) ───────────────────────
 
         const sessionCookie = await signInExistingUser(
             { email: JULIETA.email, password: JULIETA.password },
@@ -172,7 +172,7 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
             waitUntil: 'domcontentloaded'
         });
 
-        // The page must load without redirect (role guard accepts COMMERCE_OWNER).
+        // The page must load without redirect (role guard accepts GASTRONOMY_OWNER).
         expect(page.url()).toContain('/mi-cuenta/comercio');
 
         // Her OWN listings appear in the index (the page renders listing.name in

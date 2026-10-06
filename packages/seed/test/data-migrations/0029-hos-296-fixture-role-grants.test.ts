@@ -106,7 +106,7 @@ describe('0029-hos-296-fixture-role-grants up()', () => {
     it('adds the missing USER hat to a commerce owner the 0069 copy left single-hatted', async () => {
         // 0069 copies `users.role = 'COMMERCE_OWNER'` verbatim, so the fixture
         // ends up one hat short of what the seed grants today.
-        getUserRoles.mockResolvedValue([RoleEnum.COMMERCE_OWNER]);
+        getUserRoles.mockResolvedValue(['COMMERCE_OWNER' as RoleEnum]);
 
         const result = await migration.up(
             buildCtx([{ id: 'u-julieta', email: 'gastro-owner-julieta@local.test' }]),

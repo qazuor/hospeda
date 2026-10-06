@@ -9,7 +9,7 @@
  * 2. **Billing transition** — the menú del día write runs without the former plan
  *    entitlement or payload-specific billing gates.
  * 3. **Ownership** — inside `replaceGastronomyDailySpecials`, via the same
- *    `COMMERCE_EDIT_OWN` / `COMMERCE_EDIT_ALL` gate the sibling writes use.
+ *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
  *
  * The menú del día read and write have no plan entitlement gate during the billing transition.
  *

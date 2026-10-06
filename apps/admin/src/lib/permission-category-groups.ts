@@ -6,7 +6,7 @@
  * branches that listed the categories of each group by hand and had NO final
  * `else`: a category no branch claimed was not put in an "other" bucket, it was
  * dropped. Thirty-four of the enum's eighty-one categories — `HOST_TRADE`,
- * `PARTNER`, `MEDIA`, `MODERATION`, `COMMERCE`, every `SOCIAL_*`, and more —
+ * `PARTNER`, `MEDIA`, `MODERATION`, every `SOCIAL_*`, and more —
  * fell through that hole.
  *
  * What that costs, stated precisely: this page is a READ-ONLY catalogue. It
@@ -75,7 +75,7 @@ export const UNGROUPED_CATEGORY_GROUP: PermissionCategoryGroup = 'Other';
 export const GROUP_TRANSLATION_KEYS: Record<PermissionCategoryGroup, TranslationKey> = {
     'Content Management': 'admin-pages.access.permissions.groupContentManagement',
     'User & Access': 'admin-pages.access.permissions.groupUserAccess',
-    'Commerce & Billing': 'admin-pages.access.permissions.groupCommerceBilling',
+    'Commerce & Billing': 'admin-pages.access.permissions.groupListingsBilling',
     'Marketing & Advertising': 'admin-pages.access.permissions.groupMarketingAdvertising',
     'Services & Listings': 'admin-pages.access.permissions.groupServicesListings',
     'System & Configuration': 'admin-pages.access.permissions.groupSystemConfiguration',
@@ -176,7 +176,6 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
     [PermissionCategoryEnum.TOURIST_SERVICE]: 'Services & Listings',
     [PermissionCategoryEnum.PROFESSIONAL_SERVICE]: 'Services & Listings',
     [PermissionCategoryEnum.PROFESSIONAL_SERVICE_ORDER]: 'Services & Listings',
-    [PermissionCategoryEnum.COMMERCE]: 'Services & Listings',
     [PermissionCategoryEnum.GASTRONOMY]: 'Services & Listings',
     [PermissionCategoryEnum.EXPERIENCE]: 'Services & Listings',
     [PermissionCategoryEnum.HOST_TRADE]: 'Services & Listings',

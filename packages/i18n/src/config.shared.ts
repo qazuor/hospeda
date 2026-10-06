@@ -70,7 +70,7 @@ export const webNamespaces = [
     'mobile',
     'gastronomy',
     'google-calendar',
-    'commerce',
+    'listing',
     'external-reputation',
     'experience',
     'social',
@@ -122,7 +122,6 @@ import benefitsEn from './locales/en/benefits.json';
 import billingEn from './locales/en/billing.json';
 import blogEn from './locales/en/blog.json';
 import commentsEn from './locales/en/comments.json';
-import commerceEn from './locales/en/commerce.json';
 import commonEn from './locales/en/common.json';
 import contactEn from './locales/en/contact.json';
 import contentModerationEn from './locales/en/content-moderation.json';
@@ -145,6 +144,7 @@ import googleCalendarEn from './locales/en/google-calendar.json';
 import homeEn from './locales/en/home.json';
 import hostEn from './locales/en/host.json';
 import hostTradesEn from './locales/en/host-trades.json';
+import listingEn from './locales/en/listing.json';
 import mapsEn from './locales/en/maps.json';
 import mobileEn from './locales/en/mobile.json';
 import navEn from './locales/en/nav.json';
@@ -179,7 +179,6 @@ import benefitsEs from './locales/es/benefits.json';
 import billingEs from './locales/es/billing.json';
 import blogEs from './locales/es/blog.json';
 import commentsEs from './locales/es/comments.json';
-import commerceEs from './locales/es/commerce.json';
 import commonEs from './locales/es/common.json';
 import contactEs from './locales/es/contact.json';
 import contentModerationEs from './locales/es/content-moderation.json';
@@ -202,6 +201,7 @@ import googleCalendarEs from './locales/es/google-calendar.json';
 import homeEs from './locales/es/home.json';
 import hostEs from './locales/es/host.json';
 import hostTradesEs from './locales/es/host-trades.json';
+import listingEs from './locales/es/listing.json';
 import mapsEs from './locales/es/maps.json';
 import mobileEs from './locales/es/mobile.json';
 import navEs from './locales/es/nav.json';
@@ -237,7 +237,6 @@ import benefitsPt from './locales/pt/benefits.json';
 import billingPt from './locales/pt/billing.json';
 import blogPt from './locales/pt/blog.json';
 import commentsPt from './locales/pt/comments.json';
-import commercePt from './locales/pt/commerce.json';
 import commonPt from './locales/pt/common.json';
 import contactPt from './locales/pt/contact.json';
 import contentModerationPt from './locales/pt/content-moderation.json';
@@ -260,6 +259,7 @@ import googleCalendarPt from './locales/pt/google-calendar.json';
 import homePt from './locales/pt/home.json';
 import hostPt from './locales/pt/host.json';
 import hostTradesPt from './locales/pt/host-trades.json';
+import listingPt from './locales/pt/listing.json';
 import mapsPt from './locales/pt/maps.json';
 import mobilePt from './locales/pt/mobile.json';
 import navPt from './locales/pt/nav.json';
@@ -338,7 +338,7 @@ export const rawWebTranslations = {
         mobile: mobileEs,
         gastronomy: gastronomyEs,
         'google-calendar': googleCalendarEs,
-        commerce: commerceEs,
+        listing: listingEs,
         experience: experienceEs,
         social: socialEs,
         notifications: notificationsEs,
@@ -394,7 +394,7 @@ export const rawWebTranslations = {
         mobile: mobileEn,
         gastronomy: gastronomyEn,
         'google-calendar': googleCalendarEn,
-        commerce: commerceEn,
+        listing: listingEn,
         experience: experienceEn,
         social: socialEn,
         notifications: notificationsEn,
@@ -450,7 +450,7 @@ export const rawWebTranslations = {
         mobile: mobilePt,
         gastronomy: gastronomyPt,
         'google-calendar': googleCalendarPt,
-        commerce: commercePt,
+        listing: listingPt,
         experience: experiencePt,
         social: socialPt,
         notifications: notificationsPt,

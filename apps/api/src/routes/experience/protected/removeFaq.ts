@@ -2,7 +2,7 @@
  * DELETE /api/v1/protected/experiences/:id/faqs/:faqId
  * Remove (soft-delete) a FAQ from an experience listing (T-020)
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
+ * Gated on EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).
  * The FAQ must belong to the specified experience (enforced inside removeExperienceFaq).
  */
 

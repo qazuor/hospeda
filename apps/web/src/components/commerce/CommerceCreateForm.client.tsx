@@ -21,7 +21,7 @@
  *
  * HOS-693 §6.2 removed the HOS-257 `prefill` prop (sourced from the caller's
  * own admin-provisioned commerce lead, which no longer exists — HOS-687
- * grants COMMERCE_OWNER on listing creation instead). The form always starts
+ * grants the matching vertical owner role on listing creation instead). The form always starts
  * blank now, which was already its behaviour for the common case
  * (AC-10/AC-11 predate this and still hold).
  *
@@ -155,20 +155,20 @@ export function CommerceCreateForm({
     // across both verticals and needs a neutral term rather than a branch.
     const nameLabel =
         vertical === 'gastronomy'
-            ? t('commerce.owner.create.fields.name.gastronomy', 'Nombre del comercio')
-            : t('commerce.owner.create.fields.name.experience', 'Nombre de la experiencia');
+            ? t('listing.owner.create.fields.name.gastronomy', 'Nombre del comercio')
+            : t('listing.owner.create.fields.name.experience', 'Nombre de la experiencia');
     const submitLabel =
         vertical === 'gastronomy'
-            ? t('commerce.owner.create.submit.gastronomy', 'Crear comercio')
-            : t('commerce.owner.create.submit.experience', 'Crear experiencia');
+            ? t('listing.owner.create.submit.gastronomy', 'Crear comercio')
+            : t('listing.owner.create.submit.experience', 'Crear experiencia');
     const createErrorMessage =
         vertical === 'gastronomy'
             ? t(
-                  'commerce.owner.create.error.gastronomy',
+                  'listing.owner.create.error.gastronomy',
                   'No pudimos crear el comercio. Probá de nuevo.'
               )
             : t(
-                  'commerce.owner.create.error.experience',
+                  'listing.owner.create.error.experience',
                   'No pudimos crear la experiencia. Probá de nuevo.'
               );
 
@@ -271,7 +271,7 @@ export function CommerceCreateForm({
                     className={styles.label}
                     htmlFor="cc-type"
                 >
-                    {t('commerce.owner.create.fields.type', 'Categoría')}
+                    {t('listing.owner.create.fields.type', 'Categoría')}
                 </label>
                 <select
                     id="cc-type"
@@ -303,7 +303,7 @@ export function CommerceCreateForm({
                     className={styles.label}
                     htmlFor="cc-summary"
                 >
-                    {t('commerce.owner.create.fields.summary', 'Resumen')}
+                    {t('listing.owner.create.fields.summary', 'Resumen')}
                 </label>
                 <textarea
                     id="cc-summary"
@@ -326,7 +326,7 @@ export function CommerceCreateForm({
                     className={styles.label}
                     htmlFor="cc-description"
                 >
-                    {t('commerce.owner.create.fields.description', 'Descripción')}
+                    {t('listing.owner.create.fields.description', 'Descripción')}
                 </label>
                 <textarea
                     id="cc-description"
@@ -356,7 +356,7 @@ export function CommerceCreateForm({
                         role="alert"
                     >
                         {t(
-                            'commerce.owner.create.fields.destinationLoadError',
+                            'listing.owner.create.fields.destinationLoadError',
                             'No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.'
                         )}
                     </p>
@@ -367,7 +367,7 @@ export function CommerceCreateForm({
                         className={styles.label}
                         htmlFor="cc-destinationId"
                     >
-                        {t('commerce.owner.create.fields.destination', 'Ciudad / Destino')}
+                        {t('listing.owner.create.fields.destination', 'Ciudad / Destino')}
                     </label>
                     <select
                         id="cc-destinationId"
@@ -406,7 +406,7 @@ export function CommerceCreateForm({
                         role="alert"
                     >
                         {t(
-                            'commerce.owner.create.fields.destinationEmpty',
+                            'listing.owner.create.fields.destinationEmpty',
                             'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
                         )}
                     </p>
@@ -421,14 +421,14 @@ export function CommerceCreateForm({
                             checked={isPriceOnRequest}
                             onChange={(event) => setIsPriceOnRequest(event.target.checked)}
                         />
-                        {t('commerce.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
+                        {t('listing.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
                     </label>
 
                     <label
                         className={styles.label}
                         htmlFor="cc-priceFrom"
                     >
-                        {t('commerce.owner.editor.sections.priceFrom', 'Precio desde')}
+                        {t('listing.owner.editor.sections.priceFrom', 'Precio desde')}
                     </label>
                     {/* HOS-809: the owner types PESOS; the state holds centavos. */}
                     <input
@@ -456,7 +456,7 @@ export function CommerceCreateForm({
                         className={styles.label}
                         htmlFor="cc-priceUnit"
                     >
-                        {t('commerce.owner.editor.sections.priceUnit', 'Unidad de precio')}
+                        {t('listing.owner.editor.sections.priceUnit', 'Unidad de precio')}
                     </label>
                     {/*
                      * H-156: disabled while the price is "on request", mirroring
@@ -484,7 +484,7 @@ export function CommerceCreateForm({
                                 key={unit}
                                 value={unit}
                             >
-                                {t(`commerce.owner.editor.priceUnitOption.${unit}`, unit)}
+                                {t(`listing.owner.editor.priceUnitOption.${unit}`, unit)}
                             </option>
                         ))}
                     </select>
@@ -511,7 +511,7 @@ export function CommerceCreateForm({
                 aria-busy={isSubmitting}
                 data-testid="commerce-create-submit"
             >
-                {isSubmitting ? t('commerce.owner.create.submitting', 'Creando...') : submitLabel}
+                {isSubmitting ? t('listing.owner.create.submitting', 'Creando...') : submitLabel}
             </button>
         </form>
     );

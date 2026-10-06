@@ -151,13 +151,13 @@ function validateFaqEditor({
 
     if (!values.question.trim()) {
         errors.question = t(
-            'commerce.owner.editor.faqManager.questionRequired',
+            'listing.owner.editor.faqManager.questionRequired',
             'Escribí la pregunta antes de guardar.'
         );
     }
     if (!values.answer.trim()) {
         errors.answer = t(
-            'commerce.owner.editor.faqManager.answerRequired',
+            'listing.owner.editor.faqManager.answerRequired',
             'Escribí la respuesta antes de guardar.'
         );
     }
@@ -275,7 +275,7 @@ export function CommerceFaqManager({
             setIsAdding(false);
         } else {
             setActionError(
-                t('commerce.owner.editor.faqManager.saveError', 'No se pudo guardar la pregunta.')
+                t('listing.owner.editor.faqManager.saveError', 'No se pudo guardar la pregunta.')
             );
         }
     }, [addValues, basePath, t]);
@@ -338,7 +338,7 @@ export function CommerceFaqManager({
             } else {
                 setActionError(
                     t(
-                        'commerce.owner.editor.faqManager.saveError',
+                        'listing.owner.editor.faqManager.saveError',
                         'No se pudo guardar la pregunta.'
                     )
                 );
@@ -377,10 +377,7 @@ export function CommerceFaqManager({
             setFaqPendingDelete(null);
         } else {
             setActionError(
-                t(
-                    'commerce.owner.editor.faqManager.deleteError',
-                    'No se pudo eliminar la pregunta.'
-                )
+                t('listing.owner.editor.faqManager.deleteError', 'No se pudo eliminar la pregunta.')
             );
         }
     }, [basePath, faqPendingDelete, t]);
@@ -419,7 +416,7 @@ export function CommerceFaqManager({
                 // Rollback
                 setFaqs(sortFaqs(faqs));
                 setActionError(
-                    t('commerce.owner.editor.faqManager.reorderError', 'No se pudo reordenar.')
+                    t('listing.owner.editor.faqManager.reorderError', 'No se pudo reordenar.')
                 );
             }
         },
@@ -433,37 +430,37 @@ export function CommerceFaqManager({
     return (
         <section className={styles.section}>
             <h3 className={styles.sectionTitle}>
-                {t('commerce.owner.editor.faqManager.sectionTitle', 'Preguntas frecuentes')}
+                {t('listing.owner.editor.faqManager.sectionTitle', 'Preguntas frecuentes')}
             </h3>
 
             <div className={styles.channelIntro}>
                 <p className={styles.channelIntroTitle}>
                     {t(
-                        'commerce.owner.editor.faqManager.channelIntro.title',
+                        'listing.owner.editor.faqManager.channelIntro.title',
                         '¿Por qué ocultar o restringir una pregunta?'
                     )}
                 </p>
                 <p className={styles.channelIntroBody}>
                     {t(
-                        'commerce.owner.editor.faqManager.channelIntro.body1',
+                        'listing.owner.editor.faqManager.channelIntro.body1',
                         '"Visible en la ficha pública" muestra la pregunta en la página del local y en los datos estructurados (JSON-LD) que leen los buscadores. "Usable por la IA" permite que el asistente de chat use esta pregunta para responder consultas.'
                     )}
                 </p>
                 <p className={styles.channelIntroBody}>
                     {t(
-                        'commerce.owner.editor.faqManager.channelIntro.body2',
+                        'listing.owner.editor.faqManager.channelIntro.body2',
                         'Destildá "Visible en la ficha pública" para información útil pero que no querés publicar: algo temporal, un margen que preferís no prometer por escrito, o una recomendación que suena mejor en una conversación que en la vidriera.'
                     )}
                 </p>
                 <p className={styles.channelIntroBody}>
                     {t(
-                        'commerce.owner.editor.faqManager.channelIntro.body3',
+                        'listing.owner.editor.faqManager.channelIntro.body3',
                         'Destildá "Usable por la IA" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee.'
                     )}
                 </p>
                 <p className={styles.channelIntroNote}>
                     {t(
-                        'commerce.owner.editor.faqManager.channelIntro.body4',
+                        'listing.owner.editor.faqManager.channelIntro.body4',
                         'Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página.'
                     )}
                 </p>
@@ -481,7 +478,7 @@ export function CommerceFaqManager({
             {faqs.length === 0 && !isAdding && (
                 <p className={styles.emptyState}>
                     {t(
-                        'commerce.owner.editor.faqManager.emptyState',
+                        'listing.owner.editor.faqManager.emptyState',
                         'Todavía no hay preguntas. Agregá la primera.'
                     )}
                 </p>
@@ -505,7 +502,7 @@ export function CommerceFaqManager({
                                         htmlFor={`faq-q-${faq.id}`}
                                     >
                                         {t(
-                                            'commerce.owner.editor.faqManager.questionLabel',
+                                            'listing.owner.editor.faqManager.questionLabel',
                                             'Pregunta'
                                         )}
                                     </label>
@@ -521,7 +518,7 @@ export function CommerceFaqManager({
                                                 : undefined
                                         }
                                         placeholder={t(
-                                            'commerce.owner.editor.faqManager.questionPlaceholder',
+                                            'listing.owner.editor.faqManager.questionPlaceholder',
                                             'Escribí la pregunta...'
                                         )}
                                         onChange={(e) =>
@@ -545,7 +542,7 @@ export function CommerceFaqManager({
                                         htmlFor={`faq-a-${faq.id}`}
                                     >
                                         {t(
-                                            'commerce.owner.editor.faqManager.answerLabel',
+                                            'listing.owner.editor.faqManager.answerLabel',
                                             'Respuesta'
                                         )}
                                     </label>
@@ -559,7 +556,7 @@ export function CommerceFaqManager({
                                             editErrors.answer ? `faq-a-${faq.id}-error` : undefined
                                         }
                                         placeholder={t(
-                                            'commerce.owner.editor.faqManager.answerPlaceholder',
+                                            'listing.owner.editor.faqManager.answerPlaceholder',
                                             'Escribí la respuesta...'
                                         )}
                                         onChange={(e) =>
@@ -591,7 +588,7 @@ export function CommerceFaqManager({
                                                 }
                                             />
                                             {t(
-                                                'commerce.owner.editor.faqManager.visibleOnListingLabel',
+                                                'listing.owner.editor.faqManager.visibleOnListingLabel',
                                                 'Visible en la ficha pública'
                                             )}
                                         </label>
@@ -607,7 +604,7 @@ export function CommerceFaqManager({
                                                 }
                                             />
                                             {t(
-                                                'commerce.owner.editor.faqManager.usableByAiLabel',
+                                                'listing.owner.editor.faqManager.usableByAiLabel',
                                                 'Usable por la IA'
                                             )}
                                         </label>
@@ -620,7 +617,7 @@ export function CommerceFaqManager({
                                             onClick={() => handleEditSubmit(faq.id)}
                                         >
                                             {t(
-                                                'commerce.owner.editor.faqManager.saveButton',
+                                                'listing.owner.editor.faqManager.saveButton',
                                                 'Guardar'
                                             )}
                                         </button>
@@ -630,7 +627,7 @@ export function CommerceFaqManager({
                                             onClick={cancelEdit}
                                         >
                                             {t(
-                                                'commerce.owner.editor.faqManager.cancelButton',
+                                                'listing.owner.editor.faqManager.cancelButton',
                                                 'Cancelar'
                                             )}
                                         </button>
@@ -651,7 +648,7 @@ export function CommerceFaqManager({
                                                             aria-hidden="true"
                                                         />
                                                         {t(
-                                                            'commerce.owner.editor.faqManager.notVisibleBadge',
+                                                            'listing.owner.editor.faqManager.notVisibleBadge',
                                                             'No visible en la ficha'
                                                         )}
                                                     </span>
@@ -664,7 +661,7 @@ export function CommerceFaqManager({
                                                             aria-hidden="true"
                                                         />
                                                         {t(
-                                                            'commerce.owner.editor.faqManager.notAiUsableBadge',
+                                                            'listing.owner.editor.faqManager.notAiUsableBadge',
                                                             'No usable por IA'
                                                         )}
                                                     </span>
@@ -678,7 +675,7 @@ export function CommerceFaqManager({
                                             type="button"
                                             className={styles.iconBtn}
                                             aria-label={t(
-                                                'commerce.owner.editor.faqManager.moveUp',
+                                                'listing.owner.editor.faqManager.moveUp',
                                                 'Subir'
                                             )}
                                             disabled={index === 0 || isBusy}
@@ -690,7 +687,7 @@ export function CommerceFaqManager({
                                             type="button"
                                             className={styles.iconBtn}
                                             aria-label={t(
-                                                'commerce.owner.editor.faqManager.moveDown',
+                                                'listing.owner.editor.faqManager.moveDown',
                                                 'Bajar'
                                             )}
                                             disabled={index === faqs.length - 1 || isBusy}
@@ -705,7 +702,7 @@ export function CommerceFaqManager({
                                             onClick={() => startEdit(faq)}
                                         >
                                             {t(
-                                                'commerce.owner.editor.faqManager.editButton',
+                                                'listing.owner.editor.faqManager.editButton',
                                                 'Editar'
                                             )}
                                         </button>
@@ -716,7 +713,7 @@ export function CommerceFaqManager({
                                             onClick={() => setFaqPendingDelete(faq)}
                                         >
                                             {t(
-                                                'commerce.owner.editor.faqManager.deleteButton',
+                                                'listing.owner.editor.faqManager.deleteButton',
                                                 'Eliminar'
                                             )}
                                         </button>
@@ -735,7 +732,7 @@ export function CommerceFaqManager({
                         className={styles.fieldLabel}
                         htmlFor="faq-new-q"
                     >
-                        {t('commerce.owner.editor.faqManager.questionLabel', 'Pregunta')}
+                        {t('listing.owner.editor.faqManager.questionLabel', 'Pregunta')}
                     </label>
                     <textarea
                         id="faq-new-q"
@@ -745,7 +742,7 @@ export function CommerceFaqManager({
                         aria-invalid={addErrors.question ? 'true' : undefined}
                         aria-describedby={addErrors.question ? 'faq-new-q-error' : undefined}
                         placeholder={t(
-                            'commerce.owner.editor.faqManager.questionPlaceholder',
+                            'listing.owner.editor.faqManager.questionPlaceholder',
                             'Escribí la pregunta...'
                         )}
                         onChange={(e) => setAddValues((v) => ({ ...v, question: e.target.value }))}
@@ -763,7 +760,7 @@ export function CommerceFaqManager({
                         className={styles.fieldLabel}
                         htmlFor="faq-new-a"
                     >
-                        {t('commerce.owner.editor.faqManager.answerLabel', 'Respuesta')}
+                        {t('listing.owner.editor.faqManager.answerLabel', 'Respuesta')}
                     </label>
                     <textarea
                         id="faq-new-a"
@@ -773,7 +770,7 @@ export function CommerceFaqManager({
                         aria-invalid={addErrors.answer ? 'true' : undefined}
                         aria-describedby={addErrors.answer ? 'faq-new-a-error' : undefined}
                         placeholder={t(
-                            'commerce.owner.editor.faqManager.answerPlaceholder',
+                            'listing.owner.editor.faqManager.answerPlaceholder',
                             'Escribí la respuesta...'
                         )}
                         onChange={(e) => setAddValues((v) => ({ ...v, answer: e.target.value }))}
@@ -800,7 +797,7 @@ export function CommerceFaqManager({
                                 }
                             />
                             {t(
-                                'commerce.owner.editor.faqManager.visibleOnListingLabel',
+                                'listing.owner.editor.faqManager.visibleOnListingLabel',
                                 'Visible en la ficha pública'
                             )}
                         </label>
@@ -816,7 +813,7 @@ export function CommerceFaqManager({
                                 }
                             />
                             {t(
-                                'commerce.owner.editor.faqManager.usableByAiLabel',
+                                'listing.owner.editor.faqManager.usableByAiLabel',
                                 'Usable por la IA'
                             )}
                         </label>
@@ -828,7 +825,7 @@ export function CommerceFaqManager({
                             disabled={busyId === 'add'}
                             onClick={handleAddSubmit}
                         >
-                            {t('commerce.owner.editor.faqManager.saveButton', 'Guardar')}
+                            {t('listing.owner.editor.faqManager.saveButton', 'Guardar')}
                         </button>
                         <button
                             type="button"
@@ -839,7 +836,7 @@ export function CommerceFaqManager({
                                 setAddErrors(NO_FIELD_ERRORS);
                             }}
                         >
-                            {t('commerce.owner.editor.faqManager.cancelButton', 'Cancelar')}
+                            {t('listing.owner.editor.faqManager.cancelButton', 'Cancelar')}
                         </button>
                     </div>
                 </div>
@@ -849,7 +846,7 @@ export function CommerceFaqManager({
                     className={styles.addBtn}
                     onClick={() => setIsAdding(true)}
                 >
-                    {t('commerce.owner.editor.faqManager.addButton', 'Agregar pregunta')}
+                    {t('listing.owner.editor.faqManager.addButton', 'Agregar pregunta')}
                 </button>
             )}
 
@@ -861,18 +858,18 @@ export function CommerceFaqManager({
              */}
             <ConfirmDeleteDialog
                 isOpen={faqPendingDelete !== null}
-                title={t('commerce.owner.editor.faqManager.deleteDialogTitle', 'Eliminar pregunta')}
+                title={t('listing.owner.editor.faqManager.deleteDialogTitle', 'Eliminar pregunta')}
                 message={t(
-                    'commerce.owner.editor.faqManager.deleteConfirm',
+                    'listing.owner.editor.faqManager.deleteConfirm',
                     '¿Eliminás esta pregunta?'
                 )}
                 detail={faqPendingDelete?.question}
                 confirmLabel={t(
-                    'commerce.owner.editor.faqManager.deleteConfirmButton',
+                    'listing.owner.editor.faqManager.deleteConfirmButton',
                     'Eliminar pregunta'
                 )}
-                busyLabel={t('commerce.owner.editor.faqManager.deleting', 'Eliminando...')}
-                cancelLabel={t('commerce.owner.editor.faqManager.cancelButton', 'Cancelar')}
+                busyLabel={t('listing.owner.editor.faqManager.deleting', 'Eliminando...')}
+                cancelLabel={t('listing.owner.editor.faqManager.cancelButton', 'Cancelar')}
                 closeLabel={t('common.close', 'Cerrar')}
                 isBusy={busyId !== null && busyId === faqPendingDelete?.id}
                 onConfirm={() => void handleDelete()}

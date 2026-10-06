@@ -52,16 +52,16 @@ const listingIsPublished = isListingPublished({ lifecycleState: detail.lifecycle
 	listingName={detail.name}
 	currentSectionId={sectionId}
 	currentSectionSlug="datos"
-	title={t('commerce.owner.editor.sectionNav.basicInfo', 'Información básica')}
+	title={t('listing.owner.editor.sectionNav.basicInfo', 'Información básica')}
 >
 	<p class="ce-identity__notice">
 		{listingIsPublished
 			? t(
-					'commerce.owner.editor.slugFixedNotice',
+					'listing.owner.editor.slugFixedNotice',
 					'La dirección web de tu ficha (su URL) ya está fija: cambiar el nombre no la modifica.',
 				)
 			: t(
-					'commerce.owner.editor.slugFollowsNameNotice',
+					'listing.owner.editor.slugFollowsNameNotice',
 					'La dirección web de tu ficha (su URL) va a seguir al nombre hasta que la publiques.',
 				)}
 	</p>

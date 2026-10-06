@@ -79,42 +79,42 @@ const { trialDays } = resolveCommerceLandingOffer({ plansResult });
 
 const priceFaqAnswer =
     trialDays === null
-        ? t('commerce.landing.gastronomy.faq.a1NoTrial')
-        : tPlural('commerce.landing.gastronomy.faq.a1', trialDays);
+        ? t('listing.landing.gastronomy.faq.a1NoTrial')
+        : tPlural('listing.landing.gastronomy.faq.a1', trialDays);
 
 const benefits = [
     {
         Icon: MapIcon,
-        title: t('commerce.landing.gastronomy.benefits.item1.title'),
-        desc: t('commerce.landing.gastronomy.benefits.item1.desc')
+        title: t('listing.landing.gastronomy.benefits.item1.title'),
+        desc: t('listing.landing.gastronomy.benefits.item1.desc')
     },
     {
         Icon: SettingsIcon,
-        title: t('commerce.landing.gastronomy.benefits.item2.title'),
-        desc: t('commerce.landing.gastronomy.benefits.item2.desc')
+        title: t('listing.landing.gastronomy.benefits.item2.title'),
+        desc: t('listing.landing.gastronomy.benefits.item2.desc')
     },
     {
         Icon: ShieldIcon,
-        title: t('commerce.landing.gastronomy.benefits.item3.title'),
-        desc: t('commerce.landing.gastronomy.benefits.item3.desc')
+        title: t('listing.landing.gastronomy.benefits.item3.title'),
+        desc: t('listing.landing.gastronomy.benefits.item3.desc')
     }
 ] as const;
 
 const steps = [
     {
         num: '01',
-        title: t('commerce.landing.gastronomy.howItWorks.step1.title'),
-        desc: t('commerce.landing.gastronomy.howItWorks.step1.desc')
+        title: t('listing.landing.gastronomy.howItWorks.step1.title'),
+        desc: t('listing.landing.gastronomy.howItWorks.step1.desc')
     },
     {
         num: '02',
-        title: t('commerce.landing.gastronomy.howItWorks.step2.title'),
-        desc: t('commerce.landing.gastronomy.howItWorks.step2.desc')
+        title: t('listing.landing.gastronomy.howItWorks.step2.title'),
+        desc: t('listing.landing.gastronomy.howItWorks.step2.desc')
     },
     {
         num: '03',
-        title: t('commerce.landing.gastronomy.howItWorks.step3.title'),
-        desc: t('commerce.landing.gastronomy.howItWorks.step3.desc')
+        title: t('listing.landing.gastronomy.howItWorks.step3.title'),
+        desc: t('listing.landing.gastronomy.howItWorks.step3.desc')
     }
 ] as const;
 
@@ -127,9 +127,9 @@ const steps = [
  * each, so the JSON-LD can never advertise a trial the visible answer omits.
  */
 const faqs = [
-    { q: t('commerce.landing.gastronomy.faq.q1'), a: priceFaqAnswer },
-    { q: t('commerce.landing.gastronomy.faq.q2'), a: t('commerce.landing.gastronomy.faq.a2') },
-    { q: t('commerce.landing.gastronomy.faq.q3'), a: t('commerce.landing.gastronomy.faq.a3') }
+    { q: t('listing.landing.gastronomy.faq.q1'), a: priceFaqAnswer },
+    { q: t('listing.landing.gastronomy.faq.q2'), a: t('listing.landing.gastronomy.faq.a2') },
+    { q: t('listing.landing.gastronomy.faq.q3'), a: t('listing.landing.gastronomy.faq.a3') }
 ] as const;
 
 const faqJsonLd = {
@@ -142,8 +142,8 @@ const faqJsonLd = {
     }))
 };
 
-const title = t('commerce.lead.title');
-const subtitle = t('commerce.lead.subtitle');
+const title = t('listing.lead.title');
+const subtitle = t('listing.lead.subtitle');
 /**
  * The CTA points at this vertical's own pricing page.
  *
@@ -166,7 +166,7 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.gastr
     <Breadcrumbs locale={locale} items={[{ label: title }]} />
 
     <MarketingHero
-        tagline={t('commerce.landing.gastronomy.benefits.tagline')}
+        tagline={t('listing.landing.gastronomy.benefits.tagline')}
         titleAccent={title}
         subtitle={subtitle}
     >
@@ -180,29 +180,29 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.gastr
     </MarketingHero>
 
     <BenefitsSection
-        tagline={t('commerce.landing.gastronomy.benefits.tagline')}
-        title={t('commerce.landing.gastronomy.benefits.title')}
+        tagline={t('listing.landing.gastronomy.benefits.tagline')}
+        title={t('listing.landing.gastronomy.benefits.title')}
         items={benefits}
         columns={3}
     />
 
     <StepsSection
-        tagline={t('commerce.landing.gastronomy.howItWorks.tagline')}
-        title={t('commerce.landing.gastronomy.howItWorks.title')}
+        tagline={t('listing.landing.gastronomy.howItWorks.tagline')}
+        title={t('listing.landing.gastronomy.howItWorks.title')}
         items={steps}
         columns={3}
         warm
     />
 
     <FaqSection
-        tagline={t('commerce.landing.gastronomy.faq.tagline')}
-        title={t('commerce.landing.gastronomy.faq.title')}
+        tagline={t('listing.landing.gastronomy.faq.tagline')}
+        title={t('listing.landing.gastronomy.faq.title')}
         items={faqs}
     />
 
     <section class="sales-cta section section--warm">
         <div class="sales-cta__container section__container">
-            <h2 class="sales-cta__title">{t('commerce.landing.gastronomy.price.title')}</h2>
+            <h2 class="sales-cta__title">{t('listing.landing.gastronomy.price.title')}</h2>
             <GradientButton
                 href={pricingHref}
                 label={t('pricing.nav.seePlans')}

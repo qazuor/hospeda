@@ -143,27 +143,14 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // (`downloading`/`download`/`locked`/`error`) with an inline Spanish
     // fallback, so a missing prefix does not render a raw key on an /en/ or
     // /pt/ page — it silently prints Spanish there instead.
-    'commerce.brochure',
+    'listing.brochure',
     // HOS-1057 — `ExperienceCertificatePanel.client.tsx` names every state it
     // renders with an inline Spanish fallback, so a missing prefix does not
     // print a raw key on an /en/ or /pt/ page: it silently prints Spanish
     // instead, which is the failure this list exists to prevent.
-    'commerce.certificate',
-    'commerce.changePassword',
-    // NOT an i18n key — a `PermissionEnum` VALUE (`commerce.editOwn`), named as a
-    // string literal by `UserMenu.client.tsx` to decide the PostHog
-    // `user_type`. Nothing ever passes it to `t()`, and no `editOwn` key exists
-    // under this namespace in es/en/pt.
-    //
-    // It is declared anyway because the guard matches any literal whose head is
-    // a real namespace, on purpose: keys routinely reach `t()` through a data
-    // structure, so a call-site-only scan would miss them and ship a menu of raw
-    // dotted keys. That over-match is worth keeping — the cost here is zero
-    // bytes, since `pickClientNamespaces` copies only keys that exist, and this
-    // prefix matches none. See the `gastronomy.editOwn` / `experience.editOwn`
-    // siblings below, added by HOS-1077 for the same reason.
-    'commerce.editOwn',
-    'commerce.owner',
+    'listing.certificate',
+    'listing.changePassword',
+    'listing.owner',
     'common.anonymous',
     // Named directly by the review islands' network-failure branch. It is also
     // listed in EXTERNAL_I18N_KEY_PREFIXES, which covers the copy built inside
@@ -230,10 +217,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'destinations.rating',
     'destinations.weather',
     'events.categories',
-    // HOS-1077: a `PermissionEnum` value, not a key — same as `commerce.editOwn`
-    // above, whose vertical split created it. `UserMenu.client.tsx` reads all
-    // three so a gastronomy-only or experience-only owner is still segmented as
-    // an `owner` in PostHog rather than a `tourist`.
+    // The vertical EDIT_OWN permission values are used by UserMenu analytics,
+    // not as translation keys.
     // HOS-1264 — the AI chat's vertical-specific copy, named via
     // `aiChatCopyKey` in `lib/ai-chat-copy.ts`. Missing, the panel title and
     // disclaimer printed as raw keys on the experience page.

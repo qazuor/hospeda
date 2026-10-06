@@ -294,7 +294,7 @@ describe('UserService: _executeAdminSearch override', () => {
         it('should keep the multi-value roles filter out of the where clause', async () => {
             // Arrange
             const params = buildDefaultParams({
-                entityFilters: { roles: ['HOST', 'COMMERCE_OWNER'] }
+                entityFilters: { roles: ['HOST', 'GASTRONOMY_OWNER'] }
             });
 
             // Act

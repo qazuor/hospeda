@@ -34,7 +34,7 @@ perfil de usuario. Es decir: darle el rol `EDITOR` a un colaborador externo hoy 
 deja parado en el mismo panel que usa el staff.
 
 Esto ya causó un incidente real con otro rol: **HOS-152** —
-*"HOST/COMMERCE_OWNER can access the admin panel after publishing first
+*"HOST/GASTRONOMY_OWNER and EXPERIENCE_OWNER can access the admin panel after publishing first
 accommodation"*. El riesgo no es hipotético, y crece con cada feature nueva que se
 agregue al admin sin acordarse de excluir a `EDITOR` de ella.
 
@@ -219,7 +219,7 @@ Roles del admin (`apps/admin/src/features/users/components/roles/UserRolesCard.t
 No hay ningún flujo automático que otorgue `EDITOR` —
 `RoleGrantReason` (`packages/schemas/src/entities/user/user-role.schema.ts:236`)
 enumera `signup`, `signup_as_host`, `accommodation_created`,
-`accommodation_activated`, `commerce_lead_approved`, `seed`: ninguno de tipo
+`accommodation_activated`, el evento de aprobación de un lead de listado, `seed`: ninguno de tipo
 editor. Esta spec no cambia esa asignación (NG-2): sigue siendo manual, vía admin.
 
 ### 5.7 No existe precedente de un flag "de confianza" por usuario
@@ -363,7 +363,7 @@ Antes de que `EDITOR` pueda pegarle a `protected/posts`/`protected/events`:
    tenga el flag de confianza — cerrando el gap de 5.5 para esta superficie
    específica.
 4. **Nuevas rutas `GET /protected/posts/mine` y `GET /protected/events/mine`**
-   (siguiendo el patrón ya usado por commerce, HOS-278 §5.5: *"cada vertical
+   (siguiendo el patrón ya usado por gastronomy and experience, HOS-278 §5.5: *"cada vertical
    expone su propio `GET /{vertical}/mine`, owner-scoped en el service"`), que
    filtran por`authorId === actor.id` **de forma dura**, sin honrar
    `POST_VIEW_ALL`/`EVENT_VIEW_ALL` — la superficie nueva de `/mi-cuenta` no
@@ -372,7 +372,7 @@ Antes de que `EDITOR` pueda pegarle a `protected/posts`/`protected/events`:
 5. **Nueva ruta `GET /protected/posts/:id` y `GET /protected/events/:id`**
    (no existen hoy, 5.1), con el mismo enforcement de ownership que `mine` — 404
    si el post/evento no es del actor (mismo patrón que
-   `fetchOwnerListingDetail` de commerce, HOS-278 §6.4: *"the protected getById
+   `fetchOwnerListingDetail` de gastronomy and experience, HOS-278 §6.4: *"the protected getById
    endpoint enforces ownership server-side: non-owners... receive NOT_FOUND"*).
 
 Este mismo criterio de scoping (paso 4/5: sólo lo mío, sin `VIEW_ALL`) se aplica
@@ -487,7 +487,7 @@ No hace falta agregar `authorId` a `posts`/`events` — ya existe en ambas, con
   `moderationState`, también `visibility` no-público — cierre del gap de 5.2).
 - **AC-4** — Un editor no puede leer ni editar un post/evento cuyo `authorId` no
   sea el suyo, a través de las rutas nuevas `mine`/`:id` — 404, no 403 (mismo
-  criterio que commerce en HOS-278).
+  criterio que gastronomy and experience en HOS-278).
 - **AC-5** — Un editor no puede, por sí mismo, cambiar el `moderationState` o la
   `visibility` de su propio contenido hacia un estado publicado — eso requiere ya
   sea una acción de admin, ya sea tener el flag de confianza.
@@ -553,7 +553,7 @@ No hace falta agregar `authorId` a `posts`/`events` — ya existe en ambas, con
 > **Ojo con la regla de dual-write del repo**: cambiar el seed sólo arregla bases
 > nuevas. Sacar estos permisos en staging y prod necesita además una data-migration
 > numerada, como la que hizo HOS-152
-> (`0010-remove-panel-admin-from-host-commerce-owner.ts`) para el caso equivalente.
+> (la migración que retiró el acceso al panel de los roles de dueño de listado) para el caso equivalente.
 
 - **OQ-1** — Subconjunto exacto de permisos que conserva `EDITOR` una vez que
   pierde `ACCESS_PANEL_ADMIN`/`ACCESS_API_ADMIN`: ¿se queda con `TAG_*`,

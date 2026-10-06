@@ -193,7 +193,7 @@ export const handler = async (c: Context) => {
 
   // Check permissions — NEVER check roles directly, even for admin-only
   // routes. `actor.roles` (HOS-296) holds every role the actor wears at
-  // once (a user can be HOST and COMMERCE_OWNER simultaneously); routing
+  // once (a user can be HOST and GASTRONOMY_OWNER / EXPERIENCE_OWNER simultaneously); routing
   // logic must always ask "does the actor hold permission X".
   if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
     return c.json({ error: 'Insufficient permissions' }, 403);
@@ -828,7 +828,7 @@ For incident response:
 [`docs/billing/billing-runbooks.md`](../../docs/billing/billing-runbooks.md)
 
 For the deferred SPEC-193 staging smoke batch (pre-promotion gate):
-[`SPEC-193 pending-staging-smoke`](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md)
+`SPEC-193 pending-staging-smoke` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
 
 ## AI Social routes — Custom GPT integration (`/api/v1/ai/social/*`)
 

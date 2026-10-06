@@ -17,7 +17,7 @@ vi.mock('../../../../src/lib/i18n', () => ({
             // template, so the resolver ignores the fallback and interpolates
             // the param instead (BETA-124). Reproduce that here.
             const raw =
-                key === 'commerce.owner.editor.validation.summaryHint'
+                key === 'listing.owner.editor.validation.summaryHint'
                     ? '{{count}}/300'
                     : (fallback ?? `[MISSING:${key}]`);
             if (!params) return raw;

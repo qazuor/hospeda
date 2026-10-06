@@ -411,7 +411,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                 setIsPhotoLocked(true);
                 setMessage(
                     t(
-                        'commerce.owner.editor.menuManager.photoLocked',
+                        'listing.owner.editor.menuManager.photoLocked',
                         'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
                     )
                 );
@@ -421,7 +421,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             if (!response?.ok) {
                 setMessage(
                     t(
-                        'commerce.owner.editor.menuManager.photoUploadError',
+                        'listing.owner.editor.menuManager.photoUploadError',
                         'No se pudo subir la foto del plato.'
                     )
                 );
@@ -432,7 +432,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             if (!parsed.data?.url) {
                 setMessage(
                     t(
-                        'commerce.owner.editor.menuManager.photoUploadError',
+                        'listing.owner.editor.menuManager.photoUploadError',
                         'No se pudo subir la foto del plato.'
                     )
                 );
@@ -445,7 +445,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             });
             setMessage(
                 t(
-                    'commerce.owner.editor.menuManager.photoAttached',
+                    'listing.owner.editor.menuManager.photoAttached',
                     'Foto agregada. Acordate de guardar la carta.'
                 )
             );
@@ -523,7 +523,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
         setState('idle');
 
         if (result.ok) {
-            setMessage(t('commerce.owner.editor.menuManager.saved', 'Carta guardada.'));
+            setMessage(t('listing.owner.editor.menuManager.saved', 'Carta guardada.'));
             return;
         }
 
@@ -549,7 +549,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                 setIsPhotoLocked(true);
                 setMessage(
                     t(
-                        'commerce.owner.editor.menuManager.photoLocked',
+                        'listing.owner.editor.menuManager.photoLocked',
                         'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
                     )
                 );
@@ -569,7 +569,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                 setIsTranslationLocked(true);
                 setMessage(
                     t(
-                        'commerce.owner.editor.menuManager.translationLocked',
+                        'listing.owner.editor.menuManager.translationLocked',
                         'Traducir la carta está disponible en el plan Premium. Podés borrar las traducciones y guardar la carta en español.'
                     )
                 );
@@ -579,16 +579,14 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             setIsLocked(true);
             setMessage(
                 t(
-                    'commerce.owner.editor.menuManager.locked',
+                    'listing.owner.editor.menuManager.locked',
                     'Cargar la carta plato por plato está disponible desde el plan Profesional. Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace.'
                 )
             );
             return;
         }
 
-        setMessage(
-            t('commerce.owner.editor.menuManager.saveError', 'No se pudo guardar la carta.')
-        );
+        setMessage(t('listing.owner.editor.menuManager.saveError', 'No se pudo guardar la carta.'));
     }, [basePath, sections, t]);
 
     // ── The uploaded photo / PDF ────────────────────────────────────────────
@@ -621,7 +619,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             if (!response?.ok) {
                 setMessage(
                     t(
-                        'commerce.owner.editor.menuManager.uploadError',
+                        'listing.owner.editor.menuManager.uploadError',
                         'No se pudo subir el archivo del menú.'
                     )
                 );
@@ -632,7 +630,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             if (payload.data?.file) {
                 setFile(payload.data.file);
                 setMessage(
-                    t('commerce.owner.editor.menuManager.uploaded', 'Archivo del menú subido.')
+                    t('listing.owner.editor.menuManager.uploaded', 'Archivo del menú subido.')
                 );
             }
         },
@@ -649,14 +647,14 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
         if (result.ok) {
             setFile(null);
             setMessage(
-                t('commerce.owner.editor.menuManager.fileRemoved', 'Archivo del menú eliminado.')
+                t('listing.owner.editor.menuManager.fileRemoved', 'Archivo del menú eliminado.')
             );
             return;
         }
 
         setMessage(
             t(
-                'commerce.owner.editor.menuManager.deleteError',
+                'listing.owner.editor.menuManager.deleteError',
                 'No se pudo eliminar el archivo del menú.'
             )
         );
@@ -692,11 +690,11 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             id="editor-menu"
         >
             <h2 className={styles.heading}>
-                {t('commerce.owner.editor.menuManager.title', 'Carta')}
+                {t('listing.owner.editor.menuManager.title', 'Carta')}
             </h2>
             <p className={styles.intro}>
                 {t(
-                    'commerce.owner.editor.menuManager.intro',
+                    'listing.owner.editor.menuManager.intro',
                     'Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.'
                 )}
             </p>
@@ -704,7 +702,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             {/* ── The uploaded photo / PDF ──────────────────────────────── */}
             <div className={styles.fileBlock}>
                 <h3 className={styles.subheading}>
-                    {t('commerce.owner.editor.menuManager.fileTitle', 'Foto o PDF del menú')}
+                    {t('listing.owner.editor.menuManager.fileTitle', 'Foto o PDF del menú')}
                 </h3>
 
                 {file ? (
@@ -723,16 +721,16 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                 rel="noopener noreferrer"
                             >
                                 {file.kind === 'pdf'
-                                    ? t('commerce.owner.editor.menuManager.filePdf', 'Ver el PDF')
+                                    ? t('listing.owner.editor.menuManager.filePdf', 'Ver el PDF')
                                     : t(
-                                          'commerce.owner.editor.menuManager.fileImage',
+                                          'listing.owner.editor.menuManager.fileImage',
                                           'Ver la foto'
                                       )}
                             </a>
                         ) : (
                             <span className={styles.intro}>
                                 {t(
-                                    'commerce.owner.editor.menuManager.fileUnavailable',
+                                    'listing.owner.editor.menuManager.fileUnavailable',
                                     'No se puede abrir este archivo. Eliminalo y subilo de nuevo.'
                                 )}
                             </span>
@@ -745,7 +743,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                 void deleteFile();
                             }}
                         >
-                            {t('commerce.owner.editor.menuManager.removeFile', 'Eliminar')}
+                            {t('listing.owner.editor.menuManager.removeFile', 'Eliminar')}
                         </button>
                     </div>
                 ) : null}
@@ -754,10 +752,10 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                     <span>
                         {file
                             ? t(
-                                  'commerce.owner.editor.menuManager.replaceFile',
+                                  'listing.owner.editor.menuManager.replaceFile',
                                   'Reemplazar el archivo'
                               )
-                            : t('commerce.owner.editor.menuManager.addFile', 'Subir foto o PDF')}
+                            : t('listing.owner.editor.menuManager.addFile', 'Subir foto o PDF')}
                     </span>
                     <input
                         type="file"
@@ -780,7 +778,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
             {/* ── The structured carta ──────────────────────────────────── */}
             <div className={styles.sectionsBlock}>
                 <h3 className={styles.subheading}>
-                    {t('commerce.owner.editor.menuManager.sectionsTitle', 'Platos por sección')}
+                    {t('listing.owner.editor.menuManager.sectionsTitle', 'Platos por sección')}
                 </h3>
 
                 {sections.map((section, sectionIndex) => (
@@ -793,7 +791,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                     >
                         <legend className={styles.srOnly}>
                             {section.name ||
-                                t('commerce.owner.editor.menuManager.newSection', 'Nueva sección')}
+                                t('listing.owner.editor.menuManager.newSection', 'Nueva sección')}
                         </legend>
 
                         <div className={styles.sectionHead}>
@@ -802,11 +800,11 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                 type="text"
                                 value={section.name}
                                 placeholder={t(
-                                    'commerce.owner.editor.menuManager.sectionNamePlaceholder',
+                                    'listing.owner.editor.menuManager.sectionNamePlaceholder',
                                     'Entradas, Principales, Postres…'
                                 )}
                                 aria-label={t(
-                                    'commerce.owner.editor.menuManager.sectionName',
+                                    'listing.owner.editor.menuManager.sectionName',
                                     'Nombre de la sección'
                                 )}
                                 onChange={(event) => {
@@ -817,7 +815,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                 type="button"
                                 className={styles.iconButton}
                                 aria-label={t(
-                                    'commerce.owner.editor.menuManager.moveSectionUp',
+                                    'listing.owner.editor.menuManager.moveSectionUp',
                                     'Subir la sección'
                                 )}
                                 onClick={() => {
@@ -830,7 +828,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                 type="button"
                                 className={styles.iconButton}
                                 aria-label={t(
-                                    'commerce.owner.editor.menuManager.moveSectionDown',
+                                    'listing.owner.editor.menuManager.moveSectionDown',
                                     'Bajar la sección'
                                 )}
                                 onClick={() => {
@@ -846,7 +844,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                     removeSection(sectionIndex);
                                 }}
                             >
-                                {t('commerce.owner.editor.menuManager.removeSection', 'Quitar')}
+                                {t('listing.owner.editor.menuManager.removeSection', 'Quitar')}
                             </button>
                         </div>
 
@@ -880,11 +878,11 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                     type="text"
                                     value={item.name}
                                     placeholder={t(
-                                        'commerce.owner.editor.menuManager.itemNamePlaceholder',
+                                        'listing.owner.editor.menuManager.itemNamePlaceholder',
                                         'Nombre del plato'
                                     )}
                                     aria-label={t(
-                                        'commerce.owner.editor.menuManager.itemName',
+                                        'listing.owner.editor.menuManager.itemName',
                                         'Nombre del plato'
                                     )}
                                     onChange={(event) => {
@@ -898,11 +896,11 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                     type="text"
                                     value={item.description}
                                     placeholder={t(
-                                        'commerce.owner.editor.menuManager.itemDescriptionPlaceholder',
+                                        'listing.owner.editor.menuManager.itemDescriptionPlaceholder',
                                         'Ingredientes, porción…'
                                     )}
                                     aria-label={t(
-                                        'commerce.owner.editor.menuManager.itemDescription',
+                                        'listing.owner.editor.menuManager.itemDescription',
                                         'Descripción del plato'
                                     )}
                                     onChange={(event) => {
@@ -938,11 +936,11 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                     step={1}
                                     value={centsToPesosInputValue({ cents: item.priceCents })}
                                     placeholder={t(
-                                        'commerce.owner.editor.menuManager.itemPricePlaceholder',
+                                        'listing.owner.editor.menuManager.itemPricePlaceholder',
                                         'A consultar'
                                     )}
                                     aria-label={t(
-                                        'commerce.owner.editor.menuManager.itemPrice',
+                                        'listing.owner.editor.menuManager.itemPrice',
                                         'Precio del plato'
                                     )}
                                     onChange={(event) => {
@@ -964,7 +962,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                         }}
                                     />
                                     {t(
-                                        'commerce.owner.editor.menuManager.itemAvailable',
+                                        'listing.owner.editor.menuManager.itemAvailable',
                                         'Disponible'
                                     )}
                                 </label>
@@ -975,7 +973,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                         removeItem(sectionIndex, itemIndex);
                                     }}
                                 >
-                                    {t('commerce.owner.editor.menuManager.removeItem', 'Quitar')}
+                                    {t('listing.owner.editor.menuManager.removeItem', 'Quitar')}
                                 </button>
 
                                 {/*
@@ -996,7 +994,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                                 item.photoAlt ||
                                                 item.name ||
                                                 t(
-                                                    'commerce.owner.editor.menuManager.photoPreview',
+                                                    'listing.owner.editor.menuManager.photoPreview',
                                                     'Foto del plato'
                                                 )
                                             }
@@ -1007,11 +1005,11 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                         <span>
                                             {item.photoUrl
                                                 ? t(
-                                                      'commerce.owner.editor.menuManager.replacePhoto',
+                                                      'listing.owner.editor.menuManager.replacePhoto',
                                                       'Cambiar la foto'
                                                   )
                                                 : t(
-                                                      'commerce.owner.editor.menuManager.addPhoto',
+                                                      'listing.owner.editor.menuManager.addPhoto',
                                                       'Agregar foto'
                                                   )}
                                         </span>
@@ -1044,11 +1042,11 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                                 type="text"
                                                 value={item.photoAlt ?? ''}
                                                 placeholder={t(
-                                                    'commerce.owner.editor.menuManager.photoAltPlaceholder',
+                                                    'listing.owner.editor.menuManager.photoAltPlaceholder',
                                                     'Describí la foto (opcional)'
                                                 )}
                                                 aria-label={t(
-                                                    'commerce.owner.editor.menuManager.photoAlt',
+                                                    'listing.owner.editor.menuManager.photoAlt',
                                                     'Texto alternativo de la foto'
                                                 )}
                                                 onChange={(event) => {
@@ -1072,7 +1070,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                                 }}
                                             >
                                                 {t(
-                                                    'commerce.owner.editor.menuManager.removePhoto',
+                                                    'listing.owner.editor.menuManager.removePhoto',
                                                     'Quitar la foto'
                                                 )}
                                             </button>
@@ -1089,7 +1087,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                                 addItem(sectionIndex);
                             }}
                         >
-                            {t('commerce.owner.editor.menuManager.addItem', 'Agregar plato')}
+                            {t('listing.owner.editor.menuManager.addItem', 'Agregar plato')}
                         </button>
                     </fieldset>
                 ))}
@@ -1099,7 +1097,7 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                     className={styles.secondaryButton}
                     onClick={addSection}
                 >
-                    {t('commerce.owner.editor.menuManager.addSection', 'Agregar sección')}
+                    {t('listing.owner.editor.menuManager.addSection', 'Agregar sección')}
                 </button>
 
                 {/*
@@ -1116,8 +1114,8 @@ export function CommerceMenuManager({ listingId, locale }: CommerceMenuManagerPr
                     }}
                 >
                     {state === 'saving'
-                        ? t('commerce.owner.editor.menuManager.saving', 'Guardando…')
-                        : t('commerce.owner.editor.menuManager.save', 'Guardar carta')}
+                        ? t('listing.owner.editor.menuManager.saving', 'Guardando…')
+                        : t('listing.owner.editor.menuManager.save', 'Guardar carta')}
                 </button>
             </div>
 

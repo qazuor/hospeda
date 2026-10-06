@@ -27,7 +27,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * - Route requires admin-panel access (ACCESS_PANEL_ADMIN or ACCESS_API_ADMIN
  *   via `createAdminRoute`'s level check). Only staff roles
  *   (SUPER_ADMIN / ADMIN / EDITOR / CLIENT_MANAGER) hold that permission, so
- *   this endpoint is admin-only. HOST / COMMERCE_OWNER do NOT reach it: they
+ *   this endpoint is admin-only. HOST / GASTRONOMY_OWNER / EXPERIENCE_OWNER do NOT reach it: they
  *   self-manage their own accommodations from the web app
  *   (`/mi-cuenta/propiedades/`) via the owner-scoped `/api/v1/protected/*`
  *   routes, which enforce ownership without any admin permission.

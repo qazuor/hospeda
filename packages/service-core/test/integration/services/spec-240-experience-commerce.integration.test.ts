@@ -97,17 +97,17 @@ const ALWAYS_COMPLETE: ResolveCommerceListingCompleteness = async () => ({
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a COMMERCE_OWNER actor with operational edit permissions.
+ * Creates a EXPERIENCE_OWNER actor with operational edit permissions.
  * The `id` must match the seeded user to satisfy ownership checks.
  *
  * @param userId - The UUID of the owner user row in the DB.
- * @returns Actor with COMMERCE_OWNER role and relevant permissions.
+ * @returns Actor with EXPERIENCE_OWNER role and relevant permissions.
  */
 function createCommerceOwnerActor(userId: string): Actor {
     return {
         id: userId,
-        roles: [RoleEnum.COMMERCE_OWNER],
-        permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+        roles: [RoleEnum.EXPERIENCE_OWNER],
+        permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN]
     };
 }
 

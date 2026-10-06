@@ -2,7 +2,7 @@
  * Experience edit page — allows admins to update an existing experience listing.
  *
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
- * Gate-protected by COMMERCE_EDIT_ALL.
+ * Gate-protected by EXPERIENCE_EDIT_ALL.
  *
  * Mirrors the gastronomy edit page pattern (SPEC-240 T-028).
  *
@@ -47,7 +47,7 @@ function ExperienceEditPage() {
     const entityData = useExperiencePage(id);
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.EXPERIENCE_EDIT_ALL]}>
             <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                     <PageTabs

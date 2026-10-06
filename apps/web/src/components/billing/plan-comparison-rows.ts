@@ -458,7 +458,7 @@ function commerceExtrasRows({
         },
         {
             id: 'aiChatCommerce',
-            labelKey: 'billing.comparison.row.aiChatCommerce',
+            labelKey: 'billing.comparison.row.aiChatListing',
             cell: { kind: 'limit', key: aiChatLimitKey },
             status: 'available'
         }
@@ -469,7 +469,7 @@ export const GASTRONOMY_GROUPS: readonly GroupConfig[] = [
     { id: 'gastronomyListing', rows: GASTRONOMY_LISTING_ROWS },
     { id: 'gastronomyMenu', rows: GASTRONOMY_MENU_ROWS },
     {
-        id: 'commerceExtras',
+        id: 'listingExtras',
         rows: commerceExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH })
     }
 ];
@@ -478,7 +478,7 @@ export const EXPERIENCE_GROUPS: readonly GroupConfig[] = [
     { id: 'experienceListing', rows: EXPERIENCE_LISTING_ROWS },
     { id: 'experienceService', rows: EXPERIENCE_SERVICE_ROWS },
     {
-        id: 'commerceExtras',
+        id: 'listingExtras',
         rows: commerceExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH })
     }
 ];

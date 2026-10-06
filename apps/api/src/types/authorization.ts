@@ -30,21 +30,21 @@ export interface AuthorizationConfig {
      * `requiredPermissions`, which stays a plain AND list.
      *
      * ```ts
-     * // "gastronomy.editAll OR commerce.editAll"
-     * anyOfPermissions: [[GASTRONOMY_EDIT_ALL, COMMERCE_EDIT_ALL]]
+     * // "gastronomy.editAll OR experience.editAll" for a shared operation
+     * anyOfPermissions: [[GASTRONOMY_EDIT_ALL, EXPERIENCE_EDIT_ALL]]
      *
-     * // "(gastronomy.editAll OR commerce.editAll) AND
-     * //  (gastronomy.moderateReview OR commerce.moderateReview)"
+     * // "(gastronomy.editAll OR experience.editAll) AND
+     * //  (gastronomy.moderateReview OR experience.moderateReview)"
      * anyOfPermissions: [
-     *     [GASTRONOMY_EDIT_ALL, COMMERCE_EDIT_ALL],
-     *     [GASTRONOMY_MODERATE_REVIEW, COMMERCE_MODERATE_REVIEW]
+     *     [GASTRONOMY_EDIT_ALL, EXPERIENCE_EDIT_ALL],
+     *     [GASTRONOMY_MODERATE_REVIEW, EXPERIENCE_MODERATE_REVIEW]
      * ]
      * ```
      *
      * ## Why this exists
      *
      * `requiredPermissions` is `hasAllPermissions` — strictly AND — so a route
-     * that must accept "the legacy permission OR its replacement" could not be
+     * that must accept either vertical's permission could not be
      * expressed at the factory at all. The workaround already in the codebase is
      * to drop the route-level gate and re-implement the OR by hand inside the
      * handler, which moves the declaration out of the place reviewers read it

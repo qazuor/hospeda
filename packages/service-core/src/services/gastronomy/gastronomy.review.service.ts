@@ -181,12 +181,12 @@ export class GastronomyReviewService extends BaseCrudService<
         }
     }
 
-    /** Review update is staff-only (`COMMERCE_EDIT_ALL`). */
+    /** Review update is staff-only (`GASTRONOMY_EDIT_ALL`). */
     protected _canUpdate(actor: Actor, _entity: GastronomyReview): void {
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_EDIT_ALL required to update a gastronomy review'
+                'Permission denied: GASTRONOMY_EDIT_ALL required to update a gastronomy review'
             );
         }
     }
@@ -194,7 +194,7 @@ export class GastronomyReviewService extends BaseCrudService<
     /** Soft-delete: staff or the review author. */
     protected _canSoftDelete(actor: Actor, entity: GastronomyReview): void {
         const isAuthor = entity.userId === actor.id;
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL) && !isAuthor) {
+        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL) && !isAuthor) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: cannot delete this gastronomy review'
@@ -202,22 +202,22 @@ export class GastronomyReviewService extends BaseCrudService<
         }
     }
 
-    /** Hard delete is staff-only (`COMMERCE_EDIT_ALL`). */
+    /** Hard delete is staff-only (`GASTRONOMY_EDIT_ALL`). */
     protected _canHardDelete(actor: Actor, _entity: GastronomyReview): void {
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_EDIT_ALL required to permanently delete a gastronomy review'
+                'Permission denied: GASTRONOMY_EDIT_ALL required to permanently delete a gastronomy review'
             );
         }
     }
 
-    /** Restore is staff-only (`COMMERCE_EDIT_ALL`). */
+    /** Restore is staff-only (`GASTRONOMY_EDIT_ALL`). */
     protected _canRestore(actor: Actor, _entity: GastronomyReview): void {
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_EDIT_ALL required to restore a gastronomy review'
+                'Permission denied: GASTRONOMY_EDIT_ALL required to restore a gastronomy review'
             );
         }
     }
@@ -243,24 +243,24 @@ export class GastronomyReviewService extends BaseCrudService<
     }
 
     protected _canUpdateVisibility(actor: Actor, _entity: GastronomyReview, _v: unknown): void {
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_EDIT_ALL required to update gastronomy review visibility'
+                'Permission denied: GASTRONOMY_EDIT_ALL required to update gastronomy review visibility'
             );
         }
     }
 
     /**
      * Admin-list gate: verifies admin-panel access (base class) then checks
-     * `COMMERCE_MODERATE_REVIEW`.
+     * `GASTRONOMY_MODERATE_REVIEW`.
      */
     protected override async _canAdminList(actor: Actor): Promise<void> {
         await super._canAdminList(actor);
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATE_REVIEW)) {
+        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_MODERATE_REVIEW required for gastronomy review admin list'
+                'Permission denied: GASTRONOMY_MODERATE_REVIEW required for gastronomy review admin list'
             );
         }
     }
@@ -388,7 +388,7 @@ export class GastronomyReviewService extends BaseCrudService<
      * (`averageRating`, `reviewsCount`, `rating`) are recomputed from all
      * APPROVED, non-deleted reviews.
      *
-     * Permission: `COMMERCE_MODERATE_REVIEW`.
+     * Permission: `GASTRONOMY_MODERATE_REVIEW`.
      *
      * @param input - Moderation decision input.
      * @param actor - The admin actor performing the moderation.
@@ -401,12 +401,12 @@ export class GastronomyReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<GastronomyReview>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATE_REVIEW)) {
+            if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
                 return {
                     error: {
                         code: ServiceErrorCode.FORBIDDEN,
                         message:
-                            'Permission denied: COMMERCE_MODERATE_REVIEW required to moderate reviews'
+                            'Permission denied: GASTRONOMY_MODERATE_REVIEW required to moderate reviews'
                     }
                 };
             }
@@ -463,7 +463,7 @@ export class GastronomyReviewService extends BaseCrudService<
     /**
      * Returns the count of PENDING reviews for the gastronomy entity type.
      *
-     * Permission: `COMMERCE_MODERATE_REVIEW`.
+     * Permission: `GASTRONOMY_MODERATE_REVIEW`.
      *
      * @param actor - The actor requesting the count.
      * @param ctx - Optional service context for transaction propagation.
@@ -474,12 +474,12 @@ export class GastronomyReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATE_REVIEW)) {
+            if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
                 return {
                     error: {
                         code: ServiceErrorCode.FORBIDDEN,
                         message:
-                            'Permission denied: COMMERCE_MODERATE_REVIEW required to read pending count'
+                            'Permission denied: GASTRONOMY_MODERATE_REVIEW required to read pending count'
                     }
                 };
             }
@@ -513,7 +513,7 @@ export class GastronomyReviewService extends BaseCrudService<
      * `lifecycleState`, whereas the moderation UI needs to filter by
      * `moderationState`.
      *
-     * Permission: `COMMERCE_MODERATE_REVIEW`.
+     * Permission: `GASTRONOMY_MODERATE_REVIEW`.
      *
      * @param actor - The admin actor performing the listing.
      * @param params - Optional moderation-state filter and pagination.
@@ -530,12 +530,12 @@ export class GastronomyReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<GastronomyReview>>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATE_REVIEW)) {
+            if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
                 return {
                     error: {
                         code: ServiceErrorCode.FORBIDDEN,
                         message:
-                            'Permission denied: COMMERCE_MODERATE_REVIEW required to list reviews for moderation'
+                            'Permission denied: GASTRONOMY_MODERATE_REVIEW required to list reviews for moderation'
                     }
                 };
             }

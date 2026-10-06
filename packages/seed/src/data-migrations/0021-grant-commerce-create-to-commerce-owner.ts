@@ -27,9 +27,16 @@
  * `false` — this only ever ADDS a grant (an `INSERT ... ON CONFLICT DO
  * NOTHING`). It never deletes or narrows access, so the production
  * destructive-migration gate does not apply.
+ *
+ * ## Retired by HOS-1417
+ *
+ * The `COMMERCE_OWNER` role and every `commerce.*` permission were retired by
+ * migration 0126 (HOS-1417), which deletes their `role_permission` rows. Data
+ * migrations always run after the schema carril, so wherever this one has not
+ * run yet `role_enum` no longer has the value and inserting it would make
+ * Postgres reject the query. The end state 0126 leaves — no such grant — is
+ * already the correct one, so `up()` is a no-op that keeps its ledger key.
  */
-import { rolePermission } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -38,20 +45,10 @@ export const meta = {
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
 
-/** Role → permission grant this migration ensures exists. */
-const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = [
-    { role: RoleEnum.COMMERCE_OWNER, permission: PermissionEnum.COMMERCE_CREATE }
-];
-
-export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
-    const inserted = await ctx.db
-        .insert(rolePermission)
-        .values(GRANTS)
-        .onConflictDoNothing()
-        .returning();
-
+export async function up(_ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     return {
-        summary: `Granted ${inserted.length} of ${GRANTS.length} HOS-166 COMMERCE_CREATE role_permission row(s) (rest already present).`,
-        counts: { granted: inserted.length, alreadyPresent: GRANTS.length - inserted.length }
+        summary:
+            'No-op: COMMERCE_OWNER and commerce.create were retired by migration 0126 (HOS-1417).',
+        counts: { granted: 0, alreadyPresent: 0 }
     };
 }

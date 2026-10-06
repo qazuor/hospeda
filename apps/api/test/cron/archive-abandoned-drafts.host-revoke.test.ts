@@ -70,12 +70,13 @@ describe('shouldRevokeHostHat', () => {
     });
 
     it.each([
-        RoleEnum.COMMERCE_OWNER,
+        RoleEnum.GASTRONOMY_OWNER,
+        RoleEnum.EXPERIENCE_OWNER,
         RoleEnum.SPONSOR,
         RoleEnum.EDITOR
     ])('revokes HOST from an owner who also holds %s, leaving that hat to survive', (otherHat) => {
         // The point of the change: the decision names exactly one role, so
-        // a commerce owner who stops being a host stays a commerce owner.
+        // a listing owner who stops being a host keeps the listing role.
         expect(shouldRevokeHostHat({ heldRoles: [RoleEnum.USER, RoleEnum.HOST, otherHat] })).toBe(
             true
         );

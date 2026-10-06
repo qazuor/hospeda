@@ -29,8 +29,8 @@ describe('resolveFixtureRole', () => {
         expect(resolveFixtureRole({ item: { role: 'HOST' }, source: 'f.json' })).toBe(
             RoleEnum.HOST
         );
-        expect(resolveFixtureRole({ item: { role: 'COMMERCE_OWNER' }, source: 'f.json' })).toBe(
-            RoleEnum.COMMERCE_OWNER
+        expect(resolveFixtureRole({ item: { role: 'GASTRONOMY_OWNER' }, source: 'f.json' })).toBe(
+            RoleEnum.GASTRONOMY_OWNER
         );
     });
 
@@ -41,6 +41,9 @@ describe('resolveFixtureRole', () => {
     });
 
     it('throws on an unknown role instead of silently degrading to USER', () => {
+        expect(() =>
+            resolveFixtureRole({ item: { role: 'COMMERCE_OWNER' }, source: '007.json' })
+        ).toThrow(/unknown role/i);
         expect(() => resolveFixtureRole({ item: { role: 'HOSTT' }, source: '007.json' })).toThrow(
             /007\.json.*unknown role/is
         );

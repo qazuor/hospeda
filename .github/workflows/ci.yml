@@ -270,6 +270,8 @@ jobs:
       # bash + git grep — needs no setup, so it runs before it to fail fast.
       - name: Check no qzpay billing surface remains (HOS-1416 TEST:U1:1)
         run: bash scripts/check-no-qzpay.sh
+      - name: Check retired grouping word in scoped documents (TEST:U1:7 GUARD:G8)
+        run: bash scripts/check-old-grouping-word.sh
       - uses: ./.github/actions/setup
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh

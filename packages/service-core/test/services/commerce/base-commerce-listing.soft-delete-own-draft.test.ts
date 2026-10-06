@@ -6,7 +6,7 @@
  * AC-14).
  *
  * The method exists because the ordinary `softDelete()` is staff-only
- * (`_canSoftDelete` → `COMMERCE_DELETE`), so on a commerce publish page the
+ * (`_canSoftDelete` → `GASTRONOMY_DELETE`), so on a commerce publish page the
  * matrix's only FREE branch could otherwise answer nothing but 403. Every test
  * below is about a narrowing, not about the happy path:
  *

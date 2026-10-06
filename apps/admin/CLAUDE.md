@@ -545,7 +545,7 @@ instance per render.
   `apps/web/test/layouts/BaseLayout.ssr-guard.test.ts`) statically fail CI if
   `createQZPayBilling(` / `new QueryClient(` reappears in a root/layout outside a client-only
   guard. The memory-validation procedure for staging lives in
-  [`.qtm/specs/SPEC-209-admin-ssr-memory-leak-healthcheck/docs/memory-validation-procedure.md`](../../.qtm/specs/SPEC-209-admin-ssr-memory-leak-healthcheck/docs/memory-validation-procedure.md).
+  `.qtm/specs/SPEC-209-admin-ssr-memory-leak-healthcheck/docs/memory-validation-procedure.md` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`).
 
 ## Environment Variables
 

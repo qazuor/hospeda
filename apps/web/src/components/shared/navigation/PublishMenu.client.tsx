@@ -19,7 +19,7 @@
  * exactly who this three-way chooser exists for, and the pre-auth CTA has
  * no per-option "already acquired" state to react to (see the JSDoc on
  * `PUBLISH_CTA_OPTIONS`). So this component renders unconditionally for
- * every visitor — guest, tourist, HOST, or COMMERCE_OWNER alike — and no
+ * every visitor — guest, tourist, HOST, or GASTRONOMY_OWNER alike — and no
  * longer needs the SSR entitlements fetch Header.astro used to make.
  *
  * A11y molde copied from `UserMenu.client.tsx` (`aria-haspopup="menu"`,

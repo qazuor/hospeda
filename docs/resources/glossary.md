@@ -37,7 +37,7 @@ const accommodation = await accommodationService.create({
 
 ### Actor
 
-The authenticated user performing an action in the system. Used for permission checks and audit logging throughout the application. Holds a SET of roles (`roles: readonly RoleEnum[]`, HOS-296) — one account can wear several hats at once (e.g. `HOST` and `COMMERCE_OWNER`) — and permission checks always test `actor.permissions`, never `actor.roles`.
+The authenticated user performing an action in the system. Used for permission checks and audit logging throughout the application. Holds a SET of roles (`roles: readonly RoleEnum[]`, HOS-296) — one account can wear several hats at once (e.g. `HOST` and `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`) — and permission checks always test `actor.permissions`, never `actor.roles`.
 
 **Example**:
 

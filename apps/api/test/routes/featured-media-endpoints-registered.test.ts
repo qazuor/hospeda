@@ -50,7 +50,6 @@ const HEADERS = {
         'accommodation.update.any',
         'gastronomy.editAll',
         'experience.editAll',
-        'commerce.editAll',
         'access.panelAdmin'
     ])
 };

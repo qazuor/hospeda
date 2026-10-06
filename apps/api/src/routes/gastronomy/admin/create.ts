@@ -20,16 +20,15 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * POST /api/v1/admin/gastronomies
  * Create gastronomy listing — Admin endpoint.
  *
- * Requires GASTRONOMY_CREATE (or the legacy COMMERCE_CREATE) permission.
+ * Requires GASTRONOMY_CREATE permission.
  */
 export const adminCreateGastronomyRoute = createAdminRoute({
     method: 'post',
     path: '/',
     summary: 'Create gastronomy listing',
-    description:
-        'Creates a new gastronomy listing. Requires GASTRONOMY_CREATE (or the legacy COMMERCE_CREATE) permission.',
+    description: 'Creates a new gastronomy listing. Requires GASTRONOMY_CREATE permission.',
     tags: ['Gastronomy'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_CREATE, PermissionEnum.COMMERCE_CREATE]],
+    anyOfPermissions: [[PermissionEnum.GASTRONOMY_CREATE]],
     requestBody: GastronomyAdminCreateInputSchema,
     responseSchema: GastronomyAdminSchema,
     handler: async (

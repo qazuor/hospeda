@@ -168,19 +168,23 @@ interface FixtureRoleTarget {
  */
 const FIXTURE_ROLE_TARGETS: readonly FixtureRoleTarget[] = [
     // ── example/gastronomies.seed.ts — commerce owners (AC-11) ───────────────
+    // The retired COMMERCE_OWNER hat is no longer granted: migration 0126
+    // (HOS-1417) removes it from every account, and on any DB still pending this
+    // data-migration `role_enum` no longer has the value, so granting it would
+    // make Postgres reject the insert. grant-only, so nothing is revoked either.
     {
         email: 'gastro-owner-julieta@local.test',
-        roles: [RoleEnum.USER, RoleEnum.COMMERCE_OWNER],
+        roles: [RoleEnum.USER],
         mode: 'grant-only'
     },
     {
         email: 'gastro-owner-rodrigo@local.test',
-        roles: [RoleEnum.USER, RoleEnum.COMMERCE_OWNER],
+        roles: [RoleEnum.USER],
         mode: 'grant-only'
     },
     {
         email: 'gastro-owner-valentina@local.test',
-        roles: [RoleEnum.USER, RoleEnum.COMMERCE_OWNER],
+        roles: [RoleEnum.USER],
         mode: 'grant-only'
     },
     // ── example/gastronomies.seed.ts — the e2e tourist ───────────────────────

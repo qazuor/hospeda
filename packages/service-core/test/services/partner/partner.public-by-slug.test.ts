@@ -48,7 +48,7 @@ const makePartner = (overrides: Record<string, unknown> = {}) => ({
     id: PARTNER_ID,
     slug: SLUG,
     name: 'Acme Litoral',
-    type: PartnerTypeEnum.COMMERCE,
+    type: PartnerTypeEnum.BUSINESS,
     tier: PartnerTierEnum.GOLD,
     logoUrl: 'https://cdn.example.com/acme.png',
     description: 'Excursiones por el Litoral.',

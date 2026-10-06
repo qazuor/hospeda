@@ -57,7 +57,7 @@ function resolve(
 describe('resolveCommerceEditorSectionStatuses — neutral lines', () => {
     it('should count photos when there are any', () => {
         expect(resolve(completeListing(), { photoCount: 6 }).media).toEqual({
-            labelKey: 'commerce.owner.editor.hub.status.photos',
+            labelKey: 'listing.owner.editor.hub.status.photos',
             tone: 'neutral',
             params: { count: 6 }
         });
@@ -92,9 +92,9 @@ describe('resolveCommerceEditorSectionStatuses — blocking lines', () => {
         const statuses = resolve(completeListing({ priceRange: null }));
 
         expect(statuses.price).toEqual({
-            labelKey: 'commerce.owner.editor.hub.status.blockedFromPublishing',
+            labelKey: 'listing.owner.editor.hub.status.blockedFromPublishing',
             tone: 'blocking',
-            missingRequirementLabelKeys: ['commerce.owner.checklist.field.priceRange']
+            missingRequirementLabelKeys: ['listing.owner.checklist.field.priceRange']
         });
     });
 
@@ -105,9 +105,9 @@ describe('resolveCommerceEditorSectionStatuses — blocking lines', () => {
         const statuses = resolve(completeListing({ name: '', summary: '', type: '' }));
 
         expect(statuses.basicInfo?.missingRequirementLabelKeys).toEqual([
-            'commerce.owner.checklist.field.name',
-            'commerce.owner.checklist.field.summary',
-            'commerce.owner.checklist.field.type'
+            'listing.owner.checklist.field.name',
+            'listing.owner.checklist.field.summary',
+            'listing.owner.checklist.field.type'
         ]);
     });
 
@@ -119,7 +119,7 @@ describe('resolveCommerceEditorSectionStatuses — blocking lines', () => {
 
         expect(statuses.media?.tone).toBe('blocking');
         expect(statuses.media?.missingRequirementLabelKeys).toEqual([
-            'commerce.owner.checklist.field.featuredImage'
+            'listing.owner.checklist.field.featuredImage'
         ]);
     });
 
@@ -150,7 +150,7 @@ describe('resolveCommerceEditorSectionStatuses — blocking lines', () => {
         });
 
         expect(statuses.price?.missingRequirementLabelKeys).toEqual([
-            'commerce.owner.checklist.field.priceFrom'
+            'listing.owner.checklist.field.priceFrom'
         ]);
     });
 });

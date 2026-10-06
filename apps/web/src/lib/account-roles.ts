@@ -70,25 +70,21 @@ const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
  * Commerce listings (gastronomy, experiences) are a separate domain from
  * accommodation hosting, so this set is intentionally distinct from
  * `ROLES_WITH_ACCOMMODATIONS_NAV` — a plain accommodation HOST does NOT
- * get the commerce area, and a plain COMMERCE_OWNER does NOT get the host
+ * get the commerce area, and a plain GASTRONOMY_OWNER or EXPERIENCE_OWNER does NOT get the host
  * nav. Since HOS-296 an account can hold both hats at once and then gets
  * BOTH areas (AC-1).
  *
- * Mirrored by `PERMISSION_ROLE_MAP[COMMERCE_EDIT_OWN]` in `nav-gating.ts`.
+ * Mirrored by the two vertical EDIT_OWN entries in `PERMISSION_ROLE_MAP`.
  *
  * Roles:
- * - COMMERCE_OWNER: merchant who owns one or more commerce listings. RETIRING
- *   (HOS-1077) — kept here for the expand window, dropped in release 2.
  * - GASTRONOMY_OWNER / EXPERIENCE_OWNER: the per-vertical replacements
  *   (HOS-1077). Both reach the same `/mi-cuenta/comercio` area; which listings
  *   they can actually edit is decided per listing by the API, not by this set.
  *   Listing them here is what stops an account holding ONLY a vertical role
- *   from losing the nav — a set that named just `COMMERCE_OWNER` would send
- *   the first gastronomy-only owner to an empty sidebar.
+ *   from losing the nav when the account holds only one vertical role.
  * - ADMIN / SUPER_ADMIN: platform staff (can reach every area).
  */
 export const ROLES_WITH_COMMERCE_NAV = new Set<string>([
-    'COMMERCE_OWNER',
     'GASTRONOMY_OWNER',
     'EXPERIENCE_OWNER',
     'ADMIN',
@@ -108,10 +104,7 @@ export const ROLES_WITH_COMMERCE_NAV = new Set<string>([
  * `GASTRONOMY_OWNER` wins over `EXPERIENCE_OWNER` when an account somehow
  * holds both with no host role — an arbitrary but deterministic tie-break,
  * documented rather than silent, since a single pricing-page redirect cannot
- * name two verticals at once. The retiring `COMMERCE_OWNER` role (HOS-1077)
- * predates the per-vertical split and carries no vertical of its own, so it
- * degrades to the same gastronomy default rather than falling through to
- * tourist — still a stronger signal than "no commerce role at all".
+ * name two verticals at once.
  *
  * @param params.roles - Every role the user holds, or `null` for
  *   unauthenticated visitors.
@@ -127,7 +120,7 @@ function resolveCommercePricingAudience({
         return null;
     }
     const roleSet = new Set(roles);
-    if (roleSet.has('GASTRONOMY_OWNER') || roleSet.has('COMMERCE_OWNER')) {
+    if (roleSet.has('GASTRONOMY_OWNER')) {
         return 'gastronomy';
     }
     if (roleSet.has('EXPERIENCE_OWNER')) {

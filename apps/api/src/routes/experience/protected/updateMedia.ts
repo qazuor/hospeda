@@ -27,7 +27,7 @@
  * The PARENT experience is NOT protected that way, and that is deliberate. The gate
  * (`checkExperienceCanEditMedia`) answers `FORBIDDEN` (403) on an experience the actor
  * may not edit and `NOT_FOUND` (404) on one that does not exist, so an actor whose
- * grant is ownership-scoped (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`) can tell
+ * grant is ownership-scoped (`EXPERIENCE_EDIT_OWN` without `EXPERIENCE_EDIT_ALL`) can tell
  * a stranger's experience id from an invented one. The sibling media helpers — add,
  * remove, reorder, setFeatured and the media read — all share that same gate, so
  * closing the gap in `update` alone would leave `update` at 404 while `remove` stays at
@@ -63,7 +63,7 @@ export const protectedUpdateExperienceMediaRoute = createCRUDRoute({
         'Patch caption/description/alt/attribution on an existing media row. ' +
         'Each field is nullable: omit to leave unchanged, null to clear, a value ' +
         'to replace. At least one field must be present — an empty body is a ' +
-        'VALIDATION_ERROR, not a silent 200. Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
+        'VALIDATION_ERROR, not a silent 200. Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).',
     tags: ['Experience', 'Experience Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

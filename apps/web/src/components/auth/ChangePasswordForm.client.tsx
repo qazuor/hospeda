@@ -113,12 +113,12 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
 
     /** Translated strings every `PasswordField` on this form shares. */
     const passwordI18n: PasswordFieldI18n = {
-        showPassword: t('commerce.changePassword.showPassword'),
-        hidePassword: t('commerce.changePassword.hidePassword'),
+        showPassword: t('listing.changePassword.showPassword'),
+        hidePassword: t('listing.changePassword.hidePassword'),
         strength: {
-            weak: t('commerce.changePassword.strength.weak'),
-            medium: t('commerce.changePassword.strength.medium'),
-            strong: t('commerce.changePassword.strength.strong')
+            weak: t('listing.changePassword.strength.weak'),
+            medium: t('listing.changePassword.strength.medium'),
+            strong: t('listing.changePassword.strength.strong')
         }
     };
 
@@ -141,7 +141,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
         if (!fields.currentPassword) {
             setErrors((prev) => ({
                 ...prev,
-                currentPassword: t('commerce.changePassword.currentRequired')
+                currentPassword: t('listing.changePassword.currentRequired')
             }));
             return;
         }
@@ -151,7 +151,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
             setErrors((prev) => ({
                 ...prev,
                 confirmNewPassword: t(
-                    'commerce.changePassword.mismatch',
+                    'listing.changePassword.mismatch',
                     'Las contraseñas no coinciden.'
                 )
             }));
@@ -193,7 +193,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                     setErrors((prev) => ({
                         ...prev,
                         currentPassword: t(
-                            'commerce.changePassword.currentIncorrect',
+                            'listing.changePassword.currentIncorrect',
                             'La contraseña actual es incorrecta.'
                         )
                     }));
@@ -202,7 +202,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                 throw new Error(
                     body.error?.message ??
                         t(
-                            'commerce.changePassword.error',
+                            'listing.changePassword.error',
                             'Ocurrió un error al actualizar la contraseña. Por favor, intentá de nuevo.'
                         )
                 );
@@ -226,7 +226,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                 err instanceof Error
                     ? err.message
                     : t(
-                          'commerce.changePassword.error',
+                          'listing.changePassword.error',
                           'Ocurrió un error al actualizar la contraseña. Por favor, intentá de nuevo.'
                       );
             setGlobalError(msg);
@@ -245,7 +245,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                 aria-live="assertive"
             >
                 {t(
-                    'commerce.changePassword.success',
+                    'listing.changePassword.success',
                     'Contraseña actualizada correctamente. Redirigiendo...'
                 )}
             </div>
@@ -256,11 +256,11 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
         <div className={styles.wrapper}>
             <div className={styles.header}>
                 <h1 className={styles.heading}>
-                    {t('commerce.changePassword.title', 'Cambiar contraseña')}
+                    {t('listing.changePassword.title', 'Cambiar contraseña')}
                 </h1>
                 <p className={styles.subtitle}>
                     {t(
-                        'commerce.changePassword.subtitle',
+                        'listing.changePassword.subtitle',
                         'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
                     )}
                 </p>
@@ -274,7 +274,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                     className={styles.accountNotice}
                     data-testid="change-password-account-notice"
                 >
-                    {t('commerce.changePassword.accountNotice')}{' '}
+                    {t('listing.changePassword.accountNotice')}{' '}
                     <span className={styles.accountNoticeEmail}>{accountEmail}</span>
                 </p>
             </div>
@@ -290,7 +290,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                         id="cpf-currentPassword"
                         name="currentPassword"
                         label={t(
-                            'commerce.changePassword.fields.currentPassword',
+                            'listing.changePassword.fields.currentPassword',
                             'Contraseña actual'
                         )}
                         value={fields.currentPassword}
@@ -306,7 +306,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                     <PasswordField
                         id="cpf-newPassword"
                         name="newPassword"
-                        label={t('commerce.changePassword.fields.newPassword', 'Nueva contraseña')}
+                        label={t('listing.changePassword.fields.newPassword', 'Nueva contraseña')}
                         value={fields.newPassword}
                         onChange={(value) => handleFieldChange('newPassword', value)}
                         autoComplete="new-password"
@@ -322,7 +322,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                         id="cpf-confirmNewPassword"
                         name="confirmNewPassword"
                         label={t(
-                            'commerce.changePassword.fields.confirmNewPassword',
+                            'listing.changePassword.fields.confirmNewPassword',
                             'Confirmá la nueva contraseña'
                         )}
                         value={fields.confirmNewPassword}
@@ -357,10 +357,10 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                                         className={styles.spinner}
                                         aria-hidden="true"
                                     />
-                                    {t('commerce.changePassword.submitting', 'Guardando...')}
+                                    {t('listing.changePassword.submitting', 'Guardando...')}
                                 </>
                             ) : (
-                                t('commerce.changePassword.submit', 'Cambiar contraseña')
+                                t('listing.changePassword.submit', 'Cambiar contraseña')
                             )}
                         </button>
                     </div>

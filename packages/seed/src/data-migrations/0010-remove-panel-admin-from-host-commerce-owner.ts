@@ -44,6 +44,7 @@
  * removal — even a well-understood, security-motivated one.
  */
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
+// Ledgered migration: retain historical values as loose string assertions after enum retirement.
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -52,8 +53,15 @@ export const meta = {
     destructive: true
 } as const satisfies SeedMigrationModule['meta'];
 
-/** The two roles the ACCESS_PANEL_ADMIN grant must never be assigned to (HOS-152). */
-const ROLES_TO_STRIP = [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER] as const;
+/**
+ * The roles the ACCESS_PANEL_ADMIN grant must never be assigned to (HOS-152).
+ *
+ * The retired COMMERCE_OWNER role is deliberately absent: its role_permission rows
+ * are already deleted by migration 0126 (HOS-1417), and on a fresh database this
+ * data-migration runs after 0126/0127 when `role_enum` no longer has that value,
+ * so naming it would make Postgres reject the query. The end state is identical.
+ */
+const ROLES_TO_STRIP = [RoleEnum.HOST] as const;
 
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const rolePermissionModel = new ctx.models.RRolePermissionModel();
@@ -76,8 +84,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     return {
         summary:
             totalDeleted > 0
-                ? `Removed ACCESS_PANEL_ADMIN from ${totalDeleted} role_permission row(s) (HOST/COMMERCE_OWNER).`
-                : 'No ACCESS_PANEL_ADMIN rows found for HOST/COMMERCE_OWNER — already absent (idempotent no-op).',
+                ? `Removed ACCESS_PANEL_ADMIN from ${totalDeleted} role_permission row(s) (HOST).`
+                : 'No ACCESS_PANEL_ADMIN rows found for HOST — already absent (idempotent no-op).',
         counts
     };
 }

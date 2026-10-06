@@ -133,14 +133,14 @@ export function BrochureDownloadButton({
                 data-testid="commerce-brochure-download"
             >
                 {state === 'working'
-                    ? t('commerce.brochure.downloading', 'Generando la ficha…')
-                    : t('commerce.brochure.download', 'Descargar ficha en PDF')}
+                    ? t('listing.brochure.downloading', 'Generando la ficha…')
+                    : t('listing.brochure.download', 'Descargar ficha en PDF')}
             </button>
 
             {state === 'locked' && (
                 <p className={styles.hint}>
                     {t(
-                        'commerce.brochure.locked',
+                        'listing.brochure.locked',
                         'La ficha en PDF está disponible en el plan Premium de tu rubro.'
                     )}
                 </p>
@@ -152,7 +152,7 @@ export function BrochureDownloadButton({
                     role="alert"
                 >
                     {t(
-                        'commerce.brochure.error',
+                        'listing.brochure.error',
                         'No pudimos generar la ficha. Probá de nuevo en un momento.'
                     )}
                 </p>

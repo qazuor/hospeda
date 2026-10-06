@@ -1,6 +1,6 @@
 {
     "types": {
-        "commerce": "Business",
+        "business": "Business",
         "ngo": "NGO",
         "institution": "Institution"
     },

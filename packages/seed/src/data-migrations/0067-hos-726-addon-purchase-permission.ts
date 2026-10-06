@@ -79,8 +79,11 @@ export const ADDON_PURCHASE_PERMISSION = PermissionEnum.BILLING_ADDON_PURCHASE;
 export const GRANTED_ROLES: readonly RoleEnum[] = [
     RoleEnum.SUPER_ADMIN,
     RoleEnum.ADMIN,
-    RoleEnum.HOST,
-    RoleEnum.COMMERCE_OWNER
+    RoleEnum.HOST
+    // The retired COMMERCE_OWNER role is deliberately absent: migration 0126
+    // (HOS-1417) deletes its role_permission rows, and on any DB still pending
+    // this data-migration `role_enum` no longer has the value, so naming it would
+    // make Postgres reject the insert. The end state is identical.
 ];
 
 /** `(role, permission)` pairs this migration ensures exist. */

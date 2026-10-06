@@ -41,7 +41,7 @@ const REVIEW_FIELDS = [
 const baseCreate = {
     slug: 'acme-turismo',
     name: 'Acme Turismo',
-    type: PartnerTypeEnum.COMMERCE,
+    type: PartnerTypeEnum.BUSINESS,
     tier: PartnerTierEnum.SILVER,
     subscriptionStatus: 'pending',
     lifecycleState: 'DRAFT'

@@ -2,7 +2,7 @@
  * Guard: every `RoleEnum` value has a label in EVERY locale (HOS-296).
  *
  * This exists because nothing else catches a role that is missing from ALL
- * three locale files — which is exactly what happened to `COMMERCE_OWNER`:
+ * three locale files — which is exactly what happened to the former owner role:
  *
  * - `buildRoleLabelKey` interpolates the role into the key string and casts
  *   the result `as TranslationKey`, so the compiler cannot check it.

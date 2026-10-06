@@ -72,8 +72,8 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+            view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+            edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
         },
         fields: [
             {
@@ -85,8 +85,8 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                 description: 'Categoría gastronómica del comercio',
                 placeholder: 'Seleccioná el tipo…',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -105,8 +105,8 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                 description: 'Nivel de precios del establecimiento',
                 placeholder: 'Seleccioná el rango…',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -125,8 +125,8 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                 description: 'Enlace al menú digital del establecimiento (https://…)',
                 placeholder: 'https://tu-restaurante.com/menu',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
+                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
                 },
                 typeConfig: {
                     maxLength: 500
@@ -158,9 +158,9 @@ export const createGastronomyConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedEntityConfig => ({
     sections: [
-        createCommerceIdentitySection(),
+        createCommerceIdentitySection('gastronomy'),
         createGastronomySpecificSection(),
-        createCommerceOperationalSection()
+        createCommerceOperationalSection('gastronomy')
     ],
     metadata: {
         title: t('admin-entities.entities.gastronomy.singular'),

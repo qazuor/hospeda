@@ -5,7 +5,7 @@
  * full plan, next to the paid ones. For accommodation that button has always
  * worked, because `DELETE /protected/accommodations/{id}` accepts the owner.
  * The two commerce verticals had no owner-facing delete at all — their only
- * delete is `_canSoftDelete` → `COMMERCE_DELETE`, a staff permission — so on a
+ * delete is `_canSoftDelete` → the vertical's DELETE permission, a staff permission — so on a
  * commerce publish page the same button could only ever answer 403, and the
  * matrix's cheapest branch would have been the one that does not work.
  *
@@ -59,7 +59,7 @@ export const protectedDeleteCommerceDraftRoute = createProtectedRoute({
         "Soft-deletes a DRAFT gastronomy or experience listing owned by the caller, freeing a slot under their plan's cap. Ownership is the gate: no commerce permission is required, and a listing the caller does not own answers 404. A listing in any lifecycle state other than DRAFT is refused.",
     tags: ['Commerce'],
     // No `requiredPermissions` on purpose, same posture as the owner-create
-    // routes beside it (HOS-687): `COMMERCE_OWNER` is granted BY creating a
+    // routes beside it (HOS-687): the vertical owner role is granted BY creating a
     // listing, so gating the owner's own draft behind a commerce permission
     // would lock out exactly the accounts this flow exists for. Authentication
     // is still enforced by the factory, and ownership is checked in the service.

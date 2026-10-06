@@ -616,7 +616,7 @@
             "gastronomyMenu": "La carta",
             "experienceListing": "Tu experiencia en Hospeda",
             "experienceService": "Antes y después de la salida",
-            "commerceExtras": "Herramientas extra"
+            "listingExtras": "Herramientas extra"
         },
         "row": {
             "favorites": "Favoritos",
@@ -665,7 +665,7 @@
             "experienceDirections": "Cómo llegar al punto de encuentro",
             "experienceCertificate": "Certificado para quien la hizo",
             "listingPdf": "Ficha descargable en PDF",
-            "aiChatCommerce": "Consultas por chat con IA al mes"
+            "aiChatListing": "Consultas por chat con IA al mes"
         },
         "rowDesc": {
             "favorites": "Guardá los alojamientos que te interesan para consultarlos después.",

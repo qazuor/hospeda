@@ -23,7 +23,7 @@ describe('commerce entitlement labels (HOS-1178)', () => {
         }
         for (const locale of LOCALES) {
             const json = JSON.parse(
-                readFileSync(resolve(LOCALES_DIR, locale, 'commerce.json'), 'utf8')
+                readFileSync(resolve(LOCALES_DIR, locale, 'listing.json'), 'utf8')
             ) as { owner?: { entitlements?: Record<string, string> } };
             for (const [key, suffix] of entries) {
                 expect(json.owner?.entitlements?.[suffix], `${locale}: ${key}`).toBeTruthy();

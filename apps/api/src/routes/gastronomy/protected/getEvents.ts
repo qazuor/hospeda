@@ -57,7 +57,7 @@ async function requireOwnedGastronomy(ctx: Context, gastronomyId: string): Promi
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!result.data || (!hasViewAll && result.data.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }

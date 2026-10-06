@@ -165,7 +165,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // where you go to publish, that one is where you go once you do.
                 href: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy,
                 ctaI18nKey: 'account.doors.publish.options.gastronomy.cta',
-                acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
+                acquiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'
             },
             {
@@ -177,7 +177,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // other vertical.
                 href: PUBLISH_PAGE_PATH_BY_VERTICAL.experience,
                 ctaI18nKey: 'account.doors.publish.options.experience.cta',
-                acquiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
+                acquiredPermission: PermissionEnum.EXPERIENCE_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'
             }
         ]

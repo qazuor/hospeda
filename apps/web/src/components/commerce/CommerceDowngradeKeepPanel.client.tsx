@@ -114,10 +114,7 @@ export function CommerceDowngradeKeepPanel({
     return (
         <>
             <DialogHeader>
-                {t(
-                    'commerce.owner.planChange.keepPanel.title',
-                    'Elegí qué fichas seguís mostrando'
-                )}
+                {t('listing.owner.planChange.keepPanel.title', 'Elegí qué fichas seguís mostrando')}
             </DialogHeader>
             <DialogBody className={styles.root}>
                 {error}
@@ -134,7 +131,7 @@ export function CommerceDowngradeKeepPanel({
                      * `_one`/`_other` pair exists in es/en/pt, and
                      * `scripts/i18n-fallback-inventory.json` may only shrink.
                      */}
-                    {tPlural('commerce.owner.planChange.keepPanel.intro', preview.activeCount)
+                    {tPlural('listing.owner.planChange.keepPanel.intro', preview.activeCount)
                         .replace('{plan}', targetPlanName)
                         .replace('{cap}', String(preview.cap))
                         .replace('{active}', String(preview.activeCount))}
@@ -143,11 +140,11 @@ export function CommerceDowngradeKeepPanel({
                 <p className={styles.when}>
                     {effectiveDateLabel === null
                         ? t(
-                              'commerce.owner.planChange.keepPanel.whenNoDate',
+                              'listing.owner.planChange.keepPanel.whenNoDate',
                               'El cambio se aplica al final del período que ya pagaste. Hasta entonces no cambia nada.'
                           )
                         : t(
-                              'commerce.owner.planChange.keepPanel.when',
+                              'listing.owner.planChange.keepPanel.when',
                               'El cambio se aplica el {date}. Hasta entonces seguís con tu plan actual y todas tus fichas visibles.'
                           ).replace('{date}', effectiveDateLabel)}
                 </p>
@@ -155,7 +152,7 @@ export function CommerceDowngradeKeepPanel({
                 {/* The one thing an owner cannot undo from this screen, said plainly. */}
                 <p className={styles.quotaNote}>
                     {t(
-                        'commerce.owner.planChange.keepPanel.quotaNote',
+                        'listing.owner.planChange.keepPanel.quotaNote',
                         'Una ficha oculta sigue ocupando lugar en tu cupo: no vas a poder crear otra en su lugar. Vuelve a verse si subís de plan.'
                     )}
                 </p>
@@ -166,7 +163,7 @@ export function CommerceDowngradeKeepPanel({
                         role="alert"
                     >
                         {t(
-                            'commerce.owner.planChange.keepPanel.overCap',
+                            'listing.owner.planChange.keepPanel.overCap',
                             'Elegiste {selected} y el plan permite {cap}. Desmarcá {extra}.'
                         )
                             .replace('{selected}', String(selectedCount))
@@ -178,7 +175,7 @@ export function CommerceDowngradeKeepPanel({
                 <ul
                     className={styles.list}
                     aria-label={t(
-                        'commerce.owner.planChange.keepPanel.listLabel',
+                        'listing.owner.planChange.keepPanel.listLabel',
                         'Tus fichas de este rubro'
                     )}
                 >
@@ -200,7 +197,7 @@ export function CommerceDowngradeKeepPanel({
                                 {item.keepByDefault && (
                                     <span className={styles.badge}>
                                         {t(
-                                            'commerce.owner.planChange.keepPanel.suggested',
+                                            'listing.owner.planChange.keepPanel.suggested',
                                             'Sugerida'
                                         )}
                                     </span>
@@ -229,7 +226,7 @@ export function CommerceDowngradeKeepPanel({
                 >
                     {isPending
                         ? t('common.loading', 'Cargando...')
-                        : t('commerce.owner.planChange.keepPanel.confirm', 'Programar el cambio')}
+                        : t('listing.owner.planChange.keepPanel.confirm', 'Programar el cambio')}
                 </button>
             </DialogFooter>
         </>

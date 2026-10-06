@@ -90,7 +90,7 @@ export async function resolveCommerceEditorPage({
     }
 
     // HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-    // so a COMMERCE_OWNER who is ALSO a HOST keeps commerce access (AC-1).
+    // so a GASTRONOMY_OWNER who is ALSO a HOST keeps commerce access (AC-1).
     if (!hasCommerceNavAccess({ roles: user.roles })) {
         return { redirect: astro.redirect(buildUrl({ locale, path: 'mi-cuenta' })) };
     }
@@ -123,7 +123,7 @@ export async function resolveCommerceEditorPage({
     // non-owner (and non-staff) is bounced back to their listing index. The
     // write path (updateOwn) is the hard gate.
     // HOS-296: staff check over the role SET — an admin who also holds
-    // COMMERCE_OWNER is still staff here.
+    // GASTRONOMY_OWNER is still staff here.
     const isStaff = user.roles.includes('ADMIN') || user.roles.includes('SUPER_ADMIN');
     const ownsListing = detail !== null && detail.ownerId === user.id;
     if (!detail || (!ownsListing && !isStaff)) {

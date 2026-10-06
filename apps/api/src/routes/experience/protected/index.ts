@@ -98,7 +98,7 @@ app.route('/', protectedRemoveExperienceFaqRoute);
 // POST /{experienceId}/reviews — Tourist creates a review.
 app.route('/', protectedCreateExperienceReviewRoute);
 
-// Media management (HOS-372) — gated on COMMERCE_EDIT_OWN/COMMERCE_EDIT_ALL
+// Media management (HOS-372) — gated on EXPERIENCE_EDIT_OWN/EXPERIENCE_EDIT_ALL
 // inside the service layer via checkExperienceCanEditMedia.
 
 // PATCH /{id}/media/reorder — Must be before /{id}/media/{mediaId} (DELETE).

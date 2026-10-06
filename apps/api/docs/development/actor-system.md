@@ -16,7 +16,7 @@ The Actor System provides a unified way to handle authentication and authorizati
 
 > **Multi-role actors (HOS-296).** An actor holds a SET of roles (backed by the
 > `user_role` table), not a single scalar. One account can be `HOST` and
-> `COMMERCE_OWNER` at the same time. `actor.permissions` is already the union
+> `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` at the same time. `actor.permissions` is already the union
 > of every held role's permissions plus per-user overrides, so authorization
 > code should almost never need to inspect `actor.roles` directly — check
 > `actor.permissions` instead.
@@ -251,14 +251,14 @@ export const adminRoute = createSimpleRoute({
 ### Standard Roles
 
 Defined in `RoleEnum` (`@repo/schemas`) — an actor can hold several of these
-at once (HOS-296), e.g. `HOST` + `COMMERCE_OWNER`:
+at once (HOS-296), e.g. `HOST` + `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`:
 
 - **`SUPER_ADMIN`** - Every permission, including system-level actions
 - **`ADMIN`** - Almost everything except editing accommodation info directly
 - **`CLIENT_MANAGER`** - Client accounts, billing, subscriptions, analytics
 - **`EDITOR`** - Create/edit/publish events and posts only
 - **`HOST`** - Owner of an accommodation, can only edit their own
-- **`COMMERCE_OWNER`** - Owner of a commerce listing (gastronomy, experience, etc.)
+- **`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`** - Owner of a commerce listing (gastronomy, experience, etc.)
 - **`SPONSOR`** - External sponsor of events/posts, limited dashboard access
 - **`USER`** - Default role for all logged-in users of the public portal
 - **`GUEST`** - Public, not logged in

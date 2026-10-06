@@ -1424,7 +1424,7 @@
             }
         }
     },
-    "commerce": {
+    "listing": {
         "description": {
             "max": "La descripción no puede superar los {{max}} caracteres",
             "min": "La descripción debe tener al menos {{min}} caracteres",
@@ -1454,7 +1454,7 @@
             "required": "El resumen es obligatorio"
         }
     },
-    "commerceLead": {
+    "listingLead": {
         "adminNote": {
             "max": "La nota de administrador no puede superar los {{max}} caracteres"
         },
@@ -1519,7 +1519,7 @@
         "checkOut": {
             "invalidDate": "El check-out debe ser una fecha válida"
         },
-        "commerceMedia": {
+        "listingMedia": {
             "alt": {
                 "max": "O texto alternativo não pode ultrapassar {{max}} caracteres",
                 "min": "O texto alternativo deve ter ao menos {{min}} caracteres"
@@ -1548,7 +1548,7 @@
                 "invalid": "A URL não é válida"
             }
         },
-        "commerceRating": {
+        "listingRating": {
             "ambiance": {
                 "max": "El puntaje de ambiente no puede superar los {{max}}",
                 "min": "El puntaje de ambiente debe ser al menos {{min}}",
@@ -2364,7 +2364,7 @@
         "clientType": {
             "invalid": "El client type no es válido"
         },
-        "commerceEntityType": {
+        "listingEntityType": {
             "invalid": "El tipo de entidad comercial no es válido"
         },
         "conversationStatus": {

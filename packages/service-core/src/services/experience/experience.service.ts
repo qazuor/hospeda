@@ -21,7 +21,7 @@
  * 3. **Owner update gate** — `updateOwn()` validates with
  *    `ExperienceOwnerUpdateInputSchema` (operational sections only), enforces
  *    ownership (`NOT_FOUND` for non-owners), and gates on a single
- *    `COMMERCE_EDIT_OWN` permission (SPEC-253 D2=b; per-section perms removed).
+ *    `EXPERIENCE_EDIT_OWN` permission (SPEC-253 D2=b; per-section perms removed).
  * 4. **Public projections** — `_projectPublicEntity` strips `adminInfo` and
  *    `ownerId` from public-tier responses.
  *
@@ -318,12 +318,12 @@ export class ExperienceService extends BaseCommerceListingService<
         // were PUBLIC (indexable) surface as GONE (410) so crawlers/LLM fetchers
         // deindex the URL fast; deleted PRIVATE content that was never public
         // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
-        // contract (SPEC-092 T-087). Staff with COMMERCE_VIEW_ALL still see it
+        // contract (SPEC-092 T-087). Staff with EXPERIENCE_VIEW_ALL still see it
         // for management (HOS-117 T-022).
         if (
             entity.deletedAt !== null &&
             entity.deletedAt !== undefined &&
-            !hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL)
+            !hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)
         ) {
             if (entity.visibility === VisibilityEnum.PUBLIC) {
                 throw new ServiceError(ServiceErrorCode.GONE, 'Experience is gone');
@@ -334,7 +334,7 @@ export class ExperienceService extends BaseCommerceListingService<
         // Non-admin / non-owner actors receive NOT_FOUND for non-ACTIVE or PRIVATE
         // listings (mirrors AccommodationService._canView for public-read gating).
         const isOwner = entity.ownerId === actor.id;
-        const isStaff = hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL);
+        const isStaff = hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL);
         if (!isOwner && !isStaff) {
             if (entity.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
                 throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
@@ -563,9 +563,9 @@ export class ExperienceService extends BaseCommerceListingService<
      *    an owner reports that an edit "does not save".
      * 2. **Ownership check**: a non-owner receives `NOT_FOUND` to prevent
      *    existence leakage (same pattern as SPEC-169 for accommodations).
-     *    Staff holding `COMMERCE_EDIT_ALL` bypass the ownership check.
-     * 3. **Single permission check** (SPEC-253 D2=b): gated on `COMMERCE_EDIT_OWN`
-     *    (owner) OR `COMMERCE_EDIT_ALL` (staff). The former per-section permissions
+     *    Staff holding `EXPERIENCE_EDIT_ALL` bypass the ownership check.
+     * 3. **Single permission check** (SPEC-253 D2=b): gated on `EXPERIENCE_EDIT_OWN`
+     *    (owner) OR `EXPERIENCE_EDIT_ALL` (staff). The former per-section permissions
      *    are removed — one check replaces all 8 conditional gates.
      * 4. **Delegation**: passes through to `this.update()` so that junction sync
      *    (`_beforeUpdate` / `_afterUpdate`) fires for amenity/feature changes.
@@ -611,7 +611,7 @@ export class ExperienceService extends BaseCommerceListingService<
 
             // 3. Ownership gate — non-owners receive NOT_FOUND (existence leak prevention).
             const isOwner = entity.ownerId === actor.id;
-            const hasEditAll = hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL);
+            const hasEditAll = hasPermission(actor, PermissionEnum.EXPERIENCE_EDIT_ALL);
             if (!isOwner && !hasEditAll) {
                 return {
                     error: {
@@ -621,7 +621,7 @@ export class ExperienceService extends BaseCommerceListingService<
                 };
             }
 
-            // 4. Single permission check (SPEC-253 D2=b): COMMERCE_EDIT_OWN covers all
+            // 4. Single permission check (SPEC-253 D2=b): EXPERIENCE_EDIT_OWN covers all
             //    owner-accessible sections. Staff with EDIT_ALL bypass this gate.
             if (!hasEditAll) {
                 checkExperienceCanEditOwn(actor, entity);
@@ -632,9 +632,9 @@ export class ExperienceService extends BaseCommerceListingService<
             //    so casting is safe here.  Base update signature: update(actor, id, data, ctx?).
             //
             //    Base update() runs _canUpdate, which is owner-aware
-            //    (checkExperienceCanEditOwnOrAll: COMMERCE_EDIT_ALL OR owner +
-            //    COMMERCE_EDIT_OWN). updateOwn() already enforced ownership and the
-            //    single COMMERCE_EDIT_OWN gate above, and the payload was validated
+            //    (checkExperienceCanEditOwnOrAll: EXPERIENCE_EDIT_ALL OR owner +
+            //    EXPERIENCE_EDIT_OWN). updateOwn() already enforced ownership and the
+            //    single EXPERIENCE_EDIT_OWN gate above, and the payload was validated
             //    against the owner schema (operational fields only), so the actor
             //    passes the base gate without any privilege elevation.
             return this.update(

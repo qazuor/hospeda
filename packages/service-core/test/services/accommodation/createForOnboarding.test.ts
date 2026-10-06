@@ -205,12 +205,12 @@ describe('AccommodationService.createForOnboarding', () => {
         });
 
         it.each([
-            ['COMMERCE_OWNER', RoleEnum.COMMERCE_OWNER],
+            ['GASTRONOMY_OWNER', RoleEnum.GASTRONOMY_OWNER],
             ['SPONSOR', RoleEnum.SPONSOR],
             ['EDITOR', RoleEnum.EDITOR]
         ])('grants HOST to a %s actor — the removed `role === USER` guard used to skip them', async (label) => {
             // HOS-296 §6.8: the old exact-match guard is exactly why a
-            // COMMERCE_OWNER starting host onboarding never became a host.
+            // GASTRONOMY_OWNER starting host onboarding never became a host.
             // The service no longer reads the actor's existing hats at all,
             // so what this pins is that no guard was reintroduced.
             const actor = createActor({ id: `user-${label}` });

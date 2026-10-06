@@ -90,7 +90,7 @@ const EXPERIENCE_TYPE_OPTIONS = [
  * Built on top of the shared commerce layer via `createCommerceListConfig`.
  *
  * Endpoint: `GET /api/v1/admin/experiences`
- * Permissions gate: COMMERCE_VIEW_ALL
+ * Permissions gate: EXPERIENCE_VIEW_ALL
  */
 export const experienceListConfig = createCommerceListConfig<ExperienceListItem>({
     entityName: 'experiences',
@@ -125,4 +125,4 @@ const { component, route } = createEntityListPage(experienceListConfig);
 export { component as ExperiencesPageComponent, route as ExperiencesRoute };
 
 /** Required permission to view the experience list. */
-export const EXPERIENCE_VIEW_PERMISSION = PermissionEnum.COMMERCE_VIEW_ALL;
+export const EXPERIENCE_VIEW_PERMISSION = PermissionEnum.EXPERIENCE_VIEW_ALL;

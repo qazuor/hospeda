@@ -93,7 +93,7 @@ function experienceModel(): Parameters<typeof issueExperienceCertificate>[0] {
 /**
  * Loads the experience and asserts it is the caller's.
  *
- * Staff holding `COMMERCE_VIEW_ALL` pass the ownership test, as they do on the
+ * Staff holding `EXPERIENCE_VIEW_ALL` pass the ownership test, as they do on the
  * brochure route — a support agent looking at a provider's account must be able
  * to see what that provider issued.
  *
@@ -110,7 +110,7 @@ async function requireOwnedExperience(ctx: Context, experienceId: string) {
     }
 
     const entity = result.data;
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.EXPERIENCE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }

@@ -223,7 +223,7 @@ author + permission on the protected route, mirroring the admin route's shape.
 `ACCESS_PANEL_ADMIN` is the sole permission gate on the admin UI shell
 (`apps/admin/src/lib/authed-guard.ts:143`). Four roles hold it today, verified:
 `SUPER_ADMIN` (`rolePermissions.seed.ts:214`), `ADMIN` (`:608`),
-`CLIENT_MANAGER` (`:796`), `EDITOR` (`:885`). `HOST` and `COMMERCE_OWNER`
+`CLIENT_MANAGER` (`:796`), `EDITOR` (`:885`). `HOST` and `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`
 correctly do not — HOS-152 removed them, and the seed comments explain why
 (`:1009-1011`, `:1092-1094`).
 
@@ -279,7 +279,7 @@ Stripping only `ACCESS_PANEL_ADMIN` would block the admin **UI** while leaving
   `event/admin/patch.ts:30`).
 - **NG-2 — Reworking media into a relational table for posts/events.** They stay
   on the JSONB `media` column (§5.3.4). Porting them to the relational model is
-  a separate spec, comparable to HOS-372 for commerce.
+  a separate spec, comparable to HOS-372 for gastronomy and experience.
 - **NG-3 — Activating `CLIENT_MANAGER`.** Its panel access is removed only
   because the role is unused today (the seed itself says so at
   `rolePermissions.seed.ts:751-757`). If it is activated later and needs the
@@ -407,7 +407,7 @@ proper starts once they are merged.
   adds an author fallback for post/event behind the permission check (so admin
   behavior is unchanged). The `ownerId` path is deliberately left untouched:
   routing all six types through the helper would newly require
-  `ACCOMMODATION_UPDATE_OWN`/`COMMERCE_EDIT_OWN` on flows that work today.
+  `ACCOMMODATION_UPDATE_OWN`/`GASTRONOMY_EDIT_OWN` / `EXPERIENCE_EDIT_OWN` on flows that work today.
 
 Both were validated by mutation, not just observed green. Neither decides the
 ownership model — that is settled in §7.6.
@@ -422,13 +422,13 @@ orchestrator reference. It is the only editor with a complete, working four-piec
 wiring: `RichTextEditor`, `EditorSectionNav`, `ActionBar`, `useZodForm`.
 
 `RichTextEditor` (TipTap) and `useZodForm` are fully generic and already proven
-cross-domain — commerce imports `RichTextEditor` straight from `host/editor/`.
+cross-domain — gastronomy and experience imports `RichTextEditor` straight from `host/editor/`.
 `EditorSectionNav` and `ActionBar` are generic but currently have **exactly one
 consumer each** (the accommodation editor).
 
-Borrow the *file layout* from `apps/web/src/components/commerce/editor/`
+Borrow the *file layout* from the existing gastronomy and experience listing implementation
 (HOS-258/HOS-371), which is newer and shows how to decompose into per-section
-files. Do **not** copy commerce's omission of the nav and action bar: that gap is
+files. Do **not** copy gastronomy and experience's omission of the nav and action bar: that gap is
 a known blocker (`AccountSectionCard`'s `overflow: hidden` voids
 `position: sticky` on a descendant nav), not an improvement.
 
@@ -439,8 +439,8 @@ Following the existing convention
 
 - `apps/web/src/pages/[lang]/mi-cuenta/publicaciones/index.astro` + `[id]/editar.astro`
 - `apps/web/src/pages/[lang]/mi-cuenta/eventos/index.astro` + `[id]/editar.astro`
-- Create pages following the commerce `nuevo/` shape, redirecting to the editor
-  on success (`CommerceCreateForm.client.tsx:187-192` is the pattern).
+- Create pages following the gastronomy and experience `nuevo/` shape, redirecting to the editor
+  on success (the existing gastronomy and experience listing implementation is the pattern).
 
 **No route-guard registration is needed.** `PROTECTED_SEGMENTS = ['mi-cuenta']`
 (`apps/web/src/lib/routes.ts:13`) is matched on the whole second segment, so
@@ -501,14 +501,14 @@ of this phase.
 #### 5.3.2 Data migration
 
 `packages/seed/src/data-migrations/0035-<slug>.ts`, modeled directly on
-`0010-remove-panel-admin-from-host-commerce-owner.ts` (HOS-152's equivalent):
+the migration that removed admin-panel access from listing owners (HOS-152's equivalent):
 JSDoc rationale block, `meta` with `destructive: true`, a constant listing the
 roles and permissions to strip, and a `hardDelete` loop through
 `RRolePermissionModel` with a `{ role, permission }` where-object (composite PK,
 so `ctx.helpers.safeDelete` does not apply). Deleting zero matching rows returns
 `0` without throwing, so it is idempotent.
 
-Highest existing migration is `0034-hos-372-commerce-media-to-relational.ts`, so
+Highest existing migration is the listing media migration numbered `0034`, so
 `0035` is the next number — reconfirm at implementation time.
 
 #### 5.3.3 Discovery doors
@@ -586,7 +586,7 @@ All five open questions are resolved. The authorization model is settled below;
   (`event/protected/update.ts:38`) and move to `authorId`.
 - **OQ-5 — Two doors, not a hub.** Separate `discovery-doors` entries for posts
   and events, with `manageHref` pointing at `mi-cuenta/publicaciones` and
-  `mi-cuenta/eventos`. Matches the convention properties and commerce already
+  `mi-cuenta/eventos`. Matches the convention properties and gastronomy and experience already
   use, and avoids inventing an intermediate page that exists only to be a link
   target.
 

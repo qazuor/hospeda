@@ -190,7 +190,7 @@ export function PracticalInfoSection({
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="durationMinutes"
                 suffix="hours"
-                label={t('commerce.owner.editor.sections.durationHours', 'Duración — horas')}
+                label={t('listing.owner.editor.sections.durationHours', 'Duración — horas')}
                 labelClassName={styles.label}
                 className={styles.input}
                 type="number"
@@ -210,7 +210,7 @@ export function PracticalInfoSection({
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="durationMinutes"
                 suffix={COMMERCE_FIELD_ID_SUFFIXES.durationMinutes}
-                label={t('commerce.owner.editor.sections.durationMinutes', 'Duración — minutos')}
+                label={t('listing.owner.editor.sections.durationMinutes', 'Duración — minutos')}
                 labelClassName={styles.label}
                 className={styles.input}
                 // The error lives on the focus target: a rejected duration is
@@ -231,7 +231,7 @@ export function PracticalInfoSection({
 
             <p className={styles.hint}>
                 {t(
-                    'commerce.owner.editor.sections.durationHint',
+                    'listing.owner.editor.sections.durationHint',
                     'Cuánto dura la experiencia. Dejá los dos campos vacíos si preferís no publicarlo.'
                 )}
             </p>
@@ -241,14 +241,14 @@ export function PracticalInfoSection({
                 as="textarea"
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="whatToBring"
-                label={t('commerce.owner.editor.sections.whatToBring', 'Qué llevar')}
+                label={t('listing.owner.editor.sections.whatToBring', 'Qué llevar')}
                 labelClassName={styles.label}
                 className={styles.textarea}
                 error={errors.whatToBring}
                 rows={4}
                 value={checklistItemsToLines({ items: data.whatToBring })}
                 placeholder={t(
-                    'commerce.owner.editor.sections.whatToBringPlaceholder',
+                    'listing.owner.editor.sections.whatToBringPlaceholder',
                     'Repelente\nCalzado cerrado\nTraje de baño'
                 )}
                 onChange={(event) => {
@@ -261,7 +261,7 @@ export function PracticalInfoSection({
 
             <p className={styles.hint}>
                 {t(
-                    'commerce.owner.editor.sections.whatToBringHint',
+                    'listing.owner.editor.sections.whatToBringHint',
                     'Un ítem por línea. Lo que tiene que traer la persona que se anota.'
                 )}
             </p>
@@ -271,14 +271,14 @@ export function PracticalInfoSection({
                 as="textarea"
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="requirements"
-                label={t('commerce.owner.editor.sections.requirements', 'Requisitos')}
+                label={t('listing.owner.editor.sections.requirements', 'Requisitos')}
                 labelClassName={styles.label}
                 className={styles.textarea}
                 error={errors.requirements}
                 rows={4}
                 value={checklistItemsToLines({ items: data.requirements })}
                 placeholder={t(
-                    'commerce.owner.editor.sections.requirementsPlaceholder',
+                    'listing.owner.editor.sections.requirementsPlaceholder',
                     'Edad mínima 12 años\nSaber nadar\nNo apto para embarazadas'
                 )}
                 onChange={(event) => {
@@ -291,7 +291,7 @@ export function PracticalInfoSection({
 
             <p className={styles.hint}>
                 {t(
-                    'commerce.owner.editor.sections.requirementsHint',
+                    'listing.owner.editor.sections.requirementsHint',
                     'Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar.'
                 )}
             </p>
@@ -302,7 +302,7 @@ export function PracticalInfoSection({
                 prefix={COMMERCE_FIELD_PREFIX}
                 name="cancellationPolicy"
                 label={t(
-                    'commerce.owner.editor.sections.cancellationPolicy',
+                    'listing.owner.editor.sections.cancellationPolicy',
                     'Política de cancelación'
                 )}
                 labelClassName={styles.label}
@@ -312,7 +312,7 @@ export function PracticalInfoSection({
                 maxLength={1500}
                 value={data.cancellationPolicy}
                 placeholder={t(
-                    'commerce.owner.editor.sections.cancellationPolicyPlaceholder',
+                    'listing.owner.editor.sections.cancellationPolicyPlaceholder',
                     'Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.'
                 )}
                 onChange={(event) => {
@@ -322,7 +322,7 @@ export function PracticalInfoSection({
 
             <p className={styles.hint}>
                 {t(
-                    'commerce.owner.editor.sections.cancellationPolicyHint',
+                    'listing.owner.editor.sections.cancellationPolicyHint',
                     'Qué pasa si la salida no sale: lluvia, viento, bajante del río, o si no se junta el mínimo de gente.'
                 )}
             </p>
@@ -350,14 +350,14 @@ export function PracticalInfoSection({
                     }}
                 />
                 {t(
-                    'commerce.owner.editor.sections.acceptsPrivateGroups',
+                    'listing.owner.editor.sections.acceptsPrivateGroups',
                     'Hago precio especial para grupos privados'
                 )}
             </label>
 
             <p className={styles.hint}>
                 {t(
-                    'commerce.owner.editor.sections.acceptsPrivateGroupsHint',
+                    'listing.owner.editor.sections.acceptsPrivateGroupsHint',
                     'Si lo activás, la ficha invita a escribirte para consultar por grupos. No publicamos ningún tarifario.'
                 )}
             </p>

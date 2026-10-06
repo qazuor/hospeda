@@ -195,7 +195,7 @@ describe('CommerceDowngradeKeepPanel (HOS-1122)', () => {
         renderPanel({ preview: makePreview(0, 1) });
 
         expect(
-            screen.getByText('commerce.owner.planChange.keepPanel.intro_one')
+            screen.getByText('listing.owner.planChange.keepPanel.intro_one')
         ).toBeInTheDocument();
     });
 
@@ -205,7 +205,7 @@ describe('CommerceDowngradeKeepPanel (HOS-1122)', () => {
         renderPanel({ preview: makePreview(1, 3) });
 
         expect(
-            screen.getByText('commerce.owner.planChange.keepPanel.intro_other')
+            screen.getByText('listing.owner.planChange.keepPanel.intro_other')
         ).toBeInTheDocument();
     });
 

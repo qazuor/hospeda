@@ -110,13 +110,13 @@ describe('deriveActorRoles — authenticated', () => {
     it('returns the full role set when isAuthenticated is true', () => {
         const state = deriveActorRoles({
             enabled: true,
-            data: makeAuthenticatedPayload(['USER', 'HOST', 'COMMERCE_OWNER']),
+            data: makeAuthenticatedPayload(['USER', 'HOST', 'GASTRONOMY_OWNER']),
             isError: false
         });
 
         expect(state.status).toBe('ready');
         expect(state.isAuthenticated).toBe(true);
-        expect(state.roles).toEqual(['USER', 'HOST', 'COMMERCE_OWNER']);
+        expect(state.roles).toEqual(['USER', 'HOST', 'GASTRONOMY_OWNER']);
     });
 
     it('keeps the resolved role set when a BACKGROUND refetch fails', () => {

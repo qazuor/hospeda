@@ -9,8 +9,8 @@
  *  1. `hasActiveSubscription` is a server-managed field that the
  *     ExperienceUpdateInputSchema explicitly omits; it cannot be set via the
  *     service CRUD path.
- *  2. The seed must create the COMMERCE_OWNER user who will own the listings
- *     (no COMMERCE_OWNER users exist in the required-seed pipeline).
+ *  2. The seed reuses the gastronomy owner and grants `EXPERIENCE_OWNER`
+ *     before inserting that user's experience listings.
  *
  * Idempotent: each INSERT uses ON CONFLICT (slug) DO NOTHING so re-running
  * the seed is safe.
@@ -38,6 +38,8 @@
  */
 
 import { ExperienceMediaModel } from '@repo/db';
+import { RoleEnum, RoleGrantReason } from '@repo/schemas';
+import { grantRole } from '@repo/service-core';
 import { Pool } from 'pg';
 import { buildExperienceMediaRows } from '../utils/commerce-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
@@ -438,7 +440,7 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
         }
 
         // ------------------------------------------------------------------
-        // 3. Resolve the logueable COMMERCE_OWNER who owns the experiences.
+        // 3. Resolve the user who owns the experiences.
         //    We reuse gastro-owner-julieta@local.test — the first commerce owner
         //    seeded by gastronomies.seed.ts (which runs before experiences in the
         //    pipeline).  That user already has:
@@ -454,11 +456,22 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
         );
         if (!ownerRows[0]) {
             throw new Error(
-                `[experiences] COMMERCE_OWNER "${ownerEmail}" not found. seedGastronomies() must run before seedExperiences() — check the seed pipeline order.`
+                `[experiences] Owner "${ownerEmail}" not found. seedGastronomies() must run before seedExperiences() — check the seed pipeline order.`
             );
         }
         const commerceOwnerId = ownerRows[0].id;
-        logger.info(`[experiences] Using COMMERCE_OWNER: ${ownerEmail} (${commerceOwnerId})`);
+        const grantedExperienceRole = await grantRole({
+            userId: commerceOwnerId,
+            role: RoleEnum.EXPERIENCE_OWNER,
+            grantedBy: null,
+            reason: RoleGrantReason.SEED
+        });
+        if (grantedExperienceRole.error) {
+            throw new Error(
+                `Failed to grant EXPERIENCE_OWNER to ${ownerEmail}: ${grantedExperienceRole.error.message}`
+            );
+        }
+        logger.info(`[experiences] Using EXPERIENCE_OWNER: ${ownerEmail} (${commerceOwnerId})`);
 
         // ------------------------------------------------------------------
         // 4. Insert experiences (idempotent — ON CONFLICT DO NOTHING)

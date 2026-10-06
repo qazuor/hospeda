@@ -559,7 +559,7 @@ export class QrCodeService extends BaseCrudService<
      *   is large and this is not urgent, but any future reasoning about how many
      *   codes exist should count published listings, not printed documents.
      * - **A READ permission now writes.** The image routes let staff holding
-     *   `ACCOMMODATION_UPDATE_ANY` / `COMMERCE_VIEW_ALL` mint a permanent row
+     *   `ACCOMMODATION_UPDATE_ANY` / the listing vertical's `VIEW_ALL` mint a permanent row
      *   against a third party's listing with a single `GET`, fixing that code's
      *   `targetUrl` and `label` — both creation-only — without the owner ever
      *   having asked for a code. Nothing here refuses that today; it is recorded

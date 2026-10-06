@@ -145,7 +145,7 @@ export function ExperienceCertificatePanel({
             if (!response.ok) {
                 setFormError(
                     t(
-                        'commerce.certificate.error',
+                        'listing.certificate.error',
                         'No pudimos emitir el certificado. Probá de nuevo en un momento.'
                     )
                 );
@@ -158,7 +158,7 @@ export function ExperienceCertificatePanel({
         } catch {
             setFormError(
                 t(
-                    'commerce.certificate.error',
+                    'listing.certificate.error',
                     'No pudimos emitir el certificado. Probá de nuevo en un momento.'
                 )
             );
@@ -186,7 +186,7 @@ export function ExperienceCertificatePanel({
             if (!response.ok) {
                 setFormError(
                     t(
-                        'commerce.certificate.downloadError',
+                        'listing.certificate.downloadError',
                         'No pudimos generar el certificado. Probá de nuevo en un momento.'
                     )
                 );
@@ -199,7 +199,7 @@ export function ExperienceCertificatePanel({
         } catch {
             setFormError(
                 t(
-                    'commerce.certificate.downloadError',
+                    'listing.certificate.downloadError',
                     'No pudimos generar el certificado. Probá de nuevo en un momento.'
                 )
             );
@@ -216,11 +216,11 @@ export function ExperienceCertificatePanel({
         return (
             <section className={styles.panel}>
                 <h3 className={styles.heading}>
-                    {t('commerce.certificate.heading', 'Certificados')}
+                    {t('listing.certificate.heading', 'Certificados')}
                 </h3>
                 <p className={styles.hint}>
                     {t(
-                        'commerce.certificate.locked',
+                        'listing.certificate.locked',
                         'Los certificados están disponibles desde el plan Profesional de Experiencias.'
                     )}
                 </p>
@@ -232,14 +232,14 @@ export function ExperienceCertificatePanel({
         return (
             <section className={styles.panel}>
                 <h3 className={styles.heading}>
-                    {t('commerce.certificate.heading', 'Certificados')}
+                    {t('listing.certificate.heading', 'Certificados')}
                 </h3>
                 <p
                     className={styles.error}
                     role="alert"
                 >
                     {t(
-                        'commerce.certificate.error',
+                        'listing.certificate.error',
                         'No pudimos emitir el certificado. Probá de nuevo en un momento.'
                     )}
                 </p>
@@ -252,10 +252,10 @@ export function ExperienceCertificatePanel({
 
     return (
         <section className={styles.panel}>
-            <h3 className={styles.heading}>{t('commerce.certificate.heading', 'Certificados')}</h3>
+            <h3 className={styles.heading}>{t('listing.certificate.heading', 'Certificados')}</h3>
             <p className={styles.hint}>
                 {t(
-                    'commerce.certificate.intro',
+                    'listing.certificate.intro',
                     'Emitile un certificado a quien hizo la experiencia. Lo podés descargar, imprimir o mandárselo.'
                 )}
             </p>
@@ -271,7 +271,7 @@ export function ExperienceCertificatePanel({
                     htmlFor={nameFieldId}
                 >
                     <span className={styles.label}>
-                        {t('commerce.certificate.recipientLabel', 'Nombre de quien la hizo')}
+                        {t('listing.certificate.recipientLabel', 'Nombre de quien la hizo')}
                     </span>
                     <input
                         id={nameFieldId}
@@ -289,7 +289,7 @@ export function ExperienceCertificatePanel({
                     htmlFor={dateFieldId}
                 >
                     <span className={styles.label}>
-                        {t('commerce.certificate.dateLabel', 'Día en que la hizo')}
+                        {t('listing.certificate.dateLabel', 'Día en que la hizo')}
                     </span>
                     <input
                         id={dateFieldId}
@@ -309,8 +309,8 @@ export function ExperienceCertificatePanel({
                     data-testid="experience-certificate-submit"
                 >
                     {submitting
-                        ? t('commerce.certificate.submitting', 'Emitiendo…')
-                        : t('commerce.certificate.submit', 'Emitir certificado')}
+                        ? t('listing.certificate.submitting', 'Emitiendo…')
+                        : t('listing.certificate.submit', 'Emitir certificado')}
                 </button>
             </form>
 
@@ -325,7 +325,7 @@ export function ExperienceCertificatePanel({
 
             {certificates.length === 0 ? (
                 <p className={styles.hint}>
-                    {t('commerce.certificate.empty', 'Todavía no emitiste ningún certificado.')}
+                    {t('listing.certificate.empty', 'Todavía no emitiste ningún certificado.')}
                 </p>
             ) : (
                 <ul className={styles.list}>
@@ -348,10 +348,10 @@ export function ExperienceCertificatePanel({
                             >
                                 {downloadingId === certificate.id
                                     ? t(
-                                          'commerce.certificate.downloading',
+                                          'listing.certificate.downloading',
                                           'Generando el certificado…'
                                       )
-                                    : t('commerce.certificate.download', 'Descargar PDF')}
+                                    : t('listing.certificate.download', 'Descargar PDF')}
                             </button>
                         </li>
                     ))}

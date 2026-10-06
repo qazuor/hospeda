@@ -11,7 +11,7 @@
  * 2. **Billing transition** — PDF generation runs without the former plan
  *    entitlement.
  * 3. **Ownership** — the service's owner-tier read, then the same explicit
- *    `ownerId === actor.id || COMMERCE_VIEW_ALL` check `protected/getById.ts`
+ *    `ownerId === actor.id || GASTRONOMY_VIEW_ALL` check `protected/getById.ts`
  *    makes, answering NOT_FOUND for a listing that is not the caller's. A 403
  *    would confirm the id exists.
  * 4. **Is there a public ficha at all** — a listing that is not `PUBLIC` has no
@@ -74,7 +74,7 @@ export async function handleGetGastronomyBrochure(
 
     // Same gate, same wording as `protected/getById.ts` — a divergent message
     // here would tell a caller that the id they hold is real (HOS-600).
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }

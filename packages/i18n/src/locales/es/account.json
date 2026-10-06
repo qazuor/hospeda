@@ -75,7 +75,7 @@
             "title": "Tu perfil",
             "body": "Actualiza tu informacion personal, preferencias y configuracion de cuenta."
         },
-        "commerce": {
+        "listing": {
             "title": "Tu comercio",
             "body": "Edita el contenido, horarios y datos visibles de tu comercio."
         },
@@ -83,10 +83,10 @@
             "title": "Bienvenido a tu panel de gastronomia",
             "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local gastronomico."
         },
-        "commerceGastronomy": {
+        "listingGastronomy": {
             "body": "Edita el menu, los horarios y los datos visibles de tu local gastronomico."
         },
-        "commerceListings": {
+        "myListings": {
             "title": "Tus comercios",
             "body": "Revisa el estado de cada uno de tus comercios y accede a editarlos."
         },
@@ -94,7 +94,7 @@
             "title": "QR de tu menu",
             "body": "Genera el codigo QR de tu menu y consulta cuantas veces lo escanearon tus clientes."
         },
-        "commerceViews": {
+        "listingViews": {
             "title": "Visitas a tu ficha",
             "body": "Segui cuantas personas vieron la ficha publica de tu comercio."
         },
@@ -102,7 +102,7 @@
             "title": "Bienvenido a tu panel de experiencias",
             "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu experiencia."
         },
-        "commerceExperience": {
+        "listingExperience": {
             "body": "Edita la descripcion, los horarios y los datos visibles de tu experiencia."
         },
         "greetingEditor": {
@@ -128,7 +128,7 @@
         "groupAccount": "Mi cuenta",
         "groupTourist": "Área turista",
         "groupHost": "Área anfitrión",
-        "groupCommerce": "Área comercio",
+        "groupListings": "Área comercio",
         "groupEditorial": "Área editorial",
         "groupProvider": "Área proveedor",
         "dashboard": "Mi cuenta",
@@ -666,8 +666,8 @@
                 "promotions": "Mis promociones",
                 "recommendations": "Sugerencias",
                 "recommendationsDesc": "Alojamientos elegidos para vos",
-                "myCommerceDesc": "Gestioná tu ficha, tus fotos y tu suscripción",
-                "myMessagesCommerceDesc": "Consultas que recibís sobre tu comercio"
+                "myListingDesc": "Gestioná tu ficha, tus fotos y tu suscripción",
+                "myMessagesListingDesc": "Consultas que recibís sobre tu comercio"
             },
             "stats": {
                 "favorites": "Mis favoritos",
@@ -724,7 +724,7 @@
         },
         "subscription": {
             "title": "Mi suscripción",
-            "titleCommerce": "Suscripción de comercio",
+            "titleListing": "Suscripción de comercio",
             "description": "Administrá tu plan y suscripción en Hospeda",
             "heading": "Mi suscripción",
             "headingDesc": "Administrá tu plan y preferencias de pago",

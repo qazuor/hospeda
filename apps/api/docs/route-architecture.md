@@ -543,7 +543,7 @@ Gastronomy listings follow the standard three-tier structure mounted at:
 
 - `/api/v1/public/gastronomies` — public reads, no auth
 - `/api/v1/protected/gastronomies` — owner-scoped edits, session required
-- `/api/v1/admin/gastronomies` — full CRUD, `PermissionEnum.COMMERCE_*`
+- `/api/v1/admin/gastronomies` — full CRUD, `PermissionEnum.GASTRONOMY_*` / `EXPERIENCE_*`
 
 Reviews have their own admin sub-router mounted at
 `/api/v1/admin/gastronomies/reviews`.
@@ -565,33 +565,33 @@ Reviews have their own admin sub-router mounted at
 |--------|------|-----------|-------|
 | `GET` | `/api/v1/protected/gastronomies/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
 | `GET` | `/api/v1/protected/gastronomies/{id}` | Auth only | Returns `GastronomyProtectedSchema` (includes ownerId, contactInfo, audit fields) |
-| `PATCH` | `/api/v1/protected/gastronomies/{id}` | `COMMERCE_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
-| `POST` | `/api/v1/protected/gastronomies/{id}/faqs` | `COMMERCE_EDIT_OWN` | displayOrder auto-assigned as max+1 |
-| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_OWN` | Update existing FAQ |
+| `PATCH` | `/api/v1/protected/gastronomies/{id}` | `GASTRONOMY_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/gastronomies/{id}/faqs` | `GASTRONOMY_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `GASTRONOMY_EDIT_OWN` | Update existing FAQ |
 | `DELETE` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
-| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/reorder` | `COMMERCE_EDIT_OWN` | Bulk displayOrder update |
+| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/reorder` | `GASTRONOMY_EDIT_OWN` | Bulk displayOrder update |
 | `POST` | `/api/v1/protected/gastronomies/{gastronomyId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
 
 ### Admin tier
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `GET` | `/api/v1/admin/gastronomies` | `COMMERCE_VIEW_ALL` | Paginated list with full admin details |
-| `POST` | `/api/v1/admin/gastronomies` | `COMMERCE_CREATE` | Create listing |
+| `GET` | `/api/v1/admin/gastronomies` | `GASTRONOMY_VIEW_ALL` | Paginated list with full admin details |
+| `POST` | `/api/v1/admin/gastronomies` | `GASTRONOMY_CREATE` | Create listing |
 | `GET` | `/api/v1/admin/gastronomies/options` | Panel access only | Lightweight `{id, label, slug, type, destination}` for relation selectors |
-| `POST` | `/api/v1/admin/gastronomies/batch` | `COMMERCE_VIEW_ALL` | Resolve multiple UUIDs to display labels |
-| `GET` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_VIEW_ALL` | Full admin details |
-| `PUT` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_EDIT_ALL` | Full update |
-| `PATCH` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_EDIT_ALL` | Partial update |
-| `DELETE` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_DELETE` | Soft delete |
-| `DELETE` | `/api/v1/admin/gastronomies/{id}/hard` | `COMMERCE_DELETE` | Permanent delete |
-| `POST` | `/api/v1/admin/gastronomies/{id}/restore` | `COMMERCE_EDIT_ALL` | Restore soft-deleted listing |
-| `POST` | `/api/v1/admin/gastronomies/{id}/assign-owner` | `COMMERCE_EDIT_ALL` | Set or replace the `COMMERCE_OWNER` |
-| `GET` | `/api/v1/admin/gastronomies/{id}/faqs` | `COMMERCE_VIEW_ALL` | All FAQs including drafts |
-| `POST` | `/api/v1/admin/gastronomies/{id}/faqs` | `COMMERCE_EDIT_ALL` | Add FAQ |
-| `PUT` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Update FAQ |
-| `DELETE` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Remove FAQ |
-| `PATCH` | `/api/v1/admin/gastronomies/{id}/faqs/reorder` | `COMMERCE_EDIT_ALL` | Bulk displayOrder update |
+| `POST` | `/api/v1/admin/gastronomies/batch` | `GASTRONOMY_VIEW_ALL` | Resolve multiple UUIDs to display labels |
+| `GET` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_VIEW_ALL` | Full admin details |
+| `PUT` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_EDIT_ALL` | Full update |
+| `PATCH` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_EDIT_ALL` | Partial update |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_DELETE` | Soft delete |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}/hard` | `GASTRONOMY_DELETE` | Permanent delete |
+| `POST` | `/api/v1/admin/gastronomies/{id}/restore` | `GASTRONOMY_EDIT_ALL` | Restore soft-deleted listing |
+| `POST` | `/api/v1/admin/gastronomies/{id}/assign-owner` | `GASTRONOMY_EDIT_ALL` | Set or replace the `GASTRONOMY_OWNER` |
+| `GET` | `/api/v1/admin/gastronomies/{id}/faqs` | `GASTRONOMY_VIEW_ALL` | All FAQs including drafts |
+| `POST` | `/api/v1/admin/gastronomies/{id}/faqs` | `GASTRONOMY_EDIT_ALL` | Add FAQ |
+| `PUT` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `GASTRONOMY_EDIT_ALL` | Update FAQ |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `GASTRONOMY_EDIT_ALL` | Remove FAQ |
+| `PATCH` | `/api/v1/admin/gastronomies/{id}/faqs/reorder` | `GASTRONOMY_EDIT_ALL` | Bulk displayOrder update |
 
 ### Gastronomy Reviews — Admin
 
@@ -599,11 +599,11 @@ Reviews are mounted on a separate sub-router at `/api/v1/admin/gastronomies/revi
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `GET` | `/api/v1/admin/gastronomies/reviews` | `COMMERCE_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
-| `GET` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Full review with moderation fields |
-| `PUT` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_EDIT_ALL` + `COMMERCE_MODERATE_REVIEW` | Update review content |
-| `DELETE` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Soft delete |
-| `POST` | `/api/v1/admin/gastronomies/reviews/{id}/moderate` | `COMMERCE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
+| `GET` | `/api/v1/admin/gastronomies/reviews` | `GASTRONOMY_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
+| `GET` | `/api/v1/admin/gastronomies/reviews/{id}` | `GASTRONOMY_MODERATE_REVIEW` | Full review with moderation fields |
+| `PUT` | `/api/v1/admin/gastronomies/reviews/{id}` | `GASTRONOMY_EDIT_ALL` + `GASTRONOMY_MODERATE_REVIEW` | Update review content |
+| `DELETE` | `/api/v1/admin/gastronomies/reviews/{id}` | `GASTRONOMY_MODERATE_REVIEW` | Soft delete |
+| `POST` | `/api/v1/admin/gastronomies/reviews/{id}/moderate` | `GASTRONOMY_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
 
 ---
 
@@ -613,7 +613,7 @@ Experience listings follow the standard three-tier structure mounted at:
 
 - `/api/v1/public/experiences` — public reads, no auth
 - `/api/v1/protected/experiences` — owner-scoped edits, session required
-- `/api/v1/admin/experiences` — full CRUD, `PermissionEnum.COMMERCE_*`
+- `/api/v1/admin/experiences` — full CRUD, `PermissionEnum.GASTRONOMY_*`
 
 Reviews have their own admin sub-router mounted at
 `/api/v1/admin/experiences/reviews`.
@@ -635,34 +635,34 @@ Reviews have their own admin sub-router mounted at
 |--------|------|-----------|-------|
 | `GET` | `/api/v1/protected/experiences/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
 | `GET` | `/api/v1/protected/experiences/{id}` | Auth only | Returns `ExperienceProtectedSchema` (includes ownerId, contactInfo, audit fields) |
-| `PATCH` | `/api/v1/protected/experiences/{id}` | `COMMERCE_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
-| `POST` | `/api/v1/protected/experiences/{id}/faqs` | `COMMERCE_EDIT_OWN` | displayOrder auto-assigned as max+1 |
-| `PUT` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_OWN` | Update existing FAQ |
+| `PATCH` | `/api/v1/protected/experiences/{id}` | `EXPERIENCE_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/experiences/{id}/faqs` | `EXPERIENCE_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | `EXPERIENCE_EDIT_OWN` | Update existing FAQ |
 | `DELETE` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
-| `PUT` | `/api/v1/protected/experiences/{id}/faqs/reorder` | `COMMERCE_EDIT_OWN` | Bulk displayOrder update |
+| `PUT` | `/api/v1/protected/experiences/{id}/faqs/reorder` | `EXPERIENCE_EDIT_OWN` | Bulk displayOrder update |
 | `POST` | `/api/v1/protected/experiences/{experienceId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
 
 ### Admin tier
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `GET` | `/api/v1/admin/experiences` | `COMMERCE_VIEW_ALL` | Paginated list with full admin details |
-| `POST` | `/api/v1/admin/experiences` | `COMMERCE_CREATE` | Create listing |
+| `GET` | `/api/v1/admin/experiences` | `EXPERIENCE_VIEW_ALL` | Paginated list with full admin details |
+| `POST` | `/api/v1/admin/experiences` | `EXPERIENCE_CREATE` | Create listing |
 | `GET` | `/api/v1/admin/experiences/options` | Panel access only | Lightweight `{id, label, slug, type, destination}` for relation selectors |
-| `POST` | `/api/v1/admin/experiences/batch` | `COMMERCE_VIEW_ALL` | Resolve multiple UUIDs to display labels |
-| `GET` | `/api/v1/admin/experiences/{id}` | `COMMERCE_VIEW_ALL` | Full admin details |
-| `PUT` | `/api/v1/admin/experiences/{id}` | `COMMERCE_EDIT_ALL` | Full update |
-| `PATCH` | `/api/v1/admin/experiences/{id}` | `COMMERCE_EDIT_ALL` | Partial update |
-| `DELETE` | `/api/v1/admin/experiences/{id}` | `COMMERCE_DELETE` | Soft delete |
-| `DELETE` | `/api/v1/admin/experiences/{id}/hard` | `COMMERCE_DELETE` | Permanent delete |
-| `POST` | `/api/v1/admin/experiences/{id}/restore` | `COMMERCE_EDIT_ALL` | Restore soft-deleted listing |
-| `POST` | `/api/v1/admin/experiences/{id}/toggle-subscription` | `COMMERCE_EDIT_ALL` | Toggle MercadoPago subscription active/inactive |
-| `POST` | `/api/v1/admin/experiences/{id}/assign-owner` | `COMMERCE_EDIT_ALL` | Set or replace the `COMMERCE_OWNER` |
-| `GET` | `/api/v1/admin/experiences/{id}/faqs` | `COMMERCE_VIEW_ALL` | All FAQs including drafts |
-| `POST` | `/api/v1/admin/experiences/{id}/faqs` | `COMMERCE_EDIT_ALL` | Add FAQ |
-| `PUT` | `/api/v1/admin/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Update FAQ |
-| `DELETE` | `/api/v1/admin/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Remove FAQ |
-| `PATCH` | `/api/v1/admin/experiences/{id}/faqs/reorder` | `COMMERCE_EDIT_ALL` | Bulk displayOrder update |
+| `POST` | `/api/v1/admin/experiences/batch` | `EXPERIENCE_VIEW_ALL` | Resolve multiple UUIDs to display labels |
+| `GET` | `/api/v1/admin/experiences/{id}` | `EXPERIENCE_VIEW_ALL` | Full admin details |
+| `PUT` | `/api/v1/admin/experiences/{id}` | `EXPERIENCE_EDIT_ALL` | Full update |
+| `PATCH` | `/api/v1/admin/experiences/{id}` | `EXPERIENCE_EDIT_ALL` | Partial update |
+| `DELETE` | `/api/v1/admin/experiences/{id}` | `EXPERIENCE_DELETE` | Soft delete |
+| `DELETE` | `/api/v1/admin/experiences/{id}/hard` | `EXPERIENCE_DELETE` | Permanent delete |
+| `POST` | `/api/v1/admin/experiences/{id}/restore` | `EXPERIENCE_EDIT_ALL` | Restore soft-deleted listing |
+| `POST` | `/api/v1/admin/experiences/{id}/toggle-subscription` | `EXPERIENCE_EDIT_ALL` | Toggle MercadoPago subscription active/inactive |
+| `POST` | `/api/v1/admin/experiences/{id}/assign-owner` | `EXPERIENCE_EDIT_ALL` | Set or replace the `EXPERIENCE_OWNER` |
+| `GET` | `/api/v1/admin/experiences/{id}/faqs` | `EXPERIENCE_VIEW_ALL` | All FAQs including drafts |
+| `POST` | `/api/v1/admin/experiences/{id}/faqs` | `EXPERIENCE_EDIT_ALL` | Add FAQ |
+| `PUT` | `/api/v1/admin/experiences/{id}/faqs/{faqId}` | `EXPERIENCE_EDIT_ALL` | Update FAQ |
+| `DELETE` | `/api/v1/admin/experiences/{id}/faqs/{faqId}` | `EXPERIENCE_EDIT_ALL` | Remove FAQ |
+| `PATCH` | `/api/v1/admin/experiences/{id}/faqs/reorder` | `EXPERIENCE_EDIT_ALL` | Bulk displayOrder update |
 
 ### Experience Reviews — Admin
 
@@ -670,11 +670,11 @@ Reviews are mounted on a separate sub-router at `/api/v1/admin/experiences/revie
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `GET` | `/api/v1/admin/experiences/reviews` | `COMMERCE_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
-| `GET` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Full review with moderation fields |
-| `PUT` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_EDIT_ALL` + `COMMERCE_MODERATE_REVIEW` | Update review content |
-| `DELETE` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Soft delete |
-| `POST` | `/api/v1/admin/experiences/reviews/{id}/moderate` | `COMMERCE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
+| `GET` | `/api/v1/admin/experiences/reviews` | `EXPERIENCE_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
+| `GET` | `/api/v1/admin/experiences/reviews/{id}` | `EXPERIENCE_MODERATE_REVIEW` | Full review with moderation fields |
+| `PUT` | `/api/v1/admin/experiences/reviews/{id}` | `EXPERIENCE_EDIT_ALL` + `EXPERIENCE_MODERATE_REVIEW` | Update review content |
+| `DELETE` | `/api/v1/admin/experiences/reviews/{id}` | `EXPERIENCE_MODERATE_REVIEW` | Soft delete |
+| `POST` | `/api/v1/admin/experiences/reviews/{id}/moderate` | `EXPERIENCE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
 
 ---
 
@@ -699,25 +699,25 @@ Added by HOS-166 §6.3 — this section previously said no protected commerce ti
 existed, which stopped being true when the owner self-service surface shipped.
 
 Every route here authorises on **row ownership** (`actor.id === listing.ownerId`)
-on top of `COMMERCE_EDIT_OWN`. The permission says "may edit *a* listing of their
+on top of `GASTRONOMY_EDIT_OWN` / `EXPERIENCE_EDIT_OWN`. The permission says "may edit *a* listing of their
 own" and does not identify *which*, so on its own it would let any
-`COMMERCE_OWNER` act on any listing. A listing that is somebody else's answers the
+`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` act on any listing. A listing that is somebody else's answers the
 same **404** as one that does not exist (HOS-600).
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `POST` | `/api/v1/protected/commerce/listings/:entityType` | `COMMERCE_EDIT_OWN` | Owner self-service create. The listing is born `PRIVATE`/`DRAFT` and is filled in BEFORE any payment. |
-| `POST` | `/api/v1/protected/commerce/listings/:entityType/:entityId/start-subscription` | `COMMERCE_EDIT_OWN` | Owner self-checkout. `X-Idempotency-Key` required. Optional body `{ payerEmail?, planSlug?, billingInterval? }` — every field optional, and an ABSENT BODY is valid: that is the pre-HOS-1008 shape several callers still use. `planSlug` (HOS-1119) picks a tier **within the listing's own vertical**; one naming the other vertical's plan answers **400**. `billingInterval` (HOS-1285) is `monthly` (the default when absent) or `annual`; any other value answers **400**, and an `annual` request against a tier with no `'year'` price row answers `NO_ANNUAL_PRICE` rather than falling back to the monthly row. Deliberately NOT accepted on the ADMIN route below, for the same reason `payerEmail` is not: committing somebody else to a twelve-month charge is not an admin's call. 422 with `missing` when the listing is incomplete; 409 when it already has a live subscription, or when the owner already pays for this vertical on a DIFFERENT tier (change plan first). |
-| `POST` | `/api/v1/protected/commerce/subscriptions/:entityType/change-plan` | `COMMERCE_EDIT_OWN` | HOS-1119. Moves the caller's subscription for one vertical to a **dearer** tier. `X-Idempotency-Key` required. Body `{ planSlug }`. Keyed by VERTICAL rather than by listing, because since HOS-688 a commerce subscription belongs to an owner and a vertical with several listings attached to it. Answers `pending_payment` + a MercadoPago URL for the prorated delta on an `active` subscription, or `active` (applied at once, no charge) on a `trialing` one. **Both directions since HOS-1122** — a cheaper target answers `scheduled` (period end, with a `commerceRestrictionPreview`); only an EQUALLY priced one answers 422. The "upgrades only" note this row used to carry, and its reason (the scheduled-downgrade cron running accommodation restriction logic against the target plan's slug), both expired with that issue. **No `billingInterval` field, and that is not because commerce is monthly-only** (it is not, since HOS-1285): a tier change is not a cadence change, so the prices, the prorated delta and the scheduled downgrade are all resolved against the interval the subscription is ALREADY on. A target tier that does not sell that cadence answers 404 instead of falling back to the other one. |
+| `POST` | `/api/v1/protected/commerce/listings/:entityType` | `GASTRONOMY_EDIT_OWN` / `EXPERIENCE_EDIT_OWN` | Owner self-service create. The listing is born `PRIVATE`/`DRAFT` and is filled in BEFORE any payment. |
+| `POST` | `/api/v1/protected/commerce/listings/:entityType/:entityId/start-subscription` | `GASTRONOMY_EDIT_OWN` / `EXPERIENCE_EDIT_OWN` | Owner self-checkout. `X-Idempotency-Key` required. Optional body `{ payerEmail?, planSlug?, billingInterval? }` — every field optional, and an ABSENT BODY is valid: that is the pre-HOS-1008 shape several callers still use. `planSlug` (HOS-1119) picks a tier **within the listing's own vertical**; one naming the other vertical's plan answers **400**. `billingInterval` (HOS-1285) is `monthly` (the default when absent) or `annual`; any other value answers **400**, and an `annual` request against a tier with no `'year'` price row answers `NO_ANNUAL_PRICE` rather than falling back to the monthly row. Deliberately NOT accepted on the ADMIN route below, for the same reason `payerEmail` is not: committing somebody else to a twelve-month charge is not an admin's call. 422 with `missing` when the listing is incomplete; 409 when it already has a live subscription, or when the owner already pays for this vertical on a DIFFERENT tier (change plan first). |
+| `POST` | `/api/v1/protected/commerce/subscriptions/:entityType/change-plan` | `GASTRONOMY_EDIT_OWN` / `EXPERIENCE_EDIT_OWN` | HOS-1119. Moves the caller's subscription for one vertical to a **dearer** tier. `X-Idempotency-Key` required. Body `{ planSlug }`. Keyed by VERTICAL rather than by listing, because since HOS-688 a commerce subscription belongs to an owner and a vertical with several listings attached to it. Answers `pending_payment` + a MercadoPago URL for the prorated delta on an `active` subscription, or `active` (applied at once, no charge) on a `trialing` one. **Both directions since HOS-1122** — a cheaper target answers `scheduled` (period end, with a `commerceRestrictionPreview`); only an EQUALLY priced one answers 422. The "upgrades only" note this row used to carry, and its reason (the scheduled-downgrade cron running accommodation restriction logic against the target plan's slug), both expired with that issue. **No `billingInterval` field, and that is not because commerce is monthly-only** (it is not, since HOS-1285): a tier change is not a cadence change, so the prices, the prorated delta and the scheduled downgrade are all resolved against the interval the subscription is ALREADY on. A target tier that does not sell that cadence answers 404 instead of falling back to the other one. |
 
 ### Admin tier
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `GET` | `/api/v1/admin/commerce/leads` | `COMMERCE_VIEW_ALL` | Paginated lead list; filterable by `status` and `domain` |
-| `POST` | `/api/v1/admin/commerce/leads/:id/handle` | `COMMERCE_EDIT_ALL` | Approve or reject a lead; idempotent (overwrites previous decision) |
-| `POST` | `/api/v1/admin/commerce/leads/:id/provision-owner` | `COMMERCE_EDIT_ALL` | Create a `COMMERCE_OWNER` user from an approved lead; emails temp credentials; never returns the password |
-| `POST` | `/api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription` | `COMMERCE_EDIT_ALL` | Provisions a MercadoPago preapproval recurring subscription for the listing. `entityType` is currently `gastronomy` only. Requires the listing to have an owner assigned first. |
+| `GET` | `/api/v1/admin/commerce/leads` | `GASTRONOMY_VIEW_ALL` / `EXPERIENCE_VIEW_ALL` | Paginated lead list; filterable by `status` and `domain` |
+| `POST` | `/api/v1/admin/commerce/leads/:id/handle` | `GASTRONOMY_EDIT_ALL` / `EXPERIENCE_EDIT_ALL` | Approve or reject a lead; idempotent (overwrites previous decision) |
+| `POST` | `/api/v1/admin/commerce/leads/:id/provision-owner` | `GASTRONOMY_EDIT_ALL` / `EXPERIENCE_EDIT_ALL` | Create a `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` user from an approved lead; emails temp credentials; never returns the password |
+| `POST` | `/api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription` | `GASTRONOMY_EDIT_ALL` | Provisions a MercadoPago preapproval recurring subscription for the listing. `entityType` is currently `gastronomy` only. Requires the listing to have an owner assigned first. |
 
 ---
 

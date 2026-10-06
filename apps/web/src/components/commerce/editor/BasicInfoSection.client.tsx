@@ -95,7 +95,7 @@ export function BasicInfoSection({
                 <TextField
                     prefix={COMMERCE_FIELD_PREFIX}
                     name="name"
-                    label={t('commerce.owner.editor.sections.name', 'Nombre del comercio')}
+                    label={t('listing.owner.editor.sections.name', 'Nombre del comercio')}
                     labelClassName={styles.label}
                     className={styles.input}
                     error={errors.name}
@@ -109,13 +109,13 @@ export function BasicInfoSection({
                     <div>
                         <p className={styles.hint}>
                             {t(
-                                'commerce.owner.editor.slugRefresh.notice',
+                                'listing.owner.editor.slugRefresh.notice',
                                 'Esta ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.'
                             )}
                         </p>
                         <p className={styles.hint}>
                             {t(
-                                'commerce.owner.editor.slugRefresh.warning',
+                                'listing.owner.editor.slugRefresh.warning',
                                 'Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.'
                             )}
                         </p>
@@ -129,7 +129,7 @@ export function BasicInfoSection({
                             />
                             <span>
                                 {t(
-                                    'commerce.owner.editor.slugRefresh.checkbox',
+                                    'listing.owner.editor.slugRefresh.checkbox',
                                     'Cambiar igual la dirección web para que siga este nuevo nombre'
                                 )}
                             </span>
@@ -149,7 +149,7 @@ export function BasicInfoSection({
                         role="alert"
                     >
                         {t(
-                            'commerce.owner.editor.sections.destinationLoadError',
+                            'listing.owner.editor.sections.destinationLoadError',
                             'No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.'
                         )}
                     </p>
@@ -160,7 +160,7 @@ export function BasicInfoSection({
                         as="select"
                         prefix={COMMERCE_FIELD_PREFIX}
                         name="destinationId"
-                        label={t('commerce.owner.editor.sections.destination', 'Ciudad / Destino')}
+                        label={t('listing.owner.editor.sections.destination', 'Ciudad / Destino')}
                         labelClassName={styles.label}
                         className={styles.input}
                         error={errors.destinationId}
@@ -192,7 +192,7 @@ export function BasicInfoSection({
                         role="alert"
                     >
                         {t(
-                            'commerce.owner.editor.sections.destinationEmpty',
+                            'listing.owner.editor.sections.destinationEmpty',
                             'Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.'
                         )}
                     </p>
@@ -211,7 +211,7 @@ export function BasicInfoSection({
                     as="select"
                     prefix={COMMERCE_FIELD_PREFIX}
                     name="type"
-                    label={t('commerce.owner.editor.sections.type', 'Categoría')}
+                    label={t('listing.owner.editor.sections.type', 'Categoría')}
                     labelClassName={styles.label}
                     className={styles.input}
                     value={data.listingType}
@@ -237,7 +237,7 @@ export function BasicInfoSection({
                     className={styles.label}
                     htmlFor={SUMMARY_ID}
                 >
-                    {t('commerce.owner.editor.sections.summary', 'Resumen')}
+                    {t('listing.owner.editor.sections.summary', 'Resumen')}
                 </label>
                 <textarea
                     id={SUMMARY_ID}
@@ -259,7 +259,7 @@ export function BasicInfoSection({
                     className={styles.hint}
                     aria-live="polite"
                 >
-                    {t('commerce.owner.editor.validation.summaryHint', '{{count}}/300', {
+                    {t('listing.owner.editor.validation.summaryHint', '{{count}}/300', {
                         count: data.summary.length
                     })}
                 </span>
@@ -276,7 +276,7 @@ export function BasicInfoSection({
                     as="textarea"
                     prefix={COMMERCE_FIELD_PREFIX}
                     name="description"
-                    label={t('commerce.owner.editor.sections.description', 'Descripción')}
+                    label={t('listing.owner.editor.sections.description', 'Descripción')}
                     labelClassName={styles.label}
                     className={styles.textarea}
                     error={errors.description}
@@ -313,14 +313,14 @@ export function BasicInfoSection({
                 still used by the accommodation / event / post editors. */}
             <section className={styles.section}>
                 <span className={styles.label}>
-                    {t('commerce.owner.editor.sections.richDescription', 'Descripción ampliada')}
+                    {t('listing.owner.editor.sections.richDescription', 'Descripción ampliada')}
                 </span>
                 <RichTextEditor
                     id={RICH_DESCRIPTION_ID}
                     locale={locale}
                     value={data.richDescription}
                     ariaLabel={t(
-                        'commerce.owner.editor.sections.richDescription',
+                        'listing.owner.editor.sections.richDescription',
                         'Descripción ampliada'
                     )}
                     onChange={(value) => {

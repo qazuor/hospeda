@@ -24,7 +24,7 @@ const makePartner = (overrides: Partial<MyPartner> = {}): MyPartner =>
         id: 'p1',
         slug: 'acme',
         name: 'Acme',
-        type: 'commerce',
+        type: 'business',
         tier: 'silver',
         logoUrl: 'https://cdn.example.com/live.png',
         description: 'Texto vivo.',

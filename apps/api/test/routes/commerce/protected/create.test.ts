@@ -78,7 +78,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ...actual,
         GastronomyService: class MockGastronomyService {
             // HOS-687: the owner path MUST go through `createForOwner` (which
-            // grants COMMERCE_OWNER in the create transaction). The plain
+            // grants the vertical owner role in the create transaction). The plain
             // `create` is kept as a spy so a regression back to it fails loudly
             // here instead of shipping a silent "listing without an owner role".
             createForOwner = mockGastronomyCreateForOwner;
@@ -119,7 +119,7 @@ function createMockContext() {
         id: OWNER_ID,
         email: 'owner@example.com',
         name: 'Owner',
-        roles: ['COMMERCE_OWNER'],
+        roles: ['USER'],
         permissions: []
     };
     const store = new Map<string, unknown>([['actor', actor]]);

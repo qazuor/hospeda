@@ -259,7 +259,7 @@ export function CommerceListingActions({
                 setServerMissing(result.error.missing ?? []);
                 setCheckoutError(
                     t(
-                        'commerce.owner.checklist.incompleteError',
+                        'listing.owner.checklist.incompleteError',
                         'Todavía faltan datos para publicar.'
                     )
                 );
@@ -281,7 +281,7 @@ export function CommerceListingActions({
             if (result.error.status === 409) {
                 setCheckoutError(
                     t(
-                        'commerce.owner.checklist.alreadySubscribedError',
+                        'listing.owner.checklist.alreadySubscribedError',
                         'Este comercio ya tiene una suscripción activa.'
                     )
                 );
@@ -296,7 +296,7 @@ export function CommerceListingActions({
                 // payment failure.
                 setCheckoutError(
                     t(
-                        'commerce.owner.checklist.invalidPlanError',
+                        'listing.owner.checklist.invalidPlanError',
                         'El plan elegido ya no está disponible. Recargá la página e intentá de nuevo.'
                     )
                 );
@@ -305,14 +305,14 @@ export function CommerceListingActions({
 
             setCheckoutError(
                 t(
-                    'commerce.owner.checklist.checkoutError',
+                    'listing.owner.checklist.checkoutError',
                     'No pudimos iniciar el pago. Probá de nuevo.'
                 )
             );
         } catch {
             setCheckoutError(
                 t(
-                    'commerce.owner.checklist.checkoutError',
+                    'listing.owner.checklist.checkoutError',
                     'No pudimos iniciar el pago. Probá de nuevo.'
                 )
             );
@@ -388,13 +388,13 @@ export function CommerceListingActions({
         return (
             <div className={styles.actions}>
                 <span className={`${styles.badge} ${styles.badgePublished}`}>
-                    {t('commerce.owner.list.state.published', 'Publicado')}
+                    {t('listing.owner.list.state.published', 'Publicado')}
                 </span>
                 <a
                     className={styles.link}
                     href={publicUrl}
                 >
-                    {t('commerce.owner.list.state.viewPublic', 'Ver ficha pública')}
+                    {t('listing.owner.list.state.viewPublic', 'Ver ficha pública')}
                 </a>
                 {/*
                  * HOS-1058. Only in the `published` state, and that is not a
@@ -462,7 +462,7 @@ export function CommerceListingActions({
         return (
             <div className={styles.actions}>
                 <span className={`${styles.badge} ${styles.badgePending}`}>
-                    {t('commerce.owner.list.state.pendingPayment', 'Pago en proceso')}
+                    {t('listing.owner.list.state.pendingPayment', 'Pago en proceso')}
                 </span>
             </div>
         );
@@ -491,11 +491,11 @@ export function CommerceListingActions({
         return (
             <div className={styles.actions}>
                 <span className={`${styles.badge} ${styles.badgeSuspended}`}>
-                    {t('commerce.owner.list.state.suspended', 'Suspendido')}
+                    {t('listing.owner.list.state.suspended', 'Suspendido')}
                 </span>
                 <p className={styles.hint}>
                     {t(
-                        'commerce.owner.list.state.suspendedHint',
+                        'listing.owner.list.state.suspendedHint',
                         'Tu pago no pudo procesarse. Revisá tu método de pago para reactivar la publicación.'
                     )}
                 </p>
@@ -503,7 +503,7 @@ export function CommerceListingActions({
                     className={styles.link}
                     href={subscriptionHref}
                 >
-                    {t('commerce.owner.list.state.recoverCta', 'Revisar mi suscripción')}
+                    {t('listing.owner.list.state.recoverCta', 'Revisar mi suscripción')}
                 </a>
             </div>
         );
@@ -513,7 +513,7 @@ export function CommerceListingActions({
         return (
             <div className={styles.actions}>
                 <span className={styles.badge}>
-                    {t('commerce.owner.list.state.unknown', 'Estado no disponible')}
+                    {t('listing.owner.list.state.unknown', 'Estado no disponible')}
                 </span>
             </div>
         );
@@ -542,8 +542,8 @@ export function CommerceListingActions({
     function resolvePublishLabels(): { readonly cta: string; readonly busy: string } {
         if (trialVerdict === 'has_active_sub') {
             return {
-                cta: t('commerce.owner.checklist.publishCtaFree', 'Publicar'),
-                busy: t('commerce.owner.checklist.publishingFree', 'Publicando...')
+                cta: t('listing.owner.checklist.publishCtaFree', 'Publicar'),
+                busy: t('listing.owner.checklist.publishingFree', 'Publicando...')
             };
         }
 
@@ -551,7 +551,7 @@ export function CommerceListingActions({
             return {
                 cta:
                     trialDays === undefined
-                        ? t('commerce.owner.checklist.publishCtaTrialNoCount', 'Publicar gratis')
+                        ? t('listing.owner.checklist.publishCtaTrialNoCount', 'Publicar gratis')
                         : // `tPlural`, not `t`: the key has a real `_one`/`_other`
                           // pair, and `t` would never apply pluralization.
                           // `i18n-plural-shape.guard.test.ts` fails on exactly
@@ -561,14 +561,14 @@ export function CommerceListingActions({
                           // `params`, not a default string), which is why the
                           // count-free variant above is a separate `t` key
                           // rather than this call with an empty count.
-                          tPlural('commerce.owner.checklist.publishCtaTrial', trialDays),
-                busy: t('commerce.owner.checklist.publishingFree', 'Publicando...')
+                          tPlural('listing.owner.checklist.publishCtaTrial', trialDays),
+                busy: t('listing.owner.checklist.publishingFree', 'Publicando...')
             };
         }
 
         return {
-            cta: t('commerce.owner.checklist.publishCta', 'Publicar y pagar'),
-            busy: t('commerce.owner.checklist.publishing', 'Iniciando pago...')
+            cta: t('listing.owner.checklist.publishCta', 'Publicar y pagar'),
+            busy: t('listing.owner.checklist.publishing', 'Iniciando pago...')
         };
     }
 
@@ -582,8 +582,8 @@ export function CommerceListingActions({
         <div className={styles.actions}>
             <span className={`${styles.badge} ${styles.badgeDraft}`}>
                 {canPublish
-                    ? t('commerce.owner.list.state.draftComplete', 'Borrador — listo para publicar')
-                    : t('commerce.owner.list.state.draftIncomplete', 'Borrador — incompleto')}
+                    ? t('listing.owner.list.state.draftComplete', 'Borrador — listo para publicar')
+                    : t('listing.owner.list.state.draftIncomplete', 'Borrador — incompleto')}
             </span>
 
             {missing.length > 0 && (
@@ -594,7 +594,7 @@ export function CommerceListingActions({
                     {missing.map((field) => (
                         <li key={field}>
                             {t(
-                                `commerce.owner.checklist.field.${MISSING_FIELD_I18N_SUFFIX[field] ?? field}`,
+                                `listing.owner.checklist.field.${MISSING_FIELD_I18N_SUFFIX[field] ?? field}`,
                                 MISSING_FIELD_FALLBACK_LABEL[field] ?? field
                             )}
                         </li>
@@ -656,7 +656,7 @@ export function CommerceListingActions({
             <Dialog
                 isOpen={showPlanPicker}
                 onClose={() => setShowPlanPicker(false)}
-                ariaLabel={t('commerce.owner.planPicker.title', 'Elegí tu plan')}
+                ariaLabel={t('listing.owner.planPicker.title', 'Elegí tu plan')}
                 size="md"
             >
                 <CommercePlanPicker

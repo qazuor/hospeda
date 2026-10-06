@@ -240,7 +240,7 @@ function GastronomyViewPage() {
                         entityId={id}
                         entityName={gastronomy?.name ?? id}
                         entityLabel={t('admin-entities.entities.gastronomy.singular')}
-                        permission={PermissionEnum.COMMERCE_DELETE}
+                        permission={PermissionEnum.GASTRONOMY_DELETE}
                         useDeleteMutation={useDeleteGastronomyMutation}
                         variant="full"
                         entityGender="f"
@@ -256,6 +256,7 @@ function GastronomyViewPage() {
                     entityName={gastronomy?.name ?? id}
                     entityLabelKey="admin-entities.entities.gastronomy.singular"
                     currentValue={gastronomy?.moderationState}
+                    permission={PermissionEnum.GASTRONOMY_MODERATION_CHANGE}
                     useModerateMutation={useModerateGastronomyMutation}
                 />
 

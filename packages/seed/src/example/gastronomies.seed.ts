@@ -85,7 +85,7 @@ const SALT_ROUNDS = 12;
 const DEV_PW = 'Password123!';
 
 /**
- * Spec of a COMMERCE_OWNER user to seed.
+ * Spec of a GASTRONOMY_OWNER user to seed.
  */
 interface CommerceOwnerSpec {
     readonly seedId: string;
@@ -99,8 +99,8 @@ interface CommerceOwnerSpec {
 /**
  * E2E tourist user seeded alongside the commerce-owner block.
  *
- * Role: USER — intentionally NOT COMMERCE_OWNER and NOT staff, so the
- * `isCommerceOwnerRole` gate in `/mi-cuenta/comercio/index.astro` redirects
+ * Role: USER — intentionally NOT GASTRONOMY_OWNER and NOT staff, so the
+ * `hasCommerceNavAccess` gate in `/mi-cuenta/comercio/index.astro` redirects
  * this user to `/mi-cuenta/`.  Used by SPEC-252 COMMERCE-02 test case 1.
  *
  * `profileCompleted: true` is required because the profile-completion
@@ -108,7 +108,7 @@ interface CommerceOwnerSpec {
  * before the commerce role gate runs — an incomplete profile would redirect
  * to `/mi-cuenta/completar-perfil/` instead, breaking the test assertion.
  *
- * Password: Password123! (same shared dev constant as COMMERCE_OWNER accounts).
+ * Password: Password123! (same shared dev constant as GASTRONOMY_OWNER accounts).
  * Email: e2e-tourist@local.test (clearly E2E-scoped, never used on staging/prod).
  */
 const E2E_TOURIST = {
@@ -120,7 +120,7 @@ const E2E_TOURIST = {
 } as const;
 
 /**
- * Dev COMMERCE_OWNER users for gastronomy listings.
+ * Dev GASTRONOMY_OWNER users for gastronomy listings.
  * Three owners covering 6 listings (2 each):
  * - Julieta: listings 001 (la-parrilla-del-puerto, CdU) + 002 (cafe-del-palacio, Colón)
  * - Rodrigo: listings 003 (cerveceria-del-rio, Gualeguaychú) + 004 (heladeria-luna, Concordia)
@@ -258,7 +258,7 @@ async function seedGastronomyMediaRows({
 }
 
 /**
- * Seeds the three COMMERCE_OWNER users, the gastronomy listings (via Drizzle
+ * Seeds the three GASTRONOMY_OWNER users, the gastronomy listings (via Drizzle
  * insert), gastronomy FAQs, and gastronomy reviews.
  *
  * ### Ordering constraint
@@ -319,7 +319,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
     let successCount = 0;
     let errorCount = 0;
 
-    // ── Step 1: Seed COMMERCE_OWNER users ───────────────────────────────────
+    // ── Step 1: Seed GASTRONOMY_OWNER users ───────────────────────────────────
     const passwordHash = await hash(DEV_PW, SALT_ROUNDS);
 
     for (const owner of COMMERCE_OWNERS) {
@@ -345,18 +345,8 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             );
             // Heal: re-grant the hats. Idempotent, and required for databases
             // seeded before HOS-296 whose owners have no `user_role` rows yet.
-            // HOS-964 follow-up (2026-09-07 smoke finding): GASTRONOMY_OWNER
-            // added alongside the legacy COMMERCE_OWNER so this fixture
-            // matches what `createForOwner` (base-commerce-listing.service.ts)
-            // actually grants in production — BOTH hats in the same
-            // transaction. Without it, these seeded owners never receive any
-            // What's New entry targeted at GASTRONOMY_OWNER, because
-            // COMMERCE_OWNER is (correctly) excluded from that audience enum.
-            for (const role of [
-                RoleEnum.USER,
-                RoleEnum.COMMERCE_OWNER,
-                RoleEnum.GASTRONOMY_OWNER
-            ]) {
+            // Retain the per-vertical owner role for existing seeded accounts.
+            for (const role of [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER]) {
                 const healed = await grantRole({
                     userId: realUserId,
                     role,
@@ -399,19 +389,8 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             // what makes those suites pass — sweeping raw SQL in `apps/e2e`
             // does not cover it.
             //
-            // `USER` is granted alongside `COMMERCE_OWNER` because that is what
-            // a real signup produces (Better Auth's create hook grants the
-            // baseline, everything else is layered on top). `GASTRONOMY_OWNER`
-            // is granted too (HOS-964 follow-up, 2026-09-07) — production's
-            // `createForOwner` grants both the legacy and the vertical role in
-            // the same transaction (HOS-1077), and this fixture was drifting
-            // from that: it only ever held the legacy `COMMERCE_OWNER`, so a
-            // What's New entry targeted at `GASTRONOMY_OWNER` never reached it.
-            for (const role of [
-                RoleEnum.USER,
-                RoleEnum.COMMERCE_OWNER,
-                RoleEnum.GASTRONOMY_OWNER
-            ]) {
+            // Grant USER from signup and the gastronomy owner role for the listing.
+            for (const role of [RoleEnum.USER, RoleEnum.GASTRONOMY_OWNER]) {
                 const granted = await grantRole({
                     userId: realUserId,
                     role,
@@ -450,7 +429,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
     // ── Step 2b: Seed E2E tourist user (role USER, credential account) ────────
     // Needed by SPEC-252 COMMERCE-02 test case 1: a logueable non-commerce,
-    // non-staff user that the `isCommerceOwnerRole` gate redirects away from
+    // non-staff user that the `hasCommerceNavAccess` gate redirects away from
     // /mi-cuenta/comercio/. The example seed's regular users are created via
     // UserService and never get a Better Auth `accounts` row, so sign-in fails
     // for them. This user is seeded here alongside the commerce owners because
@@ -509,7 +488,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
 
             // HOS-296: the tourist fixture's single `USER` hat, as a row.
             // `commerce-02` case 1 asserts that this account is REDIRECTED away
-            // from `/mi-cuenta/comercio/`, so the absence of COMMERCE_OWNER is
+            // from `/mi-cuenta/comercio/`, so the absence of GASTRONOMY_OWNER is
             // as load-bearing as the presence of USER.
             const grantedTourist = await grantRole({
                 userId: insertedTouristRow.id,

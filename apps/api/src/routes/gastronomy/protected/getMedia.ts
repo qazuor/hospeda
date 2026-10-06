@@ -6,7 +6,7 @@
  * `sortOrder ASC`. Supports an optional `state` query filter (defaults to
  * `'visible'`).
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
+ * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
  * enforced inside `getGastronomyMedia` via `checkGastronomyCanEditMedia`. There
  * is no separate public read path for media management.
  */
@@ -33,7 +33,7 @@ export const protectedGetGastronomyMediaRoute = createCRUDRoute({
     description:
         'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
         'Supports an optional `state` query filter (default: visible). ' +
-        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2.',
+        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
     tags: ['Gastronomy', 'Gastronomy Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

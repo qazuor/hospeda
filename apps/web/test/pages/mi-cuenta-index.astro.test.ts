@@ -32,19 +32,19 @@ describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
         expect(source).toContain('hasCommerceNavAccess');
         // The repo's rule since HOS-296: gate on the role SET via the shared
         // predicate, never by comparing against a role string here.
-        expect(source).not.toMatch(/roles.*includes\(\s*['"]COMMERCE_OWNER['"]\s*\)/);
+        expect(source).not.toMatch(/roles.*includes\(\s*['"]GASTRONOMY_OWNER['"]\s*\)/);
     });
 
     it('offers the merchant a way into their listing from the dashboard', () => {
         expect(source).toContain('mi-cuenta/comercio');
-        expect(source).toContain('account.pages.dashboard.nav.myCommerceDesc');
+        expect(source).toContain('account.pages.dashboard.nav.myListingDesc');
     });
 
     it('reuses the sidebar label key so the two surfaces cannot drift apart', () => {
         // The sidebar entry (config/navigation.ts, group `comercio`) already
         // names this destination. Two independent labels for one link is how a
         // rename lands in one place and not the other.
-        expect(source).toContain("t('commerce.owner.nav'");
+        expect(source).toContain("t('listing.owner.nav'");
     });
 
     it('keeps the commerce entry conditional, so a tourist never sees it', () => {
@@ -61,6 +61,6 @@ describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
     it('does not describe the merchant inbox as conversations with hosts', () => {
         // The merchant is the one RECEIVING enquiries; the tourist-facing copy
         // ("Conversaciones con anfitriones") describes the opposite party.
-        expect(source).toContain('account.pages.dashboard.nav.myMessagesCommerceDesc');
+        expect(source).toContain('account.pages.dashboard.nav.myMessagesListingDesc');
     });
 });

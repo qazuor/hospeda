@@ -6,9 +6,6 @@
 // CLIENT_MANAGER: Manages client accounts, billing, subscriptions, and analytics.
 // EDITOR: Can create/edit/publish events and posts only.
 // HOST: Owner of an accommodation, can only edit their own accommodations.
-// COMMERCE_OWNER: Owner of a commerce listing (gastronomy, experience, etc.).
-//                 Can edit their own commerce entities; distinct from HOST.
-//                 RETIRING (HOS-1077) — see GASTRONOMY_OWNER / EXPERIENCE_OWNER.
 // GASTRONOMY_OWNER: Owner of a gastronomy listing. Per-vertical, like HOST.
 // EXPERIENCE_OWNER: Owner of an experience listing. Per-vertical, like HOST.
 // SPONSOR: External business or user that sponsors events/posts. Limited dashboard access.
@@ -23,20 +20,6 @@ export enum RoleEnum {
     CLIENT_MANAGER = 'CLIENT_MANAGER',
     EDITOR = 'EDITOR',
     HOST = 'HOST',
-    /**
-     * Owner of a commerce listing (gastronomy, experience, etc.). Added in SPEC-239.
-     *
-     * RETIRING (HOS-1077 release 2). One role for two verticals is the role-side
-     * half of the same defect as the `commerce.*` permission family: it cannot
-     * express "owns a restaurant but not an excursion". Replaced by
-     * {@link RoleEnum.GASTRONOMY_OWNER} and {@link RoleEnum.EXPERIENCE_OWNER},
-     * which are per-vertical exactly as {@link RoleEnum.HOST} is.
-     *
-     * It survives the expand release because live `user_role` rows still carry
-     * it and every gate still reads it. Do NOT grant it to new accounts once
-     * release 2 lands.
-     */
-    COMMERCE_OWNER = 'COMMERCE_OWNER',
     /**
      * Owner of one or more gastronomy listings (HOS-1077).
      *

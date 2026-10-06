@@ -154,10 +154,10 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
 | `host-trial@local.test` | HOST | `owner-trial` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c). Plan fixed HOS-1268 — was `owner-basico`, stale since HOS-1012 D-5 introduced the dedicated trial plan |
 | `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
-| `commerce-gastronomy@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
-| `commerce-experience@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` (HOS-818) | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
-| `commerce-gastronomy-at-cap@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, **already at cap** (owns 1 gastronomy listing). HOS-694 AC-13/AC-30; vertical role added HOS-964 |
-| `host-commerce@local.test` | HOST | `owner-basico` | **Dual role**: also holds COMMERCE_OWNER directly (no backing listing). HOS-694 AC-3/AC-12 |
+| `commerce-gastronomy@local.test` | GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
+| `commerce-experience@local.test` | EXPERIENCE_OWNER | `experience-basico` (HOS-818) | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
+| `commerce-gastronomy-at-cap@local.test` | GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, **already at cap** (owns 1 gastronomy listing). HOS-694 AC-13/AC-30; vertical role added HOS-964 |
+| `host-commerce@local.test` | HOST | `owner-basico` | **Dual role**: also holds GASTRONOMY_OWNER directly (no backing listing). HOS-694 AC-3/AC-12 |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
 | `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
 | `complex-premium@local.test` | CLIENT_MANAGER | `complex-premium` | top complex |
@@ -176,7 +176,7 @@ and leaves the row alone instead of locking that person out of their own ficha.
 
 ### Commerce owner fixtures (HOS-694)
 
-Before HOS-694 the matrix had **no `COMMERCE_OWNER` at all**, so HOS-688's
+Before HOS-694 the matrix had **no vertical owner fixture at all**, so HOS-688's
 per-vertical billing (`MAX_GASTRONOMIES` / `MAX_EXPERIENCES`) had nothing local
 to verify it against — AC-13 and AC-30 could only be checked on staging. Four
 fixtures close that gap:
@@ -201,36 +201,17 @@ fixtures close that gap:
   `hostAccommodation.ts`'s pattern), `PRIVATE`/`DRAFT` like a real owner-create
   request. See [`src/test-users/commerceListing.ts`](src/test-users/commerceListing.ts).
 - `host-commerce@local.test` — dual-role fixture (HOS-296 multi-role): `HOST`
-  is the declared `role` (so the HOS-30 accommodation fixture still applies)
-  and `COMMERCE_OWNER` is granted as an `extraRole`, with **no backing
-  listing** — role possession alone is what the web nav gate
-  (`ROLES_WITH_COMMERCE_NAV`) and the header's three-option publish control
-  read, so a listing isn't needed to exercise AC-3 / AC-12 locally. Unlike the
-  three fixtures above, this one deliberately does NOT also hold a vertical
-  role — it has no backing listing of either vertical, so there is nothing
-  real for `GASTRONOMY_OWNER` or `EXPERIENCE_OWNER` to represent here.
+  is the declared `role`, and `GASTRONOMY_OWNER` is granted as an `extraRole`,
+  with no backing listing. This exercises the account navigation gate locally.
 
-**HOS-964 follow-up (2026-09-07 smoke finding)**: the three commerce-owner
-fixtures WITH a real vertical (`commerce-gastronomy`, `commerce-experience`,
-`commerce-gastronomy-at-cap`) now also hold the matching vertical role
-(`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`) via `extraRoles`, granted alongside
-the legacy `COMMERCE_OWNER` in [`testUsers.seed.ts`](src/test-users/testUsers.seed.ts)
-— and the three `gastro-owner-*@local.test` fixtures in
-[`example/gastronomies.seed.ts`](src/example/gastronomies.seed.ts) now get
-`GASTRONOMY_OWNER` the same way. This matches what production's
-`createForOwner` (`packages/service-core/src/services/commerce/base-commerce-listing.service.ts`)
-actually grants — BOTH the legacy and the vertical role, in the SAME
-transaction as the listing (HOS-1077) — which these fixtures had drifted from:
-they only ever held the retiring `COMMERCE_OWNER`, so any audience targeting
-gated on the vertical role (the What's New audience enum, the HOS-788 web
-welcome-tour split) silently never reached a single seeded commerce owner.
-Known residual gap, NOT fixed here (reported, not actioned, per the "report
-don't act on cleanup" convention): `example/experiences.seed.ts` reuses
-`gastro-owner-julieta@local.test` as the owner of its experience fixtures via
-a raw SQL insert that never calls `grantRole` at all, so Julieta owns
-experience listings locally without ever holding `EXPERIENCE_OWNER` — a
-second, independent drift from what `createForOwner` would have granted her
-in production, in a file this follow-up did not touch.
+**HOS-964 follow-up (2026-09-07 smoke finding)**: commerce-owner fixtures
+now hold only the matching vertical role (`GASTRONOMY_OWNER` or
+`EXPERIENCE_OWNER`). The gastronomy example seed also grants
+`GASTRONOMY_OWNER` to its owner fixtures. Production `createForOwner` grants
+only the listing's vertical owner role in the listing transaction.
+`example/experiences.seed.ts` reuses `gastro-owner-julieta@local.test`
+as an experience owner and explicitly grants `EXPERIENCE_OWNER` before
+inserting her experience listings. She can therefore hold both vertical roles.
 
 `TestUserSpec.extraRoles` (a new, optional field) is what makes the dual-role
 fixture possible without splitting `TEST_USERS` into a second array —
@@ -260,8 +241,8 @@ verticals, rather than 20 fixtures hand-written with the same shape repeated:
 | Email prefix | Role | Plan |
 |---|---|---|
 | `host-<state>@local.test` | HOST | `owner-basico` |
-| `commerce-gastronomy-<state>@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` |
-| `commerce-experience-<state>@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` |
+| `commerce-gastronomy-<state>@local.test` | GASTRONOMY_OWNER | `gastronomy-basico` |
+| `commerce-experience-<state>@local.test` | EXPERIENCE_OWNER | `experience-basico` |
 | `tourist-<state>@local.test` | USER | `tourist-vip` |
 
 (`<state>` is one of `past-due`, `cancelled`, `paused`, `comp`, `courtesy` —
@@ -275,11 +256,11 @@ already had (HOS-1268 closes a parity gap, not just adds new states):
 
 | Email | Role | Plan | Notes |
 |---|---|---|---|
-| `commerce-gastronomy-trial@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-trial` (status=`trialing`, `COMMERCE_TRIAL_DAYS`) | Mirrors `host-trial@local.test` |
-| `commerce-experience-trial@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-trial` (status=`trialing`) | ditto |
-| `commerce-gastronomy-plus-addon@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` + `extra-gastronomies-1` addon | Mirrors `host-pro-plus-addon@local.test` |
-| `commerce-experience-plus-addon@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` + `extra-experiences-1` addon | ditto |
-| `commerce-experience-at-cap@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico`, `ownsExperienceAtCap: true` | Experiences had no at-cap fixture at all before this; mirrors `commerce-gastronomy-at-cap@local.test` via `ensureExperienceAtCapListing` in `src/test-users/commerceListing.ts` |
+| `commerce-gastronomy-trial@local.test` | GASTRONOMY_OWNER | `gastronomy-trial` (status=`trialing`, `COMMERCE_TRIAL_DAYS`) | Mirrors `host-trial@local.test` |
+| `commerce-experience-trial@local.test` | EXPERIENCE_OWNER | `experience-trial` (status=`trialing`) | ditto |
+| `commerce-gastronomy-plus-addon@local.test` | GASTRONOMY_OWNER | `gastronomy-basico` + `extra-gastronomies-1` addon | Mirrors `host-pro-plus-addon@local.test` |
+| `commerce-experience-plus-addon@local.test` | EXPERIENCE_OWNER | `experience-basico` + `extra-experiences-1` addon | ditto |
+| `commerce-experience-at-cap@local.test` | EXPERIENCE_OWNER | `experience-basico`, `ownsExperienceAtCap: true` | Experiences had no at-cap fixture at all before this; mirrors `commerce-gastronomy-at-cap@local.test` via `ensureExperienceAtCapListing` in `src/test-users/commerceListing.ts` |
 
 Fixing this also surfaced a real bug in the seed's own addon helper:
 `ensureAddonPurchase` resolved its base plan against `ALL_PLANS`, which only
@@ -325,7 +306,7 @@ The seed inserts directly into `users` + `account` + `billing_customers` + `bill
 
 When `loadEntitlements()` runs on login, the active subscription drives `userLimits` and `userEntitlements`, so limit-enforcement endpoints behave exactly as they would for a real paying user.
 
-Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md).
+Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: `.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`).
 
 ### Ready out of the box — no onboarding friction (SPEC-264)
 

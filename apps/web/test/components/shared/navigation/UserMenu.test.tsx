@@ -218,14 +218,14 @@ describe('UserMenu — permission-gated items', () => {
         });
     });
 
-    it('shows the "Mi comercio" business shortcut for users with only commerce.editOwn permission', async () => {
+    it('shows the "Mi comercio" business shortcut for users with only gastronomy.editOwn permission', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['commerce.editOwn'],
-                roles: ['USER', 'COMMERCE_OWNER'],
+                permissions: ['gastronomy.editOwn'],
+                roles: ['USER', 'GASTRONOMY_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -245,8 +245,8 @@ describe('UserMenu — permission-gated items', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['accommodation.create', 'commerce.editOwn'],
-                roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+                permissions: ['accommodation.create', 'gastronomy.editOwn'],
+                roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -629,8 +629,8 @@ describe('UserMenu — PostHog identify/reset', () => {
                 data: {
                     actor: {
                         id: 'user-1',
-                        roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
-                        permissions: ['accommodation.create', 'commerce.editOwn']
+                        roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
+                        permissions: ['accommodation.create', 'gastronomy.editOwn']
                     },
                     isAuthenticated: true
                 }
@@ -644,12 +644,36 @@ describe('UserMenu — PostHog identify/reset', () => {
                 // HOS-296: an ARRAY person property, sorted for stability.
                 // A multi-hat user reports every hat AND both segment
                 // booleans — under the old scalar only one could be true.
-                roles: ['COMMERCE_OWNER', 'HOST', 'USER'],
+                roles: ['GASTRONOMY_OWNER', 'HOST', 'USER'],
                 user_type: 'owner',
                 is_host: true,
                 is_commerce_owner: true,
                 is_staff: false
             });
+        });
+    });
+
+    it('keeps is_commerce_owner true for an experience-only owner', async () => {
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: {
+                    actor: {
+                        id: 'user-1',
+                        roles: ['USER', 'EXPERIENCE_OWNER'],
+                        permissions: ['experience.editOwn']
+                    },
+                    isAuthenticated: true
+                }
+            })
+        }) as unknown as typeof fetch;
+
+        renderMenu();
+        await waitFor(() => {
+            expect(identifyUser).toHaveBeenLastCalledWith(
+                'user-1',
+                expect.objectContaining({ is_commerce_owner: true, user_type: 'owner' })
+            );
         });
     });
 

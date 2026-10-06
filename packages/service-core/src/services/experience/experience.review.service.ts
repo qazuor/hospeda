@@ -160,12 +160,12 @@ export class ExperienceReviewService extends BaseCrudService<
         }
     }
 
-    /** Review update is staff-only (`COMMERCE_EDIT_ALL`). */
+    /** Review update is staff-only (`EXPERIENCE_EDIT_ALL`). */
     protected _canUpdate(actor: Actor, _entity: ExperienceReview): void {
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.EXPERIENCE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_EDIT_ALL required to update an experience review'
+                'Permission denied: EXPERIENCE_EDIT_ALL required to update an experience review'
             );
         }
     }
@@ -173,7 +173,7 @@ export class ExperienceReviewService extends BaseCrudService<
     /** Soft-delete: staff or the review author. */
     protected _canSoftDelete(actor: Actor, entity: ExperienceReview): void {
         const isAuthor = entity.userId === actor.id;
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL) && !isAuthor) {
+        if (!hasPermission(actor, PermissionEnum.EXPERIENCE_EDIT_ALL) && !isAuthor) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: cannot delete this experience review'
@@ -181,22 +181,22 @@ export class ExperienceReviewService extends BaseCrudService<
         }
     }
 
-    /** Hard delete is staff-only (`COMMERCE_EDIT_ALL`). */
+    /** Hard delete is staff-only (`EXPERIENCE_EDIT_ALL`). */
     protected _canHardDelete(actor: Actor, _entity: ExperienceReview): void {
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.EXPERIENCE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_EDIT_ALL required to permanently delete an experience review'
+                'Permission denied: EXPERIENCE_EDIT_ALL required to permanently delete an experience review'
             );
         }
     }
 
-    /** Restore is staff-only (`COMMERCE_EDIT_ALL`). */
+    /** Restore is staff-only (`EXPERIENCE_EDIT_ALL`). */
     protected _canRestore(actor: Actor, _entity: ExperienceReview): void {
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.EXPERIENCE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_EDIT_ALL required to restore an experience review'
+                'Permission denied: EXPERIENCE_EDIT_ALL required to restore an experience review'
             );
         }
     }
@@ -222,24 +222,24 @@ export class ExperienceReviewService extends BaseCrudService<
     }
 
     protected _canUpdateVisibility(actor: Actor, _entity: ExperienceReview, _v: unknown): void {
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.EXPERIENCE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_EDIT_ALL required to update experience review visibility'
+                'Permission denied: EXPERIENCE_EDIT_ALL required to update experience review visibility'
             );
         }
     }
 
     /**
      * Admin-list gate: verifies admin-panel access (base class) then checks
-     * `COMMERCE_MODERATE_REVIEW`.
+     * `EXPERIENCE_MODERATE_REVIEW`.
      */
     protected override async _canAdminList(actor: Actor): Promise<void> {
         await super._canAdminList(actor);
-        if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATE_REVIEW)) {
+        if (!hasPermission(actor, PermissionEnum.EXPERIENCE_MODERATE_REVIEW)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: COMMERCE_MODERATE_REVIEW required for experience review admin list'
+                'Permission denied: EXPERIENCE_MODERATE_REVIEW required for experience review admin list'
             );
         }
     }
@@ -358,7 +358,7 @@ export class ExperienceReviewService extends BaseCrudService<
      * (`averageRating`, `reviewsCount`, `rating`) are recomputed from all
      * APPROVED, non-deleted reviews.
      *
-     * Permission: `COMMERCE_MODERATE_REVIEW`.
+     * Permission: `EXPERIENCE_MODERATE_REVIEW`.
      *
      * @param input - Moderation decision input.
      * @param actor - The admin actor performing the moderation.
@@ -371,12 +371,12 @@ export class ExperienceReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<ExperienceReview>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATE_REVIEW)) {
+            if (!hasPermission(actor, PermissionEnum.EXPERIENCE_MODERATE_REVIEW)) {
                 return {
                     error: {
                         code: ServiceErrorCode.FORBIDDEN,
                         message:
-                            'Permission denied: COMMERCE_MODERATE_REVIEW required to moderate reviews'
+                            'Permission denied: EXPERIENCE_MODERATE_REVIEW required to moderate reviews'
                     }
                 };
             }
@@ -433,7 +433,7 @@ export class ExperienceReviewService extends BaseCrudService<
     /**
      * Returns the count of PENDING reviews for the experience entity type.
      *
-     * Permission: `COMMERCE_MODERATE_REVIEW`.
+     * Permission: `EXPERIENCE_MODERATE_REVIEW`.
      *
      * @param actor - The actor requesting the count.
      * @param ctx - Optional service context for transaction propagation.
@@ -444,12 +444,12 @@ export class ExperienceReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATE_REVIEW)) {
+            if (!hasPermission(actor, PermissionEnum.EXPERIENCE_MODERATE_REVIEW)) {
                 return {
                     error: {
                         code: ServiceErrorCode.FORBIDDEN,
                         message:
-                            'Permission denied: COMMERCE_MODERATE_REVIEW required to read pending count'
+                            'Permission denied: EXPERIENCE_MODERATE_REVIEW required to read pending count'
                     }
                 };
             }

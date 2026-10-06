@@ -135,13 +135,13 @@ export function CommercePlanPicker({
     return (
         <>
             <DialogHeader titleId={titleId}>
-                {t('commerce.owner.planPicker.title', 'Elegí tu plan')}
+                {t('listing.owner.planPicker.title', 'Elegí tu plan')}
             </DialogHeader>
             <DialogBody className={styles.root}>
                 {error}
                 <p className={styles.subtitle}>
                     {t(
-                        'commerce.owner.planPicker.subtitle',
+                        'listing.owner.planPicker.subtitle',
                         'Podés cambiar de plan más adelante desde tu cuenta.'
                     )}
                 </p>
@@ -185,7 +185,7 @@ export function CommercePlanPicker({
                                             {addedEntitlements.map((key) => (
                                                 <li key={key}>
                                                     {t(
-                                                        `commerce.owner.entitlements.${
+                                                        `listing.owner.entitlements.${
                                                             COMMERCE_ENTITLEMENT_I18N_SUFFIX[key] ??
                                                             key
                                                         }`,
@@ -224,7 +224,7 @@ export function CommercePlanPicker({
                     disabled={isPending || !selectedSlug}
                     aria-busy={isPending}
                 >
-                    {t('commerce.owner.planPicker.confirm', 'Continuar')}
+                    {t('listing.owner.planPicker.confirm', 'Continuar')}
                 </button>
             </DialogFooter>
         </>

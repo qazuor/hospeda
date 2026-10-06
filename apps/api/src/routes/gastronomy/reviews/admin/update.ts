@@ -21,8 +21,7 @@ const gastronomyReviewService = new GastronomyReviewService({ logger: apiLogger 
  * PUT /api/v1/admin/gastronomies/reviews/:id
  * Update gastronomy review — Admin endpoint.
  *
- * Requires both GASTRONOMY_EDIT_ALL and GASTRONOMY_MODERATE_REVIEW (or, until
- * HOS-1077 release 2, their legacy COMMERCE_ equivalents) — reviews are
+ * Requires both GASTRONOMY_EDIT_ALL and GASTRONOMY_MODERATE_REVIEW — reviews are
  * moderated content (mirrors accommodation review update pattern).
  */
 export const adminUpdateGastronomyReviewRoute = createAdminRoute({
@@ -30,11 +29,11 @@ export const adminUpdateGastronomyReviewRoute = createAdminRoute({
     path: '/{id}',
     summary: 'Update gastronomy review (admin)',
     description:
-        'Updates a gastronomy review. Requires GASTRONOMY_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) AND GASTRONOMY_MODERATE_REVIEW (or the legacy COMMERCE_MODERATE_REVIEW).',
+        'Updates a gastronomy review. Requires GASTRONOMY_EDIT_ALL AND GASTRONOMY_MODERATE_REVIEW.',
     tags: ['Gastronomy Reviews', 'Admin'],
     anyOfPermissions: [
-        [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL],
-        [PermissionEnum.GASTRONOMY_MODERATE_REVIEW, PermissionEnum.COMMERCE_MODERATE_REVIEW]
+        [PermissionEnum.GASTRONOMY_EDIT_ALL],
+        [PermissionEnum.GASTRONOMY_MODERATE_REVIEW]
     ],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

@@ -205,7 +205,7 @@ const makeActor = (permissions: PermissionEnum[]): Actor => ({
     permissions
 });
 
-const MODERATOR = () => makeActor([PermissionEnum.COMMERCE_MODERATION_CHANGE]);
+const MODERATOR = () => makeActor([PermissionEnum.GASTRONOMY_MODERATION_CHANGE]);
 
 function makeService(entity: TestEntity | null = publishedListing()) {
     const model = makeModel(entity);
@@ -332,11 +332,11 @@ describe('BaseCommerceListingService.moderate — a non-admin cannot (AC-10)', (
         expect(scheduleRevalidation).not.toHaveBeenCalled();
     });
 
-    it('refuses the listing OWNER — COMMERCE_EDIT_OWN does not clear a rejection', async () => {
+    it('refuses the listing OWNER — GASTRONOMY_EDIT_OWN does not clear a rejection', async () => {
         const { svc, model } = makeService({ ...publishedListing(), ownerId: ACTOR_ID });
 
         const result = await svc.moderate({
-            actor: makeActor([PermissionEnum.COMMERCE_EDIT_OWN]),
+            actor: makeActor([PermissionEnum.GASTRONOMY_EDIT_OWN]),
             id: ENTITY_ID,
             moderationState: ModerationStatusEnum.APPROVED
         });
@@ -345,11 +345,14 @@ describe('BaseCommerceListingService.moderate — a non-admin cannot (AC-10)', (
         expect(model.update).not.toHaveBeenCalled();
     });
 
-    it('refuses COMMERCE_EDIT_ALL — editing every listing is not moderating one', async () => {
+    it('refuses GASTRONOMY_EDIT_ALL — editing every listing is not moderating one', async () => {
         const { svc, model } = makeService();
 
         const result = await svc.moderate({
-            actor: makeActor([PermissionEnum.COMMERCE_EDIT_ALL, PermissionEnum.COMMERCE_VIEW_ALL]),
+            actor: makeActor([
+                PermissionEnum.GASTRONOMY_EDIT_ALL,
+                PermissionEnum.GASTRONOMY_VIEW_ALL
+            ]),
             id: ENTITY_ID,
             moderationState: ModerationStatusEnum.REJECTED
         });
@@ -358,13 +361,13 @@ describe('BaseCommerceListingService.moderate — a non-admin cannot (AC-10)', (
         expect(model.update).not.toHaveBeenCalled();
     });
 
-    it('refuses COMMERCE_MODERATE_REVIEW — that permission moderates reviews, not listings', async () => {
+    it('refuses GASTRONOMY_MODERATE_REVIEW — that permission moderates reviews, not listings', async () => {
         // The naming trap in HOS-589 §6.7. If this ever passes, the listing gate
         // has silently collapsed into the review gate.
         const { svc, model } = makeService();
 
         const result = await svc.moderate({
-            actor: makeActor([PermissionEnum.COMMERCE_MODERATE_REVIEW]),
+            actor: makeActor([PermissionEnum.GASTRONOMY_MODERATE_REVIEW]),
             id: ENTITY_ID,
             moderationState: ModerationStatusEnum.REJECTED
         });

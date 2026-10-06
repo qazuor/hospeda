@@ -45,7 +45,7 @@ const hasCatalogs = resolution.amenities.length > 0 || resolution.features.lengt
 	listingName={detail.name}
 	currentSectionId={sectionId}
 	currentSectionSlug="servicios"
-	title={t('commerce.owner.editor.sectionNav.amenities', 'Servicios')}
+	title={t('listing.owner.editor.sectionNav.amenities', 'Servicios')}
 >
 	{
 		hasCatalogs ? (
@@ -62,7 +62,7 @@ const hasCatalogs = resolution.amenities.length > 0 || resolution.features.lengt
 		) : (
 			<p class="commerce-editor-empty">
 				{t(
-					'commerce.owner.editor.amenities.catalogUnavailable',
+					'listing.owner.editor.amenities.catalogUnavailable',
 					'No pudimos cargar el listado de servicios y características. Recargá la página para reintentar.',
 				)}
 			</p>

@@ -30,8 +30,7 @@ import {
     ContentModerationChangeInputSchema,
     DestinationTypeEnum,
     LifecycleStatusEnum,
-    PermissionEnum,
-    RoleEnum,
+    type PermissionEnum,
     RoleGrantReason,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -236,11 +235,10 @@ export abstract class BaseCommerceListingService<
     /**
      * The VIEW_ALL permission that grants unscoped listing access.
      *
-     * Defaults to `COMMERCE_VIEW_ALL`.  Override in subclasses when a more
-     * specific permission is added (e.g. `COMMERCE_GASTRONOMY_VIEW_ALL`).
+     * Resolves VIEW_ALL for this listing's vertical.
      */
     protected get _viewAllPermission(): PermissionEnum {
-        return PermissionEnum.COMMERCE_VIEW_ALL;
+        return verticalPermission(this._revalidationEntityType, 'viewAll');
     }
 
     /**
@@ -451,9 +449,9 @@ export abstract class BaseCommerceListingService<
      * ## Why it does NOT go through `this.update()`
      *
      * `update()` runs `_canUpdate`, which is `checkCanEditOwnOrAll` —
-     * `COMMERCE_EDIT_ALL`, or the owner holding `COMMERCE_EDIT_OWN`. Routing
+     * the vertical EDIT_ALL permission, or the owner holding its EDIT_OWN permission. Routing
      * the verdict through it would AND the moderation authority with the edit
-     * authority: an account granted `COMMERCE_MODERATION_CHANGE` and nothing
+     * authority: an account granted the vertical MODERATION_CHANGE permission and nothing
      * else would be refused, and the new permission would be decorative. A
      * listing's owner must never be able to clear their own rejection either.
      * So the write goes through the model, exactly like every other `moderate()`
@@ -497,11 +495,7 @@ export abstract class BaseCommerceListingService<
             schema: ContentModerationChangeInputSchema,
             ctx,
             execute: async (validated, validatedActor, execCtx) => {
-                // HOS-1077: `_revalidationEntityType` is already exactly the
-                // vertical (`'gastronomy' | 'experience'`), so the per-vertical
-                // moderation permission is reachable here without a new abstract
-                // member. The check still accepts the legacy
-                // `COMMERCE_MODERATION_CHANGE` (dual-read).
+                // `_revalidationEntityType` selects the listing's permission family.
                 checkCanModerateCommerceListing(validatedActor, this._revalidationEntityType);
 
                 const listing = await this.model.findById(input.id, execCtx?.tx);
@@ -542,8 +536,7 @@ export abstract class BaseCommerceListingService<
 
     /**
      * Creates a commerce listing on behalf of its own owner and grants that
-     * owner the commerce hats in the SAME transaction (HOS-687 / HOS-589 §6.1):
-     * the legacy `COMMERCE_OWNER` and the vertical's own role (HOS-1077).
+     * owner the vertical's role in the SAME transaction (HOS-687 / HOS-589 §6.1).
      *
      * The exact mirror of `AccommodationService.createForOnboarding`: creating
      * the listing is what makes somebody a commerce owner, so there is no
@@ -564,7 +557,7 @@ export abstract class BaseCommerceListingService<
      *
      * This is deliberately NOT `_afterCreate`. That hook also runs on the ADMIN
      * create path, where the actor is a staff member creating a listing for
-     * somebody else — granting there would hand `COMMERCE_OWNER` to the admin.
+     * somebody else — granting there would hand the owner role to the admin.
      *
      * @param actor - The authenticated account creating (and owning) the listing.
      * @param data - Create payload, already carrying `ownerId = actor.id`.
@@ -593,18 +586,8 @@ export abstract class BaseCommerceListingService<
                 );
             }
 
-            // HOS-1077: BOTH hats, in the same transaction as the listing.
-            //
-            // The vertical role is the one that survives release 2; the legacy
-            // `COMMERCE_OWNER` is what every gate still reads until then. Granting
-            // only the legacy one would mean every listing created during the
-            // migration window produces an account release 2's contract migration
-            // has to sweep up a second time — the expand release exists precisely
-            // so that sweep is a single backfill, not a recurring one.
-            for (const role of [
-                RoleEnum.COMMERCE_OWNER,
-                VERTICAL_OWNER_ROLES[this._revalidationEntityType]
-            ]) {
+            // Grant the listing's vertical role in the listing transaction.
+            for (const role of [VERTICAL_OWNER_ROLES[this._revalidationEntityType]]) {
                 const granted = await grantRole({
                     userId: actor.id,
                     role,
@@ -1140,7 +1123,7 @@ export abstract class BaseCommerceListingService<
      * `update()` silently strips `ownerId` and the change is lost — this method
      * writes the FK column directly instead.
      *
-     * Staff-only: requires `COMMERCE_EDIT_ALL`. A listing owner cannot reassign
+     * Staff-only: requires the listing vertical's EDIT_ALL permission. A listing owner cannot reassign
      * their own listing away.
      *
      * @param actor - The actor performing the assignment.
@@ -1156,8 +1139,7 @@ export abstract class BaseCommerceListingService<
         tx?: DrizzleClient
     ): Promise<ServiceOutput<TEntity>> {
         try {
-            // HOS-1077 dual-read: the vertical's own `editAll`, or the legacy
-            // `COMMERCE_EDIT_ALL`.
+            // Check the listing vertical's editAll permission.
             if (!hasCommercePermission(actor, 'editAll', this._revalidationEntityType)) {
                 return {
                     error: new ServiceError(
@@ -1311,7 +1293,7 @@ export abstract class BaseCommerceListingService<
      *
      * The owner-tier counterpart to `softDelete()`, which is staff-only:
      * `_canSoftDelete` resolves to `checkCanDeleteCommerce`, i.e.
-     * `COMMERCE_DELETE`, which no owner holds. That gate is right for the
+     * the listing vertical's DELETE permission, which no owner holds. That gate is right for the
      * general case — an owner must not be able to erase a listing people are
      * paying for or linking to — and wrong for the one case this method
      * serves: the publish precheck offers "borrar el borrador" as the FREE way
@@ -1321,7 +1303,7 @@ export abstract class BaseCommerceListingService<
      * Three conditions, all narrowing rather than widening:
      *
      * - **Ownership is the gate**, as in {@link listOwn}. No permission is
-     *   required, deliberately: `COMMERCE_OWNER` is granted by the create call
+     *   required, deliberately: the vertical owner role is granted by the create call
      *   itself, so requiring the role here would reproduce HOS-687's shape —
      *   the flow that hands out the role being locked behind it.
      * - **DRAFT only.** A listing in any other lifecycle state is refused. A

@@ -83,7 +83,7 @@ const HOST_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
     // ACCESS: Basic access
     // NOTE (HOS-152): ACCESS_PANEL_ADMIN was REMOVED from HOST's real grant —
-    // HOST/COMMERCE_OWNER must never reach the admin panel (see
+    // HOST/GASTRONOMY_OWNER/EXPERIENCE_OWNER must never reach the admin panel (see
     // packages/seed/src/required/rolePermissions.seed.ts). A real HOST is
     // bounced by apps/admin/src/lib/authed-guard.ts before any of this nav
     // config ever renders; this array still mirrors HOST's real grant for the

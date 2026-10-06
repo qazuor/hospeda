@@ -328,8 +328,8 @@ describe('the commerce editor states ONE address rule (HOS-834)', () => {
     it('renders a distinct key for each state', () => {
         const notice = readNoticeElement();
 
-        expect(notice).toContain('commerce.owner.editor.slugFixedNotice');
-        expect(notice).toContain('commerce.owner.editor.slugFollowsNameNotice');
+        expect(notice).toContain('listing.owner.editor.slugFixedNotice');
+        expect(notice).toContain('listing.owner.editor.slugFollowsNameNotice');
     });
 
     it('no longer renders the both-states-at-once key', () => {

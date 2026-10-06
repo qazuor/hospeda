@@ -6,8 +6,7 @@ import { SubscriptionStatusEnumSchema } from '../enums/subscription-status.schem
 // CommerceOwnerListingSummary — lightweight view model for the owner's
 // self-service "Mi comercio" listing index (SPEC-249 Part A).
 //
-// A COMMERCE_OWNER can own several listings across both verticals (gastronomy,
-// experience). The owner area lists them with just enough to render the index
+// An owner can hold either or both vertical roles and own several listings. The owner area lists them with just enough to render the index
 // and deep-link to each operational editor — NOT the full entity payload.
 // ============================================================================
 
@@ -25,7 +24,7 @@ import { SubscriptionStatusEnumSchema } from '../enums/subscription-status.schem
  */
 export const CommerceOwnerListingSummarySchema = z.object({
     /** Listing UUID (primary key of the gastronomy/experience row). */
-    id: z.string().uuid({ message: 'zodError.commerce.ownerListing.id.invalid' }),
+    id: z.string().uuid({ message: 'zodError.listing.ownerListing.id.invalid' }),
 
     /** Which commerce vertical this listing belongs to ('gastronomy' | 'experience'). */
     vertical: CommerceEntityTypeEnumSchema,

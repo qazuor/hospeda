@@ -14,7 +14,7 @@ const basePayload = {
     slug: 'acme-litoral',
     name: 'Acme Litoral',
     description: 'Excursiones por el Litoral.',
-    type: PartnerTypeEnum.COMMERCE,
+    type: PartnerTypeEnum.BUSINESS,
     tier: PartnerTierEnum.GOLD,
     logoUrl: 'https://cdn.example.com/acme.png',
     websiteUrl: 'https://acme.example.com',

@@ -678,7 +678,7 @@ describe('CreatePropertyMiniForm — post-submit redirect', () => {
     });
 
     it('never redirects to the admin panel, and builds the URL from the ID rather than the slug (HOS-152 + HOS-801)', async () => {
-        // Two regressions in one destination. HOS-152: HOST/COMMERCE_OWNER
+        // Two regressions in one destination. HOS-152: HOST/GASTRONOMY_OWNER
         // users do not have `access.panelAdmin`, so any redirect into
         // `/admin/*` bounces them to `/auth/forbidden` — an earlier bug did
         // exactly that for every actor. HOS-801: the editor route resolves by

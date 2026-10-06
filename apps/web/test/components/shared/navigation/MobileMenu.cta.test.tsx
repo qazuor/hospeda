@@ -7,7 +7,7 @@
  * funnel and a "Modo anfitrión" shortcut).
  *
  * HOS-691 AC-12: the submenu renders unconditionally — for a guest, an
- * authenticated non-host, an existing HOST, AND an existing COMMERCE_OWNER
+ * authenticated non-host, an existing HOST, AND an existing GASTRONOMY_OWNER
  * alike. There is no more per-role hiding or per-role destination swapping
  * to test here; that is the whole point of the rewrite (see the issue's
  * "Tests that break" section).
@@ -201,10 +201,10 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
     });
 
-    it('renders the submenu for an existing COMMERCE_OWNER (HOS-691 AC-12)', () => {
+    it('renders the submenu for an existing GASTRONOMY_OWNER (HOS-691 AC-12)', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Commerce Owner', email: 'owner@example.com' },
-            initialRoles: ['USER', 'COMMERCE_OWNER']
+            initialRoles: ['USER', 'GASTRONOMY_OWNER']
         });
         openMenu();
         openPublishSubmenu();
@@ -212,10 +212,10 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         expect(screen.getAllByRole('menuitem')).toHaveLength(3);
     });
 
-    it('renders the submenu for a user who is BOTH HOST and COMMERCE_OWNER', () => {
+    it('renders the submenu for a user who is BOTH HOST and GASTRONOMY_OWNER', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Host Merchant', email: 'both@example.com' },
-            initialRoles: ['USER', 'COMMERCE_OWNER', 'HOST']
+            initialRoles: ['USER', 'GASTRONOMY_OWNER', 'HOST']
         });
         openMenu();
         openPublishSubmenu();

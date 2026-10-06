@@ -232,7 +232,7 @@ export class AccommodationService extends BaseCrudService<
     // promotion in `createForOnboarding` and `_assignHostRoleIfNeeded`. It is
     // gone, not relocated: granting a hat is additive and idempotent, so there
     // is nothing for a guard to protect. Keeping it would also keep the bug —
-    // the set omitted `COMMERCE_OWNER`, `SPONSOR` and `EDITOR`, which is why
+    // the set omitted listing owner roles, `SPONSOR` and `EDITOR`, which is why
     // the old destructive write ate those hats.
     //
     // Do NOT reintroduce it as a "staff" set either: the canonical one is
@@ -1495,7 +1495,7 @@ export class AccommodationService extends BaseCrudService<
                         // The old `user.role === RoleEnum.USER` guard is gone,
                         // and its removal is the point rather than a cleanup:
                         // an exact-match on USER is precisely why a
-                        // COMMERCE_OWNER starting host onboarding never
+                        // a listing owner starting host onboarding never
                         // received the host hat and stayed locked out of their
                         // own draft. Granting is additive, so the guard bought
                         // nothing that `grantRole`'s (user_id, role) primary key
@@ -2364,7 +2364,7 @@ export class AccommodationService extends BaseCrudService<
      *
      * It was `update(users, { role: HOST })`, guarded by a `PRIVILEGED_ROLES`
      * set of `{HOST, ADMIN, CLIENT_MANAGER, SUPER_ADMIN}`. That set omits
-     * `COMMERCE_OWNER`, `SPONSOR` and `EDITOR`, so activating an accommodation
+     * listing owner roles, `SPONSOR` and `EDITOR`, so activating an accommodation
      * owned by any of them silently DESTROYED that hat — a live data-loss bug.
      * A grant is additive, so there is nothing left for a guard to protect.
      *

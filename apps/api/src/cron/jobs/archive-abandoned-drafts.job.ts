@@ -59,7 +59,7 @@ const BATCH_LIMIT = 100;
  *
  * 1. **Only HOST is ever removed.** The pre-HOS-296 job ran
  *    `update(users).set({ role: USER }).where(role = HOST)`, so an owner who
- *    also held `COMMERCE_OWNER` or `EDITOR` would have lost that too if the
+ *    also held `GASTRONOMY_OWNER` or `EDITOR` would have lost that too if the
  *    `where` had ever matched. Naming a single role removes the whole class.
  * 2. **Never strand an account with zero hats.** `revokeRole` refuses the last
  *    role (AC-5); checking here lets the job treat that as "not demoted"

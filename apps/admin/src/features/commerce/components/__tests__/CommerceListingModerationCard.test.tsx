@@ -9,7 +9,7 @@
  *  - it renders REJECTED as an option at all;
  *  - choosing it goes through the confirmation dialog and then calls the
  *    mutation with `{ moderationState: 'REJECTED' }`;
- *  - an admin without `COMMERCE_MODERATION_CHANGE` gets the read-only badge and
+ *  - an admin without `GASTRONOMY_MODERATION_CHANGE` gets the read-only badge and
  *    cannot fire the mutation.
  *
  * The permission case is the one that fails invisibly in a browser: a
@@ -51,6 +51,7 @@ function renderCard() {
             entityName: 'Bar del Puerto',
             entityLabelKey: 'admin-entities.entities.gastronomy.singular',
             currentValue: ModerationStatusEnum.APPROVED,
+            permission: PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
             useModerateMutation
         })
     );
@@ -68,7 +69,7 @@ beforeEach(() => {
 
 describe('CommerceListingModerationCard — an authorised admin can reject (AC-26)', () => {
     beforeEach(() => {
-        permissions.mockReturnValue([PermissionEnum.COMMERCE_MODERATION_CHANGE]);
+        permissions.mockReturnValue([PermissionEnum.GASTRONOMY_MODERATION_CHANGE]);
     });
 
     it('renders an interactive trigger showing the current state', () => {
@@ -118,13 +119,19 @@ describe('CommerceListingModerationCard — an authorised admin can reject (AC-2
 // ---------------------------------------------------------------------------
 
 describe('CommerceListingModerationCard — an unauthorised admin cannot (AC-26)', () => {
-    it('renders read-only when the actor lacks COMMERCE_MODERATION_CHANGE', () => {
+    it('does not let an experience moderator change a gastronomy listing', () => {
+        permissions.mockReturnValue([PermissionEnum.EXPERIENCE_MODERATION_CHANGE]);
+        renderCard();
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('renders read-only when the actor lacks GASTRONOMY_MODERATION_CHANGE', () => {
         // Holding every OTHER commerce permission, including the review one, is
         // still not enough — the panel mirrors the server-side gate.
         permissions.mockReturnValue([
-            PermissionEnum.COMMERCE_EDIT_ALL,
-            PermissionEnum.COMMERCE_VIEW_ALL,
-            PermissionEnum.COMMERCE_MODERATE_REVIEW
+            PermissionEnum.GASTRONOMY_EDIT_ALL,
+            PermissionEnum.GASTRONOMY_VIEW_ALL,
+            PermissionEnum.GASTRONOMY_MODERATE_REVIEW
         ]);
 
         renderCard();

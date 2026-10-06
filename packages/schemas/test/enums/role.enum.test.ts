@@ -15,14 +15,13 @@ describe('RoleEnum', () => {
             expect(RoleEnum.CLIENT_MANAGER).toBe('CLIENT_MANAGER');
             expect(RoleEnum.EDITOR).toBe('EDITOR');
             expect(RoleEnum.HOST).toBe('HOST');
-            expect(RoleEnum.COMMERCE_OWNER).toBe('COMMERCE_OWNER');
             expect(RoleEnum.SPONSOR).toBe('SPONSOR');
             expect(RoleEnum.USER).toBe('USER');
             expect(RoleEnum.GUEST).toBe('GUEST');
         });
 
-        it('should have exactly 12 roles (10 + the two HOS-1077 vertical owners)', () => {
-            expect(Object.values(RoleEnum)).toHaveLength(12);
+        it('should have exactly 11 roles', () => {
+            expect(Object.values(RoleEnum)).toHaveLength(11);
         });
 
         // HOS-1077: the per-vertical owner roles.
@@ -31,25 +30,16 @@ describe('RoleEnum', () => {
             expect(RoleEnum.EXPERIENCE_OWNER).toBe('EXPERIENCE_OWNER');
         });
 
-        it('the two vertical owner roles are distinct from each other and from COMMERCE_OWNER', () => {
+        it('the two vertical owner roles are distinct from each other and HOST', () => {
             // The whole product point: "owns a restaurant" and "owns an
             // excursion" have to be expressible apart. If any two of these
             // collapse, the split bought nothing.
-            const owners = [
-                RoleEnum.GASTRONOMY_OWNER,
-                RoleEnum.EXPERIENCE_OWNER,
-                RoleEnum.COMMERCE_OWNER
-            ];
+            const owners = [RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER, RoleEnum.HOST];
             expect(new Set(owners).size).toBe(3);
         });
 
-        // SPEC-239: COMMERCE_OWNER role
-        it('should define COMMERCE_OWNER', () => {
-            expect(RoleEnum.COMMERCE_OWNER).toBe('COMMERCE_OWNER');
-        });
-
-        it('COMMERCE_OWNER should be distinct from HOST', () => {
-            expect(RoleEnum.COMMERCE_OWNER).not.toBe(RoleEnum.HOST);
+        it('should not define the retired COMMERCE_OWNER role', () => {
+            expect(Object.values(RoleEnum)).not.toContain('COMMERCE_OWNER');
         });
     });
 
@@ -88,10 +78,8 @@ describe('RoleEnum', () => {
             expect(() => RoleEnumSchema.parse('SYSTEM')).not.toThrow();
         });
 
-        // SPEC-239: COMMERCE_OWNER schema parsing
-        it('should parse COMMERCE_OWNER successfully', () => {
-            const result = RoleEnumSchema.parse('COMMERCE_OWNER');
-            expect(result).toBe(RoleEnum.COMMERCE_OWNER);
+        it('should reject the retired COMMERCE_OWNER role', () => {
+            expect(() => RoleEnumSchema.parse('COMMERCE_OWNER')).toThrow(ZodError);
         });
 
         it('should provide appropriate error message for invalid values', () => {

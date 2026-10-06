@@ -141,11 +141,11 @@ const adminHeaders: Record<string, string> = {
     'x-mock-actor-role': 'ADMIN',
     'x-mock-actor-permissions': JSON.stringify([
         'access.panelAdmin',
-        'commerce.create',
-        'commerce.editAll',
-        'commerce.delete',
-        'commerce.viewAll',
-        'commerce.moderateReview'
+        'experience.create',
+        'experience.editAll',
+        'experience.delete',
+        'experience.viewAll',
+        'experience.moderateReview'
     ])
 };
 
@@ -544,7 +544,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect([400, 401, 403]).toContain(res.status);
             });
 
-            it('returns 200 when admin with commerce.viewAll', async () => {
+            it('returns 200 when admin with experience.viewAll', async () => {
                 experienceSvc.adminList.mockResolvedValue({
                     data: { items: [adminExperienceFixture], total: 1 }
                 });
@@ -558,7 +558,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('POST /api/v1/admin/experiences (create)', () => {
-            it('returns 403 when missing COMMERCE_CREATE', async () => {
+            it('returns 403 when missing EXPERIENCE_CREATE', async () => {
                 const res = await app.request('/api/v1/admin/experiences', {
                     method: 'POST',
                     headers: adminNoPanelHeaders,
@@ -573,7 +573,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('gate passes with COMMERCE_CREATE (not 403)', async () => {
+            it('gate passes with EXPERIENCE_CREATE (not 403)', async () => {
                 experienceSvc.create.mockResolvedValue({ data: minimalExperience });
 
                 const res = await app.request('/api/v1/admin/experiences', {
@@ -601,7 +601,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('POST /api/v1/admin/experiences/batch', () => {
-            it('returns 403 when missing COMMERCE_VIEW_ALL', async () => {
+            it('returns 403 when missing EXPERIENCE_VIEW_ALL', async () => {
                 const res = await app.request('/api/v1/admin/experiences/batch', {
                     method: 'POST',
                     headers: adminNoPanelHeaders,
@@ -611,7 +611,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('passes permission gate with COMMERCE_VIEW_ALL (not 403)', async () => {
+            it('passes permission gate with EXPERIENCE_VIEW_ALL (not 403)', async () => {
                 // Batch returns 201 per route factory; test only that the gate passes.
                 experienceSvc.getById.mockResolvedValue({ data: adminExperienceFixture });
 
@@ -638,7 +638,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('GET /api/v1/admin/experiences/:id', () => {
-            it('returns 403 when missing COMMERCE_VIEW_ALL', async () => {
+            it('returns 403 when missing EXPERIENCE_VIEW_ALL', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}`, {
                     headers: adminNoPanelHeaders
                 });
@@ -658,7 +658,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('DELETE /api/v1/admin/experiences/:id (soft delete)', () => {
-            it('returns 403 when missing COMMERCE_DELETE', async () => {
+            it('returns 403 when missing EXPERIENCE_DELETE', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}`, {
                     method: 'DELETE',
                     headers: adminNoPanelHeaders
@@ -667,7 +667,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('returns 200 when admin has COMMERCE_DELETE', async () => {
+            it('returns 200 when admin has EXPERIENCE_DELETE', async () => {
                 experienceSvc.softDelete.mockResolvedValue({ data: { count: 1 } });
 
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}`, {
@@ -680,7 +680,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('DELETE /api/v1/admin/experiences/:id/hard', () => {
-            it('returns 403 when missing COMMERCE_DELETE', async () => {
+            it('returns 403 when missing EXPERIENCE_DELETE', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/hard`, {
                     method: 'DELETE',
                     headers: adminNoPanelHeaders
@@ -689,7 +689,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('returns 200 when admin has COMMERCE_DELETE', async () => {
+            it('returns 200 when admin has EXPERIENCE_DELETE', async () => {
                 experienceSvc.hardDelete.mockResolvedValue({ data: { count: 1 } });
 
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/hard`, {
@@ -702,7 +702,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('POST /api/v1/admin/experiences/:id/restore', () => {
-            it('returns 403 when missing COMMERCE_EDIT_ALL', async () => {
+            it('returns 403 when missing EXPERIENCE_EDIT_ALL', async () => {
                 const res = await app.request(
                     `/api/v1/admin/experiences/${EXPERIENCE_ID}/restore`,
                     { method: 'POST', headers: adminNoPanelHeaders }
@@ -711,7 +711,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('returns 2xx on successful restore (gate passes with COMMERCE_EDIT_ALL)', async () => {
+            it('returns 2xx on successful restore (gate passes with EXPERIENCE_EDIT_ALL)', async () => {
                 experienceSvc.restore.mockResolvedValue({ data: adminExperienceFixture });
 
                 const res = await app.request(
@@ -726,7 +726,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('POST /api/v1/admin/experiences/:id/assign-owner', () => {
-            it('returns 403 when missing COMMERCE_EDIT_ALL', async () => {
+            it('returns 403 when missing EXPERIENCE_EDIT_ALL', async () => {
                 const res = await app.request(
                     `/api/v1/admin/experiences/${EXPERIENCE_ID}/assign-owner`,
                     {
@@ -739,7 +739,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('passes gate with COMMERCE_EDIT_ALL (not 401/403)', async () => {
+            it('passes gate with EXPERIENCE_EDIT_ALL (not 401/403)', async () => {
                 // POST routes via createAdminRoute return 201; gate test only cares about auth.
                 experienceSvc.update.mockResolvedValue({ data: adminExperienceFixture });
 
@@ -757,7 +757,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('Admin FAQ endpoints', () => {
-            it('GET /:id/faqs returns 403 when missing COMMERCE_VIEW_ALL', async () => {
+            it('GET /:id/faqs returns 403 when missing EXPERIENCE_VIEW_ALL', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/faqs`, {
                     headers: adminNoPanelHeaders
                 });
@@ -765,7 +765,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('GET /:id/faqs returns 200 for admin with COMMERCE_VIEW_ALL', async () => {
+            it('GET /:id/faqs returns 200 for admin with EXPERIENCE_VIEW_ALL', async () => {
                 faqHelpers.listExperienceFaqs.mockResolvedValue({ data: { faqs: [] } });
 
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/faqs`, {
@@ -775,7 +775,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(200);
             });
 
-            it('POST /:id/faqs returns 403 when missing COMMERCE_EDIT_ALL', async () => {
+            it('POST /:id/faqs returns 403 when missing EXPERIENCE_EDIT_ALL', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/faqs`, {
                     method: 'POST',
                     headers: adminNoPanelHeaders,
@@ -787,7 +787,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('Admin review moderation endpoints', () => {
-            it('GET /reviews returns 403 when missing COMMERCE_MODERATE_REVIEW', async () => {
+            it('GET /reviews returns 403 when missing EXPERIENCE_MODERATE_REVIEW', async () => {
                 const res = await app.request('/api/v1/admin/experiences/reviews', {
                     headers: adminNoPanelHeaders
                 });
@@ -795,7 +795,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('GET /reviews returns 200 for admin with COMMERCE_MODERATE_REVIEW', async () => {
+            it('GET /reviews returns 200 for admin with EXPERIENCE_MODERATE_REVIEW', async () => {
                 reviewSvc.adminList.mockResolvedValue({ data: { items: [], total: 0 } });
 
                 const res = await app.request('/api/v1/admin/experiences/reviews', {
@@ -805,7 +805,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(200);
             });
 
-            it('POST /reviews/:id/moderate returns 403 when missing COMMERCE_MODERATE_REVIEW', async () => {
+            it('POST /reviews/:id/moderate returns 403 when missing EXPERIENCE_MODERATE_REVIEW', async () => {
                 const res = await app.request(
                     `/api/v1/admin/experiences/reviews/${REVIEW_ID}/moderate`,
                     {
@@ -837,7 +837,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).not.toBe(403);
             });
 
-            it('DELETE /reviews/:id returns 403 when missing COMMERCE_MODERATE_REVIEW', async () => {
+            it('DELETE /reviews/:id returns 403 when missing EXPERIENCE_MODERATE_REVIEW', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/reviews/${REVIEW_ID}`, {
                     method: 'DELETE',
                     headers: adminNoPanelHeaders

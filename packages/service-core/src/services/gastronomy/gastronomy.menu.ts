@@ -36,8 +36,8 @@
  *
  * ## Permissions vs. entitlements
  *
- * This module answers PERMISSION only — `COMMERCE_EDIT_OWN` on your own
- * listing, `COMMERCE_EDIT_ALL` for staff, via the same
+ * This module answers PERMISSION only — `GASTRONOMY_EDIT_OWN` on your own
+ * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
  * {@link checkGastronomyCanEditFaqs} gate the sibling helpers use. Whether the
  * caller's PLAN includes a structured carta is an entitlement
  * (`MANAGE_GASTRONOMY_MENU`) and is checked at the route, before this is
@@ -207,7 +207,7 @@ export async function getGastronomyMenu(
 /**
  * Replaces a listing's structured carta with the submitted document.
  *
- * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL`
+ * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL`
  * (staff). The `MANAGE_GASTRONOMY_MENU` entitlement is the route's gate, not
  * this one's.
  *

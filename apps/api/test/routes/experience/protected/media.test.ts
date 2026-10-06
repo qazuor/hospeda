@@ -70,7 +70,7 @@ const OWNER_HEADERS = {
     ...USER_AGENT,
     'x-mock-actor-id': 'owner-1',
     'x-mock-actor-role': 'OWNER_BASICO',
-    'x-mock-actor-permissions': JSON.stringify(['commerce.editOwn'])
+    'x-mock-actor-permissions': JSON.stringify(['experience.editOwn'])
 };
 
 const buildMediaRow = (id: string, sortOrder: number) => ({
@@ -106,14 +106,14 @@ describe('Experience media routes — Protected tier (HOS-372)', () => {
     // ── Service error mapping ──────────────────────────────────────────────
     //
     // NOT an authorization test. Authorization lives in
-    // `checkExperienceCanEditMedia` (COMMERCE_EDIT_OWN / COMMERCE_EDIT_ALL) inside the
+    // `checkExperienceCanEditMedia` (EXPERIENCE_EDIT_OWN / EXPERIENCE_EDIT_ALL) inside the
     // standalone service function, which is mocked module-wide here — so nothing
     // in this file can prove a guest is refused. These cases only assert that a
     // FORBIDDEN coming back from the service becomes a 4xx instead of a 500.
     //
     // The real gate is covered without mocks in
     // `packages/service-core/test/services/experience/experience.media.test.ts`
-    // ('should return FORBIDDEN when actor lacks COMMERCE_EDIT_OWN').
+    // ('should return FORBIDDEN when actor lacks EXPERIENCE_EDIT_OWN').
 
     describe('Service error mapping', () => {
         it('POST /media — maps a service FORBIDDEN to a 4xx', async () => {

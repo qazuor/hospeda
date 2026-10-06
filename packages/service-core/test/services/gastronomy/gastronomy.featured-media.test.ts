@@ -87,8 +87,8 @@ function makeMediaRow(overrides: Record<string, unknown> = {}) {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.GASTRONOMY_OWNER],
+    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
 };
 
 const touristActor: Actor = {
@@ -263,7 +263,7 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
         expect(mockMediaModel.create).not.toHaveBeenCalled();
     });
 
-    it('refuses an actor without COMMERCE_EDIT_OWN, before touching the table', async () => {
+    it('refuses an actor without GASTRONOMY_EDIT_OWN, before touching the table', async () => {
         const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 0, previousFeatured: false });
 

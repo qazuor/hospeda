@@ -441,7 +441,7 @@ interface Actor {
   isAuthenticated: boolean
   id: string
   email: string
-  roles: readonly RoleEnum[] // every role the actor holds (HOS-296) — e.g. [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]
+  roles: readonly RoleEnum[] // every role the actor holds (HOS-296) — e.g. [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER / EXPERIENCE_OWNER]
   permissions: readonly PermissionEnum[]
 }
 ```

@@ -161,7 +161,7 @@ app.route('/', protectedRemoveGastronomyFaqRoute);
 // POST /{gastronomyId}/reviews — Tourist creates a review.
 app.route('/', protectedCreateGastronomyReviewRoute);
 
-// Media management (HOS-372) — gated on COMMERCE_EDIT_OWN/COMMERCE_EDIT_ALL
+// Media management (HOS-372) — gated on GASTRONOMY_EDIT_OWN/GASTRONOMY_EDIT_ALL
 // inside the service layer via checkGastronomyCanEditMedia.
 
 // PATCH /{id}/media/reorder — Must be before /{id}/media/{mediaId} (DELETE).

@@ -63,7 +63,7 @@ export async function handleGetGastronomyMenuQrScans(
     // Same gate, same wording as `menuQr.ts` / `protected/getById.ts` — a
     // divergent message here would tell a caller that the id they hold is
     // real (HOS-600). A 403 would confirm the id exists, so this is a 404.
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }

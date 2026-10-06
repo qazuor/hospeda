@@ -9,7 +9,7 @@
  *  - extraFilters include type and priceRange filter
  *  - GastronomiesRoute is a valid route object
  *  - GastronomiesPageComponent is a function
- *  - GASTRONOMY_VIEW_PERMISSION is the COMMERCE_VIEW_ALL permission
+ *  - GASTRONOMY_VIEW_PERMISSION is the GASTRONOMY_VIEW_ALL permission
  */
 
 import { PermissionEnum } from '@repo/schemas';
@@ -75,7 +75,7 @@ describe('GastronomiesPageComponent', () => {
 });
 
 describe('GASTRONOMY_VIEW_PERMISSION', () => {
-    it('should be COMMERCE_VIEW_ALL', () => {
-        expect(GASTRONOMY_VIEW_PERMISSION).toBe(PermissionEnum.COMMERCE_VIEW_ALL);
+    it('should be GASTRONOMY_VIEW_ALL', () => {
+        expect(GASTRONOMY_VIEW_PERMISSION).toBe(PermissionEnum.GASTRONOMY_VIEW_ALL);
     });
 });

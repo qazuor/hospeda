@@ -355,7 +355,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
             contactName: 'Test Applicant',
             email: 'applicant@example.com',
             message: 'Quiero sumarme al programa de aliados.',
-            partnerType: 'commerce'
+            partnerType: 'business'
         };
 
         expect(() => AllianceLeadSubmissionSchema.parse(data)).not.toThrow();

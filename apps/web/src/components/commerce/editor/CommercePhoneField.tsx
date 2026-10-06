@@ -88,7 +88,7 @@ export function CommercePhoneField({
         <div className={styles.phoneField}>
             <fieldset className={styles.phoneFieldset}>
                 <legend className={styles.fieldLabel}>
-                    {t('commerce.owner.editor.contactField.mobilePhone', 'Teléfono')}
+                    {t('listing.owner.editor.contactField.mobilePhone', 'Teléfono')}
                 </legend>
                 <div className={styles.phoneRow}>
                     <div className={styles.phoneCountryField}>

@@ -616,7 +616,7 @@
             "gastronomyMenu": "The menu",
             "experienceListing": "Your experience on Hospeda",
             "experienceService": "Before and after the outing",
-            "commerceExtras": "Extra tools"
+            "listingExtras": "Extra tools"
         },
         "row": {
             "favorites": "Favorites",
@@ -665,7 +665,7 @@
             "experienceDirections": "How to reach the meeting point",
             "experienceCertificate": "Certificate for whoever took it",
             "listingPdf": "Downloadable PDF listing",
-            "aiChatCommerce": "AI chat queries per month"
+            "aiChatListing": "AI chat queries per month"
         },
         "rowDesc": {
             "favorites": "Save accommodations you like to revisit anytime.",

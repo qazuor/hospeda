@@ -8,11 +8,10 @@
  * ## Permission model
  *
  * - **Owner ops** (add / update / remove / reorder):
- *   Gated on `COMMERCE_EDIT_OWN` for listing owners, or
- *   `COMMERCE_EDIT_ALL` for staff (via `checkExperienceCanEditFaqs`).
+ *   Gated on `EXPERIENCE_EDIT_OWN` for listing owners, or
+ *   `EXPERIENCE_EDIT_ALL` for staff (via `checkExperienceCanEditFaqs`).
  * - **Admin list** (`adminGetFaqs`):
- *   Gated on `COMMERCE_VIEW_ALL` (staff) or `COMMERCE_VIEW_ALL` as
- *   viewOwn fallback; same as `checkExperienceCanViewAll`.
+ *   Gated on `EXPERIENCE_VIEW_ALL` (staff); same as `checkExperienceCanViewAll`.
  * - **Public list** (`getFaqs`):
  *   Open — any actor that can view the listing can read its FAQs.
  *
@@ -79,7 +78,7 @@ async function requireExperience(
 /**
  * Adds a FAQ entry to an experience listing.
  *
- * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
+ * Permission: `EXPERIENCE_EDIT_OWN` (listing owner) or `EXPERIENCE_EDIT_ALL` (staff).
  * `displayOrder` is auto-assigned as `max(existing) + 1` or 0 when no FAQs exist yet.
  *
  * @param model - ExperienceModel instance.
@@ -148,7 +147,7 @@ export async function addExperienceFaq(
 /**
  * Updates an existing FAQ entry on an experience listing.
  *
- * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
+ * Permission: `EXPERIENCE_EDIT_OWN` (listing owner) or `EXPERIENCE_EDIT_ALL` (staff).
  * The FAQ must belong to the specified experience (enforced by `experienceId` check).
  *
  * @param model - ExperienceModel instance.
@@ -216,7 +215,7 @@ export async function updateExperienceFaq(
 /**
  * Removes (soft-deletes) a FAQ from an experience listing.
  *
- * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
+ * Permission: `EXPERIENCE_EDIT_OWN` (listing owner) or `EXPERIENCE_EDIT_ALL` (staff).
  * The FAQ must belong to the specified experience.
  *
  * @param model - ExperienceModel instance.
@@ -347,7 +346,7 @@ export async function listExperienceFaqs(
  *    `order` belongs to this experience (unknown IDs → VALIDATION_ERROR).
  * 3. Apply each `displayOrder` value individually via `faqModel.update`.
  *
- * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
+ * Permission: `EXPERIENCE_EDIT_OWN` (listing owner) or `EXPERIENCE_EDIT_ALL` (staff).
  *
  * @param model - ExperienceModel instance.
  * @param actor - The actor performing the action.

@@ -161,7 +161,7 @@ vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw =
-                key === 'commerce.owner.editor.validation.summaryHint'
+                key === 'listing.owner.editor.validation.summaryHint'
                     ? '{{count}}/300'
                     : (fallback ?? `[MISSING:${key}]`);
             if (!params) return raw;

@@ -397,5 +397,5 @@ The audit's recommendation: **leave the 43 lines uncovered, document why here, a
 
 - [`docs/billing/billing-runbooks.md`](./billing-runbooks.md) — operational runbooks (functional-audit input)
 - `apps/api/test/e2e/flows/billing/` (retired in HOS-1416) — e2e test inventory
-- [`.qtm/specs/SPEC-143-billing-testing-coverage/spec.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/spec.md) — spec + tasks state
+- `.qtm/specs/SPEC-143-billing-testing-coverage/spec.md` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`) — spec + tasks state
 - SPEC-148 (cron-lag grace + plan lifecycle), SPEC-149 (MP error propagation + Sentry + retry policy), and SPEC-150 (multi-currency support) all shipped — their `.qtm/specs/` folders were retired 2026-07-02, see git history for the original spec docs.
