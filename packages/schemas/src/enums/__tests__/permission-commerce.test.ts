@@ -26,8 +26,8 @@ describe('retired commerce role and permissions', () => {
         expect(Object.values(RoleEnum)).not.toContain('COMMERCE_OWNER');
     });
 
-    it('retains the COMMERCE category for U1.3', () => {
-        expect(PermissionCategoryEnum.COMMERCE).toBe('COMMERCE');
+    it('has no category that names both listing verticals (HOS-1417)', () => {
+        expect(Object.values(PermissionCategoryEnum)).not.toContain('COMMERCE');
     });
 });
 

@@ -890,6 +890,13 @@
       "when": 1791296287297,
       "tag": "0126_cool_captain_flint",
       "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1791301955246,
+      "tag": "0127_stiff_red_hulk",
+      "breakpoints": true
     }
   ]
 }

@@ -65,19 +65,9 @@ export enum PermissionCategoryEnum {
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
     MODERATION = 'MODERATION',
-    /**
-     * Commerce listings (gastronomy, experience). Added in SPEC-239.
-     *
-     * RETIRING (HOS-1077): a category that names two verticals at once is the
-     * reason gastronomy could not be granted without experience. Split into
-     * {@link PermissionCategoryEnum.GASTRONOMY} and
-     * {@link PermissionCategoryEnum.EXPERIENCE}; kept through the expand release
-     * until the separate category cleanup in U1.3.
-     */
-    COMMERCE = 'COMMERCE',
-    /** Gastronomy listings — the gastronomy half of the commerce split (HOS-1077). */
+    /** Gastronomy listings (HOS-1077). */
     GASTRONOMY = 'GASTRONOMY',
-    /** Experience listings — the experience half of the commerce split (HOS-1077). */
+    /** Experience listings (HOS-1077). */
     EXPERIENCE = 'EXPERIENCE',
     HOST_TRADE = 'HOST_TRADE',
     /** Partners program (SPEC-271). */
