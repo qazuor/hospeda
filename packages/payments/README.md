@@ -52,8 +52,16 @@ grants the permission. The provider hands it back broken (EX-37: an
 `activation=true` parameter opens a "page does not exist" screen), so outside
 this package it is read ONLY through `sanitizeApprovalUrl(result)`, which
 refuses anything that is not an absolute `https:` URL (`ApprovalUrlRejectedError`)
-and removes every `activation` parameter, keeping the other query pairs byte for
-byte. Show its `url`, never the raw field.
+refuses a link carrying credentials (`https://trusted@other/…`), and removes
+every `activation` parameter (name matched case-sensitively, as EX-37 measured
+it), keeping the other query pairs byte for byte. Show its `url`, never the raw
+field.
+
+**The name `approvalUrl` is reserved outside this package.** GUARD:G10 fails on
+the bare name anywhere outside `packages/payments` except inside the parentheses
+of `sanitizeApprovalUrl(…)`: a member read, a destructuring, an object key, and
+type positions too (an interface property, a Zod schema key, a response type).
+Name your own field something else, e.g. `checkoutUrl`.
 
 GUARD:G10 (`scripts/check-approval-url-sanitized.ts`) fails CI on any other
 read outside `packages/payments`, and on any code outside it that names the

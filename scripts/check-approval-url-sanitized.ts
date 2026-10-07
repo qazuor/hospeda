@@ -25,7 +25,8 @@
  *     anywhere except inside the parentheses of a `sanitizeApprovalUrl(…)`
  *     call. That covers a member read (`result.approvalUrl`), a destructuring
  *     (`const { approvalUrl } = result`) and an object key alike: the name is
- *     reserved for the raw link outside the package. Pass the authorize result
+ *     reserved for the raw link outside the package, type positions included
+ *     (an interface property, a schema key). Pass the authorize result
  *     whole (`sanitizeApprovalUrl(result)`) or the field inside the call.
  *
  * ## What it does NOT see, so a green run is not read as more
@@ -93,7 +94,8 @@ export const RULE_MESSAGES: Readonly<Record<Rule, string>> = {
     'G10(b)':
         'GUARD:G10 predicate (b): code outside packages/payments names `approvalUrl` outside the ' +
         'parentheses of sanitizeApprovalUrl(…). The raw link is shown only sanitized (INV:D10, EX-37): ' +
-        'pass the authorize result to sanitizeApprovalUrl and show its `url`.'
+        'pass the authorize result to sanitizeApprovalUrl and show its `url`. The name is reserved outside ' +
+        'the package, type positions included: name your own field differently (e.g. `checkoutUrl`).'
 };
 
 const IDENTIFIER = /[A-Za-z_$][\w$]*/g;

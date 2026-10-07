@@ -121,6 +121,8 @@ describe('G10 predicate (b): every other way of reading the raw link', () => {
         ],
         ['a computed key', "export const u = result['approvalUrl'];\n"],
         ['an optional chain', 'export const u = result?.approvalUrl;\n'],
+        ['a type position', 'export interface CheckoutResponse { readonly approvalUrl: string }\n'],
+        ['a schema key', 'export const S = z.object({ approvalUrl: z.string() });\n'],
         [
             'a read next to (not inside) the sanitizer',
             'sanitizeApprovalUrl(result);\nexport const u = result.approvalUrl;\n'
