@@ -21,28 +21,80 @@ import type { PaymentProvider } from './payment-provider';
  * substrings of the lower-cased name, so `preapprovalId` and `INIT_POINT` are
  * caught. Each spelling is listed with and without its separator because a
  * type cannot strip underscores.
+ *
+ * The list is the provider's own vocabulary as MEASURED: the field and resource
+ * names of `docs/06-mp-validation-matrix.md` that have no meaning outside this
+ * provider. Field names the domain shares by meaning (a payer's email, a start
+ * date, a currency) are deliberately absent: banning them would ban the domain
+ * from saying what it means. A new provider concept goes here first.
  */
 export const PROVIDER_CONCEPT_TERMS = [
+    // the provider and its resources
     'mercadopago',
     'mercado_pago',
     'preapproval',
+    'authorized_payment',
+    'authorizedpayment',
+    'checkout',
+    'sandbox_init',
+    'topic_chargebacks',
+    'topicchargebacks',
+    'endpoint',
+    '/v1/',
+    // the hosted-page link and the redirect fields
     'init_point',
     'initpoint',
-    'sandbox_init',
-    'auto_recurring',
-    'autorecurring',
-    'external_reference',
-    'externalreference',
     'back_url',
     'backurl',
     'notification_url',
     'notificationurl',
+    // recurrence fields of its subscription resource
+    'auto_recurring',
+    'autorecurring',
+    'frequency_type',
+    'frequencytype',
+    'free_trial',
+    'freetrial',
+    'first_invoice_offset',
+    'firstinvoiceoffset',
+    'next_payment_date',
+    'nextpaymentdate',
+    'billing_day',
+    'billingday',
+    'charged_quantity',
+    'chargedquantity',
+    'statement_descriptor',
+    'statementdescriptor',
+    // payment and card fields
+    'external_reference',
+    'externalreference',
+    'transaction_amount',
+    'transactionamount',
+    'currency_id',
+    'currencyid',
+    'payment_method_id',
+    'paymentmethodid',
+    'operation_type',
+    'operationtype',
+    'status_detail',
+    'statusdetail',
+    'card_token',
+    'cardtoken',
+    'stored_credential',
+    'storedcredential',
+    'payer_token',
+    'payertoken',
+    'cc_rejected',
+    'ccrejected',
+    // account identifiers and environment
     'collector_id',
     'collectorid',
     'payer_id',
     'payerid',
-    'endpoint',
-    '/v1/'
+    'live_mode',
+    'livemode',
+    'test_user',
+    'testuser'
 ] as const;
 
 /** One banned term. */

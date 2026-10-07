@@ -47,6 +47,15 @@ interface Leaky extends Omit<PaymentProvider, 'readAuthorization'> {
     >;
 }
 export type Check = AssertNoProviderConcept<ProviderConceptsIn<Leaky>>;
+`,
+    // The reviewer's mutation: measured card and checkout fields, optional, in an input.
+    leakedInputField: `${HEADER}
+interface Leaky extends Omit<PaymentProvider, 'authorize'> {
+    authorize(
+        input: AuthorizeInput & { readonly cardTokenId?: string; readonly checkoutUrl?: string }
+    ): Promise<AuthorizeResult>;
+}
+export type Check = AssertNoProviderConcept<ProviderConceptsIn<Leaky>>;
 `
 } as const;
 
@@ -107,7 +116,9 @@ describe('the provider-concept type check', () => {
     it.each([
         ['a method name', 'leakedMethod', 'createPreapproval'],
         ['a field of a resolved result', 'leakedResultField', 'init_point'],
-        ['a literal of a status union', 'leakedStatusLiteral', 'mercadopagoPaused']
+        ['a literal of a status union', 'leakedStatusLiteral', 'mercadopagoPaused'],
+        ['a card field of an input', 'leakedInputField', 'cardTokenId'],
+        ['a checkout field of an input', 'leakedInputField', 'checkoutUrl']
     ] as const)('fails when the interface leaks a concept in %s', (_where, fixture, leaked) => {
         // Assert
         const messages = diagnosticsOf({ fixture });

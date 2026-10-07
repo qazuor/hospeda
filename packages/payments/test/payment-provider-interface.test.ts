@@ -141,17 +141,18 @@ describe('what each implementation declares', () => {
 });
 
 describe('no provider concept in the interface or in the fake', () => {
-    /** Every TypeScript file under a source folder. */
+    /** Every TypeScript file under a source folder, at any depth (src-relative). */
     const filesUnder = ({ folder }: { readonly folder: string }): readonly string[] =>
-        readdirSync(join(SRC, folder))
-            .filter((name) => name.endsWith('.ts'))
-            .map((name) => join(folder, name));
+        readdirSync(join(SRC, folder), { withFileTypes: true }).flatMap((entry) => {
+            const relative = join(folder, entry.name);
+            if (entry.isDirectory()) return filesUnder({ folder: relative });
+            return entry.name.endsWith('.ts') ? [relative] : [];
+        });
 
     // provider-concepts.ts is the one file that must spell the banned terms.
+    const CONCEPTS_FILE = join('provider', 'provider-concepts.ts');
     const scanned = [
-        ...filesUnder({ folder: 'provider' }).filter(
-            (file) => !file.endsWith('provider-concepts.ts')
-        ),
+        ...filesUnder({ folder: 'provider' }).filter((file) => file !== CONCEPTS_FILE),
         ...filesUnder({ folder: 'fake' })
     ];
 
@@ -159,6 +160,7 @@ describe('no provider concept in the interface or in the fake', () => {
         expect(scanned.length).toBeGreaterThanOrEqual(6);
         expect(scanned).toContain(join('provider', 'payment-provider.ts'));
         expect(scanned).toContain(join('fake', 'fake-payment-provider.ts'));
+        expect(scanned).not.toContain(CONCEPTS_FILE);
     });
 
     it.each(scanned)('%s names none of the banned terms, comments included', (file) => {
