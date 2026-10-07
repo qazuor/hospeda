@@ -5,6 +5,7 @@ import {
     type EmailOutboxStatus,
     emailOutbox
 } from '../../schemas/email-outbox/email_outbox.dbschema.ts';
+import { users } from '../../schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -91,6 +92,26 @@ export interface RecordEmailFailureInput {
     readonly error: string;
     /** Attempts after which the failure is definitive (`failed`) instead of `retry`. */
     readonly maxAttempts: number;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input of {@link EmailOutboxModel.markFailed}. */
+export interface MarkEmailFailedInput {
+    readonly id: string;
+    /** The owner that holds the lease; a row held by someone else is left alone. */
+    readonly owner: string;
+    /**
+     * Why the row will never be sent, stored in `last_error`. The outbox
+     * sender writes a `suppressed:<cause>` or `undeliverable:<cause>` marker
+     * (HOS-1423); `failed` plus that marker is what "undeliverable" means.
+     */
+    readonly marker: string;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input of {@link EmailOutboxModel.getRecipientDeletedAt}. */
+export interface GetRecipientDeletedAtInput {
+    readonly recipientUserId: string;
     readonly tx?: DrizzleClient;
 }
 
@@ -202,7 +223,8 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
      * Returns to `pending` every `processing` row whose lease has expired and
      * clears its owner, so no row stays stuck when its sender dies.
      *
-     * This is a primitive: nothing schedules it in this unit.
+     * The `email-outbox-sender` cron job (HOS-1423) calls it at the start of
+     * every run, before it claims.
      *
      * @param input - Reference instant and optional transaction.
      * @returns The ids that were released.
@@ -281,6 +303,63 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
             return rows[0]?.status ?? null;
         } catch (error) {
             this.fail('recordFailure', logContext, error);
+        }
+    }
+
+    /**
+     * Moves a held row straight to `failed` WITHOUT counting a delivery
+     * attempt, storing `marker` in `last_error`. Used when the row is
+     * suppressed before sending, so `attempts` keeps counting real attempts
+     * only. Does not touch the status CHECK: `failed` is one of its values.
+     *
+     * @param input - Row id, owner and marker.
+     * @returns `true` when the row was held by `owner` and is now `failed`.
+     * @throws DbError if the update fails.
+     */
+    async markFailed(input: MarkEmailFailedInput): Promise<boolean> {
+        const db = this.getClient(input.tx);
+        const logContext = { id: input.id, owner: input.owner, marker: input.marker };
+        try {
+            const rows = await db
+                .update(emailOutbox)
+                .set({
+                    status: 'failed',
+                    lastError: input.marker,
+                    lockedBy: null,
+                    lockedUntil: null
+                })
+                .where(this.heldBy(input.id, input.owner))
+                .returning({ id: emailOutbox.id });
+            this.logOk('markFailed', logContext, rows);
+            return rows.length > 0;
+        } catch (error) {
+            this.fail('markFailed', logContext, error);
+        }
+    }
+
+    /**
+     * Reads the instant the recipient's account was deleted (`users.deleted_at`,
+     * written by the account deactivation, action 24, which pseudonymizes the
+     * row instead of deleting it). The sender suppresses a mail enqueued AFTER
+     * that instant (NUCLEO/07 §4.2 cause 2).
+     *
+     * @param input - Account id.
+     * @returns `deleted_at`, or `null` when the account is live or no longer exists.
+     * @throws DbError if the query fails.
+     */
+    async getRecipientDeletedAt(input: GetRecipientDeletedAtInput): Promise<Date | null> {
+        const db = this.getClient(input.tx);
+        const logContext = { recipientUserId: input.recipientUserId };
+        try {
+            const rows = await db
+                .select({ deletedAt: users.deletedAt })
+                .from(users)
+                .where(eq(users.id, input.recipientUserId))
+                .limit(1);
+            this.logOk('getRecipientDeletedAt', logContext, rows);
+            return rows[0]?.deletedAt ?? null;
+        } catch (error) {
+            this.fail('getRecipientDeletedAt', logContext, error);
         }
     }
 
