@@ -1,7 +1,12 @@
 /**
  * Integration tests for the email outbox (HOS-1422, unit U2.1).
  *
- * TEST:U2:1/2/3/5. These tests COMMIT real rows (the atomicity and
+ * TEST:U2:1, TEST:U2:2, TEST:U2:3 and TEST:U2:5 (each id is on its `describe`;
+ * TEST:U2:2 also runs end to end through the sender in
+ * `apps/api/test/integration/outbox/email-outbox-captured-address.test.ts`;
+ * the moved-target-date half of TEST:U2:5 is in
+ * `email-outbox-dedup-moved-date.integration.test.ts`).
+ * These tests COMMIT real rows (the atomicity and
  * concurrency claims cannot be proved inside a transaction that always rolls
  * back), so every row they create is deleted in `afterEach`.
  */
@@ -51,7 +56,7 @@ afterAll(async () => {
     await closeTestPool();
 });
 
-describe('AC:U2:1 enqueue inside the domain transaction', () => {
+describe('TEST:U2:1 (AC:U2:1) enqueue inside the domain transaction', () => {
     it('commits the domain write and the outbox row together', async () => {
         // Arrange
         const db = getTestDb();
@@ -205,7 +210,7 @@ describe('AC:U2:1 enqueue inside the domain transaction', () => {
     });
 });
 
-describe('AC:U2:1 retry, ownership and error contract', () => {
+describe('TEST:U2:1 (AC:U2:1) retry, ownership and error contract', () => {
     it('re-claims a row that failed and went to retry', async () => {
         // Arrange
         const dedupKey = newKey();
@@ -284,7 +289,7 @@ describe('AC:U2:1 retry, ownership and error contract', () => {
     });
 });
 
-describe('AC:U2:2 recipient address captured at enqueue', () => {
+describe('TEST:U2:2 (AC:U2:2) recipient address captured at enqueue', () => {
     it('hands the sender the address stored at enqueue after the account is pseudonymized', async () => {
         // Arrange
         const db = getTestDb();
@@ -311,7 +316,7 @@ describe('AC:U2:2 recipient address captured at enqueue', () => {
     });
 });
 
-describe('AC:U2:3 processing has an owner and a lease', () => {
+describe('TEST:U2:3 (AC:U2:3) processing has an owner and a lease', () => {
     it('stores owner and lease on claim', async () => {
         // Arrange
         const dedupKey = newKey();
@@ -395,7 +400,7 @@ describe('AC:U2:3 processing has an owner and a lease', () => {
     });
 });
 
-describe('AC:U2:5 dedup key is a unique column', () => {
+describe('TEST:U2:5 (AC:U2:5) dedup key is a unique column', () => {
     it('enqueues one row when the same key is enqueued twice, without error', async () => {
         // Arrange
         const dedupKey = newKey();
