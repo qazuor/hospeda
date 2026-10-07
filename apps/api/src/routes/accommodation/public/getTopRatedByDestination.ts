@@ -8,7 +8,6 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
-import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
 import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -89,14 +88,9 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     // listing routes — it previously carried no rich-description stripping at all,
     // so the full entity's `richDescription` / `richDescriptionI18n` flowed straight
     // through AccommodationPublicSchema into the public payload.
-    const rawAccommodations = (result.data?.accommodations ?? []).map((accommodation) => ({
-        ...maskLegacyPremiumFields(accommodation),
-        // HOS-929: public read treats holding either the admin-curated
-        // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-        // flag as featured. `featuredByEntitlement` itself is stripped by
-        // `AccommodationPublicSchema` (never in its pick).
-        isFeatured: resolvePublicIsFeatured(accommodation)
-    }));
+    const rawAccommodations = (result.data?.accommodations ?? []).map((accommodation) =>
+        maskLegacyPremiumFields(accommodation)
+    );
     const total = rawAccommodations.length;
     const totalPages = total === 0 ? 0 : 1;
 

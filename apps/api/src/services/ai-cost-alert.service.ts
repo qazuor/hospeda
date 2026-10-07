@@ -8,7 +8,7 @@
  *
  * ## De-duplication
  *
- * The hook queries `billing_notification_log` for an existing record with the
+ * The hook queries `notification_log` for an existing record with the
  * same `idempotencyKey` (monthly granularity: `ai_cost_alert:<scope>:<feature>:<pct>:<period>`).
  * If a record is found, the notification is skipped silently.  This ensures
  * at-most-one alert per (scope × feature × thresholdPct × period) combination,
@@ -28,7 +28,7 @@
  */
 
 import type { ThresholdAlertHook, ThresholdAlertInput } from '@repo/ai-core';
-import { billingNotificationLog, getDb } from '@repo/db';
+import { getDb, notificationLog } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { and, eq, sql } from 'drizzle-orm';
 import { env } from '../utils/env.js';
@@ -58,7 +58,7 @@ function buildIdempotencyKey(input: ThresholdAlertInput): string {
 
 /**
  * Checks whether an alert with the given idempotency key has already been sent
- * by querying `billing_notification_log`.
+ * by querying `notification_log`.
  *
  * Returns `true` when a record is found (de-dup hit); `false` otherwise.
  * On query failure, returns `false` (allow-through on error to avoid missing
@@ -71,15 +71,12 @@ async function wasAlertSent(idempotencyKey: string): Promise<boolean> {
     try {
         const db = getDb();
         const existing = await db
-            .select({ id: billingNotificationLog.id })
-            .from(billingNotificationLog)
+            .select({ id: notificationLog.id })
+            .from(notificationLog)
             .where(
                 and(
-                    eq(billingNotificationLog.type, NotificationType.AI_COST_THRESHOLD_ALERT),
-                    eq(
-                        sql<string>`${billingNotificationLog.metadata}->>'idempotencyKey'`,
-                        idempotencyKey
-                    )
+                    eq(notificationLog.type, NotificationType.AI_COST_THRESHOLD_ALERT),
+                    eq(sql<string>`${notificationLog.metadata}->>'idempotencyKey'`, idempotencyKey)
                 )
             )
             .limit(1);
@@ -98,7 +95,7 @@ async function wasAlertSent(idempotencyKey: string): Promise<boolean> {
 }
 
 /**
- * Handles a single threshold alert: de-duplicates via `billing_notification_log`
+ * Handles a single threshold alert: de-duplicates via `notification_log`
  * and sends to all configured admin emails.
  *
  * Failures are caught and logged — this function must never throw.
@@ -214,7 +211,7 @@ async function handleAlert(input: ThresholdAlertInput): Promise<void> {
  * ## De-duplication
  *
  * At most one email per (scope × feature × thresholdPct × period) is sent,
- * enforced by a `billing_notification_log` idempotency-key lookup.
+ * enforced by a `notification_log` idempotency-key lookup.
  *
  * @returns A `ThresholdAlertHook` suitable for use as `onThresholdAlert` in
  *   `CheckCostCeilingInput`.

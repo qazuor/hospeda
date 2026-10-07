@@ -95,7 +95,6 @@ const minimalExperience = {
     slug: 'test-experience',
     name: 'Test Experience',
     type: 'TOUR_GUIDE',
-    hasActiveSubscription: true,
     priceFrom: 1000,
     priceUnit: 'per_person',
     isPriceOnRequest: false

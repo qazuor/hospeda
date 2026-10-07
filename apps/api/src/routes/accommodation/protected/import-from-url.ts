@@ -15,7 +15,7 @@
  * `ACCOMMODATION_UPDATE_ANY`. `createProtectedRoute.requiredPermissions` uses
  * AND semantics (`hasAllPermissions`), which cannot express this OR, so the
  * factory only enforces authentication and the handler performs the OR check
- * explicitly. (Documented in `docs/billing/endpoint-gate-matrix.md`.)
+ * explicitly.
  *
  * ## Legal confirmation (defense-in-depth)
  *

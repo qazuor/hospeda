@@ -1,8 +1,7 @@
 /**
  * The operations mailboxes that receive admin alerts.
  *
- * Extracted from `lead-intake-ports.ts` (HOS-1299) when a second caller
- * appeared — the partner payment review — rather than copied. One parser for
+ * Extracted from `lead-intake-ports.ts` (HOS-1299) so there is ONE parser for
  * one env var: a second copy would drift on the first change to how the list is
  * split, and the failure mode of that drift is an alert that reaches nobody,
  * which is silent by definition.

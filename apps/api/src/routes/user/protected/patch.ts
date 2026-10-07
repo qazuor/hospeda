@@ -29,7 +29,7 @@ import { userCache } from '../../../utils/user-cache';
  * Why an allowlist and not `UserPatchInputSchema` (= `UserSchema` made
  * partial)? Several system-managed flags on `UserSchema` declare a
  * `.default(false)` / `.default([])` — `emailVerified`, `profileCompleted`,
- * `setPasswordPrompted`, `banned`, `serviceSuspended`, `permissions`. Zod's
+ * `setPasswordPrompted`, `banned`, `permissions`. Zod's
  * `.partial()` does NOT suppress those defaults: when the field is absent from
  * a partial PATCH body, Zod still injects the default value. Hono's validator
  * returns that parsed output, so a user editing (say) their display name would

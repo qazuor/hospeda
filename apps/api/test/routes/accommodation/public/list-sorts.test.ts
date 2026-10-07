@@ -3,9 +3,9 @@
  *
  * This file covers:
  *  - Unit tests for the `sanitizeSorts()` whitelist helper (T-018).
- *  - Route-level integration tests verifying the new `sorts` / `featuredFirst`
- *    query params are accepted and do not break the endpoint (T-019 / T-020).
- *    Full ordering assertions (featured-first, stable pagination tiebreaker)
+ *  - Route-level integration tests verifying the `sorts` query param is
+ *    accepted and does not break the endpoint (T-019 / T-020).
+ *    Full ordering assertions (stable pagination tiebreaker)
  *    require a seeded test database and are out of scope for this file; they
  *    would live in an end-to-end integration suite.
  */
@@ -56,7 +56,6 @@ describe('sanitizeSorts (public list allow-list)', () => {
             { field: 'createdAt', order: 'desc' },
             { field: 'averageRating', order: 'desc' },
             { field: 'reviewsCount', order: 'desc' },
-            { field: 'isFeatured', order: 'desc' },
             { field: 'mostSaved', order: 'desc' },
             { field: 'price', order: 'asc' }
         ];
@@ -69,7 +68,7 @@ describe('sanitizeSorts (public list allow-list)', () => {
     });
 });
 
-describe('GET /api/v1/public/accommodations — sorts + featuredFirst wiring', () => {
+describe('GET /api/v1/public/accommodations — sorts wiring', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {
@@ -107,27 +106,5 @@ describe('GET /api/v1/public/accommodations — sorts + featuredFirst wiring', (
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
         expect(res.status).not.toBe(400);
-    });
-
-    it('accepts featuredFirst=false and does NOT produce a validation error (server forces true regardless)', async () => {
-        const res = await app.request(`${BASE}?featuredFirst=false`, {
-            method: 'GET',
-            headers: { 'user-agent': 'vitest', accept: 'application/json' }
-        });
-        // The client-supplied value is accepted by the HTTP schema; the route
-        // handler then overrides it with `featuredFirst: true` before calling
-        // the service. So the route must not return 400 here.
-        expect(res.status).not.toBe(400);
-        expect(res.status).not.toBe(404);
-    });
-
-    it('rejects a non-literal featuredFirst value (strict boolean coercion)', async () => {
-        const res = await app.request(`${BASE}?featuredFirst=nope`, {
-            method: 'GET',
-            headers: { 'user-agent': 'vitest', accept: 'application/json' }
-        });
-        // createBooleanQueryParam only accepts 'true' / 'false'. Anything else
-        // should be rejected by the HTTP schema with 400.
-        expect(res.status).toBe(400);
     });
 });

@@ -31,9 +31,8 @@ export const billingAddonPurchasesCols = {
 } as const;
 
 /** Shared billing notification log column-name stubs. */
-export const billingNotificationLogsCols = {
+export const notificationLogsCols = {
     id: 'id',
-    customerId: 'customer_id',
     eventType: 'event_type',
     channel: 'channel',
     status: 'status',
@@ -132,7 +131,6 @@ const GASTRONOMY_TABLE_COLUMNS = {
     visibility: 'visibility',
     lifecycleState: 'lifecycle_state',
     moderationState: 'moderation_state',
-    isFeatured: 'is_featured',
     reviewsCount: 'reviews_count',
     averageRating: 'average_rating',
     createdAt: 'created_at',
@@ -178,8 +176,6 @@ const EXPERIENCE_TABLE_COLUMNS = {
     visibility: 'visibility',
     lifecycleState: 'lifecycle_state',
     moderationState: 'moderation_state',
-    isFeatured: 'is_featured',
-    hasActiveSubscription: 'has_active_subscription',
     reviewsCount: 'reviews_count',
     averageRating: 'average_rating',
     createdAt: 'created_at',
@@ -1004,8 +1000,7 @@ export function createDbMock() {
             }
         },
 
-        // Accommodation table stubs (SPEC-167 T-007: plan-restriction.service imports
-        // accommodations.id / accommodations.deletedAt for inArray/isNull WHERE clauses)
+        // Accommodation table stubs
         accommodations: {
             id: 'id',
             ownerId: 'owner_id',
@@ -1030,12 +1025,10 @@ export function createDbMock() {
             deletedAt: 'deleted_at'
         },
 
-        // Owner promotions table stubs (SPEC-167 T-008: plan-restriction.service imports
-        // ownerPromotions.id / ownerPromotions.deletedAt for inArray/isNull WHERE clauses)
+        // Owner promotions table stubs
         ownerPromotions: {
             id: 'id',
             ownerId: 'owner_id',
-            planRestricted: 'plan_restricted',
             lifecycleState: 'lifecycle_state',
             deletedAt: 'deleted_at',
             updatedAt: 'updated_at'
@@ -1043,7 +1036,7 @@ export function createDbMock() {
 
         // Billing schema stubs
         billingAddonPurchases: billingAddonPurchasesCols,
-        billingNotificationLogs: billingNotificationLogsCols,
+        notificationLogs: notificationLogsCols,
         billingAuditLogs: {
             action: 'action',
             entityType: 'entityType',
@@ -1340,7 +1333,7 @@ export function createDbMock() {
         AttractionModel: GenericMockModel,
         BillingAddonPurchaseModel: GenericMockModel,
         BillingDunningAttemptModel: GenericMockModel,
-        BillingNotificationLogModel: GenericMockModel,
+        NotificationLogModel: GenericMockModel,
         BillingSettingsModel: GenericMockModel,
         BillingSubscriptionEventModel: GenericMockModel,
         DestinationFaqModel: GenericMockModel,

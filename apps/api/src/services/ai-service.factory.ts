@@ -190,7 +190,7 @@ export async function createConfiguredAiService(): Promise<AiService> {
     }
 
     // -----------------------------------------------------------------------
-    // 2. Build the cost-ceiling alert hook (de-dup via billing_notification_log).
+    // 2. Build the cost-ceiling alert hook (de-dup via notification_log).
     // -----------------------------------------------------------------------
     const alertHook = createAiCostThresholdAlertHook();
 

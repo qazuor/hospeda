@@ -7,7 +7,6 @@ import { ExperiencePublicSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import {
     fetchExperienceAmenities,
@@ -75,8 +74,6 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
         return applyExperienceDirectionsGate({
             experience: {
                 ...withPublicVisibleFaqs(experience),
-                // HOS-1286: PUBLIC tier ORs the two featuring sources.
-                isFeatured: resolvePublicIsFeatured(experience),
                 amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
                 features: featuresData.length > 0 ? featuresData : undefined
             },

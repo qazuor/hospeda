@@ -95,11 +95,6 @@ vi.mock('../../src/utils/env', () => {
         protectedMaxRequests: 50,
         protectedMessage: 'Too many requests, please try again later.',
 
-        billingEnabled: true,
-        billingWindowMs: 1000,
-        billingMaxRequests: 50,
-        billingMessage: 'Too many billing requests, please try again later.',
-
         webhookEnabled: true,
         webhookWindowMs: 1000,
         webhookMaxRequests: 50,

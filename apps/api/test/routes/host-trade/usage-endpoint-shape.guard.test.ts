@@ -18,10 +18,8 @@
  *    `/usages/{id}/confirm` confirms that the id exists. That is precisely the
  *    oracle §6.2 and AC-6 are written to prevent.
  *
- * `docs/billing/endpoint-gate-matrix.md` already records both facts in prose,
- * and its snapshot guard checks that every handler file has a row — but not
- * what the row SAYS. A permission added to a transition route would keep that
- * guard green.
+ * No other guard checks what a transition route declares, so a permission
+ * added to one would otherwise go unnoticed.
  *
  * Nothing here strips comments. Every check runs against the object literal
  * passed to the factory, located by brace matching, so a `requiredPermissions`

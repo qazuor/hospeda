@@ -17,7 +17,6 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
-import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
 import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 
@@ -198,16 +197,7 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
             return null;
         }
 
-        // HOS-929: public read treats holding either the admin-curated
-        // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-        // flag as featured. `featuredByEntitlement` itself is stripped by
-        // `AccommodationPublicSchema` (never in its pick), so only the OR'd
-        // `isFeatured` reaches the response.
-        const accommodation = {
-            ...result.data,
-            isFeatured: resolvePublicIsFeatured(result.data)
-        };
-        const filteredAccommodation = maskLegacyPremiumFields(accommodation);
+        const filteredAccommodation = maskLegacyPremiumFields(result.data);
 
         // Fetch related data in parallel
         const [owner, amenitiesData, featuresData, faqsData] = await Promise.all([

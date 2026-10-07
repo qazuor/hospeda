@@ -26,7 +26,7 @@
  * ## Why "never announced" is a column and not a heuristic
  *
  * `ops_notified_at` is written on CONFIRMED delivery and on nothing else. The
- * alternative — inferring it from `billing_notification_log` — looks equivalent
+ * alternative — inferring it from `notification_log` — looks equivalent
  * and is not: that table is purged on a schedule, so an old lead would drift
  * back into "never announced" and be re-sent forever.
  *

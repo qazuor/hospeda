@@ -261,13 +261,6 @@ export const getRateLimitConfig = () => ({
         'API_RATE_LIMIT_PROTECTED_MESSAGE',
         'Too many requests, please try again later.'
     ),
-    billingEnabled: _safe.getBoolean('API_RATE_LIMIT_BILLING_ENABLED', true),
-    billingWindowMs: _safe.getNumber('API_RATE_LIMIT_BILLING_WINDOW_MS', 900000),
-    billingMaxRequests: _safe.getNumber('API_RATE_LIMIT_BILLING_MAX_REQUESTS', 10),
-    billingMessage: _safe.get(
-        'API_RATE_LIMIT_BILLING_MESSAGE',
-        'Too many billing requests, please try again later.'
-    ),
     webhookEnabled: _safe.getBoolean('API_RATE_LIMIT_WEBHOOK_ENABLED', true),
     webhookWindowMs: _safe.getNumber('API_RATE_LIMIT_WEBHOOK_WINDOW_MS', 60000),
     webhookMaxRequests: _safe.getNumber('API_RATE_LIMIT_WEBHOOK_MAX_REQUESTS', 100),
