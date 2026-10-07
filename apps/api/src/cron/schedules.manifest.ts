@@ -202,6 +202,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Drop notification log rows older than the retention window.'
     },
     {
+        name: 'email-outbox-sender',
+        displayName: 'Envío de la cola de correos',
+        category: 'notifications',
+        schedule: '* * * * *',
+        description:
+            'Send queued email_outbox rows: release expired 5-minute leases, apply the suppression hierarchy, send, and record each attempt in notification_log; escalate undeliverable transactional mail (HOS-1423).'
+    },
+    {
         name: 'notification-schedule',
         displayName: 'Envío de notificaciones programadas',
         category: 'notifications',
