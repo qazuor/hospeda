@@ -65,6 +65,27 @@ export interface HasHardBounceInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Input of {@link NotificationLogModel.recordProviderHardBounce}. */
+export interface RecordProviderHardBounceInput {
+    /** Address the provider reported as hard-bounced. */
+    readonly recipient: string;
+    /** Email provider that reported the bounce (e.g. `brevo`). */
+    readonly provider: string;
+    /**
+     * Key that identifies the provider event. Stored as
+     * `metadata.idempotencyKey`, whose partial UNIQUE index makes a redelivery
+     * of the same event a no-op.
+     */
+    readonly idempotencyKey: string;
+    /** Instant the provider reports for the event. */
+    readonly at: Date;
+    /** Provider message id of the bounced mail, when the event carries it. */
+    readonly providerMessageId?: string | null;
+    /** Bounce reason reported by the provider. */
+    readonly reason?: string | null;
+    readonly tx?: DrizzleClient;
+}
+
 /** Input of {@link NotificationLogModel.countSentByClassSince}. */
 export interface CountSentByClassSinceInput {
     readonly recipient: string;
@@ -131,6 +152,56 @@ export class NotificationLogModel extends BaseModelImpl<NotificationLogRow> {
             return row;
         } catch (error) {
             this.fail('recordEmailAttempt', logContext, error);
+        }
+    }
+
+    /**
+     * Records a hard bounce the provider reported AFTER accepting the mail (its
+     * webhook), as the `bounced` row that suppresses every later mail to the
+     * address (HOS-1627, AC:U2:12).
+     *
+     * Idempotent: the row carries `metadata.idempotencyKey`, covered by the
+     * partial UNIQUE index `idx_notification_log_idempotency_key`, and the
+     * insert is `ON CONFLICT DO NOTHING`. The same event delivered twice
+     * leaves one row.
+     *
+     * @param input - Recipient, provider event key and details.
+     * @returns `inserted: false` when the event was already recorded.
+     * @throws DbError if the insert fails for any other reason.
+     */
+    async recordProviderHardBounce(
+        input: RecordProviderHardBounceInput
+    ): Promise<{ readonly inserted: boolean }> {
+        const db = this.getClient(input.tx);
+        const logContext = { op: 'recordProviderHardBounce', provider: input.provider };
+        try {
+            const rows = await db
+                .insert(notificationLog)
+                .values({
+                    type: 'email_hard_bounce',
+                    channel: 'email',
+                    recipient: input.recipient,
+                    subject: 'hard_bounce',
+                    templateId: null,
+                    status: 'bounced',
+                    sentAt: null,
+                    errorMessage: input.reason ?? null,
+                    createdAt: input.at,
+                    metadata: {
+                        source: 'provider_webhook',
+                        kind: 'provider_bounce',
+                        provider: input.provider,
+                        messageId: input.providerMessageId ?? null,
+                        idempotencyKey: input.idempotencyKey
+                    }
+                })
+                .onConflictDoNothing()
+                .returning({ id: notificationLog.id });
+            const inserted = rows.length > 0;
+            this.logOk('recordProviderHardBounce', logContext, inserted);
+            return { inserted };
+        } catch (error) {
+            this.fail('recordProviderHardBounce', logContext, error);
         }
     }
 

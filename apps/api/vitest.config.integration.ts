@@ -8,7 +8,8 @@ import { configDefaults, defineConfig } from 'vitest/config';
  * Run with: `pnpm test:integration`.
  *
  * Scope is deliberately narrow: `test/integration/ai/**`, minus the flaky
- * `vault-roundtrip.test.ts` (see the `exclude` below).
+ * `vault-roundtrip.test.ts` (see the `exclude` below), plus
+ * `test/integration/webhooks/**` (HOS-1627).
  *
  * CORRECTION (HOS-715, 2026-08-21): this comment used to claim the other
  * ~243 files under `test/integration/**` (everything outside `ai/**`)
@@ -59,7 +60,9 @@ export default defineConfig({
             './test/e2e/setup/env-setup.ts', // Load env vars FIRST
             './test/e2e/setup/test-database.ts'
         ],
-        include: ['test/integration/ai/**/*.test.ts'],
+        // `webhooks/**` (HOS-1627, TEST:U2:14): the Brevo hard-bounce route
+        // against real rows. It cleans only its own rows, never TRUNCATE.
+        include: ['test/integration/ai/**/*.test.ts', 'test/integration/webhooks/**/*.test.ts'],
         // `vault-roundtrip.test.ts` is non-deterministically flaky: the
         // credential-create route triggers a fire-and-forget `syncAiProviderModels`
         // (HOS-94 auto-sync on create) that touches the DB asynchronously after

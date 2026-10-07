@@ -1,5 +1,6 @@
 import { render } from '@react-email/render';
 import type { EmailClient } from '../../config/resend.config.js';
+import { EmailHardBounceError } from '../../services/outbox/email-outbox-delivery.service.js';
 import type {
     EmailTransport,
     SendEmailInput,
@@ -72,7 +73,9 @@ export class BrevoEmailTransport implements EmailTransport {
      *
      * @param input - Email content and metadata
      * @returns Promise resolving to send result with provider message ID
-     * @throws {Error} If Brevo returns an error response or `fetch` rejects
+     * @throws {EmailHardBounceError} If Brevo refuses the recipient address
+     *   itself (see {@link isBrevoSynchronousHardBounce})
+     * @throws {Error} If Brevo returns any other error response or `fetch` rejects
      */
     async send(input: SendEmailInput): Promise<SendEmailResult> {
         try {
@@ -117,8 +120,13 @@ export class BrevoEmailTransport implements EmailTransport {
             });
 
             if (!response.ok) {
-                const detail = await extractErrorDetail(response);
-                throw new Error(`Failed to send email via Brevo: ${detail}`);
+                const failure = await readErrorBody(response);
+                if (isBrevoSynchronousHardBounce(failure)) {
+                    throw new EmailHardBounceError(
+                        `Brevo rejected the recipient address: ${failure.message}`
+                    );
+                }
+                throw new Error(`Failed to send email via Brevo: ${failure.detail}`);
             }
 
             const data = (await response.json()) as { messageId?: string };
@@ -127,6 +135,9 @@ export class BrevoEmailTransport implements EmailTransport {
             }
             return { messageId: data.messageId };
         } catch (error) {
+            if (error instanceof EmailHardBounceError) {
+                throw error;
+            }
             if (
                 error instanceof Error &&
                 error.message.startsWith('Failed to send email via Brevo')
@@ -168,18 +179,71 @@ function parseSender(
     return { email: from };
 }
 
+/** A Brevo error response, read once. */
+export interface BrevoErrorBody {
+    /** HTTP status of the response. */
+    readonly status: number;
+    /** Brevo error `code` (e.g. `invalid_parameter`), when the body carries one. */
+    readonly code: string | null;
+    /** Brevo error `message`, when the body carries one. */
+    readonly message: string | null;
+    /** Human-readable detail: the message, or status and status text. */
+    readonly detail: string;
+}
+
 /**
- * Extract a human-readable error detail from a Brevo error response. Falls
- * back to status / status text when the body cannot be parsed as JSON.
+ * Brevo's message for a `to` address it refuses as invalid. The transport
+ * sends exactly one `to` recipient per request, so this message can only
+ * name the recipient of this mail.
  */
-async function extractErrorDetail(response: Response): Promise<string> {
+const BREVO_INVALID_RECIPIENT_MESSAGE = /\bemail is not valid in to\b/i;
+
+/**
+ * Whether a Brevo `POST /smtp/email` error is a SYNCHRONOUS hard bounce: the
+ * provider refuses the recipient address itself, so no retry can deliver it
+ * (HOS-1627, AC:U2:12).
+ *
+ * Brevo's API reference documents only a generic `400` for this endpoint and
+ * no "bounce" response; a mail to an address Brevo already blocks is accepted
+ * (`201`) and reported later through the webhook. The only synchronous refusal
+ * of the address is the `400` with code `invalid_parameter` and the message
+ * `email is not valid in to`. The match is deliberately narrow: a false
+ * positive suppresses the address forever, while a miss only costs retries
+ * that end as `retries_exhausted`. Every other refusal (other `400`s, `401`,
+ * `429`, `5xx`, network errors) stays a retryable error.
+ *
+ * @param input - The status, code and message of the error response.
+ * @returns `true` when the response is a synchronous hard bounce.
+ */
+export function isBrevoSynchronousHardBounce(
+    input: Pick<BrevoErrorBody, 'status' | 'code' | 'message'>
+): input is Pick<BrevoErrorBody, 'status' | 'code'> & { readonly message: string } {
+    return (
+        input.status === 400 &&
+        input.code === 'invalid_parameter' &&
+        typeof input.message === 'string' &&
+        BREVO_INVALID_RECIPIENT_MESSAGE.test(input.message)
+    );
+}
+
+/**
+ * Reads a Brevo error response once. Falls back to status / status text when
+ * the body cannot be parsed as JSON.
+ */
+async function readErrorBody(response: Response): Promise<BrevoErrorBody> {
+    let code: string | null = null;
+    let message: string | null = null;
     try {
-        const errorJson = (await response.json()) as { message?: string; code?: string };
-        if (errorJson.message) {
-            return errorJson.message;
-        }
+        const errorJson = (await response.json()) as { message?: unknown; code?: unknown };
+        code = typeof errorJson.code === 'string' ? errorJson.code : null;
+        message = typeof errorJson.message === 'string' ? errorJson.message : null;
     } catch {
         // ignore — fall through to status-based detail
     }
-    return `${response.status} ${response.statusText || 'error'}`;
+    return {
+        status: response.status,
+        code,
+        message,
+        detail: message || `${response.status} ${response.statusText || 'error'}`
+    };
 }
