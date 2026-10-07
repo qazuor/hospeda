@@ -95,7 +95,7 @@ const SLUG = /^[a-z0-9]+(?:[-_][a-z0-9]+)+$/;
 const NUMBER = /^\d+$/;
 
 const REFERENCE_CHAIN =
-    /^[A-Za-z_$][\w$]*(?:\s*\??\.\s*[A-Za-z_$][\w$]*|\s*(?:\?\.)?\s*\[[^\]]*\])*$/;
+    /^[A-Za-z_$][\w$]*(?:\s*\??\.\s*[A-Za-z_$][\w$]*|\s*(?:\?\.\s*)?\[[^[\]]*\])*$/;
 
 /** Whether a name reads as an identifier (case of the suffix matters: `paid` is not `…Id`). */
 function isIdName({ name }: { readonly name: string }): boolean {
@@ -174,7 +174,7 @@ export function identifierShape(args: {
     const toStringCall = /\.\s*toString\s*\(\s*\)$/.exec(code);
     if (toStringCall) return recurse(0, toStringCall.index);
     if (code.endsWith('!')) return recurse(0, code.length - 1);
-    const cast = /\s(?:as|satisfies)\s+[\w$.<>[\]\s|]+$/.exec(code);
+    const cast = /\s(?:as|satisfies)\s[\w$.<>[\]\s|]+$/.exec(code);
     if (cast) return recurse(0, cast.index);
 
     const quote = code[0];
@@ -218,7 +218,7 @@ function authorizationRanges({
         const argument = code.slice(open + 1, close).trim();
         if (/^[A-Za-z_$][\w$]*$/.test(argument)) {
             const declaration = new RegExp(
-                `\\b(?:const|let|var)\\s+${argument.replace(/\$/g, '\\$')}\\s*(?::[^=]+)?=\\s*\\{`,
+                `\\b(?:const|let|var)\\s+${argument.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*(?::[^=]+)?=\\s*\\{`,
                 'g'
             );
             for (const match of code.matchAll(declaration))
