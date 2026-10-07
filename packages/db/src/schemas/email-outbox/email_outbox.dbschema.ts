@@ -114,7 +114,7 @@ export const emailOutbox = pgTable(
 
         email_outbox_status_check: check(
             'email_outbox_status_check',
-            sql`${table.status} IN ('pending', 'processing', 'sent', 'failed', 'retry')`
+            sql`${table.status} IN (${sql.raw(EMAIL_OUTBOX_STATUSES.map((status) => `'${status}'`).join(', '))})`
         ),
 
         /** A `processing` row must always have an owner and a lease. */

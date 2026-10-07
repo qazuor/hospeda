@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { and, asc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import {
@@ -6,6 +7,23 @@ import {
 } from '../../schemas/email-outbox/email_outbox.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
+
+/**
+ * Normalizes `db.execute()` output: an array (postgres-js) or `{ rows }`
+ * (node-postgres), as the sibling models do.
+ */
+function extractRows<T>(result: unknown): T[] {
+    return Array.isArray(result) ? (result as T[]) : ((result as { rows?: T[] }).rows ?? []);
+}
+
+/**
+ * Short stable digest of a dedup key for logs and error params. The raw key can
+ * embed a recipient address, so it must never reach them.
+ */
+function keyDigest(dedupKey: string): string {
+    return createHash('sha256').update(dedupKey).digest('hex').slice(0, 16);
+}
 
 /** Row type of the `email_outbox` table. */
 export type EmailOutboxRow = typeof emailOutbox.$inferSelect;
@@ -107,6 +125,10 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
      */
     async enqueue(input: EnqueueEmailInput, tx?: DrizzleClient): Promise<EnqueueEmailResult> {
         const db = this.getClient(tx);
+        const logContext = {
+            dedupKeyDigest: keyDigest(input.dedupKey),
+            recipientUserId: input.recipientUserId ?? null
+        };
         try {
             const rows = await db
                 .insert(emailOutbox)
@@ -121,15 +143,10 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
                 .onConflictDoNothing({ target: emailOutbox.dedupKey })
                 .returning();
             const row = rows[0] ?? null;
+            this.logOk('enqueue', logContext, { enqueued: row !== null });
             return { enqueued: row !== null, row };
         } catch (error) {
-            const err = error instanceof Error ? error : new Error(String(error));
-            throw new DbError(
-                this.entityName,
-                'enqueue',
-                { dedupKey: input.dedupKey },
-                err.message
-            );
+            this.fail('enqueue', logContext, error);
         }
     }
 
@@ -148,6 +165,7 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
         const db = this.getClient(input.tx);
         const now = input.now ?? new Date();
         const lockedUntil = new Date(now.getTime() + input.leaseMs);
+        const logContext = { owner: input.owner, limit: input.limit };
         try {
             const result = await db.execute(sql`
                 UPDATE email_outbox
@@ -163,16 +181,20 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
                 )
                 RETURNING id
             `);
-            const ids = (result.rows as Array<{ id: string }>).map((r) => r.id);
-            if (ids.length === 0) return [];
-            return await db
+            const ids = extractRows<{ id: string }>(result).map((r) => r.id);
+            if (ids.length === 0) {
+                this.logOk('claim', logContext, []);
+                return [];
+            }
+            const claimed = await db
                 .select()
                 .from(emailOutbox)
                 .where(inArray(emailOutbox.id, ids))
                 .orderBy(asc(emailOutbox.createdAt));
+            this.logOk('claim', logContext, claimed);
+            return claimed;
         } catch (error) {
-            const err = error instanceof Error ? error : new Error(String(error));
-            throw new DbError(this.entityName, 'claim', { owner: input.owner }, err.message);
+            this.fail('claim', logContext, error);
         }
     }
 
@@ -189,16 +211,17 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
     async recoverExpired(input: RecoverExpiredEmailsInput = {}): Promise<string[]> {
         const db = this.getClient(input.tx);
         const now = input.now ?? new Date();
+        const logContext = { now: now.toISOString() };
         try {
             const rows = await db
                 .update(emailOutbox)
                 .set({ status: 'pending', lockedBy: null, lockedUntil: null })
                 .where(and(eq(emailOutbox.status, 'processing'), lt(emailOutbox.lockedUntil, now)))
                 .returning({ id: emailOutbox.id });
+            this.logOk('recoverExpired', logContext, rows);
             return rows.map((r) => r.id);
         } catch (error) {
-            const err = error instanceof Error ? error : new Error(String(error));
-            throw new DbError(this.entityName, 'recoverExpired', {}, err.message);
+            this.fail('recoverExpired', logContext, error);
         }
     }
 
@@ -211,6 +234,7 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
      */
     async markSent(input: MarkEmailSentInput): Promise<boolean> {
         const db = this.getClient(input.tx);
+        const logContext = { id: input.id, owner: input.owner };
         try {
             const rows = await db
                 .update(emailOutbox)
@@ -222,10 +246,10 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
                 })
                 .where(this.heldBy(input.id, input.owner))
                 .returning({ id: emailOutbox.id });
+            this.logOk('markSent', logContext, rows);
             return rows.length > 0;
         } catch (error) {
-            const err = error instanceof Error ? error : new Error(String(error));
-            throw new DbError(this.entityName, 'markSent', { id: input.id }, err.message);
+            this.fail('markSent', logContext, error);
         }
     }
 
@@ -240,6 +264,7 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
      */
     async recordFailure(input: RecordEmailFailureInput): Promise<EmailOutboxStatus | null> {
         const db = this.getClient(input.tx);
+        const logContext = { id: input.id, owner: input.owner, maxAttempts: input.maxAttempts };
         try {
             const rows = await db
                 .update(emailOutbox)
@@ -252,11 +277,27 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
                 })
                 .where(this.heldBy(input.id, input.owner))
                 .returning({ status: emailOutbox.status });
+            this.logOk('recordFailure', logContext, rows);
             return rows[0]?.status ?? null;
         } catch (error) {
-            const err = error instanceof Error ? error : new Error(String(error));
-            throw new DbError(this.entityName, 'recordFailure', { id: input.id }, err.message);
+            this.fail('recordFailure', logContext, error);
         }
+    }
+
+    /** Logs a successful query; logging never breaks the operation. */
+    private logOk(method: string, context: unknown, result: unknown): void {
+        try {
+            logQuery(this.entityName, method, context, result);
+        } catch {}
+    }
+
+    /** Logs and rethrows as a {@link DbError} that keeps the original error as `cause` (HOS-1174). */
+    private fail(method: string, context: unknown, error: unknown): never {
+        const err = error instanceof Error ? error : new Error(String(error));
+        try {
+            logError(this.entityName, method, context, err);
+        } catch {}
+        throw new DbError(this.entityName, method, context, err.message, err);
     }
 
     /** Condition: the row is `processing` and held by `owner`. */

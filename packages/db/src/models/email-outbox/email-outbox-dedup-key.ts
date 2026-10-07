@@ -17,11 +17,16 @@ export class EmailOutboxKeyError extends Error {
  * Validation is manual because `@repo/db` does not depend on zod; the inputs
  * are plain strings, so a Zod schema would add a dependency for three checks.
  */
-function requirePart(field: string, value: string): string {
+function requirePart(field: string, value: string, forbidden: readonly string[] = []): string {
     const trimmed = typeof value === 'string' ? value.trim() : '';
     if (trimmed.length === 0) throw new EmailOutboxKeyError(field, 'must not be empty');
     if (trimmed.includes(DEDUP_SEPARATOR)) {
         throw new EmailOutboxKeyError(field, `must not contain "${DEDUP_SEPARATOR}"`);
+    }
+    for (const char of forbidden) {
+        if (trimmed.includes(char)) {
+            throw new EmailOutboxKeyError(field, `must not contain "${char}"`);
+        }
     }
     return trimmed;
 }
@@ -69,8 +74,11 @@ export interface EmailDedupKeyInput {
  * @throws EmailOutboxKeyError when a part is empty, contains `|`, or the date is not `YYYY-MM-DD`.
  */
 export function buildScheduleOccurrence(input: ScheduleOccurrenceInput): string {
-    const subjectKind = requirePart('subjectKind', input.subjectKind);
-    const subjectId = requirePart('subjectId', input.subjectId);
+    // ':' joins the parts below, so it is forbidden inside them or two different
+    // inputs could produce the same occurrence. The milestone keeps its own ':'
+    // (e.g. `pre:-2d`) because it is the last free-form part before the date.
+    const subjectKind = requirePart('subjectKind', input.subjectKind, [':']);
+    const subjectId = requirePart('subjectId', input.subjectId, [':']);
     const milestone = requirePart('milestone', input.milestone);
     const targetDate = requirePart('targetDate', input.targetDate);
     if (!DATE_PATTERN.test(targetDate)) {
