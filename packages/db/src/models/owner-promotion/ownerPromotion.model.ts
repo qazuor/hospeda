@@ -84,11 +84,6 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     /**
      * Finds active owner promotions by accommodation ID.
      *
-     * SPEC-167 T-004: plan-restricted promotions are excluded. A restricted
-     * promotion is not considered active from the public perspective — it must
-     * not appear on the accommodation detail page and must not consume the
-     * host's MAX_ACTIVE_PROMOTIONS cap.
-     *
      * @param accommodationId - The accommodation ID to filter by
      * @param tx - Optional transaction client
      * @returns Promise resolving to an object with items and total count
@@ -107,7 +102,6 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                     and(
                         eq(ownerPromotions.accommodationId, accommodationId),
                         eq(ownerPromotions.lifecycleState, 'ACTIVE'),
-                        eq(ownerPromotions.planRestricted, false),
                         lte(ownerPromotions.validFrom, now),
                         // NULL validUntil means no expiry — treat as always valid (SPEC-285 FIX 4).
                         or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
@@ -136,11 +130,6 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     /**
      * Finds active owner promotions by owner ID.
      *
-     * SPEC-167 T-004: plan-restricted promotions are excluded. A restricted
-     * promotion is not active from the public/cap perspective — it must not
-     * appear in public reads and must not count toward the host's
-     * MAX_ACTIVE_PROMOTIONS cap.
-     *
      * @param ownerId - The owner ID to filter by
      * @param tx - Optional transaction client
      * @returns Promise resolving to an object with items and total count
@@ -159,7 +148,6 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                     and(
                         eq(ownerPromotions.ownerId, ownerId),
                         eq(ownerPromotions.lifecycleState, 'ACTIVE'),
-                        eq(ownerPromotions.planRestricted, false),
                         lte(ownerPromotions.validFrom, now),
                         // NULL validUntil means no expiry — treat as always valid (SPEC-285 FIX 4).
                         or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
@@ -192,7 +180,7 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
      * This prevents other owners' null-accommodationId promos from leaking onto
      * this accommodation (the AND `ownerId = $ownerId` guard isolates the owner).
      *
-     * Date window and ACTIVE/planRestricted gates are applied here so the result
+     * Date window and ACTIVE gates are applied here so the result
      * set is identical to what `_executeSearch` returns for the same conditions.
      *
      * @param params - `{ accommodationId, ownerId }` — both must be resolved by the caller.
@@ -225,7 +213,6 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
 
             const whereClause = and(
                 eq(ownerPromotions.lifecycleState, 'ACTIVE'),
-                eq(ownerPromotions.planRestricted, false),
                 isNull(ownerPromotions.deletedAt),
                 validWindowCondition,
                 or(targetedCondition, ownerWideCondition)
@@ -290,7 +277,6 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
 
             const whereClause = and(
                 eq(ownerPromotions.lifecycleState, 'ACTIVE'),
-                eq(ownerPromotions.planRestricted, false),
                 isNull(ownerPromotions.deletedAt),
                 validWindowCondition,
                 or(targetedCondition, ownerWideCondition)

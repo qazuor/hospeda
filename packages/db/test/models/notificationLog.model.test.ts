@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
-import { BillingNotificationLogModel } from '../../src/models/billing/billingNotificationLog.model';
+import { NotificationLogModel } from '../../src/models/notification-log/notificationLog.model';
 import * as logger from '../../src/utils/logger';
 
 vi.mock('../../src/utils/logger', () => ({
@@ -8,13 +8,13 @@ vi.mock('../../src/utils/logger', () => ({
     logError: vi.fn()
 }));
 
-describe('BillingNotificationLogModel', () => {
-    let model: BillingNotificationLogModel;
+describe('NotificationLogModel', () => {
+    let model: NotificationLogModel;
     let getDb: ReturnType<typeof vi.fn>;
     let logQuery: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-        model = new BillingNotificationLogModel();
+        model = new NotificationLogModel();
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
         getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
@@ -27,7 +27,7 @@ describe('BillingNotificationLogModel', () => {
     describe('getTableName', () => {
         it('should return correct table name', () => {
             const tableName = (model as unknown as { getTableName: () => string }).getTableName();
-            expect(tableName).toBe('billingNotificationLog');
+            expect(tableName).toBe('notificationLog');
         });
     });
 
@@ -44,9 +44,9 @@ describe('BillingNotificationLogModel', () => {
                                 limit: () => ({
                                     offset: () =>
                                         Promise.resolve([
-                                            { id: 'n1', customerId: 'c1', type: 'payment_failed' },
-                                            { id: 'n2', customerId: 'c1', type: 'trial_ending' },
-                                            { id: 'n3', customerId: 'c2', type: 'payment_failed' }
+                                            { id: 'n1', type: 'payment_failed' },
+                                            { id: 'n2', type: 'trial_ending' },
+                                            { id: 'n3', type: 'payment_failed' }
                                         ])
                                 }),
                                 $dynamic: () => qb
@@ -95,7 +95,7 @@ describe('BillingNotificationLogModel', () => {
                 select: () => ({
                     from: () => ({
                         where: () => ({
-                            limit: () => [{ id: 'n1', customerId: 'c1', type: 'payment_failed' }]
+                            limit: () => [{ id: 'n1', type: 'payment_failed' }]
                         })
                     })
                 })
@@ -103,7 +103,7 @@ describe('BillingNotificationLogModel', () => {
 
             const result = await model.findById('n1');
 
-            expect(result).toEqual({ id: 'n1', customerId: 'c1', type: 'payment_failed' });
+            expect(result).toEqual({ id: 'n1', type: 'payment_failed' });
             expect(logQuery).toHaveBeenCalled();
         });
 

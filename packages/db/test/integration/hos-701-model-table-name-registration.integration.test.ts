@@ -31,12 +31,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setDb } from '../../src/client.ts';
 import { AppLogEntryModel } from '../../src/models/app-log/appLogEntry.model.ts';
 import { AuditLogEntryModel } from '../../src/models/audit-log/auditLogEntry.model.ts';
-import { BillingNotificationLogModel } from '../../src/models/billing/billingNotificationLog.model.ts';
 import { ContentModerationTermModel } from '../../src/models/content-moderation/term.model.ts';
 import { ContentModerationThresholdModel } from '../../src/models/content-moderation/threshold.model.ts';
 import { CronRunModel } from '../../src/models/cron/cronRun.model.ts';
 import { ExchangeRateModel } from '../../src/models/exchange-rate/exchange-rate.model.ts';
 import { ExchangeRateConfigModel } from '../../src/models/exchange-rate/exchange-rate-config.model.ts';
+import { NotificationLogModel } from '../../src/models/notification-log/notificationLog.model.ts';
 import { PlatformSettingsModel } from '../../src/models/platform/platform-settings.model.ts';
 import { RevalidationConfigModel } from '../../src/models/revalidation/revalidation-config.model.ts';
 import { UserPushTokenModel } from '../../src/models/user/user-push-token.model.ts';
@@ -66,7 +66,7 @@ afterAll(async () => {
 const REMAINING_MODELS = [
     ['AppLogEntryModel', new AppLogEntryModel()],
     ['AuditLogEntryModel', new AuditLogEntryModel()],
-    ['BillingNotificationLogModel', new BillingNotificationLogModel()],
+    ['NotificationLogModel', new NotificationLogModel()],
     ['ContentModerationTermModel', new ContentModerationTermModel()],
     ['ContentModerationThresholdModel', new ContentModerationThresholdModel()],
     ['CronRunModel', new CronRunModel()],

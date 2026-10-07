@@ -156,21 +156,18 @@ function buildBasePriceConditions(
  * Compose the full ORDER BY list for accommodation search queries.
  *
  * Precedence (applied in order):
- *   1. `featuredFirst` pin     → `(isFeatured OR featuredByEntitlement) DESC` prepended
- *                                (SPEC-292: admin-curated OR entitlement-derived featuring).
- *   2. `sorts[]` if present    → iterated in declared order. Any `isFeatured`
- *                                entry is dropped when `featuredFirst` is pinned
- *                                (prevents a duplicated `ORDER BY is_featured`).
- *   3. Legacy `sortBy`/`sortOrder` fallback when `sorts[]` is absent or empty.
- *                                Also dropped if it would duplicate the pin.
- *   4. `id DESC`               → stable tiebreaker, ALWAYS appended so pagination
+ *   1. `sorts[]` if present    → iterated in declared order.
+ *   2. Legacy `sortBy`/`sortOrder` fallback when `sorts[]` is absent or empty.
+ *   3. `id DESC`               → stable tiebreaker, ALWAYS appended so pagination
  *                                is deterministic when leading sort keys tie.
+ *
+ * There is no featured pin: accommodations lost their featuring columns with the
+ * old billing (HOS-1419).
  *
  * Unknown fields (not present on the `accommodations` table) are silently skipped,
  * preserving parity with the legacy single-column behavior.
  */
 export function buildAccommodationOrderBy(params: {
-    featuredFirst?: boolean;
     sorts?: SortField[];
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -186,29 +183,11 @@ export function buildAccommodationOrderBy(params: {
 }): SQL[] {
     const orderBy: SQL[] = [];
 
-    if (params.featuredFirst) {
-        // SPEC-292 — effective featured = admin-curated (`isFeatured`) OR
-        // entitlement-derived (`featuredByEntitlement`, set by the billing sync;
-        // renamed SPEC-309 to reflect plan+addon union). Order by the disjunction
-        // so both surface first; the expression is evaluated per-row for sorting
-        // (not index-driven). The composite and partial indexes added in migration
-        // 0035 on these columns serve filtered queries (WHERE clauses), not this
-        // computed ORDER BY expression.
-        orderBy.push(
-            desc(sql`(${accommodations.isFeatured} OR ${accommodations.featuredByEntitlement})`)
-        );
-    }
-
-    const legacyFallback: SortField[] =
-        params.sortBy && !(params.featuredFirst && params.sortBy === 'isFeatured')
-            ? [{ field: params.sortBy, order: params.sortOrder ?? 'asc' }]
-            : [];
-    const rawSortFields: SortField[] =
+    const legacyFallback: SortField[] = params.sortBy
+        ? [{ field: params.sortBy, order: params.sortOrder ?? 'asc' }]
+        : [];
+    const sortFields: SortField[] =
         params.sorts && params.sorts.length > 0 ? params.sorts : legacyFallback;
-
-    const sortFields = params.featuredFirst
-        ? rawSortFields.filter((s) => s.field !== 'isFeatured')
-        : rawSortFields;
 
     const hasGeoCenter = params.latitude !== undefined && params.longitude !== undefined;
 
@@ -905,7 +884,6 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         const where = and(...whereClauses);
 
         const orderBy = buildAccommodationOrderBy({
-            featuredFirst: params.featuredFirst,
             sorts: params.sorts,
             sortBy: params.sortBy,
             sortOrder: params.sortOrder,
@@ -1092,7 +1070,6 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         const where = and(...whereClauses);
 
         const orderBy = buildAccommodationOrderBy({
-            featuredFirst: params.featuredFirst,
             sorts: params.sorts,
             sortBy: params.sortBy,
             sortOrder: params.sortOrder,
@@ -1187,7 +1164,6 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             limit?: number;
             destinationId?: string;
             type?: string;
-            onlyFeatured?: boolean;
             excludeRestricted?: boolean;
             excludeOwnerSuspended?: boolean;
             /** SPEC-167 T-004: exclude plan-restricted accommodations from public top-rated lists. */
@@ -1202,7 +1178,6 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             limit = 10,
             destinationId,
             type,
-            onlyFeatured = false,
             excludeRestricted = false,
             excludeOwnerSuspended = false,
             excludePlanRestricted = false,
@@ -1216,7 +1191,6 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 if (destinationId) clauses.push(eq(fields.destinationId, destinationId));
                 // DRIZZLE-LIMITATION: Domain enum (string union) and Drizzle column's branded pgEnum type differ at TS level but are identical at runtime.
                 if (type) clauses.push(eq(fields.type, type as unknown as typeof fields.type));
-                if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
                 if (excludeRestricted) clauses.push(neOp(fields.visibility, 'RESTRICTED'));
                 if (excludeOwnerSuspended) clauses.push(eq(fields.ownerSuspended, false));
                 // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.

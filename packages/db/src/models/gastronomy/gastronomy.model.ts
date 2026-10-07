@@ -16,7 +16,6 @@ interface GastronomySearchInput {
     readonly ownerId?: string;
     readonly type?: string;
     readonly priceRange?: string;
-    readonly isFeatured?: boolean;
     readonly page?: number;
     readonly pageSize?: number;
 }
@@ -114,9 +113,6 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
                         params.priceRange as typeof gastronomies.priceRange._.data
                     )
                 );
-            }
-            if (params.isFeatured !== undefined) {
-                whereClauses.push(eq(gastronomies.isFeatured, params.isFeatured));
             }
             if (params.q) {
                 whereClauses.push(safeIlike(gastronomies.name, params.q));

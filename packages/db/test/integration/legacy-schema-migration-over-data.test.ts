@@ -6,11 +6,12 @@
 // applies the demolition migration 0125 and everything after it. It must end
 // in the post-demolition world with the surviving data intact:
 //
-//   - every legacy billing table is DROPPED (all `billing_*` except
-//     `billing_notification_log`, plus `entity_subscriptions`,
-//     `partner_subscriptions`, `featured_listing_addon_grants`);
-//   - `billing_notification_log` SURVIVES, without its `customer_id` column,
-//     keeping the row that was written before the migration;
+//   - every legacy billing table is DROPPED (all `billing_*`, plus
+//     `entity_subscriptions`, `partner_subscriptions`,
+//     `featured_listing_addon_grants`);
+//   - the notification log SURVIVES — renamed to `notification_log` by HOS-1419
+//     — without its `customer_id` column, keeping the row that was written
+//     before the migration;
 //   - `accommodations` keeps its three billing columns with THEIR DATA —
 //     `owner_suspended`, `plan_restricted` and `billing_unpublished_at`
 //     arrive exactly as they were written pre-migration, in both the set and
@@ -200,7 +201,7 @@ afterAll(async () => {
 });
 
 describe('TEST:U1:3 — demolition migration over legacy data (HOS-1416)', () => {
-    it('drops every legacy billing table except billing_notification_log', async () => {
+    it('drops every legacy billing table', async () => {
         const result = await legacyPool.query<{ table_name: string }>(
             `SELECT table_name FROM information_schema.tables
              WHERE table_schema = 'public' AND table_type = 'BASE TABLE'`
@@ -208,7 +209,8 @@ describe('TEST:U1:3 — demolition migration over legacy data (HOS-1416)', () =>
         const tables = new Set(result.rows.map((r) => r.table_name));
 
         const legacyBilling = [...tables].filter((t) => t.startsWith('billing_'));
-        expect(legacyBilling).toEqual(['billing_notification_log']);
+        expect(legacyBilling).toEqual([]);
+        expect(tables.has('notification_log')).toBe(true);
 
         for (const table of [
             'entity_subscriptions',
@@ -219,16 +221,16 @@ describe('TEST:U1:3 — demolition migration over legacy data (HOS-1416)', () =>
         }
     });
 
-    it('keeps billing_notification_log alive, without customer_id, row intact', async () => {
+    it('keeps the notification log alive as notification_log, without customer_id, row intact', async () => {
         const columns = await legacyPool.query<{ column_name: string }>(
             `SELECT column_name FROM information_schema.columns
-             WHERE table_schema = 'public' AND table_name = 'billing_notification_log'`
+             WHERE table_schema = 'public' AND table_name = 'notification_log'`
         );
         const names = new Set(columns.rows.map((r) => r.column_name));
         expect(names.has('customer_id')).toBe(false);
 
         const rows = await legacyPool.query<{ type: string; recipient: string; status: string }>(
-            `SELECT "type", "recipient", "status" FROM "billing_notification_log"`
+            `SELECT "type", "recipient", "status" FROM "notification_log"`
         );
         expect(rows.rowCount).toBe(1);
         expect(rows.rows[0]).toEqual({

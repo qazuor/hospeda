@@ -43,8 +43,7 @@
  * ## Why a static text scan instead of instantiating each model
  *
  * This mirrors the existing repo convention for "N places forgot X" bugs
- * (see `apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts` and
- * `apps/api/test/services/inv1-cache-invalidation.guard.test.ts`): no DB, no
+ * (see `apps/api/test/services/inv1-cache-invalidation.guard.test.ts`): no DB, no
  * module resolution, no app boot — just source text, so the guard is fast
  * and cannot itself flake on an unrelated import failure elsewhere in the
  * dependency graph.

@@ -24,14 +24,6 @@ describe('buildAccommodationOrderBy', () => {
         expect(rendered[0]).toMatch(/"accommodations"."id" desc/i);
     });
 
-    it('prepends (isFeatured OR featuredByEntitlement) DESC when featuredFirst is true', () => {
-        const orderBy = buildAccommodationOrderBy({ featuredFirst: true });
-        expect(orderBy).toHaveLength(2);
-        const rendered = renderOrderBy(orderBy);
-        expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_entitlement".*desc/i);
-        expect(rendered[1]).toMatch(/"id" desc/i);
-    });
-
     it('appends sorts[] in declared order then the tiebreaker', () => {
         const sorts: SortField[] = [
             { field: 'name', order: 'asc' },
@@ -45,22 +37,16 @@ describe('buildAccommodationOrderBy', () => {
         expect(rendered[2]).toMatch(/"id" desc/i);
     });
 
-    it('dedups isFeatured entries within sorts[] when featuredFirst is true', () => {
+    it('skips a sort on the retired isFeatured column (HOS-1419)', () => {
         const sorts: SortField[] = [
-            { field: 'isFeatured', order: 'asc' },
+            { field: 'isFeatured', order: 'desc' },
             { field: 'name', order: 'asc' }
         ];
-        const orderBy = buildAccommodationOrderBy({ featuredFirst: true, sorts });
-        expect(orderBy).toHaveLength(3);
+        const orderBy = buildAccommodationOrderBy({ sorts });
         const rendered = renderOrderBy(orderBy);
-        // Primary pin
-        expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_entitlement".*desc/i);
-        // The in-sorts isFeatured was dropped — second position is name
-        expect(rendered[1]).toMatch(/"name" asc/i);
-        expect(rendered[2]).toMatch(/"id" desc/i);
-        // No double is_featured anywhere
-        const hits = rendered.filter((r) => /"is_featured"/i.test(r));
-        expect(hits).toHaveLength(1);
+        expect(rendered).toHaveLength(2);
+        expect(rendered[0]).toMatch(/"name" asc/i);
+        expect(rendered.some((r) => /featured/i.test(r))).toBe(false);
     });
 
     it('falls back to sortBy/sortOrder when sorts[] is absent', () => {
@@ -69,21 +55,6 @@ describe('buildAccommodationOrderBy', () => {
         const rendered = renderOrderBy(orderBy);
         expect(rendered[0]).toMatch(/"name" desc/i);
         expect(rendered[1]).toMatch(/"id" desc/i);
-    });
-
-    it('dedups legacy sortBy=isFeatured when featuredFirst is also true', () => {
-        const orderBy = buildAccommodationOrderBy({
-            featuredFirst: true,
-            sortBy: 'isFeatured',
-            sortOrder: 'asc'
-        });
-        expect(orderBy).toHaveLength(2);
-        const rendered = renderOrderBy(orderBy);
-        expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_entitlement".*desc/i);
-        expect(rendered[1]).toMatch(/"id" desc/i);
-        // No asc "is_featured" from the legacy fallback
-        const hits = rendered.filter((r) => /"is_featured"/i.test(r));
-        expect(hits).toHaveLength(1);
     });
 
     it('silently skips unknown sort fields (parity with legacy behavior)', () => {
@@ -154,17 +125,6 @@ describe('buildAccommodationOrderBy', () => {
         expect(rendered[1]).toMatch(/"id" desc/i);
     });
 
-    it('prepends featuredFirst alongside sorts without dedup when no isFeatured entry is present', () => {
-        const sorts: SortField[] = [{ field: 'averageRating', order: 'desc' }];
-        const orderBy = buildAccommodationOrderBy({ featuredFirst: true, sorts });
-        expect(orderBy).toHaveLength(3);
-        const rendered = renderOrderBy(orderBy);
-        expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_entitlement".*desc/i);
-        expect(rendered[1]).toMatch(/"average_rating"/i);
-        expect(rendered[1]).toMatch(/NULLS LAST/i);
-        expect(rendered[2]).toMatch(/"id" desc/i);
-    });
-
     describe('distance sort (haversine)', () => {
         it('emits a haversine ORDER BY when distance is requested with a geo center', () => {
             const sorts: SortField[] = [{ field: 'distance', order: 'asc' }];
@@ -225,21 +185,6 @@ describe('buildAccommodationOrderBy', () => {
             expect(orderBy).toHaveLength(2);
             const rendered = renderOrderBy(orderBy);
             expect(rendered[0]).toMatch(/asin/i);
-        });
-
-        it('combines featuredFirst with distance — pin still wins', () => {
-            const sorts: SortField[] = [{ field: 'distance', order: 'asc' }];
-            const orderBy = buildAccommodationOrderBy({
-                featuredFirst: true,
-                sorts,
-                latitude: -32.4846,
-                longitude: -58.2326
-            });
-            expect(orderBy).toHaveLength(3);
-            const rendered = renderOrderBy(orderBy);
-            expect(rendered[0]).toMatch(/"is_featured".*\bor\b.*"featured_by_entitlement".*desc/i);
-            expect(rendered[1]).toMatch(/asin/i);
-            expect(rendered[2]).toMatch(/"id" desc/i);
         });
     });
 });

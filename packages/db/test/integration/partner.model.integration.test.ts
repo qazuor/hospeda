@@ -1,20 +1,12 @@
 /**
- * Regression integration test for PartnerModel's active-partner filters
- * (SPEC-271).
+ * Integration test for PartnerModel's active-partner filters (SPEC-271,
+ * reshaped by HOS-1419).
  *
  * `findByFilters` (default, `includeInactive` unset) and `countActivePartners`
- * both filter on `partners.subscriptionStatus`. The Postgres enum
- * `partner_subscription_status_enum` only accepts lowercase values
- * (`pending|active|past_due|cancelled`) — unlike `lifecycleState`, which DOES
- * use uppercase (`'ACTIVE'`). A prior version of this model compared
- * `subscriptionStatus` against the uppercase literal `'ACTIVE'`, which
- * Postgres rejects with `invalid input value for enum
- * partner_subscription_status_enum: "ACTIVE"` — a 500 on every call to the
- * public `/partners` endpoint that hits either of these methods.
- *
- * This test seeds real rows against a live Postgres instance (a mock cannot
- * reproduce an enum-binding error) and asserts both methods resolve without
- * throwing and return exactly the active partners.
+ * used to also require `partners.subscription_status = 'active'`. HOS-1419
+ * dropped that column together with the rest of the partner billing state, so
+ * the lifecycle state is now the only visibility switch: an ACTIVE partner is
+ * listed, an INACTIVE one is not.
  *
  * Uses `withCleanSlate` rather than `withTestTransaction`: `findByFilters` and
  * `countActivePartners` call `getDb()` internally (no `tx` parameter), so
@@ -30,8 +22,7 @@ import { closeTestPool, getTestDb, withCleanSlate } from './helpers.ts';
 
 /**
  * Minimal `partners` row that satisfies all NOT NULL constraints.
- * `subscriptionStatus` and `lifecycleState` default to the values that a
- * healthy, publicly-visible partner should have.
+ * `lifecycleState` defaults to the value a publicly-visible partner has.
  */
 function partnerFixture(
     overrides: Partial<typeof partners.$inferInsert> = {}
@@ -43,7 +34,6 @@ function partnerFixture(
         name: `Partner ${uid}`,
         type: 'business' as const,
         tier: 'gold' as const,
-        subscriptionStatus: 'active' as const,
         lifecycleState: 'ACTIVE' as const,
         startsAt: new Date(),
         ...overrides
@@ -61,41 +51,39 @@ afterAll(async () => {
     await closeTestPool();
 });
 
-describe('PartnerModel active-partner filters (subscriptionStatus enum regression)', () => {
+describe('PartnerModel active-partner filters (lifecycle state is the only switch)', () => {
     const model = new PartnerModel();
 
-    it('findByFilters (default) returns active partners without an enum-binding error', async () => {
+    it('findByFilters (default) returns only ACTIVE partners', async () => {
         await withCleanSlate(async (db) => {
             // Arrange
             const activePartner = partnerFixture({ name: 'Active Partner' });
             const inactivePartner = partnerFixture({
-                name: 'Cancelled Partner',
-                subscriptionStatus: 'cancelled' as const
+                name: 'Inactive Partner',
+                lifecycleState: 'INACTIVE' as const
             });
             await db.insert(partners).values([activePartner, inactivePartner]);
 
             // Act
             const results = await model.findByFilters({});
 
-            // Assert — must not throw (old 'ACTIVE' literal caused a Postgres
-            // "invalid input value for enum" 500) and must return only the
-            // active partner.
+            // Assert — only the ACTIVE partner is returned.
             const ids = results.map((p) => p.id);
             expect(ids).toContain(activePartner.id);
             expect(ids).not.toContain(inactivePartner.id);
         });
     });
 
-    it('countActivePartners returns the count of active partners without an enum-binding error', async () => {
+    it('countActivePartners counts only ACTIVE partners', async () => {
         await withCleanSlate(async (db) => {
             // Arrange
             const activePartner1 = partnerFixture({ name: 'Active One' });
             const activePartner2 = partnerFixture({ name: 'Active Two' });
-            const pendingPartner = partnerFixture({
-                name: 'Pending Partner',
-                subscriptionStatus: 'pending' as const
+            const inactivePartner = partnerFixture({
+                name: 'Inactive Partner',
+                lifecycleState: 'INACTIVE' as const
             });
-            await db.insert(partners).values([activePartner1, activePartner2, pendingPartner]);
+            await db.insert(partners).values([activePartner1, activePartner2, inactivePartner]);
 
             // Act
             const total = await model.countActivePartners({});
