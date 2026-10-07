@@ -233,6 +233,21 @@ duplicado `H5-VB-03-1`). Es la recomendada (opción 1).
 |---|---|---|---|---|
 | CK | si el aviso de cambio de cobertura sale después del commit sin entrega durable, como `DEC-ARCH-009` y el contrato, o se encola en U2, como decía la fila de B4 | 1 | sí | **se ratifica `DEC-ARCH-009`: el aviso sale después del commit, sin entrega durable, y el reconciliador diario es la red**. El outbox de `U2` sigue siendo sólo de correos. `coberturaPerdidaEn` se guarda en la misma transacción que registra la pérdida de cobertura, antes del aviso; su lectura no espera la entrega. Se conserva la dependencia de `B4` respecto de `U2` por las obligaciones de sus predecesores, incluidos los correos de `B3` (BR), no por encolar el aviso de cobertura. La red conserva su población y sus exclusiones: no corre la máquina de trial ni promete recuperar el aviso de primer pago; se acepta hasta un día de atraso en los casos cubiertos. La otra opción era agregar transporte durable de eventos con identidad, reintentos, recuperación y confirmación, distinto del outbox de correos |
 
+## Lote CL a CP (2026-10-07)
+
+Respuestas del owner, 2026-10-07, al cerrar `U1` (`HOS-1421`, la salida de la unidad). CL a CO
+aprueban desvíos que la implementación de `U1` (`HOS-1416` a `HOS-1420`) ya había tomado; CP
+confirma la medición de producción de BT. No eran preguntas con opciones: se registra la que se
+aplicó.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| CL | si `U1` retira `featured_by_entitlement` junto con `is_featured` en las tres tablas de fichas, como dicen el lote 1 F, `AC:U1:8` y la sección de esquema de `U1.md` | la aplicada | sí | **se conserva `featured_by_entitlement` en las tres tablas y sólo sale `is_featured`** (migración `0128`, `HOS-1419`). La escribirán los planes premium y el complemento; hasta las unidades `B` no tiene escritor. Reemplaza lo que el lote 1 F, `AC:U1:8` y `U1.md` dicen de esa columna |
+| CM | si `U1` borra las superficies web del cobro viejo (`PlanPurchaseButton`, `planes/*`, `suscripcion` y las páginas de complementos) | la aplicada | sí | **quedan para las unidades `B`**, que las reescriben contra el cobro nuevo. `U1` no las toca: la rama compila y lo que queda roto es el comportamiento, no el build |
+| CN | qué job de `CI Pass` es la barrera de `TEST:U1:23` (una migración que no aplica desde cero no llega a `CI Pass`) | la aplicada | sí | **`test-integration`**, cuyo global-setup aplica la cadena completa de migraciones sobre una base vacía y que está en los `needs` de `ci-pass`. No `e2e-pr`: también corre `db:migrate` desde cero, pero es un workflow aparte, fuera de `CI Pass` |
+| CO | si `TEST:U1:22` exige que el job `guards` corra literalmente `pnpm check:guards` | la aplicada | sí | **se acepta la convención del repo: un paso del job `guards` por guard**, y el mismo guard listado también en `check:guards`. El test de salida (`scripts/__tests__/u1-exit-ci-wiring.test.ts`) comprueba las dos cosas para `G8` |
+| CP | qué pasa con las filas vivas que midió BT en producción antes del merge de `U1` | se borran en el corte | sí | **se borran en el corte, como ya hace la migración `0126`**: las 39 filas de `role_permission` y las 3 de `user_role_audit`. Medido el 2026-10-07 con `hops psql --target=prod`, sólo lectura y contando: `user_role` con el rol de dueño de comercio, 0; `role_permission` con ese rol, 27, y con sus siete permisos, 14 (unión, 39); `user_permission` con esos permisos, 0; `user_role_audit` con ese rol, 3; la tabla de contactos de alta no existe en producción (la borró la migración `0098`). Ninguna de esas tablas tiene `deleted_at`, así que todas sus filas son vivas |
+
 ## Resultado del corte
 
 - **Al corte, enteras (17)**: `U1`–`U3`, `V1`–`V6`, `B1`–`B7`, `B11`.

@@ -29,11 +29,6 @@ permissions:
 jobs:
   e2e-p0:
     name: E2E P0 Suite
-    # HOS-1416 removes billing_plans/subscriptions before the replacement
-    # system exists. The current P0 fixtures still insert into those tables.
-    # Keep the tests intact so the next epic leaves must replace those
-    # fixtures; only this demolition leaf is exempt.
-    if: ${{ !(github.base_ref == 'epic/HOS-1352-verticales-billing' && github.head_ref == 'feat/HOS-1416-sacar-cobro-viejo') }}
     runs-on: ubuntu-latest
     # 25, not 15: `Install Playwright browsers` alone ranges from 4 to 14
     # minutes because the browser cache never hits — `Cache Playwright browsers`
