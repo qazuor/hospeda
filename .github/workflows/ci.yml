@@ -281,6 +281,11 @@ jobs:
       # P-3 it carries. Runs on tsx, so after setup.
       - name: Check the payments boundary and no legacy billing library (GUARD:G16)
         run: pnpm check:payments-boundary
+      # GUARD:G14 (HOS-1432, AC:V1:7). Its own step, like every guard here. One
+      # half (billing, verticals) never imports the other outside
+      # @repo/billing-verticals-contract; the halves are the table in the script.
+      - name: Check neither half imports the other outside the contract (GUARD:G14)
+        run: pnpm check:billing-verticals-boundary
       # GUARD:G9, G10, G11 (HOS-1508, AC:B1:5/6/7). One step each, like every
       # guard here. G9: the reason sent to the provider is copy, not an id.
       # G10: the approval link is read only through sanitizeApprovalUrl (EX-37).

@@ -1,10 +1,83 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { Clock } from '../src/index';
 
 const DEFINING_STATEMENT = 'The single place where verticals and billing talk to each other';
 const PACKAGE_ROOT = resolve(import.meta.dirname, '..');
+
+/** What the production entry exports at runtime: the schemas, the class derivation and the gate. */
+const ENTRY_RUNTIME_EXPORTS = [
+    'AddonIdSchema',
+    'AddonPolicyArgsSchema',
+    'AddonPolicyResponseSchema',
+    'AddonVersionIdSchema',
+    'CanChargeArgsSchema',
+    'CanChargeResponseSchema',
+    'ChangeDirectionArgsSchema',
+    'ChangeDirectionResponseSchema',
+    'ContractValidationError',
+    'CoverageArgsSchema',
+    'CoverageChangeSchema',
+    'CoverageChangedEventSchema',
+    'CoverageReferenceSchema',
+    'CoverageResponseSchema',
+    'CoverageScopeSchema',
+    'CoverageSinceSchema',
+    'CoverageSourceSchema',
+    'CoverageSourceTypeSchema',
+    'CoverageUntilSchema',
+    'ExtendTrialArgsSchema',
+    'ExtendTrialResponseSchema',
+    'InstantSchema',
+    'ListingArgsSchema',
+    'ListingIdSchema',
+    'ListingPurgedEventSchema',
+    'ListingPurgedResponseSchema',
+    'ListingResponseSchema',
+    'PlanPolicyArgsSchema',
+    'PlanPolicyResponseSchema',
+    'PlanVersionIdSchema',
+    'RetentionStoppedArgsSchema',
+    'RetentionStoppedResponseSchema',
+    'UserIdSchema',
+    'UserVerticalArgsSchema',
+    'VerticalSchema',
+    'coverageSourceClassOf',
+    'validateBillingForVerticals',
+    'validateVerticalsForBilling'
+];
+
+/** What the `./testing` subpath exports at runtime: the simulators and the case sets. */
+const TESTING_RUNTIME_EXPORTS = [
+    'BillingForVerticalsSimulator',
+    'SIMULATED_EXTEND_TRIAL_REJECTIONS',
+    'SimulatorNotProgrammedError',
+    'VerticalsForBillingSimulator',
+    'addonPolicyCaseSet',
+    'changeDirectionCaseSet',
+    'coverageCaseSet',
+    'extendTrialCaseSet',
+    'inverseCaseSet',
+    'listingCaseSet',
+    'planPolicyCaseSet'
+];
+
+/** The only external modules the package's source may import. */
+const ALLOWED_EXTERNAL_IMPORTS = ['zod', '@repo/schemas'];
+
+/** The only dependencies the package may declare (contract §7.1). */
+const ALLOWED_DEPENDENCIES = ['@repo/schemas', 'zod'];
+
+/** Packages of either half, or of the database layer, that no dependency block may name. */
+const FORBIDDEN_DEPENDENCY = /^@repo\/(db|payments|billing)(\/|$)/;
+
+const DEPENDENCY_BLOCKS = [
+    'dependencies',
+    'devDependencies',
+    'peerDependencies',
+    'optionalDependencies'
+] as const;
 
 /** Every TypeScript source file of the package, at any depth. */
 function sourceFiles({ dir }: { readonly dir: string }): readonly string[] {
@@ -15,19 +88,38 @@ function sourceFiles({ dir }: { readonly dir: string }): readonly string[] {
     });
 }
 
-/** Every module specifier a source imports or re-exports from. */
-function specifiersOf({ source }: { readonly source: string }): readonly string[] {
-    const pattern = /(?:\bfrom\s+|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
-    return [...source.matchAll(pattern)].map((match) => match[1] ?? '');
+/** Every import statement of a source: its specifier and its full text. */
+function importsOf({
+    source
+}: {
+    readonly source: string;
+}): readonly { readonly specifier: string; readonly statement: string }[] {
+    const pattern =
+        /(?:\b(?:import|export)\b[^;]*?\bfrom\s+|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)['"]([^'"]+)['"]/g;
+    return [...source.matchAll(pattern)].map((match) => ({
+        specifier: match[1] ?? '',
+        statement: match[0]
+    }));
 }
 
+const manifest = JSON.parse(readFileSync(resolve(PACKAGE_ROOT, 'package.json'), 'utf8')) as {
+    readonly description: string;
+    readonly [block: string]: unknown;
+};
+
 describe('@repo/billing-verticals-contract package shape', () => {
-    it('exports no runtime value from its entry point: types only', async () => {
+    it('exports exactly its allowlisted runtime values from the production entry', async () => {
         // Arrange / Act
         const entry = await import('../src/index');
 
         // Assert
-        expect(Object.keys(entry)).toEqual([]);
+        expect(Object.keys(entry).sort()).toEqual([...ENTRY_RUNTIME_EXPORTS].sort());
+    });
+
+    it('exports exactly its allowlisted runtime values from the ./testing subpath', async () => {
+        const testing = await import('../src/testing/index');
+
+        expect(Object.keys(testing).sort()).toEqual([...TESTING_RUNTIME_EXPORTS].sort());
     });
 
     it('exports the Clock type (AC:B1:17), checked by the package typecheck', () => {
@@ -42,44 +134,62 @@ describe('@repo/billing-verticals-contract package shape', () => {
         expect(_broken).toBeDefined();
     });
 
-    it('imports nothing from either half nor from the database layer: only its own files', () => {
+    it('imports only its own files, zod and @repo/schemas: nothing of either half nor of the database layer', () => {
         // Arrange
-        const files = sourceFiles({ dir: join(PACKAGE_ROOT, 'src') });
-        const specifiers = files.flatMap((file) =>
-            specifiersOf({ source: readFileSync(file, 'utf8') }).map((specifier) => ({
-                file,
-                specifier
-            }))
+        const srcDir = join(PACKAGE_ROOT, 'src');
+        const files = sourceFiles({ dir: srcDir });
+        const imports = files.flatMap((file) =>
+            importsOf({ source: readFileSync(file, 'utf8') }).map((found) => ({ file, ...found }))
         );
 
-        // Assert: the scan sees the entry's own re-export, so it is not vacuous
-        expect(files.length).toBeGreaterThanOrEqual(2);
-        expect(specifiers.map(({ specifier }) => specifier)).toContain('./clock');
-        for (const { file, specifier } of specifiers) {
-            expect(specifier.startsWith('./'), `${file} imports ${specifier}`).toBe(true);
+        // Assert: the scan sees the entry's own re-exports and both externals, so it is not vacuous
+        expect(files.length).toBeGreaterThanOrEqual(10);
+        expect(imports.map(({ specifier }) => specifier)).toEqual(
+            expect.arrayContaining(['./clock', 'zod', '@repo/schemas'])
+        );
+        for (const { file, specifier } of imports) {
+            const isOwnFile =
+                specifier.startsWith('.') &&
+                !relative(srcDir, resolve(file, '..', specifier)).startsWith('..');
+            expect(
+                isOwnFile || ALLOWED_EXTERNAL_IMPORTS.includes(specifier),
+                `${relative(PACKAGE_ROOT, file)} imports ${specifier}`
+            ).toBe(true);
         }
     });
 
-    it('declares no runtime dependency, so it cannot pull in either half', () => {
-        // Arrange
-        const manifest = JSON.parse(
-            readFileSync(resolve(PACKAGE_ROOT, 'package.json'), 'utf8')
-        ) as { dependencies?: Record<string, string>; peerDependencies?: Record<string, string> };
+    it('imports only VerticalEnum from @repo/schemas', () => {
+        const statements = sourceFiles({ dir: join(PACKAGE_ROOT, 'src') }).flatMap((file) =>
+            importsOf({ source: readFileSync(file, 'utf8') })
+                .filter(({ specifier }) => specifier === '@repo/schemas')
+                .map(({ statement }) => statement.replace(/\s+/g, ' '))
+        );
 
-        // Assert
-        expect(Object.keys(manifest.dependencies ?? {})).toEqual([]);
-        expect(Object.keys(manifest.peerDependencies ?? {})).toEqual([]);
+        expect(statements.length).toBeGreaterThan(0);
+        for (const statement of statements) {
+            expect(statement).toBe("import { VerticalEnum } from '@repo/schemas'");
+        }
+    });
+
+    it('declares exactly @repo/schemas and zod as dependencies, and no peer dependency', () => {
+        expect(Object.keys((manifest.dependencies ?? {}) as object).sort()).toEqual(
+            ALLOWED_DEPENDENCIES
+        );
+        expect(Object.keys((manifest.peerDependencies ?? {}) as object)).toEqual([]);
+    });
+
+    it('names neither half nor the database layer in any dependency block', () => {
+        const named = DEPENDENCY_BLOCKS.flatMap((block) =>
+            Object.keys((manifest[block] ?? {}) as object).map((name) => `${block}: ${name}`)
+        );
+
+        expect(named.length).toBeGreaterThan(0);
+        expect(
+            named.filter((entry) => FORBIDDEN_DEPENDENCY.test(entry.split(': ')[1] ?? ''))
+        ).toEqual([]);
     });
 
     it('states in package.json what the package is', () => {
-        // Arrange
-        const manifest = JSON.parse(
-            readFileSync(resolve(PACKAGE_ROOT, 'package.json'), 'utf8')
-        ) as {
-            description: string;
-        };
-
-        // Act / Assert
         expect(manifest.description).toContain(DEFINING_STATEMENT);
     });
 
