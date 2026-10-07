@@ -74,7 +74,7 @@ los AC.
 
 El agente NO improvisa. Frena, deja un comentario en la hoja de Linear con la evidencia (spec
 archivo:línea, fuente archivo:línea) y te avisa. Si hace falta una decisión, va al owner como letra
-nueva de `41-corte-del-mvp/10-decisiones-del-owner.md` (la próxima es **CL**). La spec se corrige en
+nueva de `41-corte-del-mvp/10-decisiones-del-owner.md` (la próxima es **CR**). La spec se corrige en
 la rama de la spec, no en la de la hoja.
 
 ## El worktree de implementación
