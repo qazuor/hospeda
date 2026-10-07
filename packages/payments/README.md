@@ -90,8 +90,8 @@ data**, born as `{ "ids": [] }`, and has two readers:
   GUARD:G14's).
 - No legacy billing library, anywhere in the repo: GUARD:G16
   (`scripts/check-payments-boundary.ts`, `pnpm check:payments-boundary`).
-- The gateway's SDK (`mercadopago`, `@mercadopago/*`) is imported or declared
-  only under `src/adapters/`, never in the fake nor in this package's own
+- The gateway's SDK (`mercadopago`, `@mercadopago/*`) is imported only under
+  `src/adapters/` (never in the fake) and declared only in this package's own
   `package.json`: GUARD:G12 (`scripts/check-sdk-outside-adapter.ts`,
   `pnpm check:sdk-outside-adapter`).
 - No decision comes out of a notice without re-reading by id: GUARD:G17
