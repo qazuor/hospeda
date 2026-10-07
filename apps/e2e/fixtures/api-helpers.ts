@@ -285,8 +285,8 @@ export async function markAdminToursSeen(options: { readonly userId: string }): 
                 '(no such user, or the JSON merge did not land)'
         );
     }
-    // Read-back check, for the same reason `backdateAccommodation` has one: a
-    // fixture that quietly does nothing sends the test it feeds into a state it
+    // Read-back check: a fixture that quietly does nothing sends the test it
+    // feeds into a state it
     // was never set up for, and the resulting failure points anywhere but here.
     for (const tourId of Object.keys(seen)) {
         if (stored[tourId] !== ADMIN_TOUR_SEEN_VERSION) {
