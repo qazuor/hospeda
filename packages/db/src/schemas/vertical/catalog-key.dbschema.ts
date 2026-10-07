@@ -33,7 +33,7 @@ export const catalogKeys = pgTable(
         aggregationStrategy: varchar('aggregation_strategy', { length: 16 }).notNull(),
         /** What happens to the excess when the effective value drops. */
         enforcementStrategy: varchar('enforcement_strategy', { length: 16 }).notNull(),
-        /** `COMERCIAL` or `DE_ACCESO`; the attribute the `G-R3` validation reads. */
+        /** `COMMERCIAL` or `BASE` (spec `COMERCIAL` / `DE_ACCESO`); the attribute the `G-R3` validation reads. */
         keyClass: varchar('key_class', { length: 16 }).notNull()
     },
     (t) => ({

@@ -49,14 +49,17 @@ export type EnforcementStrategy = (typeof ENFORCEMENT_STRATEGIES)[number];
 export const EnforcementStrategySchema = z.enum(ENFORCEMENT_STRATEGIES);
 
 /**
- * Key class (DEC-ENT-005), the attribute `G-R3` reads. Closed list of two:
+ * Key class (DEC-ENT-005, glossary "Clase de una clave"), the attribute `G-R3`
+ * reads. Closed list of two. The code names differ from the spec's Spanish ones
+ * and map 1:1:
  *
- * - `COMERCIAL`: exercising it produces or sustains public presence, or
- *   consumes a limit or a metered quota.
- * - `DE_ACCESO`: exercising it produces no presence and consumes nothing. It
- *   only lets a person exist, recover what is theirs and subscribe again.
+ * - `COMMERCIAL` = spec `COMERCIAL`: exercising it produces or sustains public
+ *   presence, or consumes a limit or a metered quota. Everything sellable.
+ * - `BASE` = spec `DE_ACCESO`: exercising it produces no presence and consumes
+ *   nothing. It only lets a person exist, recover what is theirs and subscribe
+ *   again. Only the two floor keys (`subscribe_to_plan`, `recover_own_listing`).
  */
-export const KEY_CLASSES = ['COMERCIAL', 'DE_ACCESO'] as const;
+export const KEY_CLASSES = ['COMMERCIAL', 'BASE'] as const;
 export type KeyClass = (typeof KEY_CLASSES)[number];
 export const KeyClassSchema = z.enum(KEY_CLASSES);
 

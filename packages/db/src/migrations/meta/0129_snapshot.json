@@ -1,5 +1,5 @@
 {
-  "id": "0135bb3a-1ff2-415f-98c3-48058877bedd",
+  "id": "58c1441d-9283-44a5-b6fb-4a6bf4db5190",
   "prevId": "5a2f1df0-859e-473b-9a38-b57ac1056897",
   "version": "7",
   "dialect": "postgresql",
@@ -26107,7 +26107,7 @@
         },
         "ck_catalog_key_class": {
           "name": "ck_catalog_key_class",
-          "value": "\"catalog_key\".\"key_class\" IN ('COMERCIAL', 'DE_ACCESO')"
+          "value": "\"catalog_key\".\"key_class\" IN ('COMMERCIAL', 'BASE')"
         }
       },
       "isRLSEnabled": false

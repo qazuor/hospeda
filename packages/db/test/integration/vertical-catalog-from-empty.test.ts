@@ -94,17 +94,17 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
         expect(rows).toEqual(expected);
     });
 
-    it('contains the carousel presence key, COMERCIAL', async () => {
+    it('contains the carousel presence key, COMMERCIAL', async () => {
         const { rows } = await getTestPool().query<{ key_class: string; scope: string }>(
             "SELECT key_class, scope FROM catalog_key WHERE key = 'partner_carousel_presence'"
         );
 
-        expect(rows).toEqual([{ key_class: 'COMERCIAL', scope: 'vertical' }]);
+        expect(rows).toEqual([{ key_class: 'COMMERCIAL', scope: 'vertical' }]);
     });
 
-    it('classifies the two floor keys as DE_ACCESO and nothing else as DE_ACCESO', async () => {
+    it('classifies the two floor keys as BASE and nothing else as BASE', async () => {
         const { rows } = await getTestPool().query<{ key: string }>(
-            "SELECT key FROM catalog_key WHERE key_class = 'DE_ACCESO' ORDER BY key"
+            "SELECT key FROM catalog_key WHERE key_class = 'BASE' ORDER BY key"
         );
 
         expect(rows.map((r) => r.key)).toEqual(['recover_own_listing', 'subscribe_to_plan']);

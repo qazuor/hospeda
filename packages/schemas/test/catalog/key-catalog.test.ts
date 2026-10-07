@@ -31,7 +31,7 @@ describe('TEST:V1:2 — every catalog key declares its four attributes', () => {
 
     it('has the closed lists the spec fixes', () => {
         expect([...AGGREGATION_STRATEGIES]).toEqual(['SUM', 'MAX', 'MIN', 'BEST_DECLARED']);
-        expect([...KEY_CLASSES]).toEqual(['COMERCIAL', 'DE_ACCESO']);
+        expect([...KEY_CLASSES]).toEqual(['COMMERCIAL', 'BASE']);
         expect([...KEY_SCOPES]).toEqual(['vertical', 'global']);
     });
 
@@ -73,13 +73,13 @@ describe('TEST:V1:2 — every catalog key declares its four attributes', () => {
     });
 
     it('includes the carousel presence key and both floor keys', () => {
-        expect(getCatalogKey({ key: 'partner_carousel_presence' })?.keyClass).toBe('COMERCIAL');
-        expect(getCatalogKey({ key: 'subscribe_to_plan' })?.keyClass).toBe('DE_ACCESO');
-        expect(getCatalogKey({ key: 'recover_own_listing' })?.keyClass).toBe('DE_ACCESO');
+        expect(getCatalogKey({ key: 'partner_carousel_presence' })?.keyClass).toBe('COMMERCIAL');
+        expect(getCatalogKey({ key: 'subscribe_to_plan' })?.keyClass).toBe('BASE');
+        expect(getCatalogKey({ key: 'recover_own_listing' })?.keyClass).toBe('BASE');
     });
 
-    it('keeps DE_ACCESO for the two floor keys only', () => {
-        const access = CATALOG_KEY_DEFINITIONS.filter((d) => d.keyClass === 'DE_ACCESO').map(
+    it('keeps BASE for the two floor keys only', () => {
+        const access = CATALOG_KEY_DEFINITIONS.filter((d) => d.keyClass === 'BASE').map(
             (d) => d.key
         );
         expect(access.sort()).toEqual(['recover_own_listing', 'subscribe_to_plan']);
