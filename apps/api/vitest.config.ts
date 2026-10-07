@@ -97,7 +97,7 @@ export default defineConfig({
             '@repo/utils': resolve(import.meta.dirname, '../../packages/utils/src'),
             '@repo/config': resolve(import.meta.dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(import.meta.dirname, '../../packages/service-core/src'),
-            // HOS-1352 B1: the contract package (types only today) resolved from
+            // HOS-1352 B1: the contract package resolved from
             // source, like the other @repo/* packages, so no stale dist leaks in.
             '@repo/billing-verticals-contract': resolve(
                 import.meta.dirname,
