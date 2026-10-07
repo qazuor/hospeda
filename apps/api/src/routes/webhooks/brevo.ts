@@ -23,6 +23,11 @@
  * `event` field outside the SPEC-101 §4.4 whitelist are silently skipped
  * — Brevo emits "request", "proxy_open", etc. that we don't care about.
  *
+ * Hard bounces (HOS-1627, AC:U2:12): a `hard_bounce` event is ALSO written as
+ * the idempotent `bounced` row of the address in `notification_log`, which
+ * the email outbox suppression reads. That write happens before the
+ * newsletter forwarding, and its failure answers 503 so Brevo redelivers.
+ *
  * Logging policy: a signature mismatch is logged as a WARN (it's almost
  * certainly a misconfiguration or a probe — not an exception). Other
  * processing errors per-event are warns; we still return 200 to Brevo so
@@ -37,6 +42,8 @@
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { notificationLogModel } from '@repo/db';
+import { recordProviderHardBounce } from '@repo/notifications';
 import { ServiceErrorCode } from '@repo/schemas';
 import { NewsletterTrackingService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -118,6 +125,47 @@ interface RawBrevoEvent {
     readonly date?: string;
     readonly ts?: number;
     readonly ts_event?: number;
+    /** Bounce reason (transactional `hard_bounce` / `soft_bounce` events). */
+    readonly reason?: string;
+}
+
+/**
+ * Turns a `hard_bounce` event into the idempotent `bounced` row of the address
+ * in `notification_log` (HOS-1627, AC:U2:12), so the email outbox suppresses
+ * every later mail to it. Brevo's transactional webhook sends
+ * `{ event: 'hard_bounce', email, 'message-id', reason, ... }`; the marketing
+ * one carries no `message-id`, and the key then falls back to the address.
+ *
+ * @returns `true` when the bounce is recorded (now or by an earlier delivery
+ *   of the same event); `false` when the write failed, so the caller asks
+ *   Brevo to redeliver.
+ */
+async function recordHardBounce(input: {
+    readonly email: string;
+    readonly messageId: string | undefined;
+    readonly raw: RawBrevoEvent;
+}): Promise<boolean> {
+    try {
+        const { inserted } = await recordProviderHardBounce({
+            log: notificationLogModel,
+            provider: 'brevo',
+            recipient: input.email,
+            messageId: input.messageId ?? null,
+            reason: typeof input.raw.reason === 'string' ? input.raw.reason : null,
+            at: parseEventDate(input.raw)
+        });
+        apiLogger.info(
+            { inserted, hasMessageId: Boolean(input.messageId) },
+            'Brevo webhook: hard bounce recorded in notification_log'
+        );
+        return true;
+    } catch (err) {
+        apiLogger.error(
+            { error: err instanceof Error ? err.message : String(err) },
+            'Brevo webhook: failed to record hard bounce, asking Brevo to redeliver'
+        );
+        return false;
+    }
 }
 
 /**
@@ -195,6 +243,17 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
         }
 
         const messageId = raw.messageId ?? raw['message-id'];
+
+        // AC:U2:12 — the suppression record goes first and on its own: the
+        // newsletter tracking below only knows newsletter mail, and a bounce
+        // of any mail must suppress the address. The write is idempotent, so
+        // a 503 that makes Brevo redeliver the batch is safe.
+        if (eventType === 'hard_bounce') {
+            const recorded = await recordHardBounce({ email, messageId, raw });
+            if (!recorded) {
+                return c.json({ error: 'service_unavailable' }, 503);
+            }
+        }
 
         try {
             const result = await tracking.processBrevoWebhookEvent({
