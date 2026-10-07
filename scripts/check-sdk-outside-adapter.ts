@@ -17,17 +17,18 @@
  *   a dynamic `import('…')`, `require('…')`, `require.resolve('…')` or TS
  *   `import x = require('…')`, in any file NOT under
  *   `packages/payments/src/adapters/`;
- * - **in a manifest**: a `package.json` NOT under
- *   `packages/payments/src/adapters/` that declares the SDK in
+ * - **in a manifest**: any `package.json` other than
+ *   `packages/payments/package.json` that declares the SDK in
  *   `dependencies`, `devDependencies`, `peerDependencies` or
  *   `optionalDependencies`, by name or through an npm alias
  *   (`"mp": "npm:mercadopago@2"`).
  *
  * `packages/payments/src/fake/` is NOT exempt: the fake implements the
- * interface without the gateway, by definition. A consequence worth knowing:
- * the payments package's own `package.json` may not declare the SDK either, so
- * an adapter that needs it declares it in a manifest of its own under
- * `packages/payments/src/adapters/` (or speaks HTTP with native fetch).
+ * interface without the gateway, by definition. The payments package's own
+ * `package.json` is the ONE manifest that may declare the SDK: pnpm installs
+ * packages only from `packages/*`, so the adapter can get the SDK from nowhere
+ * else, and the code half still keeps every import of it under
+ * `packages/payments/src/adapters/`.
  *
  * ## What it does NOT see, so a green run is not read as more
  *
@@ -71,6 +72,9 @@ const DEPENDENCY_BLOCKS = [
     'optionalDependencies'
 ] as const;
 
+/** The only manifest allowed to declare the SDK: the payments package's own. */
+export const PAYMENTS_MANIFEST = 'packages/payments/package.json';
+
 /** One offending occurrence. */
 export interface Violation {
     readonly rule: 'G12';
@@ -81,8 +85,9 @@ export interface Violation {
 
 /** What the predicate means. */
 export const RULE_MESSAGE =
-    "GUARD:G12: the payment gateway's SDK (mercadopago, @mercadopago/*) is imported or declared " +
-    'outside packages/payments/src/adapters/. Only the adapter speaks to the gateway; everything else ' +
+    "GUARD:G12: the payment gateway's SDK (mercadopago, @mercadopago/*) is imported outside " +
+    'packages/payments/src/adapters/, or declared in a package.json other than ' +
+    'packages/payments/package.json. Only the adapter speaks to the gateway; everything else ' +
     'goes through the PaymentProvider interface (DEC-ARCH-004, condition A).';
 
 /** One module specifier in an import position. */
@@ -209,7 +214,8 @@ export function scanRepo(args: { readonly root: string }): {
         const isCode = CODE_FILE.test(file);
         if (!isManifest && !isCode) continue;
         if (isCode) scannedCodeFiles += 1;
-        if (file.startsWith(PAYMENTS_ADAPTERS_DIR)) continue;
+        if (isCode && file.startsWith(PAYMENTS_ADAPTERS_DIR)) continue;
+        if (isManifest && file === PAYMENTS_MANIFEST) continue;
         const source = readFileSync(join(args.root, file), 'utf8');
         violations.push(
             ...(isManifest
@@ -250,7 +256,7 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
     }
     lines.push(
         `OK: ${scannedCodeFiles} code file(s) and every package.json scanned; the gateway's SDK appears ` +
-            `only under ${PAYMENTS_ADAPTERS_DIR}.`
+            `imported only under ${PAYMENTS_ADAPTERS_DIR} and declared only in ${PAYMENTS_MANIFEST}.`
     );
     return { exitCode: 0, output: lines.join('\n') };
 }

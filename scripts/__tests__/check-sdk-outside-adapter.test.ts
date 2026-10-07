@@ -54,11 +54,10 @@ const GREEN: Readonly<Record<string, string>> = {
         "// never import 'mercadopago' here\n" +
         "export const provider = 'mercadopago';\n" +
         'export const go = (p: PaymentProvider) => p;\n',
-    // The adapter may speak to the SDK, and declare it in a manifest of its own.
+    // The adapter may import the SDK, and the payments package's own manifest declare it.
     [ADAPTER]:
         "import { MercadoPagoConfig } from 'mercadopago';\nexport const c = MercadoPagoConfig;\n",
-    'packages/payments/src/adapters/mercadopago/package.json': manifest({ mercadopago: '^2.0.0' }),
-    'packages/payments/package.json': manifest(),
+    'packages/payments/package.json': manifest({ mercadopago: '^2.0.0' }),
     'package.json': manifest()
 };
 
@@ -72,7 +71,7 @@ function guardOver({
 }
 
 describe('G12 over a green tree', () => {
-    it('passes: the SDK only in the adapter; the word in a string or a comment is no import', () => {
+    it('passes: imported only in the adapter, declared only by packages/payments/package.json; the word in a string or a comment is no import', () => {
         const { exitCode, output } = guardOver();
         expect(output).toContain('OK:');
         expect(exitCode).toBe(0);
@@ -128,10 +127,11 @@ describe('G12: every import form and every place', () => {
     it.each([
         ['the root package.json', 'package.json', { mercadopago: '^2.0.0' }],
         [
-            "the payments package's own package.json",
-            'packages/payments/package.json',
+            'a manifest nested under the adapters',
+            'packages/payments/src/adapters/mercadopago/package.json',
             { mercadopago: '^2.0.0' }
         ],
+        ['another package.json', 'packages/billing/package.json', { mercadopago: '^2.0.0' }],
         [
             'an app package.json, scoped',
             'apps/web/package.json',
