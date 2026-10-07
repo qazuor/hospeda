@@ -284,7 +284,8 @@ compute_changed_files() {
     # root here produces a guard that reads as covering the file and does not.
     #
     # `--no-renames` keeps every diff line a strict A/M/D with a single path, so
-    # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES) can never be defeated by git emitting an
+    # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES and
+    # EXTERNAL_BASELINE_FILES) can never be defeated by git emitting an
     # `R<score><TAB>old<TAB>new` line that the two-field `read` would collapse
     # into one path string. (diff.renames defaults ON in modern git.)
     git diff --no-renames --name-status "${base}...HEAD" -- \
