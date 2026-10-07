@@ -23,7 +23,7 @@ describe('VerticalEnum', () => {
         for (const value of Object.values(VerticalEnum)) {
             expect(VerticalEnumSchema.safeParse(value).success).toBe(true);
         }
-        for (const value of ['addon', 'commerce_x', '', null, undefined, 1]) {
+        for (const value of ['addon', 'unknown_vertical', '', null, undefined, 1]) {
             expect(VerticalEnumSchema.safeParse(value).success).toBe(false);
         }
     });
