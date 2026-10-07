@@ -1,5 +1,5 @@
 {
-  "id": "f1a44d6a-dbae-4c00-9415-7d8a427e49d2",
+  "id": "58c1441d-9283-44a5-b6fb-4a6bf4db5190",
   "prevId": "5a2f1df0-859e-473b-9a38-b57ac1056897",
   "version": "7",
   "dialect": "postgresql",
@@ -8017,191 +8017,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.email_outbox": {
-      "name": "email_outbox",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "recipient_user_id": {
-          "name": "recipient_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "recipient_email": {
-          "name": "recipient_email",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "template": {
-          "name": "template",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "channel": {
-          "name": "channel",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'email'"
-        },
-        "payload": {
-          "name": "payload",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
-        },
-        "status": {
-          "name": "status",
-          "type": "varchar(20)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "dedup_key": {
-          "name": "dedup_key",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "locked_by": {
-          "name": "locked_by",
-          "type": "varchar(100)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "locked_until": {
-          "name": "locked_until",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "attempts": {
-          "name": "attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "provider_message_id": {
-          "name": "provider_message_id",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_error": {
-          "name": "last_error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "email_outbox_dedup_key_uidx": {
-          "name": "email_outbox_dedup_key_uidx",
-          "columns": [
-            {
-              "expression": "dedup_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "email_outbox_status_locked_until_idx": {
-          "name": "email_outbox_status_locked_until_idx",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "locked_until",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "email_outbox_recipient_user_idx": {
-          "name": "email_outbox_recipient_user_idx",
-          "columns": [
-            {
-              "expression": "recipient_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "email_outbox_recipient_user_id_users_id_fk": {
-          "name": "email_outbox_recipient_user_id_users_id_fk",
-          "tableFrom": "email_outbox",
-          "tableTo": "users",
-          "columnsFrom": [
-            "recipient_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "email_outbox_status_check": {
-          "name": "email_outbox_status_check",
-          "value": "\"email_outbox\".\"status\" IN ('pending', 'processing', 'sent', 'failed', 'retry')"
-        },
-        "email_outbox_processing_lease_check": {
-          "name": "email_outbox_processing_lease_check",
-          "value": "\"email_outbox\".\"status\" <> 'processing' OR (\"email_outbox\".\"locked_by\" IS NOT NULL AND \"email_outbox\".\"locked_until\" IS NOT NULL)"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.entity_comments": {
@@ -26225,6 +26040,110 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.catalog_key": {
+      "name": "catalog_key",
+      "schema": "",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "varchar(64)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scope": {
+          "name": "scope",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "aggregation_strategy": {
+          "name": "aggregation_strategy",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enforcement_strategy": {
+          "name": "enforcement_strategy",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key_class": {
+          "name": "key_class",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_catalog_key_kind": {
+          "name": "ck_catalog_key_kind",
+          "value": "\"catalog_key\".\"kind\" IN ('entitlement', 'limit')"
+        },
+        "ck_catalog_key_scope": {
+          "name": "ck_catalog_key_scope",
+          "value": "\"catalog_key\".\"scope\" IN ('vertical', 'global')"
+        },
+        "ck_catalog_key_aggregation_strategy": {
+          "name": "ck_catalog_key_aggregation_strategy",
+          "value": "\"catalog_key\".\"aggregation_strategy\" IN ('SUM', 'MAX', 'MIN', 'BEST_DECLARED')"
+        },
+        "ck_catalog_key_enforcement_strategy": {
+          "name": "ck_catalog_key_enforcement_strategy",
+          "value": "\"catalog_key\".\"enforcement_strategy\" IN ('ARCHIVE', 'UNPUBLISH', 'DISABLE', 'NONE')"
+        },
+        "ck_catalog_key_class": {
+          "name": "ck_catalog_key_class",
+          "value": "\"catalog_key\".\"key_class\" IN ('COMMERCIAL', 'BASE')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.vertical": {
+      "name": "vertical",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "varchar(32)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "activation_event": {
+          "name": "activation_event",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_vertical_id": {
+          "name": "ck_vertical_id",
+          "value": "\"vertical\".\"id\" IN ('accommodation', 'gastronomy', 'experience', 'tourist', 'partner')"
+        },
+        "ck_vertical_activation_event": {
+          "name": "ck_vertical_activation_event",
+          "value": "\"vertical\".\"activation_event\" IS NULL OR \"vertical\".\"activation_event\" IN ('listing_published', 'start_button_pressed')"
+        }
+      },
       "isRLSEnabled": false
     }
   },

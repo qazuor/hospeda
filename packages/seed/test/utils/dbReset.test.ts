@@ -13,10 +13,23 @@
  * already does — otherwise every `--reset` would wipe the applied-migrations
  * record and every seed data-migration would silently re-run from scratch.
  */
+import { REFERENCE_TABLES } from '@repo/db';
 import { describe, expect, it } from 'vitest';
 import { partitionTablesForReset } from '../../src/utils/dbReset.js';
 
 describe('partitionTablesForReset', () => {
+    it('treats the shared REFERENCE_TABLES constant as always excluded', () => {
+        // Arrange
+        const discoveredTables = ['users', ...REFERENCE_TABLES];
+
+        // Act
+        const result = partitionTablesForReset({ discoveredTables, exclude: [] });
+
+        // Assert
+        expect([...REFERENCE_TABLES].sort()).toEqual(['catalog_key', 'vertical']);
+        expect(result.tablesToReset).toEqual(['users']);
+    });
+
     it('excludes seed_migrations even when the caller does not ask to exclude it', () => {
         // Arrange
         const discoveredTables = ['users', 'seed_migrations', 'accommodations'];
@@ -28,6 +41,18 @@ describe('partitionTablesForReset', () => {
         expect(result.tablesToReset).not.toContain('seed_migrations');
         expect(result.tablesSkipped).toContain('seed_migrations');
         expect(result.tablesToReset).toEqual(['users', 'accommodations']);
+    });
+
+    it('keeps the migration-written reference tables vertical and catalog_key out of the reset (HOS-1430)', () => {
+        // Arrange
+        const discoveredTables = ['users', 'vertical', 'catalog_key', 'accommodations'];
+
+        // Act
+        const result = partitionTablesForReset({ discoveredTables, exclude: [] });
+
+        // Assert
+        expect(result.tablesToReset).toEqual(['users', 'accommodations']);
+        expect(result.tablesSkipped).toEqual(['vertical', 'catalog_key']);
     });
 
     it('excludes drizzle_migrations alongside seed_migrations (both always-excluded)', () => {

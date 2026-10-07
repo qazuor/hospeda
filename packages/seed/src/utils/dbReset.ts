@@ -1,4 +1,4 @@
-import { getDb } from '@repo/db';
+import { getDb, REFERENCE_TABLES } from '@repo/db';
 import { sql } from 'drizzle-orm';
 import { STATUS_ICONS } from './icons.js';
 import { IdMapper } from './idMapper.js';
@@ -22,10 +22,15 @@ import { logger } from './logger.js';
  *   real exclusion entry — without it, `--reset` would wipe the
  *   applied-migrations record and every seed data-migration would silently
  *   re-run from scratch on the next seed.
+ * - `REFERENCE_TABLES` (HOS-1430, `vertical` and `catalog_key`): reference rows written BY THE
+ *   STRUCTURAL MIGRATION itself, not by any seed. Truncating them would leave
+ *   a freshly reset database with no verticals and no keys, and nothing
+ *   afterwards re-inserts them (`db:migrate` considers the migration applied).
  */
 const ALWAYS_EXCLUDE_TABLES: ReadonlySet<string> = new Set([
     'drizzle_migrations',
-    'seed_migrations'
+    'seed_migrations',
+    ...REFERENCE_TABLES
 ]);
 
 /**
