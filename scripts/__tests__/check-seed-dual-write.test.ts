@@ -108,7 +108,7 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         // Arrange
         const changed = [
             'M\tpackages/seed/src/data/feature/001-foo.json',
-            'M\tpackages/seed/src/data-migrations/0001-billing-plans-ai-consumer-search-limits.ts'
+            'M\tpackages/seed/src/data-migrations/0001-some-existing-migration.ts'
         ].join('\n');
 
         // Act
@@ -130,11 +130,6 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
         expect(result.exitCode).toBe(0);
         expect(result.stdout).toContain('OK (opt-out)');
     });
-
-    // The "guards billing plan/limit config constants" case was retired with
-    // HOS-1416: `packages/billing/src/config` (the plan catalog those paths
-    // pointed at) was demolished, so BILLING_CONFIG_FILES is empty and a diff
-    // there can no longer occur.
 
     it('guards pointOfInterest JSON changes (HOS-113 T-027, R-5)', () => {
         // Arrange
@@ -294,17 +289,17 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
     it('a rename-shaped diff line (R<score>\\told\\tnew) does NOT match an exact-guarded file', () => {
         // Documents WHY compute_changed_files passes `--no-renames`: the two-field
         // `IFS=$'\t' read -r status path` collapses "old<TAB>new" into `path`, so a
-        // rename line can never equal a bare INLINE_CONSTANT_FILES/BILLING_CONFIG_FILES
+        // rename line can never equal a bare INLINE_CONSTANT_FILES
         // name. With --no-renames git emits clean A/D pairs instead, keeping the
         // exact-match guards reliable. If this test ever starts FAILING (exit 1),
         // the parsing changed and --no-renames may no longer be load-bearing.
         const renameLine =
-            'R100\tpackages/billing/src/config/plans.config.ts\tpackages/billing/src/config/plans2.config.ts';
+            'R100\tpackages/seed/src/required/rolePermissions.seed.ts\tpackages/seed/src/required/rolePermissions2.seed.ts';
 
         // Act
         const result = runGuard({ CHANGED_FILES_OVERRIDE: renameLine, MARKER_TEXT_OVERRIDE: '' });
 
-        // Assert: the collapsed path does not equal 'plans.config.ts' → not guarded.
+        // Assert: the collapsed path does not equal 'rolePermissions.seed.ts' → not guarded.
         expect(result.exitCode).toBe(0);
     });
 
