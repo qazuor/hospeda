@@ -94,7 +94,7 @@ pnpm db:generate      # Generate migration from schema changes
 pnpm db:studio        # Open Drizzle Studio
 pnpm db:seed          # Seed database
 pnpm db:fresh         # Reset + migrate + seed
-pnpm db:fresh-dev     # Reset + push schema + seed (dev shortcut)
+pnpm db:fresh-dev     # Reset + migrate + extras + seed + test users (dev shortcut; committed migrations only)
 pnpm db:seed:ready-user <email>  # Mark one user ready (skip onboarding friction) - SPEC-264
 
 # Build

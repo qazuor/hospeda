@@ -350,15 +350,22 @@ Iterate freely in dev — push resets the DB to match the TS schema immediately:
 
 ```bash
 pnpm db:push          # Push schema directly to local DB (no migration file — DEV ONLY)
-pnpm db:fresh-dev     # Reset + push + seed (the normal local dev loop)
+pnpm db:fresh-dev     # Reset + migrate + extras + seed (the normal local dev loop)
 ```
+
+`db:fresh-dev` builds the database with `db:migrate`, not `push` (HOS-1431, AC:V1:4(d)): the
+reference rows of `catalog_key` and `vertical` travel inside migration 0129, so a pushed schema
+would come up without them. It applies **committed** migrations only — a schema change you have
+not generated yet is invisible to it. While iterating on an uncommitted schema change, use
+`db:push` on top, then `db:generate` before the PR.
 
 `push` is **dev-only** and must NEVER be run against a VPS. It drops objects the migration
 history depends on and cannot be rolled back.
 
 ### Close-of-work workflow (mandatory before a schema PR)
 
-1. Iterate freely in dev with `push` / `db:fresh-dev`.
+1. Iterate freely in dev with `push`; rebuild from scratch with `db:fresh-dev` once the
+   migration is generated.
 2. Run `pnpm --filter @repo/db db:generate` and review the generated file.
 3. If the column type change requires a data conversion, hand-edit the generated `.sql` to add
    the `USING` expression (Drizzle won't invent it).

@@ -248,6 +248,21 @@ aplicó.
 | CO | si `TEST:U1:22` exige que el job `guards` corra literalmente `pnpm check:guards` | la aplicada | sí | **se acepta la convención del repo: un paso del job `guards` por guard**, y el mismo guard listado también en `check:guards`. El test de salida (`scripts/__tests__/u1-exit-ci-wiring.test.ts`) comprueba las dos cosas para `G8` |
 | CP | qué pasa con las filas vivas que midió BT en producción antes del merge de `U1` | se borran en el corte | sí | **se borran en el corte, como ya hace la migración `0126`**: las 39 filas de `role_permission` y las 3 de `user_role_audit`. Medido el 2026-10-07 con `hops psql --target=prod`, sólo lectura y contando: `user_role` con el rol de dueño de comercio, 0; `role_permission` con ese rol, 27, y con sus siete permisos, 14 (unión, 39); `user_permission` con esos permisos, 0; `user_role_audit` con ese rol, 3; la tabla de contactos de alta no existe en producción (la borró la migración `0098`). Ninguna de esas tablas tiene `deleted_at`, así que todas sus filas son vivas |
 
+## Lote CQ (2026-10-07)
+
+Respuesta del owner, 2026-10-07, al hueco que encontró la revisión de `HOS-1423` (`U2.2`, PR
+#3488): ninguna hoja del árbol convierte un rebote duro del proveedor en la fila `bounced` de la
+bitácora que lee la supresión. `EmailHardBounceError` sólo se lanza en los tests;
+`BrevoEmailTransport.send` envuelve todo error en un `Error` genérico; y el webhook de Brevo
+(`apps/api/src/routes/webhooks/brevo.ts`) reenvía `hard_bounce` al seguimiento del newsletter y no
+escribe la bitácora. Hoy un rebote real termina como reintentos agotados después de cinco intentos,
+y las ramas de rebote duro de `AC:U2:4` y `AC:U2:7` sólo se prueban con errores inyectados. No era
+una pregunta con opciones: el owner aprobó la hoja nueva `HOS-1627` con este alcance.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| CQ | quién convierte un rebote duro real del proveedor en la fila `bounced` de la bitácora, de la que dependen la supresión (`AC:U2:7`), el escalado (`AC:U2:4`) y `B3` | la aprobada | sí | **`U2`, con una hoja nueva antes de la salida (`HOS-1627`, `AC:U2:12`)**: el transport traduce a `EmailHardBounceError` el rebote duro que detecta de forma sincrónica, y el webhook de Brevo traduce el evento de rebote duro en una fila `bounced` para ese destinatario, de forma idempotente. El test entra un rebote real por el webhook y comprueba que el próximo envío, de cualquier clase, queda suprimido; sacar el mapeo lo pone en rojo. Qué rechazo sincrónico es un rebote duro y si el evento de los correos transaccionales llega al mismo webhook con la misma forma no se dan por hechos: los confirma el PR de la hoja |
+
 ## Resultado del corte
 
 - **Al corte, enteras (17)**: `U1`–`U3`, `V1`–`V6`, `B1`–`B7`, `B11`.
