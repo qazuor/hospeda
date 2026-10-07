@@ -5,7 +5,7 @@
     "type": "module",
     "sideEffects": false,
     "license": "MIT",
-    "description": "The single place where verticals and billing talk to each other: neither imports the other outside this package. Types only, no runtime values; V1 and B1 fill it.",
+    "description": "The single place where verticals and billing talk to each other: neither imports the other outside this package. The two interfaces, their validation schemas and the clock interface; the simulators and shared case sets live under the ./testing subpath, which no production build imports. No implementation lives here.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
@@ -17,6 +17,16 @@
             "require": {
                 "types": "./dist/index.d.cts",
                 "default": "./dist/index.cjs"
+            }
+        },
+        "./testing": {
+            "import": {
+                "types": "./dist/testing/index.d.ts",
+                "default": "./dist/testing/index.js"
+            },
+            "require": {
+                "types": "./dist/testing/index.d.cts",
+                "default": "./dist/testing/index.cjs"
             }
         }
     },
@@ -34,6 +44,10 @@
         "format": "biome format --write .",
         "check": "biome check --write .",
         "clean": "rm -rf node_modules dist"
+    },
+    "dependencies": {
+        "@repo/schemas": "workspace:*",
+        "zod": "^4.0.8"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
