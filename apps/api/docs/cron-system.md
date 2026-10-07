@@ -870,6 +870,7 @@ await sendMetrics(metrics);
 | `trial-expiry` | `0 2 * * *` | Expire trials that have passed their end date | 5 min |
 | `webhook-retry` | `0 */1 * * *` | Retry failed webhook events from dead letter queue | 5 min |
 | `notification-schedule` | `0 8 * * *` | Send scheduled notifications for trials and renewals | 2 min |
+| `email-outbox-sender` | `* * * * *` | Send queued `email_outbox` rows: recover expired leases, suppress, send, log each attempt, escalate undeliverable transactional mail (HOS-1423) | 55 s |
 | `addon-expiry` | `0 5 * * *` | Process expired add-ons and send warnings | 2 min |
 | `exchange-rate-fetch` | `0 6 * * *` | Fetch latest exchange rates from external providers | 2 min |
 | `dunning` | `0 3 * * *` | Process dunning for past-due subscriptions (send reminders, escalate) | 5 min |
@@ -1040,6 +1041,55 @@ await sendMetrics(metrics);
 - Uses in-memory `sentNotifications` Set to prevent duplicates within same run
 - Idempotency key format: `${type}:${customerId}:${YYYY-MM-DD}`
 - Fire-and-forget pattern - failures are logged but don't stop processing
+
+---
+
+### email-outbox-sender
+
+**File:** `apps/api/src/cron/jobs/email-outbox-sender.job.ts` (wiring) and
+`packages/notifications/src/services/outbox/` (the batch and the suppression evaluator).
+
+**Schedule:** every minute (`* * * * *`). Lease of a claimed row: 5 minutes. Batch: 50 rows.
+Both are code constants (`EMAIL_OUTBOX_SENDER_SCHEDULE`, `EMAIL_OUTBOX_LEASE_MS`,
+`EMAIL_OUTBOX_BATCH_SIZE`), not env vars.
+
+**Purpose:** the sending half of the HOS-1352 unit `U2` outbox. A domain transition enqueues a
+row in `email_outbox` inside its own transaction; this job sends it outside.
+
+**What it does, per run** (`now` is `ctx.startedAt`, used for every lease, window and record):
+
+1. `recoverExpired` — every `processing` row whose lease expired goes back to `pending`.
+2. `claim` — up to 50 `pending`/`retry` rows move to `processing` with this run as owner
+   (`FOR UPDATE SKIP LOCKED`, so parallel runs never share a row).
+3. **Suppression, in order** (NUCLEO/07 §4.2), evaluated by the pure
+   `evaluateOutboxSuppression`:
+   1. hard bounce (a `bounced` row for the address in `notification_log`) — suppresses
+      everything, transactional included;
+   2. deleted account — `users.deleted_at` earlier than the row's `created_at` (a row enqueued
+      before the deletion still goes out, to the address it captured);
+   3. opt-out (`PreferenceService`) — commercial only;
+   4. daily cap — commercial only, **1** sent commercial mail per recipient in a **rolling 24 h**
+      window (becomes the Buenos Aires calendar day in U2.3).
+
+   The class comes from `OUTBOX_TEMPLATE_CLASS`: only the five post-trial win-back templates are
+   commercial; every other template, including an unknown one, is transactional.
+4. Render (`OUTBOX_MAIL_RENDERERS`, empty until the units that enqueue register theirs) and send.
+5. Record **one** `notification_log` row per attempt (`sent`, `failed`, `bounced`), or one
+   `suppressed` row. `notification_log` is the only attempt record; `email_outbox` is queue
+   state; the Redis `RetryService` is not used.
+
+**Failures:** a refused send returns the row to `retry`; the fifth refused attempt
+(`EMAIL_OUTBOX_CONSTANTS.MAX_ATTEMPTS`) leaves it `failed`. A hard bounce leaves it `failed` at
+once. "Undeliverable" is `failed` plus a `last_error` marker: `undeliverable:retries_exhausted`
+or `undeliverable:hard_bounce`; a suppressed row carries `suppressed:<cause>`.
+
+**Escalation:** a **transactional** mail that is undeliverable (retries exhausted or hard
+bounce) writes an extra `notification_log` row with status `undeliverable` and is logged with
+`capture: true` (Sentry) on the cron logger. It never blocks the domain transaction that
+enqueued it. The `domain_event` record of it is U2.3.
+
+**Without `HOSPEDA_EMAIL_API_KEY`:** the run only releases expired leases and leaves the queue
+untouched.
 
 ---
 
