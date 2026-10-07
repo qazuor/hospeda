@@ -37,6 +37,8 @@ ALTER TABLE "experiences" DROP COLUMN "featured_by_entitlement";--> statement-br
 ALTER TABLE "gastronomies" DROP COLUMN "is_featured";--> statement-breakpoint
 ALTER TABLE "gastronomies" DROP COLUMN "featured_by_entitlement";--> statement-breakpoint
 ALTER TABLE "owner_promotions" DROP COLUMN "plan_restricted";--> statement-breakpoint
+-- HOS-1419: a partner that is publicly ACTIVE only because nobody had flipped it while it stopped paying would come out of this migration published and free. Before the payment state disappears, take every ACTIVE partner whose subscription is not active offline (it stays INACTIVE until it is reactivated).
+UPDATE "partners" SET "lifecycle_state" = 'INACTIVE' WHERE "lifecycle_state" = 'ACTIVE' AND "subscription_status" <> 'active' AND "deleted_at" IS NULL;--> statement-breakpoint
 ALTER TABLE "partners" DROP COLUMN "subscription_status";--> statement-breakpoint
 ALTER TABLE "partners" DROP COLUMN "plan_id";--> statement-breakpoint
 ALTER TABLE "partners" DROP COLUMN "subscription_id";--> statement-breakpoint

@@ -8,11 +8,15 @@
 //     permission values, next to rows that must survive;
 //   - a `partners` row with the six billing columns populated, plus its
 //     alliance window (`starts_at` / `ends_at`);
+//   - ACTIVE partners whose subscription is NOT active (one live, one
+//     soft-deleted), which the migration must take offline before the payment
+//     state disappears — except the soft-deleted one;
 //   - a `billing_notification_log` row,
 //
 // then applies `0128_*`. It must remove those permission rows and columns,
 // keep the unrelated grants, leave `starts_at` / `ends_at` exactly as they were,
-// and carry the notification log row over to `notification_log`.
+// carry the notification log row over to `notification_log`, and take the unpaid
+// ACTIVE partner offline.
 //
 // Like `old-grouping-over-data.test.ts`, this file provisions and tears down
 // its OWN database so it can stand on the pre-migration side of history.
@@ -36,6 +40,8 @@ const TARGET_PREFIX = '0128_';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
 const PARTNER_ID = '22222222-2222-4222-8222-222222222222';
+const UNPAID_PARTNER_ID = '55555555-5555-4555-8555-555555555555';
+const DELETED_UNPAID_PARTNER_ID = '66666666-6666-4666-8666-666666666666';
 const STARTS_AT = '2026-03-01T12:00:00.000Z';
 const ENDS_AT = '2027-03-01T12:00:00.000Z';
 
@@ -127,6 +133,18 @@ beforeAll(async () => {
         [PARTNER_ID, STARTS_AT, ENDS_AT]
     );
     await db.query(
+        `INSERT INTO partners (id, slug, name, type, tier, subscription_status, lifecycle_state)
+         VALUES ($1, 'unpaid-partner', 'Unpaid Partner', 'business', 'gold', 'past_due', 'ACTIVE')`,
+        [UNPAID_PARTNER_ID]
+    );
+    await db.query(
+        `INSERT INTO partners
+             (id, slug, name, type, tier, subscription_status, lifecycle_state, deleted_at)
+         VALUES ($1, 'deleted-unpaid-partner', 'Deleted Unpaid Partner', 'business', 'gold',
+                 'pending', 'ACTIVE', '2026-06-01T00:00:00Z')`,
+        [DELETED_UNPAID_PARTNER_ID]
+    );
+    await db.query(
         `INSERT INTO billing_notification_log ("type", "channel", "recipient", "subject", "status", "metadata")
          VALUES ('trial_ending', 'email', 'owner@example.test', 'Pre-rename row', 'sent', '{"idempotencyKey":"k-1"}'::jsonb)`
     );
@@ -180,6 +198,20 @@ describe('TEST:U1:14 — old billing untangled over live-style data', () => {
         expect(rows.rowCount).toBe(1);
         expect(rows.rows[0]?.starts_at.toISOString()).toBe(STARTS_AT);
         expect(rows.rows[0]?.ends_at.toISOString()).toBe(ENDS_AT);
+    });
+
+    it('takes an ACTIVE partner whose subscription is not active offline', async () => {
+        const rows = await db.query<{ id: string; lifecycle_state: string }>(
+            `SELECT id, lifecycle_state::text AS lifecycle_state FROM partners WHERE id = ANY($1)`,
+            [[PARTNER_ID, UNPAID_PARTNER_ID, DELETED_UNPAID_PARTNER_ID]]
+        );
+        const byId = new Map(rows.rows.map((row) => [row.id, row.lifecycle_state]));
+
+        expect(byId.get(UNPAID_PARTNER_ID), 'unpaid ACTIVE partner').toBe('INACTIVE');
+        expect(byId.get(PARTNER_ID), 'paying ACTIVE partner').toBe('ACTIVE');
+        expect(byId.get(DELETED_UNPAID_PARTNER_ID), 'soft-deleted partner is left alone').toBe(
+            'ACTIVE'
+        );
     });
 
     it('drops the two partner billing enum types', async () => {
