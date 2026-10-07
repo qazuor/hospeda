@@ -77,6 +77,7 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
             const result = await model.searchWithRelations(
                 {
                     sorts: [{ field: 'mostSaved', order: 'desc' }],
+                    featuredFirst: true,
                     pageSize: 10
                 },
                 tx

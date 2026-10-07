@@ -15,8 +15,9 @@
 //
 // then applies `0128_*`. It must remove those permission rows and columns,
 // keep the unrelated grants, leave `starts_at` / `ends_at` exactly as they were,
-// carry the notification log row over to `notification_log`, and take the unpaid
-// ACTIVE partner offline.
+// carry the notification log row over to `notification_log`, take the unpaid
+// ACTIVE partner offline, and keep `featured_by_entitlement` (owner decision:
+// only the admin-curated `is_featured` goes).
 //
 // Like `old-grouping-over-data.test.ts`, this file provisions and tears down
 // its OWN database so it can stand on the pre-migration side of history.
@@ -212,6 +213,22 @@ describe('TEST:U1:14 — old billing untangled over live-style data', () => {
         expect(byId.get(DELETED_UNPAID_PARTNER_ID), 'soft-deleted partner is left alone').toBe(
             'ACTIVE'
         );
+    });
+
+    it('keeps featured_by_entitlement and drops only is_featured on the three verticals', async () => {
+        const columns = await db.query<{ table_name: string; column_name: string }>(
+            `SELECT table_name, column_name FROM information_schema.columns
+             WHERE table_schema = 'public'
+               AND table_name IN ('accommodations', 'gastronomies', 'experiences')
+               AND column_name IN ('is_featured', 'featured_by_entitlement')
+             ORDER BY 1, 2`
+        );
+
+        expect(columns.rows).toEqual([
+            { table_name: 'accommodations', column_name: 'featured_by_entitlement' },
+            { table_name: 'experiences', column_name: 'featured_by_entitlement' },
+            { table_name: 'gastronomies', column_name: 'featured_by_entitlement' }
+        ]);
     });
 
     it('drops the two partner billing enum types', async () => {

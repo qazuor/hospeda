@@ -13,16 +13,11 @@ CREATE TYPE "public"."permission_enum" AS ENUM('accommodation.create', 'accommod
 ALTER TABLE "role_permission" ALTER COLUMN "permission" SET DATA TYPE "public"."permission_enum" USING "permission"::"public"."permission_enum";--> statement-breakpoint
 ALTER TABLE "user_permission" ALTER COLUMN "permission" SET DATA TYPE "public"."permission_enum" USING "permission"::"public"."permission_enum";--> statement-breakpoint
 DROP INDEX "accommodations_isFeatured_idx";--> statement-breakpoint
-DROP INDEX "accommodations_featuredByEntitlement_idx";--> statement-breakpoint
-DROP INDEX "accommodations_visibility_featuredByEntitlement_idx";--> statement-breakpoint
-DROP INDEX "accommodations_destinationId_featuredByEntitlement_visibility_idx";--> statement-breakpoint
 DROP INDEX "accommodations_visibility_isFeatured_idx";--> statement-breakpoint
 DROP INDEX "accommodations_destinationId_isFeatured_visibility_idx";--> statement-breakpoint
 DROP INDEX "experiences_isFeatured_idx";--> statement-breakpoint
-DROP INDEX "experiences_featuredByEntitlement_idx";--> statement-breakpoint
 DROP INDEX "experiences_hasActiveSubscription_lifecycleState_idx";--> statement-breakpoint
 DROP INDEX "gastronomies_isFeatured_idx";--> statement-breakpoint
-DROP INDEX "gastronomies_featuredByEntitlement_idx";--> statement-breakpoint
 DROP INDEX "ownerPromotions_planRestricted_idx";--> statement-breakpoint
 DROP INDEX "partners_subscriptionStatus_idx";--> statement-breakpoint
 DROP INDEX "partners_paymentReviewState_idx";--> statement-breakpoint
@@ -30,12 +25,9 @@ DROP INDEX "partners_subscriptionStatus_lifecycleState_idx";--> statement-breakp
 -- The idempotency index already exists on live databases (created by the deleted extras/004 under the same name) and travels with the rename; IF NOT EXISTS makes it a no-op there and creates it on a fresh database.
 CREATE UNIQUE INDEX IF NOT EXISTS "idx_notification_log_idempotency_key" ON "notification_log" USING btree (("metadata"->>'idempotencyKey')) WHERE "notification_log"."metadata"->>'idempotencyKey' IS NOT NULL;--> statement-breakpoint
 ALTER TABLE "accommodations" DROP COLUMN "is_featured";--> statement-breakpoint
-ALTER TABLE "accommodations" DROP COLUMN "featured_by_entitlement";--> statement-breakpoint
 ALTER TABLE "experiences" DROP COLUMN "has_active_subscription";--> statement-breakpoint
 ALTER TABLE "experiences" DROP COLUMN "is_featured";--> statement-breakpoint
-ALTER TABLE "experiences" DROP COLUMN "featured_by_entitlement";--> statement-breakpoint
 ALTER TABLE "gastronomies" DROP COLUMN "is_featured";--> statement-breakpoint
-ALTER TABLE "gastronomies" DROP COLUMN "featured_by_entitlement";--> statement-breakpoint
 ALTER TABLE "owner_promotions" DROP COLUMN "plan_restricted";--> statement-breakpoint
 -- HOS-1419: a partner that is publicly ACTIVE only because nobody had flipped it while it stopped paying would come out of this migration published and free. Before the payment state disappears, take every ACTIVE partner whose subscription is not active offline (it stays INACTIVE until it is reactivated).
 UPDATE "partners" SET "lifecycle_state" = 'INACTIVE' WHERE "lifecycle_state" = 'ACTIVE' AND "subscription_status" <> 'active' AND "deleted_at" IS NULL;--> statement-breakpoint

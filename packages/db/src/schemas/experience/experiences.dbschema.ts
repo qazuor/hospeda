@@ -262,6 +262,38 @@ export const experiences = pgTable(
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('DRAFT'),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
+        /**
+         * Denormalized billing-state flag (HOS-1286) — mirror of
+         * `accommodations.featured_by_entitlement`. True while a
+         * `visibility-boost-experience-*` addon purchase grants an active
+         * FEATURED_LISTING entitlement for THIS listing. Written only by the
+         * billing sync primitives, never by admin curation. Since HOS-1419
+         * dropped the admin-curated `is_featured` column it is the ONLY featuring
+         * source: the public `isFeatured` value is derived from it in the PUBLIC
+         * routes only (`resolvePublicIsFeatured`).
+         *
+         * **Only one source feeds it, unlike accommodation.** No experience plan
+         * grants FEATURED_LISTING (the experience entitlement config grants
+         * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
+         * column has exactly one writer — the addon — where accommodation has
+         * two (plan owner-wide + addon per-listing).
+         *
+         * ---
+         * ## Why a denormalized column rather than deriving on read
+         *
+         * The honest argument FOR deriving (joining
+         * `featured_listing_addon_grants` → `billing_addon_purchases` per public
+         * read) is not performance: **a derived value cannot desync**, while this
+         * column needs sync primitives and a reconcile cron — more code, and more
+         * surface where the stored state can lie.
+         *
+         * It still loses because `accommodations` already denormalizes: deriving
+         * here would leave TWO mechanisms answering one question, the asymmetry
+         * HOS-1257 exists to close. The full argument, and the note that the
+         * right future question is "should BOTH derive?", is recorded once on
+         * `gastronomies.featuredByEntitlement`.
+         */
+        featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
         // Denormalized aggregate stats (updated by trigger / service)
         reviewsCount: integer('reviews_count').notNull().default(0),
         /** Average rating across all review criteria (0.00–5.00). mode:'number' for JS coercion. */
@@ -283,6 +315,11 @@ export const experiences = pgTable(
             table.destinationId
         ),
         experiences_visibility_idx: index('experiences_visibility_idx').on(table.visibility),
+        // HOS-1286: parallel index for featuredByEntitlement — see the twin on
+        // `gastronomies` and the accommodations pair it mirrors.
+        experiences_featuredByEntitlement_idx: index('experiences_featuredByEntitlement_idx').on(
+            table.featuredByEntitlement
+        ),
         experiences_type_idx: index('experiences_type_idx').on(table.type),
         experiences_ownerId_idx: index('experiences_ownerId_idx').on(table.ownerId),
         experiences_deletedAt_idx: index('experiences_deletedAt_idx').on(table.deletedAt),

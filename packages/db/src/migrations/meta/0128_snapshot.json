@@ -113,6 +113,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "featured_by_entitlement": {
+          "name": "featured_by_entitlement",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "show_external_reputation": {
           "name": "show_external_reputation",
           "type": "boolean",
@@ -284,6 +291,69 @@
           "columns": [
             {
               "expression": "is_verified",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_featuredByEntitlement_idx": {
+          "name": "accommodations_featuredByEntitlement_idx",
+          "columns": [
+            {
+              "expression": "featured_by_entitlement",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_visibility_featuredByEntitlement_idx": {
+          "name": "accommodations_visibility_featuredByEntitlement_idx",
+          "columns": [
+            {
+              "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "featured_by_entitlement",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_destinationId_featuredByEntitlement_visibility_idx": {
+          "name": "accommodations_destinationId_featuredByEntitlement_visibility_idx",
+          "columns": [
+            {
+              "expression": "destination_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "featured_by_entitlement",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "visibility",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -10797,6 +10867,13 @@
           "notNull": true,
           "default": "'PENDING'"
         },
+        "featured_by_entitlement": {
+          "name": "featured_by_entitlement",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "reviews_count": {
           "name": "reviews_count",
           "type": "integer",
@@ -10877,6 +10954,21 @@
           "columns": [
             {
               "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "experiences_featuredByEntitlement_idx": {
+          "name": "experiences_featuredByEntitlement_idx",
+          "columns": [
+            {
+              "expression": "featured_by_entitlement",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -11616,6 +11708,13 @@
           "notNull": true,
           "default": "'PENDING'"
         },
+        "featured_by_entitlement": {
+          "name": "featured_by_entitlement",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
         "reviews_count": {
           "name": "reviews_count",
           "type": "integer",
@@ -11696,6 +11795,21 @@
           "columns": [
             {
               "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gastronomies_featuredByEntitlement_idx": {
+          "name": "gastronomies_featuredByEntitlement_idx",
+          "columns": [
+            {
+              "expression": "featured_by_entitlement",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

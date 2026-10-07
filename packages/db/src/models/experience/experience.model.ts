@@ -15,6 +15,7 @@ interface ExperienceSearchInput {
     readonly destinationId?: string;
     readonly ownerId?: string;
     readonly type?: string;
+    readonly isFeatured?: boolean;
     readonly page?: number;
     readonly pageSize?: number;
 }
@@ -104,6 +105,11 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
                 whereClauses.push(
                     eq(experiences.type, params.type as typeof experiences.type._.data)
                 );
+            }
+            if (params.isFeatured !== undefined) {
+                // `isFeatured` is the public name; its only source is
+                // `featuredByEntitlement` since HOS-1419 dropped `is_featured`.
+                whereClauses.push(eq(experiences.featuredByEntitlement, params.isFeatured));
             }
             if (params.q) {
                 whereClauses.push(safeIlike(experiences.name, params.q));

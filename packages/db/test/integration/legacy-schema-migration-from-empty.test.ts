@@ -77,7 +77,11 @@ const LEGACY_NAMED_TABLES = [
     'billing_notification_log'
 ];
 
-/** `table.column` pairs the old billing left in surviving tables (AC:U1:8). */
+/**
+ * `table.column` pairs the old billing left in surviving tables (AC:U1:8).
+ * `featured_by_entitlement` is deliberately absent: the owner kept it on the
+ * three verticals (premium plans and the new add-on will write it).
+ */
 const DROPPED_COLUMNS: ReadonlyArray<readonly [string, string]> = [
     ['partners', 'subscription_status'],
     ['partners', 'plan_id'],
@@ -89,11 +93,8 @@ const DROPPED_COLUMNS: ReadonlyArray<readonly [string, string]> = [
     ['owner_promotions', 'plan_restricted'],
     ['experiences', 'has_active_subscription'],
     ['accommodations', 'is_featured'],
-    ['accommodations', 'featured_by_entitlement'],
     ['gastronomies', 'is_featured'],
-    ['gastronomies', 'featured_by_entitlement'],
-    ['experiences', 'is_featured'],
-    ['experiences', 'featured_by_entitlement']
+    ['experiences', 'is_featured']
 ];
 
 /** Permission categories retired with the old billing (decision 3). */
