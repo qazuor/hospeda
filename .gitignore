@@ -184,3 +184,6 @@ docs/marketing/placas/
 
 # Local Claude/Pi notification logs
 tools/.claude/.log/
+
+# Cutover run manifests (ids only; deleted when the cutover ends)
+scripts/cutover/out/
