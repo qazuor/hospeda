@@ -62,6 +62,8 @@ const ROWS: readonly KeyRow[] = [
     ['ai_support', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['ai_translate', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['ai_accommodation_import', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
+    // Two separate keys (HOS-1352 DEC-ENT-006): the public page is granted by Gold only,
+    // the carousel presence by Gold and Silver. Who gets which is a plan assignment, not code.
     ['partner_public_page', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['partner_carousel_presence', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['recover_own_listing', 'vertical', 'MAX', 'NONE', 'BASE'],

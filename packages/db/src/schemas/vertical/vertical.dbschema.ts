@@ -1,8 +1,7 @@
 import { VERTICAL_ACTIVATION_EVENT_VALUES, VerticalEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { check, pgTable, varchar } from 'drizzle-orm/pg-core';
-
-const quoted = (values: readonly string[]): string => values.map((v) => `'${v}'`).join(', ');
+import { quotedList } from './quoted-list.ts';
 
 /**
  * `vertical` — database mirror of `VerticalEnum` (HOS-1430, program HOS-1352).
@@ -27,11 +26,11 @@ export const verticals = pgTable(
     (t) => ({
         idCheck: check(
             'ck_vertical_id',
-            sql`${t.id} IN (${sql.raw(quoted(Object.values(VerticalEnum)))})`
+            sql`${t.id} IN (${quotedList(Object.values(VerticalEnum))})`
         ),
         activationEventCheck: check(
             'ck_vertical_activation_event',
-            sql`${t.activationEvent} IS NULL OR ${t.activationEvent} IN (${sql.raw(quoted(VERTICAL_ACTIVATION_EVENT_VALUES))})`
+            sql`${t.activationEvent} IS NULL OR ${t.activationEvent} IN (${quotedList(VERTICAL_ACTIVATION_EVENT_VALUES)})`
         )
     })
 );

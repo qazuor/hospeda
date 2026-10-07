@@ -19,8 +19,9 @@ export type KeyRow = readonly [
 /**
  * Expands compact rows into full {@link CatalogKeyDefinition}s of one kind.
  *
- * @param params.kind - Which list the rows belong to.
- * @param params.rows - The compact rows.
+ * @param input - Expansion input.
+ * @param input.kind - Which list the rows belong to.
+ * @param input.rows - The compact rows.
  * @returns One frozen definition per row, in the same order.
  */
 export function toDefinitions({

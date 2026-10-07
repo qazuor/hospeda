@@ -7,9 +7,7 @@ import {
 } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { check, pgTable, varchar } from 'drizzle-orm/pg-core';
-
-const inList = (values: readonly string[]): ReturnType<typeof sql.raw> =>
-    sql.raw(values.map((v) => `'${v}'`).join(', '));
+import { quotedList } from './quoted-list.ts';
 
 /**
  * `catalog_key` — the table of entitlement and limit keys (HOS-1430).
@@ -37,17 +35,20 @@ export const catalogKeys = pgTable(
         keyClass: varchar('key_class', { length: 16 }).notNull()
     },
     (t) => ({
-        kindCheck: check('ck_catalog_key_kind', sql`${t.kind} IN (${inList(KEY_KINDS)})`),
-        scopeCheck: check('ck_catalog_key_scope', sql`${t.scope} IN (${inList(KEY_SCOPES)})`),
+        kindCheck: check('ck_catalog_key_kind', sql`${t.kind} IN (${quotedList(KEY_KINDS)})`),
+        scopeCheck: check('ck_catalog_key_scope', sql`${t.scope} IN (${quotedList(KEY_SCOPES)})`),
         aggregationCheck: check(
             'ck_catalog_key_aggregation_strategy',
-            sql`${t.aggregationStrategy} IN (${inList(AGGREGATION_STRATEGIES)})`
+            sql`${t.aggregationStrategy} IN (${quotedList(AGGREGATION_STRATEGIES)})`
         ),
         enforcementCheck: check(
             'ck_catalog_key_enforcement_strategy',
-            sql`${t.enforcementStrategy} IN (${inList(ENFORCEMENT_STRATEGIES)})`
+            sql`${t.enforcementStrategy} IN (${quotedList(ENFORCEMENT_STRATEGIES)})`
         ),
-        classCheck: check('ck_catalog_key_class', sql`${t.keyClass} IN (${inList(KEY_CLASSES)})`)
+        classCheck: check(
+            'ck_catalog_key_class',
+            sql`${t.keyClass} IN (${quotedList(KEY_CLASSES)})`
+        )
     })
 );
 

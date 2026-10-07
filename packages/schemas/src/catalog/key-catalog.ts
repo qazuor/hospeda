@@ -26,7 +26,8 @@ const BY_KEY: ReadonlyMap<string, CatalogKeyDefinition> = new Map(
 /**
  * Looks a key up in the catalog.
  *
- * @param params.key - The key name to look up.
+ * @param input - Lookup input.
+ * @param input.key - The key name to look up.
  * @returns The declared definition, or `undefined` when the catalog does not know the key.
  */
 export function getCatalogKey({ key }: { readonly key: string }): CatalogKeyDefinition | undefined {
@@ -36,7 +37,8 @@ export function getCatalogKey({ key }: { readonly key: string }): CatalogKeyDefi
 /**
  * Whether the catalog knows a key.
  *
- * @param params.key - The key name to test.
+ * @param input - Lookup input.
+ * @param input.key - The key name to test.
  * @returns `true` when the key is declared in the catalog.
  */
 export function isCatalogKey({ key }: { readonly key: string }): boolean {
