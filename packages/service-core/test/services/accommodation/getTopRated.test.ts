@@ -54,7 +54,8 @@ describe('AccommodationService.getTopRated', () => {
         const actor = createListActor();
         const base = createAccommodationWithMockIds({
             averageRating: 5,
-            reviewsCount: 25
+            reviewsCount: 25,
+            featuredByEntitlement: true
         });
         const items = [base];
         (model.findTopRated as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(items);
@@ -73,6 +74,7 @@ describe('AccommodationService.getTopRated', () => {
         expect(first?.summary).toBe(base.summary);
         expect(first?.price).toEqual(base.price);
         expect(first?.type).toBe(base.type);
+        expect(first?.featuredByEntitlement).toBe(true);
         // Note: amenities and features are not part of the new schema structure
         // They are handled through relations in the database
     });

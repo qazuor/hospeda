@@ -83,6 +83,7 @@ describe('AccommodationService.getSummary', () => {
                 summary: accommodation.summary,
                 media: accommodation.media,
                 location: accommodation.location,
+                isFeatured: accommodation.featuredByEntitlement,
                 ownerId: accommodation.ownerId,
                 averageRating: 0,
                 reviewsCount: 0

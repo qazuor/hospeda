@@ -2900,10 +2900,10 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Returns top-rated accommodations, optionally filtered by destination.
+     * Returns top-rated accommodations, optionally filtered by destination, type, and featured flag.
      * The output is a compact summary tailored for cards/lists and includes joined amenities/features only when related.
      * @param actor - The actor performing the action
-     * @param params - Input with optional pageSize and destinationId
+     * @param params - Input with optional pageSize, destinationId, type and onlyFeatured
      * @param ctx - Optional service context for transaction propagation
      * @returns List of summarized accommodations ordered by rating
      */
@@ -2932,6 +2932,8 @@ export class AccommodationService extends BaseCrudService<
                     // own-scope), so plan-restricted mirrors ownerSuspended exactly.
                     excludePlanRestricted: !hasVipAccess,
                     activeOnly: !hasVipAccess
+                    // type: validated.type, // Field not available in schema
+                    // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
 
                 const normalized =
@@ -2996,6 +2998,7 @@ export class AccommodationService extends BaseCrudService<
                     slug: entity.slug,
                     name: entity.name,
                     summary: entity.summary,
+                    isFeatured: entity.featuredByEntitlement,
                     reviewsCount: 0,
                     averageRating: 0,
                     media: withMedia?.media ?? entity.media,
@@ -3120,6 +3123,7 @@ export class AccommodationService extends BaseCrudService<
                         price: item.price,
                         location: item.location,
                         media: item.media,
+                        isFeatured: item.featuredByEntitlement,
                         ownerId: item.ownerId,
                         // Denormalized rating columns on the accommodations table —
                         // surfaced so the comparison matrix can rank by quality.
@@ -3186,6 +3190,7 @@ export class AccommodationService extends BaseCrudService<
                 // Create the stats object following AccommodationStatsSchema format
                 const stats: AccommodationStats = {
                     total: 1, // Single accommodation
+                    totalFeatured: entity.featuredByEntitlement ? 1 : 0,
                     averagePrice: entity.price?.price,
                     averageRating: entity.averageRating ?? 0,
                     totalByType: {

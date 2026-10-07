@@ -17,7 +17,7 @@
  *    (`rGastronomyAmenityModel`, `rGastronomyFeatureModel`) and catalog models
  *    (`amenityModel`, `featureModel`) for the base junction-sync machinery.
  * 2. **Search filters** — `_executeSearch` / `_executeCount` apply gastronomy
- *    filters (`type`, `priceRange`, `destinationId`, …).
+ *    filters (`type`, `priceRange`, `destinationId`, `isFeatured`, …).
  * 3. **Owner update gate** — `updateOwn()` validates with
  *    `GastronomyOwnerUpdateInputSchema` (operational sections only), enforces
  *    ownership (`NOT_FOUND` for non-owners), and gates on a single
@@ -434,7 +434,7 @@ export class GastronomyService extends BaseListingService<
      * Executes the public search query with gastronomy-specific filter support.
      *
      * Scalar filters forwarded to the model: `type`, `priceRange`, `destinationId`,
-     * `ownerId`.
+     * `ownerId`, `isFeatured`.
      *
      * `amenities` / `features` are junction-table filters and are applied as
      * `additionalConditions` built by `@repo/db`'s

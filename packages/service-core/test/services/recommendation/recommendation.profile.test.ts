@@ -38,6 +38,7 @@ const createCandidate = (
         summary: 'A lovely place to stay for at least ten characters.',
         type: AccommodationTypeEnum.CABIN,
         ownerId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+        isFeatured: false,
         averageRating: 0,
         destinationId: DESTINATION_1,
         amenityIds: [],

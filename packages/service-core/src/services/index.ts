@@ -31,6 +31,7 @@ export {
 export * from './accommodation/accommodation.occupancy';
 export * from './accommodation/accommodation.poi-proximity.helper';
 export * from './accommodation/accommodation.service';
+export * from './accommodation/accommodation.sync-featured-by-entitlement';
 // HookState types for service consumers
 export type {
     AccommodationHookState,

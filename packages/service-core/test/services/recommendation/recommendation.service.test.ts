@@ -51,6 +51,7 @@ const createJoinedRow = (
         destinationId?: string;
         destinationPath?: string;
         amenityIds?: string[];
+        isFeatured?: boolean;
         averageRating?: number;
     } = {}
 ) => {
@@ -59,6 +60,7 @@ const createJoinedRow = (
         ...createMockAccommodation({
             id: overrides.id ?? getMockId('accommodation'),
             destinationId,
+            featuredByEntitlement: overrides.isFeatured ?? false,
             averageRating: overrides.averageRating ?? 4,
             price: { price: 20000, currency: PriceCurrencyEnum.ARS }
         }),
@@ -124,8 +126,8 @@ describe('RecommendationService.getFeed', () => {
     describe('cold-start (spec §5.5)', () => {
         it('returns isColdStart=true and a popularity-ranked feed when the actor has no signals', async () => {
             const poolRows = [
-                createJoinedRow({ averageRating: 3 }),
-                createJoinedRow({ averageRating: 5 })
+                createJoinedRow({ averageRating: 3, isFeatured: false }),
+                createJoinedRow({ averageRating: 5, isFeatured: true })
             ];
             asMock(accommodationModelMock.findTopRated).mockResolvedValue(poolRows);
 
@@ -134,7 +136,7 @@ describe('RecommendationService.getFeed', () => {
             expectSuccess(result);
             expect(result.data?.isColdStart).toBe(true);
             expect(result.data?.items).toHaveLength(2);
-            // Higher rating should outrank the lower-rating item —
+            // Higher rating + featured should outrank the lower-rating item —
             // the quality component is the only non-zero score against an
             // empty profile, so it fully determines ordering.
             expect(result.data?.items[0]?.accommodation.id).toBe(poolRows[1]?.id);
@@ -421,7 +423,9 @@ describe('RecommendationService.getFeed', () => {
     });
 
     it('produces items whose type reference AccommodationTypeEnum values from the raw rows', async () => {
-        asMock(accommodationModelMock.findTopRated).mockResolvedValue([createJoinedRow()]);
+        asMock(accommodationModelMock.findTopRated).mockResolvedValue([
+            createJoinedRow({ isFeatured: true })
+        ]);
 
         const result = await service.getFeed(actor);
 

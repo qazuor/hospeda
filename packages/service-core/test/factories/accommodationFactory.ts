@@ -63,6 +63,9 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     type: AccommodationTypeEnum.HOTEL,
     destinationId: getMockId('destination') as string,
     ownerId: getMockId('user') as string,
+    // HOS-929: billing-derived featuring (SPEC-292, renamed SPEC-309 OQ-3) —
+    // the only featuring source since HOS-1419; defaults false.
+    featuredByEntitlement: false,
     ownerSuspended: false,
     planRestricted: false,
     // Server-managed (SPEC-237): owner-controlled master toggle for external reputation block.

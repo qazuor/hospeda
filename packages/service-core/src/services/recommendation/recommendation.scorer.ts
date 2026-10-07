@@ -92,6 +92,18 @@ const AMENITIES_MAX_POINTS = 15;
 /** Maximum points for the quality component (spec §5.4). */
 const QUALITY_MAX_POINTS = 5;
 
+/**
+ * Portion of the quality component driven by `averageRating` (spec §5.4:
+ * "average_rating / is_featured — tie-break + editorial boost"). Rating is
+ * the primary, user-generated quality signal, so it gets the larger 4-of-5
+ * share; `isFeatured` is an editorial nudge worth at most 1 point — enough
+ * to break a near-tie but never enough to outweigh a real rating gap.
+ */
+const QUALITY_RATING_PORTION_MAX = 4;
+
+/** Flat bonus added when `isFeatured` is true (see {@link QUALITY_RATING_PORTION_MAX}). */
+const QUALITY_FEATURED_BONUS = 1;
+
 // ---------------------------------------------------------------------------
 // Destination component
 // ---------------------------------------------------------------------------
@@ -317,14 +329,19 @@ const scoreAmenities = (
 // ---------------------------------------------------------------------------
 
 /**
- * Scores the quality component (0-5, spec §5.4) from `averageRating` alone,
- * normalized from the 0-5 rating scale onto the 0-{@link QUALITY_MAX_POINTS}
- * point scale. There is no editorial boost: the featured flag no longer exists
- * on accommodations (HOS-1419).
+ * Scores the quality component (0-5, spec §5.4): up to 4 points from
+ * `averageRating` normalized to a 5-point scale, plus a flat 1-point bonus
+ * when `isFeatured` is true, capped at 5 total. See
+ * {@link QUALITY_RATING_PORTION_MAX} for the rationale behind the 4+1 split.
  */
 const scoreQuality = (candidate: RecommendationCandidateAccommodation): number => {
     const rating = candidate.averageRating ?? 0;
-    return Math.min(Math.max((rating / 5) * QUALITY_MAX_POINTS, 0), QUALITY_MAX_POINTS);
+    const ratingPortion = Math.min(
+        Math.max((rating / 5) * QUALITY_RATING_PORTION_MAX, 0),
+        QUALITY_RATING_PORTION_MAX
+    );
+    const featuredBonus = candidate.isFeatured ? QUALITY_FEATURED_BONUS : 0;
+    return Math.min(ratingPortion + featuredBonus, QUALITY_MAX_POINTS);
 };
 
 // ---------------------------------------------------------------------------

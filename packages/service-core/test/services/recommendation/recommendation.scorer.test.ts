@@ -46,6 +46,7 @@ const createCandidate = (
         summary: 'A lovely place to stay for at least ten characters.',
         type: AccommodationTypeEnum.CABIN,
         ownerId: OWNER_ID,
+        isFeatured: false,
         averageRating: 0,
         destinationId: DEST_A,
         amenityIds: [],
@@ -512,17 +513,18 @@ describe('scoreCandidateAccommodation — amenities component (0-15, spec §5.4)
 // ---------------------------------------------------------------------------
 
 describe('scoreCandidateAccommodation — quality component (0-5, spec §5.4)', () => {
-    it('awards the full 5 for a max rating', () => {
-        const candidate = createCandidate({ averageRating: 5 });
+    it('awards the full 5 for a max rating plus featured bonus (capped)', () => {
+        const candidate = createCandidate({ averageRating: 5, isFeatured: true });
         const profile = createProfile();
 
         const result = scoreCandidateAccommodation({ candidate, profile, destinationPaths: {} });
 
+        // ratingPortion = (5/5)*4 = 4; featuredBonus = 1; total = 5 (== cap)
         expect(result.score.quality).toBe(5);
     });
 
-    it('awards 0 for a zero rating', () => {
-        const candidate = createCandidate({ averageRating: 0 });
+    it('awards 0 for a zero rating and not featured', () => {
+        const candidate = createCandidate({ averageRating: 0, isFeatured: false });
         const profile = createProfile();
 
         const result = scoreCandidateAccommodation({ candidate, profile, destinationPaths: {} });
@@ -530,13 +532,24 @@ describe('scoreCandidateAccommodation — quality component (0-5, spec §5.4)', 
         expect(result.score.quality).toBe(0);
     });
 
-    it('scales the rating linearly onto the 0-5 quality scale', () => {
-        const candidate = createCandidate({ averageRating: 2.5 });
+    it('awards only the rating portion when not featured', () => {
+        const candidate = createCandidate({ averageRating: 2.5, isFeatured: false });
         const profile = createProfile();
 
         const result = scoreCandidateAccommodation({ candidate, profile, destinationPaths: {} });
 
-        expect(result.score.quality).toBe(2.5);
+        // ratingPortion = (2.5/5)*4 = 2; featuredBonus = 0
+        expect(result.score.quality).toBe(2);
+    });
+
+    it('awards only the featured bonus when rating is zero', () => {
+        const candidate = createCandidate({ averageRating: 0, isFeatured: true });
+        const profile = createProfile();
+
+        const result = scoreCandidateAccommodation({ candidate, profile, destinationPaths: {} });
+
+        // ratingPortion = 0; featuredBonus = 1
+        expect(result.score.quality).toBe(1);
     });
 });
 
@@ -552,7 +565,8 @@ describe('scoreCandidateAccommodation — end-to-end multi-component (hand-compu
             type: AccommodationTypeEnum.CABIN,
             price: { price: 12000, currency: PriceCurrencyEnum.ARS },
             amenityIds: [AMENITY_1, AMENITY_2, AMENITY_3],
-            averageRating: 4
+            averageRating: 4,
+            isFeatured: true
         });
         const profile = createProfile({
             preferredDestinations: [{ destinationId: DEST_B, weight: 5 }],
@@ -578,10 +592,10 @@ describe('scoreCandidateAccommodation — end-to-end multi-component (hand-compu
         expect(result.score.price).toBe(20);
         // amenities: intersection {A1,A2}=2, union {A1,A2,A3}=3 -> 15*(2/3) = 10
         expect(result.score.amenities).toBe(10);
-        // quality: (4/5)*5 = 4
-        expect(result.score.quality).toBeCloseTo(4, 10);
-        // totalScore = 40+16+20+10+4 = 90
-        expect(result.totalScore).toBeCloseTo(90, 10);
+        // quality: ratingPortion (4/5)*4=3.2, featuredBonus=1 -> 4.2
+        expect(result.score.quality).toBeCloseTo(4.2, 10);
+        // totalScore = 40+16+20+10+4.2 = 90.2
+        expect(result.totalScore).toBeCloseTo(90.2, 10);
         // ScoredAccommodationSchema.parse applies the schema's `reviewsCount`
         // default (0) since the fixture omits it — the rest passes through untouched.
         expect(result.accommodation).toEqual({ ...candidate, reviewsCount: 0 });
@@ -596,6 +610,7 @@ describe('scoreCandidateAccommodation — cold/empty profile', () => {
     it('does not throw and yields low/zero scores when called against a cold profile', () => {
         const candidate = createCandidate({
             averageRating: 0,
+            isFeatured: false,
             amenityIds: [AMENITY_1]
         });
         const coldProfile: RecommendationProfile = {

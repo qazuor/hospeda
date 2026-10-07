@@ -49,6 +49,7 @@ const makeGastronomy = (overrides: Record<string, unknown> = {}) => ({
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     moderationState: ModerationStatusEnum.APPROVED,
     visibility: VisibilityEnum.PUBLIC,
+    isFeatured: false,
     averageRating: 0,
     reviewsCount: 0,
     createdAt: new Date('2024-01-01'),

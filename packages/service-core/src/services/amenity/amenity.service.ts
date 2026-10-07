@@ -354,6 +354,7 @@ export class AmenityService extends BaseCrudRelatedService<
                     slug: acc.slug ?? '',
                     name: acc.name,
                     summary: acc.summary ?? '',
+                    isFeatured: acc.featuredByEntitlement,
                     averageRating: acc.averageRating ?? 0
                 }));
 
