@@ -45,6 +45,31 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   start is the decision on that subject, not the run; for an administrative
   action, its confirmation (`{ kind: 'adminAction', confirmedAt }`).
 
+## The approval link is shown only sanitized
+
+`authorize` returns `approvalUrl`, the provider-hosted page where the customer
+grants the permission. The provider hands it back broken (EX-37: an
+`activation=true` parameter opens a "page does not exist" screen), so outside
+this package it is read ONLY through `sanitizeApprovalUrl(result)`, which
+refuses anything that is not an absolute `https:` URL (`ApprovalUrlRejectedError`)
+refuses a link carrying credentials (`https://trusted@other/…`), and removes
+every `activation` parameter (name matched case-sensitively, as EX-37 measured
+it), keeping the other query pairs byte for byte. Show its `url`, never the raw
+field.
+
+**The name `approvalUrl` is reserved outside this package.** GUARD:G10 fails on
+the bare name anywhere outside `packages/payments` except inside the parentheses
+of `sanitizeApprovalUrl(…)`: a member read, a destructuring, an object key, and
+type positions too (an interface property, a Zod schema key, a response type).
+Name your own field something else, e.g. `checkoutUrl`.
+
+GUARD:G10 (`scripts/check-approval-url-sanitized.ts`) fails CI on any other
+read outside `packages/payments`, and on any code outside it that names the
+provider's own link field. Its siblings guard the rest of what an authorization
+sends: GUARD:G9 (`check-reason-is-copy.ts`, the `reason` is customer copy, never
+an identifier) and GUARD:G11 (`check-no-provider-trial.ts`, no trial-request
+field where an authorization is built).
+
 ## The probe manifest
 
 `src/probes/probes.json` is the versioned list of provider subject ids that
