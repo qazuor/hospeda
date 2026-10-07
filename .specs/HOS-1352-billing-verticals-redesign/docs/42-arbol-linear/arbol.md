@@ -2,7 +2,7 @@
 
 Fuentes: `spec-consolidada/10-corte/` y `20-fase-*/` (ACs nominales), `docs/41-corte-del-mvp/aristas.py` (64 dependencias) y el árbol real de Linear (consulta de sólo lectura, 2026-10-04). Cada nodo es una issue: `↻HOS-n` = existente que se reusa; sin marca = issue a crear. Las hojas son unidades de PR con objetivo de ~400 líneas authored; el tamaño final se comprueba al implementar. Sólo las hojas llevan ACs. Validar: `python3 chequeo.py` (exit 0 = árbol sano).
 
-Estadísticas: 248 nodos · 28 existentes reusados · 194 hojas de PR · 506 ACs cubiertas (exactamente una hoja por AC).
+Estadísticas: 249 nodos · 28 existentes reusados · 195 hojas de PR · 507 ACs cubiertas (exactamente una hoja por AC).
 
 - **HOS-1352 ↻HOS-1352** — Rediseño integral de Verticales, Billing, Trials, Entitlements, Limits y Complementos
   - **HOS-1353 ↻HOS-1353** — Épica Verticales — capacidades, entitlements, limits y autorización, sin dependencia de la pasarela
@@ -245,8 +245,9 @@ Estadísticas: 248 nodos · 28 existentes reusados · 194 hojas de PR · 506 ACs
   - **U2 ↻HOS-1401** — U2 · El outbox común ← U1
     - **U2.1** — U2 · Encolar el correo, deduplicar y dar dueño a processing (PR 1/4) · 4 AC ← U1.6
     - **U2.2** — U2 · Entrega: escala sin trabar, supresión y bitácora (PR 2/4) · 3 AC ← U2.1
+    - **U2.2b** — U2 · Ingesta de rebotes duros del proveedor (hoja nueva, antes de la salida) · 1 AC ← U2.2
     - **U2.3** — U2 · Huso, correlación y domain_event (PR 3/4) · 3 AC ← U2.2
-    - **U2.4** — U2 · Salida (PR 4/4) · 1 AC ← U2.3
+    - **U2.4** — U2 · Salida (PR 4/4) · 1 AC ← U2.3, U2.2b
   - **U3 ↻HOS-1402** — U3 · El script del corte ← U1
     - **U3.1** — U3 · Censo y cancelaciones en el proveedor (PR 1/4) · 4 AC ← U1.6
     - **U3.2** — U3 · Manifiesto, script suelto e inversos (PR 2/4) · 3 AC ← U3.1
