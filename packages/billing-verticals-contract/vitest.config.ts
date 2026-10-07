@@ -9,6 +9,10 @@ export default defineConfig({
         include: ['test/**/*.test.ts'],
         globals: true,
         environment: 'node',
-        pool: 'forks'
+        pool: 'forks',
+        // The first test of a file pays the cold import of the whole
+        // @repo/schemas barrel, and the never-in-production test walks the
+        // repo: both can pass 5s on a loaded CI runner.
+        testTimeout: 30_000
     }
 });
