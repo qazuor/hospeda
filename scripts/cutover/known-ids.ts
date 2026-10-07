@@ -37,7 +37,10 @@ const PLAN_IDS_SQL = `
     SELECT mp_preapproval_plan_id FROM billing_pending_checkouts WHERE mp_preapproval_plan_id IS NOT NULL`;
 
 function toIds({ rows }: { readonly rows: readonly Record<string, unknown>[] }): readonly string[] {
-    return rows.map((row) => String(row.id)).filter((id) => id.length > 0);
+    return rows
+        .filter((row) => row.id !== null && row.id !== undefined)
+        .map((row) => String(row.id))
+        .filter((id) => id.length > 0);
 }
 
 /**

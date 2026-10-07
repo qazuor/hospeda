@@ -51,7 +51,8 @@ export function withDatabase({
  * a skipped database test reads as green and proves nothing.
  */
 export function requireAdminUrl(): string {
-    const url = Reflect.get(process.env, 'HOSPEDA_TEST_DATABASE_URL');
+    const session = process.env;
+    const url = session.HOSPEDA_TEST_DATABASE_URL;
     if (typeof url !== 'string' || url.length === 0) {
         throw new Error('HOSPEDA_TEST_DATABASE_URL is required for the cutover database tests');
     }

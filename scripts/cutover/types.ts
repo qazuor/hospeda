@@ -66,7 +66,9 @@ export type FailureCode =
     | 'KNOWN_ID_MISSING'
     | 'UNEXPECTED_STATUS'
     | 'NOT_CANCELLED'
-    | 'PROVIDER_ERROR';
+    | 'PROVIDER_ERROR'
+    | 'OLD_DB_ERROR'
+    | 'UNEXPECTED_ERROR';
 
 /** One failure. `detail` is fixed text plus ids: never provider payloads. */
 export interface CutoverFailure {

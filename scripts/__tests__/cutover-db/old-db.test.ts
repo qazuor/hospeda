@@ -24,7 +24,8 @@ import {
 const suffix = randomBytes(4).toString('hex');
 const OLD_DB = `cutover_u3_old_${suffix}`;
 const NEW_DB = `cutover_u3_new_${suffix}`;
-const oldRef = Reflect.get(process.env, 'CUTOVER_OLD_SCHEMA_REF') ?? 'origin/main';
+const session = process.env;
+const oldRef = session.CUTOVER_OLD_SCHEMA_REF ?? 'origin/main';
 
 const PERSON_EMAIL = 'person.example@example.invalid';
 

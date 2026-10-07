@@ -1,4 +1,3 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -6,6 +5,7 @@ import { createKnownIdsReader } from './known-ids.ts';
 import { readProbeManifest } from './probe-manifest.ts';
 import { createProviderApi } from './provider-api.ts';
 import { runCutover } from './run-cutover.ts';
+import { writeManifest } from './write-manifest.ts';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const DEFAULT_PROBES = path.join(repoRoot, 'packages/payments/src/probes/probes.json');
@@ -37,7 +37,13 @@ async function main(): Promise<number> {
         console.error(`set ${VAR_TOKEN} and ${VAR_OLD_DB} in this shell session`);
         return 2;
     }
-    const probeIds = readProbeManifest({ path: values.probes ?? DEFAULT_PROBES });
+    let probeIds: readonly string[];
+    try {
+        probeIds = readProbeManifest({ path: values.probes ?? DEFAULT_PROBES });
+    } catch (error) {
+        console.error(error instanceof Error ? error.message : 'probe manifest could not be read');
+        return 2;
+    }
     const result = await runCutover({
         api: createProviderApi({ accessToken }),
         readKnownIds: createKnownIdsReader({ connectionString: oldDb }),
@@ -49,21 +55,32 @@ async function main(): Promise<number> {
     const out =
         values['manifest-out'] ??
         path.join(repoRoot, 'scripts/cutover/out', `cutover-manifest-${stamp}.json`);
-    mkdirSync(path.dirname(out), { recursive: true });
-    writeFileSync(out, `${JSON.stringify(result.manifest, null, 2)}\n`, { flag: 'wx' });
-    console.info(`outcome=${result.manifest.outcome} manifest=${out}`);
+    const { writtenTo } = writeManifest({
+        manifest: result.manifest,
+        wantedPath: out,
+        fallback: (text) => {
+            console.error('MANIFEST WRITE FAILED. Full manifest follows; save it now:');
+            console.error(text);
+        }
+    });
+    console.info(
+        `outcome=${result.manifest.outcome} manifest=${writtenTo ?? 'NOT WRITTEN (see stderr)'}`
+    );
     for (const failure of result.manifest.failures) {
         console.error(
             `FAIL ${failure.code}${failure.id ? ` ${failure.id}` : ''}: ${failure.detail}`
         );
     }
-    return result.ok ? 0 : 1;
+    return result.ok && writtenTo !== null ? 0 : 1;
 }
 
-main().then(
-    (code) => process.exit(code),
-    () => {
+async function entry(): Promise<void> {
+    try {
+        process.exit(await main());
+    } catch {
         console.error('cutover crashed before producing a manifest');
         process.exit(1);
     }
-);
+}
+
+void entry();

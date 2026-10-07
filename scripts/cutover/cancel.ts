@@ -11,11 +11,11 @@ export interface Target {
 }
 
 /**
- * Sends one cancellation call per target, in order. Each call's answer is recorded but
- * never trusted: step 2 re-reads every id. A failed call does not stop the loop.
+ * Sends one cancellation call per target, in order. An answer is never trusted: it is
+ * neither read nor recorded here, because step 2 re-reads every id by id and retries
+ * the ones that did not take. A failed call does not stop the loop.
  *
  * @param input - provider client and targets
- * @returns the targets whose call was not accepted
  */
 export async function cancelTargets({
     api,
@@ -23,13 +23,10 @@ export async function cancelTargets({
 }: {
     readonly api: ProviderApi;
     readonly targets: readonly Target[];
-}): Promise<readonly Target[]> {
-    const rejected: Target[] = [];
+}): Promise<void> {
     for (const target of targets) {
-        const result = await api.cancel(target);
-        if (!result.accepted) rejected.push(target);
+        await api.cancel(target);
     }
-    return rejected;
 }
 
 /** Outcome of step 2. */

@@ -19,7 +19,9 @@ export function readProbeManifest({ path }: { readonly path: string }): readonly
     try {
         raw = readFileSync(path, 'utf8');
     } catch {
-        throw new Error(`probe manifest not readable at ${path}`);
+        throw new Error(
+            `probe manifest not found or unreadable at ${path}. The default is packages/payments/src/probes/probes.json (created by the payments package); pass --probes <path> to use another file.`
+        );
     }
     let json: unknown;
     try {

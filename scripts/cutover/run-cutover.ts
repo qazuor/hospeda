@@ -6,6 +6,7 @@ import { ProviderError } from './provider-api.ts';
 import type {
     CutoverFailure,
     CutoverManifest,
+    KnownIds,
     KnownIdsReader,
     ObjectKind,
     ProviderApi,
@@ -65,6 +66,35 @@ function missingKnown({
         }));
 }
 
+/** The old database could not be read. Raised before any provider call is made. */
+class OldDbError extends Error {}
+
+function describeCause({ error }: { readonly error: unknown }): string {
+    if (!(error instanceof Error)) return 'unknown error';
+    const code = Reflect.get(error, 'code');
+    return `${typeof code === 'string' ? `${code} ` : ''}${error.message}`.trim();
+}
+
+async function readOldDb({
+    readKnownIds
+}: {
+    readonly readKnownIds: KnownIdsReader;
+}): Promise<KnownIds> {
+    try {
+        return await readKnownIds();
+    } catch (error) {
+        throw new OldDbError(`old database read failed: ${describeCause({ error })}`, {
+            cause: error
+        });
+    }
+}
+
+function describeFailure({ error }: { readonly error: unknown }): CutoverFailure {
+    if (error instanceof OldDbError) return { code: 'OLD_DB_ERROR', detail: error.message };
+    if (error instanceof ProviderError) return { code: 'PROVIDER_ERROR', detail: error.message };
+    return { code: 'UNEXPECTED_ERROR', detail: describeCause({ error }) };
+}
+
 /**
  * Runs steps 1a, 1b and 2 of the cutover against the provider.
  *
@@ -96,7 +126,7 @@ export async function runCutover({
     let verified: readonly string[] = [];
 
     try {
-        const known = await readKnownIds();
+        const known = await readOldDb({ readKnownIds });
         plansWalk = await walkAll({ api, kind: 'plan' });
         preapprovalsWalk = await walkAll({ api, kind: 'preapproval' });
 
@@ -140,8 +170,7 @@ export async function runCutover({
         }
         unknownLive = [
             ...plansToCancel.map((t) => t.id),
-            ...preapprovalsToCancel.map((t) => t.id),
-            ...preserved
+            ...preapprovalsToCancel.map((t) => t.id)
         ].filter((id) => !knownSet.has(id) && !probeSet.has(id));
 
         if (!dryRun) {
@@ -164,9 +193,7 @@ export async function runCutover({
         }
         failures.push(...completeness);
     } catch (error) {
-        const detail =
-            error instanceof ProviderError ? error.message : 'unexpected error during the run';
-        failures.push({ code: 'PROVIDER_ERROR', detail });
+        failures.push(describeFailure({ error }));
     }
 
     const summary = (walk: WalkResult | undefined) => ({

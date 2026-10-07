@@ -10,8 +10,11 @@ provider was complete. It runs steps **1a, 1b and 2** of the cutover order.
 - Writes **nothing** into any database and sends **nothing** to anybody.
 - Not deployed: no image carries it. It is run from a copy of the repository and is
   archived by deleting this folder in a commit after the cutover.
-- Out of scope here: the exit manifest and the imports/G8 check (U3.2), the step 4b probes
-  (U3.3) and the unit exit (U3.4).
+- Out of scope here: the formal exit manifest and the imports/G8 check (U3.2, AC:U3:5 and 6),
+  the step 4b probes (U3.3) and the unit exit (U3.4). This leaf writes only a **raw run record**
+  (see "Output manifest"): it is kept minimal on purpose, because losing the ids of
+  already-cancelled preapprovals is worse than a record with fewer fields. U3.2 owns the formal
+  manifest contract.
 
 ## Run
 
@@ -26,7 +29,7 @@ corepack pnpm exec tsx scripts/cutover/cli.ts --confirm-cancel-all
 | Flag | Default | Meaning |
 |---|---|---|
 | `--probes <path>` | `packages/payments/src/probes/probes.json` | Probe manifest, `{ "ids": string[] }`, read by file path (a JSON read, never an import) and validated by a local schema. |
-| `--manifest-out <path>` | `scripts/cutover/out/cutover-manifest-<timestamp>.json` | Where the run manifest is written. Never overwrites an existing file. `scripts/cutover/out/` is git-ignored. |
+| `--manifest-out <path>` | `scripts/cutover/out/cutover-manifest-<timestamp>.json` | Where the run manifest is written. Never overwrites an existing file (a free name is picked) and is written through a temp file plus rename. `scripts/cutover/out/` is git-ignored. |
 | `--dry-run` | off | Census, re-read and completeness gate; no `PUT` is sent. |
 | `--confirm-cancel-all` | off | Required for a real run. Without it (and without `--dry-run`) the script refuses to start. |
 
@@ -63,14 +66,16 @@ Retries: `429` and `5xx` on any call are retried with a short increasing delay i
 client; the three step-2 retries above are about a cancellation that was accepted but did
 not take.
 
-## Output manifest
+## Output manifest (raw run record)
 
 JSON with ids and counts only: `outcome` (`ok`, `failed`, `dry-run`), timestamps, walked
 versus `total` per family, `cancelledPlanIds`, `cancelledPreapprovalIds`,
 `rereadCancelledIds` (verified `cancelled` by id), `preservedProbeIds` (left alive on
 purpose), `unknownLiveIds` (alive at the provider, unknown to the DB and to the probe
 manifest) and `failures`. Provider payloads are never copied, so no email, name or phone
-can reach it. It is written also on failure. Delete it when the cutover ends.
+can reach it. It is written also on failure. If the file cannot be written, the full JSON is
+dumped to stderr and the exit code is 1, so the ids of cancellations already done are never lost.
+Delete it when the cutover ends.
 
 ## Failure modes (exit code 1; the cutover does not advance)
 
@@ -81,6 +86,8 @@ can reach it. It is written also on failure. Delete it when the cutover ends.
 | `UNEXPECTED_STATUS` | A preapproval is in a status other than pending, authorized, paused or cancelled. |
 | `NOT_CANCELLED` | An id is still not `cancelled` after the 3 retries. |
 | `PROVIDER_ERROR` | The provider could not be read or answered something unusable (status and path only; the body is dropped). |
+| `OLD_DB_ERROR` | The old database could not be read (SQLSTATE or error code plus message). Raised before any provider call. |
+| `UNEXPECTED_ERROR` | Anything else that threw during the run. |
 
 Exit code 2 means a usage error (missing flag or credentials). A failed run goes to the
 cutover abort branch. The script itself never restores anything.
@@ -106,7 +113,7 @@ the staging old DB. Never against production.
 
 1. In a shell session set `CUTOVER_MP_ACCESS_TOKEN` (sandbox token) and
    `CUTOVER_OLD_DATABASE_URL` (a copy or the staging old DB; the script only reads it).
-2. Make sure `packages/payments/src/probes/probes.json` exists (or pass `--probes`).
+2. Make sure `packages/payments/src/probes/probes.json` exists (or pass `--probes`). A missing file stops the script at startup with an error naming the path (exit 2).
 3. Dry run first: `corepack pnpm exec tsx scripts/cutover/cli.ts --dry-run`. Check that the
    walked counts equal the totals, that `unknownLiveIds` makes sense, and that the
    manifest has only ids.

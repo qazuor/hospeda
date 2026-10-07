@@ -153,7 +153,7 @@ describe('probe manifest read by path', () => {
         expect(() => readProbeManifest({ path: write('{"ids":[1]}') })).toThrow(/does not match/);
         expect(() => readProbeManifest({ path: write('nope') })).toThrow(/not valid JSON/);
         expect(() => readProbeManifest({ path: '/nonexistent/probes.json' })).toThrow(
-            /not readable/
+            /not found or unreadable/
         );
     });
 });
