@@ -31,6 +31,7 @@ export const ExperienceFiltersSchema = z.object({
     /** Filter listings that have a given feature. Accepts a list of feature UUIDs. */
     features: z.array(z.string().uuid()).optional(),
     /** Filter by featured status. */
+    isFeatured: z.boolean().optional(),
     /** Filter by owner UUID. */
     ownerId: z.string().uuid().optional(),
     /** Filter by active subscription flag (public listing visibility gate). */
@@ -75,6 +76,7 @@ export const ExperienceSearchSchema = BaseSearchSchema.extend({
     /** Filter listings that have all these feature UUIDs. */
     features: z.array(z.string().uuid()).optional(),
     /** Filter by featured status. */
+    isFeatured: z.boolean().optional(),
     /** Filter by owner UUID. */
     ownerId: z.string().uuid().optional(),
     /** Filter by active subscription flag. */
@@ -129,6 +131,8 @@ export const ExperienceListItemSchema = ExperienceSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Use `.default(0)` only — `.default().optional()` is a dead chain because
     // `.default()` already handles the absent-key case.
     reviewsCount: z.number().int().min(0).default(0),
@@ -158,6 +162,8 @@ export const ExperienceSummarySchema = ExperienceSchema.pick({
     ownerId: true,
     destinationId: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Use `.default(0)` only — same rationale as ExperienceListItemSchema above.
     reviewsCount: z.number().int().min(0).default(0),
     averageRating: z.number().min(0).max(5).default(0)

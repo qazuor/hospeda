@@ -19,12 +19,13 @@ describe('SortFieldSchema', () => {
     });
 });
 
-describe('BaseSearchSchema — sorts', () => {
+describe('BaseSearchSchema — sorts + featuredFirst', () => {
     it('accepts an empty object (all fields optional)', () => {
         const result = BaseSearchSchema.parse({});
         expect(result.page).toBe(1);
         expect(result.pageSize).toBe(10);
         expect(result.sorts).toBeUndefined();
+        expect(result.featuredFirst).toBeUndefined();
     });
 
     it('accepts up to 5 sort entries', () => {
@@ -56,9 +57,14 @@ describe('BaseSearchSchema — sorts', () => {
         expect((issue as { origin?: string }).origin).toBe('array');
     });
 
-    it('no longer carries featuredFirst (removed with the featured columns, HOS-1419)', () => {
+    it('accepts featuredFirst: true', () => {
         const result = BaseSearchSchema.parse({ featuredFirst: true });
-        expect('featuredFirst' in result).toBe(false);
+        expect(result.featuredFirst).toBe(true);
+    });
+
+    it('accepts featuredFirst: false', () => {
+        const result = BaseSearchSchema.parse({ featuredFirst: false });
+        expect(result.featuredFirst).toBe(false);
     });
 
     it('keeps the legacy sortBy/sortOrder fields', () => {
@@ -121,8 +127,24 @@ describe('HttpSortingSchema — CSV sorts transform', () => {
     });
 });
 
-describe('HttpSortingSchema — featuredFirst removed (HOS-1419)', () => {
-    it('does not expose featuredFirst any more', () => {
-        expect(Object.keys(HttpSortingSchema.shape)).not.toContain('featuredFirst');
+describe('HttpSortingSchema — featuredFirst strict boolean coercion', () => {
+    it("coerces the literal 'true' to true", () => {
+        const result = HttpSortingSchema.parse({ featuredFirst: 'true' });
+        expect(result.featuredFirst).toBe(true);
+    });
+
+    it("coerces the literal 'false' to false (NOT truthy)", () => {
+        const result = HttpSortingSchema.parse({ featuredFirst: 'false' });
+        expect(result.featuredFirst).toBe(false);
+    });
+
+    it('rejects any non-literal string (no lax coercion)', () => {
+        const result = HttpSortingSchema.safeParse({ featuredFirst: 'truthy' });
+        expect(result.success).toBe(false);
+    });
+
+    it('allows omitting featuredFirst entirely', () => {
+        const result = HttpSortingSchema.parse({});
+        expect(result.featuredFirst).toBeUndefined();
     });
 });

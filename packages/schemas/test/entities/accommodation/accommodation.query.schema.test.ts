@@ -37,6 +37,7 @@ const createValidAccommodation = () => ({
     },
     reviewsCount: 0,
     averageRating: 0,
+    isFeatured: false,
     isActive: true,
     visibility: 'PUBLIC',
     ownerId: '12345678-1234-4234-8234-123456789013',
@@ -59,6 +60,7 @@ const createValidAccommodation = () => ({
  */
 const createValidStats = () => ({
     total: 10,
+    totalFeatured: 3,
     averagePrice: 150.5,
     averageRating: 4.2,
     totalByType: {
@@ -196,6 +198,7 @@ describe('AccommodationStatsWrapperSchema', () => {
 
         const result = AccommodationStatsWrapperSchema.parse(wrapper);
         expect(result.stats.total).toBe(10);
+        expect(result.stats.totalFeatured).toBe(3);
         expect(result.stats.averagePrice).toBe(150.5);
         expect(result.stats.averageRating).toBe(4.2);
     });
@@ -204,6 +207,7 @@ describe('AccommodationStatsWrapperSchema', () => {
         const wrapper = {
             stats: {
                 total: 5,
+                totalFeatured: 1,
                 totalByType: {
                     HOTEL: 5
                 }
@@ -214,6 +218,7 @@ describe('AccommodationStatsWrapperSchema', () => {
 
         const result = AccommodationStatsWrapperSchema.parse(wrapper);
         expect(result.stats.total).toBe(5);
+        expect(result.stats.totalFeatured).toBe(1);
         expect(result.stats.averagePrice).toBeUndefined();
         expect(result.stats.averageRating).toBeUndefined();
     });
@@ -228,6 +233,7 @@ describe('AccommodationStatsWrapperSchema', () => {
         const wrapper = {
             stats: {
                 total: -1, // Invalid negative value
+                totalFeatured: 'invalid', // Should be number
                 totalByType: 'invalid' // Should be object
             }
         };
@@ -238,7 +244,7 @@ describe('AccommodationStatsWrapperSchema', () => {
     it('should reject stats without required fields', () => {
         const wrapper = {
             stats: {
-                // Missing total, totalByType
+                // Missing total, totalFeatured, totalByType
                 averagePrice: 100
             }
         };

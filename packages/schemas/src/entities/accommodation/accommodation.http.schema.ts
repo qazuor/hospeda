@@ -59,6 +59,7 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     maxRating: z.coerce.number().min(0).max(5).optional(),
 
     // Boolean filters with HTTP coercion
+    isFeatured: createBooleanQueryParam('Filter featured accommodations'),
     isAvailable: createBooleanQueryParam('Filter available accommodations'),
     hasPool: createBooleanQueryParam('Filter accommodations with pools'),
     hasWifi: createBooleanQueryParam('Filter accommodations with WiFi'),
@@ -639,11 +640,13 @@ export const httpToDomainAccommodationSearch = (
     sortBy: httpParams.sortBy,
     sortOrder: httpParams.sortOrder,
     sorts: httpParams.sorts,
+    featuredFirst: httpParams.featuredFirst,
     q: httpParams.q,
 
     // Entity-specific filters that exist in BOTH schemas
     type: httpParams.type,
     types: httpParams.types,
+    isFeatured: httpParams.isFeatured,
     minPrice: httpParams.minPrice,
     maxPrice: httpParams.maxPrice,
     currency: httpParams.currency,

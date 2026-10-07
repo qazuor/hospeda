@@ -35,6 +35,11 @@ describe('GastronomySearchSchema', () => {
         expect(() => GastronomySearchSchema.parse(data)).not.toThrow();
     });
 
+    it('should accept isFeatured boolean filter', () => {
+        const result = GastronomySearchSchema.parse({ isFeatured: true });
+        expect(result.isFeatured).toBe(true);
+    });
+
     it('should reject invalid type enum value', () => {
         expect(() => GastronomySearchSchema.parse({ type: 'TAQUERIA' })).toThrow(ZodError);
     });

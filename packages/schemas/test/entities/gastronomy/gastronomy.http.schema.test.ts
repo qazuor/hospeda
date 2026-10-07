@@ -20,6 +20,11 @@ describe('GastronomySearchHttpSchema', () => {
         expect(result.page).toBe(2);
     });
 
+    it('should coerce isFeatured from string "true"', () => {
+        const result = GastronomySearchHttpSchema.parse({ isFeatured: 'true' });
+        expect(result.isFeatured).toBe(true);
+    });
+
     it('should coerce minRating from string', () => {
         const result = GastronomySearchHttpSchema.parse({ minRating: '4' });
         expect(result.minRating).toBe(4);

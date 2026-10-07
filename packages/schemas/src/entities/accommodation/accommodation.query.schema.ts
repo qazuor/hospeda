@@ -34,6 +34,7 @@ export const AccommodationFiltersSchema = z.object({
     // Basic filters
     type: AccommodationTypeEnumSchema.optional(),
     types: z.array(z.string()).optional(),
+    isFeatured: z.boolean().optional(),
 
     // Price range filters
     minPrice: z.number().min(0).optional(),
@@ -102,6 +103,7 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     // Entity-specific filters
     type: AccommodationTypeEnumSchema.optional(),
     types: z.array(z.string()).optional(),
+    isFeatured: z.boolean().optional(),
     minPrice: z.number().min(0).optional(),
     maxPrice: z.number().min(0).optional(),
     currency: PriceCurrencyEnumSchema.optional(),
@@ -187,7 +189,7 @@ export type AccommodationSearchResult = z.infer<typeof AccommodationSearchResult
  *
  * @deprecated Use `AccommodationSearchHttpSchema` from `./accommodation.http.schema.ts`
  * instead. That schema is the one wired to the current public list route, supports
- * `features`, `sorts`, and has a compile-time contract with
+ * `features`, `sorts`, `featuredFirst`, and has a compile-time contract with
  * `httpToDomainAccommodationSearch`. This schema has zero external consumers and is
  * preserved only to avoid breaking an inferred re-export chain; it is a removal
  * candidate in a follow-up cleanup.
@@ -198,6 +200,7 @@ export const HttpAccommodationSearchSchema = HttpPaginationSchema.merge(HttpSort
 
     // Basic filters
     type: AccommodationTypeEnumSchema.optional(),
+    isFeatured: HttpQueryFields.isFeatured(),
 
     // Price filters with coercion
     minPrice: HttpQueryFields.minPrice(),
@@ -321,6 +324,8 @@ export const AccommodationListItemSchema = AccommodationReadSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Explicitly make review fields optional since they might not be present in list responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
     averageRating: createAverageRatingField({ optional: true, default: 0 })
@@ -343,6 +348,8 @@ export const AccommodationSummarySchema = AccommodationReadSchema.pick({
     media: true,
     ownerId: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Explicitly make review fields optional since they might not be present in summary responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
     averageRating: createAverageRatingField({ optional: true, default: 0 }),
@@ -362,6 +369,7 @@ export type AccommodationSummary = z.infer<typeof AccommodationSummarySchema>;
 // Essential schemas that are actually used
 export const AccommodationStatsSchema = z.object({
     total: z.number(),
+    totalFeatured: z.number(),
     averagePrice: z.number().optional(),
     averageRating: createAverageRatingField({ optional: true }),
     totalByType: z.record(z.string(), z.number())

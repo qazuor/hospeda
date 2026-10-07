@@ -21,6 +21,7 @@ export const ExperienceSearchHttpSchema = BaseHttpSearchSchema.extend({
     /** Filter by experience sub-type. */
     type: ExperienceTypeEnumSchema.optional(),
     /** Filter by featured status (coerced from query string). */
+    isFeatured: createBooleanQueryParam('Filter featured experience listings'),
     /** Minimum average rating (0–5, coerced from query string). */
     minRating: z.coerce.number().min(0).max(5).optional(),
     /** Maximum average rating (0–5, coerced from query string). */
@@ -158,9 +159,11 @@ export const httpToDomainExperienceSearch = (
     sortBy: httpParams.sortBy,
     sortOrder: httpParams.sortOrder,
     sorts: httpParams.sorts,
+    featuredFirst: httpParams.featuredFirst,
     q: httpParams.q,
     // Entity-specific filters
     type: httpParams.type,
+    isFeatured: httpParams.isFeatured,
     destinationId: httpParams.destinationId,
     ownerId: httpParams.ownerId,
     minRating: httpParams.minRating,

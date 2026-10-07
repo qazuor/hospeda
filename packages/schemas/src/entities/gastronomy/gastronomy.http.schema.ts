@@ -23,6 +23,7 @@ export const GastronomySearchHttpSchema = BaseHttpSearchSchema.extend({
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter by featured status (coerced from query string). */
+    isFeatured: createBooleanQueryParam('Filter featured gastronomy listings'),
     /** Minimum average rating (0–5, coerced from query string). */
     minRating: z.coerce.number().min(0).max(5).optional(),
     /** Maximum average rating (0–5, coerced from query string). */
@@ -196,9 +197,11 @@ export const httpToDomainGastronomySearch = (
     sortBy: httpParams.sortBy,
     sortOrder: httpParams.sortOrder,
     sorts: httpParams.sorts,
+    featuredFirst: httpParams.featuredFirst,
     q: httpParams.q,
     // Entity-specific filters
     type: httpParams.type,
+    isFeatured: httpParams.isFeatured,
     priceRange: httpParams.priceRange,
     destinationId: httpParams.destinationId,
     ownerId: httpParams.ownerId,

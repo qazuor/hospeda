@@ -65,6 +65,10 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     isVerified: true,
     verifiedAt: true,
     verifiedById: true,
+    // Server-managed (SPEC-292, renamed SPEC-309 OQ-3; HOS-929): written ONLY
+    // by the featured-by-entitlement sync primitives, never through the
+    // general create/update path.
+    featuredByEntitlement: true,
     // Server-managed (HOS-1181): only the trial-expiry cron sets this and only
     // publish/win-back-republish clears it — never through create/update input.
     billingUnpublishedAt: true
@@ -163,6 +167,10 @@ export const AccommodationUpdateInputSchema = z
                 isVerified: true,
                 verifiedAt: true,
                 verifiedById: true,
+                // Server-managed (SPEC-292, renamed SPEC-309 OQ-3; HOS-929): written
+                // ONLY by the featured-by-entitlement sync primitives, never through
+                // the general create/update path.
+                featuredByEntitlement: true,
                 // Server-managed (HOS-1181): only the trial-expiry cron sets this
                 // and only publish/win-back-republish clears it — never through
                 // create/update input.

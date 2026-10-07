@@ -294,6 +294,13 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     extraInfo: true
 }).extend({
     /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
+    /**
      * Slug — relaxed on the read side so accommodations whose slug was
      * generated before the BETA-172 truncation fix (onboarding drafts with a
      * long imported name) can still be fetched without tripping the write
@@ -562,6 +569,12 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     //     locally-composed schema is not seen.
     richDescription: true,
     richDescriptionI18n: true,
+    // HOS-929: the owner's own editor needs the featuring source to know
+    // whether the listing is CURRENTLY featured — the addon upsell in the
+    // editor hub reads this to decide whether to show at all. It is the only
+    // source since HOS-1419 dropped `is_featured`. A billing-status boolean,
+    // not premium content.
+    featuredByEntitlement: true,
     destinationId: true,
     media: true,
     videos: true,
@@ -593,6 +606,13 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
     /**
      * Slug — relaxed on the read side so accommodations whose slug was
      * generated before the BETA-172 truncation fix (onboarding drafts with a
@@ -678,10 +698,19 @@ export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema
  * had to arrive in the same change. Omitting the fields here makes the nested case
  * fail-closed by construction: there is no per-route strip to forget, and no
  * entitlement to resolve for a relation nobody renders rich text from.
+ *
+ * `featuredByEntitlement` (HOS-929) rides the same hazard: `PostService.getDefaultListRelations()`
+ * eager-loads `relatedAccommodation` with no column allowlist on every `GET /protected/posts`
+ * and `/protected/posts/:id`, which authorize only `authorId === actor.id` — never ownership of
+ * the referenced accommodation. A content author who lists/edits their own post about ANOTHER
+ * user's accommodation would otherwise receive that owner's billing-derived flag. Omitted here
+ * for the same fail-closed reason as the rich-description pair, not because it is equally
+ * sensitive (it is a boolean, not PII/credentials).
  */
 export const AccommodationProtectedCardSchema = AccommodationProtectedSchema.omit({
     richDescription: true,
-    richDescriptionI18n: true
+    richDescriptionI18n: true,
+    featuredByEntitlement: true
 });
 
 export type AccommodationProtectedCard = z.infer<typeof AccommodationProtectedCardSchema>;
