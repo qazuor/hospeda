@@ -62,7 +62,13 @@ export default defineConfig({
         ],
         // `webhooks/**` (HOS-1627, TEST:U2:14): the Brevo hard-bounce route
         // against real rows. It cleans only its own rows, never TRUNCATE.
-        include: ['test/integration/ai/**/*.test.ts', 'test/integration/webhooks/**/*.test.ts'],
+        // `outbox/**` (HOS-1425, TEST:U2:2): the outbox sender end to end against
+        // real rows. It cleans only its own rows, never TRUNCATE.
+        include: [
+            'test/integration/ai/**/*.test.ts',
+            'test/integration/webhooks/**/*.test.ts',
+            'test/integration/outbox/**/*.test.ts'
+        ],
         // `vault-roundtrip.test.ts` is non-deterministically flaky: the
         // credential-create route triggers a fire-and-forget `syncAiProviderModels`
         // (HOS-94 auto-sync on create) that touches the DB asynchronously after
