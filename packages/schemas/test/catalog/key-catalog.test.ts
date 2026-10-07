@@ -126,3 +126,68 @@ describe('vertical activation events (DEC-TRIAL-006)', () => {
         expect(VerticalActivationEventSchema.safeParse('user_signed_up').success).toBe(false);
     });
 });
+
+/**
+ * Independent expected values for the semantically load-bearing keys. They are
+ * written by hand from the spec, NOT derived from the catalog, so a lockstep
+ * change of the code and the migration still turns this file red.
+ */
+const EXPECTED_BASE_KEYS = ['recover_own_listing', 'subscribe_to_plan'];
+const EXPECTED_GLOBAL_KEYS = ['has_verification_badge', 'priority_support', 'vip_support'];
+const EXPECTED_LISTING_CAPS = [
+    'max_accommodations',
+    'max_experiences',
+    'max_gastronomies',
+    'max_properties'
+];
+const EXPECTED_METERED_KEYS = [
+    'max_ai_accommodation_import_per_month',
+    'max_ai_chat_consumer_per_month',
+    'max_ai_chat_experience_per_month',
+    'max_ai_chat_gastronomy_per_month',
+    'max_ai_chat_per_month',
+    'max_ai_search_per_month',
+    'max_ai_support_per_month',
+    'max_ai_text_improve_per_month',
+    'max_ai_translate_per_month'
+];
+
+describe('load-bearing key attributes are pinned to the spec', () => {
+    const keysWhere = (predicate: (d: (typeof CATALOG_KEY_DEFINITIONS)[number]) => boolean) =>
+        CATALOG_KEY_DEFINITIONS.filter(predicate)
+            .map((d) => d.key)
+            .sort();
+
+    it('has exactly the BASE set, and every other key is COMMERCIAL', () => {
+        expect(keysWhere((d) => d.keyClass === 'BASE')).toEqual(EXPECTED_BASE_KEYS);
+        expect(keysWhere((d) => d.keyClass === 'COMMERCIAL')).toHaveLength(
+            CATALOG_KEY_DEFINITIONS.length - EXPECTED_BASE_KEYS.length
+        );
+    });
+
+    it('has exactly the expected global-scope keys', () => {
+        expect(keysWhere((d) => d.scope === 'global')).toEqual(EXPECTED_GLOBAL_KEYS);
+    });
+
+    it('sums the listing caps and unpublishes the excess', () => {
+        for (const key of EXPECTED_LISTING_CAPS) {
+            const definition = getCatalogKey({ key });
+            expect(definition?.kind).toBe('limit');
+            expect(definition?.aggregationStrategy).toBe('SUM');
+            expect(definition?.enforcementStrategy).toBe('UNPUBLISH');
+        }
+    });
+
+    it('declares the metered monthly keys as vertical, summed, disabled on excess', () => {
+        expect(keysWhere((d) => d.key.endsWith('_per_month'))).toEqual(EXPECTED_METERED_KEYS);
+        for (const key of EXPECTED_METERED_KEYS) {
+            expect(getCatalogKey({ key })).toMatchObject({
+                kind: 'limit',
+                scope: 'vertical',
+                aggregationStrategy: 'SUM',
+                enforcementStrategy: 'DISABLE',
+                keyClass: 'COMMERCIAL'
+            });
+        }
+    });
+});

@@ -5,7 +5,7 @@ import {
     VerticalEnum
 } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
-import { closeTestPool, getTestPool } from './helpers.ts';
+import { closeTestPool, getTestPool, withCleanSlate } from './helpers.ts';
 
 afterAll(async () => {
     await closeTestPool();
@@ -123,5 +123,36 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
 
         expect(error?.code).toBe('23514');
         expect(error?.constraint).toBe(constraint);
+    });
+});
+
+describe('reference rows survive the integration clean slate', () => {
+    it('keeps the 5 verticals and the 78 keys after withCleanSlate', async () => {
+        await withCleanSlate(async () => {
+            const verticals = await getTestPool().query('SELECT 1 FROM vertical');
+            const keys = await getTestPool().query('SELECT 1 FROM catalog_key');
+
+            expect(verticals.rowCount).toBe(Object.values(VerticalEnum).length);
+            expect(keys.rowCount).toBe(CATALOG_KEY_DEFINITIONS.length);
+            expect(keys.rowCount).toBe(78);
+        });
+    });
+});
+
+describe('load-bearing catalog_key rows are pinned independently of the code catalog', () => {
+    it('stores exactly the BASE and the global keys the spec names', async () => {
+        const base = await getTestPool().query<{ key: string }>(
+            "SELECT key FROM catalog_key WHERE key_class = 'BASE' ORDER BY key"
+        );
+        const global = await getTestPool().query<{ key: string }>(
+            "SELECT key FROM catalog_key WHERE scope = 'global' ORDER BY key"
+        );
+
+        expect(base.rows.map((r) => r.key)).toEqual(['recover_own_listing', 'subscribe_to_plan']);
+        expect(global.rows.map((r) => r.key)).toEqual([
+            'has_verification_badge',
+            'priority_support',
+            'vip_support'
+        ]);
     });
 });
