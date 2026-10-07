@@ -22,6 +22,7 @@ import {
     findLegacyInCode,
     findLegacyInManifest,
     LEGACY_PREFIX,
+    MIN_SCANNED_FILES,
     RULE_MESSAGES,
     run
 } from '../check-payments-boundary.js';
@@ -127,6 +128,71 @@ describe('G16 predicate (a): the legacy library in any package.json or import', 
     });
 });
 
+describe('G16 predicate (a): the legacy library pinned through an override', () => {
+    it.each([
+        [
+            'a pnpm.overrides selector',
+            json({ name: 'root', pnpm: { overrides: { [`${LEGACY_PREFIX}-core`]: '1.0.0' } } }),
+            'pnpm.overrides'
+        ],
+        [
+            'a pnpm.overrides alias target',
+            json({ name: 'root', pnpm: { overrides: { zod: `npm:${LEGACY_PREFIX}-core@1` } } }),
+            'pnpm.overrides'
+        ],
+        [
+            'an npm overrides nested selector',
+            json({ name: 'root', overrides: { x: { [`${LEGACY_PREFIX}-hono`]: '1' } } }),
+            'overrides'
+        ],
+        [
+            'a yarn resolutions entry',
+            json({ name: 'root', resolutions: { [`**/${LEGACY_PREFIX}-react`]: '1' } }),
+            'resolutions'
+        ]
+    ])('turns red on %s in a package.json, naming predicate (a)', (_case, content, where) => {
+        const { exitCode, output } = guardOver({ overrides: { 'package.json': content } });
+        expect(exitCode).toBe(1);
+        expect(output).toContain(RULE_MESSAGES['G16(a)']);
+        expect(output).toContain(`package.json  ${where} overrides`);
+    });
+
+    it('turns red on an overrides entry in pnpm-workspace.yaml, naming predicate (a)', () => {
+        const yaml = `packages:\n  - "packages/*"\n\noverrides:\n  "${LEGACY_PREFIX}-core": 1.0.0\n`;
+        const { exitCode, output } = guardOver({ overrides: { 'pnpm-workspace.yaml': yaml } });
+        expect(exitCode).toBe(1);
+        expect(output).toContain(RULE_MESSAGES['G16(a)']);
+        expect(output).toContain('pnpm-workspace.yaml:5');
+    });
+
+    it('stays green when pnpm-workspace.yaml names the library only in comments', () => {
+        const yaml = `packages:\n  - "packages/*"\n# no ${LEGACY_PREFIX} override lives here\noverrides:\n  zod: 4.0.0 # was ${LEGACY_PREFIX}-core\n`;
+        const { exitCode, output } = guardOver({ overrides: { 'pnpm-workspace.yaml': yaml } });
+        expect(output).toContain('OK:');
+        expect(exitCode).toBe(0);
+    });
+});
+
+describe('G16 fails closed on a manifest it cannot read', () => {
+    it('turns red on a malformed package.json, naming predicate (a) and the file', () => {
+        const { exitCode, output } = guardOver({
+            overrides: { 'tools/x/package.json': '{ "name": ' }
+        });
+        expect(exitCode).toBe(1);
+        expect(output).toContain(RULE_MESSAGES['G16(a)']);
+        expect(output).toContain('tools/x/package.json  is not a valid JSON object');
+    });
+
+    it('turns red on a malformed payments manifest under both predicates', () => {
+        const { exitCode, output } = guardOver({
+            overrides: { 'packages/payments/package.json': '[]' }
+        });
+        expect(exitCode).toBe(1);
+        expect(output).toContain(RULE_MESSAGES['G16(a)']);
+        expect(output).toContain(RULE_MESSAGES['G16(b)']);
+    });
+});
+
 describe('G16 predicate (b): the payments package importing from apps/', () => {
     it.each([
         ['a relative path into apps/', "import { db } from '../../../apps/api/src/db';"],
@@ -191,6 +257,14 @@ describe('G16 cannot pass vacuously', () => {
         const result = run({ root: makeTree({ files: GREEN }), minScannedFiles: 1000 });
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain('not a clean tree');
+    });
+
+    it('keeps its default floor at 1000 code files, and applies it when none is passed', () => {
+        // The CLI passes no floor, so this default is the one CI runs with.
+        expect(MIN_SCANNED_FILES).toBe(1000);
+        const result = run({ root: makeTree({ files: GREEN }) });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`expected at least ${MIN_SCANNED_FILES}`);
     });
 
     it('is green over this repository', () => {

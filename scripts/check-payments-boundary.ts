@@ -7,7 +7,10 @@
  *
  * (a) The legacy billing library, ANY of its packages, appears in a
  *     `package.json` (dependencies, devDependencies, peerDependencies or
- *     optionalDependencies) or as a module specifier in code, anywhere in the
+ *     optionalDependencies, plus the override maps `pnpm.overrides`, `overrides`
+ *     and `resolutions`), in `pnpm-workspace.yaml` (any non-comment line: its
+ *     `overrides:` is where the legacy pin used to live), or as a module
+ *     specifier in code, anywhere in the
  *     repo. Code is `.ts .tsx .mts .cts .js .jsx .mjs .cjs .astro`; a specifier
  *     is any quoted string equal to the library's name or starting with it, so
  *     `import`, `export … from`, `import()`, `require()` and `vi.mock()` are all
@@ -136,8 +139,9 @@ export interface Violation {
 /** What each rule means, printed once per failing rule. */
 export const RULE_MESSAGES: Readonly<Record<Rule, string>> = {
     'G16(a)':
-        'GUARD:G16 predicate (a): the legacy billing library is declared in a package.json or imported. ' +
-        'The old billing system was demolished (U1); no package.json and no import in the repo may name it again.',
+        'GUARD:G16 predicate (a): the legacy billing library is declared or overridden in a package.json or ' +
+        'pnpm-workspace.yaml, or imported (or a manifest cannot be read to prove otherwise). The old billing ' +
+        'system was demolished (U1); nothing in the repo may name it again.',
     'G16(b)':
         'GUARD:G16 predicate (b): the payments package (packages/payments) imports from apps/. ' +
         'It is a shared package: it may depend on internal @repo/* packages, never on an app.',
@@ -164,23 +168,77 @@ const IMPORT_SPECIFIER =
     /(?:\bfrom|\bimport|\brequire|\bvi\.(?:mock|doMock|importActual)|\bjest\.mock)\s*\(?\s*(['"`])([^'"`]+)\1/g;
 
 /**
- * Predicate (a), manifest half: a `package.json` that declares the library.
+ * Parses a manifest, failing CLOSED: a manifest the guard cannot read is a
+ * violation of the rule that needed to read it, never a silent skip.
+ */
+function parseManifest(args: {
+    readonly file: string;
+    readonly source: string;
+    readonly rule: Rule;
+}): { readonly manifest: Record<string, unknown> } | { readonly violation: Violation } {
+    try {
+        const parsed: unknown = JSON.parse(args.source);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            return { manifest: parsed as Record<string, unknown> };
+        }
+    } catch {
+        // falls through to the violation below
+    }
+    return {
+        violation: {
+            rule: args.rule,
+            file: args.file,
+            detail: 'is not a valid JSON object; the guard cannot read it, so it cannot clear it'
+        }
+    };
+}
+
+/**
+ * The version-override maps a manifest can carry: pnpm's `pnpm.overrides`, npm's
+ * `overrides` and yarn's `resolutions`. Each can pull a package into the tree
+ * without any dependency block naming it.
+ */
+function overrideMaps(args: { readonly manifest: Record<string, unknown> }): readonly {
+    readonly where: string;
+    readonly map: Record<string, unknown>;
+}[] {
+    const pnpm = args.manifest.pnpm;
+    const candidates: readonly [string, unknown][] = [
+        [
+            'pnpm.overrides',
+            pnpm && typeof pnpm === 'object'
+                ? (pnpm as Record<string, unknown>).overrides
+                : undefined
+        ],
+        ['overrides', args.manifest.overrides],
+        ['resolutions', args.manifest.resolutions]
+    ];
+    return candidates.flatMap(([where, map]) =>
+        map && typeof map === 'object' ? [{ where, map: map as Record<string, unknown> }] : []
+    );
+}
+
+/** Whether an override entry (its selector or its target) names the library. */
+function overrideNamesLegacy(args: { readonly key: string; readonly value: unknown }): boolean {
+    return args.key.includes(LEGACY_PREFIX) || JSON.stringify(args.value).includes(LEGACY_PREFIX);
+}
+
+/**
+ * Predicate (a), manifest half: a `package.json` that declares the library in
+ * a dependency block, or pins it through an override map.
  *
  * @param args.file - Repo-relative path, used in the report
  * @param args.source - The manifest text
- * @returns One violation per declaring entry (a manifest that is not JSON yields none)
+ * @returns One violation per declaring entry; one if the manifest is not JSON
  */
 export function findLegacyInManifest(args: {
     readonly file: string;
     readonly source: string;
 }): readonly Violation[] {
-    let manifest: Record<string, unknown>;
-    try {
-        manifest = JSON.parse(args.source) as Record<string, unknown>;
-    } catch {
-        return [];
-    }
-    return DEPENDENCY_BLOCKS.flatMap((block) => {
+    const parsed = parseManifest({ ...args, rule: 'G16(a)' });
+    if ('violation' in parsed) return [parsed.violation];
+    const { manifest } = parsed;
+    const declared = DEPENDENCY_BLOCKS.flatMap((block) => {
         const deps = manifest[block];
         if (!deps || typeof deps !== 'object') return [];
         return Object.keys(deps)
@@ -190,6 +248,45 @@ export function findLegacyInManifest(args: {
                 file: args.file,
                 detail: `${block} declares ${name}`
             }));
+    });
+    const overridden = overrideMaps({ manifest }).flatMap(({ where, map }) =>
+        Object.entries(map)
+            .filter(([key, value]) => overrideNamesLegacy({ key, value }))
+            .map(([key]) => ({
+                rule: 'G16(a)' as const,
+                file: args.file,
+                detail: `${where} overrides ${key}`
+            }))
+    );
+    return [...declared, ...overridden];
+}
+
+/**
+ * Predicate (a), workspace half: `pnpm-workspace.yaml`, where pnpm reads its
+ * `overrides:` (and catalogs, patches). There is no YAML parser among the root
+ * dependencies, so it is read by line: ANY non-comment line naming the library
+ * fails, which is stricter than the overrides block alone and errs closed.
+ *
+ * @param args.file - Repo-relative path, used in the report
+ * @param args.source - The YAML text
+ * @returns One violation per offending line
+ */
+export function findLegacyInWorkspace(args: {
+    readonly file: string;
+    readonly source: string;
+}): readonly Violation[] {
+    return args.source.split('\n').flatMap((line, index) => {
+        const code = line.replace(/(^|\s)#.*$/, '');
+        return code.includes(LEGACY_PREFIX)
+            ? [
+                  {
+                      rule: 'G16(a)' as const,
+                      file: args.file,
+                      line: index + 1,
+                      detail: line.trim()
+                  }
+              ]
+            : [];
     });
 }
 
@@ -273,7 +370,9 @@ export function findAppDependencies(args: {
     readonly source: string;
     readonly appNames: readonly string[];
 }): readonly Violation[] {
-    const manifest = JSON.parse(args.source) as Record<string, unknown>;
+    const parsed = parseManifest({ ...args, rule: 'G16(b)' });
+    if ('violation' in parsed) return [parsed.violation];
+    const { manifest } = parsed;
     return DEPENDENCY_BLOCKS.flatMap((block) => {
         const deps = manifest[block];
         if (!deps || typeof deps !== 'object') return [];
@@ -365,9 +464,14 @@ export function scanRepo(args: { readonly root: string }): {
     let scannedCodeFiles = 0;
     for (const file of files) {
         const isManifest = file === 'package.json' || file.endsWith('/package.json');
+        const isWorkspace = file === 'pnpm-workspace.yaml' || file.endsWith('/pnpm-workspace.yaml');
         const isCode = CODE_EXTENSIONS.some((ext) => file.endsWith(ext));
-        if (!isManifest && !isCode) continue;
+        if (!isManifest && !isWorkspace && !isCode) continue;
         const source = readFileSync(join(root, file), 'utf8');
+        if (isWorkspace) {
+            violations.push(...findLegacyInWorkspace({ file, source }));
+            continue;
+        }
         if (isManifest) {
             violations.push(...findLegacyInManifest({ file, source }));
             if (file === paymentsManifest)
@@ -433,7 +537,7 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
     if (failing.length > 0) return { exitCode: 1, output: lines.join('\n') };
 
     lines.push(
-        `OK: ${result.scannedCodeFiles} code file(s) and every package.json scanned; ` +
+        `OK: ${result.scannedCodeFiles} code file(s), every package.json and pnpm-workspace.yaml scanned; ` +
             'predicates (a) and (b) and rule P-3 hold.'
     );
     return { exitCode: 0, output: lines.join('\n') };
