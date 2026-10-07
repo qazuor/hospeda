@@ -29,6 +29,14 @@ const oldRef = session.CUTOVER_OLD_SCHEMA_REF ?? 'origin/main';
 
 const PERSON_EMAIL = 'person.example@example.invalid';
 
+/**
+ * Tables whose rows the new system's structural migration writes itself (HOS-1430,
+ * `REFERENCE_TABLES` in @repo/db). They are reference data, not transcribed live rows,
+ * so TEST:U3:13 exempts them from "the new system stays empty". Kept as literals: the
+ * cutover side imports no code from the new system.
+ */
+const MIGRATION_REFERENCE_TABLES: readonly string[] = ['catalog_key', 'vertical'];
+
 let admin: PgClient;
 let oldUrl: string;
 let newUrl: string;
@@ -180,7 +188,11 @@ describe('TEST:U3:13 the old commitment is cancelled, never transcribed (AC:U3:2
         expect(oldAfter).toEqual(oldBefore);
         expect(oldBefore.billing_subscriptions?.startsWith('2:')).toBe(true);
         expect(newAfter).toEqual(newBefore);
-        for (const state of Object.values(newAfter)) expect(state.startsWith('0:')).toBe(true);
+        for (const [table, state] of Object.entries(newAfter)) {
+            if (MIGRATION_REFERENCE_TABLES.includes(table)) continue;
+            expect(state.startsWith('0:')).toBe(true);
+        }
+        for (const table of MIGRATION_REFERENCE_TABLES) expect(newAfter[table]).toBeDefined();
         expect(JSON.stringify(result.manifest)).not.toContain(PERSON_EMAIL);
     });
 });

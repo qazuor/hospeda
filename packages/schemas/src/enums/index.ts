@@ -182,5 +182,7 @@ export * from './tag-type.enum.js';
 export * from './tag-type.schema.js';
 export * from './tourist-audience.enum.js';
 export * from './tourist-audience.schema.js';
+export * from './vertical.enum.js';
+export * from './vertical.schema.js';
 export * from './visibility.enum.js';
 export * from './visibility.schema.js';
