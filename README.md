@@ -124,7 +124,6 @@ Three-tier route system:
 - [Security](docs/security/README.md)
 - [Monitoring](docs/monitoring/README.md)
 - [Runbooks](docs/runbooks/README.md)
-- [Billing](docs/billing/README.md)
 
 ### Testing
 

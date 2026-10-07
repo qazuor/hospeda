@@ -23,7 +23,7 @@ NotificationService
     |-- SubjectBuilder     (generate email subject)
     |-- Template selector  (pick React Email template)
     |-- EmailTransport     (Resend API / Mock)
-    |-- DeliveryLogger     (PostgreSQL billing_notification_log)
+    |-- DeliveryLogger     (PostgreSQL notification_log)
     |-- RetryService       (Redis sorted set queue)
 ```
 
@@ -97,6 +97,5 @@ HOSPEDA_REDIS_URL=redis://localhost:6379         # Redis (optional, for retries)
 
 ## Related Resources
 
-- [Billing Documentation](../../../docs/billing/README.md)
 - [@repo/db](../../db/docs/README.md) .. Database schema for notification log
 - [@repo/logger](../../logger/docs/README.md) .. Logging integration

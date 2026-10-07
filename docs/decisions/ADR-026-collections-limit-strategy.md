@@ -71,5 +71,4 @@ limit from `ctx.hookState.planLimit` instead.
 See `packages/billing/src/config/plans.config.ts` (plan quotas),
 `apps/api/src/middlewares/tourist-entitlements.ts` (`gateCollections`),
 `packages/service-core/src/services/userBookmarkCollection/userBookmarkCollection.service.ts`
-(`createCollection`), and `docs/billing/endpoint-gate-matrix.md` for the
-current implementation.
+(`createCollection`) for the current implementation.

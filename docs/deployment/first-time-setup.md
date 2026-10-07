@@ -1125,7 +1125,7 @@ For provider-level issues during onboarding, see the per-service common gotchas 
 | Rate limit applies to all requests at once | `API_RATE_LIMIT_TRUST_PROXY` not `true` | Phase 3. Set on API project |
 | `https://hospeda.com.ar` works but `https://api.hospeda.com.ar` is 404 | API project domain not configured or wrong project linked | Phase 2 + Phase 1.1. Confirm `apps/api/.vercel/project.json` `projectId` matches the project that owns `api.hospeda.com.ar` |
 
-For deeper incident response, see the runbooks in [`docs/runbooks/`](../runbooks/README.md): rollback, backup-recovery, billing-incidents, cloudinary-incidents, monitoring, sentry-setup, scaling, production-bugs.
+For deeper incident response, see the runbooks in [`docs/runbooks/`](../runbooks/README.md): rollback, backup-recovery, cloudinary-incidents, monitoring, sentry-setup, scaling, production-bugs.
 
 ---
 

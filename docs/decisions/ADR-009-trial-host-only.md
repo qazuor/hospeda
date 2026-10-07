@@ -2,7 +2,7 @@
 
 ## Status
 
-**Superseded — historical record only. Do not read anything below as current.**
+**Superseded by DEC-ARCH-012 (HOS-1352) — historical record only. Do not read anything below as current.**
 
 > **Superseded (HOS-1302, 2026-09-09).** Both load-bearing facts in this ADR are
 > now false, and the HOS-171 addendum below is false a third time:
@@ -20,7 +20,7 @@
 >   no longer exists.
 >
 > The live picture is in the root `CLAUDE.md` ("The trial is Hospeda's;
-> MercadoPago only charges") and `packages/billing/CLAUDE.md`.
+> MercadoPago only charges").
 >
 > **Addendum (HOS-171, 2026-07-15) — since retired by HOS-1012, see above.** The
 > trial became **card-first** (a MercadoPago preapproval carrying
