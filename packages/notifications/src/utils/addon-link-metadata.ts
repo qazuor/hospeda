@@ -4,7 +4,7 @@
  *
  * ## Why this module exists
  *
- * A notification that fails to send is written to `billing_notification_log`
+ * A notification that fails to send is written to `notification_log`
  * with `status = 'failed'`, and `notification-retry.service.ts` later
  * REBUILDS the payload from that row's `metadata` column and sends it again.
  * So `metadata` is the only channel through which anything on the original
@@ -36,7 +36,7 @@
 import type { NotificationPayload } from '../types/notification.types.js';
 
 /**
- * Subset of `billing_notification_log.metadata` that carries the add-on
+ * Subset of `notification_log.metadata` that carries the add-on
  * deep-link fields through a failed send and back out on retry.
  */
 export interface AddonLinkMetadata {

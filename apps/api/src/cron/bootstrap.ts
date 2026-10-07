@@ -193,7 +193,7 @@ export const startCronScheduler = async (): Promise<void> => {
                     });
 
                     // Capture to Sentry with consistent tags so the Sentry alert
-                    // rules in docs/billing/sentry-alerts-runbook.md can match.
+                    // rules can match.
                     // Tags pinned by the alert configuration: module=cron,
                     // job_name=<name>. The dunning job carries an extra
                     // event_type=dunning_failure tag for its dedicated alert.

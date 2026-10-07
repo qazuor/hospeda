@@ -320,11 +320,12 @@ export const AccommodationListItemSchema = AccommodationReadSchema.pick({
     price: true,
     location: true,
     media: true,
-    isFeatured: true,
     ownerId: true,
     createdAt: true,
     updatedAt: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Explicitly make review fields optional since they might not be present in list responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
     averageRating: createAverageRatingField({ optional: true, default: 0 })
@@ -345,9 +346,10 @@ export const AccommodationSummarySchema = AccommodationReadSchema.pick({
     price: true,
     location: true,
     media: true,
-    isFeatured: true,
     ownerId: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Explicitly make review fields optional since they might not be present in summary responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
     averageRating: createAverageRatingField({ optional: true, default: 0 }),

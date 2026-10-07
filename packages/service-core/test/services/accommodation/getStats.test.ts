@@ -70,7 +70,7 @@ describe('AccommodationService.getStats', () => {
         expect(result.data).toEqual({
             stats: {
                 total: 1,
-                totalFeatured: accommodation.isFeatured ? 1 : 0,
+                totalFeatured: accommodation.featuredByEntitlement ? 1 : 0,
                 averagePrice: accommodation.price?.price,
                 averageRating: accommodation.averageRating ?? 0,
                 totalByType: {

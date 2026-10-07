@@ -11,7 +11,7 @@ import {
     RAccommodationAmenityModel,
     RAccommodationFeatureModel,
     sql,
-    UserModel,
+    type UserModel,
     withTransaction
 } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
@@ -368,12 +368,6 @@ export class AccommodationService extends BaseCrudService<
     private readonly mediaProvider: ImageProvider | null;
 
     /**
-     * User model used directly for system-level role assignment in lifecycle hooks.
-     * Used instead of UserService to avoid actor permission requirements on hook actions.
-     */
-    private readonly _userModel: UserModel;
-
-    /**
      * Optional billing dependencies required by `publish()`. Wired by the API layer
      * (apps/api) which has access to TrialService and the QZPay client. Routes that
      * never publish (e.g. read endpoints) instantiate the service without these.
@@ -424,7 +418,8 @@ export class AccommodationService extends BaseCrudService<
      * @param ctx - The service context, containing the logger.
      * @param model - Optional AccommodationModel instance (for testing/mocking).
      * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
-     * @param userModel - Optional UserModel instance (for testing/mocking).
+     * @param _userModel - Unused. The owner-suspension guard that read it was removed
+     *   (HOS-1419); the positional slot is kept so existing callers do not shift.
      * @param publishDeps - Optional billing dependencies required by `publish()`.
      *   Required only when calling `publish()`; other methods do not need them.
      * @param rAmenityModel - Optional junction model for `r_accommodation_amenity` (for testing/mocking).
@@ -441,7 +436,7 @@ export class AccommodationService extends BaseCrudService<
         ctx: ServiceConfig,
         model?: AccommodationModel,
         mediaProvider?: ImageProvider | null,
-        userModel?: UserModel,
+        _userModel?: UserModel,
         publishDeps?: AccommodationPublishDeps | null,
         rAmenityModel?: RAccommodationAmenityModel,
         rFeatureModel?: RAccommodationFeatureModel,
@@ -462,7 +457,6 @@ export class AccommodationService extends BaseCrudService<
         });
         this._destinationModel = new DestinationModel();
         this.mediaProvider = mediaProvider ?? null;
-        this._userModel = userModel ?? new UserModel();
         this._publishDeps = publishDeps ?? null;
         this._rAmenityModel = rAmenityModel ?? new RAccommodationAmenityModel();
         this._rFeatureModel = rFeatureModel ?? new RAccommodationFeatureModel();
@@ -845,19 +839,6 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
-        // SPEC-143 #29: a service-suspended owner is "not selling", so they
-        // cannot create new accommodations while the subscription is paused.
-        // No exemption — this guards the owner target itself, not the caller.
-        if (data.ownerId) {
-            const owner = await this._userModel.findById(data.ownerId, ctx?.tx);
-            if (owner?.serviceSuspended) {
-                throw new ServiceError(
-                    ServiceErrorCode.FORBIDDEN,
-                    'Cannot create an accommodation while the owner subscription is paused'
-                );
-            }
-        }
-
         // HOS-153: an accommodation may only be created directly in ACTIVE state with
         // complete capacity. `publish()` enforces this for DRAFT/INACTIVE -> ACTIVE
         // transitions, but a direct `create({ lifecycleState: ACTIVE })` — reachable via
@@ -3017,7 +2998,7 @@ export class AccommodationService extends BaseCrudService<
                     slug: entity.slug,
                     name: entity.name,
                     summary: entity.summary,
-                    isFeatured: entity.isFeatured,
+                    isFeatured: entity.featuredByEntitlement,
                     reviewsCount: 0,
                     averageRating: 0,
                     media: withMedia?.media ?? entity.media,
@@ -3142,7 +3123,7 @@ export class AccommodationService extends BaseCrudService<
                         price: item.price,
                         location: item.location,
                         media: item.media,
-                        isFeatured: item.isFeatured,
+                        isFeatured: item.featuredByEntitlement,
                         ownerId: item.ownerId,
                         // Denormalized rating columns on the accommodations table —
                         // surfaced so the comparison matrix can rank by quality.
@@ -3209,7 +3190,7 @@ export class AccommodationService extends BaseCrudService<
                 // Create the stats object following AccommodationStatsSchema format
                 const stats: AccommodationStats = {
                     total: 1, // Single accommodation
-                    totalFeatured: entity.isFeatured ? 1 : 0,
+                    totalFeatured: entity.featuredByEntitlement ? 1 : 0,
                     averagePrice: entity.price?.price,
                     averageRating: entity.averageRating ?? 0,
                     totalByType: {

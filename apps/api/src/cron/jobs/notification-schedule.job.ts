@@ -4,7 +4,7 @@
  *
  * @module cron/jobs/notification-schedule
  */
-import { billingNotificationLog, eq, getDb } from '@repo/db';
+import { eq, getDb, notificationLog } from '@repo/db';
 import { type NotificationPayload, RetryService } from '@repo/notifications';
 import { trySendNotification } from '../../utils/notification-helper.js';
 import { getRedisClient } from '../../utils/redis.js';
@@ -44,9 +44,9 @@ export const notificationScheduleJob: CronJobDefinition = {
             const retryService = new RetryService(redis, {
                 onPermanentFailure: async (notification) => {
                     await getDb()
-                        .update(billingNotificationLog)
+                        .update(notificationLog)
                         .set({ status: 'permanently_failed', errorMessage: notification.lastError })
-                        .where(eq(billingNotificationLog.id, notification.id));
+                        .where(eq(notificationLog.id, notification.id));
                 }
             });
             const stats = await retryService.processRetries(async (payload: unknown) => {

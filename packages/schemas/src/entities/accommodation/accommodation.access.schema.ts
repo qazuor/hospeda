@@ -250,7 +250,6 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Content
     summary: true,
     description: true,
-    isFeatured: true,
     isVerified: true,
 
     // SPEC-212: I18nText translations (public-safe content fields).
@@ -294,6 +293,13 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Extra Info (public)
     extraInfo: true
 }).extend({
+    /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
     /**
      * Slug — relaxed on the read side so accommodations whose slug was
      * generated before the BETA-172 truncation fix (onboarding drafts with a
@@ -563,13 +569,11 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     //     locally-composed schema is not seen.
     richDescription: true,
     richDescriptionI18n: true,
-    isFeatured: true,
-    // HOS-929: the owner's own editor needs BOTH source columns to know
-    // whether the listing is CURRENTLY featured for any reason — the addon
-    // upsell in the editor hub reads this to decide whether to show at all.
-    // Same sensitivity class as `isFeatured` (a billing-status boolean, not
-    // premium content), so it rides the same pick/omit path, including into
-    // `AccommodationProtectedCardSchema` embeds.
+    // HOS-929: the owner's own editor needs the featuring source to know
+    // whether the listing is CURRENTLY featured — the addon upsell in the
+    // editor hub reads this to decide whether to show at all. It is the only
+    // source since HOS-1419 dropped `is_featured`. A billing-status boolean,
+    // not premium content.
     featuredByEntitlement: true,
     destinationId: true,
     media: true,
@@ -602,6 +606,13 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
     /**
      * Slug — relaxed on the read side so accommodations whose slug was
      * generated before the BETA-172 truncation fix (onboarding drafts with a

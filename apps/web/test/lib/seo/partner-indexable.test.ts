@@ -19,12 +19,11 @@ import { evaluatePartnerIndexability } from '../../../src/lib/seo/partner-indexa
 const indexable = {
     tier: 'gold',
     lifecycleState: 'ACTIVE',
-    subscriptionStatus: 'active',
     description: 'Excursiones por el Litoral con guías locales.'
 };
 
 describe('evaluatePartnerIndexability', () => {
-    it('accepts a gold, active, paying partner with a description', () => {
+    it('accepts a gold, active partner with a description', () => {
         // Arrange / Act
         const result = evaluatePartnerIndexability(indexable);
 
@@ -55,16 +54,16 @@ describe('evaluatePartnerIndexability', () => {
         expect(result.reason).toBe('not-visible');
     });
 
-    it('rejects a partner who stopped paying', () => {
-        // Arrange / Act
+    it('no longer reads a subscription status (dropped with the old billing, HOS-1419)', () => {
+        // Arrange / Act — a stale payload still carrying the retired field must
+        // be judged on the surviving conditions only.
         const result = evaluatePartnerIndexability({
             ...indexable,
             subscriptionStatus: 'pending'
-        });
+        } as Parameters<typeof evaluatePartnerIndexability>[0]);
 
         // Assert
-        expect(result.isIndexable).toBe(false);
-        expect(result.reason).toBe('not-visible');
+        expect(result.isIndexable).toBe(true);
     });
 
     it('rejects a partner with no description at all', () => {

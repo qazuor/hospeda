@@ -173,7 +173,6 @@ interface GastronomySeedData {
     readonly visibility: string;
     readonly lifecycleState: string;
     readonly moderationState: string;
-    readonly isFeatured: boolean;
     readonly contactInfo?: Record<string, unknown> | null;
     readonly socialNetworks?: Record<string, unknown> | null;
     readonly openingHours?: Record<string, unknown> | null;
@@ -574,7 +573,6 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                         item.lifecycleState as (typeof gastronomies.$inferInsert)['lifecycleState'],
                     moderationState:
                         item.moderationState as (typeof gastronomies.$inferInsert)['moderationState'],
-                    isFeatured: item.isFeatured,
                     contactInfo: (item.contactInfo ??
                         null) as (typeof gastronomies.$inferInsert)['contactInfo'],
                     socialNetworks: (item.socialNetworks ??

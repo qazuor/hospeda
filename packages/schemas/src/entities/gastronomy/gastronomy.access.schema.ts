@@ -46,7 +46,6 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     // Content
     summary: true,
     description: true,
-    isFeatured: true,
 
     // I18n translations
     nameI18n: true,
@@ -97,6 +96,13 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     // Opening hours (public)
     openingHours: true
 }).extend({
+    /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
     /**
      * Rich-text (markdown) variant of the description for entitled owners.
      * Must survive serialization so the web client can switch between rich
@@ -246,10 +252,9 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     summaryI18n: true,
     descriptionI18n: true,
     richDescriptionI18n: true,
-    isFeatured: true,
-    // HOS-1286: the owner's own editor sees both featuring sources separately,
-    // like the accommodation protected tier. Never added to the PUBLIC pick —
-    // public reads get the OR under `isFeatured` and nothing else.
+    // HOS-1286: the owner's own editor sees the featuring source under its own
+    // name, like the accommodation protected tier. Never added to the PUBLIC
+    // pick — public reads get it derived under `isFeatured` and nothing else.
     featuredByEntitlement: true,
     destinationId: true,
     media: true,

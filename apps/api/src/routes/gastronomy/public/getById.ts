@@ -40,8 +40,7 @@ export const publicGetGastronomyByIdRoute = createPublicRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // HOS-1286: the OR of the two featuring sources, applied in the
-        // PUBLIC tier only. Before this the handler returned the row as-is.
+        // HOS-1286: the public `isFeatured`, derived in the PUBLIC tier only.
         return result.data ? withPublicIsFeatured(withPublicVisibleFaqs(result.data)) : null;
     },
     options: {

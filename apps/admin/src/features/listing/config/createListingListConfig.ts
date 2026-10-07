@@ -20,7 +20,6 @@ import type { ListingEntityConfigParams } from '../types';
  */
 const SHARED_FILTER_ORDER = {
     DESTINATION: 1,
-    FEATURED: 2,
     OWNER_ID: 3,
     INCLUDE_DELETED: 99
 } as const;
@@ -89,12 +88,6 @@ export function createListingListConfig<TListItem extends { id: string }>(
             order: SHARED_FILTER_ORDER.DESTINATION,
             debounceMs: 400,
             maxLength: 36
-        },
-        {
-            paramKey: 'isFeatured',
-            labelKey: 'admin-filters.isFeatured.label' as const,
-            type: 'boolean' as const,
-            order: SHARED_FILTER_ORDER.FEATURED
         },
         {
             paramKey: 'ownerId',

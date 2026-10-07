@@ -165,7 +165,6 @@ hard-delete is guarded and discouraged.
   (superseded by SPEC-168; explains the prior code-only model)
 - [ADR-006: Integer Monetary Values](../decisions/ADR-006-integer-monetary-values.md)
 - [ADR-009: Trial Host-Only](../decisions/ADR-009-trial-host-only.md) — **superseded**; kept as a historical record only
-- [Billing Package](../../packages/billing/CLAUDE.md)
 - SPEC-168: `.claude/specs/SPEC-168-admin-plan-management/spec.md`
 - HOS-39: `.specs/HOS-39-plans-limits-entitlements-editable/spec.md` — narrowed
   the Model C admin-editable field policy (entitlements/trial/sort-order

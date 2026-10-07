@@ -3,7 +3,7 @@
  * @description Locale-aware lookups for billing config values that the billing
  * package stores in English. The billing package is the single source of truth
  * for plans, entitlements and limits, but its strings are config-language only
- * (per packages/billing/CLAUDE.md). This module wraps each lookup with i18n
+ * (config values are not localised at the source). This module wraps each lookup with i18n
  * keys that translators can override per locale; falls back to the config value
  * when no translation is provided.
  */

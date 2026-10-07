@@ -65,7 +65,7 @@ const attachOpenApiExample = <T>(schema: T, example: unknown): T => {
  * `sortBy`/`sortOrder` pair.
  *
  * `featuredFirst` is an independent flag. When `true`, the model prepends
- * `isFeatured DESC` to the ORDER BY clause. Public routes may force this to
+ * `featuredByEntitlement DESC` to the ORDER BY clause. Public routes may force this to
  * `true` server-side, ignoring the client value.
  */
 export const HttpSortingSchema = z.object({

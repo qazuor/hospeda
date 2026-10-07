@@ -55,8 +55,9 @@ const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>)
         type: result.data.type,
         reviewsCount: result.data.reviewsCount,
         averageRating: result.data.averageRating,
-        // HOS-929: public read treats holding either the admin-curated flag
-        // OR the billing-derived entitlement flag as featured.
+        // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+        // (the only featuring source since HOS-1419); the raw column itself is
+        // stripped by the public schema (never in its pick).
         isFeatured: resolvePublicIsFeatured(result.data),
         visibility: result.data.visibility || 'PUBLIC',
         lifecycleState: result.data.lifecycleState || 'ACTIVE',

@@ -87,33 +87,17 @@ describe('buildFeaturedAddonOffers', () => {
 
 /**
  * HOS-929 — the addon upsell in the editor (`FeaturedAddonOffer.astro`) must
- * self-hide once the listing is featured from EITHER source: pitching the
- * add-on to an already-featured host makes no sense with the owner toggle
- * gone (holding the entitlement now features automatically, so "not
- * featured" is exactly "holds neither source").
+ * self-hide once the listing is featured: pitching the add-on to an
+ * already-featured host makes no sense with the owner toggle gone (holding
+ * the entitlement now features automatically, and it is the only featuring
+ * source since HOS-1419).
  */
 describe('isAccommodationAlreadyFeatured', () => {
-    it('is already featured when only isFeatured is true', () => {
-        expect(
-            isAccommodationAlreadyFeatured({ isFeatured: true, featuredByEntitlement: false })
-        ).toBe(true);
+    it('is already featured when featuredByEntitlement is true', () => {
+        expect(isAccommodationAlreadyFeatured({ featuredByEntitlement: true })).toBe(true);
     });
 
-    it('is already featured when only featuredByEntitlement is true', () => {
-        expect(
-            isAccommodationAlreadyFeatured({ isFeatured: false, featuredByEntitlement: true })
-        ).toBe(true);
-    });
-
-    it('is already featured when both are true', () => {
-        expect(
-            isAccommodationAlreadyFeatured({ isFeatured: true, featuredByEntitlement: true })
-        ).toBe(true);
-    });
-
-    it('is NOT featured when both are false — the offer must show', () => {
-        expect(
-            isAccommodationAlreadyFeatured({ isFeatured: false, featuredByEntitlement: false })
-        ).toBe(false);
+    it('is NOT featured when featuredByEntitlement is false — the offer must show', () => {
+        expect(isAccommodationAlreadyFeatured({ featuredByEntitlement: false })).toBe(false);
     });
 });

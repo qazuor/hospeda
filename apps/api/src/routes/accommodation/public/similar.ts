@@ -144,12 +144,11 @@ export const publicGetSimilarRoute = createPublicRoute({
                 summary: true,
                 description: true,
                 type: true,
-                isFeatured: true,
-                // HOS-929: the billing-derived sibling of `isFeatured` (SPEC-292,
-                // renamed SPEC-309 OQ-3). This raw query bypasses the service/model
-                // layer entirely, so nothing else selects it for this route — it
-                // must be explicit here or the public OR silently degrades to
-                // `isFeatured` alone.
+                // HOS-929: the featuring source behind the public `isFeatured`
+                // (SPEC-292, renamed SPEC-309 OQ-3). This raw query bypasses the
+                // service/model layer entirely, so nothing else selects it for this
+                // route — it must be explicit here or every similar listing reads
+                // as not featured.
                 featuredByEntitlement: true,
                 // SPEC-291 Phase 3b: select isVerified so the badge gate can read the
                 // real DB value. Previously omitted → defaulted to false by stripWithSchema
@@ -248,9 +247,9 @@ export const publicGetSimilarRoute = createPublicRoute({
                 rows: mediaByAccommodationId.get(row.id) ?? [],
                 videos: row.videos
             });
-            // HOS-929: public read treats holding either source flag as
-            // featured. `featuredByEntitlement` itself is stripped by
-            // `AccommodationPublicSchema` (never in its pick).
+            // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+            // (the only featuring source since HOS-1419); the raw column itself is
+            // stripped by the public schema (never in its pick).
             const withMedia = { ...rest, media, isFeatured: resolvePublicIsFeatured(row) };
             return destination ? { ...withMedia, cityDestination: destination } : withMedia;
         });

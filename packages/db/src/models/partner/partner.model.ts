@@ -1,26 +1,8 @@
-import type { LifecycleStatusEnum, Partner, PartnerSubscriptionStatusEnum } from '@repo/schemas';
-import {
-    and,
-    asc,
-    count,
-    desc,
-    eq,
-    exists,
-    gte,
-    isNotNull,
-    isNull,
-    lte,
-    ne,
-    or,
-    sql
-} from 'drizzle-orm';
+import type { LifecycleStatusEnum, Partner } from '@repo/schemas';
+import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
-import { allianceLeads } from '../../schemas/alliance/alliance_lead.dbschema.js';
-import type {
-    LifecycleStatusPgEnum,
-    PartnerSubscriptionStatusPgEnum
-} from '../../schemas/enums.dbschema.ts';
+import type { LifecycleStatusPgEnum } from '../../schemas/enums.dbschema.ts';
 import { partners } from '../../schemas/partner/partner.dbschema.js';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 
@@ -28,7 +10,6 @@ export interface SearchPartnerFilters {
     q?: string;
     type?: string;
     tier?: string;
-    subscriptionStatus?: string;
     includeInactive?: boolean;
     page?: number;
     pageSize?: number;
@@ -83,14 +64,11 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         const db = getDb();
         const conditions = [];
 
-        // Only active partners by default
+        // Only active partners by default. The lifecycle state is the only
+        // visibility switch since the partner billing columns were dropped
+        // (HOS-1419).
         if (!filters.includeInactive) {
-            conditions.push(
-                and(
-                    eq(partners.lifecycleState, 'ACTIVE'),
-                    eq(partners.subscriptionStatus, 'active')
-                )
-            );
+            conditions.push(eq(partners.lifecycleState, 'ACTIVE'));
         }
 
         // Text search on name and description.
@@ -108,11 +86,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         // Tier filter
         if (filters.tier) {
             conditions.push(eq(partners.tier, filters.tier));
-        }
-
-        // Subscription status filter
-        if (filters.subscriptionStatus) {
-            conditions.push(eq(partners.subscriptionStatus, filters.subscriptionStatus));
         }
 
         // Soft delete filter
@@ -167,11 +140,7 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         filters: { q?: string; type?: string; tier?: string } = {}
     ): Promise<number> {
         const db = getDb();
-        const conditions = [
-            eq(partners.lifecycleState, 'ACTIVE'),
-            eq(partners.subscriptionStatus, 'active'),
-            isNull(partners.deletedAt)
-        ];
+        const conditions = [eq(partners.lifecycleState, 'ACTIVE'), isNull(partners.deletedAt)];
 
         // Text search — mirrors findByFilters so counts are always consistent.
         if (filters.q) {
@@ -221,7 +190,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             .where(
                 and(
                     eq(partners.lifecycleState, 'ACTIVE'),
-                    eq(partners.subscriptionStatus, 'active'),
                     isNull(partners.deletedAt),
                     gte(partners.endsAt, new Date()),
                     lte(partners.endsAt, cutoffDate)
@@ -244,176 +212,12 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             .where(
                 and(
                     eq(partners.lifecycleState, 'ACTIVE'),
-                    eq(partners.subscriptionStatus, 'active'),
                     isNull(partners.deletedAt),
                     lte(partners.endsAt, now)
                 )
             );
 
         return result as Partner[];
-    }
-
-    /**
-     * Partners whose confirmed period has elapsed and for whom the system holds
-     * no record of payment (HOS-1299).
-     *
-     * The population `partner-expiry` cannot see and `partner-unpaid-reaper`
-     * deliberately excludes: somebody an admin activated with
-     * `registerManualPayment` — cash, cheque, a transfer — who is therefore
-     * active, has a `starts_at`, has no `ends_at` (NOTHING in the codebase
-     * writes that column outside the admin form) and has no billing
-     * subscription. Both crons miss them by construction, so nothing looks at
-     * them again, ever.
-     *
-     * This query does NOT decide anything. It produces the list a human is
-     * asked about. Five conditions narrow it, and each excludes a population
-     * that belongs to somebody else:
-     *
-     * - **`content_approved_at IS NOT NULL`** — the payment gate itself. Both
-     *   `registerManualPayment` and `send-link` refuse without it, so a partner
-     *   who never cleared it has never been able to pay through any path and
-     *   cannot be suspected of having stopped.
-     *
-     *   MEASURED CAVEAT about the six curated example fixtures
-     *   (`packages/seed/src/data/partner/*.json`): this clause excludes them on
-     *   an already-seeded environment and NOT on a fresh one, because the two
-     *   paths that put them there write different rows. Seed migration 0019
-     *   inserts through `PartnerModel` directly, bypassing
-     *   `PartnerService._beforeCreate`, so staging and production hold them
-     *   with `content_approved_at` NULL — excluded. A fresh seed runs
-     *   `partners.seed.ts`, which goes through `PartnerService.create()`, and
-     *   that hook stamps `contentApprovedAt` — so on a local database the six
-     *   demo partners DO match, carry a 2025 `starts_at`, and are flagged on
-     *   the first tick. Noisy rather than wrong (a partner with no payment
-     *   record is the shape this hunts for) and it changes no state, but do not
-     *   read this predicate as "the fixtures are excluded".
-     * - **`starts_at IS NOT NULL`** — a partner who never started is the unpaid
-     *   reaper's, which reads exactly that column.
-     * - **`payment_review_state IS NULL`** — already asked. This is what makes
-     *   the cron idempotent: the flag is its own memory, so the admin gets one
-     *   alert and not one per night.
-     * - **`revoked_at IS NULL`** — an admin already dealt with them.
-     *
-     * HOS-1416: the former fifth condition (a NOT EXISTS over the deleted
-     * `partner_subscriptions` link table, filtered by injected exempt
-     * subscription statuses) is gone with that table. The
-     * `exemptSubscriptionStatuses` input is kept in the signature so callers
-     * keep compiling; it no longer influences the predicate and T4 owns the
-     * caller-side cleanup.
-     *
-     * The clock is `coalesce(payment_confirmed_through, starts_at)`, never
-     * `ends_at`: writing a period into that column would arm `partner-expiry`,
-     * which archives unattended.
-     *
-     * @param input - `{ confirmedThroughBefore, exemptSubscriptionStatuses }`
-     *   (RO-RO). The cutoff is `now` minus the review window.
-     * @param limit - Batch ceiling, mirroring the other two partner crons.
-     * @returns The partners an admin should be asked about.
-     */
-    async findDueForPaymentReview(
-        input: {
-            readonly confirmedThroughBefore: Date;
-            readonly exemptSubscriptionStatuses: readonly string[];
-        },
-        limit = 100
-    ): Promise<Partner[]> {
-        const db = getDb();
-
-        const result = await db
-            .select()
-            .from(partners)
-            .where(
-                and(
-                    eq(partners.lifecycleState, 'ACTIVE'),
-                    eq(partners.subscriptionStatus, 'active'),
-                    isNull(partners.deletedAt),
-                    isNull(partners.revokedAt),
-                    isNull(partners.paymentReviewState),
-                    isNotNull(partners.contentApprovedAt),
-                    isNotNull(partners.startsAt),
-                    lte(
-                        sql`coalesce(${partners.paymentConfirmedThrough}, ${partners.startsAt})`,
-                        input.confirmedThroughBefore
-                    )
-                )
-            )
-            .limit(limit);
-
-        return result as Partner[];
-    }
-
-    /**
-     * Partners that were provisioned from an approved lead and never paid
-     * (HOS-278 R-3).
-     *
-     * The population R-3 is about — "un partner puede cargar todo y no pagar
-     * nunca" — and deliberately NOT every unpaid partner. The scope is decided
-     * by `alliance_leads.provisioned_partner_id`: a partner an admin typed in
-     * by hand is that admin's working state, and archiving it out from under
-     * them would be the cron deciding their queue is stale. Same predicate the
-     * migration-0080 backfill used to draw the same line.
-     *
-     * "Never paid" is `starts_at IS NULL`: that column is written only when a
-     * subscription actually activates, which makes it the honest record of
-     * whether money ever moved. Reading `subscription_status` instead would
-     * also match a partner who paid once and lapsed — a different story, owned
-     * by the dunning flow, not by this reaper.
-     *
-     * Already-archived and revoked rows are excluded so the cron is idempotent
-     * and never re-touches a partner an admin has already dealt with.
-     *
-     * @param input - `{ createdBefore, noticeState }` (RO-RO).
-     *   `noticeState: 'un-notified'` returns candidates for the nudge (stage
-     *   one); `'any'` returns candidates for archiving (stage two), which does
-     *   not care whether the notice went out — a partner who was created
-     *   before the notice column existed must still be archivable.
-     * @param limit - Batch ceiling, mirroring the expiry cron.
-     * @returns The matching partners.
-     */
-    async findUnpaidProvisioned(
-        input: { readonly createdBefore: Date; readonly noticeState: 'un-notified' | 'any' },
-        limit = 100
-    ): Promise<Partner[]> {
-        const db = getDb();
-
-        const conditions = [
-            isNull(partners.startsAt),
-            isNull(partners.revokedAt),
-            isNull(partners.deletedAt),
-            ne(partners.lifecycleState, 'ARCHIVED'),
-            lte(partners.createdAt, input.createdBefore),
-            exists(
-                db
-                    .select({ one: sql`1` })
-                    .from(allianceLeads)
-                    .where(eq(allianceLeads.provisionedPartnerId, partners.id))
-            )
-        ];
-
-        if (input.noticeState === 'un-notified') {
-            conditions.push(isNull(partners.unpaidNoticeSentAt));
-        }
-
-        const result = await db
-            .select()
-            .from(partners)
-            .where(and(...conditions))
-            .limit(limit);
-
-        return result as Partner[];
-    }
-
-    /**
-     * Update partner subscription status
-     */
-    async updateSubscriptionStatus(
-        id: string,
-        status: (typeof PartnerSubscriptionStatusPgEnum.enumValues)[number]
-    ): Promise<Partner | null> {
-        return this.update(
-            { id },
-            { subscriptionStatus: status as PartnerSubscriptionStatusEnum }
-        ) as Promise<Partner | null>;
     }
 
     /**

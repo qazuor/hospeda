@@ -43,8 +43,7 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
     deletedById: true,
     // HOS-1286: server-managed billing flag. Written ONLY by the
     // featured-by-entitlement sync primitives — never from a request body, not
-    // even an admin's. `isFeatured`, the admin-curated flag beside it, stays
-    // accepted. Same treatment as `accommodations.featuredByEntitlement`.
+    // even an admin's. Same treatment as `accommodations.featuredByEntitlement`.
     featuredByEntitlement: true,
     // HOS-895: the uploaded menu photo/PDF. Written ONLY by
     // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
@@ -142,7 +141,7 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  * PATCH body is silently stripped (Zod's default unknown-key behaviour).
  *
  * **Control fields stay admin-only (HOS-166 §6.2 / AC-19):** `lifecycleState`,
- * `visibility`, `moderationState`, `isFeatured`, `ownerId` are **intentionally
+ * `visibility`, `moderationState`, `ownerId` are **intentionally
  * absent** from this schema — these are the *control* fields (as opposed to
  * *identity*), and the reversal above is scoped to identity only. Any of these
  * keys in an owner PATCH body is silently stripped.
@@ -169,7 +168,7 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
- * - `lifecycleState`, `visibility`, `moderationState`, `isFeatured`, `ownerId`
+ * - `lifecycleState`, `visibility`, `moderationState`, `ownerId`
  *   (control fields — HOS-166 §6.2)
  * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)
  */
@@ -236,10 +235,10 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
  *   `actor.id` (D-3 — an owner can only ever create a listing for themselves).
  * - `slug` — never accepted from the body; derived server-side from `name` at
  *   create time by `BaseListingService._beforeCreate` (HOS-166 OQ-3).
- * - `lifecycleState`, `visibility`, `isFeatured`, `moderationState` — control
+ * - `lifecycleState`, `visibility`, `moderationState` — control
  *   fields; the route always forces `visibility: PRIVATE` and
  *   `lifecycleState: DRAFT` on create (HOS-166 D-3 — complete first, pay
- *   after). `isFeatured`/`moderationState` are left to their schema defaults.
+ *   after). `moderationState` is left to its schema default.
  * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates;
  *   nonsensical on a brand-new listing with no reviews yet.
  *
@@ -297,11 +296,9 @@ export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
     slug: true,
     lifecycleState: true,
     visibility: true,
-    isFeatured: true,
     // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
     // primitives, never through create/update — the same treatment
-    // `accommodation.crud.schema.ts` gives its twin, and unlike `isFeatured`,
-    // which admin still controls manually.
+    // `accommodation.crud.schema.ts` gives its twin.
     featuredByEntitlement: true,
     moderationState: true,
     // Server-computed aggregates — nonsensical on create.
@@ -360,7 +357,7 @@ export const GastronomyUpdateInputSchema = z
         // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
         // this, a PATCH like `{ lifecycleState: 'ACTIVE' }` would arrive at the
         // service carrying injected defaults (`visibility:'PUBLIC'`,
-        // `moderationState:'PENDING'`, `isFeatured:false`, review stats, etc.),
+        // `moderationState:'PENDING'`, review stats, etc.),
         // silently overwriting server state. Stripping the top-level defaults
         // restores correct "absent key = no change" PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
@@ -380,7 +377,6 @@ export const GastronomyUpdateInputSchema = z
                 // it in would let an owner send `featuredByEntitlement: true` in
                 // their own update and feature their listing without buying the
                 // add-on, which is the exact product HOS-1286 exists to sell.
-                // `isFeatured`, the admin-curated flag beside it, stays writable.
                 featuredByEntitlement: true,
                 // Server-managed: ownership change requires a dedicated admin action,
                 // not a generic PATCH body (mirrors accommodation's ownerSuspended omit).

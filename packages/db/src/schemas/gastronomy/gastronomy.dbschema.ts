@@ -142,15 +142,14 @@ export const gastronomies = pgTable(
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
-        isFeatured: boolean('is_featured').notNull().default(false),
         /**
          * Denormalized billing-state flag (HOS-1286) — mirror of
          * `accommodations.featured_by_entitlement`. True while a
          * `visibility-boost-gastronomy-*` addon purchase grants an active
          * FEATURED_LISTING entitlement for THIS listing. Written only by the
-         * billing sync primitives, never by admin curation, and deliberately
-         * independent of {@link isFeatured}: the effective public value is the
-         * disjunction `isFeatured OR featuredByEntitlement`, ORed in the PUBLIC
+         * billing sync primitives, never by admin curation. Since HOS-1419
+         * dropped the admin-curated `is_featured` column it is the ONLY featuring
+         * source: the public `isFeatured` value is derived from it in the PUBLIC
          * routes only (`resolvePublicIsFeatured`).
          *
          * **Only one source feeds it, unlike accommodation.** No gastronomy plan
@@ -205,11 +204,8 @@ export const gastronomies = pgTable(
             table.destinationId
         ),
         gastronomies_visibility_idx: index('gastronomies_visibility_idx').on(table.visibility),
-        gastronomies_isFeatured_idx: index('gastronomies_isFeatured_idx').on(table.isFeatured),
-        // HOS-1286: parallel index for featuredByEntitlement, mirroring the
-        // accommodations pair. A BitmapOr of (isFeatured_idx,
-        // featuredByEntitlement_idx) serves "isFeatured OR featuredByEntitlement"
-        // without an expression index over the disjunction.
+        // HOS-1286: index for featuredByEntitlement, mirroring the accommodations
+        // one — the only featuring source since HOS-1419 dropped `is_featured`.
         gastronomies_featuredByEntitlement_idx: index('gastronomies_featuredByEntitlement_idx').on(
             table.featuredByEntitlement
         ),

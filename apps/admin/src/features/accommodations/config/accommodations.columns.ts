@@ -1,7 +1,6 @@
 import type { TranslationKey } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
-import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
 import {
     type InlineStateOption,
     InlineStateSelectCell
@@ -219,22 +218,6 @@ export const createAccommodationsColumns = (
                     reviewsPath: '/api/v1/admin/accommodations/reviews',
                     idParamName: 'accommodationId',
                     queryKeyPrefix: 'accommodation-reviews'
-                })
-        },
-        {
-            id: 'isFeatured',
-            header: t('admin-entities.columns.featured'),
-            accessorKey: 'isFeatured',
-            enableSorting: true,
-            columnType: ColumnType.WIDGET,
-            widgetRenderer: (row) =>
-                createElement(InlineFeaturedCell, {
-                    entityId: row.id,
-                    entityName: row.name,
-                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
-                    checked: Boolean(row.isFeatured),
-                    permission: PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
-                    useUpdateMutation: useUpdateAccommodationMutation
                 })
         },
         {

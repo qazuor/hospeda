@@ -16,7 +16,6 @@ interface ExperienceSearchInput {
     readonly ownerId?: string;
     readonly type?: string;
     readonly isFeatured?: boolean;
-    readonly hasActiveSubscription?: boolean;
     readonly page?: number;
     readonly pageSize?: number;
 }
@@ -25,7 +24,7 @@ interface ExperienceSearchInput {
  * ExperienceModel — all DB access for experience listings (SPEC-240).
  *
  * Mirrors GastronomyModel structure: extends BaseModelImpl, provides search()
- * override with experience-specific filters (type, hasActiveSubscription).
+ * override with experience-specific filters (type).
  * Expand with domain-specific query methods as the service layer grows.
  */
 export class ExperienceModel extends BaseModelImpl<Experience> {
@@ -108,12 +107,9 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
                 );
             }
             if (params.isFeatured !== undefined) {
-                whereClauses.push(eq(experiences.isFeatured, params.isFeatured));
-            }
-            if (params.hasActiveSubscription !== undefined) {
-                whereClauses.push(
-                    eq(experiences.hasActiveSubscription, params.hasActiveSubscription)
-                );
+                // `isFeatured` is the public name; its only source is
+                // `featuredByEntitlement` since HOS-1419 dropped `is_featured`.
+                whereClauses.push(eq(experiences.featuredByEntitlement, params.isFeatured));
             }
             if (params.q) {
                 whereClauses.push(safeIlike(experiences.name, params.q));

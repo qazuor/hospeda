@@ -38,11 +38,6 @@
             "type": "string",
             "description": "ID of the destination where the accommodation is located"
         },
-        "isFeatured": {
-            "type": "boolean",
-            "default": false,
-            "description": "Whether the accommodation is featured"
-        },
         "contactInfo": {
             "$ref": "common.schema.json#/definitions/contactInfo"
         },

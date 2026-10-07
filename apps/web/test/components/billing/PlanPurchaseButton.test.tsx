@@ -138,15 +138,7 @@ type MockUseSession = ReturnType<typeof vi.fn>;
  */
 const PENDING_KEY = 'hospeda:checkout:pendingSubscriptionId';
 
-/**
- * Default props used across most tests.
- *
- * `ownPreapprovalEnabled: true` — this file's whole point is exercising
- * the payer-email confirm dialog via `confirmPayerEmail()`, so every test here
- * opts the gate (HOS-937 review fix) in explicitly. The gate's OFF behavior
- * (dialog skipped, straight to checkout) is covered separately in
- * `PlanPurchaseButton.own-preapproval-gate.test.tsx`.
- */
+/** Default props used across most tests. */
 const defaultProps = {
     planSlug: 'plan_starter',
     // 120000 cents = $1200 ARS — formatPrice divides by 100 internally
@@ -159,8 +151,7 @@ const defaultProps = {
     audience: 'owner' as const,
     // HOS-942: the post-signin return path is a prop now — the component no
     // longer knows which of the two pricing pages it was mounted on.
-    plansPath: 'suscriptores/planes/anfitriones',
-    ownPreapprovalEnabled: true
+    plansPath: 'suscriptores/planes/anfitriones'
 };
 
 /**
@@ -223,16 +214,13 @@ function getMainButton(): HTMLElement {
 }
 
 /**
- * HOS-937 step 2: clicking the CTA now always opens the payer-email confirm
- * dialog (spec §8.1) before the actual checkout POST fires. Every existing
- * test in this file that expects the checkout request to have fired must
- * click through it first — this helper does that with the pre-filled
- * default (the session's own email), matching the "zero new fields for
- * whoever's email matches" behavior (one click through).
+ * The payer-email confirm dialog and its own-preapproval flag were retired
+ * with the old billing system (HOS-1419): a click now goes straight to the
+ * checkout POST with the session's own email. Kept as a no-op so the call
+ * sites below still read as "the click that starts the checkout".
  */
-async function confirmPayerEmail(user: ReturnType<typeof userEvent.setup>): Promise<void> {
-    await screen.findByRole('dialog');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+async function confirmPayerEmail(_user: ReturnType<typeof userEvent.setup>): Promise<void> {
+    await Promise.resolve();
 }
 
 // ---------------------------------------------------------------------------

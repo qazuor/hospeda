@@ -12,7 +12,7 @@
  * Making the fallback throw was considered and rejected on evidence: 101 of the
  * 712 permissions rely on it TODAY, and they are not mistakes. Whole live
  * families sit there — `AMENITY_*`, `FEATURE_*`, `TAG_*`, `AD_SLOT_*`,
- * `AD_MEDIA_ASSET_*`, `PRICING_PLAN_*`, `PRICING_TIER_*` — and giving each one a
+ * `AD_MEDIA_ASSET_*`, `PRICING_TIER_*` — and giving each one a
  * category is a taxonomy decision about how the permissions screen should read,
  * not a bug fix. Breaking the build would mean breaking it for all 101 at once.
  *
@@ -91,13 +91,8 @@ const KNOWN_SYSTEM_FALLBACK_KEYS: readonly string[] = [
     'MANAGE_CONTENT',
     'MANAGE_PRODUCTS',
     'MANAGE_PURCHASES',
-    'MANAGE_SUBSCRIPTIONS',
     'MANAGE_USERS',
     'MULTILANGUAGE_CONTENT_EDIT',
-    'PRICING_PLAN_CREATE',
-    'PRICING_PLAN_DELETE',
-    'PRICING_PLAN_UPDATE',
-    'PRICING_PLAN_VIEW',
     'PRICING_TIER_CREATE',
     'PRICING_TIER_DELETE',
     'PRICING_TIER_UPDATE',

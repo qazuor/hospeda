@@ -55,7 +55,6 @@ function makePromotion(overrides: Partial<OwnerPromotion> = {}): OwnerPromotion 
         validUntil: new Date('2026-12-31T00:00:00.000Z'),
         maxRedemptions: null,
         currentRedemptions: 0,
-        planRestricted: false,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         createdAt: new Date('2026-06-30T09:00:00.000Z'),
         updatedAt: new Date('2026-06-30T09:00:00.000Z'),

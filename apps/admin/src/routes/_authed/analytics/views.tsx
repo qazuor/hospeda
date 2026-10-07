@@ -13,7 +13,7 @@
  *    by the API (AC-37).
  *
  * Permission guard: `requireAnalyticsViewAccess` (beforeLoad, same pattern as
- * billing routes using `requireBillingAccess`). Redirects to `/auth/forbidden`
+ * the other admin routes using `requireAdminPermission`). Redirects to `/auth/forbidden`
  * when `ANALYTICS_VIEW` is absent (AC-32).
  *
  * @module analytics/views
@@ -45,7 +45,7 @@ import type { AuthState } from '@/lib/auth-session';
  * @throws {ReturnType<typeof redirect>} Redirects to `/auth/forbidden`.
  */
 function requireAnalyticsViewAccess(context: unknown): void {
-    // TYPE-WORKAROUND: same pattern used in @/lib/billing-access.ts
+    // TYPE-WORKAROUND: same pattern used in @/lib/admin-api-access.ts
     const authState = context as unknown as AuthState;
     if (!authState.permissions?.includes(PermissionEnum.ANALYTICS_VIEW)) {
         throw redirect({ to: '/auth/forbidden' });

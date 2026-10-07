@@ -4,7 +4,7 @@
  *
  * Supported filters (all wired through to the model via service.search()):
  * - type: accommodation type (direct column match)
- * - isFeatured: featured flag (direct column match)
+ * - isFeatured: featured flag (derived from `featuredByEntitlement`)
  * - destinationId: filter by destination (direct column match)
  * - q: full-text search on name and description
  * - minPrice, maxPrice: price range (JSONB field)
@@ -239,13 +239,10 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // so the badge is unconditional; `isVerified` is emitted as stored.
         const items = rawItems.map((item) => ({
             ...maskLegacyPremiumFields(item),
-            // HOS-929: public read treats holding either the admin-curated
-            // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-            // flag as featured. `featuredByEntitlement` itself is stripped by
-            // `AccommodationPublicSchema` (never in its pick).
-            isFeatured: resolvePublicIsFeatured(
-                item as { isFeatured: boolean; featuredByEntitlement?: boolean }
-            ),
+            // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+            // (the only featuring source since HOS-1419); the raw column itself is
+            // stripped by the public schema (never in its pick).
+            isFeatured: resolvePublicIsFeatured(item as { featuredByEntitlement?: boolean }),
             hasAiChat: true
         }));
 

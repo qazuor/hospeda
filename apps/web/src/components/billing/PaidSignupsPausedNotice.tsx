@@ -1,8 +1,7 @@
 /**
  * @file PaidSignupsPausedNotice.tsx
  * @description The notice rendered INSTEAD of a checkout CTA while an admin has
- * paused new self-service paid signups (`billing_settings.newPaidSignupsFrozen`,
- * surfaced to the web through `fetchCheckoutConfig`).
+ * paused new self-service paid signups (`billing_settings.newPaidSignupsFrozen`).
  *
  * One component and one pair of i18n keys for every surface the freeze covers
  * — the pricing plan cards, the owner listing publish CTA and the add-on

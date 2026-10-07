@@ -146,11 +146,10 @@ export type ProvisionPartnerResult =
  *   behavior: the admin creates the partner by hand. Refusing outright would
  *   strand every partner lead already sitting in the inbox.
  *
- * The row is created DORMANT — `lifecycleState: DRAFT`, and
- * `subscriptionStatus` left at its `pending` column default. Public visibility
- * requires `ACTIVE` **and** `active` together, so a provisioned partner is
- * invisible until it actually pays; provisioning grants an account something to
- * fill in, not a published listing.
+ * The row is created DORMANT — `lifecycleState: DRAFT`. Public visibility
+ * requires `ACTIVE`, so a provisioned partner is invisible until an admin
+ * activates it; provisioning grants an account something to fill in, not a
+ * published listing.
  *
  * `startsAt` is deliberately NOT set. It is the date the alliance began, and at
  * this point it has not — writing "today" here is exactly the invented date

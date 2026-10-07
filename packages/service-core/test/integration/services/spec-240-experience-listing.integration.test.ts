@@ -203,18 +203,16 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
                         lifecycleState: LifecycleStatusEnum.INACTIVE,
                         moderationState: ModerationStatusEnum.PENDING,
                         averageRating: 0,
-                        isFeatured: false,
                         reviewsCount: 0,
                         // These all carry a Zod `.default()`, which makes them
                         // optional on INPUT but not on the OUTPUT type `z.infer`
                         // resolves to (same reason the gastronomy admin-create
-                        // test above states averageRating/isFeatured/reviewsCount
+                        // test above states averageRating/reviewsCount
                         // explicitly) — so `tsc` requires them here.
                         meetingPointDirections: [],
                         whatToBring: [],
                         requirements: [],
-                        acceptsPrivateGroups: false,
-                        hasActiveSubscription: false
+                        acceptsPrivateGroups: false
                     },
                     ctx
                 );

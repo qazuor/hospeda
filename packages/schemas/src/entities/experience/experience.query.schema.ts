@@ -35,7 +35,6 @@ export const ExperienceFiltersSchema = z.object({
     /** Filter by owner UUID. */
     ownerId: z.string().uuid().optional(),
     /** Filter by active subscription flag (public listing visibility gate). */
-    hasActiveSubscription: z.boolean().optional(),
     /** Minimum average rating (0–5). */
     minRating: z.number().min(0).max(5).optional(),
     /** Maximum average rating (0–5). */
@@ -81,7 +80,6 @@ export const ExperienceSearchSchema = BaseSearchSchema.extend({
     /** Filter by owner UUID. */
     ownerId: z.string().uuid().optional(),
     /** Filter by active subscription flag. */
-    hasActiveSubscription: z.boolean().optional(),
     /** Minimum average rating (0–5). */
     minRating: z.number().min(0).max(5).optional(),
     /** Maximum average rating (0–5). */
@@ -127,14 +125,14 @@ export const ExperienceListItemSchema = ExperienceSchema.pick({
     priceFrom: true,
     priceUnit: true,
     isPriceOnRequest: true,
-    hasActiveSubscription: true,
     media: true,
-    isFeatured: true,
     ownerId: true,
     destinationId: true,
     createdAt: true,
     updatedAt: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Use `.default(0)` only — `.default().optional()` is a dead chain because
     // `.default()` already handles the absent-key case.
     reviewsCount: z.number().int().min(0).default(0),
@@ -160,12 +158,12 @@ export const ExperienceSummarySchema = ExperienceSchema.pick({
     priceFrom: true,
     priceUnit: true,
     isPriceOnRequest: true,
-    hasActiveSubscription: true,
     media: true,
-    isFeatured: true,
     ownerId: true,
     destinationId: true
 }).extend({
+    /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
+    isFeatured: z.boolean().optional(),
     // Use `.default(0)` only — same rationale as ExperienceListItemSchema above.
     reviewsCount: z.number().int().min(0).default(0),
     averageRating: z.number().min(0).max(5).default(0)

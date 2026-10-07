@@ -3,9 +3,9 @@
 exports[`ENV_REGISTRY > var count per category > should match expected distribution across categories 1`] = `
 {
   "ai": 1,
-  "api-config": 94,
+  "api-config": 90,
   "auth": 11,
-  "billing": 13,
+  "billing": 6,
   "build": 5,
   "cache": 2,
   "client-admin": 28,
@@ -25,6 +25,6 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "newsletter": 7,
   "social-automation": 1,
   "system": 5,
-  "testing": 9,
+  "testing": 6,
 }
 `;

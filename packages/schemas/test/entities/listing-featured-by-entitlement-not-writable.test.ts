@@ -193,14 +193,14 @@ describe('HOS-1286 — featuredByEntitlement is never accepted from a request bo
         expect(Object.hasOwn(data, 'featuredByEntitlement')).toBe(false);
     });
 
-    it('accepts isFeatured where it is meant to, so the strip is not blanket', () => {
-        // Non-vacuity, and the distinction that matters: `isFeatured` is the
-        // ADMIN-curated flag and stays writable on the admin tier. A change that
-        // stripped both would pass every assertion above while quietly removing
-        // a capability admin has.
-        const result = GastronomyUpdateInputSchema.safeParse({ isFeatured: true });
+    it('accepts other fields where it is meant to, so the strip is not blanket', () => {
+        // Non-vacuity: the omit removes `featuredByEntitlement` only. A change
+        // that stripped every field would pass every assertion above while
+        // quietly removing the update path. (The admin-curated `isFeatured`
+        // this case used to check was dropped by HOS-1419.)
+        const result = GastronomyUpdateInputSchema.safeParse({ name: 'La Parrilla' });
 
         expect(result.success).toBe(true);
-        expect(result.data).toMatchObject({ isFeatured: true });
+        expect(result.data).toMatchObject({ name: 'La Parrilla' });
     });
 });

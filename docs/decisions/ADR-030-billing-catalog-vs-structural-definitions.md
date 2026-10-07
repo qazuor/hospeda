@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-06-04)
+Superseded by DEC-ARCH-012 (HOS-1352). Previously: Accepted (2026-06-04)
 
 **Lineage**: formalises the boundary first drawn in SPEC-168
 ("Admin Plan Management") and completed by SPEC-192 ("Billing Catalog to DB").

@@ -619,7 +619,7 @@ drops the call.
 `// PHANTOM-GATE (SPEC-145)`: a gate function exists in
 `middlewares/tourist-entitlements.ts` or `middlewares/accommodation-entitlements.ts`
 but the route it protects has not been built yet. Do not delete these;
-do not build the route without a spec. The snapshot guard excepts them.
+do not build the route without a spec.
 
 **An unmounted gate helper does NOT prove the feature is unprotected.** A route
 may call the generic `requireEntitlement` directly instead of the named helper,
@@ -632,27 +632,7 @@ the routes that require the entitlement KEY, never the call sites of the helper.
 
 `// RESERVED-LIMIT`: a `LimitKey` is wired via `requireLimit` but the
 `currentCount` implementation is a hardcoded `0` stub (the counter service
-does not exist yet). See the "Reserved — Limit Stubs" section in
-`docs/billing/endpoint-gate-matrix.md`.
-
-### Gate matrix + snapshot guard
-
-`docs/billing/endpoint-gate-matrix.md` is the single source of truth for
-gate decisions on every protected and admin route. The snapshot guard
-(`apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts`, T-145-22)
-parses the table on every CI run:
-
-- A new handler file without a matrix row → CI fails.
-- A matrix row pointing at a deleted file → CI fails.
-
-When adding a new protected/admin route:
-
-1. Add a matrix row with the correct Decision and Status.
-2. If Decision = `none`, write a clear Reason.
-3. If gating an existing previously-ungated route, document the behavior
-   change in `docs/billing/spec-145-behavior-changes.md`.
-
-See `docs/billing/adding-an-entitlement.md` for the full end-to-end workflow.
+does not exist yet).
 
 ### DELETE-body factory gotcha
 
@@ -821,12 +801,6 @@ is the authoritative name → schedule mapping. And the last two belong to the
 `reconcileSubscriptionLinkedEntities` at all — its bridge is
 `services/partner-reconcile.service.ts`.
 
-For MP sandbox setup and operator procedures:
-[`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md)
-
-For incident response:
-[`docs/billing/billing-runbooks.md`](../../docs/billing/billing-runbooks.md)
-
 For the deferred SPEC-193 staging smoke batch (pre-promotion gate):
 `SPEC-193 pending-staging-smoke` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)
 
@@ -886,8 +860,7 @@ only on the hardcoded `KNOWN_PROVIDERS` catalog in `apps/admin`.
 ### `POST /api/v1/admin/ai/credentials/{providerId}/sync-models`
 
 Gated by `adminAuthMiddleware([AI_SETTINGS_MANAGE])` only — staff bypass
-entitlements (INV-6), so there is no billing gate; see the row in
-[`docs/billing/endpoint-gate-matrix.md`](../../docs/billing/endpoint-gate-matrix.md).
+entitlements (INV-6), so there is no billing gate.
 Orchestrated by `ai-sync-models.service.ts::syncAiProviderModels()`: decrypt
 (`getDecryptedAiProviderCredential` plus a direct `metadata.baseURL` read,
 since the vault's decrypt result omits metadata) → fetch

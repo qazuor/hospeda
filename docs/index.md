@@ -68,7 +68,6 @@ Per-app deployment guides live in each app's `docs/` directory (see [App Documen
 - [Environments](deployment/environments.md)
 - [Secrets](deployment/secrets.md)
 - [CI/CD](deployment/ci-cd.md)
-- [Billing Checklist](deployment/billing-checklist.md)
 - [Deployment Checklist](deployment/checklist.md)
 - [API Deployment](deployment/apps/api.md)
 - [Web Deployment](deployment/apps/web.md)
@@ -92,11 +91,6 @@ Per-app deployment guides live in each app's `docs/` directory (see [App Documen
 
 ## Billing
 
-- [Billing Index](billing/README.md)
-- [AFIP Research](billing/afip-research.md)
-- [Dispute Handling v1](billing/dispute-handling-v1.md)
-- [Grace Period Source of Truth](billing/grace-period-source-of-truth.md)
-
 ## Runbooks
 
 - [Runbooks Index](runbooks/README.md)
@@ -105,7 +99,6 @@ Per-app deployment guides live in each app's `docs/` directory (see [App Documen
 - [Rollback](runbooks/rollback.md)
 - [Scaling](runbooks/scaling.md)
 - [Backup Recovery](runbooks/backup-recovery.md)
-- [Billing Incidents](runbooks/billing-incidents.md)
 - [Sentry Setup](runbooks/sentry-setup.md)
 
 ## Resources
@@ -198,7 +191,6 @@ Each package has a `CLAUDE.md` with development instructions. Packages with a `d
 | Package | CLAUDE.md | Docs |
 |---------|-----------|------|
 | auth-ui | [packages/auth-ui/CLAUDE.md](../packages/auth-ui/CLAUDE.md) | [docs/](../packages/auth-ui/docs/README.md) |
-| billing | [packages/billing/CLAUDE.md](../packages/billing/CLAUDE.md) | [docs/](../packages/billing/docs/README.md) |
 | content-moderation | -- | [README](../packages/content-moderation/README.md) |
 | biome-config | [packages/biome-config/CLAUDE.md](../packages/biome-config/CLAUDE.md) | -- |
 | config | [packages/config/CLAUDE.md](../packages/config/CLAUDE.md) | [docs/](../packages/config/docs/README.md) |

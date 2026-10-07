@@ -12,7 +12,6 @@
     "visibility": "PUBLIC",
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "isFeatured": false,
     "contactInfo": {
         "personalEmail": "hola@lacerveceridelrio.com.ar",
         "mobilePhone": "+54 9 3446 500003",

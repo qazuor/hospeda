@@ -134,8 +134,6 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
     [PermissionCategoryEnum.PURCHASE]: 'Listing & Billing',
     [PermissionCategoryEnum.REFUND]: 'Listing & Billing',
     [PermissionCategoryEnum.CREDIT_NOTE]: 'Listing & Billing',
-    [PermissionCategoryEnum.SUBSCRIPTION]: 'Listing & Billing',
-    [PermissionCategoryEnum.SUBSCRIPTION_ITEM]: 'Listing & Billing',
     [PermissionCategoryEnum.PRODUCT]: 'Listing & Billing',
     [PermissionCategoryEnum.CLIENT]: 'Listing & Billing',
     [PermissionCategoryEnum.BILLING]: 'Listing & Billing',
@@ -166,12 +164,9 @@ export const CATEGORY_GROUP: Record<PermissionCategoryEnum, PermissionCategoryGr
 
     // ---- Services & Listings -----------------------------------------------
     [PermissionCategoryEnum.ACCOMMODATION_LISTING]: 'Services & Listings',
-    [PermissionCategoryEnum.ACCOMMODATION_LISTING_PLAN]: 'Services & Listings',
     [PermissionCategoryEnum.SERVICE_LISTING]: 'Services & Listings',
-    [PermissionCategoryEnum.SERVICE_LISTING_PLAN]: 'Services & Listings',
     [PermissionCategoryEnum.SERVICE_ORDER]: 'Services & Listings',
     [PermissionCategoryEnum.BENEFIT_LISTING]: 'Services & Listings',
-    [PermissionCategoryEnum.BENEFIT_LISTING_PLAN]: 'Services & Listings',
     [PermissionCategoryEnum.BENEFIT_PARTNER]: 'Services & Listings',
     [PermissionCategoryEnum.TOURIST_SERVICE]: 'Services & Listings',
     [PermissionCategoryEnum.PROFESSIONAL_SERVICE]: 'Services & Listings',

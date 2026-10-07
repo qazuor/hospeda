@@ -149,7 +149,7 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
 
         return {
             ...withPublicVisibleFaqs(gastronomy),
-            // HOS-1286: PUBLIC tier ORs the two featuring sources.
+            // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
             isFeatured: resolvePublicIsFeatured(gastronomy),
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
             features: featuresData.length > 0 ? featuresData : undefined,

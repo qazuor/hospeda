@@ -9,42 +9,40 @@
  * structural rather than tied to `Accommodation`, so nothing here had to change
  * for the other two to use it.
  *
- * `accommodations` carries TWO deliberately independent boolean columns
- * (SPEC-292, renamed SPEC-309 OQ-3): `isFeatured` (admin-curated) and
- * `featuredByEntitlement` (billing-derived — set by the plan/addon sync
- * primitives in `accommodation.sync-featured-by-entitlement.ts`). The 2026-08-29
- * owner decision is that holding EITHER counts as "featured" for every
- * PUBLIC-facing read, with no owner-facing toggle: an owner who buys the
- * visibility-boost addon (or holds a plan that grants FEATURED_LISTING) sees
- * the badge automatically, for as long as the entitlement lasts.
+ * Each listing table carries ONE featuring column, `featuredByEntitlement`
+ * (billing-derived — set by the sync primitives in
+ * `accommodation.sync-featured-by-entitlement.ts`). Until HOS-1419 a second,
+ * admin-curated `is_featured` column was OR'd with it here; that column was
+ * dropped with the old billing, so the public `isFeatured` value is now the
+ * entitlement flag alone. The 2026-08-29 owner decision still holds: holding
+ * the entitlement features the listing on every PUBLIC-facing read, with no
+ * owner-facing toggle.
  *
- * This OR is applied ONLY on public/* routes — never in the generic service
- * (shared with admin/protected) and never in the DB ordering resolver
- * (`accommodation.model.ts`, which already ORs the two columns for sort
- * order only, independently of this read-side helper). Admin and protected
- * responses keep showing the two source columns separately.
+ * This derivation is applied ONLY on public/* routes — never in the generic
+ * service (shared with admin/protected) and never in the DB ordering resolver
+ * (`accommodation.model.ts`, which orders by the column directly). Admin and
+ * protected responses show `featuredByEntitlement` under its own name.
  *
  * @module utils/accommodation-featured
  */
 
 /**
- * Minimal shape this helper needs: the two independent "featured" source
- * columns as they come off an `Accommodation` entity or a raw DB row.
+ * Minimal shape this helper needs: the featuring source column as it comes
+ * off a listing entity or a raw DB row.
  */
 export interface FeaturedSourceColumns {
-    readonly isFeatured: boolean;
     readonly featuredByEntitlement?: boolean | null;
 }
 
 /**
- * Resolves the PUBLIC-facing `isFeatured` value: true when either the
- * admin-curated flag or the billing-derived entitlement flag is true.
+ * Resolves the PUBLIC-facing `isFeatured` value: true when the billing-derived
+ * entitlement flag is true (the only featuring source since HOS-1419).
  *
- * @param input - The accommodation's two independent featured source columns.
- * @returns The OR'd boolean to serialize as `isFeatured` on a public response.
+ * @param input - The listing's featuring source column.
+ * @returns The boolean to serialize as `isFeatured` on a public response.
  */
 export const resolvePublicIsFeatured = (input: FeaturedSourceColumns): boolean =>
-    input.isFeatured || Boolean(input.featuredByEntitlement);
+    Boolean(input.featuredByEntitlement);
 
 /**
  * Returns `entity` with its PUBLIC `isFeatured` resolved (HOS-1286).
@@ -53,12 +51,12 @@ export const resolvePublicIsFeatured = (input: FeaturedSourceColumns): boolean =
  * {@link resolvePublicIsFeatured}, because each already built its response
  * object for other reasons. The gastronomy and experience routes do not: `getById` and both
  * `getByDestination` handlers return what the service handed them, untouched.
- * Introducing four hand-written spreads there is four chances to write the OR
+ * Introducing four hand-written spreads there is four chances to derive it
  * one way in one file and another way in the next, so the spread lives here
  * once.
  *
- * @param entity - Any row carrying the two featured source columns.
- * @returns A shallow copy whose `isFeatured` is the disjunction.
+ * @param entity - Any row carrying the featuring source column.
+ * @returns A shallow copy whose `isFeatured` is resolved.
  */
 export const withPublicIsFeatured = <T extends FeaturedSourceColumns>(
     entity: T

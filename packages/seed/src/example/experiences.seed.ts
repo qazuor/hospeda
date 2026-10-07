@@ -4,13 +4,10 @@
  * Inserts 5 experience listings covering different types, price units, and
  * visibility states.  Mirrors the gastronomy seeder pattern from SPEC-239
  * but uses direct Drizzle-level insertion (bypassing ExperienceService.create)
- * for two reasons:
- *
- *  1. `hasActiveSubscription` is a server-managed field that the
- *     ExperienceUpdateInputSchema explicitly omits; it cannot be set via the
- *     service CRUD path.
- *  2. The seed reuses the gastronomy owner and grants `EXPERIENCE_OWNER`
- *     before inserting that user's experience listings.
+ * because the seed reuses the gastronomy owner and grants `EXPERIENCE_OWNER`
+ * before inserting that user's experience listings. (It used to have a second
+ * reason, the server-managed `has_active_subscription` column; HOS-1419 dropped
+ * that column.)
  *
  * Idempotent: each INSERT uses ON CONFLICT (slug) DO NOTHING so re-running
  * the seed is safe.
@@ -68,11 +65,9 @@ interface ExperienceInsertInput {
     priceFrom: number;
     priceUnit: string;
     isPriceOnRequest: boolean;
-    hasActiveSubscription: boolean;
     visibility: string;
     lifecycleState: string;
     moderationState: string;
-    isFeatured: boolean;
     ownerId: string;
     destinationId: string;
     createdById: string;
@@ -147,11 +142,9 @@ function buildExperienceInputs(
             priceFrom: 850000,
             priceUnit: 'per_person',
             isPriceOnRequest: false,
-            hasActiveSubscription: true,
             visibility: 'PUBLIC',
             lifecycleState: 'ACTIVE',
             moderationState: 'APPROVED',
-            isFeatured: true,
             ownerId: listingOwnerId,
             destinationId: concepcion,
             createdById: superAdminId,
@@ -185,11 +178,9 @@ function buildExperienceInputs(
             priceFrom: 350000,
             priceUnit: 'per_hour',
             isPriceOnRequest: false,
-            hasActiveSubscription: true,
             visibility: 'PUBLIC',
             lifecycleState: 'ACTIVE',
             moderationState: 'APPROVED',
-            isFeatured: false,
             ownerId: listingOwnerId,
             destinationId: colon,
             createdById: superAdminId,
@@ -223,11 +214,9 @@ function buildExperienceInputs(
             priceFrom: 0,
             priceUnit: 'per_group',
             isPriceOnRequest: true,
-            hasActiveSubscription: true,
             visibility: 'PUBLIC',
             lifecycleState: 'ACTIVE',
             moderationState: 'APPROVED',
-            isFeatured: false,
             ownerId: listingOwnerId,
             destinationId: gualeguaychu,
             createdById: superAdminId,
@@ -261,11 +250,9 @@ function buildExperienceInputs(
             priceFrom: 1200000,
             priceUnit: 'per_group',
             isPriceOnRequest: false,
-            hasActiveSubscription: false,
             visibility: 'PRIVATE',
             lifecycleState: 'DRAFT',
             moderationState: 'PENDING',
-            isFeatured: false,
             ownerId: listingOwnerId,
             destinationId: concordia,
             createdById: superAdminId,
@@ -300,11 +287,9 @@ function buildExperienceInputs(
             priceFrom: 650000,
             priceUnit: 'per_person',
             isPriceOnRequest: false,
-            hasActiveSubscription: false,
             visibility: 'PUBLIC',
             lifecycleState: 'DRAFT',
             moderationState: 'PENDING',
-            isFeatured: false,
             ownerId: listingOwnerId,
             destinationId: concepcion,
             createdById: superAdminId,
@@ -343,10 +328,8 @@ function buildExperienceInputs(
 /**
  * Inserts a listing's fixture photos as `experience_media` rows (HOS-372).
  *
- * Uses `ExperienceMediaModel` rather than this file's raw `pg.Pool`: the pool
- * exists here because `has_active_subscription` is a server-managed column the
- * service schema excludes, which is not a constraint the media table shares.
- * Going through the model keeps the row shape typed and reuses the same builder
+ * Uses `ExperienceMediaModel` rather than this file's raw `pg.Pool`. Going
+ * through the model keeps the row shape typed and reuses the same builder
  * the accommodation and gastronomy seeds use.
  *
  * Idempotent: skips entirely when the listing already has media rows.
@@ -386,10 +369,8 @@ async function seedExperienceMediaRows({
 /**
  * Seeds experience listings using a raw pg.Pool connection.
  *
- * `hasActiveSubscription` is a server-managed field excluded from the
- * service-level ExperienceUpdateInputSchema, so direct SQL insertion is
- * intentional and correct here (same tradeoff as billing plan seeding which
- * also bypasses service validation for admin-only fields).
+ * Direct SQL insertion keeps the deterministic fixture ids (HOS-25 T-026)
+ * without going through the service create path.
  *
  * @param context - Seed context (actor used to resolve super admin ID).
  * @returns Promise resolving when all experience rows are created or skipped.
@@ -492,14 +473,14 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
             const result = await pool.query<{ id: string }>(
                 `INSERT INTO experiences
                    (id, slug, name, summary, description, type,
-                    price_from, price_unit, is_price_on_request, has_active_subscription,
-                    visibility, lifecycle_state, moderation_state, is_featured,
+                    price_from, price_unit, is_price_on_request,
+                    visibility, lifecycle_state, moderation_state,
                     owner_id, destination_id, created_by_id, updated_by_id)
                  VALUES
                    ($1, $2, $3, $4, $5, $6,
-                    $7, $8, $9, $10,
-                    $11, $12, $13, $14,
-                    $15, $16, $17, $17)
+                    $7, $8, $9,
+                    $10, $11, $12,
+                    $13, $14, $15, $15)
                  ON CONFLICT (slug) DO NOTHING
                  RETURNING id`,
                 [
@@ -512,11 +493,9 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                     input.priceFrom,
                     input.priceUnit,
                     input.isPriceOnRequest,
-                    input.hasActiveSubscription,
                     input.visibility,
                     input.lifecycleState,
                     input.moderationState,
-                    input.isFeatured,
                     input.ownerId,
                     input.destinationId,
                     input.createdById

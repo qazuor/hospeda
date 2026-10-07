@@ -37,7 +37,6 @@ const MOCK_GASTRONOMY = {
     description: 'Descripción detallada de la parrilla de prueba.',
     ownerId: OWNER_ID,
     destinationId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-    hasActiveSubscription: true,
     lifecycleState: 'ACTIVE',
     visibility: 'PUBLIC',
     averageRating: 4.5,

@@ -155,7 +155,7 @@ export const meAccommodationsConfig: EntityConfig<Accommodation> = {
         }
     ],
     peekSubtitleField: 'slug',
-    peekFeaturedField: 'isFeatured'
+    peekFeaturedField: 'featuredByEntitlement'
 };
 
 // Generate the component and route (grid-only, no toggle)

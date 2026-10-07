@@ -75,11 +75,7 @@ vi.mock('../../../../src/utils/actor', () => ({
     getActorFromContext: (ctx: { get: (key: string) => unknown }) => ctx.get('actor')
 }));
 
-import {
-    ExperienceOwnerCreateInputSchema,
-    LifecycleStatusEnum,
-    VisibilityEnum
-} from '@repo/schemas';
+import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
 import { handleCreateExperienceListing } from '../../../../src/routes/experience/protected/create';
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
@@ -152,24 +148,5 @@ describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {
 
         expect(mockCreateForOwner).toHaveBeenCalledTimes(1);
         expect(mockPlainCreate).not.toHaveBeenCalled();
-    });
-
-    it('drops hasActiveSubscription end-to-end through the real request pipeline', async () => {
-        // Same nuance as the gastronomy slug test: the handler alone re-parses
-        // against the ADMIN schema (which allows this field). The guarantee
-        // lives at the route level — simulate that real pipeline here.
-        const validatedBody = ExperienceOwnerCreateInputSchema.parse({
-            ...VALID_EXPERIENCE_BODY,
-            hasActiveSubscription: true
-        });
-        const ctx = createMockContext();
-
-        await handleCreateExperienceListing(ctx as never, validatedBody);
-
-        const [, createInput] = mockCreateForOwner.mock.calls[0] as [
-            unknown,
-            Record<string, unknown>
-        ];
-        expect(createInput.hasActiveSubscription).toBe(false);
     });
 });

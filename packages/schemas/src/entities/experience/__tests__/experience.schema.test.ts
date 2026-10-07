@@ -99,34 +99,6 @@ describe('ExperienceSchema', () => {
             }
         });
 
-        it('should default hasActiveSubscription to false when absent', () => {
-            // Arrange
-            const raw = buildValidExperience({ hasActiveSubscription: undefined });
-
-            // Act
-            const result = ExperienceSchema.safeParse(raw);
-
-            // Assert
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.hasActiveSubscription).toBe(false);
-            }
-        });
-
-        it('should default isFeatured to false when absent', () => {
-            // Arrange
-            const raw = buildValidExperience({ isFeatured: undefined });
-
-            // Act
-            const result = ExperienceSchema.safeParse(raw);
-
-            // Assert
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.isFeatured).toBe(false);
-            }
-        });
-
         it('should accept priceFrom = 0 (free / on_request)', () => {
             const raw = buildValidExperience({ priceFrom: 0, isPriceOnRequest: true });
             const result = ExperienceSchema.safeParse(raw);

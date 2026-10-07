@@ -38,8 +38,6 @@ import {
     PartnerContentReviewStateEnum,
     PartnerLogoClickDestinationEnum,
     PartnerMentionChannelEnum,
-    PartnerPaymentReviewStateEnum,
-    PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum,
     PermissionCategoryEnum,
@@ -406,11 +404,6 @@ export const PartnerTypePgEnum = pgEnum('partner_type_enum', enumToTuple(Partner
 
 export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(PartnerTierEnum));
 
-export const PartnerSubscriptionStatusPgEnum = pgEnum(
-    'partner_subscription_status_enum',
-    enumToTuple(PartnerSubscriptionStatusEnum)
-);
-
 /**
  * Channels a manual partner promotion can be logged against (HOS-377).
  *
@@ -446,19 +439,6 @@ export const PartnerLogoClickDestinationPgEnum = pgEnum(
 export const PartnerContentReviewStatePgEnum = pgEnum(
     'partner_content_review_state_enum',
     enumToTuple(PartnerContentReviewStateEnum)
-);
-
-/**
- * Whether an admin has been asked to confirm a partner's payment (HOS-1299).
- *
- * A SEPARATE type from `partner_subscription_status_enum`, not a fifth value of
- * it: every visibility surface in the platform reads that column, so suspecting
- * a partner of not having paid would, by itself, take them down. See
- * `PartnerPaymentReviewStateEnum` for the full list of what would have moved.
- */
-export const PartnerPaymentReviewStatePgEnum = pgEnum(
-    'partner_payment_review_state_enum',
-    enumToTuple(PartnerPaymentReviewStateEnum)
 );
 
 /**

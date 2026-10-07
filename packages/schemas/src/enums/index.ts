@@ -98,10 +98,6 @@ export * from './partner-logo-click-destination.schema.js';
 export * from './partner-mention-channel.enum.js';
 export * from './partner-mention-channel.schema.js';
 // Partner payment review, kept OUT of the subscription status (HOS-1299)
-export * from './partner-payment-review-state.enum.js';
-export * from './partner-payment-review-state.schema.js';
-export * from './partner-subscription-status.enum.js';
-export * from './partner-subscription-status.schema.js';
 export * from './partner-tier.enum.js';
 export * from './partner-tier.schema.js';
 // Partner enums (SPEC-271)

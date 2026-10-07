@@ -32,13 +32,12 @@ const E2E_ROOT = join(import.meta.dirname, '..', '..');
 // flow stopped calling startTrial. Which is exactly what this guard exists to
 // catch, and could not: the guard only inspects the files named here, and a
 // self-skip driven by runtime state is invisible to a source scan. Rebuilding it
-// on the post-create compensation path is HOS-184.
+// on the post-create compensation path is HOS-184. host-07c and res-01 left the
+// list with the QZPay test-control adapter they needed (HOS-1419).
 const TARGET_SPECS = [
     'tests/host/host-03-trial-expired.spec.ts',
     'tests/host/host-04-cancellation-grace.spec.ts',
-    'tests/host/host-07b-subscription-required.spec.ts',
-    'tests/host/host-07c-qzpay-timeout.spec.ts',
-    'tests/resilience/res-01-api-down-checkout.spec.ts'
+    'tests/host/host-07b-subscription-required.spec.ts'
 ] as const;
 
 // ── Real-file guard tests ──────────────────────────────────────────────────

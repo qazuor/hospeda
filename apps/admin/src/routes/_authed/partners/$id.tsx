@@ -2,18 +2,13 @@ import { PartnerContentReviewStateEnum, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
-import { useToast } from '@/components/ui/ToastProvider';
 import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import {
-    usePartnerPaymentReviewMutation,
     usePartnerQuery,
-    useRegisterPartnerManualPaymentMutation,
-    useSendPartnerPaymentLinkMutation
+    useRegisterPartnerManualPaymentMutation
 } from '@/features/partners/hooks/usePartnerQuery';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { formatCalendarShortDate, formatShortDate } from '@/lib/format-helpers';
-import { PaymentReviewCard } from './-components/PaymentReviewCard';
-import { SendPaymentLinkCard } from './-components/SendPaymentLinkCard';
 
 /** Spanish labels for {@link PartnerContentReviewStateEnum}, plus "never submitted". */
 const CONTENT_REVIEW_STATE_LABELS: Record<PartnerContentReviewStateEnum, string> = {
@@ -34,11 +29,8 @@ export const Route = createFileRoute('/_authed/partners/$id')({
 function PartnerViewPage() {
     const { id } = Route.useParams();
     const query = usePartnerQuery(id);
-    const sendLinkMutation = useSendPartnerPaymentLinkMutation(id);
     const manualPaymentMutation = useRegisterPartnerManualPaymentMutation(id);
-    const paymentReviewMutation = usePartnerPaymentReviewMutation(id);
     const [manualNote, setManualNote] = useState('');
-    const { addToast } = useToast();
 
     if (query.isLoading) {
         return <div className="p-6">Cargando partner...</div>;
@@ -73,10 +65,6 @@ function PartnerViewPage() {
                     </div>
                     <div>
                         <span className="font-medium">Tier:</span> {partner.tier}
-                    </div>
-                    <div>
-                        <span className="font-medium">Estado billing:</span>{' '}
-                        {partner.subscriptionStatus}
                     </div>
                     <div>
                         <span className="font-medium">Lifecycle:</span> {partner.lifecycleState}
@@ -122,20 +110,6 @@ function PartnerViewPage() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2">
-                    {/* First in the grid and full width: it is the only card
-                        here that is waiting on the operator. */}
-                    <PaymentReviewCard
-                        partner={partner}
-                        mutation={paymentReviewMutation}
-                        addToast={addToast}
-                    />
-
-                    <SendPaymentLinkCard
-                        partner={partner}
-                        mutation={sendLinkMutation}
-                        addToast={addToast}
-                    />
-
                     <div className="space-y-3 rounded-lg border p-4">
                         <h2 className="font-medium text-lg">Registrar pago manual</h2>
                         <textarea

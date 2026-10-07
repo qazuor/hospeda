@@ -24,14 +24,6 @@ describe('GastronomySchema', () => {
             expect(() => GastronomySchema.parse(data)).not.toThrow();
         });
 
-        it('should default isFeatured to false when not provided', () => {
-            const data = createMinimalGastronomy();
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { isFeatured: _removed, ...withoutFeatured } = data as any;
-            const result = GastronomySchema.parse(withoutFeatured);
-            expect(result.isFeatured).toBe(false);
-        });
-
         it('should accept nullish priceRange', () => {
             const data = { ...createMinimalGastronomy(), priceRange: null };
             expect(() => GastronomySchema.parse(data)).not.toThrow();

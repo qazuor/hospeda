@@ -42,7 +42,6 @@ import { rExperienceFeature } from './r_experience_feature.dbschema.ts';
  * - Same jsonb contact/social/media/seo/adminInfo pattern
  * - Same i18n columns pattern (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
  * - Same rating aggregate columns (reviewsCount, averageRating, rating)
- * - Same hasActiveSubscription denormalized flag (binary subscription hook from SPEC-239)
  * - Entity-specific columns: type (ExperienceTypePgEnum), priceFrom (integer centavos),
  *   priceUnit (ExperiencePriceUnitPgEnum), isPriceOnRequest (boolean)
  * - openingHours stored as jsonb on main table (same choice as gastronomy — PARITY)
@@ -230,12 +229,6 @@ export const experiences = pgTable(
          * flag is on.
          */
         acceptsPrivateGroups: boolean('accepts_private_groups').notNull().default(false),
-        /**
-         * Denormalized flag driven by the SPEC-239 binary-subscription lifecycle hook.
-         * When false, the experience is hidden from public listing and detail pages.
-         * Flipped by the subscription reconciler — never edited directly via CRUD.
-         */
-        hasActiveSubscription: boolean('has_active_subscription').notNull().default(false),
         // Jsonb grouped columns (matching gastronomy / accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
@@ -269,15 +262,14 @@ export const experiences = pgTable(
         visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('DRAFT'),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
-        isFeatured: boolean('is_featured').notNull().default(false),
         /**
          * Denormalized billing-state flag (HOS-1286) — mirror of
          * `accommodations.featured_by_entitlement`. True while a
          * `visibility-boost-experience-*` addon purchase grants an active
          * FEATURED_LISTING entitlement for THIS listing. Written only by the
-         * billing sync primitives, never by admin curation, and deliberately
-         * independent of {@link isFeatured}: the effective public value is the
-         * disjunction `isFeatured OR featuredByEntitlement`, ORed in the PUBLIC
+         * billing sync primitives, never by admin curation. Since HOS-1419
+         * dropped the admin-curated `is_featured` column it is the ONLY featuring
+         * source: the public `isFeatured` value is derived from it in the PUBLIC
          * routes only (`resolvePublicIsFeatured`).
          *
          * **Only one source feeds it, unlike accommodation.** No experience plan
@@ -323,7 +315,6 @@ export const experiences = pgTable(
             table.destinationId
         ),
         experiences_visibility_idx: index('experiences_visibility_idx').on(table.visibility),
-        experiences_isFeatured_idx: index('experiences_isFeatured_idx').on(table.isFeatured),
         // HOS-1286: parallel index for featuredByEntitlement — see the twin on
         // `gastronomies` and the accommodations pair it mirrors.
         experiences_featuredByEntitlement_idx: index('experiences_featuredByEntitlement_idx').on(
@@ -335,10 +326,6 @@ export const experiences = pgTable(
         experiences_moderationState_idx: index('experiences_moderationState_idx').on(
             table.moderationState
         ),
-        // Composite: subscription flag + lifecycle state for fast public listing query
-        experiences_hasActiveSubscription_lifecycleState_idx: index(
-            'experiences_hasActiveSubscription_lifecycleState_idx'
-        ).on(table.hasActiveSubscription, table.lifecycleState),
         // Composite: owner + soft-delete (mirrors gastronomy pattern)
         experiences_ownerId_deletedAt_idx: index('experiences_ownerId_deletedAt_idx').on(
             table.ownerId,

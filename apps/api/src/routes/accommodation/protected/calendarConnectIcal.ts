@@ -21,7 +21,7 @@
  * immediate, actionable 400 instead of a silently-dead connection that only
  * surfaces as an error on the next cron run. On success, the probe's parsed
  * rows are discarded (not written here) — `saveIcalConnection` persists only
- * the credential. See `docs/billing/endpoint-gate-matrix.md` for the gate row.
+ * the credential.
  *
  * ## Immediate first sync on connect (HOS-162 judgment-day Fix #5)
  *

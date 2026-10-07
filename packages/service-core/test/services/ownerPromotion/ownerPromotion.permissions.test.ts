@@ -240,8 +240,8 @@ describe('OwnerPromotion Permissions', () => {
 
     // -------------------------------------------------------------------- view
     describe('checkCanView', () => {
-        // ── Public (ACTIVE + non-planRestricted) entities ─────────────────────
-        it('allows any actor to view an ACTIVE non-planRestricted promotion', () => {
+        // ── Public (ACTIVE) entities ─────────────────────
+        it('allows any actor to view an ACTIVE promotion', () => {
             // T-001 regression: guest actor (no permissions) must NOT get FORBIDDEN
             // for ACTIVE public promotions. Security is in the route layer.
             expect(() => checkCanView(createActor([]), withOwner(mockUserId))).not.toThrow();
@@ -265,7 +265,7 @@ describe('OwnerPromotion Permissions', () => {
             ).not.toThrow();
         });
 
-        // ── Non-public (DRAFT / planRestricted) entities require permissions ──
+        // ── Non-public (DRAFT) entities require permissions ──
         it('allows with OWNER_PROMOTION_VIEW_ANY on DRAFT promotion', () => {
             expect(() =>
                 checkCanView(
@@ -313,17 +313,6 @@ describe('OwnerPromotion Permissions', () => {
                             ownerId: mockUserId,
                             lifecycleState: LifecycleStatusEnum.DRAFT
                         })
-                    ),
-                'view owner promotion'
-            );
-        });
-
-        it('forbids any actor without permission from viewing a planRestricted promotion', () => {
-            expectForbidden(
-                () =>
-                    checkCanView(
-                        createActor([]),
-                        createMockOwnerPromotion({ ownerId: mockUserId, planRestricted: true })
                     ),
                 'view owner promotion'
             );

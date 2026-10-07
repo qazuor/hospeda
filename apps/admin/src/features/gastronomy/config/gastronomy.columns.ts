@@ -113,9 +113,11 @@ export const createGastronomyColumns = (
         columnType: ColumnType.STRING
     },
     {
-        id: 'isFeatured',
+        // Read-only: `featuredByEntitlement` is the only featuring source since
+        // HOS-1419 dropped the admin-curated `is_featured` column.
+        id: 'featuredByEntitlement',
         header: t('admin-entities.columns.featured'),
-        accessorKey: 'isFeatured',
+        accessorKey: 'featuredByEntitlement',
         enableSorting: true,
         columnType: ColumnType.BOOLEAN
     },

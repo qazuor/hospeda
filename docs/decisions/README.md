@@ -14,6 +14,7 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-006](ADR-006-integer-monetary-values.md) | Integer Storage for Monetary Values | Accepted |
 | [ADR-007](ADR-007-vercel-deployment.md) | Vercel Deployment (migrated from Fly.io) | Accepted |
 | [ADR-008](ADR-008-afip-deferred-v2.md) | Defer AFIP Integration to v2 | Accepted |
+| [ADR-009](ADR-009-trial-host-only.md) | Free Trial Restricted to HOST Role | Superseded by DEC-ARCH-012 (HOS-1352) |
 | [ADR-013](ADR-013-deferred-limit-enforcement.md) | Deferred Limit Enforcement | Accepted |
 | [ADR-014](ADR-014-manual-dispute-handling-v1.md) | Manual Dispute Handling for v1 | Accepted |
 | [ADR-015](ADR-015-redis-rate-limiting.md) | Redis Rate Limiting | Accepted |
@@ -31,7 +32,7 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-027](ADR-027-newsletter-dispatch-architecture.md) | Newsletter Dispatch Architecture | Accepted |
 | [ADR-028](ADR-028-role-permission-own-scoping.md) | Role Permission Audit + Owner-Scoped Data Access | Accepted |
 | [ADR-029](ADR-029-versioned-migration-strategy.md) | Versioned Migration Strategy (generate + migrate + two carriles) | Accepted |
-| [ADR-030](ADR-030-billing-catalog-vs-structural-definitions.md) | Billing Catalog vs. Structural Definitions | Accepted |
+| [ADR-030](ADR-030-billing-catalog-vs-structural-definitions.md) | Billing Catalog vs. Structural Definitions | Superseded by DEC-ARCH-012 (HOS-1352) |
 | [ADR-031](ADR-031-ai-core-foundation-architecture.md) | AI Foundation Architecture (`@repo/ai-core`) | Accepted |
 | [ADR-032](ADR-032-markdown-canonical-rich-text.md) | Markdown as Canonical Storage Format for Entity Rich Text | Accepted |
 | [ADR-033](ADR-033-accommodation-import-from-url.md) | Accommodation Import from URL (tiered strategy, provider abstraction, SSRF, legal posture) | Accepted |

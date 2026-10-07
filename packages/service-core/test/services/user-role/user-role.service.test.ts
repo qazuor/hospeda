@@ -392,8 +392,8 @@ describe('revokeRole — AC-5 last-role guard', () => {
 
         // Assert
         expect(result.error).toBeUndefined();
-        // The case that made `archive-abandoned-drafts` log a demotion that
-        // never happened: a concurrent writer removes HOST between the job's
+        // The case that made a caller log a demotion that
+        // never happened: a concurrent writer removes HOST between the caller's
         // unlocked pre-check and `revokeRole`'s own locked re-read, so the
         // revoke succeeds as a no-op — no error, no delete, no audit row.
         expect(result.data?.changed).toBe(false);

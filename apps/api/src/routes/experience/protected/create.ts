@@ -57,8 +57,7 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
     const actor = getActorFromContext(ctx);
     const data = body as ExperienceOwnerCreateInput;
 
-    // Re-parse through the full admin create schema so isFeatured/
-    // moderationState/reviewsCount/averageRating/hasActiveSubscription get
+    // Re-parse through the full admin create schema so moderationState/reviewsCount/averageRating get
     // their schema defaults.
     //
     // `safeParse`, not `.parse()` (H-156): the CHECKED schema carries the

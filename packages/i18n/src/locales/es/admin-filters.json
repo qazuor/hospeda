@@ -266,12 +266,5 @@
         "bronze": "Bronce",
         "silver": "Plata",
         "gold": "Oro"
-    },
-    "partnerSubscriptionStatus": {
-        "label": "Estado suscripción",
-        "active": "Activo",
-        "pending": "Pendiente",
-        "past_due": "Vencido",
-        "cancelled": "Cancelado"
     }
 }

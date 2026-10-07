@@ -55,10 +55,9 @@ const getByDestinationHandler = async (c: Context) => {
     const strippedAccommodations = Array.isArray(data.accommodations)
         ? data.accommodations.map((accommodation) => ({
               ...maskLegacyPremiumFields(accommodation),
-              // HOS-929: public read treats holding either the admin-curated
-              // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-              // flag as featured. `featuredByEntitlement` itself is stripped by
-              // `AccommodationPublicSchema` (never in its pick).
+              // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+              // (the only featuring source since HOS-1419); the raw column itself is
+              // stripped by the public schema (never in its pick).
               isFeatured: resolvePublicIsFeatured(accommodation)
           }))
         : [];

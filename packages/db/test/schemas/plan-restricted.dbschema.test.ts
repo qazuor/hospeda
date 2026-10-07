@@ -1,10 +1,10 @@
 /**
  * SPEC-167 T-001 — `plan_restricted` column schema tests.
  *
- * Verifies the Drizzle schema definitions for the two new `plan_restricted`
- * boolean columns added by SPEC-167:
+ * Verifies the Drizzle schema definitions for the `plan_restricted` boolean
+ * columns added by SPEC-167:
  *   (1) accommodations.plan_restricted — boolean NOT NULL DEFAULT false
- *   (2) owner_promotions.plan_restricted — boolean NOT NULL DEFAULT false
+ *   (2) owner_promotions.plan_restricted — DROPPED by HOS-1419
  *
  * Each column must be separate from its respective "suspension" mechanism
  * (ownerSuspended for accommodations; lifecycleState deactivation for
@@ -104,61 +104,18 @@ describe('accommodations.plan_restricted column (SPEC-167 D-3)', () => {
     });
 });
 
-// ─── owner_promotions.plan_restricted ────────────────────────────────────────
+// ─── owner_promotions.plan_restricted (retired) ──────────────────────────────
 
-describe('owner_promotions.plan_restricted column (SPEC-167 D-3)', () => {
-    it('exists with SQL name plan_restricted', () => {
-        // Arrange & Act
-        const config = getOwnerPromotionColumn('plan_restricted');
-
-        // Assert
-        expect(config).toBeDefined();
-    });
-
-    it('is boolean type', () => {
-        // Arrange
-        const config = getOwnerPromotionColumn('plan_restricted');
-
-        // Assert
-        expect(config?.dataType).toBe('boolean');
-    });
-
-    it('is NOT NULL', () => {
-        // Arrange
-        const config = getOwnerPromotionColumn('plan_restricted');
-
-        // Assert
-        expect(config?.notNull).toBe(true);
-    });
-
-    it('defaults to false', () => {
-        // Arrange
-        const config = getOwnerPromotionColumn('plan_restricted');
-
-        // Assert
-        expect(config?.default).toBe(false);
-    });
-
-    it('coexists with lifecycle_state (D-3: plan-restrict is a separate marker from lifecycle deactivation)', () => {
-        // Arrange — both columns must coexist independently; a lifecycle flip
-        // loses the 'restricted-by-plan' context needed for selective restore.
-        const lifecycleState = getOwnerPromotionColumn('lifecycle_state');
-        const planRestricted = getOwnerPromotionColumn('plan_restricted');
-
-        // Assert
-        expect(lifecycleState).toBeDefined();
-        expect(planRestricted).toBeDefined();
-    });
-
-    it('has a corresponding index ownerPromotions_planRestricted_idx', () => {
+describe('owner_promotions.plan_restricted column (dropped by HOS-1419)', () => {
+    it('no longer exists, nor does its index', () => {
         // Arrange
         const { indexes } = getTableConfig(ownerPromotions);
 
-        // Act
-        const idx = indexes.find((i) => i.config.name === 'ownerPromotions_planRestricted_idx');
-
-        // Assert
-        expect(idx).toBeDefined();
-        expect(idx?.config.unique).toBeFalsy();
+        // Assert — the accommodations column above survives; this one left
+        // together with the old plan-downgrade flow that wrote it.
+        expect(getOwnerPromotionColumn('plan_restricted')).toBeUndefined();
+        expect(
+            indexes.find((i) => i.config.name === 'ownerPromotions_planRestricted_idx')
+        ).toBeUndefined();
     });
 });

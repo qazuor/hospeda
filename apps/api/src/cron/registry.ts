@@ -7,7 +7,6 @@
 import {
     alertsDigestJob,
     appLogPurgeJob,
-    archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
     calendarSyncGoogleJob,
     calendarSyncIcalJob,
@@ -49,7 +48,6 @@ export const cronJobs: CronJobDefinition[] = [
     calendarSyncIcalJob,
     pageRevalidationJob,
     archiveExpiredPromotionsJob,
-    archiveAbandonedDraftsJob,
     leadIntakeBackstopJob,
     mediaOrphanCleanupJob,
     cloudinaryE2eCleanupJob,

@@ -29,7 +29,7 @@ export type ExperienceListItem = Pick<
     | 'name'
     | 'type'
     | 'destinationId'
-    | 'isFeatured'
+    | 'featuredByEntitlement'
     | 'ownerId'
     | 'createdAt'
     | 'destination'

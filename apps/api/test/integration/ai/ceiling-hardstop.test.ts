@@ -23,13 +23,13 @@
  * In the integration test environment none of those external services are
  * configured. Rather than requiring full notification infra, we **mock
  * `sendNotification`** at the module level so it directly writes one row to
- * `billingNotificationLog`. This is the documented mock-seam for this test
+ * `notificationLog`. This is the documented mock-seam for this test
  * (see harness instructions: "if the alert path requires more notification infra
  * than the test db has, seed the minimal rows it needs — read handleAlert to
  * find out"; the real limiting factor here is the external Brevo transport, not
  * a missing DB row).
  *
- * The mock writes a `billingNotificationLog` row with `status: 'sent'` and the
+ * The mock writes a `notificationLog` row with `status: 'sent'` and the
  * correct `idempotencyKey` inside `metadata`, which is what the real production
  * path would write after a successful email delivery.
  *
@@ -53,12 +53,12 @@ process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-for-integration
 process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'test-admin@hospeda-test.invalid';
 
 // ---------------------------------------------------------------------------
-// Mock `sendNotification` so it writes directly to `billingNotificationLog`
+// Mock `sendNotification` so it writes directly to `notificationLog`
 // without requiring Brevo / Redis / email API key.
 //
 // The mock:
 //   1. Extracts the `idempotencyKey` from the payload.
-//   2. Inserts a row into `billingNotificationLog` with `status: 'sent'` and
+//   2. Inserts a row into `notificationLog` with `status: 'sent'` and
 //      `metadata: { idempotencyKey }`.
 //
 // Decision: `vi.mock` with a factory function that uses the real `@repo/db`
@@ -74,10 +74,10 @@ vi.mock('../../../src/utils/notification-helper.js', () => ({
     sendNotification: vi.fn(async (payload: Record<string, unknown>) => {
         // Lazy-import @repo/db inside the mock factory to avoid top-level
         // circular imports (the mock factory runs before module graph resolution).
-        const { getDb, billingNotificationLog } = await import('@repo/db');
+        const { getDb, notificationLog } = await import('@repo/db');
         const db = getDb();
 
-        await db.insert(billingNotificationLog).values({
+        await db.insert(notificationLog).values({
             type: String(payload.type ?? 'ai_cost_threshold_alert'),
             channel: 'email',
             recipient: String(payload.recipientEmail ?? 'mock@test.invalid'),
@@ -99,7 +99,7 @@ vi.mock('../../../src/utils/notification-helper.js', () => ({
 }));
 
 import { AiCeilingHitError, invalidateConfigCache, invalidatePromptCache } from '@repo/ai-core';
-import { aiSettings, aiUsage, billingNotificationLog, getDb } from '@repo/db';
+import { aiSettings, aiUsage, getDb, notificationLog } from '@repo/db';
 import type { AiSettingsValue } from '@repo/schemas';
 import { and, eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -396,11 +396,11 @@ describe('AI cost-ceiling hard stop (SPEC-173 T-037 AC-8 + AC-13)', () => {
     });
 
     // -------------------------------------------------------------------------
-    // 100 % threshold alert written to billingNotificationLog (via mock)
+    // 100 % threshold alert written to notificationLog (via mock)
     // -------------------------------------------------------------------------
 
     describe('100% threshold alert persisted (via sendNotification mock)', () => {
-        it('billingNotificationLog contains idempotency key for the 100% ceiling alert', async () => {
+        it('notificationLog contains idempotency key for the 100% ceiling alert', async () => {
             const db = getDb();
             const { users } = await import('@repo/db');
 
@@ -424,7 +424,7 @@ describe('AI cost-ceiling hard stop (SPEC-173 T-037 AC-8 + AC-13)', () => {
             ).rejects.toThrow(AiCeilingHitError);
 
             // The hook is fire-and-forget (no await). Poll briefly for the async
-            // sendNotification mock to complete and write to billingNotificationLog.
+            // sendNotification mock to complete and write to notificationLog.
             const expectedPeriod = (() => {
                 const now = new Date();
                 const y = now.getUTCFullYear();
@@ -440,13 +440,13 @@ describe('AI cost-ceiling hard stop (SPEC-173 T-037 AC-8 + AC-13)', () => {
             let alertRow: { id: string } | undefined;
             for (let attempt = 0; attempt < 20; attempt++) {
                 const rows = await db
-                    .select({ id: billingNotificationLog.id })
-                    .from(billingNotificationLog)
+                    .select({ id: notificationLog.id })
+                    .from(notificationLog)
                     .where(
                         and(
-                            eq(billingNotificationLog.type, 'ai_cost_threshold_alert'),
+                            eq(notificationLog.type, 'ai_cost_threshold_alert'),
                             eq(
-                                sql<string>`${billingNotificationLog.metadata}->>'idempotencyKey'`,
+                                sql<string>`${notificationLog.metadata}->>'idempotencyKey'`,
                                 expectedIdempotencyKey
                             )
                         )

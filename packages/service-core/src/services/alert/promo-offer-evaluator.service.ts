@@ -128,8 +128,7 @@ export interface BuildPromoOfferMatchInput {
  *    evaluator's notion of "currently valid" never diverges from what the
  *    public search endpoint considers valid.
  *
- * Note: `lifecycleState === 'ACTIVE'`, `planRestricted === false`, and
- * `deletedAt === null` are enforced separately as DB-level `where` filters in
+ * Note: `lifecycleState === 'ACTIVE'` and `deletedAt === null` are enforced separately as DB-level `where` filters in
  * {@link PromoOfferEvaluatorService.fetchAllActivePromotions} — they are not
  * re-checked here.
  *
@@ -195,7 +194,7 @@ export function buildPromoOfferMatch({
  * T-007 `alerts-digest` cron job, via T-012's wiring).
  *
  * Algorithm:
- * 1. Fetch every `ACTIVE`, non-plan-restricted, non-soft-deleted owner
+ * 1. Fetch every `ACTIVE`, non-soft-deleted owner
  *    promotion (DB-level `where` filter — see
  *    {@link fetchAllActivePromotions}), then narrow to the ones that qualify
  *    for THIS run via the pure {@link isPromotionQualifying} (recency +
@@ -343,7 +342,7 @@ export class PromoOfferEvaluatorService {
     }
 
     /**
-     * Pages through every `ACTIVE`, non-plan-restricted, non-soft-deleted
+     * Pages through every `ACTIVE`, non-soft-deleted
      * `owner_promotions` row, regardless of its recency or valid-date window
      * (those two checks are applied afterward by the pure
      * {@link isPromotionQualifying}, mirroring how
@@ -365,7 +364,6 @@ export class PromoOfferEvaluatorService {
             const { items } = await this.ownerPromotionModel.findAll(
                 {
                     lifecycleState: LifecycleStatusEnum.ACTIVE,
-                    planRestricted: false,
                     deletedAt: null
                 },
                 { page, pageSize: SCAN_PAGE_SIZE }

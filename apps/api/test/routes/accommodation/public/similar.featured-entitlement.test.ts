@@ -1,14 +1,14 @@
 /**
  * HOS-929 regression — the similar-accommodations endpoint must feature a row
- * whose owner holds a FEATURED_LISTING entitlement (plan or addon), even when
- * the admin-curated `isFeatured` column is `false`.
+ * whose owner holds a FEATURED_LISTING entitlement (plan or addon) — the only
+ * featuring source since HOS-1419 dropped the admin-curated `is_featured`.
  *
  * `similar.ts` is a raw relational query on `getDb()` that bypasses the
  * service/model layer entirely (see its own file header), so it is the
- * easiest of the affected routes to silently miss when wiring the public OR:
+ * easiest of the affected routes to silently miss when wiring the public value:
  * unlike the other public routes, it must explicitly SELECT
- * `featuredByEntitlement` in its Drizzle `columns` allowlist or the OR
- * degrades to `isFeatured` alone with no type error to catch it.
+ * `featuredByEntitlement` in its Drizzle `columns` allowlist or every similar
+ * listing reads as not featured with no type error to catch it.
  *
  * Mirrors the mock strategy of `similar.rich-description.test.ts`.
  */
@@ -23,7 +23,7 @@ const mockSelect = vi.fn();
 const mockFindMany = vi.fn();
 const mockFindByAccommodations = vi.fn().mockResolvedValue(new Map());
 
-/** Row shape as it comes off the DB — includes both featured source columns. */
+/** Row shape as it comes off the DB — includes the featuring source column. */
 const ACCOMMODATION_ENTITLEMENT_FEATURED = {
     id: 'b1b2b3b4-0000-4000-8000-000000000002',
     slug: 'entitlement-featured-similar',
@@ -31,8 +31,7 @@ const ACCOMMODATION_ENTITLEMENT_FEATURED = {
     summary: 'A lodge featured only via billing entitlement',
     description: 'Plain description text',
     type: 'CABIN',
-    // HOS-929 bug case: admin-curated flag is false, entitlement flag is true.
-    isFeatured: false,
+    // HOS-929 bug case: the entitlement flag is true.
     featuredByEntitlement: true,
     isVerified: false,
     averageRating: 4.5,
@@ -160,7 +159,7 @@ async function buildApp() {
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 
-describe('publicGetSimilarRoute — HOS-929 featured entitlement OR', () => {
+describe('publicGetSimilarRoute — HOS-929 featured from the entitlement', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });

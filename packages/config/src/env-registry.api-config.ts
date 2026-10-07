@@ -971,66 +971,6 @@ export const API_CONFIG_ENV_VARS = [
         howToObtainEs: 'Texto libre que se devuelve cuando salta el limiter por IP de protected.'
     },
     {
-        name: 'API_RATE_LIMIT_BILLING_ENABLED',
-        description: 'Enable dedicated rate limiter for billing endpoints',
-        descriptionEs: 'Activa el rate limiter dedicado para endpoints de billing',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'true',
-        exampleValue: 'true',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Default true. Restrictive per-IP throttle on POST requests to /billing/ paths — financial operations. Almost never disable in prod.',
-        howToObtainEs:
-            'Por defecto true. Throttle restrictivo por IP en los POST a rutas /billing/ (operaciones financieras). Casi nunca se desactiva en prod.'
-    },
-    {
-        name: 'API_RATE_LIMIT_BILLING_WINDOW_MS',
-        description: 'Billing rate-limit window duration in milliseconds',
-        descriptionEs: 'Duración de la ventana de rate-limit de billing, en ms',
-        type: 'number',
-        required: false,
-        secret: false,
-        defaultValue: '900000',
-        exampleValue: '900000',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain: 'Window for the billing counter (ms). Default 900000 (15 min).',
-        howToObtainEs: 'Ventana del contador de billing (ms). Por defecto 900000 (15 min).'
-    },
-    {
-        name: 'API_RATE_LIMIT_BILLING_MAX_REQUESTS',
-        description: 'Maximum requests allowed per window for the billing limiter',
-        descriptionEs: 'Máximo de requests por ventana en el limiter de billing',
-        type: 'number',
-        required: false,
-        secret: false,
-        defaultValue: '10',
-        exampleValue: '10',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain:
-            'Max billing POSTs per IP per window. Default 10/15min — deliberately tight: these are payment mutations, not browsing.',
-        howToObtainEs:
-            'Máximo de POSTs de billing por IP por ventana. Por defecto 10/15min: apretado a propósito, son mutaciones de pago, no navegación.'
-    },
-    {
-        name: 'API_RATE_LIMIT_BILLING_MESSAGE',
-        description: 'Error message returned when the billing rate limit is exceeded',
-        descriptionEs: 'Mensaje de error cuando se excede el rate limit de billing',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue: 'Too many billing requests, please try again later.',
-        exampleValue: 'Too many billing requests, please try again later.',
-        apps: ['api'],
-        category: 'api-config',
-        howToObtain: 'Free text returned when the billing limiter trips.',
-        howToObtainEs: 'Texto libre que se devuelve cuando salta el limiter de billing.'
-    },
-    {
         name: 'API_RATE_LIMIT_WEBHOOK_ENABLED',
         description: 'Enable dedicated rate limiter for webhook and machine-to-machine endpoints',
         descriptionEs:

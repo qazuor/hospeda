@@ -75,16 +75,6 @@ describe('owner_promotions.tourist_audience column (HOS-21 D1)', () => {
         expect(col?.config.default).toBe('plus');
     });
 
-    it('is separate from plan_restricted (owner-side plan limit is unrelated to tourist-side gating)', () => {
-        // Arrange — both columns must coexist independently
-        const planRestricted = getOwnerPromotionRawColumn('plan_restricted');
-        const touristAudience = getOwnerPromotionRawColumn('tourist_audience');
-
-        // Assert
-        expect(planRestricted).toBeDefined();
-        expect(touristAudience).toBeDefined();
-    });
-
     it('has a corresponding index ownerPromotions_touristAudience_idx', () => {
         // Arrange
         const { indexes } = getTableConfig(ownerPromotions);

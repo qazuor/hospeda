@@ -44,7 +44,6 @@ function makeGastronomy(overrides: Partial<Record<string, unknown>> = {}): Gastr
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         moderationState: ModerationStatusEnum.APPROVED,
         visibility: VisibilityEnum.PUBLIC,
-        isFeatured: false,
         averageRating: 0,
         reviewsCount: 0,
         adminInfo: { notes: 'internal notes' } as unknown as Gastronomy['adminInfo'],

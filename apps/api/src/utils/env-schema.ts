@@ -316,12 +316,6 @@ export const ApiEnvBaseSchema = z.object({
      * The webhook bucket also backs the `ai-inbound` and `make-callback`
      * tiers (see getEndpointType) — tuning it moves all three.
      */
-    API_RATE_LIMIT_BILLING_ENABLED: boolEnv(true),
-    API_RATE_LIMIT_BILLING_WINDOW_MS: z.coerce.number().default(900000),
-    API_RATE_LIMIT_BILLING_MAX_REQUESTS: z.coerce.number().default(10),
-    API_RATE_LIMIT_BILLING_MESSAGE: z
-        .string()
-        .default('Too many billing requests, please try again later.'),
     API_RATE_LIMIT_WEBHOOK_ENABLED: boolEnv(true),
     API_RATE_LIMIT_WEBHOOK_WINDOW_MS: z.coerce.number().default(60000),
     API_RATE_LIMIT_WEBHOOK_MAX_REQUESTS: z.coerce.number().default(100),
@@ -464,129 +458,6 @@ export const ApiEnvBaseSchema = z.object({
         .optional()
         .default('true')
         .transform((v) => v !== 'false'),
-    /**
-     * Feature flag for addon lifecycle processing (cancellations, plan changes, expiry).
-     * Set to 'false' to disable all addon lifecycle side-effects without deploying code.
-     * Default: true (enabled).
-     */
-    HOSPEDA_ADDON_LIFECYCLE_ENABLED: z
-        .string()
-        .optional()
-        .transform((v) => v !== 'false'),
-    /**
-     * Feature flag for the user self-service subscription cancellation route
-     * (SPEC-147). Ships dark (default false) until the SPEC-203 UI lands.
-     * Set to 'true' to enable. Absent or any other value keeps the route
-     * disabled (opt-in: only the literal string 'true' enables it).
-     */
-    HOSPEDA_USER_CANCEL_ENABLED: z
-        .string()
-        .optional()
-        .transform((v) => v === 'true'),
-    /**
-     * Feature flag for the MercadoPago subscription_preapproval polling
-     * fallback (SPEC-143 Finding #17). When `true` (default), start-paid
-     * schedules a polling job that queries MP `/preapproval/{id}` until
-     * the preapproval reports `authorized`, then flips the local
-     * subscription to `active`. Set to `false` as a kill-switch if the
-     * polling layer misbehaves in production — the webhook handler
-     * still works regardless of this flag.
-     */
-    HOSPEDA_BILLING_POLLING_ENABLED: z
-        .string()
-        .optional()
-        .default('true')
-        .transform((v) => v !== 'false'),
-    /**
-     * Feature flag for the plan price-INCREASE propagation path (HOS-176
-     * Increment A). Ships dark (default false): while unset/false the
-     * propagation cron leaves every `increase` price change in `pending` and
-     * NEVER sends an advance notice or raises a subscriber's MercadoPago
-     * `transaction_amount`. Set to the literal string `'true'` to enable the
-     * full increase flow — the Disp. 954/2025 advance-notice phase plus the
-     * post-grace amount mutation. Decrease propagation is unaffected by this
-     * flag (it is frictionless and always active). Opt-in: only `'true'`
-     * enables it; keep it false until the legal notice copy is signed off and
-     * a staging smoke has passed.
-     */
-    HOSPEDA_BILLING_PRICE_INCREASE_ENABLED: z
-        .string()
-        .optional()
-        .transform((v) => v === 'true'),
-    /**
-     * Feature flag for the own-preapproval accommodation-monthly checkout
-     * (HOS-937 step 1). Ships dark (default false): while unset/false,
-     * `initiatePaidMonthlySubscription` keeps redirecting to the shared
-     * MercadoPago `preapproval_plan` share link (Path C, HOS-191), whose
-     * `external_reference` MercadoPago silently discards. Set to the literal
-     * string `'true'` to create a per-user `POST /preapproval` instead, whose
-     * `external_reference` (the local subscription id) survives in the body
-     * of the server-to-server call. Scoped to accommodation monthly only —
-     * annual, gastronomy/experience and partner checkouts are unaffected regardless of
-     * this flag.
-     */
-    HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED: z
-        .string()
-        .optional()
-        .transform((v) => v === 'true'),
-    /**
-     * Feature flag for recurring add-on charging via a dedicated MercadoPago
-     * preapproval per add-on (HOS-847). Ships dark (default false) across the
-     * whole PR chain: while unset/false, add-on checkout keeps using the
-     * one-time `Preference` path (`mode: 'payment'`) byte-for-byte, regardless
-     * of `billingType: 'recurring'` on the add-on. Set to the literal string
-     * `'true'` ONLY once the full chain is merged (checkout, webhook
-     * activation/renewal, hard-cancel on cancellation, and the reconciler
-     * cron).
-     *
-     * Turning it on before PR 5's webhook handler exists is WORSE than a
-     * purchase stuck `pending`, which is what this comment used to claim. The
-     * add-on's own `billing_subscriptions` row carries a real
-     * `mp_subscription_id`, and `subscription-logic.ts` resolves an incoming
-     * `preapproval.updated` against that column with no product-domain filter —
-     * so the generic plan handler MATCHES the add-on's row and runs the full
-     * plan activation over something that is not a plan (status transition,
-     * period arithmetic, notifications, promo redemption). The buyer is charged
-     * either way; what they do not get is the add-on.
-     *
-     * Do NOT flip this on staging/prod until the staging + prod smoke
-     * checklists (SPEC-143) have both signed off.
-     */
-    HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED: z
-        .string()
-        .optional()
-        .transform((v) => v === 'true'),
-    /**
-     * Statement descriptor that appears on the cardholder's bank statement
-     * after a MercadoPago payment. MP rejects descriptors longer than 11
-     * characters and recommends uppercase ASCII (letters, digits, spaces) so
-     * the value renders consistently across issuers.
-     *
-     * Validated at startup. Tunable via env so the value can be adjusted
-     * during MP homologation without a code deploy.
-     */
-    HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR: z
-        .string()
-        .regex(
-            /^[A-Z0-9 ]{1,11}$/,
-            'Statement descriptor must be 1-11 ASCII uppercase letters, digits or spaces'
-        )
-        .default('HOSPEDA'),
-
-    /**
-     * Gastronomy or experience vertical → billing-plan-slug mapping (HOS-688), in the form
-     * `gastronomy:<slug>,experience:<slug>`.
-     *
-     * ONE variable rather than one per vertical: two variables can be left
-     * half-set, and then one vertical sells while the other answers 503 with the
-     * site looking perfectly healthy.
-     *
-     * The SHAPE is validated in `env.ts`'s `.superRefine`, not here, because
-     * this file is import-pure (zod only) and the parser lives in
-     * the retired per-vertical plan-config helper. A malformed value fails startup — AC-35's
-     * "an unset or unknown slug stops the container, it does not 503 a
-     * checkout". Unset falls back to the shipped catalogue defaults.
-     */
 
     /**
      * Extra trusted origins (CSV of full URLs). Applied to BOTH the
@@ -747,49 +618,6 @@ export const ApiEnvBaseSchema = z.object({
      * generation, not because the service imports this module. Default: 5.
      */
     HOSPEDA_ALERT_PRICE_DROP_THRESHOLD_PCT: z.coerce.number().default(5),
-
-    /**
-     * Testing-only override for the host publish-flow trial length, in days.
-     * When set to a positive integer it replaces the `OWNER_TRIAL_DAYS` (30
-     * as of the 2026-08-15 owner decision) constant used by
-     * `TrialService.startTrial`, so a QA run can exercise trial expiry after
-     * e.g. 1 day instead of waiting 30.
-     *
-     * Deliberately NOT gated by environment: `NODE_ENV` is `'production'` on BOTH
-     * the prod and staging deployments (so it cannot distinguish them), and testing
-     * must be possible against production. It is an explicit ops knob — it affects
-     * EVERY trial started while it is set, so the operator sets it, runs the test,
-     * then UNSETS it. Optional (no default) so the absence of the var yields
-     * `undefined` and the constant path is taken. Unset by default everywhere.
-     */
-    HOSPEDA_TRIAL_DAYS_OVERRIDE: z.coerce.number().int().positive().optional(),
-
-    /**
-     * Testing-only flag that exposes and enables subscribing to the hidden
-     * daily test billing plan (`owner-test-daily`, `@repo/billing`
-     * `TEST_DAILY_PLAN`). When `false` (default), `resolvePlanBySlug` in
-     * `apps/api/src/services/subscription-checkout.service.ts` rejects the
-     * plan slug with `PLAN_NOT_FOUND` even though the row always exists in
-     * `billing_plans`/`billing_prices` (seeded unconditionally). When `true`,
-     * the plan resolves normally and a checkout against it creates a REAL
-     * MercadoPago recurring preapproval that charges every 1 day.
-     *
-     * Deliberately NOT gated by environment: `NODE_ENV` is `'production'` on
-     * BOTH the prod and staging deployments (so it cannot distinguish them),
-     * and testing the full recurring-charge lifecycle must be possible
-     * against production (the MP sandbox on staging is unreliable). It is an
-     * explicit ops knob — while it is `true`, ANY authenticated caller who
-     * knows the `owner-test-daily` slug can trigger a REAL daily charge in
-     * prod. Set it, run the test, then UNSET it. Unset by default everywhere.
-     *
-     * Uses the string→boolean transform (NOT z.coerce.boolean()) so the
-     * literal 'false' evaluates to false — see the footgun note on
-     * HOSPEDA_DISABLE_AUTH.
-     */
-    HOSPEDA_SHOW_TEST_BILLING_PLAN: z
-        .string()
-        .optional()
-        .transform((v) => v === 'true'),
 
     // AI / Credential Vault
     // Decision (owner-approved 2026-06-04): base-optional so non-production envs

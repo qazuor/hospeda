@@ -1,6 +1,6 @@
 import { asMajor } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
-import { billingNotificationLog } from '@repo/db';
+import { notificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import type { ReactElement } from 'react';
 import { NOTIFICATION_CATEGORY_MAP } from '../config/notification-categories.js';
@@ -27,7 +27,6 @@ import {
     HostTradeRevoked,
     PartnerMentionsLogged,
     PartnerRevoked,
-    PartnerUnpaidNotice,
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
@@ -87,7 +86,6 @@ import type {
     NotificationPayload,
     PartnerMentionsLoggedPayload,
     PartnerRevokedPayload,
-    PartnerUnpaidNoticePayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
     PlanBeingRetiredPayload,
@@ -972,15 +970,6 @@ export class NotificationService {
                 });
             }
 
-            case 'partner_unpaid_notice': {
-                const p = payload as PartnerUnpaidNoticePayload;
-                return PartnerUnpaidNotice({
-                    recipientName,
-                    partnerName: p.partnerName,
-                    daysUntilArchive: p.daysUntilArchive
-                });
-            }
-
             case 'accommodation_calendar_feed_broken': {
                 const p = payload as AccommodationCalendarFeedBrokenPayload;
                 return AccommodationCalendarFeedBroken({
@@ -1060,7 +1049,7 @@ export class NotificationService {
         const { payload, status, messageId, error } = params;
 
         try {
-            await db.insert(billingNotificationLog).values({
+            await db.insert(notificationLog).values({
                 type: payload.type,
                 channel: 'email',
                 recipient: payload.recipientEmail,

@@ -150,12 +150,6 @@ describe('AccommodationService — revalidation hooks', () => {
                 destinationType: DestinationTypeEnum.CITY
             })
         };
-        // SPEC-143 #29: _beforeCreate looks up the owner's serviceSuspended via
-        // _userModel; stub it so the create-lock check does not hit the real DB.
-        // @ts-expect-error: private field override for test isolation
-        service._userModel = {
-            findById: vi.fn().mockResolvedValue({ serviceSuspended: false })
-        };
         // SPEC-204: _afterCreate shadow-writes media via _accommodationMediaModel.
         // Stub it so the sync (running inside the mocked transaction) does not hit the real DB.
         // @ts-expect-error: private field override for test isolation

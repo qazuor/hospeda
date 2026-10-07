@@ -560,7 +560,7 @@ export class GastronomyService extends BaseListingService<
      * Admin search — inherits owner-scoping from the base class.
      *
      * Gastronomy-specific entity filters (`type`, `priceRange`, `destinationId`,
-     * `ownerId`, `isFeatured`) are plain scalars that the generic admin search
+     * `ownerId`) are plain scalars that the generic admin search
      * builder handles natively via the where-clause builder.
      *
      * @param params - Admin search parameters assembled by `adminList()`.

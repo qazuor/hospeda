@@ -211,7 +211,7 @@ vi.mock('@repo/db/schemas', () => ({
         updatedAt: 'updated_at',
         deletedAt: 'deleted_at'
     },
-    billingNotificationLogs: {
+    notificationLogs: {
         id: 'id',
         customerId: 'customer_id',
         eventType: 'event_type',

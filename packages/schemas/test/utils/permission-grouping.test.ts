@@ -42,10 +42,7 @@ describe('permission-grouping (SPEC-170)', () => {
             if (listingPerm) {
                 const [, value] = listingPerm;
                 const category = PERMISSION_TO_CATEGORY[value as PermissionEnum];
-                expect([
-                    PermissionCategoryEnum.ACCOMMODATION_LISTING,
-                    PermissionCategoryEnum.ACCOMMODATION_LISTING_PLAN
-                ]).toContain(category);
+                expect(category).toBe(PermissionCategoryEnum.ACCOMMODATION_LISTING);
                 expect(category).not.toBe(PermissionCategoryEnum.ACCOMMODATION);
             }
         });

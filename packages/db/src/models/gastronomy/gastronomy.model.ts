@@ -116,7 +116,9 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
                 );
             }
             if (params.isFeatured !== undefined) {
-                whereClauses.push(eq(gastronomies.isFeatured, params.isFeatured));
+                // `isFeatured` is the public name; its only source is
+                // `featuredByEntitlement` since HOS-1419 dropped `is_featured`.
+                whereClauses.push(eq(gastronomies.featuredByEntitlement, params.isFeatured));
             }
             if (params.q) {
                 whereClauses.push(safeIlike(gastronomies.name, params.q));

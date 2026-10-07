@@ -14,15 +14,16 @@
  * block no action) and the owner asked for it back in this same change.
  *
  * Rendered SSR-only, deliberately NOT a React island: the page already has
- * the accommodation's `isFeatured` / `featuredByEntitlement` columns loaded
+ * the accommodation's `featuredByEntitlement` column loaded
  * server-side (`resolveEditorPage`), so there is nothing left to fetch on
  * mount. The original component's HOS-1031 bug (a `client:visible` island
  * whose first render was `return null`, so its zero-size `<astro-island>`
  * wrapper never got an observable area to hydrate against) cannot recur here
  * because there is no island and no client-side loading state at all.
  *
- * Self-hides when the listing is already featured, from either source: the
- * gesture "you should buy this" makes no sense once it is already true.
+ * Self-hides when the listing is already featured (`featuredByEntitlement`, the
+ * only featuring source since HOS-1419): the gesture "you should buy this"
+ * makes no sense once it is already true.
  */
 import { translateAddonName } from '@/lib/addon-labels';
 import {
@@ -34,16 +35,14 @@ import { createTranslations } from '@/lib/i18n';
 
 interface Props {
 	readonly locale: SupportedLocale;
-	/** Admin-curated flag — true means already featured regardless of entitlement. */
-	readonly isFeatured: boolean;
 	/** Billing-derived flag (SPEC-292/SPEC-309 OQ-3) — true means an active plan or addon entitlement currently features this listing. */
 	readonly featuredByEntitlement: boolean;
 }
 
-const { locale, isFeatured, featuredByEntitlement } = Astro.props;
+const { locale, featuredByEntitlement } = Astro.props;
 const { t } = createTranslations(locale);
 
-const alreadyFeatured = isAccommodationAlreadyFeatured({ isFeatured, featuredByEntitlement });
+const alreadyFeatured = isAccommodationAlreadyFeatured({ featuredByEntitlement });
 const offers = alreadyFeatured ? [] : buildFeaturedAddonOffers({ locale });
 ---
 

@@ -183,7 +183,6 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/alojamientos/comparar/': 'noindex',
     '/alojamientos/mapa/': 'noindex',
     '/destinos/mapa/': 'noindex',
-    '/suscriptores/plan1/': 'noindex',
     '/newsletter/confirma-tu-email/': 'noindex',
     '/newsletter/confirmado/': 'noindex',
     '/newsletter/desuscripto/': 'noindex',

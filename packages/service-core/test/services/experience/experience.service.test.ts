@@ -53,13 +53,11 @@ function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}):
         priceFrom: 150000,
         priceUnit: ExperiencePriceUnitEnum.PER_PERSON,
         isPriceOnRequest: false,
-        hasActiveSubscription: true,
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         moderationState: ModerationStatusEnum.APPROVED,
         visibility: VisibilityEnum.PUBLIC,
-        isFeatured: false,
         averageRating: 0,
         reviewsCount: 0,
         createdAt: new Date('2024-01-01'),
@@ -378,25 +376,6 @@ describe('ExperienceService.updateOwn — schema enforcement', () => {
             expect(updatePayload).not.toHaveProperty('slug');
         }
     });
-
-    it('should not allow hasActiveSubscription in owner update (subscription lifecycle only)', async () => {
-        // hasActiveSubscription is admin-only; owner cannot toggle it.
-        // The field is absent from ExperienceOwnerUpdateInputSchema so it is stripped silently.
-        const entity = makeExperienceEntity();
-        const service = makeService(entity);
-        const mockUpdate = (service as AnyService).model.update;
-        // biome-ignore lint/suspicious/noExplicitAny: test coercion — simulating forged HTTP body
-        const forgedPayload: any = {
-            isPriceOnRequest: false,
-            hasActiveSubscription: true // should be stripped
-        };
-        await service.updateOwn(ENTITY_ID, forgedPayload, ownerActor);
-        const updateArgs = mockUpdate.mock.calls[0];
-        if (updateArgs) {
-            const updatePayload = updateArgs[1] as Record<string, unknown>;
-            expect(updatePayload).not.toHaveProperty('hasActiveSubscription');
-        }
-    });
 });
 
 // ---------------------------------------------------------------------------
@@ -409,7 +388,7 @@ describe('ExperienceService.updateOwn — schema enforcement', () => {
 // reverses SPEC-239 decision #5: `name`, `description`, `destinationId` are
 // now owner-editable identity fields too. `slug` stays admin-only post-create
 // (OQ-3); only true control fields (lifecycle/visibility/moderation/
-// isFeatured/hasActiveSubscription/ownerId) remain stripped.
+// ownerId) remain stripped.
 describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
     it('persists name/description/destinationId/type/priceFrom/priceUnit/summary/i18n; strips slug + control fields', async () => {
         const entity = makeExperienceEntity();
@@ -430,8 +409,6 @@ describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-
             lifecycleState: LifecycleStatusEnum.ARCHIVED, // control field — stripped
             visibility: VisibilityEnum.PRIVATE, // control field — stripped
             moderationState: ModerationStatusEnum.REJECTED, // control field — stripped
-            isFeatured: true, // control field — stripped
-            hasActiveSubscription: false, // subscription lifecycle only — stripped
             ownerId: '00000000-0000-4000-a000-0000000000fe' // control field — stripped
         };
 
@@ -456,8 +433,6 @@ describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-
             'lifecycleState',
             'visibility',
             'moderationState',
-            'isFeatured',
-            'hasActiveSubscription',
             'ownerId'
         ]) {
             expect(updatePayload).not.toHaveProperty(forbidden);
@@ -506,25 +481,6 @@ describe('ExperienceService search filter forwarding', () => {
         expect(mockFindAllWithRelations).toHaveBeenCalledWith(
             expect.objectContaining({ destination: true, owner: true }),
             expect.objectContaining({ type: ExperienceTypeEnum.TOUR_GUIDE, deletedAt: null }),
-            expect.any(Object),
-            undefined,
-            undefined
-        );
-    });
-
-    it('should forward hasActiveSubscription filter to model.findAllWithRelations', async () => {
-        const entity = makeExperienceEntity();
-        const service = makeService(entity);
-        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
-
-        await (
-            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ hasActiveSubscription: true, page: 1, pageSize: 10 }, staffActor, {});
-
-        // After B3 fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
-        expect(mockFindAllWithRelations).toHaveBeenCalledWith(
-            expect.objectContaining({ destination: true, owner: true }),
-            expect.objectContaining({ hasActiveSubscription: true }),
             expect.any(Object),
             undefined,
             undefined
@@ -639,13 +595,6 @@ describe('ExperienceService._projectPublicEntity', () => {
         expect(result).toHaveProperty('priceUnit');
         expect(result).toHaveProperty('isPriceOnRequest', false);
     });
-
-    it('should preserve hasActiveSubscription in public projection', () => {
-        const entity = makeExperienceEntity({ hasActiveSubscription: true });
-        const service = makeService(entity);
-        const result = (service as AnyService)._projectPublicEntity(entity);
-        expect(result).toHaveProperty('hasActiveSubscription', true);
-    });
 });
 
 // ---------------------------------------------------------------------------
@@ -713,28 +662,6 @@ describe('ExperienceService._canView', () => {
         const entity = makeExperienceEntity({ visibility: VisibilityEnum.PRIVATE });
         const service = makeService(entity);
         expect(() => (service as AnyService)._canView(ownerActor, entity)).not.toThrow();
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Subscription toggle (hasActiveSubscription flag)
-// ---------------------------------------------------------------------------
-
-describe('ExperienceService subscription visibility gate', () => {
-    it('should have hasActiveSubscription false by default on new entities', () => {
-        const entity = makeExperienceEntity({ hasActiveSubscription: false });
-        expect(entity.hasActiveSubscription).toBe(false);
-    });
-
-    it('should allow staff to flip hasActiveSubscription via generic update', async () => {
-        const entity = makeExperienceEntity({ hasActiveSubscription: false });
-        const service = makeService(entity);
-        const mockUpdate = (service as AnyService).model.update;
-        // Staff uses the admin update path (not updateOwn) to flip the subscription flag.
-        await service.update(staffActor, ENTITY_ID, {
-            hasActiveSubscription: true
-        } as Partial<Experience>);
-        expect(mockUpdate).toHaveBeenCalled();
     });
 });
 

@@ -98,11 +98,6 @@ describe('GastronomyCreateHttpSchema', () => {
         expect(() => GastronomyCreateHttpSchema.parse(validCreate())).not.toThrow();
     });
 
-    it('should default isFeatured to false', () => {
-        const result = GastronomyCreateHttpSchema.parse(validCreate());
-        expect(result.isFeatured).toBe(false);
-    });
-
     it('should reject when name is missing', () => {
         const { name: _n, ...data } = validCreate();
         expect(() => GastronomyCreateHttpSchema.parse(data)).toThrow(ZodError);

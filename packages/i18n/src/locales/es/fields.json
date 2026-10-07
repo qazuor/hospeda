@@ -235,12 +235,6 @@
             "description": "Categoría del alojamiento",
             "placeholder": "Selecciona el tipo"
         },
-        "isFeatured": {
-            "title": "Destacado",
-            "label": "Alojamiento destacado",
-            "description": "Marcar como alojamiento destacado",
-            "placeholder": "¿Es destacado?"
-        },
         "isVerified": {
             "title": "Verificado",
             "label": "Alojamiento verificado",

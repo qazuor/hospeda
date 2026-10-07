@@ -15,7 +15,7 @@
  */
 
 import type { QueryContext } from '@repo/db';
-import { and, billingNotificationLog, getDb, isNotNull, isNull, sql } from '@repo/db';
+import { and, getDb, isNotNull, isNull, notificationLog, sql } from '@repo/db';
 import { lt } from 'drizzle-orm';
 import { withServiceTransaction } from '../../../utils/transaction.js';
 
@@ -75,15 +75,12 @@ export class NotificationRetentionService {
         const db = ctx?.tx ?? getDb();
 
         const result = await db
-            .update(billingNotificationLog)
+            .update(notificationLog)
             .set({ expiredAt: sql`NOW()` })
             .where(
                 and(
-                    lt(
-                        billingNotificationLog.createdAt,
-                        sql`NOW() - ${retentionDays} * INTERVAL '1 day'`
-                    ),
-                    isNull(billingNotificationLog.expiredAt)
+                    lt(notificationLog.createdAt, sql`NOW() - ${retentionDays} * INTERVAL '1 day'`),
+                    isNull(notificationLog.expiredAt)
                 )
             );
 
@@ -112,14 +109,11 @@ export class NotificationRetentionService {
         const db = ctx?.tx ?? getDb();
 
         const result = await db
-            .delete(billingNotificationLog)
+            .delete(notificationLog)
             .where(
                 and(
-                    isNotNull(billingNotificationLog.expiredAt),
-                    lt(
-                        billingNotificationLog.expiredAt,
-                        sql`NOW() - ${graceDays} * INTERVAL '1 day'`
-                    )
+                    isNotNull(notificationLog.expiredAt),
+                    lt(notificationLog.expiredAt, sql`NOW() - ${graceDays} * INTERVAL '1 day'`)
                 )
             );
 

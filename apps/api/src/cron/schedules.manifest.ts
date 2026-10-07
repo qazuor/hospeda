@@ -83,13 +83,6 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Purge app_log_entries older than 30 days (WARN/ERROR only).'
     },
     {
-        name: 'archive-abandoned-drafts',
-        displayName: 'Archivar borradores abandonados',
-        category: 'content',
-        schedule: '0 3 * * *',
-        description: 'Archive accommodation drafts left untouched past the retention window.'
-    },
-    {
         name: 'archive-expired-promotions',
         displayName: 'Archivar promociones vencidas',
         category: 'billing',

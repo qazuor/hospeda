@@ -325,27 +325,6 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
         PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
 
-        // BILLING: All billing admin permissions. MANAGE_SUBSCRIPTIONS and
-        // BILLING_MANAGE gate write ops on the qzpay-hono admin tier (cancel,
-        // change-plan, extend-trial, force-cancel, refund, mark-paid, void,
-        // entitlements/limits manage). Without them ADMIN can only READ; today
-        // only SUPER_ADMIN can write (via the actor.ts catch-all bypass that
-        // grants every PermissionEnum value regardless of role_permission).
-        // Surfaced during SPEC-143 Block 2 smoke 2.2 (admin subscription cancel).
-        PermissionEnum.BILLING_READ_ALL,
-        PermissionEnum.BILLING_MANAGE,
-        PermissionEnum.MANAGE_SUBSCRIPTIONS,
-        PermissionEnum.BILLING_PROMO_CODE_READ,
-        PermissionEnum.BILLING_PROMO_CODE_MANAGE,
-        PermissionEnum.BILLING_METRICS_READ,
-        // HOS-765 orphan-payment rescue (force-link + payment backfill).
-        // SUPER_ADMIN ONLY, and deliberately not folded into BILLING_MANAGE:
-        // these two verbs write money into the ledger and bind a real payer's
-        // charge to a named person's subscription. Granting it alongside
-        // BILLING_MANAGE would mean the grant that lets someone expire an add-on
-        // also lets them move a charge between customers.
-        PermissionEnum.BILLING_RECONCILIATION_MANAGE,
-
         // REVALIDATION: All permissions
         PermissionEnum.REVALIDATION_TRIGGER,
         PermissionEnum.REVALIDATION_CONFIG_VIEW,
@@ -374,10 +353,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MAINTENANCE_MODE_WRITE,
         PermissionEnum.BILLING_SETTINGS_VIEW,
         PermissionEnum.BILLING_SETTINGS_WRITE,
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
-        PermissionEnum.BILLING_ADDON_PURCHASE, // HOS-726 — staff see every gated nav entry.
 
         // AI (SPEC-173): credential vault + settings management — SUPER_ADMIN-only.
         PermissionEnum.AI_SETTINGS_MANAGE,
@@ -715,10 +691,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // METRICS: All permissions
         PermissionEnum.METRICS_RESET,
 
-        // SPEC-164: POST_SPONSORSHIP_MANAGE, all SPONSORSHIP _ANY, all OWNER_PROMOTION _ANY,
-        // and all BILLING permissions (BILLING_READ_ALL, BILLING_MANAGE, MANAGE_SUBSCRIPTIONS,
-        // BILLING_PROMO_CODE_READ, BILLING_PROMO_CODE_MANAGE, BILLING_METRICS_READ) have been
-        // revoked from ADMIN (19 total). These are now SUPER_ADMIN-only.
+        // SPEC-164: POST_SPONSORSHIP_MANAGE, all SPONSORSHIP _ANY and all OWNER_PROMOTION _ANY
+        // have been revoked from ADMIN. These are now SUPER_ADMIN-only. (The old billing
+        // admin family revoked alongside them was retired entirely by HOS-1419.)
 
         // REVALIDATION: All permissions
         PermissionEnum.REVALIDATION_TRIGGER,
@@ -746,10 +721,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.SETTINGS_GENERAL_WRITE,
         PermissionEnum.BILLING_SETTINGS_VIEW,
         PermissionEnum.BILLING_SETTINGS_WRITE,
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
-        PermissionEnum.BILLING_ADDON_PURCHASE, // HOS-726 — staff see every gated nav entry.
 
         // MODERATION: Content auto-moderation management (SPEC-195)
         PermissionEnum.MODERATION_TERM_VIEW,
@@ -880,10 +852,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // panel access is re-granted at that point, not preemptively.
         PermissionEnum.ACCESS_API_PUBLIC,
 
-        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
-        // (CLIENT_MANAGER buys complex tiers per SPEC-143 test users).
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1134,13 +1103,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
-        // PLATFORM SETTINGS V1 (SPEC-156): HOST self-billing landing + Mi cuenta self-edit.
-        // BILLING_VIEW_OWN/SUBSCRIPTION_VIEW_OWN are distinct from BILLING_READ_ALL (admin-tier).
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
         PermissionEnum.USER_UPDATE_SELF,
-        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons) and buys from it.
-        PermissionEnum.BILLING_ADDON_PURCHASE,
 
         // HOST_TRADE: read-only access to the admin-curated host trades directory (SPEC-241).
         PermissionEnum.HOST_TRADE_VIEW,
@@ -1202,14 +1166,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
-        // BILLING: Own subscription and billing view (mirrors HOST)
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF,
-
-        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons)
-        // and buys from it. Same owner-only scope as the gastronomy and experience grants.
-        PermissionEnum.BILLING_ADDON_PURCHASE
+        // Mi cuenta self-edit (mirrors HOST)
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.EXPERIENCE_OWNER]: [
@@ -1260,14 +1218,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
-        // BILLING: Own subscription and billing view (mirrors HOST)
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF,
-
-        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons)
-        // and buys from it. Same owner-only scope as the gastronomy and experience grants.
-        PermissionEnum.BILLING_ADDON_PURCHASE
+        // Mi cuenta self-edit (mirrors HOST)
+        PermissionEnum.USER_UPDATE_SELF
     ],
 
     [RoleEnum.USER]: [
@@ -1308,12 +1260,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC,
 
-        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
-        // (USER buys tourist tiers + needs checkout flow to upgrade to HOST).
-        // BILLING_VIEW_OWN gates /protected/billing/*; ownership middleware
-        // still enforces per-resource scope.
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1339,10 +1286,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC,
 
-        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
-        // (SPONSOR pays for sponsorship packages — needs /protected/billing/* access).
-        PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
         PermissionEnum.USER_UPDATE_SELF
     ],
 

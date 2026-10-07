@@ -67,11 +67,9 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
             return null;
         }
 
-        // HOS-929: public read treats holding either the admin-curated
-        // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-        // flag as featured. `featuredByEntitlement` itself is stripped by
-        // `AccommodationPublicSchema` (never in its pick), so only the OR'd
-        // `isFeatured` reaches the response.
+        // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+        // (the only featuring source since HOS-1419); the raw column itself is
+        // stripped by the public schema (never in its pick).
         const accommodation = {
             ...result.data,
             isFeatured: resolvePublicIsFeatured(result.data)

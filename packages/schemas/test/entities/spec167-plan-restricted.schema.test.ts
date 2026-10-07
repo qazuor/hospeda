@@ -4,8 +4,8 @@
  * Verifies that the `planRestricted` boolean field is correctly defined on:
  *   (1) AccommodationSchema — full entity round-trip and default
  *   (2) AccommodationCreateInputSchema / AccommodationUpdateInputSchema — field is omitted (server-managed)
- *   (3) OwnerPromotionSchema — full entity round-trip and default
- *   (4) OwnerPromotionCreateInputSchema / OwnerPromotionUpdateInputSchema — field is omitted (server-managed)
+ *   (3) OwnerPromotionSchema — no longer declares it (the column was dropped by HOS-1419)
+ *   (4) OwnerPromotionCreateInputSchema / OwnerPromotionUpdateInputSchema — field is rejected
  *
  * Design decision D-3 (SPEC-167 §4): `planRestricted` MUST be a separate flag from
  * `ownerSuspended` (accommodations) and `lifecycleState` (promotions) so the two
@@ -24,16 +24,11 @@ import {
     OwnerPromotionUpdateInputSchema
 } from '../../src/entities/ownerPromotion/owner-promotion.crud.schema.js';
 import { OwnerPromotionSchema } from '../../src/entities/ownerPromotion/owner-promotion.schema.js';
-import { LifecycleStatusEnum } from '../../src/enums/lifecycle-state.enum.js';
 import {
     createMinimalAccommodation,
     createValidAccommodation
 } from '../fixtures/accommodation.fixtures.js';
-import {
-    createMinimalOwnerPromotion,
-    createOwnerPromotionCreateInput,
-    createValidOwnerPromotion
-} from '../fixtures/ownerPromotion.fixtures.js';
+import { createOwnerPromotionCreateInput } from '../fixtures/ownerPromotion.fixtures.js';
 
 // ─── AccommodationSchema ─────────────────────────────────────────────────────
 
@@ -138,66 +133,14 @@ describe('AccommodationUpdateInputSchema.planRestricted omitted (SPEC-167 T-002)
 
 // ─── OwnerPromotionSchema ────────────────────────────────────────────────────
 
-describe('OwnerPromotionSchema.planRestricted (SPEC-167 T-002)', () => {
-    it('defaults to false when not provided', () => {
+describe('OwnerPromotionSchema no longer declares planRestricted (HOS-1419)', () => {
+    it('drops the old plan-downgrade flag with its column', () => {
         // Arrange
-        const data = createMinimalOwnerPromotion();
+        const shape = OwnerPromotionSchema.shape as Record<string, unknown>;
 
-        // Act
-        const result = OwnerPromotionSchema.safeParse(data);
-
-        // Assert
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.data.planRestricted).toBe(false);
-        }
-    });
-
-    it('round-trips planRestricted: true through parse', () => {
-        // Arrange
-        const data = { ...createValidOwnerPromotion(), planRestricted: true };
-
-        // Act
-        const result = OwnerPromotionSchema.safeParse(data);
-
-        // Assert
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.data.planRestricted).toBe(true);
-        }
-    });
-
-    it('round-trips planRestricted: false through parse', () => {
-        // Arrange
-        const data = { ...createValidOwnerPromotion(), planRestricted: false };
-
-        // Act
-        const result = OwnerPromotionSchema.safeParse(data);
-
-        // Assert
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.data.planRestricted).toBe(false);
-        }
-    });
-
-    it('is a distinct field from lifecycleState (D-3: states must not collide)', () => {
-        // Arrange: promotion deactivated by lifecycle AND plan-restricted simultaneously
-        const data = {
-            ...createValidOwnerPromotion(),
-            lifecycleState: LifecycleStatusEnum.ARCHIVED,
-            planRestricted: true
-        };
-
-        // Act
-        const result = OwnerPromotionSchema.safeParse(data);
-
-        // Assert
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.data.lifecycleState).toBe(LifecycleStatusEnum.ARCHIVED);
-            expect(result.data.planRestricted).toBe(true);
-        }
+        // Act + Assert — `owner_promotions.plan_restricted` was dropped with the
+        // old billing; `accommodations.plan_restricted` (above) survives.
+        expect(shape.planRestricted).toBeUndefined();
     });
 });
 

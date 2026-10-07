@@ -17,7 +17,7 @@
  *    (`rExperienceAmenityModel`, `rExperienceFeatureModel`) and catalog models
  *    (`amenityModel`, `featureModel`) for the base junction-sync machinery.
  * 2. **Search filters** — `_executeSearch` / `_executeCount` apply experience
- *    filters (`type`, `hasActiveSubscription`, `destinationId`, `isFeatured`, …).
+ *    filters (`type`, `destinationId`, `isFeatured`, …).
  * 3. **Owner update gate** — `updateOwn()` validates with
  *    `ExperienceOwnerUpdateInputSchema` (operational sections only), enforces
  *    ownership (`NOT_FOUND` for non-owners), and gates on a single
@@ -411,7 +411,7 @@ export class ExperienceService extends BaseListingService<
      * Executes the public search query with experience-specific filter support.
      *
      * Scalar filters forwarded to the model: `type`, `destinationId`,
-     * `ownerId`, `isFeatured`, `hasActiveSubscription`.
+     * `ownerId`, `isFeatured`.
      *
      * NOTE: `amenities` / `features` (array filters requiring junction-table
      * JOINs) and `minRating` / `maxRating` are stripped here and NOT applied —
@@ -520,7 +520,7 @@ export class ExperienceService extends BaseListingService<
      * Admin search — inherits owner-scoping from the base class.
      *
      * Experience-specific entity filters (`type`, `destinationId`,
-     * `ownerId`, `isFeatured`, `hasActiveSubscription`) are plain scalars that
+     * `ownerId`) are plain scalars that
      * the generic admin search builder handles natively via the where-clause builder.
      *
      * @param params - Admin search parameters assembled by `adminList()`.

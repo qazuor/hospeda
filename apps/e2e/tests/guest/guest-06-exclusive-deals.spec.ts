@@ -129,12 +129,12 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
                  owner_id, destination_id, lifecycle_state,
-                 visibility, moderation_state, is_featured,
+                 visibility, moderation_state,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
                  $5, $6, 'ACTIVE'::lifecycle_status_enum,
-                 'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, false,
+                 'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum,
                  NOW(), NOW()
              ) RETURNING id`,
             [
@@ -152,12 +152,12 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
                  owner_id, destination_id, lifecycle_state,
-                 visibility, moderation_state, is_featured,
+                 visibility, moderation_state,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
                  $5, $6, 'ACTIVE'::lifecycle_status_enum,
-                 'RESTRICTED'::visibility_enum, 'APPROVED'::moderation_status_enum, false,
+                 'RESTRICTED'::visibility_enum, 'APPROVED'::moderation_status_enum,
                  NOW(), NOW()
              ) RETURNING id`,
             [

@@ -115,6 +115,8 @@ export const STAFF_ROLES: readonly RoleEnum[] = [RoleEnum.SUPER_ADMIN, RoleEnum.
  * `editOwn`/`create` pair; spelling the other twenty-five out twice would be an
  * invitation for the copies to drift.
  */
+// HOS-1419: the three old-billing permissions this list used to carry were removed
+// from the permission enum, so they are no longer granted here.
 const OWNER_SHARED_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.USER_VIEW_PROFILE,
     PermissionEnum.USER_UPDATE_PROFILE,
@@ -137,10 +139,7 @@ const OWNER_SHARED_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.CONVERSATION_REPLY_OWN,
     PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
     PermissionEnum.CONVERSATION_BLOCK_OWN,
-    PermissionEnum.BILLING_VIEW_OWN,
-    PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-    PermissionEnum.USER_UPDATE_SELF,
-    PermissionEnum.BILLING_ADDON_PURCHASE
+    PermissionEnum.USER_UPDATE_SELF
 ];
 
 /** The full permission set for `GASTRONOMY_OWNER`, in seed order. */

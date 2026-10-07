@@ -78,17 +78,13 @@
 #      - packages/seed/src/required/socialAutomation.seed.ts
 #      - packages/seed/src/required/contentModeration.seed.ts
 #      - packages/seed/src/required/systemUser.seed.ts
-#    (The `required/billing*.seed.ts` and `required/partnerPlan` and the gastronomy and experience plan
-#    seeders are NOT here: their data lives in `packages/billing/src/config/
-#    *.config.ts`, already guarded below — the seeders only read it.)
 #
 #    EXTERNAL BASELINES (HOS-789): `required/aiPrompts.seed.ts` is listed above
 #    as though its data were inline, and it is not — it only READS
 #    `DEFAULT_PROMPTS` / `DEFAULT_RULES` from
-#    `packages/ai-core/src/engine/default-prompts.ts`, exactly the way the
-#    billing seeders read `billing/src/config/*.config.ts`. Billing had the
-#    right shape from the start (guard the config, the seeder is incidental);
-#    aiPrompts had it backwards, so rewording a prompt — which touches only
+#    `packages/ai-core/src/engine/default-prompts.ts`. The right shape is to
+#    guard the config and treat the seeder as incidental; aiPrompts had it
+#    backwards, so rewording a prompt — which touches only
 #    ai-core — moved nothing in the guarded surface and CI stayed silent while
 #    staging and prod kept the old `ai_prompt_versions` rows. That is what
 #    HOS-789 ended up backfilling by hand. EXTERNAL_BASELINE_FILES below closes
@@ -111,10 +107,6 @@
 #    content, move it to INLINE_CONSTANT_FILES — as entityTagAssignments/userTags
 #    were. The `scripts/__tests__` suite pins both the exemption of these three
 #    AND the guarding of entityTagAssignments/userTags so the split stays visible.)
-#
-#    Additionally, the billing plan/limit/entitlement/addon/promo-code TS
-#    constants in `packages/billing/src/config/*.config.ts` are guarded — the
-#    exact precedent the 0001-0003 data-migrations already ported.
 #
 #    NOT COVERED (residual, see HOS-173 §6.2 / OQ-3): a FUTURE prod-content
 #    inline-constant seeder added under `example/`/`required/` with neither a
@@ -140,22 +132,6 @@
 #         future fixture that truly re-randomizes. No such case exists today;
 #         the bare word "non-deterministic" with no described, diff-visible
 #         mechanism is NOT an acceptable reason (that was v1's false premise).
-#      c) "additive-code-only: <what was added>" — the diff adds CODE to a
-#         guarded file and modifies NO seeded definition. This category exists
-#         because BILLING_CONFIG_FILES is file-granular over files that MIX data
-#         with code: plans.config.ts is 1235 lines and already holds ten helpers
-#         alongside the plan rows, so a derived index or a pure lookup added
-#         next to them trips a guard that has nothing to back-fill. The
-#         declaration must NAME what was added, and REVIEW must confirm the diff
-#         touches no PlanDefinition field — a changed price, entitlement, limit,
-#         slug or isActive is NOT this category however additive it looks.
-#         Extracting the helper to an unwatched file is NOT the preferred exit:
-#         it shrinks the guard's coverage to make a false positive disappear.
-#         Added by HOS-1119 (PR #3177), the marker's first use in this repo,
-#         for the per-vertical plan lookup helpers (since removed). The
-#         predicate did not change with it — only this list of reasons review
-#         will accept, which until then did not describe a case the guard
-#         structurally produces.
 #
 #    False-positive profile: a genuinely-safe additive data change without the
 #    marker fails loudly — the marker unblocks it with an explicit, reviewable
@@ -266,13 +242,6 @@ EXTERNAL_BASELINE_FILES=(
     'packages/ai-core/src/engine/default-prompts.ts'
 )
 
-# Billing plan/limit/entitlement/addon/promo-code TS constants (023-025
-# precedent) — RETIRED with HOS-1416: the whole `packages/billing/src/config`
-# plan-catalog they guarded was demolished, and the plan source of truth is
-# now the database. The list is kept as an empty array so the shared loop in
-# is_guarded_path keeps one shape.
-BILLING_CONFIG_FILES=()
-
 # Matches make.ts / discover.ts's own NNNN-slug.ts convention.
 MIGRATION_FILE_PATTERN='^packages/seed/src/data-migrations/[0-9]{4}-.+\.ts$'
 
@@ -308,8 +277,6 @@ compute_changed_files() {
     # INLINE_CONSTANT_FILES show up in the diff),
     # `ai-core/src/engine` (so EXTERNAL_BASELINE_FILES show up), and
     # `data-migrations` (to detect the accompanying migration).
-    # (The `packages/billing/src/config` root was retired with the demolished
-    # plan catalog in HOS-1416.)
     #
     # A path missing from this list is invisible to the guard NO MATTER what
     # is_guarded_path says about it — the diff never emits it, so the predicate
@@ -317,8 +284,8 @@ compute_changed_files() {
     # root here produces a guard that reads as covering the file and does not.
     #
     # `--no-renames` keeps every diff line a strict A/M/D with a single path, so
-    # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES /
-    # BILLING_CONFIG_FILES) can never be defeated by git emitting an
+    # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES and
+    # EXTERNAL_BASELINE_FILES) can never be defeated by git emitting an
     # `R<score><TAB>old<TAB>new` line that the two-field `read` would collapse
     # into one path string. (diff.renames defaults ON in modern git.)
     git diff --no-renames --name-status "${base}...HEAD" -- \
@@ -358,10 +325,10 @@ $(git log "${base}..HEAD" --format=%B 2>/dev/null || true)"
 is_guarded_path() {
     local path="$1"
 
-    # Exact-match guarded files (billing config + inline-constant seeders +
-    # baselines living outside packages/seed).
+    # Exact-match guarded files (inline-constant seeders + baselines living
+    # outside packages/seed).
     local f
-    for f in "${BILLING_CONFIG_FILES[@]}" "${INLINE_CONSTANT_FILES[@]}" "${EXTERNAL_BASELINE_FILES[@]}"; do
+    for f in "${INLINE_CONSTANT_FILES[@]}" "${EXTERNAL_BASELINE_FILES[@]}"; do
         [[ "${path}" == "${f}" ]] && return 0
     done
 

@@ -53,7 +53,7 @@ export type SortField = z.infer<typeof SortFieldSchema>;
  *   2. `sortBy` / `sortOrder` — legacy single-column fallback.
  *
  * `featuredFirst` is an independent flag that, when true, forces the consuming
- * model to prepend `isFeatured DESC` to the ORDER BY clause — regardless of what
+ * model to prepend `featuredByEntitlement DESC` to the ORDER BY clause — regardless of what
  * the client requested in `sorts`/`sortBy`. Enforcement is the model's job.
  */
 export const BaseSearchSchema = z.object({

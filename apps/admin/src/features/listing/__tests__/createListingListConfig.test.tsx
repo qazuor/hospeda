@@ -5,7 +5,7 @@
  * Acceptance criteria:
  *   AC-1  `createListingListConfig` returns a well-formed `EntityConfig` from
  *         minimal params, including shared listing filter params (destinationId,
- *         isFeatured, ownerId, includeDeleted).
+ *         ownerId, includeDeleted).
  *   AC-2  Extra filters from the caller are merged AFTER the shared ones.
  *   AC-3  Default listing overrides (pagination, search, layout) are applied
  *         and overrideable via `extraListConfig`.
@@ -105,7 +105,7 @@ describe('createListingListConfig', () => {
     it('AC-1: always includes shared listing filter params in the filter bar', () => {
         const paramKeys = (config.filterBarConfig?.filters ?? []).map((f) => f.paramKey);
         expect(paramKeys).toContain('destinationId');
-        expect(paramKeys).toContain('isFeatured');
+        expect(paramKeys).not.toContain('isFeatured');
         expect(paramKeys).toContain('ownerId');
         expect(paramKeys).toContain('includeDeleted');
     });
@@ -269,11 +269,8 @@ describe('createListingIdentitySection', () => {
         expect(ids).toContain('rejectionReason');
     });
 
-    it('AC-4: isFeatured is view/edit only (not in create)', () => {
-        const featured = section.fields.find((f) => f.id === 'isFeatured');
-        expect(featured?.modes).not.toContain('create');
-        expect(featured?.modes).toContain('view');
-        expect(featured?.modes).toContain('edit');
+    it('AC-4: the identity section has no isFeatured field (column dropped, HOS-1419)', () => {
+        expect(section.fields.find((f) => f.id === 'isFeatured')).toBeUndefined();
     });
 
     it('AC-4: destinationId uses DESTINATION_SELECT field type', () => {

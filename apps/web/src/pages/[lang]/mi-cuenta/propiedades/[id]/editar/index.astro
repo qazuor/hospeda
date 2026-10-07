@@ -88,12 +88,11 @@ const statuses = resolveEditorSectionStatuses({
 	{/*
 	 * HOS-318 D-10 / HOS-929: no nav item and no hub row — rendered here at
 	 * the foot, where it costs the hub nothing. Self-hides once the listing
-	 * is featured from either source (see the component header).
+	 * is featured (see the component header).
 	 */}
 	<div class="editor-hub-page__extra">
 		<FeaturedAddonOffer
 			locale={locale}
-			isFeatured={accommodation.isFeatured}
 			featuredByEntitlement={accommodation.featuredByEntitlement}
 		/>
 	</div>

@@ -72,7 +72,6 @@ const partner = toPartnerDetailProps({ item: raw, locale });
 const { isIndexable } = evaluatePartnerIndexability({
     tier: raw.tier as string | null,
     lifecycleState: raw.lifecycleState as string | null,
-    subscriptionStatus: raw.subscriptionStatus as string | null,
     description: partner.description
 });
 

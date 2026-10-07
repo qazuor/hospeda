@@ -7,8 +7,6 @@ import {
     PartnerContentReviewStateEnum,
     type PartnerOwnerUpdate,
     PartnerOwnerUpdateSchema,
-    PartnerPaymentReviewStateEnum,
-    PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     RoleEnum,
     ServiceErrorCode,
@@ -27,7 +25,6 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { defaultPaymentConfirmedThrough } from './partner.payment-review';
 import {
     checkCanAdminList,
     checkCanCount,
@@ -99,23 +96,6 @@ const revokePartnerInputSchema = z.object({
         .max(1000, { message: 'zodError.partner.revokeReason.max' })
 });
 
-/** Input for {@link PartnerService.reviewPayment} (HOS-1299). */
-const reviewPartnerPaymentInputSchema = z.object({
-    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    decision: z.enum(['confirmed-paid', 'not-paid'], {
-        message: 'zodError.partner.paymentReview.decision.invalid'
-    }),
-    /**
-     * How far the confirmed period now runs. Optional: omitted means "one more
-     * standard period from today", the answer in the common case of a partner
-     * paying the same amount on the same cadence.
-     *
-     * Only meaningful on `confirmed-paid`. A `not-paid` decision does not take
-     * the partner down here — see {@link PartnerService.reviewPayment}.
-     */
-    confirmedThrough: z.coerce.date().optional()
-});
-
 /** Input for {@link PartnerService.reviewContent}. */
 const reviewPartnerContentInputSchema = z
     .object({
@@ -148,8 +128,8 @@ const reviewPartnerContentInputSchema = z
 /**
  * Whether a partner may have a payment initiated for it (HOS-278 AC-11).
  *
- * The single definition of the gate, exported so the two payment surfaces
- * (`send-link`, `manual-payment`) cannot drift into disagreeing about what
+ * The single definition of the gate, exported so every payment surface
+ * (e.g. `manual-payment`) cannot drift into disagreeing about what
  * "content approved" means.
  *
  * Reads {@link Partner.contentApprovedAt} and NOT
@@ -402,11 +382,10 @@ export class PartnerService extends BaseCrudService<
     }
 
     /**
-     * Register manual payment for partner
+     * Activates a partner whose payment was settled off-platform.
      *
-     * Gated by AC-11 exactly like `send-link`: this path skips MercadoPago but
-     * it still flips the partner to ACTIVE/active, which is what actually puts
-     * them on the carousel. A comp or an off-platform transfer is no reason to
+     * Gated by AC-11 exactly like `send-link`: it flips the partner to ACTIVE,
+     * which is what actually puts them on the carousel. A comp or an off-platform transfer is no reason to
      * publish content nobody reviewed.
      */
     async registerManualPayment(
@@ -429,15 +408,11 @@ export class PartnerService extends BaseCrudService<
             );
         }
 
-        // Update partner status to active.
+        // Activate the partner.
         //
         // `startsAt` is sealed here because THIS is the moment the alliance
         // begins (HOS-409). Provisioning deliberately leaves it null — at that
-        // point nothing has started — and the unpaid reaper reads exactly that
-        // column to decide who never paid (`PartnerModel.findUnpaidProvisioned`).
-        // Activating without stamping it leaves a paying partner indistinguishable
-        // from a deadbeat, so the reaper mails them an unpaid notice on day 30 and
-        // archives them on day 90 while they are still being charged.
+        // point nothing has started.
         //
         // Only when it is absent: an admin who typed the real start date on the
         // edit form outranks "today", and a later reactivation must not rewrite
@@ -445,7 +420,6 @@ export class PartnerService extends BaseCrudService<
         const updated = await this.model.update(
             { id: partnerId },
             {
-                subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE,
                 lifecycleState: LifecycleStatusEnum.ACTIVE,
                 ...(partner.startsAt ? {} : { startsAt: new Date() })
             }
@@ -543,14 +517,14 @@ export class PartnerService extends BaseCrudService<
     /**
      * The partner behind a public `/partners/<slug>/` request (HOS-294 D-6).
      *
-     * Gated on THREE conditions, all of which must hold:
+     * Gated on the conditions below, all of which must hold:
      *
      * - `tier === GOLD` — the page is what separates the two paid plans. This
      *   is the only condition this method adds; the other two are the filters
      *   every public partner read already applies.
-     * - `lifecycleState === ACTIVE` and `subscriptionStatus === active` — the
-     *   same pair `PartnerModel.findByFilters` forces on the carousel, so the
-     *   ficha can never outlive a partner's presence in the listing.
+     * - `lifecycleState === ACTIVE` — the same condition
+     *   `PartnerModel.findByFilters` forces on the carousel, so the ficha can
+     *   never outlive a partner's presence in the listing.
      *
      * Gated by {@link checkCanSearch}, NOT `checkCanView`. The distinction is
      * load-bearing: `checkCanSearch` accepts `ACCESS_API_PUBLIC`, which is what
@@ -566,7 +540,7 @@ export class PartnerService extends BaseCrudService<
      * ### Which failure answers 410, and which answers 404 (HOS-562)
      *
      * Only a partner carrying `revokedAt` answers `gone` (410). Every other way
-     * of failing the visibility pair — never published, or lapsed payment —
+     * of failing the visibility check — never published, or taken offline —
      * answers `notFound` (404), because 410 is the only irreversible signal we
      * can send a crawler and neither of those states is irreversible.
      *
@@ -600,30 +574,23 @@ export class PartnerService extends BaseCrudService<
                     return { outcome: 'notFound' } as const;
                 }
 
-                const isVisible =
-                    partner.lifecycleState === LifecycleStatusEnum.ACTIVE &&
-                    partner.subscriptionStatus === PartnerSubscriptionStatusEnum.ACTIVE;
+                const isVisible = partner.lifecycleState === LifecycleStatusEnum.ACTIVE;
 
                 if (isVisible) {
                     return { outcome: 'found', partner } as const;
                 }
 
                 // HOS-562: "not visible" covers two situations that HTTP answers
-                // differently, and this used to collapse both into 410.
+                // differently.
                 //
                 // 410 Gone is the one irreversible answer: it tells a crawler to
                 // drop the URL for good. That is right for a deliberate takedown
-                // and wrong for everything else. A partner who merely stopped
-                // paying is a TEMPORARY outage — de-indexing them means that when
-                // they regularise the payment they come back without their
-                // ranking. A gold partner still in DRAFT never had a page at all.
+                // and wrong for everything else. A gold partner still in DRAFT
+                // never had a page at all, and one taken offline may come back.
                 //
                 // `revokedAt` is precisely the "we took them down, on purpose,
-                // and it does not come back" marker, and the column's own docs
-                // draw the same line: `subscriptionStatus` is deliberately left
-                // alone on revoke so it never conflates "we took them down" with
-                // "they stopped paying". So 410 keys off `revokedAt`; every other
-                // non-visible state answers 404.
+                // and it does not come back" marker. So 410 keys off
+                // `revokedAt`; every other non-visible state answers 404.
                 if (partner.revokedAt) {
                     return { outcome: 'gone' } as const;
                 }
@@ -839,115 +806,6 @@ export class PartnerService extends BaseCrudService<
             }
         });
     }
-    /**
-     * Answers the question the `partner-payment-review` cron asked (HOS-1299).
-     *
-     * The human half of the owner's decision (2026-09-09). The cron detects
-     * that a partner activated outside MercadoPago has run past the period an
-     * admin last confirmed, flags them and sends one email; NOTHING about the
-     * partner changes until this method runs. That asymmetry is the point:
-     * leaving a non-payer published costs a month of product, cutting off
-     * somebody who paid costs the customer, and a machine cannot tell "they did
-     * not pay" from "nobody wrote it down".
-     *
-     * Two answers:
-     *
-     * - **`confirmed-paid`** — they are up to date (or the admin has now
-     *   recorded the payment they forgot). Clears the flag and moves
-     *   `paymentConfirmedThrough` forward, which is what re-arms the clock.
-     *   Nothing else moves: they were never taken down, so there is nothing to
-     *   restore.
-     * - **`not-paid`** — the same transition `partner-expiry` performs on a
-     *   partner whose term ran out, `CANCELLED` + `ARCHIVED`, only with a human
-     *   behind it.
-     *
-     * `not-paid` deliberately does NOT go through {@link PartnerService.revoke}.
-     * Revoking sets `revokedAt`, and `getPublicBySlug` answers **410 Gone** on
-     * that column — the one irreversible answer, which tells a crawler to drop
-     * the URL for good. A partner who stopped paying is a TEMPORARY outage: they
-     * must be able to regularise and come back with their ranking, so this path
-     * leaves `revokedAt` alone and earns a reversible 404. Revoke stays what it
-     * is, a deliberate takedown with a reason.
-     *
-     * @param actor - The admin answering.
-     * @param input - `{ id, decision, confirmedThrough? }` (RO-RO).
-     * @param ctx - Optional service execution context.
-     * @returns The updated partner.
-     * @throws `NOT_FOUND` when no such partner exists.
-     * @throws `VALIDATION_ERROR` when nothing was asked about this partner —
-     *   answering a question nobody posed would push the clock forward on a
-     *   partner the system never doubted.
-     */
-    public async reviewPayment(
-        actor: Actor,
-        input: {
-            readonly id: string;
-            readonly decision: 'confirmed-paid' | 'not-paid';
-            readonly confirmedThrough?: Date;
-        },
-        ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ partner: Partner }>> {
-        return this.runWithLoggingAndValidation({
-            methodName: 'reviewPayment',
-            input: { actor, ...input },
-            schema: reviewPartnerPaymentInputSchema,
-            ctx,
-            execute: async (validated, a) => {
-                const existing = await this.model.findById(validated.id, ctx?.tx);
-                if (!existing) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Partner not found: ${validated.id}`
-                    );
-                }
-
-                checkCanUpdate(a, existing);
-
-                if (
-                    existing.paymentReviewState !==
-                    PartnerPaymentReviewStateEnum.PENDING_CONFIRMATION
-                ) {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        'This partner has no pending payment review to answer'
-                    );
-                }
-
-                const updated = await this.model.update(
-                    { id: validated.id },
-                    validated.decision === 'confirmed-paid'
-                        ? {
-                              paymentReviewState: null,
-                              paymentConfirmedThrough:
-                                  validated.confirmedThrough ??
-                                  defaultPaymentConfirmedThrough({ from: new Date() }),
-                              updatedById: a.id
-                          }
-                        : {
-                              // The flag is cleared here too: the question has
-                              // been answered. Leaving it set would keep the
-                              // partner in the admin queue after the decision
-                              // was made, and the queue is what tells an
-                              // operator what still needs them.
-                              paymentReviewState: null,
-                              subscriptionStatus: PartnerSubscriptionStatusEnum.CANCELLED,
-                              lifecycleState: LifecycleStatusEnum.ARCHIVED,
-                              updatedById: a.id
-                          },
-                    ctx?.tx
-                );
-
-                if (!updated) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Partner not found: ${validated.id}`
-                    );
-                }
-
-                return { partner: updated };
-            }
-        });
-    }
 
     /**
      * Revokes a partner: makes it invisible while KEEPING the row.
@@ -962,9 +820,7 @@ export class PartnerService extends BaseCrudService<
      * queries too, and a revoked partner must stay in front of the admins who
      * revoked it. `lifecycleState` is the visibility switch this table already
      * had — public reads force `ACTIVE`, so flipping it to `INACTIVE` is what
-     * removes them from the carousel. `subscriptionStatus` is deliberately left
-     * alone: writing it here would conflate "we took them down" with "they
-     * stopped paying", and the billing crons read that column.
+     * removes them from the carousel.
      *
      * Gated by `PARTNER_MANAGE`, NOT by the stricter `PARTNER_DELETE` its
      * host-trade sibling uses. `PARTNER_DELETE` exists in the enum but is

@@ -31,9 +31,8 @@ export const ExperienceSearchHttpSchema = BaseHttpSearchSchema.extend({
     /** Opt-in projection: include amenities per result. */
     includeAmenities: createBooleanQueryParam('Include experience amenities in response'),
     /** Opt-in projection: include features per result. */
-    includeFeatures: createBooleanQueryParam('Include experience features in response'),
+    includeFeatures: createBooleanQueryParam('Include experience features in response')
     /** Filter by active subscription flag (coerced from query string). */
-    hasActiveSubscription: createBooleanQueryParam('Filter experiences with active subscription')
 });
 
 export type ExperienceSearchHttp = z.infer<typeof ExperienceSearchHttpSchema>;
@@ -71,7 +70,6 @@ export const ExperienceCreateHttpSchema = z.object({
      */
     isPriceOnRequest: httpBodyBoolean().default(false),
     /** Whether the listing is featured. */
-    isFeatured: httpBodyBoolean().default(false),
     /** Destination UUID for the listing. */
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
@@ -171,8 +169,7 @@ export const httpToDomainExperienceSearch = (
     minRating: httpParams.minRating,
     maxRating: httpParams.maxRating,
     includeAmenities: httpParams.includeAmenities,
-    includeFeatures: httpParams.includeFeatures,
-    hasActiveSubscription: httpParams.hasActiveSubscription
+    includeFeatures: httpParams.includeFeatures
     // Note: amenities, features, createdAfter, createdBefore exist in domain
     // but not in HTTP schema, so they are not mapped here.
 });
@@ -200,7 +197,6 @@ export const httpToDomainExperienceCreate = (
     priceFrom: httpData.priceFrom,
     priceUnit: httpData.priceUnit,
     isPriceOnRequest: httpData.isPriceOnRequest,
-    isFeatured: httpData.isFeatured,
 
     // Server-managed defaults
     moderationState: ModerationStatusEnum.PENDING,
@@ -208,7 +204,6 @@ export const httpToDomainExperienceCreate = (
     reviewsCount: 0,
     averageRating: 0,
     visibility: VisibilityEnum.PUBLIC,
-    hasActiveSubscription: false,
 
     // HOS-1046 / HOS-1056: the flat HTTP create surface does not collect the
     // practical ficha fields — they are filled in afterwards, from the owner
@@ -283,7 +278,6 @@ export const httpToDomainExperienceUpdate = (
     priceFrom: httpData.priceFrom,
     priceUnit: httpData.priceUnit,
     isPriceOnRequest: httpData.isPriceOnRequest,
-    isFeatured: httpData.isFeatured,
     destinationId: httpData.destinationId,
 
     // Contact info mapping (emit only provided fields).

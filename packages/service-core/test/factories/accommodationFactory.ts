@@ -63,9 +63,8 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
     type: AccommodationTypeEnum.HOTEL,
     destinationId: getMockId('destination') as string,
     ownerId: getMockId('user') as string,
-    isFeatured: false,
-    // HOS-929: billing-derived sibling of `isFeatured` (SPEC-292, renamed
-    // SPEC-309 OQ-3) — independent column, defaults false like `isFeatured`.
+    // HOS-929: billing-derived featuring (SPEC-292, renamed SPEC-309 OQ-3) —
+    // the only featuring source since HOS-1419; defaults false.
     featuredByEntitlement: false,
     ownerSuspended: false,
     planRestricted: false,
@@ -148,7 +147,6 @@ export const createMockAccommodationCreateInput = (
         type: AccommodationTypeEnum.HOTEL,
         destinationId: getMockId('destination') as string,
         ownerId: getMockId('user') as string,
-        isFeatured: false,
         reviewsCount: 0,
         averageRating: 0,
         lifecycleState: LifecycleStatusEnum.ACTIVE,

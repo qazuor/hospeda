@@ -5,7 +5,7 @@
  *
  * The second instance of the defect `addon-link-metadata.ts` was written for,
  * and the mechanism is identical: a notification that fails to send is written
- * to `billing_notification_log`, and `notification-retry.service.ts` REBUILDS
+ * to `notification_log`, and `notification-retry.service.ts` REBUILDS
  * the payload from that row's `metadata` column. `metadata` is the only channel
  * through which anything type-specific survives to the retry, and
  * `logNotification` writes only envelope fields unless something like this
@@ -37,7 +37,7 @@
 import { type NotificationPayload, NotificationType } from '../types/notification.types.js';
 
 /**
- * Subset of `billing_notification_log.metadata` that carries the comp-grant
+ * Subset of `notification_log.metadata` that carries the comp-grant
  * fields through a failed send and back out on retry.
  */
 export interface CompGrantMetadata {

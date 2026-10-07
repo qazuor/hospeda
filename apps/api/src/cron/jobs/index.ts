@@ -16,7 +16,6 @@
 // Import job definitions
 export { alertsDigestJob } from './alerts-digest.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';
-export { archiveAbandonedDraftsJob } from './archive-abandoned-drafts.job.js';
 export { archiveExpiredPromotionsJob } from './archive-expired-promotions.job.js';
 export { calendarSyncGoogleJob } from './calendar-sync-google.job.js';
 export { calendarSyncIcalJob } from './calendar-sync-ical.job.js';

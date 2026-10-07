@@ -6,7 +6,6 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { AccommodationTypeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -19,7 +18,6 @@ import { AccommodationTypeEnumSchema } from '../../enums/index.js';
  *   page: 1,
  *   pageSize: 20,
  *   type: 'HOTEL',
- *   isFeatured: true,
  *   minPrice: 50,
  *   maxPrice: 500
  * });
@@ -44,7 +42,6 @@ export const AccommodationAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by owner'),
 
     /** Filter featured accommodations */
-    isFeatured: createBooleanQueryParam('Filter by featured status'),
 
     /** Minimum price per night */
     minPrice: z.coerce

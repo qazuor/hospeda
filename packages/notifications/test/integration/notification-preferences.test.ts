@@ -12,7 +12,7 @@
  * @module test/integration/notification-preferences.test
  */
 
-import { billingNotificationLog, type getDb } from '@repo/db';
+import { type getDb, notificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import {
@@ -158,7 +158,7 @@ describe('Notification Preferences Integration Tests', () => {
             );
 
             // Verify database log entry with status 'skipped'
-            expect(mockDb.insert).toHaveBeenCalledWith(billingNotificationLog);
+            expect(mockDb.insert).toHaveBeenCalledWith(notificationLog);
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({

@@ -31,7 +31,6 @@ const makePartner = (overrides: Partial<MyPartner> = {}): MyPartner =>
         websiteUrl: 'https://acme.example.com',
         contactInfo: { workEmail: 'hola@acme.com', workPhone: '+543442111111', whatsapp: null },
         socialNetworks: { instagram: 'https://instagram.com/acme' },
-        subscriptionStatus: 'pending',
         lifecycleState: 'DRAFT',
         startsAt: null,
         endsAt: null,

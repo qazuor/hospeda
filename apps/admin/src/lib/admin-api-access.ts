@@ -11,11 +11,9 @@
  *   - SUPER_ADMIN, ADMIN, CLIENT_MANAGER, EDITOR → granted
  *   - HOST, USER, SPONSOR → denied (redirected to `/auth/forbidden`)
  *
- * Note: this is distinct from `requireBillingAccess`, which gates on
- * `BILLING_READ_ALL` (SUPER_ADMIN-only). The ops/email pages were previously
- * reusing the billing guard by mistake — see SPEC-156 PR-4 smoke sign-off
- * (PR #1305) for the discovery context. Each non-billing route should use
- * this helper instead until granular per-route permissions are introduced.
+ * Each route should use this helper (or {@link requireAdminPermission} when a
+ * narrower permission exists) until granular per-route permissions are
+ * introduced.
  *
  * Usage inside a route file:
  *

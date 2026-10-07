@@ -49,9 +49,15 @@ describe('createExperienceColumns — structure', () => {
         expect(columns.find((c) => c.id === 'destination')).toBeDefined();
     });
 
-    it('should include a "isFeatured" column', () => {
+    it('should NOT include an "isFeatured" column (column dropped, HOS-1419)', () => {
         const columns = createExperienceColumns(t);
-        expect(columns.find((c) => c.id === 'isFeatured')).toBeDefined();
+        expect(columns.find((c) => c.id === 'isFeatured')).toBeUndefined();
+    });
+
+    it('should include a read-only "featuredByEntitlement" column (the only featuring source)', () => {
+        const columns = createExperienceColumns(t);
+        const featured = columns.find((c) => c.id === 'featuredByEntitlement');
+        expect(featured?.accessorKey).toBe('featuredByEntitlement');
     });
 
     it('should include a "createdAt" column', () => {
@@ -86,8 +92,8 @@ describe('createExperienceColumns — column details', () => {
             name: 'Paseo en kayak',
             type: ExperienceTypeEnum.KAYAK_RENTAL,
             destinationId: 'dest-1',
-            isFeatured: false,
             ownerId: 'owner-1',
+            featuredByEntitlement: false,
             createdAt: new Date()
         });
         expect(link).toMatchObject({
@@ -104,8 +110,8 @@ describe('createExperienceColumns — column details', () => {
             name: 'No ID',
             type: ExperienceTypeEnum.OTHER,
             destinationId: 'dest-1',
-            isFeatured: false,
             ownerId: null as unknown as string,
+            featuredByEntitlement: false,
             createdAt: new Date()
         });
         expect(link).toBeUndefined();

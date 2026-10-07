@@ -163,8 +163,8 @@ const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
  * tick too — and each used to fire its OWN unawaited purge. That is the
  * measured burst the edge WAF answers with 403 (1 POST → 401, 20 concurrent →
  * 403 ×20). Callers that fan out this way include
- * `accommodation.sync-featured-by-entitlement` (every accommodation of an
- * owner), plan upgrade/downgrade remediation and subscription pause.
+ * any bulk write that touches every listing of one owner, such as
+ * `accommodation.sync-featured-by-entitlement`.
  *
  * A short window is enough because the siblings are already simultaneous; it
  * exists only to absorb scheduler skew, and it is charged AFTER the debounce

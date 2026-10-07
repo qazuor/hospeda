@@ -127,16 +127,6 @@ export const users = pgTable(
          */
         setPasswordPrompted: boolean('set_password_prompted').notNull().default(false),
         /**
-         * SPEC-143 #29: canonical service-suspension flag. True when the host's
-         * subscription is paused WITH service suspension (host self-pause or an
-         * admin "full" pause). While true, the host's accommodations are hidden
-         * from public reads and locked from edits/creates. Cleared on resume.
-         * Denormalized to accommodations.owner_suspended for the public hot path;
-         * this column is the source of truth and is used for the create-guard
-         * (where no accommodation row exists yet to read).
-         */
-        serviceSuspended: boolean('service_suspended').notNull().default(false),
-        /**
          * SPEC-239: Flag indicating the user must change their password on next
          * login. Set to true by admins after a manual password reset or when a
          * gastronomy or experience owner account is provisioned. Cleared to false once the user

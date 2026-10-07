@@ -80,15 +80,13 @@ export const accommodations = pgTable(
          * public surface that displays them. Guarded by `videosPreservation.test.ts`.
          */
         videos: jsonb('videos').$type<Video[]>(),
-        isFeatured: boolean('is_featured').notNull().default(false),
         // Denormalized billing-state flag (SPEC-292, renamed SPEC-309): true when the
         // owner's plan OR a customer-level addon grants an active FEATURED_LISTING
-        // entitlement. Set/cleared by the billing-sync reconciler — never written by
-        // admin curation. Distinct from isFeatured, which is the admin-curated flag.
-        // Effective featured status is the disjunction: isFeatured OR
-        // featuredByEntitlement. This column is the hot-path denormalization so
-        // public queries do not join billing tables. Flipped in bulk on entitlement
-        // grant/revoke events.
+        // entitlement. Set/cleared by the billing-sync primitives — never written by
+        // admin curation. Since HOS-1419 dropped the admin-curated `is_featured`
+        // column this is the ONLY featuring source: the public `isFeatured` value is
+        // derived from it. This column is the hot-path denormalization so public
+        // queries do not join billing tables.
         featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
         /**
          * SPEC-237: master toggle — when false the public detail page hides all
@@ -160,13 +158,10 @@ export const accommodations = pgTable(
         rating: jsonb('rating').$type<Record<string, unknown>>()
     },
     (table) => ({
-        accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),
         // SPEC-291: index for admin verified-badge queries/filters.
         accommodations_isVerified_idx: index('accommodations_isVerified_idx').on(table.isVerified),
-        // SPEC-292: parallel indexes for featuredByEntitlement, mirroring the isFeatured
-        // family (renamed SPEC-309). BitmapOr of (isFeatured_idx, featuredByEntitlement_idx)
-        // serves "isFeatured OR featuredByEntitlement" efficiently without an expression
-        // index (kept in the structural carril).
+        // SPEC-292: indexes for featuredByEntitlement (renamed SPEC-309), the only
+        // featuring source since HOS-1419 dropped `is_featured`.
         accommodations_featuredByEntitlement_idx: index(
             'accommodations_featuredByEntitlement_idx'
         ).on(table.featuredByEntitlement),
@@ -186,18 +181,12 @@ export const accommodations = pgTable(
         accommodations_lifecycle_idx: index('accommodations_lifecycle_idx').on(
             table.lifecycleState
         ),
-        accommodations_visibility_isFeatured_idx: index(
-            'accommodations_visibility_isFeatured_idx'
-        ).on(table.visibility, table.isFeatured),
         accommodations_destinationId_visibility_idx: index(
             'accommodations_destinationId_visibility_idx'
         ).on(table.destinationId, table.visibility),
         accommodations_ownerId_idx: index('accommodations_ownerId_idx').on(table.ownerId),
         accommodations_type_idx: index('accommodations_type_idx').on(table.type),
         accommodations_createdAt_idx: index('accommodations_createdAt_idx').on(table.createdAt),
-        accommodations_destinationId_isFeatured_visibility_idx: index(
-            'accommodations_destinationId_isFeatured_visibility_idx'
-        ).on(table.destinationId, table.isFeatured, table.visibility),
         // Performance indexes for soft delete and moderation queries
         accommodations_deletedAt_idx: index('accommodations_deletedAt_idx').on(table.deletedAt),
         accommodations_moderationState_idx: index('accommodations_moderationState_idx').on(

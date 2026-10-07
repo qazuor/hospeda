@@ -48,12 +48,12 @@ describe('experienceListConfig', () => {
         expect(opts.length).toBeGreaterThan(0);
     });
 
-    it('should have shared listing filters (destinationId, ownerId, isFeatured, includeDeleted)', () => {
+    it('should have shared listing filters (destinationId, ownerId, includeDeleted)', () => {
         const filters = experienceListConfig.filterBarConfig?.filters ?? [];
         const paramKeys = filters.map((f) => f.paramKey);
         expect(paramKeys).toContain('destinationId');
         expect(paramKeys).toContain('ownerId');
-        expect(paramKeys).toContain('isFeatured');
+        expect(paramKeys).not.toContain('isFeatured');
         expect(paramKeys).toContain('includeDeleted');
     });
 

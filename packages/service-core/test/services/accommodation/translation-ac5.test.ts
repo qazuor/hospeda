@@ -8,7 +8,7 @@
  */
 
 import type { AccommodationModel } from '@repo/db';
-import { DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
+import { AccommodationTypeEnum, DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import {
@@ -182,14 +182,14 @@ describe('AccommodationService — SPEC-212 AC-5: translation diff on update', (
             description: 'Una descripción'
         });
         // Only update a non-translatable field
-        const after = { ...accommodation, isFeatured: true };
+        const after = { ...accommodation, type: AccommodationTypeEnum.CABIN };
 
         (model.findById as Mock)
             .mockResolvedValueOnce(accommodation)
             .mockResolvedValueOnce(accommodation);
         (model.update as Mock).mockResolvedValue(after);
 
-        await service.update(actor, accommodation.id, { isFeatured: true });
+        await service.update(actor, accommodation.id, { type: AccommodationTypeEnum.CABIN });
 
         expect(translateMock).not.toHaveBeenCalled();
     });
