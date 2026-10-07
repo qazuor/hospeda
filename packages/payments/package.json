@@ -1,0 +1,49 @@
+{
+    "name": "@repo/payments",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "sideEffects": false,
+    "license": "MIT",
+    "description": "The payments package: the eight-capability interface the billing domain talks to a payment provider through, its in-memory fake, the Mercado Pago adapter behind it, and the probe manifest. No app, no verticals code and no legacy billing library is imported from here.",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "build:ts": "tsup",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules dist"
+    },
+    "dependencies": {
+        "zod": "^4.0.8"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^26.6.1",
+        "@vitest/coverage-v8": "^4.1.10",
+        "tsup": "^8.5.1",
+        "typescript": "6.0.3",
+        "vitest": "^4.1.11"
+    }
+}
