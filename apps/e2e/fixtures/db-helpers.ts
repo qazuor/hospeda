@@ -272,26 +272,3 @@ export async function forcePeriodEndPast(subscriptionId: string): Promise<void> 
         [subscriptionId]
     );
 }
-
-/**
- * Suspends a user (HOST or otherwise) by setting users.service_suspended = true.
- * Used by ADM-03 helper paths.
- *
- * Note: the `users` table uses a boolean `service_suspended` column, NOT
- * a timestamp `suspended_at` column. The ADM-03 test's DB invariant check
- * was written against the old schema; it is updated to use `service_suspended`.
- *
- * @param userId - UUID
- */
-export async function suspendUser(userId: string): Promise<void> {
-    await execSQL('UPDATE users SET service_suspended = true WHERE id = $1', [userId]);
-}
-
-/**
- * Reverses a suspension.
- *
- * @param userId - UUID
- */
-export async function reactivateUser(userId: string): Promise<void> {
-    await execSQL('UPDATE users SET service_suspended = false WHERE id = $1', [userId]);
-}

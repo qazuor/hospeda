@@ -596,12 +596,12 @@ export async function createAccommodation(options: {
         `INSERT INTO accommodations (
              slug, name, summary, description, type,
              owner_id, destination_id, lifecycle_state,
-             visibility, moderation_state, is_featured, extra_info,
+             visibility, moderation_state, extra_info,
              created_at, updated_at
          ) VALUES (
              $1, $2, $3, $4, $5::accommodation_type_enum,
              $6, $7, $8::lifecycle_status_enum,
-             'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, false, $9::jsonb,
+             'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, $9::jsonb,
              NOW(), NOW()
          ) RETURNING id`,
         [

@@ -112,13 +112,6 @@ jobs:
       HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: ${{ secrets.HOSPEDA_MERCADO_PAGO_PUBLIC_KEY }}
       HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
       HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
-      # SPEC-217: enable the QZPay test-control adapter so the fault-injection
-      # specs (host-07c/res-01) mount the control endpoint and applyTestControl
-      # intercepts the wrapped subscription ops. Gated to non-production by
-      # routes/index.ts. Without it both specs degrade to test.fixme() and are
-      # skipped — a silent hole in the very resilience coverage the nightly exists
-      # to provide. Already set in e2e-pr.yml; missing here.
-      HOSPEDA_QZPAY_TEST_CONTROL_ENABLED: 'true'
 
       # Disable API response cache for deterministic e2e: tests mutate state
       # (publish/unpublish, subscription changes) and immediately assert the
