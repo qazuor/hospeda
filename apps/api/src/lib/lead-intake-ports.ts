@@ -44,6 +44,7 @@ import { allianceLeads, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import type { AllianceLeadKind } from '@repo/schemas';
 import type { AllianceLeadIntakeNotifyPort } from '@repo/service-core';
+import { MARKET_TIMEZONE } from '@repo/utils';
 import { eq } from 'drizzle-orm';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
@@ -116,7 +117,7 @@ function formatSubmittedAt(date: Date): string {
     return new Intl.DateTimeFormat('es-AR', {
         dateStyle: 'long',
         timeStyle: 'short',
-        timeZone: 'America/Argentina/Buenos_Aires'
+        timeZone: MARKET_TIMEZONE
     }).format(date);
 }
 

@@ -91,6 +91,7 @@
  * @module services/ical-calendar/ical-parser
  */
 
+import { MARKET_TIMEZONE } from '@repo/utils';
 import { type SafeFetchInput, safeExternalFetch } from '@repo/utils/safe-fetch';
 import type { CalendarComponent, VEvent } from 'node-ical';
 import ical from 'node-ical';
@@ -107,7 +108,7 @@ import {
  * day semantics across both providers. All-day VEVENTs are unaffected — see
  * the module doc's `node-ical` quirk section.
  */
-const ICAL_MARKET_TIMEZONE = 'America/Argentina/Buenos_Aires';
+const ICAL_MARKET_TIMEZONE = MARKET_TIMEZONE;
 
 /** Reused across calls — `Intl.DateTimeFormat` construction is not free. */
 const arDayFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: ICAL_MARKET_TIMEZONE });
