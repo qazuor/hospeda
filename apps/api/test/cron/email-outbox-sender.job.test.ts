@@ -167,6 +167,43 @@ describe('email-outbox-sender handler', () => {
         expect(result).toMatchObject({ success: true, details: { failed: 1, escalated: 1 } });
     });
 
+    it('logs a row whose processing threw, with its outbox id and cause', async () => {
+        // Arrange
+        const broken = row();
+        const { deps } = fakeDeps([broken]);
+        vi.mocked(deps.log.hasHardBounce).mockRejectedValueOnce(new Error('db down'));
+        const job = createEmailOutboxSenderJob({ buildDeps: () => deps });
+        const ctx = context();
+
+        // Act
+        const result = await job.handler(ctx);
+
+        // Assert
+        expect(ctx.logger.error).toHaveBeenCalledWith(
+            'Email outbox: row processing failed; it returns on lease expiry',
+            { outboxId: broken.id, template: broken.template, error: 'db down' }
+        );
+        expect(result).toMatchObject({ success: true, errors: 1 });
+    });
+
+    it('warns when a sent mail lost its lease before being marked sent', async () => {
+        // Arrange
+        const r = row();
+        const { deps, outbox } = fakeDeps([r]);
+        outbox.markSent.mockResolvedValueOnce(false);
+        const job = createEmailOutboxSenderJob({ buildDeps: () => deps });
+        const ctx = context();
+
+        // Act
+        await job.handler(ctx);
+
+        // Assert
+        expect(ctx.logger.warn).toHaveBeenCalledWith(
+            'Email outbox: mail sent but the lease was lost before marking it sent',
+            { outboxId: r.id, template: r.template, providerMessageId: 'msg-1' }
+        );
+    });
+
     it('without a provider key it only releases expired leases and leaves the queue untouched', async () => {
         // Arrange
         const recoverExpired = vi.fn(async () => ['r1']);

@@ -39,8 +39,11 @@ export const EMAIL_OUTBOX_LEASE_MS = 5 * 60 * 1000;
 /** Rows claimed per run. */
 export const EMAIL_OUTBOX_BATCH_SIZE = 50;
 
-/** Everything the run needs except escalation, which is built from the run's logger. */
-export type EmailOutboxSenderDeps = Omit<EmailOutboxDeliveryDeps, 'escalate'>;
+/** Everything the run needs except the reporting hooks, which are built from the run's logger. */
+export type EmailOutboxSenderDeps = Omit<
+    EmailOutboxDeliveryDeps,
+    'escalate' | 'onRowError' | 'onLeaseLost'
+>;
 
 /** Input of {@link createEmailOutboxSenderJob}. */
 export interface CreateEmailOutboxSenderJobInput {
@@ -166,6 +169,20 @@ export function createEmailOutboxSenderJob(
                                 'Email outbox: transactional mail is undeliverable and was escalated',
                                 { ...event },
                                 { capture: true }
+                            );
+                        },
+                        onRowError: (event) => {
+                            ctx.logger.error(
+                                'Email outbox: row processing failed; it returns on lease expiry',
+                                {
+                                    ...event
+                                }
+                            );
+                        },
+                        onLeaseLost: (event) => {
+                            ctx.logger.warn(
+                                'Email outbox: mail sent but the lease was lost before marking it sent',
+                                { ...event }
                             );
                         }
                     },
