@@ -33,7 +33,6 @@ export const GastronomyFiltersSchema = z.object({
     /** Filter listings that have a given feature. Accepts a list of feature UUIDs. */
     features: z.array(z.string().uuid()).optional(),
     /** Filter by featured status. */
-    isFeatured: z.boolean().optional(),
     /** Filter by owner UUID. */
     ownerId: z.string().uuid().optional(),
     /** Minimum average rating (0–5). */
@@ -80,7 +79,6 @@ export const GastronomySearchSchema = BaseSearchSchema.extend({
     /** Filter listings that have all these feature UUIDs. */
     features: z.array(z.string().uuid()).optional(),
     /** Filter by featured status. */
-    isFeatured: z.boolean().optional(),
     /** Filter by owner UUID. */
     ownerId: z.string().uuid().optional(),
     /** Minimum average rating (0–5). */
@@ -126,7 +124,6 @@ export const GastronomyListItemSchema = GastronomySchema.pick({
     type: true,
     priceRange: true,
     media: true,
-    isFeatured: true,
     ownerId: true,
     destinationId: true,
     createdAt: true,
@@ -157,7 +154,6 @@ export const GastronomySummarySchema = GastronomySchema.pick({
     type: true,
     priceRange: true,
     media: true,
-    isFeatured: true,
     ownerId: true,
     destinationId: true
 }).extend({

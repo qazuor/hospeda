@@ -63,10 +63,6 @@ const attachOpenApiExample = <T>(schema: T, example: unknown): T => {
  * `sortBy`/`sortOrder` are present, `sorts` wins. When `sorts` is absent or
  * empty after whitelist filtering, the model falls back to the legacy
  * `sortBy`/`sortOrder` pair.
- *
- * `featuredFirst` is an independent flag. When `true`, the model prepends
- * `isFeatured DESC` to the ORDER BY clause. Public routes may force this to
- * `true` server-side, ignoring the client value.
  */
 export const HttpSortingSchema = z.object({
     sortBy: z.string().optional().describe('Field name to sort by (legacy single-sort)'),
@@ -100,10 +96,6 @@ export const HttpSortingSchema = z.object({
                     'Example: `averageRating:desc,name:asc`'
             ),
         'averageRating:desc,name:asc'
-    ),
-    featuredFirst: createBooleanQueryParam(
-        'When true, featured accommodations appear before non-featured within any sort. ' +
-            'Public listing routes force this to true server-side.'
     )
 });
 

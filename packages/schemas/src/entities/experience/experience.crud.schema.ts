@@ -91,12 +91,7 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true,
-    // HOS-1286: server-managed billing flag. Written ONLY by the
-    // featured-by-entitlement sync primitives — never from a request body, not
-    // even an admin's. `isFeatured`, the admin-curated flag beside it, stays
-    // accepted. Same treatment as `accommodations.featuredByEntitlement`.
-    featuredByEntitlement: true
+    deletedById: true
 }).extend({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
@@ -190,7 +185,7 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * PATCH body is silently stripped (Zod's default unknown-key behaviour).
  *
  * **Control fields stay admin-only (HOS-166 §6.2 / AC-19):** `lifecycleState`,
- * `visibility`, `moderationState`, `isFeatured`, `ownerId` are **intentionally
+ * `visibility`, `moderationState`, `ownerId` are **intentionally
  * absent** from this schema — the reversal above is scoped to identity only.
  * Any of these keys in an owner PATCH body is silently stripped.
  *
@@ -227,9 +222,8 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
- * - `lifecycleState`, `visibility`, `moderationState`, `isFeatured`, `ownerId`
+ * - `lifecycleState`, `visibility`, `moderationState`, `ownerId`
  *   (control fields — HOS-166 §6.2)
- * - `hasActiveSubscription` (subscription lifecycle, admin-only toggle)
  */
 export const ExperienceOwnerUpdateInputSchema = z
     .object(
@@ -322,9 +316,8 @@ export type ExperienceOwnerUpdateInput = z.infer<typeof ExperienceOwnerUpdateInp
  *
  * - `ownerId` — never accepted; the route forces `actor.id`.
  * - `slug` — never accepted; derived server-side from `name` (HOS-166 OQ-3).
- * - `lifecycleState`, `visibility`, `isFeatured`, `moderationState` — control
+ * - `lifecycleState`, `visibility`, `moderationState` — control
  *   fields; the route forces `visibility: PRIVATE` + `lifecycleState: DRAFT`.
- * - `hasActiveSubscription` — subscription-lifecycle only, never client input.
  * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates.
  *
  * `destinationId` stays `.optional()` (mirrors the admin create schema) —
@@ -343,14 +336,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     slug: true,
     lifecycleState: true,
     visibility: true,
-    isFeatured: true,
-    // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
-    // primitives, never through create/update — the same treatment
-    // `accommodation.crud.schema.ts` gives its twin, and unlike `isFeatured`,
-    // which admin still controls manually.
-    featuredByEntitlement: true,
     moderationState: true,
-    hasActiveSubscription: true,
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,
     averageRating: true,
@@ -435,15 +421,13 @@ export type ExperienceOwnerCreateInput = z.infer<typeof ExperienceOwnerCreateInp
  * ### Why server-managed fields are explicitly omitted
  *
  * Even though `stripShapeDefaults` removes `.default()` wrappers, fields like
- * `ownerId`, `reviewsCount`, `averageRating`, and `hasActiveSubscription` must
+ * `ownerId`, `reviewsCount` and `averageRating` must
  * never arrive at the service from a generic PATCH body:
  *
  * - `ownerId` — immutable after creation; ownership change requires a dedicated
  *   admin action, not a generic update payload.
  * - `reviewsCount` / `averageRating` — server-computed aggregates updated by
  *   the review subsystem, not by the admin CRUD path.
- * - `hasActiveSubscription` — driven by the subscription lifecycle hook; toggled
- *   via the dedicated `toggleSubscription` admin action, not a generic PATCH.
  */
 export const ExperienceUpdateInputSchema = z
     .object(
@@ -461,23 +445,12 @@ export const ExperienceUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
-                // Server-managed (HOS-1286): written ONLY by the
-                // featured-by-entitlement sync primitives, the addon checkout
-                // confirmation and the reconcile cron — never through the generic
-                // PATCH path. Omitted here because these schemas are built with
-                // `.omit(...)`, so a field is accepted unless it is named: leaving
-                // it in would let an owner send `featuredByEntitlement: true` in
-                // their own update and feature their listing without buying the
-                // add-on, which is the exact product HOS-1286 exists to sell.
-                // `isFeatured`, the admin-curated flag beside it, stays writable.
-                featuredByEntitlement: true,
                 // Server-managed: ownership change requires a dedicated admin action.
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.
                 reviewsCount: true,
                 averageRating: true,
                 // Subscription lifecycle hook — use toggleSubscription route instead.
-                hasActiveSubscription: true,
                 // HOS-372: the `media` JSONB column was dropped. Photos live in
                 // `experience_media` and are written through the relational media
                 // endpoints; videos travel as the top-level `videos` column, which

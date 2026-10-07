@@ -6,7 +6,6 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { ExperienceTypeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -19,7 +18,6 @@ import { ExperienceTypeEnumSchema } from '../../enums/index.js';
  *   page: 1,
  *   pageSize: 20,
  *   type: 'EXCURSION',
- *   hasActiveSubscription: true,
  * });
  * ```
  */
@@ -39,13 +37,11 @@ export const ExperienceAdminSearchSchema = AdminSearchBaseSchema.extend({
         .string()
         .uuid({ message: 'zodError.admin.search.experience.ownerId.uuid' })
         .optional()
-        .describe('Filter by owner'),
+        .describe('Filter by owner')
 
     /** Filter featured experience listings. */
-    isFeatured: createBooleanQueryParam('Filter by featured status'),
 
     /** Filter by active subscription flag (controls public visibility). */
-    hasActiveSubscription: createBooleanQueryParam('Filter experiences with active subscription')
 });
 
 /**

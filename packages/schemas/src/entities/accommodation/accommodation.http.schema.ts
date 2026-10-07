@@ -59,7 +59,6 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     maxRating: z.coerce.number().min(0).max(5).optional(),
 
     // Boolean filters with HTTP coercion
-    isFeatured: createBooleanQueryParam('Filter featured accommodations'),
     isAvailable: createBooleanQueryParam('Filter available accommodations'),
     hasPool: createBooleanQueryParam('Filter accommodations with pools'),
     hasWifi: createBooleanQueryParam('Filter accommodations with WiFi'),
@@ -315,18 +314,6 @@ export const AccommodationCreateHttpSchema = z.object({
     currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.ARS),
 
     // Boolean properties
-    // isFeatured is intentionally omitted from this general update schema: it is
-    // not a free-form field an owner edits alongside the rest of the listing.
-    // Featuring is derived from the FEATURED_LISTING entitlement
-    // (accommodations.featuredByEntitlement, renamed from featuredByPlan —
-    // SPEC-309 OQ-1), grantable via plan OR an accommodation-scoped addon
-    // (SPEC-309 OQ-3). The admin path keeps manual isFeatured control via
-    // AccommodationPatchInputSchema in accommodation.crud.schema.ts (SPEC-292).
-    // HOS-929 (2026-08-29 owner decision) retired the owner self-service
-    // toggle entirely: holding the entitlement now features the listing
-    // automatically (public read ORs `isFeatured` with `featuredByEntitlement`,
-    // see `apps/api/src/utils/accommodation-featured.ts`) — there is no owner
-    // write path for this field anywhere, this schema included.
     isAvailable: httpBodyBoolean().default(true),
     allowsPets: httpBodyBoolean().default(false),
 
@@ -652,13 +639,11 @@ export const httpToDomainAccommodationSearch = (
     sortBy: httpParams.sortBy,
     sortOrder: httpParams.sortOrder,
     sorts: httpParams.sorts,
-    featuredFirst: httpParams.featuredFirst,
     q: httpParams.q,
 
     // Entity-specific filters that exist in BOTH schemas
     type: httpParams.type,
     types: httpParams.types,
-    isFeatured: httpParams.isFeatured,
     minPrice: httpParams.minPrice,
     maxPrice: httpParams.maxPrice,
     currency: httpParams.currency,
@@ -856,15 +841,6 @@ export const httpToDomainAccommodationCreate = (
     type: httpData.type,
     destinationId: httpData.destinationId,
     ownerId: httpData.ownerId,
-    // isFeatured is always false on owner-created accommodations (SPEC-292).
-    // Not settable at creation — it is derived from the FEATURED_LISTING
-    // entitlement (accommodations.featuredByEntitlement, renamed from
-    // featuredByPlan — SPEC-309 OQ-1). Admin keeps manual control via the admin
-    // path. HOS-929 retired the owner self-service toggle: holding the
-    // entitlement now features the listing automatically post-creation, with
-    // no owner write path anywhere for this field.
-    isFeatured: false,
-
     // Required fields with sensible defaults using proper enums
     moderationState: ModerationStatusEnum.PENDING,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -989,7 +965,6 @@ const DRAFT_DESCRIPTION_PLACEHOLDER =
  * Forced server-side overrides:
  * - `lifecycleState`: always `DRAFT`
  * - `visibility`: always `PRIVATE`
- * - `isFeatured`: always `false`
  * - `moderationState`: always `PENDING`
  * - `ownerId`: always injected from the authenticated actor
  *
@@ -1010,7 +985,6 @@ export const httpToDomainAccommodationCreateDraft = (
     ownerId,
 
     // --- Forced server-side overrides ---
-    isFeatured: false,
     moderationState: ModerationStatusEnum.PENDING,
     lifecycleState: LifecycleStatusEnum.DRAFT,
     reviewsCount: 0,
@@ -1108,9 +1082,6 @@ export const httpToDomainAccommodationUpdate = (
     httpData: AccommodationUpdateHttp
 ): AccommodationUpdateInput => ({
     // Only map fields that exist in both schemas.
-    // isFeatured is intentionally absent: owner PATCH must not carry it.
-    // The field stays undefined (AccommodationUpdateInput is .partial()), so
-    // the service layer sees no instruction to flip the featured flag (SPEC-292).
     name: httpData.name,
     summary: httpData.summary,
     description: httpData.description,

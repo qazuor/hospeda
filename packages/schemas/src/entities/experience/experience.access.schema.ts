@@ -30,7 +30,6 @@ import { ExperienceSchema } from './experience.schema.js';
  * - Omits: adminInfo, ownerId, audit internals.
  * - Includes a NARROWED `contactInfo` (HOS-815) — see
  *   {@link ExperiencePublicContactInfoSchema} for the published subset.
- * - Includes: `hasActiveSubscription` — clients need this to guard 404 display.
  * - The `richDescription` field is re-added via `.extend()` because it follows
  *   the same entitlement-by-omission gate as in the gastronomy schema:
  *   the service strips it server-side for non-entitled owners before
@@ -90,7 +89,6 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     // Content
     summary: true,
     description: true,
-    isFeatured: true,
 
     // I18n translations
     nameI18n: true,
@@ -133,7 +131,6 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     acceptsPrivateGroups: true,
 
     // Subscription visibility gate
-    hasActiveSubscription: true,
 
     // Destination reference
     destinationId: true,
@@ -292,11 +289,6 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     summaryI18n: true,
     descriptionI18n: true,
     richDescriptionI18n: true,
-    isFeatured: true,
-    // HOS-1286: the owner's own editor sees both featuring sources separately,
-    // like the accommodation protected tier. Never added to the PUBLIC pick —
-    // public reads get the OR under `isFeatured` and nothing else.
-    featuredByEntitlement: true,
     destinationId: true,
     media: true,
     videos: true,
@@ -309,7 +301,6 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     priceFrom: true,
     priceUnit: true,
     isPriceOnRequest: true,
-    hasActiveSubscription: true,
     openingHours: true,
     // HOS-1048: owner-editable, so it must round-trip to the owner editor —
     // omitting it here would make the form re-open with the field blank and

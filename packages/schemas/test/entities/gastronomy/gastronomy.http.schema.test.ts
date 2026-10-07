@@ -20,11 +20,6 @@ describe('GastronomySearchHttpSchema', () => {
         expect(result.page).toBe(2);
     });
 
-    it('should coerce isFeatured from string "true"', () => {
-        const result = GastronomySearchHttpSchema.parse({ isFeatured: 'true' });
-        expect(result.isFeatured).toBe(true);
-    });
-
     it('should coerce minRating from string', () => {
         const result = GastronomySearchHttpSchema.parse({ minRating: '4' });
         expect(result.minRating).toBe(4);
@@ -96,11 +91,6 @@ describe('GastronomyCreateHttpSchema', () => {
 
     it('should validate a valid create payload', () => {
         expect(() => GastronomyCreateHttpSchema.parse(validCreate())).not.toThrow();
-    });
-
-    it('should default isFeatured to false', () => {
-        const result = GastronomyCreateHttpSchema.parse(validCreate());
-        expect(result.isFeatured).toBe(false);
     });
 
     it('should reject when name is missing', () => {

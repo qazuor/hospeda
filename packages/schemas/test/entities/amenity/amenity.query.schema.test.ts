@@ -677,7 +677,6 @@ describe('Amenity Query Schemas', () => {
                         name: 'Hotel Paradise',
                         slug: 'hotel-paradise',
                         summary: 'A beautiful beachfront hotel',
-                        isFeatured: true,
                         averageRating: 4.5
                     },
                     {
@@ -685,7 +684,6 @@ describe('Amenity Query Schemas', () => {
                         name: 'City Lodge',
                         slug: 'city-lodge',
                         summary: 'Modern urban accommodation',
-                        isFeatured: false,
                         averageRating: 4.1
                     }
                 ]
@@ -711,7 +709,6 @@ describe('Amenity Query Schemas', () => {
             expect(() => AmenityAccommodationListWrapperSchema.parse(minimalWrapper)).not.toThrow();
             const result = AmenityAccommodationListWrapperSchema.parse(minimalWrapper);
             expect(result.accommodations[0]?.slug).toBeUndefined();
-            expect(result.accommodations[0]?.isFeatured).toBeUndefined();
         });
 
         it('should validate empty accommodation list wrapper', () => {

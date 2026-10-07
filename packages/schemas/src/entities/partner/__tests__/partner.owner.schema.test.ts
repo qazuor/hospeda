@@ -15,9 +15,6 @@ const smuggled: Record<string, unknown> = {
     slug: 'renamed-by-owner',
     type: PartnerTypeEnum.NGO,
     tier: PartnerTierEnum.GOLD,
-    planId: '00000000-0000-4000-a000-000000000002',
-    subscriptionId: '00000000-0000-4000-a000-000000000003',
-    subscriptionStatus: 'active',
     lifecycleState: 'ACTIVE',
     startsAt: new Date().toISOString(),
     endsAt: new Date().toISOString(),
@@ -32,8 +29,7 @@ const smuggled: Record<string, unknown> = {
     contentApprovedById: '00000000-0000-4000-a000-000000000005',
     revokedAt: new Date().toISOString(),
     revokedById: '00000000-0000-4000-a000-000000000006',
-    revokeReason: 'sneaky',
-    unpaidNoticeSentAt: new Date().toISOString()
+    revokeReason: 'sneaky'
 };
 
 describe('PartnerOwnerUpdateSchema — server-side stripping', () => {

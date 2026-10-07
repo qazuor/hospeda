@@ -65,11 +65,6 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     isVerified: true,
     verifiedAt: true,
     verifiedById: true,
-    // Server-managed (SPEC-292, renamed SPEC-309 OQ-3; HOS-929): written ONLY
-    // by the featured-by-entitlement sync primitives, never through the
-    // general create/update path — unlike `isFeatured`, which admin still
-    // controls manually via `AccommodationPatchInputSchema`.
-    featuredByEntitlement: true,
     // Server-managed (HOS-1181): only the trial-expiry cron sets this and only
     // publish/win-back-republish clears it — never through create/update input.
     billingUnpublishedAt: true
@@ -143,7 +138,7 @@ export const AccommodationUpdateInputSchema = z
         // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
         // this, a PATCH like `{ lifecycleState: 'ACTIVE' }` would arrive at the
         // service carrying injected defaults (`visibility:'PUBLIC'`,
-        // `moderationState:'PENDING'`, `isFeatured:false`, review stats, etc.),
+        // `moderationState:'PENDING'`, review stats, etc.),
         // silently overwriting server state AND — for a DRAFT→ACTIVE publish —
         // making the non-empty rest-fields trigger a plain update that flips the row
         // to ACTIVE before the publish/trial flow runs (SPEC-217). Stripping the
@@ -168,11 +163,6 @@ export const AccommodationUpdateInputSchema = z
                 isVerified: true,
                 verifiedAt: true,
                 verifiedById: true,
-                // Server-managed (SPEC-292, renamed SPEC-309 OQ-3; HOS-929): written
-                // ONLY by the featured-by-entitlement sync primitives, never through
-                // the general create/update path — unlike `isFeatured`, which admin
-                // still controls manually via `AccommodationPatchInputSchema`.
-                featuredByEntitlement: true,
                 // Server-managed (HOS-1181): only the trial-expiry cron sets this
                 // and only publish/win-back-republish clears it — never through
                 // create/update input.

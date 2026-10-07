@@ -51,10 +51,6 @@ export type SortField = z.infer<typeof SortFieldSchema>;
  * Sorting precedence (when both are present):
  *   1. `sorts[]` — multi-column sort, up to 5 entries in declared order.
  *   2. `sortBy` / `sortOrder` — legacy single-column fallback.
- *
- * `featuredFirst` is an independent flag that, when true, forces the consuming
- * model to prepend `isFeatured DESC` to the ORDER BY clause — regardless of what
- * the client requested in `sorts`/`sortBy`. Enforcement is the model's job.
  */
 export const BaseSearchSchema = z.object({
     page: z.number().int().positive().default(1),
@@ -65,7 +61,6 @@ export const BaseSearchSchema = z.object({
         .array(SortFieldSchema)
         .max(5, { message: 'zodError.common.sort.maxFields' })
         .optional(),
-    featuredFirst: z.boolean().optional(),
     q: z.string().optional()
 });
 export type BaseSearchType = z.infer<typeof BaseSearchSchema>;

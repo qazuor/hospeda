@@ -84,15 +84,6 @@ describe('ExperiencePublicSchema — SPEC-210 leak-guard discipline', () => {
                 expect(result.data.isPriceOnRequest).toBe(false);
             }
         });
-
-        it('should include hasActiveSubscription (visibility gate for clients)', () => {
-            const raw = buildPublicExperience({ hasActiveSubscription: true });
-            const result = ExperiencePublicSchema.safeParse(raw);
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.hasActiveSubscription).toBe(true);
-            }
-        });
     });
 
     describe('admin/internal fields are NOT part of public schema', () => {

@@ -84,13 +84,12 @@ export const UserCreateOutputSchema = UserReadSchema;
  * `BaseCrudService.update` re-parses the input through this schema, a
  * `.partial()` update that omits them would have Zod RE-INJECT the default and
  * persist it — silently resetting `emailVerified`, `profileCompleted`,
- * `serviceSuspended`, etc. on every unrelated edit (e.g. a user changing their
+ * etc. on every unrelated edit (e.g. a user changing their
  * display name would lose email verification and bounce back to onboarding).
  * None of these flags are written through the generic update path: each has a
  * dedicated writer — Better Auth (`emailVerified`, `banned`, `banReason`,
  * `banExpires`), `UserService.completeProfile` (`profileCompleted`),
- * `UserService.skip/markSetPassword` (`setPasswordPrompted`),
- * `setOwnerServiceSuspension` (`serviceSuspended`), and `PermissionService`
+ * `UserService.skip/markSetPassword` (`setPasswordPrompted`), and `PermissionService`
  * (`permissions`, which has no column on `users` anyway).
  *
  * `isSystemAccount` (HOS-375) joins the list for the same reason and with a
@@ -131,7 +130,6 @@ export const UserUpdateInputSchema = z
                 emailVerified: true,
                 profileCompleted: true,
                 setPasswordPrompted: true,
-                serviceSuspended: true,
                 isSystemAccount: true,
                 permissions: true,
                 banned: true,

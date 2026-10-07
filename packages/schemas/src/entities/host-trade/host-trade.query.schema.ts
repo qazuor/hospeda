@@ -6,7 +6,7 @@ import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.sch
  * HostTradeQuerySchema — public/host query filters for the host-trades list endpoint.
  *
  * Extends `BaseSearchSchema` (which provides `page`, `pageSize`, `sortBy`,
- * `sortOrder`, `sorts`, `featuredFirst`, and `q`) with entity-specific filters.
+ * `sortOrder`, `sorts`, and `q`) with entity-specific filters.
  *
  * @example
  * ```ts

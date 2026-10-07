@@ -23,7 +23,6 @@ export const GastronomySearchHttpSchema = BaseHttpSearchSchema.extend({
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter by featured status (coerced from query string). */
-    isFeatured: createBooleanQueryParam('Filter featured gastronomy listings'),
     /** Minimum average rating (0–5, coerced from query string). */
     minRating: z.coerce.number().min(0).max(5).optional(),
     /** Maximum average rating (0–5, coerced from query string). */
@@ -109,7 +108,6 @@ export const GastronomyCreateHttpSchema = z.object({
         .startsWith('https://', { message: 'zodError.gastronomy.menuUrl.httpsRequired' })
         .optional(),
     /** Whether the listing is featured. */
-    isFeatured: httpBodyBoolean().default(false),
     /** Destination UUID for the listing. */
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
@@ -176,7 +174,6 @@ export type GastronomyGetHttp = z.infer<typeof GastronomyGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';
@@ -199,11 +196,9 @@ export const httpToDomainGastronomySearch = (
     sortBy: httpParams.sortBy,
     sortOrder: httpParams.sortOrder,
     sorts: httpParams.sorts,
-    featuredFirst: httpParams.featuredFirst,
     q: httpParams.q,
     // Entity-specific filters
     type: httpParams.type,
-    isFeatured: httpParams.isFeatured,
     priceRange: httpParams.priceRange,
     destinationId: httpParams.destinationId,
     ownerId: httpParams.ownerId,
@@ -244,7 +239,6 @@ export const httpToDomainGastronomyCreate = (
     ownerId: httpData.ownerId,
     priceRange: httpData.priceRange,
     menuUrl: httpData.menuUrl,
-    isFeatured: httpData.isFeatured,
 
     // Server-managed defaults
     moderationState: ModerationStatusEnum.PENDING,
@@ -305,7 +299,6 @@ export const httpToDomainGastronomyUpdate = (
     type: httpData.type,
     priceRange: httpData.priceRange,
     menuUrl: httpData.menuUrl,
-    isFeatured: httpData.isFeatured,
     destinationId: httpData.destinationId,
 
     // Contact info mapping (emit only provided fields).

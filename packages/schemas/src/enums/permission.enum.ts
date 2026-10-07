@@ -1,7 +1,6 @@
 export enum PermissionCategoryEnum {
     ACCOMMODATION = 'ACCOMMODATION',
     ACCOMMODATION_LISTING = 'ACCOMMODATION_LISTING',
-    ACCOMMODATION_LISTING_PLAN = 'ACCOMMODATION_LISTING_PLAN',
     ACCOMMODATION_REVIEW = 'ACCOMMODATION_REVIEW',
     AD_PRICING_CATALOG = 'AD_PRICING_CATALOG',
     ATTRACTION = 'ATTRACTION',
@@ -39,17 +38,13 @@ export enum PermissionCategoryEnum {
     USER_BOOKMARK_COLLECTION = 'USER_BOOKMARK_COLLECTION',
     CLIENT = 'CLIENT',
     PRODUCT = 'PRODUCT',
-    SUBSCRIPTION = 'SUBSCRIPTION',
-    SUBSCRIPTION_ITEM = 'SUBSCRIPTION_ITEM',
     PROMOTION = 'PROMOTION',
     DISCOUNT_CODE = 'DISCOUNT_CODE',
     CAMPAIGN = 'CAMPAIGN',
     SERVICE_LISTING = 'SERVICE_LISTING',
     BENEFIT_LISTING = 'BENEFIT_LISTING',
     BENEFIT_PARTNER = 'BENEFIT_PARTNER',
-    BENEFIT_LISTING_PLAN = 'BENEFIT_LISTING_PLAN',
     TOURIST_SERVICE = 'TOURIST_SERVICE',
-    SERVICE_LISTING_PLAN = 'SERVICE_LISTING_PLAN',
     NEWSLETTER_CAMPAIGN = 'NEWSLETTER_CAMPAIGN',
     NEWSLETTER_SUBSCRIBER = 'NEWSLETTER_SUBSCRIBER',
     NOTIFICATION = 'NOTIFICATION',
@@ -188,15 +183,6 @@ export enum PermissionEnum {
     ACCOMMODATION_LISTING_RESTORE = 'accommodationListing.restore', // Allows restoring a deleted accommodation listing.
     ACCOMMODATION_LISTING_HARD_DELETE = 'accommodationListing.hardDelete', // Allows permanently deleting an accommodation listing.
     ACCOMMODATION_LISTING_STATUS_MANAGE = 'accommodationListing.status.manage', // Allows managing accommodation listing status (draft, active, paused, archived).
-
-    // ACCOMMODATION_LISTING_PLAN: Permissions related to accommodation listing plan management
-    ACCOMMODATION_LISTING_PLAN_CREATE = 'accommodationListingPlan.create', // Allows creating a new accommodation listing plan.
-    ACCOMMODATION_LISTING_PLAN_UPDATE = 'accommodationListingPlan.update', // Allows updating an accommodation listing plan.
-    ACCOMMODATION_LISTING_PLAN_DELETE = 'accommodationListingPlan.delete', // Allows deleting an accommodation listing plan (soft delete).
-    ACCOMMODATION_LISTING_PLAN_VIEW = 'accommodationListingPlan.view', // Allows viewing accommodation listing plan information.
-    ACCOMMODATION_LISTING_PLAN_RESTORE = 'accommodationListingPlan.restore', // Allows restoring a deleted accommodation listing plan.
-    ACCOMMODATION_LISTING_PLAN_HARD_DELETE = 'accommodationListingPlan.hardDelete', // Allows permanently deleting an accommodation listing plan.
-    ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE = 'accommodationListingPlan.status.manage', // Allows managing accommodation listing plan status (activate, deactivate).
 
     // Catalog management for amenities/features
     AMENITY_VIEW = 'amenity.view', // Allows viewing amenity information.
@@ -371,34 +357,12 @@ export enum PermissionEnum {
     CLIENT_HARD_DELETE = 'client.hardDelete', // Allows permanently deleting a client.
     MANAGE_CLIENTS = 'client.manage', // Allows full management of clients.
 
-    // SUBSCRIPTION: Permissions related to subscription management
-    SUBSCRIPTION_CREATE = 'subscription.create', // Allows creating a new subscription.
-    SUBSCRIPTION_UPDATE = 'subscription.update', // Allows updating a subscription.
-    SUBSCRIPTION_DELETE = 'subscription.delete', // Allows deleting a subscription.
-    SUBSCRIPTION_VIEW = 'subscription.view', // Allows viewing subscription information.
-    MANAGE_SUBSCRIPTIONS = 'subscription.manage', // Allows full management of subscriptions.
-
-    // SUBSCRIPTION_ITEM: Permissions related to subscription item management
-    SUBSCRIPTION_ITEM_CREATE = 'subscriptionItem.create', // Allows creating a new subscription item.
-    SUBSCRIPTION_ITEM_UPDATE = 'subscriptionItem.update', // Allows updating a subscription item.
-    SUBSCRIPTION_ITEM_DELETE = 'subscriptionItem.delete', // Allows deleting a subscription item (soft delete).
-    SUBSCRIPTION_ITEM_VIEW = 'subscriptionItem.view', // Allows viewing subscription item information.
-    SUBSCRIPTION_ITEM_RESTORE = 'subscriptionItem.restore', // Allows restoring a deleted subscription item.
-    SUBSCRIPTION_ITEM_HARD_DELETE = 'subscriptionItem.hardDelete', // Allows permanently deleting a subscription item.
-    SUBSCRIPTION_ITEM_LINK_MANAGE = 'subscriptionItem.link.manage', // Allows managing links between subscriptions/purchases and entities.
-
     // PRODUCT: Permissions related to product management
     PRODUCT_CREATE = 'product.create', // Allows creating a new product.
     PRODUCT_UPDATE = 'product.update', // Allows updating a product.
     PRODUCT_DELETE = 'product.delete', // Allows deleting a product.
     PRODUCT_VIEW = 'product.view', // Allows viewing product information.
     MANAGE_PRODUCTS = 'product.manage', // Allows full management of products.
-
-    // PRICING_PLAN: Permissions related to pricing plan management
-    PRICING_PLAN_CREATE = 'pricingPlan.create', // Allows creating a new pricing plan.
-    PRICING_PLAN_UPDATE = 'pricingPlan.update', // Allows updating a pricing plan.
-    PRICING_PLAN_DELETE = 'pricingPlan.delete', // Allows deleting a pricing plan.
-    PRICING_PLAN_VIEW = 'pricingPlan.view', // Allows viewing pricing plan information.
 
     // PRICING_TIER: Permissions related to pricing tier management
     PRICING_TIER_CREATE = 'pricingTier.create', // Allows creating a new pricing tier.
@@ -820,16 +784,6 @@ export enum PermissionEnum {
     BENEFIT_PARTNER_SOFT_DELETE_VIEW = 'benefitPartner.softDelete.view', // Allows viewing soft-deleted benefit partners.
     BENEFIT_PARTNER_STATUS_MANAGE = 'benefitPartner.status.manage', // Allows managing benefit partner status.
 
-    // BENEFIT_LISTING_PLAN: Permissions related to benefit listing plan management
-    BENEFIT_LISTING_PLAN_CREATE = 'benefitListingPlan.create', // Allows creating a new benefit listing plan.
-    BENEFIT_LISTING_PLAN_UPDATE = 'benefitListingPlan.update', // Allows updating a benefit listing plan.
-    BENEFIT_LISTING_PLAN_DELETE = 'benefitListingPlan.delete', // Allows deleting a benefit listing plan (soft delete).
-    BENEFIT_LISTING_PLAN_VIEW = 'benefitListingPlan.view', // Allows viewing benefit listing plan information.
-    BENEFIT_LISTING_PLAN_RESTORE = 'benefitListingPlan.restore', // Allows restoring a deleted benefit listing plan.
-    BENEFIT_LISTING_PLAN_HARD_DELETE = 'benefitListingPlan.hardDelete', // Allows permanently deleting a benefit listing plan.
-    BENEFIT_LISTING_PLAN_SOFT_DELETE_VIEW = 'benefitListingPlan.softDelete.view', // Allows viewing soft-deleted benefit listing plans.
-    BENEFIT_LISTING_PLAN_STATUS_MANAGE = 'benefitListingPlan.status.manage', // Allows managing benefit listing plan status.
-
     // TOURIST_SERVICE: Permissions related to tourist service management
     TOURIST_SERVICE_CREATE = 'touristService.create', // Allows creating a new tourist service.
     TOURIST_SERVICE_UPDATE = 'touristService.update', // Allows updating a tourist service.
@@ -839,16 +793,6 @@ export enum PermissionEnum {
     TOURIST_SERVICE_HARD_DELETE = 'touristService.hardDelete', // Allows permanently deleting a tourist service.
     TOURIST_SERVICE_SOFT_DELETE_VIEW = 'touristService.softDelete.view', // Allows viewing soft-deleted tourist services.
     TOURIST_SERVICE_STATUS_MANAGE = 'touristService.status.manage', // Allows managing tourist service status.
-
-    // SERVICE_LISTING_PLAN: Permissions related to service listing plan management
-    SERVICE_LISTING_PLAN_CREATE = 'serviceListingPlan.create', // Allows creating a new service listing plan.
-    SERVICE_LISTING_PLAN_UPDATE = 'serviceListingPlan.update', // Allows updating a service listing plan.
-    SERVICE_LISTING_PLAN_DELETE = 'serviceListingPlan.delete', // Allows deleting a service listing plan (soft delete).
-    SERVICE_LISTING_PLAN_VIEW = 'serviceListingPlan.view', // Allows viewing service listing plan information.
-    SERVICE_LISTING_PLAN_RESTORE = 'serviceListingPlan.restore', // Allows restoring a deleted service listing plan.
-    SERVICE_LISTING_PLAN_HARD_DELETE = 'serviceListingPlan.hardDelete', // Allows permanently deleting a service listing plan.
-    SERVICE_LISTING_PLAN_SOFT_DELETE_VIEW = 'serviceListingPlan.softDelete.view', // Allows viewing soft-deleted service listing plans.
-    SERVICE_LISTING_PLAN_STATUS_MANAGE = 'serviceListingPlan.status.manage', // Allows managing service listing plan status.
 
     // SERVICE_ORDER: Permissions related to professional service order management
     SERVICE_ORDER_CREATE = 'serviceOrder.create', // Allows creating a new service order.
@@ -861,14 +805,6 @@ export enum PermissionEnum {
     SERVICE_ORDER_STATUS_MANAGE = 'serviceOrder.status.manage', // Allows managing service order status (start, complete, cancel, refund).
     SERVICE_ORDER_DELIVERABLES_MANAGE = 'serviceOrder.deliverables.manage', // Allows managing service order deliverables and revisions.
     SERVICE_ORDER_PRICING_MANAGE = 'serviceOrder.pricing.manage', // Allows managing service order pricing and charges.
-
-    // BILLING: Cross-cutting billing admin permissions
-    BILLING_READ_ALL = 'billing.readAll', // Allows viewing all billing data (notifications, usage, webhooks).
-    BILLING_PROMO_CODE_READ = 'billing.promoCode.read', // Allows viewing promo codes.
-    BILLING_PROMO_CODE_MANAGE = 'billing.promoCode.manage', // Allows creating, updating, and deleting promo codes.
-    BILLING_METRICS_READ = 'billing.metrics.read', // Allows viewing billing metrics and analytics.
-    BILLING_MANAGE = 'billing.manage', // Allows managing billing records (expire, activate add-ons, etc.).
-    BILLING_RECONCILIATION_MANAGE = 'billing.reconciliation.manage', // Allows using the orphan-payment rescue tool (HOS-765): reading the MercadoPago<->local divergence report, force-linking a preapproval to a local subscription, and backfilling a billing_payments row for a charge that already settled. Deliberately NOT folded into BILLING_MANAGE: those two verbs write MONEY into the ledger and bind a real payer's charge to a subscription, so the gate that opens them is its own, auditable grant. SUPER_ADMIN-only.
 
     // REVALIDATION: Permissions related to on-demand ISR revalidation management
     REVALIDATION_TRIGGER = 'revalidation.trigger', // Allows triggering on-demand revalidation of cached pages.
@@ -933,9 +869,6 @@ export enum PermissionEnum {
     MAINTENANCE_MODE_WRITE = 'system.maintenanceMode.write', // Allows writing maintenance mode + global announcements (Plataforma → Configuración crítica). SUPER_ADMIN-only.
     BILLING_SETTINGS_VIEW = 'billing.settings.view', // Allows viewing Comercial → Configuración billing (trial/payment/webhook/notification fields).
     BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
-    BILLING_VIEW_OWN = 'billing.view.own', // Allows HOST to view their own billing data (subscription, invoices, payments, usage) via /protected/billing/*.
-    SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
-    BILLING_ADDON_PURCHASE = 'billing.addon.purchase', // Allows paying owner tiers to reach the self-service add-on catalog and buy from it (HOS-726). Deliberately NOT granted to plain USER: the add-on page gates per product domain on an entitlement-granting subscription, so a tourist only ever reaches its empty state. Distinct from BILLING_MANAGE, which is the admin-tier gate for activating/expiring add-ons on someone else's behalf.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).

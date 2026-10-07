@@ -6,8 +6,6 @@ import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { PartnerContentReviewStateEnumSchema } from '../../enums/partner-content-review-state.schema.js';
-import { PartnerPaymentReviewStateEnumSchema } from '../../enums/partner-payment-review-state.schema.js';
-import { PartnerSubscriptionStatusEnumSchema } from '../../enums/partner-subscription-status.schema.js';
 import { PartnerTierEnumSchema } from '../../enums/partner-tier.schema.js';
 import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
 
@@ -84,11 +82,8 @@ export const partnerSchema = z.object({
     contactInfo: PartnerStoredContactInfoSchema.nullish(),
     /** Operational counterpart of {@link partnerSchema.shape.contactInfo}. */
     socialNetworks: SocialNetworkSchema.nullish(),
-    subscriptionStatus: PartnerSubscriptionStatusEnumSchema,
     lifecycleState: LifecycleStatusEnumSchema,
     analytics: partnerAnalyticsSchema.default({}),
-    planId: z.string().uuid().nullable().optional(),
-    subscriptionId: z.string().uuid().nullable().optional(),
     /**
      * The account that owns this partner listing.
      *
@@ -149,13 +144,6 @@ export const partnerSchema = z.object({
     /** Admin who accepted the content. */
     contentApprovedById: UserIdSchema.nullish(),
     /**
-     * When the unpaid-partner notice was sent (HOS-278 R-3), or null.
-     *
-     * The reaper's memory for its first stage: without it the 30-day nudge
-     * would go out every day until the partner pays or is archived.
-     */
-    unpaidNoticeSentAt: z.coerce.date().nullish(),
-    /**
      * When this partner was revoked (HOS-278 R-4), or null if it was not.
      *
      * Revoking sets {@link partnerSchema.shape.lifecycleState} to INACTIVE and
@@ -170,33 +158,6 @@ export const partnerSchema = z.object({
     revokedById: UserIdSchema.nullish(),
     /** Why it was revoked. Required at the endpoint, so never empty when set. */
     revokeReason: z.string().max(1000).nullish(),
-    /**
-     * Whether an admin has been asked to confirm this partner's payment
-     * (HOS-1299), or null when nothing is pending.
-     *
-     * Its own column rather than a fifth
-     * {@link partnerSchema.shape.subscriptionStatus} — see
-     * {@link PartnerPaymentReviewStateEnum} for why that would have turned the
-     * QUESTION into the takedown it exists to ask about.
-     *
-     * Nothing reads this to decide visibility, billing or listing. It drives an
-     * admin queue and one email; the decision stays with the human.
-     */
-    paymentReviewState: PartnerPaymentReviewStateEnumSchema.nullish(),
-    /**
-     * The date through which an admin has confirmed the partner is paid up
-     * (HOS-1299), or null when nobody ever has.
-     *
-     * Deliberately NOT {@link partnerSchema.shape.endsAt}, which is read by the
-     * `partner-expiry` cron and ARCHIVES the partner unattended the moment it
-     * passes. Writing the confirmed period into that column would rebuild the
-     * silent automatic takedown the owner ruled out, by the back door.
-     *
-     * Null falls back to {@link partnerSchema.shape.startsAt} for the review
-     * clock, which is the honest reading: the alliance has been running,
-     * unconfirmed, since the day it began.
-     */
-    paymentConfirmedThrough: z.coerce.date().nullish(),
     ...BaseAuditFields
 });
 
@@ -245,43 +206,4 @@ export const PARTNER_REVOKE_MANAGED_FIELDS = {
     revokedAt: true,
     revokedById: true,
     revokeReason: true
-} as const;
-
-/**
- * The reaper's bookkeeping column, as an `.omit()` mask (HOS-278 R-3).
- *
- * One key, and its own mask rather than a guest in
- * {@link PARTNER_REVOKE_MANAGED_FIELDS}: that one is about a takedown decision
- * an admin made, this is about a cron's memory of having sent an email. The
- * first version of this shipped inside the revoke mask with a comment
- * apologising for it, and the mask guard caught the mismatch — which is
- * exactly what a guard that asserts "this mask names its own columns and no
- * others" is for.
- *
- * Omitted from the write schemas for the usual reason: the reaper is its only
- * writer, and an admin who could stamp it by hand would silence a partner's
- * nudge with nothing recording that they did.
- */
-export const PARTNER_REAPER_MANAGED_FIELDS = {
-    unpaidNoticeSentAt: true
-} as const;
-
-/**
- * The payment-review columns, as an `.omit()` mask (HOS-1299).
- *
- * Its own mask for the same reason the three above are separate: this one
- * answers "has a human confirmed that this partner actually paid?", which is
- * neither a content verdict nor a takedown nor a cron's memory of an email.
- *
- * Omitted from the write schemas because the review endpoint is their only
- * writer. An admin who could PATCH `paymentConfirmedThrough` would silence the
- * question without ever answering it — and an admin who could clear
- * `paymentReviewState` inside an unrelated rename would dismiss the alert with
- * nothing recording that a decision was made. The whole feature is the
- * confirmation gesture; a field that rides along inside another edit is not
- * one.
- */
-export const PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS = {
-    paymentReviewState: true,
-    paymentConfirmedThrough: true
 } as const;

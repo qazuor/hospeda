@@ -145,8 +145,6 @@ function experienceChecklistSchema(input: {
  * Those four are ficha data too, and like the meeting point they are NEVER
  * entitlement-gated: owner decision (2026-09-01), they ship from the basic
  * tier. Do not add an `EntitlementKey` for any of them.
- * - `hasActiveSubscription` — denormalized flag driven by the binary subscription
- *   lifecycle hook from the SPEC-239 core; controls public visibility.
  *
  * @example
  * ```ts
@@ -363,32 +361,9 @@ export const ExperienceSchema = z.object({
      */
     acceptsPrivateGroups: z.boolean().default(false),
 
-    /**
-     * Denormalized flag driven by the SPEC-239 binary-subscription lifecycle hook.
-     * When false, the experience is hidden from public listing and detail pages.
-     * Flipped by the subscription reconciler — never edited directly via CRUD.
-     */
-    hasActiveSubscription: z.boolean().default(false),
-
     // Linked destination and owner
     destinationId: DestinationIdSchema,
     ownerId: UserIdSchema,
-
-    /** Whether this experience listing is featured on the platform. */
-    isFeatured: z.boolean().default(false),
-
-    /**
-     * Billing-derived featuring (HOS-1286): true while a
-     * `visibility-boost-experience-*` addon purchase grants an active
-     * FEATURED_LISTING entitlement for THIS listing.
-     *
-     * Deliberately independent of {@link isFeatured}, the admin-curated flag.
-     * PUBLIC responses serialize their disjunction as `isFeatured`
-     * (`resolvePublicIsFeatured`) and never expose this column on its own —
-     * exactly as `AccommodationPublicSchema` omits its twin. Admin and the
-     * owner's own editor keep seeing the two sources separately.
-     */
-    featuredByEntitlement: z.boolean().default(false),
 
     // Base field groups — spread in the same order as GastronomySchema
     ...BaseLifecycleFields,

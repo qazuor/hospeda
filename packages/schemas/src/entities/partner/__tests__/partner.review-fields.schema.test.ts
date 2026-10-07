@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { PartnerContentReviewStateEnum } from '../../../enums/partner-content-review-state.enum.js';
-import { PartnerPaymentReviewStateEnum } from '../../../enums/partner-payment-review-state.enum.js';
 import { PartnerTierEnum } from '../../../enums/partner-tier.enum.js';
 import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import { createPartnerSchema } from '../partner.create.schema.js';
 import {
-    PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS,
-    PARTNER_REAPER_MANAGED_FIELDS,
     PARTNER_REVIEW_MANAGED_FIELDS,
     PARTNER_REVOKE_MANAGED_FIELDS,
     partnerSchema
@@ -24,17 +21,12 @@ const smuggled: Record<string, unknown> = {
     contentApprovedById: '00000000-0000-4000-a000-000000000003',
     revokedAt: new Date().toISOString(),
     revokedById: '00000000-0000-4000-a000-000000000004',
-    revokeReason: 'sneaky',
-    unpaidNoticeSentAt: new Date().toISOString(),
-    paymentReviewState: PartnerPaymentReviewStateEnum.PENDING_CONFIRMATION,
-    paymentConfirmedThrough: new Date().toISOString()
+    revokeReason: 'sneaky'
 };
 
 const REVIEW_FIELDS = [
     ...Object.keys(PARTNER_REVIEW_MANAGED_FIELDS),
-    ...Object.keys(PARTNER_REVOKE_MANAGED_FIELDS),
-    ...Object.keys(PARTNER_REAPER_MANAGED_FIELDS),
-    ...Object.keys(PARTNER_PAYMENT_REVIEW_MANAGED_FIELDS)
+    ...Object.keys(PARTNER_REVOKE_MANAGED_FIELDS)
 ];
 
 /** A minimal payload the create schema accepts on its own. */
@@ -43,7 +35,6 @@ const baseCreate = {
     name: 'Acme Turismo',
     type: PartnerTypeEnum.BUSINESS,
     tier: PartnerTierEnum.SILVER,
-    subscriptionStatus: 'pending',
     lifecycleState: 'DRAFT'
 };
 
@@ -53,19 +44,14 @@ describe('PARTNER_REVIEW_MANAGED_FIELDS — the mask itself', () => {
         // review column is added to `partnerSchema` and forgotten here, it
         // silently becomes writable through an ordinary admin PATCH.
         // The prefix list is hand-enumerated, so it sees only what it was told
-        // to look for: `paymentReviewState`/`paymentConfirmedThrough` (HOS-1299)
-        // matched NONE of the original five and would have passed this guard
-        // while staying writable through an ordinary PATCH. A new managed
-        // column has to be added here as well as to its mask.
+        // to look for. A new managed column has to be added here as well as to
+        // its mask.
         const declared = Object.keys(partnerSchema.shape).filter(
             (key) =>
                 key.startsWith('pending') ||
                 key.startsWith('contentReview') ||
                 key.startsWith('contentApproved') ||
-                key.startsWith('revoke') ||
-                key.startsWith('unpaid') ||
-                key.startsWith('paymentReview') ||
-                key.startsWith('paymentConfirmed')
+                key.startsWith('revoke')
         );
 
         // Act + Assert

@@ -396,7 +396,6 @@ export const AmenityAccommodationListWrapperSchema = z.object({
             slug: z.string().optional(),
             summary: z.string().optional(),
             // Basic accommodation info for amenity context
-            isFeatured: z.boolean().optional(),
             averageRating: createAverageRatingField({ optional: true })
         })
     )

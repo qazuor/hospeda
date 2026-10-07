@@ -6,7 +6,6 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -19,7 +18,6 @@ import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/inde
  *   page: 1,
  *   pageSize: 20,
  *   type: 'RESTAURANT',
- *   isFeatured: true,
  *   priceRange: 'MID',
  * });
  * ```
@@ -43,10 +41,9 @@ export const GastronomyAdminSearchSchema = AdminSearchBaseSchema.extend({
         .string()
         .uuid({ message: 'zodError.admin.search.gastronomy.ownerId.uuid' })
         .optional()
-        .describe('Filter by owner'),
+        .describe('Filter by owner')
 
     /** Filter featured gastronomy listings. */
-    isFeatured: createBooleanQueryParam('Filter by featured status')
 });
 
 /**

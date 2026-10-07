@@ -72,7 +72,15 @@ describe('AccommodationProtectedCardSchema', () => {
         // Non-vacuity: without this, the assertions above would also pass on an
         // empty or wrongly-narrowed schema.
         const keys = Object.keys(AccommodationProtectedCardSchema.shape);
-        for (const field of ['id', 'name', 'slug', 'summary', 'ownerId', 'media', 'isFeatured']) {
+        for (const field of [
+            'id',
+            'name',
+            'slug',
+            'summary',
+            'ownerId',
+            'media',
+            'destinationId'
+        ]) {
             expect(keys).toContain(field);
         }
     });

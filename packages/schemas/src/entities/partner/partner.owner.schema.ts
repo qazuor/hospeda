@@ -9,7 +9,7 @@ import { PARTNER_SAFE_WRITE_URL_FIELDS, partnerSchema } from './partner.schema.j
  * Follows the `host_trades` precedent exactly: the identity and commercial
  * fields are not "validated as forbidden", they are ABSENT FROM THE SCHEMA. Zod
  * strips keys an object schema does not declare, so a payload carrying `name`,
- * `slug`, `tier` or `subscriptionStatus` loses them at parse time and the
+ * `slug` or `tier` loses them at parse time and the
  * update never sees them. A field the owner cannot edit is one this file does
  * not mention — the mechanism fails closed by construction rather than by
  * remembering to add a check.
@@ -71,22 +71,18 @@ export type PartnerOwnerUpdate = z.infer<typeof PartnerOwnerUpdateSchema>;
  *
  * Exported so a guard test can assert they are absent from
  * {@link PartnerOwnerUpdateSchema} rather than trusting that nobody widens it
- * by accident. Three groups, each dangerous in its own way:
+ * by accident. Four groups, each dangerous in its own way:
  *
  * - **Identity** (`name`, `slug`, `type`) — what the partner IS, and what the
  *   public URL resolves to. An owner who could rewrite their slug would break
  *   every link to their own ficha.
- * - **Commercial** (`tier`, `planId`, `subscriptionId`, `subscriptionStatus`,
- *   `startsAt`, `endsAt`, `lifecycleState`) — an owner who could set
- *   `subscriptionStatus` would publish themselves without paying, which is the
- *   entire point of §6.3's ordering.
+ * - **Commercial** (`tier`, `startsAt`, `endsAt`, `lifecycleState`) — an owner
+ *   who could set `lifecycleState` would publish themselves.
  * - **Review** (the pending trio, the review state and note, and the approval
  *   stamp) — an owner who could set `contentApprovedAt` would approve their own
  *   content, which is AC-11 defeated in one field.
  * - **Revocation** (R-4) — an owner who could clear `revokedAt` would put
  *   themselves back on the carousel after an admin took them down.
- * - **Reaper bookkeeping** (R-3) — an owner who could stamp
- *   `unpaidNoticeSentAt` would silence their own archive warning.
  */
 export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'id',
@@ -94,9 +90,6 @@ export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'slug',
     'type',
     'tier',
-    'planId',
-    'subscriptionId',
-    'subscriptionStatus',
     'lifecycleState',
     'startsAt',
     'endsAt',
@@ -111,8 +104,7 @@ export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'contentApprovedById',
     'revokedAt',
     'revokedById',
-    'revokeReason',
-    'unpaidNoticeSentAt'
+    'revokeReason'
 ] as const;
 
 /**
@@ -142,7 +134,6 @@ export const PartnerOwnerViewSchema = partnerSchema.pick({
     websiteUrl: true,
     contactInfo: true,
     socialNetworks: true,
-    subscriptionStatus: true,
     lifecycleState: true,
     startsAt: true,
     endsAt: true,

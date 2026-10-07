@@ -11,12 +11,10 @@ import { partnerSchema } from './partner.schema.js';
  *
  * GROWS ADDITIVELY ONLY (HOS-294 D-5). `contactInfo` and `socialNetworks` were
  * added for the gold partner's own page at `/partners/<slug>/`, which renders
- * both. Nothing was removed in the same change on purpose: `subscriptionStatus`
- * and `lifecycleState` are constant by construction on every public response —
- * `PartnerModel.findByFilters` already requires `ACTIVE`/`active` — so they
- * inform no consumer and leak commercial state, but dropping a shipped field is
- * a three-phase migration under the schema-compat policy, not a line deleted
- * while adding others. Tracked as a separate follow-up.
+ * both. `lifecycleState` is constant by construction on every public response
+ * (`PartnerModel.findByFilters` requires `ACTIVE`), but dropping a shipped field
+ * is a three-phase migration under the schema-compat policy. The former
+ * `subscriptionStatus` field left with its column (HOS-1419).
  */
 export const PartnerPublicSchema = partnerSchema.pick({
     id: true,
@@ -28,7 +26,6 @@ export const PartnerPublicSchema = partnerSchema.pick({
     logoUrl: true,
     websiteUrl: true,
     lifecycleState: true,
-    subscriptionStatus: true,
     startsAt: true,
     endsAt: true,
     contactInfo: true,
