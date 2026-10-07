@@ -10,11 +10,15 @@
  * on top of it by their own unit (B1.4); nothing here pretends to reproduce
  * them yet.
  *
+ * Every read by id carries its instant, taken from the injected clock (AC:B1:4):
+ * the fake never reads the system time.
+ *
  * Beyond the interface it exposes two test-side handles, both named for what a
  * test does with them: `approve` stands for the customer granting the
  * permission on the provider's page, and `takeDeliveries` hands over the
  * notices the fake sent, in the shape our receiver gets them.
  */
+import type { Clock } from '@repo/billing-verticals-contract';
 import type { CapabilitySupportMap, PaymentCapability } from '../provider/capabilities';
 import { PaymentProviderError } from '../provider/errors';
 import type {
@@ -36,6 +40,7 @@ import type {
     RefundInput,
     RefundResult
 } from '../provider/payment-provider';
+import { type ProviderRead, stampProviderRead } from '../provider/provider-read';
 import {
     AuthorizationRefSchema,
     AuthorizeInputSchema,
@@ -43,6 +48,7 @@ import {
     ChargeInputSchema,
     ChargeRefSchema,
     NoticeDeliverySchema,
+    PaymentProviderOptionsSchema,
     parseProviderInput,
     RefundInputSchema
 } from '../provider/schemas';
@@ -81,6 +87,14 @@ export class FakePaymentProvider implements PaymentProvider {
     private readonly charges = new Map<string, StoredCharge>();
     private readonly outbox: NoticeDelivery[] = [];
     private sequence = 0;
+    private readonly clock: Clock;
+
+    /**
+     * @param options.clock - The clock every read by id is stamped with
+     */
+    constructor(options: { readonly clock: Clock }) {
+        this.clock = PaymentProviderOptionsSchema.parse(options).clock;
+    }
 
     /** Capability 1 · authorize: the authorization is born pending the customer's approval. */
     async authorize(input: AuthorizeInput): Promise<AuthorizeResult> {
@@ -244,27 +258,29 @@ export class FakePaymentProvider implements PaymentProvider {
     }
 
     /** Capability 7 · read an authorization by id. */
-    async readAuthorization(input: AuthorizationRef): Promise<AuthorizationSnapshot> {
+    async readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>> {
         const { value } = parseProviderInput({
             schema: AuthorizationRefSchema,
             input,
             capability: 'read'
         });
-        return structuredClone(
+        const snapshot = structuredClone(
             this.authorizationOrThrow({ id: value.authorizationId, capability: 'read' }).snapshot
         );
+        return stampProviderRead({ snapshot, clock: this.clock });
     }
 
     /** Capability 7 · read a charge by id. */
-    async readCharge(input: ChargeRef): Promise<ChargeSnapshot> {
+    async readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>> {
         const { value } = parseProviderInput({
             schema: ChargeRefSchema,
             input,
             capability: 'read'
         });
-        return structuredClone(
+        const snapshot = structuredClone(
             this.chargeOrThrow({ id: value.chargeId, capability: 'read' }).snapshot
         );
+        return stampProviderRead({ snapshot, clock: this.clock });
     }
 
     /** Capability 8 · decode one of the fake's own deliveries into a notice. */

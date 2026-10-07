@@ -97,6 +97,14 @@ export default defineConfig({
             '@repo/utils': resolve(import.meta.dirname, '../../packages/utils/src'),
             '@repo/config': resolve(import.meta.dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(import.meta.dirname, '../../packages/service-core/src'),
+            // HOS-1352 B1: the contract package (types only today) resolved from
+            // source, like the other @repo/* packages, so no stale dist leaks in.
+            '@repo/billing-verticals-contract': resolve(
+                import.meta.dirname,
+                '../../packages/billing-verticals-contract/src'
+            ),
+            // Test-only package (the adjustable clock): devDependency, never src.
+            '@repo/test-clock': resolve(import.meta.dirname, '../../packages/test-clock/src'),
             '@repo/billing': resolve(import.meta.dirname, '../../packages/billing/src'),
             '@repo/notifications': resolve(import.meta.dirname, '../../packages/notifications/src'),
             '@repo/email': resolve(import.meta.dirname, '../../packages/email/src'),

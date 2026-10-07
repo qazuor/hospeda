@@ -460,6 +460,9 @@ importers:
       '@repo/billing':
         specifier: workspace:*
         version: link:../../packages/billing
+      '@repo/billing-verticals-contract':
+        specifier: workspace:*
+        version: link:../../packages/billing-verticals-contract
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
@@ -587,6 +590,9 @@ importers:
       '@better-auth/expo':
         specifier: 1.6.23
         version: 1.6.23(36ed7cacaac9e2ed7ce45b70e2444d92)
+      '@repo/test-clock':
+        specifier: workspace:*
+        version: link:../../packages/test-clock
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
@@ -1664,10 +1670,16 @@ importers:
 
   packages/payments:
     dependencies:
+      '@repo/billing-verticals-contract':
+        specifier: workspace:*
+        version: link:../billing-verticals-contract
       zod:
         specifier: 4.3.6
         version: 4.3.6
     devDependencies:
+      '@repo/test-clock':
+        specifier: workspace:*
+        version: link:../test-clock
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -1878,6 +1890,34 @@ importers:
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3
+      vitest:
+        specifier: 4.1.10
+        version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.9)(jsdom@26.0.0(supports-color@8.1.1))(msw@2.15.0(@types/node@26.6.2)(typescript@6.0.3))(vite@8.2.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.15)(yaml@2.9.0))
+
+  packages/test-clock:
+    dependencies:
+      '@repo/billing-verticals-contract':
+        specifier: workspace:*
+        version: link:../billing-verticals-contract
+      zod:
+        specifier: 4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@repo/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      '@types/node':
+        specifier: ^26.6.1
+        version: 26.6.2
+      '@vitest/coverage-v8':
+        specifier: 4.1.10
+        version: 4.1.10(vitest@4.1.10)
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.28)(supports-color@8.1.1)(tsx@4.23.15)(typescript@6.0.3)(yaml@2.9.0)
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
       vitest:
         specifier: 4.1.10
         version: 4.1.10(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@4.1.10)(@vitest/ui@4.1.9)(jsdom@26.0.0(supports-color@8.1.1))(msw@2.15.0(@types/node@26.6.2)(typescript@6.0.3))(vite@8.2.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.49.2)(tsx@4.23.15)(yaml@2.9.0))
