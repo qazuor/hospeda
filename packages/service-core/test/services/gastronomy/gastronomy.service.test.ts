@@ -51,7 +51,6 @@ function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}):
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         moderationState: ModerationStatusEnum.APPROVED,
         visibility: VisibilityEnum.PUBLIC,
-        isFeatured: false,
         averageRating: 0,
         reviewsCount: 0,
         createdAt: new Date('2024-01-01'),
@@ -335,7 +334,7 @@ describe('GastronomyService.updateOwn', () => {
 // listing, so the owner has to own their own identity). `slug` stays
 // admin-only post-create (HOS-166 OQ-3 — derived server-side from `name` at
 // create, staff-only rename after). Only true control fields
-// (lifecycle/visibility/moderation/isFeatured/ownerId) remain stripped.
+// (lifecycle/visibility/moderation/ownerId) remain stripped.
 describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
     it('persists name/description/destinationId/type/summary/i18n; strips control fields + slug', async () => {
         const entity = makeGastronomyEntity();
@@ -355,7 +354,6 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
             lifecycleState: LifecycleStatusEnum.ARCHIVED, // control field — stripped
             visibility: VisibilityEnum.PRIVATE, // control field — stripped
             moderationState: ModerationStatusEnum.REJECTED, // control field — stripped
-            isFeatured: true, // control field — stripped
             ownerId: '00000000-0000-4000-a000-0000000000fe' // control field — stripped
         };
 
@@ -379,7 +377,6 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
             'lifecycleState',
             'visibility',
             'moderationState',
-            'isFeatured',
             'ownerId'
         ]) {
             expect(updatePayload).not.toHaveProperty(forbidden);

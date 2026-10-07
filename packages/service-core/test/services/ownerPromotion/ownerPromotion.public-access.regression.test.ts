@@ -8,8 +8,8 @@
  *
  * These tests verify that a guest actor can:
  * 1. Call `checkCanSearch` without error (public list/search endpoint).
- * 2. Call `checkCanView` on an ACTIVE non-plan-restricted promotion without error.
- * 3. Is still blocked from viewing DRAFT / plan-restricted promotions.
+ * 2. Call `checkCanView` on an ACTIVE promotion without error.
+ * 3. Is still blocked from viewing DRAFT promotions.
  */
 
 import type { UserIdType } from '@repo/schemas';
@@ -36,22 +36,13 @@ const guestActor = {
 /** Active, public promotion (the norm for public reads). */
 const activePromotion = createMockOwnerPromotion({
     ownerId: getMockId('user', 'owner') as UserIdType,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    planRestricted: false
+    lifecycleState: LifecycleStatusEnum.ACTIVE
 });
 
 /** Draft promotion (should NOT be publicly visible). */
 const draftPromotion = createMockOwnerPromotion({
     ownerId: getMockId('user', 'owner') as UserIdType,
-    lifecycleState: LifecycleStatusEnum.DRAFT,
-    planRestricted: false
-});
-
-/** Plan-restricted promotion (should NOT be publicly visible). */
-const planRestrictedPromotion = createMockOwnerPromotion({
-    ownerId: getMockId('user', 'owner') as UserIdType,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    planRestricted: true
+    lifecycleState: LifecycleStatusEnum.DRAFT
 });
 
 beforeEach(() => {
@@ -96,18 +87,6 @@ describe('SPEC-285 T-001 regression — guest actor public read path', () => {
             expect(() => checkCanView(guestActor, draftPromotion)).toThrow(ServiceError);
             try {
                 checkCanView(guestActor, draftPromotion);
-            } catch (err) {
-                expect(err).toBeInstanceOf(ServiceError);
-                if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                }
-            }
-        });
-
-        it('still throws FORBIDDEN for a guest actor viewing a planRestricted promotion', () => {
-            expect(() => checkCanView(guestActor, planRestrictedPromotion)).toThrow(ServiceError);
-            try {
-                checkCanView(guestActor, planRestrictedPromotion);
             } catch (err) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {

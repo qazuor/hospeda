@@ -3,7 +3,7 @@
  * (HOS-1171).
  *
  * A notification that fails to send is rebuilt on retry from
- * `billing_notification_log.metadata` and nothing else, so a field that is not
+ * `notification_log.metadata` and nothing else, so a field that is not
  * persisted here does not exist for the retry. For `CompGranted` that is not a
  * cosmetic loss: without `hadActiveBilling` the retry sends the "you never gave
  * us a card" variant to someone whose MercadoPago preapproval was just

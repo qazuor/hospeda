@@ -555,7 +555,6 @@ export class RecommendationService extends BaseService {
             price: row.price,
             location: row.location,
             media: row.media,
-            isFeatured: row.isFeatured,
             ownerId: row.ownerId,
             reviewsCount: row.reviewsCount ?? 0,
             averageRating: row.averageRating ?? 0,

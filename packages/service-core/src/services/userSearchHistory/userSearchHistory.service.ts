@@ -58,7 +58,6 @@ export const RecordSearchHistoryInputSchema = z.object({
             maxBathrooms: z.number().optional(),
             minRating: z.number().optional(),
             maxRating: z.number().optional(),
-            isFeatured: z.boolean().optional(),
             isAvailable: z.boolean().optional(),
             hasPool: z.boolean().optional(),
             hasWifi: z.boolean().optional(),

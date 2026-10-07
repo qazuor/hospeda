@@ -46,8 +46,6 @@ export const TOURIST_TRIAL_DAYS = 30;
  * the warning log in `apps/api/src/middlewares/past-due-grace.middleware.ts`. The
  * middleware logs a warning at import time if this value diverges from 3, but
  * the runtime grace behavior follows qzpay-core regardless.
- *
- * See `docs/billing/grace-period-source-of-truth.md` for the full picture.
  */
 export const PAYMENT_GRACE_PERIOD_DAYS = 3;
 

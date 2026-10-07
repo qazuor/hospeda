@@ -1759,8 +1759,7 @@ describe('RevalidationService -- coalesced purge window', () => {
      * bucket used to fire its own unawaited purge — N simultaneous POSTs from one
      * egress IP, which is the measured signature the edge WAF answers with 403
      * (1 POST → 401, 20 concurrent → 403 ×20). Callers that fan out this way
-     * include `accommodation.sync-featured-by-entitlement`, which maps over every
-     * accommodation an owner has.
+     * include any bulk write that maps over every accommodation an owner has.
      */
     /**
      * THE REGRESSION GUARD for the rate-limit hole HOS-369 W1-1 introduced.
@@ -1829,7 +1828,7 @@ describe('RevalidationService -- coalesced purge window', () => {
                 { entityType: 'accommodation', slug: 'cabana-cuatro' },
                 { entityType: 'accommodation', slug: 'cabana-cinco' }
             ],
-            reason: 'featured-by-entitlement-owner'
+            reason: 'bulk-owner-write'
         });
 
         await vi.runAllTimersAsync();
@@ -1935,10 +1934,8 @@ describe('RevalidationService -- coalescing covers BOTH debounce branches', () =
      * with a fully green suite, because every other test schedules distinct slugs
      * exactly once.
      *
-     * This is the ordinary plan-change shape, not an edge case:
-     * `immediate-plan-swap` runs upgrade restoration and then
-     * `syncFeaturedByEntitlementForOwner` over overlapping accommodations, so the
-     * same debounce keys are hit twice in one request.
+     * This is an ordinary shape, not an edge case: two bulk writes over
+     * overlapping accommodations hit the same debounce keys twice in one request.
      */
     it('fires ONE purge even when every entity is rescheduled inside its window', async () => {
         const adapter = makeMockAdapter();

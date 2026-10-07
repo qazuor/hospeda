@@ -90,12 +90,6 @@ describe('AccommodationService.create', () => {
         service._destinationModel = {
             findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.CITY })
         };
-        // SPEC-143 #29: stub the private user model so _beforeCreate's
-        // service-suspension guard resolves a non-suspended owner by default.
-        // @ts-expect-error: override for test
-        service._userModel = {
-            findById: vi.fn().mockResolvedValue({ serviceSuspended: false })
-        };
         vi.clearAllMocks();
     });
 
@@ -158,26 +152,6 @@ describe('AccommodationService.create', () => {
         expect(result.data).toBeDefined();
         expect(result.data?.id).toBe('b1-regression-id');
         expect(model.create).toHaveBeenCalled();
-    });
-
-    it('should return FORBIDDEN when the owner is service-suspended (SPEC-143 #29)', async () => {
-        // Arrange — even an admin cannot create a listing for a paused owner.
-        const actor = createAdminActor();
-        const input = createMockAccommodationCreateInput({
-            reviewsCount: 0,
-            averageRating: 0,
-            tags: []
-        });
-        // @ts-expect-error: override for test
-        service._userModel = {
-            findById: vi.fn().mockResolvedValue({ serviceSuspended: true })
-        };
-        // Act
-        const result = await service.create(actor, input);
-        // Assert
-        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-        expect(result.error?.message).toMatch(/paused/i);
-        expect(result.data).toBeUndefined();
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {

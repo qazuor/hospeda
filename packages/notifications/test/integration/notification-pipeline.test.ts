@@ -12,7 +12,7 @@
  * @module test/integration/notification-pipeline.test
  */
 
-import { billingNotificationLog, type getDb } from '@repo/db';
+import { type getDb, notificationLog } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import type Redis from 'ioredis';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -126,7 +126,7 @@ describe('Notification Pipeline Integration Tests', () => {
             expect(mockEmailTransport.send).toHaveBeenCalledTimes(1);
 
             // Verify database log was created
-            expect(mockDb.insert).toHaveBeenCalledWith(billingNotificationLog);
+            expect(mockDb.insert).toHaveBeenCalledWith(notificationLog);
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -160,7 +160,7 @@ describe('Notification Pipeline Integration Tests', () => {
             expect(result.error).toBe('SMTP connection timeout');
 
             // Verify database log was created with failure status
-            expect(mockDb.insert).toHaveBeenCalledWith(billingNotificationLog);
+            expect(mockDb.insert).toHaveBeenCalledWith(notificationLog);
             const insertCall = (mockDb.insert as Mock).mock.results[0].value;
             expect(insertCall.values).toHaveBeenCalledWith(
                 expect.objectContaining({

@@ -253,18 +253,6 @@ describe('Subject placeholders reach the inbox resolved (H-64 / H-75)', () => {
             expect(subject).not.toMatch(UNRESOLVED_PLACEHOLDER);
         });
 
-        it('PARTNER_UNPAID_NOTICE resolves partnerName', async () => {
-            const subject = await sentSubject({
-                type: NotificationType.PARTNER_UNPAID_NOTICE,
-                ...basePayload,
-                partnerName: 'Heladería Colón',
-                daysUntilArchive: 7
-            });
-
-            expect(subject).toContain('Heladería Colón');
-            expect(subject).not.toMatch(UNRESOLVED_PLACEHOLDER);
-        });
-
         it('PARTNER_MENTIONS_LOGGED resolves BOTH partnerName and mentionedAtLabel', async () => {
             // The only pattern in the affected set with two unresolved
             // placeholders. Filling one and not the other still ships template

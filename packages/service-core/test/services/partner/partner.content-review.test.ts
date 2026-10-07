@@ -14,7 +14,6 @@ import type { PartnerModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
     PartnerContentReviewStateEnum,
-    PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum,
     PermissionEnum,
@@ -49,11 +48,8 @@ const makePartner = (overrides: Record<string, unknown> = {}) => ({
     logoUrl: null,
     websiteUrl: null,
     description: null,
-    subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING,
     lifecycleState: LifecycleStatusEnum.DRAFT,
     analytics: {},
-    planId: null,
-    subscriptionId: null,
     ownerUserId: getMockId('user', 'partner-owner-1'),
     startsAt: null,
     endsAt: null,
@@ -379,7 +375,6 @@ describe('PartnerService.create — a hand-created partner is payable immediatel
             name: 'Acme Turismo',
             type: PartnerTypeEnum.BUSINESS,
             tier: PartnerTierEnum.SILVER,
-            subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING,
             lifecycleState: LifecycleStatusEnum.DRAFT
         });
 
@@ -395,8 +390,8 @@ describe('PartnerService.create — a hand-created partner is payable immediatel
 
 describe('PartnerService.registerManualPayment — AC-11 gate', () => {
     it('refuses to activate a partner whose content was never approved', async () => {
-        // Arrange — this path skips MercadoPago but still flips the partner to
-        // ACTIVE, which is what actually publishes them.
+        // Arrange — this path still flips the partner to ACTIVE, which is what
+        // actually publishes them.
         const { service, model } = buildService({
             findById: vi.fn(async () => makePartner({ contentApprovedAt: null })),
             update: vi.fn(async () => makePartner())
@@ -416,7 +411,6 @@ describe('PartnerService.registerManualPayment — AC-11 gate', () => {
             findById: vi.fn(async () => approved),
             update: vi.fn(async () => ({
                 ...approved,
-                subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
             }))
         });
@@ -425,7 +419,7 @@ describe('PartnerService.registerManualPayment — AC-11 gate', () => {
         const result = await service.registerManualPayment(adminActor, PARTNER_ID);
 
         // Assert
-        expect(result.subscriptionStatus).toBe(PartnerSubscriptionStatusEnum.ACTIVE);
+        expect(result.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
         expect(writtenPatch(model).lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
     });
 });

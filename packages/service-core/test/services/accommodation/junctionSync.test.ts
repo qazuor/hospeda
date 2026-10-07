@@ -197,10 +197,6 @@ function buildFixtures(): Fixtures {
     service._destinationModel = {
         findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.CITY })
     };
-    // @ts-expect-error: override for test
-    service._userModel = {
-        findById: vi.fn().mockResolvedValue({ serviceSuspended: false, role: 'HOST' })
-    };
 
     return { service, model, rAmenityModel, rFeatureModel, amenityModel, featureCatalogModel };
 }

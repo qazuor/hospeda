@@ -53,12 +53,6 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // operator nothing they can act on without opening the admin, which is the
     // dependency this alert exists to remove.
     [NotificationType.ADMIN_LEAD_RECEIVED]: '[Admin] Nuevo lead de {programLabel} — {contactName}',
-    // Names the partner AND phrases it as a question, for the same triage reason
-    // plus one of its own: nothing has happened to this partner yet, and a
-    // subject that read like a notice of removal would be a lie about the only
-    // thing this email is for.
-    [NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW]:
-        '[Admin] ¿{partnerName} sigue pagando? No hay pago registrado',
     [NotificationType.FEEDBACK_REPORT]: '[{reportType}] {reportTitle}',
     [NotificationType.CONTACT_SUBMISSION]: '[Contacto] {contactType} - {senderName}',
     [NotificationType.SUBSCRIPTION_CANCELLED]: 'Tu suscripción {planName} ha sido cancelada',
@@ -139,11 +133,6 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // and says "aliados" rather than "directorio": a partner was never in the
     // provider directory, so naming it would describe the wrong takedown.
     [NotificationType.PARTNER_REVOKED]: '{partnerName} ya no aparece entre los aliados de Hospeda',
-
-    // Unpaid partner nudge (HOS-278 R-3). States the fact, not a deadline
-    // countdown: the exact day lives in the body, where "no se borra nada" can
-    // sit next to it.
-    [NotificationType.PARTNER_UNPAID_NOTICE]: '{partnerName} todavía no está publicado',
 
     // Mentions logged (HOS-377 AC-9). Says what was DONE and nothing about how
     // it performed: "difundimos" is an action Hospeda actually took, whereas

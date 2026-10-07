@@ -20,7 +20,6 @@
 import type { PartnerModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
-    PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum,
     PermissionEnum,
@@ -55,11 +54,8 @@ const makePartner = (overrides: Record<string, unknown> = {}) => ({
     websiteUrl: 'https://acme.example.com',
     contactInfo: { workEmail: 'hola@acme.com' },
     socialNetworks: { instagram: 'https://instagram.com/acme' },
-    subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     analytics: {},
-    planId: null,
-    subscriptionId: null,
     ownerUserId: null,
     startsAt: new Date(),
     endsAt: null,
@@ -180,15 +176,15 @@ describe('PartnerService.getPublicBySlug — the gold gate (HOS-294 D-6)', () =>
         expect(result.data?.outcome).toBe('notFound');
     });
 
-    it('returns notFound — NOT gone — for a gold partner who stopped paying (H-160)', async () => {
-        // Arrange — still ACTIVE, subscription lapsed, never revoked. This is the
+    it('returns notFound — NOT gone — for a gold partner taken offline without a revoke (H-160)', async () => {
+        // Arrange — taken off the carousel, never revoked. This is the
         // expensive case: 410 de-indexes the partner aggressively, so when they
-        // regularise the payment they come back without their ranking. A lapse is
-        // temporary; 404 is the reversible answer for it.
+        // come back they lose their ranking. An offline state is temporary; 404
+        // is the reversible answer for it.
         const { service } = buildService({
             findOne: vi.fn(async () =>
                 makePartner({
-                    subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING,
+                    lifecycleState: LifecycleStatusEnum.INACTIVE,
                     revokedAt: null
                 })
             )
@@ -202,14 +198,12 @@ describe('PartnerService.getPublicBySlug — the gold gate (HOS-294 D-6)', () =>
         expect(result.data?.outcome).toBe('notFound');
     });
 
-    it('still returns gone for a revoked partner whose subscription also lapsed', async () => {
-        // Arrange — revoking deliberately leaves `subscriptionStatus` alone, so
-        // the two signals can coexist. The deliberate takedown wins.
+    it('still returns gone for a revoked partner', async () => {
+        // Arrange — the deliberate takedown wins over the generic offline state.
         const { service } = buildService({
             findOne: vi.fn(async () =>
                 makePartner({
                     lifecycleState: LifecycleStatusEnum.INACTIVE,
-                    subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING,
                     revokedAt: new Date('2026-08-13T00:00:00Z')
                 })
             )
@@ -223,7 +217,7 @@ describe('PartnerService.getPublicBySlug — the gold gate (HOS-294 D-6)', () =>
     });
 
     it('returns notFound for an EXISTING silver partner in perfect standing', async () => {
-        // Arrange — the row exists, is ACTIVE and is paying. Only the tier
+        // Arrange — the row exists and is ACTIVE. Only the tier
         // separates it from the case above, and that is the whole product
         // decision: silver never had this URL, so it is a 404, not a 410.
         const { service } = buildService({

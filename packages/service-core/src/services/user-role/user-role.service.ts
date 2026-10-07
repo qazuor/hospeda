@@ -26,8 +26,7 @@
  *    payload: it is the ONLY way a caller can tell a real write apart from an
  *    idempotent no-op, and it mirrors exactly whether an audit row exists.
  * 4. **Transaction-aware.** Both accept the caller's `ctx.tx` and enlist in it
- *    rather than opening a competing boundary (`archive-abandoned-drafts.job.ts`
- *    already wraps its own).
+ *    rather than opening a competing boundary.
  *
  * Errors follow the repo's `ServiceOutput` envelope (the spec's `Result<T>`).
  * When the caller supplied a transaction, errors are RE-THROWN instead of being
@@ -58,10 +57,9 @@ import { ServiceError } from '../../types/index.js';
  * whether anything actually happened: an already-worn hat and a freshly granted
  * one both return successfully. `changed` is what separates them.
  *
- * It exists because callers ACT on that distinction. The
- * `archive-abandoned-drafts` cron increments its `demoted` counter and logs an
- * `owner_demoted` event; doing that on a no-op asserts a state change that no
- * `user_role_audit` row corroborates (the audit table deliberately records only
+ * It exists because callers ACT on that distinction. A caller that counts a
+ * demotion or logs an `owner_demoted` event must not do so on a no-op: that
+ * asserts a state change that no `user_role_audit` row corroborates (the audit table deliberately records only
  * real changes — see the module note). `changed` mirrors exactly the condition
  * under which an audit row was written.
  */
@@ -378,9 +376,8 @@ export const revokeRole = async (
  *   still OPEN. Invalidating there fires BEFORE the commit, and a concurrent
  *   non-transactional read (this middleware, on every request) immediately
  *   re-populates the entry with the pre-commit set. Nothing invalidates after
- *   the commit, so the stale set is served for the whole TTL. Four callers
- *   pass `ctx.tx` today, including the `archive-abandoned-drafts` cron — where
- *   the symptom is a privilege RETAINED past a revoke.
+ *   the commit, so the stale set is served for the whole TTL. Callers
+ *   pass `ctx.tx`, and the symptom is a privilege RETAINED past a revoke.
  * - Stale roles after a grant is the exact failure mode for which Better
  *   Auth's `customSession` was rejected in HOS-296 OQ-4. Trading it back in to
  *   save one indexed `SELECT` inverts that decision.

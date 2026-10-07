@@ -50,12 +50,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // alert that reached nobody.
     [NotificationType.ADMIN_LEAD_RECEIVED]: NotificationCategory.ADMIN,
 
-    // Partner with no recorded payment (HOS-1299) - ops list, never the partner,
-    // and not opt-out-able for the same reason as the lead alert above: this is
-    // the only signal that a manual-payment partner needs a decision at all, and
-    // an operator who muted it would be muting the decision, not a notification.
-    [NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW]: NotificationCategory.ADMIN,
-
     // Feedback - Sent to admin notification list, not end-user
     [NotificationType.FEEDBACK_REPORT]: NotificationCategory.ADMIN,
 
@@ -133,10 +127,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
 
     // Partner revoked (HOS-278 R-4) — TRANSACTIONAL for the same reason.
     [NotificationType.PARTNER_REVOKED]: NotificationCategory.TRANSACTIONAL,
-
-    // Unpaid partner nudge (HOS-278 R-3) — TRANSACTIONAL: it reports a pending
-    // consequence on an arrangement the recipient entered, not marketing.
-    [NotificationType.PARTNER_UNPAID_NOTICE]: NotificationCategory.TRANSACTIONAL,
 
     // Mentions logged (HOS-377 AC-9) — TRANSACTIONAL: it reports work performed
     // under the arrangement the partner is paying for, which is the thing they

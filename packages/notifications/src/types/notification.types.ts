@@ -87,19 +87,6 @@ export enum NotificationType {
      * type exists to close.
      */
     ADMIN_LEAD_RECEIVED = 'admin_lead_received',
-    /**
-     * A partner is active with no record of payment for the current period, and
-     * an admin has to decide whether to take them down (HOS-1299).
-     *
-     * ADMIN category, like the lead alert above and for the same reason: it goes
-     * to the operations list and is not opt-out-able. What it is NOT is a
-     * notice of something already done — nothing changes state when this is
-     * sent. The owner's decision (2026-09-09) is that the two possible mistakes
-     * are asymmetric: leaving a non-payer published costs a month of product,
-     * cutting off somebody who paid costs the customer. So the system asks and
-     * waits, and this email is the asking.
-     */
-    ADMIN_PARTNER_PAYMENT_REVIEW = 'admin_partner_payment_review',
     FEEDBACK_REPORT = 'feedback_report',
     CONTACT_SUBMISSION = 'contact_submission',
     SUBSCRIPTION_CANCELLED = 'subscription_cancelled',
@@ -135,7 +122,7 @@ export enum NotificationType {
      *
      * Decision (owner-approved 2026-06-04): dedicated type instead of reusing
      * ADMIN_SYSTEM_EVENT so the alert can be de-duplicated by type in
-     * `billing_notification_log` without colliding with other system events.
+     * `notification_log` without colliding with other system events.
      */
     AI_COST_THRESHOLD_ALERT = 'ai_cost_threshold_alert',
     /**
@@ -281,7 +268,6 @@ export enum NotificationType {
      */
     HOST_TRADE_REPLY_MODERATED = 'host_trade_reply_moderated',
     PARTNER_REVOKED = 'partner_revoked',
-    PARTNER_UNPAID_NOTICE = 'partner_unpaid_notice',
     /**
      * HOS-377 AC-9 — the team logged one or more promotion actions for a
      * partner, and this tells them so, with a link to each publication.
@@ -1009,7 +995,7 @@ export interface AiCostThresholdAlertPayload extends BaseNotificationPayload {
  * ```
  */
 export interface SendNotificationOptions {
-    /** Skip writing to the billing_notification_log table */
+    /** Skip writing to the notification_log table */
     skipDb?: boolean;
     /** Skip structured logging via @repo/logger */
     skipLogging?: boolean;
@@ -1317,21 +1303,6 @@ export interface PartnerMentionsLoggedPayload extends BaseNotificationPayload {
 }
 
 /**
- * Payload for the PARTNER_UNPAID_NOTICE notification (HOS-278 R-3).
- *
- * The one-time nudge before an unpaid partner listing is archived. Sent by the
- * reaper cron, never by a user action, and never twice — see
- * `partners.unpaid_notice_sent_at`.
- */
-export interface PartnerUnpaidNoticePayload extends BaseNotificationPayload {
-    readonly type: NotificationType.PARTNER_UNPAID_NOTICE;
-    /** Display name of the partner that has not been paid for. */
-    readonly partnerName: string;
-    /** Days remaining before it is archived. */
-    readonly daysUntilArchive: number;
-}
-
-/**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
  *
@@ -1466,37 +1437,8 @@ export interface AdminLeadReceivedPayload extends BaseNotificationPayload {
     readonly submittedAtLabel: string;
 }
 
-/**
- * Payload for the ADMIN_PARTNER_PAYMENT_REVIEW notification (HOS-1299).
- *
- * The question, not a verdict. Sent by the `partner-payment-review` cron when a
- * partner activated outside MercadoPago has run past the period an admin last
- * confirmed, and NEVER as the record of an action — the partner's status,
- * lifecycle and visibility are all untouched when this goes out.
- *
- * It carries the date the clock ran from so the operator can tell "we never
- * confirmed anything since they started" from "the period we confirmed has
- * lapsed"; those need different answers, and the first is the far more common
- * one on a listing that predates this feature.
- */
-export interface AdminPartnerPaymentReviewPayload extends BaseNotificationPayload {
-    readonly type: NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW;
-    /** Display name of the partner in question. */
-    readonly partnerName: string;
-    /**
-     * Date the review clock ran from — the last confirmation, or the day the
-     * alliance began when there has never been one. Already formatted.
-     */
-    readonly coveredThroughLabel: string;
-    /** Days elapsed since that date. */
-    readonly daysSinceCovered: number;
-    /** Deep link to the partner's admin detail, where the question is answered. */
-    readonly adminUrl: string;
-}
-
 export type NotificationPayload =
     | AdminLeadReceivedPayload
-    | AdminPartnerPaymentReviewPayload
     | PurchaseConfirmationPayload
     | AddonPurchaseConfirmationPayload
     | AddonSubscriptionStartedPayload
@@ -1528,7 +1470,6 @@ export type NotificationPayload =
     | HostTradeReviewReceivedPayload
     | HostTradeReplyModeratedPayload
     | PartnerRevokedPayload
-    | PartnerUnpaidNoticePayload
     | PartnerMentionsLoggedPayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload;

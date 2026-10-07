@@ -17,7 +17,7 @@
  *    (`rGastronomyAmenityModel`, `rGastronomyFeatureModel`) and catalog models
  *    (`amenityModel`, `featureModel`) for the base junction-sync machinery.
  * 2. **Search filters** — `_executeSearch` / `_executeCount` apply gastronomy
- *    filters (`type`, `priceRange`, `destinationId`, `isFeatured`, …).
+ *    filters (`type`, `priceRange`, `destinationId`, …).
  * 3. **Owner update gate** — `updateOwn()` validates with
  *    `GastronomyOwnerUpdateInputSchema` (operational sections only), enforces
  *    ownership (`NOT_FOUND` for non-owners), and gates on a single
@@ -434,7 +434,7 @@ export class GastronomyService extends BaseListingService<
      * Executes the public search query with gastronomy-specific filter support.
      *
      * Scalar filters forwarded to the model: `type`, `priceRange`, `destinationId`,
-     * `ownerId`, `isFeatured`.
+     * `ownerId`.
      *
      * `amenities` / `features` are junction-table filters and are applied as
      * `additionalConditions` built by `@repo/db`'s
@@ -560,7 +560,7 @@ export class GastronomyService extends BaseListingService<
      * Admin search — inherits owner-scoping from the base class.
      *
      * Gastronomy-specific entity filters (`type`, `priceRange`, `destinationId`,
-     * `ownerId`, `isFeatured`) are plain scalars that the generic admin search
+     * `ownerId`) are plain scalars that the generic admin search
      * builder handles natively via the where-clause builder.
      *
      * @param params - Admin search parameters assembled by `adminList()`.

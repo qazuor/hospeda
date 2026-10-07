@@ -178,7 +178,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
 
                 // Act: create via service using enum values and required non-null defaults.
                 // GastronomyAdminCreateInputSchema omits id/timestamps but keeps
-                // averageRating, isFeatured, reviewsCount (they have schema defaults
+                // averageRating, reviewsCount (they have schema defaults
                 // but are still part of the required shape before omit).
                 const result = await gastronomyService.create(
                     adminActor,
@@ -194,7 +194,6 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                         lifecycleState: LifecycleStatusEnum.INACTIVE,
                         moderationState: ModerationStatusEnum.PENDING,
                         averageRating: 0,
-                        isFeatured: false,
                         reviewsCount: 0
                     },
                     ctx

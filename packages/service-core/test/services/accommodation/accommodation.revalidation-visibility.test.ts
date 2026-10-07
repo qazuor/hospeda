@@ -89,10 +89,6 @@ const makeService = (model: ReturnType<typeof createMockBaseModel>): Accommodati
             .fn()
             .mockResolvedValue({ destinationType: DestinationTypeEnum.CITY, slug: 'mock-dest' })
     };
-    // @ts-expect-error: override for test — _beforeCreate service-suspension guard
-    service._userModel = {
-        findById: vi.fn().mockResolvedValue({ serviceSuspended: false })
-    };
     return service;
 };
 

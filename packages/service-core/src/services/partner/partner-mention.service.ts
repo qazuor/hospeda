@@ -177,9 +177,8 @@ const groupMentionsIntoBatches = (
 /**
  * The partner mentions log (HOS-377).
  *
- * Deliberately its own service rather than methods on `PartnerService`, the same
- * way `partner_subscriptions` got its own schema instead of columns on
- * `partners`: mentions are a child collection with their own lifecycle, their own
+ * Deliberately its own service rather than methods on `PartnerService`:
+ * mentions are a child collection with their own lifecycle, their own
  * permissions surface and their own notification.
  */
 export class PartnerMentionService extends BaseCrudService<
