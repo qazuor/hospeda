@@ -116,7 +116,6 @@ const LISTING_OWNER_DENIED: Readonly<Record<string, string>> = {
     slug: 'derived server-side from name; a free rename enables slug-squatting',
     lifecycleState: 'control field — the route forces DRAFT on owner create',
     visibility: 'control field — the route forces PRIVATE on owner create',
-    isFeatured: 'control field — admin-curated placement',
     moderationState: 'control field — moderation decides it, not the moderated',
     reviewsCount: 'aggregate, written by the review subsystem',
     averageRating: 'aggregate, written by the review subsystem',
@@ -150,7 +149,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'admin',
                 accepts: fields(`
                     adminInfo averageRating contactInfo description descriptionI18n destinationId
-                    extraInfo faqs iaData isFeatured lastWarnedAt lifecycleState location media
+                    extraInfo faqs iaData lastWarnedAt lifecycleState location media
                     moderationState name nameI18n ownerId price rating reviewsCount richDescription
                     richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
                     translationMeta type videos visibility
@@ -162,7 +161,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'admin',
                 accepts: fields(`
                     adminInfo averageRating contactInfo description descriptionI18n destinationId
-                    extraInfo faqs iaData isFeatured lastWarnedAt lifecycleState location
+                    extraInfo faqs iaData lastWarnedAt lifecycleState location
                     moderationState name nameI18n ownerId price rating reviewsCount richDescription
                     richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
                     translationMeta type videos visibility
@@ -242,10 +241,7 @@ export const ENTITIES: readonly EntityEntry[] = [
         base: ExperienceSchema as unknown as Shaped,
         writableProbe: 'name',
         neverFromBody: { ...AUDIT_COLUMNS },
-        neverFromOwnerBody: {
-            ...LISTING_OWNER_DENIED,
-            hasActiveSubscription: 'mirrors the billing subscription state; never client input'
-        },
+        neverFromOwnerBody: { ...LISTING_OWNER_DENIED },
         writeSchemas: [
             {
                 name: 'ExperienceAdminCreateInputSchema',
@@ -254,7 +250,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 accepts: fields(`
                     acceptsPrivateGroups adminInfo averageRating cancellationPolicy contactInfo
                     description descriptionI18n destinationId durationMinutes faqs
-                    hasActiveSubscription isFeatured isPriceOnRequest lifecycleState media
+                    isPriceOnRequest lifecycleState media
                     meetingPoint meetingPointDirections meetingPointLat meetingPointLong
                     moderationState name nameI18n openingHours ownerId priceFrom priceUnit rating
                     requirements reviewsCount richDescription richDescriptionI18n seo slug
@@ -268,7 +264,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'admin',
                 accepts: fields(`
                     acceptsPrivateGroups adminInfo cancellationPolicy contactInfo description
-                    descriptionI18n destinationId durationMinutes faqs isFeatured isPriceOnRequest
+                    descriptionI18n destinationId durationMinutes faqs isPriceOnRequest
                     lifecycleState meetingPoint meetingPointDirections meetingPointLat
                     meetingPointLong moderationState name nameI18n openingHours priceFrom priceUnit
                     rating requirements richDescription richDescriptionI18n seo slug socialNetworks
@@ -327,7 +323,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 tier: 'admin',
                 accepts: fields(`
                     adminInfo averageRating contactInfo description descriptionI18n destinationId
-                    faqs isFeatured lifecycleState media menuUrl moderationState name nameI18n
+                    faqs lifecycleState media menuUrl moderationState name nameI18n
                     openingHours ownerId priceRange rating reviewsCount richDescription
                     richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
                     translationMeta type videos visibility
@@ -338,7 +334,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: GastronomyUpdateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
-                    adminInfo contactInfo description descriptionI18n destinationId faqs isFeatured
+                    adminInfo contactInfo description descriptionI18n destinationId faqs
                     lifecycleState menuUrl moderationState name nameI18n openingHours priceRange
                     rating richDescription richDescriptionI18n seo slug socialNetworks summary
                     summaryI18n tags translationMeta type videos visibility
