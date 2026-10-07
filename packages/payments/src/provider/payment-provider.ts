@@ -11,11 +11,15 @@
  * Two rules every caller inherits:
  * - An acknowledgement is NOT a confirmation. A provider can answer success to a
  *   mutation and not apply it (INV:D5); the caller re-reads by id and compares
- *   field by field.
+ *   field by field (`confirmAuthorizationMutation`).
+ * - A read by id carries its instant, and only an implementation builds it
+ *   (`ProviderRead`); a decision refuses a read older than its own start
+ *   (`assertFreshForAct`, INV:D17).
  * - A notice says only WHAT changed (kind, id, version), never the new state:
  *   the state comes from a read by id (GUARD:G17).
  */
 import type { CapabilitySupportMap } from './capabilities';
+import type { ProviderRead } from './provider-read';
 
 /** An amount of money in integer minor units (centavos), never a float. */
 export interface Money {
@@ -170,10 +174,16 @@ export interface PaymentProvider {
     cancel(input: AuthorizationRef): Promise<MutationAcknowledgement>;
     /** Capability 6 · refund. */
     refund(input: RefundInput): Promise<RefundResult>;
-    /** Capability 7 · read an authorization by id. */
-    readAuthorization(input: AuthorizationRef): Promise<AuthorizationSnapshot>;
-    /** Capability 7 · read a charge by id. */
-    readCharge(input: ChargeRef): Promise<ChargeSnapshot>;
+    /**
+     * Capability 7 · read an authorization by id. The read carries its instant
+     * (AC:B1:4): a decision takes it through `assertFreshForAct`.
+     */
+    readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>>;
+    /**
+     * Capability 7 · read a charge by id. The read carries its instant
+     * (AC:B1:4): a decision takes it through `assertFreshForAct`.
+     */
+    readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>>;
     /** Capability 8 · turn a delivery into a notice (kind, id, version only). */
     decodeNotice(input: NoticeDelivery): Promise<ProviderNotice>;
 }

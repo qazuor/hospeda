@@ -3,6 +3,7 @@
  * interface, validates every input like any adapter, and refuses every
  * capability with NOT_IMPLEMENTED, naming it, instead of pretending to work.
  */
+import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
 import {
     MercadoPagoPaymentProvider,
@@ -10,6 +11,8 @@ import {
     PaymentProviderError,
     type PaymentProviderMethod
 } from '../src/index';
+
+const clock = createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') });
 
 const ARS = { amountMinor: 1_000, currency: 'ARS' } as const;
 
@@ -73,7 +76,11 @@ describe('MercadoPagoPaymentProvider (skeleton)', () => {
         input
     }) => {
         // Act
-        const outcome = call({ provider: new MercadoPagoPaymentProvider(), method, input });
+        const outcome = call({
+            provider: new MercadoPagoPaymentProvider({ clock }),
+            method,
+            input
+        });
 
         // Assert
         await expect(outcome).rejects.toBeInstanceOf(PaymentProviderError);
@@ -82,10 +89,17 @@ describe('MercadoPagoPaymentProvider (skeleton)', () => {
 
     it.each(VALID_CALLS)('$method validates its input first', async ({ method, capability }) => {
         const outcome = call({
-            provider: new MercadoPagoPaymentProvider(),
+            provider: new MercadoPagoPaymentProvider({ clock }),
             method,
             input: { bogus: true }
         });
         await expect(outcome).rejects.toMatchObject({ code: 'INVALID_INPUT', capability });
+    });
+
+    it('receives its clock injected and refuses to be built without one', () => {
+        expect(new MercadoPagoPaymentProvider({ clock }).clock).toBe(clock);
+        expect(
+            () => new MercadoPagoPaymentProvider({} as unknown as { readonly clock: typeof clock })
+        ).toThrow();
     });
 });

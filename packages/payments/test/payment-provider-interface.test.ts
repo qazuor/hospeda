@@ -9,6 +9,7 @@
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
+import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
 import {
     CAPABILITY_METHODS,
@@ -22,12 +23,14 @@ import {
     PROVIDER_METHODS
 } from '../src/index';
 
+const clock = createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') });
+
 const SRC = resolve(import.meta.dirname, '../src');
 
 const IMPLEMENTATIONS: readonly { readonly name: string; readonly make: () => PaymentProvider }[] =
     [
-        { name: 'fake', make: () => new FakePaymentProvider() },
-        { name: 'Mercado Pago adapter', make: () => new MercadoPagoPaymentProvider() }
+        { name: 'fake', make: () => new FakePaymentProvider({ clock }) },
+        { name: 'Mercado Pago adapter', make: () => new MercadoPagoPaymentProvider({ clock }) }
     ];
 
 /** Every method name reachable on an instance, own or inherited (Object excluded). */
@@ -121,12 +124,14 @@ describe.each(IMPLEMENTATIONS)('the $name', ({ make }) => {
 
 describe('what each implementation declares', () => {
     it('the fake offers all eight whole: it is the reference', () => {
-        expect(notFull({ support: new FakePaymentProvider().capabilitySupport })).toEqual([]);
+        expect(notFull({ support: new FakePaymentProvider({ clock }).capabilitySupport })).toEqual(
+            []
+        );
     });
 
     it('Mercado Pago declares the three measured half-capabilities as partial, with their handling', () => {
         // Arrange
-        const support = new MercadoPagoPaymentProvider().capabilitySupport;
+        const support = new MercadoPagoPaymentProvider({ clock }).capabilitySupport;
 
         // Assert: the B/06 §2 table, no parity faked
         expect(notFull({ support })).toEqual(['pauseAndResume', 'read', 'notify']);
