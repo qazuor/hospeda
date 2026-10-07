@@ -1,4 +1,5 @@
 export * from './api/index.js';
+export * from './catalog/index.js';
 export * from './common/index.js';
 export * from './contact/index.js';
 export * from './entities/index.js';
