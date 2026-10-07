@@ -709,6 +709,15 @@ jobs:
         run: pnpm test:integration
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+      # U3 (HOS-1426): the cutover script's database tests build the OLD schema from
+      # `main`'s migrations, so that ref must exist in this shallow checkout. They
+      # create and drop their own scratch databases on the same service.
+      - name: Fetch main for the old-schema migration chain (cutover tests)
+        run: git fetch --depth=1 origin main:refs/remotes/origin/main
+      - name: Cutover script database tests (U3)
+        run: pnpm test:cutover-db
+        env:
+          HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
 
   # ------------------------------------------------------------------
   # Coverage threshold check. Downloads the per-shard raw coverage
