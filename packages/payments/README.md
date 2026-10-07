@@ -90,5 +90,14 @@ data**, born as `{ "ids": [] }`, and has two readers:
   GUARD:G14's).
 - No legacy billing library, anywhere in the repo: GUARD:G16
   (`scripts/check-payments-boundary.ts`, `pnpm check:payments-boundary`).
+- The gateway's SDK (`mercadopago`, `@mercadopago/*`) is imported only under
+  `src/adapters/` (never in the fake) and declared only in this package's own
+  `package.json`: GUARD:G12 (`scripts/check-sdk-outside-adapter.ts`,
+  `pnpm check:sdk-outside-adapter`).
+- No decision comes out of a notice without re-reading by id: GUARD:G17
+  (`scripts/check-decision-rereads-by-id.ts`, `pnpm check:decision-rereads-by-id`).
+  (a) a notice receiver reads only kind, id and version; (b) a decision takes
+  the provider's state only as a `ProviderRead` through `assertFreshForAct`;
+  (c) nothing outside `scripts/cutover/` reads the notification table.
 - Internal `@repo/*` packages are allowed when avoiding them is not simple.
 - No table: the package declares no schema and depends on no database layer.

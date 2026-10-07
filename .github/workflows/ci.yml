@@ -296,6 +296,14 @@ jobs:
         run: pnpm check:approval-url-sanitized
       - name: Check no trial is asked of the provider (GUARD:G11)
         run: pnpm check:no-provider-trial
+      # GUARD:G12, G17 (HOS-1509, AC:B1:8/11). G12: the gateway's SDK is imported
+      # or declared only under packages/payments/src/adapters/. G17: no decision
+      # comes out of a notice without re-reading by id; its message names which
+      # of its three predicates failed.
+      - name: Check the gateway SDK is used only inside the adapter (GUARD:G12)
+        run: pnpm check:sdk-outside-adapter
+      - name: Check no decision comes out of a notice without re-reading by id (GUARD:G17)
+        run: pnpm check:decision-rereads-by-id
       # GUARD:G18 (HOS-1431, AC:V1:4). Its own step, like every guard here. The
       # reference rows every migration inserts (catalog_key, vertical) are the
       # rows scripts/generate-catalog-sql.ts regenerates from the code catalog.
