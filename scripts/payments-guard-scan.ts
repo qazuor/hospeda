@@ -1,8 +1,8 @@
 /**
  * @file payments-guard-scan.ts
- * @description What GUARD:G9, G10 and G11 (HOS-1352 program, B1 / HOS-1508)
- * share: which files they read, and a lexical view of a file that tells code
- * from comments and strings. Not a guard itself.
+ * @description What GUARD:G9, G10, G11 (HOS-1508), G12 and G17 (HOS-1509)
+ * (HOS-1352 program, B1) share: which files they read, and a lexical view of a
+ * file that tells code from comments and strings. Not a guard itself.
  *
  * ## The masked view
  *
@@ -55,6 +55,8 @@ export interface MaskedSource {
     readonly code: string;
     /** Every quoted string, and every template literal without `${…}`. */
     readonly strings: readonly StringLiteral[];
+    /** Every comment, as `[start, end)` offsets into the source. */
+    readonly comments: readonly { readonly start: number; readonly end: number }[];
 }
 
 /**
@@ -66,6 +68,7 @@ export interface MaskedSource {
 export function maskSource({ source }: { readonly source: string }): MaskedSource {
     const out = source.split('');
     const strings: StringLiteral[] = [];
+    const comments: { start: number; end: number }[] = [];
     /** Open `${` expressions: brace depth inside each. */
     const templateDepth: number[] = [];
     const n = source.length;
@@ -105,6 +108,7 @@ export function maskSource({ source }: { readonly source: string }): MaskedSourc
         if (ch === '/' && next === '/') {
             const end = source.indexOf('\n', i);
             const stop = end === -1 ? n : end;
+            comments.push({ start: i, end: stop });
             blank(i, stop);
             i = stop;
             continue;
@@ -112,6 +116,7 @@ export function maskSource({ source }: { readonly source: string }): MaskedSourc
         if (ch === '/' && next === '*') {
             const end = source.indexOf('*/', i + 2);
             const stop = end === -1 ? n : end + 2;
+            comments.push({ start: i, end: stop });
             blank(i, stop);
             i = stop;
             continue;
@@ -143,7 +148,7 @@ export function maskSource({ source }: { readonly source: string }): MaskedSourc
         }
         i += 1;
     }
-    return { code: out.join(''), strings };
+    return { code: out.join(''), strings, comments };
 }
 
 /** The 1-based line of an offset. */
@@ -221,14 +226,17 @@ export function normalizeName({ name }: { readonly name: string }): string {
  *
  * @param args.root - Repository root
  * @param args.excludePrefixes - Repo-relative prefixes the guard does not read
+ * @param args.scanRoot - Which top-level folders count; defaults to {@link SCAN_ROOT}
  * @returns Repo-relative paths
  */
 export function listProductionFiles({
     root,
-    excludePrefixes
+    excludePrefixes,
+    scanRoot = SCAN_ROOT
 }: {
     readonly root: string;
     readonly excludePrefixes: readonly string[];
+    readonly scanRoot?: RegExp;
 }): readonly string[] {
     const out = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '-z'], {
         cwd: root,
@@ -239,10 +247,135 @@ export function listProductionFiles({
         out
             .split('\0')
             .filter(Boolean)
-            .filter((file) => SCAN_ROOT.test(file) && CODE_FILE.test(file) && !TEST_FILE.test(file))
+            .filter((file) => scanRoot.test(file) && CODE_FILE.test(file) && !TEST_FILE.test(file))
             .filter((file) => !/(^|\/)(node_modules|dist)\//.test(file))
             .filter((file) => !excludePrefixes.some((prefix) => file.startsWith(prefix)))
             // `-c` also lists a tracked file deleted from the working tree.
             .filter((file) => existsSync(join(root, file)))
     );
+}
+
+const IDENTIFIER_START = /^[A-Za-z_$][\w$]*/;
+
+/** The first offset at or after `at` that is not whitespace. */
+export function skipSpace({ code, at }: { readonly code: string; readonly at: number }): number {
+    let k = at;
+    while (k < code.length && /\s/.test(code[k] as string)) k += 1;
+    return k;
+}
+
+/** The content of the string literal whose opening quote is at `offset`, if any. */
+export function literalAt({
+    masked,
+    offset
+}: {
+    readonly masked: MaskedSource;
+    readonly offset: number;
+}): string | undefined {
+    return masked.strings.find((literal) => literal.start === offset)?.value;
+}
+
+/**
+ * The member chain right after `at`, at most `max` deep: `.a.b`, `?.a`,
+ * `['a']`. Stops at a call, a computed key that is not a string, or anything else.
+ */
+export function membersAfter({
+    masked,
+    at,
+    max = 2
+}: {
+    readonly masked: MaskedSource;
+    readonly at: number;
+    readonly max?: number;
+}): readonly string[] {
+    const { code } = masked;
+    const names: string[] = [];
+    let k = skipSpace({ code, at });
+    while (k < code.length && names.length < max) {
+        if (code.startsWith('?.', k)) k = skipSpace({ code, at: k + 2 });
+        else if (code[k] === '.') k = skipSpace({ code, at: k + 1 });
+        else if (code[k] !== '[') break;
+        if (code[k] === '[') {
+            const value = literalAt({ masked, offset: skipSpace({ code, at: k + 1 }) });
+            if (value === undefined) break;
+            names.push(value);
+            k = skipSpace({ code, at: matchingClose({ code, open: k }) + 1 });
+            continue;
+        }
+        const name = IDENTIFIER_START.exec(code.slice(k))?.[0];
+        if (!name) break;
+        names.push(name);
+        k = skipSpace({ code, at: k + name.length });
+    }
+    return names;
+}
+
+/** The top-level entries of an object pattern, given its inside (masked code, braces excluded). */
+export function patternKeys({
+    inner
+}: {
+    readonly inner: string;
+}): readonly { readonly key: string; readonly value: string }[] {
+    const parts: string[] = [];
+    let depth = 0;
+    let start = 0;
+    for (let k = 0; k <= inner.length; k += 1) {
+        const c = inner[k];
+        if (c === '{' || c === '[' || c === '(') depth += 1;
+        if (c === '}' || c === ']' || c === ')') depth -= 1;
+        if ((c === ',' && depth === 0) || k === inner.length) {
+            parts.push(inner.slice(start, k).trim());
+            start = k + 1;
+        }
+    }
+    return parts.filter(Boolean).map((part) => {
+        const colon = part.indexOf(':');
+        const key = (colon === -1 ? part.split('=')[0] : part.slice(0, colon))?.trim() ?? '';
+        return { key, value: colon === -1 ? '' : part.slice(colon + 1).trim() };
+    });
+}
+
+/** One `const|let|var {…} = rhs`: the pattern's inside, the rhs onwards, and the pattern's offset. */
+export interface Destructuring {
+    readonly inner: string;
+    readonly rhs: string;
+    readonly at: number;
+}
+
+/** Every object destructuring in a declaration (masked code); `await` before the rhs is skipped. */
+export function declaredDestructurings({
+    code
+}: {
+    readonly code: string;
+}): readonly Destructuring[] {
+    const out: Destructuring[] = [];
+    for (const match of code.matchAll(/\b(?:const|let|var)\s*\{/g)) {
+        const open = match.index + match[0].length - 1;
+        const close = matchingClose({ code, open });
+        if (close === -1) continue;
+        const rest = /^\s*(?::[^=]*)?=\s*(?:await\s+)?/.exec(code.slice(close + 1));
+        if (!rest) continue;
+        out.push({
+            inner: code.slice(open + 1, close),
+            rhs: code.slice(close + 1 + rest[0].length),
+            at: open
+        });
+    }
+    return out;
+}
+
+/** Identifiers declared `const|let|var x = rhs` (masked code) whose rhs, past `await`, matches `start`. */
+export function identifiersBoundTo({
+    code,
+    start
+}: {
+    readonly code: string;
+    readonly start: RegExp;
+}): ReadonlySet<string> {
+    const names = new Set<string>();
+    const declaration = /\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*(?::[^=;]*)?=\s*(?:await\s+)?/g;
+    for (const match of code.matchAll(declaration)) {
+        if (start.test(code.slice(match.index + match[0].length))) names.add(match[1] as string);
+    }
+    return names;
 }
