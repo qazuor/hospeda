@@ -36,6 +36,7 @@ export function row(overrides: Partial<EmailOutboxRow> = {}): EmailOutboxRow {
         attempts: 0,
         providerMessageId: null,
         lastError: null,
+        correlationId: null,
         createdAt: new Date(NOW.getTime() - 60_000),
         updatedAt: new Date(NOW.getTime() - 60_000),
         ...overrides
@@ -103,7 +104,7 @@ export function harness(claimed: EmailOutboxRow[]): Harness {
             react: createElement('p', null, 'body')
         }),
         transport: { send },
-        escalate: (event) => {
+        escalate: async (event) => {
             escalations.push(event);
         },
         onRowError: (event) => {

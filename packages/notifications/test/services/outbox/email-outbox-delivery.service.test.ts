@@ -189,7 +189,8 @@ describe('TEST:U2:8 one attempt record, in notification_log only', () => {
 describe('TEST:U2:4 escalation of an undeliverable transactional mail', () => {
     it('retries exhausted: the row ends failed with the exhausted marker and is escalated', async () => {
         // Arrange
-        const r = row({ attempts: EMAIL_OUTBOX_CONSTANTS.MAX_ATTEMPTS - 1 });
+        const correlationId = crypto.randomUUID();
+        const r = row({ attempts: EMAIL_OUTBOX_CONSTANTS.MAX_ATTEMPTS - 1, correlationId });
         const h = harness([r]);
         h.send.mockRejectedValueOnce(new Error('provider 503'));
 
@@ -215,7 +216,8 @@ describe('TEST:U2:4 escalation of an undeliverable transactional mail', () => {
                 recipientUserId: r.recipientUserId,
                 reason: 'retries_exhausted',
                 attempts: EMAIL_OUTBOX_CONSTANTS.MAX_ATTEMPTS,
-                lastError: `${OUTBOX_LAST_ERROR_MARKERS.RETRIES_EXHAUSTED}: provider 503`
+                lastError: `${OUTBOX_LAST_ERROR_MARKERS.RETRIES_EXHAUSTED}: provider 503`,
+                correlationId
             }
         ]);
         expect(result).toMatchObject({ failed: 1, escalated: 1 });
@@ -291,5 +293,69 @@ describe('TEST:U2:4 escalation of an undeliverable transactional mail', () => {
         // Assert
         expect(h.send).not.toHaveBeenCalled();
         expect(h.escalations[0]?.lastError).toContain('No outbox renderer registered');
+    });
+});
+
+describe('TEST:U2:9 each outbox item carries its own correlation (HOS-1424)', () => {
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+    it('escalates under the correlation stored on the row by its enqueuing intention', async () => {
+        // Arrange
+        const correlationId = crypto.randomUUID();
+        const h = harness([row({ correlationId })]);
+        h.log.hasHardBounce.mockResolvedValueOnce(true);
+
+        // Act
+        await run(h);
+
+        // Assert
+        expect(h.escalations.map((e) => e.correlationId)).toEqual([correlationId]);
+    });
+
+    it('mints a distinct correlation per item when the row carries none', async () => {
+        // Arrange
+        const h = harness([row(), row()]);
+        h.log.hasHardBounce.mockResolvedValue(true);
+
+        // Act
+        await run(h);
+
+        // Assert
+        const [first, second] = h.escalations.map((e) => e.correlationId);
+        expect(first).toMatch(UUID);
+        expect(second).toMatch(UUID);
+        expect(first).not.toBe(second);
+    });
+
+    it('never hands the correlation to the provider', async () => {
+        // Arrange
+        const correlationId = crypto.randomUUID();
+        const h = harness([row({ correlationId })]);
+
+        // Act
+        await run(h);
+
+        // Assert
+        expect(JSON.stringify(h.send.mock.calls)).not.toContain(correlationId);
+    });
+
+    it('awaits the escalation hook before the batch ends', async () => {
+        // Arrange
+        const h = harness([row()]);
+        h.log.hasHardBounce.mockResolvedValueOnce(true);
+        let settled = false;
+        const deps = {
+            ...h.deps,
+            escalate: async () => {
+                await new Promise((resolve) => setTimeout(resolve, 5));
+                settled = true;
+            }
+        };
+
+        // Act
+        await processEmailOutboxBatch({ deps, owner: OWNER, now: NOW, leaseMs: 1, batchSize: 1 });
+
+        // Assert
+        expect(settled).toBe(true);
     });
 });
