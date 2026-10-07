@@ -76,6 +76,13 @@ describe('sanitizeApprovalUrl', () => {
         expect(sanitizeApprovalUrl({ approvalUrl: raw }).url).toBe(raw);
     });
 
+    it('matches the name case-sensitively: a mixed-case Activation is another parameter, kept', () => {
+        const raw = 'https://pay.example/a?Activation=true&ACTIVATION=1&activation=true';
+        expect(sanitizeApprovalUrl({ approvalUrl: raw }).url).toBe(
+            'https://pay.example/a?Activation=true&ACTIVATION=1'
+        );
+    });
+
     it('leaves a link without the parameter as it is', () => {
         const raw = 'https://pay.example/approve?id=abc';
         expect(sanitizeApprovalUrl({ approvalUrl: raw }).url).toBe(raw);
@@ -86,7 +93,12 @@ describe('sanitizeApprovalUrl', () => {
         ['a relative path', '/approve?id=1', 'NOT_A_URL'],
         ['plain text', 'not a link', 'NOT_A_URL'],
         ['http', 'http://pay.example/approve?id=1', 'NOT_HTTPS'],
-        ['a script', 'javascript:alert(1)', 'NOT_HTTPS']
+        ['a script', 'javascript:alert(1)', 'NOT_HTTPS'],
+        ['a data: URL', 'data:text/html,<script>alert(1)</script>', 'NOT_HTTPS'],
+        ['a protocol-relative link', '//evil.example/approve?id=1', 'NOT_A_URL'],
+        ['a lookalike host before an @', 'https://pay.example@evil.example/x', 'HAS_CREDENTIALS'],
+        ['a username and password', 'https://user:pass@pay.example/approve', 'HAS_CREDENTIALS'],
+        ['a password alone', 'https://:pass@pay.example/approve', 'HAS_CREDENTIALS']
     ])('refuses %s', (_case, raw, reason) => {
         expect(rejectionOf(raw)).toBe(reason);
     });

@@ -18,9 +18,17 @@
  * 1. The link parses as an absolute URL; otherwise it is refused (`NOT_A_URL`).
  * 2. Its scheme is `https:`; otherwise it is refused (`NOT_HTTPS`). A payment
  *    page served over anything else is not shown to a customer.
- * 3. Every `activation` query parameter is removed, whatever its value (EX-37).
- *    Every other query pair is kept byte for byte, in its order; the rest of
- *    the link is the WHATWG URL serialization of what the provider sent.
+ * 3. It carries no credentials (`https://user:pass@host`, or the lookalike
+ *    `https://trusted.example@other.example/`); otherwise it is refused
+ *    (`HAS_CREDENTIALS`): what precedes the `@` is not the host the customer
+ *    lands on.
+ * 4. Every `activation` query parameter is removed, whatever its value (EX-37).
+ *    The name is matched CASE-SENSITIVELY, after percent-decoding: EX-37
+ *    measured exactly `activation`, URL query names are case-sensitive, and a
+ *    different name (`Activation`) is a different parameter the provider may
+ *    need, so it is kept. Every other query pair is kept byte for byte, in its
+ *    order; the rest of the link is the WHATWG URL serialization of what the
+ *    provider sent.
  */
 import { z } from 'zod';
 
@@ -28,7 +36,7 @@ import { z } from 'zod';
 export const BROKEN_APPROVAL_PARAMETER = 'activation';
 
 /** Why an approval link could not be sanitized. */
-export type ApprovalUrlRejection = 'NOT_A_URL' | 'NOT_HTTPS';
+export type ApprovalUrlRejection = 'NOT_A_URL' | 'NOT_HTTPS' | 'HAS_CREDENTIALS';
 
 /** A link that cannot be shown to a customer, sanitized or not. */
 export class ApprovalUrlRejectedError extends Error {
@@ -55,7 +63,7 @@ const SanitizeApprovalUrlInputSchema = z.object({ approvalUrl: z.string() });
  *
  * @param input.approvalUrl - The raw link, as the provider returned it
  * @returns `url`: the link with every `activation` parameter removed
- * @throws {ApprovalUrlRejectedError} When the link is not an absolute `https:` URL
+ * @throws {ApprovalUrlRejectedError} When the link is not an absolute `https:` URL, or carries credentials
  */
 export function sanitizeApprovalUrl(input: { readonly approvalUrl: string }): {
     readonly url: string;
@@ -74,6 +82,12 @@ export function sanitizeApprovalUrl(input: { readonly approvalUrl: string }): {
         throw new ApprovalUrlRejectedError({
             reason: 'NOT_HTTPS',
             message: `The approval link uses ${parsed.protocol}, not https:`
+        });
+    }
+    if (parsed.username !== '' || parsed.password !== '') {
+        throw new ApprovalUrlRejectedError({
+            reason: 'HAS_CREDENTIALS',
+            message: 'The approval link carries credentials before its host'
         });
     }
     parsed.search = withoutParameter({
