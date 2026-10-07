@@ -51,7 +51,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
      * The clock its reads by id will be stamped with (`stampProviderRead`), once
      * the reads are implemented: the adapter never reads the system time.
      */
-    readonly clock: Clock;
+    private readonly clock: Clock;
 
     /**
      * @param options.clock - The injected clock (AC:B1:17)

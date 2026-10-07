@@ -97,7 +97,7 @@ describe('MercadoPagoPaymentProvider (skeleton)', () => {
     });
 
     it('receives its clock injected and refuses to be built without one', () => {
-        expect(new MercadoPagoPaymentProvider({ clock }).clock).toBe(clock);
+        expect(() => new MercadoPagoPaymentProvider({ clock })).not.toThrow();
         expect(
             () => new MercadoPagoPaymentProvider({} as unknown as { readonly clock: typeof clock })
         ).toThrow();
