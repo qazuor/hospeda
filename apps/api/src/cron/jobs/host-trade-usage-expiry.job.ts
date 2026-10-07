@@ -24,7 +24,7 @@ import type { CronJobDefinition } from '../types.js';
 export const hostTradeUsageExpiryJob: CronJobDefinition = {
     name: 'host-trade-usage-expiry',
     description: 'Expire PENDING benefit usages whose confirmation window has run out',
-    schedule: '15 4 * * *', // Daily at 4:15 UTC
+    schedule: '15 4 * * *', // Daily at 4:15 Buenos Aires time
     enabled: true,
     timeoutMs: 120_000,
 

@@ -10,8 +10,8 @@
  * A 65-day buffer is added so the cron can miss several nightly runs without
  * silently truncating any live analytics window. 30 + 65 = 95 days.
  *
- * Schedule: Nightly at 3:30 UTC — in the existing off-peak maintenance band
- * (3–4 UTC) but 30 minutes after the 3:00 UTC batch, avoiding thundering herd.
+ * Schedule: Nightly at 3:30 Buenos Aires time — in the existing off-peak maintenance band
+ * (03:00–04:00 Buenos Aires time) but 30 minutes after the 3:00 Buenos Aires time batch, avoiding thundering herd.
  *
  * @module cron/jobs/entity-views-purge
  */
@@ -30,13 +30,13 @@ const ENTITY_VIEWS_RETENTION_DAYS = 95;
 /**
  * Entity views purge job definition.
  *
- * Schedule: Daily at 3:30 UTC.
+ * Schedule: Daily at 3:30 Buenos Aires time.
  * Purpose: Bound the entity_views append-only telemetry table.
  */
 export const entityViewsPurgeJob: CronJobDefinition = {
     name: 'entity-views-purge',
     description: `Purge entity_views rows older than ${ENTITY_VIEWS_RETENTION_DAYS} days (GDPR-lite data minimisation)`,
-    schedule: '30 3 * * *', // Daily at 3:30 UTC
+    schedule: '30 3 * * *', // Daily at 3:30 Buenos Aires time
     enabled: true,
     timeoutMs: 120_000, // 2 minutes — table can grow large; allow for bulk deletes
 

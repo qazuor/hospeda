@@ -37,7 +37,7 @@ const E2E_PREFIX = 'hospeda/e2e/' as const;
 /**
  * Cloudinary E2E cleanup cron job definition.
  *
- * Schedule: Weekly on Sunday at 02:00 UTC (after media-orphan-cleanup at 00:00).
+ * Schedule: Weekly on Sunday at 02:00 Buenos Aires time (after media-orphan-cleanup at 00:00).
  * Purpose: Bulk-delete leftover E2E Cloudinary assets when test cleanup
  * hooks failed to run.
  */

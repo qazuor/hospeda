@@ -35,7 +35,7 @@ const ORPHAN_PREFIXES = ['hospeda/preview/', 'hospeda/test/'] as const;
 /**
  * Media orphan cleanup cron job definition.
  *
- * Schedule: Weekly on Sunday at 00:00 UTC.
+ * Schedule: Weekly on Sunday at 00:00 Buenos Aires time.
  * Purpose: Bulk-delete preview and test Cloudinary assets to keep storage
  * costs bounded.
  */
@@ -43,7 +43,7 @@ export const mediaOrphanCleanupJob: CronJobDefinition = {
     name: 'media-orphan-cleanup',
     description:
         'Weekly cleanup of disposable Cloudinary prefixes (hospeda/preview/, hospeda/test/)',
-    schedule: '0 0 * * 0', // Sundays at 00:00 UTC
+    schedule: '0 0 * * 0', // Sundays at 00:00 Buenos Aires time
     enabled: true,
     timeoutMs: 60_000, // 1 minute is plenty for two delete-by-prefix calls
 
