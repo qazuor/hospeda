@@ -551,7 +551,7 @@ Reviews have their own admin sub-router mounted at
 
 | Method | Path | Notes |
 |--------|------|-------|
-| `GET` | `/api/v1/public/gastronomies` | Paginated list (filter by type, priceRange, destinationId, ownerId) |
+| `GET` | `/api/v1/public/gastronomies` | Paginated list (filter by type, priceRange, destinationId, isFeatured, ownerId) |
 | `GET` | `/api/v1/public/gastronomies/{id}` | Get by UUID; 404 when not publicly visible |
 | `GET` | `/api/v1/public/gastronomies/slug/{slug}` | Get by URL slug; null when not found |
 | `GET` | `/api/v1/public/gastronomies/destination/{destinationId}` | Paginated list filtered by destination |
@@ -621,7 +621,7 @@ Reviews have their own admin sub-router mounted at
 
 | Method | Path | Notes |
 |--------|------|-------|
-| `GET` | `/api/v1/public/experiences` | Paginated list (filter by type, destinationId, ownerId) |
+| `GET` | `/api/v1/public/experiences` | Paginated list (filter by type, destinationId, isFeatured, ownerId) |
 | `GET` | `/api/v1/public/experiences/{id}` | Get by UUID; 404 when not publicly visible |
 | `GET` | `/api/v1/public/experiences/slug/{slug}` | Get by URL slug; null when not found |
 | `GET` | `/api/v1/public/experiences/destination/{destinationId}` | Paginated list filtered by destination |
