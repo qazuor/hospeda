@@ -265,11 +265,6 @@ jobs:
       - name: A branch cut from the umbrella may not target staging or main (DEC-ARCH-007)
         if: github.base_ref == 'staging' || github.base_ref == 'main'
         run: bash scripts/check-umbrella-branch-target.sh
-      # TEST:U1:1 (HOS-1416). Its own step, like every guard here: being listed
-      # in `pnpm check:guards` is NOT what makes a guard run in this job. Pure
-      # bash + git grep — needs no setup, so it runs before it to fail fast.
-      - name: Check no qzpay billing surface remains (HOS-1416 TEST:U1:1)
-        run: bash scripts/check-no-qzpay.sh
       # GUARD:G8 (AC:U1:5 / AC:U1:6). HOSPEDA_PRODUCTION_BUILD tells its step-6
       # rule whether this run guards a build destined for production: the same
       # condition as the coverage run further down (push to main, or a PR whose
@@ -280,6 +275,12 @@ jobs:
           HOSPEDA_PRODUCTION_BUILD: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')) && '1' || '0' }}
         run: bash scripts/check-old-grouping-word.sh
       - uses: ./.github/actions/setup
+      # GUARD:G16 (HOS-1506, AC:B1:10). Its own step, like every guard here:
+      # being listed in `pnpm check:guards` is NOT what makes a guard run in this
+      # job. Replaces the retired qzpay shell guard (TEST:U1:1, HOS-1416), whose rule
+      # P-3 it carries. Runs on tsx, so after setup.
+      - name: Check the payments boundary and no legacy billing library (GUARD:G16)
+        run: pnpm check:payments-boundary
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh
       - name: Check CSP-incompatible patterns
