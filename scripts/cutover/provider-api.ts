@@ -3,12 +3,18 @@ import type {
     CancelCallResult,
     ListPage,
     ObjectKind,
+    PaymentRead,
     ProviderApi,
-    ProviderObject
+    ProviderObject,
+    RefundCallResult,
+    RefundRead
 } from './types.ts';
 
 /** Production base URL of the provider API. Tests inject a fake `fetchImpl` instead. */
 export const DEFAULT_PROVIDER_BASE_URL = 'https://api.mercadopago.com';
+
+/** Payments API path. The small step-4b payment and its refund live here (not under orders). */
+const PAYMENTS_PATH = '/v1/payments';
 
 const KIND_PATH: Readonly<Record<ObjectKind, string>> = {
     plan: '/preapproval_plan',
@@ -28,6 +34,12 @@ const DEFAULT_RETRY_DELAY_MS = 1_000;
 
 const idSchema = z.union([z.string(), z.number()]).transform((value) => String(value));
 const objectSchema = z.object({ id: idSchema, status: z.string() });
+const createdSchema = z.object({ id: idSchema });
+const paymentSchema = z.object({
+    id: idSchema,
+    status: z.string(),
+    refunds: z.array(z.object({ id: idSchema })).nullish()
+});
 const pageSchema = z.object({
     paging: z.object({ total: z.number().int().nonnegative() }),
     results: z.array(objectSchema)
@@ -66,8 +78,9 @@ function assertSafeId({ id }: { readonly id: string }): void {
 }
 
 /**
- * Builds the provider client over native fetch. GET and PUT here are idempotent, so
- * 429 and 5xx are retried with a short increasing delay. Error messages carry the
+ * Builds the provider client over native fetch. GET and PUT here are idempotent, and the
+ * only POST (a refund) carries a deterministic idempotency key, so 429 and 5xx are retried
+ * with a short increasing delay. Error messages carry the
  * path and HTTP status only: provider bodies can hold personal data and are dropped.
  *
  * @param input - token and optional injection points (base URL, fetch, sleep)
@@ -82,11 +95,13 @@ export function createProviderApi({
     const request = async ({
         method,
         path,
-        body
+        body,
+        idempotencyKey
     }: {
-        readonly method: 'GET' | 'PUT';
+        readonly method: 'GET' | 'PUT' | 'POST';
         readonly path: string;
         readonly body?: Readonly<Record<string, string>>;
+        readonly idempotencyKey?: string;
     }): Promise<{ readonly httpStatus: number; readonly json: unknown }> => {
         let lastStatus = 0;
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
@@ -95,7 +110,10 @@ export function createProviderApi({
                     method,
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        ...(idempotencyKey === undefined
+                            ? {}
+                            : { 'X-Idempotency-Key': idempotencyKey })
                     },
                     body: body === undefined ? undefined : JSON.stringify(body)
                 });
@@ -148,6 +166,53 @@ export function createProviderApi({
                 body: { status: CANCEL_STATUS[kind] }
             });
             return { accepted: httpStatus >= 200 && httpStatus < 300, httpStatus };
+        },
+        getPayment: async ({ paymentId }): Promise<PaymentRead> => {
+            assertSafeId({ id: paymentId });
+            const path = `${PAYMENTS_PATH}/${paymentId}`;
+            const { httpStatus, json } = await request({ method: 'GET', path });
+            const parsed = paymentSchema.safeParse(json);
+            if (httpStatus !== 200 || !parsed.success) {
+                throw new ProviderError({
+                    message: `unusable answer from GET ${path}`,
+                    httpStatus
+                });
+            }
+            return {
+                id: parsed.data.id,
+                status: parsed.data.status,
+                refundIds: (parsed.data.refunds ?? []).map((refund) => refund.id)
+            };
+        },
+        refundPayment: async ({ paymentId }): Promise<RefundCallResult> => {
+            assertSafeId({ id: paymentId });
+            const { httpStatus, json } = await request({
+                method: 'POST',
+                path: `${PAYMENTS_PATH}/${paymentId}/refunds`,
+                body: {},
+                idempotencyKey: `cutover-refund-${paymentId}`
+            });
+            const accepted = httpStatus >= 200 && httpStatus < 300;
+            const parsed = createdSchema.safeParse(json);
+            return {
+                accepted,
+                httpStatus,
+                refundId: accepted && parsed.success ? parsed.data.id : null
+            };
+        },
+        getRefund: async ({ paymentId, refundId }): Promise<RefundRead> => {
+            assertSafeId({ id: paymentId });
+            assertSafeId({ id: refundId });
+            const path = `${PAYMENTS_PATH}/${paymentId}/refunds/${refundId}`;
+            const { httpStatus, json } = await request({ method: 'GET', path });
+            const parsed = objectSchema.safeParse(json);
+            if (httpStatus !== 200 || !parsed.success) {
+                throw new ProviderError({
+                    message: `unusable answer from GET ${path}`,
+                    httpStatus
+                });
+            }
+            return { id: parsed.data.id, status: parsed.data.status };
         }
     };
 }

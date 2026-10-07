@@ -36,9 +36,11 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
+        "@repo/billing-verticals-contract": "workspace:*",
         "zod": "^4.0.8"
     },
     "devDependencies": {
+        "@repo/test-clock": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.6.1",
         "@vitest/coverage-v8": "^4.1.10",

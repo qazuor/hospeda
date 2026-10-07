@@ -4,6 +4,7 @@
  * status code or an acknowledgement (INV:D5, "ninguna aserción se escribe sobre
  * un código de estado"). The lies of M1..M13 are another unit's (B1.4).
  */
+import { type AdjustableClock, createAdjustableClock } from '@repo/test-clock';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
     FakePaymentProvider,
@@ -37,9 +38,11 @@ async function codeOf({
 }
 
 let fake: FakePaymentProvider;
+let clock: AdjustableClock;
 
 beforeEach(() => {
-    fake = new FakePaymentProvider();
+    clock = createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') });
+    fake = new FakePaymentProvider({ clock });
 });
 
 /** An authorization the customer already approved. */
@@ -53,9 +56,9 @@ describe('authorize and approve', () => {
     it('creates a pending authorization with an approval link, active once approved', async () => {
         // Act
         const { authorizationId, approvalUrl } = await fake.authorize(AUTHORIZE);
-        const before = await fake.readAuthorization({ authorizationId });
+        const before = (await fake.readAuthorization({ authorizationId })).snapshot;
         await fake.approve({ authorizationId });
-        const after = await fake.readAuthorization({ authorizationId });
+        const after = (await fake.readAuthorization({ authorizationId })).snapshot;
 
         // Assert
         expect(new URL(approvalUrl).pathname).toContain(authorizationId);
@@ -89,7 +92,7 @@ describe('charge', () => {
         });
 
         // Assert
-        expect(await fake.readCharge({ chargeId })).toEqual({
+        expect((await fake.readCharge({ chargeId })).snapshot).toEqual({
             chargeId,
             authorizationId,
             reference: 'cycle-1',
@@ -113,7 +116,9 @@ describe('change the amount, pause, resume, cancel', () => {
     it('applies an amount change, visible on re-read', async () => {
         const authorizationId = await activeAuthorization();
         await fake.changeAmount({ authorizationId, amount: ARS(2_000_000) });
-        expect((await fake.readAuthorization({ authorizationId })).amount).toEqual(ARS(2_000_000));
+        expect((await fake.readAuthorization({ authorizationId })).snapshot.amount).toEqual(
+            ARS(2_000_000)
+        );
     });
 
     it('refuses an amount change in another currency', async () => {
@@ -131,15 +136,17 @@ describe('change the amount, pause, resume, cancel', () => {
     it('pauses and resumes, visible on re-read', async () => {
         const authorizationId = await activeAuthorization();
         await fake.pause({ authorizationId });
-        expect((await fake.readAuthorization({ authorizationId })).status).toBe('paused');
+        expect((await fake.readAuthorization({ authorizationId })).snapshot.status).toBe('paused');
         await fake.resume({ authorizationId });
-        expect((await fake.readAuthorization({ authorizationId })).status).toBe('active');
+        expect((await fake.readAuthorization({ authorizationId })).snapshot.status).toBe('active');
     });
 
     it('cancels irreversibly', async () => {
         const authorizationId = await activeAuthorization();
         await fake.cancel({ authorizationId });
-        expect((await fake.readAuthorization({ authorizationId })).status).toBe('cancelled');
+        expect((await fake.readAuthorization({ authorizationId })).snapshot.status).toBe(
+            'cancelled'
+        );
         expect(await codeOf({ promise: fake.resume({ authorizationId }) })).toBe('REJECTED');
         expect(await codeOf({ promise: fake.cancel({ authorizationId }) })).toBe('REJECTED');
     });
@@ -163,7 +170,7 @@ describe('refund', () => {
         });
 
         // Assert
-        expect((await fake.readCharge({ chargeId })).refundedAmount).toEqual(ARS(1_000));
+        expect((await fake.readCharge({ chargeId })).snapshot.refundedAmount).toEqual(ARS(1_000));
         expect(over).toBe('REJECTED');
     });
 });
@@ -176,11 +183,34 @@ describe('read', () => {
         expect(await codeOf({ promise: fake.readCharge({ chargeId: 'nope' }) })).toBe('NOT_FOUND');
     });
 
+    it('stamps every read by id with the injected clock, never the system time', async () => {
+        // Arrange
+        const authorizationId = await activeAuthorization();
+        const first = await fake.readAuthorization({ authorizationId });
+
+        // Act
+        clock.advance({ ms: 40 * 60_000 });
+        const second = await fake.readAuthorization({ authorizationId });
+
+        // Assert
+        expect(first.readAt).toEqual(new Date('2026-10-01T03:00:00.000Z'));
+        expect(second.readAt).toEqual(new Date('2026-10-01T03:40:00.000Z'));
+    });
+
+    it('hands out the read instant as a copy: mutating it does not move the read', async () => {
+        const authorizationId = await activeAuthorization();
+        const read = await fake.readAuthorization({ authorizationId });
+        read.readAt.setTime(0);
+        expect(read.readAt).toEqual(new Date('2026-10-01T03:00:00.000Z'));
+    });
+
     it('hands out a copy: mutating a snapshot does not change the provider', async () => {
         const authorizationId = await activeAuthorization();
-        const snapshot = await fake.readAuthorization({ authorizationId });
+        const { snapshot } = await fake.readAuthorization({ authorizationId });
         (snapshot.amount as { amountMinor: number }).amountMinor = 1;
-        expect((await fake.readAuthorization({ authorizationId })).amount).toEqual(ARS(1_800_000));
+        expect((await fake.readAuthorization({ authorizationId })).snapshot.amount).toEqual(
+            ARS(1_800_000)
+        );
     });
 });
 

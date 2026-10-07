@@ -29,6 +29,21 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
 - **Rules every caller inherits**: an acknowledgement is not a confirmation, so
   every mutation is confirmed by re-reading by id (INV:D5); a notice carries only
   kind, id and version, never state (GUARD:G17).
+- **Confirm by re-reading** (AC:B1:3): `confirmAuthorizationMutation({ provider,
+  acknowledgement, sent })` re-reads the authorization by id and compares every
+  field the mutation sent. A field that did not land makes it `notApplied`
+  (a failed mutation), naming each such field; a field that did land is not
+  hidden by one that did not.
+- **A read by id carries its instant** (AC:B1:4, INV:D17): `readAuthorization`
+  and `readCharge` return a `ProviderRead<T>` (`snapshot` + `readAt`). Only an
+  implementation builds one (its builder is not exported, and the brand is a
+  module-private symbol), stamped with the **injected** `Clock`
+  (`@repo/billing-verticals-contract`): both implementations take
+  `{ clock }` in their constructor and never read the system time. A decision
+  takes the state through `assertFreshForAct({ read, act })`, which refuses a
+  read older than the act's start (`STALE_READ`) so the act re-reads. The
+  start is the decision on that subject, not the run; for an administrative
+  action, its confirmation (`{ kind: 'adminAction', confirmedAt }`).
 
 ## The probe manifest
 

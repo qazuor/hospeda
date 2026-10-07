@@ -9,6 +9,7 @@
  * units that own each capability. No SDK is imported here, nor anywhere else in
  * the repo: the SDK, when it comes, lives only in this folder (GUARD:G12).
  */
+import type { Clock } from '@repo/billing-verticals-contract';
 import type { CapabilitySupportMap, PaymentCapability } from '../../provider/capabilities';
 import { PaymentProviderError } from '../../provider/errors';
 import type {
@@ -28,6 +29,7 @@ import type {
     RefundInput,
     RefundResult
 } from '../../provider/payment-provider';
+import type { ProviderRead } from '../../provider/provider-read';
 import {
     AuthorizationRefSchema,
     AuthorizeInputSchema,
@@ -35,6 +37,7 @@ import {
     ChargeInputSchema,
     ChargeRefSchema,
     NoticeDeliverySchema,
+    PaymentProviderOptionsSchema,
     parseProviderInput,
     RefundInputSchema
 } from '../../provider/schemas';
@@ -43,6 +46,19 @@ import { MERCADOPAGO_CAPABILITY_SUPPORT } from './mercadopago-capability-support
 /** The Mercado Pago payment provider (skeleton: validates, then refuses). */
 export class MercadoPagoPaymentProvider implements PaymentProvider {
     readonly capabilitySupport: CapabilitySupportMap = MERCADOPAGO_CAPABILITY_SUPPORT;
+
+    /**
+     * The clock its reads by id will be stamped with (`stampProviderRead`), once
+     * the reads are implemented: the adapter never reads the system time.
+     */
+    private readonly clock: Clock;
+
+    /**
+     * @param options.clock - The injected clock (AC:B1:17)
+     */
+    constructor(options: { readonly clock: Clock }) {
+        this.clock = PaymentProviderOptionsSchema.parse(options).clock;
+    }
 
     /** Capability 1 · authorize. */
     async authorize(input: AuthorizeInput): Promise<AuthorizeResult> {
@@ -87,13 +103,13 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     }
 
     /** Capability 7 · read an authorization by id. */
-    async readAuthorization(input: AuthorizationRef): Promise<AuthorizationSnapshot> {
+    async readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>> {
         parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'read' });
         throw notImplemented({ capability: 'read' });
     }
 
     /** Capability 7 · read a charge by id. */
-    async readCharge(input: ChargeRef): Promise<ChargeSnapshot> {
+    async readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>> {
         parseProviderInput({ schema: ChargeRefSchema, input, capability: 'read' });
         throw notImplemented({ capability: 'read' });
     }

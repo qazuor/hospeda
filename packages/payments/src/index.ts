@@ -3,7 +3,14 @@
  *
  * - the eight-capability interface (`PaymentProvider`) and its types;
  * - its two implementations: the in-memory fake and the Mercado Pago adapter;
- * - the probe manifest.
+ * - the probe manifest;
+ * - the re-read rules every caller inherits: a mutation is confirmed by
+ *   re-reading field by field (`confirmAuthorizationMutation`, INV:D5), and a
+ *   decision refuses a read by id older than its own start
+ *   (`assertFreshForAct`, INV:D17).
+ *
+ * `stampProviderRead`, the only builder of a `ProviderRead`, is deliberately
+ * NOT exported: only an implementation of the interface builds a read.
  */
 export { MERCADOPAGO_CAPABILITY_SUPPORT } from './adapters/mercadopago/mercadopago-capability-support';
 export { MercadoPagoPaymentProvider } from './adapters/mercadopago/mercadopago-payment-provider';
@@ -35,6 +42,13 @@ export {
     type EveryMethodHasACapability,
     PROVIDER_METHODS
 } from './provider/capability-methods';
+export {
+    type AuthorizationMutableField,
+    type AuthorizationMutationConfirmation,
+    confirmAuthorizationMutation,
+    type SentAuthorizationFields,
+    type UnappliedField
+} from './provider/confirm-mutation';
 export {
     PaymentProviderError,
     type PaymentProviderErrorCode,
@@ -72,6 +86,15 @@ export {
     type ProviderConceptTerm
 } from './provider/provider-concepts';
 export {
+    type ActStart,
+    actStartInstant,
+    assertFreshForAct,
+    type ProviderRead,
+    ProviderReadRejectedError,
+    type ProviderReadRejectedErrorInput,
+    type ProviderReadRejection
+} from './provider/provider-read';
+export {
     AuthorizationRefSchema,
     AuthorizeInputSchema,
     ChangeAmountInputSchema,
@@ -79,6 +102,7 @@ export {
     ChargeRefSchema,
     MoneySchema,
     NoticeDeliverySchema,
+    PaymentProviderOptionsSchema,
     parseProviderInput,
     RefundInputSchema
 } from './provider/schemas';

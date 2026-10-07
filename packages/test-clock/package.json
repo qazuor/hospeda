@@ -1,11 +1,11 @@
 {
-    "name": "@repo/billing-verticals-contract",
+    "name": "@repo/test-clock",
     "version": "0.0.0",
     "private": true,
     "type": "module",
     "sideEffects": false,
     "license": "MIT",
-    "description": "The single place where verticals and billing talk to each other: neither imports the other outside this package. Types only, no runtime values; V1 and B1 fill it.",
+    "description": "The shared test package with the adjustable clock: the Clock tests inject in place of the system time. Test-only: a devDependency wherever it appears, never imported by a production build.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
@@ -34,6 +34,10 @@
         "format": "biome format --write .",
         "check": "biome check --write .",
         "clean": "rm -rf node_modules dist"
+    },
+    "dependencies": {
+        "@repo/billing-verticals-contract": "workspace:*",
+        "zod": "^4.0.8"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
