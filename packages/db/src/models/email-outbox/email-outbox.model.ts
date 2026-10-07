@@ -43,6 +43,12 @@ export interface EnqueueEmailInput {
     readonly dedupKey: string;
     /** Delivery channel. Defaults to `email`. */
     readonly channel?: string;
+    /**
+     * Correlation of the business intention that enqueues the mail
+     * (NUCLEO/08 §2.2, AC:U2:9). The caller passes it explicitly; this
+     * package never reads the API's request context. Never sent to the provider.
+     */
+    readonly correlationId?: string | null;
 }
 
 /** Result of {@link EmailOutboxModel.enqueue}. */
@@ -159,7 +165,8 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
                     template: input.template,
                     channel: input.channel ?? 'email',
                     payload: input.payload ?? {},
-                    dedupKey: input.dedupKey
+                    dedupKey: input.dedupKey,
+                    correlationId: input.correlationId ?? null
                 })
                 .onConflictDoNothing({ target: emailOutbox.dedupKey })
                 .returning();

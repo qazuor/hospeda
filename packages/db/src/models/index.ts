@@ -8,6 +8,7 @@ export * from './content-moderation/index.ts';
 export * from './conversation/index.ts';
 export * from './cron/index.ts';
 export * from './destination/index.ts';
+export * from './domain-event/index.ts';
 export * from './email-outbox/index.ts';
 export * from './entity-comment/index.ts';
 export * from './entity-view/index.ts';
