@@ -34,6 +34,8 @@ vi.mock('../../src/services/ical-calendar/ical-calendar-sync.service.js', () => 
 const buildCtx = (dryRun = false): CronJobContext => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
     startedAt: new Date(),
+    runId: 'run-00000000-test',
+    correlationId: '00000000-0000-4000-8000-00000000c0de',
     dryRun
 });
 

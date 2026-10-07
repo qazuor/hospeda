@@ -83,6 +83,8 @@ Every job handler receives a `CronJobContext` and returns a `CronJobResult`:
 interface CronJobContext {
   logger: Logger;
   startedAt: Date;
+  runId: string;         // fresh UUID per run (HOS-1424)
+  correlationId: string; // the run's correlation (HOS-1424)
   dryRun: boolean;
 }
 
@@ -95,6 +97,35 @@ interface CronJobResult {
   details?: Record<string, unknown>;
 }
 ```
+
+#### Time zone: schedules are read on the Buenos Aires wall clock (HOS-1424)
+
+Every schedule is registered with node-cron's per-task option
+`{ timezone: 'America/Argentina/Buenos_Aires' }` (`MARKET_TIMEZONE` from
+`@repo/utils`), so `0 8 * * *` fires at **08:00 in Buenos Aires** (11:00 UTC)
+whatever zone the process runs in. `TZ` is never set or read. The admin panel's
+"next run" is computed in the same zone.
+
+Before HOS-1424 the scheduler fixed no zone, so on the VPS (UTC) every
+expression was read in UTC. The expressions were **not** compensated when the
+zone was fixed (owner decision): every job with a fixed hour now runs three
+hours later in real time than it used to. Jobs that only use the minute field
+(`* * * * *`, `*/5 * * * *`, `0 * * * *`) are unaffected.
+
+Windows expressed in days ("three days before", "today so far") are computed on
+the same calendar with `startOfMarketDay()` from `@repo/utils`; instants are
+always stored in UTC (NUCLEO/07 §3).
+
+#### Run id and correlation (HOS-1424)
+
+Each scheduled tick and each manual trigger gets a fresh `runId` and a run
+`correlationId`; both are stamped on every log line of the run, so a run can be
+read whole. A manual trigger uses the correlation of the admin request that
+started it (echoed in the `X-Correlation-ID` response header). A job that
+processes items also carries, per item, **the item's own** correlation: the one
+stored on the entity (e.g. `email_outbox.correlation_id`), or one minted for the
+item when the entity has none. `cron_runs` is unchanged and does not store either
+id.
 
 ---
 
@@ -505,7 +536,7 @@ import type { CronJobDefinition } from '../types.js';
 /**
  * Session cleanup cron job definition
  *
- * Schedule: Daily at 3:00 AM UTC
+ * Schedule: Daily at 03:00 Buenos Aires time
  * Purpose: Remove expired sessions to maintain database health
  */
 export const cleanupSessionsJob: CronJobDefinition = {
@@ -882,7 +913,7 @@ await sendMetrics(metrics);
 
 **File:** `apps/api/src/cron/jobs/trial-expiry.ts`
 
-**Schedule:** Daily at 2:00 AM UTC
+**Schedule:** Daily at 02:00 Buenos Aires time
 
 **Purpose:** Automatically expire trial subscriptions that have passed their end date.
 
@@ -978,7 +1009,7 @@ await sendMetrics(metrics);
 
 **File:** `apps/api/src/cron/jobs/notification-schedule.job.ts`
 
-**Schedule:** Daily at 8:00 AM UTC (5:00 AM Argentina time)
+**Schedule:** Daily at 08:00 Buenos Aires time (11:00 UTC)
 
 **Purpose:** Send scheduled notifications for trials and subscription renewals.
 
@@ -1097,7 +1128,7 @@ untouched.
 
 **File:** `apps/api/src/cron/jobs/addon-expiry.job.ts`
 
-**Schedule:** Daily at 5:00 AM UTC (2:00 AM Argentina time)
+**Schedule:** Daily at 05:00 Buenos Aires time (08:00 UTC)
 
 **Purpose:** Process expired add-ons and send expiration warnings.
 

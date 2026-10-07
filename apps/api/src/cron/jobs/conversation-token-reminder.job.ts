@@ -67,7 +67,7 @@
  * There is no catch-up mechanism for this case — it is a narrow, logged
  * (`warn`), single-token blast radius, not a batch-wide one.
  *
- * Schedule: daily at 09:00 UTC (6:00 AM Argentina time).
+ * Schedule: daily at 09:00 Buenos Aires time.
  *
  * @module cron/jobs/conversation-token-reminder
  */
@@ -233,7 +233,7 @@ async function dispatchTokenReminder(input: DispatchTokenReminderInput): Promise
 /**
  * Conversation token reminder cron job.
  *
- * Schedule: daily at 09:00 UTC
+ * Schedule: daily at 09:00 Buenos Aires time
  * Advisory lock: none (removed HOS-129 — see module doc-comment; the
  * `*_reminder_sent_at` DB column is the durable dedup guard).
  */

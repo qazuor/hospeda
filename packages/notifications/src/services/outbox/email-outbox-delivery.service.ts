@@ -1,5 +1,6 @@
 /**
- * Email outbox delivery (HOS-1423, unit U2: AC:U2:4, AC:U2:7, AC:U2:8).
+ * Email outbox delivery (HOS-1423, unit U2: AC:U2:4, AC:U2:7, AC:U2:8;
+ * HOS-1424: AC:U2:6, AC:U2:9).
  *
  * One batch of the outbox sender: release expired leases, claim sendable rows,
  * apply suppression, send, and record every attempt in `notification_log`,
@@ -11,15 +12,21 @@
  * as queue state plus a log row, never as an error the domain action waits on
  * (INV:25).
  *
+ * Each row is processed under ITS OWN correlation (NUCLEO/08 §2.3): the one
+ * its enqueuing intention stored on the row, or a fresh one when the row has
+ * none. The correlation travels to the escalation, never to the provider.
+ *
  * @module services/outbox/email-outbox-delivery
  */
 
+import { randomUUID } from 'node:crypto';
 import type {
     EmailOutboxModel,
     EmailOutboxRow,
     EmailOutboxStatus,
     NotificationLogModel
 } from '@repo/db';
+import { startOfMarketDay } from '@repo/utils';
 import type { ReactElement } from 'react';
 import { EMAIL_OUTBOX_CONSTANTS } from '../../constants/notification.constants.js';
 import type { EmailTransport } from '../../transports/email/email-transport.interface.js';
@@ -85,6 +92,11 @@ export interface OutboxEscalation {
     readonly reason: OutboxEscalationReason;
     readonly attempts: number;
     readonly lastError: string | null;
+    /**
+     * The row's correlation: the one stored at enqueue, or the one minted for
+     * this item when the row had none (NUCLEO/08 §2.3).
+     */
+    readonly correlationId: string;
 }
 
 /** Dependencies of {@link processEmailOutboxBatch}. */
@@ -111,10 +123,12 @@ export interface EmailOutboxDeliveryDeps {
     readonly transport: EmailTransport;
     /**
      * Raises the escalation where a person sees it. The cron wires it to an
-     * `error` log with `capture: true` (Sentry); the domain_event write is U2.3.
-     * Must not throw.
+     * `error` log with `capture: true` (Sentry) and an `email.undeliverable`
+     * row in `domain_event` (HOS-1424). Awaited; the queue state is already
+     * written when it runs, so nothing it does can roll that back. Must not
+     * throw: a failed event write is logged by the hook itself.
      */
-    readonly escalate: (event: OutboxEscalation) => void;
+    readonly escalate: (event: OutboxEscalation) => Promise<void>;
     /**
      * Reports a row whose processing threw (a DB read or write failed). The
      * row stays `processing` until its lease expires and `recoverExpired`
@@ -156,7 +170,6 @@ export interface ProcessEmailOutboxBatchInput {
     readonly batchSize: number;
     readonly maxAttempts?: number;
     readonly dailyCap?: number;
-    readonly capWindowMs?: number;
 }
 
 /** Counters of one batch. */
@@ -181,6 +194,8 @@ interface RowContext {
     readonly now: Date;
     readonly emailClass: OutboxEmailClass;
     readonly maxAttempts: number;
+    /** The item's correlation (the row's, or minted for it). */
+    readonly correlationId: string;
 }
 
 /**
@@ -219,7 +234,9 @@ export async function processEmailOutboxBatch(
     const { deps, owner, now } = input;
     const maxAttempts = input.maxAttempts ?? EMAIL_OUTBOX_CONSTANTS.MAX_ATTEMPTS;
     const dailyCap = input.dailyCap ?? EMAIL_OUTBOX_CONSTANTS.DAILY_COMMERCIAL_CAP_PER_RECIPIENT;
-    const capWindowMs = input.capWindowMs ?? EMAIL_OUTBOX_CONSTANTS.DAILY_CAP_WINDOW_MS;
+    // The daily cap counts the market's calendar day so far, from midnight in
+    // America/Argentina/Buenos_Aires to now, not a rolling 24 hours (AC:U2:6).
+    const capWindowStart = startOfMarketDay({ instant: now });
 
     const recovered = await deps.outbox.recoverExpired({ now });
     const rows = await deps.outbox.claim({
@@ -233,13 +250,14 @@ export async function processEmailOutboxBatch(
 
     for (const row of rows) {
         const { emailClass } = classifyOutboxTemplate({ template: row.template });
-        const ctx: RowContext = { deps, row, owner, now, emailClass, maxAttempts };
+        const correlationId = row.correlationId ?? randomUUID();
+        const ctx: RowContext = { deps, row, owner, now, emailClass, maxAttempts, correlationId };
         try {
             const decision = evaluateOutboxSuppression(
                 await readSuppressionFacts({
                     ctx,
                     dailyCap,
-                    since: new Date(now.getTime() - capWindowMs)
+                    since: capWindowStart
                 })
             );
             let outcome: RowOutcome;
@@ -450,14 +468,14 @@ async function handleSendFailure(input: {
     return { outcome: 'failed', escalated };
 }
 
-/** Writes the `undeliverable` escalation record and raises the escalation. */
+/** Writes the `undeliverable` escalation record and raises (and awaits) the escalation. */
 async function escalateRow(input: {
     readonly ctx: RowContext;
     readonly reason: OutboxEscalationReason;
     readonly attempts: number;
     readonly lastError: string;
 }): Promise<void> {
-    const { deps, row, now, emailClass } = input.ctx;
+    const { deps, row, now, emailClass, correlationId } = input.ctx;
     await deps.log.recordEmailAttempt({
         outboxId: row.id,
         recipient: row.recipientEmail,
@@ -469,12 +487,13 @@ async function escalateRow(input: {
         errorMessage: input.lastError,
         metadata: { kind: 'escalation', reason: input.reason, attempts: input.attempts }
     });
-    deps.escalate({
+    await deps.escalate({
         outboxId: row.id,
         template: row.template,
         recipientUserId: row.recipientUserId,
         reason: input.reason,
         attempts: input.attempts,
-        lastError: input.lastError
+        lastError: input.lastError,
+        correlationId
     });
 }

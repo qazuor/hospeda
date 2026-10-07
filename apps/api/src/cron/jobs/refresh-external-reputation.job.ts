@@ -35,7 +35,7 @@ import {
 
 /**
  * Default cron schedule for the external reputation refresh job.
- * Every Monday at 02:00 UTC.
+ * Every Monday at 02:00 Buenos Aires time.
  */
 const DEFAULT_CRON_SCHEDULE = '0 2 * * 1';
 
@@ -100,7 +100,7 @@ export function sortByGoogleTtlUrgency(
 /**
  * External reputation refresh cron job definition.
  *
- * Schedule: `HOSPEDA_EXTREP_CRON_SCHEDULE` (default `0 2 * * 1` — Monday 02:00 UTC)
+ * Schedule: `HOSPEDA_EXTREP_CRON_SCHEDULE` (default `0 2 * * 1` — Monday 02:00 Buenos Aires time)
  * Purpose: Keep cached platform ratings and Google snippets fresh weekly.
  */
 export const refreshExternalReputationJob: CronJobDefinition = {

@@ -62,6 +62,8 @@ const createCtx = (overrides: Partial<CronJobContext> = {}): CronJobContext => (
         debug: vi.fn()
     },
     startedAt: new Date('2026-04-19T00:00:00Z'),
+    runId: 'run-00000000-test',
+    correlationId: '00000000-0000-4000-8000-00000000c0de',
     dryRun: false,
     ...overrides
 });

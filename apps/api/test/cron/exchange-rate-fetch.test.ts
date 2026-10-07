@@ -118,6 +118,8 @@ describe('Exchange Rate Fetch Cron Job', () => {
         mockContext = {
             logger: mockLogger,
             startedAt: new Date('2024-01-01T00:00:00Z'),
+            runId: 'run-00000000-test',
+            correlationId: '00000000-0000-4000-8000-00000000c0de',
             dryRun: false
         };
 

@@ -115,6 +115,7 @@ describe('createAppLogSinkHandler', () => {
             await runWithRequestContext({
                 store: {
                     requestId: 'req-abc-123',
+                    correlationId: '00000000-0000-4000-8000-00000000c0de',
                     method: 'POST',
                     path: '/api/v1/protected/bookmarks'
                 },
@@ -159,6 +160,7 @@ describe('createAppLogSinkHandler', () => {
             await runWithRequestContext({
                 store: {
                     requestId: 'req-guest-789',
+                    correlationId: '00000000-0000-4000-8000-00000000c0de',
                     method: 'GET',
                     path: '/api/v1/public/accommodations'
                 },

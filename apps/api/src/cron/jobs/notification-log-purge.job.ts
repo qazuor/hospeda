@@ -2,7 +2,7 @@
  * Notification Log Purge Cron Job
  *
  * Periodically purges old notification log entries using the
- * NotificationRetentionService. Runs daily at 3:00 UTC (midnight Argentina time).
+ * NotificationRetentionService. Runs daily at 3:00 Buenos Aires time.
  *
  * Retention policy:
  * - Records older than 90 days are marked as expired (soft delete)
@@ -17,13 +17,13 @@ import type { CronJobDefinition } from '../types.js';
 /**
  * Notification log purge cron job definition
  *
- * Schedule: Daily at 3:00 UTC (midnight Argentina time)
+ * Schedule: Daily at 3:00 Buenos Aires time
  * Purpose: Clean up old notification log entries to prevent unbounded table growth
  */
 export const notificationLogPurgeJob: CronJobDefinition = {
     name: 'notification-log-purge',
     description: 'Purge old notification log entries (90-day retention + 30-day grace)',
-    schedule: '0 3 * * *', // Daily at 3:00 UTC
+    schedule: '0 3 * * *', // Daily at 3:00 Buenos Aires time
     enabled: true,
     timeoutMs: 60000, // 1 minute timeout
 

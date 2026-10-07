@@ -3,7 +3,7 @@
  *
  * Periodically deletes old `app_log_entries` records via
  * {@link AppLogEntryService.purgeOld}, keeping the log observability table
- * bounded. Runs daily at 5:00 UTC (one hour after cron-run-purge).
+ * bounded. Runs daily at 5:00 Buenos Aires time (one hour after cron-run-purge).
  *
  * Retention policy: uniform 30 days for both WARN and ERROR entries.
  *
@@ -20,13 +20,13 @@ const RETENTION_DAYS = 30;
 /**
  * App log purge job definition.
  *
- * Schedule: Daily at 5:00 UTC.
+ * Schedule: Daily at 5:00 Buenos Aires time.
  * Purpose: Prevent unbounded growth of the app_log_entries observability table.
  */
 export const appLogPurgeJob: CronJobDefinition = {
     name: 'app-log-purge',
     description: 'Purge app_log_entries older than 30 days (WARN/ERROR only)',
-    schedule: '0 5 * * *', // Daily at 5:00 UTC
+    schedule: '0 5 * * *', // Daily at 5:00 Buenos Aires time
     enabled: true,
     timeoutMs: 60_000, // 1 minute timeout
 

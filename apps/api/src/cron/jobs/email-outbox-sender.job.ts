@@ -1,11 +1,16 @@
 /**
- * Email outbox sender (HOS-1423, unit U2: AC:U2:4, AC:U2:7, AC:U2:8).
+ * Email outbox sender (HOS-1423, unit U2: AC:U2:4, AC:U2:7, AC:U2:8;
+ * HOS-1424: AC:U2:9, AC:U2:11).
  *
  * Every minute: release expired `processing` leases, claim sendable rows with
  * a 5-minute lease, apply the suppression hierarchy, send, and record every
  * attempt in `notification_log`. The work itself lives in
  * `processEmailOutboxBatch` (`@repo/notifications`); this file wires the real
- * dependencies and turns an escalation into a Sentry-captured error.
+ * dependencies and turns an escalation into a Sentry-captured error plus an
+ * `email.undeliverable` row in `domain_event` (HOS-1424), written under the
+ * item's correlation (the outbox row's, or one minted for it) by actor `job`.
+ * A failed event write is logged with `capture: true` and the run goes on:
+ * the queue state is already written and is never rolled back for it.
  *
  * Cadence and lease are code constants, not env vars (the owner's U2 call).
  * Nothing here touches a domain transaction: a mail that cannot be delivered
@@ -16,13 +21,20 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { emailOutboxModel, notificationLogModel, userModel } from '@repo/db';
+import {
+    type DomainEventModel,
+    domainEventModel,
+    emailOutboxModel,
+    notificationLogModel,
+    userModel
+} from '@repo/db';
 import {
     BrevoEmailTransport,
     createEmailClient,
     createOutboxMailRenderer,
     createOutboxOptOutReader,
     type EmailOutboxDeliveryDeps,
+    type OutboxEscalation,
     PreferenceService,
     processEmailOutboxBatch
 } from '@repo/notifications';
@@ -55,6 +67,43 @@ export interface CreateEmailOutboxSenderJobInput {
     readonly buildDeps: () => EmailOutboxSenderDeps | null;
     /** Releases expired leases when there are no deps. Defaults to the outbox model. */
     readonly recoverExpired?: (input: { readonly now: Date }) => Promise<readonly string[]>;
+    /** Writes one domain event. Defaults to the `domain_event` model. */
+    readonly recordEvent?: (input: Parameters<DomainEventModel['insert']>[0]) => Promise<unknown>;
+}
+
+/** Entity type of an outbox row in `domain_event`. */
+export const OUTBOX_DOMAIN_EVENT_ENTITY_TYPE = 'email_outbox';
+
+/**
+ * Maps an escalation to its `email.undeliverable` domain event: about the
+ * outbox row, caused by a job, under the item's correlation. The recipient
+ * address is not copied (a reference, never the content); `changes` records
+ * the row moving to `failed`. `occurredAt` is the RUN instant (`ctx.startedAt`),
+ * the same instant the batch uses for every lease, window and log record, not
+ * the wall-clock moment the insert happens.
+ *
+ * @param input - The escalation and the run instant.
+ * @returns The event to write.
+ */
+export function buildUndeliverableEvent(input: {
+    readonly escalation: OutboxEscalation;
+    readonly occurredAt: Date;
+}): Parameters<DomainEventModel['insert']>[0] {
+    const { escalation } = input;
+    return {
+        eventType: 'email.undeliverable',
+        entityType: OUTBOX_DOMAIN_EVENT_ENTITY_TYPE,
+        entityId: escalation.outboxId,
+        actorType: 'job',
+        actorId: null,
+        correlationId: escalation.correlationId,
+        occurredAt: input.occurredAt,
+        reason: escalation.reason,
+        changes: [
+            { field: 'status', new: 'failed' },
+            { field: 'attempts', new: escalation.attempts }
+        ]
+    };
 }
 
 /**
@@ -119,6 +168,9 @@ export function createEmailOutboxSenderJob(
     const recoverExpired =
         input.recoverExpired ??
         ((args: { readonly now: Date }) => emailOutboxModel.recoverExpired(args));
+    const recordEvent =
+        input.recordEvent ??
+        ((event: Parameters<DomainEventModel['insert']>[0]) => domainEventModel.insert(event));
 
     return {
         name: 'email-outbox-sender',
@@ -164,12 +216,28 @@ export function createEmailOutboxSenderJob(
                 const stats = await processEmailOutboxBatch({
                     deps: {
                         ...deps,
-                        escalate: (event) => {
+                        escalate: async (event) => {
                             ctx.logger.error(
                                 'Email outbox: transactional mail is undeliverable and was escalated',
                                 { ...event },
                                 { capture: true }
                             );
+                            try {
+                                await recordEvent(
+                                    buildUndeliverableEvent({ escalation: event, occurredAt: now })
+                                );
+                            } catch (error) {
+                                ctx.logger.error(
+                                    'Email outbox: the undeliverable domain event could not be written',
+                                    {
+                                        outboxId: event.outboxId,
+                                        correlationId: event.correlationId,
+                                        error:
+                                            error instanceof Error ? error.message : String(error)
+                                    },
+                                    { capture: true }
+                                );
+                            }
                         },
                         onRowError: (event) => {
                             ctx.logger.error(

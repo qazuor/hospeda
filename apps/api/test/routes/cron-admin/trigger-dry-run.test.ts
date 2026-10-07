@@ -51,6 +51,7 @@ vi.mock('../../../src/utils/logger', () => ({
 }));
 
 await import('../../../src/routes/cron-admin/index');
+const { runWithRequestContext } = await import('../../../src/lib/request-context');
 
 const triggerConfig = capturedRoutes.get('/{jobName}') as RouteConfig;
 const querySchema = z.object(triggerConfig.requestQuery ?? {});
@@ -97,5 +98,60 @@ describe('POST /admin/cron/{jobName} dryRun query (HOS-410)', () => {
 
     it.each(['', 'yes', '1', 'TRUE'])('rejects the ambiguous value %j instead of guessing', (v) => {
         expect(() => querySchema.parse({ dryRun: v })).toThrow();
+    });
+});
+
+describe('POST /admin/cron/{jobName} run ids (HOS-1424, TEST:U2:9)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockJobHandler.mockResolvedValue({
+            success: true,
+            message: 'ok',
+            processed: 0,
+            errors: 0,
+            durationMs: 1
+        });
+    });
+
+    it('a manual run mints its own run id and run correlation, not the request correlation', async () => {
+        // Arrange: two triggers inside requests that carry the SAME correlation.
+        const requestCorrelation = crypto.randomUUID();
+        const store = {
+            requestId: 'r',
+            correlationId: requestCorrelation,
+            method: 'POST',
+            path: '/api/v1/admin/cron/demo'
+        };
+
+        // Act
+        await runWithRequestContext({ store, fn: async () => void (await trigger({})) });
+        await runWithRequestContext({ store, fn: async () => void (await trigger({})) });
+
+        // Assert
+        const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+        const [first, second] = mockJobHandler.mock.calls.map(
+            (call) => call[0] as { runId: string; correlationId: string }
+        );
+        for (const ctx of [first, second]) {
+            expect(ctx?.correlationId).toMatch(uuid);
+            expect(ctx?.correlationId).not.toBe(requestCorrelation);
+            expect(ctx?.runId).toMatch(uuid);
+            expect(ctx?.runId).not.toBe(ctx?.correlationId);
+        }
+        expect(first?.correlationId).not.toBe(second?.correlationId);
+        expect(first?.runId).not.toBe(second?.runId);
+    });
+
+    it('outside a request scope it mints the run correlation', async () => {
+        // Act
+        await trigger({});
+        await trigger({});
+
+        // Assert
+        const [first, second] = mockJobHandler.mock.calls.map(
+            (call) => (call[0] as { correlationId: string; runId: string }).correlationId
+        );
+        expect(first).toMatch(/^[0-9a-f-]{36}$/);
+        expect(first).not.toBe(second);
     });
 });

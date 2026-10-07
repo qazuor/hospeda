@@ -20,6 +20,8 @@
  * @module services/calendar-sync/date-range
  */
 
+import { MARKET_TIMEZONE } from '@repo/utils';
+
 /** Milliseconds in a day, for half-open date enumeration. */
 export const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -27,10 +29,11 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
  * IANA timezone shared by every calendar-sync provider (Google Calendar,
  * iCal/Airbnb/Booking/OTHER) for anchoring "today" — the platform targets
  * only the AR market (Litoral) and accommodations carry no per-property
- * timezone. AR is a fixed UTC-3 offset (no DST since 2009), so this is safe
- * to hardcode; revisit only if non-AR accommodations are onboarded.
+ * timezone. Re-exported from `@repo/utils`, the single definition of the
+ * market zone (HOS-1424), so the calendar sync and the job scheduler can
+ * never disagree on it.
  */
-export const MARKET_TIMEZONE = 'America/Argentina/Buenos_Aires';
+export { MARKET_TIMEZONE };
 
 /**
  * Reused across calls — `Intl.DateTimeFormat` construction is not free and

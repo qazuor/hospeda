@@ -39,6 +39,7 @@ function row(overrides: Partial<EmailOutboxRow> = {}): EmailOutboxRow {
         attempts: 0,
         providerMessageId: null,
         lastError: null,
+        correlationId: null,
         createdAt: new Date(STARTED_AT.getTime() - 1000),
         updatedAt: STARTED_AT,
         ...overrides
@@ -49,6 +50,8 @@ function context(dryRun = false): CronJobContext {
     return {
         logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
         startedAt: STARTED_AT,
+        runId: 'run-00000000-test',
+        correlationId: '00000000-0000-4000-8000-00000000c0de',
         dryRun
     };
 }
@@ -230,5 +233,87 @@ describe('email-outbox-sender handler', () => {
 
         // Assert
         expect(result).toMatchObject({ success: false, errors: 1, message: 'db down' });
+    });
+});
+
+describe('TEST:U2:9 / TEST:U2:4 the escalation writes an email.undeliverable domain event (HOS-1424)', () => {
+    it('writes the event about the outbox row, by a job, under the ROW correlation', async () => {
+        // Arrange
+        const correlationId = crypto.randomUUID();
+        const exhausted = row({ attempts: 4, correlationId });
+        const { deps, send } = fakeDeps([exhausted]);
+        send.mockRejectedValueOnce(new Error('provider 503'));
+        const recordEvent = vi.fn(async () => ({}));
+        const job = createEmailOutboxSenderJob({ buildDeps: () => deps, recordEvent });
+        const ctx = context();
+
+        // Act
+        const result = await job.handler(ctx);
+
+        // Assert: the item's correlation, not the run's.
+        expect(recordEvent).toHaveBeenCalledTimes(1);
+        expect(recordEvent).toHaveBeenCalledWith({
+            eventType: 'email.undeliverable',
+            entityType: 'email_outbox',
+            entityId: exhausted.id,
+            actorType: 'job',
+            actorId: null,
+            correlationId,
+            occurredAt: STARTED_AT,
+            reason: 'retries_exhausted',
+            changes: [
+                { field: 'status', new: 'failed' },
+                { field: 'attempts', new: 5 }
+            ]
+        });
+        expect(correlationId).not.toBe(ctx.correlationId);
+        expect(result).toMatchObject({ success: true, details: { escalated: 1 } });
+    });
+
+    it('mints an item correlation for a row enqueued without one', async () => {
+        // Arrange
+        const { deps } = fakeDeps([row()]);
+        vi.mocked(deps.log.hasHardBounce).mockResolvedValueOnce(true);
+        const recordEvent = vi.fn(async () => ({}));
+        const job = createEmailOutboxSenderJob({ buildDeps: () => deps, recordEvent });
+        const ctx = context();
+
+        // Act
+        await job.handler(ctx);
+
+        // Assert
+        const written = (recordEvent.mock.calls[0] as unknown as [{ correlationId: string }])[0];
+        expect(written.correlationId).toMatch(
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+        );
+        expect(written.correlationId).not.toBe(ctx.correlationId);
+    });
+
+    it('a failed event write is logged with capture and never rolls back the queue state', async () => {
+        // Arrange
+        const exhausted = row({ attempts: 4 });
+        const { deps, send, outbox } = fakeDeps([exhausted]);
+        send.mockRejectedValueOnce(new Error('provider 503'));
+        const recordEvent = vi.fn(async () => {
+            throw new Error('domain_event insert failed');
+        });
+        const job = createEmailOutboxSenderJob({ buildDeps: () => deps, recordEvent });
+        const ctx = context();
+
+        // Act
+        const result = await job.handler(ctx);
+
+        // Assert
+        expect(ctx.logger.error).toHaveBeenCalledWith(
+            'Email outbox: the undeliverable domain event could not be written',
+            expect.objectContaining({
+                outboxId: exhausted.id,
+                error: 'domain_event insert failed'
+            }),
+            { capture: true }
+        );
+        expect(outbox.recordFailure).toHaveBeenCalledTimes(1);
+        expect(outbox.markSent).not.toHaveBeenCalled();
+        expect(result).toMatchObject({ success: true, errors: 0, details: { failed: 1 } });
     });
 });

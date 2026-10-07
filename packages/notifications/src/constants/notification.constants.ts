@@ -38,16 +38,11 @@ export const EMAIL_OUTBOX_CONSTANTS = {
     MAX_ATTEMPTS: 5,
 
     /**
-     * Commercial mails one recipient may be SENT in the cap window. A third
+     * Commercial mails one recipient may be SENT per calendar day of the
+     * market time zone (America/Argentina/Buenos_Aires; HOS-1424). A third
      * vertical's win-back on the same day is exactly what the cap stops
      * ("suprimir dos de tres", HOS-1353 11-trial §6.2), so the cap is one.
      * Transactional mail is never counted nor capped (NUCLEO/07 §4.2).
      */
-    DAILY_COMMERCIAL_CAP_PER_RECIPIENT: 1,
-
-    /**
-     * Length of the cap window: a rolling 24 hours. U2.3 replaces it with the
-     * calendar day of the market time zone (America/Argentina/Buenos_Aires).
-     */
-    DAILY_CAP_WINDOW_MS: 24 * 60 * 60 * 1000
+    DAILY_COMMERCIAL_CAP_PER_RECIPIENT: 1
 } as const;

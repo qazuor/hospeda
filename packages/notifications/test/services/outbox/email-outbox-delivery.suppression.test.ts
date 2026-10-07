@@ -6,16 +6,16 @@
  */
 import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { EMAIL_OUTBOX_CONSTANTS } from '../../../src/constants/notification.constants';
 import {
     createOutboxOptOutReader,
-    OUTBOX_LAST_ERROR_MARKERS
+    OUTBOX_LAST_ERROR_MARKERS,
+    processEmailOutboxBatch
 } from '../../../src/services/outbox/email-outbox-delivery.service';
 import {
     createOutboxMailRenderer,
     OUTBOX_MAIL_RENDERERS
 } from '../../../src/services/outbox/email-outbox-renderers';
-import { COMMERCIAL, type Harness, harness, NOW, row, run } from './outbox-batch.harness';
+import { COMMERCIAL, type Harness, harness, row, run } from './outbox-batch.harness';
 
 describe('TEST:U2:7 suppression cuts before sending', () => {
     let h: Harness;
@@ -102,7 +102,7 @@ describe('TEST:U2:7 suppression cuts before sending', () => {
         expect(h.send).toHaveBeenCalledTimes(1);
     });
 
-    it('daily cap: counts commercial mail to THIS recipient over the rolling window', async () => {
+    it('daily cap: counts commercial mail to THIS recipient since BA midnight of today (TEST:U2:6)', async () => {
         // Arrange
         const r = row({ template: COMMERCIAL, recipientEmail: 'capped@example.com' });
         h = harness([r]);
@@ -115,12 +115,37 @@ describe('TEST:U2:7 suppression cuts before sending', () => {
         expect(h.log.countSentByClassSince).toHaveBeenCalledWith({
             recipient: 'capped@example.com',
             emailClass: 'commercial',
-            since: new Date(NOW.getTime() - EMAIL_OUTBOX_CONSTANTS.DAILY_CAP_WINDOW_MS)
+            // NOW is 09:00 on 7 October in Buenos Aires: the window opens at 00:00 -03:00.
+            since: new Date('2026-10-07T03:00:00.000Z')
         });
         expect(h.send).not.toHaveBeenCalled();
         expect(h.outbox.markFailed).toHaveBeenCalledWith(
             expect.objectContaining({ marker: OUTBOX_LAST_ERROR_MARKERS.DAILY_CAP })
         );
+    });
+
+    it('daily cap near midnight: 23:30 in Buenos Aires still counts from BA midnight of that day (TEST:U2:6)', async () => {
+        // Arrange: 2026-10-07T02:30Z is 23:30 on 6 October in Buenos Aires, while
+        // the UTC calendar already says 7 October.
+        const r = row({ template: COMMERCIAL, recipientEmail: 'late@example.com' });
+        h = harness([r]);
+        const lateNight = new Date('2026-10-07T02:30:00.000Z');
+
+        // Act
+        await processEmailOutboxBatch({
+            deps: h.deps,
+            owner: 'email-outbox-sender:test',
+            now: lateNight,
+            leaseMs: 300_000,
+            batchSize: 50
+        });
+
+        // Assert: the window is 6 October in BA, neither the UTC day nor a rolling 24h.
+        expect(h.log.countSentByClassSince).toHaveBeenCalledWith({
+            recipient: 'late@example.com',
+            emailClass: 'commercial',
+            since: new Date('2026-10-06T03:00:00.000Z')
+        });
     });
 
     it('a suppression does not count a delivery attempt', async () => {

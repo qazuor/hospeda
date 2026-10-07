@@ -95,6 +95,13 @@ export const emailOutbox = pgTable(
         /** Most recent failure reason. */
         lastError: text('last_error'),
 
+        /**
+         * Correlation of the business intention that enqueued the mail
+         * (NUCLEO/08 §2.2, AC:U2:9). NULL for a row enqueued without one; the
+         * sender then mints a per-item correlation. Never sent to the provider.
+         */
+        correlationId: uuid('correlation_id'),
+
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },

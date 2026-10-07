@@ -91,7 +91,7 @@ type CronTransactionResult =
 /**
  * Destination weather fetch cron job definition.
  *
- * Schedule: 06:00 and 18:00 UTC (03:00 / 15:00 ART).
+ * Schedule: 06:00 and 18:00 Buenos Aires time (09:00 / 21:00 UTC).
  * Purpose: Keep cached destination weather current without per-request external calls.
  *
  * HOS-154: moved off the previous `0 *\/12 * * *` (00:00/12:00 UTC = 21:00/09:00
@@ -100,11 +100,17 @@ type CronTransactionResult =
  * destinations every run. 06:00/18:00 UTC lands on lower-traffic windows. The
  * job timeout is also raised to 3 min to leave headroom for the client's
  * per-destination retries.
+ *
+ * HOS-1424: every schedule is now read on the Buenos Aires wall clock, and the
+ * owner chose not to compensate the expressions, so this job moved from
+ * 03:00/15:00 ART to 06:00/18:00 ART. Accepted by the owner on 2026-10-07;
+ * watch the load of the 18:00 ART tick after the cutover (HOS-154 moved away
+ * from a 21:00 ART traffic peak).
  */
 export const destinationWeatherFetchJob: CronJobDefinition = {
     name: 'destination-weather-fetch',
     description: 'Refresh cached Open-Meteo weather for published destinations with coordinates',
-    schedule: '0 6,18 * * *', // 06:00 & 18:00 UTC (03:00 / 15:00 ART) — off-peak (HOS-154)
+    schedule: '0 6,18 * * *', // 06:00 & 18:00 Buenos Aires time (HOS-154, moved by HOS-1424)
     enabled: true,
     timeoutMs: 180000, // 3 minute timeout — headroom for per-destination retries (HOS-154)
 
