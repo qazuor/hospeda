@@ -3,6 +3,7 @@
  * Each adapter parses its input with these before doing anything else, so a
  * malformed request is refused the same way by every provider.
  */
+import type { Clock } from '@repo/billing-verticals-contract';
 import { z } from 'zod';
 import type { PaymentCapability } from './capabilities';
 import { PaymentProviderError } from './errors';
@@ -74,6 +75,17 @@ export const RefundInputSchema: z.ZodType<RefundInput> = z.strictObject({
 export const NoticeDeliverySchema: z.ZodType<NoticeDelivery> = z.strictObject({
     headers: z.record(z.string(), z.string()),
     body: z.string()
+});
+
+/** Constructor options of every implementation: the injected clock. */
+export const PaymentProviderOptionsSchema: z.ZodType<{ readonly clock: Clock }> = z.strictObject({
+    clock: z.custom<Clock>(
+        (value) =>
+            typeof value === 'object' &&
+            value !== null &&
+            typeof (value as { now?: unknown }).now === 'function',
+        { message: 'clock must be an object with now(): Date' }
+    )
 });
 
 /**
