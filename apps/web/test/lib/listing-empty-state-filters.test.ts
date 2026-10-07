@@ -20,7 +20,6 @@ describe('hasActiveGastronomyListingFilters', () => {
                 destinationId: undefined,
                 type: undefined,
                 priceRange: undefined,
-                isFeatured: undefined,
                 minRating: undefined,
                 features: undefined
             })
@@ -32,7 +31,6 @@ describe('hasActiveGastronomyListingFilters', () => {
         { destinationId: 'dest-1' },
         { type: 'RESTAURANT' },
         { priceRange: 'MID' },
-        { isFeatured: true },
         { minRating: 4 },
         // HOS-1054: the apto filter narrows results like any other, so an empty
         // grid reached with only an apto selected must say "nothing matched your
@@ -46,7 +44,6 @@ describe('hasActiveGastronomyListingFilters', () => {
                 destinationId: undefined,
                 type: undefined,
                 priceRange: undefined,
-                isFeatured: undefined,
                 minRating: undefined,
                 features: undefined,
                 ...filters
@@ -68,7 +65,6 @@ describe('hasActiveGastronomyListingFilters', () => {
                 destinationId: undefined,
                 type: undefined,
                 priceRange: undefined,
-                isFeatured: undefined,
                 minRating: undefined,
                 features
             })
@@ -83,7 +79,6 @@ describe('hasActiveExperienceListingFilters', () => {
                 q: undefined,
                 destinationId: undefined,
                 type: undefined,
-                isFeatured: undefined,
                 minRating: undefined
             })
         ).toBe(false);
@@ -93,7 +88,6 @@ describe('hasActiveExperienceListingFilters', () => {
         { q: 'kayak' },
         { destinationId: 'dest-1' },
         { type: 'KAYAK_RENTAL' },
-        { isFeatured: true },
         { minRating: 5 }
     ])('returns true when a real experience filter is active: %o', (filters) => {
         expect(
@@ -101,7 +95,6 @@ describe('hasActiveExperienceListingFilters', () => {
                 q: undefined,
                 destinationId: undefined,
                 type: undefined,
-                isFeatured: undefined,
                 minRating: undefined,
                 ...filters
             })
@@ -123,7 +116,6 @@ describe('hasActiveAccommodationEmptyStateFilters', () => {
                 hasPool: undefined,
                 hasParking: undefined,
                 allowsPets: undefined,
-                isFeatured: undefined,
                 minBedrooms: undefined,
                 minBathrooms: undefined,
                 minRating: undefined,
@@ -150,7 +142,6 @@ describe('hasActiveAccommodationEmptyStateFilters', () => {
         { hasPool: true },
         { hasParking: true },
         { allowsPets: true },
-        { isFeatured: true },
         { minBedrooms: 2 },
         { minBathrooms: 1 },
         { minRating: 4 },
@@ -175,7 +166,6 @@ describe('hasActiveAccommodationEmptyStateFilters', () => {
                 hasPool: undefined,
                 hasParking: undefined,
                 allowsPets: undefined,
-                isFeatured: undefined,
                 minBedrooms: undefined,
                 minBathrooms: undefined,
                 minRating: undefined,
@@ -205,7 +195,6 @@ describe('hasActiveAccommodationEmptyStateFilters', () => {
                 hasPool: undefined,
                 hasParking: undefined,
                 allowsPets: undefined,
-                isFeatured: undefined,
                 minBedrooms: undefined,
                 minBathrooms: undefined,
                 minRating: undefined,

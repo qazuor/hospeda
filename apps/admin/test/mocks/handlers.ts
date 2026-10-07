@@ -63,7 +63,6 @@ const mockAccommodation = {
     slug: 'test-hotel',
     type: 'hotel',
     description: 'A test hotel for testing',
-    isFeatured: false,
     destinationId: 'dest-1',
     ownerId: 'user-1',
     lifecycleState: 'active',

@@ -131,20 +131,6 @@ export const createBasicInfoConsolidatedSection = (
             }
         },
         {
-            id: 'isFeatured',
-            type: FieldTypeEnum.SWITCH,
-            required: false,
-            modes: ['view', 'edit'], // No visible en create (se setea por defecto)
-            label: t('fields.accommodation.isFeatured.label'),
-            description: t('fields.accommodation.isFeatured.description'),
-            permissions: {
-                view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-                edit: [PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE]
-            },
-            entitlementKey: EntitlementKey.FEATURED_LISTING, // T-G-009: Gate featured listing toggle
-            typeConfig: {}
-        },
-        {
             id: 'isVerified',
             type: FieldTypeEnum.SWITCH,
             required: false,

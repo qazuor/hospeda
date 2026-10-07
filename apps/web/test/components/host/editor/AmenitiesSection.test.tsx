@@ -48,7 +48,6 @@ const MOCK_DATA: AccommodationEditData = {
     basePrice: 1000,
     currency: 'ARS',
     isAvailable: true,
-    isFeatured: false,
     amenityIds: [],
     featureIds: [],
     phone: '',

@@ -10,7 +10,7 @@
  *
  *   - `createListingIdentitySection()` — admin-only core fields:
  *       name, slug, summary, description, richDescription,
- *       destinationId, ownerId, isFeatured,
+ *       destinationId, ownerId,
  *       lifecycleStatus, moderationStatus, moderationNotes, rejectionReason.
  *
  *   - `createListingOperationalSection()` — owner-editable operational fields:
@@ -101,7 +101,7 @@ function permissionsForVertical(vertical: GastronomyOrExperience) {
  * Returns the SHARED admin-identity section for any listing.
  *
  * Contains: name, slug, summary, description, richDescription, destinationId,
- * ownerId, isFeatured, lifecycleStatus, moderationStatus, moderationNotes,
+ * ownerId, lifecycleStatus, moderationStatus, moderationNotes,
  * rejectionReason.
  *
  * Visible in all three modes (`view`, `edit`, `create`), except state/
@@ -269,23 +269,6 @@ export function createListingIdentitySection(
                     showAvatar: true,
                     clearable: true
                 }
-            },
-
-            // ------------------------------------------------------------------
-            // Featured toggle (admin-only)
-            // ------------------------------------------------------------------
-            {
-                id: 'isFeatured',
-                type: FieldTypeEnum.SWITCH,
-                required: false,
-                modes: ['view', 'edit'],
-                label: 'Destacado',
-                description: 'Indica si el comercio aparece en los listados destacados',
-                permissions: {
-                    view: [permissions.view],
-                    edit: [permissions.editAll]
-                },
-                typeConfig: {}
             },
 
             // ------------------------------------------------------------------

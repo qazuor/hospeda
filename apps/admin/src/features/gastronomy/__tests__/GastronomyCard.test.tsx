@@ -8,8 +8,6 @@
  *  - Renders the type badge
  *  - Renders the price range badge when provided
  *  - Does NOT render price range badge when absent
- *  - Renders "Destacado" badge when isFeatured is true
- *  - Does NOT render "Destacado" when isFeatured is false
  *  - Renders the formatted creation date when provided
  *  - Renders the ownerId when provided
  *  - Renders the lifecycleStatus when provided
@@ -56,7 +54,6 @@ const BASE_GASTRONOMY: GastronomyListItem = {
     type: GastronomyTypeEnum.RESTAURANT,
     priceRange: PriceRangeEnum.MID,
     destinationId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
-    isFeatured: false,
     ownerId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     createdAt: new Date('2024-03-15T10:00:00.000Z'),
     lifecycleStatus: 'ACTIVE'
@@ -96,16 +93,6 @@ describe('GastronomyCard — rendering', () => {
     it('should NOT render price range badge when priceRange is null/undefined', () => {
         renderCard({ priceRange: undefined });
         expect(screen.queryByText('$$')).not.toBeInTheDocument();
-    });
-
-    it('should render "Destacado" badge when isFeatured is true', () => {
-        renderCard({ isFeatured: true });
-        expect(screen.getByText('Destacado')).toBeInTheDocument();
-    });
-
-    it('should NOT render "Destacado" when isFeatured is false', () => {
-        renderCard({ isFeatured: false });
-        expect(screen.queryByText('Destacado')).not.toBeInTheDocument();
     });
 
     it('should render the lifecycleStatus', () => {

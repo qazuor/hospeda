@@ -20,8 +20,7 @@
  * entitlement wire strings as literals rather than import the enum, and
  * `hooks/useCompareGuard.ts` — a hook reachable from islands — does the same
  * ("Keys (must match @repo/billing EntitlementKey / LimitKey string values)").
- * `components/billing/TestDailyPlanButton.client.tsx` hardcodes a plan SLUG for
- * the same reason, and `CreatePropertyMiniForm.client.tsx` avoids the coupling
+ * `CreatePropertyMiniForm.client.tsx` avoids the coupling
  * differently, by taking `trialDays: number` as a prop from its `.astro` parent.
  *
  * ## Why the convention exists

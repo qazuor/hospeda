@@ -5,8 +5,7 @@
  * (`@/components/shared/ui/Dialog.client`), which renders a <div> panel — so
  * nothing here declares `max-height` or `overflow`, per HOS-958: the panel's
  * height is decided in exactly one place and a second opinion races it on
- * source order. Buttons mirror `PayerEmailConfirmDialog.module.css` so the two
- * dialogs this button can open look like one family. All values reference
+ * source order. All values reference
  * design tokens from global.css — no hardcoded colours. */
 
 .body {

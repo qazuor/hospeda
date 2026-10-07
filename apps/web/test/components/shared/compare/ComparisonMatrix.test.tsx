@@ -83,7 +83,6 @@ vi.mock('../../../../src/lib/api/transforms', () => ({
         summary: (item.summary as string | undefined) ?? 'A nice place',
         averageRating: (item.averageRating as number | undefined) ?? 4.5,
         reviewsCount: (item.reviewsCount as number | undefined) ?? 3,
-        isFeatured: (item.isFeatured as boolean | undefined) ?? false,
         location: { city: 'Concepción', state: '' },
         cityName: (item.cityName as string | undefined) ?? 'Concepción',
         featuredImage: { url: '' },

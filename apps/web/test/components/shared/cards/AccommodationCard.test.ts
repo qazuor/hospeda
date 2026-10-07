@@ -301,9 +301,9 @@ describe('AccommodationCard.astro', () => {
     });
 
     describe('featured badge', () => {
-        it('should conditionally render a status corner when isFeatured is true', () => {
-            expect(src).toContain('data.isFeatured');
-            expect(src).toContain('acc-card__status-corner');
+        it('should not render a featured badge (the featured flag was dropped, HOS-1419)', () => {
+            expect(src).not.toContain('data.isFeatured');
+            expect(src).not.toContain('class="acc-card__featured-badge');
         });
     });
 

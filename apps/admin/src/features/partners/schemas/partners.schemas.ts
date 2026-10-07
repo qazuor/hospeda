@@ -15,7 +15,6 @@ export const PartnerListItemSchema = partnerSchema.pick({
     logoUrl: true,
     websiteUrl: true,
     description: true,
-    subscriptionStatus: true,
     lifecycleState: true,
     analytics: true,
     startsAt: true,

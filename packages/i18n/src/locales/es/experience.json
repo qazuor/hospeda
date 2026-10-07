@@ -22,18 +22,14 @@
         "searchPlaceholder": "Buscar por nombre o descripción...",
         "destination": "Destino",
         "type": "Tipo de experiencia",
-        "featured": "Solo destacadas",
         "minRating": "Calificación mínima",
         "sort": {
-            "featured": "Destacadas primero",
             "ratingDesc": "Mejor valoradas",
             "newest": "Recién agregadas",
             "nameAsc": "Nombre (A-Z)"
         }
     },
-    "card": {
-        "featured": "Destacada"
-    },
+    "card": {},
     "detail": {
         "amenities": {
             "title": "Servicios y comodidades"

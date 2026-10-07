@@ -21,7 +21,6 @@ const EXPECTED_ENTITY_KEYS = [
     'event',
     'destination',
     'user',
-    'subscription',
     'newsletterCampaign'
 ] as const;
 

@@ -1693,9 +1693,6 @@
         "hasAccommodations": {
             "invalidBoolean": "El has accommodations debe ser verdadero o falso"
         },
-        "hasActiveSubscription": {
-            "invalidBoolean": "El has active subscription debe ser verdadero o falso"
-        },
         "iaData": {
             "category": {
                 "max": "La categoría no puede superar los {{max}} caracteres",

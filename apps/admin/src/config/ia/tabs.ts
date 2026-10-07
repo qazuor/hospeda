@@ -281,53 +281,6 @@ const userTabs: TabsConfigInput = {
 };
 
 // ---------------------------------------------------------------------------
-// Subscription tabs
-// ---------------------------------------------------------------------------
-
-/**
- * Tabs for the subscription detail page (within Comercial).
- *
- * @example
- * ```ts
- * import { tabs } from '@/config/ia/tabs';
- * const billingTab = tabs.subscription.tabs.find(t => t.id === 'pagos');
- * ```
- */
-const subscriptionTabs: TabsConfigInput = {
-    entity: 'subscription',
-    tabs: [
-        {
-            id: 'overview',
-            label: { es: 'General', en: 'Overview', pt: 'Geral' }
-        },
-        {
-            id: 'plan-addons',
-            label: { es: 'Plan y Add-ons', en: 'Plan & Add-ons', pt: 'Plano e Add-ons' },
-            permissions: ['SUBSCRIPTION_VIEW'],
-            onMissing: 'disable'
-        },
-        {
-            id: 'pagos',
-            label: { es: 'Pagos', en: 'Payments', pt: 'Pagamentos' },
-            permissions: ['PAYMENT_VIEW'],
-            onMissing: 'disable'
-        },
-        {
-            id: 'uso',
-            label: { es: 'Uso', en: 'Usage', pt: 'Uso' },
-            permissions: ['BILLING_METRICS_READ'],
-            onMissing: 'disable'
-        },
-        {
-            id: 'facturas',
-            label: { es: 'Facturas', en: 'Invoices', pt: 'Faturas' },
-            permissions: ['INVOICE_VIEW'],
-            onMissing: 'disable'
-        }
-    ]
-};
-
-// ---------------------------------------------------------------------------
 // Newsletter campaign tabs
 // ---------------------------------------------------------------------------
 
@@ -400,6 +353,5 @@ export const tabs: Record<string, TabsConfigInput> = {
     event: eventTabs,
     destination: destinationTabs,
     user: userTabs,
-    subscription: subscriptionTabs,
     newsletterCampaign: newsletterCampaignTabs
 };

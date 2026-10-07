@@ -52,7 +52,7 @@ const { t } = createTranslations(locale);
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
-	// This listing accepts `q`, `type`, `destinationId`, `isFeatured`,
+	// This listing accepts `q`, `type`, `destinationId`,
 	// `minRating`, `sortBy`, `priceRange` and `features` (the apto filter,
 	// HOS-1054) — all read in the frontmatter, all changing the SSR HTML.
 	// Anything beyond pagination makes the render an arbitrary slice and stays
@@ -73,7 +73,6 @@ const q = url.searchParams.get('q') ?? undefined;
 const destinationId = url.searchParams.get('destinationId') ?? undefined;
 const type = url.searchParams.get('type') ?? undefined;
 const priceRange = url.searchParams.get('priceRange') ?? undefined;
-const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
 const minRating = url.searchParams.get('minRating')
     ? Number(url.searchParams.get('minRating'))
     : undefined;
@@ -96,18 +95,17 @@ const featuresParam = url.searchParams.get('features') ?? undefined;
 /**
  * Maps the URL's user-friendly sort key (matching the `sortOptions` below) to
  * the backend `(sortBy, sortOrder)` pair. BETA-119: previously the actual API
- * call ignored `sortBy` entirely (always sorted `isFeatured desc`), while the
+ * call ignored `sortBy` entirely (always sorted by the default order), while the
  * sidebar still offered a sort selector — this reads and applies the real
  * selection, same as the accommodations/events/posts listings.
  */
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
-    featured:   { sortBy: 'isFeatured',    sortOrder: 'desc' },
     ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
     newest:     { sortBy: 'createdAt',     sortOrder: 'desc' },
     nameAsc:    { sortBy: 'name',          sortOrder: 'asc'  }
 };
 /** Default sort key — used when the URL has no `sortBy`. Matches the previous hardcoded behavior. */
-const DEFAULT_SORT_KEY = 'featured';
+const DEFAULT_SORT_KEY = 'ratingDesc';
 
 const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
@@ -134,7 +132,6 @@ const [destinationsResult, featuresResult, result] = await Promise.all([
         destinationId,
         type,
         priceRange,
-        isFeatured,
         minRating,
         features: featuresParam,
         sortBy: sortResolved.sortBy,
@@ -168,7 +165,6 @@ const hasActiveFilters = hasActiveGastronomyListingFilters({
 	destinationId,
 	type,
 	priceRange,
-	isFeatured,
 	minRating,
 	features: featuresParam,
 });
@@ -225,11 +221,6 @@ const filterGroups: FilterGroup[] = [
             label: t(`gastronomy.card.priceRange.${value}`, value)
         }))
     },
-    {
-        id: 'isFeatured',
-        label: t('gastronomy.listing.featured'),
-        type: 'toggle'
-    },
     // The aptos group (HOS-1054). Rendered only when the catalog read
     // succeeded and returned rows: an empty `icon-chips` group is a header over
     // nothing, which reads as a broken filter rather than as an absent one.
@@ -262,7 +253,6 @@ const filterGroups: FilterGroup[] = [
 ];
 
 const sortOptions = [
-    { value: 'featured', label: t('gastronomy.listing.sort.featured') },
     {
         value: 'ratingDesc',
         label: t('gastronomy.listing.sort.ratingDesc')
@@ -277,7 +267,6 @@ if (q) initialParams.q = q;
 if (destinationId) initialParams.destinationId = destinationId;
 if (type) initialParams.type = type;
 if (priceRange) initialParams.priceRange = priceRange;
-if (isFeatured) initialParams.isFeatured = 'true';
 if (minRating !== undefined) initialParams.minRating = String(minRating);
 if (featuresParam) initialParams.features = featuresParam;
 initialParams.sortBy = sortKey;
@@ -301,7 +290,6 @@ const filterSummary = buildGastronomyListingSummary({
         type,
         destinationId,
         priceRange,
-        isFeatured,
         minRating
     },
     counts: { shown: cards.length, total },

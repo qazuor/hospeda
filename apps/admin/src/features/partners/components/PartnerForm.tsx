@@ -11,7 +11,6 @@
 import {
     createPartnerSchema,
     LifecycleStatusEnum,
-    PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum
 } from '@repo/schemas';
@@ -20,7 +19,6 @@ import * as React from 'react';
 import type { z } from 'zod';
 import { Button } from '@/components/ui-wrapped/Button';
 import { isApiError } from '@/lib/errors';
-import type { PartnerAdminPlanOption } from '../hooks/usePartnerQuery';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,8 +33,6 @@ export interface PartnerFormProps {
      * omit (or pass `undefined`) when creating.
      */
     readonly initialData?: Partial<PartnerFormValues> | null;
-    /** Available billing plans for the plan selector. */
-    readonly plans: readonly PartnerAdminPlanOption[];
     /** Whether the form is in a pending/saving state. */
     readonly isSubmitting?: boolean;
     /** Label for the submit button. */
@@ -190,7 +186,6 @@ function FieldWrapper({ label, htmlFor, required, error, children }: FieldWrappe
  */
 export function PartnerForm({
     initialData,
-    plans,
     isSubmitting = false,
     submitLabel = 'Guardar',
     onCancel,
@@ -224,9 +219,6 @@ export function PartnerForm({
             logoUrl: initialData?.logoUrl ?? null,
             websiteUrl: initialData?.websiteUrl ?? null,
             description: initialData?.description ?? null,
-            planId: initialData?.planId ?? null,
-            subscriptionStatus:
-                initialData?.subscriptionStatus ?? PartnerSubscriptionStatusEnum.PENDING,
             lifecycleState: initialData?.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
             startsAt: initialData?.startsAt ?? null,
             endsAt: initialData?.endsAt ?? null
@@ -469,51 +461,6 @@ export function PartnerForm({
                                 </FieldWrapper>
                             )}
                         </form.Field>
-
-                        {/* Plan */}
-                        <div className="sm:col-span-2">
-                            {/* NO required validator, deliberately. `partnerSchema.planId`
-                                is `.nullable().optional()`, and every partner in production
-                                carries `plan_id = NULL` — a hand-written "required" rule
-                                here therefore vetoed the save on EVERY existing partner
-                                before the submit handler could run (H-161). A partner
-                                without a plan is a real, supported state: it is what a
-                                curated partner looks like until someone sells it one. */}
-                            <form.Field name="planId">
-                                {(field) => (
-                                    <FieldWrapper
-                                        label="Plan de billing"
-                                        htmlFor={field.name}
-                                        error={fieldError(field.state.meta, submitAttempted)}
-                                    >
-                                        <select
-                                            id={field.name}
-                                            name={field.name}
-                                            value={(field.state.value as string) ?? ''}
-                                            onBlur={field.handleBlur}
-                                            onChange={(e) =>
-                                                field.handleChange(e.target.value || null)
-                                            }
-                                            className={INPUT_CLASS}
-                                            disabled={isSubmitting}
-                                        >
-                                            <option value="">Sin plan asignado</option>
-                                            {plans.map((plan) => (
-                                                <option
-                                                    key={plan.id}
-                                                    value={plan.id}
-                                                >
-                                                    {plan.name}
-                                                    {plan.monthlyPriceArs === null
-                                                        ? ''
-                                                        : ` · ARS ${(plan.monthlyPriceArs / 100).toLocaleString('es-AR')}`}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </FieldWrapper>
-                                )}
-                            </form.Field>
-                        </div>
                     </div>
                 </section>
 

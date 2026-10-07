@@ -48,7 +48,6 @@ describe('transformAccommodationEdit', () => {
             },
             price: { price: 15000, currency: 'ARS' },
             isAvailable: true,
-            isFeatured: false,
             amenities: [
                 { amenityId: 'am-1', amenity: { id: 'am-1' } },
                 { amenityId: 'am-2', amenity: { id: 'am-2' } }
@@ -90,7 +89,6 @@ describe('transformAccommodationEdit', () => {
         expect(result.basePrice).toBe(15000);
         expect(result.currency).toBe('ARS');
         expect(result.isAvailable).toBe(true);
-        expect(result.isFeatured).toBe(false);
         expect(result.amenityIds).toEqual(['am-1', 'am-2']);
         expect(result.featureIds).toEqual(['ft-1', 'ft-2']);
         expect(result.seoTitle).toBe('A'.repeat(30));
@@ -131,7 +129,6 @@ describe('transformAccommodationEdit', () => {
         expect(result.basePrice).toBeNull();
         expect(result.currency).toBeNull();
         expect(result.isAvailable).toBe(true);
-        expect(result.isFeatured).toBe(false);
         expect(result.amenityIds).toEqual([]);
         expect(result.featureIds).toEqual([]);
         expect(result.seoTitle).toBe('');

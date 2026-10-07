@@ -50,7 +50,6 @@ const MOCK_GASTRONOMY = {
     priceRange: 'MID',
     lifecycleState: 'ACTIVE',
     moderationState: 'APPROVED',
-    isFeatured: false,
     ownerId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     destinationId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
     createdAt: new Date().toISOString(),

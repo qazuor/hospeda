@@ -149,9 +149,6 @@ function buildRerunUrl({
         if (filtersJson.allowsPets) {
             params.allowsPets = 'true';
         }
-        if (filtersJson.isFeatured) {
-            params.isFeatured = 'true';
-        }
         // `type` (single) takes precedence; fall through to `types` (array) otherwise.
         if (filtersJson.type) {
             params.types = filtersJson.type;
@@ -213,7 +210,6 @@ function countActiveFilters(filtersJson: SearchHistoryFilters | null): number {
     if (filtersJson.hasWifi) count++;
     if (filtersJson.hasParking) count++;
     if (filtersJson.allowsPets) count++;
-    if (filtersJson.isFeatured) count++;
     if (filtersJson.type || filtersJson.types?.length) count++;
     if (filtersJson.amenities?.length) count++;
     if (filtersJson.features?.length) count++;

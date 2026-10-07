@@ -898,8 +898,7 @@ export const billingApi = {
      * without touching the payment provider (SPEC-262 T-012).
      *
      * @param params - Plan slug, billing interval, optional promo code, and
-     *   optional payer email (HOS-937 step 2 — the email confirmed/edited on
-     *   the pre-redirect screen; see `PayerEmailConfirmDialog.client.tsx`).
+     *   optional payer email (the session's own email).
      * @returns The checkout URL to redirect the user to, plus metadata
      *
      * @example
@@ -1550,40 +1549,6 @@ export const billingApi = {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing/trial-eligibility`,
             params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
-            cookieHeader
-        });
-    },
-
-    // ── Payer-email known (HOS-1234) ────────────────────────────────────────
-
-    /**
-     * Get whether the authenticated user already has a known MercadoPago
-     * payer email on file (`billing_customers.mp_payer_email`).
-     *
-     * Read-only, boolean-only — never returns the email itself (see
-     * `apps/api/src/routes/billing/payer-email-known.ts`). Used by
-     * `PlanPurchaseButton.client.tsx` to skip the pre-redirect payer-email
-     * confirm dialog once a prior own-preapproval charge already confirmed
-     * an email that worked.
-     *
-     * @param params - Optional SSR cookie header (see
-     *   {@link protectedConversationsApi.list}).
-     * @returns Whether a payer email is already known for this customer.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.getPayerEmailKnown();
-     * if (result.ok && result.data.hasKnownPayerEmail) {
-     *   // skip the payer-email confirm dialog
-     * }
-     * ```
-     */
-    getPayerEmailKnown(params?: {
-        readonly cookieHeader?: string;
-    }): Promise<ApiResult<{ readonly hasKnownPayerEmail: boolean }>> {
-        const { cookieHeader } = params ?? {};
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/payer-email-known`,
             cookieHeader
         });
     }
@@ -3168,7 +3133,6 @@ export interface MyPartner {
     readonly websiteUrl: string | null;
     readonly contactInfo: MyPartnerContactInfo | null;
     readonly socialNetworks: MyPartnerSocialNetworks | null;
-    readonly subscriptionStatus: string;
     readonly lifecycleState: string;
     readonly startsAt: string | null;
     readonly endsAt: string | null;

@@ -750,7 +750,7 @@ const plataformaSidebar: SidebarInput = {
             },
             icon: 'MailIcon',
             defaultOpen: false,
-            permissions: ['BILLING_READ_ALL'],
+            permissions: ['ACCESS_API_ADMIN'],
             onMissing: 'hide',
             items: [
                 {
@@ -763,7 +763,7 @@ const plataformaSidebar: SidebarInput = {
                     },
                     icon: 'MailIcon',
                     route: '/platform/email/logs',
-                    permissions: ['BILLING_READ_ALL']
+                    permissions: ['ACCESS_API_ADMIN']
                 }
             ]
         },

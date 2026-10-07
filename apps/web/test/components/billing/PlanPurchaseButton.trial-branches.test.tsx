@@ -215,7 +215,7 @@ describe('PlanPurchaseButton — HOS-1233 AC-3: an unstarted trial goes to the c
         await user.click(button);
 
         expect(window.location.href).toBe('/es/publicar/');
-        // AC-3 in full: no payer-email dialog either. The sibling that keeps
+        // AC-3 in full: no dialog either. The sibling that keeps
         // this honest is the AC-4 suite below, where the same query DOES find
         // a dialog.
         expect(screen.queryByRole('dialog')).toBeNull();

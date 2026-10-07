@@ -35,7 +35,7 @@
  * scroll lock, `Escape`, focus trap, focus restore and back-button handling,
  * and it renders a `<div>` panel — so none of the `dialog-panel` height rules
  * HOS-958 polices apply, and this module declares no `max-height` or `overflow`
- * of its own. Same call `PayerEmailConfirmDialog` made, for the same reasons.
+ * of its own.
  */
 
 import type { JSX } from 'react';

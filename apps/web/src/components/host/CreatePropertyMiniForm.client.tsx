@@ -72,7 +72,7 @@ export type CreatePropertyMiniFormProps = {
      * Free-trial length in days, for the publish callout copy. Passed in from
      * the page rather than read from `@repo/billing` here: client components in
      * this app deliberately do not import the billing package (see
-     * `TestDailyPlanButton.client.tsx`). Resolved server-side by the parent
+     * `test/static-guards/billing-barrel-client-isolation.test.ts`). Resolved server-side by the parent
      * `.astro` page from the live billing plans — the minimum `trialDays`
      * among active owner plans with `hasTrial`, via
      * `resolveGenericOwnerTrialDays` — rather than the `OWNER_TRIAL_DAYS`

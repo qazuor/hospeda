@@ -13,41 +13,28 @@
  *
  * Two independent defects meet in that silence and each gets its own test:
  *
- * 1. A hand-written `planId` validator demanded a value the schema declares
- *    `.nullable().optional()`. Every partner in production carries
- *    `plan_id = NULL`, so editing ANY of them was blocked before the submit
- *    handler ran.
+ * 1. A hand-written `planId` validator demanded a value the schema declared
+ *    `.nullable().optional()`, so editing ANY partner was blocked before the
+ *    submit handler ran. (The plan selector and the `plan_id` column were
+ *    removed with the old billing, HOS-1419; the property still holds: a
+ *    production partner saves.)
  * 2. `form.handleSubmit()` resolves normally when a field validator refuses, so
  *    the abort had no channel at all. Even a legitimately invalid form must say
  *    so — a save that neither succeeds nor complains is worse than one that
  *    fails loudly.
  */
 
-import { PartnerSubscriptionStatusEnum, PartnerTierEnum, PartnerTypeEnum } from '@repo/schemas';
+import { PartnerTierEnum, PartnerTypeEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors';
 import type { PartnerFormProps } from '../PartnerForm';
 import { PartnerForm } from '../PartnerForm';
 
-const PLAN_ID = '00000000-0000-4000-a000-0000000000b1';
-
-const PLANS: PartnerFormProps['plans'] = [
-    {
-        id: PLAN_ID,
-        slug: 'partner-gold',
-        name: 'Partner Gold',
-        description: null,
-        monthlyPriceArs: 1_500_000
-    }
-];
-
 /**
  * A partner exactly as production holds one.
  *
- * Copied from the shape of `partners` on prod, where all 8 live rows carry
- * `plan_id = NULL` — that null is the whole point of the fixture, so do not
- * "fix" it into a uuid.
+ * Copied from the shape of `partners` on prod.
  */
 function prodPartner() {
     return {
@@ -58,8 +45,6 @@ function prodPartner() {
         logoUrl: 'https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg',
         websiteUrl: 'https://www.entreriossustentable.org.ar',
         description: 'Una fundación de prueba.',
-        planId: null,
-        subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE,
         lifecycleState: 'ACTIVE',
         startsAt: new Date('2025-01-15T00:00:00.000Z'),
         endsAt: null
@@ -71,7 +56,6 @@ function renderForm(overrides: Partial<PartnerFormProps> = {}) {
     render(
         <PartnerForm
             initialData={prodPartner()}
-            plans={PLANS}
             submitLabel="Guardar cambios"
             onSubmit={onSubmit}
             {...overrides}
@@ -86,7 +70,7 @@ function submitButton() {
 }
 
 describe('PartnerForm — the save actually leaves (H-161)', () => {
-    it('submits a production partner whose planId is null', async () => {
+    it('submits a production partner', async () => {
         const { onSubmit } = renderForm();
 
         fireEvent.click(submitButton());
@@ -96,8 +80,7 @@ describe('PartnerForm — the save actually leaves (H-161)', () => {
         await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
         expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
             slug: 'fundacion-entre-rios-sustentable',
-            tier: PartnerTierEnum.GOLD,
-            planId: null
+            tier: PartnerTierEnum.GOLD
         });
     });
 
@@ -114,17 +97,6 @@ describe('PartnerForm — the save actually leaves (H-161)', () => {
 
         await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
         expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ tier: PartnerTierEnum.SILVER });
-    });
-
-    it('submits a partner that does have a plan', async () => {
-        const { onSubmit } = renderForm({
-            initialData: { ...prodPartner(), planId: PLAN_ID } as PartnerFormProps['initialData']
-        });
-
-        fireEvent.click(submitButton());
-
-        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-        expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ planId: PLAN_ID });
     });
 });
 
@@ -159,7 +131,6 @@ describe('PartnerForm — a rejected save says so (HOS-1061)', () => {
         render(
             <PartnerForm
                 initialData={prodPartner()}
-                plans={PLANS}
                 submitLabel="Guardar cambios"
                 onSubmit={onSubmit}
             />
@@ -193,7 +164,6 @@ describe('PartnerForm — a rejected save says so (HOS-1061)', () => {
         render(
             <PartnerForm
                 initialData={prodPartner()}
-                plans={PLANS}
                 submitLabel="Guardar cambios"
                 onSubmit={onSubmit}
             />
@@ -218,7 +188,6 @@ describe('PartnerForm — a rejected save says so (HOS-1061)', () => {
         render(
             <PartnerForm
                 initialData={prodPartner()}
-                plans={PLANS}
                 submitLabel="Guardar cambios"
                 onSubmit={onSubmit}
             />

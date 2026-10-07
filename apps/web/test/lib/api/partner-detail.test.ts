@@ -23,7 +23,6 @@ const apiPayload = {
     logoUrl: 'https://cdn.example.com/acme.png',
     websiteUrl: 'https://acme.example.com',
     lifecycleState: 'ACTIVE',
-    subscriptionStatus: 'active',
     startsAt: '2026-01-01T00:00:00.000Z',
     endsAt: null,
     contactInfo: { workEmail: 'hola@acme.com' },

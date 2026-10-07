@@ -56,9 +56,9 @@ describe('createGastronomyColumns — structure', () => {
         expect(columns.find((c) => c.id === 'destination')).toBeDefined();
     });
 
-    it('should include a "isFeatured" column', () => {
+    it('should NOT include an "isFeatured" column (column dropped, HOS-1419)', () => {
         const columns = createGastronomyColumns(t);
-        expect(columns.find((c) => c.id === 'isFeatured')).toBeDefined();
+        expect(columns.find((c) => c.id === 'isFeatured')).toBeUndefined();
     });
 
     it('should include a "createdAt" column', () => {
@@ -93,7 +93,6 @@ describe('createGastronomyColumns — column details', () => {
             name: 'Test',
             type: GastronomyTypeEnum.RESTAURANT,
             destinationId: 'dest-1',
-            isFeatured: false,
             ownerId: 'owner-1',
             createdAt: new Date()
         });

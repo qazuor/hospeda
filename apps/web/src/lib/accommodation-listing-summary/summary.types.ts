@@ -52,8 +52,6 @@ export interface AccommodationSummaryFilters {
     readonly bedrooms?: number | string | null;
     /** Minimum bathroom count. */
     readonly bathrooms?: number | string | null;
-    /** Featured-only filter. `true` = only featured, `false` = only non-featured. */
-    readonly featured?: boolean | null;
 }
 
 /** Sort configuration applied to the listing. */

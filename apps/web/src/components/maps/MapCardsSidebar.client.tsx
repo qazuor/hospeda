@@ -46,8 +46,6 @@ export interface MapSidebarCardData {
     readonly TypeIcon?: ComponentType<IconProps>;
     readonly cityName?: string;
     readonly summary?: string;
-    readonly isFeatured?: boolean;
-    readonly featuredLabel?: string;
     readonly averageRating?: number;
     readonly reviewsCount?: number;
     readonly reviewsLabel?: string;
@@ -262,20 +260,6 @@ export function MapCardsSidebar({
                                             <span className={sidebarStyles.cardStatusText}>
                                                 {item.newLabel}
                                             </span>
-                                        </div>
-                                    ) : null}
-
-                                    {/* Featured badge */}
-                                    {item.isFeatured && item.featuredLabel ? (
-                                        <div
-                                            className={`${sidebarStyles.cardFeaturedBadge} featured-badge`}
-                                        >
-                                            <StarIcon
-                                                size={12}
-                                                weight="fill"
-                                                aria-hidden="true"
-                                            />
-                                            <span>{item.featuredLabel}</span>
                                         </div>
                                     ) : null}
 

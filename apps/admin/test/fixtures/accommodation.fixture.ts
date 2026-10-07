@@ -11,7 +11,6 @@ export const mockAccommodation = {
     summary: 'A comfortable hotel near the river for testing purposes',
     description:
         'A comfortable and modern hotel located near the river. Perfect for families and couples looking for a relaxing stay in Concepcion del Uruguay.',
-    isFeatured: false,
     type: 'HOTEL',
     destinationId: 'dest-test-001',
     ownerId: 'user-test-001',
@@ -64,7 +63,6 @@ export const mockAccommodationList = [
         name: 'Cabanas del Bosque',
         slug: 'cabanas-del-bosque',
         type: 'CABIN' as const,
-        isFeatured: true,
         summary: 'Cozy cabins surrounded by native forest',
         description:
             'Beautiful wooden cabins surrounded by native forest. Each cabin features a private deck with views of the trees and a wood-burning stove.'

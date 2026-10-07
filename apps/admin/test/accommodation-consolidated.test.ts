@@ -47,7 +47,7 @@ describe('AccommodationConsolidatedConfig', () => {
 
             expect(basicInfoSection).toBeDefined();
             expect(basicInfoSection?.modes).toEqual(['view', 'edit', 'create']);
-            expect(basicInfoSection?.fields).toHaveLength(9); // name, summary, description, richDescription, type, isFeatured, isVerified, destinationId, ownerId
+            expect(basicInfoSection?.fields).toHaveLength(8); // name, summary, description, richDescription, type, isVerified, destinationId, ownerId
         });
 
         it('should have all required fields in basic-info section', () => {
@@ -61,7 +61,7 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(fieldIds).toContain('name');
             expect(fieldIds).toContain('description');
             expect(fieldIds).toContain('type');
-            expect(fieldIds).toContain('isFeatured');
+            expect(fieldIds).not.toContain('isFeatured');
             expect(fieldIds).toContain('isVerified');
             expect(fieldIds).toContain('destinationId');
             expect(fieldIds).toContain('ownerId');
@@ -80,7 +80,7 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(viewSections[0].id).toBe('basic-info');
 
             // All fields must be present in view mode
-            expect(viewSections[0].fields).toHaveLength(9);
+            expect(viewSections[0].fields).toHaveLength(8);
         });
 
         it('should filter sections correctly for edit mode', () => {
@@ -97,7 +97,7 @@ describe('AccommodationConsolidatedConfig', () => {
 
             // All fields must be present in edit mode
             const editBasicInfo = editSections.find((s) => s.id === 'basic-info');
-            expect(editBasicInfo?.fields).toHaveLength(9);
+            expect(editBasicInfo?.fields).toHaveLength(8);
         });
 
         it('should filter sections correctly for create mode', () => {

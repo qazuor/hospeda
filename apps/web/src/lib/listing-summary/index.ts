@@ -18,9 +18,9 @@
  *
  * const summary = buildGastronomyListingSummary({
  *     locale: 'es',
- *     filters: { type: 'RESTAURANT', destinationId: 'colon-id', isFeatured: true },
+ *     filters: { type: 'RESTAURANT', destinationId: 'colon-id' },
  *     counts: { shown: 3, total: 4 },
- *     sort: { sortKey: 'featured' },
+ *     sort: { sortKey: 'ratingDesc' },
  *     catalogs: {
  *         destinations: [{ key: 'colon-id', label: { es: 'Colón', en: 'Colón' } }],
  *         types: DEFAULT_GASTRONOMY_TYPES

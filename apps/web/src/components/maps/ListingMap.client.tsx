@@ -46,9 +46,6 @@ export interface AccommodationListingItem {
     readonly typeLabel?: string;
     readonly cityName?: string;
     readonly summary?: string;
-    readonly isFeatured?: boolean;
-    /** Pre-localised "Destacado" / "Featured" label, only used when isFeatured. */
-    readonly featuredLabel?: string;
     readonly averageRating?: number;
     readonly reviewsCount?: number;
     /** Pre-localised label like "12 reseñas" or "1 review". */

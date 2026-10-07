@@ -16,8 +16,8 @@
  * checkout from here), and that an unmapped rejection still degrades to the
  * exact generic sentence the line used to hardcode.
  *
- * Own file, like every sibling: `PlanPurchaseButton`'s subscription,
- * trial-eligibility and payer-email lookups are module-level singletons set
+ * Own file, like every sibling: `PlanPurchaseButton`'s subscription and
+ * trial-eligibility lookups are module-level singletons set
  * once per test FILE and never reset between `it()` blocks.
  */
 
@@ -121,8 +121,7 @@ const baseProps = {
     annualPrice: 1200000,
     currency: 'ARS' as const,
     ctaText: 'Contratar',
-    locale: 'es' as const,
-    ownPreapprovalEnabled: true
+    locale: 'es' as const
 };
 
 function mockAuthenticated() {
@@ -142,13 +141,6 @@ function mockAuthenticated() {
  */
 function buildFetchMock(startPaidError: Record<string, unknown>, status = 409) {
     return vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/billing/payer-email-known')) {
-            return Promise.resolve({
-                ok: true,
-                status: 200,
-                json: () => Promise.resolve({ data: { hasKnownPayerEmail: true } })
-            });
-        }
         if (url.includes('/billing/subscriptions/start-paid')) {
             return Promise.resolve({
                 ok: false,

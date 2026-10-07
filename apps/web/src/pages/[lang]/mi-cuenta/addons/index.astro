@@ -33,7 +33,6 @@ import {
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import { filterAddonsByHeldDomains } from '@/lib/billing/addon-domain';
 import { ADDON_FOCUS_PARAM } from '@/lib/billing/addon-focus';
-import { fetchCheckoutConfig } from '@/lib/billing/fetch-checkout-config';
 import type { ProductDomainScope } from '@/lib/api/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -46,11 +45,6 @@ const user = Astro.locals.user;
 if (!user) {
     return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
-
-// Admin-paused new paid signups (billing settings). Never throws: on any
-// failure it reads as "not paused", and the purchase route still refuses
-// server-side while the freeze is on.
-const { newPaidSignupsFrozen } = await fetchCheckoutConfig();
 
 const { t } = createTranslations(locale);
 const title = t('account.pages.addons.title', 'Complementos');
@@ -272,7 +266,6 @@ const upgradeUrl = buildUrl({
                 experience: ownerListingsByVertical.experience
             }}
             focusSlug={focusSlugParam}
-            newPaidSignupsFrozen={newPaidSignupsFrozen}
         />
     )}
 </AccountLayout>

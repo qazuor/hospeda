@@ -138,7 +138,6 @@ export const accommodationsApi = {
         sortOrder?: 'asc' | 'desc';
         type?: string;
         types?: string;
-        isFeatured?: boolean;
         destinationId?: string;
         destinationIds?: string;
         includeAmenities?: boolean;
@@ -1640,7 +1639,6 @@ export const gastronomyApi = {
         readonly destinationId?: string;
         readonly type?: string;
         readonly priceRange?: string;
-        readonly isFeatured?: boolean;
         readonly minRating?: number;
         readonly maxRating?: number;
         readonly sortBy?: string;
@@ -1728,7 +1726,6 @@ export const experiencesApi = {
         readonly q?: string;
         readonly destinationId?: string;
         readonly type?: string;
-        readonly isFeatured?: boolean;
         readonly minRating?: number;
         readonly maxRating?: number;
         readonly sortBy?: string;

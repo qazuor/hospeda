@@ -199,7 +199,6 @@ export interface AccommodationDetailedCardData {
     readonly averageRating: number;
     readonly reviewsCount: number;
     readonly price?: { readonly amount: number; readonly currency: string };
-    readonly isFeatured: boolean;
 }
 
 // --- Helper: derive city fields from cityDestination (SPEC-095) ---
@@ -349,7 +348,6 @@ export function toAccommodationCardProps({
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || item.ratingCount || 0),
         location: { city, state },
-        isFeatured: Boolean(item.isFeatured),
         // SPEC-291: manual verification flag. Owner entitlement gating
         // (HAS_VERIFICATION_BADGE) is already applied server-side.
         isVerified: Boolean(item.isVerified),
@@ -453,8 +451,7 @@ export function toAccommodationDetailedProps({
                       amount: Number(priceData?.amount ?? priceData?.price ?? 0),
                       currency: priceData?.currency ?? 'ARS'
                   }
-                : undefined,
-        isFeatured: Boolean(item.isFeatured)
+                : undefined
     };
 }
 
@@ -998,7 +995,6 @@ export function toAccommodationDetailPageProps({
                   )
                 : undefined,
         type: String(item.type || ''),
-        isFeatured: Boolean(item.isFeatured),
         // SPEC-291: manual verification flag. Owner entitlement gating
         // (HAS_VERIFICATION_BADGE) is already applied server-side.
         isVerified: Boolean(item.isVerified),
@@ -2001,9 +1997,6 @@ export function transformAccommodationEdit({
                 : Number(priceObj.price),
         currency: priceObj?.currency == null ? null : String(priceObj.currency),
         isAvailable: item.isAvailable == null ? true : Boolean(item.isAvailable),
-        isFeatured: item.isFeatured == null ? false : Boolean(item.isFeatured),
-        featuredByEntitlement:
-            item.featuredByEntitlement == null ? false : Boolean(item.featuredByEntitlement),
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
         featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
         // Phase B: contact info (flat HTTP fields from the domain contactInfo object)
@@ -2738,7 +2731,6 @@ export function toGastronomyCardProps({
         priceRange: item.priceRange == null ? null : String(item.priceRange),
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
-        isFeatured: Boolean(item.isFeatured),
         openingHours: normalizeOpeningHours(item.openingHours),
         createdAt: item.createdAt ? String(item.createdAt) : null,
         // SPEC-098: pass through favorite/bookmark enrichment when present.
@@ -3139,7 +3131,6 @@ export function toExperienceCardProps({
         isPriceOnRequest: Boolean(item.isPriceOnRequest),
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
-        isFeatured: Boolean(item.isFeatured),
         // Experience reuses the gastronomy structured-hours normalizer (shared
         // OpeningHoursSchema source); see normalizeOpeningHours (Bug B8 fix).
         openingHours: normalizeOpeningHours(item.openingHours),

@@ -117,7 +117,6 @@ export interface CardLocation {
  *   price: { amount: 1500000, currency: 'ARS', period: 'noche' },
  *   averageRating: 4.7,
  *   reviewsCount: 32,
- *   isFeatured: true,
  * };
  * ```
  */
@@ -146,8 +145,6 @@ export interface AccommodationCardData {
     readonly averageRating: number;
     /** Total number of reviews contributing to `averageRating`. */
     readonly reviewsCount: number;
-    /** Whether this accommodation appears in featured/promoted slots. */
-    readonly isFeatured: boolean;
     /**
      * SPEC-291: Whether this accommodation has been manually verified.
      * Drives the "Verificado" card badge. The owner's HAS_VERIFICATION_BADGE
@@ -651,7 +648,6 @@ export interface AccommodationDetailData {
     readonly description: string;
     readonly richDescription?: string | null;
     readonly type: string;
-    readonly isFeatured: boolean;
     /**
      * SPEC-291: Whether this accommodation has been manually verified.
      * Drives the "Verificado" detail-header badge, gated server-side on the
@@ -1043,7 +1039,6 @@ export interface GastronomySocialNetworks {
  *   priceRange: 'MID',
  *   averageRating: 4.5,
  *   reviewsCount: 28,
- *   isFeatured: true,
  *   openingHours: null,
  * };
  * ```
@@ -1075,8 +1070,6 @@ export interface GastronomyCardData {
     readonly averageRating: number;
     /** Total number of reviews contributing to `averageRating`. */
     readonly reviewsCount: number;
-    /** Whether this listing appears in featured/promoted slots. */
-    readonly isFeatured: boolean;
     /** Structured opening hours by day. Null when not configured by the owner. */
     readonly openingHours: Record<string, GastronomyOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
@@ -1346,7 +1339,6 @@ export interface ExperienceContactInfo {
  *   isPriceOnRequest: false,
  *   averageRating: 4.8,
  *   reviewsCount: 12,
- *   isFeatured: true,
  *   openingHours: null,
  * };
  * ```
@@ -1392,8 +1384,6 @@ export interface ExperienceCardData {
     readonly averageRating: number;
     /** Total number of reviews contributing to `averageRating`. */
     readonly reviewsCount: number;
-    /** Whether this listing appears in featured/promoted slots. */
-    readonly isFeatured: boolean;
     /** Structured opening hours by day. Null when not configured by the owner. */
     readonly openingHours: Record<string, ExperienceOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */

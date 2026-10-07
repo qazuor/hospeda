@@ -174,8 +174,7 @@ export interface AddonsPurchasePanelProps {
     readonly focusSlug?: string | null;
     /**
      * Whether an admin paused new self-service paid signups
-     * (`billing_settings.newPaidSignupsFrozen`), resolved SSR-side via
-     * `fetchCheckoutConfig()`. When `true` the panel shows ONE
+     * (`billing_settings.newPaidSignupsFrozen`). When `true` the panel shows ONE
      * {@link PaidSignupsPausedNotice} above the catalog and no card offers a
      * buy button (or a target picker that only feeds one): an add-on purchase
      * opens a new charge, which the API refuses with `NEW_PAID_SIGNUPS_FROZEN`.

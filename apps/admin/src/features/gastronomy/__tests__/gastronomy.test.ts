@@ -41,7 +41,6 @@ describe('createGastronomyColumns', () => {
         expect(ids).toContain('type');
         expect(ids).toContain('priceRange');
         expect(ids).toContain('destination');
-        expect(ids).toContain('isFeatured');
         expect(ids).toContain('owner');
         expect(ids).toContain('lifecycleStatus');
         expect(ids).toContain('createdAt');
@@ -119,7 +118,7 @@ describe('gastronomyListConfig', () => {
             (f) => f.paramKey
         );
         expect(paramKeys).toContain('destinationId');
-        expect(paramKeys).toContain('isFeatured');
+        expect(paramKeys).not.toContain('isFeatured');
         expect(paramKeys).toContain('ownerId');
         expect(paramKeys).toContain('includeDeleted');
     });
@@ -279,8 +278,7 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
         const result = GastronomyAdminCreateInputSchema.safeParse({
             ...VALID_PAYLOAD,
             priceRange: PriceRangeEnum.MID,
-            menuUrl: 'https://laparrilla.com/menu',
-            isFeatured: false
+            menuUrl: 'https://laparrilla.com/menu'
         });
         expect(result.success).toBe(true);
     });

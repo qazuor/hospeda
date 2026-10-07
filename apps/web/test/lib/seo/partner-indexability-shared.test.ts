@@ -30,11 +30,7 @@ const CONSUMERS = [
  * Conditions the predicate owns. If one of these strings shows up in a consumer,
  * that consumer is deciding indexability for itself.
  */
-const PREDICATE_INTERNALS = [
-    "=== 'gold'",
-    "!== 'gold'",
-    "subscriptionStatus === 'active'"
-] as const;
+const PREDICATE_INTERNALS = ["=== 'gold'", "!== 'gold'", "lifecycleState !== 'ACTIVE'"] as const;
 
 describe('one predicate, two consumers (AC-7)', () => {
     it.each(CONSUMERS)('$label imports evaluatePartnerIndexability', ({ path }) => {

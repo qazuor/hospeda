@@ -25,15 +25,7 @@ import { createExperienceColumns } from './experience.columns';
  */
 export type ExperienceListItem = Pick<
     z.infer<typeof ExperienceAdminListItemSchema>,
-    | 'id'
-    | 'name'
-    | 'type'
-    | 'destinationId'
-    | 'isFeatured'
-    | 'ownerId'
-    | 'createdAt'
-    | 'destination'
-    | 'owner'
+    'id' | 'name' | 'type' | 'destinationId' | 'ownerId' | 'createdAt' | 'destination' | 'owner'
 > & {
     /** Lifecycle state string rendered in the status column. */
     readonly lifecycleStatus?: string | null;

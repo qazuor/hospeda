@@ -114,7 +114,6 @@ const MOCK_DATA = {
     basePrice: 1000,
     currency: 'ARS',
     isAvailable: true,
-    isFeatured: false,
     amenityIds: [],
     featureIds: [],
     phone: '',

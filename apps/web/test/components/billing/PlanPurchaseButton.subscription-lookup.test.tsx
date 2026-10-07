@@ -86,8 +86,7 @@ const baseProps = {
     annualPrice: 1200000,
     currency: 'ARS' as const,
     ctaText: 'Contratar',
-    locale: 'es' as const,
-    ownPreapprovalEnabled: true
+    locale: 'es' as const
 };
 
 function mockAuthenticated() {
@@ -123,13 +122,6 @@ const TOURIST_VIP_SUBSCRIPTION = {
  */
 function buildFetchMock() {
     return vi.fn().mockImplementation((url: string) => {
-        if (url.includes('/billing/payer-email-known')) {
-            return Promise.resolve({
-                ok: true,
-                status: 200,
-                json: () => Promise.resolve({ data: { hasKnownPayerEmail: true } })
-            });
-        }
         if (url.includes(SUBSCRIPTION_PATH)) {
             const namesADomain = url.includes('productDomain=');
             return Promise.resolve({

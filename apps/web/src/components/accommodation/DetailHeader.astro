@@ -36,7 +36,7 @@ import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 import RatingStars from '@/components/shared/ui/RatingStars.astro';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { DetailCompareButton } from '@/components/accommodation/DetailCompareButton.client';
-import { CheckCircleIcon, StarIcon } from '@repo/icons';
+import { CheckCircleIcon } from '@repo/icons';
 
 interface Props {
   readonly accommodation: AccommodationDetailData;
@@ -82,12 +82,6 @@ const newStyle =
           size="sm"
           class="detail-header__type-badge"
         />
-        {accommodation.isFeatured && (
-          <span class="featured-badge">
-            <StarIcon size={12} weight="fill" aria-hidden="true" />
-            <span>{t('accommodations.detail.badges.featured')}</span>
-          </span>
-        )}
         {accommodation.isVerified && (
           <span class="featured-badge detail-header__verified-badge">
             <CheckCircleIcon size={12} weight="fill" aria-hidden="true" />

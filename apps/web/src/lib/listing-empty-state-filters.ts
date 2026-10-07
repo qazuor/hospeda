@@ -19,7 +19,6 @@ export interface GastronomyListingEmptyStateFilters {
     readonly destinationId: string | undefined;
     readonly type: string | undefined;
     readonly priceRange: string | undefined;
-    readonly isFeatured: boolean | undefined;
     readonly minRating: number | undefined;
     /**
      * The "apto" filter (HOS-1054): a comma-separated list of feature UUIDs.
@@ -35,7 +34,6 @@ export interface ExperienceListingEmptyStateFilters {
     readonly q: string | undefined;
     readonly destinationId: string | undefined;
     readonly type: string | undefined;
-    readonly isFeatured: boolean | undefined;
     readonly minRating: number | undefined;
 }
 
@@ -56,7 +54,6 @@ export interface AccommodationListingEmptyStateFilters {
     readonly hasPool: boolean | undefined;
     readonly hasParking: boolean | undefined;
     readonly allowsPets: boolean | undefined;
-    readonly isFeatured: boolean | undefined;
     readonly minBedrooms: number | undefined;
     readonly minBathrooms: number | undefined;
     readonly minRating: number | undefined;
@@ -79,7 +76,6 @@ export function hasActiveGastronomyListingFilters({
     destinationId,
     type,
     priceRange,
-    isFeatured,
     minRating,
     features
 }: GastronomyListingEmptyStateFilters): boolean {
@@ -88,7 +84,6 @@ export function hasActiveGastronomyListingFilters({
             hasNonEmptyText(destinationId) ||
             hasNonEmptyText(type) ||
             hasNonEmptyText(priceRange) ||
-            isFeatured === true ||
             hasFiniteNumber(minRating) ||
             hasNonEmptyCsv(features)
     );
@@ -102,14 +97,12 @@ export function hasActiveExperienceListingFilters({
     q,
     destinationId,
     type,
-    isFeatured,
     minRating
 }: ExperienceListingEmptyStateFilters): boolean {
     return Boolean(
         hasNonEmptyText(q) ||
             hasNonEmptyText(destinationId) ||
             hasNonEmptyText(type) ||
-            isFeatured === true ||
             hasFiniteNumber(minRating)
     );
 }
@@ -129,7 +122,6 @@ export function hasActiveAccommodationEmptyStateFilters({
     hasPool,
     hasParking,
     allowsPets,
-    isFeatured,
     minBedrooms,
     minBathrooms,
     minRating,
@@ -153,7 +145,6 @@ export function hasActiveAccommodationEmptyStateFilters({
             hasPool === true ||
             hasParking === true ||
             allowsPets === true ||
-            isFeatured === true ||
             hasFiniteNumber(minBedrooms) ||
             hasFiniteNumber(minBathrooms) ||
             hasFiniteNumber(minRating) ||

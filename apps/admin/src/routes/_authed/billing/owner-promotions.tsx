@@ -5,7 +5,7 @@
  */
 
 import { AddIcon } from '@repo/icons';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
@@ -37,12 +37,13 @@ import {
 } from '@/features/owner-promotions/hooks';
 import type { OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
-import { requireBillingAccess } from '@/lib/billing-access';
+import { requireAdminPermission } from '@/lib/admin-api-access';
 import { formatCalendarShortDate } from '@/lib/format-helpers';
 
 // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CREATE_PROMOTIONS entitlement gate.
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
-    beforeLoad: ({ context }) => requireBillingAccess(context),
+    beforeLoad: ({ context }) =>
+        requireAdminPermission(context, PermissionEnum.OWNER_PROMOTION_VIEW),
     component: BillingOwnerPromotionsPage
 });
 

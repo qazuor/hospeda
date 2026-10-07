@@ -30,7 +30,6 @@ describe('toAccommodationCardProps', () => {
             type: 'hotel',
             averageRating: 4.5,
             reviewsCount: 10,
-            isFeatured: true,
             location: { city: 'Colón', state: 'Entre Ríos' },
             price: { amount: 15000, currency: 'ARS' }
         };
@@ -42,7 +41,6 @@ describe('toAccommodationCardProps', () => {
         expect(result.name).toBe('Casa del Río');
         expect(result.type).toBe('hotel');
         expect(result.averageRating).toBe(4.5);
-        expect(result.isFeatured).toBe(true);
         expect(result.location.city).toBe('Colón');
     });
 
@@ -89,7 +87,6 @@ describe('toAccommodationCardProps', () => {
         expect(result.slug).toBe('');
         expect(result.name).toBe('');
         expect(result.averageRating).toBe(0);
-        expect(result.isFeatured).toBe(false);
     });
 
     it('should extract price when present', () => {
@@ -650,7 +647,6 @@ describe('toAccommodationDetailPageProps', () => {
             summary: 'A cozy cabin',
             description: 'Full description here',
             type: 'CABIN',
-            isFeatured: true,
             createdAt: '2025-01-15T10:00:00.000Z',
             averageRating: 4.7,
             reviewsCount: 23,
@@ -713,7 +709,6 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.summary).toBe('A cozy cabin');
             expect(result.description).toBe('Full description here');
             expect(result.type).toBe('CABIN');
-            expect(result.isFeatured).toBe(true);
             expect(result.createdAt).toBe('2025-01-15T10:00:00.000Z');
             expect(result.averageRating).toBe(4.7);
             expect(result.reviewsCount).toBe(23);
@@ -985,7 +980,6 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.type).toBe('');
             expect(result.averageRating).toBe(0);
             expect(result.reviewsCount).toBe(0);
-            expect(result.isFeatured).toBe(false);
         });
 
         it('should default media to empty arrays', () => {

@@ -394,7 +394,7 @@ function CancelConfirmModal({
             });
 
             if (!result.ok) {
-                // 404 means the feature flag HOSPEDA_USER_CANCEL_ENABLED is OFF —
+                // 404 means the self-service cancel endpoint is unavailable —
                 // degrade gracefully to the email-support path.
                 if (result.error.status === 404) {
                     setStep('flag_off');

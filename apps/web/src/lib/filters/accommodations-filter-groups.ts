@@ -22,7 +22,7 @@ interface BuildAccommodationsFilterGroupsParams {
     readonly features: readonly FeaturePublic[];
     /**
      * When true, omits the `types` checkbox group (but keeps the rest of the
-     * "Tipo y características" section — `isFeatured`, `amenities`,
+     * "Tipo y características" section — `amenities`,
      * `features` — since those are unrelated to the type facet). Used by the
      * per-type facet landings (`/alojamientos/tipo/{type}/`), where the type
      * is already fixed by the URL path rather than user-selectable.
@@ -170,11 +170,6 @@ export function buildAccommodationsFilterGroups({
             type: 'section-header',
             label: t('accommodations.sidebar.section.type', 'Tipo y características'),
             icon: 'AccommodationIcon'
-        },
-        {
-            id: 'isFeatured',
-            label: t('accommodations.sidebar.featured', 'Solo destacados'),
-            type: 'toggle'
         },
         ...(excludeType ? [] : [typeGroup]),
         {

@@ -53,12 +53,6 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
                 ]
             },
             {
-                paramKey: 'isFeatured',
-                labelKey: 'admin-filters.isFeatured.label',
-                type: 'boolean',
-                order: 3
-            },
-            {
                 paramKey: 'price',
                 labelKey: 'admin-filters.price.label',
                 type: 'number-range',
@@ -179,9 +173,8 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
             format: 'image'
         }
     ],
-    // Header extras: slug as subtitle, isFeatured as a chip next to the title.
-    peekSubtitleField: 'slug',
-    peekFeaturedField: 'isFeatured'
+    // Header extras: slug as subtitle.
+    peekSubtitleField: 'slug'
 };
 
 // Generate the component and route

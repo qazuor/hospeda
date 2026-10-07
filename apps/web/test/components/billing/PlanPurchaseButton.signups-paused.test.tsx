@@ -75,8 +75,7 @@ const baseProps = {
     ctaText: 'Contratar',
     locale: 'es' as const,
     plansPath: '/es/suscriptores/planes/',
-    audience: 'owner' as const,
-    ownPreapprovalEnabled: false
+    audience: 'owner' as const
 };
 
 function mockAuthenticated() {

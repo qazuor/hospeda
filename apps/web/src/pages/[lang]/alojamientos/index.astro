@@ -71,7 +71,7 @@ const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
 const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
 const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
 /**
- * Maps the URL's user-friendly sort key (e.g. `featured`, `priceAsc`) to the
+ * Maps the URL's user-friendly sort key (e.g. `ratingDesc`, `priceAsc`) to the
  * backend `(sortBy, sortOrder)` pair. Encoding direction in the key lets the
  * UI offer pre-baked options like "Mejor valorados" / "Precio menor a mayor"
  * without exposing a separate direction toggle.
@@ -81,7 +81,6 @@ const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get(
  * `price` and `mostSaved` are synthetic fields handled by the model.
  */
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
-    featured:     { sortBy: 'isFeatured',    sortOrder: 'desc' },
     mostSaved:    { sortBy: 'mostSaved',     sortOrder: 'desc' },
     ratingDesc:   { sortBy: 'averageRating', sortOrder: 'desc' },
     mostReviewed: { sortBy: 'reviewsCount',  sortOrder: 'desc' },
@@ -96,7 +95,7 @@ const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc
     distance:     { sortBy: 'distance',      sortOrder: 'asc'  }
 };
 /** Default sort key when the URL has no `sortBy`. */
-const DEFAULT_SORT_KEY = 'featured';
+const DEFAULT_SORT_KEY = 'ratingDesc';
 
 const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 
@@ -106,7 +105,6 @@ const hasWifi = url.searchParams.get('hasWifi') === 'true' ? true : undefined;
 const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
 const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
 const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
-const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
 // `minGuests` is no longer exposed as its own field — it's derived from
 // `adults + children` further down so a couple looking for "2 adultos +
 // 0 niños" actually filters out 1-person studios. The variable is computed
@@ -255,7 +253,6 @@ const [destinationsResult, amenitiesResult, featuresResult, result] = await Prom
 	maxPrice,
 	sortBy,
 	sortOrder,
-	isFeatured,
 	minGuests,
 	minBedrooms,
 	minBathrooms,
@@ -346,7 +343,6 @@ const hasActiveFilters = hasActiveAccommodationEmptyStateFilters({
 	hasPool,
 	hasParking,
 	allowsPets,
-	isFeatured,
 	minBedrooms,
 	minBathrooms,
 	minRating,
@@ -375,7 +371,6 @@ const filterSummary = buildAccommodationListingSummary({
 		includeWithoutRating: includeNoReviews,
 		bedrooms: minBedrooms,
 		bathrooms: minBathrooms,
-		featured: isFeatured ?? null,
 	},
 	counts: {
 		shown: cards.length,
@@ -398,7 +393,7 @@ const filterSummary = buildAccommodationListingSummary({
 // Fechas / Capacidad / Precio y Calidad). `section-header` entries divide
 // the panel with small-caps headers; the FilterSidebar switches to
 // declaration-order rendering when any section-header is declared, so inline
-// toggles (`isFeatured`) land under their intended section.
+// toggles land under their intended section.
 //
 // `dates`, `adults`, and `children` live inside the sidebar even though they
 // don't narrow the result set today (no availability system) — they're
@@ -414,11 +409,9 @@ const filterGroups = buildAccommodationsFilterGroups({ t, destinations, amenitie
 
 // Sort options expose 9 encoded keys, each resolved to a concrete
 // `(sortBy, sortOrder)` pair via the SORT_OPTION_MAP at the top of this
-// file. Default = `featured` so paid / promoted accommodations land at the
-// top of the first page. All sortBy values are whitelisted in the API
+// file. Default = `ratingDesc` (best rated first). All sortBy values are whitelisted in the API
 // route's ALLOWED_SORT_FIELDS — see PR fix/accommodation-backend-filters-sort.
 const sortOptions = [
-	{ value: 'featured',     label: t('accommodations.sort.featured',     'Destacados primero') },
 	{ value: 'mostSaved',    label: t('accommodations.sort.mostSaved',    'Más guardados') },
 	{ value: 'ratingDesc',   label: t('accommodations.sort.ratingDesc',   'Mejor valorados') },
 	{ value: 'mostReviewed', label: t('accommodations.sort.mostReviewed', 'Más reseñados') },
@@ -477,7 +470,6 @@ const hasOtherAccommodationFilters = Boolean(
 		destinationIds ||
 		minPrice !== undefined ||
 		maxPrice !== undefined ||
-		isFeatured ||
 		minBedrooms !== undefined ||
 		minBathrooms !== undefined ||
 		minRating !== undefined ||
@@ -648,7 +640,6 @@ if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
 initialParams.sortBy = sortKey;
-if (isFeatured) initialParams.isFeatured = 'true';
 if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
 if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
 if (minRating !== undefined) initialParams.minRating = String(minRating);
@@ -765,12 +756,6 @@ if (minPrice !== undefined || maxPrice !== undefined) {
 	activeFilterChips.push({
 		label: priceLabel,
 		removeUrl: urlWithoutKeys(['minPrice', 'maxPrice', 'includeNoPrice']),
-	});
-}
-if (isFeatured) {
-	activeFilterChips.push({
-		label: t('accommodations.emptyChip.featured', 'Solo destacados'),
-		removeUrl: urlWithoutKeys(['isFeatured']),
 	});
 }
 if (minRating !== undefined) {

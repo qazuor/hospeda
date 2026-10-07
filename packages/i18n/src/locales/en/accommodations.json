@@ -80,7 +80,6 @@
             "location": "Location",
             "rating": "Rating",
             "reviews": "Reviews",
-            "featured": "Featured",
             "summary": "Description",
             "viewDetails": "View details",
             "notAvailable": "N/A",
@@ -116,7 +115,6 @@
     "sort": {
         "title": "Sort by",
         "default": "Recommended",
-        "featured": "Featured",
         "price.asc": "Price: Low to high",
         "price.desc": "Price: High to low",
         "rating": "Top rated",
@@ -236,7 +234,6 @@
         "children": "Children",
         "bedrooms": "Bedrooms",
         "bathrooms": "Bathrooms",
-        "featured": "Featured only",
         "clearAll": "Clear filters",
         "activeFilters": "Active filters",
         "removeFilter": "Remove {{name}} filter",
@@ -592,7 +589,6 @@
         },
         "badges": {
             "new": "New",
-            "featured": "Featured",
             "verified": "Verified"
         },
         "bookmark_count": "Saved by {{count}} people",
@@ -874,8 +870,7 @@
         }
     },
     "emptyChip": {
-        "price": "Price",
-        "featured": "Featured only"
+        "price": "Price"
     },
     "emptySuggestion": {
         "viewMap": "View on map",

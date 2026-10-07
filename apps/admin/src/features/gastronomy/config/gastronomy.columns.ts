@@ -113,13 +113,6 @@ export const createGastronomyColumns = (
         columnType: ColumnType.STRING
     },
     {
-        id: 'isFeatured',
-        header: t('admin-entities.columns.featured'),
-        accessorKey: 'isFeatured',
-        enableSorting: true,
-        columnType: ColumnType.BOOLEAN
-    },
-    {
         id: 'owner',
         header: t('admin-entities.columns.owner'),
         // Show a readable owner label from the eager-loaded relation, not the raw

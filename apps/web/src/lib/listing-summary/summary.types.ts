@@ -3,8 +3,8 @@
  *
  * Shared by the gastronomy and experience listing pages (BETA-119). Both
  * entities have near-identical filter shapes (text, single type/category,
- * destination, isFeatured, minRating) and IDENTICAL sort options
- * (featured | ratingDesc | newest | nameAsc) — only the subject noun
+ * destination, minRating) and IDENTICAL sort options
+ * (ratingDesc | newest | nameAsc) — only the subject noun
  * (with its grammatical gender) and the optional `priceRange` facet
  * (gastronomy-only) differ. Rather than duplicating the full
  * types/catalogs/descriptors/builder set twice (as `post-listing-summary`
@@ -51,11 +51,9 @@ export interface ListingSummaryFilters {
     readonly priceRange?: string | null;
     /** Minimum star rating (1-5, may include a decimal). */
     readonly minRating?: number | null;
-    /** Featured-only toggle. */
-    readonly isFeatured?: boolean | null;
 }
 
-/** Encoded sort key from the URL (`featured` | `ratingDesc` | `newest` | `nameAsc`). */
+/** Encoded sort key from the URL (`ratingDesc` | `newest` | `nameAsc`). */
 export interface ListingSort {
     readonly sortKey: string;
 }

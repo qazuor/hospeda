@@ -125,14 +125,6 @@ const isNew = data.createdAt
 				</div>
 			)}
 
-			<!-- Featured badge -->
-			{data.isFeatured && (
-				<div class="acc-card__featured-badge featured-badge">
-					<StarIcon size={12} weight="fill" aria-hidden="true" />
-					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
-				</div>
-			)}
-
 			<!-- Verified badge — shown when the accommodation has been manually
 			     verified by an admin AND the owner's plan grants the
 			     HAS_VERIFICATION_BADGE entitlement. The entitlement gate happens
@@ -350,16 +342,6 @@ const isNew = data.createdAt
 		line-height: 22.4px;
 		color: var(--primary-foreground);
 		white-space: nowrap;
-	}
-
-	/* Featured badge — right edge matches the actions column above
-	 * (12px from card edge) so favorite, photo-count and featured stack
-	 * along the same vertical guideline. Look (color/font/padding/icon
-	 * gap) comes from the shared `.featured-badge` rule in components.css. */
-	.acc-card__featured-badge {
-		position: absolute;
-		bottom: 48px;
-		right: 12px;
 	}
 
 	/* Verified badge — stacked above the AI-chat badge on the bottom-LEFT,
@@ -781,18 +763,6 @@ const isNew = data.createdAt
 
 		.acc-card__reviews-count {
 			display: none;
-		}
-
-		/* In mobile the image area shrinks via clamp(160px,…); placing the
-		 * featured badge at bottom-right made it collide vertically with the
-		 * actions column (favorite + photo count). Top-left is occupied by
-		 * the "Nuevo" status corner, top-right by the actions column —
-		 * bottom-left, just above the wave, is the only quadrant left clear. */
-		.acc-card__featured-badge {
-			bottom: 48px;
-			left: 12px;
-			right: auto;
-			top: auto;
 		}
 
 		/* Mirror: featured moves to bottom-left on mobile, so the AI badge

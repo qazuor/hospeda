@@ -71,37 +71,6 @@ export const createPartnersColumns = (t: ColumnTFunction): readonly ColumnConfig
             startVisibleOnGrid: true
         },
         {
-            id: 'subscriptionStatus',
-            header: t('admin-filters.partnerSubscriptionStatus.label' as TranslationKey),
-            accessorKey: 'subscriptionStatus',
-            enableSorting: true,
-            columnType: ColumnType.BADGE,
-            badgeOptions: [
-                {
-                    value: 'active',
-                    label: t('admin-filters.partnerSubscriptionStatus.active' as TranslationKey),
-                    color: BadgeColor.SUCCESS
-                },
-                {
-                    value: 'pending',
-                    label: t('admin-filters.partnerSubscriptionStatus.pending' as TranslationKey),
-                    color: BadgeColor.SECONDARY
-                },
-                {
-                    value: 'past_due',
-                    label: t('admin-filters.partnerSubscriptionStatus.past_due' as TranslationKey),
-                    color: BadgeColor.ERROR
-                },
-                {
-                    value: 'cancelled',
-                    label: t('admin-filters.partnerSubscriptionStatus.cancelled' as TranslationKey),
-                    color: BadgeColor.DEFAULT
-                }
-            ],
-            startVisibleOnTable: true,
-            startVisibleOnGrid: true
-        },
-        {
             id: 'lifecycleState',
             header: t('admin-entities.columns.lifecycleState'),
             accessorKey: 'lifecycleState',

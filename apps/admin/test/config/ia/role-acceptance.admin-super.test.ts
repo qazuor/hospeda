@@ -242,11 +242,6 @@ const ADMIN_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.OWNER_PROMOTION_HARD_DELETE_ANY,
     PermissionEnum.OWNER_PROMOTION_RESTORE_ANY,
     PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
-    // BILLING
-    PermissionEnum.BILLING_READ_ALL,
-    PermissionEnum.BILLING_PROMO_CODE_READ,
-    PermissionEnum.BILLING_PROMO_CODE_MANAGE,
-    PermissionEnum.BILLING_METRICS_READ,
     // REVALIDATION
     PermissionEnum.REVALIDATION_TRIGGER,
     PermissionEnum.REVALIDATION_CONFIG_VIEW,

@@ -19,11 +19,9 @@
         "destination": "Destination",
         "type": "Establishment type",
         "priceRange": "Price range",
-        "featured": "Featured only",
         "features": "Dietary options and features",
         "minRating": "Minimum rating",
         "sort": {
-            "featured": "Featured first",
             "ratingDesc": "Top rated",
             "newest": "Recently added",
             "nameAsc": "Name (A-Z)"
@@ -37,8 +35,7 @@
             "PREMIUM": "Premium"
         },
         "openNow": "Open now",
-        "closedNow": "Closed now",
-        "featured": "Featured"
+        "closedNow": "Closed now"
     },
     "detail": {
         "openingHours": {

@@ -35,10 +35,10 @@ describe('buildGastronomyListingSummary', () => {
                 locale: 'es',
                 filters: {},
                 counts: { shown: 9, total: 18 },
-                sort: { sortKey: 'featured' }
+                sort: { sortKey: 'ratingDesc' }
             });
             expect(result).toBe(
-                'Mostrando 9 de 18 establecimientos gastronómicos, sin filtros activos, ordenados con los destacados primero.'
+                'Mostrando 9 de 18 establecimientos gastronómicos, sin filtros activos, ordenados por mejor calificación.'
             );
         });
 
@@ -194,28 +194,6 @@ describe('buildGastronomyListingSummary', () => {
         });
     });
 
-    describe('featured filter', () => {
-        it('should render the masculine "solo destacados" phrase', () => {
-            const result = buildGastronomyListingSummary({
-                locale: 'es',
-                filters: { isFeatured: true },
-                counts: { shown: 7, total: 18 }
-            });
-            expect(result).toBe(
-                'Mostrando 7 de 18 establecimientos gastronómicos, solo destacados.'
-            );
-        });
-
-        it('should not be active when isFeatured is falsy', () => {
-            const result = buildGastronomyListingSummary({
-                locale: 'es',
-                filters: { isFeatured: undefined },
-                counts: { shown: 18, total: 18 }
-            });
-            expect(result).toContain('sin filtros activos');
-        });
-    });
-
     describe('sort', () => {
         it('should render the ratingDesc phrase (gender-invariant fragment)', () => {
             const result = buildGastronomyListingSummary({
@@ -280,7 +258,7 @@ describe('buildGastronomyListingSummary', () => {
     });
 
     describe('full integration example', () => {
-        it('should combine type + destination + text + priceRange + minRating + featured + sort', () => {
+        it('should combine type + destination + text + priceRange + minRating + sort', () => {
             const result = buildGastronomyListingSummary({
                 locale: 'es',
                 filters: {
@@ -288,8 +266,7 @@ describe('buildGastronomyListingSummary', () => {
                     destinationId: 'colon-id',
                     text: 'centro',
                     priceRange: 'MID',
-                    minRating: 4,
-                    isFeatured: true
+                    minRating: 4
                 },
                 counts: { shown: 2, total: 5 },
                 sort: { sortKey: 'ratingDesc' },
@@ -300,7 +277,7 @@ describe('buildGastronomyListingSummary', () => {
                 }
             });
             expect(result).toBe(
-                'Mostrando 2 de 5 establecimientos gastronómicos de restaurante en Colón, que contienen "centro" en el nombre o la descripción, con precios moderados, con calificación mínima de 4, solo destacados, ordenados por mejor calificación.'
+                'Mostrando 2 de 5 establecimientos gastronómicos de restaurante en Colón, que contienen "centro" en el nombre o la descripción, con precios moderados, con calificación mínima de 4, ordenados por mejor calificación.'
             );
         });
     });
@@ -322,10 +299,10 @@ describe('buildExperienceListingSummary', () => {
                 locale: 'es',
                 filters: {},
                 counts: { shown: 3, total: 4 },
-                sort: { sortKey: 'featured' }
+                sort: { sortKey: 'ratingDesc' }
             });
             expect(result).toBe(
-                'Mostrando 3 de 4 experiencias, sin filtros activos, ordenadas con las destacadas primero.'
+                'Mostrando 3 de 4 experiencias, sin filtros activos, ordenadas por mejor calificación.'
             );
         });
 
@@ -376,17 +353,6 @@ describe('buildExperienceListingSummary', () => {
         });
     });
 
-    describe('featured filter', () => {
-        it('should render the feminine "solo destacadas" phrase', () => {
-            const result = buildExperienceListingSummary({
-                locale: 'es',
-                filters: { isFeatured: true },
-                counts: { shown: 5, total: 6 }
-            });
-            expect(result).toBe('Mostrando 5 de 6 experiencias, solo destacadas.');
-        });
-    });
-
     describe('minRating filter', () => {
         it('should render the rating phrase', () => {
             const result = buildExperienceListingSummary({
@@ -424,22 +390,21 @@ describe('buildExperienceListingSummary', () => {
     });
 
     describe('full integration example', () => {
-        it('should combine type + destination + text + minRating + featured + sort', () => {
+        it('should combine type + destination + text + minRating + sort', () => {
             const result = buildExperienceListingSummary({
                 locale: 'es',
                 filters: {
                     type: 'BOAT_TRIP',
                     destinationId: 'concordia-id',
                     text: 'atardecer',
-                    minRating: 4.5,
-                    isFeatured: true
+                    minRating: 4.5
                 },
                 counts: { shown: 2, total: 3 },
                 sort: { sortKey: 'newest' },
                 catalogs: { types: DEFAULT_EXPERIENCE_TYPES, destinations: DESTINATIONS }
             });
             expect(result).toBe(
-                'Mostrando 2 de 3 experiencias de paseo en lancha en Concordia, que contienen "atardecer" en el nombre o la descripción, con calificación mínima de 4,5, solo destacadas, ordenadas por más recientes.'
+                'Mostrando 2 de 3 experiencias de paseo en lancha en Concordia, que contienen "atardecer" en el nombre o la descripción, con calificación mínima de 4,5, ordenadas por más recientes.'
             );
         });
     });

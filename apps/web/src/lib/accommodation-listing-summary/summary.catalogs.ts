@@ -119,17 +119,6 @@ export const DEFAULT_SORT_KEYS: readonly SortKeyEntry[] = [
         desc: { es: 'de mayor a menor', en: 'most first', pt: 'mais primeiro' }
     },
     {
-        key: 'isFeatured',
-        type: 'boolean',
-        label: { es: 'destacados', en: 'featured', pt: 'destaques' },
-        asc: {
-            es: 'no destacados primero',
-            en: 'non-featured first',
-            pt: 'não destacados primeiro'
-        },
-        desc: { es: 'destacados primero', en: 'featured first', pt: 'destacados primeiro' }
-    },
-    {
         key: 'price',
         type: 'numeric',
         label: { es: 'precio', en: 'price', pt: 'preço' },
@@ -177,8 +166,6 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         bedroomPlural: 'dormitorios',
         bathroomSingular: 'baño',
         bathroomPlural: 'baños',
-        onlyFeatured: 'solo destacados',
-        onlyNotFeatured: 'solo no destacados',
         noResultsFound: 'No se encontraron'
     },
     en: {
@@ -211,8 +198,6 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         bedroomPlural: 'bedrooms',
         bathroomSingular: 'bathroom',
         bathroomPlural: 'bathrooms',
-        onlyFeatured: 'featured only',
-        onlyNotFeatured: 'non-featured only',
         noResultsFound: 'No results found for'
     },
     pt: {
@@ -245,8 +230,6 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         bedroomPlural: 'quartos',
         bathroomSingular: 'banheiro',
         bathroomPlural: 'banheiros',
-        onlyFeatured: 'somente destacados',
-        onlyNotFeatured: 'somente não destacados',
         noResultsFound: 'Nenhum resultado encontrado para'
     }
 } as const;

@@ -27,8 +27,6 @@ export interface PartnerIndexabilityInput {
     readonly tier?: string | null;
     /** `partners.lifecycle_state`. */
     readonly lifecycleState?: string | null;
-    /** `partners.subscription_status`. */
-    readonly subscriptionStatus?: string | null;
     /** The live description. Blank means the page would be thin content. */
     readonly description?: string | null;
 }
@@ -46,18 +44,16 @@ export interface PartnerIndexabilityResult {
  *
  * 1. **gold** — the page is what separates the paid plans. A silver partner has
  *    no page, so its URL must never reach the sitemap.
- * 2. **visible** — `ACTIVE` lifecycle and an `active` subscription, the same
- *    pair every public partner read already forces. A partner who is off the
- *    carousel must not still be in the index.
+ * 2. **visible** — `ACTIVE` lifecycle, the same condition every public partner
+ *    read already forces. A partner who is off the carousel must not still be
+ *    in the index. (It used to be paired with an `active` subscription status;
+ *    that column left with the old billing, HOS-1419.)
  * 3. **has a description** — R-3. A page carrying only a logo and a name is
  *    thin content; two of them are the doorway-page pattern this condition
  *    exists to avoid. Whitespace does not count, or the guard would be defeated
  *    by a space bar.
  *
- * Conditions 2's two halves share one reason (`not-visible`) on purpose: from
- * the indexer's side, "revoked" and "stopped paying" are the same event — the
- * page is no longer public. The reason string is for logging and tests, not for
- * telling a partner why.
+ * The reason string is for logging and tests, not for telling a partner why.
  *
  * @param input - See {@link PartnerIndexabilityInput}.
  * @returns The verdict and the failing condition.
@@ -69,7 +65,7 @@ export function evaluatePartnerIndexability(
         return { isIndexable: false, reason: 'not-gold' };
     }
 
-    if (input.lifecycleState !== 'ACTIVE' || input.subscriptionStatus !== 'active') {
+    if (input.lifecycleState !== 'ACTIVE') {
         return { isIndexable: false, reason: 'not-visible' };
     }
 

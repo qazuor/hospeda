@@ -41,7 +41,6 @@ const DEFAULT_PROPS = {
     accommodationId: '550e8400-e29b-41d4-a716-446655440000',
     locale: 'es' as const,
     accommodationType: 'CABIN',
-    isFeatured: true,
     destinationId: 'dest-colon',
     destinationName: 'Colón',
     price: 12000,
@@ -100,7 +99,6 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
             accommodation_slug: DEFAULT_PROPS.slug,
             locale: DEFAULT_PROPS.locale,
             accommodation_type: 'CABIN',
-            is_featured: true,
             destination_id: 'dest-colon',
             source_page: 'accommodation_detail'
         });

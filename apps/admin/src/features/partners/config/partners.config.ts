@@ -42,27 +42,6 @@ export const partnersConfig: EntityConfig<Partner> = {
                 ]
             },
             {
-                paramKey: 'subscriptionStatus',
-                labelKey: 'admin-filters.partnerSubscriptionStatus.label',
-                type: 'select',
-                order: 3,
-                options: [
-                    { value: 'active', labelKey: 'admin-filters.partnerSubscriptionStatus.active' },
-                    {
-                        value: 'pending',
-                        labelKey: 'admin-filters.partnerSubscriptionStatus.pending'
-                    },
-                    {
-                        value: 'past_due',
-                        labelKey: 'admin-filters.partnerSubscriptionStatus.past_due'
-                    },
-                    {
-                        value: 'cancelled',
-                        labelKey: 'admin-filters.partnerSubscriptionStatus.cancelled'
-                    }
-                ]
-            },
-            {
                 paramKey: 'includeDeleted',
                 labelKey: 'admin-filters.includeDeleted.label',
                 type: 'boolean',

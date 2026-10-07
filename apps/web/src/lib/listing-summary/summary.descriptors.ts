@@ -10,7 +10,7 @@
  */
 
 import { cleanText, formatRating } from '../accommodation-listing-summary/summary.helpers';
-import { getGenderedPhrase, getPhrase, lookupCatalogLabel } from './summary.catalogs';
+import { getPhrase, lookupCatalogLabel } from './summary.catalogs';
 import type { FilterDescriptor } from './summary.types';
 
 /**
@@ -102,26 +102,11 @@ const minRatingDescriptor: FilterDescriptor = {
 };
 
 /**
- * Featured-only filter. Renders: `solo destacados` / `solo destacadas`
- * (gender-agreed with the entity's subject noun).
- */
-const featuredDescriptor: FilterDescriptor = {
-    key: 'featured',
-    isActive: ({ filters }) => filters.isFeatured === true,
-    build: ({ context }) =>
-        getGenderedPhrase({
-            locale: context.locale,
-            key: 'onlyFeatured',
-            gender: context.entity.gender
-        })
-};
-
-/**
  * Ordered descriptor list. Matches the desired modifier order in the
  * sentence:
  *   "X establecimientos gastronómicos de restaurante en Concordia, que
  *    contienen \"pizza\" en el nombre o la descripción, con precios
- *    económicos, con calificación mínima de 4, solo destacados, ordenados..."
+ *    económicos, con calificación mínima de 4, ordenados..."
  *
  * Type appears FIRST so it flows into the subject ("establecimientos
  * gastronómicos de restaurante") rather than as a parenthetical aside.
@@ -132,6 +117,5 @@ export const FILTER_DESCRIPTORS: readonly FilterDescriptor[] = [
     destinationDescriptor,
     textDescriptor,
     priceRangeDescriptor,
-    minRatingDescriptor,
-    featuredDescriptor
+    minRatingDescriptor
 ];

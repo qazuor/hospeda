@@ -293,22 +293,6 @@ const ratingDescriptor: FilterDescriptor = {
     }
 };
 
-/**
- * Featured filter descriptor.
- * Renders: "solo destacados" (true) or "solo no destacados" (false)
- * Not active when `featured` is null or undefined.
- */
-const featuredDescriptor: FilterDescriptor = {
-    key: 'featured',
-    isActive: ({ filters }) => filters.featured === true || filters.featured === false,
-    build: ({ context }) => {
-        const { filters, locale } = context;
-        return filters.featured === true
-            ? getPhrase({ locale, key: 'onlyFeatured' })
-            : getPhrase({ locale, key: 'onlyNotFeatured' });
-    }
-};
-
 // ---------------------------------------------------------------------------
 // Ordered descriptor array (controls sentence order)
 // ---------------------------------------------------------------------------
@@ -326,7 +310,6 @@ const featuredDescriptor: FilterDescriptor = {
  * 7. services     (comma modifier)
  * 8. amenities    (comma modifier)
  * 9. rating       (comma modifier)
- * 10. featured    (comma modifier)
  */
 export const FILTER_DESCRIPTORS: readonly FilterDescriptor[] = [
     destinationDescriptor,
@@ -337,8 +320,7 @@ export const FILTER_DESCRIPTORS: readonly FilterDescriptor[] = [
     bathroomsDescriptor,
     servicesDescriptor,
     amenitiesDescriptor,
-    ratingDescriptor,
-    featuredDescriptor
+    ratingDescriptor
 ] as const;
 
 /** Keys of the "flow modifiers" — these attach to the subject with a space, not a comma. */
