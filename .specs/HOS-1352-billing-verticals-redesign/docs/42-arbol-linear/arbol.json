@@ -471,6 +471,16 @@
             "existente": null
         },
         {
+            "clave": "U2.2b",
+            "padre": "U2",
+            "titulo": "U2 · Ingesta de rebotes duros del proveedor (hoja nueva, antes de la salida)",
+            "descripcion": "**Qué entrega:** que un rebote duro informado por el proveedor de correo se convierta en una fila `bounced` de `notification_log`.\n\n**Pieza:** `U2` — spec [U2.md](../../spec-consolidada/10-corte/U2.md), secciones «Criterios de aceptación»; owner 2026-10-07, letra CQ.\n\n**Cubre:**\n- `AC:U2:12` — Un rebote duro real del proveedor se convierte en la fila `bounced` de la bitácora.\n\n**Depende de:** Dentro de `U2`: esperar a `U2.2`.\n\n**Verificación:** tests `TEST:U2:13`, `TEST:U2:14`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:U2:12"],
+            "depende_de": ["U2.2"],
+            "labels": ["area-api", "kind-spec", "source-agent"],
+            "existente": null
+        },
+        {
             "clave": "U2.3",
             "padre": "U2",
             "titulo": "U2 · Huso, correlación y domain_event (PR 3/4)",
@@ -484,9 +494,9 @@
             "clave": "U2.4",
             "padre": "U2",
             "titulo": "U2 · Salida (PR 4/4)",
-            "descripcion": "**Qué entrega:** Salida.\n\n**Pieza:** `U2` — spec [U2.md](../../spec-consolidada/10-corte/U2.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:U2:10` — Salida: `U2` está lista (su *«Lista cuando»*).\n\n**Depende de:** Dentro de `U2`: esperar a `U2.3`.\n\n**Verificación:** tests `TEST:U2:10`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** Salida.\n\n**Pieza:** `U2` — spec [U2.md](../../spec-consolidada/10-corte/U2.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:U2:10` — Salida: `U2` está lista (su *«Lista cuando»*).\n\n**Depende de:** Dentro de `U2`: esperar a `U2.3` y `U2.2b`.\n\n**Verificación:** tests `TEST:U2:10`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:U2:10"],
-            "depende_de": ["U2.3"],
+            "depende_de": ["U2.3", "U2.2b"],
             "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
             "existente": null
         },
