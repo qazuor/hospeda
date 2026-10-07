@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RunCutoverInput } from '../../cutover/run-cutover.ts';
 import { runCutover } from '../../cutover/run-cutover.ts';
+import type { CutoverManifest } from '../../cutover/types.ts';
 import type { FakeProviderOptions } from './fake-provider.ts';
 import { createFakeProvider, STANDARD_KNOWN, STANDARD_OBJECTS } from './fake-provider.ts';
 
@@ -176,30 +177,67 @@ describe('TEST:U3:4 completeness gate (AC:U3:4)', () => {
     });
 });
 
+/** Keys every manifest carries (finished or partial). */
+const BASE_KEYS = [
+    'cancelledPlanIds',
+    'cancelledPreapprovalIds',
+    'census',
+    'failures',
+    'finishedAt',
+    'outcome',
+    'preservedProbeIds',
+    'rereadCancelledIds',
+    'schemaVersion',
+    'startedAt',
+    'unknownLiveIds'
+] as const;
+
+/** The optional step-4b ids (HOS-1427): ids only, absent until step 4b creates them. */
+const STEP_4B_KEYS = ['paymentId', 'probeId', 'refundId'] as const;
+
+/**
+ * Pins the full key set of the manifest TYPE: `Required<>` makes a missing key a type error and
+ * the object literal makes an extra one a type error, so a new field cannot slip in unpinned.
+ */
+const EVERY_FIELD: Required<CutoverManifest> = {
+    schemaVersion: 1,
+    outcome: 'ok',
+    startedAt: '',
+    finishedAt: '',
+    census: { plans: { total: 0, walked: 0 }, preapprovals: { total: 0, walked: 0 } },
+    cancelledPlanIds: [],
+    cancelledPreapprovalIds: [],
+    rereadCancelledIds: [],
+    preservedProbeIds: [],
+    unknownLiveIds: [],
+    failures: [],
+    probeId: '',
+    paymentId: '',
+    refundId: ''
+};
+
 describe('TEST:U3:6 manifest carries ids only (AC:U3:5)', () => {
     it('contains only ids, counts and fixed text: no person data and no send call', async () => {
         // Arrange
-        const { fake, promise } = run({});
+        const checkpoints: CutoverManifest[] = [];
+        const { fake, promise } = run({
+            overrides: {
+                onCheckpoint: (m) => {
+                    checkpoints.push(m);
+                    return true;
+                }
+            }
+        });
         // Act
         const { manifest } = await promise;
         // Assert
-        expect(Object.keys(manifest).sort()).toEqual(
-            [
-                'cancelledPlanIds',
-                'cancelledPreapprovalIds',
-                'census',
-                'failures',
-                'finishedAt',
-                'outcome',
-                'preservedProbeIds',
-                'rereadCancelledIds',
-                'schemaVersion',
-                'startedAt',
-                'unknownLiveIds'
-            ].sort()
-        );
-        const text = JSON.stringify(manifest);
-        expect(text).not.toMatch(/@|email|name|phone|payer/i);
+        expect(Object.keys(manifest).sort()).toEqual([...BASE_KEYS].sort());
+        expect(Object.keys(EVERY_FIELD).sort()).toEqual([...BASE_KEYS, ...STEP_4B_KEYS].sort());
+        expect(checkpoints.length).toBeGreaterThan(1);
+        for (const record of [...checkpoints, manifest]) {
+            expect(Object.keys(record).every((k) => k in EVERY_FIELD)).toBe(true);
+            expect(JSON.stringify(record)).not.toMatch(/@|email|name|phone|payer/i);
+        }
         expect(fake.calls.every((c) => /^(LIST|GET|CANCEL) /.test(c))).toBe(true);
     });
 });

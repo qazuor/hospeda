@@ -15,17 +15,21 @@ export interface Target {
  * neither read nor recorded here, because step 2 re-reads every id by id and retries
  * the ones that did not take. A failed call does not stop the loop.
  *
- * @param input - provider client and targets
+ * @param input - provider client, targets and an optional hook called after each call was sent
+ *   (the run uses it to checkpoint the manifest, so an abort keeps the ids already touched)
  */
 export async function cancelTargets({
     api,
-    targets
+    targets,
+    onSent
 }: {
     readonly api: ProviderApi;
     readonly targets: readonly Target[];
+    readonly onSent?: (target: Target) => void;
 }): Promise<void> {
     for (const target of targets) {
         await api.cancel(target);
+        onSent?.(target);
     }
 }
 
