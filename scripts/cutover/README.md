@@ -10,11 +10,12 @@ provider was complete. It runs steps **1a, 1b and 2** of the cutover order.
 - Writes **nothing** into any database and sends **nothing** to anybody.
 - Not deployed: no image carries it. It is run from a copy of the repository and is
   archived by deleting this folder in a commit after the cutover.
-- Out of scope here: the formal exit manifest and the imports/G8 check (U3.2, AC:U3:5 and 6),
-  the step 4b probes (U3.3) and the unit exit (U3.4). This leaf writes only a **raw run record**
-  (see "Output manifest"): it is kept minimal on purpose, because losing the ids of
-  already-cancelled preapprovals is worse than a record with fewer fields. U3.2 owns the formal
-  manifest contract.
+- It also runs the **abort inverses (b) and (c)** (AC:U3:9, HOS-1427) in a separate mode, on the
+  ids of a manifest only (see "Abort inverses").
+- Out of scope here: the real step 4b (the delivery probe, the small payment and the read-only
+  `provider_notification` query, U3.3) and the unit exit (U3.4). The provider methods for the
+  payment and its refund, and the manifest fields for the 4b ids, are already here; U3.3 reuses
+  them.
 
 ## Run
 
@@ -24,6 +25,9 @@ corepack pnpm exec tsx scripts/cutover/cli.ts --dry-run
 
 # the real run (irreversible for preapprovals; step 1a plans are reversible)
 corepack pnpm exec tsx scripts/cutover/cli.ts --confirm-cancel-all
+
+# abort branch: inverses (b) and (c) on the ids of a run's manifest (partial or finished)
+corepack pnpm exec tsx scripts/cutover/cli.ts --abort-inverse <manifest.json> --confirm-abort-inverse
 ```
 
 | Flag | Default | Meaning |
@@ -32,6 +36,8 @@ corepack pnpm exec tsx scripts/cutover/cli.ts --confirm-cancel-all
 | `--manifest-out <path>` | `scripts/cutover/out/cutover-manifest-<timestamp>.json` | Where the run manifest is written. Never overwrites an existing file (a free name is picked) and is written through a temp file plus rename. `scripts/cutover/out/` is git-ignored. |
 | `--dry-run` | off | Census, re-read and completeness gate; no `PUT` is sent. |
 | `--confirm-cancel-all` | off | Required for a real run. Without it (and without `--dry-run`) the script refuses to start. |
+| `--abort-inverse <path>` | none | Runs ONLY the abort inverses (b) and (c) on the ids of that manifest. Cannot be combined with `--dry-run` or `--confirm-cancel-all`. |
+| `--confirm-abort-inverse` | off | Required by `--abort-inverse`. Without it the mode refuses to start (exit 2). |
 
 ### Credentials (proposed names, operator's shell session only)
 
@@ -41,7 +47,7 @@ in the application env registry (the unit spec marks the registry as N/A for thi
 | Variable | What |
 |---|---|
 | `CUTOVER_MP_ACCESS_TOKEN` | Provider access token for the account being cut over. |
-| `CUTOVER_OLD_DATABASE_URL` | Connection string of the OLD database. Opened read-only (`default_transaction_read_only=on` plus a `READ ONLY` transaction). |
+| `CUTOVER_OLD_DATABASE_URL` | Connection string of the OLD database. Opened read-only (`default_transaction_read_only=on` plus a `READ ONLY` transaction). Not needed by `--abort-inverse`. |
 
 ## What it does
 
@@ -66,16 +72,55 @@ Retries: `429` and `5xx` on any call are retried with a short increasing delay i
 client; the three step-2 retries above are about a cancellation that was accepted but did
 not take.
 
-## Output manifest (raw run record)
+## Output manifest (AC:U3:5)
 
-JSON with ids and counts only: `outcome` (`ok`, `failed`, `dry-run`), timestamps, walked
-versus `total` per family, `cancelledPlanIds`, `cancelledPreapprovalIds`,
-`rereadCancelledIds` (verified `cancelled` by id), `preservedProbeIds` (left alive on
-purpose), `unknownLiveIds` (alive at the provider, unknown to the DB and to the probe
-manifest) and `failures`. Provider payloads are never copied, so no email, name or phone
-can reach it. It is written also on failure. If the file cannot be written, the full JSON is
-dumped to stderr and the exit code is 1, so the ids of cancellations already done are never lost.
-Delete it when the cutover ends.
+JSON with ids and counts only (`schemaVersion: 1`): `outcome`, `startedAt`, `finishedAt`,
+walked versus `total` per family (`census`), `cancelledPlanIds` and `cancelledPreapprovalIds`
+(ids a cancellation call was sent for), `rereadCancelledIds` (verified `cancelled` by id),
+`preservedProbeIds` (left alive on purpose), `unknownLiveIds` (alive at the provider, unknown to
+the DB and to the probe manifest) and `failures`. Optional, and absent until step 4b creates
+them: `probeId` (the delivery probe preapproval), `paymentId` (the small payment) and
+`refundId` (its refund). Adding these three did not bump `schemaVersion`. Provider payloads are
+never copied, so no email, name or phone can reach it.
+
+**Written incrementally.** The run writes a checkpoint before its first call, once the targets
+are known and after every cancellation call sent, so an abort or a crash mid-run still leaves on
+disk every id already touched, which is what the abort inverses need.
+
+- **Partial versus finished**: a checkpoint reads `outcome: "in-progress"` (its `finishedAt` is
+  the time of that checkpoint); a finished record reads `ok`, `failed` or `dry-run`. A manifest
+  left `in-progress` means the run did not finish.
+- **Never overwrites**: the first write claims a free name (an existing file is never taken: a
+  `-1`, `-2`... suffix is picked). Each later write replaces that same file through a temp file
+  plus rename, and only while the file is still this run's partial manifest (same `startedAt`,
+  `outcome: "in-progress"`); a finished record found there is never overwritten (the write takes
+  a new free name instead), and once the finished record is written no further write lands.
+- **Never lost**: if the first checkpoint cannot be written the run stops before any call
+  (`MANIFEST_WRITE_FAILED`). A later write that fails dumps the full JSON to stderr and the run
+  goes on; if the finished record cannot be written the exit code is 1.
+
+Delete the manifest (and any abort-inverse report next to it) when the cutover ends.
+
+## Abort inverses (AC:U3:9)
+
+`--abort-inverse <manifest> --confirm-abort-inverse` acts **only on the ids of that manifest**,
+partial or finished. Ids that are absent (an abort before step 4b) are not a failure: there is
+nothing to undo.
+
+- **(b) delivery probe**: re-reads `probeId` by id; if it is not `cancelled`, cancels it and
+  verifies by re-reading, with the same 3 retries as step 2. The probe is a preapproval at the
+  provider, so this is the same read and cancel as step 1b.
+- **(c) small payment**: if `refundId` is in the manifest, only re-reads it. Otherwise reads
+  `paymentId`: a refund the payment already lists is re-read (never refunded twice); a payment
+  that never charged (`rejected`, `cancelled`) needs nothing; an `approved` one is refunded in
+  full (`POST /v1/payments/{id}/refunds` with a deterministic idempotency key) and the refund is
+  re-read by id until it reads `approved` (re-read only, the refund is never re-sent). Any other
+  payment status is a failure and nothing is refunded.
+
+The two inverses are independent: a failure in (b) does not skip (c). The mode never touches
+the run's manifest; it writes its own report, ids and actions only, next to it as
+`<manifest>-abort-inverse.json` (same no-overwrite and stderr fallback). Exit 0 when both
+inverses ended clean, 1 otherwise, 2 on a usage error.
 
 ## Failure modes (exit code 1; the cutover does not advance)
 
@@ -85,6 +130,8 @@ Delete it when the cutover ends.
 | `KNOWN_ID_MISSING` | An id from the old DB or the probe manifest is absent from the unfiltered walk. |
 | `UNEXPECTED_STATUS` | A preapproval is in a status other than pending, authorized, paused or cancelled. |
 | `NOT_CANCELLED` | An id is still not `cancelled` after the 3 retries. |
+| `REFUND_NOT_CONFIRMED` | Abort inverse (c): the refund never read `approved`, or the refund call got no refund. |
+| `MANIFEST_WRITE_FAILED` | The first manifest checkpoint could not be written; nothing was called. |
 | `PROVIDER_ERROR` | The provider could not be read or answered something unusable (status and path only; the body is dropped). |
 | `OLD_DB_ERROR` | The old database could not be read (SQLSTATE or error code plus message). Raised before any provider call. |
 | `UNEXPECTED_ERROR` | Anything else that threw during the run. |
@@ -99,7 +146,11 @@ only covers the ids we already know.
 ## Tests
 
 - Unit, against a simulated provider (no network): `corepack pnpm test:scripts`
-  (`scripts/__tests__/cutover/`), TEST:U3:1 to 4 and 6.
+  (`scripts/__tests__/cutover/`), TEST:U3:1 to 4, 6 (`run-cutover.test.ts` and, for the
+  inverse path, `abort-inverse.test.ts`), 7 (`standalone.test.ts`: imports are only this
+  folder, `node:` built-ins and `zod`, plus the declared `pg` driver load in `known-ids.ts`;
+  and G8 passes without this folder in its list) and 10 (`abort-inverse.test.ts`). The
+  incremental manifest is covered by `manifest-writer.test.ts`.
 - Real Postgres: `HOSPEDA_TEST_DATABASE_URL=<server admin url> corepack pnpm test:cutover-db`
   (`scripts/__tests__/cutover-db/`), TEST:U3:5 and 13. They create their own scratch
   databases, build the old schema from `main`'s migrations (`CUTOVER_OLD_SCHEMA_REF`,
