@@ -5,7 +5,7 @@
     "type": "module",
     "sideEffects": false,
     "license": "MIT",
-    "description": "The single place where verticals and billing talk to each other: neither imports the other outside this package. Empty on purpose; V1 and B1 fill it.",
+    "description": "The single place where verticals and billing talk to each other: neither imports the other outside this package. Types only, no runtime values; V1 and B1 fill it.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
