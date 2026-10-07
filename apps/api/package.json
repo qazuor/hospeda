@@ -39,6 +39,7 @@
         "@repo/ai-core": "workspace:*",
         "@repo/analytics": "workspace:*",
         "@repo/billing": "workspace:*",
+        "@repo/billing-verticals-contract": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/email": "workspace:*",
@@ -83,6 +84,7 @@
     },
     "devDependencies": {
         "@better-auth/expo": "1.6.23",
+        "@repo/test-clock": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@sentry/esbuild-plugin": "^5.4.0",
         "@types/bcryptjs": "^3.0.0",

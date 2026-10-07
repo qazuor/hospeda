@@ -1,11 +1,11 @@
 {
-    "name": "@repo/payments",
+    "name": "@repo/test-clock",
     "version": "0.0.0",
     "private": true,
     "type": "module",
     "sideEffects": false,
     "license": "MIT",
-    "description": "The payments package: the eight-capability interface the billing domain talks to a payment provider through, its in-memory fake, the Mercado Pago adapter behind it, and the probe manifest. No app, no verticals code and no legacy billing library is imported from here.",
+    "description": "The shared test package with the adjustable clock: the Clock tests inject in place of the system time. Test-only: a devDependency wherever it appears, never imported by a production build.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
@@ -40,7 +40,6 @@
         "zod": "^4.0.8"
     },
     "devDependencies": {
-        "@repo/test-clock": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.6.1",
         "@vitest/coverage-v8": "^4.1.10",
