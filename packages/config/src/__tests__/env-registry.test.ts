@@ -294,8 +294,15 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +1 = PUBLIC_DAILYMOTION_PLAYER_ID (HOS-1217, integrations category, optional,
  * web only) — Dailymotion's geo host 403s a third-party embed without a Player
  * ID in the URL. 285 + 1 = 286.
+ *
+ * -14 (HOS-1419 U1.4, retired old-billing vars): the nine old-system-only vars
+ * (ADDON_LIFECYCLE_ENABLED, USER_CANCEL_ENABLED, BILLING_POLLING_ENABLED,
+ * BILLING_PRICE_INCREASE_ENABLED, BILLING_OWN_PREAPPROVAL_ENABLED,
+ * BILLING_RECURRING_ADDONS_ENABLED, TRIAL_DAYS_OVERRIDE, SHOW_TEST_BILLING_PLAN,
+ * QZPAY_TEST_CONTROL_ENABLED), MERCADO_PAGO_STATEMENT_DESCRIPTOR and the four
+ * API_RATE_LIMIT_BILLING_*. 285 - 14 = 271.
  */
-const EXPECTED_VAR_COUNT = 285;
+const EXPECTED_VAR_COUNT = 271;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -355,13 +362,6 @@ describe('ENV_REGISTRY', () => {
             expect(entry, 'HOSPEDA_DEPLOY_ENV missing from registry').toBeDefined();
             expect(entry?.type).toBe('enum');
             expect(entry?.enumValues).toEqual(['dev', 'test', 'preview', 'prod']);
-        });
-
-        it('registers HOSPEDA_QZPAY_TEST_CONTROL_ENABLED (billing test-control gate)', () => {
-            const entry = byName('HOSPEDA_QZPAY_TEST_CONTROL_ENABLED');
-            expect(entry, 'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED missing from registry').toBeDefined();
-            expect(entry?.type).toBe('boolean');
-            expect(entry?.apps).toContain('api');
         });
 
         // HOS-79 T-007: three MORE gaps the new env:check:usage scanner found
