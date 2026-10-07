@@ -8,7 +8,6 @@ import type {
     CutoverManifest,
     KnownIds,
     KnownIdsReader,
-    ObjectKind,
     ProviderApi,
     ProviderObject
 } from './types.ts';
@@ -26,6 +25,13 @@ export interface RunCutoverInput {
     readonly sleep: (ms: number) => Promise<void>;
     readonly backoffMs?: readonly number[];
     readonly now?: () => Date;
+    /**
+     * Persists a manifest checkpoint and answers whether it landed on disk (HOS-1427). Called
+     * before any call (outcome `in-progress`), once the targets are known and after every
+     * cancellation call sent, so an abort or a crash still leaves the ids already touched. If the
+     * FIRST checkpoint cannot be written the run stops before touching the provider.
+     */
+    readonly onCheckpoint?: (manifest: CutoverManifest) => boolean;
 }
 
 /** Result of a run. `ok` is false whenever the cutover must not advance. */
@@ -113,7 +119,8 @@ export async function runCutover({
     dryRun,
     sleep,
     backoffMs,
-    now = () => new Date()
+    now = () => new Date(),
+    onCheckpoint
 }: RunCutoverInput): Promise<RunCutoverResult> {
     const startedAt = now().toISOString();
     const failures: CutoverFailure[] = [];
@@ -124,6 +131,35 @@ export async function runCutover({
     const preserved: string[] = [];
     let unknownLive: string[] = [];
     let verified: readonly string[] = [];
+    const sentPlanIds: string[] = [];
+    const sentPreapprovalIds: string[] = [];
+
+    const summary = (walk: WalkResult | undefined) => ({
+        total: walk?.total ?? 0,
+        walked: walk?.ids.size ?? 0
+    });
+    const build = (outcome: CutoverManifest['outcome']): CutoverManifest => ({
+        schemaVersion: 1,
+        outcome,
+        startedAt,
+        finishedAt: now().toISOString(),
+        census: { plans: summary(plansWalk), preapprovals: summary(preapprovalsWalk) },
+        cancelledPlanIds: [...sentPlanIds],
+        cancelledPreapprovalIds: [...sentPreapprovalIds],
+        rereadCancelledIds: verified,
+        preservedProbeIds: [...preserved],
+        unknownLiveIds: unknownLive,
+        failures: [...failures]
+    });
+    const checkpoint = (): boolean => onCheckpoint?.(build('in-progress')) ?? true;
+
+    if (!checkpoint()) {
+        failures.push({
+            code: 'MANIFEST_WRITE_FAILED',
+            detail: 'the first manifest checkpoint could not be written; nothing was called'
+        });
+        return { ok: false, manifest: build('failed') };
+    }
 
     try {
         const known = await readOldDb({ readKnownIds });
@@ -174,8 +210,13 @@ export async function runCutover({
         ].filter((id) => !knownSet.has(id) && !probeSet.has(id));
 
         if (!dryRun) {
-            await cancelTargets({ api, targets: plansToCancel });
-            await cancelTargets({ api, targets: preapprovalsToCancel });
+            checkpoint();
+            const onSent = (target: Target): void => {
+                (target.kind === 'plan' ? sentPlanIds : sentPreapprovalIds).push(target.id);
+                checkpoint();
+            };
+            await cancelTargets({ api, targets: plansToCancel, onSent });
+            await cancelTargets({ api, targets: preapprovalsToCancel, onSent });
             const result = await verifyCancelled({
                 api,
                 targets: [...plansToCancel, ...preapprovalsToCancel],
@@ -196,25 +237,6 @@ export async function runCutover({
         failures.push(describeFailure({ error }));
     }
 
-    const summary = (walk: WalkResult | undefined) => ({
-        total: walk?.total ?? 0,
-        walked: walk?.ids.size ?? 0
-    });
-    const idsOf = (targets: readonly Target[], kind: ObjectKind) =>
-        targets.filter((t) => t.kind === kind).map((t) => t.id);
     const ok = failures.length === 0;
-    const manifest: CutoverManifest = {
-        schemaVersion: 1,
-        outcome: ok ? (dryRun ? 'dry-run' : 'ok') : 'failed',
-        startedAt,
-        finishedAt: now().toISOString(),
-        census: { plans: summary(plansWalk), preapprovals: summary(preapprovalsWalk) },
-        cancelledPlanIds: dryRun ? [] : idsOf(plansToCancel, 'plan'),
-        cancelledPreapprovalIds: dryRun ? [] : idsOf(preapprovalsToCancel, 'preapproval'),
-        rereadCancelledIds: verified,
-        preservedProbeIds: preserved,
-        unknownLiveIds: unknownLive,
-        failures
-    };
-    return { ok, manifest };
+    return { ok, manifest: build(ok ? (dryRun ? 'dry-run' : 'ok') : 'failed') };
 }
