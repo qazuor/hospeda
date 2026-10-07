@@ -114,6 +114,7 @@ describe('TEST:V1:4 — GUARD:G3', () => {
             'FAIL G3: production code uses a key that is not in the key catalog'
         );
         expect(result.output).toContain('apps/web/src/new.ts:2');
+        expect(result.output).toContain('Seen forms only: legacy enum members');
         expect(result.output).toContain(key);
     });
 

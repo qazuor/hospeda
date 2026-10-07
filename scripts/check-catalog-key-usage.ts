@@ -285,7 +285,9 @@ export function run(
         lines.push(
             '',
             'FAIL G3: production code uses a key that is not in the key catalog (packages/schemas/src/catalog).',
-            'Add the key to the catalog (and regenerate its SQL, GUARD:G18) or stop using it.'
+            'Seen forms only: legacy enum members (EntitlementKey.X / LimitKey.X), legacy key literals and',
+            'getCatalogKey/isCatalogKey arguments. Add the key to the catalog (and regenerate its SQL,',
+            'GUARD:G18) or stop using it.'
         );
         for (const v of violations) lines.push(`  ${v.file}:${v.line}  ${v.detail}`);
     }

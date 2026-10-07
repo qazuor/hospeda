@@ -14,7 +14,7 @@
  *
  * The output is byte-identical to the `INSERT` statements of
  * `packages/db/src/migrations/0129_gorgeous_storm.sql`, which were hand-written
- * before this generator existed (`scripts/__tests__/generate-catalog-sql.test.ts`
+ * before this generator existed (`scripts/__tests__/check-catalog-sql.test.ts`
  * pins that). Row order is deterministic: verticals in enum order; keys
  * entitlements first then limits, each sorted by key (the catalog's own order).
  *
