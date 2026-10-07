@@ -22,8 +22,11 @@ import type { AuthorizeInput, AuthorizeResult, AuthorizationSnapshot, PaymentPro
 `;
 
 const FIXTURES = {
+    // Re-states the check in the fixture itself, so a concept leaked into the
+    // real interface surfaces as a diagnostic of THIS file, not only of src.
     clean: `${HEADER}
-export type Check = PaymentProviderNamesNoProviderConcept;
+export type Shipped = PaymentProviderNamesNoProviderConcept;
+export type Check = AssertNoProviderConcept<ProviderConceptsIn<PaymentProvider>>;
 `,
     leakedMethod: `${HEADER}
 interface Leaky extends PaymentProvider {
