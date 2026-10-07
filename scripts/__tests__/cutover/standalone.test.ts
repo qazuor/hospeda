@@ -75,7 +75,7 @@ describe('TEST:U3:7 the cutover script is standalone and under G8 (AC:U3:6)', ()
         // Arrange / Act
         const modules = loadedModules();
         // Assert: a known relative import, `zod`, a built-in and the driver exception are all seen
-        expect(modules).toContainEqual({ file: 'cli.ts', specifier: './run-cutover.ts' });
+        expect(modules).toContainEqual({ file: 'cli-main.ts', specifier: './run-cutover.ts' });
         expect(modules).toContainEqual({ file: 'provider-api.ts', specifier: 'zod' });
         expect(modules).toContainEqual({ file: 'write-manifest.ts', specifier: 'node:fs' });
         expect(modules).toContainEqual(DRIVER_EXCEPTION);
