@@ -12,6 +12,7 @@
  * @module routes/cron-admin
  */
 
+import { randomUUID } from 'node:crypto';
 import {
     type CronCategory,
     CronJobsAdminListSchema,
@@ -20,6 +21,7 @@ import {
     PermissionEnum
 } from '@repo/schemas';
 import { CronRunService } from '@repo/service-core';
+import { MARKET_TIMEZONE } from '@repo/utils';
 import { CronExpressionParser } from 'cron-parser';
 import cronstrue from 'cronstrue/i18n.js';
 import type { Context } from 'hono';
@@ -28,6 +30,7 @@ import { recordCronRun } from '../../cron/record-run';
 import { cronJobs, getCronJob } from '../../cron/registry';
 import { CRON_SCHEDULES } from '../../cron/schedules.manifest';
 import type { CronJobContext, CronJobResult } from '../../cron/types';
+import { getRequestCorrelationId } from '../../lib/request-context';
 import type { AppBindings } from '../../types';
 import { getActorFromContext } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
@@ -63,11 +66,18 @@ const humanizeSchedule = (expr: string): string => {
     }
 };
 
-/** Computes the next run for an enabled job; null when disabled or unparseable. */
+/**
+ * Computes the next run for an enabled job; null when disabled or unparseable.
+ * Read on the market wall clock, the zone the scheduler registers every job in
+ * (HOS-1424).
+ */
 const computeNextRun = (expr: string, enabled: boolean): string | null => {
     if (!enabled) return null;
     try {
-        return CronExpressionParser.parse(expr).next().toDate().toISOString();
+        return CronExpressionParser.parse(expr, { tz: MARKET_TIMEZONE })
+            .next()
+            .toDate()
+            .toISOString();
     } catch {
         return null;
     }
@@ -175,23 +185,31 @@ export const triggerCronJobHandler = async (
 
     const startTime = Date.now();
     const startedAt = new Date();
+    // HOS-1424: a fresh run id per trigger; the run's correlation is the one of
+    // the admin request that triggered it (minted at the edge, echoed on the
+    // response), so the operator can follow the run from the response.
+    const runId = randomUUID();
+    const correlationId = getRequestCorrelationId() ?? randomUUID();
+    const ids = { runId, correlationId };
 
     const jobContext: CronJobContext = {
         logger: {
             info: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.info({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...data });
+                apiLogger.info({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
             },
             warn: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.warn({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...data });
+                apiLogger.warn({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
             },
             error: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.error({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...data });
+                apiLogger.error({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
             },
             debug: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.debug({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...data });
+                apiLogger.debug({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
             }
         },
         startedAt,
+        runId,
+        correlationId,
         dryRun
     };
 

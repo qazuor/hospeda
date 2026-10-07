@@ -37,6 +37,20 @@ export interface CronJobContext {
     };
     /** Timestamp when the job execution started */
     startedAt: Date;
+    /**
+     * Identifier of this run (HOS-1424, NUCLEO/08 §2.3). Fresh on every tick
+     * and every manual trigger; stamped on every log line of the run so a run
+     * can be read whole. `cron_runs` keeps its own row id; this one is not
+     * persisted there.
+     */
+    runId: string;
+    /**
+     * Correlation of this run (HOS-1424, AC:U2:9): a job carries the
+     * correlation of its run AND, for each item it processes, the item's own
+     * (the one stored on the entity, or one minted for the item). This is the
+     * first of the two; per-item correlations are the job's business.
+     */
+    correlationId: string;
     /** If true, job should run in dry-run mode (no actual changes) */
     dryRun: boolean;
 }
@@ -75,7 +89,12 @@ export interface CronJobDefinition {
     name: string;
     /** Human-readable description of what the job does */
     description: string;
-    /** Cron schedule expression (e.g., "0 0 * * *" for daily at midnight) */
+    /**
+     * Cron schedule expression (e.g., "0 0 * * *" for daily at midnight).
+     * Read on the wall clock of the market time zone,
+     * `America/Argentina/Buenos_Aires` (HOS-1424): `0 8 * * *` runs at 08:00
+     * in Buenos Aires (11:00 UTC), whatever the process zone is.
+     */
     schedule: string;
     /** Function to execute when the job runs */
     handler: CronJobHandler;

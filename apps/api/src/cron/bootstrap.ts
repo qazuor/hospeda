@@ -10,9 +10,18 @@
  * - `manual` — used in dev/tests/CI when something else (admin panel,
  *   tests, an operator) is responsible for triggering jobs.
  *
+ * Every schedule is registered on the wall clock of the market time zone,
+ * `America/Argentina/Buenos_Aires`, through node-cron's per-task `timezone`
+ * option (HOS-1424, NUCLEO/07 §3): `0 8 * * *` fires at 08:00 in Buenos
+ * Aires whatever zone the process runs in. `TZ` is never set or read.
+ *
+ * Every tick gets its own run id and run correlation (NUCLEO/08 §2.3).
+ *
  * @module cron/bootstrap
  */
 
+import { randomUUID } from 'node:crypto';
+import { MARKET_TIMEZONE } from '@repo/utils';
 import * as Sentry from '@sentry/node';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
@@ -23,31 +32,44 @@ import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
 /** Default per-job execution timeout (matches the value used by admin manual triggers). */
 const DEFAULT_JOB_TIMEOUT_MS = 30_000;
 
+/** node-cron options shared by every registered schedule. */
+export const CRON_SCHEDULE_OPTIONS = { timezone: MARKET_TIMEZONE } as const;
+
 /**
  * Builds the per-tick context handed to a job handler.
  *
- * Each log call is namespaced with the job name so log scraping by
- * `[CRON:<name>]` works the same as on the admin manual trigger path.
+ * Each tick mints a fresh run id and run correlation (HOS-1424). Each log
+ * call is namespaced with the job name so log scraping by `[CRON:<name>]`
+ * works the same as on the admin manual trigger path, and carries both ids
+ * so one run can be read whole.
+ *
+ * @param jobName - Name of the job being run.
+ * @returns The context for one run.
  */
-function buildContext(jobName: string): CronJobContext {
+export function buildContext(jobName: string): CronJobContext {
+    const runId = randomUUID();
+    const correlationId = randomUUID();
+    const ids = { runId, correlationId };
     return {
         logger: {
             info: (message, data) =>
-                apiLogger.info({ message: `[CRON:${jobName}] ${message}`, ...data }),
+                apiLogger.info({ message: `[CRON:${jobName}] ${message}`, ...ids, ...data }),
             warn: (message, data) =>
-                apiLogger.warn({ message: `[CRON:${jobName}] ${message}`, ...data }),
+                apiLogger.warn({ message: `[CRON:${jobName}] ${message}`, ...ids, ...data }),
             // SPEC-180: propagate `capture` option so job handlers can opt in to
             // Sentry forwarding via `ctx.logger.error(msg, data, { capture: true })`.
             error: (message, data, options) =>
                 apiLogger.error(
-                    { message: `[CRON:${jobName}] ${message}`, ...data },
+                    { message: `[CRON:${jobName}] ${message}`, ...ids, ...data },
                     undefined,
                     options?.capture ? { capture: true } : undefined
                 ),
             debug: (message, data) =>
-                apiLogger.debug({ message: `[CRON:${jobName}] ${message}`, ...data })
+                apiLogger.debug({ message: `[CRON:${jobName}] ${message}`, ...ids, ...data })
         },
         startedAt: new Date(),
+        runId,
+        correlationId,
         dryRun: false
     };
 }
@@ -125,113 +147,118 @@ export const startCronScheduler = async (): Promise<void> => {
                 }
             }
 
-            nodeCron.schedule(scheduleExpression, async () => {
-                const startTime = Date.now();
-                apiLogger.info({ message: `[cron] tick: ${job.name}` });
-                try {
-                    const result = await runJobWithTimeout(
-                        job,
-                        job.timeoutMs ?? DEFAULT_JOB_TIMEOUT_MS
-                    );
-                    apiLogger.info({
-                        message: `[cron] completed: ${job.name}`,
-                        success: result.success,
-                        processed: result.processed,
-                        errors: result.errors,
-                        durationMs: Date.now() - startTime
-                    });
-                    // Fire-and-forget: never alters the job outcome.
-                    await recordCronRun({
-                        jobName: job.name,
-                        executionMode: 'scheduled',
-                        dryRun: false,
-                        startedAt: new Date(startTime),
-                        finishedAt: new Date(),
-                        result
-                    });
+            nodeCron.schedule(
+                scheduleExpression,
+                async () => {
+                    const startTime = Date.now();
+                    apiLogger.info({ message: `[cron] tick: ${job.name}` });
+                    try {
+                        const result = await runJobWithTimeout(
+                            job,
+                            job.timeoutMs ?? DEFAULT_JOB_TIMEOUT_MS
+                        );
+                        apiLogger.info({
+                            message: `[cron] completed: ${job.name}`,
+                            success: result.success,
+                            processed: result.processed,
+                            errors: result.errors,
+                            durationMs: Date.now() - startTime
+                        });
+                        // Fire-and-forget: never alters the job outcome.
+                        await recordCronRun({
+                            jobName: job.name,
+                            executionMode: 'scheduled',
+                            dryRun: false,
+                            startedAt: new Date(startTime),
+                            finishedAt: new Date(),
+                            result
+                        });
 
-                    // Soft-failure: job completed but reported errors — capture once
-                    // per run so silent partial failures are visible in Sentry.
-                    // Use level=warning (not error) to distinguish from thrown
-                    // exceptions. No PII in details; errors count is safe.
-                    if (!result.success) {
+                        // Soft-failure: job completed but reported errors — capture once
+                        // per run so silent partial failures are visible in Sentry.
+                        // Use level=warning (not error) to distinguish from thrown
+                        // exceptions. No PII in details; errors count is safe.
+                        if (!result.success) {
+                            Sentry.captureException(
+                                new Error(
+                                    `[cron] soft-failure: ${job.name} — ${result.errors} error(s)`
+                                ),
+                                {
+                                    level: 'warning',
+                                    tags: {
+                                        module: 'cron',
+                                        job_name: job.name,
+                                        ...(job.name === 'dunning'
+                                            ? { event_type: 'dunning_failure' }
+                                            : { event_type: 'cron_soft_failure' })
+                                    },
+                                    contexts: {
+                                        cron: {
+                                            jobName: job.name,
+                                            schedule: scheduleExpression,
+                                            durationMs: Date.now() - startTime,
+                                            errors: result.errors,
+                                            processed: result.processed,
+                                            // HOS-154: attach the job's own details (e.g. per-destination
+                                            // errorDetails) so a soft-failure names WHAT failed, not just
+                                            // a count. Job details never carry PII.
+                                            ...(result.details ? { details: result.details } : {})
+                                        }
+                                    }
+                                }
+                            );
+                        }
+                    } catch (error) {
+                        const errorMessage =
+                            error instanceof Error ? error.message : 'Unknown error';
+                        apiLogger.error({
+                            message: `[cron] failed: ${job.name}`,
+                            error: errorMessage,
+                            durationMs: Date.now() - startTime
+                        });
+
+                        // Capture to Sentry with consistent tags so the Sentry alert
+                        // rules can match.
+                        // Tags pinned by the alert configuration: module=cron,
+                        // job_name=<name>. The dunning job carries an extra
+                        // event_type=dunning_failure tag for its dedicated alert.
                         Sentry.captureException(
-                            new Error(
-                                `[cron] soft-failure: ${job.name} — ${result.errors} error(s)`
-                            ),
+                            error instanceof Error ? error : new Error(errorMessage),
                             {
-                                level: 'warning',
+                                level: 'error',
                                 tags: {
                                     module: 'cron',
                                     job_name: job.name,
                                     ...(job.name === 'dunning'
                                         ? { event_type: 'dunning_failure' }
-                                        : { event_type: 'cron_soft_failure' })
+                                        : { event_type: 'cron_failure' })
                                 },
                                 contexts: {
                                     cron: {
                                         jobName: job.name,
                                         schedule: scheduleExpression,
-                                        durationMs: Date.now() - startTime,
-                                        errors: result.errors,
-                                        processed: result.processed,
-                                        // HOS-154: attach the job's own details (e.g. per-destination
-                                        // errorDetails) so a soft-failure names WHAT failed, not just
-                                        // a count. Job details never carry PII.
-                                        ...(result.details ? { details: result.details } : {})
+                                        durationMs: Date.now() - startTime
                                     }
                                 }
                             }
                         );
+
+                        // Fire-and-forget: record the failure/timeout outcome.
+                        await recordCronRun({
+                            jobName: job.name,
+                            executionMode: 'scheduled',
+                            dryRun: false,
+                            startedAt: new Date(startTime),
+                            finishedAt: new Date(),
+                            error
+                        });
                     }
-                } catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                    apiLogger.error({
-                        message: `[cron] failed: ${job.name}`,
-                        error: errorMessage,
-                        durationMs: Date.now() - startTime
-                    });
-
-                    // Capture to Sentry with consistent tags so the Sentry alert
-                    // rules can match.
-                    // Tags pinned by the alert configuration: module=cron,
-                    // job_name=<name>. The dunning job carries an extra
-                    // event_type=dunning_failure tag for its dedicated alert.
-                    Sentry.captureException(
-                        error instanceof Error ? error : new Error(errorMessage),
-                        {
-                            level: 'error',
-                            tags: {
-                                module: 'cron',
-                                job_name: job.name,
-                                ...(job.name === 'dunning'
-                                    ? { event_type: 'dunning_failure' }
-                                    : { event_type: 'cron_failure' })
-                            },
-                            contexts: {
-                                cron: {
-                                    jobName: job.name,
-                                    schedule: scheduleExpression,
-                                    durationMs: Date.now() - startTime
-                                }
-                            }
-                        }
-                    );
-
-                    // Fire-and-forget: record the failure/timeout outcome.
-                    await recordCronRun({
-                        jobName: job.name,
-                        executionMode: 'scheduled',
-                        dryRun: false,
-                        startedAt: new Date(startTime),
-                        finishedAt: new Date(),
-                        error
-                    });
-                }
-            });
+                },
+                CRON_SCHEDULE_OPTIONS
+            );
 
             apiLogger.info({
-                message: `[cron] schedule registered: ${job.name} @ ${scheduleExpression}`,
+                message: `[cron] schedule registered: ${job.name} @ ${scheduleExpression} (${MARKET_TIMEZONE})`,
                 description: job.description
             });
         } catch (error) {
