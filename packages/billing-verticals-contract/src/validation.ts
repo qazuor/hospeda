@@ -115,7 +115,14 @@ async function gated<TArgs extends z.ZodType, TResponse extends z.ZodType>(args:
     });
 }
 
-/** Wraps a listener so it only ever receives an event that validates. */
+/**
+ * Wraps a listener so it only ever receives an event that validates.
+ *
+ * An invalid event never reaches the listener: the wrapper throws
+ * `ContractValidationError` back to the EMITTER (synchronously, from the call
+ * the emitter makes), so the side that produced the malformed event is the one
+ * that sees the failure.
+ */
 function gatedListener<TSchema extends z.ZodType>(args: {
     readonly operation: string;
     readonly schema: TSchema;
