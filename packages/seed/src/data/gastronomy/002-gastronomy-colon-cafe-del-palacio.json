@@ -12,7 +12,6 @@
     "visibility": "PUBLIC",
     "lifecycleState": "ACTIVE",
     "moderationState": "APPROVED",
-    "isFeatured": true,
     "contactInfo": {
         "personalEmail": "cafedelpalacio@gmail.com",
         "mobilePhone": "+54 9 3447 500002",

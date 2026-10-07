@@ -45,11 +45,6 @@
             "type": "string",
             "description": "Short description of the partner"
         },
-        "subscriptionStatus": {
-            "type": "string",
-            "enum": ["pending", "active", "past_due", "cancelled"],
-            "description": "Partner billing subscription status (PartnerSubscriptionStatusEnum)"
-        },
         "lifecycleState": {
             "type": "string",
             "enum": ["ACTIVE", "INACTIVE", "ARCHIVED", "SUSPENDED"],
@@ -66,15 +61,6 @@
             "description": "Date the partnership ends (omit for ongoing)"
         }
     },
-    "required": [
-        "id",
-        "slug",
-        "name",
-        "type",
-        "tier",
-        "subscriptionStatus",
-        "lifecycleState",
-        "startsAt"
-    ],
+    "required": ["id", "slug", "name", "type", "tier", "lifecycleState", "startsAt"],
     "additionalProperties": false
 }

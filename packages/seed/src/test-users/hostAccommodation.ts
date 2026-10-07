@@ -249,7 +249,6 @@ export function buildHostAccommodationCoreFields(
         type,
         ownerId,
         destinationId,
-        isFeatured: false,
         contactInfo: {
             personalEmail: `contacto+${slugSuffix}@hospeda-seed.test`,
             mobilePhone: '+5493442100000',

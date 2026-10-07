@@ -61,15 +61,12 @@ describe('ROLE_PERMISSIONS — EDITOR newsletter permissions (SPEC-155 T-016)', 
 const ADMIN = 'ADMIN' as const;
 const SUPER_ADMIN = 'SUPER_ADMIN' as const;
 
-/** The 19 permissions revoked from ADMIN by SPEC-164. */
+/**
+ * The permissions revoked from ADMIN by SPEC-164 that still exist. SPEC-164
+ * revoked 19; the six old billing ones among them were retired from the enum
+ * entirely by HOS-1419, leaving 13.
+ */
 const SPEC_164_REVOKED_PERMS = [
-    // Billing (6)
-    'billing.readAll',
-    'billing.manage',
-    'subscription.manage',
-    'billing.promoCode.read',
-    'billing.promoCode.manage',
-    'billing.metrics.read',
     // Sponsorship _ANY (6)
     'sponsorship.view.any',
     'sponsorship.update.any',
@@ -95,13 +92,13 @@ describe('ROLE_PERMISSIONS — SPEC-164 admin billing surface (SUPER_ADMIN-only)
         SUPER_ADMIN as unknown as RoleKey
     ] as readonly string[];
 
-    // AC-15: ADMIN does NOT hold any of the 19 revoked permissions.
-    describe('AC-15: ADMIN does not hold any of the 19 revoked billing permissions', () => {
-        it('has exactly 19 permissions in the revoked list', () => {
+    // AC-15: ADMIN does NOT hold any of the 13 surviving revoked permissions.
+    describe('AC-15: ADMIN does not hold any of the 13 surviving revoked permissions', () => {
+        it('has exactly 13 permissions in the revoked list', () => {
             // Arrange / Act
             const count = SPEC_164_REVOKED_PERMS.length;
             // Assert
-            expect(count).toBe(19);
+            expect(count).toBe(13);
         });
 
         for (const perm of SPEC_164_REVOKED_PERMS) {
@@ -122,8 +119,8 @@ describe('ROLE_PERMISSIONS — SPEC-164 admin billing surface (SUPER_ADMIN-only)
         });
     });
 
-    // AC-17: SUPER_ADMIN seed list still contains all 19 permissions.
-    describe('AC-17: SUPER_ADMIN seed list retains all 19 billing permissions', () => {
+    // AC-17: SUPER_ADMIN seed list still contains all 13 surviving permissions.
+    describe('AC-17: SUPER_ADMIN seed list retains all 13 surviving permissions', () => {
         for (const perm of SPEC_164_REVOKED_PERMS) {
             it(`grants "${perm}" to SUPER_ADMIN`, () => {
                 expect(superAdminPerms).toContain(perm);
@@ -203,10 +200,16 @@ const SETTINGS_GENERAL_WRITE = 'settings.general.write' as const;
 const MAINTENANCE_MODE_WRITE = 'system.maintenanceMode.write' as const;
 const BILLING_SETTINGS_VIEW = 'billing.settings.view' as const;
 const BILLING_SETTINGS_WRITE = 'billing.settings.write' as const;
-const BILLING_VIEW_OWN = 'billing.view.own' as const;
-const SUBSCRIPTION_VIEW_OWN = 'subscription.view.own' as const;
 const USER_UPDATE_SELF = 'user.update.self' as const;
-const BILLING_READ_ALL = 'billing.readAll' as const;
+/** Old billing values retired by HOS-1419; no role may hold them. */
+const RETIRED_BILLING_PERMS = [
+    'billing.view.own',
+    'subscription.view.own',
+    'billing.addon.purchase',
+    'billing.readAll',
+    'billing.manage',
+    'subscription.manage'
+] as const;
 
 const ALL_SPEC_156_PERMS = [
     SETTINGS_GENERAL_VIEW,
@@ -214,8 +217,6 @@ const ALL_SPEC_156_PERMS = [
     MAINTENANCE_MODE_WRITE,
     BILLING_SETTINGS_VIEW,
     BILLING_SETTINGS_WRITE,
-    BILLING_VIEW_OWN,
-    SUBSCRIPTION_VIEW_OWN,
     USER_UPDATE_SELF
 ] as const;
 
@@ -234,7 +235,7 @@ describe('ROLE_PERMISSIONS — SPEC-156 Platform Settings V1 (D1)', () => {
     const guest = get(GUEST);
     const system = get(SYSTEM);
 
-    describe('SUPER_ADMIN holds the full set (all 8 new perms)', () => {
+    describe('SUPER_ADMIN holds the full set (all 6 surviving perms)', () => {
         for (const perm of ALL_SPEC_156_PERMS) {
             it(`grants "${perm}" to SUPER_ADMIN`, () => {
                 expect(superAdmin).toContain(perm);
@@ -242,14 +243,12 @@ describe('ROLE_PERMISSIONS — SPEC-156 Platform Settings V1 (D1)', () => {
         }
     });
 
-    describe('ADMIN holds 7 (no MAINTENANCE_MODE_WRITE — SUPER_ADMIN-only)', () => {
+    describe('ADMIN holds 5 (no MAINTENANCE_MODE_WRITE — SUPER_ADMIN-only)', () => {
         const adminExpected = [
             SETTINGS_GENERAL_VIEW,
             SETTINGS_GENERAL_WRITE,
             BILLING_SETTINGS_VIEW,
             BILLING_SETTINGS_WRITE,
-            BILLING_VIEW_OWN,
-            SUBSCRIPTION_VIEW_OWN,
             USER_UPDATE_SELF
         ] as const;
 
@@ -264,21 +263,9 @@ describe('ROLE_PERMISSIONS — SPEC-156 Platform Settings V1 (D1)', () => {
         });
     });
 
-    describe('HOST has self-billing visibility but NOT admin-tier billing', () => {
-        it('grants BILLING_VIEW_OWN to HOST', () => {
-            expect(host).toContain(BILLING_VIEW_OWN);
-        });
-
-        it('grants SUBSCRIPTION_VIEW_OWN to HOST', () => {
-            expect(host).toContain(SUBSCRIPTION_VIEW_OWN);
-        });
-
+    describe('HOST has Mi cuenta self-edit but no admin-tier settings', () => {
         it('grants USER_UPDATE_SELF to HOST', () => {
             expect(host).toContain(USER_UPDATE_SELF);
-        });
-
-        it('does NOT grant BILLING_READ_ALL to HOST (admin-tier — kept SPEC-164 boundary)', () => {
-            expect(host).not.toContain(BILLING_READ_ALL);
         });
 
         it('does NOT grant MAINTENANCE_MODE_WRITE to HOST', () => {
@@ -319,43 +306,26 @@ describe('ROLE_PERMISSIONS — SPEC-156 Platform Settings V1 (D1)', () => {
         }
     });
 
-    describe('Paying roles also have self-billing access (T-007 expansion)', () => {
-        // USER buys tourist tiers, CLIENT_MANAGER buys complex tiers, SPONSOR
-        // pays for sponsorship packages — all need /protected/billing/* access.
-        // Per the dev test-users matrix (SPEC-143): tourist-free / tourist-plus /
-        // tourist-vip (USER); complex-basico / complex-pro / complex-premium
-        // (CLIENT_MANAGER); sponsor (SPONSOR).
-        const payingRoles: Array<readonly [string, readonly string[]]> = [
-            ['USER', user],
+    describe('No role holds a retired old-billing permission (HOS-1419)', () => {
+        const allRoles: Array<readonly [string, readonly string[]]> = [
+            ['SUPER_ADMIN', superAdmin],
+            ['ADMIN', admin],
+            ['HOST', host],
+            ['EDITOR', editor],
             ['CLIENT_MANAGER', clientManager],
-            ['SPONSOR', sponsor]
+            ['USER', user],
+            ['SPONSOR', sponsor],
+            ['GUEST', guest],
+            ['SYSTEM', system]
         ];
 
-        for (const [roleName, perms] of payingRoles) {
-            it(`grants BILLING_VIEW_OWN to ${roleName}`, () => {
-                expect(perms).toContain(BILLING_VIEW_OWN);
-            });
-
-            it(`grants SUBSCRIPTION_VIEW_OWN to ${roleName}`, () => {
-                expect(perms).toContain(SUBSCRIPTION_VIEW_OWN);
-            });
-
-            it(`does NOT grant BILLING_READ_ALL to ${roleName} (admin-tier remains SPEC-164 boundary)`, () => {
-                expect(perms).not.toContain(BILLING_READ_ALL);
-            });
+        for (const [roleName, perms] of allRoles) {
+            for (const perm of RETIRED_BILLING_PERMS) {
+                it(`does NOT grant "${perm}" to ${roleName}`, () => {
+                    expect(perms).not.toContain(perm);
+                });
+            }
         }
-    });
-
-    describe('EDITOR (internal role) does NOT receive billing gates', () => {
-        // EDITOR is content moderation, internal, non-paying. Should not be
-        // able to hit /protected/billing/* even with valid auth.
-        it('does NOT grant BILLING_VIEW_OWN to EDITOR', () => {
-            expect(editor).not.toContain(BILLING_VIEW_OWN);
-        });
-
-        it('does NOT grant SUBSCRIPTION_VIEW_OWN to EDITOR', () => {
-            expect(editor).not.toContain(SUBSCRIPTION_VIEW_OWN);
-        });
     });
 
     describe('Settings/maintenance gates remain admin-only', () => {

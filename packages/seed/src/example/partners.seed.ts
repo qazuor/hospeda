@@ -36,10 +36,10 @@ const getPartnerInfo = (item: unknown) => {
  *
  * Seeds example brand/business directory partners (SPEC-271) that power the
  * public `/partners` landing and the `PartnersSection` home carousel. All
- * fixtures are created `subscriptionStatus: 'active'` + `lifecycleState:
- * 'ACTIVE'` so they show up on the public listing out of the box (see
- * `PartnerModel.findByFilters` / `PartnerService._executeSearch`, which force
- * both filters for the public/protected search path).
+ * fixtures are created `lifecycleState: 'ACTIVE'` so they show up on the
+ * public listing out of the box (see `PartnerModel.findByFilters` /
+ * `PartnerService._executeSearch`, which force that filter for the
+ * public/protected search path).
  */
 export const seedPartners = createSeedFactory({
     entityName: 'Partners',
