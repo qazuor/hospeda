@@ -70,4 +70,27 @@ describe('email outbox dedup key (AC:U2:5)', () => {
             EmailOutboxKeyError
         );
     });
+
+    it('gives a different key when only the template differs', () => {
+        const occurrence = buildEventOccurrence({ eventId: 'e1' });
+        const a = buildEmailDedupKey({ recipient: 'u1', template: 'tpl-a', occurrence });
+        const b = buildEmailDedupKey({ recipient: 'u1', template: 'tpl-b', occurrence });
+        expect(a).not.toBe(b);
+    });
+
+    it('gives a different key when only the recipient differs', () => {
+        const occurrence = buildEventOccurrence({ eventId: 'e1' });
+        const a = buildEmailDedupKey({ recipient: 'u1', template: 'tpl', occurrence });
+        const b = buildEmailDedupKey({ recipient: 'u2', template: 'tpl', occurrence });
+        expect(a).not.toBe(b);
+    });
+
+    it('rejects ":" in the subject parts so two inputs cannot share an occurrence', () => {
+        expect(() => buildScheduleOccurrence({ ...schedule, subjectId: 'b:c' })).toThrow(
+            EmailOutboxKeyError
+        );
+        expect(() => buildScheduleOccurrence({ ...schedule, subjectKind: 'a:b' })).toThrow(
+            EmailOutboxKeyError
+        );
+    });
 });

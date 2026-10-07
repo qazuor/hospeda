@@ -13,6 +13,7 @@ import { buildEmailDedupKey } from '../../src/models/email-outbox/email-outbox-d
 import { emailOutbox } from '../../src/schemas/email-outbox/email_outbox.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
+import { DbError } from '../../src/utils/error.ts';
 import { closeTestPool, getTestDb, testData } from './helpers.ts';
 
 const model = new EmailOutboxModel();
@@ -204,6 +205,85 @@ describe('AC:U2:1 enqueue inside the domain transaction', () => {
     });
 });
 
+describe('AC:U2:1 retry, ownership and error contract', () => {
+    it('re-claims a row that failed and went to retry', async () => {
+        // Arrange
+        const dedupKey = newKey();
+        await model.enqueue({ recipientEmail: 'r@example.com', template: 't', dedupKey });
+        await model.claim({ owner: 'A', leaseMs: 60_000, limit: 100 });
+        const [held] = await getTestDb()
+            .select()
+            .from(emailOutbox)
+            .where(eq(emailOutbox.dedupKey, dedupKey));
+        if (!held) throw new Error('row missing');
+        await model.recordFailure({ id: held.id, owner: 'A', error: 'boom', maxAttempts: 5 });
+
+        // Act
+        const reclaimed = await model.claim({ owner: 'B', leaseMs: 60_000, limit: 100 });
+
+        // Assert
+        const row = reclaimed.find((r) => r.dedupKey === dedupKey);
+        expect(row?.lockedBy).toBe('B');
+        expect(row?.attempts).toBe(1);
+    });
+
+    it('ignores markSent and recordFailure from an owner that does not hold the lease', async () => {
+        // Arrange
+        const dedupKey = newKey();
+        await model.enqueue({ recipientEmail: 's@example.com', template: 't', dedupKey });
+        await model.claim({ owner: 'A', leaseMs: 60_000, limit: 100 });
+        const [held] = await getTestDb()
+            .select()
+            .from(emailOutbox)
+            .where(eq(emailOutbox.dedupKey, dedupKey));
+        if (!held) throw new Error('row missing');
+
+        // Act
+        const sent = await model.markSent({ id: held.id, owner: 'B', providerMessageId: 'x' });
+        const failure = await model.recordFailure({
+            id: held.id,
+            owner: 'B',
+            error: 'x',
+            maxAttempts: 1
+        });
+
+        // Assert
+        const [after] = await getTestDb()
+            .select()
+            .from(emailOutbox)
+            .where(eq(emailOutbox.id, held.id));
+        expect(sent).toBe(false);
+        expect(failure).toBeNull();
+        expect(after?.status).toBe('processing');
+        expect(after?.lockedBy).toBe('A');
+    });
+
+    it('keeps the original error as cause and never puts the raw key in params', async () => {
+        // Arrange: channel is varchar(20), so this insert fails inside Postgres
+        const dedupKey = buildEmailDedupKey({
+            recipient: 'secret.person@example.com',
+            template: 't',
+            occurrence: `event:${crypto.randomUUID()}`
+        });
+        createdKeys.push(dedupKey);
+
+        // Act
+        const error = await model
+            .enqueue({
+                recipientEmail: 'x@example.com',
+                template: 't',
+                dedupKey,
+                channel: 'c'.repeat(40)
+            })
+            .catch((e: unknown) => e);
+
+        // Assert
+        expect(error).toBeInstanceOf(DbError);
+        expect((error as DbError).cause).toBeInstanceOf(Error);
+        expect(JSON.stringify((error as DbError).params)).not.toContain('secret.person');
+    });
+});
+
 describe('AC:U2:2 recipient address captured at enqueue', () => {
     it('hands the sender the address stored at enqueue after the account is pseudonymized', async () => {
         // Arrange
@@ -341,6 +421,26 @@ describe('AC:U2:5 dedup key is a unique column', () => {
         expect(second.enqueued).toBe(false);
         expect(second.row).toBeNull();
         expect(rows).toHaveLength(1);
+    });
+
+    it('stores the literal (recipient, template, occurrence) key', async () => {
+        // Arrange
+        const dedupKey = buildEmailDedupKey({
+            recipient: 'User-1',
+            template: 'trial-pre',
+            occurrence: 'trial:abc:pre:-2d:2026-10-04'
+        });
+        createdKeys.push(dedupKey);
+
+        // Act
+        const { row } = await model.enqueue({
+            recipientEmail: 'k@example.com',
+            template: 'trial-pre',
+            dedupKey
+        });
+
+        // Assert
+        expect(row?.dedupKey).toBe('user-1|trial-pre|trial:abc:pre:-2d:2026-10-04');
     });
 
     it('enqueues one row when parallel instances enqueue the same key', async () => {
