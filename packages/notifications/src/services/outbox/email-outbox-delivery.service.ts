@@ -115,6 +115,34 @@ export interface EmailOutboxDeliveryDeps {
      * Must not throw.
      */
     readonly escalate: (event: OutboxEscalation) => void;
+    /**
+     * Reports a row whose processing threw (a DB read or write failed). The
+     * row stays `processing` until its lease expires and `recoverExpired`
+     * returns it to `pending` WITHOUT counting an attempt, so a row that
+     * always throws is retried indefinitely; this report is what makes that
+     * visible. The cron wires it to an `error` log. Must not throw.
+     */
+    readonly onRowError: (event: OutboxRowError) => void;
+    /**
+     * Reports a mail the provider accepted whose row this sender no longer
+     * held when marking it `sent` (the lease expired mid-send and another
+     * sender may take it again). The cron wires it to a `warn` log. Must not throw.
+     */
+    readonly onLeaseLost: (event: OutboxLeaseLost) => void;
+}
+
+/** A row whose processing threw. */
+export interface OutboxRowError {
+    readonly outboxId: string;
+    readonly template: string;
+    readonly error: string;
+}
+
+/** A sent row whose lease was lost before it could be marked `sent`. */
+export interface OutboxLeaseLost {
+    readonly outboxId: string;
+    readonly template: string;
+    readonly providerMessageId: string;
 }
 
 /** Input of {@link processEmailOutboxBatch}. */
@@ -230,8 +258,13 @@ export async function processEmailOutboxBatch(
             }
             counts[outcome] += 1;
             if (escalated) counts.escalated += 1;
-        } catch {
+        } catch (error) {
             counts.errors += 1;
+            deps.onRowError({
+                outboxId: row.id,
+                template: row.template,
+                error: error instanceof Error ? error.message : String(error)
+            });
         }
     }
 
@@ -342,7 +375,14 @@ async function sendRow(input: {
         return handleSendFailure({ ctx: input.ctx, subject, error });
     }
 
-    await deps.outbox.markSent({ id: row.id, owner, providerMessageId: messageId });
+    const marked = await deps.outbox.markSent({ id: row.id, owner, providerMessageId: messageId });
+    if (!marked) {
+        deps.onLeaseLost({
+            outboxId: row.id,
+            template: row.template,
+            providerMessageId: messageId
+        });
+    }
     await deps.log.recordEmailAttempt({
         outboxId: row.id,
         recipient: row.recipientEmail,

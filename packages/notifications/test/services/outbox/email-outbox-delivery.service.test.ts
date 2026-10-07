@@ -1,128 +1,19 @@
 /**
- * Unit tests of the outbox sender batch (HOS-1423).
- *
- * TEST:U2:4 (escalation without blocking), TEST:U2:7 (suppression applied
- * before sending) and TEST:U2:8 (one attempt record per attempt, in the
- * notification log only). The real SQL behind each dependency is proved in
+ * Unit tests of the outbox sender batch (HOS-1423): the run, TEST:U2:8 (one
+ * attempt record per attempt, in the notification log only) and TEST:U2:4
+ * (escalation without blocking). Orchestration is tested with fakes; the SQL
+ * primitives are proved against a real database in
  * `packages/db/test/integration/email-outbox-delivery.integration.test.ts`.
  */
-import type { EmailOutboxRow, EmailOutboxStatus, RecordEmailAttemptInput } from '@repo/db';
-import { createElement } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { EMAIL_OUTBOX_CONSTANTS } from '../../../src/constants/notification.constants';
 import {
-    createOutboxOptOutReader,
     EmailHardBounceError,
-    type EmailOutboxDeliveryDeps,
     OUTBOX_LAST_ERROR_MARKERS,
-    type OutboxEscalation,
     processEmailOutboxBatch
 } from '../../../src/services/outbox/email-outbox-delivery.service';
-import {
-    createOutboxMailRenderer,
-    OUTBOX_MAIL_RENDERERS
-} from '../../../src/services/outbox/email-outbox-renderers';
-import { NotificationType } from '../../../src/types/notification.types';
-
-const NOW = new Date('2026-10-07T12:00:00.000Z');
-const OWNER = 'email-outbox-sender:test';
-const COMMERCIAL = NotificationType.TRIAL_WIN_BACK_5D;
-const TRANSACTIONAL = 'subscription-cancel-notice';
-
-function row(overrides: Partial<EmailOutboxRow> = {}): EmailOutboxRow {
-    return {
-        id: crypto.randomUUID(),
-        recipientUserId: crypto.randomUUID(),
-        recipientEmail: 'host@example.com',
-        template: TRANSACTIONAL,
-        channel: 'email',
-        payload: {},
-        status: 'processing',
-        dedupKey: crypto.randomUUID(),
-        lockedBy: OWNER,
-        lockedUntil: new Date(NOW.getTime() + 300_000),
-        attempts: 0,
-        providerMessageId: null,
-        lastError: null,
-        createdAt: new Date(NOW.getTime() - 60_000),
-        updatedAt: new Date(NOW.getTime() - 60_000),
-        ...overrides
-    };
-}
-
-interface Harness {
-    readonly deps: EmailOutboxDeliveryDeps;
-    readonly records: RecordEmailAttemptInput[];
-    readonly escalations: OutboxEscalation[];
-    readonly send: ReturnType<typeof vi.fn>;
-    readonly outbox: {
-        readonly recoverExpired: ReturnType<typeof vi.fn>;
-        readonly claim: ReturnType<typeof vi.fn>;
-        readonly markSent: ReturnType<typeof vi.fn>;
-        readonly recordFailure: ReturnType<typeof vi.fn>;
-        readonly markFailed: ReturnType<typeof vi.fn>;
-        readonly getRecipientDeletedAt: ReturnType<typeof vi.fn>;
-    };
-    readonly log: {
-        readonly hasHardBounce: ReturnType<typeof vi.fn>;
-        readonly countSentByClassSince: ReturnType<typeof vi.fn>;
-    };
-    readonly isOptedOut: ReturnType<typeof vi.fn>;
-}
-
-function harness(claimed: EmailOutboxRow[]): Harness {
-    const records: RecordEmailAttemptInput[] = [];
-    const escalations: OutboxEscalation[] = [];
-    const outbox = {
-        recoverExpired: vi.fn(async () => []),
-        claim: vi.fn(async () => claimed),
-        markSent: vi.fn(async () => true),
-        recordFailure: vi.fn(
-            async (input: { id: string; maxAttempts: number }): Promise<EmailOutboxStatus> => {
-                const current = claimed.find((r) => r.id === input.id);
-                return (current?.attempts ?? 0) + 1 >= input.maxAttempts ? 'failed' : 'retry';
-            }
-        ),
-        markFailed: vi.fn(async () => true),
-        getRecipientDeletedAt: vi.fn(async () => null)
-    };
-    const log = {
-        hasHardBounce: vi.fn(async () => false),
-        countSentByClassSince: vi.fn(async () => 0)
-    };
-    const isOptedOut = vi.fn(async () => false);
-    const send = vi.fn(async () => ({ messageId: 'msg-1' }));
-    const deps: EmailOutboxDeliveryDeps = {
-        outbox,
-        log: {
-            ...log,
-            recordEmailAttempt: vi.fn(async (input: RecordEmailAttemptInput) => {
-                records.push(input);
-                return {} as never;
-            })
-        },
-        isOptedOut,
-        render: async ({ row: r }) => ({
-            subject: `Subject of ${r.template}`,
-            react: createElement('p', null, 'body')
-        }),
-        transport: { send },
-        escalate: (event) => {
-            escalations.push(event);
-        }
-    };
-    return { deps, records, escalations, send, outbox, log, isOptedOut };
-}
-
-async function run(h: Harness) {
-    return processEmailOutboxBatch({
-        deps: h.deps,
-        owner: OWNER,
-        now: NOW,
-        leaseMs: 300_000,
-        batchSize: 50
-    });
-}
+import { createOutboxMailRenderer } from '../../../src/services/outbox/email-outbox-renderers';
+import { COMMERCIAL, harness, NOW, OWNER, row, run, TRANSACTIONAL } from './outbox-batch.harness';
 
 describe('processEmailOutboxBatch — the run', () => {
     it('releases expired leases BEFORE claiming, with the run instant', async () => {
@@ -159,6 +50,50 @@ describe('processEmailOutboxBatch — the run', () => {
 
         // Assert
         expect(result).toMatchObject({ claimed: 2, errors: 1, sent: 1 });
+    });
+
+    it('reports every row that throws, with its outbox id and the cause', async () => {
+        // Arrange
+        const broken = row();
+        const h = harness([broken, row()]);
+        h.log.hasHardBounce.mockRejectedValueOnce(new Error('db down'));
+
+        // Act
+        await run(h);
+
+        // Assert
+        expect(h.rowErrors).toEqual([
+            { outboxId: broken.id, template: broken.template, error: 'db down' }
+        ]);
+    });
+
+    it('reports nothing when every row processes cleanly', async () => {
+        // Arrange
+        const h = harness([row(), row()]);
+
+        // Act
+        await run(h);
+
+        // Assert
+        expect(h.rowErrors).toHaveLength(0);
+        expect(h.leaseLost).toHaveLength(0);
+    });
+
+    it('reports a sent mail whose lease was lost before marking it sent, and still records the attempt', async () => {
+        // Arrange
+        const r = row();
+        const h = harness([r]);
+        h.outbox.markSent.mockResolvedValueOnce(false);
+
+        // Act
+        const result = await run(h);
+
+        // Assert
+        expect(h.leaseLost).toEqual([
+            { outboxId: r.id, template: r.template, providerMessageId: 'msg-1' }
+        ]);
+        expect(h.records.map((x) => x.status)).toEqual(['sent']);
+        expect(result).toMatchObject({ sent: 1, errors: 0 });
     });
 });
 
@@ -356,170 +291,5 @@ describe('TEST:U2:4 escalation of an undeliverable transactional mail', () => {
         // Assert
         expect(h.send).not.toHaveBeenCalled();
         expect(h.escalations[0]?.lastError).toContain('No outbox renderer registered');
-    });
-});
-
-describe('TEST:U2:7 suppression cuts before sending', () => {
-    let h: Harness;
-
-    beforeEach(() => {
-        h = harness([]);
-    });
-
-    it('deleted account: a mail enqueued after the deletion is suppressed, not escalated', async () => {
-        // Arrange
-        const r = row();
-        h = harness([r]);
-        h.outbox.getRecipientDeletedAt.mockResolvedValueOnce(new Date(r.createdAt.getTime() - 1));
-
-        // Act
-        const result = await run(h);
-
-        // Assert
-        expect(h.send).not.toHaveBeenCalled();
-        expect(h.outbox.markFailed).toHaveBeenCalledWith(
-            expect.objectContaining({ marker: OUTBOX_LAST_ERROR_MARKERS.ACCOUNT_DELETED })
-        );
-        expect(h.records).toHaveLength(1);
-        expect(h.records[0]).toMatchObject({ status: 'suppressed' });
-        expect(h.escalations).toHaveLength(0);
-        expect(result.suppressed).toBe(1);
-    });
-
-    it('deleted account: a mail enqueued before the deletion still goes out', async () => {
-        // Arrange
-        const r = row();
-        h = harness([r]);
-        h.outbox.getRecipientDeletedAt.mockResolvedValueOnce(new Date(r.createdAt.getTime() + 1));
-
-        // Act
-        await run(h);
-
-        // Assert
-        expect(h.send).toHaveBeenCalledTimes(1);
-    });
-
-    it('a row with no account never reads a deletion', async () => {
-        // Arrange
-        h = harness([row({ recipientUserId: null })]);
-
-        // Act
-        await run(h);
-
-        // Assert
-        expect(h.outbox.getRecipientDeletedAt).not.toHaveBeenCalled();
-        expect(h.send).toHaveBeenCalledTimes(1);
-    });
-
-    it('opt-out suppresses a commercial mail', async () => {
-        // Arrange
-        const r = row({ template: COMMERCIAL });
-        h = harness([r]);
-        h.isOptedOut.mockResolvedValueOnce(true);
-
-        // Act
-        await run(h);
-
-        // Assert
-        expect(h.isOptedOut).toHaveBeenCalledWith({
-            userId: r.recipientUserId,
-            template: COMMERCIAL
-        });
-        expect(h.send).not.toHaveBeenCalled();
-        expect(h.outbox.markFailed).toHaveBeenCalledWith(
-            expect.objectContaining({ marker: OUTBOX_LAST_ERROR_MARKERS.OPT_OUT })
-        );
-    });
-
-    it('opt-out and cap are never even read for a transactional mail', async () => {
-        // Arrange
-        h = harness([row()]);
-
-        // Act
-        await run(h);
-
-        // Assert
-        expect(h.isOptedOut).not.toHaveBeenCalled();
-        expect(h.log.countSentByClassSince).not.toHaveBeenCalled();
-        expect(h.send).toHaveBeenCalledTimes(1);
-    });
-
-    it('daily cap: counts commercial mail to THIS recipient over the rolling window', async () => {
-        // Arrange
-        const r = row({ template: COMMERCIAL, recipientEmail: 'capped@example.com' });
-        h = harness([r]);
-        h.log.countSentByClassSince.mockResolvedValueOnce(1);
-
-        // Act
-        await run(h);
-
-        // Assert
-        expect(h.log.countSentByClassSince).toHaveBeenCalledWith({
-            recipient: 'capped@example.com',
-            emailClass: 'commercial',
-            since: new Date(NOW.getTime() - EMAIL_OUTBOX_CONSTANTS.DAILY_CAP_WINDOW_MS)
-        });
-        expect(h.send).not.toHaveBeenCalled();
-        expect(h.outbox.markFailed).toHaveBeenCalledWith(
-            expect.objectContaining({ marker: OUTBOX_LAST_ERROR_MARKERS.DAILY_CAP })
-        );
-    });
-
-    it('a suppression does not count a delivery attempt', async () => {
-        // Arrange
-        h = harness([row({ template: COMMERCIAL })]);
-        h.isOptedOut.mockResolvedValueOnce(true);
-
-        // Act
-        await run(h);
-
-        // Assert
-        expect(h.outbox.recordFailure).not.toHaveBeenCalled();
-    });
-});
-
-describe('createOutboxOptOutReader', () => {
-    it('is opted out when the preference service says not to send', async () => {
-        // Arrange
-        const shouldSendNotification = vi.fn(async () => false);
-        const read = createOutboxOptOutReader({ preferenceService: { shouldSendNotification } });
-
-        // Act
-        const optedOut = await read({ userId: 'u1', template: COMMERCIAL });
-
-        // Assert
-        expect(optedOut).toBe(true);
-        expect(shouldSendNotification).toHaveBeenCalledWith('u1', COMMERCIAL);
-    });
-
-    it('is never opted out of a template that has no preference', async () => {
-        // Arrange
-        const shouldSendNotification = vi.fn(async () => false);
-        const read = createOutboxOptOutReader({ preferenceService: { shouldSendNotification } });
-
-        // Act / Assert
-        expect(await read({ userId: 'u1', template: 'unknown-template' })).toBe(false);
-        expect(shouldSendNotification).not.toHaveBeenCalled();
-    });
-});
-
-describe('createOutboxMailRenderer', () => {
-    it('ships an empty registry: U2 enqueues none of the catalog mails', () => {
-        expect(Object.keys(OUTBOX_MAIL_RENDERERS)).toHaveLength(0);
-    });
-
-    it('delegates to a registered renderer', async () => {
-        // Arrange
-        const render = createOutboxMailRenderer({
-            renderers: {
-                welcome: () => ({ subject: 'Hi', react: createElement('p', null, 'x') })
-            }
-        });
-
-        // Act
-        const mail = await render({ row: row({ template: 'welcome' }) });
-
-        // Assert
-        expect(mail.subject).toBe('Hi');
     });
 });
