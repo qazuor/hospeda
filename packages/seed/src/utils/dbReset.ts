@@ -22,10 +22,16 @@ import { logger } from './logger.js';
  *   real exclusion entry — without it, `--reset` would wipe the
  *   applied-migrations record and every seed data-migration would silently
  *   re-run from scratch on the next seed.
+ * - `vertical` and `catalog_key` (HOS-1430): reference rows written BY THE
+ *   STRUCTURAL MIGRATION itself, not by any seed. Truncating them would leave
+ *   a freshly reset database with no verticals and no keys, and nothing
+ *   afterwards re-inserts them (`db:migrate` considers the migration applied).
  */
 const ALWAYS_EXCLUDE_TABLES: ReadonlySet<string> = new Set([
     'drizzle_migrations',
-    'seed_migrations'
+    'seed_migrations',
+    'vertical',
+    'catalog_key'
 ]);
 
 /**
