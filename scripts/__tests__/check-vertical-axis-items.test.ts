@@ -105,6 +105,20 @@ describe('TEST:V1:8 — GUARD:G1', () => {
             expect(result.output).not.toContain('FAIL G1(a)');
         });
 
+        it('says in its red message that apps/web and apps/admin are not covered, and why', () => {
+            const result = guardOver({
+                overrides: {
+                    'packages/shared/src/x.ts':
+                        "export const f = (v: string) => (v === 'gastronomy' ? 1 : 2);\n"
+                }
+            });
+
+            expect(result.output).toContain('apps/web and apps/admin are NOT covered');
+            expect(result.output).toContain(
+                'cannot tell a total ternary over a two-value type from a broken one'
+            );
+        });
+
         it('reports the line of the comparison', () => {
             const violations = findBinaryVerticalTernaries({
                 file: 'x.ts',

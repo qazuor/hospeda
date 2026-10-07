@@ -286,6 +286,11 @@ jobs:
       # rows scripts/generate-catalog-sql.ts regenerates from the code catalog.
       - name: Check migration reference rows match the code catalog (GUARD:G18)
         run: pnpm check:catalog-sql
+      # GUARD:G3 (HOS-1431, AC:V1:3). Its own step. Every key production code uses
+      # (legacy enum members, legacy literals, catalog accessors) is in the key
+      # catalog; packages/billing and one allowlisted file wait for HOS-1626.
+      - name: Check every key used in code is in the key catalog (GUARD:G3)
+        run: pnpm check:catalog-key-usage
       # GUARD:G1 (HOS-1431, AC:V1:5). Its own step. Retires the HOS-1079 shell
       # guard on binary vertical ternaries, whose rule it widens.
       - name: Check every vertical carries its Axis-2 item and no binary vertical ternary (GUARD:G1)

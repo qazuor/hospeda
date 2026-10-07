@@ -36,11 +36,13 @@
  * - (b) is one syntactic shape. An `if (x === 'gastronomy') return A; return B;`
  *   chain, a lookup with a default, or a ternary on a variable that already
  *   holds the comparison is invisible to it.
- * - (b) does not scan `apps/web` or `apps/admin`, and does not anchor on the
- *   `accommodation`, `tourist` or `partner` literals. Measured on the epic
- *   (969a6e2cca): those widenings flag 21 files, nearly all a ternary over an
- *   operand typed `'gastronomy' | 'experience'` (total, not HOS-1079) or a
- *   comparison that is not a vertical dispatch.
+ * - (b) does NOT cover `apps/web` or `apps/admin` (owner decision, 2026-10-07,
+ *   option A), and does not anchor on the `accommodation`, `tourist` or
+ *   `partner` literals. Why: a syntactic check cannot tell a TOTAL ternary over
+ *   an operand typed `'gastronomy' | 'experience'` (two values, both handled)
+ *   from the broken HOS-1079 one over a wider type. Measured on the epic
+ *   (969a6e2cca), those widenings flag 21 files, nearly all of the total kind
+ *   or a comparison that is not a vertical dispatch.
  * - Test files (`*.test.*`, `*.spec.*`, `test/`, `tests/`, `__tests__/`, `e2e/`)
  *   are not scanned: fixtures compare against literals on purpose.
  *
@@ -92,7 +94,9 @@ export const RULE_MESSAGES = {
     'G1(b)':
         `G1(b): shared code feeds a comparison with a vertical literal (${DISPATCH_LITERALS.join(', ')}) ` +
         "straight into a ternary (`x === 'gastronomy' ? A : B`). It answers B for EVERY other vertical " +
-        '(HOS-1079). Replace it with an exhaustive `switch` whose `default` throws, or a Record keyed by vertical.'
+        '(HOS-1079). Replace it with an exhaustive `switch` whose `default` throws, or a Record keyed by vertical. ' +
+        'Scope: apps/api/src and packages/*/src only; apps/web and apps/admin are NOT covered, because a ' +
+        'syntactic check cannot tell a total ternary over a two-value type from a broken one.'
 } as const;
 
 /**
