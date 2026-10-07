@@ -31,9 +31,17 @@
  * four dependency blocks declares a package of the other half.
  * The red names the file (and line) and the half imported.
  *
+ * The statement may span lines: the keyword, the parenthesis and the specifier
+ * can each sit on their own line (`import(\n'x'\n)`, `vi.mock(\n'x',`,
+ * `from\n'x'`), and the red reports the specifier's line. Comments are blanked
+ * out first, so a specifier in prose is not an import.
+ *
  * NOT seen, on purpose (contract §4.2): one half reading the other's TABLES
- * through `@repo/db`, which no import reveals; a specifier built at runtime;
- * the admin app, which joins neither half (it reads both through the API).
+ * through `@repo/db`, which no import reveals; a specifier that is not a
+ * string literal (built at runtime, or a variable); a comment BETWEEN the
+ * keyword and the specifier (`import(/* x *\/ 'y')`); a template literal with
+ * `${}` holding a backtick; the admin app, which joins neither half (it reads
+ * both through the API).
  *
  * ## Fails loud
  *
@@ -85,7 +93,11 @@ const DEPENDENCY_BLOCKS = [
     'optionalDependencies'
 ] as const;
 
-/** A module specifier in an import-creating form. */
+/**
+ * A module specifier in an import-creating form. Matched over the whole
+ * (comment-free) source: the whitespace between the keyword, the parenthesis
+ * and the specifier may include newlines.
+ */
 const IMPORT_SPECIFIER =
     /(?:\bfrom|\bimport|\brequire|\bvi\.(?:mock|doMock|importActual))\s*\(?\s*(['"`])([^'"`]+)\1/g;
 
@@ -111,24 +123,54 @@ export function halfOf(args: { readonly path: string; readonly roots: HalfRoots 
     return null;
 }
 
-/** Whether a line starts as a comment (prose, not an import). */
-const isCommentLine = (line: string): boolean => /^\s*(\/\/|\/\*|\*)/.test(line);
-
-/** Drops a trailing `// …` outside string literals. */
-function codeOf(line: string): string {
-    let quote: string | null = null;
-    for (let i = 0; i < line.length; i += 1) {
-        const ch = line[i];
-        if (quote) {
-            if (ch === '\\') i += 1;
-            else if (ch === quote) quote = null;
-        } else if (ch === '"' || ch === "'" || ch === '`') {
-            quote = ch;
-        } else if (ch === '/' && line[i + 1] === '/') {
-            return line.slice(0, i);
+/**
+ * The source with every comment blanked out (each comment character becomes a
+ * space, newlines kept), so a specifier in prose is not an import and offsets
+ * still map to the same lines. A `'` or `"` string ends at its line's end even
+ * when unclosed (they cannot span lines), so a stray quote, e.g. inside a
+ * regex literal, cannot swallow the rest of the file.
+ */
+export function withoutComments(source: string): string {
+    let out = '';
+    let state: 'code' | 'line' | 'block' | "'" | '"' | '`' = 'code';
+    for (let i = 0; i < source.length; i += 1) {
+        const ch = source[i] as string;
+        const next = source[i + 1];
+        if (state === 'line') {
+            if (ch === '\n') {
+                state = 'code';
+                out += ch;
+            } else out += ' ';
+        } else if (state === 'block') {
+            if (ch === '*' && next === '/') {
+                state = 'code';
+                out += '  ';
+                i += 1;
+            } else out += ch === '\n' ? ch : ' ';
+        } else if (state === 'code') {
+            if (ch === '/' && next === '/') {
+                state = 'line';
+                out += '  ';
+                i += 1;
+            } else if (ch === '/' && next === '*') {
+                state = 'block';
+                out += '  ';
+                i += 1;
+            } else {
+                if (ch === "'" || ch === '"' || ch === '`') state = ch;
+                out += ch;
+            }
+        } else {
+            out += ch;
+            if (ch === '\\' && i + 1 < source.length) {
+                out += source[i + 1];
+                i += 1;
+            } else if (ch === state || (ch === '\n' && state !== '`')) {
+                state = 'code';
+            }
         }
     }
-    return line;
+    return out;
 }
 
 /** The files git sees under `root`. */
@@ -174,27 +216,28 @@ export function findCrossingImports(args: {
 }): readonly Violation[] {
     const target = otherHalf(args.half);
     const fileDir = posix.dirname(args.file);
-    return args.source.split('\n').flatMap((line, index) => {
-        if (isCommentLine(line)) return [];
-        return [...codeOf(line).matchAll(IMPORT_SPECIFIER)].flatMap((match) => {
-            const specifier = match[2] ?? '';
-            const byName = args.packageNames[target].some(
-                (name) => specifier === name || specifier.startsWith(`${name}/`)
-            );
-            const resolved = specifier.startsWith('.') ? posix.join(fileDir, specifier) : null;
-            const byPath =
-                resolved !== null && halfOf({ path: resolved, roots: args.roots }) === target;
-            return byName || byPath
-                ? [
-                      {
-                          file: args.file,
-                          line: index + 1,
-                          importedHalf: target,
-                          detail: `imports '${specifier}'`
-                      }
-                  ]
-                : [];
-        });
+    const code = withoutComments(args.source);
+    // Over the whole source, not line by line: `\s*` spans newlines, so
+    // `import(\n'x'\n)` and `vi.mock(\n'x',` (how Biome wraps a long call)
+    // are seen. The reported line is the specifier's.
+    return [...code.matchAll(IMPORT_SPECIFIER)].flatMap((match) => {
+        const specifier = match[2] ?? '';
+        const byName = args.packageNames[target].some(
+            (name) => specifier === name || specifier.startsWith(`${name}/`)
+        );
+        const resolved = specifier.startsWith('.') ? posix.join(fileDir, specifier) : null;
+        const byPath =
+            resolved !== null && halfOf({ path: resolved, roots: args.roots }) === target;
+        if (!byName && !byPath) return [];
+        const specifierAt = (match.index ?? 0) + match[0].lastIndexOf(specifier);
+        return [
+            {
+                file: args.file,
+                line: code.slice(0, specifierAt).split('\n').length,
+                importedHalf: target,
+                detail: `imports '${specifier}'`
+            }
+        ];
     });
 }
 

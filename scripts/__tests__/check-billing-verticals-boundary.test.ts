@@ -201,6 +201,49 @@ describe('TEST:V1:11 G14 broken on purpose', () => {
         });
         expect(exitCode).toBe(1);
     });
+
+    it.each([
+        [
+            'a dynamic import wrapped by Biome',
+            "export const load = async () =>\n    await import(\n        '@repo/payments/adapters'\n    );\n",
+            3
+        ],
+        [
+            'a vi.mock wrapped by Biome',
+            "vi.mock(\n    '@repo/payments',\n    async () => ({ x: 1 })\n);\n",
+            2
+        ],
+        ['a require wrapped by Biome', "const m = require(\n    '@repo/payments'\n);\n", 2],
+        [
+            "a 'from' on the line after the keyword",
+            "import { FakePaymentProvider } from\n    '@repo/payments';\nexport const p = FakePaymentProvider;\n",
+            2
+        ],
+        [
+            'a multi-line named import',
+            "import {\n    a,\n    b\n} from '@repo/payments';\nexport const p = [a, b];\n",
+            4
+        ]
+    ])('%s is red, reporting the line of the specifier', (_case, source, line) => {
+        const { exitCode, output } = guardOver({
+            overrides: { 'packages/verticals/src/trial.ts': source }
+        });
+        expect(exitCode).toBe(1);
+        expect(output).toContain(
+            `packages/verticals/src/trial.ts:${line}  imports '@repo/payments`
+        );
+    });
+
+    it('a specifier in a comment, single-line or block, is prose and stays green', () => {
+        const { exitCode, output } = guardOver({
+            overrides: {
+                'packages/verticals/src/trial.ts':
+                    "/**\n * Billing used to be reached with import(\n * '@repo/payments')\n */\n// vi.mock('@repo/payments')\nexport const t = \"it's 'quoted'\"; // from '@repo/payments'\n"
+            }
+        });
+        expect(output).toContain('OK:');
+        expect(exitCode).toBe(0);
+    });
 });
 
 describe('G14 fails loud instead of passing an unenforceable rule', () => {
