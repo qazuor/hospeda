@@ -401,7 +401,7 @@ describe('TEST:U2:7 the facts the suppression reads', () => {
     });
 });
 
-describe('recoverExpired wiring: an expired lease goes back to pending and another sender takes it', () => {
+describe('TEST:U2:3 recoverExpired wiring: an expired lease goes back to pending and another sender takes it', () => {
     it('releases only expired leases at the run instant, then a new owner claims the row', async () => {
         // Arrange
         const row = await enqueueRow({ recipientEmail: newRecipient() });
