@@ -1,0 +1,46 @@
+{
+    "name": "@repo/billing-verticals-contract",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "sideEffects": false,
+    "license": "MIT",
+    "description": "The single place where verticals and billing talk to each other: neither imports the other outside this package. Empty on purpose; V1 and B1 fill it.",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "build:ts": "tsup",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json",
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "check": "biome check --write .",
+        "clean": "rm -rf node_modules dist"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^26.6.1",
+        "@vitest/coverage-v8": "^4.1.10",
+        "tsup": "^8.5.1",
+        "typescript": "6.0.3",
+        "vitest": "^4.1.11"
+    }
+}
