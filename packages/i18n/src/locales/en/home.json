@@ -41,6 +41,7 @@
     "accommodations": {
         "badge": {
             "new": "New",
+            "featured": "Featured",
             "aiChat": "AI Chat",
             "verified": "Verified"
         },

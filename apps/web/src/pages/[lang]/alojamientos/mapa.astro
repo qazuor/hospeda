@@ -85,6 +85,7 @@ const sortBy = url.searchParams.get('sortBy') ?? undefined;
 const explicitSortOrder = url.searchParams.get('sortOrder') as 'asc' | 'desc' | null;
 const sortOrder: 'asc' | 'desc' | undefined =
     explicitSortOrder ?? (sortBy === 'mostSaved' ? 'desc' : undefined);
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
 // `minGuests` is now derived from adults + children (see further down). The
 // raw URL param is no longer surfaced as its own filter to keep the UI in
 // sync with the list view.
@@ -143,6 +144,7 @@ const result = await accommodationsApi.list({
 	maxPrice,
 	sortBy,
 	sortOrder,
+	isFeatured,
 	minGuests,
 	minBedrooms,
 	minBathrooms,
@@ -175,6 +177,7 @@ const mapExtraSearchParams: Record<string, unknown> = {
 	maxPrice,
 	sortBy,
 	sortOrder,
+	isFeatured,
 	minGuests,
 	minBedrooms,
 	minBathrooms,
@@ -241,6 +244,7 @@ const filterSummary = buildAccommodationListingSummary({
 		includeWithoutRating: includeNoReviews,
 		bedrooms: minBedrooms,
 		bathrooms: minBathrooms,
+		featured: isFeatured ?? null,
 	},
 	counts: {
 		shown: cards.length,
@@ -259,6 +263,7 @@ const filterSummary = buildAccommodationListingSummary({
 // Filter sidebar config (same as list view)
 const filterGroups: FilterGroup[] = [
 	{ id: 'q', label: t('accommodations.sidebar.search', 'Búsqueda por texto'), type: 'search', placeholder: t('accommodations.sidebar.searchPlaceholder', 'Buscar por nombre o descripción...') },
+	{ id: 'isFeatured', label: t('accommodations.sidebar.featured', 'Solo destacados'), type: 'toggle' },
 	{
 		id: 'types',
 		label: t('accommodations.sidebar.type', 'Tipo de Alojamiento'),
@@ -370,6 +375,7 @@ if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
 if (sortBy) initialParams.sortBy = sortBy;
+if (isFeatured) initialParams.isFeatured = 'true';
 // `minGuests` is derived (adults + children), not a user-facing filter.
 if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
 if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
@@ -520,6 +526,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 				reviewsLabelById={reviewsLabelById}
 				photosLabelById={photosLabelById}
 				priceLabelById={priceLabelById}
+				featuredLabel={t('home.accommodations.badge.featured', 'Destacado')}
 				newLabel={t('home.accommodations.badge.new', 'Nuevo')}
 				newBg={newColors.bg}
 				newText={newColors.text}

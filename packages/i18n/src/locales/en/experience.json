@@ -22,14 +22,18 @@
         "searchPlaceholder": "Search by name or description...",
         "destination": "Destination",
         "type": "Experience type",
+        "featured": "Featured only",
         "minRating": "Minimum rating",
         "sort": {
+            "featured": "Featured first",
             "ratingDesc": "Best rated",
             "newest": "Recently added",
             "nameAsc": "Name (A-Z)"
         }
     },
-    "card": {},
+    "card": {
+        "featured": "Featured"
+    },
     "detail": {
         "amenities": {
             "title": "Services and amenities"

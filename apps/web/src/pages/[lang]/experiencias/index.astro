@@ -52,7 +52,7 @@ const { t } = createTranslations(locale);
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
-	// This listing accepts `q`, `type`, `destinationId`,
+	// This listing accepts `q`, `type`, `destinationId`, `isFeatured`,
 	// `minRating`, `sortBy` — all read in the frontmatter, all
 	// changing the SSR HTML. Anything beyond pagination makes the render an
 	// arbitrary slice and stays private.
@@ -71,6 +71,7 @@ const pageSize = 20;
 const q = url.searchParams.get('q') ?? undefined;
 const destinationId = url.searchParams.get('destinationId') ?? undefined;
 const type = url.searchParams.get('type') ?? undefined;
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
 const minRating = url.searchParams.get('minRating')
     ? Number(url.searchParams.get('minRating'))
     : undefined;
@@ -78,17 +79,18 @@ const minRating = url.searchParams.get('minRating')
 /**
  * Maps the URL's user-friendly sort key (matching the `sortOptions` below) to
  * the backend `(sortBy, sortOrder)` pair. BETA-119: previously the actual API
- * call ignored `sortBy` entirely (always sorted by the default order), while the
+ * call ignored `sortBy` entirely (always sorted `isFeatured desc`), while the
  * sidebar still offered a sort selector — this reads and applies the real
  * selection, same as the accommodations/events/posts listings.
  */
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+    featured:   { sortBy: 'isFeatured',    sortOrder: 'desc' },
     ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
     newest:     { sortBy: 'createdAt',     sortOrder: 'desc' },
     nameAsc:    { sortBy: 'name',          sortOrder: 'asc'  }
 };
 /** Default sort key — used when the URL has no `sortBy`. Matches the previous hardcoded behavior. */
-const DEFAULT_SORT_KEY = 'ratingDesc';
+const DEFAULT_SORT_KEY = 'featured';
 
 const sortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
@@ -104,6 +106,7 @@ const result = await experiencesApi.list({
     q,
     destinationId,
     type,
+    isFeatured,
     minRating,
     sortBy: sortResolved.sortBy,
     sortOrder: sortResolved.sortOrder
@@ -131,6 +134,7 @@ const hasActiveFilters = hasActiveExperienceListingFilters({
 	q,
 	destinationId,
 	type,
+	isFeatured,
 	minRating,
 });
 
@@ -184,6 +188,11 @@ const filterGroups: FilterGroup[] = [
         }))
     },
     {
+        id: 'isFeatured',
+        label: t('experience.listing.featured', 'Solo destacadas'),
+        type: 'toggle'
+    },
+    {
         id: 'minRating',
         label: t('experience.listing.minRating', 'Calificación mínima'),
         type: 'stars'
@@ -191,6 +200,7 @@ const filterGroups: FilterGroup[] = [
 ];
 
 const sortOptions = [
+    { value: 'featured', label: t('experience.listing.sort.featured', 'Destacadas primero') },
     {
         value: 'ratingDesc',
         label: t('experience.listing.sort.ratingDesc', 'Mejor valoradas')
@@ -204,6 +214,7 @@ const initialParams: Record<string, string> = {};
 if (q) initialParams.q = q;
 if (destinationId) initialParams.destinationId = destinationId;
 if (type) initialParams.type = type;
+if (isFeatured) initialParams.isFeatured = 'true';
 if (minRating !== undefined) initialParams.minRating = String(minRating);
 initialParams.sortBy = sortKey;
 
@@ -225,6 +236,7 @@ const filterSummary = buildExperienceListingSummary({
         text: q,
         type,
         destinationId,
+        isFeatured,
         minRating
     },
     counts: { shown: cards.length, total },

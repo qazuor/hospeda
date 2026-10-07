@@ -57,12 +57,20 @@ export const DEFAULT_PRICE_RANGES: readonly CatalogEntry[] = [
 /**
  * Sort phrase fragment per encoded sort key (matches the identical
  * `sortOptions` array declared in both `gastronomia/index.astro` and
- * `experiencias/index.astro`). All fragments are gender-invariant.
+ * `experiencias/index.astro`). The `featured` fragment is gender-dependent
+ * (Spanish agreement with the entity noun); the others are gender-invariant.
  * Consumed via {@link getSortPhraseFragment}, never indexed directly.
  */
 const SORT_KEY_PHRASES: Readonly<
     Record<string, { readonly es: Record<EntityGender, string>; readonly en: string }>
 > = {
+    featured: {
+        es: {
+            masculine: 'con los destacados primero',
+            feminine: 'con las destacadas primero'
+        },
+        en: 'with featured first'
+    },
     ratingDesc: {
         es: { masculine: 'por mejor calificación', feminine: 'por mejor calificación' },
         en: 'by highest rating'
@@ -95,7 +103,7 @@ export function getSortPhraseFragment({
 /**
  * Phrase dictionary for templated assembly. Keys are referenced by both the
  * builder and the individual descriptors. Gender-dependent entries
- * (`sortedBy`) are resolved via {@link getGenderedPhrase}.
+ * (`sortedBy`, `onlyFeatured`) are resolved via {@link getGenderedPhrase}.
  */
 const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, string>>>> = {
     es: {
@@ -126,13 +134,15 @@ const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, string>>>>
 
 /** Gender-dependent phrase fragments (Spanish agreement; English is invariant). */
 const GENDERED_PHRASES: Readonly<
-    Record<SummaryLocale, Record<'sortedBy', Record<EntityGender, string>>>
+    Record<SummaryLocale, Record<'sortedBy' | 'onlyFeatured', Record<EntityGender, string>>>
 > = {
     es: {
-        sortedBy: { masculine: 'ordenados', feminine: 'ordenadas' }
+        sortedBy: { masculine: 'ordenados', feminine: 'ordenadas' },
+        onlyFeatured: { masculine: 'solo destacados', feminine: 'solo destacadas' }
     },
     en: {
-        sortedBy: { masculine: 'sorted', feminine: 'sorted' }
+        sortedBy: { masculine: 'sorted', feminine: 'sorted' },
+        onlyFeatured: { masculine: 'featured only', feminine: 'featured only' }
     }
 } as const;
 
@@ -141,14 +151,14 @@ export function getPhrase({ locale, key }: { locale: SummaryLocale; key: string 
     return PHRASES[locale][key] ?? key;
 }
 
-/** Resolve a gender-dependent phrase fragment ("ordenados/ordenadas"). */
+/** Resolve a gender-dependent phrase fragment ("ordenados/ordenadas", "solo destacados/destacadas"). */
 export function getGenderedPhrase({
     locale,
     key,
     gender
 }: {
     readonly locale: SummaryLocale;
-    readonly key: 'sortedBy';
+    readonly key: 'sortedBy' | 'onlyFeatured';
     readonly gender: EntityGender;
 }): string {
     return GENDERED_PHRASES[locale][key][gender];

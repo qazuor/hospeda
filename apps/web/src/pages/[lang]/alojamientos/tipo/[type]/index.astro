@@ -102,6 +102,7 @@ applyCacheHeaders({
  * rationale and the `ALLOWED_SORT_FIELDS` whitelist note.
  */
 const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc' }> = {
+	featured: { sortBy: 'isFeatured', sortOrder: 'desc' },
 	mostSaved: { sortBy: 'mostSaved', sortOrder: 'desc' },
 	ratingDesc: { sortBy: 'averageRating', sortOrder: 'desc' },
 	mostReviewed: { sortBy: 'reviewsCount', sortOrder: 'desc' },
@@ -112,7 +113,7 @@ const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc
 	priceDesc: { sortBy: 'price', sortOrder: 'desc' },
 	distance: { sortBy: 'distance', sortOrder: 'asc' }
 };
-const DEFAULT_SORT_KEY = 'ratingDesc';
+const DEFAULT_SORT_KEY = 'featured';
 const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 
 // --- Combinable filters (mirrors `/alojamientos/`, minus `types` — fixed by
@@ -125,6 +126,7 @@ const hasWifi = url.searchParams.get('hasWifi') === 'true' ? true : undefined;
 const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
 const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
 const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
 const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
 const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
 const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
@@ -190,6 +192,7 @@ const result = await accommodationsApi.list({
 	maxPrice,
 	sortBy: sortResolved.sortBy,
 	sortOrder: sortResolved.sortOrder,
+	isFeatured,
 	minGuests,
 	minBedrooms,
 	minBathrooms,
@@ -224,12 +227,13 @@ const cards = items.map((item) => toAccommodationCardProps({ item: item as unkno
 /**
  * `filterGroups` for FilterSidebar — the same config as `/alojamientos/`,
  * minus the `types` checkbox (fixed by the URL path here). The rest of the
- * "Tipo y características" section (`amenities`, `features`)
+ * "Tipo y características" section (`isFeatured`, `amenities`, `features`)
  * stays, since those are unrelated to the type facet.
  */
 const filterGroups = buildAccommodationsFilterGroups({ t, destinations, amenities, features, excludeType: true });
 
 const sortOptions = [
+	{ value: 'featured', label: t('accommodations.sort.featured', 'Destacados primero') },
 	{ value: 'mostSaved', label: t('accommodations.sort.mostSaved', 'Más guardados') },
 	{ value: 'ratingDesc', label: t('accommodations.sort.ratingDesc', 'Mejor valorados') },
 	{ value: 'mostReviewed', label: t('accommodations.sort.mostReviewed', 'Más reseñados') },
@@ -258,6 +262,7 @@ if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
 initialParams.sortBy = sortKey;
+if (isFeatured) initialParams.isFeatured = 'true';
 if (minBedrooms !== undefined) initialParams.minBedrooms = String(minBedrooms);
 if (minBathrooms !== undefined) initialParams.minBathrooms = String(minBathrooms);
 if (minRating !== undefined) initialParams.minRating = String(minRating);
@@ -361,6 +366,12 @@ if (minPrice !== undefined || maxPrice !== undefined) {
 	activeFilterChips.push({
 		label: t('accommodations.emptyChip.price', 'Precio'),
 		removeUrl: urlWithoutKeys(['minPrice', 'maxPrice', 'includeNoPrice'])
+	});
+}
+if (isFeatured) {
+	activeFilterChips.push({
+		label: t('accommodations.emptyChip.featured', 'Solo destacados'),
+		removeUrl: urlWithoutKeys(['isFeatured'])
 	});
 }
 if (minRating !== undefined) {

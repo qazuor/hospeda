@@ -25,6 +25,8 @@ interface AccommodationViewTrackerProps {
     readonly locale: SupportedLocale;
     /** Accommodation type (HOTEL, CABIN, …) so funnels can segment by type. */
     readonly accommodationType: string;
+    /** Whether the accommodation is featured (entitlement- or admin-driven). */
+    readonly isFeatured: boolean;
     /** Destination id the accommodation belongs to. */
     readonly destinationId: string;
 }
@@ -59,6 +61,7 @@ export function AccommodationViewTracker({
     accommodationId,
     locale,
     accommodationType,
+    isFeatured,
     destinationId
 }: AccommodationViewTrackerProps): null {
     useEffect(() => {
@@ -74,6 +77,7 @@ export function AccommodationViewTracker({
             accommodation_slug: slug,
             locale,
             accommodation_type: accommodationType,
+            is_featured: isFeatured,
             destination_id: destinationId,
             source_page: 'accommodation_detail'
         });
@@ -88,7 +92,7 @@ export function AccommodationViewTracker({
         return () => {
             resetGroups();
         };
-    }, [slug, accommodationId, locale, accommodationType, destinationId]);
+    }, [slug, accommodationId, locale, accommodationType, isFeatured, destinationId]);
 
     return null;
 }

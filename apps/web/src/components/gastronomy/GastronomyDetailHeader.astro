@@ -74,6 +74,12 @@ const isNew = gastronomy.createdAt
                 {priceRangeLabel && (
                     <span class="gastro-detail-header__price-badge wh-compact-badge">{priceRangeLabel}</span>
                 )}
+                {gastronomy.isFeatured && (
+                    <span class="featured-badge">
+                        <StarIcon size={12} weight="fill" aria-hidden="true" />
+                        <span>{t('gastronomy.card.featured', 'Destacado')}</span>
+                    </span>
+                )}
                 {isNew && (
                     <span class="gastro-detail-header__new-badge wh-compact-badge">
                         {t('home.accommodations.badge.new', 'Nuevo')}

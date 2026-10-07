@@ -70,6 +70,7 @@ const MOCK_INITIAL_DATA = {
     basePrice: 15000,
     currency: 'ARS',
     isAvailable: true,
+    isFeatured: false,
     amenityIds: ['am-1'],
     featureIds: ['ft-1'],
     phone: '+54 9 343 1234567',

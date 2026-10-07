@@ -684,6 +684,48 @@ describe('buildAccommodationListingSummary', () => {
     });
 
     // -------------------------------------------------------------------------
+    // Featured filter
+    // -------------------------------------------------------------------------
+
+    describe('featured filter', () => {
+        it('should render "solo destacados" when featured is true', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { featured: true },
+                counts: { shown: 10, globalTotal: 50 }
+            });
+            expect(result).toContain('solo destacados');
+        });
+
+        it('should render "solo no destacados" when featured is false', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { featured: false },
+                counts: { shown: 40, globalTotal: 50 }
+            });
+            expect(result).toContain('solo no destacados');
+        });
+
+        it('should not be active when featured is null', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { featured: null },
+                counts: { shown: 50, globalTotal: 50 }
+            });
+            expect(result).toContain('sin filtros activos');
+        });
+
+        it('should render featured as comma modifier (with comma)', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { featured: true },
+                counts: { shown: 7, globalTotal: 124 }
+            });
+            expect(result).toBe('Mostrando 7 de 124 hospedajes, solo destacados.');
+        });
+    });
+
+    // -------------------------------------------------------------------------
     // Sort
     // -------------------------------------------------------------------------
 
@@ -754,6 +796,17 @@ describe('buildAccommodationListingSummary', () => {
             expect(result).toContain('ordenados por fecha de creación, más antiguos primero');
         });
 
+        it('should render boolean sort phrase', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 10, globalTotal: 50 },
+                sort: { key: 'isFeatured', direction: 'desc' },
+                catalogs: TEST_CATALOGS
+            });
+            expect(result).toContain('ordenados por destacados, destacados primero');
+        });
+
         it('should render generic fallback for unknown sort key', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'es',
@@ -779,12 +832,12 @@ describe('buildAccommodationListingSummary', () => {
         it('should separate sort with comma when filters are active', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'es',
-                filters: { guests: 5 },
+                filters: { featured: true },
                 counts: { shown: 5, globalTotal: 50 },
                 sort: { key: 'price', direction: 'asc' },
                 catalogs: TEST_CATALOGS
             });
-            expect(result).toContain('para al menos 5 huéspedes, ordenados por precio');
+            expect(result).toContain('solo destacados, ordenados por precio');
         });
     });
 
@@ -842,14 +895,15 @@ describe('buildAccommodationListingSummary', () => {
                     guests: 3,
                     amenities: ['wifi', 'aire-acondicionado'],
                     minRating: 4,
-                    includeWithoutRating: true
+                    includeWithoutRating: true,
+                    featured: true
                 },
                 counts: { shown: 8, globalTotal: 124, subjectTotal: 42 },
                 sort: { key: 'price', direction: 'asc' },
                 catalogs: TEST_CATALOGS
             });
             expect(result).toBe(
-                'Mostrando 8 de 42 hoteles que contienen "centro" en el nombre o la descripción, con precio entre $8.000 y $20.000 o sin precio definido, para al menos 3 huéspedes, con amenities como wifi y aire acondicionado, con calificación mínima de 4 o sin calificación, ordenados por precio, de menor a mayor.'
+                'Mostrando 8 de 42 hoteles que contienen "centro" en el nombre o la descripción, con precio entre $8.000 y $20.000 o sin precio definido, para al menos 3 huéspedes, con amenities como wifi y aire acondicionado, con calificación mínima de 4 o sin calificación, solo destacados, ordenados por precio, de menor a mayor.'
             );
         });
 
@@ -867,13 +921,13 @@ describe('buildAccommodationListingSummary', () => {
             expect(result).toBe('Mostrando 0 de 42 hoteles en Colón, para al menos 10 huéspedes.');
         });
 
-        it('example 6: no subjectTotal with a single filter', () => {
+        it('example 6: no subjectTotal with featured only', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'es',
-                filters: { guests: 10 },
+                filters: { featured: true },
                 counts: { shown: 7, globalTotal: 124 }
             });
-            expect(result).toBe('Mostrando 7 de 124 hospedajes, para al menos 10 huéspedes.');
+            expect(result).toBe('Mostrando 7 de 124 hospedajes, solo destacados.');
         });
 
         it('example 7: three types + destination + bedrooms + bathrooms + sort', () => {
@@ -977,6 +1031,15 @@ describe('buildAccommodationListingSummary', () => {
             expect(result).toContain('with amenities like wifi and pool');
         });
 
+        it('should render featured in English', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'en',
+                filters: { featured: true },
+                counts: { shown: 10, globalTotal: 50 }
+            });
+            expect(result).toContain('featured only');
+        });
+
         it('should render multiple types joined with "and" in English', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'en',
@@ -1052,6 +1115,15 @@ describe('buildAccommodationListingSummary', () => {
             expect(result).toContain('com comodidades como wifi e piscina');
         });
 
+        it('should render featured in Portuguese', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: { featured: true },
+                counts: { shown: 10, globalTotal: 50 }
+            });
+            expect(result).toContain('somente destacados');
+        });
+
         it('should render multiple types joined with "e" in Portuguese', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'pt',
@@ -1124,7 +1196,8 @@ describe('buildAccommodationListingSummary', () => {
                     services: ['desayuno'],
                     amenities: ['wifi'],
                     minRating: 3,
-                    includeWithoutRating: true
+                    includeWithoutRating: true,
+                    featured: true
                 },
                 counts: { shown: 2, globalTotal: 124, subjectTotal: 42 },
                 sort: { key: 'price', direction: 'asc' },
@@ -1141,6 +1214,7 @@ describe('buildAccommodationListingSummary', () => {
             expect(result).toContain('con servicios como desayuno');
             expect(result).toContain('con amenities como wifi');
             expect(result).toContain('con calificación mínima de 3');
+            expect(result).toContain('solo destacados');
             expect(result).toContain('ordenados por precio');
             expect(result).toMatch(/\.$/);
         });
@@ -1269,6 +1343,13 @@ describe('buildAccommodationListingSummary', () => {
             expect(result.services).toEqual(['desayuno']);
         });
 
+        it('should map isFeatured toggle', () => {
+            const result = mapLegacyFiltersToSummaryFilters({
+                filters: [{ type: 'toggle', key: 'isFeatured', values: [true] }]
+            });
+            expect(result.featured).toBe(true);
+        });
+
         it('should silently skip unknown keys', () => {
             const result = mapLegacyFiltersToSummaryFilters({
                 filters: [{ type: 'text', key: 'unknownField', values: ['value'] }]
@@ -1305,7 +1386,8 @@ describe('buildAccommodationListingSummary', () => {
                     { type: 'checkbox', key: 'types', values: ['HOTEL', 'CABIN'] },
                     { type: 'checkbox', key: 'destination', values: ['colon'] },
                     { type: 'range', key: 'price', values: [5000, 20000, false] },
-                    { type: 'stepper', key: 'minGuests', values: [4] }
+                    { type: 'stepper', key: 'minGuests', values: [4] },
+                    { type: 'toggle', key: 'isFeatured', values: [true] }
                 ]
             });
             expect(result.types).toEqual(['HOTEL', 'CABIN']);
@@ -1313,6 +1395,7 @@ describe('buildAccommodationListingSummary', () => {
             expect(result.price?.min).toBe(5000);
             expect(result.price?.max).toBe(20000);
             expect(result.guests).toBe(4);
+            expect(result.featured).toBe(true);
         });
 
         it('should integrate with buildAccommodationListingSummary after mapping', () => {
@@ -1374,7 +1457,7 @@ describe('buildAccommodationListingSummary', () => {
         });
 
         // --- Spec example 3 — full complex sentence ---------------------------
-        it('type + text + price range + guests + amenities + rating + sort → full sentence', () => {
+        it('type + text + price range + guests + amenities + rating + featured + sort → full sentence', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'es',
                 filters: {
@@ -1384,14 +1467,15 @@ describe('buildAccommodationListingSummary', () => {
                     guests: 3,
                     amenities: ['wifi', 'aire-acondicionado'],
                     minRating: 4,
-                    includeWithoutRating: true
+                    includeWithoutRating: true,
+                    featured: true
                 },
                 counts: { shown: 8, globalTotal: 42, subjectTotal: 42 },
                 sort: { key: 'price', direction: 'asc' },
                 catalogs: TEST_CATALOGS
             });
             expect(result).toBe(
-                'Mostrando 8 de 42 hoteles que contienen "centro" en el nombre o la descripción, con precio entre $8.000 y $20.000 o sin precio definido, para al menos 3 huéspedes, con amenities como wifi y aire acondicionado, con calificación mínima de 4 o sin calificación, ordenados por precio, de menor a mayor.'
+                'Mostrando 8 de 42 hoteles que contienen "centro" en el nombre o la descripción, con precio entre $8.000 y $20.000 o sin precio definido, para al menos 3 huéspedes, con amenities como wifi y aire acondicionado, con calificación mínima de 4 o sin calificación, solo destacados, ordenados por precio, de menor a mayor.'
             );
         });
 
@@ -1499,6 +1583,19 @@ describe('buildAccommodationListingSummary', () => {
             );
         });
 
+        it('single type + featured false (non-featured only)', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: {
+                    types: ['RESORT'],
+                    featured: false
+                },
+                counts: { shown: 4, globalTotal: 8, subjectTotal: 8 },
+                catalogs: TEST_CATALOGS
+            });
+            expect(result).toBe('Mostrando 4 de 8 resorts, solo no destacados.');
+        });
+
         it('no filters, no sort → sin filtros activos, no sort phrase', () => {
             const result = buildAccommodationListingSummary({
                 locale: 'es',
@@ -1519,11 +1616,11 @@ describe('buildAccommodationListingSummary', () => {
                     guests: 2
                 },
                 counts: { shown: 15, globalTotal: 45, subjectTotal: 45 },
-                sort: { key: 'price', direction: 'asc' },
+                sort: { key: 'isFeatured', direction: 'desc' },
                 catalogs: TEST_CATALOGS
             });
             expect(result).toBe(
-                'Mostrando 15 de 45 hoteles, cabañas y hostels en Colón, Concordia o Federación, con precio entre $5.000 y $30.000, para al menos 2 huéspedes, ordenados por precio, de menor a mayor.'
+                'Mostrando 15 de 45 hoteles, cabañas y hostels en Colón, Concordia o Federación, con precio entre $5.000 y $30.000, para al menos 2 huéspedes, ordenados por destacados, destacados primero.'
             );
         });
     });

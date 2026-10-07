@@ -86,6 +86,12 @@ const isNew = experience.createdAt
         <div class="exp-hero__main wh-compact-row">
             <div class="exp-hero__badges">
                 <span class="exp-hero__type-badge wh-compact-badge">{typeLabel}</span>
+                {experience.isFeatured && (
+                    <span class="featured-badge">
+                        <StarIcon size={12} weight="fill" aria-hidden="true" />
+                        <span>{t('experience.card.featured', 'Destacada')}</span>
+                    </span>
+                )}
                 {isNew && (
                     <span class="exp-hero__new-badge wh-compact-badge">
                         {t('home.accommodations.badge.new', 'Nuevo')}

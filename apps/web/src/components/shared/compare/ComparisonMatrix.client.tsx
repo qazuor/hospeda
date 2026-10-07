@@ -86,7 +86,7 @@ interface MatrixRow {
     /**
      * `id`s of the accommodation(s) holding the "best value" for this row
      * (price = cheapest, rating = highest). Omitted for rows with no
-     * best-value concept (type, location, reviews, summary).
+     * best-value concept (type, location, reviews, featured, summary).
      */
     readonly bestValueIds?: ReadonlySet<string>;
 }
@@ -338,6 +338,21 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
             label: t('accommodations.comparison.matrix.reviews', 'Reseñas'),
             render: (a) => String(a.reviewsCount ?? 0),
             getValue: (a) => a.reviewsCount ?? 0
+        },
+        {
+            key: 'featured',
+            label: t('accommodations.comparison.matrix.featured', 'Destacado'),
+            render: (a) =>
+                a.isFeatured ? (
+                    <StarIcon
+                        size={16}
+                        weight="fill"
+                        aria-hidden="true"
+                    />
+                ) : (
+                    na
+                ),
+            getValue: (a) => a.isFeatured
         },
         {
             key: 'summary',

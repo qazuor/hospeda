@@ -88,6 +88,18 @@ function firstAsNumberOrString(
     return null;
 }
 
+/**
+ * Extracts the first value as a boolean. Returns null for non-boolean values.
+ * @internal
+ */
+function firstAsBoolean(
+    values: readonly (string | number | boolean | null | undefined)[]
+): boolean | null {
+    const v = values[0];
+    if (typeof v === 'boolean') return v;
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // Main function
 // ---------------------------------------------------------------------------
@@ -110,6 +122,7 @@ function firstAsNumberOrString(
  * | `minRating` (type=stars) | `minRating`, `includeWithoutRating` |
  * | `amenities` (type=icon-chips or checkbox) | `amenities` |
  * | `features` (type=icon-chips or checkbox) | `services` |
+ * | `isFeatured` (type=toggle) | `featured` |
  *
  * Unknown keys are silently skipped. Malformed values are ignored.
  *
@@ -144,6 +157,7 @@ export function mapLegacyFiltersToSummaryFilters({
     let amenities: string[] | undefined;
     let minRating: number | string | null | undefined;
     let includeWithoutRating: boolean | null | undefined;
+    let featured: boolean | null | undefined;
 
     for (const filter of filters) {
         const { key, values, type } = filter;
@@ -236,6 +250,13 @@ export function mapLegacyFiltersToSummaryFilters({
                 break;
             }
 
+            case 'isFeatured': {
+                if (type === 'toggle') {
+                    featured = firstAsBoolean(values);
+                }
+                break;
+            }
+
             default:
                 // Unknown key — silently skip
                 break;
@@ -257,6 +278,7 @@ export function mapLegacyFiltersToSummaryFilters({
             includeWithoutRating !== null && {
                 includeWithoutRating
             }),
+        ...(featured !== undefined && featured !== null && { featured }),
         ...((priceMin !== undefined && priceMin !== null) ||
         (priceMax !== undefined && priceMax !== null) ||
         priceIncludeWithout === true

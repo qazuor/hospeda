@@ -13,6 +13,7 @@
  */
 import 'leaflet/dist/leaflet.css';
 
+import { StarIcon } from '@repo/icons';
 import L from 'leaflet';
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
@@ -472,6 +473,8 @@ export function ListingMapInner(props: ListingMapProps) {
                     item.typeLabel ?? '',
                     item.cityName ?? '',
                     item.summary ?? '',
+                    item.isFeatured ? '1' : '0',
+                    item.featuredLabel ?? '',
                     item.averageRating ?? '',
                     item.reviewsCount ?? '',
                     item.reviewsLabel ?? '',
@@ -724,7 +727,10 @@ function AccommodationPopupContent({
         item.averageRating > 0 &&
         typeof item.reviewsCount === 'number' &&
         item.reviewsCount > 0;
-    const hasHeaderRow = Boolean(item.typeLabel) || Boolean(item.id);
+    const hasHeaderRow =
+        Boolean(item.typeLabel) ||
+        (item.isFeatured && Boolean(item.featuredLabel)) ||
+        Boolean(item.id);
     return (
         <div className={styles.popupCard}>
             <div className={styles.popupBody}>
@@ -733,6 +739,16 @@ function AccommodationPopupContent({
                         <div className={styles.popupHeaderChips}>
                             {item.typeLabel ? (
                                 <span className={styles.popupTypeChip}>{item.typeLabel}</span>
+                            ) : null}
+                            {item.isFeatured && item.featuredLabel ? (
+                                <span className={`${styles.popupFeaturedBadge} featured-badge`}>
+                                    <StarIcon
+                                        size={12}
+                                        weight="fill"
+                                        aria-hidden="true"
+                                    />
+                                    <span>{item.featuredLabel}</span>
+                                </span>
                             ) : null}
                         </div>
                         <FavoriteButton

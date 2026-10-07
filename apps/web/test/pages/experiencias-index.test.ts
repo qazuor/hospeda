@@ -50,6 +50,10 @@ describe('experiencias/index.astro', () => {
             expect(src).toContain('type,');
         });
 
+        it('passes isFeatured filter', () => {
+            expect(src).toContain('isFeatured,');
+        });
+
         it('passes minRating filter', () => {
             expect(src).toContain('minRating,');
         });
@@ -117,6 +121,11 @@ describe('experiencias/index.astro', () => {
         it('includes a type checkbox filter', () => {
             expect(src).toContain("id: 'type'");
             expect(src).toContain("type: 'checkbox'");
+        });
+
+        it('includes a toggle for isFeatured', () => {
+            expect(src).toContain("id: 'isFeatured'");
+            expect(src).toContain("type: 'toggle'");
         });
 
         it('includes a stars filter for minRating', () => {

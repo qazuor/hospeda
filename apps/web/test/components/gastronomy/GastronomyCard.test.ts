@@ -74,9 +74,9 @@ describe('GastronomyCard.astro', () => {
     });
 
     describe('featured badge', () => {
-        it('does not render a featured badge (the featured flag was dropped, HOS-1419)', () => {
-            expect(src).not.toContain('data.isFeatured');
-            expect(src).not.toContain('featured-badge');
+        it('renders the featured badge when data.isFeatured is true', () => {
+            expect(src).toContain('data.isFeatured');
+            expect(src).toContain('featured-badge');
         });
     });
 

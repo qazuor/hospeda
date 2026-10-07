@@ -82,6 +82,8 @@ interface AccommodationsListingMapProps {
      * serializing functions across the island boundary.
      */
     readonly reviewsLabelById?: Record<string, string>;
+    /** Localised "Destacado" / "Featured" badge used on featured cards. */
+    readonly featuredLabel?: string;
     /**
      * Sidebar-only labels. Forwarded to each card in the cards sidebar so they
      * mirror the AccommodationCard look without the island knowing about i18n
@@ -121,6 +123,7 @@ export function AccommodationsListingMap({
     typeLabels,
     detailHrefById,
     reviewsLabelById,
+    featuredLabel,
     newLabel,
     newBg,
     newText,
@@ -229,6 +232,8 @@ export function AccommodationsListingMap({
                         }),
                         cityName: card.cityName,
                         summary: card.summary,
+                        isFeatured: card.isFeatured,
+                        featuredLabel: card.isFeatured ? featuredLabel : undefined,
                         isNew,
                         newLabel: isNew ? newLabel : undefined,
                         newBg,
@@ -260,6 +265,7 @@ export function AccommodationsListingMap({
             items,
             typeLabels,
             detailHrefById,
+            featuredLabel,
             newLabel,
             newBg,
             newText,

@@ -19,9 +19,11 @@
         "destination": "Destino",
         "type": "Tipo de estabelecimento",
         "priceRange": "Faixa de preço",
+        "featured": "Somente destaques",
         "features": "Opções alimentares e características",
         "minRating": "Avaliação mínima",
         "sort": {
+            "featured": "Destaques primeiro",
             "ratingDesc": "Mais bem avaliados",
             "newest": "Adicionados recentemente",
             "nameAsc": "Nome (A-Z)"
@@ -35,7 +37,8 @@
             "PREMIUM": "Premium"
         },
         "openNow": "Aberto agora",
-        "closedNow": "Fechado agora"
+        "closedNow": "Fechado agora",
+        "featured": "Destaque"
     },
     "detail": {
         "openingHours": {

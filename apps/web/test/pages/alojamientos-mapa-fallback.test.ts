@@ -81,6 +81,7 @@ describe('alojamientos/mapa.astro — filters forwarded to the viewport-search r
             'maxPrice,',
             'sortBy,',
             'sortOrder,',
+            'isFeatured,',
             'minGuests,',
             'minBedrooms,',
             'minBathrooms,',

@@ -80,6 +80,7 @@
             "location": "Ubicación",
             "rating": "Calificación",
             "reviews": "Reseñas",
+            "featured": "Destacado",
             "summary": "Descripción",
             "viewDetails": "Ver detalle",
             "notAvailable": "N/D",
@@ -353,6 +354,7 @@
     "sort": {
         "title": "Ordenar por",
         "default": "Recomendados",
+        "featured": "Destacados",
         "price.asc": "Precio: Menor a mayor",
         "price.desc": "Precio: Mayor a menor",
         "rating": "Mejor calificados",
@@ -472,6 +474,7 @@
         "children": "Niños",
         "bedrooms": "Dormitorios",
         "bathrooms": "Baños",
+        "featured": "Solo destacados",
         "clearAll": "Limpiar filtros",
         "activeFilters": "Filtros activos",
         "removeFilter": "Quitar filtro {{name}}",
@@ -827,6 +830,7 @@
         },
         "badges": {
             "new": "Nuevo",
+            "featured": "Destacado",
             "verified": "Verificado"
         },
         "bookmark_count": "Guardado por {{count}} personas",
@@ -870,7 +874,8 @@
         }
     },
     "emptyChip": {
-        "price": "Precio"
+        "price": "Precio",
+        "featured": "Solo destacados"
     },
     "emptySuggestion": {
         "viewMap": "Ver en mapa",

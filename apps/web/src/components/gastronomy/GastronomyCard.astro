@@ -56,6 +56,7 @@ const openNowStatus: boolean | null = data.openingHours
     ? computeOpenNowStatus(data.openingHours as Record<string, GastronomyOpeningHoursEntry>)
     : null;
 
+const featuredLabel = t('gastronomy.card.featured', 'Destacado');
 const openNowLabel = t('gastronomy.card.openNow', 'Abierto ahora');
 const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
 const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
@@ -112,6 +113,14 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                     <span class="gastro-card__status-text">
                         {t('home.accommodations.badge.new', 'Nuevo')}
                     </span>
+                </div>
+            )}
+
+            <!-- Featured badge -->
+            {data.isFeatured && (
+                <div class="gastro-card__featured-badge featured-badge">
+                    <StarIcon size={12} weight="fill" aria-hidden="true" />
+                    <span>{featuredLabel}</span>
                 </div>
             )}
 
@@ -295,6 +304,13 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         line-height: 22.4px;
         color: var(--primary-foreground);
         white-space: nowrap;
+    }
+
+    /* Featured badge */
+    .gastro-card__featured-badge {
+        position: absolute;
+        bottom: 48px;
+        right: 12px;
     }
 
     /* Open/closed badge */
@@ -543,7 +559,15 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             display: none;
         }
 
-        /* On mobile the open/closed badge sits at bottom-right (BETA-117). */
+        .gastro-card__featured-badge {
+            bottom: 48px;
+            left: 12px;
+            right: auto;
+            top: auto;
+        }
+
+        /* On mobile the featured badge takes bottom-left, so the open/closed
+           badge moves to bottom-right to stay opposite it (BETA-117). */
         .gastro-card__open-badge {
             left: auto;
             right: 12px;

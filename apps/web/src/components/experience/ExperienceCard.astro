@@ -45,6 +45,7 @@ const isNew = data.createdAt
     ? Date.now() - new Date(data.createdAt).getTime() < THIRTY_DAYS_MS
     : false;
 
+const featuredLabel = t('experience.card.featured', 'Destacada');
 const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
 ---
 
@@ -85,6 +86,14 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                     <span class="exp-card__status-text">
                         {t('home.accommodations.badge.new', 'Nuevo')}
                     </span>
+                </div>
+            )}
+
+            <!-- Featured badge -->
+            {data.isFeatured && (
+                <div class="exp-card__featured-badge featured-badge">
+                    <StarIcon size={12} weight="fill" aria-hidden="true" />
+                    <span>{featuredLabel}</span>
                 </div>
             )}
 
@@ -260,6 +269,13 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         line-height: 22.4px;
         color: var(--primary-foreground);
         white-space: nowrap;
+    }
+
+    /* Featured badge */
+    .exp-card__featured-badge {
+        position: absolute;
+        bottom: 48px;
+        right: 12px;
     }
 
     /* Top-right actions overlay (FavoriteButton) */
@@ -465,6 +481,13 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
 
         .exp-card__reviews-count {
             display: none;
+        }
+
+        .exp-card__featured-badge {
+            bottom: 48px;
+            left: 12px;
+            right: auto;
+            top: auto;
         }
     }
 </style>

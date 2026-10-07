@@ -232,6 +232,12 @@
     overflow: hidden;
 }
 
+/* Layout-only override on top of the shared `.featured-badge` rule in
+ * components.css (color/font/padding/icon gap come from there). */
+.popupFeaturedBadge {
+    flex-shrink: 0;
+}
+
 .popupCity {
     margin: 0;
     font-size: 0.8125rem;

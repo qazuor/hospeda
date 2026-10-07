@@ -48,6 +48,10 @@ describe('gastronomia/index.astro', () => {
             expect(src).toContain('priceRange,');
         });
 
+        it('passes isFeatured filter', () => {
+            expect(src).toContain('isFeatured,');
+        });
+
         it('passes minRating filter', () => {
             expect(src).toContain('minRating,');
         });
@@ -124,6 +128,11 @@ describe('gastronomia/index.astro', () => {
 
         it('includes a priceRange checkbox filter', () => {
             expect(src).toContain("id: 'priceRange'");
+        });
+
+        it('includes a toggle for isFeatured', () => {
+            expect(src).toContain("id: 'isFeatured'");
+            expect(src).toContain("type: 'toggle'");
         });
 
         it('includes a stars filter for minRating', () => {
