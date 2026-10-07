@@ -30,12 +30,21 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 /**
  * Shape of the per-request store held in AsyncLocalStorage.
  *
- * All fields except `requestId`, `method`, and `path` are optional because
- * the store is created before authentication and enriched progressively.
+ * All fields except `requestId`, `correlationId`, `method`, and `path` are
+ * optional because the store is created before authentication and enriched
+ * progressively.
  */
 export interface RequestContextStore {
     /** Unique identifier for the request (from `hono/request-id`). */
     requestId: string;
+    /**
+     * Correlation of the business intention this request starts (HOS-1424,
+     * NUCLEO/08 §2.1, AC:U2:9). Respected when the client sends a valid UUID in
+     * `x-correlation-id`, minted otherwise. Everything the intention produces
+     * (a domain event, an outbox row) carries it; it never travels to a
+     * payment or mail provider. Unlike `requestId`, it can span requests.
+     */
+    correlationId: string;
     /** HTTP method in uppercase, e.g. `"GET"`. */
     method: string;
     /** URL pathname, e.g. `"/api/v1/public/accommodations"`. */
@@ -161,6 +170,20 @@ export async function runWithRequestContext(input: RunWithRequestContextInput): 
  */
 export function getRequestContext(): RequestContextStore | undefined {
     return requestContextStorage.getStore();
+}
+
+/**
+ * Returns the active request's correlation id (HOS-1424), or `undefined`
+ * outside a request scope (a cron run carries its own on `CronJobContext`).
+ *
+ * Code that writes a domain event or enqueues an outbox row reads it here and
+ * passes it to the `@repo/db` model explicitly: the models never read this
+ * store themselves.
+ *
+ * @returns The correlation id of the current request, if any.
+ */
+export function getRequestCorrelationId(): string | undefined {
+    return requestContextStorage.getStore()?.correlationId;
 }
 
 /**
