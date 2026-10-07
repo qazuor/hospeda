@@ -7,6 +7,7 @@ import { ExperiencePublicSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
@@ -47,7 +48,7 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
 
         // Keep formerly plan-gated directions hidden until replacement coverage exists.
         return applyExperienceDirectionsGate({
-            experience: withPublicVisibleFaqs(experience),
+            experience: withPublicIsFeatured(withPublicVisibleFaqs(experience)),
             ownerGrantsDirections: false
         });
     },

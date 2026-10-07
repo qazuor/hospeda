@@ -41,7 +41,7 @@ const FORBIDDEN_FIELDS = [
 ] as const;
 
 /** Fields that must survive on the public accommodation summary. */
-const REQUIRED_PUBLIC_FIELDS = ['id', 'slug', 'name', 'summary', 'type'] as const;
+const REQUIRED_PUBLIC_FIELDS = ['id', 'slug', 'name', 'summary', 'type', 'isFeatured'] as const;
 
 /**
  * Mirrors exactly the object the summary handler builds (getSummary.ts), plus
@@ -94,7 +94,7 @@ describe('AccommodationSummarySchema — public summary enforcement (SPEC-210)',
         }
     });
 
-    it('preserves the required public fields (id, slug, name, summary, type)', () => {
+    it('preserves the required public fields (id, slug, name, summary, type, isFeatured)', () => {
         const result = AccommodationSummarySchema.safeParse(HANDLER_SUMMARY_SHAPE);
         expect(result.success).toBe(true);
         if (result.success) {

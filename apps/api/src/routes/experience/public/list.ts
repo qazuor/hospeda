@@ -14,6 +14,7 @@ import {
     httpToDomainExperienceSearch
 } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
+import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -29,7 +30,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * All filter params from ExperienceSearchHttpSchema are converted to the domain
  * search input via httpToDomainExperienceSearch and forwarded to
  * experienceService.search(), which force-filters deletedAt=null and applies
- * scalar filters (type, destinationId, ownerId, minRating, maxRating).
+ * scalar filters (type, destinationId, isFeatured, ownerId, minRating, maxRating).
  */
 export const publicListExperiencesRoute = createPublicListRoute({
     method: 'get',
@@ -61,7 +62,9 @@ export const publicListExperiencesRoute = createPublicListRoute({
         // extra round trips), and `meetingPointDirections` is named on
         // `ExperiencePublicSchema` — so it is withheld here unconditionally,
         // through the same gate the detail routes use.
-        const items = withholdExperienceDirectionsFromList(result.data?.items || []);
+        const items = withPublicIsFeaturedList(
+            withholdExperienceDirectionsFromList(result.data?.items || [])
+        );
 
         return {
             items,

@@ -7,6 +7,7 @@ import { GastronomyPublicSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
@@ -39,7 +40,8 @@ export const publicGetGastronomyByIdRoute = createPublicRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        return result.data ? withPublicVisibleFaqs(result.data) : null;
+        // HOS-1286: the public `isFeatured`, derived in the PUBLIC tier only.
+        return result.data ? withPublicIsFeatured(withPublicVisibleFaqs(result.data)) : null;
     },
     options: {
         cacheTTL: 300,

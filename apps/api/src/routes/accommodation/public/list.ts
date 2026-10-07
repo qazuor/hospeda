@@ -4,6 +4,7 @@
  *
  * Supported filters (all wired through to the model via service.search()):
  * - type: accommodation type (direct column match)
+ * - isFeatured: featured flag (derived from `featuredByEntitlement`)
  * - destinationId: filter by destination (direct column match)
  * - q: full-text search on name and description
  * - minPrice, maxPrice: price range (JSONB field)
@@ -18,6 +19,9 @@
  * - `sortBy`/`sortOrder`: legacy single-column sort. Whitelisted via `sanitizeSortBy`.
  * - `sorts`: multi-column compound sort, `?sorts=field:order,field:order` (max 5).
  *           Whitelisted via `sanitizeSorts`. Takes precedence over `sortBy`.
+ * - `featuredFirst`: FORCED to `true` server-side. Featured accommodations are
+ *           ALWAYS returned before non-featured within any sort. The client
+ *           cannot opt out — any `?featuredFirst=false` is ignored.
  * - Stable `id DESC` tiebreaker is appended by the model to guarantee
  *           deterministic pagination across pages when leading sort keys tie.
  */
@@ -30,6 +34,7 @@ import {
     type SortField
 } from '@repo/schemas';
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -58,6 +63,7 @@ const ALLOWED_SORT_FIELDS = new Set([
     'createdAt',
     'averageRating',
     'reviewsCount',
+    'isFeatured',
     'mostSaved',
     'price',
     // Synthetic sort field — orders by haversine distance from the
@@ -117,7 +123,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Convert all HTTP query params to domain search input.
-        // This maps: type, destinationId, q, minPrice, maxPrice,
+        // This maps: type, isFeatured, destinationId, q, minPrice, maxPrice,
         // minGuests, maxGuests, minBedrooms, maxBedrooms, minBathrooms,
         // maxBathrooms, minRating, maxRating, amenities, sortBy, sortOrder,
         // currency, latitude, longitude, radius, checkIn, checkOut, isAvailable.
@@ -162,7 +168,11 @@ export const publicListAccommodationsRoute = createPublicListRoute({
             pageSize,
             sortBy: safeSortBy,
             sortOrder: safeSortBy ? (domainParams.sortOrder ?? 'asc') : undefined,
-            sorts: sanitizeSorts(domainParams.sorts)
+            sorts: sanitizeSorts(domainParams.sorts),
+            // Forced server-side: featured accommodations always appear first on
+            // the public listing, regardless of what the client requested in the
+            // `?featuredFirst=...` query parameter.
+            featuredFirst: true
         });
 
         if (result.error) {
@@ -193,6 +203,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
                         maxBathrooms: httpQuery.maxBathrooms,
                         minRating: httpQuery.minRating,
                         maxRating: httpQuery.maxRating,
+                        isFeatured: httpQuery.isFeatured,
                         isAvailable: httpQuery.isAvailable,
                         hasPool: httpQuery.hasPool,
                         hasWifi: httpQuery.hasWifi,
@@ -228,6 +239,10 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // so the badge is unconditional; `isVerified` is emitted as stored.
         const items = rawItems.map((item) => ({
             ...maskLegacyPremiumFields(item),
+            // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+            // (the only featuring source since HOS-1419); the raw column itself is
+            // stripped by the public schema (never in its pick).
+            isFeatured: resolvePublicIsFeatured(item as { featuredByEntitlement?: boolean }),
             hasAiChat: true
         }));
 

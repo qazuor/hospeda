@@ -13,6 +13,7 @@ import {
     httpToDomainGastronomySearch
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
+import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -27,7 +28,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * All filter params from GastronomySearchHttpSchema are converted to the domain
  * search input via httpToDomainGastronomySearch and forwarded to
  * gastronomyService.search(), which force-filters deletedAt=null and applies
- * scalar filters (type, priceRange, destinationId, ownerId).
+ * scalar filters (type, priceRange, destinationId, isFeatured, ownerId).
  */
 export const publicListGastronomiesRoute = createPublicListRoute({
     method: 'get',
@@ -54,7 +55,7 @@ export const publicListGastronomiesRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        const items = result.data?.items || [];
+        const items = withPublicIsFeaturedList(result.data?.items || []);
 
         return {
             items,

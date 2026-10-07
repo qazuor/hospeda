@@ -1,6 +1,7 @@
 import { AccommodationIdSchema, AccommodationSummarySchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -54,6 +55,10 @@ const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>)
         type: result.data.type,
         reviewsCount: result.data.reviewsCount,
         averageRating: result.data.averageRating,
+        // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+        // (the only featuring source since HOS-1419); the raw column itself is
+        // stripped by the public schema (never in its pick).
+        isFeatured: resolvePublicIsFeatured(result.data),
         visibility: result.data.visibility || 'PUBLIC',
         lifecycleState: result.data.lifecycleState || 'ACTIVE',
         createdAt: result.data.createdAt,

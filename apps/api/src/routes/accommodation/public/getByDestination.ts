@@ -8,6 +8,7 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
 import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -52,7 +53,13 @@ const getByDestinationHandler = async (c: Context) => {
     // change.
     const data = result.data ?? { accommodations: [] };
     const strippedAccommodations = Array.isArray(data.accommodations)
-        ? data.accommodations.map((accommodation) => maskLegacyPremiumFields(accommodation))
+        ? data.accommodations.map((accommodation) => ({
+              ...maskLegacyPremiumFields(accommodation),
+              // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+              // (the only featuring source since HOS-1419); the raw column itself is
+              // stripped by the public schema (never in its pick).
+              isFeatured: resolvePublicIsFeatured(accommodation)
+          }))
         : [];
 
     // The SPEC-291 isVerified owner-entitlement gate was removed with the

@@ -80,6 +80,7 @@ describe('GET /accommodations (Enhanced List)', () => {
                     expect(item).toHaveProperty('type');
                     expect(item).toHaveProperty('reviewsCount');
                     expect(item).toHaveProperty('averageRating');
+                    expect(item).toHaveProperty('isFeatured');
 
                     // Type validation
                     expect(typeof item.id).toBe('string');
@@ -87,6 +88,7 @@ describe('GET /accommodations (Enhanced List)', () => {
                     expect(typeof item.type).toBe('string');
                     expect(typeof item.reviewsCount).toBe('number');
                     expect(typeof item.averageRating).toBe('number');
+                    expect(typeof item.isFeatured).toBe('boolean');
 
                     // Value constraints
                     expect(item.id).toMatch(
@@ -439,6 +441,8 @@ describe('GET /accommodations (Enhanced List)', () => {
 
         it('should handle boolean filters', async () => {
             const booleanTests = [
+                { isFeatured: 'true' },
+                { isFeatured: 'false' },
                 { isActive: 'true' },
                 { isPublished: 'true' },
                 { petFriendly: 'true' },
@@ -463,6 +467,17 @@ describe('GET /accommodations (Enhanced List)', () => {
                 if (response.status === 200) {
                     const data = await response.json();
                     expect(data.success).toBe(true);
+
+                    // Validate featured filter
+                    if (filters.isFeatured === 'true') {
+                        for (const item of data.data.items) {
+                            expect(item.isFeatured).toBe(true);
+                        }
+                    } else if (filters.isFeatured === 'false') {
+                        for (const item of data.data.items) {
+                            expect(item.isFeatured).toBe(false);
+                        }
+                    }
                 }
             }
         });
@@ -475,6 +490,7 @@ describe('GET /accommodations (Enhanced List)', () => {
                     type: 'hotel',
                     city: 'Miami',
                     minRating: 4.0,
+                    isFeatured: 'true',
                     page: 1,
                     pageSize: 10,
                     sortBy: 'averageRating',
@@ -529,6 +545,9 @@ describe('GET /accommodations (Enhanced List)', () => {
                             expect(item.averageRating).toBeGreaterThanOrEqual(
                                 Number.parseFloat(filters.minRating.toString())
                             );
+                        }
+                        if (filters.isFeatured === 'true') {
+                            expect(item.isFeatured).toBe(true);
                         }
                     }
 

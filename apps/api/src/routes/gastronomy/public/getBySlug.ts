@@ -15,6 +15,7 @@ import {
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import {
     fetchGastronomyAmenities,
@@ -148,6 +149,8 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
 
         return {
             ...withPublicVisibleFaqs(gastronomy),
+            // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
+            isFeatured: resolvePublicIsFeatured(gastronomy),
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
             features: featuresData.length > 0 ? featuresData : undefined,
             ...menuGate,

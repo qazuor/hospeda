@@ -76,10 +76,11 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
         const result = await accommodationService.search(createGuestActor(), {
             ownerId,
             page,
-            pageSize
+            pageSize,
             // Only surface publicly visible accommodations.
             // `lifecycleState` is validated and enforced by the service layer.
             // Soft-deleted records are excluded by the base model (deletedAt IS NULL).
+            featuredFirst: true
         });
 
         if (result.error) {

@@ -17,6 +17,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
+import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
 import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
 
@@ -197,7 +198,14 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
             return null;
         }
 
-        const filteredAccommodation = maskLegacyPremiumFields(result.data);
+        // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+        // (the only featuring source since HOS-1419); the raw column itself is
+        // stripped by the public schema (never in its pick).
+        const accommodation = {
+            ...result.data,
+            isFeatured: resolvePublicIsFeatured(result.data)
+        };
+        const filteredAccommodation = maskLegacyPremiumFields(accommodation);
 
         // Fetch related data in parallel
         const [owner, amenitiesData, featuresData, faqsData] = await Promise.all([

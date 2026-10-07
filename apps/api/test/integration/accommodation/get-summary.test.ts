@@ -55,6 +55,7 @@ describe('GET /accommodations/:id/summary', () => {
                 expect(summary).toHaveProperty('type');
                 expect(summary).toHaveProperty('reviewsCount');
                 expect(summary).toHaveProperty('averageRating');
+                expect(summary).toHaveProperty('isFeatured');
 
                 // Type validation
                 expect(typeof summary.id).toBe('string');
@@ -63,6 +64,7 @@ describe('GET /accommodations/:id/summary', () => {
                 expect(typeof summary.type).toBe('string');
                 expect(typeof summary.reviewsCount).toBe('number');
                 expect(typeof summary.averageRating).toBe('number');
+                expect(typeof summary.isFeatured).toBe('boolean');
 
                 // Value constraints validation
                 expect(summary.id).toBe(validUuid);
