@@ -70,10 +70,10 @@ import styles from './ListingQrSheet.module.css';
  * API path segment per vertical — mirrors the protected route mounts of both
  * `protected/qrCode.ts` (the image) and `protected/qrSheet.ts` (the PDF).
  *
- * A map rather than a ternary: `check-no-binary-vertical-ternary.sh` exists
- * because eleven sites decided a vertical with `x === 'gastronomy' ? A : B` and
- * every one of them silently answered `B` for `'accommodation'` (HOS-1079). With
- * three verticals in play here that mistake would be one keystroke away.
+ * A map rather than a ternary: eleven sites once decided a vertical with
+ * `x === 'gastronomy' ? A : B` and every one of them silently answered `B` for
+ * `'accommodation'` (HOS-1079), the shape GUARD:G1 now forbids in shared code.
+ * With three verticals in play here that mistake would be one keystroke away.
  */
 const API_SEGMENT_BY_VERTICAL = {
     accommodation: 'accommodations',

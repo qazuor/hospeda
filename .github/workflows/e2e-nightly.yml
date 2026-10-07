@@ -210,8 +210,11 @@ jobs:
       - name: Build apps
         run: pnpm exec turbo run build --filter=hospeda-api --filter=admin --filter=hospeda-web
 
-      - name: Push Drizzle schema to E2E database
-        run: pnpm --filter @repo/db db:push
+      # Versioned migrations, like e2e-pr, not `db:push`: the migrations write the
+      # reference rows (`vertical`, `catalog_key`), so a pushed schema would hold
+      # none of them (AC:V1:4 (d), HOS-1431).
+      - name: Apply versioned Drizzle migrations to E2E database
+        run: pnpm --filter @repo/db db:migrate
         env:
           HOSPEDA_DATABASE_URL: ${{ env.HOSPEDA_E2E_DATABASE_URL }}
 
