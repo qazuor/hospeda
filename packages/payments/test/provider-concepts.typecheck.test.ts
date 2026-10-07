@@ -53,18 +53,18 @@ export type Check = AssertNoProviderConcept<ProviderConceptsIn<Leaky>>;
 type FixtureName = keyof typeof FIXTURES;
 
 let fixtureDir = '';
-let diagnosticsByFixture: Record<FixtureName, readonly string[]>;
+const FIXTURE_NAMES = Object.keys(FIXTURES) as FixtureName[];
+const diagnosticsByFixture = new Map<FixtureName, readonly string[]>();
 
 beforeAll(() => {
     // Arrange: one program over every fixture, with the package's own options.
     fixtureDir = mkdtempSync(join(tmpdir(), 'payments-concepts-'));
-    const files = Object.fromEntries(
-        Object.entries(FIXTURES).map(([name, source]) => {
-            const file = join(fixtureDir, `${name}.ts`);
-            writeFileSync(file, source);
-            return [name, file];
-        })
-    ) as Record<FixtureName, string>;
+    const files = new Map<FixtureName, string>();
+    for (const name of FIXTURE_NAMES) {
+        const file = join(fixtureDir, `${name}.ts`);
+        writeFileSync(file, FIXTURES[name]);
+        files.set(name, file);
+    }
     const config = ts.getParsedCommandLineOfConfigFile(
         join(PACKAGE_ROOT, 'tsconfig.json'),
         {},
@@ -72,22 +72,28 @@ beforeAll(() => {
     );
     if (!config) throw new Error('cannot read packages/payments/tsconfig.json');
     const program = ts.createProgram({
-        rootNames: Object.values(files),
+        rootNames: [...files.values()],
         options: { ...config.options, noEmit: true, types: [] }
     });
 
     // Act
-    diagnosticsByFixture = Object.fromEntries(
-        Object.entries(files).map(([name, file]) => {
-            const source = program.getSourceFile(file);
-            const diagnostics = source ? ts.getPreEmitDiagnostics(program, source) : [];
-            return [
-                name,
-                diagnostics.map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'))
-            ];
-        })
-    ) as Record<FixtureName, readonly string[]>;
+    for (const [name, file] of files) {
+        const source = program.getSourceFile(file);
+        if (!source) throw new Error(`fixture ${name} was not compiled`);
+        const diagnostics = ts.getPreEmitDiagnostics(program, source);
+        diagnosticsByFixture.set(
+            name,
+            diagnostics.map((d) => ts.flattenDiagnosticMessageText(d.messageText, '\n'))
+        );
+    }
 }, 60_000);
+
+/** The diagnostics of one fixture; a fixture that was never compiled fails here. */
+function diagnosticsOf({ fixture }: { readonly fixture: FixtureName }): readonly string[] {
+    const messages = diagnosticsByFixture.get(fixture);
+    if (!messages) throw new Error(`no diagnostics recorded for ${fixture}`);
+    return messages;
+}
 
 afterAll(() => {
     rmSync(fixtureDir, { recursive: true, force: true });
@@ -95,7 +101,7 @@ afterAll(() => {
 
 describe('the provider-concept type check', () => {
     it('compiles the real interface clean', () => {
-        expect(diagnosticsByFixture.clean).toEqual([]);
+        expect(diagnosticsOf({ fixture: 'clean' })).toEqual([]);
     });
 
     it.each([
@@ -104,7 +110,7 @@ describe('the provider-concept type check', () => {
         ['a literal of a status union', 'leakedStatusLiteral', 'mercadopagoPaused']
     ] as const)('fails when the interface leaks a concept in %s', (_where, fixture, leaked) => {
         // Assert
-        const messages = diagnosticsByFixture[fixture];
+        const messages = diagnosticsOf({ fixture });
         expect(messages.length).toBeGreaterThan(0);
         expect(messages.join('\n')).toContain(leaked);
     });
