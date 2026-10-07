@@ -30,7 +30,6 @@ import { recordCronRun } from '../../cron/record-run';
 import { cronJobs, getCronJob } from '../../cron/registry';
 import { CRON_SCHEDULES } from '../../cron/schedules.manifest';
 import type { CronJobContext, CronJobResult } from '../../cron/types';
-import { getRequestCorrelationId } from '../../lib/request-context';
 import type { AppBindings } from '../../types';
 import { getActorFromContext } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
@@ -185,11 +184,12 @@ export const triggerCronJobHandler = async (
 
     const startTime = Date.now();
     const startedAt = new Date();
-    // HOS-1424: a fresh run id per trigger; the run's correlation is the one of
-    // the admin request that triggered it (minted at the edge, echoed on the
-    // response), so the operator can follow the run from the response.
+    // HOS-1424 (AC:U2:9): every run carries its own run id AND its own run
+    // correlation, minted here like on a scheduled tick. It is NOT the admin
+    // request's correlation (still echoed on the HTTP response by the edge
+    // middleware): two triggers sent with the same header are two runs.
     const runId = randomUUID();
-    const correlationId = getRequestCorrelationId() ?? randomUUID();
+    const correlationId = randomUUID();
     const ids = { runId, correlationId };
 
     const jobContext: CronJobContext = {

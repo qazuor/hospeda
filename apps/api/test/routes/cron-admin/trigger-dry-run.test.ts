@@ -113,28 +113,33 @@ describe('POST /admin/cron/{jobName} run ids (HOS-1424, TEST:U2:9)', () => {
         });
     });
 
-    it('a manual run carries a fresh run id and the correlation of the request that triggered it', async () => {
-        // Arrange
-        const correlationId = crypto.randomUUID();
+    it('a manual run mints its own run id and run correlation, not the request correlation', async () => {
+        // Arrange: two triggers inside requests that carry the SAME correlation.
+        const requestCorrelation = crypto.randomUUID();
+        const store = {
+            requestId: 'r',
+            correlationId: requestCorrelation,
+            method: 'POST',
+            path: '/api/v1/admin/cron/demo'
+        };
 
         // Act
-        await runWithRequestContext({
-            store: {
-                requestId: 'r',
-                correlationId,
-                method: 'POST',
-                path: '/api/v1/admin/cron/demo'
-            },
-            fn: async () => {
-                await trigger({});
-            }
-        });
+        await runWithRequestContext({ store, fn: async () => void (await trigger({})) });
+        await runWithRequestContext({ store, fn: async () => void (await trigger({})) });
 
         // Assert
-        const ctx = mockJobHandler.mock.calls[0]?.[0] as { runId: string; correlationId: string };
-        expect(ctx.correlationId).toBe(correlationId);
-        expect(ctx.runId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-        expect(ctx.runId).not.toBe(correlationId);
+        const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+        const [first, second] = mockJobHandler.mock.calls.map(
+            (call) => call[0] as { runId: string; correlationId: string }
+        );
+        for (const ctx of [first, second]) {
+            expect(ctx?.correlationId).toMatch(uuid);
+            expect(ctx?.correlationId).not.toBe(requestCorrelation);
+            expect(ctx?.runId).toMatch(uuid);
+            expect(ctx?.runId).not.toBe(ctx?.correlationId);
+        }
+        expect(first?.correlationId).not.toBe(second?.correlationId);
+        expect(first?.runId).not.toBe(second?.runId);
     });
 
     it('outside a request scope it mints the run correlation', async () => {

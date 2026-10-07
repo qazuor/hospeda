@@ -78,7 +78,9 @@ export const OUTBOX_DOMAIN_EVENT_ENTITY_TYPE = 'email_outbox';
  * Maps an escalation to its `email.undeliverable` domain event: about the
  * outbox row, caused by a job, under the item's correlation. The recipient
  * address is not copied (a reference, never the content); `changes` records
- * the row moving to `failed`.
+ * the row moving to `failed`. `occurredAt` is the RUN instant (`ctx.startedAt`),
+ * the same instant the batch uses for every lease, window and log record, not
+ * the wall-clock moment the insert happens.
  *
  * @param input - The escalation and the run instant.
  * @returns The event to write.
