@@ -12,6 +12,11 @@
  *
  * Mutation: removing the mapping from the hard-bounce event to the `bounced`
  * row in `apps/api/src/routes/webhooks/brevo.ts` turns the bounce cases red.
+ *
+ * Also covers the route's two failure modes: a failed write answers 503
+ * without forwarding that event to the newsletter tracker (removing the 503
+ * branch turns it red), and a poison `hard_bounce` (invalid fields) is logged
+ * and skipped with 200 (removing the skip turns it red).
  */
 
 import {
@@ -27,6 +32,7 @@ import {
     OUTBOX_LAST_ERROR_MARKERS,
     processEmailOutboxBatch
 } from '@repo/notifications';
+import { NewsletterTrackingService } from '@repo/service-core';
 import { inArray, sql } from 'drizzle-orm';
 import type { ReactElement } from 'react';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -111,6 +117,7 @@ describe('TEST:U2:14 a Brevo hard bounce suppresses every later mail to the addr
     });
 
     afterEach(async () => {
+        vi.restoreAllMocks();
         const db = testDb.getDb();
         if (createdRecipients.length > 0) {
             const lowered = createdRecipients.map((r) => sql`${r.toLowerCase()}`);
@@ -157,19 +164,63 @@ describe('TEST:U2:14 a Brevo hard bounce suppresses every later mail to the addr
         expect(await notificationLogModel.hasHardBounce({ recipient })).toBe(true);
     });
 
-    it('records ONE bounced row for a redelivered event without message-id', async () => {
-        // Arrange
+    it('records ONE bounced row for a redelivered event without message-id, whatever the casing', async () => {
+        // Arrange: the key falls back to the lower-cased address
         const recipient = newRecipient();
-        const event = hardBounceEvent({ email: recipient.toUpperCase() });
 
-        // Act
-        const first = await postEvent(app, event);
-        const second = await postEvent(app, event);
+        // Act: the two deliveries spell the address differently
+        const first = await postEvent(app, hardBounceEvent({ email: recipient.toUpperCase() }));
+        const second = await postEvent(app, hardBounceEvent({ email: recipient }));
 
         // Assert
         expect(first.status).toBe(200);
         expect(second.status).toBe(200);
         expect(await bouncedRowsOf(recipient)).toHaveLength(1);
+    });
+
+    it('answers 503 when the bounce write fails, writes nothing and does NOT forward that event to the newsletter tracker', async () => {
+        // Arrange
+        const recipient = newRecipient();
+        vi.spyOn(notificationLogModel, 'recordProviderHardBounce').mockRejectedValueOnce(
+            new Error('connection terminated')
+        );
+        const tracker = vi.spyOn(NewsletterTrackingService.prototype, 'processBrevoWebhookEvent');
+
+        // Act
+        const res = await postEvent(app, [
+            hardBounceEvent({ email: recipient, messageId: 'm-503' })
+        ]);
+
+        // Assert
+        expect(res.status).toBe(503);
+        expect(await res.json()).toEqual({ error: 'service_unavailable' });
+        expect(tracker).not.toHaveBeenCalled();
+        expect(await bouncedRowsOf(recipient)).toHaveLength(0);
+    });
+
+    it.each([
+        ['a malformed address', () => 'not-an-email', 'm-bad-1'],
+        [
+            'an address longer than the recipient column',
+            () => `x@${Array.from({ length: 5 }, () => 'a'.repeat(60)).join('.')}.com`,
+            'm-bad-2'
+        ],
+        ['an oversized message-id', () => newRecipient(), 'm'.repeat(600)]
+    ])('logs and skips a poison hard_bounce with %s: 200, no row, not forwarded', async (_label, makeEmail, messageId) => {
+        // Arrange
+        const email = makeEmail();
+        createdRecipients.push(email);
+        const tracker = vi.spyOn(NewsletterTrackingService.prototype, 'processBrevoWebhookEvent');
+
+        // Act
+        const res = await postEvent(app, hardBounceEvent({ email, messageId }));
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { readonly data: unknown };
+        expect(body.data).toEqual({ ok: true, processed: 0, skipped: 1 });
+        expect(tracker).not.toHaveBeenCalled();
+        expect(await bouncedRowsOf(email)).toHaveLength(0);
     });
 
     it('rejects an event without the webhook token and writes nothing', async () => {

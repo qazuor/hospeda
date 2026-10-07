@@ -27,6 +27,7 @@
  * the idempotent `bounced` row of the address in `notification_log`, which
  * the email outbox suppression reads. That write happens before the
  * newsletter forwarding, and its failure answers 503 so Brevo redelivers.
+ * A hard_bounce whose fields fail validation is logged and skipped.
  *
  * Logging policy: a signature mismatch is logged as a WARN (it's almost
  * certainly a misconfiguration or a probe — not an exception). Other
@@ -47,6 +48,7 @@ import { recordProviderHardBounce } from '@repo/notifications';
 import { ServiceErrorCode } from '@repo/schemas';
 import { NewsletterTrackingService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { createPerRouteRateLimitMiddleware } from '../../middlewares/rate-limit';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
@@ -129,6 +131,32 @@ interface RawBrevoEvent {
     readonly reason?: string;
 }
 
+/** `notification_log.recipient` is `varchar(255)`. */
+const RECIPIENT_MAX_LENGTH = 255;
+/** Upper bound for a Brevo `message-id`; real ones are well under 100 chars. */
+const MESSAGE_ID_MAX_LENGTH = 512;
+/** The bounce reason is free text from the provider; it is kept, truncated. */
+const REASON_MAX_LENGTH = 1000;
+
+/**
+ * The fields of a `hard_bounce` event that the suppression write uses. The
+ * body arrives as an unchecked cast, so these are validated before they reach
+ * the database: an event that fails here is a poison event, logged and
+ * skipped, never a 503 that would make Brevo redeliver it forever.
+ */
+const HardBounceFieldsSchema = z.object({
+    email: z.email().max(RECIPIENT_MAX_LENGTH),
+    messageId: z.string().trim().min(1).max(MESSAGE_ID_MAX_LENGTH).optional(),
+    reason: z
+        .unknown()
+        .transform((value) =>
+            typeof value === 'string' ? value.slice(0, REASON_MAX_LENGTH) : null
+        )
+});
+
+/** Outcome of {@link recordHardBounce}. */
+type HardBounceOutcome = 'recorded' | 'invalid' | 'write_failed';
+
 /**
  * Turns a `hard_bounce` event into the idempotent `bounced` row of the address
  * in `notification_log` (HOS-1627, AC:U2:12), so the email outbox suppresses
@@ -136,35 +164,48 @@ interface RawBrevoEvent {
  * `{ event: 'hard_bounce', email, 'message-id', reason, ... }`; the marketing
  * one carries no `message-id`, and the key then falls back to the address.
  *
- * @returns `true` when the bounce is recorded (now or by an earlier delivery
- *   of the same event); `false` when the write failed, so the caller asks
- *   Brevo to redeliver.
+ * @returns `recorded` when the bounce is in the log (now or by an earlier
+ *   delivery of the same event); `invalid` when its fields fail validation
+ *   (the caller skips the event); `write_failed` when the write threw (the
+ *   caller answers 503 so Brevo redelivers).
  */
 async function recordHardBounce(input: {
     readonly email: string;
-    readonly messageId: string | undefined;
+    readonly messageId: unknown;
     readonly raw: RawBrevoEvent;
-}): Promise<boolean> {
+}): Promise<HardBounceOutcome> {
+    const fields = HardBounceFieldsSchema.safeParse({
+        email: input.email,
+        messageId: input.messageId ?? undefined,
+        reason: input.raw.reason
+    });
+    if (!fields.success) {
+        apiLogger.warn(
+            { issues: fields.error.issues.map((issue) => issue.path.join('.')) },
+            'Brevo webhook: invalid hard_bounce event, skipped'
+        );
+        return 'invalid';
+    }
     try {
         const { inserted } = await recordProviderHardBounce({
             log: notificationLogModel,
             provider: 'brevo',
-            recipient: input.email,
-            messageId: input.messageId ?? null,
-            reason: typeof input.raw.reason === 'string' ? input.raw.reason : null,
+            recipient: fields.data.email,
+            messageId: fields.data.messageId ?? null,
+            reason: fields.data.reason,
             at: parseEventDate(input.raw)
         });
         apiLogger.info(
-            { inserted, hasMessageId: Boolean(input.messageId) },
+            { inserted, hasMessageId: Boolean(fields.data.messageId) },
             'Brevo webhook: hard bounce recorded in notification_log'
         );
-        return true;
+        return 'recorded';
     } catch (err) {
         apiLogger.error(
             { error: err instanceof Error ? err.message : String(err) },
             'Brevo webhook: failed to record hard bounce, asking Brevo to redeliver'
         );
-        return false;
+        return 'write_failed';
     }
 }
 
@@ -231,12 +272,16 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
     let skipped = 0;
 
     for (const raw of events) {
-        const eventType = (raw.event ?? '').trim();
+        if (!raw || typeof raw !== 'object') {
+            skipped += 1;
+            continue;
+        }
+        const eventType = typeof raw.event === 'string' ? raw.event.trim() : '';
         if (!FORWARDED_EVENTS.has(eventType)) {
             skipped += 1;
             continue;
         }
-        const email = (raw.email ?? '').trim();
+        const email = typeof raw.email === 'string' ? raw.email.trim() : '';
         if (!email) {
             skipped += 1;
             continue;
@@ -246,11 +291,22 @@ async function brevoWebhookHandler(c: Context): Promise<Response> {
 
         // AC:U2:12 — the suppression record goes first and on its own: the
         // newsletter tracking below only knows newsletter mail, and a bounce
-        // of any mail must suppress the address. The write is idempotent, so
-        // a 503 that makes Brevo redeliver the batch is safe.
+        // of any mail must suppress the address.
+        // - An invalid hard_bounce (bad email, oversized message-id) is a
+        //   poison event: logged and skipped, newsletter forwarding included,
+        //   so Brevo never redelivers it forever.
+        // - A failed write answers 503 at once, without forwarding THIS event
+        //   to the newsletter tracker; Brevo then redelivers the whole batch.
+        //   Events earlier in the batch were already processed and are
+        //   processed again on redelivery — the bounce write is idempotent
+        //   and the tracker's writes land on the same terminal state.
         if (eventType === 'hard_bounce') {
-            const recorded = await recordHardBounce({ email, messageId, raw });
-            if (!recorded) {
+            const outcome = await recordHardBounce({ email, messageId, raw });
+            if (outcome === 'invalid') {
+                skipped += 1;
+                continue;
+            }
+            if (outcome === 'write_failed') {
                 return c.json({ error: 'service_unavailable' }, 503);
             }
         }
