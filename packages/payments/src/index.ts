@@ -7,7 +7,8 @@
  * - the re-read rules every caller inherits: a mutation is confirmed by
  *   re-reading field by field (`confirmAuthorizationMutation`, INV:D5), and a
  *   decision refuses a read by id older than its own start
- *   (`assertFreshForAct`, INV:D17).
+ *   (`assertFreshForAct`, INV:D17);
+ * - the approval link is shown only sanitized (`sanitizeApprovalUrl`, INV:D10).
  *
  * `stampProviderRead`, the only builder of a `ProviderRead`, is deliberately
  * NOT exported: only an implementation of the interface builds a read.
@@ -28,6 +29,12 @@ export {
     ProbeManifestSchema,
     parseProbeManifest
 } from './probes/probe-manifest';
+export {
+    ApprovalUrlRejectedError,
+    type ApprovalUrlRejection,
+    BROKEN_APPROVAL_PARAMETER,
+    sanitizeApprovalUrl
+} from './provider/approval-url';
 export {
     type CapabilityGap,
     type CapabilityGapHandling,
