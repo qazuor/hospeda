@@ -61,6 +61,12 @@ describe('createGastronomyColumns — structure', () => {
         expect(columns.find((c) => c.id === 'isFeatured')).toBeUndefined();
     });
 
+    it('should include a read-only "featuredByEntitlement" column (the only featuring source)', () => {
+        const columns = createGastronomyColumns(t);
+        const featured = columns.find((c) => c.id === 'featuredByEntitlement');
+        expect(featured?.accessorKey).toBe('featuredByEntitlement');
+    });
+
     it('should include a "createdAt" column', () => {
         const columns = createGastronomyColumns(t);
         expect(columns.find((c) => c.id === 'createdAt')).toBeDefined();
@@ -94,6 +100,7 @@ describe('createGastronomyColumns — column details', () => {
             type: GastronomyTypeEnum.RESTAURANT,
             destinationId: 'dest-1',
             ownerId: 'owner-1',
+            featuredByEntitlement: false,
             createdAt: new Date()
         });
         expect(link).toMatchObject({

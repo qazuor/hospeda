@@ -95,6 +95,14 @@ export const GastronomyCard = React.memo(function GastronomyCardComponent({
                 <CardHeader className="pb-2">
                     <div className="flex items-start justify-between gap-2">
                         <CardTitle className="line-clamp-2 text-base">{gastronomy.name}</CardTitle>
+                        {gastronomy.featuredByEntitlement && (
+                            <Badge
+                                variant="secondary"
+                                className="shrink-0 text-xs"
+                            >
+                                Destacado
+                            </Badge>
+                        )}
                     </div>
 
                     {/* Type + price row */}

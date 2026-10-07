@@ -54,6 +54,12 @@ describe('createExperienceColumns — structure', () => {
         expect(columns.find((c) => c.id === 'isFeatured')).toBeUndefined();
     });
 
+    it('should include a read-only "featuredByEntitlement" column (the only featuring source)', () => {
+        const columns = createExperienceColumns(t);
+        const featured = columns.find((c) => c.id === 'featuredByEntitlement');
+        expect(featured?.accessorKey).toBe('featuredByEntitlement');
+    });
+
     it('should include a "createdAt" column', () => {
         const columns = createExperienceColumns(t);
         expect(columns.find((c) => c.id === 'createdAt')).toBeDefined();
@@ -87,6 +93,7 @@ describe('createExperienceColumns — column details', () => {
             type: ExperienceTypeEnum.KAYAK_RENTAL,
             destinationId: 'dest-1',
             ownerId: 'owner-1',
+            featuredByEntitlement: false,
             createdAt: new Date()
         });
         expect(link).toMatchObject({
@@ -104,6 +111,7 @@ describe('createExperienceColumns — column details', () => {
             type: ExperienceTypeEnum.OTHER,
             destinationId: 'dest-1',
             ownerId: null as unknown as string,
+            featuredByEntitlement: false,
             createdAt: new Date()
         });
         expect(link).toBeUndefined();

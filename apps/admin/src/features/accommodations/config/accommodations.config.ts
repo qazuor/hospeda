@@ -173,8 +173,10 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
             format: 'image'
         }
     ],
-    // Header extras: slug as subtitle.
-    peekSubtitleField: 'slug'
+    // Header extras: slug as subtitle, the featured state (featuredByEntitlement,
+    // the only featuring source since HOS-1419) as a chip next to the title.
+    peekSubtitleField: 'slug',
+    peekFeaturedField: 'featuredByEntitlement'
 };
 
 // Generate the component and route

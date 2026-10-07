@@ -95,6 +95,15 @@ export const createExperienceColumns = (
         columnType: ColumnType.STRING
     },
     {
+        // Read-only: `featuredByEntitlement` is the only featuring source since
+        // HOS-1419 dropped the admin-curated `is_featured` column.
+        id: 'featuredByEntitlement',
+        header: t('admin-entities.columns.featured'),
+        accessorKey: 'featuredByEntitlement',
+        enableSorting: true,
+        columnType: ColumnType.BOOLEAN
+    },
+    {
         id: 'owner',
         header: t('admin-entities.columns.owner'),
         // Show a readable owner label from the eager-loaded relation, not the raw

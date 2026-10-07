@@ -35,6 +35,7 @@ export type GastronomyListItem = Pick<
     | 'type'
     | 'priceRange'
     | 'destinationId'
+    | 'featuredByEntitlement'
     | 'ownerId'
     | 'createdAt'
     | 'destination'

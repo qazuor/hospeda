@@ -56,6 +56,7 @@ const BASE_GASTRONOMY: GastronomyListItem = {
     destinationId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
     ownerId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     createdAt: new Date('2024-03-15T10:00:00.000Z'),
+    featuredByEntitlement: false,
     lifecycleStatus: 'ACTIVE'
 };
 
@@ -75,6 +76,16 @@ function renderCard(overrides?: Partial<GastronomyListItem>, onSelect?: (id: str
 // ---------------------------------------------------------------------------
 
 describe('GastronomyCard — rendering', () => {
+    it('should render "Destacado" badge when featuredByEntitlement is true', () => {
+        renderCard({ featuredByEntitlement: true });
+        expect(screen.getByText('Destacado')).toBeInTheDocument();
+    });
+
+    it('should NOT render "Destacado" when featuredByEntitlement is false', () => {
+        renderCard({ featuredByEntitlement: false });
+        expect(screen.queryByText('Destacado')).not.toBeInTheDocument();
+    });
+
     it('should render the gastronomy name', () => {
         renderCard();
         expect(screen.getByText('La Parrilla del Sur')).toBeInTheDocument();
