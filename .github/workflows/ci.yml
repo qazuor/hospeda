@@ -281,6 +281,11 @@ jobs:
       # P-3 it carries. Runs on tsx, so after setup.
       - name: Check the payments boundary and no legacy billing library (GUARD:G16)
         run: pnpm check:payments-boundary
+      # GUARD:G14 (HOS-1432, AC:V1:7). Its own step, like every guard here. One
+      # half (billing, verticals) never imports the other outside
+      # @repo/billing-verticals-contract; the halves are the table in the script.
+      - name: Check neither half imports the other outside the contract (GUARD:G14)
+        run: pnpm check:billing-verticals-boundary
       # GUARD:G18 (HOS-1431, AC:V1:4). Its own step, like every guard here. The
       # reference rows every migration inserts (catalog_key, vertical) are the
       # rows scripts/generate-catalog-sql.ts regenerates from the code catalog.
