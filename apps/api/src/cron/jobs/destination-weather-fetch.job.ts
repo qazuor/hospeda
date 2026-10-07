@@ -103,8 +103,9 @@ type CronTransactionResult =
  *
  * HOS-1424: every schedule is now read on the Buenos Aires wall clock, and the
  * owner chose not to compensate the expressions, so this job moved from
- * 03:00/15:00 ART to 06:00/18:00 ART. Whether 18:00 ART is a traffic peak like
- * the 21:00 tick HOS-154 moved away from has not been measured.
+ * 03:00/15:00 ART to 06:00/18:00 ART. Accepted by the owner on 2026-10-07;
+ * watch the load of the 18:00 ART tick after the cutover (HOS-154 moved away
+ * from a 21:00 ART traffic peak).
  */
 export const destinationWeatherFetchJob: CronJobDefinition = {
     name: 'destination-weather-fetch',
