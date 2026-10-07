@@ -173,7 +173,55 @@ describe('G16 predicate (a): the legacy library pinned through an override', () 
     });
 });
 
+describe('G16 predicate (a): the legacy library hidden behind an npm alias', () => {
+    it.each([
+        'dependencies',
+        'devDependencies',
+        'peerDependencies',
+        'optionalDependencies'
+    ])('turns red on an alias value in %s, naming predicate (a)', (block) => {
+        const content = json({ name: 'x', [block]: { 'billing-lib': `npm:${LEGACY_PREFIX}@1` } });
+        const { exitCode, output } = guardOver({ overrides: { 'tools/x/package.json': content } });
+        expect(exitCode).toBe(1);
+        expect(output).toContain(RULE_MESSAGES['G16(a)']);
+        expect(output).toContain(`tools/x/package.json  ${block} declares billing-lib as`);
+    });
+});
+
+describe('G16 predicate (a): inline comments are prose, code before them is not', () => {
+    it('stays green on a trailing or inline comment that names the library', () => {
+        const { exitCode, output } = guardOver({
+            overrides: {
+                'packages/db/src/a.ts': `export const y = 1; // was '${LEGACY_PREFIX}-core'\nexport const z = /* '${LEGACY_PREFIX}' */ 2;\n`
+            }
+        });
+        expect(output).toContain('OK:');
+        expect(exitCode).toBe(0);
+    });
+
+    it('still turns red on an import followed by a comment, and after a URL string', () => {
+        const { exitCode, output } = guardOver({
+            overrides: {
+                'packages/db/src/a.ts': `import { x } from '${LEGACY_PREFIX}-core'; // legacy\n`,
+                'packages/db/src/b.ts': `const u = 'http://x'; const m = await import('${LEGACY_PREFIX}');\n`
+            }
+        });
+        expect(exitCode).toBe(1);
+        expect(output).toContain('packages/db/src/a.ts:1');
+        expect(output).toContain('packages/db/src/b.ts:1');
+    });
+});
+
 describe('G16 fails closed on a manifest it cannot read', () => {
+    it('turns red on a malformed app manifest, naming predicate (b)', () => {
+        const { exitCode, output } = guardOver({
+            overrides: { 'apps/web/package.json': '{ oops' }
+        });
+        expect(exitCode).toBe(1);
+        expect(output).toContain(RULE_MESSAGES['G16(b)']);
+        expect(output).toContain('apps/web/package.json  is not a valid JSON object');
+    });
+
     it('turns red on a malformed package.json, naming predicate (a) and the file', () => {
         const { exitCode, output } = guardOver({
             overrides: { 'tools/x/package.json': '{ "name": ' }

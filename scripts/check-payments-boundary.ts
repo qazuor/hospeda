@@ -155,6 +155,46 @@ function isCommentLine({ line }: { readonly line: string }): boolean {
     return /^\s*(\/\/|\/\*|\*)/.test(line);
 }
 
+/**
+ * The code part of one line: a trailing `// …` and any inline `/* … *\/` are
+ * dropped when they sit OUTSIDE a string literal, so `foo(); // was '<lib>'`
+ * is not a hit while `'http://x'` keeps its slashes. A line-local scan: a
+ * string or comment spanning lines is not tracked (the leading-comment check
+ * covers block comment bodies).
+ */
+function codeOf({ line }: { readonly line: string }): string {
+    let out = '';
+    let quote: string | null = null;
+    for (let i = 0; i < line.length; i += 1) {
+        const ch = line[i] as string;
+        if (quote) {
+            out += ch;
+            if (ch === '\\' && i + 1 < line.length) {
+                out += line[i + 1];
+                i += 1;
+            } else if (ch === quote) {
+                quote = null;
+            }
+            continue;
+        }
+        if (ch === '"' || ch === "'" || ch === '`') {
+            quote = ch;
+            out += ch;
+            continue;
+        }
+        if (ch === '/' && line[i + 1] === '/') break;
+        if (ch === '/' && line[i + 1] === '*') {
+            const end = line.indexOf('*/', i + 2);
+            if (end === -1) break;
+            i = end + 1;
+            out += ' ';
+            continue;
+        }
+        out += ch;
+    }
+    return out;
+}
+
 /** Escapes a literal for use inside a RegExp. */
 function escapeRegExp({ text }: { readonly text: string }): string {
     return text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
@@ -241,12 +281,16 @@ export function findLegacyInManifest(args: {
     const declared = DEPENDENCY_BLOCKS.flatMap((block) => {
         const deps = manifest[block];
         if (!deps || typeof deps !== 'object') return [];
-        return Object.keys(deps)
-            .filter((name) => name.startsWith(LEGACY_PREFIX))
-            .map((name) => ({
+        // The KEY and the VALUE: an npm alias ("x": "npm:<lib>@1") names the
+        // library only in its value.
+        return Object.entries(deps as Record<string, unknown>)
+            .filter(([name, spec]) => overrideNamesLegacy({ key: name, value: spec }))
+            .map(([name, spec]) => ({
                 rule: 'G16(a)' as const,
                 file: args.file,
-                detail: `${block} declares ${name}`
+                detail: name.startsWith(LEGACY_PREFIX)
+                    ? `${block} declares ${name}`
+                    : `${block} declares ${name} as ${JSON.stringify(spec)}`
             }));
     });
     const overridden = overrideMaps({ manifest }).flatMap(({ where, map }) =>
@@ -302,7 +346,7 @@ export function findLegacyInCode(args: {
     readonly source: string;
 }): readonly Violation[] {
     return args.source.split('\n').flatMap((line, index) =>
-        !isCommentLine({ line }) && LEGACY_SPECIFIER.test(line)
+        !isCommentLine({ line }) && LEGACY_SPECIFIER.test(codeOf({ line }))
             ? [
                   {
                       rule: 'G16(a)' as const,
@@ -334,7 +378,7 @@ export function findAppImports(args: {
     const fileDir = dirname(resolve(args.root, args.file));
     return args.source.split('\n').flatMap((line, index) => {
         if (isCommentLine({ line })) return [];
-        return [...line.matchAll(IMPORT_SPECIFIER)].flatMap((match) => {
+        return [...codeOf({ line }).matchAll(IMPORT_SPECIFIER)].flatMap((match) => {
             const specifier = match[2] ?? '';
             const namesApp = args.appNames.some(
                 (app) => specifier === app || specifier.startsWith(`${app}/`)
@@ -433,16 +477,42 @@ function listFiles({ root }: { readonly root: string }): readonly string[] {
         });
 }
 
-/** The package names of `apps/*`. */
-function readAppNames({ root }: { readonly root: string }): readonly string[] {
+/**
+ * The package names of `apps/*`, which predicate (b) needs. An app manifest
+ * that cannot be read is a named (b) violation: without its name, an import of
+ * that app could not be recognised.
+ */
+function readAppNames({ root }: { readonly root: string }): {
+    readonly appNames: readonly string[];
+    readonly violations: readonly Violation[];
+} {
     const appsDir = join(root, 'apps');
-    if (!existsSync(appsDir)) return [];
-    return readdirSync(appsDir).flatMap((dir) => {
+    if (!existsSync(appsDir)) return { appNames: [], violations: [] };
+    const appNames: string[] = [];
+    const violations: Violation[] = [];
+    for (const dir of readdirSync(appsDir)) {
         const manifest = join(appsDir, dir, 'package.json');
-        if (!existsSync(manifest)) return [];
-        const { name } = JSON.parse(readFileSync(manifest, 'utf8')) as { name?: string };
-        return name ? [name] : [];
-    });
+        if (!existsSync(manifest)) continue;
+        const file = `apps/${dir}/package.json`;
+        const parsed = parseManifest({
+            file,
+            source: readFileSync(manifest, 'utf8'),
+            rule: 'G16(b)'
+        });
+        if ('violation' in parsed) {
+            violations.push(parsed.violation);
+            continue;
+        }
+        const { name } = parsed.manifest;
+        if (typeof name === 'string' && name !== '') appNames.push(name);
+        else
+            violations.push({
+                rule: 'G16(b)',
+                file,
+                detail: 'has no package name; predicate (b) cannot recognise imports of it'
+            });
+    }
+    return { appNames, violations };
 }
 
 /**
@@ -458,9 +528,10 @@ export function scanRepo(args: { readonly root: string }): {
 } {
     const root = isAbsolute(args.root) ? args.root : resolve(args.root);
     const files = listFiles({ root });
-    const appNames = readAppNames({ root });
+    const apps = readAppNames({ root });
+    const { appNames } = apps;
     const paymentsManifest = `${PAYMENTS_PACKAGE_DIR}/package.json`;
-    const violations: Violation[] = [];
+    const violations: Violation[] = [...apps.violations];
     let scannedCodeFiles = 0;
     for (const file of files) {
         const isManifest = file === 'package.json' || file.endsWith('/package.json');
