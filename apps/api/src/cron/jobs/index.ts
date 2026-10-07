@@ -25,6 +25,7 @@ export { conversationTokenCleanupJob } from './conversation-token-cleanup.job.js
 export { conversationTokenReminderJob } from './conversation-token-reminder.job.js';
 export { cronRunPurgeJob } from './cron-run-purge.job.js';
 export { destinationWeatherFetchJob } from './destination-weather-fetch.job.js';
+export { emailOutboxSenderJob } from './email-outbox-sender.job.js';
 export { entityViewsPurgeJob } from './entity-views-purge.job.js';
 export { exchangeRateFetchJob } from './exchange-rate-fetch.job.js';
 export { hostTradeStatsReconcileJob } from './host-trade-stats-reconcile.job.js';

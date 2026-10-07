@@ -16,6 +16,7 @@ import {
     conversationTokenReminderJob,
     cronRunPurgeJob,
     destinationWeatherFetchJob,
+    emailOutboxSenderJob,
     entityViewsPurgeJob,
     exchangeRateFetchJob,
     hostTradeStatsReconcileJob,
@@ -57,6 +58,8 @@ export const cronJobs: CronJobDefinition[] = [
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
     notificationScheduleJob,
+    // HOS-1423: the email outbox sender (unit U2).
+    emailOutboxSenderJob,
     cronRunPurgeJob,
     appLogPurgeJob,
     hostTradeStatsReconcileJob,
