@@ -19,7 +19,8 @@
  *   `body`, `rawBody`, `payload`, `notice`, `notification`, `noticeBody`,
  *   `parsedBody`, `requestBody` or `reqBody` (any case, `_`/`-` ignored), an
  *   identifier bound to `JSON.parse(…)`, `….json(…)`, `….parseBody(…)`,
- *   `….formData(…)` or an argument-less `….query()`/`….queries()`, or such a call
+ *   `….formData(…)`, Hono's `….valid('json'|'form')` or an argument-less
+ *   `….query()`/`….queries()`, or such a call
  *   itself. Reading a body means a member access, a bracket access with a string,
  *   a destructuring, or a spread of it. Allowed members: `resourceKind`,
  *   `resourceId`, `version`, `type`, `topic`, `kind`, `id`, and `data` only when
@@ -61,7 +62,8 @@
  *   mention is red, including the schema definition, the receiver's insert and
  *   its 180-day deletion, which the spec allows: B3 must refine (c) when it
  *   names the table's schema export (HOS-1525). A table name assembled at run
- *   time is not seen.
+ *   time is not seen, and neither are `.sql` files (migrations) nor `.sh`
+ *   scripts: (c) reads code files only.
  *
  * ## Scope and positive control
  *
@@ -83,6 +85,7 @@ import {
     lineOf,
     listProductionFiles,
     literalAt,
+    type MaskedSource,
     maskSource,
     matchingClose,
     matchingOpen,
@@ -126,7 +129,7 @@ export const RULE_MESSAGES: Readonly<Record<Rule, string>> = {
         'read by id. Take a ProviderRead and hand it to assertFreshForAct; never a bare snapshot or ' +
         'status, never a read built by hand (INV:D17, AC:B1:4).',
     'G17(c)':
-        `GUARD:G17 predicate (c): code reads ${NOTIFICATION_TABLE_NAME}. Only the receiver writes it and only ` +
+        `GUARD:G17 predicate (c): code names ${NOTIFICATION_TABLE_NAME}. Only the receiver writes it and only ` +
         'its 180-day deletion removes from it; no transition, action, sweep or other code reads it, nor ' +
         `the receiver itself (B/02 §2.7). The only exemption is ${CUTOVER_DIR}.`
 };
@@ -162,11 +165,32 @@ const NOTICE_FIELDS = new Set([
 
 /** A call whose result is the body, at the start of an expression (masked code). */
 const BODY_CALL_START =
-    /^(?:JSON\s*\.\s*parse\s*\(|[\w$.]*\.\s*(?:json|parseBody|formData)\s*(?:<[^>]*>)?\s*\(|[\w$.]*\.\s*quer(?:y|ies)\s*\(\s*\))/;
+    /^(?:JSON\s*\.\s*parse\s*\(|[\w$.]*\.\s*(?:json|parseBody|formData)\s*(?:<[^>]*>)?\s*\(|[\w$.]*\.\s*quer(?:y|ies)\s*\(\s*\)|[\w$.]*\.\s*valid\s*\(\s*['"](?:json|form)['"]\s*\))/;
 
 /** The same calls, anywhere (masked code). */
 const BODY_CALL =
-    /\bJSON\s*\.\s*parse\s*\(|\.\s*(?:json|parseBody|formData)\s*(?:<[^>]*>)?\s*\(|\.\s*quer(?:y|ies)\s*\(\s*\)/g;
+    /\bJSON\s*\.\s*parse\s*\(|\.\s*(?:json|parseBody|formData)\s*(?:<[^>]*>)?\s*\(|\.\s*quer(?:y|ies)\s*\(\s*\)|\.\s*valid\s*\(\s*['"](?:json|form)['"]\s*\)/g;
+
+/**
+ * The masked code with the `'json'`/`'form'` target of every `….valid(…)` call
+ * written back, so the body calls above can see Hono's validated body. Same
+ * length as the masked code: offsets do not move.
+ */
+function withValidTargets({ masked }: { readonly masked: MaskedSource }): string {
+    const out = masked.code.split('');
+    for (const literal of masked.strings) {
+        if (literal.value !== 'json' && literal.value !== 'form') continue;
+        if (
+            !/\.\s*valid\s*\(\s*$/.test(
+                masked.code.slice(Math.max(0, literal.start - 40), literal.start)
+            )
+        )
+            continue;
+        for (let k = 0; k < literal.value.length; k += 1)
+            out[literal.start + 1 + k] = literal.value[k] as string;
+    }
+    return out.join('');
+}
 
 /** A provider state type: only allowed inside `ProviderRead<…>`. */
 const STATE_TYPE = /\b(?:AuthorizationSnapshot|ChargeSnapshot|AuthorizationStatus|ChargeStatus)\b/g;
@@ -199,7 +223,7 @@ export function findNoticeBodyReads(args: {
     readonly source: string;
 }): readonly Violation[] {
     const masked = maskSource({ source: args.source });
-    const { code } = masked;
+    const code = withValidTargets({ masked });
     if (!NOTICE_SURFACE.test(code)) return [];
     const found: { offset: number; detail: string }[] = [];
     const bound = identifiersBoundTo({ code, start: BODY_CALL_START });
@@ -218,7 +242,9 @@ export function findNoticeBodyReads(args: {
         else check(match.index, match.index + match[0].length, match[0]);
     }
     for (const match of code.matchAll(BODY_CALL)) {
-        let k = matchingClose({ code, open: match.index + match[0].length - 1 }) + 1;
+        const last = match.index + match[0].length - 1;
+        // `….query()` and `….valid('json')` match through their closing parenthesis.
+        let k = code[last] === ')' ? last + 1 : matchingClose({ code, open: last }) + 1;
         if (k === 0) continue;
         for (let j = skipSpace({ code, at: k }); code[j] === ')'; j = skipSpace({ code, at: k })) {
             const open = matchingOpen({ code, close: j });

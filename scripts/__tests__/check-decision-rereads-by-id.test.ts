@@ -158,6 +158,13 @@ describe('TEST:B1:11 (a) — the receiver reads more than kind, id and version',
         ['a rest destructuring', '\n    const { type, ...rest } = body;'],
         ['a spread', '\n    const copy = { ...body };'],
         ['an IPN query parameter', "\n    const s = c.req.query('status');"],
+        [
+            "Hono's validated body, bound",
+            "\n    const input = c.req.valid('json');\n    const s = input.status;"
+        ],
+        ["Hono's validated body, destructured", "\n    const { status } = c.req.valid('json');"],
+        ["Hono's validated form", "\n    const s = c.req.valid('form').status;"],
+        ['a whole query object', '\n    const s = c.req.query().status;'],
         ['a field of the notice', '\n    const s = notice.status;'],
         [
             'a body bound under another name',
