@@ -286,6 +286,16 @@ jobs:
       # @repo/billing-verticals-contract; the halves are the table in the script.
       - name: Check neither half imports the other outside the contract (GUARD:G14)
         run: pnpm check:billing-verticals-boundary
+      # GUARD:G9, G10, G11 (HOS-1508, AC:B1:5/6/7). One step each, like every
+      # guard here. G9: the reason sent to the provider is copy, not an id.
+      # G10: the approval link is read only through sanitizeApprovalUrl (EX-37).
+      # G11: no trial-request field where an authorization is built (INV:D12).
+      - name: Check the provider reason is copy, not an identifier (GUARD:G9)
+        run: pnpm check:reason-is-copy
+      - name: Check the approval link is shown only sanitized (GUARD:G10)
+        run: pnpm check:approval-url-sanitized
+      - name: Check no trial is asked of the provider (GUARD:G11)
+        run: pnpm check:no-provider-trial
       # GUARD:G18 (HOS-1431, AC:V1:4). Its own step, like every guard here. The
       # reference rows every migration inserts (catalog_key, vertical) are the
       # rows scripts/generate-catalog-sql.ts regenerates from the code catalog.
