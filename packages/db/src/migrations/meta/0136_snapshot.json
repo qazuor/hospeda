@@ -1,5 +1,5 @@
 {
-  "id": "bbc9c7b2-e0c9-43d3-9b4b-0ef231757ee5",
+  "id": "08a84679-d9ce-4721-b94b-5692b99868d1",
   "prevId": "7f1bed7d-bebc-475a-bdbe-f75cd3f887f3",
   "version": "7",
   "dialect": "postgresql",
@@ -25112,6 +25112,21 @@
           "columnsTo": [
             "id",
             "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_trial_floor_trial_plan_version_plan": {
+          "name": "fk_trial_floor_trial_plan_version_plan",
+          "tableFrom": "trial",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "floor_trial_plan_version_id",
+            "trial_plan_id"
+          ],
+          "columnsTo": [
+            "id",
+            "plan_id"
           ],
           "onDelete": "no action",
           "onUpdate": "no action"

@@ -520,6 +520,35 @@ describe('TEST:V4:2 - the shape of a trial row', () => {
         });
     });
 
+    it('rejects a trial-plan floor version of ANOTHER plan of the same vertical', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const userId = await insertUser(client);
+            const planA = await insertPlanAndVersion(client, 'accommodation');
+            const planB = await client.query<{ id: string }>(
+                `INSERT INTO plan (vertical, slug, name)
+                 VALUES ('accommodation', 'other-plan', 'Other plan') RETURNING id`
+            );
+            const versionOfB = await client.query<{ id: string }>(
+                `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause)
+                 VALUES ($1, 'accommodation', 2, false, true, 14, false) RETURNING id`,
+                [(planB.rows[0] as { id: string }).id]
+            );
+
+            const error = await attempt(INSERT_ACTIVE, [
+                userId,
+                'accommodation',
+                planA.planId,
+                planA.versionId,
+                planA.versionId,
+                (versionOfB.rows[0] as { id: string }).id,
+                pseudonymOf('plan-a-version-b')
+            ]);
+
+            expect(error?.code).toBe('23503');
+            expect(error?.constraint).toBe('fk_trial_floor_trial_plan_version_plan');
+        });
+    });
+
     it('rejects a clock that ends before it starts and a half-written clock', async () => {
         await inRolledBackTx(async ({ client, attempt }) => {
             const userId = await insertUser(client);

@@ -115,6 +115,13 @@ export const trials = pgTable(
             columns: [t.floorTrialPlanVersionId, t.vertical],
             foreignColumns: [planVersions.id, planVersions.vertical]
         }),
+        // The version must belong to THE trial plan of the row, not just to some
+        // plan of the vertical (targets `uq_plan_version_id_plan`).
+        floorTrialPlanVersionPlanFk: foreignKey({
+            name: 'fk_trial_floor_trial_plan_version_plan',
+            columns: [t.floorTrialPlanVersionId, t.trialPlanId],
+            foreignColumns: [planVersions.id, planVersions.planId]
+        }),
         statusCheck: check(
             'ck_trial_status',
             sql`${t.status} IN (${quotedList(Object.values(TrialStatusEnum))})`
