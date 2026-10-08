@@ -47,6 +47,9 @@ out
 # Testing / Coverage
 # =========================
 coverage
+# coverage/ is the vertical-coverage domain here, not test coverage output (HOS-1447)
+!packages/verticals/src/coverage/
+!packages/verticals/test/coverage/
 test-results/
 # Playwright e2e artifacts (regenerated each run; see apps/e2e/playwright.config.ts)
 apps/e2e/playwright-report/

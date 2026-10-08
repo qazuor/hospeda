@@ -5,6 +5,15 @@
  */
 
 export {
+    type BootstrapBillingForVerticals,
+    createBootstrapBillingForVerticals
+} from './coverage/bootstrap-billing-for-verticals';
+export {
+    type BootstrapCoverageReader,
+    type BootstrapTrialRow,
+    resolveTrialAndBaseSources
+} from './coverage/trial-and-base-sources';
+export {
     ContradictoryStrategyError,
     GrantFloorPlanMismatchError,
     GrantReferenceVerticalMismatchError,
