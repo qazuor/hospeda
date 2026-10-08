@@ -32,7 +32,12 @@ const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 const reader: PlanCatalogReader = {
     findPlanVersion: ({ id }) => planCatalogModel.findPlanVersion({ id, tx: db }),
     findPlanVersionEffects: ({ id }) => planCatalogModel.findPlanVersionEffects({ id, tx: db }),
-    findAddonVersion: ({ id }) => planCatalogModel.findAddonVersion({ id, tx: db })
+    findAddonVersion: ({ id }) => planCatalogModel.findAddonVersion({ id, tx: db }),
+    findPlanVersionSummary: ({ id }) => planCatalogModel.findPlanVersionSummary({ id, tx: db }),
+    findSellableCurrentVersions: ({ vertical }) =>
+        planCatalogModel.findSellableCurrentVersions({ vertical, tx: db }),
+    findCurrentPlanVersion: ({ planId }) =>
+        planCatalogModel.findCurrentPlanVersion({ planId, tx: db })
 };
 const subject = createPlanCatalogInverse({ reader });
 

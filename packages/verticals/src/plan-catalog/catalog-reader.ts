@@ -18,6 +18,26 @@ export interface PlanVersionPolicyRow {
 }
 
 /**
+ * The identity and the two catalog flags of one plan version (HOS-1440, V3.2,
+ * AC:V3:3 to AC:V3:5): which plan and vertical it belongs to, its rank, and
+ * whether it is sellable and current.
+ *
+ * The effective-set resolution reads it to derive a vertical's versions and to
+ * follow a GRANT's anchored plan
+ * (`V/10` §2). A version is never read "sellable or not" by the same path:
+ * the derivation of the trial plan sells and requires both flags; a grant reads
+ * the current version whether it is sellable or not.
+ */
+export interface PlanVersionSummaryRow {
+    readonly id: string;
+    readonly planId: string;
+    readonly vertical: string;
+    readonly rank: number;
+    readonly sellable: boolean;
+    readonly current: boolean;
+}
+
+/**
  * One entitlement a plan version grants; `planQuota` is set for a metered one.
  * `aggregationStrategy` is the one its key declares in the catalog.
  */
@@ -56,4 +76,26 @@ export interface PlanCatalogReader {
     findPlanVersionEffects(args: { readonly id: string }): Promise<PlanVersionEffectsRow>;
     /** One addon version, or `null` when no addon version has that id. */
     findAddonVersion(args: { readonly id: string }): Promise<AddonVersionPolicyRow | null>;
+    /**
+     * The identity of one plan version, or `null` when no version has that id.
+     * Used to read the vertical a source's `reference` belongs to (GRANT floor
+     * by vertical, AC:V3:5).
+     */
+    findPlanVersionSummary(args: { readonly id: string }): Promise<PlanVersionSummaryRow | null>;
+    /**
+     * Every sellable and current version of a vertical, in rank order. The trial
+     * plan derives from the highest-rank one for entitlements and the
+     * lowest-rank one for limits (`V/10` §2, AC:V3:4).
+     */
+    findSellableCurrentVersions(args: {
+        readonly vertical: string;
+    }): Promise<readonly PlanVersionSummaryRow[]>;
+    /**
+     * The current version of a plan, whether it is sellable or not. A GRANT
+     * follows the current version of its anchored plan even when the plan was
+     * retired (AC:V3:5, `V/10` §2).
+     */
+    findCurrentPlanVersion(args: {
+        readonly planId: string;
+    }): Promise<PlanVersionSummaryRow | null>;
 }

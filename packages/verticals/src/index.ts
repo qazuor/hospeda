@@ -4,9 +4,31 @@
  * (GUARD:G14 lists `packages/verticals` as the verticals half).
  */
 
-export { ContradictoryStrategyError } from './effective-set/errors';
+export {
+    ContradictoryStrategyError,
+    GrantReferenceVerticalMismatchError,
+    GrantWithoutFloorError,
+    MeteredKeyGlobalScopeError,
+    MissingVerticalForVerticalKeyError,
+    TrialPlanEntitlementOverrideError
+} from './effective-set/errors';
 export { foldPlegableSet } from './effective-set/fold';
+export {
+    type GrantSet,
+    resolveGrantSet,
+    selectGrantForVertical
+} from './effective-set/grant-ratchet';
 export { hasLiveNonTrialTitle, selectPlegableSources } from './effective-set/plegable';
+export {
+    assertMeteredKeyIsVertical,
+    type KeyResolution,
+    resolveKeyScope
+} from './effective-set/scope';
+export {
+    resolveTrialLimits,
+    type TrialFloorReferences,
+    type TrialInProgress
+} from './effective-set/trial-ratchet';
 export type { FoldableSource, SourceGrant } from './effective-set/types';
 export type {
     AddonVersionPolicyRow,
@@ -14,7 +36,8 @@ export type {
     PlanVersionEffectsRow,
     PlanVersionEntitlementRow,
     PlanVersionLimitRow,
-    PlanVersionPolicyRow
+    PlanVersionPolicyRow,
+    PlanVersionSummaryRow
 } from './plan-catalog/catalog-reader';
 export { decideChangeDirection } from './plan-catalog/change-direction';
 export {
