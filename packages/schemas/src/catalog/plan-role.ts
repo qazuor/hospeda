@@ -30,13 +30,3 @@ export const FLOOR_PLAN_ROLE: PlanRole = 'floor';
 
 /** The two non-sellable roles that are not the trial plan. */
 export const NON_SELLABLE_PLAN_ROLES: readonly PlanRole[] = [PRE_TRIAL_PLAN_ROLE, FLOOR_PLAN_ROLE];
-
-/**
- * Whether a role names a non-sellable plan.
- *
- * @param role - The role to test, or `null` for a sellable plan.
- * @returns `true` when the role is one of the three non-sellable roles.
- */
-export function isNonSellablePlanRole(role: PlanRole | null | undefined): role is PlanRole {
-    return role != null && PLAN_ROLES.includes(role);
-}
