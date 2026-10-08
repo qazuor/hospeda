@@ -4,6 +4,25 @@
  * (GUARD:G14 lists `packages/verticals` as the verticals half).
  */
 
+export { NonBaseKeyError, resolveEntitlementStep } from './authorization/entitlement-step';
+export {
+    LISTING_OPERATIONS,
+    type ListingOperation,
+    OPERATION_STEP6_KEY,
+    OWNER_ADMITTING_STATES,
+    RECOVER_OWN_LISTING_KEY
+} from './authorization/listing-operation';
+export {
+    EMAIL_UNVERIFIED_ALLOWED_OPERATIONS,
+    type EmailUnverifiedAllowedOperation,
+    resolvePersonStateStep
+} from './authorization/person-state-step';
+export { resolveListingAccess } from './authorization/resolve-listing-access';
+export {
+    type ListingAccessFacts,
+    resolveResourceStep,
+    type StepOutcome
+} from './authorization/resource-step';
 export {
     type BootstrapBillingForVerticals,
     createBootstrapBillingForVerticals
