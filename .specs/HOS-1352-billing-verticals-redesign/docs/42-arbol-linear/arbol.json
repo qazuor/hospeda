@@ -1,6 +1,6 @@
 {
     "raiz": "HOS-1352",
-    "generado": "2026-10-07 (corte del MVP: CR a DD, Coord-1 a Coord-10)",
+    "generado": "2026-10-07 (corte del MVP: CR a DD, Coord-1 a Coord-11)",
     "fuente": "spec-consolidada + docs/41-corte-del-mvp/aristas.py + Linear (sólo lectura) + grafo reparado (deps-audit A y B) + decisiones del 2026-10-07",
     "nodos": [
         {
@@ -1648,16 +1648,17 @@
             "clave": "V9a.1b",
             "padre": "V9a",
             "titulo": "V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 2/2)",
-            "descripcion": "**Qué entrega:** El registro de hechos de contenido (corte).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:V9a:4` — Escribe desde el día del corte, y es la fuente del hecho 1.\n- `AC:V9a:5` — Salida: la pieza está lista.\n\n**Depende de:** `V6.9`, `V9a.1` (2026-10-07).\n\n**Verificación:** tests `TEST:V9a:4`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** El registro de hechos de contenido (corte).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), secciones «Criterios de aceptación».\n (parte 2/2).\n**Cubre:**\n- `AC:V9a:4` — Escribe desde el día del corte, y es la fuente del hecho 1.\n- `AC:V9a:5` — Salida: la pieza está lista.\n\n**Depende de:** `V6.9`, `V9a.1`, `V9a.1c` (2026-10-07).\n\n**Verificación:** tests `TEST:V9a:4`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V9a:4", "AC:V9a:5"],
-            "depende_de": ["V6.9", "V9a.1"],
+            "depende_de": ["V6.9", "V9a.1", "V9a.1c"],
             "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
             "existente": null,
             "corte": "mvp",
             "salida": true,
             "por_que": {
                 "V9a.1": "AC:V9a:4 consulta el acto más reciente en los eventos que escribe V9a.1 (AC:V9a:1)",
-                "V6.9": "AC:V9a:4 usa como fixture las fichas que carga la migración del paso 3 de V6.9 (AC:V6:17)"
+                "V6.9": "AC:V9a:4 usa como fixture las fichas que carga la migración del paso 3 de V6.9 (AC:V6:17)",
+                "V9a.1c": "la salida verifica lo que entrega V9a.1c"
             }
         },
         {
@@ -3695,6 +3696,21 @@
             "por_que": {
                 "B13a.8": "salida de B13a al corte",
                 "B5.4b": "MP4"
+            }
+        },
+        {
+            "clave": "V9a.1c",
+            "padre": "V9a",
+            "titulo": "V9a · Editar FAQ, fotos y las demás subentidades es un acto del dueño (V9a.1c)",
+            "descripcion": "**Qué entrega:** Editar FAQ, fotos y las demás subentidades es un acto del dueño (V9a.1c).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V9a:6` — Editar las FAQ y las fotos o media de una ficha es un acto del dueño.\n- `AC:V9a:7` — Editar la carta, los especiales, los eventos o los certificados es un acto del dueño.\n\n**Depende de:** `V9a.1` (2026-10-07).\n\n**Verificación:** tests `TEST:V9a:6`, `TEST:V9a:7`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V9a:6", "AC:V9a:7"],
+            "depende_de": ["V9a.1"],
+            "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
+            "existente": null,
+            "corte": "mvp",
+            "salida": false,
+            "por_que": {
+                "V9a.1": "usa recordListingOwnerAct y el evento de dominio del dueño que crea V9a.1 (AC:V9a:1/2)"
             }
         },
         {

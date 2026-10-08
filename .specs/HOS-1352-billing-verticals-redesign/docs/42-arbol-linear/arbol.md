@@ -1,10 +1,10 @@
 # Árbol Linear de HOS-1352 — de la spec consolidada a issues
 
-Fuentes: `spec-consolidada/10-corte/` y `20-fase-*/` (ACs nominales), `docs/41-corte-del-mvp/aristas.py` (dependencias entre piezas), el árbol real de Linear y, desde el 2026-10-07, el grafo de hojas reparado (las dos auditorías de dependencias) con las decisiones del corte del MVP (CR a DD y Coord-1 a Coord-10 en `docs/41-corte-del-mvp/10-decisiones-del-owner.md`). Cada nodo es una issue: `↻HOS-n` = contenedor existente que se reusa; `HOS-n` = hoja ya creada; *(nueva)* = issue a crear. Las hojas son unidades de PR; sólo las hojas llevan ACs. Cada hoja declara su fase (`corte`: hecha, mvp, fase-1 a fase-4), si es la salida de su pieza (`salida`) y, en el MVP, qué usa de cada hoja de la que depende (`por_que`). Validar: `python3 chequeo.py` (exit 0 = árbol sano).
+Fuentes: `spec-consolidada/10-corte/` y `20-fase-*/` (ACs nominales), `docs/41-corte-del-mvp/aristas.py` (dependencias entre piezas), el árbol real de Linear y, desde el 2026-10-07, el grafo de hojas reparado (las dos auditorías de dependencias) con las decisiones del corte del MVP (CR a DD y Coord-1 a Coord-11 en `docs/41-corte-del-mvp/10-decisiones-del-owner.md`). Cada nodo es una issue: `↻HOS-n` = contenedor existente que se reusa; `HOS-n` = hoja ya creada; *(nueva)* = issue a crear. Las hojas son unidades de PR; sólo las hojas llevan ACs. Cada hoja declara su fase (`corte`: hecha, mvp, fase-1 a fase-4), si es la salida de su pieza (`salida`) y, en el MVP, qué usa de cada hoja de la que depende (`por_que`). Validar: `python3 chequeo.py` (exit 0 = árbol sano).
 
-Estadísticas: 263 nodos · 28 existentes reusados · 209 hojas de PR · 526 ACs cubiertas (exactamente una hoja por AC).
+Estadísticas: 264 nodos · 28 existentes reusados · 210 hojas de PR · 528 ACs cubiertas (exactamente una hoja por AC).
 
-Por fase: 21 hechas · **130 del MVP por hacer (320 AC)** · 5 de la Fase 1 · 27 de la Fase 2 · 10 de la Fase 3 · 16 de la Fase 4. Camino crítico del MVP: **24 hojas**; calendario: **14 olas, 64 PRs** (abajo).
+Por fase: 21 hechas · **131 del MVP por hacer (322 AC)** · 5 de la Fase 1 · 27 de la Fase 2 · 10 de la Fase 3 · 16 de la Fase 4. Camino crítico del MVP: **24 hojas**; calendario: **14 olas, 64 PRs** (abajo).
 
 - **HOS-1352 ↻HOS-1352** — Rediseño integral de Verticales, Billing, Trials, Entitlements, Limits y Complementos
   - **HOS-1353 ↻HOS-1353** — Épica Verticales — capacidades, entitlements, limits y autorización, sin dependencia de la pasarela
@@ -22,7 +22,8 @@ Por fase: 21 hechas · **130 del MVP por hacer (320 AC)** · 5 de la Fase 1 · 2
     - **HOS-1363 ↻HOS-1363** — V9 · Retención
       - **V9a** — V9a · El registro de los actos del dueño ← U2, V4, V6
         - **V9a.1 `HOS-1499`** — V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 1/2) · 3 AC
-        - **V9a.1b `HOS-1500`** — V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 2/2) · 2 AC ← V6.9, V9a.1
+        - **V9a.1b `HOS-1500`** — V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 2/2) · 2 AC ← V6.9, V9a.1, V9a.1c
+        - **V9a.1c *(nueva)*** — V9a · Editar FAQ, fotos y las demás subentidades es un acto del dueño (V9a.1c) · 2 AC ← V9a.1
       - **V9b** — V9b · Retención ← U2, V4, V6, V9a
         - **V9b.1 `HOS-1501`** — V9b · El borrado del día 180 (PR 1/5) · 3 AC · **Fase 1** ← U2.4, V4.7, V6.13, V9a.1b
         - **V9b.2 `HOS-1502`** — V9b · Calendario, borrados remotos y plazos (PR 2/5) · 2 AC · **Fase 1** ← V9b.1
@@ -286,7 +287,7 @@ Un grupo = un PR: ≤3 hojas y ≤8 AC, de una sola pieza (así las piezas de pl
 
 Camino crítico: B13a.8 ← B13a.5 ← B13a.4 ← B13a.1 ← B8a.3 ← B8a.1 ← B7.5 ← B7.6 ← B8a.2 ← B5.6 ← B5.5 ← B5.3 ← B5.2 ← B5.1 ← B3.5b ← B3.5 ← B3.4 ← B3.3b ← B3.3 ← B3.1b ← B3.1 ← B3.9 ← B2.1 ← V2.1
 
-### Ola 1 — 6 PRs, 10 hojas, 21 AC
+### Ola 1 — 6 PRs, 11 hojas, 23 AC
 
 | PR | hojas | AC |
 |---|---|---|
@@ -295,7 +296,7 @@ Camino crítico: B13a.8 ← B13a.5 ← B13a.4 ← B13a.1 ← B8a.3 ← B8a.1 ←
 | 1.3 | V2.1 (HOS-1434) + V2.2 (HOS-1435) | 5 |
 | 1.4 | V5.4 (HOS-1458) | 2 |
 | 1.5 | V6.10 (HOS-1480) + V6.11 (HOS-1481) + V6.8a (HOS-1478) | 4 |
-| 1.6 | V9a.1 (HOS-1499) | 3 |
+| 1.6 | V9a.1 (HOS-1499) + V9a.1c (nueva) | 5 |
 
 ### Ola 2 — 3 PRs, 8 hojas, 20 AC
 

@@ -9,10 +9,10 @@ lleva hasta un PR verde. Las reglas de abajo reemplazan a la coordinación.
   0 BLOQUEA). Es la ÚNICA fuente para implementar (`DEC-METH-019`). Mientras #3360 no esté
   mergeado, se lee desde el worktree de la spec:
   `/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign`.
-- **El árbol**: 209 hojas en Linear bajo HOS-1352 (`42-arbol-linear/arbol.json`; `creados.json`
+- **El árbol**: 210 hojas en Linear bajo HOS-1352 (`42-arbol-linear/arbol.json`; `creados.json`
   mapea cada clave a su issue). Cada hoja dice qué AC cubre, en qué archivo de la spec están, de qué
   depende y por qué (`por_que`), y en qué fase va (`corte`: `hecha`, `mvp`, `fase-1` a `fase-4`). Al
-  2026-10-07 quedan **130 hojas del MVP** (320 AC, camino crítico de 24 hojas); las de `fase-*` no se
+  2026-10-07 quedan **131 hojas del MVP** (322 AC, camino crítico de 24 hojas); las de `fase-*` no se
   implementan en esta épica. El calendario de olas está al final de `42-arbol-linear/arbol.md`.
 - **La rama épica**: `epic/HOS-1352-verticales-billing` (`DEC-ARCH-016`, `DEC-CI-001`). Todos los
   PR de las hojas van ahí, NO a `staging`. La épica se mergea a `staging` una sola vez, al final.
