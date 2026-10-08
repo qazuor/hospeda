@@ -199,11 +199,12 @@ Fuente: [LISTA:V9a](#lista-v9a)
 Fuente: [V9b](../20-fase-1/V9b.md) (tabla de lo que cuelga de una ficha, «el contenido de la ficha») · [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1) · [Coord-11](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#decisiones-del-coordinador-2026-10-07)
 
 <a id="ac-v9a-7"></a>
-**AC:V9a:7** — Editar la carta, los especiales, los eventos o los certificados es un acto del dueño.
+**AC:V9a:7** — Editar la carta, los especiales, los eventos, los certificados o las etiquetas es un acto del dueño.
 
-- **Dado** una ficha de gastronomía con carta, especiales y eventos, y una de experiencia con certificados
+- **Dado** una ficha de gastronomía con carta, especiales y eventos, una de experiencia con certificados, y
+  una ficha de cada vertical con etiquetas (`r_entity_tag`, por las operaciones propias de `TagService`)
 - **Cuando** el dueño edita cualquiera de esas subentidades
-- **Entonces** cada operación escribe su evento con `recordListingOwnerAct` dentro de su transacción, con sólo el nombre del campo, como en [AC:V9a:6](#ac-v9a-6). La spec los nombra como contenido de la ficha junto con las fotos y la FAQ; **la ocupación no está en esa lista** y queda pendiente: entra si el owner la declara contenido.
+- **Entonces** cada operación escribe su evento con `recordListingOwnerAct` dentro de su transacción, con sólo el nombre del campo, como en [AC:V9a:6](#ac-v9a-6). La spec los nombra como contenido de la ficha junto con las fotos y la FAQ (`V9b.md:367`). Los horarios y las amenities/features de esa misma fila no van acá: viajan en el `update` de la fila principal y ya los registra [AC:V9a:1](#ac-v9a-1).
 
 Fuente: [V9b](../20-fase-1/V9b.md) (tabla de lo que cuelga de una ficha, «el contenido de la ficha») · [Coord-11](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#decisiones-del-coordinador-2026-10-07)
 
@@ -276,7 +277,7 @@ Fuente: [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1)
 
 <a id="test-v9a-7"></a>
 **TEST:V9a:7** — Integración, uno por subentidad: editar la carta, un especial y un evento de una
-gastronomía, y un certificado de una experiencia, deja su evento con sólo el nombre del campo.
+gastronomía, un certificado de una experiencia y agregar o quitar una etiqueta en cada vertical, deja su evento con sólo el nombre del campo.
 Tipo: integración con DB
 Cubre: [AC:V9a:7](#ac-v9a-7)
 Fuente: [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1)

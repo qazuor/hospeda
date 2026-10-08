@@ -3702,7 +3702,7 @@
             "clave": "V9a.1c",
             "padre": "V9a",
             "titulo": "V9a · Editar FAQ, fotos y las demás subentidades es un acto del dueño (V9a.1c)",
-            "descripcion": "**Qué entrega:** Editar FAQ, fotos y las demás subentidades es un acto del dueño (V9a.1c).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V9a:6` — Editar las FAQ y las fotos o media de una ficha es un acto del dueño.\n- `AC:V9a:7` — Editar la carta, los especiales, los eventos o los certificados es un acto del dueño.\n\n**Depende de:** `V9a.1` (2026-10-07).\n\n**Verificación:** tests `TEST:V9a:6`, `TEST:V9a:7`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** Editar FAQ, fotos y las demás subentidades es un acto del dueño (V9a.1c).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V9a:6` — Editar las FAQ y las fotos o media de una ficha es un acto del dueño.\n- `AC:V9a:7` — Editar la carta, los especiales, los eventos, los certificados o las etiquetas es un acto del dueño.\n\n**Depende de:** `V9a.1` (2026-10-07).\n\n**Verificación:** tests `TEST:V9a:6`, `TEST:V9a:7`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V9a:6", "AC:V9a:7"],
             "depende_de": ["V9a.1"],
             "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
