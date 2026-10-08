@@ -953,6 +953,13 @@
       "when": 1791436907470,
       "tag": "0135_retire_user_impersonate",
       "breakpoints": true
+    },
+    {
+      "idx": 136,
+      "version": "7",
+      "when": 1791440749204,
+      "tag": "0136_tan_talisman",
+      "breakpoints": true
     }
   ]
 }
