@@ -208,13 +208,13 @@ describe.each(cases)('TEST:V5:1 $label resource step', ({ label, service, route 
     });
 
     it.each([
-        'ARCHIVED',
-        'LEGACY',
-        'EMAIL_UNVERIFIED'
+        'ARCHIVED_EMAIL_VERIFIED',
+        'LEGACY_EMAIL_VERIFIED',
+        'ARCHIVED_EMAIL_UNVERIFIED'
     ] as const)('lets the owner read %s', async (variant) => {
-        const app = buildApp(await route(), variant !== 'EMAIL_UNVERIFIED');
+        const app = buildApp(await route(), variant !== 'ARCHIVED_EMAIL_UNVERIFIED');
         const row =
-            variant === 'LEGACY'
+            variant === 'LEGACY_EMAIL_VERIFIED'
                 ? { ...fixtures[label] }
                 : { ...fixtures[label], publicationStatus: 'ARCHIVED' };
         if (label === 'accommodation' || label === 'experience') {

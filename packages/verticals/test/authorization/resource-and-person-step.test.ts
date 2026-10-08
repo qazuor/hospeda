@@ -85,19 +85,29 @@ describe('step 2: closed email-unverified list', () => {
         });
     });
 
-    it('rejects an omitted or invented operation and partner-linked email changes', () => {
+    it('rejects an omitted or invented operation', () => {
         const refusal = { allowed: false, reason: 'EMAIL_NOT_VERIFIED' };
         expect(resolvePersonStateStep({ emailVerified: false })).toEqual(refusal);
         expect(
             resolvePersonStateStep({ emailVerified: false, operation: 'OTHER' as never })
         ).toEqual(refusal);
+    });
+
+    it('TEST:V5:3 rejects CHANGE_EMAIL with a Partner link and admits it without one', () => {
         expect(
             resolvePersonStateStep({
                 emailVerified: false,
                 operation: 'CHANGE_EMAIL',
                 hasPartnerLink: true
             })
-        ).toEqual(refusal);
+        ).toEqual({ allowed: false, reason: 'EMAIL_NOT_VERIFIED' });
+        expect(
+            resolvePersonStateStep({
+                emailVerified: false,
+                operation: 'CHANGE_EMAIL',
+                hasPartnerLink: false
+            })
+        ).toEqual({ allowed: true });
     });
 
     it('admits verified and unspecified email state', () => {
