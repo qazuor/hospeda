@@ -1368,7 +1368,7 @@
             "titulo": "V6 · La migración de partners para V7 (PR 11/13)",
             "descripcion": "**Qué entrega:** La migración de partners para V7.\n\n**Pieza:** `V6` — spec [V6.md](../../spec-consolidada/10-corte/V6.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V6:23` — La migración de `partners` del esquema de `V7`.\n- `AC:V6:24` — El resto del esquema de `V7`, sin migración estructural después.\n\n**Depende de:** `V6.10` (2026-10-07).\n\n**Verificación:** tests `TEST:V6:29`, `TEST:V6:30`, `TEST:V6:31`, `TEST:V6:32`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V6:23", "AC:V6:24"],
-            "depende_de": ["V6.10"],
+            "depende_de": ["V6.10", "V6.9"],
             "labels": [
                 "area-admin",
                 "area-api",
@@ -1381,7 +1381,8 @@
             "corte": "mvp",
             "salida": false,
             "por_que": {
-                "V6.10": "AC:V6:29 (medición de partners) precede la migración de partners"
+                "V6.10": "AC:V6:29 (medición de partners) precede la migración de partners",
+                "V6.9": "PLAZO:9 vive en la tabla de plazos de verticales que crea V6.9"
             }
         },
         {
