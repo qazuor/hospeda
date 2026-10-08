@@ -26,7 +26,11 @@ describe('partitionTablesForReset', () => {
         const result = partitionTablesForReset({ discoveredTables, exclude: [] });
 
         // Assert
-        expect([...REFERENCE_TABLES].sort()).toEqual(['catalog_key', 'vertical']);
+        expect([...REFERENCE_TABLES].sort()).toEqual([
+            'billing_deadline_version',
+            'catalog_key',
+            'vertical'
+        ]);
         expect(result.tablesToReset).toEqual(['users']);
     });
 
@@ -43,16 +47,26 @@ describe('partitionTablesForReset', () => {
         expect(result.tablesToReset).toEqual(['users', 'accommodations']);
     });
 
-    it('keeps the migration-written reference tables vertical and catalog_key out of the reset (HOS-1430)', () => {
+    it('keeps migration-written reference tables out of the reset (HOS-1430, HOS-1516)', () => {
         // Arrange
-        const discoveredTables = ['users', 'vertical', 'catalog_key', 'accommodations'];
+        const discoveredTables = [
+            'users',
+            'vertical',
+            'catalog_key',
+            'billing_deadline_version',
+            'accommodations'
+        ];
 
         // Act
         const result = partitionTablesForReset({ discoveredTables, exclude: [] });
 
         // Assert
         expect(result.tablesToReset).toEqual(['users', 'accommodations']);
-        expect(result.tablesSkipped).toEqual(['vertical', 'catalog_key']);
+        expect(result.tablesSkipped).toEqual([
+            'vertical',
+            'catalog_key',
+            'billing_deadline_version'
+        ]);
     });
 
     it('excludes drizzle_migrations alongside seed_migrations (both always-excluded)', () => {
