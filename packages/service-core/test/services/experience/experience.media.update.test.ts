@@ -39,8 +39,12 @@ const mockMediaModel = {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
+    // HOS-1642: these writes now record an owner-act event; the double keeps
+    // the write off the (nonexistent) test database.
+    const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
         ExperienceMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),

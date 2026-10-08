@@ -44,6 +44,20 @@ export type ListingOwnerActEntityType = 'accommodation' | 'gastronomy' | 'experi
 export type ListingOwnerActEventType = 'listing.created' | 'listing.edited';
 
 /**
+ * Closed list of the listing sub-entity fields an owner act can touch
+ * (V9b.md:367 content list). Each value names ONE sub-entity collection
+ * (`faqs`, `media`, …) — the field name only, never its content.
+ */
+export type ListingSubEntityField =
+    | 'faqs'
+    | 'media'
+    | 'menu'
+    | 'dailySpecials'
+    | 'events'
+    | 'certificates'
+    | 'tags';
+
+/**
  * The closed list of listing fields that are NOT content (NUCLEO/08 §1.2:
  * "estado, plan, monto, fechas"). Only these keep their old and new values in
  * an event; anything else is content and keeps only its name.
@@ -181,4 +195,48 @@ export async function recordListingOwnerAct(
         ...(ctx?.tx ? { tx: ctx.tx } : {})
     });
     return { recorded: true };
+}
+
+/** Input of {@link recordListingSubEntityEdit}. */
+export interface RecordListingSubEntityEditInput {
+    readonly entityType: ListingOwnerActEntityType;
+    /** The listing the act is about. */
+    readonly listing: { readonly id: string; readonly ownerId?: string | null };
+    readonly actor: Actor;
+    /** The sub-entity field the act touched: the NAME only, never content. */
+    readonly field: ListingSubEntityField;
+    /** The service context of the write; its `tx` makes the event atomic with it. */
+    readonly ctx?: ServiceContext;
+}
+
+/**
+ * Writes one owner act for an edit of a listing SUB-ENTITY (an FAQ, a gallery
+ * photo, …), inside `ctx.tx` when there is one (AC:V9a:6, AC:V9a:7).
+ *
+ * Sub-entity edits are not state transitions of the listing itself, so they are
+ * always recorded as `listing.edited` — the closed DOMAIN_EVENT_TYPES catalog
+ * and its CHECK constraint have no per-sub-entity type, and adding one would
+ * mean a migration for no information. The event's `changes` carries ONLY the
+ * field name (`[{ field: 'faqs' }]`): a delta of a sub-entity row IS a copy of
+ * its content, and content fields never store values (DEC-DATA-005).
+ *
+ * A thin wrapper over {@link recordListingOwnerAct}: the same owner gate (the
+ * actor must be the listing's owner — an administrator editing somebody
+ * else's listing writes nothing), the same atomicity rule, the same
+ * correlation handling.
+ *
+ * @param input - The vertical, the listing, the actor, the touched field and the context.
+ * @returns `{ recorded }`, `false` when the actor is not the owner.
+ */
+export async function recordListingSubEntityEdit(
+    input: RecordListingSubEntityEditInput
+): Promise<{ readonly recorded: boolean }> {
+    return recordListingOwnerAct({
+        eventType: 'listing.edited',
+        entityType: input.entityType,
+        listing: input.listing,
+        actor: input.actor,
+        ctx: input.ctx,
+        changes: [{ field: input.field }]
+    });
 }

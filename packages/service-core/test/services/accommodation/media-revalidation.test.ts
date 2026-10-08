@@ -21,7 +21,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { resetDb, setDb } from '@repo/db';
+import { domainEventModel, resetDb, setDb } from '@repo/db';
 import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
@@ -82,14 +82,18 @@ const ownerActor = {
 
 /** Minimal Drizzle stub for `AccommodationMediaModel.findById` + `.update()`. */
 function makeMediaDbMock(updateResult: unknown[]) {
-    return {
+    const db = {
         select: vi.fn(() => ({
             from: () => ({ where: () => ({ limit: () => Promise.resolve([baseMediaRow]) }) })
         })),
         update: vi.fn(() => ({
             set: () => ({ where: () => ({ returning: () => Promise.resolve(updateResult) }) })
-        }))
+        })),
+        // HOS-1642: media and its owner act now share a transaction.
+        transaction: vi.fn()
     };
+    db.transaction.mockImplementation(async (run: (tx: typeof db) => Promise<unknown>) => run(db));
+    return db;
 }
 
 /**
@@ -114,9 +118,13 @@ function buildService({ isPublic }: { readonly isPublic: boolean }) {
 describe('accommodation media — public-page revalidation (HOS-389 §4)', () => {
     beforeEach(() => {
         mockScheduleRevalidation.mockClear();
+        // This test asserts cache scheduling; the owner-act integration test
+        // checks the real event insert and rollback against PostgreSQL.
+        vi.spyOn(domainEventModel, 'insert').mockResolvedValue({} as never);
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         resetDb();
     });
 

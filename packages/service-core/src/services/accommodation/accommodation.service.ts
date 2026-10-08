@@ -137,7 +137,11 @@ import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
-import { buildListingOwnerActChanges, recordListingOwnerAct } from '../listing/listing-owner-act';
+import {
+    buildListingOwnerActChanges,
+    recordListingOwnerAct,
+    recordListingSubEntityEdit
+} from '../listing/listing-owner-act';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
@@ -3595,28 +3599,50 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationFaqAddInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
-                }
-                await this._canUpdate(actor, accommodation);
-                const faqModel = new AccommodationFaqModel();
-                // Compute next displayOrder: max(existing) + 1, or 0 if none yet.
-                const existing = await faqModel.findAll(
-                    { accommodationId: validated.accommodationId, deletedAt: null },
-                    { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
-                    undefined,
-                    ctx?.tx
-                );
-                const topOrder = existing.items[0]?.displayOrder ?? -1;
-                const nextOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
-                const faqToCreate = {
-                    ...validated.faq,
-                    accommodationId: validated.accommodationId as AccommodationIdType,
-                    displayOrder: nextOrder
+                // HOS-1642 (AC:V9a:6): the write and its owner-act event share
+                // one transaction — an FAQ edit without its event (or the
+                // reverse) would feed the retention clock a false fact.
+                const run = async (tx: DrizzleClient) => {
+                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    if (!accommodation) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Accommodation not found'
+                        );
+                    }
+                    await this._canUpdate(actor, accommodation);
+                    const faqModel = new AccommodationFaqModel();
+                    // Compute next displayOrder: max(existing) + 1, or 0 if none yet.
+                    const existing = await faqModel.findAll(
+                        { accommodationId: validated.accommodationId, deletedAt: null },
+                        { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
+                        undefined,
+                        tx
+                    );
+                    const topOrder = existing.items[0]?.displayOrder ?? -1;
+                    const nextOrder =
+                        typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+                    const faqToCreate = {
+                        ...validated.faq,
+                        accommodationId: validated.accommodationId as AccommodationIdType,
+                        displayOrder: nextOrder
+                    };
+                    const createdFaq = await faqModel.create(faqToCreate, tx);
+                    // Post-write, inside the tx: the event commits or rolls back
+                    // WITH the FAQ row it describes (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'faqs',
+                        ctx: { ...ctx, tx }
+                    });
+                    return { faq: createdFaq };
                 };
-                const createdFaq = await faqModel.create(faqToCreate, ctx?.tx);
-                return { faq: createdFaq };
+                if (ctx?.tx) {
+                    return run(ctx.tx);
+                }
+                return withTransaction(run);
             }
         });
     }
@@ -3638,21 +3664,39 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationFaqRemoveInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
+                const run = async (tx: DrizzleClient) => {
+                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    if (!accommodation) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Accommodation not found'
+                        );
+                    }
+                    await this._canUpdate(actor, accommodation);
+                    const faqModel = new AccommodationFaqModel();
+                    const faq = await faqModel.findById(validated.faqId, tx);
+                    if (!faq || faq.accommodationId !== validated.accommodationId) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'FAQ not found for this accommodation'
+                        );
+                    }
+                    await faqModel.softDelete({ id: validated.faqId }, actor.id, tx);
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'faqs',
+                        ctx: { ...ctx, tx }
+                    });
+                    return { success: true };
+                };
+                if (ctx?.tx) {
+                    return run(ctx.tx);
                 }
-                await this._canUpdate(actor, accommodation);
-                const faqModel = new AccommodationFaqModel();
-                const faq = await faqModel.findById(validated.faqId, ctx?.tx);
-                if (!faq || faq.accommodationId !== validated.accommodationId) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        'FAQ not found for this accommodation'
-                    );
-                }
-                await faqModel.softDelete({ id: validated.faqId }, actor.id, ctx?.tx);
-                return { success: true };
+                return withTransaction(run);
             }
         });
     }
@@ -3674,31 +3718,52 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationFaqUpdateInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
-                }
-                await this._canUpdate(actor, accommodation);
-                const faqModel = new AccommodationFaqModel();
-                const faq = await faqModel.findById(validated.faqId, ctx?.tx);
-                if (!faq || faq.accommodationId !== validated.accommodationId) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        'FAQ not found for this accommodation'
+                // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
+                const run = async (tx: DrizzleClient) => {
+                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    if (!accommodation) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Accommodation not found'
+                        );
+                    }
+                    await this._canUpdate(actor, accommodation);
+                    const faqModel = new AccommodationFaqModel();
+                    const faq = await faqModel.findById(validated.faqId, tx);
+                    if (!faq || faq.accommodationId !== validated.accommodationId) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'FAQ not found for this accommodation'
+                        );
+                    }
+                    const updatedFaq = await faqModel.update(
+                        { id: validated.faqId },
+                        {
+                            ...validated.faq,
+                            accommodationId: validated.accommodationId as AccommodationIdType
+                        },
+                        tx
                     );
+                    if (!updatedFaq) {
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            'Failed to update FAQ'
+                        );
+                    }
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'faqs',
+                        ctx: { ...ctx, tx }
+                    });
+                    return { faq: updatedFaq };
+                };
+                if (ctx?.tx) {
+                    return run(ctx.tx);
                 }
-                const updatedFaq = await faqModel.update(
-                    { id: validated.faqId },
-                    {
-                        ...validated.faq,
-                        accommodationId: validated.accommodationId as AccommodationIdType
-                    },
-                    ctx?.tx
-                );
-                if (!updatedFaq) {
-                    throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update FAQ');
-                }
-                return { faq: updatedFaq };
+                return withTransaction(run);
             }
         });
     }
@@ -3840,6 +3905,15 @@ export class AccommodationService extends BaseCrudService<
                             tx
                         );
                     }
+                    // Post-write, inside the tx: one event for the whole
+                    // reorder, field name only (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'faqs',
+                        ctx: { ...ctx, tx }
+                    });
                 };
 
                 if (ctx?.tx) {
@@ -4168,94 +4242,116 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationMediaAddInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
-                }
-                await this._canUpdate(actor, accommodation);
+                // HOS-1642 (AC:V9a:6): the write and its owner-act event share
+                // one transaction — a photo edit without its event (or the
+                // reverse) would feed the retention clock a false fact.
+                const run = async (tx: DrizzleClient) => {
+                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    if (!accommodation) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Accommodation not found'
+                        );
+                    }
+                    await this._canUpdate(actor, accommodation);
 
-                const mediaModel = new AccommodationMediaModel();
+                    const mediaModel = new AccommodationMediaModel();
 
-                // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
-                // Using the base findAll with descending sort on sortOrder picks the
-                // highest current sortOrder in a single-row page — same pattern as addFaq.
-                const existing = await mediaModel.findAll(
-                    {
-                        accommodationId: validated.accommodationId,
-                        state: 'visible',
-                        deletedAt: null
-                    },
-                    { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
-                    undefined,
-                    ctx?.tx
-                );
-                const topOrder = existing.items[0]?.sortOrder ?? -1;
-                const nextSortOrder =
-                    typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
-
-                // HOS-389 §2: the per-entity gallery cap WAS already enforced
-                // server-side — but only at the UPLOAD routes
-                // (`media/protected/upload-entity.ts`, `media/admin/upload.ts`),
-                // which is the step that costs a Cloudinary asset. Registering
-                // the row was never capped, so anything reaching `addMedia`
-                // directly with an already-uploaded URL walked straight past it.
-                //
-                // Same `getGalleryCap` constant those routes read, and the same
-                // filter `resolveVisibleGalleryCount` applies for accommodations:
-                // `state: 'visible'` (an archived photo does not occupy a slot)
-                // AND `isFeatured: false` (HOS-791 — the featured image is not a
-                // gallery item, so charging it a slot closed the gallery one
-                // photo early).
-                //
-                // This is a SECOND query rather than a reuse of `existing.total`.
-                // `existing` is deliberately left unfiltered because it also
-                // computes the next `sortOrder`, and skipping the featured row
-                // there would hand out a `sortOrder` already in use whenever the
-                // featured row holds the current maximum.
-                const galleryCount = await mediaModel.count(
-                    {
-                        accommodationId: validated.accommodationId,
-                        state: 'visible',
-                        isFeatured: false,
-                        deletedAt: null
-                    },
-                    { tx: ctx?.tx }
-                );
-                const galleryCap = getGalleryCap('accommodation');
-                if (galleryCount >= galleryCap) {
-                    throw new ServiceError(
-                        ServiceErrorCode.QUOTA_EXCEEDED,
-                        `Gallery limit of ${galleryCap} photos reached for this accommodation`,
-                        { currentCount: galleryCount, maxAllowed: galleryCap }
+                    // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
+                    // Using the base findAll with descending sort on sortOrder picks the
+                    // highest current sortOrder in a single-row page — same pattern as addFaq.
+                    const existing = await mediaModel.findAll(
+                        {
+                            accommodationId: validated.accommodationId,
+                            state: 'visible',
+                            deletedAt: null
+                        },
+                        { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
+                        undefined,
+                        tx
                     );
-                }
+                    const topOrder = existing.items[0]?.sortOrder ?? -1;
+                    const nextSortOrder =
+                        typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
-                const rowToCreate = {
-                    ...validated.media,
-                    accommodationId: validated.accommodationId as AccommodationIdType,
-                    moderationState:
-                        validated.media.moderationState ?? ModerationStatusEnum.PENDING,
-                    state: 'visible' as const,
-                    isFeatured: false,
-                    sortOrder: nextSortOrder
+                    // HOS-389 §2: the per-entity gallery cap WAS already enforced
+                    // server-side — but only at the UPLOAD routes
+                    // (`media/protected/upload-entity.ts`, `media/admin/upload.ts`),
+                    // which is the step that costs a Cloudinary asset. Registering
+                    // the row was never capped, so anything reaching `addMedia`
+                    // directly with an already-uploaded URL walked straight past it.
+                    //
+                    // Same `getGalleryCap` constant those routes read, and the same
+                    // filter `resolveVisibleGalleryCount` applies for accommodations:
+                    // `state: 'visible'` (an archived photo does not occupy a slot)
+                    // AND `isFeatured: false` (HOS-791 — the featured image is not a
+                    // gallery item, so charging it a slot closed the gallery one
+                    // photo early).
+                    //
+                    // This is a SECOND query rather than a reuse of `existing.total`.
+                    // `existing` is deliberately left unfiltered because it also
+                    // computes the next `sortOrder`, and skipping the featured row
+                    // there would hand out a `sortOrder` already in use whenever the
+                    // featured row holds the current maximum.
+                    const galleryCount = await mediaModel.count(
+                        {
+                            accommodationId: validated.accommodationId,
+                            state: 'visible',
+                            isFeatured: false,
+                            deletedAt: null
+                        },
+                        { tx }
+                    );
+                    const galleryCap = getGalleryCap('accommodation');
+                    if (galleryCount >= galleryCap) {
+                        throw new ServiceError(
+                            ServiceErrorCode.QUOTA_EXCEEDED,
+                            `Gallery limit of ${galleryCap} photos reached for this accommodation`,
+                            { currentCount: galleryCount, maxAllowed: galleryCap }
+                        );
+                    }
+
+                    const rowToCreate = {
+                        ...validated.media,
+                        accommodationId: validated.accommodationId as AccommodationIdType,
+                        moderationState:
+                            validated.media.moderationState ?? ModerationStatusEnum.PENDING,
+                        state: 'visible' as const,
+                        isFeatured: false,
+                        sortOrder: nextSortOrder
+                    };
+
+                    const createdMedia = await mediaModel.create(rowToCreate, tx);
+
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6): the event
+                    // commits or rolls back WITH the media row it describes.
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'media',
+                        ctx: { ...ctx, tx }
+                    });
+
+                    // HOS-389 §4: the gallery IS the public page's content, so a
+                    // photo change has to purge it. Before this, none of the seven
+                    // media methods scheduled anything — a host replaced the cover
+                    // and the listing kept serving the old one from cache until some
+                    // unrelated edit happened to purge it.
+                    //
+                    // Guarded on public visibility for the same reason `_afterCreate`
+                    // is (HOS-203): a DRAFT/PRIVATE listing has no public footprint,
+                    // so purging its paths is wasted work and logged 404s in prod.
+                    if (this._isPubliclyVisible(accommodation)) {
+                        await this._scheduleAccommodationRevalidation(accommodation);
+                    }
+
+                    return { media: createdMedia };
                 };
-
-                const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
-
-                // HOS-389 §4: the gallery IS the public page's content, so a
-                // photo change has to purge it. Before this, none of the seven
-                // media methods scheduled anything — a host replaced the cover
-                // and the listing kept serving the old one from cache until some
-                // unrelated edit happened to purge it.
-                //
-                // Guarded on public visibility for the same reason `_afterCreate`
-                // is (HOS-203): a DRAFT/PRIVATE listing has no public footprint,
-                // so purging its paths is wasted work and logged 404s in prod.
-                if (this._isPubliclyVisible(accommodation)) {
-                    await this._scheduleAccommodationRevalidation(accommodation);
+                if (ctx?.tx) {
+                    return run(ctx.tx);
                 }
-
-                return { media: createdMedia };
+                return withTransaction(run);
             }
         });
     }
@@ -4321,22 +4417,42 @@ export class AccommodationService extends BaseCrudService<
 
                 const mediaModel = new AccommodationMediaModel();
 
-                const { media, previousFeatured } = await addFeaturedMediaRow({
-                    port: buildOwnedMediaFeaturedPort({
-                        mediaModel,
-                        ownerKey: 'accommodationId',
-                        ownerId: validated.accommodationId,
-                        media: validated.media,
-                        findFeatured: (tx) =>
-                            mediaModel.findFeatured({
-                                accommodationId: validated.accommodationId,
-                                tx
-                            }),
-                        deletedById: actor.id
-                    }),
-                    planGalleryCap: validated.planGalleryCap,
-                    tx: ctx?.tx
-                });
+                // HOS-1642 (AC:V9a:6): the swap and its owner-act event share one
+                // boundary. The tx is opened HERE (when the caller brought none)
+                // and passed down to the shared primitive — modifying
+                // `addFeaturedMediaRow` itself would move the record call out of
+                // every other caller's reach.
+                const run = async (tx: DrizzleClient) => {
+                    const { media, previousFeatured } = await addFeaturedMediaRow({
+                        port: buildOwnedMediaFeaturedPort({
+                            mediaModel,
+                            ownerKey: 'accommodationId',
+                            ownerId: validated.accommodationId,
+                            media: validated.media,
+                            findFeatured: (tx2) =>
+                                mediaModel.findFeatured({
+                                    accommodationId: validated.accommodationId,
+                                    tx: tx2
+                                }),
+                            deletedById: actor.id
+                        }),
+                        planGalleryCap: validated.planGalleryCap,
+                        tx
+                    });
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'media',
+                        ctx: { ...ctx, tx }
+                    });
+                    return { media, previousFeatured };
+                };
+
+                const { media, previousFeatured } = ctx?.tx
+                    ? await run(ctx.tx)
+                    : await withTransaction(run);
 
                 // HOS-389 §4 — see `addMedia` for the guard's rationale. Loudest
                 // case: the cover is what every social preview renders.
@@ -4429,6 +4545,15 @@ export class AccommodationService extends BaseCrudService<
                             await mediaModel.update({ id: row.id }, { sortOrder: i }, tx);
                         }
                     }
+
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'media',
+                        ctx: { ...ctx, tx }
+                    });
                 };
 
                 if (ctx?.tx) {
@@ -4539,6 +4664,15 @@ export class AccommodationService extends BaseCrudService<
                             await mediaModel.update({ id }, { sortOrder: i }, tx);
                         }
                     }
+                    // Post-write, inside the tx: one event for the whole
+                    // reorder, field name only (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'media',
+                        ctx: { ...ctx, tx }
+                    });
                 };
 
                 if (ctx?.tx) {
@@ -4685,6 +4819,14 @@ export class AccommodationService extends BaseCrudService<
                     }
                     // 2. Promote the target row.
                     await mediaModel.update({ id: validated.mediaId }, { isFeatured: true }, tx);
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'media',
+                        ctx: { ...ctx, tx }
+                    });
                 };
 
                 if (ctx?.tx) {
@@ -4750,53 +4892,75 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationMediaUpdateInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                // HOS-1642 (AC:V9a:6): the write and its owner-act event share
+                // one transaction.
+                const run = async (tx: DrizzleClient) => {
+                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    if (!accommodation) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Accommodation not found'
+                        );
+                    }
+                    await this._canUpdate(actor, accommodation);
+
+                    const mediaModel = new AccommodationMediaModel();
+                    const mediaRow = await mediaModel.findById(validated.mediaId, tx);
+                    if (
+                        !mediaRow ||
+                        mediaRow.accommodationId !== validated.accommodationId ||
+                        mediaRow.deletedAt
+                    ) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Media not found for this accommodation'
+                        );
+                    }
+
+                    // Only include keys the caller actually supplied. `undefined` is
+                    // excluded on purpose — passing it through would SET the column to
+                    // undefined instead of leaving it alone. `null` IS included — it is
+                    // the caller's explicit "clear this field" signal.
+                    const patch: Partial<
+                        Pick<AccommodationMedia, 'caption' | 'description' | 'alt' | 'attribution'>
+                    > = {};
+                    if (validated.caption !== undefined) patch.caption = validated.caption;
+                    if (validated.description !== undefined)
+                        patch.description = validated.description;
+                    if (validated.alt !== undefined) patch.alt = validated.alt;
+                    if (validated.attribution !== undefined)
+                        patch.attribution = validated.attribution;
+
+                    const updated = await mediaModel.update({ id: validated.mediaId }, patch, tx);
+                    if (!updated) {
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            'Failed to retrieve updated media row after update'
+                        );
+                    }
+
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'media',
+                        ctx: { ...ctx, tx }
+                    });
+
+                    // HOS-389 §4 — see `addMedia` for the guard's rationale. `alt`
+                    // is rendered into the public page, so correcting it has to
+                    // reach the cache.
+                    if (this._isPubliclyVisible(accommodation)) {
+                        await this._scheduleAccommodationRevalidation(accommodation);
+                    }
+
+                    return { media: updated };
+                };
+                if (ctx?.tx) {
+                    return run(ctx.tx);
                 }
-                await this._canUpdate(actor, accommodation);
-
-                const mediaModel = new AccommodationMediaModel();
-                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (
-                    !mediaRow ||
-                    mediaRow.accommodationId !== validated.accommodationId ||
-                    mediaRow.deletedAt
-                ) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        'Media not found for this accommodation'
-                    );
-                }
-
-                // Only include keys the caller actually supplied. `undefined` is
-                // excluded on purpose — passing it through would SET the column to
-                // undefined instead of leaving it alone. `null` IS included — it is
-                // the caller's explicit "clear this field" signal.
-                const patch: Partial<
-                    Pick<AccommodationMedia, 'caption' | 'description' | 'alt' | 'attribution'>
-                > = {};
-                if (validated.caption !== undefined) patch.caption = validated.caption;
-                if (validated.description !== undefined) patch.description = validated.description;
-                if (validated.alt !== undefined) patch.alt = validated.alt;
-                if (validated.attribution !== undefined) patch.attribution = validated.attribution;
-
-                const updated = await mediaModel.update({ id: validated.mediaId }, patch, ctx?.tx);
-                if (!updated) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        'Failed to retrieve updated media row after update'
-                    );
-                }
-
-                // HOS-389 §4 — see `addMedia` for the guard's rationale. `alt`
-                // is rendered into the public page, so correcting it has to
-                // reach the cache.
-                if (this._isPubliclyVisible(accommodation)) {
-                    await this._scheduleAccommodationRevalidation(accommodation);
-                }
-
-                return { media: updated };
+                return withTransaction(run);
             }
         });
     }
@@ -4833,61 +4997,82 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationMediaArchiveInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
-                }
-                await this._canUpdate(actor, accommodation);
+                // HOS-1642 (AC:V9a:6): an archive is a change to the listing's
+                // photos ("cambia" in the spec), so it records too — and shares
+                // the write's transaction.
+                const run = async (tx: DrizzleClient) => {
+                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    if (!accommodation) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Accommodation not found'
+                        );
+                    }
+                    await this._canUpdate(actor, accommodation);
 
-                const mediaModel = new AccommodationMediaModel();
-                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (
-                    !mediaRow ||
-                    mediaRow.accommodationId !== validated.accommodationId ||
-                    mediaRow.deletedAt
-                ) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        'Media not found for this accommodation'
+                    const mediaModel = new AccommodationMediaModel();
+                    const mediaRow = await mediaModel.findById(validated.mediaId, tx);
+                    if (
+                        !mediaRow ||
+                        mediaRow.accommodationId !== validated.accommodationId ||
+                        mediaRow.deletedAt
+                    ) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Media not found for this accommodation'
+                        );
+                    }
+
+                    // Guard: only visible rows can be archived.
+                    if (mediaRow.state !== 'visible') {
+                        throw new ServiceError(
+                            ServiceErrorCode.VALIDATION_ERROR,
+                            'Photo is already archived'
+                        );
+                    }
+
+                    // Guard: featured photos cannot be archived — the CHECK constraint
+                    // `NOT (is_featured AND state = 'archived')` would fire at the DB.
+                    // Reject early with an actionable message.
+                    if (mediaRow.isFeatured) {
+                        throw new ServiceError(
+                            ServiceErrorCode.VALIDATION_ERROR,
+                            'Cannot archive the featured photo — unfeature it first'
+                        );
+                    }
+
+                    const archived = await mediaModel.update(
+                        { id: validated.mediaId },
+                        { state: 'archived', archivedAt: new Date() },
+                        tx
                     );
-                }
+                    if (!archived) {
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            'Failed to retrieve updated media row after archive'
+                        );
+                    }
 
-                // Guard: only visible rows can be archived.
-                if (mediaRow.state !== 'visible') {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        'Photo is already archived'
-                    );
-                }
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'media',
+                        ctx: { ...ctx, tx }
+                    });
 
-                // Guard: featured photos cannot be archived — the CHECK constraint
-                // `NOT (is_featured AND state = 'archived')` would fire at the DB.
-                // Reject early with an actionable message.
-                if (mediaRow.isFeatured) {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        'Cannot archive the featured photo — unfeature it first'
-                    );
-                }
+                    // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                    if (this._isPubliclyVisible(accommodation)) {
+                        await this._scheduleAccommodationRevalidation(accommodation);
+                    }
 
-                const archived = await mediaModel.update(
-                    { id: validated.mediaId },
-                    { state: 'archived', archivedAt: new Date() },
-                    ctx?.tx
-                );
-                if (!archived) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        'Failed to retrieve updated media row after archive'
-                    );
+                    return { media: archived };
+                };
+                if (ctx?.tx) {
+                    return run(ctx.tx);
                 }
-
-                // HOS-389 §4 — see `addMedia` for the guard's rationale.
-                if (this._isPubliclyVisible(accommodation)) {
-                    await this._scheduleAccommodationRevalidation(accommodation);
-                }
-
-                return { media: archived };
+                return withTransaction(run);
             }
         });
     }
@@ -4925,68 +5110,89 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationMediaRestoreInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
-                }
-                await this._canUpdate(actor, accommodation);
+                // HOS-1642 (AC:V9a:6): a restore is a change to the listing's
+                // photos ("cambia" in the spec), so it records too — and shares
+                // the write's transaction.
+                const run = async (tx: DrizzleClient) => {
+                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    if (!accommodation) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Accommodation not found'
+                        );
+                    }
+                    await this._canUpdate(actor, accommodation);
 
-                const mediaModel = new AccommodationMediaModel();
-                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-                if (
-                    !mediaRow ||
-                    mediaRow.accommodationId !== validated.accommodationId ||
-                    mediaRow.deletedAt
-                ) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        'Media not found for this accommodation'
+                    const mediaModel = new AccommodationMediaModel();
+                    const mediaRow = await mediaModel.findById(validated.mediaId, tx);
+                    if (
+                        !mediaRow ||
+                        mediaRow.accommodationId !== validated.accommodationId ||
+                        mediaRow.deletedAt
+                    ) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            'Media not found for this accommodation'
+                        );
+                    }
+
+                    // Guard: only archived rows can be restored.
+                    if (mediaRow.state !== 'archived') {
+                        throw new ServiceError(
+                            ServiceErrorCode.VALIDATION_ERROR,
+                            'Photo is not archived'
+                        );
+                    }
+
+                    // Compute next sortOrder: append at end of current visible gallery.
+                    const existing = await mediaModel.findAll(
+                        {
+                            accommodationId: validated.accommodationId,
+                            state: 'visible',
+                            deletedAt: null
+                        },
+                        { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
+                        undefined,
+                        tx
                     );
-                }
+                    const topOrder = existing.items[0]?.sortOrder ?? -1;
+                    const nextSortOrder =
+                        typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
-                // Guard: only archived rows can be restored.
-                if (mediaRow.state !== 'archived') {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        'Photo is not archived'
+                    const restored = await mediaModel.update(
+                        { id: validated.mediaId },
+                        { state: 'visible', archivedAt: null, sortOrder: nextSortOrder },
+                        tx
                     );
+                    if (!restored) {
+                        throw new ServiceError(
+                            ServiceErrorCode.INTERNAL_ERROR,
+                            'Failed to retrieve updated media row after restore'
+                        );
+                    }
+
+                    // Post-write, inside the tx (HOS-1642, AC:V9a:6).
+                    await recordListingSubEntityEdit({
+                        entityType: 'accommodation',
+                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        actor,
+                        field: 'media',
+                        ctx: { ...ctx, tx }
+                    });
+
+                    // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                    // Restoring an archived photo puts it back in the public
+                    // gallery, so it purges exactly like archiving does.
+                    if (this._isPubliclyVisible(accommodation)) {
+                        await this._scheduleAccommodationRevalidation(accommodation);
+                    }
+
+                    return { media: restored };
+                };
+                if (ctx?.tx) {
+                    return run(ctx.tx);
                 }
-
-                // Compute next sortOrder: append at end of current visible gallery.
-                const existing = await mediaModel.findAll(
-                    {
-                        accommodationId: validated.accommodationId,
-                        state: 'visible',
-                        deletedAt: null
-                    },
-                    { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
-                    undefined,
-                    ctx?.tx
-                );
-                const topOrder = existing.items[0]?.sortOrder ?? -1;
-                const nextSortOrder =
-                    typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
-
-                const restored = await mediaModel.update(
-                    { id: validated.mediaId },
-                    { state: 'visible', archivedAt: null, sortOrder: nextSortOrder },
-                    ctx?.tx
-                );
-                if (!restored) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        'Failed to retrieve updated media row after restore'
-                    );
-                }
-
-                // HOS-389 §4 — see `addMedia` for the guard's rationale.
-                // Restoring an archived photo puts it back in the public
-                // gallery, so it purges exactly like archiving does.
-                if (this._isPubliclyVisible(accommodation)) {
-                    await this._scheduleAccommodationRevalidation(accommodation);
-                }
-
-                return { media: restored };
+                return withTransaction(run);
             }
         });
     }

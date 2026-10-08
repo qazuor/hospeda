@@ -23,8 +23,23 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
+import { FAKE_DB_TX } from '../../helpers/owner-act-doubles';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createModelMock } from '../../utils/modelMockFactory';
+
+// HOS-1642: the FAQ/media writes now run inside a transaction and write an
+// owner-act event to `domain_event`. Unit tests have no database, so both
+// need stand-ins: the DB-level transaction fake and the domain-event double
+// (same pattern as the listing owner-act tests).
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
+        withTransaction: doubles.fakeDbWithTransaction
+    };
+});
 
 /**
  * Test suite for the AccommodationService.addFaq method.
@@ -90,7 +105,7 @@ describe('AccommodationService.addFaq', () => {
             answer: input.faq.answer,
             accommodationId: accommodation.id as any
         });
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, FAKE_DB_TX);
         expect(faqModelMock.create).toHaveBeenCalled();
         expect(permissionHelpers.checkCanUpdate).toHaveBeenCalledWith(actor, accommodation);
     });
@@ -99,7 +114,7 @@ describe('AccommodationService.addFaq', () => {
         modelMock.findById.mockResolvedValue(null);
         const result = await service.addFaq(actor, input);
         expectNotFoundError(result);
-        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
+        expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, FAKE_DB_TX);
     });
 
     it('should return FORBIDDEN if actor cannot update', async () => {
@@ -162,7 +177,7 @@ describe('AccommodationService.addFaq', () => {
                 isVisibleOnListing: false,
                 isUsableByAi: false
             }),
-            undefined
+            FAKE_DB_TX
         );
     });
 
@@ -184,7 +199,7 @@ describe('AccommodationService.addFaq', () => {
                 isVisibleOnListing: true,
                 isUsableByAi: true
             }),
-            undefined
+            FAKE_DB_TX
         );
     });
 });

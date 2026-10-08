@@ -30,8 +30,23 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
+import { FAKE_DB_TX } from '../../helpers/owner-act-doubles';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createModelMock } from '../../utils/modelMockFactory';
+
+// HOS-1642: the FAQ/media writes now run inside a transaction and write an
+// owner-act event to `domain_event`. Unit tests have no database, so both
+// need stand-ins: the DB-level transaction fake and the domain-event double
+// (same pattern as the listing owner-act tests).
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
+        withTransaction: doubles.fakeDbWithTransaction
+    };
+});
 
 describe('AccommodationService.reorderFaqs', () => {
     let service: AccommodationService;
@@ -208,7 +223,7 @@ describe('AccommodationService.addFaq – displayOrder assignment', () => {
         expectSuccess(result);
         expect(faqModelMock.create).toHaveBeenCalledWith(
             expect.objectContaining({ displayOrder: highestOrder + 1 }),
-            undefined
+            FAKE_DB_TX
         );
     });
 
@@ -233,7 +248,7 @@ describe('AccommodationService.addFaq – displayOrder assignment', () => {
         expectSuccess(result);
         expect(faqModelMock.create).toHaveBeenCalledWith(
             expect.objectContaining({ displayOrder: 0 }),
-            undefined
+            FAKE_DB_TX
         );
     });
 });

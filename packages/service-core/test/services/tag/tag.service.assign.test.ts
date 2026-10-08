@@ -11,7 +11,7 @@
  *
  * References: D-005, D-007, D-008, D-009
  */
-import { REntityTagModel, TagModel } from '@repo/db';
+import { AccommodationModel, REntityTagModel, TagModel } from '@repo/db';
 import type { EntityTag } from '@repo/schemas';
 import { EntityTypeEnum, PermissionEnum, ServiceErrorCode, TagTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -35,6 +35,16 @@ import { asMock } from '../../utils/test-utils';
 vi.mock('../../../src/services/tag/entity-access-registry', () => ({
     getCanViewChecker: vi.fn(() => async () => true)
 }));
+
+// The owner-act integration test exercises the real transaction and listing
+// lookup. These existing permission unit tests keep their injected model doubles.
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...actual,
+        withTransaction: async (run: (tx: undefined) => Promise<unknown>) => run(undefined)
+    };
+});
 
 import { getCanViewChecker } from '../../../src/services/tag/entity-access-registry';
 
@@ -72,6 +82,7 @@ describe('TagService — assignTag / removeAssignment (T-021, SPEC-086)', () => 
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.spyOn(AccommodationModel.prototype, 'findById').mockResolvedValue(null);
 
         tagModelMock = createTypedModelMock(TagModel, ['findById', 'findByType']);
         relatedModelMock = createTypedModelMock(REntityTagModel, [

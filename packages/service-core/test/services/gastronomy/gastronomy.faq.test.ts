@@ -27,8 +27,13 @@ const mockFaqModel = {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
+    // HOS-1642: these writes now record an owner-act event; the double keeps
+    // the write off the (nonexistent) test database.
+    const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
+        withTransaction: doubles.fakeDbWithTransaction,
         GastronomyFaqModel: vi.fn(function () {
             return mockFaqModel;
         })
@@ -56,6 +61,7 @@ import {
 } from '../../../src/services/gastronomy/gastronomy.faq';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
+import { FAKE_DB_TX } from '../../helpers/owner-act-doubles';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -216,7 +222,7 @@ describe('addGastronomyFaq', () => {
         expect(result.error).toBeUndefined();
         expect(mockFaqModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ displayOrder: 0 }),
-            undefined
+            FAKE_DB_TX
         );
     });
 
@@ -243,7 +249,7 @@ describe('addGastronomyFaq', () => {
         // Assert — displayOrder should be 4 (max 3 + 1)
         expect(mockFaqModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ displayOrder: 4 }),
-            undefined
+            FAKE_DB_TX
         );
     });
 
@@ -415,7 +421,7 @@ describe('removeGastronomyFaq', () => {
         expect(mockFaqModel.softDelete).toHaveBeenCalledWith(
             expect.objectContaining({ id: FAQ_ID }),
             ownerActor.id,
-            undefined
+            FAKE_DB_TX
         );
     });
 });
