@@ -1,6 +1,6 @@
 {
     "raiz": "HOS-1352",
-    "generado": "2026-10-07 (corte del MVP: CR a DD, Coord-1 a Coord-8)",
+    "generado": "2026-10-07 (corte del MVP: CR a DD, Coord-1 a Coord-9)",
     "fuente": "spec-consolidada + docs/41-corte-del-mvp/aristas.py + Linear (sólo lectura) + grafo reparado (deps-audit A y B) + decisiones del 2026-10-07",
     "nodos": [
         {
@@ -2481,7 +2481,7 @@
             "clave": "B7.1",
             "padre": "B7",
             "titulo": "B7 · Entra a grace (PR 1/9, parte 1/2)",
-            "descripcion": "**Qué entrega:** Entra a grace.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B7:1` — la fila pasa a `GRACE_PERIOD` por `S4`, arranca el reloj del grace con el servicio entero, el\n- `AC:B7:2` — su lectura del período en curso corre `S4` y la fila entra en grace igual, con sus días y\n- `AC:B7:3` — no corre `S4` y no hay grace: lo que corre es `S16`, de `B3` —el que nunca pagó no recibe\n- `AC:B7:34` — «¿cobró?» se contesta mirando cada intento, nunca el contador ni `last_charged_date`; la ventana de\n\n**Depende de:** `B5.1`, `V2.2` (2026-10-07).\n\n**Verificación:** tests `TEST:B7:1`, `TEST:B7:21`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** Entra a grace.\n\n**Pieza:** `B7` — spec [B7.md](../../spec-consolidada/10-corte/B7.md), secciones «Historias de usuario y criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:B7:1` — la fila pasa a `GRACE_PERIOD` por `S4`, arranca el reloj del grace con el servicio entero, el\n- `AC:B7:2` — su lectura del período en curso corre `S4` y la fila entra en grace igual, con sus días y\n- `AC:B7:3` — no corre `S4` y no hay grace: lo que corre es `S16`, de `B3` —el que nunca pagó no recibe\n- `AC:B7:34` — la fecha del último cobro nunca se lee de `last_charged_date`; la ventana de vida del cobro se lee d\n\n**Depende de:** `B5.1`, `V2.2` (2026-10-07).\n\n**Verificación:** tests `TEST:B7:1`, `TEST:B7:21`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B7:1", "AC:B7:2", "AC:B7:3", "AC:B7:34"],
             "depende_de": ["B5.1", "V2.2"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],

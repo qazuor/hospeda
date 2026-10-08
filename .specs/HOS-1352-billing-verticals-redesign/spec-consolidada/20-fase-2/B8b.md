@@ -1051,7 +1051,7 @@ Cubre: [AC:B8b:27](#ac-b8b-27), [AC:B8b:28](#ac-b8b-28)
 
 Fuente: [M:M2](../04-catalogos.md#m-m2) · [RP:RP10](../04-catalogos.md#rp-rp10)
 
-Con `M1` y `M2` encendidas, el cambio de plan con dos campos recibe `200` y la relectura detecta el campo no aplicado; con `M12` y `RP10`, la pausa no se reanuda sola y la fecha avanzada no cuenta como cobro; con cada una apagada por nombre, el caso sano pasa.
+Con `M1` y `M2` encendidas, el cambio de plan con dos campos recibe `200` y la relectura detecta el campo no aplicado; con `RP10`, la fecha avanzada al reanudar no cuenta como cobro (`M12` la prueba [TEST:B8b:3](#test-b8b-3)); con cada una apagada por nombre, el caso sano pasa.
 
 <a id="test-b8b-1"></a>
 **TEST:B8b:1** — `S8` y su rama de fallo
@@ -1083,13 +1083,14 @@ La base rechaza una `subscription_pause` sin motivo o con uno fuera del dominio.
 
 Tipo: integración con DB
 
-Cubre: [AC:B8b:3](#ac-b8b-3)
+Cubre: [AC:B8b:3](#ac-b8b-3), [AC:B8b:28](#ac-b8b-28)
 
 Fuente: [TRANS:B:S10](../04-catalogos.md#trans-b-s10) · [INV:24](../02-nucleo.md#inv-24)
 
 Con el reloj en el fin previsto y con una vuelta anticipada: `fin_real` escrito, complementos de
 vuelta por `S33`; con el falso dando `paused` en la relectura, la fila sigue `PAUSED` con
-`REANUDACIÓN_NO_APLICADA`; un pagador manual avanza su fecha sin abrir cuota.
+`REANUDACIÓN_NO_APLICADA`; un pagador manual avanza su fecha sin abrir cuota. Es la prueba de defensa de `M12`: con la mentira
+encendida, la pausa no se reanuda sola en el proveedor y la reanuda `S10` en su fecha.
 
 <a id="test-b8b-4"></a>
 **TEST:B8b:4** — el aumento sobre una pausada
