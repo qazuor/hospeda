@@ -280,6 +280,56 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
         }
     );
 
+    // TEST:V9a:1 (atomicity) — AC:V9a:1: no event for a write that failed.
+    it.skipIf(!dbAvailable)(
+        'TEST:V9a:1 — an edit that fails after its event was written leaves no event behind',
+        async () => {
+            /** Fails the write AFTER the base after-hook has written the event. */
+            class FailingAfterEventGastronomyService extends GastronomyService {
+                protected override async _afterUpdate(
+                    ...args: Parameters<GastronomyService['_afterUpdate']>
+                ): ReturnType<GastronomyService['_afterUpdate']> {
+                    await super._afterUpdate(...args);
+                    throw new Error('listing write fails after the owner-act event');
+                }
+            }
+            const failing = new FailingAfterEventGastronomyService({
+                logger: createLoggerMock()
+            });
+
+            await withServiceTestTransaction(async (tx) => {
+                const { ownerId, gastronomyId } = await seedGastronomy(tx);
+
+                // The write runs in a SAVEPOINT of the test transaction: when it
+                // throws, the savepoint rolls back — and with it the event, ONLY
+                // if the event was written through the write's own `tx`. An
+                // event written on another connection would survive (committed).
+                let failed = false;
+                try {
+                    await tx.transaction(async (savepoint) => {
+                        const result = await failing.updateOwn(
+                            gastronomyId,
+                            { summary: 'Un resumen que no debe quedar' },
+                            ownerActor(ownerId),
+                            { tx: savepoint as unknown as ServiceContext['tx'] }
+                        );
+                        if (result.error) throw result.error;
+                    });
+                } catch {
+                    failed = true;
+                }
+                expect(failed).toBe(true);
+
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'gastronomy',
+                    entityId: gastronomyId,
+                    tx
+                });
+                expect(events).toHaveLength(0);
+            });
+        }
+    );
+
     // TEST:V9a:2 — AC:V9a:2
     it.skipIf(!dbAvailable)(
         'TEST:V9a:2 — editing the description and the state in one act stores only the description name and the state old/new',
