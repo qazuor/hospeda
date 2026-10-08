@@ -1062,9 +1062,9 @@
             "clave": "V5.10",
             "padre": "V5.G5",
             "titulo": "V5 · Salida (PR 10/10)",
-            "descripcion": "**Qué entrega:** Salida.\n\n**Pieza:** `V5` — spec [V5.md](../../spec-consolidada/10-corte/V5.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V5:23` — Salida: la pieza está lista.\n\n**Depende de:** `V5.4`, `V5.5`, `V5.6`, `V5.7`, `V5.8`, `V5.9` (2026-10-07).\n\n**Verificación:** tests `TEST:V5:27`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** Salida.\n\n**Pieza:** `V5` — spec [V5.md](../../spec-consolidada/10-corte/V5.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V5:23` — Salida: la pieza está lista.\n\n**Depende de:** `V5.13`, `V5.4`, `V5.5`, `V5.6`, `V5.7`, `V5.8`, `V5.9` (2026-10-07).\n\n**Verificación:** tests `TEST:V5:27`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V5:23"],
-            "depende_de": ["V5.4", "V5.5", "V5.6", "V5.7", "V5.8", "V5.9"],
+            "depende_de": ["V5.4", "V5.5", "V5.6", "V5.7", "V5.8", "V5.9", "V5.13"],
             "labels": ["area-api", "area-auth", "kind-spec", "source-agent"],
             "existente": null,
             "corte": "mvp",
@@ -1075,7 +1075,8 @@
                 "V5.5": "la salida verifica la fábrica única del actor de sistema y la guarda G19 de V5.5 (AC:V5:12/13, AC:V5:23)",
                 "V5.6": "la salida verifica permisos SUPER_ADMIN, la acción 26 y la firma de concesiones de V5.6 (AC:V5:14/15/24, AC:V5:23)",
                 "V5.7": "la salida verifica que el guest falle en el paso 1 salvo lectura pública y PP1 (AC:V5:16, AC:V5:23)",
-                "V5.8": "la salida verifica las guardas G6 y G4 de V5.8 (AC:V5:17/18/19, AC:V5:23)"
+                "V5.8": "la salida verifica las guardas G6 y G4 de V5.8 (AC:V5:17/18/19, AC:V5:23)",
+                "V5.13": "la salida verifica el guard de cero marcadores y las rutas de turista, comerciales y de verticales restauradas por DG"
             }
         },
         {
@@ -3469,9 +3470,9 @@
             "clave": "B13a.8",
             "padre": "B13a",
             "titulo": "B13a · La cancelación de punta a punta y salida (PR 8/8)",
-            "descripcion": "**Qué entrega:** La cancelación de punta a punta y salida.\n\n**Pieza:** `B13a` — spec [B13a.md](../../spec-consolidada/10-corte/B13a.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:B13a:15` — salida de la pieza (el *«Lista cuando»* de `B13a`)\n- `AC:B13a:19` — la cancelación (la baja), de punta a punta, desde su pantalla\n\n**Depende de:** `B13a.10`, `B13a.2`, `B13a.5`, `B13a.6`, `B13a.7`, `B8a.5` (2026-10-07).\n\n**Verificación:** tests `TEST:B13a:14`, `TEST:B13a:16`, `TEST:B13a:20`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** La cancelación de punta a punta y salida.\n\n**Pieza:** `B13a` — spec [B13a.md](../../spec-consolidada/10-corte/B13a.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:B13a:15` — salida de la pieza (el *«Lista cuando»* de `B13a`)\n- `AC:B13a:19` — la cancelación (la baja), de punta a punta, desde su pantalla\n\n**Depende de:** `B13a.13`, `B13a.10`, `B13a.2`, `B13a.5`, `B13a.6`, `B13a.7`, `B8a.5` (2026-10-07).\n\n**Verificación:** tests `TEST:B13a:14`, `TEST:B13a:16`, `TEST:B13a:20`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B13a:15", "AC:B13a:19"],
-            "depende_de": ["B13a.10", "B13a.2", "B13a.5", "B13a.6", "B13a.7", "B8a.5"],
+            "depende_de": ["B13a.10", "B13a.2", "B13a.5", "B13a.6", "B13a.7", "B8a.5", "B13a.13"],
             "labels": ["area-admin", "area-billing", "area-web", "kind-spec", "source-agent"],
             "existente": null,
             "corte": "mvp",
@@ -3482,7 +3483,8 @@
                 "B13a.2": "la salida verifica el aviso de addons perdidos y el alta que rebota de B13a.2 (AC:B13a:4/5, AC:B13a:15)",
                 "B13a.5": "la salida verifica botón de suscribirse, pricing y que ninguna pantalla oculte lo que se autoriza (AC:B13a:10/11/12, AC:B13a:15)",
                 "B13a.6": "la salida verifica los avisos de renovación y el checklist de smoke de B13a.6 (AC:B13a:13/14, AC:B13a:15)",
-                "B13a.10": "la salida verifica el retiro de las compuertas viejas y el guard de endpoints de B13a.10 (AC:B13a:23/24, AC:B13a:15)"
+                "B13a.10": "la salida verifica el retiro de las compuertas viejas y el guard de endpoints de B13a.10 (AC:B13a:23/24, AC:B13a:15)",
+                "B13a.13": "la salida verifica el endpoint protegido y las compuertas web sobre capacidades efectivas de DG"
             }
         },
         {
@@ -3737,6 +3739,73 @@
                 "V6.6": "lectores de PB (V6.1–V6.7)",
                 "V6.7": "lectores de PB (V6.1–V6.7)",
                 "V5.2": "AC:V5:5: la autorización ya no lee visibility"
+            }
+        },
+        {
+            "clave": "V5.11",
+            "padre": "V5",
+            "titulo": "V5 · Gates de contenido y cupos de verticales (DG 1/3)",
+            "descripcion": "**Qué entrega:** Gates de contenido y cupos de verticales (DG 1/3).\n\n**Pieza:** `V5` — spec [V5.md](../../spec-consolidada/10-corte/V5.md), «Criterios de aceptación»; decisión [DG](../../spec-consolidada/01-decisiones-vigentes.md#own-41-corte-del-mvp-t20-dg).\n\n**Cubre:**\n- `AC:V5:26` — contenido de Alojamiento, Gastronomía y Experiencia exige claves y cupos efectivos\n\n**Depende de:** `V3.4`, `V5.3`.\n\n**Verificación:** `TEST:V5:31`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V5:26"],
+            "depende_de": ["V3.4", "V5.3"],
+            "labels": ["hos-1352", "area-api", "area-auth", "kind-spec", "source-agent"],
+            "existente": null,
+            "corte": "mvp",
+            "salida": false,
+            "por_que": {
+                "V3.4": "usa el conjunto efectivo por usuario y vertical que entrega la salida de V3",
+                "V5.3": "usa la cadena de autorización y el paso de cobertura de escrituras de verticales"
+            }
+        },
+        {
+            "clave": "V5.12",
+            "padre": "V5",
+            "titulo": "V5 · Gates comerciales, estadísticas e IA (DG 2/3)",
+            "descripcion": "**Qué entrega:** Gates comerciales, estadísticas e IA (DG 2/3).\n\n**Pieza:** `V5` — spec [V5.md](../../spec-consolidada/10-corte/V5.md), «Criterios de aceptación»; decisión [DG](../../spec-consolidada/01-decisiones-vigentes.md#own-41-corte-del-mvp-t20-dg).\n\n**Cubre:**\n- `AC:V5:27` — estadísticas, promociones, alertas de precio e IA exigen claves y cupos efectivos\n\n**Depende de:** `V3.4`, `V5.3`, `V5.11`.\n\n**Verificación:** `TEST:V5:32`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V5:27"],
+            "depende_de": ["V3.4", "V5.3", "V5.11"],
+            "labels": ["hos-1352", "area-api", "area-auth", "kind-spec", "source-agent"],
+            "existente": null,
+            "corte": "mvp",
+            "salida": false,
+            "por_que": {
+                "V3.4": "usa el conjunto efectivo y la cuota mensual que entrega V3",
+                "V5.3": "usa los pasos de cobertura y autorización de V5",
+                "V5.11": "usa el patrón de consumo de claves de catálogo en rutas y servicios de API"
+            }
+        },
+        {
+            "clave": "V5.13",
+            "padre": "V5",
+            "titulo": "V5 · Gates de turista y guard de salida (DG 3/3)",
+            "descripcion": "**Qué entrega:** Gates de turista y guard de salida (DG 3/3).\n\n**Pieza:** `V5` — spec [V5.md](../../spec-consolidada/10-corte/V5.md), «Criterios de aceptación»; decisión [DG](../../spec-consolidada/01-decisiones-vigentes.md#own-41-corte-del-mvp-t20-dg).\n\n**Cubre:**\n- `AC:V5:28` — favoritos, colecciones, historial, reviews y recomendaciones recuperan sus gates\n- `AC:V5:29` — guard de API exige cero marcadores transitorios y falla por mutación\n\n**Depende de:** `V3.4`, `V5.3`, `V5.12`.\n\n**Verificación:** `TEST:V5:33`, `TEST:V5:34`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:V5:28", "AC:V5:29"],
+            "depende_de": ["V3.4", "V5.3", "V5.12"],
+            "labels": ["hos-1352", "area-api", "area-auth", "kind-spec", "source-agent"],
+            "existente": null,
+            "corte": "mvp",
+            "salida": false,
+            "por_que": {
+                "V3.4": "usa el conjunto efectivo de capacidades y cupos que entrega V3",
+                "V5.3": "usa la cadena de autorización y el paso de cobertura de V5",
+                "V5.12": "el guard de cero marcadores espera los gates comerciales y de IA de V5.12"
+            }
+        },
+        {
+            "clave": "B13a.13",
+            "padre": "B13a",
+            "titulo": "B13a · Endpoint protegido y compuertas web sobre V3 (DG)",
+            "descripcion": "**Qué entrega:** Endpoint protegido y compuertas web sobre V3 (DG).\n\n**Pieza:** `B13a` — spec [B13a.md](../../spec-consolidada/10-corte/B13a.md), «Criterios de aceptación»; decisión [DG](../../spec-consolidada/01-decisiones-vigentes.md#own-41-corte-del-mvp-t20-dg).\n\n**Cubre:**\n- `AC:B13a:26` — endpoint protegido devuelve capacidades y cupos efectivos por usuario y vertical\n- `AC:B13a:27` — pantallas web conservan sus compuertas y fallan cerrado\n\n**Depende de:** `V3.4`, `B13a.9`, `V5.12`.\n\n**Verificación:** `TEST:B13a:24`, `TEST:B13a:25`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "acs": ["AC:B13a:26", "AC:B13a:27"],
+            "depende_de": ["V3.4", "B13a.9", "V5.12"],
+            "labels": ["hos-1352", "area-api", "area-web", "area-billing", "kind-spec", "source-agent"],
+            "existente": null,
+            "corte": "mvp",
+            "salida": false,
+            "por_que": {
+                "V3.4": "el endpoint devuelve el conjunto efectivo por usuario y vertical que entrega V3",
+                "B13a.9": "el cliente web viejo se retira antes de enlazar el endpoint nuevo",
+                "V5.12": "las pantallas de promociones y estadísticas reflejan las claves exigidas por la API"
             }
         }
     ]
