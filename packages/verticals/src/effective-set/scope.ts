@@ -12,8 +12,12 @@
  * `scope: global`.
  *
  * Both rules are pure functions over a catalog definition; the publish-version
- * validation (V2.3 / HOS-1436) reuses {@link assertMeteredKeyIsVertical}, which
- * is why it is exported from the package index.
+ * validation (V2.3 / HOS-1436, AC:V2:7 cause (a)) decides whether an
+ * entitlement is metered with {@link isMeteredEntitlement}, which is why both
+ * it and {@link assertMeteredKeyIsVertical} are exported from the package
+ * index. {@link isMeteredEntitlement} is the SINGLE definition of "metered":
+ * the action 18 validation and the grant ratchet both call it, so the two can
+ * never diverge (HOS-1654).
  */
 import { type CatalogKeyDefinition, getCatalogKey } from '@repo/schemas';
 import { MeteredKeyGlobalScopeError, MissingVerticalForVerticalKeyError } from './errors';
@@ -83,11 +87,34 @@ export function resolveKeyScope(args: {
 }
 
 /**
+ * Whether an entitlement is metered: the one whose row carries a quota, plan or
+ * trial (`V/15` §3.2). It is the SINGLE definition of "metered" of the program,
+ * so the action 18 validation (V2.3 / HOS-1436, AC:V2:7 cause (a)) and the
+ * grant ratchet (`grant-ratchet.ts`, AC:V3:3) can never diverge: both call it
+ * instead of repeating the rule (HOS-1654).
+ *
+ * A quota that is absent (`undefined`) — not just `null` — counts as none
+ * carried, so an entitlement row that predates `trialQuota` is not read as
+ * metered.
+ *
+ * @param args.planQuota - The plan quota of the entitlement row, or `null`/`undefined`.
+ * @param args.trialQuota - The trial quota of the entitlement row, or `null`/`undefined`.
+ * @returns `true` when any of the two quotas is neither `null` nor `undefined`.
+ */
+export function isMeteredEntitlement(args: {
+    readonly planQuota?: number | null;
+    readonly trialQuota?: number | null;
+}): boolean {
+    return args.planQuota != null || args.trialQuota != null;
+}
+
+/**
  * Refuses a metered key declared with `scope: global` (`V/15` §3.2).
  *
  * A metered key is the one whose entitlement row carries a quota; whether the
  * key is metered is a property of the version being read, not of the catalog
- * declaration, which is why it arrives as its own argument.
+ * declaration, which is why it arrives as its own argument — the caller
+ * computes it with {@link isMeteredEntitlement}.
  *
  * @param args.definition - The catalog definition of the key.
  * @param args.isMetered - Whether the key carries a quota (plan or trial) in
