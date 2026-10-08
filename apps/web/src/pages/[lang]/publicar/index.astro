@@ -38,7 +38,6 @@
  */
 
 import {
-    AlertCircleIcon,
     BuildingsIcon,
     ChatIcon,
     EyeIcon,
@@ -61,7 +60,7 @@ import {
     PLANS_PAGE_PATH_BY_VERTICAL,
     PRICING_PAGE_PATH_BY_VERTICAL
 } from '@/lib/publish/publish-page-paths';
-import { billingApi, publishApi } from '@/lib/api/endpoints-protected';
+import { publishApi } from '@/lib/api/endpoints-protected';
 import { shouldShowPublishTrialCallout } from '@/lib/host/publish-trial-callout';
 import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
 import { buildUrl } from '@/lib/urls';
@@ -85,21 +84,12 @@ const slot = await resolvePublishPageSlot({
     wantsCreate: Astro.url.searchParams.get('create') === '1'
 });
 
-/** The trial fields the hero callout reads. */
-type TrialStatusData = {
-    readonly isOnTrial: boolean;
-    readonly isExpired: boolean;
-    readonly daysRemaining: number | null;
-    readonly startedAt: string | null;
-    readonly expiresAt: string | null;
-    readonly planSlug: string | null;
-};
-
-// The one SSR fetch that survived the D-3 removal. It answers a question the
-// precheck does not: an expired trial is not a full plan, so it produces
-// `create_direct` and a form that will refuse on submit. Telling the host up
-// front is the whole point of the banner.
-let trialStatus: TrialStatusData | null = null;
+// The expired-trial banner this page used to render read the visitor's trial
+// from the old billing (`GET /protected/billing/trial/status`), a route the API
+// no longer registers. It was removed with the old billing client (HOS-1637,
+// AC:B13a:21); the leaf that rewrites subscribe → publish (V8a) brings the
+// trial state back on the new billing, so nothing here reports an expired
+// trial.
 
 // HOS-1183 F-6: whether publishing would actually grant this owner a trial.
 // `null` = unresolved (signed out, or the read failed) — see
@@ -108,34 +98,19 @@ let trialEligibility: boolean | null = null;
 
 if (isAuthenticated && cookieHeader) {
     try {
-        const [trialResult, eligibility] = await Promise.all([
-            // HOS-1282: scoped to this page's own vertical. The endpoint used
-            // to be called with no domain at all — the capability did not
-            // exist — so a dual-role owner with a live GASTRONOMY/EXPERIENCE
-            // subscription resolved that unrelated row first and this page
-            // never saw its own (possibly expired) accommodation trial.
-            billingApi.getTrialStatus({ cookieHeader, productDomain: VERTICAL }),
-            publishApi.accommodationEligibility({ cookieHeader })
-        ]);
-        if (trialResult.ok) {
-            trialStatus = trialResult.data;
-        }
+        const eligibility = await publishApi.accommodationEligibility({ cookieHeader });
         if (eligibility.ok) {
             trialEligibility = eligibility.data.startsTrial;
         }
     } catch (error) {
-        logger.warn('publicar/index: failed to fetch trial status', { error });
+        logger.warn('publicar/index: failed to fetch publish eligibility', { error });
         // Non-fatal: the default trial callout renders.
     }
 }
 
-const isTrialExpired = trialStatus?.isExpired === true;
-
 // HOS-1183 F-6. The decision lives in a pure helper, not here — see its
 // docblock for why `isExpired` alone was the wrong question.
-const showTrialCallout = shouldShowPublishTrialCallout({ isTrialExpired, trialEligibility });
-const expiredAtDisplay = trialStatus?.expiresAt ? trialStatus.expiresAt.substring(0, 10) : '';
-const expiredPlanSlug = trialStatus?.planSlug ?? '';
+const showTrialCallout = shouldShowPublishTrialCallout({ isTrialExpired: false, trialEligibility });
 
 // H-98: read the trial length from the live billing plans, never from a
 // constant, so the number in the callout cannot drift from what checkout grants.
@@ -187,31 +162,7 @@ const benefits = [
         Icon={BuildingsIcon}
         floatingIcons={[TrendingUpIcon, ChatIcon, StarIcon]}
     >
-        {isTrialExpired ? (
-            <div class="publicar-hero__trial-expired" role="alert" aria-live="polite">
-                <span class="publicar-hero__trial-expired-icon" aria-hidden="true">
-                    <AlertCircleIcon size={20} weight="duotone" />
-                </span>
-                <div class="publicar-hero__trial-expired-body">
-                    <p class="publicar-hero__trial-expired-title">
-                        {t('billing.subscription.trial.expiredBanner.title', 'Tu prueba gratuita terminó')}
-                    </p>
-                    <p class="publicar-hero__trial-expired-text">
-                        {t(
-                            'billing.subscription.trial.expiredBanner.body',
-                            'Tu prueba del plan {{planSlug}} venció el {{expiresAt}}. Suscribite para volver a publicar.',
-                            { planSlug: expiredPlanSlug, expiresAt: expiredAtDisplay }
-                        )}
-                    </p>
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
-                        class="publicar-hero__trial-expired-cta"
-                    >
-                        {t('billing.subscription.trial.expiredBanner.cta', 'Ver planes')}
-                    </a>
-                </div>
-            </div>
-        ) : showTrialCallout ? (
+        {showTrialCallout ? (
             <div class="publicar-hero__trial-callout" role="note">
                 <span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
                 <p class="publicar-hero__trial-callout-text">
@@ -247,9 +198,9 @@ const benefits = [
 </MarketingLayout>
 
 <style>
-    /* ── Trial callout / expired banner (F1-UI) ────────────────────────────
-       Rendered into the hero's slot, so these two blocks are the only styles
-       this page still owns; everything else lives in the shared sections. */
+    /* ── Trial callout (F1-UI) ─────────────────────────────────────────────
+       Rendered into the hero's slot, so this block is the only style this
+       page still owns; everything else lives in the shared sections. */
     .publicar-hero__trial-callout {
         display: flex;
         align-items: flex-start;
@@ -278,61 +229,4 @@ const benefits = [
         font-weight: 500;
     }
 
-    .publicar-hero__trial-expired {
-        display: flex;
-        align-items: flex-start;
-        gap: var(--space-3);
-        font-family: var(--font-sans);
-        line-height: 1.5;
-        margin: var(--space-5) 0 0;
-        padding: var(--space-4) var(--space-5);
-        background-color: var(--core-foreground-a05);
-        border: 1px solid var(--core-foreground-a20);
-        border-left: 4px solid var(--core-muted-foreground);
-        border-radius: var(--radius-button);
-        max-width: 56ch;
-    }
-
-    .publicar-hero__trial-expired-icon {
-        flex-shrink: 0;
-        color: var(--core-muted-foreground);
-        opacity: 0.8;
-        line-height: 1;
-        padding-top: 2px;
-    }
-
-    .publicar-hero__trial-expired-body {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1);
-    }
-
-    .publicar-hero__trial-expired-title {
-        margin: 0;
-        font-size: var(--text-body-md);
-        font-weight: 600;
-        color: var(--core-foreground);
-    }
-
-    .publicar-hero__trial-expired-text {
-        margin: 0;
-        font-size: var(--text-body-sm);
-        color: var(--core-muted-foreground);
-    }
-
-    .publicar-hero__trial-expired-cta {
-        display: inline-flex;
-        font-size: var(--text-body-sm);
-        font-weight: 600;
-        color: var(--brand-primary);
-        text-decoration: none;
-        text-underline-offset: 2px;
-        margin-top: var(--space-1);
-        transition: color var(--duration-fast) ease;
-    }
-
-    .publicar-hero__trial-expired-cta:hover {
-        color: var(--brand-accent);
-        text-decoration: underline;
-    }
 </style>

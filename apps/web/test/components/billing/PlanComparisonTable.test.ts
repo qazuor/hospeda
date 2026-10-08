@@ -100,9 +100,10 @@ describe('PlanComparisonTable.astro — rendering', () => {
         expect(src).toContain("result === 'unlimited'");
     });
 
-    it('renders a per-column purchase CTA in each plan header', () => {
-        expect(src).toContain('PlanPurchaseButton');
+    it('renders a per-column CTA slot in each plan header, with no purchase island (HOS-1637)', () => {
         expect(src).toContain('comparison-table__plan-cta');
+        expect(src).toContain('comparison-table__plan-link');
+        expect(src).not.toContain('PlanPurchaseButton');
     });
 });
 

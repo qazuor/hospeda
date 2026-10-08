@@ -52,7 +52,7 @@
  */
 
 import type { IconProps } from '@repo/icons';
-import { CompassIcon, ForkKnifeIcon, HomeIcon, MegaphoneIcon, StarIcon } from '@repo/icons';
+import { CompassIcon, ForkKnifeIcon, HomeIcon, StarIcon } from '@repo/icons';
 import type { ComponentType } from 'react';
 import type { AudienceCardId } from '@/lib/billing/audience-plans';
 import type { TranslationFn } from '@/lib/i18n';
@@ -71,8 +71,7 @@ export const AUDIENCE_CARD_ICONS: Readonly<Record<AudienceCardId, ComponentType<
     host: HomeIcon,
     tourist: StarIcon,
     gastronomy: ForkKnifeIcon,
-    experience: CompassIcon,
-    partner: MegaphoneIcon
+    experience: CompassIcon
 } as const;
 
 /**
@@ -117,8 +116,8 @@ export function audienceHighlightKeys(input: { readonly id: AudienceCardId }): r
  *
  * @example
  * ```ts
- * resolveAudienceHighlights({ id: 'partner', t });
- * // ['Presencia de marca en el carrusel de aliados de Hospeda.', …]
+ * resolveAudienceHighlights({ id: 'host', t });
+ * // ['…', …]
  * ```
  */
 export function resolveAudienceHighlights(input: {

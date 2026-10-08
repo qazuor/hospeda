@@ -1,12 +1,13 @@
 /**
  * @file AnalyticsSection.test.tsx
- * @description Tests for AnalyticsSection — container component that handles
- * entitlement gating, parallel data fetching, and renders the wired analytics
- * widgets or a locked state.
+ * @description Tests for AnalyticsSection — container component that fetches
+ * the wired analytics endpoints in parallel and renders the widgets or a
+ * locked state.
  *
- * SPEC-207 Fase A: daily-series endpoint is now fetched alongside getViews.
- * Both are gated by view_basic_stats and re-fetched on window toggle.
- * Favorites widget remains gated by view_advanced_stats (SPEC-207 Fase B).
+ * HOS-1637 (AC:B13a:22): the section no longer pre-gates on the old billing's
+ * entitlements. The API decides: a 403 on the basic views read renders the
+ * locked state; a 403 on the market-comparison read hides the advanced
+ * (market + favorites) widgets.
  */
 
 import { render, screen } from '@testing-library/react';
@@ -27,7 +28,6 @@ vi.mock('recharts', () => ({
 }));
 
 // Mock before any imports — vitest hoists vi.mock to top of file
-const mockGetEntitlements = vi.fn();
 const mockGetResponseRate = vi.fn();
 const mockGetInquiryTrend = vi.fn();
 const mockGetMarketComparison = vi.fn();
@@ -37,9 +37,6 @@ const mockGetFavoritesBreakdown = vi.fn();
 const mockGetViewsDailySeries = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
-    get billingApi() {
-        return { getEntitlements: mockGetEntitlements };
-    },
     get hostAnalyticsApi() {
         return {
             getResponseRate: mockGetResponseRate,
@@ -55,6 +52,12 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 
 // Import component AFTER mock setup (vitest handles hoisting)
 import { AnalyticsSection } from '../../../src/components/host/AnalyticsSection.client';
+
+/** A 403 as the API client reports it. */
+const FORBIDDEN = {
+    ok: false,
+    error: { status: 403, code: 'FORBIDDEN', message: 'Forbidden' }
+} as const;
 
 /** Stub all wired endpoints with empty-but-ok payloads. */
 function stubWiredEndpoints(): void {
@@ -88,44 +91,40 @@ function stubWiredEndpoints(): void {
     });
 }
 
+/** Basic reads granted, advanced reads refused by the API. */
+function stubBasicOnly(): void {
+    stubWiredEndpoints();
+    mockGetMarketComparison.mockResolvedValue(FORBIDDEN);
+    mockGetFavoritesBreakdown.mockResolvedValue(FORBIDDEN);
+}
+
 afterEach(() => {
     vi.clearAllMocks();
 });
 
 describe('AnalyticsSection', () => {
-    it('renders loading skeleton while fetching entitlements', () => {
-        mockGetEntitlements.mockReturnValue(new Promise(() => {})); // never resolves
+    it('renders loading skeleton while fetching', () => {
+        stubWiredEndpoints();
+        mockGetViews.mockReturnValue(new Promise(() => {})); // never resolves
 
         render(<AnalyticsSection locale="es" />);
         expect(screen.getByTestId('analytics-section-skeleton')).toBeInTheDocument();
     });
 
-    it('renders locked state when basic-stats entitlement is absent', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: { entitlements: [], limits: {}, plan: null, asOf: '2026-01-01' }
-        });
+    it('renders locked state when the API refuses the basic views read', async () => {
+        stubWiredEndpoints();
+        mockGetViews.mockResolvedValue(FORBIDDEN);
 
         render(<AnalyticsSection locale="es" />);
         const lockedTitle = await screen.findByText(/Estadísticas disponibles/i);
         expect(lockedTitle).toBeInTheDocument();
     });
 
-    it('renders the wired widgets with basic + advanced entitlements', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: {
-                entitlements: ['view_basic_stats', 'view_advanced_stats'],
-                limits: {},
-                plan: { slug: 'owner-pro', name: 'Owner Pro', status: 'active' },
-                asOf: '2026-01-01'
-            }
-        });
+    it('renders the wired widgets when every read is granted', async () => {
         stubWiredEndpoints();
 
         render(<AnalyticsSection locale="es" />);
 
-        // Views widget and Favorites widget both show the accommodation name (appears twice now)
         expect((await screen.findAllByText('Casa Uno')).length).toBeGreaterThanOrEqual(1);
         expect((await screen.findAllByText(/Tiempo de respuesta/i)).length).toBeGreaterThanOrEqual(
             1
@@ -134,84 +133,36 @@ describe('AnalyticsSection', () => {
         expect(
             (await screen.findAllByText(/Comparación de mercado/i)).length
         ).toBeGreaterThanOrEqual(1);
-    });
-
-    it('hides the market widget when the advanced-stats entitlement is absent', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: {
-                entitlements: ['view_basic_stats'],
-                limits: {},
-                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
-                asOf: '2026-01-01'
-            }
-        });
-        stubWiredEndpoints();
-
-        render(<AnalyticsSection locale="es" />);
-
-        // Basic widgets render…
-        await screen.findAllByText(/Tiempo de respuesta/i);
-        // …and the advanced market widget is not fetched nor rendered.
-        expect(screen.queryByText(/Comparación de mercado/i)).not.toBeInTheDocument();
-        expect(mockGetMarketComparison).not.toHaveBeenCalled();
-    });
-
-    it('mounts both Views and Favorites widgets when view_advanced_stats is present (SPEC-207)', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: {
-                entitlements: ['view_basic_stats', 'view_advanced_stats'],
-                limits: {},
-                plan: { slug: 'owner-pro', name: 'Owner Pro', status: 'active' },
-                asOf: '2026-01-01'
-            }
-        });
-        stubWiredEndpoints();
-
-        render(<AnalyticsSection locale="es" />);
-
-        // Views widget is mounted — the title should be visible
-        expect(await screen.findByText(/Vistas/i)).toBeInTheDocument();
-        // Favorites is now mounted too (SPEC-207 Fase B)
         expect(await screen.findByText(/Favoritos/i)).toBeInTheDocument();
-        // The favorites API was called
-        expect(mockGetFavoritesBreakdown).toHaveBeenCalled();
     });
 
-    it('hides Favorites widget and does not call getFavoritesBreakdown when view_advanced_stats is absent', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: {
-                entitlements: ['view_basic_stats'],
-                limits: {},
-                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
-                asOf: '2026-01-01'
-            }
-        });
-        stubWiredEndpoints();
+    it('hides the market and favorites widgets when the API refuses the advanced reads', async () => {
+        stubBasicOnly();
 
         render(<AnalyticsSection locale="es" />);
 
         // Basic widgets render…
         await screen.findAllByText(/Tiempo de respuesta/i);
-        // …and the favorites widget is not rendered
+        // …and the advanced widgets do not.
+        expect(screen.queryByText(/Comparación de mercado/i)).not.toBeInTheDocument();
         expect(screen.queryByText(/Favoritos/i)).not.toBeInTheDocument();
-        // …and the endpoint was never called
-        expect(mockGetFavoritesBreakdown).not.toHaveBeenCalled();
     });
 
-    it('shows section title when entitlement is present', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: {
-                entitlements: ['view_basic_stats'],
-                limits: {},
-                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
-                asOf: '2026-01-01'
-            }
-        });
+    it('shows a widget error, not the locked state, when the views read fails for another reason', async () => {
         stubWiredEndpoints();
+        mockGetViews.mockResolvedValue({
+            ok: false,
+            error: { status: 500, code: 'INTERNAL_ERROR', message: 'Error de vistas' }
+        });
+
+        render(<AnalyticsSection locale="es" />);
+
+        await screen.findAllByText(/Tiempo de respuesta/i);
+        expect(screen.queryByText(/Estadísticas disponibles/i)).not.toBeInTheDocument();
+    });
+
+    it('shows section title when the reads are granted', async () => {
+        stubBasicOnly();
 
         render(<AnalyticsSection locale="es" />);
 
@@ -221,17 +172,8 @@ describe('AnalyticsSection', () => {
 
     // ── SPEC-207 Fase A: daily-series fetch ─────────────────────────────
 
-    it('calls getViewsDailySeries on mount when view_basic_stats is present', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: {
-                entitlements: ['view_basic_stats'],
-                limits: {},
-                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
-                asOf: '2026-01-01'
-            }
-        });
-        stubWiredEndpoints();
+    it('calls getViewsDailySeries once on mount with the default window', async () => {
+        stubBasicOnly();
 
         render(<AnalyticsSection locale="es" />);
         await screen.findAllByText(/Tiempo de respuesta/i);
@@ -240,54 +182,12 @@ describe('AnalyticsSection', () => {
         expect(mockGetViewsDailySeries).toHaveBeenCalledWith({ window: '30d' });
     });
 
-    it('does NOT call getViewsDailySeries when view_basic_stats is absent', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: { entitlements: [], limits: {}, plan: null, asOf: '2026-01-01' }
-        });
-
-        render(<AnalyticsSection locale="es" />);
-        await screen.findByText(/Estadísticas disponibles/i);
-
-        expect(mockGetViewsDailySeries).not.toHaveBeenCalled();
-    });
-
     it('passes dailySeries data to ViewsWidget (smoke: Views title visible)', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: {
-                entitlements: ['view_basic_stats'],
-                limits: {},
-                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
-                asOf: '2026-01-01'
-            }
-        });
-        stubWiredEndpoints();
+        stubBasicOnly();
 
         render(<AnalyticsSection locale="es" />);
 
-        // Views widget renders (the daily-series is wired internally in ViewsWidget)
         expect(await screen.findByText(/Vistas/i)).toBeInTheDocument();
-        expect(mockGetViewsDailySeries).toHaveBeenCalled();
-    });
-
-    it('favorites tests still pass: favorites API called with advanced stats', async () => {
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: {
-                entitlements: ['view_basic_stats', 'view_advanced_stats'],
-                limits: {},
-                plan: { slug: 'owner-pro', name: 'Owner Pro', status: 'active' },
-                asOf: '2026-01-01'
-            }
-        });
-        stubWiredEndpoints();
-
-        render(<AnalyticsSection locale="es" />);
-
-        await screen.findByText(/Favoritos/i);
-        expect(mockGetFavoritesBreakdown).toHaveBeenCalled();
-        // Daily series also called
         expect(mockGetViewsDailySeries).toHaveBeenCalled();
     });
 });

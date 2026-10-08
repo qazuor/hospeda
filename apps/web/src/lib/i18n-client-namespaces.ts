@@ -62,7 +62,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'accommodations.detail',
     'accommodations.featureNames',
     'accommodations.types',
-    'account.addons',
     'account.alerts',
     'account.alliances',
     'account.avatar',
@@ -91,7 +90,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.searchHistory',
     'account.setPassword',
     'account.status',
-    'account.subscription',
     'account.welcomeTour',
     'account.whatsNewBadge',
     'account.whatsNewModal',
@@ -132,9 +130,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'auth.tabs',
     'auth.verifyEmail',
     'billing.checkout',
-    // HOS-937 step 3 — the checkout-retry banner (CheckoutRetryBanner.client.tsx)
-    // named on `mi-cuenta/suscripcion` after a card-rejected preapproval.
-    'billing.checkoutRetry',
     'billing.limit',
     'blog.categories',
     'comments.form',
@@ -300,18 +295,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'newsletter.error',
     'newsletter.errorMessage',
     'newsletter.errorPage',
-    'pricing.free',
-    'pricing.monthlyOnly',
-    'pricing.period',
-    // HOS-1233. The three the plans-page trial branch names from islands: the
-    // warn-and-confirm dialog, the remaining-days banner, and the already-VIP
-    // disabled state. All three sit on the last click before payment, so a
-    // missing prefix here does not degrade — it renders the raw key text at
-    // exactly the moment the visitor is deciding whether to be charged.
-    'pricing.touristVipHeld',
-    'pricing.trialBanner',
-    'pricing.trialNotEligible',
-    'pricing.trialWarning',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',

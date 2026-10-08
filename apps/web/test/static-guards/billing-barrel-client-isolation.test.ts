@@ -98,9 +98,10 @@
  *
  * The invariant: **no module reachable from a client entrypoint imports
  * `@repo/billing` at runtime**. Modules that DO import it are fine as long as
- * they stay unreachable. Measured on this tree (2026-07-29) there are 12 such
- * production modules under `apps/web/src` — five `.ts`
- * (`lib/price-alert-gate.ts`, `components/billing/plan-comparison-rows.ts`,
+ * they stay unreachable. Measured on this tree (2026-07-29) there were 12 such
+ * production modules under `apps/web/src` (one, `lib/price-alert-gate.ts`, was
+ * removed with the old billing client by HOS-1637) — the `.ts` ones
+ * (`components/billing/plan-comparison-rows.ts`,
  * `lib/billing-i18n.ts`, `lib/owner-faq.ts`, `lib/host/usage-badge.ts`) and
  * seven `.astro` frontmatters (`layouts/Header.astro`,
  * `components/host/PropertyCard.astro`, `pages/[lang]/funcionalidades/index.astro`,
@@ -140,11 +141,10 @@
  *
  * `import type` is intentionally allowed, both at the leaf and along the EDGES:
  * type-only statements are erased before the module reaches the browser.
- * `lib/billing/fetch-plans.ts` relies on this — three islands
- * (`PlanChangeFlow.client.tsx`, `PlanPicker.client.tsx`,
- * `SubscriptionDashboard.client.tsx`) import a type from it, while its `.astro`
- * consumers call it at runtime. Following that erased edge would judge an
- * SSR-only module by a client-side rule.
+ * `lib/billing/fetch-plans.ts` is the case this rule was written for: islands
+ * have imported types from it while its `.astro` consumers call it at runtime.
+ * Following that erased edge would judge an SSR-only module by a client-side
+ * rule.
  *
  * @module test/static-guards/billing-barrel-client-isolation
  */
@@ -625,10 +625,10 @@ describe('HOS-360 static guard — @repo/billing never enters the web client gra
     });
 
     it('does not follow type-only edges into SSR-only modules', () => {
-        // Three islands import a TYPE from lib/billing/fetch-plans.ts. That
-        // edge is erased, so the module never reaches the browser and must not
-        // be judged by a client-side rule. The mutation test below proves this
-        // is the erasure rule at work and not a dead resolver.
+        // No island reaches lib/billing/fetch-plans.ts today. The three that
+        // imported a TYPE from it were removed with the old billing (HOS-1637);
+        // the mutation test below plants that type-only edge on a live island
+        // and proves the erasure rule, not a dead resolver, keeps it out.
         expect(visited.has(abs('lib/billing/fetch-plans.ts'))).toBe(false);
     });
 
@@ -729,32 +729,46 @@ describe('HOS-360 static guard — the corpus walk goes RED on a planted violati
         }
     });
 
-    it('follows the fetch-plans edge as soon as it stops being type-only', () => {
+    it('skips a planted type-only fetch-plans edge and follows it once it stops being type-only', () => {
         // Non-vacuity for the type-only skip: the module IS resolvable and IS
         // one hop from an island — it is excluded by the erasure rule alone.
-        const island = abs('components/account/PlanPicker.client.tsx');
+        // The island that used to carry the type-only import naturally was
+        // removed with the old billing (HOS-1637), so the edge is planted.
+        const island = abs(MOBILE_MENU);
         const readFileSync = fs.readFileSync.bind(fs);
-        clearStrippedCache();
-        const spy = vi.spyOn(fs, 'readFileSync').mockImplementation(((
-            file: Parameters<typeof fs.readFileSync>[0],
-            options: Parameters<typeof fs.readFileSync>[1]
-        ) => {
-            const content = readFileSync(file, options);
-            return file === island
-                ? (content as string).replace(
-                      `import type { PublicPlanData } from '@/lib/billing/fetch-plans';`,
-                      `import { filterPlansByCategory } from '@/lib/billing/fetch-plans';`
-                  )
-                : content;
-        }) as typeof fs.readFileSync);
+        const plantImport = (line: string) =>
+            vi.spyOn(fs, 'readFileSync').mockImplementation(((
+                file: Parameters<typeof fs.readFileSync>[0],
+                options: Parameters<typeof fs.readFileSync>[1]
+            ) => {
+                const content = readFileSync(file, options);
+                return file === island ? `${line}\n${content as string}` : content;
+            }) as typeof fs.readFileSync);
 
+        clearStrippedCache();
+        const typeOnlySpy = plantImport(
+            `import type { PublicPlanData } from '@/lib/billing/fetch-plans';`
+        );
+        try {
+            const visited = new Set<string>();
+            findOffenders([island], visited);
+            expect(visited.has(island)).toBe(true);
+            expect(visited.has(abs('lib/billing/fetch-plans.ts'))).toBe(false);
+        } finally {
+            unplant(typeOnlySpy);
+        }
+
+        clearStrippedCache();
+        const valueSpy = plantImport(
+            `import { filterPlansByCategory } from '@/lib/billing/fetch-plans';`
+        );
         try {
             const visited = new Set<string>();
             findOffenders([island], visited);
 
             expect(visited.has(abs('lib/billing/fetch-plans.ts'))).toBe(true);
         } finally {
-            unplant(spy);
+            unplant(valueSpy);
         }
     });
 });

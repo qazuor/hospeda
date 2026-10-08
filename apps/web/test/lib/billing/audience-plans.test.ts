@@ -1,7 +1,8 @@
 /**
  * @file billing/audience-plans.test.ts
- * @description Unit tests for the five-audience model behind
- * `/suscriptores/planes/` (HOS-942 AC-1, AC-8, AC-9).
+ * @description Unit tests for the audience model behind `/suscriptores/planes/`
+ * (HOS-942 AC-1, AC-8, AC-9). Four audiences since the partner card left with
+ * its `/planes/aliados/*` pages (HOS-1637, AC:B13a:21).
  *
  * These assert BEHAVIOUR, not page source. An `.astro` page cannot be rendered
  * in Vitest, so a source-reading test on `planes/index.astro` could only confirm
@@ -137,18 +138,10 @@ const EXPERIENCE_PLANS = [
     })
 ];
 
-const PARTNER_PLANS = [
-    // The pre-tier plan: still active, but nobody can subscribe to it.
-    makePlan({ slug: 'partner-listing', monthlyPriceArs: 500_000 }),
-    makePlan({ slug: 'partner-silver', monthlyPriceArs: 1_500_000, sortOrder: 2 }),
-    makePlan({ slug: 'partner-gold', monthlyPriceArs: 3_000_000, sortOrder: 3 })
-];
-
 const ALL_OK = {
     accommodation: ok(ACCOMMODATION_PLANS),
     gastronomy: ok(GASTRONOMY_PLANS),
-    experience: ok(EXPERIENCE_PLANS),
-    partner: ok(PARTNER_PLANS)
+    experience: ok(EXPERIENCE_PLANS)
 } as const;
 
 afterEach(() => {
@@ -156,19 +149,16 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// The five audiences (AC-1, AC-9)
+// The four audiences (AC-1, AC-9)
 // ---------------------------------------------------------------------------
 
 describe('audience card model', () => {
-    it('declares exactly five audiences', () => {
-        expect(AUDIENCE_CARD_ORDER).toHaveLength(5);
-        expect([...AUDIENCE_CARD_ORDER]).toEqual([
-            'host',
-            'tourist',
-            'gastronomy',
-            'experience',
-            'partner'
-        ]);
+    it('declares exactly four audiences — no partner card (HOS-1637)', () => {
+        // The partner card linked to `/planes/aliados/`, removed with the old
+        // billing; Partner has no subject until V7 and nothing may link to it.
+        expect(AUDIENCE_CARD_ORDER).toHaveLength(4);
+        expect([...AUDIENCE_CARD_ORDER]).toEqual(['host', 'tourist', 'gastronomy', 'experience']);
+        expect(Object.values(AUDIENCE_CARD_PATHS).join(' ')).not.toContain('aliados');
     });
 
     it('keeps gastronomy and experience as two separate audiences (AC-9)', () => {
@@ -185,8 +175,7 @@ describe('audience card model', () => {
             host: 'planes/anfitriones/precios',
             tourist: 'planes/turistas/precios',
             gastronomy: 'planes/gastronomia',
-            experience: 'planes/experiencias',
-            partner: 'planes/aliados'
+            experience: 'planes/experiencias'
         });
     });
 
@@ -281,44 +270,13 @@ describe('resolveStartingPrice', () => {
 });
 
 describe('resolveAudienceStartingPrices', () => {
-    it('resolves a price for the four priced audiences when every domain loads', () => {
+    it('resolves a price for every audience when every domain loads', () => {
         const prices = resolveAudienceStartingPrices(ALL_OK);
 
         expect(prices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
         expect(prices.tourist).toEqual({ kind: 'free' });
         expect(prices.gastronomy).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
         expect(prices.experience).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
-    });
-
-    it('withholds the partner price even though its catalogue resolved (HOS-1212)', () => {
-        // THE regression test. Partner is not a degraded audience here: its
-        // fetch succeeded and `resolveStartingPrice` over the same list returns
-        // ARS 15.000 — the exact figure the index used to advertise while both
-        // pages behind the card said "Consultar" (HOS-985 AC-43).
-        const partnerPlans = selectAudiencePlans(ALL_OK).partner;
-        expect(resolveStartingPrice({ plans: partnerPlans })).toEqual({
-            kind: 'from',
-            monthlyPriceArs: 1_500_000
-        });
-
-        expect(resolveAudienceStartingPrices(ALL_OK).partner).toBeNull();
-    });
-
-    it('suppresses the price for partner and for nobody else', () => {
-        // Named literally rather than re-derived through
-        // `isPriceOnRequestAudience`: a test that asks the implementation which
-        // audiences are withheld agrees with it by construction, and would keep
-        // passing if the set grew to swallow gastronomy. This one fails in BOTH
-        // directions — a gate that stops applying, and a gate that over-applies.
-        const prices = resolveAudienceStartingPrices(ALL_OK);
-
-        expect(AUDIENCE_CARD_ORDER.filter((id) => prices[id] === null)).toEqual(['partner']);
-    });
-
-    it('excludes only the unsellable pre-tier without copying the retired tier map', () => {
-        const selected = selectAudiencePlans(ALL_OK).partner.map((plan) => plan.slug);
-        expect(selected).toContain('partner-silver');
-        expect(selected).not.toContain('partner-listing');
     });
 
     it('never surfaces a complex-tier price on the host card', () => {
@@ -341,19 +299,16 @@ describe('resolveAudienceStartingPrices', () => {
         expect(prices.host).not.toBeNull();
         expect(prices.tourist).not.toBeNull();
         expect(prices.experience).not.toBeNull();
-        // Partner is deliberately absent from this list: it is `null` whatever
-        // happens to the other domains, so it can prove nothing about isolation.
     });
 
-    it('still answers for all five audiences when EVERY domain fails', () => {
+    it('still answers for all four audiences when EVERY domain fails', () => {
         const prices = resolveAudienceStartingPrices({
             accommodation: failed(),
             gastronomy: failed(),
-            experience: failed(),
-            partner: failed()
+            experience: failed()
         });
 
-        // The keys are what the page maps over: five cards, no price on any.
+        // The keys are what the page maps over: four cards, no price on any.
         expect(Object.keys(prices).sort()).toEqual([...AUDIENCE_CARD_ORDER].sort());
         for (const id of AUDIENCE_CARD_ORDER) {
             expect(prices[id]).toBeNull();
@@ -367,7 +322,7 @@ describe('resolveAudienceStartingPrices', () => {
 
 describe('resolveAudienceTrialDays', () => {
     it('answers a DIFFERENT number for every audience that has a trial', () => {
-        // The load-bearing test of the whole feature. Five audiences, five
+        // The load-bearing test of the whole feature. Four audiences, four
         // distinct answers from one call: no constant, no default and no number
         // copied from a neighbouring card can satisfy this at once.
         //
@@ -379,8 +334,7 @@ describe('resolveAudienceTrialDays', () => {
             host: OWNER_TRIAL,
             tourist: TOURIST_TRIAL,
             gastronomy: GASTRONOMY_TRIAL,
-            experience: EXPERIENCE_TRIAL,
-            partner: null
+            experience: EXPERIENCE_TRIAL
         });
     });
 
@@ -433,42 +387,28 @@ describe('resolveAudienceTrialDays', () => {
     });
 
     it('returns null — never 0 — for an audience where nothing offers a trial', () => {
-        // All three partner tiers sit at `hasTrial: false, trialDays: 0`. The
-        // distinction matters at the render site: `null` means "no line", `0`
-        // would mean "0 días de prueba", which is worse than saying nothing.
-        const trials = resolveAudienceTrialDays(ALL_OK);
+        // `null` means "no line" at the render site; `0` would mean
+        // "0 días de prueba", which is worse than saying nothing.
+        const trials = resolveAudienceTrialDays({
+            ...ALL_OK,
+            experience: ok([makePlan({ slug: 'experience-basico', hasTrial: false, trialDays: 0 })])
+        });
 
-        expect(trials.partner).toBeNull();
-        expect(trials.partner).not.toBe(0);
+        expect(trials.experience).toBeNull();
+        expect(trials.experience).not.toBe(0);
     });
 
     it('ignores a plan that claims trialDays without hasTrial, and vice versa', () => {
         // Both halves of the eligibility rule, each failing on its own.
         const trials = resolveAudienceTrialDays({
             ...ALL_OK,
-            partner: ok([
-                makePlan({ slug: 'partner-silver', hasTrial: false, trialDays: 30 }),
-                makePlan({ slug: 'partner-gold', hasTrial: true, trialDays: 0, sortOrder: 2 })
+            experience: ok([
+                makePlan({ slug: 'experience-basico', hasTrial: false, trialDays: 30 }),
+                makePlan({ slug: 'experience-pro', hasTrial: true, trialDays: 0, sortOrder: 2 })
             ])
         });
 
-        expect(trials.partner).toBeNull();
-    });
-
-    it('never advertises a trial from a plan nobody can subscribe to', () => {
-        // `partner-listing` is active but unsellable. If the trial were computed
-        // over the raw domain instead of the sellable tiers, the partner card
-        // would promise a trial that no purchasable plan grants.
-        const trials = resolveAudienceTrialDays({
-            ...ALL_OK,
-            partner: ok([
-                makePlan({ slug: 'partner-listing', hasTrial: true, trialDays: 90 }),
-                makePlan({ slug: 'partner-silver', sortOrder: 2 }),
-                makePlan({ slug: 'partner-gold', sortOrder: 3 })
-            ])
-        });
-
-        expect(trials.partner).toBeNull();
+        expect(trials.experience).toBeNull();
     });
 
     it('ignores inactive plans even when they offer a shorter trial', () => {
@@ -502,12 +442,11 @@ describe('resolveAudienceTrialDays', () => {
         expect(trials.experience).toBe(EXPERIENCE_TRIAL);
     });
 
-    it('still answers for all five audiences when EVERY domain fails', () => {
+    it('still answers for all four audiences when EVERY domain fails', () => {
         const trials = resolveAudienceTrialDays({
             accommodation: failed(),
             gastronomy: failed(),
-            experience: failed(),
-            partner: failed()
+            experience: failed()
         });
 
         expect(Object.keys(trials).sort()).toEqual([...AUDIENCE_CARD_ORDER].sort());
@@ -521,14 +460,9 @@ describe('selectAudiencePlans', () => {
     it('gives the price and the trial the exact same plans to read', () => {
         // The reason the selection is factored out at all: two readings of one
         // offer must not be able to disagree about which plans that offer is
-        // made of. Asserted through the observable consequence — partner's
-        // unsellable tier is excluded from BOTH readings by one rule.
+        // made of.
         const selected = selectAudiencePlans(ALL_OK);
 
-        expect(selected.partner.map((plan) => plan.slug)).toEqual([
-            'partner-silver',
-            'partner-gold'
-        ]);
         expect(selected.host.every((plan) => plan.category === 'owner')).toBe(true);
         expect(selected.tourist.every((plan) => plan.category === 'tourist')).toBe(true);
         expect(Object.keys(selected).sort()).toEqual([...AUDIENCE_CARD_ORDER].sort());
@@ -548,7 +482,7 @@ describe('selectAudiencePlans', () => {
 });
 
 // ---------------------------------------------------------------------------
-// The four fetches (AC-8)
+// The three fetches (AC-8)
 // ---------------------------------------------------------------------------
 
 describe('fetchAudienceOffers', () => {
@@ -567,37 +501,34 @@ describe('fetchAudienceOffers', () => {
         }) as unknown as typeof fetch;
     };
 
-    it('queries the accommodation, gastronomy, experience and partner domains', async () => {
+    it('queries the accommodation, gastronomy and experience domains — not partner', async () => {
         stubFetchByDomain({
             accommodation: ACCOMMODATION_PLANS,
             gastronomy: GASTRONOMY_PLANS,
-            experience: EXPERIENCE_PLANS,
-            partner: PARTNER_PLANS
+            experience: EXPERIENCE_PLANS
         });
 
         const { startingPrices: prices } = await fetchAudienceOffers();
 
-        // FOUR, not eight: price and trial are two readings of one catalogue,
+        // THREE, not six: price and trial are two readings of one catalogue,
         // so asking for both must not double the request count.
-        expect(global.fetch).toHaveBeenCalledTimes(4);
+        expect(global.fetch).toHaveBeenCalledTimes(3);
         const requested = (global.fetch as unknown as { mock: { calls: unknown[][] } }).mock.calls
             .map((call) => String(call[0]))
             .sort();
         expect(requested).toEqual([
             'http://api.test/api/v1/public/plans',
             'http://api.test/api/v1/public/plans?domain=experience',
-            'http://api.test/api/v1/public/plans?domain=gastronomy',
-            'http://api.test/api/v1/public/plans?domain=partner'
+            'http://api.test/api/v1/public/plans?domain=gastronomy'
         ]);
         expect(prices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
     });
 
-    it('keeps four audiences priced when one domain 500s', async () => {
+    it('keeps the other audiences priced when one domain 500s', async () => {
         stubFetchByDomain({
             accommodation: ACCOMMODATION_PLANS,
             gastronomy: 'fail',
-            experience: EXPERIENCE_PLANS,
-            partner: PARTNER_PLANS
+            experience: EXPERIENCE_PLANS
         });
 
         const { startingPrices: prices } = await fetchAudienceOffers();
@@ -610,8 +541,7 @@ describe('fetchAudienceOffers', () => {
         stubFetchByDomain({
             accommodation: ACCOMMODATION_PLANS,
             gastronomy: GASTRONOMY_PLANS,
-            experience: EXPERIENCE_PLANS,
-            partner: PARTNER_PLANS
+            experience: EXPERIENCE_PLANS
         });
 
         const { startingPrices, trialDays } = await fetchAudienceOffers();
@@ -619,16 +549,9 @@ describe('fetchAudienceOffers', () => {
         // Host: priced AND trialled, both off the accommodation response.
         expect(startingPrices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
         expect(trialDays.host).toBe(OWNER_TRIAL);
-        // Gastronomy: priced, NOT trialled. The two lines are independent, which
-        // is the whole reason the card guards them separately — and this is now
-        // the audience that demonstrates it, since partner carries neither
-        // (HOS-1212) and so cannot show the two resolving apart.
+        // Gastronomy: priced and trialled off its own domain's response.
         expect(startingPrices.gastronomy).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
         expect(trialDays.gastronomy).toBe(GASTRONOMY_TRIAL);
-        // Partner: its catalogue arrived in the SAME round of fetches and both
-        // readings still come back empty.
-        expect(startingPrices.partner).toBeNull();
-        expect(trialDays.partner).toBeNull();
     });
 
     it('never rejects when the network itself throws', async () => {
@@ -639,15 +562,13 @@ describe('fetchAudienceOffers', () => {
                 host: null,
                 tourist: null,
                 gastronomy: null,
-                experience: null,
-                partner: null
+                experience: null
             },
             trialDays: {
                 host: null,
                 tourist: null,
                 gastronomy: null,
-                experience: null,
-                partner: null
+                experience: null
             }
         });
     });
