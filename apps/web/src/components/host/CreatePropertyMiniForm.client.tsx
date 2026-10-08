@@ -35,7 +35,7 @@
 
 import type { AccommodationImportResponse, DestinationPublic, FieldSource } from '@repo/schemas';
 import { AccommodationCreateDraftHttpSchema, AccommodationTypeEnum } from '@repo/schemas';
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useId, useMemo, useState } from 'react';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
 import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
@@ -45,7 +45,6 @@ import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { destinationsApi } from '@/lib/api/endpoints';
-import { billingApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { formatPrice } from '@/lib/format-utils';
@@ -293,30 +292,13 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
     const [extras, setExtras] = useState<ImportedExtras>({});
     const [extrasOpen, setExtrasOpen] = useState(true);
 
-    // The onboarding callout must NOT promise "14 días gratis" to a user who is
-    // not trial-eligible: a tourist who already paid or is mid-trial gets NO
-    // owner trial on conversion (HOS-217 decision C), so a static "free trial"
-    // callout would lie to them — the same class of bug HOS-226 fixed on the
-    // pricing badge. Resolve eligibility once via the same endpoint the badge
-    // uses and swap the callout copy when the user is ineligible. `null` =
-    // unknown (loading / unauthenticated / lookup failed) → keep the
-    // encouraging default; only an explicit `false` swaps to the no-trial copy.
-    const [trialEligible, setTrialEligible] = useState<boolean | null>(null);
-
-    useEffect(() => {
-        let cancelled = false;
-        billingApi
-            .getTrialEligibility()
-            .then((result) => {
-                if (!cancelled) setTrialEligible(result.ok ? result.data.eligible : null);
-            })
-            .catch(() => {
-                if (!cancelled) setTrialEligible(null);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    // The onboarding callout used to swap to no-trial copy for a user the old
+    // billing reported as trial-ineligible (HOS-217 / HOS-226). That lookup
+    // targeted a route the API no longer registers and was removed with the
+    // old billing client (HOS-1637, AC:B13a:22); it always failed on this
+    // branch, which rendered the default copy — the copy kept here. The
+    // eligibility read comes back with the leaf that builds this surface on
+    // the new billing.
 
     // Items for the accommodation type picker. Memoized so the dropdown
     // doesn't re-allocate on every render. Each item carries the matching
@@ -761,12 +743,7 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
                     addToast({
                         type: 'error',
                         message: limitPayload.message,
-                        // HOS-723: forwarded verbatim — the helper, not this call
-                        // site, decides which CTA leads. `max_accommodations` IS
-                        // raised by an add-on (`extra-accommodations-5`), so here
-                        // `action` is that add-on and `secondaryAction` the plan.
-                        action: limitPayload.action,
-                        secondaryAction: limitPayload.secondaryAction
+                        action: limitPayload.action
                     });
                     return;
                 }
@@ -1776,23 +1753,14 @@ export function CreatePropertyMiniForm({ locale, apiUrl, trialDays }: CreateProp
                     className="form-trial-callout__icon"
                     aria-hidden="true"
                 >
-                    {trialEligible === false ? '🏠' : '🎁'}
+                    🎁
                 </span>
                 <div className="form-trial-callout__body">
                     <p className="form-trial-callout__title">
-                        {trialEligible === false
-                            ? t('host.pages.nueva.trialCalloutTitleIneligible', 'Armá tu propiedad')
-                            : tPlural('host.pages.nueva.trialCalloutTitle', trialDays, {
-                                  trialDays
-                              })}
+                        {tPlural('host.pages.nueva.trialCalloutTitle', trialDays, { trialDays })}
                     </p>
                     <p className="form-trial-callout__text">
-                        {trialEligible === false
-                            ? t(
-                                  'host.pages.nueva.trialNoteIneligible',
-                                  'Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.'
-                              )
-                            : tPlural('host.pages.nueva.trialNote', trialDays, { trialDays })}
+                        {tPlural('host.pages.nueva.trialNote', trialDays, { trialDays })}
                     </p>
                 </div>
             </aside>

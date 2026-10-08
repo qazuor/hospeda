@@ -12,15 +12,17 @@
  * The invariants under test:
  * - the SSR / edge-cached output is the anonymous `children`, never a button;
  * - a visitor with no session triggers no protected request;
- * - while the gate is resolving, no branch the visitor could act on is shown;
- * - an existing alert wins over the locked and max-reached branches, so a
- *   downgraded visitor can still cancel an alert they already hold.
+ * - while the lookup is resolving, no branch the visitor could act on is shown;
+ * - an existing alert for this accommodation renders the cancel action.
+ *
+ * HOS-1637 (AC:B13a:21): the client-side plan gate — locked upsell and
+ * max-reached state, read from the old billing's entitlements — was removed;
+ * the island no longer calls the old billing client, and whether a visitor may
+ * create an alert is the API's answer to the create request.
  */
 
-import { EntitlementKey, LimitKey } from '@repo/billing';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 
 import { buildAuthSnapshot } from '../../helpers/auth-session';
 
@@ -44,11 +46,9 @@ vi.mock('@/lib/auth-cache', () => ({
 }));
 
 const mockAlertsList = vi.fn();
-const mockGetEntitlements = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
-    priceAlertsApi: { list: (params: unknown) => mockAlertsList(params) },
-    billingApi: { getEntitlements: (params: unknown) => mockGetEntitlements(params) }
+    priceAlertsApi: { list: (params: unknown) => mockAlertsList(params) }
 }));
 
 // Imported after the mocks so the module graph picks them up.
@@ -61,31 +61,10 @@ const PROPS = {
     children: <div data-testid="signin-cta">Iniciá sesión para crear la alerta</div>
 };
 
-/**
- * Entitlements payload granting price alerts with the given active limit.
- *
- * Built from the real `@repo/billing` enums rather than string literals. The
- * first draft of this file hardcoded `'PRICE_ALERTS'` / `'MAX_ACTIVE_ALERTS'`,
- * whose actual values are `price_alerts` / `max_active_alerts` — so every
- * "entitled" case silently resolved to the LOCKED branch and the test was
- * asserting the wrong component state. Using the enums makes a future rename
- * break this loudly instead.
- */
-function entitled(maxActiveAlerts: number) {
-    return {
-        ok: true as const,
-        data: {
-            entitlements: [EntitlementKey.PRICE_ALERTS],
-            limits: { [LimitKey.MAX_ACTIVE_ALERTS]: maxActiveAlerts }
-        }
-    };
-}
-
 describe('PriceAlertButton — anonymous variant', () => {
     beforeEach(() => {
         mockReadCachedAuthMe.mockReset();
         mockAlertsList.mockReset();
-        mockGetEntitlements.mockReset();
     });
 
     it('renders the sign-in children while the session is unresolved', () => {
@@ -103,90 +82,47 @@ describe('PriceAlertButton — anonymous variant', () => {
 
         expect(screen.getByTestId('signin-cta')).toBeInTheDocument();
         await waitFor(() => expect(mockAlertsList).not.toHaveBeenCalled());
-        expect(mockGetEntitlements).not.toHaveBeenCalled();
     });
 });
 
-describe('PriceAlertButton — resolved gate', () => {
+describe('PriceAlertButton — resolved lookup', () => {
     beforeEach(() => {
         mockReadCachedAuthMe.mockReset();
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
         mockAlertsList.mockReset();
-        mockGetEntitlements.mockReset();
     });
 
-    it('shows a disabled button, not the locked upsell, while resolving', async () => {
-        // Never-settling lookups: the state a real visitor sees for one RTT.
+    it('shows a disabled button while resolving', async () => {
+        // A never-settling lookup: the state a real visitor sees for one RTT.
         mockAlertsList.mockReturnValue(new Promise(() => undefined));
-        mockGetEntitlements.mockReturnValue(new Promise(() => undefined));
 
         render(<PriceAlertButton {...PROPS} />);
 
         const button = await screen.findByRole('button');
         expect(button).toBeDisabled();
         expect(button).toHaveAttribute('aria-busy', 'true');
-        // The locked branch links to the plans page; showing it here would flash
-        // a false "your plan does not include this" at an entitled visitor.
-        expect(screen.queryByRole('link')).not.toBeInTheDocument();
     });
 
-    it('offers the create action when entitled and under the limit', async () => {
-        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
-        mockGetEntitlements.mockResolvedValue(entitled(5));
+    it('offers the create action when the visitor has no alert for this accommodation', async () => {
+        mockAlertsList.mockResolvedValue({
+            ok: true,
+            data: { items: [{ id: 'a1', accommodationId: 'other' }] }
+        });
 
         render(<PriceAlertButton {...PROPS} />);
 
         const button = await screen.findByRole('button', { name: /avisame si baja el precio/i });
         await waitFor(() => expect(button).not.toBeDisabled());
         expect(mockAlertsList).toHaveBeenCalledWith({});
-        expect(mockGetEntitlements).toHaveBeenCalledWith({});
+        // No plan upsell link and no max-reached state: the old gate is gone.
+        expect(screen.queryByRole('link')).not.toBeInTheDocument();
+        expect(screen.queryByTitle(/límite/i)).not.toBeInTheDocument();
     });
 
-    it('shows the locked upsell when the plan lacks the entitlement', async () => {
-        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: { entitlements: [], limits: {} }
-        });
-
-        render(<PriceAlertButton {...PROPS} />);
-
-        // BETA-201: the upsell targets the TOURIST plans page, since every owner
-        // plan already inherits this entitlement.
-        const link = await screen.findByRole('link');
-        expect(link.getAttribute('href')).toContain(PRICING_PAGE_PATH_BY_AUDIENCE.tourist);
-    });
-
-    it('disables the button when the plan limit is reached', async () => {
-        mockAlertsList.mockResolvedValue({
-            ok: true,
-            data: { items: [{ id: 'a1', accommodationId: 'other' }] }
-        });
-        mockGetEntitlements.mockResolvedValue(entitled(1));
-
-        render(<PriceAlertButton {...PROPS} />);
-
-        // Wait on the TITLE, not on `toBeDisabled()`. The resolving branch also
-        // renders a disabled button, and it carries no title — so waiting on
-        // "disabled" alone settles while the gate is still resolving, and the
-        // next line reads `null`. That is a race, not a stable pass: locally the
-        // mocked promises settle before waitFor's first poll and it goes green,
-        // while a loaded CI runner opens the window and it fails with
-        // ".toMatch() expects to receive a string, but got object".
-        const button = await screen.findByTitle(/límite/i);
-        expect(button).toBeDisabled();
-    });
-
-    it('offers cancel when an alert exists for THIS accommodation, even at the limit', async () => {
-        // The precedence that keeps a downgraded visitor from being stranded
-        // with an alert they can see but not cancel.
+    it('offers cancel when an alert exists for THIS accommodation', async () => {
         mockAlertsList.mockResolvedValue({
             ok: true,
             data: { items: [{ id: 'alert-9', accommodationId: 'acc-1' }] }
-        });
-        mockGetEntitlements.mockResolvedValue({
-            ok: true,
-            data: { entitlements: [], limits: { [LimitKey.MAX_ACTIVE_ALERTS]: 1 } }
         });
 
         render(<PriceAlertButton {...PROPS} />);
@@ -194,14 +130,12 @@ describe('PriceAlertButton — resolved gate', () => {
         expect(await screen.findByRole('button', { name: /cancelar alerta/i })).toBeEnabled();
     });
 
-    it('falls back to the locked branch when the entitlements call fails', async () => {
-        // Fail-closed: offering a create the plan may not allow would bounce the
-        // visitor off a 403.
-        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
-        mockGetEntitlements.mockRejectedValue(new Error('network'));
+    it('offers the create action when the alert lookup fails', async () => {
+        mockAlertsList.mockRejectedValue(new Error('network'));
 
         render(<PriceAlertButton {...PROPS} />);
 
-        expect(await screen.findByRole('link')).toBeInTheDocument();
+        const button = await screen.findByRole('button', { name: /avisame si baja el precio/i });
+        await waitFor(() => expect(button).not.toBeDisabled());
     });
 });

@@ -159,9 +159,10 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
 
     it('is checking locales that actually exist', () => {
         // Guards the guard: a `readLocale` that silently returned `{}` would
-        // make every assertion above vacuously true.
+        // make every assertion above vacuously true. (The sentinel used to be a
+        // partner-card bullet, removed with the partner card in HOS-1637.)
         expect(JSON.stringify(readLocale('es', 'pricing'))).toContain(
-            'Condiciones comerciales a medida'
+            'Niveles de alianza con Hospeda'
         );
     });
 });

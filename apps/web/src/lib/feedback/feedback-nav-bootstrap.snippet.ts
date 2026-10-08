@@ -17,7 +17,7 @@
  *
  * Exporting the source as a string and passing it through `set:html` sidesteps
  * the expression container entirely, and matches the pattern already used by
- * `PostHogScript.astro` and `StripCheckoutReturnParams.astro`.
+ * `PostHogScript.astro`.
  *
  * ## Why inline and synchronous (not the FAB island)
  *

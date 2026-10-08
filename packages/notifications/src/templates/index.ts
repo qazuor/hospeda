@@ -2,7 +2,6 @@
  * Email templates
  */
 
-export * from './addon/index.js';
 export * from './admin/index.js';
 export * from './alerts/index.js';
 export * from './alliance/index.js';

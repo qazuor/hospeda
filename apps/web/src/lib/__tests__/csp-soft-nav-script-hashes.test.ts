@@ -10,7 +10,6 @@
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET } from '../../components/billing/strip-checkout-return-params.snippet';
 import { SOFT_NAV_SCRIPT_HASHES_PLACEHOLDER } from '../csp-soft-nav-placeholder';
 import { parseSoftNavScriptHashes, SOFT_NAV_SCRIPT_HASHES } from '../csp-soft-nav-script-hashes';
 import { FEEDBACK_NAV_BOOTSTRAP_SNIPPET } from '../feedback/feedback-nav-bootstrap.snippet';
@@ -50,9 +49,6 @@ describe('parseSoftNavScriptHashes', () => {
 describe('SOFT_NAV_SCRIPT_HASHES', () => {
     it('carries the boot-time hashes of the set:html constants', () => {
         expect(SOFT_NAV_SCRIPT_HASHES).toContain(referenceHash(FEEDBACK_NAV_BOOTSTRAP_SNIPPET));
-        expect(SOFT_NAV_SCRIPT_HASHES).toContain(
-            referenceHash(STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET)
-        );
         expect(SOFT_NAV_SCRIPT_HASHES).toContain(referenceHash(iconSpriteClientScript()));
     });
 });

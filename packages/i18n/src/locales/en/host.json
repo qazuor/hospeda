@@ -914,18 +914,15 @@
             "properties": "Properties",
             "promotions": "Promotions",
             "messages": "Messages",
-            "subscription": "Subscription",
-            "addons": "Add-ons"
+            "subscription": "Subscription"
         }
     },
     "pages": {
         "nueva": {
             "trialCalloutTitle_one": "{{trialDays}} free day, no card — only one for accommodation",
             "trialCalloutTitle_other": "{{trialDays}} free days, no card — only one for accommodation",
-            "trialCalloutTitleIneligible": "Set up your property",
             "trialNote_one": "You can build your property now, at your own pace and with no card. The {{trialDays}}-day free trial starts on its own when you publish; there is only one for accommodation, and when it ends, you pick a plan to stay online.",
             "trialNote_other": "You can build your property now, at your own pace and with no card. The {{trialDays}}-day free trial starts on its own when you publish; there is only one for accommodation, and when it ends, you pick a plan to stay online.",
-            "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
             "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {

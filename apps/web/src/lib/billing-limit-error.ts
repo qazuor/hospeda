@@ -8,22 +8,12 @@
  * 403. This module maps that payload to an i18n-keyed title/message/action
  * triple that toast consumers can render directly.
  *
- * HOS-723 — a cap has up to TWO ways out, and this helper used to know only
- * one. Four of the nineteen limits are raised by an add-on that is on sale
- * today, and when one exists it LEADS: at the real catalog prices the add-on
- * beats the plan jump on both axes at once. A Básico host ($18.000, 1 listing)
- * who wants a second one pays $31.000 with the add-on and gets 6 listings, or
- * $35.000 on Pro and gets 3; wanting more photos, $23.000 for 35 photos against
- * Pro's $35.000 for 30. Leading with the plan meant offering the worse of the
- * two options first, in every sellable case.
- *
- * The offer is resolved through {@link resolveLimitAddonOffer}, the same
- * composition the publish precheck and the property-quota badge use (HOS-727),
- * so there is ONE limit → add-on resolution in the app rather than one per
- * surface.
+ * HOS-723 added a second way out — an add-on offer that led the toast when
+ * one was on sale for the limit hit. That offer pointed at the old add-on
+ * purchase page and was removed with it (HOS-1637, AC:B13a:20), so the toast
+ * carries the plan action only.
  */
 
-import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -55,34 +45,13 @@ export interface LimitReachedToastAction {
 }
 
 /**
- * Resolved toast payload. The two fields map 1:1 onto `addToast`'s `action` /
- * `secondaryAction`, so a consumer forwards them verbatim and never decides
- * prominence itself.
- *
- * Which CTA occupies which slot depends on whether an add-on raises this limit:
- *
- * | limit has an add-on | `action` (primary) | `secondaryAction` |
- * | --- | --- | --- |
- * | yes (4 of 19) | the add-on | the plan upgrade |
- * | no (15 of 19)  | the plan upgrade | absent |
- *
- * Two invariants hold in both rows, and the tests pin both:
- *
- * 1. **The plan upgrade is always reachable.** It is never dropped — it only
- *    moves slot. A limit toast is never a dead end.
- * 2. **An add-on is offered only when one exists.** For the other 15 limits the
- *    secondary slot stays empty rather than falling back to a bare add-ons-page
- *    link: sending someone to shop for a card that is not on the page is a
- *    false promise, worse than making no offer at all.
- *
- * The no-add-on row is byte-for-byte the pre-HOS-723 payload, so the inversion
- * applies strictly where there is something better to offer.
+ * Resolved toast payload. `action` maps 1:1 onto `addToast`'s `action`: the
+ * plan upgrade, so a limit toast is never a dead end.
  */
 export interface LimitReachedToastPayload {
     readonly title: string;
     readonly message: string;
     readonly action: LimitReachedToastAction;
-    readonly secondaryAction?: LimitReachedToastAction;
 }
 
 /**
@@ -147,9 +116,7 @@ export const KNOWN_LIMIT_KEYS = new Set([
  *
  * @param params.errorBody - Parsed JSON body from a 403 LIMIT_REACHED response.
  * @param params.locale - Active UI locale for building URLs and translating strings.
- * @returns A localized payload ready for `addToast`. `action` is the add-on
- * when one raises this limit and the plan upgrade otherwise;
- * `secondaryAction` carries the demoted plan upgrade in the former case.
+ * @returns A localized payload ready for `addToast`; `action` is the plan upgrade.
  *
  * @example
  * ```ts
@@ -157,8 +124,7 @@ export const KNOWN_LIMIT_KEYS = new Set([
  * addToast({
  *   type: 'error',
  *   message: payload.title,
- *   action: payload.action,
- *   secondaryAction: payload.secondaryAction
+ *   action: payload.action
  * });
  * ```
  */
@@ -184,9 +150,7 @@ export function buildLimitReachedPayload({
  *
  * @param params.details - The `details` field from `ApiError` (cast-safe, guarded internally).
  * @param params.locale - Active UI locale.
- * @returns A localized payload ready for `addToast`. `action` is the add-on
- * when one raises this limit and the plan upgrade otherwise;
- * `secondaryAction` carries the demoted plan upgrade in the former case.
+ * @returns A localized payload ready for `addToast`; `action` is the plan upgrade.
  *
  * @example
  * ```ts
@@ -195,8 +159,7 @@ export function buildLimitReachedPayload({
  *   addToast({
  *     type: 'error',
  *     message: payload.message,
- *     action: payload.action,
- *     secondaryAction: payload.secondaryAction
+ *     action: payload.action
  *   });
  * }
  * ```
@@ -279,37 +242,5 @@ function buildFromDetails({
         href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' })
     };
 
-    // Resolved from the RAW key, not the `KNOWN_LIMIT_KEYS`-normalised one
-    // above: that allowlist governs whether specific COPY exists, which is a
-    // different question from whether an add-on is on sale. Reading it here
-    // would make dropping a key from the copy allowlist silently withdraw a
-    // purchasable offer.
-    //
-    // `resolveLimitAddonOffer` returns `null` for the 15 limits nothing is sold
-    // for, and that `null` is the load-bearing half — see the payload docs.
-    const addonOffer = details?.limitKey
-        ? resolveLimitAddonOffer({ locale, limitKey: details.limitKey })
-        : null;
-
-    if (addonOffer === null) {
-        return { title, message, action: planAction };
-    }
-
-    return {
-        title,
-        message,
-        // The add-on takes the primary slot: it is cheaper AND grants more than
-        // the plan jump at every real catalog price (see the file header), so
-        // leading with the plan would put the worse option first.
-        action: {
-            // Reuses the plan-usage panel's own label — and the precheck
-            // panel's (HOS-727) — so all three surfaces name the same escape
-            // hatch identically.
-            label: t('account.subscription.usage.buyAddon', 'Ampliar con un complemento'),
-            href: addonOffer.href
-        },
-        // Demoted, never dropped: the plan upgrade stays one step down so a
-        // host who genuinely wants the bigger plan can still reach it.
-        secondaryAction: planAction
-    };
+    return { title, message, action: planAction };
 }

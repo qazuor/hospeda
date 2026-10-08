@@ -33,6 +33,15 @@
  * With no source of truth for the number, those two pages promise nothing: they
  * keep the expired-trial banner, scoped to their own vertical, and this guard
  * pins that the retired catalogue read did not come back.
+ *
+ * ## The expired-trial banner left with the old billing (HOS-1637)
+ *
+ * All three pages read the visitor's trial from
+ * `GET /protected/billing/trial/status`, a route the API no longer registers,
+ * to render an expired-trial banner. That read and the banner were removed with
+ * the old billing client (AC:B13a:21); the subscribe → publish leaf (V8a)
+ * brings the trial state back on the new billing. This guard now pins that the
+ * old read did not come back, alongside the accommodation callout wiring.
  */
 
 import { readFileSync } from 'node:fs';
@@ -56,7 +65,7 @@ const PUBLISH_PAGES: ReadonlyArray<{
         file: 'publicar/index.astro',
         vertical: 'accommodation',
         trialCalloutWiring:
-            'const showTrialCallout = shouldShowPublishTrialCallout({ isTrialExpired, trialEligibility });'
+            'const showTrialCallout = shouldShowPublishTrialCallout({ isTrialExpired: false, trialEligibility });'
     },
     {
         route: '/{lang}/publicar/gastronomia/',
@@ -113,27 +122,17 @@ describe('HOS-1293 — every publish page mentions the trial it may grant', () =
                 }
             );
 
-            it("fetches its OWN vertical's trial status, not a hardcoded default", () => {
-                // Regression guard for HOS-1282's own bug, reproduced at this
-                // vertical: an unscoped getTrialStatus() call resolves the
-                // server's domain-blind default, which is accommodation. A
-                // gastronomy/experience page calling it unscoped would silently read the
-                // wrong (or a dual-role owner's unrelated) subscription.
-                // Whitespace-tolerant: the formatter may wrap the argument object.
-                expect(src).toMatch(
-                    /billingApi\.getTrialStatus\(\{\s*cookieHeader,\s*productDomain:\s*VERTICAL\s*\}\)/
-                );
+            it('declares its own vertical', () => {
                 expect(src).toContain(`const VERTICAL = '${page.vertical}' as const;`);
             });
 
-            it('renders the expired-trial banner, reusing the shared billing.subscription.trial.expiredBanner.* copy', () => {
-                // Reused verbatim across all three verticals — the sentence
-                // ("Suscribite para volver a publicar") is vertical-agnostic,
-                // so this is deliberate reuse, not an oversight that a
-                // gastronomy/experience-specific banner should replace.
-                expect(src).toContain('billing.subscription.trial.expiredBanner.title');
-                expect(src).toContain('billing.subscription.trial.expiredBanner.body');
-                expect(src).toContain('billing.subscription.trial.expiredBanner.cta');
+            it('no longer reads the trial from the old billing client, nor renders its expired banner (HOS-1637, AC:B13a:21)', () => {
+                // Positive sibling: the page is read and is the right file.
+                expect(src.length).toBeGreaterThan(500);
+                expect(src).not.toContain('billingApi');
+                expect(src).not.toContain('getTrialStatus');
+                expect(src).not.toContain('billing.subscription.trial.expiredBanner');
+                expect(src).not.toContain('publicar-hero__trial-expired');
             });
         });
     }
