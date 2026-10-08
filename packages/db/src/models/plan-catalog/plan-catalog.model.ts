@@ -13,7 +13,7 @@
  */
 
 import { type AggregationStrategy, AggregationStrategySchema } from '@repo/schemas';
-import { eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     addonVersions,
@@ -31,6 +31,16 @@ import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 const ENTITY_NAME = 'planCatalog';
+
+/** The columns of {@link PlanVersionSummary}, shared by its three reads. */
+const PLAN_VERSION_SUMMARY_COLUMNS = {
+    id: planVersions.id,
+    planId: planVersions.planId,
+    vertical: planVersions.vertical,
+    rank: planVersions.rank,
+    sellable: planVersions.sellable,
+    current: planVersions.current
+} as const;
 
 /** Input of the single-row reads: an id and an optional transaction. */
 export interface FindCatalogVersionInput {
@@ -60,6 +70,16 @@ export interface PlanVersionLimitEffect {
 export interface PlanVersionEffects {
     readonly entitlements: readonly PlanVersionEntitlementEffect[];
     readonly limits: readonly PlanVersionLimitEffect[];
+}
+
+/** The identity and catalog flags of one plan version (HOS-1440, V3.2). */
+export interface PlanVersionSummary {
+    readonly id: string;
+    readonly planId: string;
+    readonly vertical: string;
+    readonly rank: number;
+    readonly sellable: boolean;
+    readonly current: boolean;
 }
 
 /** Read model of the plan and addon catalog. */
@@ -138,6 +158,91 @@ export class PlanCatalogModel {
             return effects;
         } catch (error) {
             this.fail('findPlanVersionEffects', logContext, error);
+        }
+    }
+
+    /**
+     * Reads the identity of one plan version: its plan, its vertical, its rank
+     * and the two catalog flags (HOS-1440, V3.2; AC:V3:3 to AC:V3:5).
+     *
+     * @param input - The version id and an optional transaction.
+     * @returns The summary, or `null` when no version has that id.
+     * @throws DbError if the query fails.
+     */
+    async findPlanVersionSummary(
+        input: FindCatalogVersionInput
+    ): Promise<PlanVersionSummary | null> {
+        const logContext = { id: input.id };
+        try {
+            const rows = await this.client(input.tx)
+                .select(PLAN_VERSION_SUMMARY_COLUMNS)
+                .from(planVersions)
+                .where(eq(planVersions.id, input.id))
+                .limit(1);
+            this.logOk('findPlanVersionSummary', logContext, rows);
+            return rows[0] ?? null;
+        } catch (error) {
+            this.fail('findPlanVersionSummary', logContext, error);
+        }
+    }
+
+    /**
+     * Reads every sellable and current version of a vertical, in ascending rank
+     * order. The trial plan derives from the highest-rank one for entitlements
+     * and the lowest-rank one for limits (`V/10` §2, AC:V3:4).
+     *
+     * @param input - The vertical and an optional transaction.
+     * @returns The sellable and current versions, lowest rank first.
+     * @throws DbError if the query fails.
+     */
+    async findSellableCurrentVersions(input: {
+        readonly vertical: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<readonly PlanVersionSummary[]> {
+        const logContext = { vertical: input.vertical };
+        try {
+            const rows = await this.client(input.tx)
+                .select(PLAN_VERSION_SUMMARY_COLUMNS)
+                .from(planVersions)
+                .where(
+                    and(
+                        eq(planVersions.vertical, input.vertical),
+                        eq(planVersions.sellable, true),
+                        eq(planVersions.current, true)
+                    )
+                )
+                .orderBy(asc(planVersions.rank));
+            this.logOk('findSellableCurrentVersions', logContext, rows);
+            return rows;
+        } catch (error) {
+            this.fail('findSellableCurrentVersions', logContext, error);
+        }
+    }
+
+    /**
+     * Reads the current version of a plan, whether it is sellable or not. A
+     * GRANT follows the current version of its anchored plan even when the plan
+     * was retired by publishing a non-sellable version (`V/10` §2, AC:V3:5).
+     *
+     * @param input - The plan id and an optional transaction.
+     * @returns The current version, or `null` when the plan has none.
+     * @throws DbError if the query fails.
+     */
+    async findCurrentPlanVersion(input: {
+        readonly planId: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<PlanVersionSummary | null> {
+        const logContext = { planId: input.planId };
+        try {
+            const rows = await this.client(input.tx)
+                .select(PLAN_VERSION_SUMMARY_COLUMNS)
+                .from(planVersions)
+                .where(and(eq(planVersions.planId, input.planId), eq(planVersions.current, true)))
+                .limit(1);
+            this.logOk('findCurrentPlanVersion', logContext, rows);
+            return rows[0] ?? null;
+        } catch (error) {
+            this.fail('findCurrentPlanVersion', logContext, error);
         }
     }
 
