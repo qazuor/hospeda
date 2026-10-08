@@ -2,6 +2,7 @@ import { VerticalEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import {
     check,
+    foreignKey,
     integer,
     pgTable,
     timestamp,
@@ -11,7 +12,7 @@ import {
     varchar
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { addonVersions } from './addon-catalog.dbschema.ts';
+import { addons, addonVersions } from './addon-catalog.dbschema.ts';
 import { quotedList } from './quoted-list.ts';
 import { subscriptions } from './subscription.dbschema.ts';
 
@@ -38,6 +39,9 @@ export const addonProducts = pgTable(
         versionId: uuid('version_id')
             .notNull()
             .references(() => addonVersions.id),
+        addonId: uuid('addon_id')
+            .notNull()
+            .references(() => addons.id),
         /** precio */
         price: integer('price').notNull(),
         /** moneda */
@@ -52,6 +56,11 @@ export const addonProducts = pgTable(
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
     },
     (t) => ({
+        versionAddonFk: foreignKey({
+            name: 'fk_addon_product_version_addon',
+            columns: [t.versionId, t.addonId],
+            foreignColumns: [addonVersions.id, addonVersions.addonId]
+        }),
         priceCheck: check('ck_addon_product_price', sql`${t.price} > 0`),
         currencyCheck: check('ck_addon_product_currency', sql`${t.currency} = 'ARS'`),
         chargeKindCheck: check(
