@@ -55,14 +55,16 @@ describe('HOS-1436 V2.3 — action 18 (route, TEST:V2:9)', () => {
             limits: [{ key: 'max_photos_per_accommodation', value: 20 }]
         });
 
-        const preview = await app.request(previewUrl(planId), {
+        const preview = await app.request(previewUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: previewBody({
-                rank: 20,
-                trialDays: 3,
-                entitlements: [{ key: 'view_basic_stats' }, { key: 'view_advanced_stats' }],
-                limits: [{ key: 'max_photos_per_accommodation', value: 30 }]
+                overrides: {
+                    rank: 20,
+                    trialDays: 3,
+                    entitlements: [{ key: 'view_basic_stats' }, { key: 'view_advanced_stats' }],
+                    limits: [{ key: 'max_photos_per_accommodation', value: 30 }]
+                }
             })
         });
         expect(preview.status, JSON.stringify(await preview.clone().json())).toBe(201);
@@ -102,14 +104,16 @@ describe('HOS-1436 V2.3 — action 18 (route, TEST:V2:9)', () => {
         const persisted: CreateAuditLogEntry[] = [];
         registerAuditLogPersister((record) => persisted.push(record));
 
-        const publish = await app.request(publishUrl(planId), {
+        const publish = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: publishBody({
-                rank: 20,
-                trialDays: 3,
-                entitlements: [{ key: 'view_basic_stats' }, { key: 'view_advanced_stats' }],
-                limits: [{ key: 'max_photos_per_accommodation', value: 30 }]
+                overrides: {
+                    rank: 20,
+                    trialDays: 3,
+                    entitlements: [{ key: 'view_basic_stats' }, { key: 'view_advanced_stats' }],
+                    limits: [{ key: 'max_photos_per_accommodation', value: 30 }]
+                }
             })
         });
         expect(publish.status, JSON.stringify(await publish.clone().json())).toBe(201);
@@ -138,12 +142,14 @@ describe('HOS-1436 V2.3 — action 18 (route, TEST:V2:9)', () => {
             limits: [{ key: 'max_photos_per_accommodation', value: 20 }]
         });
 
-        const preview = await app.request(previewUrl(planId), {
+        const preview = await app.request(previewUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: previewBody({
-                entitlements: [{ key: 'view_advanced_stats' }],
-                limits: []
+                overrides: {
+                    entitlements: [{ key: 'view_advanced_stats' }],
+                    limits: []
+                }
             })
         });
         expect(preview.status, JSON.stringify(await preview.clone().json())).toBe(201);
@@ -199,10 +205,10 @@ describe('HOS-1436 V2.3 — action 18 (route, TEST:V2:9)', () => {
     it('TEST:V2:9 an account without SUPER_ADMIN is rejected with FORBIDDEN', async () => {
         const app = initApp();
         const planId = await insertPlan({ vertical: 'accommodation', slug: 'basic' });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: otherAdmin,
-            body: publishBody({})
+            body: publishBody({ overrides: {} })
         });
         expect(response.status).toBe(403);
         expect((await response.json()).error.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -223,7 +229,7 @@ describe('HOS-1436 V2.3 — action 18 (route, TEST:V2:9)', () => {
             JSON.stringify({ ...BASE_CONTENT }),
             JSON.stringify({ ...BASE_CONTENT, confirmed: false })
         ]) {
-            const response = await app.request(publishUrl(planId), {
+            const response = await app.request(publishUrl({ planId }), {
                 method: 'POST',
                 headers: superAdmin,
                 body: raw
@@ -249,18 +255,18 @@ describe('HOS-1436 V2.3 — action 18 (route, TEST:V2:9)', () => {
             current: true
         });
 
-        const retire = await app.request(publishUrl(planId), {
+        const retire = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ sellable: false })
+            body: publishBody({ overrides: { sellable: false } })
         });
         expect(retire.status, JSON.stringify(await retire.clone().json())).toBe(201);
         expect((await retire.json()).data).toMatchObject({ sellable: false, current: true });
 
-        const undo = await app.request(publishUrl(planId), {
+        const undo = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ sellable: true, rank: 10 })
+            body: publishBody({ overrides: { sellable: true, rank: 10 } })
         });
         expect(undo.status, JSON.stringify(await undo.clone().json())).toBe(201);
         expect((await undo.json()).data).toMatchObject({ sellable: true, current: true });

@@ -14,28 +14,38 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
  * action 18, publish a plan version (HOS-1436, piece V2.3, AC:V2:6/7).
  */
 
+/** Stable actor ID used by the mock authentication headers and audit assertions. */
 export const ACTOR_ID = '11111111-1111-4111-8111-111111111111';
+/** Permissions granted to the super admin in publication tests. */
 export const SUPER_PERMISSIONS = [
     PermissionEnum.ACCESS_PANEL_ADMIN,
     PermissionEnum.MAINTENANCE_MODE_WRITE
 ];
+/** Permissions granted to the regular admin in rejection tests. */
 export const OTHER_PERMISSIONS = [PermissionEnum.ACCESS_PANEL_ADMIN];
 
-/** Mock-actor headers the API reads under `HOSPEDA_ALLOW_MOCK_ACTOR`. */
-export function headers(role: RoleEnum, permissions: PermissionEnum[]) {
+/**
+ * Builds mock-actor headers read by the API under `HOSPEDA_ALLOW_MOCK_ACTOR`.
+ * @param args - Role and permissions assigned to the mock actor.
+ * @returns JSON request headers with the mock actor identity and permissions.
+ */
+export function headers(args: { role: RoleEnum; permissions: PermissionEnum[] }) {
     return {
         'Content-Type': 'application/json',
         Authorization: 'Bearer test-admin-token',
         'User-Agent': 'vitest',
         'x-mock-actor-id': ACTOR_ID,
-        'x-mock-actor-role': role,
-        'x-mock-actor-permissions': JSON.stringify(permissions)
+        'x-mock-actor-role': args.role,
+        'x-mock-actor-permissions': JSON.stringify(args.permissions)
     };
 }
 
-export const superAdmin = headers(RoleEnum.SUPER_ADMIN, SUPER_PERMISSIONS);
-export const otherAdmin = headers(RoleEnum.ADMIN, OTHER_PERMISSIONS);
+/** Request headers for a super admin allowed to publish plans. */
+export const superAdmin = headers({ role: RoleEnum.SUPER_ADMIN, permissions: SUPER_PERMISSIONS });
+/** Request headers for an admin without publication permission. */
+export const otherAdmin = headers({ role: RoleEnum.ADMIN, permissions: OTHER_PERMISSIONS });
 
+/** Default content shared by preview and publication request bodies. */
 export const BASE_CONTENT = {
     rank: 10,
     sellable: true,
@@ -47,7 +57,11 @@ export const BASE_CONTENT = {
     limits: [] as { key: string; value: number }[]
 };
 
-/** Inserts a plan and returns its id. */
+/**
+ * Inserts a plan fixture.
+ * @param args - Vertical, slug and optional role for the plan.
+ * @returns The ID of the inserted plan.
+ */
 export async function insertPlan(args: {
     vertical: string;
     slug: string;
@@ -66,7 +80,11 @@ export async function insertPlan(args: {
     return row.id;
 }
 
-/** Inserts a version and its effects in ONE transaction (extras 041 requires it). */
+/**
+ * Inserts a version and its effects in one transaction, as extras 041 requires.
+ * @param args - Plan version fields and optional entitlements and limits.
+ * @returns The ID of the inserted version.
+ */
 export async function insertVersion(args: {
     planId: string;
     vertical: string;
@@ -119,37 +137,65 @@ export async function insertVersion(args: {
     });
 }
 
-/** Reads one version's stored entitlements and limits (for the trial rule). */
-export async function readVersionEffects(versionId: string): Promise<{
+/**
+ * Reads a version's stored entitlements and limits for the trial rule.
+ * @param args - ID of the version to inspect.
+ * @returns Stored entitlement keys and limit keys.
+ */
+export async function readVersionEffects(args: { versionId: string }): Promise<{
     entitlements: { key: string }[];
     limits: { key: string }[];
 }> {
     const entitlements = await getDb()
         .select({ key: planVersionEntitlements.key })
         .from(planVersionEntitlements)
-        .where(eq(planVersionEntitlements.planVersionId, versionId));
+        .where(eq(planVersionEntitlements.planVersionId, args.versionId));
     const limits = await getDb()
         .select({ key: planVersionLimits.key })
         .from(planVersionLimits)
-        .where(eq(planVersionLimits.planVersionId, versionId));
+        .where(eq(planVersionLimits.planVersionId, args.versionId));
     return { entitlements, limits };
 }
 
-export function publishBody(overrides: Record<string, unknown>): string {
-    return JSON.stringify({ ...BASE_CONTENT, ...overrides, confirmed: true });
+/**
+ * Builds a confirmed publication request body from the default content.
+ * @param args - Content fields that override the defaults.
+ * @returns The serialized publication request body.
+ */
+export function publishBody(args: { overrides: Record<string, unknown> }): string {
+    return JSON.stringify({ ...BASE_CONTENT, ...args.overrides, confirmed: true });
 }
 
-export function previewBody(overrides: Record<string, unknown>): string {
-    return JSON.stringify({ ...BASE_CONTENT, ...overrides });
+/**
+ * Builds a preview request body from the default content.
+ * @param args - Content fields that override the defaults.
+ * @returns The serialized preview request body.
+ */
+export function previewBody(args: { overrides: Record<string, unknown> }): string {
+    return JSON.stringify({ ...BASE_CONTENT, ...args.overrides });
 }
 
-export const publishUrl = (planId: string): string =>
-    `/api/v1/admin/plan-catalog/plans/${planId}/versions`;
-export const previewUrl = (planId: string): string =>
-    `/api/v1/admin/plan-catalog/plans/${planId}/versions/preview`;
+/**
+ * Builds the publication endpoint URL for a plan.
+ * @param args - ID of the plan to publish.
+ * @returns The plan's publication endpoint URL.
+ */
+export const publishUrl = (args: { planId: string }): string =>
+    `/api/v1/admin/plan-catalog/plans/${args.planId}/versions`;
+/**
+ * Builds the preview endpoint URL for a plan.
+ * @param args - ID of the plan to preview.
+ * @returns The plan's preview endpoint URL.
+ */
+export const previewUrl = (args: { planId: string }): string =>
+    `/api/v1/admin/plan-catalog/plans/${args.planId}/versions/preview`;
+/** Endpoint URL for creating a plan. */
 export const createPlanUrl = '/api/v1/admin/plan-catalog/plans';
 
-/** Empties the plan catalog between tests. */
+/**
+ * Empties the plan catalog between tests.
+ * @returns A promise that resolves after the catalog has been truncated.
+ */
 export async function truncatePlanCatalog(): Promise<void> {
     await getDb().execute(
         sql`TRUNCATE TABLE plan_version_entitlement, plan_version_limit, billing_option, plan_version, plan CASCADE`

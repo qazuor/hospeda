@@ -35,10 +35,12 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             slug: 'pre-trial',
             role: 'pre_trial'
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ sellable: false, entitlements: [{ key: 'view_basic_stats' }] })
+            body: publishBody({
+                overrides: { sellable: false, entitlements: [{ key: 'view_basic_stats' }] }
+            })
         });
         expect(response.status).toBe(400);
         expect((await response.json()).error.message).toBe('clave de más');
@@ -51,12 +53,14 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             slug: 'pre-trial',
             role: 'pre_trial'
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: publishBody({
-                sellable: false,
-                entitlements: [{ key: 'subscribe_to_plan', planQuota: 5, trialQuota: 5 }]
+                overrides: {
+                    sellable: false,
+                    entitlements: [{ key: 'subscribe_to_plan', planQuota: 5, trialQuota: 5 }]
+                }
             })
         });
         expect(response.status).toBe(400);
@@ -70,16 +74,16 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             slug: 'trial',
             role: 'trial'
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ sellable: false, trialDays: 7 })
+            body: publishBody({ overrides: { sellable: false, trialDays: 7 } })
         });
         expect(response.status, JSON.stringify(await response.clone().json())).toBe(201);
         const published = (await response.json()).data;
         expect(published).toMatchObject({ planId, sellable: false, current: true });
         // The trial plan's entitlements and limits are derived, never stored.
-        const effects = await readVersionEffects(published.id);
+        const effects = await readVersionEffects({ versionId: published.id });
         expect(effects.entitlements).toEqual([]);
         expect(effects.limits).toEqual([]);
     });
@@ -91,12 +95,14 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             slug: 'trial',
             role: 'trial'
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: publishBody({
-                sellable: false,
-                entitlements: [{ key: 'view_basic_stats' }]
+                overrides: {
+                    sellable: false,
+                    entitlements: [{ key: 'view_basic_stats' }]
+                }
             })
         });
         expect(response.status).toBe(400);
@@ -112,12 +118,14 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             slug: 'floor',
             role: 'floor'
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: publishBody({
-                sellable: false,
-                entitlements: [{ key: 'subscribe_to_plan' }]
+                overrides: {
+                    sellable: false,
+                    entitlements: [{ key: 'subscribe_to_plan' }]
+                }
             })
         });
         expect(response.status).toBe(400);
@@ -131,12 +139,14 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             slug: 'pre-trial',
             role: 'pre_trial'
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: publishBody({
-                sellable: false,
-                entitlements: [{ key: 'activate_trial' }]
+                overrides: {
+                    sellable: false,
+                    entitlements: [{ key: 'activate_trial' }]
+                }
             })
         });
         expect(response.status).toBe(400);
@@ -165,12 +175,14 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             slug: 'pre-trial',
             role: 'pre_trial'
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: publishBody({
-                sellable: false,
-                entitlements: [{ key: 'subscribe_to_plan' }]
+                overrides: {
+                    sellable: false,
+                    entitlements: [{ key: 'subscribe_to_plan' }]
+                }
             })
         });
         expect(response.status).toBe(400);
@@ -180,10 +192,12 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
     it('TEST:V2:10 (d) a trial version that inherits Turista VIP is rejected', async () => {
         const app = initApp();
         const planId = await insertPlan({ vertical: 'tourist', slug: 'trial', role: 'trial' });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ sellable: false, trialDays: 7, inheritsTouristVip: true })
+            body: publishBody({
+                overrides: { sellable: false, trialDays: 7, inheritsTouristVip: true }
+            })
         });
         expect(response.status).toBe(400);
         expect((await response.json()).error.message).toBe(
@@ -202,10 +216,10 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             current: true
         });
         const planId = await insertPlan({ vertical: 'gastronomy', slug: 'pro' });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ rank: 20 })
+            body: publishBody({ overrides: { rank: 20 } })
         });
         expect(response.status).toBe(400);
         expect((await response.json()).error.message).toBe(
@@ -217,10 +231,10 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
         const app = initApp();
         await insertPlan({ vertical: 'experience', slug: 'orphan' });
         const planId = await insertPlan({ vertical: 'experience', slug: 'pro' });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({})
+            body: publishBody({ overrides: {} })
         });
         expect(response.status).toBe(400);
         expect((await response.json()).error.message).toBe(
@@ -243,10 +257,10 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             current: true,
             trialDays: 0
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ sellable: false, trialDays: 7 })
+            body: publishBody({ overrides: { sellable: false, trialDays: 7 } })
         });
         expect(response.status).toBe(400);
         expect((await response.json()).error.message).toBe(
@@ -269,10 +283,10 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             current: true,
             trialDays: 7
         });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ sellable: false, trialDays: 0 })
+            body: publishBody({ overrides: { sellable: false, trialDays: 0 } })
         });
         expect(response.status).toBe(400);
         expect((await response.json()).error.message).toBe(
@@ -283,10 +297,10 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
     it('TEST:V2:10 (h) a grace not shorter than the shortest cycle of the request is rejected', async () => {
         const app = initApp();
         const planId = await insertPlan({ vertical: 'accommodation', slug: 'basic' });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ graceDays: 28, cycles: ['monthly'] })
+            body: publishBody({ overrides: { graceDays: 28, cycles: ['monthly'] } })
         });
         expect(response.status).toBe(400);
         expect((await response.json()).error.message).toBe(
@@ -311,10 +325,10 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
             currency: 'ARS'
         });
 
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
-            body: publishBody({ graceDays: 28 })
+            body: publishBody({ overrides: { graceDays: 28 } })
         });
         expect(response.status).toBe(400);
         expect((await response.json()).error.message).toBe(
@@ -325,13 +339,15 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
     it('TEST:V2:10 a valid version is published', async () => {
         const app = initApp();
         const planId = await insertPlan({ vertical: 'accommodation', slug: 'basic' });
-        const response = await app.request(publishUrl(planId), {
+        const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
             body: publishBody({
-                cycles: ['annual'],
-                entitlements: [{ key: 'view_basic_stats' }],
-                limits: [{ key: 'max_photos_per_accommodation', value: 20 }]
+                overrides: {
+                    cycles: ['annual'],
+                    entitlements: [{ key: 'view_basic_stats' }],
+                    limits: [{ key: 'max_photos_per_accommodation', value: 20 }]
+                }
             })
         });
         expect(response.status, JSON.stringify(await response.clone().json())).toBe(201);
