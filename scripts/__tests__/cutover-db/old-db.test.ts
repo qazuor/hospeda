@@ -35,7 +35,11 @@ const PERSON_EMAIL = 'person.example@example.invalid';
  * so TEST:U3:13 exempts them from "the new system stays empty". Kept as literals: the
  * cutover side imports no code from the new system.
  */
-const MIGRATION_REFERENCE_TABLES: readonly string[] = ['catalog_key', 'vertical'];
+const MIGRATION_REFERENCE_TABLES: readonly string[] = [
+    'billing_deadline_version',
+    'catalog_key',
+    'vertical'
+];
 
 let admin: PgClient;
 let oldUrl: string;
