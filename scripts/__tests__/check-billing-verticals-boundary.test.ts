@@ -86,16 +86,28 @@ function guardOver({
 }
 
 describe('TEST:V1:11 G14 on the branch', () => {
-    it('is green over the repo, and says the verticals half is still empty', () => {
+    it('is green over the repo, with packages/verticals as the verticals half', () => {
         const { exitCode, output } = run({ root: REPO_ROOT });
         expect(output).toContain('OK:');
-        expect(output).toContain('verticals half: (none registered)');
-        expect(output).toContain('NOTE: the verticals half has no folder registered yet');
+        expect(output).toContain('verticals half: packages/verticals');
+        expect(output).not.toContain('NOTE: the verticals half has no folder registered yet');
         expect(exitCode).toBe(0);
     });
 
-    it('declares billing as packages/payments, verticals as empty', () => {
-        expect(HALVES).toEqual({ billing: ['packages/payments'], verticals: [] });
+    it('declares billing as packages/payments, verticals as packages/verticals (V2.1, HOS-1434)', () => {
+        expect(HALVES).toEqual({
+            billing: ['packages/payments'],
+            verticals: ['packages/verticals']
+        });
+    });
+
+    it('over halves where verticals declares no folder, says so in its output', () => {
+        const { exitCode, output } = guardOver({
+            roots: { billing: ['packages/payments'], verticals: [] }
+        });
+        expect(output).toContain('verticals half: (none registered)');
+        expect(output).toContain('NOTE: the verticals half has no folder registered yet');
+        expect(exitCode).toBe(0);
     });
 
     it('is green over a tree where both halves go through the contract', () => {
