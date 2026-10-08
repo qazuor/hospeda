@@ -57,8 +57,8 @@ async function fixture(
     );
     const versionId = version.rows[0]?.id as string;
     const product = await client.query<{ id: string }>(
-        "INSERT INTO addon_product (version_id, price, currency, charge_kind, compatible_verticals) VALUES ($1, 100, 'ARS', 'UNA_VEZ', ARRAY['accommodation']) RETURNING id",
-        [versionId]
+        "INSERT INTO addon_product (version_id, addon_id, price, currency, charge_kind, compatible_verticals) VALUES ($1, $2, 100, 'ARS', 'UNA_VEZ', ARRAY['accommodation']) RETURNING id",
+        [versionId, addon.rows[0]?.id]
     );
     const subscription = await client.query<{ id: string }>(
         "INSERT INTO subscription (status, class) VALUES ('CANCELLED', 'LAPIDA') RETURNING id"
