@@ -3,7 +3,7 @@
  * the main profile view/edit (i.e. permissions and activity).
  *
  * Renders the same EntityPageHeader sticky chrome (avatar + displayName +
- * role subtitle + lifecycle badge + Impersonate + Delete + tab strip) and
+ * role subtitle + lifecycle badge + Delete + tab strip) and
  * delegates the body to its children. Use this for pages reached by the
  * Perfil / Permisos / Actividad tab navigation so the chrome stays
  * consistent with `$id.tsx` and `$id_.edit.tsx`.
@@ -20,7 +20,6 @@ import { EntityPageHeader } from '@/components/entity-header/EntityPageHeader';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { PageTabs, userTabs } from '@/components/layout/PageTabs';
-import { ImpersonateButton } from '@/features/users/components/ImpersonateButton';
 import { useUserHeaderProps } from '@/features/users/hooks/useUserHeaderProps';
 import { useDeleteUserMutation, useUserQuery } from '@/features/users/hooks/useUserQuery';
 import { useTranslations } from '@/hooks/use-translations';
@@ -80,21 +79,15 @@ export function UserSiblingPageShell({ userId, children }: UserSiblingPageShellP
     const displayName = userEntity.displayName || userEntity.slug || userId;
 
     const headerExtraActions = (
-        <>
-            <ImpersonateButton
-                userId={userId}
-                variant="responsive"
-            />
-            <DeleteRowButton
-                entityId={userId}
-                entityName={displayName}
-                entityLabel={t('admin-entities.entities.user.singular')}
-                permission={PermissionEnum.USER_DELETE}
-                useDeleteMutation={useDeleteUserMutation}
-                variant="responsive"
-                onDeleted={() => navigate({ to: '/access/users' })}
-            />
-        </>
+        <DeleteRowButton
+            entityId={userId}
+            entityName={displayName}
+            entityLabel={t('admin-entities.entities.user.singular')}
+            permission={PermissionEnum.USER_DELETE}
+            useDeleteMutation={useDeleteUserMutation}
+            variant="responsive"
+            onDeleted={() => navigate({ to: '/access/users' })}
+        />
     );
 
     const headerTabs = (

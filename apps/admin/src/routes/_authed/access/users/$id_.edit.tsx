@@ -5,7 +5,6 @@ import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { PageTabs, userTabs } from '@/components/layout/PageTabs';
-import { ImpersonateButton } from '@/features/users/components/ImpersonateButton';
 import { UserEditDirtyGuard } from '@/features/users/components/UserEditDirtyGuard';
 import { useUserHeaderProps } from '@/features/users/hooks/useUserHeaderProps';
 import { useUserPage } from '@/features/users/hooks/useUserPage';
@@ -41,21 +40,15 @@ function UserEditPage() {
     });
 
     const headerExtraActions = (
-        <>
-            <ImpersonateButton
-                userId={id}
-                variant="responsive"
-            />
-            <DeleteRowButton
-                entityId={id}
-                entityName={displayName}
-                entityLabel={t('admin-entities.entities.user.singular')}
-                permission={PermissionEnum.USER_DELETE}
-                useDeleteMutation={useDeleteUserMutation}
-                variant="responsive"
-                onDeleted={() => navigate({ to: '/access/users' })}
-            />
-        </>
+        <DeleteRowButton
+            entityId={id}
+            entityName={displayName}
+            entityLabel={t('admin-entities.entities.user.singular')}
+            permission={PermissionEnum.USER_DELETE}
+            useDeleteMutation={useDeleteUserMutation}
+            variant="responsive"
+            onDeleted={() => navigate({ to: '/access/users' })}
+        />
     );
 
     const headerTabs = (
