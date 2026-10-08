@@ -295,6 +295,16 @@ pieza lo construye»). No era una pregunta con opciones: se registra lo que el o
 |---|---|---|---|---|
 | DE | qué es exportar una ficha y qué pieza lo construye | se difiere, fuera del MVP | — | **exportar una ficha queda fuera del MVP y se difiere.** El owner no recuerda haber acordado esa funcionalidad, así que después se decide si sale de la spec o en qué fase entra (pendiente en `spec-consolidada/80-abiertos.md` §4-ter). Al corte, `V9a.1` registra crear y editar; el acto «exportar» de `AC:V9a:1` queda diferido y **el registro lo suma en forma aditiva** cuando la operación exista. Nada del corte construye exportar ni lo espera |
 
+## Lote DF (2026-10-08)
+
+Respuesta del owner, 2026-10-08, al valor pendiente del PLAZO:19, la ventana `N` del resumen de
+conciliación (`DEC-OBS-001`, BU y BX). No era una pregunta con opciones: se registra lo que el owner
+decidió.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| DF | cuánto dura la ventana `N` del resumen de conciliación (PLAZO:19) | 60 minutos | — | **el valor inicial del PLAZO:19 es 60 minutos.** Un desajuste de conciliación lo mira una persona: una ventana más corta vuelve ruido el resumen y una más larga deja un problema de cobro horas sin aviso. Es un plazo versionado; cambiarlo después publica una versión nueva |
+
 ## Decisiones del coordinador (2026-10-07)
 
 No son letras del owner: las tomó el coordinador del programa sobre hallazgos de las hojas en curso,

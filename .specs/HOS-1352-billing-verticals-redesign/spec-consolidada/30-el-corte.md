@@ -451,8 +451,7 @@ nuevo ([DEC-MIG-001#📌1](01-decisiones-vigentes.md#dec-mig-001-p1)).
 
 - **antes que nada, la versión 1 de los plazos de cada mitad, con los diecinueve valores**, que la
   escritura `C` y la prueba guardan: **la migración falla si alguno está vacío, y el owner fija los
-  cinco sin valor escrito antes del merge de `V6`**; **el valor de la clave 19 de billing lo fija
-  antes del merge de `B2` (BU, BX)** (FASE 5, owner 2026-09-30, lote 3 D; S-78;
+  cinco sin valor escrito antes del merge de `V6`**; ~~el valor de la clave 19 de billing lo fija antes del merge de `B2` (BU, BX)~~ **la clave 19 de billing nace con 60 minutos** (corte del MVP, owner 2026-10-08, [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df)) (FASE 5, owner 2026-09-30, lote 3 D; S-78;
   verificación corta, 2026-09-29, lote N-H; `NUCLEO/02` §1.5; los tres nuevos, FASE 9 vuelta 3, lote
   K y `F-8V3B3-003`, con su valor fijado: 7, 7 y 180 días, lote R);
 - **el catálogo de producción** —SQL generado por un script TypeScript y vigilado por un guard que
