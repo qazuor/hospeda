@@ -286,6 +286,11 @@ jobs:
       # @repo/billing-verticals-contract; the halves are the table in the script.
       - name: Check neither half imports the other outside the contract (GUARD:G14)
         run: pnpm check:billing-verticals-boundary
+      # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
+      # code of the verticals half (G14's HALVES.verticals) writes
+      # addon_product.version_id: re-pointing it is an act of billing.
+      - name: Check verticals never writes addon_product.version_id (TEST:V2:8)
+        run: pnpm check:verticals-no-addon-product-write
       # GUARD:G9, G10, G11 (HOS-1508, AC:B1:5/6/7). One step each, like every
       # guard here. G9: the reason sent to the provider is copy, not an id.
       # G10: the approval link is read only through sanitizeApprovalUrl (EX-37).

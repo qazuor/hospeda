@@ -21,6 +21,7 @@ export * from './hostTrade/index.ts';
 export * from './notification-log/index.ts';
 export * from './owner-promotion/index.ts';
 export * from './partner/index.ts';
+export * from './plan-catalog/index.ts';
 export * from './platform/index.ts';
 export * from './post/index.ts';
 export * from './qr-code/index.ts';
