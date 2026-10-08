@@ -237,6 +237,21 @@ describe('G15 predicate (b): every other way to break it', () => {
         expect(output).toContain(detail);
     });
 
+    it.each([
+        ['a sibling test of the runtime twin', 'packages/payments/test/fake-lies.test.ts'],
+        [
+            'the runtime twin under another extension',
+            'packages/payments/test/fake-switches.test.tsx'
+        ]
+    ])('reads %s: only the exact runtime-twin path is skipped', (_case, file) => {
+        const { exitCode, output } = guardOver({
+            overrides: { [file]: aTest({ options: "honestAbout: [{ lie: 'M99' }]" }) }
+        });
+        expect(exitCode).toBe(1);
+        expect(output).toContain(PREDICATE_MESSAGES.b);
+        expect(output).toContain(`${file}:1`);
+    });
+
     it('reads production code too, not only tests', () => {
         const { exitCode, output } = guardOver({
             overrides: {

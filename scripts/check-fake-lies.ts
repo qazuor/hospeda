@@ -314,7 +314,11 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
     const root = args.root ?? resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
     const minScannedFiles = args.minScannedFiles ?? MIN_SCANNED_FILES;
     const lines = ['=== GUARD:G15 - the fake payment provider lies only from its closed list ==='];
-    const files = listCodeFiles({ root, excludePrefixes: [PAYMENTS_FAKE_DIR, RUNTIME_CHECK_TEST] });
+    // The runtime twin's test is skipped by EXACT path, never by prefix: a prefix
+    // would also skip `fake-switches.test.tsx` or a whole folder.
+    const files = listCodeFiles({ root, excludePrefixes: [PAYMENTS_FAKE_DIR] }).filter(
+        (file) => file !== RUNTIME_CHECK_TEST
+    );
     const fakeFiles = listProductionFiles({
         root,
         excludePrefixes: [],
