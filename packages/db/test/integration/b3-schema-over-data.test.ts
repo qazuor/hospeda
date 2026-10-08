@@ -41,8 +41,11 @@ async function fingerprints(): Promise<Record<string, Fingerprint>> {
         'billing_option',
         'billing_deadline_version'
     ]) {
+        // Later migrations may add columns; compare the original row shape.
+        const row =
+            table === 'plan' ? "(row_to_json(t)::jsonb - 'role')::text" : 'row_to_json(t)::text';
         const query = await db.query<Fingerprint>(
-            `SELECT count(*)::text AS count, md5(coalesce(string_agg(row_to_json(t)::text, '|' ORDER BY row_to_json(t)::text), '')) AS digest FROM ${table} t`
+            `SELECT count(*)::text AS count, md5(coalesce(string_agg(${row}, '|' ORDER BY ${row}), '')) AS digest FROM ${table} t`
         );
         result[table] = query.rows[0] as Fingerprint;
     }
@@ -111,6 +114,8 @@ describe('TEST:B3:32 — B3 migration over existing rows', () => {
         expect(before.plan?.count).not.toBe('0');
         expect(before.plan_version?.count).not.toBe('0');
         expect(before.billing_option?.count).not.toBe('0');
+        const roles = await db.query<{ role: string | null }>('SELECT role FROM plan');
+        expect(roles.rows).toEqual([{ role: null }]);
     });
 
     it('creates both invariant 8 partial indexes', async () => {

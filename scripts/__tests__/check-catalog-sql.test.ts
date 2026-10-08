@@ -17,15 +17,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { CatalogKeyDefinition } from '../../packages/schemas/src/catalog/key-attributes.js';
 import { CATALOG_KEY_DEFINITIONS } from '../../packages/schemas/src/catalog/key-catalog.js';
 import { run, splitStatements } from '../check-catalog-sql.js';
-import {
-    buildCatalogKeyLoad,
-    buildVerticalLoad,
-    generateCatalogSql,
-    renderInsert
-} from '../generate-catalog-sql.js';
+import { buildCatalogKeyLoad, buildVerticalLoad, renderInsert } from '../generate-catalog-sql.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const MIGRATION_0129 = path.join(REPO_ROOT, 'packages/db/src/migrations/0129_gorgeous_storm.sql');
+const MIGRATION_0140 = path.join(
+    REPO_ROOT,
+    'packages/db/src/migrations/0140_misty_captain_britain.sql'
+);
 
 const NEW_KEY: CatalogKeyDefinition = {
     key: 'zz_new_capability',
@@ -51,18 +50,24 @@ function migrationsDir({ files }: { readonly files: Readonly<Record<string, stri
     return dir;
 }
 
-/** A green history: the real 0129 plus an unrelated earlier migration. */
+/** A green history: the original catalog, the later activation key, and an unrelated migration. */
 const GREEN = {
     '0001_unrelated.sql': 'CREATE TABLE "x" ("id" integer);\n',
-    '0129_gorgeous_storm.sql': readFileSync(MIGRATION_0129, 'utf8')
+    '0129_gorgeous_storm.sql': readFileSync(MIGRATION_0129, 'utf8'),
+    '0140_misty_captain_britain.sql': readFileSync(MIGRATION_0140, 'utf8')
 };
 
 describe('scripts/generate-catalog-sql.ts', () => {
-    it('reproduces the INSERT statements of 0129_gorgeous_storm.sql byte for byte', () => {
+    it('reproduces the original INSERT statements of 0129_gorgeous_storm.sql byte for byte', () => {
         const migration = readFileSync(MIGRATION_0129, 'utf8');
         const compared = migration.slice(migration.indexOf('INSERT INTO'));
+        const originalKeys = buildCatalogKeyLoad({
+            definitions: CATALOG_KEY_DEFINITIONS.filter((d) => d.key !== 'activate_trial')
+        });
 
-        expect(generateCatalogSql()).toBe(compared);
+        expect(
+            `${renderInsert({ load: buildVerticalLoad() })}\n--> statement-breakpoint\n${renderInsert({ load: originalKeys })}\n`
+        ).toBe(compared);
     });
 
     it('renders one row per code catalog key and one per vertical', () => {
@@ -75,7 +80,7 @@ describe('TEST:V1:5 — GUARD:G18', () => {
     it('is green over the repository migrations', () => {
         const result = run();
 
-        expect(result.output).toContain('catalog_key 78 row(s)');
+        expect(result.output).toContain(`catalog_key ${CATALOG_KEY_DEFINITIONS.length} row(s)`);
         expect(result.exitCode).toBe(0);
     });
 
@@ -186,7 +191,9 @@ describe('TEST:V1:5 — GUARD:G18', () => {
 
     it('is red when two migrations insert the same key', () => {
         const dup = buildCatalogKeyLoad({
-            definitions: [CATALOG_KEY_DEFINITIONS[0] as CatalogKeyDefinition]
+            definitions: [
+                CATALOG_KEY_DEFINITIONS.find((d) => d.key === 'ai_chat') as CatalogKeyDefinition
+            ]
         });
 
         const result = run({

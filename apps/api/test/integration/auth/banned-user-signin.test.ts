@@ -21,8 +21,8 @@ import { testDb } from '../../e2e/setup/test-database';
 
 let app: AppOpenAPI;
 // Better Auth's CSRF protection rejects mutating requests without a trusted
-// Origin header. Matches HOSPEDA_SITE_URL.
-const TRUSTED_ORIGIN = 'http://localhost:4321';
+// Origin header. CI can use a different HOSPEDA_SITE_URL from local tests.
+const trustedOrigin = () => new URL(process.env.HOSPEDA_SITE_URL ?? 'http://localhost:4321').origin;
 // Generated per run: a literal password trips the pre-commit secret scan.
 const testPassword = `Pw-${randomUUID()}-Aa1!`;
 let testCounter = 0;
@@ -47,7 +47,9 @@ afterAll(async () => {
 const authHeaders = {
     'content-type': 'application/json',
     'user-agent': 'vitest',
-    origin: TRUSTED_ORIGIN
+    get origin() {
+        return trustedOrigin();
+    }
 } as const;
 
 /** Signs up and verifies a fresh account; returns its email and id. */

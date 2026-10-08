@@ -67,8 +67,20 @@ const ROWS: readonly KeyRow[] = [
     ['partner_public_page', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['partner_carousel_presence', 'vertical', 'MAX', 'NONE', 'COMMERCIAL'],
     ['recover_own_listing', 'vertical', 'MAX', 'NONE', 'BASE'],
-    ['subscribe_to_plan', 'vertical', 'MAX', 'NONE', 'BASE']
+    ['subscribe_to_plan', 'vertical', 'MAX', 'NONE', 'BASE'],
+    // The activation capability of a vertical (HOS-1436, V2, AC:V2:6/7):
+    // granted by the pre-trial version if and only if the vertical declares an
+    // activation event AND its trial plan has trial days > 0. BASE class.
+    ['activate_trial', 'vertical', 'MAX', 'NONE', 'BASE']
 ];
+
+/**
+ * The key of the vertical's activation capability (HOS-1436, V2).
+ *
+ * Exported so `V5` and `V4.2` import the literal instead of repeating it. It is
+ * the key the `si y sólo si` of `G-R3` half (c) is about.
+ */
+export const VERTICAL_ACTIVATION_KEY = 'activate_trial';
 
 /** Every entitlement (boolean) key the new design keeps. */
 export const ENTITLEMENT_KEY_DEFINITIONS: readonly CatalogKeyDefinition[] = toDefinitions({

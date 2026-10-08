@@ -1,3 +1,4 @@
+import { PLAN_ROLES } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import {
     boolean,
@@ -13,6 +14,7 @@ import {
     varchar
 } from 'drizzle-orm/pg-core';
 import { catalogKeys } from './catalog-key.dbschema.ts';
+import { quotedList } from './quoted-list.ts';
 import { verticals } from './vertical.dbschema.ts';
 
 /**
@@ -27,6 +29,13 @@ import { verticals } from './vertical.dbschema.ts';
  *   state "this plan belongs to that vertical" (the version's own FK here, and
  *   billing's grant anchor later). Postgres needs a unique constraint over
  *   exactly the referenced columns, even when `id` is already the key.
+ *
+ * `role` (HOS-1436, AC:V2:6/7) marks the three non-sellable plans every
+ * vertical declares — `trial`, `pre_trial`, `floor`; `NULL` is an ordinary
+ * sellable plan. `CHECK` holds it to the closed list and a partial `UNIQUE`
+ * allows at most one plan per role in a vertical. It is IMMUTABLE: a row
+ * trigger (extras `044`) rejects any UPDATE that changes it. It is accepted
+ * only when the plan is created (action 18), never updated.
  */
 export const plans = pgTable(
     'plan',
@@ -44,12 +53,21 @@ export const plans = pgTable(
         description: text('description'),
         /** Position on the vertical's pricing page. Cosmetic. */
         pricingOrder: integer('pricing_order').notNull().default(0),
+        /** `trial`, `pre_trial` or `floor`; `NULL` for a sellable plan. Immutable. */
+        role: varchar('role', { length: 16 }),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
     },
     (t) => ({
         verticalSlugUnique: unique('uq_plan_vertical_slug').on(t.vertical, t.slug),
-        idVerticalUnique: unique('uq_plan_id_vertical').on(t.id, t.vertical)
+        idVerticalUnique: unique('uq_plan_id_vertical').on(t.id, t.vertical),
+        roleCheck: check(
+            'ck_plan_role',
+            sql`${t.role} IS NULL OR ${t.role} IN (${quotedList(PLAN_ROLES)})`
+        ),
+        verticalRoleUnique: uniqueIndex('uq_plan_vertical_role')
+            .on(t.vertical, t.role)
+            .where(sql`${t.role} IS NOT NULL`)
     })
 );
 

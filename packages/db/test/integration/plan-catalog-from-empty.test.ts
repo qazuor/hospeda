@@ -713,3 +713,91 @@ describe('TEST:V2:3 — sellable and current versions never share a rank; one cu
         });
     });
 });
+
+/** Inserts a plan with a role and returns its id. */
+async function insertPlanWithRole(
+    client: PoolClient,
+    args: { readonly vertical: string; readonly slug: string; readonly role: string | null }
+): Promise<string> {
+    const { rows } = await client.query<{ id: string }>(
+        `INSERT INTO plan (vertical, slug, name, role) VALUES ($1, $2, $3, $4) RETURNING id`,
+        [args.vertical, args.slug, `Plan ${args.slug}`, args.role]
+    );
+    return (rows[0] as { id: string }).id;
+}
+
+describe('TEST:V2:6/7 (HOS-1436) — plan.role: closed list, one per vertical, immutable', () => {
+    it('accepts NULL and the three closed roles', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const results = [
+                await attempt(
+                    `INSERT INTO plan (vertical, slug, name) VALUES ('accommodation', 'sellable', 'Sellable')`
+                ),
+                await attempt(
+                    `INSERT INTO plan (vertical, slug, name, role) VALUES ('accommodation', 'trial', 'Trial', 'trial')`
+                ),
+                await attempt(
+                    `INSERT INTO plan (vertical, slug, name, role) VALUES ('accommodation', 'pre', 'Pre', 'pre_trial')`
+                ),
+                await attempt(
+                    `INSERT INTO plan (vertical, slug, name, role) VALUES ('accommodation', 'floor', 'Floor', 'floor')`
+                )
+            ];
+
+            expect(results).toEqual([null, null, null, null]);
+        });
+    });
+
+    it('rejects a role outside the closed list', async () => {
+        await inRolledBackTx(async ({ attempt }) => {
+            const error = await attempt(
+                `INSERT INTO plan (vertical, slug, name, role) VALUES ('accommodation', 'x', 'X', 'premium')`
+            );
+
+            expect(error?.code).toBe('23514');
+            expect(error?.constraint).toBe('ck_plan_role');
+        });
+    });
+
+    it('allows at most one plan per role in a vertical, and the same role in another vertical', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            await insertPlanWithRole(client, {
+                vertical: 'accommodation',
+                slug: 'floor-1',
+                role: 'floor'
+            });
+
+            const duplicate = await attempt(
+                `INSERT INTO plan (vertical, slug, name, role) VALUES ('accommodation', 'floor-2', 'Floor 2', 'floor')`
+            );
+            const otherVertical = await attempt(
+                `INSERT INTO plan (vertical, slug, name, role) VALUES ('gastronomy', 'floor-1', 'Floor', 'floor')`
+            );
+
+            expect(duplicate?.code).toBe('23505');
+            expect(duplicate?.constraint).toBe('uq_plan_vertical_role');
+            expect(otherVertical).toBeNull();
+        });
+    });
+
+    it('rejects every UPDATE that changes role', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const planId = await insertPlanWithRole(client, {
+                vertical: 'experience',
+                slug: 'trial',
+                role: 'trial'
+            });
+
+            const setFloor = await attempt(`UPDATE plan SET role = 'floor' WHERE id = $1`, [
+                planId
+            ]);
+            const toNull = await attempt(`UPDATE plan SET role = NULL WHERE id = $1`, [planId]);
+            const cosmetic = await attempt(`UPDATE plan SET name = 'Otro' WHERE id = $1`, [planId]);
+
+            expect(setFloor?.code).toBe('P0001');
+            expect(setFloor?.message).toContain('plan.role is immutable');
+            expect(toNull?.code).toBe('P0001');
+            expect(cosmetic).toBeNull();
+        });
+    });
+});
