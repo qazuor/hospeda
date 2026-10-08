@@ -288,6 +288,11 @@ jobs:
       # @repo/billing-verticals-contract; the halves are the table in the script.
       - name: Check neither half imports the other outside the contract (GUARD:G14)
         run: pnpm check:billing-verticals-boundary
+      # GUARD:G13 (HOS-1447, AC:V4:12). Production builds must not link bootstrap billing answers.
+      - name: Check bootstrap billing answers never reach production (GUARD:G13)
+        env:
+          HOSPEDA_PRODUCTION_BUILD: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')) && '1' || '0' }}
+        run: pnpm check:bootstrap-answers-never-in-production
       # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
       # code of the verticals half (G14's HALVES.verticals) writes
       # addon_product.version_id: re-pointing it is an act of billing.
