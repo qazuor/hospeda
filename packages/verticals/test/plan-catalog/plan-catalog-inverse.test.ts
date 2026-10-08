@@ -165,6 +165,28 @@ describe('TEST:V2:7 — addonPolicy answers its four fields and never what the a
         });
     });
 
+    it('a fixed-days version answers its own number of days', async () => {
+        const catalog = createInMemoryCatalog();
+        const addonVersionId = catalog.addAddonVersion({
+            addonId: '0d7b2a51-8f43-4e1a-9a7e-2c4b6d8e0f12',
+            validity: 'FIXED_DAYS',
+            validityDays: 7,
+            scopeType: 'USER',
+            entitlements: [],
+            limits: []
+        });
+        const subject = createPlanCatalogInverse({ reader: catalog.reader });
+
+        const answer = await subject.addonPolicy({ addonVersionId });
+
+        expect(answer).toStrictEqual({
+            addonId: '0d7b2a51-8f43-4e1a-9a7e-2c4b6d8e0f12',
+            validity: 'FIXED_DAYS',
+            validityDays: 7,
+            scopeType: 'USER'
+        });
+    });
+
     it('an unknown addon version is refused', async () => {
         const subject = createPlanCatalogInverse({ reader: createInMemoryCatalog().reader });
 
