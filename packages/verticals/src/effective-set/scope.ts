@@ -15,13 +15,51 @@
  * validation (V2.3 / HOS-1436) reuses {@link assertMeteredKeyIsVertical}, which
  * is why it is exported from the package index.
  */
-import type { CatalogKeyDefinition } from '@repo/schemas';
+import { type CatalogKeyDefinition, getCatalogKey } from '@repo/schemas';
 import { MeteredKeyGlobalScopeError, MissingVerticalForVerticalKeyError } from './errors';
 
 /** Where a key resolves: by `user + vertical` (a vertical key) or by `user`. */
 export type KeyResolution =
     | { readonly by: 'user+vertical'; readonly vertical: string }
     | { readonly by: 'user' };
+
+/** A resolved value can only be read with the identity selected by its catalog scope. */
+export interface ScopedKeyValues {
+    get(args: {
+        readonly key: string;
+        readonly userId: string;
+        readonly vertical: string | null;
+    }): number | undefined;
+}
+
+/** Binds resolved values to their user or user-and-vertical identity. */
+export function scopeKeyValues(args: {
+    readonly values: ReadonlyMap<string, number>;
+    readonly userId: string;
+    readonly vertical: string;
+}): ScopedKeyValues {
+    const global = new Map<string, number>();
+    const vertical = new Map<string, number>();
+    for (const [key, value] of args.values) {
+        const definition = getCatalogKey({ key });
+        if (!definition) continue;
+        const resolution = resolveKeyScope({ definition, vertical: args.vertical });
+        (resolution.by === 'user' ? global : vertical).set(key, value);
+    }
+    return {
+        get: ({ key, userId, vertical: requestedVertical }) => {
+            if (userId !== args.userId) return undefined;
+            const definition = getCatalogKey({ key });
+            if (!definition) return undefined;
+            const resolution = resolveKeyScope({ definition, vertical: requestedVertical });
+            return resolution.by === 'user'
+                ? global.get(key)
+                : resolution.vertical === args.vertical
+                  ? vertical.get(key)
+                  : undefined;
+        }
+    };
+}
 
 /**
  * Resolves where a key resolves, from its declared scope.

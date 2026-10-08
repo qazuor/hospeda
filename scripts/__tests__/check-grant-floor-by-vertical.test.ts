@@ -108,6 +108,30 @@ describe('TEST:V3:7 — GUARD:G-R2-B', () => {
         expect(result.output).toContain(`FAIL ${RULE_MESSAGES['grant-floor-by-vertical']}`);
     });
 
+    it('mutation: querying coverage for another vertical is red', () => {
+        const source = resolutionFiles()['grant-ratchet.ts'] as string;
+        const mutated = source.replace(
+            'args.billing.coverage({ userId: args.userId, vertical: args.vertical });',
+            "args.billing.coverage({ userId: args.userId, vertical: 'gastronomy' });"
+        );
+        expect(mutated).not.toBe(source);
+        const result = run({ root: makeTree({ overrides: { 'grant-ratchet.ts': mutated } }) });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`FAIL ${RULE_MESSAGES['grant-coverage-identity']}`);
+    });
+
+    it('mutation: querying coverage for another user is red', () => {
+        const source = resolutionFiles()['grant-ratchet.ts'] as string;
+        const mutated = source.replace(
+            'userId: args.userId, vertical: args.vertical });',
+            "userId: 'other-user', vertical: args.vertical });"
+        );
+        expect(mutated).not.toBe(source);
+        const result = run({ root: makeTree({ overrides: { 'grant-ratchet.ts': mutated } }) });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`FAIL ${RULE_MESSAGES['grant-coverage-identity']}`);
+    });
+
     it('refuses a missing resolution', () => {
         const root = mkdtempSync(path.join(tmpdir(), 'gr2b-empty-'));
         tempDirs.push(root);

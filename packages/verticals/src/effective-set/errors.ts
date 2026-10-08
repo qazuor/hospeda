@@ -95,6 +95,21 @@ export class GrantReferenceVerticalMismatchError extends Error {
     }
 }
 
+/** The GRANT floor must be a version of its anchored reference plan. */
+export class GrantFloorPlanMismatchError extends Error {
+    readonly referencePlanId: string;
+    readonly floorPlanId: string;
+
+    constructor(args: { readonly referencePlanId: string; readonly floorPlanId: string }) {
+        super(
+            `the GRANT floor belongs to plan ${args.floorPlanId}, not anchored plan ${args.referencePlanId}`
+        );
+        this.name = 'GrantFloorPlanMismatchError';
+        this.referencePlanId = args.referencePlanId;
+        this.floorPlanId = args.floorPlanId;
+    }
+}
+
 /**
  * The fold met a key whose sources declare contradicting aggregation strategies
  * and that the catalog does not declare, so there is no authority to say which

@@ -6,6 +6,7 @@
 
 export {
     ContradictoryStrategyError,
+    GrantFloorPlanMismatchError,
     GrantReferenceVerticalMismatchError,
     GrantWithoutFloorError,
     MeteredKeyGlobalScopeError,
@@ -22,7 +23,9 @@ export { hasLiveNonTrialTitle, selectPlegableSources } from './effective-set/ple
 export {
     assertMeteredKeyIsVertical,
     type KeyResolution,
-    resolveKeyScope
+    resolveKeyScope,
+    type ScopedKeyValues,
+    scopeKeyValues
 } from './effective-set/scope';
 export {
     resolveTrialSet,

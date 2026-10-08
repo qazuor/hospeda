@@ -6,7 +6,12 @@
  * vertical refuses (G-R2-B).
  */
 import { randomUUID } from 'node:crypto';
-import { type CoverageSource, CoverageSourceSchema } from '@repo/billing-verticals-contract';
+import {
+    type CoverageArgs,
+    type CoverageSource,
+    CoverageSourceSchema
+} from '@repo/billing-verticals-contract';
+import { BillingForVerticalsSimulator } from '@repo/billing-verticals-contract/testing';
 import {
     type DrizzleClient,
     planCatalogModel,
@@ -15,10 +20,12 @@ import {
     planVersionLimits,
     planVersions
 } from '@repo/db';
+import { VerticalEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
+    GrantFloorPlanMismatchError,
     GrantReferenceVerticalMismatchError,
     GrantWithoutFloorError,
     MeteredKeyGlobalScopeError,
@@ -29,9 +36,10 @@ import {
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 3 });
 const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 
-const VERTICAL = 'accommodation';
-const OTHER_VERTICAL = 'gastronomy';
+const VERTICAL = VerticalEnum.ACCOMMODATION;
+const OTHER_VERTICAL = VerticalEnum.GASTRONOMY;
 const MAX_PHOTOS = 'max_photos_per_accommodation';
+const MAX_GASTRONOMIES = 'max_gastronomies';
 const SINCE = new Date('2026-01-01T00:00:00.000Z');
 
 afterAll(async () => {
@@ -91,6 +99,7 @@ async function seedVersion(args: {
     readonly sellable: boolean;
     readonly current: boolean;
     readonly limitValue?: number;
+    readonly limitKey?: string;
     readonly entitlements?: readonly {
         readonly key: string;
         readonly planQuota: number | null;
@@ -113,9 +122,11 @@ async function seedVersion(args: {
         .returning({ id: planVersions.id });
     const versionId = (version as { id: string }).id;
     if (args.limitValue !== undefined) {
-        await args.tx
-            .insert(planVersionLimits)
-            .values({ planVersionId: versionId, key: MAX_PHOTOS, value: args.limitValue });
+        await args.tx.insert(planVersionLimits).values({
+            planVersionId: versionId,
+            key: args.limitKey ?? MAX_PHOTOS,
+            value: args.limitValue
+        });
     }
     for (const entitlement of args.entitlements ?? []) {
         await args.tx
@@ -163,7 +174,145 @@ function grantSourceWithoutFloor(reference: string): readonly CoverageSource[] {
     return [source];
 }
 
+/** Delivers the source through the validated billing coverage contract. */
+async function resolveFromSource(args: {
+    readonly reader: PlanCatalogReader;
+    readonly vertical: CoverageArgs['vertical'];
+    readonly sources: readonly CoverageSource[];
+}) {
+    const billing = new BillingForVerticalsSimulator();
+    const userId = 'grant-user';
+    if (args.sources.some((source) => source.floor === null)) {
+        return resolveGrantSet({
+            reader: args.reader,
+            billing: { coverage: async () => ({ covered: true, sources: [...args.sources] }) },
+            userId,
+            vertical: args.vertical
+        });
+    }
+    billing.setCoverage({
+        userId,
+        vertical: args.vertical,
+        response: { covered: true, sources: [...args.sources] }
+    });
+    return resolveGrantSet({ reader: args.reader, billing, userId, vertical: args.vertical });
+}
+
 describe('TEST:V3:6 — a grant never grants less than its floor', () => {
+    it('selects coverage for the requested user and vertical', async () => {
+        await inRollback(async (tx) => {
+            const accommodationA = await seedPlan({ tx });
+            const versionA = await seedVersion({
+                tx,
+                planId: accommodationA,
+                rank: 10,
+                sellable: true,
+                current: true,
+                limitValue: 20
+            });
+            const accommodationB = await seedPlan({ tx });
+            const versionB = await seedVersion({
+                tx,
+                planId: accommodationB,
+                rank: 11,
+                sellable: true,
+                current: true,
+                limitValue: 30
+            });
+            const gastronomyPlan = await seedPlan({ tx, vertical: OTHER_VERTICAL });
+            const gastronomyVersion = await seedVersion({
+                tx,
+                planId: gastronomyPlan,
+                vertical: OTHER_VERTICAL,
+                rank: 10,
+                sellable: true,
+                current: true,
+                limitValue: 99,
+                limitKey: MAX_GASTRONOMIES
+            });
+            const billing = new BillingForVerticalsSimulator();
+            billing.setCoverage({
+                userId: 'user-a',
+                vertical: VERTICAL,
+                response: {
+                    covered: true,
+                    sources: [...grantSource({ reference: versionA, floor: versionA })]
+                }
+            });
+            billing.setCoverage({
+                userId: 'user-b',
+                vertical: VERTICAL,
+                response: {
+                    covered: true,
+                    sources: [...grantSource({ reference: versionB, floor: versionB })]
+                }
+            });
+            billing.setCoverage({
+                userId: 'user-a',
+                vertical: OTHER_VERTICAL,
+                response: {
+                    covered: true,
+                    sources: [
+                        ...grantSource({ reference: gastronomyVersion, floor: gastronomyVersion })
+                    ]
+                }
+            });
+
+            const userA = await resolveGrantSet({
+                reader: readerOn(tx),
+                billing,
+                userId: 'user-a',
+                vertical: VERTICAL
+            });
+            const userB = await resolveGrantSet({
+                reader: readerOn(tx),
+                billing,
+                userId: 'user-b',
+                vertical: VERTICAL
+            });
+            const otherVertical = await resolveGrantSet({
+                reader: readerOn(tx),
+                billing,
+                userId: 'user-a',
+                vertical: OTHER_VERTICAL
+            });
+            const uncovered = await resolveGrantSet({
+                reader: readerOn(tx),
+                billing,
+                userId: 'user-b',
+                vertical: OTHER_VERTICAL
+            });
+
+            expect(
+                userA?.limits.get({ key: MAX_PHOTOS, userId: 'user-a', vertical: VERTICAL })
+            ).toBe(20);
+            expect(
+                userB?.limits.get({ key: MAX_PHOTOS, userId: 'user-b', vertical: VERTICAL })
+            ).toBe(30);
+            expect(
+                otherVertical?.limits.get({
+                    key: MAX_GASTRONOMIES,
+                    userId: 'user-a',
+                    vertical: OTHER_VERTICAL
+                })
+            ).toBe(99);
+            expect(
+                userA?.limits.get({ key: MAX_PHOTOS, userId: 'user-a', vertical: OTHER_VERTICAL })
+            ).toBeUndefined();
+            expect(uncovered).toBeNull();
+            expect(
+                billing.calls
+                    .filter((call) => call.operation === 'coverage')
+                    .map((call) => call.args)
+            ).toStrictEqual([
+                { userId: 'user-a', vertical: VERTICAL },
+                { userId: 'user-b', vertical: VERTICAL },
+                { userId: 'user-a', vertical: OTHER_VERTICAL },
+                { userId: 'user-b', vertical: OTHER_VERTICAL }
+            ]);
+        });
+    });
+
     it('a new version that grants less does not go below the floor', async () => {
         await inRollback(async (tx) => {
             const planId = await seedPlan({ tx });
@@ -184,13 +333,15 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
                 limitValue: 15
             });
 
-            const resolved = await resolveGrantSet({
+            const resolved = await resolveFromSource({
                 reader: readerOn(tx),
                 vertical: VERTICAL,
                 sources: grantSource({ reference: anchored, floor: anchored })
             });
 
-            expect(resolved?.limits.get(MAX_PHOTOS)).toBe(20);
+            expect(
+                resolved?.limits.get({ key: MAX_PHOTOS, userId: 'grant-user', vertical: VERTICAL })
+            ).toBe(20);
         });
     });
 
@@ -214,13 +365,15 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
                 limitValue: 25
             });
 
-            const resolved = await resolveGrantSet({
+            const resolved = await resolveFromSource({
                 reader: readerOn(tx),
                 vertical: VERTICAL,
                 sources: grantSource({ reference: anchored, floor: anchored })
             });
 
-            expect(resolved?.limits.get(MAX_PHOTOS)).toBe(25);
+            expect(
+                resolved?.limits.get({ key: MAX_PHOTOS, userId: 'grant-user', vertical: VERTICAL })
+            ).toBe(25);
         });
     });
 
@@ -244,13 +397,15 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
                 limitValue: 30
             });
 
-            const resolved = await resolveGrantSet({
+            const resolved = await resolveFromSource({
                 reader: readerOn(tx),
                 vertical: VERTICAL,
                 sources: grantSource({ reference: anchored, floor: anchored })
             });
 
-            expect(resolved?.limits.get(MAX_PHOTOS)).toBe(30);
+            expect(
+                resolved?.limits.get({ key: MAX_PHOTOS, userId: 'grant-user', vertical: VERTICAL })
+            ).toBe(30);
         });
     });
 
@@ -268,7 +423,7 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
             });
 
             await expect(
-                resolveGrantSet({
+                resolveFromSource({
                     reader: readerOn(tx),
                     vertical: VERTICAL,
                     sources: grantSource({ reference: foreign, floor: foreign })
@@ -300,12 +455,43 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
             });
 
             await expect(
-                resolveGrantSet({
+                resolveFromSource({
                     reader: readerOn(tx),
                     vertical: VERTICAL,
                     sources: grantSource({ reference: anchored, floor: foreignFloor })
                 })
             ).rejects.toThrow(GrantReferenceVerticalMismatchError);
+        });
+    });
+
+    it('a floor from another plan of the same vertical refuses', async () => {
+        await inRollback(async (tx) => {
+            const planId = await seedPlan({ tx });
+            const anchored = await seedVersion({
+                tx,
+                planId,
+                rank: 10,
+                sellable: true,
+                current: true,
+                limitValue: 20
+            });
+            const otherPlanId = await seedPlan({ tx });
+            const foreignFloor = await seedVersion({
+                tx,
+                planId: otherPlanId,
+                rank: 11,
+                sellable: true,
+                current: true,
+                limitValue: 99
+            });
+
+            await expect(
+                resolveFromSource({
+                    reader: readerOn(tx),
+                    vertical: VERTICAL,
+                    sources: grantSource({ reference: anchored, floor: foreignFloor })
+                })
+            ).rejects.toThrow(GrantFloorPlanMismatchError);
         });
     });
 
@@ -322,7 +508,7 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
             });
 
             await expect(
-                resolveGrantSet({
+                resolveFromSource({
                     reader: readerOn(tx),
                     vertical: VERTICAL,
                     sources: grantSourceWithoutFloor(anchored)
@@ -344,7 +530,7 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
             });
 
             await expect(
-                resolveGrantSet({
+                resolveFromSource({
                     reader: readerOn(tx),
                     vertical: VERTICAL,
                     sources: grantSource({ reference: version, floor: version })
@@ -365,13 +551,19 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
                 entitlements: [{ key: 'priority_support', planQuota: null, trialQuota: null }]
             });
 
-            const resolved = await resolveGrantSet({
+            const resolved = await resolveFromSource({
                 reader: readerOn(tx),
                 vertical: VERTICAL,
                 sources: grantSource({ reference: version, floor: version })
             });
 
-            expect(resolved?.entitlements.get('priority_support')).toBe(Number.POSITIVE_INFINITY);
+            expect(
+                resolved?.entitlements.get({
+                    key: 'priority_support',
+                    userId: 'grant-user',
+                    vertical: VERTICAL
+                })
+            ).toBe(Number.POSITIVE_INFINITY);
         });
     });
 });

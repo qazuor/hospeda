@@ -10,7 +10,8 @@ import {
     assertMeteredKeyIsVertical,
     MeteredKeyGlobalScopeError,
     MissingVerticalForVerticalKeyError,
-    resolveKeyScope
+    resolveKeyScope,
+    scopeKeyValues
 } from '../../src';
 
 /** A definition that the catalog declares, by key. */
@@ -68,5 +69,47 @@ describe('TEST:V3:4 — the scope decides how a key resolves', () => {
         expect(() =>
             assertMeteredKeyIsVertical({ definition: globalDefinition, isMetered: false })
         ).not.toThrow();
+    });
+
+    it('reads global keys by user and vertical keys by user plus vertical', () => {
+        const accommodation = scopeKeyValues({
+            values: new Map([
+                ['priority_support', 1],
+                ['max_accommodations', 3]
+            ]),
+            userId: 'user-a',
+            vertical: 'accommodation'
+        });
+        const gastronomy = scopeKeyValues({
+            values: new Map([
+                ['priority_support', 1],
+                ['max_gastronomies', 7]
+            ]),
+            userId: 'user-a',
+            vertical: 'gastronomy'
+        });
+        expect(
+            accommodation.get({ key: 'priority_support', userId: 'user-a', vertical: 'gastronomy' })
+        ).toBe(1);
+        expect(
+            gastronomy.get({ key: 'priority_support', userId: 'user-a', vertical: 'accommodation' })
+        ).toBe(1);
+        expect(
+            accommodation.get({
+                key: 'max_accommodations',
+                userId: 'user-a',
+                vertical: 'gastronomy'
+            })
+        ).toBeUndefined();
+        expect(
+            gastronomy.get({
+                key: 'max_gastronomies',
+                userId: 'user-a',
+                vertical: 'accommodation'
+            })
+        ).toBeUndefined();
+        expect(
+            accommodation.get({ key: 'priority_support', userId: 'user-b', vertical: null })
+        ).toBeUndefined();
     });
 });

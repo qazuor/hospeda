@@ -5,9 +5,14 @@
  * `user` and does not need the vertical. The first case fails if
  * {@link resolveKeyScope} is disconnected from the path that reads keys.
  */
-import { CoverageSourceSchema } from '@repo/billing-verticals-contract';
+import { type CoverageArgs, CoverageSourceSchema } from '@repo/billing-verticals-contract';
 import { describe, expect, it } from 'vitest';
-import { MissingVerticalForVerticalKeyError, resolveGrantSet } from '../../src';
+import {
+    MeteredKeyGlobalScopeError,
+    MissingVerticalForVerticalKeyError,
+    resolveGrantSet,
+    resolveTrialSet
+} from '../../src';
 import { createInMemoryCatalog, planVersionRow } from '../plan-catalog/in-memory-catalog-reader';
 
 const SINCE = new Date('2026-01-01T00:00:00.000Z');
@@ -31,7 +36,7 @@ describe('TEST:V3:4 — the resolution reads every key by its scope', () => {
         const catalog = createInMemoryCatalog();
         const versionId = catalog.addPlanVersion(
             planVersionRow({
-                vertical: '',
+                vertical: '' as CoverageArgs['vertical'],
                 planId: 'plan-without-vertical',
                 sellable: true,
                 current: true,
@@ -42,8 +47,11 @@ describe('TEST:V3:4 — the resolution reads every key by its scope', () => {
         await expect(
             resolveGrantSet({
                 reader: catalog.reader,
-                vertical: '',
-                sources: [grantSource(versionId)]
+                billing: {
+                    coverage: async () => ({ covered: true, sources: [grantSource(versionId)] })
+                },
+                userId: 'scope-user',
+                vertical: '' as CoverageArgs['vertical']
             })
         ).rejects.toThrow(MissingVerticalForVerticalKeyError);
     });
@@ -69,10 +77,60 @@ describe('TEST:V3:4 — the resolution reads every key by its scope', () => {
 
         const resolved = await resolveGrantSet({
             reader: catalog.reader,
-            vertical: '',
-            sources: [grantSource(versionId)]
+            billing: {
+                coverage: async () => ({ covered: true, sources: [grantSource(versionId)] })
+            },
+            userId: 'scope-user',
+            vertical: '' as CoverageArgs['vertical']
         });
 
-        expect(resolved?.entitlements.get('priority_support')).toBe(Number.POSITIVE_INFINITY);
+        expect(
+            resolved?.entitlements.get({
+                key: 'priority_support',
+                userId: 'scope-user',
+                vertical: null
+            })
+        ).toBe(Number.POSITIVE_INFINITY);
+    });
+
+    it('the trial path rejects a global entitlement with a trial quota', async () => {
+        const catalog = createInMemoryCatalog();
+        const basic = catalog.addPlanVersion(
+            planVersionRow({
+                planId: 'basic',
+                vertical: 'accommodation',
+                entitlements: [
+                    {
+                        key: 'priority_support',
+                        planQuota: null,
+                        trialQuota: 1,
+                        aggregationStrategy: 'MAX'
+                    }
+                ]
+            })
+        );
+        const trialVersion = catalog.addPlanVersion(
+            planVersionRow({
+                planId: 'trial',
+                vertical: 'accommodation',
+                sellable: false,
+                rank: 1
+            })
+        );
+        await expect(
+            resolveTrialSet({
+                reader: catalog.reader,
+                trial: {
+                    userId: 'scope-user',
+                    vertical: 'accommodation',
+                    trialPlanId: 'trial',
+                    floor: {
+                        entitlementsVersionId: basic,
+                        limitsVersionId: basic,
+                        trialPlanVersionId: trialVersion
+                    }
+                }
+            })
+        ).rejects.toThrow(MeteredKeyGlobalScopeError);
     });
 });

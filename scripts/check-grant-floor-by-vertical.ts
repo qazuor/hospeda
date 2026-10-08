@@ -12,8 +12,9 @@
  * steps per call site), so the guard reads that directory's production files and
  * requires two halves to still be wired:
  *
- * - (a) the GRANT source of the resolution is selected by a function
- *       (`selectGrantForVertical`) that FILTERS on `'GRANT'`, and
+ * - (a) the resolution calls `coverage` with its requested `userId` and
+ *       `vertical`, selects from that response's sources, and filters on
+ *       `'GRANT'`, and
  * - (b) the resolution reads the floor from the selected source
  *       (`grant.floor`, never a billing table), reads the floor VERSION's
  *       summary FROM that `grant.floor`, and compares BOTH the referenced plan
@@ -35,11 +36,9 @@
  *
  * ## What it does NOT prove, so a green run is not read as more
  *
- * It is a static structure check over one directory: it does not prove that the
- * data reaching the resolution is a real `cobertura` response, nor that the
- * anchor is stored correctly. It proves the by-vertical wiring of the grant's
- * floor is still in the single-locus resolution, which is the property AC:V3:5
- * and G-R2-B name.
+ * It is a static structure check over one directory: it proves the requested
+ * identity is passed to coverage and its sources reach the selector, but does
+ * not prove the implementation of billing or how the anchor is stored.
  *
  * Exit codes: 0 = clean; 1 = a half is missing, or the resolution is absent.
  */
@@ -53,7 +52,10 @@ import ts from 'typescript';
 export const RESOLUTION_DIR = 'packages/verticals/src/effective-set';
 
 /** The two halves of the by-vertical grant floor, each named when absent. */
-export type GR2BHalf = 'grant-source-by-type' | 'grant-floor-by-vertical';
+export type GR2BHalf =
+    | 'grant-source-by-type'
+    | 'grant-floor-by-vertical'
+    | 'grant-coverage-identity';
 
 /** The message per half. Each claims only what its predicate verifies. */
 export const RULE_MESSAGES: Readonly<Record<GR2BHalf, string>> = {
@@ -64,8 +66,77 @@ export const RULE_MESSAGES: Readonly<Record<GR2BHalf, string>> = {
         'G-R2-B: the resolution does not compare the referenced plan version vertical AND the ' +
         "floor version vertical (read from the GRANT source's `grant.floor`) against the " +
         'resolved vertical, so a grant can be compared against a plan or a floor of another ' +
-        'vertical.'
+        'vertical.',
+    'grant-coverage-identity':
+        'G-R2-B: the GRANT source is not selected from coverage(userId, vertical) of the requested identity.'
 };
+
+/** Whether a property access has the exact AST path requested. */
+function hasPath(node: ts.Node, path: string): boolean {
+    return ts.isExpression(node) && dottedName(node) === path;
+}
+
+/** Checks the coverage call and the selected sources within resolveGrantSet. */
+function fileBindsCoverageToIdentity(file: ResolutionFile): boolean {
+    const sourceFile = ts.createSourceFile(
+        file.name,
+        file.source,
+        ts.ScriptTarget.Latest,
+        true,
+        ts.ScriptKind.TS
+    );
+    const resolver = findFunction(sourceFile, 'resolveGrantSet');
+    if (!resolver?.body) return false;
+    const coverageNames = new Set<string>();
+    let selectsCoverage = false;
+    const visit = (node: ts.Node): void => {
+        if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+            const init = ts.isAwaitExpression(node.initializer)
+                ? node.initializer.expression
+                : node.initializer;
+            if (ts.isCallExpression(init) && hasPath(init.expression, 'args.billing.coverage')) {
+                const first = init.arguments[0];
+                if (first && ts.isObjectLiteralExpression(first)) {
+                    const fields = new Map(
+                        first.properties
+                            .filter(ts.isPropertyAssignment)
+                            .map((property) => [
+                                property.name.getText(sourceFile),
+                                property.initializer
+                            ])
+                    );
+                    if (
+                        hasPath(fields.get('userId') ?? sourceFile, 'args.userId') &&
+                        hasPath(fields.get('vertical') ?? sourceFile, 'args.vertical')
+                    )
+                        coverageNames.add(node.name.text);
+                }
+            }
+            if (ts.isCallExpression(init) && hasPath(init.expression, 'selectGrantForVertical')) {
+                const first = init.arguments[0];
+                if (first && ts.isObjectLiteralExpression(first)) {
+                    const sources = first.properties.find(
+                        (property) =>
+                            ts.isPropertyAssignment(property) &&
+                            property.name.getText(sourceFile) === 'sources'
+                    );
+                    if (
+                        sources &&
+                        ts.isPropertyAssignment(sources) &&
+                        ts.isPropertyAccessExpression(sources.initializer) &&
+                        sources.initializer.name.text === 'sources' &&
+                        ts.isIdentifier(sources.initializer.expression) &&
+                        coverageNames.has(sources.initializer.expression.text)
+                    )
+                        selectsCoverage = true;
+                }
+            }
+        }
+        ts.forEachChild(node, visit);
+    };
+    visit(resolver.body);
+    return selectsCoverage;
+}
 
 const TEST_FILE = /\.(?:test|spec)\.[cm]?tsx?$/;
 
@@ -395,6 +466,7 @@ export function findMissingHalves({
     const missing: GR2BHalf[] = [];
     if (!selectorGrantsByType(files)) missing.push('grant-source-by-type');
     if (!readsFloorAndComparesVertical(files)) missing.push('grant-floor-by-vertical');
+    if (!files.some(fileBindsCoverageToIdentity)) missing.push('grant-coverage-identity');
     return missing;
 }
 
@@ -446,7 +518,7 @@ export function run(args: { readonly root?: string } = {}): {
     }
 
     lines.push(
-        `OK: ${RESOLUTION_DIR} selects the GRANT source by type, and compares both the referenced plan version vertical and the floor version vertical (read from the source's floor) against the resolved one.`
+        `OK: ${RESOLUTION_DIR} selects the GRANT source from coverage(userId, vertical) by type, and compares both the referenced plan version vertical and the floor version vertical (read from the source's floor) against the resolved one.`
     );
     return { exitCode: 0, output: lines.join('\n') };
 }

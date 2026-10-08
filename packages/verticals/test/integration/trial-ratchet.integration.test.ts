@@ -30,6 +30,7 @@ import { Pool } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
     CatalogVersionNotFoundError,
+    MeteredKeyGlobalScopeError,
     type PlanCatalogReader,
     resolveTrialSet,
     TrialPlanEntitlementOverrideError
@@ -115,7 +116,7 @@ async function seedVersion(args: {
             sellable: args.sellable,
             current: args.current,
             graceDays: 10,
-            trialDays: 14,
+            trialDays: 0, // Required catalog field; duration is outside this fixture's behavior.
             allowsPause: true
         })
         .returning({ id: planVersions.id });
@@ -141,6 +142,7 @@ async function seedTrial(args: {
     readonly floorLimitsVersionId: string;
     readonly floorTrialPlanVersionId: string;
 }): Promise<{
+    readonly userId: string;
     readonly vertical: string;
     readonly trialPlanId: string;
     readonly floor: {
@@ -167,8 +169,8 @@ async function seedTrial(args: {
         floorEntitlementsVersionId: args.floorEntitlementsVersionId,
         floorLimitsVersionId: args.floorLimitsVersionId,
         floorTrialPlanVersionId: args.floorTrialPlanVersionId,
-        startedAt: new Date('2026-01-01T00:00:00.000Z'),
-        endsAt: new Date('2026-01-15T00:00:00.000Z'),
+        startedAt: new Date('2020-01-01T00:00:00.000Z'),
+        endsAt: new Date('2030-01-01T00:00:00.000Z'),
         emailPseudonym: randomUUID().replaceAll('-', '').padEnd(64, '0'),
         deadlinesVersion: 1
     });
@@ -183,6 +185,7 @@ async function seedTrial(args: {
         floorTrialPlanVersionId: string | null;
     };
     return {
+        userId,
         vertical: trial.vertical,
         trialPlanId: trial.trialPlanId as string,
         floor: {
@@ -223,6 +226,17 @@ describe('TEST:V3:5 — the trial plan derives, applies overrides and ratchets',
     it('(a) raising the basic plan MAX_PHOTOS from 20 to 25 raises the trial', async () => {
         await inRollback(async (tx) => {
             const basicPlanId = await seedPlan({ tx });
+            const floorLimits = await seedVersion({
+                tx,
+                planId: basicPlanId,
+                rank: 10,
+                sellable: true,
+                current: false,
+                limits: [
+                    { key: MAX_PHOTOS, value: 20 },
+                    { key: MAX_LISTINGS, value: 3 }
+                ]
+            });
             await seedVersion({
                 tx,
                 planId: basicPlanId,
@@ -231,18 +245,6 @@ describe('TEST:V3:5 — the trial plan derives, applies overrides and ratchets',
                 current: true,
                 limits: [
                     { key: MAX_PHOTOS, value: 25 },
-                    { key: MAX_LISTINGS, value: 3 }
-                ]
-            });
-            const floorPlanId = await seedPlan({ tx });
-            const floorLimits = await seedVersion({
-                tx,
-                planId: floorPlanId,
-                rank: 100,
-                sellable: false,
-                current: false,
-                limits: [
-                    { key: MAX_PHOTOS, value: 20 },
                     { key: MAX_LISTINGS, value: 3 }
                 ]
             });
@@ -261,14 +263,26 @@ describe('TEST:V3:5 — the trial plan derives, applies overrides and ratchets',
 
             const resolved = await resolveTrialSet({ reader: readerOn(tx), trial });
 
-            expect(resolved.limits.get(MAX_PHOTOS)).toBe(25);
-            expect(resolved.limits.get(MAX_LISTINGS)).toBe(1);
+            expect(
+                resolved.limits.get({ key: MAX_PHOTOS, userId: trial.userId, vertical: VERTICAL })
+            ).toBe(25);
+            expect(
+                resolved.limits.get({ key: MAX_LISTINGS, userId: trial.userId, vertical: VERTICAL })
+            ).toBe(1);
         });
     });
 
     it('(b) lowering MAX_PHOTOS below the floor does not degrade the trial', async () => {
         await inRollback(async (tx) => {
             const basicPlanId = await seedPlan({ tx });
+            const floorLimits = await seedVersion({
+                tx,
+                planId: basicPlanId,
+                rank: 10,
+                sellable: true,
+                current: false,
+                limits: [{ key: MAX_PHOTOS, value: 20 }]
+            });
             await seedVersion({
                 tx,
                 planId: basicPlanId,
@@ -276,15 +290,6 @@ describe('TEST:V3:5 — the trial plan derives, applies overrides and ratchets',
                 sellable: true,
                 current: true,
                 limits: [{ key: MAX_PHOTOS, value: 15 }]
-            });
-            const floorPlanId = await seedPlan({ tx });
-            const floorLimits = await seedVersion({
-                tx,
-                planId: floorPlanId,
-                rank: 100,
-                sellable: false,
-                current: false,
-                limits: [{ key: MAX_PHOTOS, value: 20 }]
             });
             const trialPlan = await seedTrialPlan({ tx });
             const trial = await seedTrial({
@@ -297,7 +302,9 @@ describe('TEST:V3:5 — the trial plan derives, applies overrides and ratchets',
 
             const resolved = await resolveTrialSet({ reader: readerOn(tx), trial });
 
-            expect(resolved.limits.get(MAX_PHOTOS)).toBe(20);
+            expect(
+                resolved.limits.get({ key: MAX_PHOTOS, userId: trial.userId, vertical: VERTICAL })
+            ).toBe(20);
         });
     });
 
@@ -348,8 +355,16 @@ describe('TEST:V3:5 — the trial plan derives, applies overrides and ratchets',
 
             const resolved = await resolveTrialSet({ reader: readerOn(tx), trial });
 
-            expect(resolved.limits.get(MAX_LISTINGS)).toBe(1);
-            expect(resolved.limits.get(MAX_PROMOTIONS)).toBe(2);
+            expect(
+                resolved.limits.get({ key: MAX_LISTINGS, userId: trial.userId, vertical: VERTICAL })
+            ).toBe(1);
+            expect(
+                resolved.limits.get({
+                    key: MAX_PROMOTIONS,
+                    userId: trial.userId,
+                    vertical: VERTICAL
+                })
+            ).toBe(2);
         });
     });
 
@@ -394,7 +409,39 @@ describe('TEST:V3:5 — the trial plan derives, applies overrides and ratchets',
             const resolved = await resolveTrialSet({ reader: readerOn(tx), trial });
 
             // Highest rank (20) gives 20; the floor gives 30; trialQuota (999/1) never counts.
-            expect(resolved.entitlements.get(METERED)).toBe(30);
+            expect(
+                resolved.entitlements.get({
+                    key: METERED,
+                    userId: trial.userId,
+                    vertical: VERTICAL
+                })
+            ).toBe(30);
+        });
+    });
+
+    it('rejects a metered global entitlement read through the trial derivation', async () => {
+        await inRollback(async (tx) => {
+            const basicPlanId = await seedPlan({ tx });
+            const basic = await seedVersion({
+                tx,
+                planId: basicPlanId,
+                rank: 10,
+                sellable: true,
+                current: true,
+                entitlements: [{ key: 'priority_support', planQuota: 1, trialQuota: 1 }]
+            });
+            const trialPlan = await seedTrialPlan({ tx });
+            const trial = await seedTrial({
+                tx,
+                trialPlanId: trialPlan.planId,
+                floorEntitlementsVersionId: basic,
+                floorLimitsVersionId: basic,
+                floorTrialPlanVersionId: trialPlan.floorVersionId
+            });
+
+            await expect(resolveTrialSet({ reader: readerOn(tx), trial })).rejects.toThrow(
+                MeteredKeyGlobalScopeError
+            );
         });
     });
 

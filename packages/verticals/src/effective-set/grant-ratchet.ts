@@ -9,7 +9,7 @@
  *
  * - The grant source is the one of the vertical being resolved and no other:
  *   the resolution selects it with {@link selectGrantForVertical} over the
- *   coverage of that `user + vertical`.
+ *   coverage obtained for that `user + vertical` from billing.
  * - The plan of the source's `reference` must belong to that same vertical. A
  *   source that transports a plan of another vertical refuses
  *   ({@link GrantReferenceVerticalMismatchError}), because a single floor for a
@@ -28,20 +28,33 @@
  * one (AC:V3:3). A metered key (one whose entitlement carries `planQuota` OR
  * `trialQuota`) with `scope: global` refuses here, on the real version read.
  */
-import type { CoverageSource } from '@repo/billing-verticals-contract';
+import type {
+    BillingForVerticals,
+    CoverageArgs,
+    CoverageSource
+} from '@repo/billing-verticals-contract';
 import { type AggregationStrategy, getCatalogKey } from '@repo/schemas';
 import type { PlanCatalogReader, PlanVersionSummaryRow } from '../plan-catalog/catalog-reader';
 import { CatalogVersionNotFoundError } from '../plan-catalog/errors';
-import { GrantReferenceVerticalMismatchError, GrantWithoutFloorError } from './errors';
+import {
+    GrantFloorPlanMismatchError,
+    GrantReferenceVerticalMismatchError,
+    GrantWithoutFloorError
+} from './errors';
 import { bestOf } from './ratchet';
-import { assertMeteredKeyIsVertical, resolveKeyScope } from './scope';
+import {
+    assertMeteredKeyIsVertical,
+    resolveKeyScope,
+    type ScopedKeyValues,
+    scopeKeyValues
+} from './scope';
 
 /** What a grant resolves: its entitlement quotas and its limits. */
 export interface GrantSet {
     /** Plan quota per entitlement key (`Infinity` for a plain one). */
-    readonly entitlements: ReadonlyMap<string, number>;
+    readonly entitlements: ScopedKeyValues;
     /** Value per limit key. */
-    readonly limits: ReadonlyMap<string, number>;
+    readonly limits: ScopedKeyValues;
 }
 
 /**
@@ -50,7 +63,7 @@ export interface GrantSet {
  * already that of the vertical, so selecting the GRANT source here is selecting
  * the one of the vertical being resolved.
  *
- * @param args.sources - The live sources of the `user + vertical`.
+ * @param args.sources - The live sources already returned for one `user + vertical`.
  * @returns The GRANT source, or `null` when the coverage carries none.
  */
 export function selectGrantForVertical(args: {
@@ -156,7 +169,8 @@ function ratchet(args: {
  *
  * @param args.reader - Reads the catalog.
  * @param args.vertical - The vertical being resolved.
- * @param args.sources - The live sources of that `user + vertical`.
+ * @param args.billing - The coverage reader for the requested identity.
+ * @param args.userId - The person whose grant is resolved.
  * @returns The ratcheted set, or `null` when the coverage carries no GRANT.
  * @throws GrantWithoutFloorError if the GRANT source carries no floor.
  * @throws GrantReferenceVerticalMismatchError if the reference plan OR the floor
@@ -171,10 +185,12 @@ function ratchet(args: {
  */
 export async function resolveGrantSet(args: {
     readonly reader: PlanCatalogReader;
-    readonly vertical: string;
-    readonly sources: readonly CoverageSource[];
+    readonly billing: Pick<BillingForVerticals, 'coverage'>;
+    readonly userId: string;
+    readonly vertical: CoverageArgs['vertical'];
 }): Promise<GrantSet | null> {
-    const grant = selectGrantForVertical({ sources: args.sources });
+    const coverage = await args.billing.coverage({ userId: args.userId, vertical: args.vertical });
+    const grant = selectGrantForVertical({ sources: coverage.sources });
     if (!grant) return null;
 
     const referenceId = referencePlanVersionIdOf({ reference: grant.reference });
@@ -205,6 +221,12 @@ export async function resolveGrantSet(args: {
             referenceVertical: floorSummary.vertical
         });
     }
+    if (floorSummary.planId !== reference.planId) {
+        throw new GrantFloorPlanMismatchError({
+            referencePlanId: reference.planId,
+            floorPlanId: floorSummary.planId
+        });
+    }
 
     const currentVersion = await args.reader.findCurrentPlanVersion({
         planId: reference.planId
@@ -224,7 +246,15 @@ export async function resolveGrantSet(args: {
         vertical: args.vertical
     });
     return {
-        entitlements: ratchet({ current: current.entitlements, floor: floor.entitlements }),
-        limits: ratchet({ current: current.limits, floor: floor.limits })
+        entitlements: scopeKeyValues({
+            values: ratchet({ current: current.entitlements, floor: floor.entitlements }),
+            userId: args.userId,
+            vertical: args.vertical
+        }),
+        limits: scopeKeyValues({
+            values: ratchet({ current: current.limits, floor: floor.limits }),
+            userId: args.userId,
+            vertical: args.vertical
+        })
     };
 }

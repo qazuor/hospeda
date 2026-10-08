@@ -33,7 +33,12 @@ import type { PlanCatalogReader } from '../plan-catalog/catalog-reader';
 import { CatalogVersionNotFoundError } from '../plan-catalog/errors';
 import { TrialPlanEntitlementOverrideError } from './errors';
 import { bestOf } from './ratchet';
-import { resolveKeyScope } from './scope';
+import {
+    assertMeteredKeyIsVertical,
+    resolveKeyScope,
+    type ScopedKeyValues,
+    scopeKeyValues
+} from './scope';
 
 /** A value with the aggregation strategy its key declares. */
 interface Valued {
@@ -50,6 +55,7 @@ export interface TrialFloorReferences {
 
 /** A trial in progress: its vertical, its trial plan and its floor references. */
 export interface TrialInProgress {
+    readonly userId: string;
     readonly vertical: string;
     readonly trialPlanId: string;
     readonly floor: TrialFloorReferences;
@@ -58,16 +64,20 @@ export interface TrialInProgress {
 /** The effective set of a trial in progress. */
 export interface TrialSet {
     /** Plan quota per entitlement key (`Infinity` for a plain one). */
-    readonly entitlements: ReadonlyMap<string, number>;
+    readonly entitlements: ScopedKeyValues;
     /** Value per limit key. */
-    readonly limits: ReadonlyMap<string, number>;
+    readonly limits: ScopedKeyValues;
 }
 
 /** Resolves the scope of every key a version declares. */
 function assertKeysResolveByVertical(args: {
     readonly effects: {
         readonly limits: readonly { readonly key: string }[];
-        readonly entitlements: readonly { readonly key: string }[];
+        readonly entitlements: readonly {
+            readonly key: string;
+            readonly planQuota: number | null;
+            readonly trialQuota?: number | null;
+        }[];
     };
     readonly vertical: string;
 }): void {
@@ -75,6 +85,15 @@ function assertKeysResolveByVertical(args: {
         const definition = getCatalogKey({ key: key.key });
         if (!definition) continue;
         resolveKeyScope({ definition, vertical: args.vertical });
+    }
+
+    for (const entitlement of args.effects.entitlements) {
+        const definition = getCatalogKey({ key: entitlement.key });
+        if (!definition) continue;
+        assertMeteredKeyIsVertical({
+            definition,
+            isMetered: entitlement.planQuota !== null || (entitlement.trialQuota ?? null) !== null
+        });
     }
 }
 
@@ -261,13 +280,18 @@ export async function resolveTrialSet(args: {
     });
 
     return {
-        entitlements: ratchet({
-            current: derivedEntitlements,
-            floor: floorEntitlements
+        entitlements: scopeKeyValues({
+            values: ratchet({ current: derivedEntitlements, floor: floorEntitlements }),
+            userId: args.trial.userId,
+            vertical: args.trial.vertical
         }),
-        limits: ratchet({
-            current: applyOverrides({ derived: derivedLimits, overrides }),
-            floor: applyOverrides({ derived: floorDerived, overrides: floorOverrides })
+        limits: scopeKeyValues({
+            values: ratchet({
+                current: applyOverrides({ derived: derivedLimits, overrides }),
+                floor: applyOverrides({ derived: floorDerived, overrides: floorOverrides })
+            }),
+            userId: args.trial.userId,
+            vertical: args.trial.vertical
         })
     };
 }
