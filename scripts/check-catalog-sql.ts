@@ -27,16 +27,16 @@
  *
  * ## What it does NOT do, so a green run is not read as more
  *
- * - It reads `INSERT INTO "<table>" (...) VALUES (...), ...;` with string
- *   literals and `NULL` only. Any OTHER statement that writes one of the two
+ * - It reads `INSERT INTO "<table>" (...) VALUES (...), ...;` with string,
+ *   safe-integer, boolean and `NULL` literals. Any OTHER statement that writes one of the
  *   tables (`UPDATE`, `DELETE`, `TRUNCATE`, `INSERT ... SELECT`,
  *   `INSERT ... ON CONFLICT`) cannot be folded into the row set, so the guard
  *   FAILS on it instead of guessing; teach it the new shape first.
  * - It does not read the database. That the migration actually applies, and
  *   that the FK rejects an unknown key, is TEST:V1:6
  *   (`packages/db/test/integration/catalog-key-fk-from-empty.test.ts`).
- * - The production catalog load that V2 adds is not here yet: V2 adds it to the
- *   generator and to {@link LOAD_NAMES}.
+ * - V2.4a's production catalog loads are passed to `run({ loads })` in tests.
+ *   V2.4b adds them to the default migration loads with the committed SQL.
  * - The extras carril (`migrations/extras/`) is not read: reference rows never
  *   go there.
  *
@@ -123,8 +123,8 @@ export function splitStatements({ sql }: { readonly sql: string }): readonly str
 }
 
 /**
- * Parses the `VALUES` list of an `INSERT`: parenthesised tuples of string
- * literals and `NULL`.
+ * Parses the `VALUES` list of an `INSERT`: parenthesised tuples of string,
+ * safe-integer, boolean and `NULL` literals.
  *
  * @param input - Parse input.
  * @param input.text - Everything after the `VALUES` keyword.
@@ -164,6 +164,18 @@ export function parseValues({ text }: { readonly text: string }): {
             } else if (/^NULL\b/i.test(text.slice(i))) {
                 tuple.push(null);
                 i += 4;
+            } else if (/^(TRUE|FALSE)\b/i.test(text.slice(i))) {
+                const match = /^(TRUE|FALSE)\b/i.exec(text.slice(i)) as RegExpExecArray;
+                tuple.push(match[1]?.toUpperCase() === 'TRUE');
+                i += match[0].length;
+            } else if (/^-?(?:0|[1-9]\d*)\b/.test(text.slice(i))) {
+                const match = /^-?(?:0|[1-9]\d*)\b/.exec(text.slice(i)) as RegExpExecArray;
+                const value = Number(match[0]);
+                if (!Number.isSafeInteger(value)) {
+                    return { tuples, error: `unsafe integer at "${text.slice(i, i + 20)}"` };
+                }
+                tuple.push(value);
+                i += match[0].length;
             } else {
                 return { tuples, error: `unsupported value at "${text.slice(i, i + 20)}"` };
             }
