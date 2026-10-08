@@ -1,8 +1,9 @@
 /**
- * The fake's skeleton behaviour (AC:B1:1): an honest, coherent provider over
- * all eight capabilities. Every assertion reads the state back by id, never a
- * status code or an acknowledgement (INV:D5, "ninguna aserción se escribe sobre
- * un código de estado"). The lies of M1..M13 are another unit's (B1.4).
+ * The fake's core behaviour (AC:B1:1): a coherent provider over all eight
+ * capabilities. Every assertion reads the state back by id, never a status code
+ * or an acknowledgement (INV:D5, "ninguna aserción se escribe sobre un código
+ * de estado"). The three lies these cases would otherwise meet are turned off
+ * by name; each lie is exercised on its own in `fake-lies.test.ts`.
  */
 import { type AdjustableClock, createAdjustableClock } from '@repo/test-clock';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -42,7 +43,14 @@ let clock: AdjustableClock;
 
 beforeEach(() => {
     clock = createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') });
-    fake = new FakePaymentProvider({ clock });
+    fake = new FakePaymentProvider({
+        clock,
+        honestAbout: [
+            { lie: 'M6', why: 'these cases count one notice per change, delivered at once' },
+            { lie: 'M8', why: 'these cases read a charge approved the moment it is asked' },
+            { lie: 'M13', why: 'these cases accumulate partial refunds from the first one' }
+        ]
+    });
 });
 
 /** An authorization the customer already approved. */
@@ -158,19 +166,19 @@ describe('refund', () => {
         const authorizationId = await activeAuthorization();
         const { chargeId } = await fake.charge({
             authorizationId,
-            amount: ARS(1_000),
+            amount: ARS(100_000),
             reference: 'cycle-1'
         });
 
         // Act
-        await fake.refund({ chargeId, amount: ARS(400), reference: 'r-1' });
-        await fake.refund({ chargeId, amount: ARS(600), reference: 'r-2' });
+        await fake.refund({ chargeId, amount: ARS(40_000), reference: 'r-1' });
+        await fake.refund({ chargeId, amount: ARS(60_000), reference: 'r-2' });
         const over = await codeOf({
             promise: fake.refund({ chargeId, amount: ARS(1), reference: 'r-3' })
         });
 
         // Assert
-        expect((await fake.readCharge({ chargeId })).snapshot.refundedAmount).toEqual(ARS(1_000));
+        expect((await fake.readCharge({ chargeId })).snapshot.refundedAmount).toEqual(ARS(100_000));
         expect(over).toBe('REJECTED');
     });
 });

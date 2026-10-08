@@ -5,22 +5,25 @@
  * it is written without one provider concept: being writable that way is what
  * proves the interface does not leak one (AC:B1:1).
  *
- * This is the skeleton: a coherent, honest provider. The closed lists of what
- * the real one lies about (M1..M13) and of its own rules (RP1..RP12) are added
- * on top of it by their own unit (B1.4); nothing here pretends to reproduce
- * them yet.
+ * **It lies like the real one** (DEC-TEST-003, AC:B1:9, AC:B1:13): every lie of
+ * the closed list (`fake-lists.json`) whose surface the interface carries is
+ * told here, by default, each in ONE place, behind `this.lying({ lie })`. A
+ * test turns a lie off only by naming it and saying why
+ * (`honestAbout: [{ lie, why }]`); GUARD:G15 checks both rules statically. The
+ * provider's own rules (RP) are kept always (`fake-rules.ts`, AC:B1:14). What it
+ * simulates without having measured it is apart and off by default
+ * (`simulate: [{ simulation, why }]`).
  *
- * Every read by id carries its instant, taken from the injected clock (AC:B1:4):
- * the fake never reads the system time.
+ * Every read by id carries its instant, taken from the injected clock (AC:B1:4),
+ * and every delay of the fake (a late charge, a late notice, an expiring link)
+ * runs on that same clock: the fake never reads the system time.
  *
- * Beyond the interface it exposes two test-side handles, both named for what a
- * test does with them: `approve` stands for the customer granting the
- * permission on the provider's page, and `takeDeliveries` hands over the
- * notices the fake sent, in the shape our receiver gets them.
+ * Beyond the interface it exposes two test-side handles: `approve` stands for
+ * the customer granting the permission on the provider's page, and
+ * `takeDeliveries` hands over the notices the fake sent and that are due.
  */
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { CapabilitySupportMap, PaymentCapability } from '../provider/capabilities';
-import { PaymentProviderError } from '../provider/errors';
 import type {
     AuthorizationRef,
     AuthorizationSnapshot,
@@ -31,10 +34,8 @@ import type {
     ChargeRef,
     ChargeResult,
     ChargeSnapshot,
-    Money,
     MutationAcknowledgement,
     NoticeDelivery,
-    NoticeResourceKind,
     PaymentProvider,
     ProviderNotice,
     RefundInput,
@@ -48,149 +49,224 @@ import {
     ChargeInputSchema,
     ChargeRefSchema,
     NoticeDeliverySchema,
-    PaymentProviderOptionsSchema,
     parseProviderInput,
     RefundInputSchema
 } from '../provider/schemas';
-import { decodeFakeNoticeBody, encodeFakeNoticeBody } from './fake-notice';
+import { FakeLedger } from './fake-ledger';
+import type { FakeLieId } from './fake-lists';
+import { decodeFakeNotice } from './fake-notice';
+import { type FakePaymentProviderOptions, parseFakeOptions } from './fake-options';
+import { FakeOutbox } from './fake-outbox';
+import { assertChargeableAmount, nextChargeBatch } from './fake-rules';
+import {
+    APPROVAL_BASE_URL,
+    assertSameCurrency,
+    FAKE_CAPABILITY_SUPPORT,
+    FAKE_HONEST_LINK_LIFETIME_MS,
+    NOT_REFUNDABLE_MESSAGE,
+    rejected,
+    throughNetwork
+} from './fake-support';
 
-/** The fake offers every capability whole: it is the reference, not a provider. */
-export const FAKE_CAPABILITY_SUPPORT: CapabilitySupportMap = Object.freeze({
-    authorize: { level: 'full' },
-    charge: { level: 'full' },
-    changeAmount: { level: 'full' },
-    pauseAndResume: { level: 'full' },
-    cancel: { level: 'full' },
-    refund: { level: 'full' },
-    read: { level: 'full' },
-    notify: { level: 'full' }
-});
+export { FAKE_CAPABILITY_SUPPORT, FAKE_HONEST_LINK_LIFETIME_MS, NOT_REFUNDABLE_MESSAGE };
 
-/** Where the fake sends a customer to approve; a reserved, never-resolving host. */
-const APPROVAL_BASE_URL = 'https://payments-fake.invalid/approve/';
-
-interface StoredAuthorization {
-    snapshot: AuthorizationSnapshot;
-    version: number;
-}
-
-interface StoredCharge {
-    snapshot: ChargeSnapshot;
-    version: number;
-}
-
-/** In-memory payment provider implementing all eight capabilities. */
+/** In-memory payment provider implementing all eight capabilities, lying as measured. */
 export class FakePaymentProvider implements PaymentProvider {
     readonly capabilitySupport: CapabilitySupportMap = FAKE_CAPABILITY_SUPPORT;
 
-    private readonly authorizations = new Map<string, StoredAuthorization>();
-    private readonly charges = new Map<string, StoredCharge>();
-    private readonly outbox: NoticeDelivery[] = [];
-    private sequence = 0;
+    private readonly outbox: FakeOutbox;
+    private readonly ledger: FakeLedger;
     private readonly clock: Clock;
+    private readonly honest: ReadonlySet<string>;
+    private readonly simulating: ReadonlySet<string>;
 
     /**
-     * @param options.clock - The clock every read by id is stamped with
+     * @param options.clock - The clock every read and every delay runs on
+     * @param options.honestAbout - The lies this test turns off, each with why
+     * @param options.simulate - The simulations this test turns on, each with why
      */
-    constructor(options: { readonly clock: Clock }) {
-        this.clock = PaymentProviderOptionsSchema.parse(options).clock;
+    constructor(options: FakePaymentProviderOptions) {
+        const parsed = parseFakeOptions({ options });
+        this.clock = parsed.clock;
+        this.honest = parsed.honest;
+        this.simulating = parsed.simulating;
+        this.outbox = new FakeOutbox({
+            clock: this.clock,
+            isHonestAbout: ({ lie }) => this.honest.has(lie),
+            outOfOrder: this.simulating.has('noticesOutOfOrder')
+        });
+        this.ledger = new FakeLedger({ outbox: this.outbox });
     }
 
-    /** Capability 1 · authorize: the authorization is born pending the customer's approval. */
+    /**
+     * Capability 1 · authorize: the authorization is born pending the customer's
+     * approval. Each equal request creates another (M3), and the link comes
+     * back broken (M10).
+     */
     async authorize(input: AuthorizeInput): Promise<AuthorizeResult> {
         const { value } = parseProviderInput({
             schema: AuthorizeInputSchema,
             input,
             capability: 'authorize'
         });
-        const authorizationId = this.nextId({ prefix: 'auth' });
-        this.authorizations.set(authorizationId, {
-            snapshot: {
-                authorizationId,
-                reference: value.reference,
-                status: 'pending',
-                amount: { ...value.amount },
-                cadence: { ...value.cadence }
-            },
-            version: 1
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'authorize',
+            run: () => {
+                this.catchUp();
+                assertChargeableAmount({ amount: value.amount, capability: 'authorize' });
+                const existing = [...this.ledger.authorizations.values()].find(
+                    (stored) => stored.snapshot.reference === value.reference
+                );
+                if (existing && !this.lying({ lie: 'M3' })) {
+                    const { authorizationId } = existing.snapshot;
+                    return { authorizationId, approvalUrl: existing.approvalUrl };
+                }
+                const authorizationId = this.ledger.nextId({ prefix: 'auth' });
+                const link = `${APPROVAL_BASE_URL}${authorizationId}`;
+                const approvalUrl = this.lying({ lie: 'M10' }) ? `${link}?activation=true` : link;
+                this.ledger.authorizations.set(authorizationId, {
+                    snapshot: {
+                        authorizationId,
+                        reference: value.reference,
+                        status: 'pending',
+                        amount: { ...value.amount },
+                        cadence: { ...value.cadence }
+                    },
+                    version: 1,
+                    approvalUrl,
+                    createdAt: this.now()
+                });
+                this.ledger.emit({
+                    resourceKind: 'authorization',
+                    resourceId: authorizationId,
+                    version: 1
+                });
+                return { authorizationId, approvalUrl };
+            }
         });
-        this.emit({ resourceKind: 'authorization', resourceId: authorizationId, version: 1 });
-        return { authorizationId, approvalUrl: `${APPROVAL_BASE_URL}${authorizationId}` };
     }
 
     /**
      * Test handle: the customer grants the permission on the provider's page.
+     * It is not a request of ours, so no network simulation touches it.
      *
      * @param input.authorizationId - The pending authorization
      * @returns The acknowledgement of the transition
      */
     async approve(input: AuthorizationRef): Promise<MutationAcknowledgement> {
-        return this.transition({ input, capability: 'authorize', from: ['pending'], to: 'active' });
+        return this.transition({
+            input,
+            capability: 'authorize',
+            from: ['pending'],
+            to: 'active',
+            viaNetwork: false
+        });
     }
 
-    /** Capability 2 · charge: only an active authorization is charged, in its own currency. */
+    /**
+     * Capability 2 · charge: only an active authorization is charged (RP9), in
+     * its currency and within the amount range (RP3, RP4). The charge lands in
+     * the first batch after the hour it was asked (M8): pending until then.
+     */
     async charge(input: ChargeInput): Promise<ChargeResult> {
         const { value } = parseProviderInput({
             schema: ChargeInputSchema,
             input,
             capability: 'charge'
         });
-        const stored = this.authorizationOrThrow({
-            id: value.authorizationId,
-            capability: 'charge'
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'charge',
+            run: () => {
+                this.catchUp();
+                const stored = this.ledger.authorizationOrThrow({
+                    id: value.authorizationId,
+                    capability: 'charge'
+                });
+                if (stored.snapshot.status === 'paused') {
+                    throw rejected({
+                        capability: 'charge',
+                        reason: 'a paused authorization is not charged'
+                    });
+                }
+                if (stored.snapshot.status !== 'active') {
+                    throw rejected({
+                        capability: 'charge',
+                        reason: `authorization is ${stored.snapshot.status}`
+                    });
+                }
+                assertChargeableAmount({ amount: value.amount, capability: 'charge' });
+                assertSameCurrency({
+                    expected: stored.snapshot.amount,
+                    actual: value.amount,
+                    capability: 'charge'
+                });
+                const late = this.lying({ lie: 'M8' });
+                const chargeId = this.ledger.nextId({ prefix: 'charge' });
+                this.ledger.charges.set(chargeId, {
+                    snapshot: {
+                        chargeId,
+                        authorizationId: value.authorizationId,
+                        reference: value.reference,
+                        status: late ? 'pending' : 'approved',
+                        amount: { ...value.amount },
+                        refundedAmount: { amountMinor: 0, currency: value.amount.currency }
+                    },
+                    version: 1,
+                    settleAt: late ? nextChargeBatch({ at: this.now() }) : null,
+                    refundAttempts: 0,
+                    refundsByReference: new Map()
+                });
+                this.ledger.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
+                return { chargeId };
+            }
         });
-        if (stored.snapshot.status !== 'active') {
-            throw this.rejected({
-                capability: 'charge',
-                reason: `authorization is ${stored.snapshot.status}`
-            });
-        }
-        this.assertSameCurrency({
-            expected: stored.snapshot.amount,
-            actual: value.amount,
-            capability: 'charge'
-        });
-        const chargeId = this.nextId({ prefix: 'charge' });
-        this.charges.set(chargeId, {
-            snapshot: {
-                chargeId,
-                authorizationId: value.authorizationId,
-                reference: value.reference,
-                status: 'approved',
-                amount: { ...value.amount },
-                refundedAmount: { amountMinor: 0, currency: value.amount.currency }
-            },
-            version: 1
-        });
-        this.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
-        return { chargeId };
     }
 
-    /** Capability 3 · change the amount of a live authorization. */
+    /**
+     * Capability 3 · change the amount of a live authorization. A paused one
+     * refuses it (RP6); the new amount keeps the range (RP3, RP4). No notice
+     * says it happened (M5).
+     */
     async changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement> {
         const { value } = parseProviderInput({
             schema: ChangeAmountInputSchema,
             input,
             capability: 'changeAmount'
         });
-        const stored = this.authorizationOrThrow({
-            id: value.authorizationId,
-            capability: 'changeAmount'
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'changeAmount',
+            run: () => {
+                this.catchUp();
+                const stored = this.ledger.authorizationOrThrow({
+                    id: value.authorizationId,
+                    capability: 'changeAmount'
+                });
+                const { status } = stored.snapshot;
+                if (status === 'cancelled' || status === 'paused') {
+                    throw rejected({
+                        capability: 'changeAmount',
+                        reason: `a ${status} authorization accepts no change`
+                    });
+                }
+                assertChargeableAmount({ amount: value.amount, capability: 'changeAmount' });
+                assertSameCurrency({
+                    expected: stored.snapshot.amount,
+                    actual: value.amount,
+                    capability: 'changeAmount'
+                });
+                stored.snapshot = { ...stored.snapshot, amount: { ...value.amount } };
+                this.ledger.bump({
+                    stored,
+                    resourceKind: 'authorization',
+                    resourceId: value.authorizationId,
+                    notify: !this.lying({ lie: 'M5' })
+                });
+                return { accepted: true as const, resourceId: value.authorizationId };
+            }
         });
-        if (stored.snapshot.status === 'cancelled') {
-            throw this.rejected({
-                capability: 'changeAmount',
-                reason: 'authorization is cancelled'
-            });
-        }
-        this.assertSameCurrency({
-            expected: stored.snapshot.amount,
-            actual: value.amount,
-            capability: 'changeAmount'
-        });
-        stored.snapshot = { ...stored.snapshot, amount: { ...value.amount } };
-        this.bump({ stored, resourceKind: 'authorization', resourceId: value.authorizationId });
-        return { accepted: true, resourceId: value.authorizationId };
     }
 
     /** Capability 4 · pause an active authorization. */
@@ -213,7 +289,7 @@ export class FakePaymentProvider implements PaymentProvider {
         });
     }
 
-    /** Capability 5 · cancel: irreversible, from any state but cancelled. */
+    /** Capability 5 · cancel: irreversible, from any state but cancelled (RP6: paused too). */
     async cancel(input: AuthorizationRef): Promise<MutationAcknowledgement> {
         return this.transition({
             input,
@@ -223,38 +299,72 @@ export class FakePaymentProvider implements PaymentProvider {
         });
     }
 
-    /** Capability 6 · refund, total or partial, cumulative against what was charged. */
+    /**
+     * Capability 6 · refund, total or partial, cumulative against what was
+     * charged. The `reference` is the idempotency key: without it the request
+     * fails before anything else (RP2), and repeated it moves nothing (RP5).
+     * The first partial refund of a charge is refused as not refundable (M13).
+     */
     async refund(input: RefundInput): Promise<RefundResult> {
         const { value } = parseProviderInput({
             schema: RefundInputSchema,
             input,
             capability: 'refund'
         });
-        const stored = this.chargeOrThrow({ id: value.chargeId, capability: 'refund' });
-        const { snapshot } = stored;
-        if (snapshot.status !== 'approved') {
-            throw this.rejected({ capability: 'refund', reason: `charge is ${snapshot.status}` });
-        }
-        this.assertSameCurrency({
-            expected: snapshot.amount,
-            actual: value.amount,
-            capability: 'refund'
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'refund',
+            run: () => {
+                this.catchUp();
+                const stored = this.ledger.chargeOrThrow({
+                    id: value.chargeId,
+                    capability: 'refund'
+                });
+                const replayed = stored.refundsByReference.get(value.reference);
+                if (replayed !== undefined) {
+                    if (replayed !== value.amount.amountMinor) {
+                        throw rejected({
+                            capability: 'refund',
+                            reason: 'the key was already used for another amount'
+                        });
+                    }
+                    return { refundId: '' };
+                }
+                const { snapshot } = stored;
+                if (snapshot.status !== 'approved') {
+                    throw rejected({
+                        capability: 'refund',
+                        reason: `charge is ${snapshot.status}`
+                    });
+                }
+                assertSameCurrency({
+                    expected: snapshot.amount,
+                    actual: value.amount,
+                    capability: 'refund'
+                });
+                const refunded = snapshot.refundedAmount.amountMinor + value.amount.amountMinor;
+                if (refunded > snapshot.amount.amountMinor) {
+                    throw rejected({
+                        capability: 'refund',
+                        reason: 'refund exceeds the charged amount'
+                    });
+                }
+                stored.refundAttempts += 1;
+                const partial = refunded < snapshot.amount.amountMinor;
+                if (stored.refundAttempts === 1 && partial && this.lying({ lie: 'M13' })) {
+                    throw rejected({ capability: 'refund', reason: NOT_REFUNDABLE_MESSAGE });
+                }
+                stored.snapshot = {
+                    ...snapshot,
+                    refundedAmount: { amountMinor: refunded, currency: snapshot.amount.currency }
+                };
+                stored.refundsByReference.set(value.reference, value.amount.amountMinor);
+                const refundId = this.ledger.nextId({ prefix: 'refund' });
+                this.ledger.bump({ stored, resourceKind: 'charge', resourceId: value.chargeId });
+                this.ledger.emit({ resourceKind: 'refund', resourceId: refundId, version: 1 });
+                return { refundId };
+            }
         });
-        const refunded = snapshot.refundedAmount.amountMinor + value.amount.amountMinor;
-        if (refunded > snapshot.amount.amountMinor) {
-            throw this.rejected({
-                capability: 'refund',
-                reason: 'refund exceeds the charged amount'
-            });
-        }
-        stored.snapshot = {
-            ...snapshot,
-            refundedAmount: { amountMinor: refunded, currency: snapshot.amount.currency }
-        };
-        const refundId = this.nextId({ prefix: 'refund' });
-        this.bump({ stored, resourceKind: 'charge', resourceId: value.chargeId });
-        this.emit({ resourceKind: 'refund', resourceId: refundId, version: 1 });
-        return { refundId };
     }
 
     /** Capability 7 · read an authorization by id. */
@@ -264,8 +374,10 @@ export class FakePaymentProvider implements PaymentProvider {
             input,
             capability: 'read'
         });
+        this.catchUp();
         const snapshot = structuredClone(
-            this.authorizationOrThrow({ id: value.authorizationId, capability: 'read' }).snapshot
+            this.ledger.authorizationOrThrow({ id: value.authorizationId, capability: 'read' })
+                .snapshot
         );
         return stampProviderRead({ snapshot, clock: this.clock });
     }
@@ -277,29 +389,64 @@ export class FakePaymentProvider implements PaymentProvider {
             input,
             capability: 'read'
         });
+        this.catchUp();
         const snapshot = structuredClone(
-            this.chargeOrThrow({ id: value.chargeId, capability: 'read' }).snapshot
+            this.ledger.chargeOrThrow({ id: value.chargeId, capability: 'read' }).snapshot
         );
         return stampProviderRead({ snapshot, clock: this.clock });
     }
 
-    /** Capability 8 · decode one of the fake's own deliveries into a notice. */
+    /** Capability 8 · decode one of the fake's own deliveries, in either format, into a notice. */
     async decodeNotice(input: NoticeDelivery): Promise<ProviderNotice> {
         const { value } = parseProviderInput({
             schema: NoticeDeliverySchema,
             input,
             capability: 'notify'
         });
-        return decodeFakeNoticeBody({ body: value.body }).notice;
+        return decodeFakeNotice({ delivery: value }).notice;
     }
 
     /**
-     * Test handle: hands over, and forgets, every delivery sent since the last call.
+     * Test handle: hands over, and forgets, every delivery due by now.
      *
-     * @returns The deliveries, oldest first
+     * @returns The due deliveries, oldest first
      */
     takeDeliveries(): { readonly deliveries: readonly NoticeDelivery[] } {
-        return { deliveries: this.outbox.splice(0) };
+        this.catchUp();
+        return this.outbox.take();
+    }
+
+    private lying(args: { readonly lie: FakeLieId }): boolean {
+        return !this.honest.has(args.lie);
+    }
+
+    /** Brings the time-driven state up to the clock: late charges land, open links expire. */
+    private catchUp(): void {
+        const now = this.now();
+        for (const [chargeId, stored] of this.ledger.charges) {
+            if (stored.settleAt === null || stored.settleAt > now) continue;
+            const at = stored.settleAt;
+            stored.settleAt = null;
+            stored.snapshot = { ...stored.snapshot, status: 'approved' };
+            this.ledger.bump({ stored, resourceKind: 'charge', resourceId: chargeId, at });
+        }
+        this.expireOpenLinks({ now });
+    }
+
+    /** With M11 off, a link nobody approved expires after a day. With it on, never. */
+    private expireOpenLinks(args: { readonly now: number }): void {
+        if (this.lying({ lie: 'M11' })) return;
+        for (const [authorizationId, stored] of this.ledger.authorizations) {
+            const expiresAt = stored.createdAt + FAKE_HONEST_LINK_LIFETIME_MS;
+            if (stored.snapshot.status !== 'pending' || expiresAt > args.now) continue;
+            stored.snapshot = { ...stored.snapshot, status: 'cancelled' };
+            this.ledger.bump({
+                stored,
+                resourceKind: 'authorization',
+                resourceId: authorizationId,
+                at: expiresAt
+            });
+        }
     }
 
     private async transition(args: {
@@ -307,112 +454,43 @@ export class FakePaymentProvider implements PaymentProvider {
         readonly capability: PaymentCapability;
         readonly from: readonly AuthorizationSnapshot['status'][];
         readonly to: AuthorizationSnapshot['status'];
+        readonly viaNetwork?: boolean;
     }): Promise<MutationAcknowledgement> {
         const { value } = parseProviderInput({
             schema: AuthorizationRefSchema,
             input: args.input,
             capability: args.capability
         });
-        const stored = this.authorizationOrThrow({
-            id: value.authorizationId,
-            capability: args.capability
-        });
-        if (!args.from.includes(stored.snapshot.status)) {
-            throw this.rejected({
-                capability: args.capability,
-                reason: `cannot go from ${stored.snapshot.status} to ${args.to}`
+        const run = (): MutationAcknowledgement => {
+            this.catchUp();
+            const stored = this.ledger.authorizationOrThrow({
+                id: value.authorizationId,
+                capability: args.capability
             });
-        }
-        stored.snapshot = { ...stored.snapshot, status: args.to };
-        this.bump({ stored, resourceKind: 'authorization', resourceId: value.authorizationId });
-        return { accepted: true, resourceId: value.authorizationId };
-    }
-
-    private authorizationOrThrow(args: {
-        readonly id: string;
-        readonly capability: PaymentCapability;
-    }): StoredAuthorization {
-        const stored = this.authorizations.get(args.id);
-        if (!stored) throw this.notFound({ capability: args.capability, id: args.id });
-        return stored;
-    }
-
-    private chargeOrThrow(args: {
-        readonly id: string;
-        readonly capability: PaymentCapability;
-    }): StoredCharge {
-        const stored = this.charges.get(args.id);
-        if (!stored) throw this.notFound({ capability: args.capability, id: args.id });
-        return stored;
-    }
-
-    private assertSameCurrency(args: {
-        readonly expected: Money;
-        readonly actual: Money;
-        readonly capability: PaymentCapability;
-    }): void {
-        if (args.expected.currency !== args.actual.currency) {
-            throw this.rejected({
-                capability: args.capability,
-                reason: `currency ${args.actual.currency} differs from ${args.expected.currency}`
+            if (!args.from.includes(stored.snapshot.status)) {
+                throw rejected({
+                    capability: args.capability,
+                    reason: `cannot go from ${stored.snapshot.status} to ${args.to}`
+                });
+            }
+            stored.snapshot = { ...stored.snapshot, status: args.to };
+            this.ledger.bump({
+                stored,
+                resourceKind: 'authorization',
+                resourceId: value.authorizationId
             });
-        }
+            return { accepted: true, resourceId: value.authorizationId };
+        };
+        return args.viaNetwork === false
+            ? run()
+            : throughNetwork({
+                  simulating: this.simulating,
+                  capability: args.capability,
+                  run
+              });
     }
 
-    private bump(args: {
-        readonly stored: StoredAuthorization | StoredCharge;
-        readonly resourceKind: NoticeResourceKind;
-        readonly resourceId: string;
-    }): void {
-        args.stored.version += 1;
-        this.emit({
-            resourceKind: args.resourceKind,
-            resourceId: args.resourceId,
-            version: args.stored.version
-        });
-    }
-
-    private emit(args: {
-        readonly resourceKind: NoticeResourceKind;
-        readonly resourceId: string;
-        readonly version: number;
-    }): void {
-        this.outbox.push({
-            headers: { 'content-type': 'application/json' },
-            body: encodeFakeNoticeBody({
-                notice: {
-                    resourceKind: args.resourceKind,
-                    resourceId: args.resourceId,
-                    version: String(args.version)
-                }
-            }).body
-        });
-    }
-
-    private nextId(args: { readonly prefix: string }): string {
-        this.sequence += 1;
-        return `fake-${args.prefix}-${this.sequence}`;
-    }
-
-    private notFound(args: {
-        readonly capability: PaymentCapability;
-        readonly id: string;
-    }): PaymentProviderError {
-        return new PaymentProviderError({
-            code: 'NOT_FOUND',
-            capability: args.capability,
-            message: `no resource with id ${args.id}`
-        });
-    }
-
-    private rejected(args: {
-        readonly capability: PaymentCapability;
-        readonly reason: string;
-    }): PaymentProviderError {
-        return new PaymentProviderError({
-            code: 'REJECTED',
-            capability: args.capability,
-            message: args.reason
-        });
+    private now(): number {
+        return this.clock.now().getTime();
     }
 }

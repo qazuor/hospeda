@@ -94,6 +94,26 @@ posterior** (*«cómo se enciende sobre una rama `epic/**` lo fija `DEC-CI-001`�
 como lo que falta escribir al abrir la primera fase (`D/16-fase-7-del-paraguas.md:1023`;
 [GATE:FP.3](30-el-corte.md#gate-fp-3)).
 
+## 4-bis. Pendientes del owner agregados el 2026-10-07
+
+1. **El orden de `MIN` y `BEST_DECLARED`.** Cuando aparezca la primera clave del catálogo que declare
+   la estrategia `MÍNIMO` (`MIN`) o `MEJOR_DECLARADO` (`BEST_DECLARED`), el owner confirma el orden que
+   la clave declara —qué valor es «mejor» para el cliente— antes del merge de la hoja que la agrega
+   ([AC:V3:1](10-corte/V3.md#ac-v3-1), [AC:V2:4](10-corte/V2.md#ac-v2-4)).
+2. **Qué es exportar una ficha y qué pieza lo construye** (Coord-4,
+   `docs/41-corte-del-mvp/10-decisiones-del-owner.md`): la pieza natural es `V8a`. **Contestado el
+   2026-10-08 (DE)**: se difiere fuera del MVP; lo que sigue abierto está en §4-ter.
+
+## 4-ter. Pendientes del owner agregados el 2026-10-08
+
+1. **Definir si exportar una ficha se queda en la spec y en qué fase** (DE,
+   `docs/41-corte-del-mvp/10-decisiones-del-owner.md`). El owner no recuerda haber acordado la
+   funcionalidad y la difirió fuera del MVP. La spec la nombra en `10-corte/V5.md:531-553` (el paso 4
+   y la versión de piso autorizan al dueño a «verla, exportarla, reactivarla y borrarla») y en
+   `10-corte/V9a.md:215-216` (exportar como acto del dueño que reinicia el reloj de inactividad).
+   Si se queda, hace falta la pieza que construya la operación; el registro de `V9a` le suma el
+   evento en forma aditiva. Si sale, hay que limpiar esas dos menciones y la de [AC:V9a:1](10-corte/V9a.md#ac-v9a-1).
+
 ## 5. Lo que cada capítulo declara que NO cierra
 
 Las secciones *«Lo que este capítulo (o esta mitad) NO cierra»* de los capítulos del diseño, en su

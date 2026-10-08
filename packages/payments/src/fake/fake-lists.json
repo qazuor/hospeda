@@ -1,0 +1,227 @@
+{
+    "lies": [
+        {
+            "id": "M1",
+            "name": "says yes to a change and does not apply it",
+            "does": "Acknowledges a change to a live authorization (cycle, plan, billing date, free period, scheduled end) and applies nothing; on creation, a line-items field is accepted and dropped.",
+            "measured": [
+                { "row": "EX-4", "date": "2026-09-15", "accounts": ["sandbox", "production"] },
+                { "row": "EX-21", "date": "2026-09-15", "accounts": ["sandbox"] },
+                { "row": "EX-34", "date": "2026-09-16", "accounts": ["sandbox"] },
+                { "row": "EX-35", "date": "2026-09-16", "accounts": ["sandbox"] },
+                { "row": "CN-1", "date": "2026-09-15", "accounts": ["sandbox", "production"] },
+                { "row": "EX-5", "date": "2026-09-15", "accounts": ["sandbox"] }
+            ],
+            "defenseTest": "TEST:B1:3"
+        },
+        {
+            "id": "M2",
+            "name": "applies one of two changes under a single success",
+            "does": "With two changes in one request, applies one and drops the other, answering one success.",
+            "measured": [{ "row": "EX-20", "date": "2026-09-15", "accounts": ["production"] }],
+            "defenseTest": "TEST:B1:3"
+        },
+        {
+            "id": "M3",
+            "name": "creates a duplicate for every equal request",
+            "does": "Every authorization request creates a new authorization, even with the reference of an existing one.",
+            "measured": [
+                { "row": "EX-17", "date": "2026-09-15", "accounts": ["sandbox", "production"] }
+            ],
+            "defenseTest": "TEST:B3:6"
+        },
+        {
+            "id": "M4",
+            "name": "the search answers a part without error",
+            "does": "The search returns part of the matches without an error, ignores our reference, and carries fewer fields than the read by id.",
+            "measured": [
+                { "row": "RC-1", "date": "2026-09-15", "accounts": ["sandbox", "production"] },
+                { "row": "RC-4", "date": "2026-09-15", "accounts": ["production"] }
+            ],
+            "defenseTest": "TEST:B11:1"
+        },
+        {
+            "id": "M5",
+            "name": "an amount change sends no notice",
+            "does": "Changing the amount of an authorization sends no notice on any channel.",
+            "measured": [
+                { "row": "EX-15", "date": "2026-09-15", "accounts": ["sandbox"] },
+                { "row": "EX-15", "date": "2026-09-29", "accounts": ["sandbox"] }
+            ],
+            "defenseTest": "TEST:B11:8"
+        },
+        {
+            "id": "M6",
+            "name": "notices come late, repeated or never",
+            "does": "A notice arrives late, repeated or never; a refund arrives as three deliveries in two formats; a charge arrives once per channel.",
+            "measured": [
+                { "row": "WH-1", "date": "2026-09-15", "accounts": ["sandbox"] },
+                { "row": "WH-2", "date": "2026-09-15", "accounts": ["sandbox"] },
+                { "row": "WH-4", "date": "2026-09-15", "accounts": ["sandbox"] },
+                { "row": "WH-5", "date": "2026-09-23", "accounts": ["sandbox", "production"] },
+                { "row": "RF-7", "date": "2026-09-15", "accounts": ["production"] },
+                { "row": "WH-6", "date": "2026-09-29", "accounts": ["sandbox", "production"] }
+            ],
+            "defenseTest": "TEST:B5:2"
+        },
+        {
+            "id": "M7",
+            "name": "a rejected charge counts as a charge",
+            "does": "Counts a rejected charge attempt as a charge, and the attempt status does not say whether money moved.",
+            "measured": [
+                { "row": "RC-5", "date": "2026-09-22", "accounts": ["production"] },
+                { "row": "RC-6", "date": "2026-09-22", "accounts": ["production"] }
+            ],
+            "defenseTest": "TEST:B11:9"
+        },
+        {
+            "id": "M8",
+            "name": "charges late and in batches",
+            "does": "A charge lands in the first batch after the hour it was due, at minute :02, not at the instant asked.",
+            "measured": [
+                { "row": "PA-3", "date": "2026-09-15", "accounts": ["sandbox", "production"] },
+                { "row": "EX-51", "date": "2026-09-24", "accounts": ["production"] }
+            ],
+            "defenseTest": "TEST:B8a:10"
+        },
+        {
+            "id": "M9",
+            "name": "adds a free period on its own",
+            "does": "Adds a free period by itself when the first charge is in the future.",
+            "measured": [
+                { "row": "EX-8", "date": "2026-09-15", "accounts": ["sandbox"] },
+                { "row": "EX-26", "date": "2026-09-15", "accounts": ["sandbox"] },
+                { "row": "EX-33", "date": "2026-09-16", "accounts": ["production"] }
+            ],
+            "defenseTest": "TEST:B1:7"
+        },
+        {
+            "id": "M10",
+            "name": "hands back a broken approval link",
+            "does": "The approval link carries activation=true, which opens a page that does not exist.",
+            "measured": [{ "row": "EX-37", "date": "2026-09-16", "accounts": ["production"] }],
+            "defenseTest": "TEST:B1:6"
+        },
+        {
+            "id": "M11",
+            "name": "an open approval link never expires",
+            "does": "An authorization nobody approved stays pending forever; its link never expires.",
+            "measured": [{ "row": "EX-1", "date": "2026-09-23", "accounts": ["staging"] }],
+            "defenseTest": "TEST:B3:10"
+        },
+        {
+            "id": "M12",
+            "name": "a pause never resumes on its own",
+            "does": "A paused authorization is never resumed by the provider.",
+            "measured": [{ "row": "PS-4", "date": "2026-09-16", "accounts": ["sandbox"] }],
+            "defenseTest": "TEST:B8b:3"
+        },
+        {
+            "id": "M13",
+            "name": "says a refundable charge cannot be refunded",
+            "does": "Refuses a refund as not refundable (code 2084) when the same charge does accept another amount.",
+            "measured": [{ "row": "RF-8", "date": "2026-09-15", "accounts": ["production"] }],
+            "defenseTest": "TEST:B6:3"
+        }
+    ],
+    "rules": [
+        {
+            "id": "RP1",
+            "kind": "rule",
+            "name": "a card token is single use",
+            "measured": [{ "row": "EX-12", "date": "2026-09-15", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP2",
+            "kind": "rule",
+            "name": "a refund without its idempotency key fails before any business validation",
+            "measured": [{ "row": "RF-4", "date": "2026-09-15", "accounts": ["production"] }]
+        },
+        {
+            "id": "RP3",
+            "kind": "rule",
+            "name": "an amount below ARS 15 or above ARS 2.000.000 is refused with the exact message",
+            "measured": [
+                { "row": "PC-2", "date": "2026-09-15", "accounts": ["sandbox", "production"] }
+            ]
+        },
+        {
+            "id": "RP4",
+            "kind": "rule",
+            "name": "another currency is refused",
+            "measured": [
+                { "row": "EX-18", "date": "2026-09-15", "accounts": ["sandbox", "production"] }
+            ]
+        },
+        {
+            "id": "RP5",
+            "kind": "rule",
+            "name": "a repeated refund moves no money and answers an empty body",
+            "measured": [{ "row": "RF-6", "date": "2026-09-15", "accounts": ["production"] }]
+        },
+        {
+            "id": "RP6",
+            "kind": "rule",
+            "name": "a paused authorization refuses every change but lets itself be cancelled",
+            "measured": [{ "row": "EX-11", "date": "2026-09-15", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP7",
+            "kind": "measuredBehaviour",
+            "name": "every charge carries its expiry",
+            "measured": [{ "row": "RC-7", "date": "2026-09-22", "accounts": ["production"] }]
+        },
+        {
+            "id": "RP8",
+            "kind": "measuredBehaviour",
+            "name": "a failed cycle takes four attempts on one record, then the provider pauses",
+            "measured": [{ "row": "GR-3", "date": "2026-09-22", "accounts": ["production"] }]
+        },
+        {
+            "id": "RP9",
+            "kind": "measuredBehaviour",
+            "name": "a paused authorization is not charged",
+            "measured": [{ "row": "PS-2", "date": "2026-09-15", "accounts": ["production"] }]
+        },
+        {
+            "id": "RP10",
+            "kind": "measuredBehaviour",
+            "name": "on resume, the next charge date moved on without charging",
+            "measured": [
+                { "row": "PS-6", "date": "2026-09-16", "accounts": ["sandbox", "production"] }
+            ]
+        },
+        {
+            "id": "RP11",
+            "kind": "measuredBehaviour",
+            "name": "the last charged date is the last attempt, not the last charge",
+            "measured": [{ "row": "RC-5", "date": "2026-09-22", "accounts": ["production"] }]
+        },
+        {
+            "id": "RP12",
+            "kind": "measuredBehaviour",
+            "name": "a card change emits a zero-amount validation charge on both channels",
+            "measured": [
+                { "row": "EX-36", "date": "2026-09-29", "accounts": ["sandbox"] },
+                { "row": "PA-3", "date": "2026-09-15", "accounts": ["production"] }
+            ]
+        }
+    ],
+    "simulations": [
+        {
+            "id": "lostResponse",
+            "name": "the provider does the work but the answer is lost on the way",
+            "why": "A network case, not a measured lie: the code must survive not knowing whether its request landed."
+        },
+        {
+            "id": "networkCut",
+            "name": "the network is cut before the request reaches the provider",
+            "why": "A network case, not a measured lie."
+        },
+        {
+            "id": "noticesOutOfOrder",
+            "name": "notices arrive out of order",
+            "why": "WH-3 did not observe it (deliveries came in causal order in three runs), so it cannot be a lie of the list, yet the code must resist it."
+        }
+    ]
+}
