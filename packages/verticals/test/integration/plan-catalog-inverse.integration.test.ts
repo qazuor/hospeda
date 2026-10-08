@@ -76,36 +76,42 @@ async function seedVersion(args: {
     readonly entitlements?: readonly { key: string; planQuota?: number }[];
     readonly limits?: readonly { key: string; value: number }[];
 }): Promise<string> {
-    const [plan] = await db
-        .insert(plans)
-        .values({ vertical: 'accommodation', slug: `p-${randomUUID()}`, name: 'Plan' })
-        .returning({ id: plans.id });
-    const [version] = await db
-        .insert(planVersions)
-        .values({
-            planId: (plan as { id: string }).id,
-            vertical: 'accommodation',
-            rank: args.rank ?? nextRank++,
-            sellable: args.sellable ?? true,
-            current: args.current ?? true,
-            graceDays: args.graceDays ?? 10,
-            trialDays: 14,
-            allowsPause: args.allowsPause ?? true
-        })
-        .returning({ id: planVersions.id });
-    const planVersionId = (version as { id: string }).id;
-    for (const e of args.entitlements ?? []) {
-        await db.insert(planVersionEntitlements).values({
-            planVersionId,
-            key: e.key,
-            planQuota: e.planQuota ?? null,
-            trialQuota: e.planQuota === undefined ? null : 0
-        });
-    }
-    for (const l of args.limits ?? []) {
-        await db.insert(planVersionLimits).values({ planVersionId, key: l.key, value: l.value });
-    }
-    return planVersionId;
+    // A version and what it grants are written in ONE transaction, as the
+    // publish action does: extras 041 rejects a child row added later.
+    return db.transaction(async (tx) => {
+        const [plan] = await tx
+            .insert(plans)
+            .values({ vertical: 'accommodation', slug: `p-${randomUUID()}`, name: 'Plan' })
+            .returning({ id: plans.id });
+        const [version] = await tx
+            .insert(planVersions)
+            .values({
+                planId: (plan as { id: string }).id,
+                vertical: 'accommodation',
+                rank: args.rank ?? nextRank++,
+                sellable: args.sellable ?? true,
+                current: args.current ?? true,
+                graceDays: args.graceDays ?? 10,
+                trialDays: 14,
+                allowsPause: args.allowsPause ?? true
+            })
+            .returning({ id: planVersions.id });
+        const planVersionId = (version as { id: string }).id;
+        for (const e of args.entitlements ?? []) {
+            await tx.insert(planVersionEntitlements).values({
+                planVersionId,
+                key: e.key,
+                planQuota: e.planQuota ?? null,
+                trialQuota: e.planQuota === undefined ? null : 0
+            });
+        }
+        for (const l of args.limits ?? []) {
+            await tx
+                .insert(planVersionLimits)
+                .values({ planVersionId, key: l.key, value: l.value });
+        }
+        return planVersionId;
+    });
 }
 
 describe('TEST:V2:5 — changeDirection over seeded versions decides by the delta', () => {

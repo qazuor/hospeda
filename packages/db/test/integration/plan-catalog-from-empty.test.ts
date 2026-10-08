@@ -469,6 +469,117 @@ describe('TEST:V2:2 — cosmetics mutate; what has an effect is only published a
     });
 });
 
+/** Commits a plan version and an addon version in their own transaction; returns their ids. */
+async function commitPublishedVersions(): Promise<{
+    readonly planVersionId: string;
+    readonly addonVersionId: string;
+}> {
+    const client = await getTestPool().connect();
+    try {
+        await client.query('BEGIN');
+        const planId = await insertPlan(client, {
+            vertical: 'accommodation',
+            slug: `published-${Date.now()}-${Math.random()}`
+        });
+        const planVersionId = await insertVersion(client, {
+            planId,
+            vertical: 'accommodation',
+            rank: 10,
+            sellable: true,
+            current: false
+        });
+        const addon = await client.query<{ id: string }>(
+            `INSERT INTO addon (slug, name) VALUES ($1, 'Fotos') RETURNING id`,
+            [`published-${Date.now()}-${Math.random()}`]
+        );
+        const addonVersion = await client.query<{ id: string }>(
+            `INSERT INTO addon_version (addon_id, validity, scope_type)
+             VALUES ($1, 'WHILE_SUBSCRIPTION_ALIVE', 'USER') RETURNING id`,
+            [(addon.rows[0] as { id: string }).id]
+        );
+        await client.query('COMMIT');
+        return {
+            planVersionId,
+            addonVersionId: (addonVersion.rows[0] as { id: string }).id
+        };
+    } finally {
+        client.release();
+    }
+}
+
+describe('TEST:V2:2 — nothing is added to a version published by another transaction', () => {
+    it('a child row inserted after the version was committed elsewhere is rejected, in all four tables', async () => {
+        const { planVersionId, addonVersionId } = await commitPublishedVersions();
+
+        await inRolledBackTx(async ({ attempt }) => {
+            const errors = [
+                await attempt(
+                    `INSERT INTO plan_version_entitlement (plan_version_id, key) VALUES ($1, 'respond_reviews')`,
+                    [planVersionId]
+                ),
+                await attempt(
+                    `INSERT INTO plan_version_limit (plan_version_id, key, value) VALUES ($1, 'max_photos_per_accommodation', 99)`,
+                    [planVersionId]
+                ),
+                await attempt(
+                    `INSERT INTO addon_version_entitlement (addon_version_id, key) VALUES ($1, 'featured_listing')`,
+                    [addonVersionId]
+                ),
+                await attempt(
+                    `INSERT INTO addon_version_limit (addon_version_id, key, value) VALUES ($1, 'max_photos_per_accommodation', 99)`,
+                    [addonVersionId]
+                )
+            ];
+
+            expect(errors.map((e) => e?.code)).toEqual(['P0001', 'P0001', 'P0001', 'P0001']);
+            expect(errors[0]?.message).toContain('published by another transaction');
+        });
+    });
+
+    it('a version and its rows created in the same transaction pass, also under a savepoint', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const planId = await insertPlan(client, { vertical: 'accommodation', slug: 'same-tx' });
+            const versionId = await insertVersion(client, {
+                planId,
+                vertical: 'accommodation',
+                rank: 10,
+                sellable: true,
+                current: true
+            });
+            await client.query('SAVEPOINT nested');
+            const nestedPlan = await insertPlan(client, {
+                vertical: 'accommodation',
+                slug: 'same-tx-nested'
+            });
+            const nestedVersion = await insertVersion(client, {
+                planId: nestedPlan,
+                vertical: 'accommodation',
+                rank: 11,
+                sellable: true,
+                current: true
+            });
+            await client.query('RELEASE SAVEPOINT nested');
+
+            const results = [
+                await attempt(
+                    `INSERT INTO plan_version_entitlement (plan_version_id, key, plan_quota, trial_quota) VALUES ($1, 'ai_chat', 100, 10)`,
+                    [versionId]
+                ),
+                await attempt(
+                    `INSERT INTO plan_version_limit (plan_version_id, key, value) VALUES ($1, 'max_photos_per_accommodation', 20)`,
+                    [versionId]
+                ),
+                await attempt(
+                    `INSERT INTO plan_version_limit (plan_version_id, key, value) VALUES ($1, 'max_photos_per_accommodation', 20)`,
+                    [nestedVersion]
+                )
+            ];
+
+            expect(results).toEqual([null, null, null]);
+        });
+    });
+});
+
 describe('TEST:V2:3 — sellable and current versions never share a rank; one current per plan', () => {
     it('two sellable, current versions with the same rank in one vertical: rejected', async () => {
         await inRolledBackTx(async ({ client, attempt }) => {
