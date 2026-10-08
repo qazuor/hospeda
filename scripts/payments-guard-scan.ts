@@ -1,7 +1,7 @@
 /**
  * @file payments-guard-scan.ts
- * @description What GUARD:G9, G10, G11 (HOS-1508), G12 and G17 (HOS-1509)
- * (HOS-1352 program, B1) share: which files they read, and a lexical view of a
+ * @description What GUARD:G9, G10, G11 (HOS-1508), G12 and G17 (HOS-1509) and
+ * G15 (HOS-1510) (HOS-1352 program, B1) share: which files they read, and a lexical view of a
  * file that tells code from comments and strings. Not a guard itself.
  *
  * ## The masked view
@@ -238,6 +238,30 @@ export function listProductionFiles({
     readonly excludePrefixes: readonly string[];
     readonly scanRoot?: RegExp;
 }): readonly string[] {
+    return listCodeFiles({ root, excludePrefixes, scanRoot }).filter(
+        (file) => !TEST_FILE.test(file)
+    );
+}
+
+/**
+ * Every code file a guard reads, TESTS INCLUDED: under `apps/` or `packages/`,
+ * code extensions, minus the given prefixes. For a guard whose subject is the
+ * tests themselves (G15 predicate (b)).
+ *
+ * @param args.root - Repository root
+ * @param args.excludePrefixes - Repo-relative prefixes the guard does not read
+ * @param args.scanRoot - Which top-level folders count; defaults to {@link SCAN_ROOT}
+ * @returns Repo-relative paths
+ */
+export function listCodeFiles({
+    root,
+    excludePrefixes,
+    scanRoot = SCAN_ROOT
+}: {
+    readonly root: string;
+    readonly excludePrefixes: readonly string[];
+    readonly scanRoot?: RegExp;
+}): readonly string[] {
     const out = execFileSync('git', ['ls-files', '-co', '--exclude-standard', '-z'], {
         cwd: root,
         encoding: 'utf8',
@@ -247,7 +271,7 @@ export function listProductionFiles({
         out
             .split('\0')
             .filter(Boolean)
-            .filter((file) => scanRoot.test(file) && CODE_FILE.test(file) && !TEST_FILE.test(file))
+            .filter((file) => scanRoot.test(file) && CODE_FILE.test(file))
             .filter((file) => !/(^|\/)(node_modules|dist)\//.test(file))
             .filter((file) => !excludePrefixes.some((prefix) => file.startsWith(prefix)))
             // `-c` also lists a tracked file deleted from the working tree.
