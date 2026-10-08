@@ -38,12 +38,23 @@ export interface PlanVersionSummaryRow {
 }
 
 /**
- * One entitlement a plan version grants; `planQuota` is set for a metered one.
- * `aggregationStrategy` is the one its key declares in the catalog.
+ * One entitlement a plan version grants; a metered one carries BOTH quotas
+ * (`planQuota` and `trialQuota`), set together (DB check
+ * `ck_plan_version_entitlement_quotas_together`). `aggregationStrategy` is the
+ * one its key declares in the catalog.
+ *
+ * The port transports both quotas so the resolution can tell a metered key from
+ * a plain one by the key's own definition (HOS-1440, V3.2, AC:V3:3): dropping
+ * `trialQuota` here would make `undefined` look metered and wrongly refuse a
+ * plain global key. It is declared optional so a V2 unit fixture that predates
+ * this half (out of this change's scope) still typechecks; `PlanCatalogModel`
+ * and the in-memory reader always transport it, and the resolution treats a
+ * missing one as "no trial quota".
  */
 export interface PlanVersionEntitlementRow {
     readonly key: string;
     readonly planQuota: number | null;
+    readonly trialQuota?: number | null;
     readonly aggregationStrategy: AggregationStrategy;
 }
 

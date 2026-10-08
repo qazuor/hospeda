@@ -25,9 +25,10 @@ export {
     resolveKeyScope
 } from './effective-set/scope';
 export {
-    resolveTrialLimits,
+    resolveTrialSet,
     type TrialFloorReferences,
-    type TrialInProgress
+    type TrialInProgress,
+    type TrialSet
 } from './effective-set/trial-ratchet';
 export type { FoldableSource, SourceGrant } from './effective-set/types';
 export type {

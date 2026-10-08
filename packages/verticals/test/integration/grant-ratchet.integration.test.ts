@@ -11,6 +11,7 @@ import {
     type DrizzleClient,
     planCatalogModel,
     plans,
+    planVersionEntitlements,
     planVersionLimits,
     planVersions
 } from '@repo/db';
@@ -19,6 +20,8 @@ import { Pool } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
     GrantReferenceVerticalMismatchError,
+    GrantWithoutFloorError,
+    MeteredKeyGlobalScopeError,
     type PlanCatalogReader,
     resolveGrantSet
 } from '../../src';
@@ -88,6 +91,11 @@ async function seedVersion(args: {
     readonly sellable: boolean;
     readonly current: boolean;
     readonly limitValue?: number;
+    readonly entitlements?: readonly {
+        readonly key: string;
+        readonly planQuota: number | null;
+        readonly trialQuota: number | null;
+    }[];
 }): Promise<string> {
     const vertical = args.vertical ?? VERTICAL;
     const [version] = await args.tx
@@ -109,6 +117,11 @@ async function seedVersion(args: {
             .insert(planVersionLimits)
             .values({ planVersionId: versionId, key: MAX_PHOTOS, value: args.limitValue });
     }
+    for (const entitlement of args.entitlements ?? []) {
+        await args.tx
+            .insert(planVersionEntitlements)
+            .values({ planVersionId: versionId, ...entitlement });
+    }
     return versionId;
 }
 
@@ -129,6 +142,25 @@ function grantSource(args: {
             floor: args.floor
         })
     ];
+}
+
+/**
+ * A GRANT source with `floor: null` (AC:V3:5): the contract's response rule sets
+ * `floor` on a GRANT, so this shape is only reachable as a defensive branch and
+ * is built raw.
+ */
+function grantSourceWithoutFloor(reference: string): readonly CoverageSource[] {
+    const source: CoverageSource = {
+        type: 'GRANT',
+        reference: { kind: 'PLAN_VERSION', planVersionId: reference },
+        scope: 'VERTICAL',
+        target: null,
+        since: SINCE,
+        until: 'NEVER_EXPIRES',
+        charged: null,
+        floor: null
+    };
+    return [source];
 }
 
 describe('TEST:V3:6 — a grant never grants less than its floor', () => {
@@ -242,6 +274,104 @@ describe('TEST:V3:6 — a grant never grants less than its floor', () => {
                     sources: grantSource({ reference: foreign, floor: foreign })
                 })
             ).rejects.toThrow(GrantReferenceVerticalMismatchError);
+        });
+    });
+
+    it('a floor of another vertical refuses (G-R2-B)', async () => {
+        await inRollback(async (tx) => {
+            const planId = await seedPlan({ tx });
+            const anchored = await seedVersion({
+                tx,
+                planId,
+                rank: 10,
+                sellable: true,
+                current: false,
+                limitValue: 20
+            });
+            const foreignPlanId = await seedPlan({ tx, vertical: OTHER_VERTICAL });
+            const foreignFloor = await seedVersion({
+                tx,
+                planId: foreignPlanId,
+                vertical: OTHER_VERTICAL,
+                rank: 10,
+                sellable: true,
+                current: false,
+                limitValue: 99
+            });
+
+            await expect(
+                resolveGrantSet({
+                    reader: readerOn(tx),
+                    vertical: VERTICAL,
+                    sources: grantSource({ reference: anchored, floor: foreignFloor })
+                })
+            ).rejects.toThrow(GrantReferenceVerticalMismatchError);
+        });
+    });
+
+    it('a grant without a floor refuses', async () => {
+        await inRollback(async (tx) => {
+            const planId = await seedPlan({ tx });
+            const anchored = await seedVersion({
+                tx,
+                planId,
+                rank: 10,
+                sellable: true,
+                current: false,
+                limitValue: 20
+            });
+
+            await expect(
+                resolveGrantSet({
+                    reader: readerOn(tx),
+                    vertical: VERTICAL,
+                    sources: grantSourceWithoutFloor(anchored)
+                })
+            ).rejects.toThrow(GrantWithoutFloorError);
+        });
+    });
+
+    it('a metered key declared global refuses through the real resolution (AC:V3:3)', async () => {
+        await inRollback(async (tx) => {
+            const planId = await seedPlan({ tx });
+            const version = await seedVersion({
+                tx,
+                planId,
+                rank: 10,
+                sellable: true,
+                current: true,
+                entitlements: [{ key: 'priority_support', planQuota: 5, trialQuota: 3 }]
+            });
+
+            await expect(
+                resolveGrantSet({
+                    reader: readerOn(tx),
+                    vertical: VERTICAL,
+                    sources: grantSource({ reference: version, floor: version })
+                })
+            ).rejects.toThrow(MeteredKeyGlobalScopeError);
+        });
+    });
+
+    it('a plain global key does not look metered: trialQuota travels as null (AC:V3:3)', async () => {
+        await inRollback(async (tx) => {
+            const planId = await seedPlan({ tx });
+            const version = await seedVersion({
+                tx,
+                planId,
+                rank: 10,
+                sellable: true,
+                current: true,
+                entitlements: [{ key: 'priority_support', planQuota: null, trialQuota: null }]
+            });
+
+            const resolved = await resolveGrantSet({
+                reader: readerOn(tx),
+                vertical: VERTICAL,
+                sources: grantSource({ reference: version, floor: version })
+            });
+
+            expect(resolved?.entitlements.get('priority_support')).toBe(Number.POSITIVE_INFINITY);
         });
     });
 });

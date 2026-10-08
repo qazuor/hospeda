@@ -94,6 +94,20 @@ describe('TEST:V3:7 — GUARD:G-R2-B', () => {
         expect(result.output).toContain(`FAIL ${RULE_MESSAGES['grant-floor-by-vertical']}`);
     });
 
+    it('mutation: not comparing the floor version vertical is red (real cross read)', () => {
+        const source = resolutionFiles()['grant-ratchet.ts'] as string;
+        const mutated = source.replace(
+            'if (floorSummary.vertical !== args.vertical) {',
+            'if (false) {'
+        );
+        expect(mutated).not.toBe(source);
+
+        const result = run({ root: makeTree({ overrides: { 'grant-ratchet.ts': mutated } }) });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`FAIL ${RULE_MESSAGES['grant-floor-by-vertical']}`);
+    });
+
     it('refuses a missing resolution', () => {
         const root = mkdtempSync(path.join(tmpdir(), 'gr2b-empty-'));
         tempDirs.push(root);

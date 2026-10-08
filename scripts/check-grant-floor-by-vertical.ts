@@ -15,8 +15,13 @@
  * - (a) the GRANT source of the resolution is selected by a function
  *       (`selectGrantForVertical`) that FILTERS on `'GRANT'`, and
  * - (b) the resolution reads the floor from the selected source
- *       (`grant.floor`, never a billing table) AND compares the referenced
- *       plan version's `vertical` against the resolved one.
+ *       (`grant.floor`, never a billing table), reads the floor VERSION's
+ *       summary FROM that `grant.floor`, and compares BOTH the referenced plan
+ *       version's `vertical` AND the floor version's `vertical` against the
+ *       resolved one. Requiring the floor version's own summary (bound from
+ *       `grant.floor`) and its `.vertical` comparison is what detects a real
+ *       cross read: a resolution that checks only the reference and reads the
+ *       floor from another vertical is red.
  *
  * ## Why a parser, not a substring
  *
@@ -56,9 +61,10 @@ export const RULE_MESSAGES: Readonly<Record<GR2BHalf, string>> = {
         'G-R2-B: the resolution no longer selects the GRANT source through a filter on ' +
         "`'GRANT'`, so a source of another type (or a non-grant) can be resolved as the grant.",
     'grant-floor-by-vertical':
-        'G-R2-B: the resolution does not read the floor from the GRANT source (`grant.floor`) ' +
-        'and compare the referenced plan version vertical against the resolved vertical, so a ' +
-        'grant can be compared against a plan of another vertical.'
+        'G-R2-B: the resolution does not compare the referenced plan version vertical AND the ' +
+        "floor version vertical (read from the GRANT source's `grant.floor`) against the " +
+        'resolved vertical, so a grant can be compared against a plan or a floor of another ' +
+        'vertical.'
 };
 
 const TEST_FILE = /\.(?:test|spec)\.[cm]?tsx?$/;
@@ -238,12 +244,104 @@ function grantBindingNames(sourceFile: ts.SourceFile): ReadonlySet<string> {
     return names;
 }
 
+/** Whether an expression tree contains `<grant>.floor` for any grant binding. */
+function referencesSelectedFloor(expression: ts.Expression, grants: ReadonlySet<string>): boolean {
+    let found = false;
+    const visit = (node: ts.Node): void => {
+        if (found) return;
+        if (
+            ts.isPropertyAccessExpression(node) &&
+            ts.isIdentifier(node.expression) &&
+            grants.has(node.expression.text) &&
+            node.name.text === 'floor'
+        ) {
+            found = true;
+            return;
+        }
+        ts.forEachChild(node, visit);
+    };
+    visit(expression);
+    return found;
+}
+
+/** Whether a file reads `<grant>.floor` for a grant bound from the selector. */
+function fileReadsSelectedFloor(sourceFile: ts.SourceFile, grants: ReadonlySet<string>): boolean {
+    let found = false;
+    const visit = (node: ts.Node): void => {
+        if (found) return;
+        if (
+            ts.isPropertyAccessExpression(node) &&
+            ts.isIdentifier(node.expression) &&
+            grants.has(node.expression.text) &&
+            node.name.text === 'floor'
+        ) {
+            found = true;
+            return;
+        }
+        ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+    return found;
+}
+
+/**
+ * The names bound from a call whose arguments reference `<grant>.floor`: the
+ * floor version's summary (and any read taken from that same floor value).
+ */
+function floorDerivedBindingNames(
+    sourceFile: ts.SourceFile,
+    grants: ReadonlySet<string>
+): ReadonlySet<string> {
+    const names = new Set<string>();
+    const visit = (node: ts.Node): void => {
+        if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer) {
+            let initializer: ts.Expression = node.initializer;
+            if (ts.isAwaitExpression(initializer)) initializer = initializer.expression;
+            if (
+                ts.isCallExpression(initializer) &&
+                initializer.arguments.some((argument) => referencesSelectedFloor(argument, grants))
+            ) {
+                names.add(node.name.text);
+            }
+        }
+        ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+    return names;
+}
+
+/** Whether a node is a binary comparison over a `.vertical` property. */
+function isVerticalComparison(node: ts.Node): node is ts.BinaryExpression {
+    return (
+        ts.isBinaryExpression(node) &&
+        (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsToken ||
+            node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ||
+            node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsToken ||
+            node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken) &&
+        (isVerticalProperty(node.left) || isVerticalProperty(node.right))
+    );
+}
+
+/** Whether a comparison compares the `.vertical` of a value in `bindings`. */
+function comparesVerticalOfBinding(
+    node: ts.BinaryExpression,
+    bindings: ReadonlySet<string>
+): boolean {
+    const isBoundVertical = (side: ts.Node): boolean =>
+        ts.isPropertyAccessExpression(side) &&
+        side.name.text === 'vertical' &&
+        ts.isIdentifier(side.expression) &&
+        bindings.has(side.expression.text);
+    return isBoundVertical(node.left) || isBoundVertical(node.right);
+}
+
 /**
  * Whether ONE file both reads the floor FROM THE SELECTED GRANT
- * (`<grant>.floor`, where `<grant>` is bound from `selectGrantForVertical`) and
- * compares a `.vertical` in a binary expression. Requiring both in the SAME
- * file, and the floor on the selected grant and not on an unrelated object,
- * is what ties the floor to the vertical check.
+ * (`<grant>.floor`, where `<grant>` is bound from `selectGrantForVertical`),
+ * takes the floor version's summary from that floor, and compares BOTH a
+ * non-floor `.vertical` (the reference) AND a floor-derived `.vertical` against
+ * the resolved vertical. Requiring the floor's own comparison is what makes a
+ * real cross read red instead of merely checking the reference.
  */
 function fileReadsFloorAndComparesVertical(file: ResolutionFile): boolean {
     const sourceFile = ts.createSourceFile(
@@ -255,31 +353,22 @@ function fileReadsFloorAndComparesVertical(file: ResolutionFile): boolean {
     );
     const grants = grantBindingNames(sourceFile);
     if (grants.size === 0) return false;
-    let readsFloor = false;
-    let comparesVertical = false;
+    if (!fileReadsSelectedFloor(sourceFile, grants)) return false;
+
+    const floorBindings = floorDerivedBindingNames(sourceFile, grants);
+    if (floorBindings.size === 0) return false;
+
+    let comparesFloorVertical = false;
+    let comparesReferenceVertical = false;
     const visit = (node: ts.Node): void => {
-        if (
-            ts.isPropertyAccessExpression(node) &&
-            ts.isIdentifier(node.expression) &&
-            grants.has(node.expression.text) &&
-            node.name.text === 'floor'
-        ) {
-            readsFloor = true;
-        }
-        if (
-            ts.isBinaryExpression(node) &&
-            (node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsToken ||
-                node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ||
-                node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsToken ||
-                node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken) &&
-            (isVerticalProperty(node.left) || isVerticalProperty(node.right))
-        ) {
-            comparesVertical = true;
+        if (isVerticalComparison(node)) {
+            if (comparesVerticalOfBinding(node, floorBindings)) comparesFloorVertical = true;
+            else comparesReferenceVertical = true;
         }
         ts.forEachChild(node, visit);
     };
     visit(sourceFile);
-    return readsFloor && comparesVertical;
+    return comparesFloorVertical && comparesReferenceVertical;
 }
 
 /** Whether some resolution file reads the floor and compares the vertical. */
@@ -357,7 +446,7 @@ export function run(args: { readonly root?: string } = {}): {
     }
 
     lines.push(
-        `OK: ${RESOLUTION_DIR} selects the GRANT source by type, and reads its floor comparing the referenced plan vertical against the resolved one.`
+        `OK: ${RESOLUTION_DIR} selects the GRANT source by type, and compares both the referenced plan version vertical and the floor version vertical (read from the source's floor) against the resolved one.`
     );
     return { exitCode: 0, output: lines.join('\n') };
 }

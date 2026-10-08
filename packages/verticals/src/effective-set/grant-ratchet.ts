@@ -14,9 +14,19 @@
  *   source that transports a plan of another vertical refuses
  *   ({@link GrantReferenceVerticalMismatchError}), because a single floor for a
  *   plural grant would compare Gastronomía's keys against an Alojamiento plan.
+ * - The version of the source's `floor` must ALSO belong to that same vertical:
+ *   the floor is read as its own summary and its `vertical` compared against the
+ *   resolved one, so a floor transported from another vertical refuses instead
+ *   of ratcheting this vertical's keys against a foreign plan. The guard
+ *   G-R2-B reads that comparison (`grant-floor-by-vertical`).
  *
  * The floor travels in the source's `floor` field (contract §2, `piso` → `floor`)
  * and is never read from a billing table.
+ *
+ * Every key of a version is resolved through {@link resolveKeyScope}: a vertical
+ * key asks for the vertical being resolved, so it can never be read from another
+ * one (AC:V3:3). A metered key (one whose entitlement carries `planQuota` OR
+ * `trialQuota`) with `scope: global` refuses here, on the real version read.
  */
 import type { CoverageSource } from '@repo/billing-verticals-contract';
 import { type AggregationStrategy, getCatalogKey } from '@repo/schemas';
@@ -24,7 +34,7 @@ import type { PlanCatalogReader, PlanVersionSummaryRow } from '../plan-catalog/c
 import { CatalogVersionNotFoundError } from '../plan-catalog/errors';
 import { GrantReferenceVerticalMismatchError, GrantWithoutFloorError } from './errors';
 import { bestOf } from './ratchet';
-import { assertMeteredKeyIsVertical } from './scope';
+import { assertMeteredKeyIsVertical, resolveKeyScope } from './scope';
 
 /** What a grant resolves: its entitlement quotas and its limits. */
 export interface GrantSet {
@@ -75,15 +85,28 @@ interface Valued {
 async function effectsOf(args: {
     readonly reader: PlanCatalogReader;
     readonly versionId: string;
+    readonly vertical: string;
 }): Promise<{ readonly entitlements: Map<string, Valued>; readonly limits: Map<string, Valued> }> {
     const effects = await args.reader.findPlanVersionEffects({ id: args.versionId });
     for (const entitlement of effects.entitlements) {
         const definition = getCatalogKey({ key: entitlement.key });
         if (!definition) continue;
+        // The resolution asks for the vertical of every key it reads: a vertical
+        // key without one cannot be resolved (AC:V3:3).
+        resolveKeyScope({ definition, vertical: args.vertical });
+        // A metered key is one that carries EITHER quota (AC:V3:3); both travel
+        // from the effects, so a plain key is never read as metered. A reader
+        // that omits `trialQuota` is treated as carrying none (the field is
+        // optional only so an older V2 fixture still typechecks).
         assertMeteredKeyIsVertical({
             definition,
-            isMetered: entitlement.planQuota !== null
+            isMetered: entitlement.planQuota !== null || (entitlement.trialQuota ?? null) !== null
         });
+    }
+    for (const limit of effects.limits) {
+        const definition = getCatalogKey({ key: limit.key });
+        if (!definition) continue;
+        resolveKeyScope({ definition, vertical: args.vertical });
     }
     return {
         entitlements: new Map(
@@ -136,8 +159,12 @@ function ratchet(args: {
  * @param args.sources - The live sources of that `user + vertical`.
  * @returns The ratcheted set, or `null` when the coverage carries no GRANT.
  * @throws GrantWithoutFloorError if the GRANT source carries no floor.
- * @throws GrantReferenceVerticalMismatchError if the reference plan is of
- * another vertical than the one being resolved.
+ * @throws GrantReferenceVerticalMismatchError if the reference plan OR the floor
+ * version is of another vertical than the one being resolved.
+ * @throws MeteredKeyGlobalScopeError if a version declares a metered key with
+ * `scope: global`.
+ * @throws MissingVerticalForVerticalKeyError if a version declares a vertical key
+ * and the resolution carries no vertical.
  * @throws CatalogVersionNotFoundError if the reference or the floor version does
  * not exist.
  * @throws UndecidableKeyError if a key declares `BEST_DECLARED`.
@@ -165,6 +192,20 @@ export async function resolveGrantSet(args: {
     }
     if (grant.floor === null) throw new GrantWithoutFloorError();
 
+    // The floor must be OF THIS VERTICAL too: reading its summary and comparing
+    // its `vertical` is what makes a cross-vertical floor refuse instead of
+    // ratcheting this vertical's keys against a foreign plan (G-R2-B).
+    const floorSummary = await args.reader.findPlanVersionSummary({ id: grant.floor });
+    if (!floorSummary) {
+        throw new CatalogVersionNotFoundError({ kind: 'plan_version', id: grant.floor });
+    }
+    if (floorSummary.vertical !== args.vertical) {
+        throw new GrantReferenceVerticalMismatchError({
+            resolvedVertical: args.vertical,
+            referenceVertical: floorSummary.vertical
+        });
+    }
+
     const currentVersion = await args.reader.findCurrentPlanVersion({
         planId: reference.planId
     });
@@ -172,8 +213,16 @@ export async function resolveGrantSet(args: {
         throw new CatalogVersionNotFoundError({ kind: 'plan_version', id: reference.planId });
     }
 
-    const current = await effectsOf({ reader: args.reader, versionId: currentVersion.id });
-    const floor = await effectsOf({ reader: args.reader, versionId: grant.floor });
+    const current = await effectsOf({
+        reader: args.reader,
+        versionId: currentVersion.id,
+        vertical: args.vertical
+    });
+    const floor = await effectsOf({
+        reader: args.reader,
+        versionId: grant.floor,
+        vertical: args.vertical
+    });
     return {
         entitlements: ratchet({ current: current.entitlements, floor: floor.entitlements }),
         limits: ratchet({ current: current.limits, floor: floor.limits })
