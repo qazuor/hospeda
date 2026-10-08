@@ -4,25 +4,6 @@
     "recommended": "Recomendado",
     "trial_one": "{{count}} día de prueba gratis",
     "trial_other": "{{count}} días de prueba gratis",
-    "trialNotEligible": "Sin período de prueba",
-    "trialWarning": {
-        "title": "Vas a perder tu prueba gratis",
-        "body_one": "Te queda {{count}} día de prueba gratis. Si contratás ahora, lo perdés.",
-        "body_other": "Te quedan {{count}} días de prueba gratis. Si contratás ahora, los perdés.",
-        "bodyUnknown": "Puede que tengas una prueba gratis en curso. Si contratás ahora, la perdés.",
-        "immediateCharge": "El cobro es inmediato: se hace ahora, no al terminar la prueba.",
-        "confirm": "Contratar igual",
-        "cancel": "Seguir con la prueba"
-    },
-    "trialBanner": {
-        "message_one": "Tu prueba gratis sigue activa: te queda {{count}} día.",
-        "message_other": "Tu prueba gratis sigue activa: te quedan {{count}} días.",
-        "hint": "Si contratás un plan ahora, el cobro es inmediato y perdés los días que te quedan."
-    },
-    "touristVipHeld": {
-        "cta": "Ya tenés estos beneficios",
-        "note": "Tu suscripción activa ya incluye todos los beneficios VIP de turista."
-    },
     "includesEverything": "Todo lo del plan {plan}, más:",
     "includesAll": "Este plan incluye:",
     "limitsLabel": "Límites de este plan",
@@ -79,15 +60,12 @@
         "year": "/año"
     },
     "monthlyOnly": "Solo plan mensual",
-    "promoEntry": {
-        "label": "¿Tenés un código de descuento? Vas a poder usarlo en el plan que elijas."
-    },
     "index": {
         "title": "Planes de Hospeda",
         "description": "Elegí a qué audiencia pertenecés y mirá los planes pensados para vos.",
         "tagline": "Planes y precios",
         "heading": "Un plan para cada audiencia",
-        "subtitle": "Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá qué incluye cada una.",
+        "subtitle": "Hospeda tiene cuatro formas de sumarse. Elegí la tuya y mirá qué incluye cada una.",
         "cardsHeading": "Elegí tu audiencia",
         "highlightsLabel": "Qué obtenés",
         "from": "Desde {{price}}",
@@ -132,16 +110,6 @@
                     "item1": "Publicá excursiones, paseos y actividades con fotos y horarios.",
                     "item2": "Aparecé entre las experiencias que se buscan en el Litoral.",
                     "item3": "Un monto mensual fijo: ninguna reserva te cobra comisión aparte."
-                }
-            },
-            "partner": {
-                "title": "Ser partner de Hospeda",
-                "audience": "Para marcas y comercios que quieren visibilidad en toda la plataforma.",
-                "cta": "Conocer el programa de partners",
-                "highlights": {
-                    "item1": "Presencia de marca en el carrusel de aliados de Hospeda.",
-                    "item2": "Visibilidad conjunta en nuestras campañas y canales de difusión.",
-                    "item3": "Condiciones comerciales a medida según el tipo de alianza."
                 }
             }
         }

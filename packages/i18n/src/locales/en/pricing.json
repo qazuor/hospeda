@@ -4,25 +4,6 @@
     "recommended": "Recommended",
     "trial_one": "{{count}} day free trial",
     "trial_other": "{{count}} days free trial",
-    "trialNotEligible": "No trial period",
-    "trialWarning": {
-        "title": "You are about to lose your free trial",
-        "body_one": "You have {{count}} day of free trial left. If you subscribe now, you lose it.",
-        "body_other": "You have {{count}} days of free trial left. If you subscribe now, you lose them.",
-        "bodyUnknown": "You may have a free trial running. If you subscribe now, you lose it.",
-        "immediateCharge": "You are charged straight away, not when the trial ends.",
-        "confirm": "Subscribe anyway",
-        "cancel": "Keep my trial"
-    },
-    "trialBanner": {
-        "message_one": "Your free trial is still running: {{count}} day left.",
-        "message_other": "Your free trial is still running: {{count}} days left.",
-        "hint": "If you subscribe now, you are charged straight away and lose the days you have left."
-    },
-    "touristVipHeld": {
-        "cta": "You already have these benefits",
-        "note": "Your active subscription already includes every tourist VIP benefit."
-    },
     "includesEverything": "Everything in {plan}, plus:",
     "includesAll": "This plan includes:",
     "limitsLabel": "This plan's limits",
@@ -79,15 +60,12 @@
         "year": "/year"
     },
     "monthlyOnly": "Monthly plan only",
-    "promoEntry": {
-        "label": "Have a discount code? You'll be able to use it on whichever plan you pick."
-    },
     "index": {
         "title": "Hospeda plans",
         "description": "Pick the audience you belong to and see the plans built for you.",
         "tagline": "Plans and pricing",
         "heading": "A plan for every audience",
-        "subtitle": "There are five ways to join Hospeda. Pick yours and see what each one includes.",
+        "subtitle": "There are four ways to join Hospeda. Pick yours and see what each one includes.",
         "cardsHeading": "Choose your audience",
         "highlightsLabel": "What you get",
         "from": "From {{price}}",
@@ -132,16 +110,6 @@
                     "item1": "Publish tours, outings and activities with photos and schedules.",
                     "item2": "Appear among the experiences travellers look for in the Litoral.",
                     "item3": "One fixed monthly amount: no booking charges you a separate commission."
-                }
-            },
-            "partner": {
-                "title": "Become a Hospeda partner",
-                "audience": "For brands and businesses that want visibility across the platform.",
-                "cta": "Explore the partner programme",
-                "highlights": {
-                    "item1": "Brand presence in Hospeda's partner carousel.",
-                    "item2": "Joint visibility in our campaigns and outreach channels.",
-                    "item3": "Tailored commercial terms depending on the partnership type."
                 }
             }
         }

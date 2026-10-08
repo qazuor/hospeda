@@ -914,18 +914,15 @@
             "properties": "Propiedades",
             "promotions": "Promociones",
             "messages": "Mensajes",
-            "subscription": "Suscripción",
-            "addons": "Complementos"
+            "subscription": "Suscripción"
         }
     },
     "pages": {
         "nueva": {
             "trialCalloutTitle_one": "{{trialDays}} día gratis, sin tarjeta — una sola para alojamientos",
             "trialCalloutTitle_other": "{{trialDays}} días gratis, sin tarjeta — una sola para alojamientos",
-            "trialCalloutTitleIneligible": "Armá tu propiedad",
             "trialNote_one": "Podés armar tu propiedad ahora, sin apuro y sin tarjeta. La prueba gratis de {{trialDays}} día arranca sola cuando publicás; es una sola para alojamientos, y cuando termine, elegís un plan para seguir publicado.",
             "trialNote_other": "Podés armar tu propiedad ahora, sin apuro y sin tarjeta. La prueba gratis de {{trialDays}} días arranca sola cuando publicás; es una sola para alojamientos, y cuando termine, elegís un plan para seguir publicado.",
-            "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.",
             "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
             "precheck": {
                 "pickDraftDeleteOrUpgrade": {
