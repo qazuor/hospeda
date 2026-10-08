@@ -4,6 +4,11 @@
  * purpose. Mutation (the one the spec names): remove from the fold the condition
  * "a live title that is not of type TRIAL" (admit complements with any title),
  * and the guard reddens. Removing the selector call is the other half.
+ *
+ * The guard also has to redden when the discard is NEUTRALISED rather than
+ * removed: `|| true`, `true ||`, or a filter that calls the helper and ignores
+ * its result. Those keep both the `'COMPLEMENT'` literal and the helper call, so
+ * a presence check would stay green; the structural check must not.
  */
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -28,6 +33,17 @@ function resolutionFiles(): Record<string, string> {
             .filter((name) => name.endsWith('.ts'))
             .map((name) => [name, readFileSync(path.join(dir, name), 'utf8')])
     );
+}
+
+/**
+ * The real selector with one substitution applied, to build a neutralisation
+ * mutation without hand-writing the whole file. Fails loudly if the anchor the
+ * mutation relies on is no longer in the source.
+ */
+function plegableWith(from: string, to: string): string {
+    const source = resolutionFiles()['plegable.ts'] as string;
+    expect(source).toContain(from);
+    return source.replace(from, to);
 }
 
 /** Writes the resolution (overridable per file) into a fresh tree. */
@@ -110,6 +126,51 @@ describe('TEST:V3:3 — GUARD:G-R2', () => {
 
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain('has no production file');
+    });
+
+    it('mutation: a filter neutralised with `|| true` is red', () => {
+        const result = run({
+            root: makeTree({
+                overrides: {
+                    'plegable.ts': plegableWith(
+                        '|| admitsComplements',
+                        '|| admitsComplements || true'
+                    )
+                }
+            })
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`FAIL ${RULE_MESSAGES['selector-gates-complement']}`);
+    });
+
+    it('mutation: a filter neutralised with `true ||` is red', () => {
+        const result = run({
+            root: makeTree({
+                overrides: {
+                    'plegable.ts': plegableWith(
+                        "coverageSourceClassOf({ source }).sourceClass !== 'COMPLEMENT'",
+                        "true || coverageSourceClassOf({ source }).sourceClass !== 'COMPLEMENT'"
+                    )
+                }
+            })
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`FAIL ${RULE_MESSAGES['selector-gates-complement']}`);
+    });
+
+    it('mutation: a filter that ignores the helper result is red', () => {
+        const result = run({
+            root: makeTree({
+                overrides: {
+                    'plegable.ts': plegableWith('|| admitsComplements', '')
+                }
+            })
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`FAIL ${RULE_MESSAGES['selector-gates-complement']}`);
     });
 });
 
