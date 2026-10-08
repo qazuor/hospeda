@@ -275,6 +275,8 @@ jobs:
           HOSPEDA_PRODUCTION_BUILD: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')) && '1' || '0' }}
         run: bash scripts/check-old-grouping-word.sh
       - uses: ./.github/actions/setup
+      - name: Reject commercial values in billing code (GUARD:G7)
+        run: pnpm check:commercial-values
       # GUARD:G16 (HOS-1506, AC:B1:10). Its own step, like every guard here:
       # being listed in `pnpm check:guards` is NOT what makes a guard run in this
       # job. Replaces the retired qzpay shell guard (TEST:U1:1, HOS-1416), whose rule
