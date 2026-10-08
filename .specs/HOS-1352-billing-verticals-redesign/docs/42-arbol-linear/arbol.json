@@ -1817,7 +1817,7 @@
             "clave": "B1.7",
             "padre": "B1",
             "titulo": "B1 · Salida (PR 7/7)",
-            "descripcion": "**Qué entrega:** Salida.\n\n**Pieza:** `B1` — spec [B1.md](../../spec-consolidada/10-corte/B1.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B1:19` — Salida: la pieza está lista.\n\n**Depende de:** `B1.4` (2026-10-07).\n\n**Verificación:** tests `TEST:B1:1`, `TEST:B1:3`, `TEST:B1:8`, `TEST:B1:9`, `TEST:B1:10`, `TEST:B1:11`, `TEST:B1:15`, `TEST:B1:18`; guards `G15`, `G16`, `G17`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** Salida.\n\n**Pieza:** `B1` — spec [B1.md](../../spec-consolidada/10-corte/B1.md), secciones «Historias de usuario y criterios de aceptación».\n\n**Cubre:**\n- `AC:B1:19` — Salida: la pieza está lista.\n\n**Depende de:** `B1.4` (2026-10-07).\n\n**Verificación:** tests `TEST:B1:1`, `TEST:B1:3`, `TEST:B1:8`, `TEST:B1:9`, `TEST:B1:10`, `TEST:B1:11`, `TEST:B1:18`; guards `G15`, `G16`, `G17`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:B1:19"],
             "depende_de": ["B1.4"],
             "labels": ["area-api", "area-billing", "kind-spec", "source-agent"],
