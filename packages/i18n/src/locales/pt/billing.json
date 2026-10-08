@@ -53,12 +53,7 @@
         },
         "trial": {
             "noCharge": "Nenhuma cobrança foi realizada",
-            "subscribeNow": "Assinar agora",
-            "expiredBanner": {
-                "title": "Seu período de teste gratuito encerrou",
-                "body": "Seu teste do plano {{planSlug}} venceu em {{expiresAt}}. Assine para voltar a publicar.",
-                "cta": "Ver planos"
-            }
+            "subscribeNow": "Assinar agora"
         },
         "cancelled": {
             "title": "Assinatura cancelada",
@@ -183,34 +178,8 @@
     },
     "checkout": {
         "success": {
-            "title": "Sua assinatura está ativa!",
-            "subtitle": "Seu pagamento foi aprovado com sucesso",
             "planDetails": "Plano: {{planName}}",
-            "amountDetails": "Valor: {{amount}}",
-            "verifyingStatus": "Verificando o status do pagamento...",
-            "verifyingSubtitle": "Estamos confirmando seu pagamento. Pode levar alguns instantes.",
-            "cta": "Ir para minha conta",
-            "pageTitle": "Pagamento aprovado",
-            "promoIgnoredNote": "Seu código não foi aplicado: ele estende um período de teste grátis, e esta assinatura não tem um.",
-            "linkErrorTitle": "Não conseguimos vincular seu pagamento",
-            "linkErrorSubtitle": "Houve um problema ao vincular este pagamento à sua conta. Se você já pagou, entre em contato com o suporte com o número da operação do MercadoPago.",
-            "unresolvedTitle": "Ainda estamos confirmando seu pagamento",
-            "unresolvedSubtitle": "Seu pagamento não foi perdido. O MercadoPago pode levar alguns minutos para confirmá-lo e, assim que isso acontecer, seu plano é ativado automaticamente. Você pode fechar esta página: verifique o status em Minha Conta, ou escreva para nós se daqui a pouco ainda não conseguir vê-lo.",
-            "unresolvedSupportCta": "Fale conosco"
-        },
-        "pending": {
-            "title": "Seu pagamento está sendo processado",
-            "body": "Pode levar até 24 horas para confirmar. Vamos te avisar por email quando for aprovado.",
-            "cta": "Verificar status",
-            "pageTitle": "Pagamento em processamento"
-        },
-        "partnerPending": {
-            "pageTitle": "Pagamento recebido",
-            "title": "Recebemos seu pagamento",
-            "body": "Estamos confirmando a operação com o MercadoPago. Pode levar alguns minutos e, em alguns casos, até 24 horas. Quando o pagamento for aprovado, sua presença no Hospeda é ativada automaticamente: você não precisa fazer mais nada.",
-            "note": "Guarde o comprovante que o MercadoPago enviou. Se algo não ficar claro, fale com a gente e revisamos junto com você.",
-            "homeCta": "Ir para o início",
-            "contactCta": "Fale com a gente"
+            "amountDetails": "Valor: {{amount}}"
         },
         "failure": {
             "title": "Não foi possível processar o pagamento",
@@ -227,48 +196,6 @@
             "retryCta": "Tentar novamente",
             "supportCta": "Falar com o suporte",
             "pageTitle": "Pagamento recusado"
-        },
-        "button": {
-            "cta": "Contratar",
-            "processing": "Processando...",
-            "processingAriaLabel": "Processando pagamento",
-            "error": "Não conseguimos iniciar o pagamento. Tente novamente.",
-            "unauthCta": "Faça login para contratar",
-            "currentPlan": "Plano atual",
-            "currentPlanAriaLabel": "Este é o seu plano atual",
-            "changePlan": "Mudar para este plano",
-            "freeRegisterCta": "Cadastre-se grátis",
-            "freePlanLegend": "Você já tem este plano"
-        },
-        "promoApply": {
-            "label": "Código de desconto",
-            "inputPlaceholder": "Digite seu código",
-            "applyButton": "Aplicar",
-            "applying": "Verificando...",
-            "removeButton": "Remover",
-            "discountPercentForever": "{{percent}}% de desconto para sempre",
-            "discountPercentCycle_one": "{{percent}}% de desconto por {{months}} mês",
-            "discountPercentCycle_other": "{{percent}}% de desconto por {{months}} meses",
-            "discountFixedForever": "R${{amount}} de desconto para sempre",
-            "discountFixedCycle_one": "R${{amount}} de desconto por {{months}} mês",
-            "discountFixedCycle_other": "R${{amount}} de desconto por {{months}} meses",
-            "trialExtension_one": "{{days}} dia extra de avaliação gratuita",
-            "trialExtension_other": "{{days}} dias extras de avaliação gratuita",
-            "comp": "Grátis para sempre",
-            "compNotRedeemable": "Este código não pode ser resgatado. Fale com a gente se prometeram uma assinatura de cortesia a você.",
-            "errorInvalid": "O código informado não é válido. Verifique e tente novamente.",
-            "errorAnnualOutsideTrial": "Este código de desconto não se aplica a planos anuais fora do período de avaliação.",
-            "errorGeneric": "Não conseguimos verificar o código. Tente novamente.",
-            "errorNotFound": "Não encontramos esse código. Verifique se está escrito corretamente.",
-            "errorInactive": "Este código não está mais ativo.",
-            "errorExpired": "Este código expirou.",
-            "errorMaxUses": "Este código atingiu seu limite de usos.",
-            "errorMaxUsesPerUser": "Você já usou este código o número máximo de vezes.",
-            "errorPlanRestriction": "Este código não é válido para o plano selecionado.",
-            "errorNewUsersOnly": "Este código é apenas para novos clientes.",
-            "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código.",
-            "pendingAuthMessage": "Você vai poder aplicar o código {{code}} assim que terminar de se cadastrar.",
-            "registerCta": "Cadastrar-me"
         },
         "payerEmailConfirm": {
             "title": "Com qual email você vai poder pagar",
@@ -287,21 +214,6 @@
             "title": "Publicação de novos anúncios em pausa",
             "body": "Pausamos temporariamente a publicação de novos anúncios. Seu anúncio fica salvo como rascunho e você poderá publicá-lo quando retomarmos."
         }
-    },
-    "checkoutRetry": {
-        "checkingTitle": "Verificando seu pagamento...",
-        "checkingBody": "Estamos verificando o status da sua assinatura.",
-        "redirectingTitle": "Estamos te redirecionando para o Mercado Pago...",
-        "redirectingBody": "Um momento, estamos te levando para concluir o pagamento.",
-        "activeTitle": "Sua assinatura já está ativa",
-        "activeBody": "Não precisa pagar de novo: seu plano já está funcionando.",
-        "confirmingTitle": "Estamos confirmando seu pagamento",
-        "confirmingBody": "Talvez já estejamos resolvendo isso em outra aba. Aguarde um momento.",
-        "confirmingTimedOutTitle": "Ainda estamos confirmando seu pagamento",
-        "confirmingTimedOutBody": "Isso está demorando mais do que o esperado. Você pode tentar novamente em instantes.",
-        "errorTitle": "Não conseguimos verificar seu pagamento",
-        "errorBody": "Tente novamente, ou fale conosco se o problema continuar.",
-        "retryButton": "Tentar novamente"
     },
     "limit": {
         "max_favorites": {

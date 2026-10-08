@@ -65,8 +65,15 @@ import { fetchPublicPlans, filterPlansByCategory } from './fetch-plans';
 import { computeMinimumTrialDays } from './generic-trial-days';
 import { isPriceOnRequestAudience } from './price-on-request-audiences';
 
-/** The five audiences the plan index offers, in display order. */
-export type AudienceCardId = 'host' | 'tourist' | 'gastronomy' | 'experience' | 'partner';
+/**
+ * The audiences the plan index offers, in display order.
+ *
+ * `partner` is not one of them any more: its pricing and sales pages
+ * (`/planes/aliados/*`) were removed with the old billing, and the Partner
+ * offering has no subject until V7 (HOS-1637, AC:B13a:21). Nothing may link to
+ * those URLs.
+ */
+export type AudienceCardId = 'host' | 'tourist' | 'gastronomy' | 'experience';
 
 /**
  * Display order of the audience cards.
@@ -78,8 +85,7 @@ export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
     'host',
     'tourist',
     'gastronomy',
-    'experience',
-    'partner'
+    'experience'
 ] as const;
 
 /**
@@ -105,8 +111,7 @@ export const AUDIENCE_CARD_PATHS: Readonly<Record<AudienceCardId, string>> = {
     host: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
     tourist: PRICING_PAGE_PATH_BY_AUDIENCE.tourist,
     gastronomy: 'planes/gastronomia',
-    experience: 'planes/experiencias',
-    partner: 'planes/aliados'
+    experience: 'planes/experiencias'
 } as const;
 
 /**
@@ -122,17 +127,20 @@ export const PRICING_AUDIENCE_BY_CARD_ID: Readonly<Record<AudienceCardId, Pricin
     host: 'owner',
     tourist: 'tourist',
     gastronomy: 'gastronomy',
-    experience: 'experience',
-    partner: 'partner'
+    experience: 'experience'
 } as const;
 
-/** Inverse of {@link PRICING_AUDIENCE_BY_CARD_ID}. */
-export const CARD_ID_BY_PRICING_AUDIENCE: Readonly<Record<PricingAudience, AudienceCardId>> = {
+/**
+ * Inverse of {@link PRICING_AUDIENCE_BY_CARD_ID}. `partner` has no card (see
+ * {@link AudienceCardId}).
+ */
+export const CARD_ID_BY_PRICING_AUDIENCE: Readonly<
+    Record<Exclude<PricingAudience, 'partner'>, AudienceCardId>
+> = {
     owner: 'host',
     tourist: 'tourist',
     gastronomy: 'gastronomy',
-    experience: 'experience',
-    partner: 'partner'
+    experience: 'experience'
 } as const;
 
 /**
@@ -148,8 +156,7 @@ const PLAN_DOMAIN_BY_CARD_ID: Readonly<Record<AudienceCardId, ProductDomainValue
     host: undefined,
     tourist: undefined,
     gastronomy: 'gastronomy',
-    experience: 'experience',
-    partner: 'partner'
+    experience: 'experience'
 } as const;
 
 /**
@@ -195,8 +202,7 @@ export async function fetchAudiencePlans({
     const selected = selectAudiencePlans({
         accommodation: domain === undefined ? result : empty,
         gastronomy: domain === 'gastronomy' ? result : empty,
-        experience: domain === 'experience' ? result : empty,
-        partner: domain === 'partner' ? result : empty
+        experience: domain === 'experience' ? result : empty
     })[audience];
 
     return selected
@@ -305,8 +311,6 @@ export interface AudiencePlanResults {
     readonly gastronomy: FetchPlansResult;
     /** `?domain=experience`. */
     readonly experience: FetchPlansResult;
-    /** `?domain=partner`. */
-    readonly partner: FetchPlansResult;
 }
 
 /** Unwrap a fetch result to its plan list, or an empty list when it failed. */
@@ -345,9 +349,7 @@ export function selectAudiencePlans(
         host: filterPlansByCategory(accommodationPlans, 'owner'),
         tourist: filterPlansByCategory(accommodationPlans, 'tourist'),
         gastronomy: plansOf(results.gastronomy),
-        experience: plansOf(results.experience),
-        // HOS-1352: transitional until V2 (HOS-1356), see PR: the new catalogue will identify sellable partner tiers.
-        partner: plansOf(results.partner).filter((plan) => plan.slug !== 'partner-listing')
+        experience: plansOf(results.experience)
     };
 }
 
@@ -437,14 +439,13 @@ export function resolveAudienceTrialDays(results: AudiencePlanResults): Audience
  * @returns Price and trial per audience, `null` where either is unresolvable.
  */
 export async function fetchAudienceOffers(): Promise<AudienceOffers> {
-    const [accommodation, gastronomy, experience, partner] = await Promise.all([
+    const [accommodation, gastronomy, experience] = await Promise.all([
         fetchPublicPlans(),
         fetchPublicPlans({ domain: 'gastronomy' }),
-        fetchPublicPlans({ domain: 'experience' }),
-        fetchPublicPlans({ domain: 'partner' })
+        fetchPublicPlans({ domain: 'experience' })
     ]);
 
-    const results: AudiencePlanResults = { accommodation, gastronomy, experience, partner };
+    const results: AudiencePlanResults = { accommodation, gastronomy, experience };
 
     return {
         startingPrices: resolveAudienceStartingPrices(results),

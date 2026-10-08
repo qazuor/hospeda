@@ -96,8 +96,6 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         '`buildWhatsAppLink` composes `https://wa.me/<digits>`; a non-dialable number yields null, not a URL',
     'components/account/ProfileCompletionConsentFields.tsx#{`/${locale}/legal/terminos/`}':
         'an internal path literal; it carries `rel="noopener"` only because it opens in a new tab',
-    'components/account/SubscriptionDashboard.client.tsx#{adminUrl}':
-        '`getAdminUrl()` — our own admin panel origin, from validated env',
     'components/shared/navigation/MobileMenu.client.tsx#{adminPanelItem.href}':
         '`buildAdminPanelItem` over the same admin origin',
     'components/shared/navigation/UserMenu.client.tsx#{adminPanelItem.href}':

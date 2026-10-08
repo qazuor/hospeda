@@ -27,9 +27,7 @@ export {
 
 export {
     authApi,
-    billingApi,
     exchangeRatesApi,
-    plansApi,
     reviewsApi,
     tagsApi,
     userApi,
@@ -47,15 +45,7 @@ export type {
     CreateAccommodationReviewBody,
     ExchangeRateConfig,
     ExchangeRateItem,
-    InvoiceItem,
-    LimitUsage,
-    PaymentItem,
-    PlanItem,
-    SubscriptionData,
-    TagPublicResponse,
-    UsageSummary,
-    UsageThresholdLevel,
-    UserAddon
+    TagPublicResponse
 } from './endpoints-protected';
 
 // --- Transform functions ---
