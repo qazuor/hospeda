@@ -69,7 +69,7 @@ def main() -> None:
         chunk = leaves[i : i + 50]
         body = " ".join(
             f'n{j}:issue(id:"{created[k]}"){{identifier title state{{type}} '
-            f'inverseRelations{{nodes{{type issue{{identifier state{{type name}}}}}}}}}}}}' for j, k in enumerate(chunk)
+            f'inverseRelations{{nodes{{type issue{{identifier state{{type name}}}}}}}}}}' for j, k in enumerate(chunk)
         )
         data = graphql("query{" + body + "}")
         for j, k in enumerate(chunk):

@@ -1635,7 +1635,7 @@
             "clave": "V9a.1",
             "padre": "V9a",
             "titulo": "V9a · El registro de hechos de contenido (corte) (PR 1/1, parte 1/2)",
-            "descripcion": "**Qué entrega:** El registro de hechos de contenido (corte).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:V9a:1` — Crear, editar y exportar se registran aunque no sean transiciones.\n- `AC:V9a:2` — De los campos de contenido, sólo el nombre.\n- `AC:V9a:3` — Ninguna copia del texto en los eventos.\n\n**Depende de:** nada pendiente (2026-10-07).\n\n**Verificación:** tests `TEST:V9a:1`, `TEST:V9a:2`, `TEST:V9a:3`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** El registro de hechos de contenido (corte).\n\n**Pieza:** `V9a` — spec [V9a.md](../../spec-consolidada/10-corte/V9a.md), secciones «Criterios de aceptación».\n (parte 1/2).\n**Cubre:**\n- `AC:V9a:1` — Crear, editar y exportar se registran aunque no sean transiciones. Exportar queda diferido (decisión DE, 2026-10-08): el registro lo suma en forma aditiva cuando exista.\n- `AC:V9a:2` — De los campos de contenido, sólo el nombre.\n- `AC:V9a:3` — Ninguna copia del texto en los eventos.\n\n**Depende de:** nada pendiente (2026-10-07).\n\n**Verificación:** tests `TEST:V9a:1`, `TEST:V9a:2`, `TEST:V9a:3`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V9a:1", "AC:V9a:2", "AC:V9a:3"],
             "depende_de": [],
             "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
