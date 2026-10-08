@@ -21,6 +21,27 @@
 --   Changing anything with an effect is publishing a NEW version, never
 --   editing the one somebody anchored to.
 --
+-- How "created by this transaction" is decided: an AFTER INSERT trigger on
+-- `plan_version` and on `addon_version` appends the new id to the
+-- transaction-local setting `hospeda.catalog_versions_created_in_xact`
+-- (set_config(..., is_local => true)), and the child BEFORE INSERT trigger
+-- accepts only a parent whose id is in that list. A local setting is undone at
+-- the end of the transaction and when a savepoint is rolled back, so the list
+-- names exactly the versions this transaction (still) created; a savepoint
+-- that is released keeps its additions. The trigger is AFTER, not BEFORE, so
+-- an INSERT that never lands (ON CONFLICT DO NOTHING on an existing id) does
+-- not add that id. Consequence: the version must be inserted by an EARLIER
+-- statement than its rows; one statement doing both (a data-modifying CTE)
+-- is rejected, because AFTER row triggers fire at the end of the statement.
+--
+-- Why not `xmin` (the first version of this file used it): a row's `xmin` is
+-- the transaction that wrote its CURRENT tuple, not the one that inserted it.
+-- `plan_version.current` is mutable, so `UPDATE plan_version SET current =
+-- current WHERE id = <published>` gave the published row a fresh xmin and let
+-- the same transaction add grants to a version subscriptions were anchored to
+-- (and the catalog load, which flips `current` on the old version, could do it
+-- by accident).
+--
 -- Rejections raise SQLSTATE P0001 with a message naming the table.
 --
 -- TRUNCATE is not a row operation and is NOT blocked: the integration suites
@@ -36,29 +57,22 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Whether a row whose `xmin` is given was written by the CURRENT transaction
--- (or one of its subtransactions: a savepoint gets its own xid, so comparing
--- with pg_current_xact_id() alone would reject a version created under a
--- savepoint). The row is visible to us, and another transaction's uncommitted
--- rows never are, so "its xmin is still in progress" means "it is ours".
--- `xmin` is a 32-bit `xid`; `pg_xact_status` takes a 64-bit `xid8`, rebuilt
--- with the epoch of pg_current_xact_id() (one epoch back when the low 32 bits
--- are far ahead, i.e. the row predates a wraparound). A frozen or truncated xid
--- answers NULL, which is "not ours".
-CREATE OR REPLACE FUNCTION catalog_row_written_by_current_xact(row_xmin xid)
-  RETURNS boolean AS $$
+-- The xmin-based check this file used before; nothing calls it anymore.
+DROP FUNCTION IF EXISTS catalog_row_written_by_current_xact(xid);
+
+-- AFTER INSERT on a version table: record the new version as created by the
+-- current transaction (see the header).
+CREATE OR REPLACE FUNCTION record_catalog_version_created_in_xact()
+  RETURNS TRIGGER AS $$
 DECLARE
-  current_full bigint := pg_current_xact_id()::text::bigint;
-  low bigint := row_xmin::text::bigint;
-  full_xid bigint := ((current_full >> 32) << 32) | low;
+  created text := coalesce(current_setting('hospeda.catalog_versions_created_in_xact', true), '');
 BEGIN
-  IF low > (current_full & 4294967295) + 2147483648 THEN
-    full_xid := full_xid - 4294967296;
-  END IF;
-  IF full_xid < 0 THEN
-    RETURN false;
-  END IF;
-  RETURN coalesce(pg_xact_status(full_xid::text::xid8) = 'in progress', false);
+  PERFORM set_config(
+    'hospeda.catalog_versions_created_in_xact',
+    CASE WHEN created = '' THEN NEW.id::text ELSE created || ',' || NEW.id::text END,
+    true
+  );
+  RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -69,13 +83,14 @@ CREATE OR REPLACE FUNCTION reject_catalog_child_insert_into_published_version()
   RETURNS TRIGGER AS $$
 DECLARE
   parent_id uuid;
-  parent_xmin xid;
+  parent_exists boolean;
+  created text := coalesce(current_setting('hospeda.catalog_versions_created_in_xact', true), '');
 BEGIN
   parent_id := (to_jsonb(NEW) ->> TG_ARGV[1])::uuid;
-  EXECUTE format('SELECT xmin FROM %I WHERE id = $1', TG_ARGV[0])
-    INTO parent_xmin USING parent_id;
+  EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I WHERE id = $1)', TG_ARGV[0])
+    INTO parent_exists USING parent_id;
   -- A missing parent is left to the foreign key, which names it.
-  IF parent_xmin IS NOT NULL AND NOT catalog_row_written_by_current_xact(parent_xmin) THEN
+  IF parent_exists AND NOT (parent_id::text = ANY (string_to_array(created, ','))) THEN
     RAISE EXCEPTION '% is immutable: % % was published by another transaction; publish a new version instead',
       TG_TABLE_NAME, TG_ARGV[0], parent_id
       USING ERRCODE = 'P0001';
@@ -137,6 +152,16 @@ DROP TRIGGER IF EXISTS trg_addon_version_limit_immutable ON addon_version_limit;
 CREATE TRIGGER trg_addon_version_limit_immutable
   BEFORE UPDATE OR DELETE ON addon_version_limit
   FOR EACH ROW EXECUTE FUNCTION reject_catalog_version_change();
+
+DROP TRIGGER IF EXISTS trg_plan_version_record_created_in_xact ON plan_version;
+CREATE TRIGGER trg_plan_version_record_created_in_xact
+  AFTER INSERT ON plan_version
+  FOR EACH ROW EXECUTE FUNCTION record_catalog_version_created_in_xact();
+
+DROP TRIGGER IF EXISTS trg_addon_version_record_created_in_xact ON addon_version;
+CREATE TRIGGER trg_addon_version_record_created_in_xact
+  AFTER INSERT ON addon_version
+  FOR EACH ROW EXECUTE FUNCTION record_catalog_version_created_in_xact();
 
 DROP TRIGGER IF EXISTS trg_plan_version_entitlement_insert_same_xact ON plan_version_entitlement;
 CREATE TRIGGER trg_plan_version_entitlement_insert_same_xact
