@@ -73,7 +73,6 @@
         "post.view.private",
         "post.view.draft",
         "user.read.all",
-        "user.impersonate",
         "user.create",
         "user.update.roles",
         "user.delete",

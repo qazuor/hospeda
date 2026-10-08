@@ -133,7 +133,7 @@ const ADMIN_PERMISSIONS: readonly PermissionEnum[] = [
     PermissionEnum.POST_VIEW_PRIVATE,
     PermissionEnum.POST_VIEW_DRAFT,
     PermissionEnum.POST_VIEW_ALL,
-    // USER: Most permissions (no impersonate, no hard delete)
+    // USER: Most permissions (no hard delete)
     PermissionEnum.USER_READ_ALL,
     PermissionEnum.USER_CREATE,
     PermissionEnum.USER_UPDATE_ROLES,
