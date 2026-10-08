@@ -434,17 +434,24 @@ vi.mock('../../../src/lib/api/endpoints', () => ({
 }));
 
 /**
- * Mock the protected API — the mini-form resolves the caller's trial
- * eligibility on mount to decide whether the trial callout may promise
- * "14 días gratis" (NOSPEC: trial-callout drift; a paid/mid-trial tourist
- * who converts to host gets no owner trial, HOS-217 decision C).
+ * Mock the protected API. The mini-form must not call it at all since the old
+ * billing's trial-eligibility lookup was removed (HOS-1637, AC:B13a:22); the
+ * mock exists only so the "calls nothing" assertion has something to observe.
  */
-const { mockGetTrialEligibility } = vi.hoisted(() => ({ mockGetTrialEligibility: vi.fn() }));
-vi.mock('../../../src/lib/api/endpoints-protected', () => ({
-    billingApi: {
-        getTrialEligibility: () => mockGetTrialEligibility()
-    }
-}));
+const { mockProtectedApiAccess } = vi.hoisted(() => ({ mockProtectedApiAccess: vi.fn() }));
+vi.mock(
+    '../../../src/lib/api/endpoints-protected',
+    () =>
+        new Proxy(
+            {},
+            {
+                get: (_target, prop) => {
+                    mockProtectedApiAccess(prop);
+                    return undefined;
+                }
+            }
+        )
+);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -476,13 +483,6 @@ function buildFetchResponse(opts: { ok?: boolean; status?: number; body?: unknow
 
 beforeEach(() => {
     vi.clearAllMocks();
-
-    // Default: trial-eligible → the encouraging "14 días gratis" callout.
-    // Tests exercising the ineligible / lookup-failure paths override this.
-    mockGetTrialEligibility.mockResolvedValue({
-        ok: true,
-        data: { eligible: true, planSlug: null }
-    });
 
     // JSDOM does not allow direct assignment to window.location.href in strict
     // mode. Use Object.defineProperty to provide a writable stub — same
@@ -1415,43 +1415,18 @@ describe('CreatePropertyMiniForm — import analytics (SPEC-258 A7)', () => {
     });
 });
 
-describe('CreatePropertyMiniForm — trial callout eligibility (NOSPEC)', () => {
-    it('shows the ineligible callout (no "14 días gratis") when the user is not trial-eligible', async () => {
-        mockGetTrialEligibility.mockResolvedValue({
-            ok: true,
-            data: { eligible: false, planSlug: null }
-        });
-        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
-
-        // useEffect resolves eligible:false → the callout swaps to the no-trial copy.
-        expect(await screen.findByText('Armá tu propiedad')).toBeInTheDocument();
-        expect(
-            screen.queryByText('21 días gratis en tu primera suscripción')
-        ).not.toBeInTheDocument();
-    });
-
-    it('shows the trial callout with the interpolated trial length when the user is trial-eligible', async () => {
-        mockGetTrialEligibility.mockResolvedValue({
-            ok: true,
-            data: { eligible: true, planSlug: null }
-        });
+describe('CreatePropertyMiniForm — trial callout (HOS-1637)', () => {
+    it('shows the trial callout with the interpolated trial length, with no eligibility lookup', async () => {
+        // The NOSPEC eligibility swap read the old billing
+        // (`GET /protected/billing/trial-eligibility`), a route the API no
+        // longer registers; it always failed on this branch, which rendered the
+        // default callout. The lookup was removed and the default kept.
         render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
 
         expect(
             await screen.findByText('21 días gratis en tu primera suscripción')
         ).toBeInTheDocument();
         expect(screen.queryByText('Armá tu propiedad')).not.toBeInTheDocument();
-    });
-
-    it('keeps the default callout when the eligibility lookup fails (null → encouraging default)', async () => {
-        mockGetTrialEligibility.mockResolvedValue({
-            ok: false,
-            error: { status: 500, message: 'boom' }
-        });
-        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
-
-        expect(
-            await screen.findByText('21 días gratis en tu primera suscripción')
-        ).toBeInTheDocument();
+        expect(mockProtectedApiAccess).not.toHaveBeenCalledWith('billingApi');
     });
 });

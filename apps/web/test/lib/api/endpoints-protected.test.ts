@@ -21,8 +21,7 @@ vi.mock('../../../src/lib/api/client', () => ({
 import {
     accommodationCalendarSyncApi,
     accommodationFaqApi,
-    publishApi,
-    userApi
+    publishApi
 } from '../../../src/lib/api/endpoints-protected';
 
 describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regression)', () => {
@@ -56,43 +55,6 @@ describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regressio
             body: {}
         });
         expect(post).not.toHaveBeenCalled();
-    });
-});
-
-describe('userApi.getSubscription productDomain param (HOS-259)', () => {
-    beforeEach(() => {
-        getProtected.mockReset();
-        getProtected.mockResolvedValue({ ok: true, data: { subscription: null } });
-    });
-
-    it('omits the productDomain query param when none is passed (server default applies)', async () => {
-        await userApi.getSubscription();
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: undefined,
-            cookieHeader: undefined
-        });
-    });
-
-    it('forwards productDomain=gastronomy as a query param', async () => {
-        await userApi.getSubscription({ productDomain: 'gastronomy' });
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: { productDomain: 'gastronomy' },
-            cookieHeader: undefined
-        });
-    });
-
-    it('forwards the cookieHeader alongside productDomain for SSR callers', async () => {
-        await userApi.getSubscription({ productDomain: 'accommodation', cookieHeader: 'sid=abc' });
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: { productDomain: 'accommodation' },
-            cookieHeader: 'sid=abc'
-        });
     });
 });
 

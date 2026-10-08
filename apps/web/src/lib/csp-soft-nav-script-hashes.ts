@@ -57,7 +57,6 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { POSTHOG_INLINE_SNIPPET } from '../components/analytics/posthog.snippet';
-import { STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET } from '../components/billing/strip-checkout-return-params.snippet';
 import { SOFT_NAV_SCRIPT_HASHES_PLACEHOLDER } from './csp-soft-nav-placeholder';
 import { FEEDBACK_NAV_BOOTSTRAP_SNIPPET } from './feedback/feedback-nav-bootstrap.snippet';
 import { iconSpriteClientScript } from './icon-sprite';
@@ -116,10 +115,6 @@ export const DEPLOYMENT_CONSTANT_INLINE_SCRIPTS: readonly {
     readonly source: string | null;
 }[] = [
     { component: 'src/layouts/BaseLayout.astro', source: FEEDBACK_NAV_BOOTSTRAP_SNIPPET },
-    {
-        component: 'src/components/billing/StripCheckoutReturnParams.astro',
-        source: STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET
-    },
     { component: 'src/components/analytics/PostHogScript.astro', source: POSTHOG_INLINE_SNIPPET },
     // Deterministic for a build (content-addressed sprite URL + committed
     // symbol manifest). Hashed here rather than trusted to be present on every

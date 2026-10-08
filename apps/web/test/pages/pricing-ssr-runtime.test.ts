@@ -66,16 +66,9 @@ const AUDIENCE_PAGES: readonly AudiencePage[] = [
         audienceId: 'experience',
         pricingAudience: 'experience',
         publishesPrice: true
-    },
-    {
-        // HOS-941 D-13: no figure is published for aliados, so no
-        // `PriceSpecification` either — it would put the amount into the field a
-        // search result quotes, which is exactly what the visible page withholds.
-        path: 'planes/aliados/precios',
-        audienceId: 'partner',
-        pricingAudience: 'partner',
-        publishesPrice: false
     }
+    // The aliados pricing page was removed with the old billing (HOS-1637,
+    // AC:B13a:21).
 ];
 
 function readPage(path: string): string {
