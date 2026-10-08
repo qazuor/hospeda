@@ -67,7 +67,10 @@ export default defineConfig({
         include: [
             'test/integration/ai/**/*.test.ts',
             'test/integration/webhooks/**/*.test.ts',
-            'test/integration/outbox/**/*.test.ts'
+            'test/integration/outbox/**/*.test.ts',
+            // TEST:V5:13 (HOS-1458): the ban gate is the one job the Better
+            // Auth admin plugin keeps. Only this file, not auth/**.
+            'test/integration/auth/banned-user-signin.test.ts'
         ],
         // `vault-roundtrip.test.ts` is non-deterministically flaky: the
         // credential-create route triggers a fire-and-forget `syncAiProviderModels`
