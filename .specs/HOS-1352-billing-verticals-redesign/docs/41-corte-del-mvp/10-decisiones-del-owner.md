@@ -305,6 +305,15 @@ decidió.
 |---|---|---|---|---|
 | DF | cuánto dura la ventana `N` del resumen de conciliación (PLAZO:19) | 60 minutos | — | **el valor inicial del PLAZO:19 es 60 minutos.** Un desajuste de conciliación lo mira una persona: una ventana más corta vuelve ruido el resumen y una más larga deja un problema de cobro horas sin aviso. Es un plazo versionado; cambiarlo después publica una versión nueva |
 
+## Lote DG (2026-10-08)
+
+Respuesta del owner, 2026-10-08, al retiro transitorio de gates de plan por `U1` (commit
+`acb12be063`). No era una pregunta con opciones: se registra el alcance aprobado para el MVP.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| DG | si el MVP deja sin gate las rutas de API marcadas `HOS-1352: transitional until V3` y los consumidores web de `/users/me/entitlements`, que ya no existe | restituir los gates en el MVP | — | **V5 restituye en lecturas y escrituras cada capacidad y cupo por clave del catálogo sobre el conjunto efectivo de V3; B13a agrega la lectura protegida de capacidades para web y migra sus pantallas.** Se conserva qué función y cuánto permite cada plan; no se agrega una habilitación por defecto. El guard de API exige cero marcadores transitorios y falla con uno reintroducido. Sin lectura válida, web falla cerrado |
+
 ## Decisiones del coordinador (2026-10-07)
 
 No son letras del owner: las tomó el coordinador del programa sobre hallazgos de las hojas en curso,
