@@ -54,7 +54,14 @@ export const LISTING_NON_CONTENT_FIELDS = [
     'moderationState',
     'ownerSuspended',
     'planRestricted',
-    'billingUnpublishedAt'
+    'billingUnpublishedAt',
+    // The new publication model's state and clock columns (HOS-1478,
+    // `listing-publication-columns.ts`): state, version of the deadlines and
+    // dates — never content.
+    'publicationStatus',
+    'inactiveSince',
+    'deadlinesVersion',
+    'deletionAnnouncedAt'
 ] as const;
 
 const NON_CONTENT = new Set<string>(LISTING_NON_CONTENT_FIELDS);
