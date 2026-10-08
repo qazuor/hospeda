@@ -8,6 +8,9 @@ import type { BillingCycle } from '@repo/schemas';
 export const PLAN_PUBLICATION_REJECTIONS = {
     sellableNonSellableRole:
         'un plan no vendible por construcción no puede publicar una versión vendible',
+    // Own message, NOT G-R3(a): a trial plan's effects are derived, never
+    // stored (V2.md:412-416,457-462). G-R3(a) covers only pre_trial and floor.
+    trialStoresEffects: 'los limits y entitlements del plan de trial no se guardan: se derivan',
     extraKey: 'clave de más',
     floorKeyMissing: 'clave de piso que falta',
     activationIff: 'activación fuera del si y sólo si',

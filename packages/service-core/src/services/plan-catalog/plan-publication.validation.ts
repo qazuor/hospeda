@@ -15,9 +15,9 @@ import {
 import type { PublicationContext } from './plan-publication.types.js';
 
 /**
- * The G-R3 validation plus the sellable-role invariant of action 18 (HOS-1436,
- * piece V2, AC:V2:7). Each cause throws its OWN message; the route maps
- * `VALIDATION_ERROR` to HTTP 400.
+ * The G-R3 validation plus the sellable-role and trial-effects invariants of
+ * action 18 (HOS-1436, piece V2, AC:V2:7). Each cause throws its OWN message;
+ * the route maps `VALIDATION_ERROR` to HTTP 400.
  */
 
 /** Whether a key's class marks it commercial. */
@@ -44,6 +44,15 @@ export function validatePublication(input: { context: PublicationContext }): voi
     // A plan of a non-sellable role publishes only non-sellable versions.
     if (role !== null && content.sellable) {
         reject(PLAN_PUBLICATION_REJECTIONS.sellableNonSellableRole);
+    }
+
+    // A trial plan derives its entitlements and limits: it never stores them
+    // (V2.md:412-416,457-462). Its own message, NOT G-R3(a).
+    if (
+        role === TRIAL_PLAN_ROLE &&
+        (content.entitlements.length > 0 || content.limits.length > 0)
+    ) {
+        reject(PLAN_PUBLICATION_REJECTIONS.trialStoresEffects);
     }
 
     // (a) the two non-sellable plans that are not the trial plan grant no

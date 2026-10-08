@@ -13,7 +13,8 @@ import {
     PLAN_ROLES,
     type PlanPublicationConfirmation,
     type PlanVersionContentInput,
-    ServiceErrorCode
+    ServiceErrorCode,
+    TRIAL_PLAN_ROLE
 } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
@@ -140,7 +141,10 @@ export async function publishPlanVersion(input: {
         if (!published) {
             throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'No se publicó la versión');
         }
-        if (context.content.entitlements.length > 0) {
+        // A trial plan's entitlements and limits are derived, never stored
+        // (V2.md:412-416,457-462); validation already rejected explicit effects.
+        const storesEffects = context.role !== TRIAL_PLAN_ROLE;
+        if (storesEffects && context.content.entitlements.length > 0) {
             await tx.insert(planVersionEntitlements).values(
                 context.content.entitlements.map((item) => {
                     const planQuota = item.planQuota ?? null;
@@ -160,7 +164,7 @@ export async function publishPlanVersion(input: {
                 })
             );
         }
-        if (context.content.limits.length > 0) {
+        if (storesEffects && context.content.limits.length > 0) {
             await tx.insert(planVersionLimits).values(
                 context.content.limits.map((item) => ({
                     planVersionId: published.id,
