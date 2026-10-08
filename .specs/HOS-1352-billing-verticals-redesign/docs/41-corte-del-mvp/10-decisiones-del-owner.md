@@ -286,6 +286,15 @@ el árbol (`docs/42-arbol-linear/arbol.json`). Las piezas `V` siguen enteras al 
 | DC | qué pasa con el suscriptor suspendido que quiere volver | queda después del MVP, con fecha límite | sí | un `SUSPENDED` con tarjeta **no puede volver a suscribirse sin la sucesión de `B8b`** (su fila es viva y ocupa el `UNIQUE` del invariante 8). Se queda después del MVP, con un **plazo de seguridad: la sucesión de `B8b` tiene que estar en producción antes de la primera renovación fallida posible ≈ el corte + la duración del trial + un mes de cobro** (el owner: «unos dos meses»). Los correos de las filas 10 y 10-ter **prometen «volvé a suscribirte»**: el texto se mantiene y el plazo existe para que la promesa sea verdad cuando alguien la lea |
 | DD | si `V9b` conserva su fecha límite | sí | sí | **`V9b` conserva la fecha de BV** (corte + plazo 1 − plazo 4): es un plazo real de seguridad, la excepción que CR admite |
 
+## Lote DE (2026-10-08)
+
+Respuesta del owner, 2026-10-08, al pendiente que dejó Coord-4 («qué es exportar una ficha y qué
+pieza lo construye»). No era una pregunta con opciones: se registra lo que el owner decidió.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| DE | qué es exportar una ficha y qué pieza lo construye | se difiere, fuera del MVP | — | **exportar una ficha queda fuera del MVP y se difiere.** El owner no recuerda haber acordado esa funcionalidad, así que después se decide si sale de la spec o en qué fase entra (pendiente en `spec-consolidada/80-abiertos.md` §4-ter). Al corte, `V9a.1` registra crear y editar; el acto «exportar» de `AC:V9a:1` queda diferido y **el registro lo suma en forma aditiva** cuando la operación exista. Nada del corte construye exportar ni lo espera |
+
 ## Decisiones del coordinador (2026-10-07)
 
 No son letras del owner: las tomó el coordinador del programa sobre hallazgos de las hojas en curso,
@@ -312,7 +321,8 @@ dentro de lo que el owner ya había decidido. Cada una dice cómo revertirla.
 2. **Qué es exportar una ficha y qué pieza lo construye.** La spec lo autoriza en `V5` (paso 4 y la
    versión de piso: «verla, exportarla, reactivarla y borrarla») y lo nombra `V9a`, pero nadie lo
    construye. La pieza natural para construirlo es **`V8a`** (las superficies de fichas del corte), con
-   la autorización que `V5` ya escribe; `V9a.1` agrega el evento cuando exista.
+   la autorización que `V5` ya escribe; `V9a.1` agrega el evento cuando exista. **Contestado en DE
+   (2026-10-08)**: se difiere fuera del MVP; queda abierto si sale de la spec o en qué fase entra.
 
 ## Resultado del corte
 
