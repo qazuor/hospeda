@@ -22,7 +22,7 @@ abierto:
    deja el número en el PR; si da cero no hay nada que decidir, y si no, vuelve al owner con el
    número antes del merge. Una salida vacía de `hops psql` no es un cero: se repite. Lo que sigue
    abierto es el número. (línea 145)
-2. La duración del trial y los plazos de retención, que fija el owner antes del merge de `V6`.
+2. ~~La duración del trial~~ **Cerrada por [DM](../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-dk-a-do-2026-10-08): 30 días en Alojamiento, Gastronomía, Experiencias y Turista; Partner en 0.** Los plazos de retención, que fija el owner antes del merge de `V6`.
    (línea 243; ver el [paso 3](30-el-corte.md#paso-3): la migración falla si alguno de los plazos
    sin valor escrito está vacío) ~~**Y el plazo 19**, la ventana `N` del resumen de conciliación: lo que sigue abierto es el valor~~ **Cerrado por [DF](01-decisiones-vigentes.md#own-41-corte-del-mvp-t19-df): 60 minutos.** [BU](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bu) y [BX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t10-bx) fijaron la clave y el momento; DF fija su valor. (líneas 146 y 157)
 3. Dependencias internas ocultas en las mitades *a* más allá de la de `S1`. (línea 244) **Lo que se
