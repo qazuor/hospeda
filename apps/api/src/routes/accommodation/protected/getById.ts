@@ -14,9 +14,11 @@ import {
 import type { AmenityProtected, FeatureProtected } from '@repo/schemas';
 import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
 import { AccommodationService, entityNotFoundError, ServiceError } from '@repo/service-core';
+import { resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { readListingAccessFacts } from '../../../utils/listing-access';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -130,8 +132,8 @@ async function fetchProtectedFeatures(accommodationId: string): Promise<FeatureP
  * GET /api/v1/protected/accommodations/:id
  * Get own accommodation by ID - Protected endpoint
  *
- * Returns the accommodation only if the authenticated user is the owner
- * (`ownerId === actor.id`) or holds ACCOMMODATION_UPDATE_ANY permission.
+ * Returns the accommodation only if the resource step admits the owner
+ * or the actor holds ACCOMMODATION_UPDATE_ANY permission.
  * Returns 404 if the record is not found or belongs to a different user.
  *
  * HOS-321: the response is enriched with the `amenities` / `features` junction
@@ -149,6 +151,7 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
     description:
         'Returns a single accommodation owned by the authenticated user. Returns 404 if not found or not owned by the requesting user.',
     tags: ['Accommodations'],
+    emailUnverifiedOperation: 'READ_OWN',
     // No permission gate: the handler enforces ownership in the service
     // layer and returns 404 if the row belongs to a different user. The
     // previous `ACCOMMODATION_LISTING_VIEW` requirement was the admin
@@ -179,8 +182,15 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
         // whole difference between "this listing is real and belongs to
         // somebody else" and "no such listing" lived in that capital A.
         const hasUpdateAny = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY);
-        if (!hasUpdateAny && accommodation?.ownerId !== actor.id) {
-            throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
+        if (!hasUpdateAny) {
+            const access = resolveResourceStep({
+                actorId: actor.id,
+                facts: readListingAccessFacts({ entity: accommodation }),
+                operation: 'READ_OWN'
+            });
+            if (!access.allowed) {
+                throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
+            }
         }
 
         if (!accommodation) {

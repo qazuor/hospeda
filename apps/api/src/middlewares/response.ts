@@ -32,6 +32,7 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.INVALID_PAGINATION_PARAMS]: 400,
     [ServiceErrorCode.UNAUTHORIZED]: 401,
     [ServiceErrorCode.FORBIDDEN]: 403,
+    [ServiceErrorCode.EMAIL_NOT_VERIFIED]: 403,
     [ServiceErrorCode.NOT_FOUND]: 404,
     [ServiceErrorCode.ALREADY_EXISTS]: 409,
     [ServiceErrorCode.INTERNAL_ERROR]: 500,

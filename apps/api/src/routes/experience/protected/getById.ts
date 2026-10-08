@@ -7,9 +7,11 @@
  */
 import { ExperienceProtectedSchema, PermissionEnum } from '@repo/schemas';
 import { ExperienceService, entityNotFoundError, ServiceError } from '@repo/service-core';
+import { resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { readListingAccessFacts } from '../../../utils/listing-access';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -19,7 +21,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * GET /api/v1/protected/experiences/:id
  * Get experience listing by ID — Protected endpoint (owner view only).
  *
- * Ownership is enforced: only the owner (`ownerId === actor.id`) or an actor
+ * The resource step admits only the owner, or an actor
  * holding EXPERIENCE_VIEW_ALL (staff / admin) may retrieve this endpoint.
  * Non-owners receive NOT_FOUND to prevent leaking owner-private fields exposed
  * by ExperienceProtectedSchema (contactInfo, lifecycleState, audit dates).
@@ -32,6 +34,7 @@ export const protectedGetExperienceByIdRoute = createProtectedRoute({
     description:
         'Returns an experience listing with owner-tier fields. Only the owner or staff with EXPERIENCE_VIEW_ALL may access this endpoint.',
     tags: ['Experience'],
+    emailUnverifiedOperation: 'READ_OWN',
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -54,8 +57,15 @@ export const protectedGetExperienceByIdRoute = createProtectedRoute({
         // `'experience not found'` by one capital letter, which was enough to tell
         // a caller that the id they were holding is real.
         const hasViewAll = actor.permissions?.includes(PermissionEnum.EXPERIENCE_VIEW_ALL);
-        if (!hasViewAll && entity?.ownerId !== actor.id) {
-            throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
+        if (!hasViewAll) {
+            const access = resolveResourceStep({
+                actorId: actor.id,
+                facts: readListingAccessFacts({ entity }),
+                operation: 'READ_OWN'
+            });
+            if (!access.allowed) {
+                throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
+            }
         }
 
         if (!entity) {
