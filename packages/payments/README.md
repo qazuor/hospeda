@@ -16,9 +16,8 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   (`PROVIDER_CONCEPT_TERMS`). `DetectorCatchesNestedConcepts` keeps that check
   from going vacuous.
 - **Two implementations**:
-  - `FakePaymentProvider`, in memory, all eight capabilities. Today it is an
-    honest skeleton; the measured lies (M1..M13) and the provider's own rules
-    (RP1..RP12) are added by B1.4.
+  - `FakePaymentProvider`, in memory, all eight capabilities, and it **lies
+    like the real one** (see "The fake lies, from a closed list" below).
   - `MercadoPagoPaymentProvider`, the adapter skeleton: same interface, validates
     each input, refuses with `NOT_IMPLEMENTED`. It does not call the provider and
     no SDK is installed.
@@ -44,6 +43,44 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   read older than the act's start (`STALE_READ`) so the act re-reads. The
   start is the decision on that subject, not the run; for an administrative
   action, its confirmation (`{ kind: 'adminAction', confirmedAt }`).
+
+## The fake lies, from a closed list
+
+The fake does not simulate a reasonable provider: it reproduces what the real
+one was MEASURED doing (DEC-TEST-003). `src/fake/fake-lists.json` holds two
+closed lists and one apart, validated at load (`FAKE_LISTS`):
+
+- **`lies`, M1..M13**: each row has its name, the matrix rows it comes from
+  (date and account) and the test that proves our code resists it
+  (`defenseTest`).
+- **`rules`, RP1..RP12**: the provider's own rules and measured behaviour. Not
+  lies; the fake keeps them always.
+- **`simulations`**: network cases nobody measured (`lostResponse`,
+  `networkCut`, `noticesOutOfOrder`). Not lies, never counted as such.
+
+Three rules, held at runtime by the constructor and statically by GUARD:G15
+(`scripts/check-fake-lies.ts`, `pnpm check:fake-lies`):
+
+1. A lie not in the list cannot be told: each lie lives in ONE place of
+   `src/fake/`, as `this.lying({ lie: 'M<n>' })`.
+2. By default the fake tells every lie: `new FakePaymentProvider({ clock })`.
+3. A test turns one off only by naming it and saying why, written in place:
+   `new FakePaymentProvider({ clock, honestAbout: [{ lie: 'M8', why: '…' }] })`.
+   Simulations are the other way round: off unless `simulate: [{ simulation, why }]`.
+
+**What the fake tells today** (B1.4a, HOS-1510): the lies whose surface the
+payment interface carries, M3 (a duplicate per equal request), M5 (no notice of
+an amount change), M6 (notices late, repeated or never; a refund in three
+deliveries and two formats; a charge once per channel), M8 (a charge lands at
+minute :02 of the next hour), M10 (the broken link), M11 (an open link never
+expires) and M13 (the first partial refund refused as not refundable); and the
+rules RP2, RP3, RP4, RP5, RP6 and RP9. The other rows (M1, M2, M4, M7, M9, M12;
+RP1, RP7, RP8, RP10, RP11, RP12) stay in the list and arrive with the units that
+add their surface to the interface.
+
+Every delay of the fake runs on the injected clock: advance it to see a late
+charge land, a late notice arrive (`FAKE_NOTICE_DELAY_MS`) or, with M11 off, an
+open link expire. `takeDeliveries()` hands over the notices that are due.
 
 ## The approval link is shown only sanitized
 

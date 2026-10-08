@@ -58,6 +58,15 @@ vi.mock('../../../src/services/user-role/user-role.service', () => ({
     revokeRole: mockRevokeRole
 }));
 
+// HOS-1499: listing writes record the owner act in `domain_event`; no DB here.
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 vi.mock('../../../src/utils/transaction', () => ({
     withServiceTransaction: mockWithServiceTransaction
 }));

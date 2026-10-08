@@ -2,11 +2,14 @@
  * TEST:B1:3 (AC:B1:3, INV:D5): every mutation is confirmed by re-reading by id
  * and comparing field by field; an acknowledgement closes nothing.
  *
- * SCOPE OF THIS VERSION (B1.2): the lies run against a LOCAL test double built
- * on the honest fake, which acknowledges a mutation and does not apply it (the
- * shape of M:M1) or applies one field of two under a single acknowledgement
- * (the shape of M:M2). The fake's own named, switchable M1/M2 lies belong to
- * B1.4 (HOS-1510), which completes TEST:B1:3 against them.
+ * SCOPE: the lies run against a LOCAL test double built on the fake, which
+ * acknowledges a mutation and does not apply it (the shape of M:M1) or applies
+ * one field of two under a single acknowledgement (the shape of M:M2). The
+ * fake's own named, switchable M1 and M2 do not exist yet: the payment
+ * interface carries no surface where the real provider tells them (a cycle,
+ * plan or date change; a request with two changes). B1.4a (HOS-1510) left
+ * their rows in the closed list and moved them, and the M2 part of this test,
+ * to the units that add that surface.
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { beforeEach, describe, expect, it } from 'vitest';

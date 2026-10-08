@@ -227,6 +227,8 @@ Fuente: [TRANS:B:S12](../04-catalogos.md#trans-b-s12) · [DEC-ARCH-017#📌6](..
 
 Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:162
 
+> **Corte del MVP, 2026-10-07: esta AC va en la Fase 2** ([CY](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07): al corte el contracargo sólo abre la marca 17 ([AC:B11:27](B11.md#ac-b11-27))). En el árbol vive en una hoja de esa fase; no se implementa al corte.
+
 <a id="ac-b8a-8"></a>
 **AC:B8a:8** — la baja desde `SUSPENDED` (`S23`)
 

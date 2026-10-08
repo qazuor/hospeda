@@ -17,6 +17,7 @@ import {
     initializeTranslationService,
     PlatformSettingsService,
     setCalendarConnectionRevocationPort,
+    setCorrelationIdResolver,
     setPermissionChangeAuditEmitter,
     setUserPermissionsCacheInvalidator
 } from '@repo/service-core';
@@ -30,7 +31,7 @@ import { registerAuditLogPersistence } from './lib/audit-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { isEntityPubliclyVisible } from './lib/indexnow-visibility';
 import { shutdownPostHog } from './lib/posthog';
-import { getRequestContext } from './lib/request-context';
+import { getRequestContext, getRequestCorrelationId } from './lib/request-context';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
 import { calendarConnectionRevocationAdapter } from './services/calendar-sync/calendar-connection-revocation.adapter';
@@ -342,6 +343,11 @@ const startServer = async (): Promise<void> => {
         // the OAuth vault and the provider clients that do it.
         setCalendarConnectionRevocationPort(calendarConnectionRevocationAdapter);
         apiLogger.info('Calendar connection revocation adapter registered');
+
+        // HOS-1499: the domain events service-core writes (the owner acts on a
+        // listing, V9a) carry the correlation U2 minted at the edge. The service
+        // cannot read the API's request context, so it is wired here.
+        setCorrelationIdResolver(getRequestCorrelationId);
 
         const app = initApp();
 

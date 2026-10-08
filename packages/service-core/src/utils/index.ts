@@ -1,3 +1,4 @@
+export * from './correlation';
 export * from './foreign-row';
 export * from './identifier';
 export * from './location-obfuscation';

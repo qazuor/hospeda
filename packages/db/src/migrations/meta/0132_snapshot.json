@@ -1,5 +1,5 @@
 {
-  "id": "8382804f-73e0-458c-aba7-a8d4d0f24cc4",
+  "id": "a3c4bdbf-5861-4d73-a1c2-829288f26a77",
   "prevId": "0b9d1a3f-271c-4e03-bf4d-70bcdafe7bb8",
   "version": "7",
   "dialect": "postgresql",
@@ -171,6 +171,31 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "publication_status": {
+          "name": "publication_status",
+          "type": "publication_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inactive_since": {
+          "name": "inactive_since",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deadlines_version": {
+          "name": "deadlines_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deletion_announced_at": {
+          "name": "deletion_announced_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "destination_id": {
           "name": "destination_id",
@@ -11185,6 +11210,31 @@
           "primaryKey": false,
           "notNull": true
         },
+        "publication_status": {
+          "name": "publication_status",
+          "type": "publication_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inactive_since": {
+          "name": "inactive_since",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deadlines_version": {
+          "name": "deadlines_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deletion_announced_at": {
+          "name": "deletion_announced_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "destination_id": {
           "name": "destination_id",
           "type": "uuid",
@@ -12025,6 +12075,31 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "publication_status": {
+          "name": "publication_status",
+          "type": "publication_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "inactive_since": {
+          "name": "inactive_since",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deadlines_version": {
+          "name": "deadlines_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deletion_announced_at": {
+          "name": "deletion_announced_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         },
         "destination_id": {
           "name": "destination_id",
@@ -15496,6 +15571,168 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.fix_request": {
+      "name": "fix_request",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "suggested_date": {
+          "name": "suggested_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "owner_reported_fixed_at": {
+          "name": "owner_reported_fixed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "opened_by_id": {
+          "name": "opened_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opened_at": {
+          "name": "opened_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_by_id": {
+          "name": "closed_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "fix_request_one_open_per_listing_uidx": {
+          "name": "fix_request_one_open_per_listing_uidx",
+          "columns": [
+            {
+              "expression": "entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"fix_request\".\"closed_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "fix_request_entity_idx": {
+          "name": "fix_request_entity_idx",
+          "columns": [
+            {
+              "expression": "entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fix_request_opened_by_id_users_id_fk": {
+          "name": "fix_request_opened_by_id_users_id_fk",
+          "tableFrom": "fix_request",
+          "tableTo": "users",
+          "columnsFrom": [
+            "opened_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "fix_request_closed_by_id_users_id_fk": {
+          "name": "fix_request_closed_by_id_users_id_fk",
+          "tableFrom": "fix_request",
+          "tableTo": "users",
+          "columnsFrom": [
+            "closed_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "fix_request_entity_type_check": {
+          "name": "fix_request_entity_type_check",
+          "value": "\"fix_request\".\"entity_type\" IN ('accommodation', 'gastronomy', 'experience')"
+        },
+        "fix_request_closed_by_requires_closed_at_check": {
+          "name": "fix_request_closed_by_requires_closed_at_check",
+          "value": "\"fix_request\".\"closed_by_id\" IS NULL OR \"fix_request\".\"closed_at\" IS NOT NULL"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.newsletter_campaign_deliveries": {
@@ -27213,6 +27450,7 @@
         "post.delete.own",
         "post.publish.own",
         "user.read.all",
+        "user.impersonate",
         "user.create",
         "user.update.roles",
         "user.update.any",
@@ -28118,6 +28356,18 @@
       "values": [
         "visible",
         "archived"
+      ]
+    },
+    "public.publication_status_enum": {
+      "name": "publication_status_enum",
+      "schema": "public",
+      "values": [
+        "DRAFT",
+        "PUBLISHED",
+        "UNPUBLISHED_BY_BILLING",
+        "ARCHIVED",
+        "MODERATED",
+        "PURGED"
       ]
     },
     "public.post_media_state_enum": {

@@ -59,6 +59,7 @@ import {
     verticalPermission
 } from './listing.permissions';
 import type { ListingHookState } from './listing.types';
+import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
 import { scheduleListingRevalidation } from './listing-revalidation.js';
 
 // ---------------------------------------------------------------------------
@@ -256,27 +257,14 @@ export abstract class BaseListingService<
     }
 
     /**
-     * Whether a write payload carries junction IDs, i.e. whether the after-hook
-     * will fan out into `syncListingAmenityJunction` / `syncListingFeatureJunction`
-     * and therefore REQUIRES an active transaction (HOS-808).
-     *
-     * Read off the raw payload rather than the validated one on purpose: the
-     * decision to open a boundary has to be made before `super.create` /
-     * `super.update` runs the schema, and the three-way junction contract keys
-     * off presence (`undefined` → no-op), which survives validation unchanged.
-     *
-     * @param data - The raw create/update payload.
-     * @returns `true` when `amenityIds` or `featureIds` is present (even as `[]`).
-     */
-    private static _carriesJunctionIds(data: unknown): boolean {
-        const payload = data as { amenityIds?: unknown; featureIds?: unknown } | null | undefined;
-        if (!payload || typeof payload !== 'object') return false;
-        return payload.amenityIds !== undefined || payload.featureIds !== undefined;
-    }
-
-    /**
      * Runs a write inside its own transaction boundary and converts a thrown
      * `ServiceError` back into the `ServiceOutput` envelope (HOS-808).
+     *
+     * Every create and update opens one when the caller brought none
+     * (HOS-1499): the owner-act event `_afterCreate` / `_afterUpdate` writes to
+     * `domain_event` must commit or roll back WITH the change it describes —
+     * an event for a rolled-back edit, or an edit without its event, would feed
+     * the retention clock a false "fact 1".
      *
      * The conversion is not cosmetic. `runWithLoggingAndValidation` RE-THROWS
      * instead of returning `{ error }` whenever `ctx.tx` is set — that is what
@@ -291,7 +279,7 @@ export abstract class BaseListingService<
      * @param params.run - The write to execute with the transactional context.
      * @returns The write's `ServiceOutput`, or the rolled-back error as an envelope.
      */
-    private async _runInJunctionTransaction({
+    private async _runInWriteTransaction({
         ctx,
         run
     }: {
@@ -323,14 +311,11 @@ export abstract class BaseListingService<
     }
 
     /**
-     * Creates a listing, opening a transaction when the payload carries
-     * `amenityIds` / `featureIds` (HOS-808).
+     * Creates a listing inside a transaction (HOS-808, HOS-1499).
      *
-     * `_afterCreate` syncs the junction tables and hard-refuses to run without
-     * `ctx.tx`, so an admin create carrying amenities used to fail with
-     * `INTERNAL_ERROR` after the row had already been written. Mirrors
-     * `AccommodationService.create`: a transparent pass-through when no junction
-     * IDs are present, and a no-op when the caller already supplied a `tx`
+     * `_afterCreate` syncs the junction tables (which hard-refuses to run
+     * without `ctx.tx`) and writes the owner-act event, both of which must be
+     * atomic with the row. Enlists in the caller's `tx` when there is one
      * (`createForOwner` does — `withServiceTransaction` always opens a NEW
      * boundary, so re-entering here would split one unit of work in two).
      *
@@ -344,19 +329,19 @@ export abstract class BaseListingService<
         data: z.infer<TCreateSchema>,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<TEntity>> {
-        if (ctx?.tx || !BaseListingService._carriesJunctionIds(data)) {
+        if (ctx?.tx) {
             return super.create(actor, data, ctx);
         }
 
-        return this._runInJunctionTransaction({
+        return this._runInWriteTransaction({
             ctx: (ctx ?? {}) as ServiceContext<ListingHookState>,
             run: (txCtx) => super.create(actor, data, txCtx)
         });
     }
 
     /**
-     * Updates a listing, opening a transaction when the payload carries
-     * `amenityIds` / `featureIds` (HOS-808).
+     * Updates a listing inside a transaction (HOS-808, HOS-1499): the junction
+     * sync and the owner-act event `_afterUpdate` writes are atomic with the row.
      *
      * Without this, ticking ANY service or feature checkbox in the owner editor
      * answered 500: `_afterUpdate` throws `INTERNAL_ERROR` ("Junction sync
@@ -382,8 +367,8 @@ export abstract class BaseListingService<
             resolvedCtx.hookState.updateId = id;
         }
 
-        if (!resolvedCtx.tx && BaseListingService._carriesJunctionIds(data)) {
-            return this._runInJunctionTransaction({
+        if (!resolvedCtx.tx) {
+            return this._runInWriteTransaction({
                 ctx: resolvedCtx,
                 run: (txCtx) => super.update(actor, id, data, txCtx)
             });
@@ -697,6 +682,8 @@ export abstract class BaseListingService<
             typedCtx.hookState.pendingFeatureIds = payload.featureIds as
                 | readonly string[]
                 | undefined;
+            // HOS-1499: what the owner wrote, for the owner-act event.
+            typedCtx.hookState.ownerActPayload = payload;
         }
 
         // (b) Slug auto-generation from name when absent
@@ -726,13 +713,13 @@ export abstract class BaseListingService<
      * Callers must wrap the `create()` call inside `withServiceTransaction`.
      *
      * @param entity - The newly created entity.
-     * @param _actor - The actor performing the action.
+     * @param actor - The actor; when it is the owner, the create is recorded as an owner act (HOS-1499).
      * @param ctx - Service execution context (must carry `tx` when junction IDs are present).
      * @returns The entity unchanged (side-effects only).
      */
     protected override async _afterCreate(
         entity: TEntity,
-        _actor: Actor,
+        actor: Actor,
         ctx: ServiceContext
     ): Promise<TEntity> {
         const typedCtx = ctx as ServiceContext<ListingHookState>;
@@ -770,6 +757,18 @@ export abstract class BaseListingService<
                 tx: ctx.tx
             });
         }
+
+        // --- Owner act: listing.created (HOS-1499, AC:V9a:1) ---
+        await recordListingOwnerAct({
+            eventType: 'listing.created',
+            entityType: this._revalidationEntityType,
+            listing: entity,
+            actor,
+            ctx,
+            changes: buildListingOwnerActChanges({
+                payload: typedCtx.hookState?.ownerActPayload ?? {}
+            }).changes
+        });
 
         // --- Edge cache revalidation (HOS-369 W2-4) ---
         // Appended to the existing junction-sync body rather than overriding
@@ -813,6 +812,10 @@ export abstract class BaseListingService<
         const updateId = typedCtx.hookState?.updateId;
         if (updateId) {
             const current = await this.model.findById(updateId, ctx.tx);
+            if (typedCtx.hookState !== undefined) {
+                // HOS-1499: the row before the edit, for the event's old values.
+                typedCtx.hookState.ownerActBefore = current ?? null;
+            }
             if (
                 current &&
                 shouldRegenerateSlugOnListingChange({
@@ -842,6 +845,8 @@ export abstract class BaseListingService<
             typedCtx.hookState.pendingFeatureIds = payload.featureIds as
                 | readonly string[]
                 | undefined;
+            // HOS-1499: what the owner wrote, for the owner-act event.
+            typedCtx.hookState.ownerActPayload = payload;
         }
 
         // Strip write-only junction fields from the DB write payload
@@ -868,13 +873,13 @@ export abstract class BaseListingService<
      * Same transaction requirement as `_afterCreate`.
      *
      * @param entity - The updated entity.
-     * @param _actor - The actor performing the action.
+     * @param actor - The actor; when it is the owner, the edit is recorded as an owner act (HOS-1499).
      * @param ctx - Service execution context (must carry `tx` when junction IDs are present).
      * @returns The entity unchanged (side-effects only).
      */
     protected override async _afterUpdate(
         entity: TEntity,
-        _actor: Actor,
+        actor: Actor,
         ctx: ServiceContext
     ): Promise<TEntity> {
         const typedCtx = ctx as ServiceContext<ListingHookState>;
@@ -912,6 +917,24 @@ export abstract class BaseListingService<
                 tx: ctx.tx
             });
         }
+
+        // --- Owner act: listing.edited (HOS-1499, AC:V9a:1-3) ---
+        // Ownership is read off the row BEFORE the edit when there is one.
+        const before = typedCtx.hookState?.ownerActBefore;
+        await recordListingOwnerAct({
+            eventType: 'listing.edited',
+            entityType: this._revalidationEntityType,
+            listing: {
+                id: entity.id,
+                ownerId: (before?.ownerId as string | null | undefined) ?? entity.ownerId
+            },
+            actor,
+            ctx,
+            changes: buildListingOwnerActChanges({
+                before: before ?? null,
+                payload: typedCtx.hookState?.ownerActPayload ?? {}
+            }).changes
+        });
 
         // --- Edge cache revalidation (HOS-369 W2-4) ---
         // Appended to the existing junction-sync body rather than overriding

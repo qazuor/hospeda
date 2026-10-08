@@ -1168,9 +1168,14 @@ texto.
 | fase | piezas | por qué en ese lugar |
 |---|---|---|
 | 1 | `V9b` | tiene que estar mergeada antes de la primera fecha en que un aviso de retención podría salir (AC), y `B10` la espera (`V9b → B10`) |
-| 2 | `B8b`, `B9b` | `B9b` espera a `B8b` (la sucesión), y `B10` espera a `B9b` |
-| 3 | `B10`, `B13b`, `B12` | `B10` espera a `V9b` y a `B9b`; `B13b`, a `B10`; `B12`, a `B13b` |
-| 4 | `V7`, `V8b` | `V8b` espera a `V7`; ninguna otra pieza posterior espera a `V7` |
+| 2 | `B8b`, `B9b` (salvo su rebanada básica, que va al corte: DB); y desde el 2026-10-07 también `B6` entera (CT), `B2.2` con `AC:B3:40` (CW), las partes de `B9a` de revocar y de grant a quien paga con `B13a.3` y `AC:B5:26` (CU), y los contracargos salvo detectarlos: `B5.2b`, `AC:B7:10`, `:27`, `:33`, `AC:B8a:7`, `AC:B11:25`, `:28`, `AC:B13a:25` (CY) | `B9b` espera a `B8b` (la sucesión), y `B10` espera a `B9b`; lo agregado el 2026-10-07 es billing que pasa después de una suscripción exitosa y no hace falta para suscribirse |
+| 3 | `B10`, `B13b`, `B12` (sin `AC:B12:1`, que pasó al corte como `AC:B4:12`: CZ) | `B10` espera a `V9b` y a `B9b`; `B13b`, a `B10`; `B12`, a `B13b` |
+| 4 | `V7`, `V8b`, y desde el 2026-10-07 el pagador manual (`B5.4`, `B5.4b`, `AC:B3:4`, `AC:B7:5`, `:12`, `:18`, `AC:B13a:18`: CV), `PP1` (`AC:V7:20`: CS) y la batería mensual `B1.6` (CX) | `V8b` espera a `V7`; ninguna otra pieza posterior espera a `V7`; el pagador manual tiene a Partner como único sujeto; y la batería corre cuando todo el programa está desplegado |
+
+**Aclaración del owner, 2026-10-07 ([CR](41-corte-del-mvp/10-decisiones-del-owner.md#lote-cr-a-dd-2026-10-07))**: todo lo que tiene que andar sale en el deploy del MVP; después pueden salir, cuando sea, deploys con más funciones. **Las fases no están atadas a fechas**, salvo dos plazos reales de seguridad:
+
+1. **`V9b` (Fase 1)**: la fecha de BV, abajo; el owner la conserva (DD).
+2. **La sucesión de `B8b` (Fase 2)**: tiene que estar en producción **antes de la primera renovación fallida posible ≈ el instante del corte + la duración del trial + un mes de cobro** (el owner: «unos dos meses»). Sin ella un `SUSPENDED` con tarjeta no puede volver a suscribirse —su fila viva ocupa el `UNIQUE` del invariante 8— y los correos de las filas 10 y 10-ter de `B13a` le dicen «volvé a suscribirte» (DC). El gate de la Fase 2 verifica ese número como el de la Fase 1 verifica el suyo.
 
 El orden lo fija AW; que la fase 4 pueda adelantarse a la 2 o a la 3 no lo dice *(lo marco)*.
 

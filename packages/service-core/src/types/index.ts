@@ -39,6 +39,14 @@ export interface ServiceContext<THookState = Record<string, unknown>> extends Qu
      */
     hookState?: THookState;
     /**
+     * Correlation of the business intention this call belongs to (HOS-1499;
+     * NUCLEO/08 §2, minted at the edge by U2). Carried into every domain event
+     * the call writes. Optional: when absent, the event writer falls back to the
+     * resolver the API wires at startup (`setCorrelationIdResolver`) and, outside
+     * any request, mints a fresh one — `domain_event.correlation_id` is NOT NULL.
+     */
+    correlationId?: string;
+    /**
      * Pagination parameters extracted from the search/count input before the
      * pagination keys are stripped from `params`.
      *

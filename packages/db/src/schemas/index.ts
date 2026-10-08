@@ -21,6 +21,7 @@ export * from './feature-flags/index.ts';
 export * from './gastronomy/index.ts';
 export * from './host-trade/index.ts';
 export * from './integration/index.ts';
+export * from './listing/index.ts';
 export * from './newsletter/index.ts';
 export * from './notification-log/index.ts';
 export * from './owner-promotion/index.ts';

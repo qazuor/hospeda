@@ -7,6 +7,21 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+
+// HOS-1499: every listing write now runs in a transaction and records the
+// owner act; neither has a database here.
+vi.mock('../../../src/utils/transaction', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 import type { z } from 'zod';
 import { ZodError } from 'zod';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
@@ -17,6 +32,7 @@ import {
 } from '../../factories/accommodationFactory';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
+import { FAKE_SERVICE_TX } from '../../helpers/owner-act-doubles';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
 // HOS-296: `_afterUpdate` grants the owner the HOST hat when a listing becomes
@@ -89,7 +105,7 @@ describe('AccommodationService.update', () => {
         expect(result.data).toBeDefined();
         expect(result.data?.name).toBe('Updated Name');
         expect(result.error).toBeUndefined();
-        expect(model.findById).toHaveBeenCalledWith(id, undefined);
+        expect(model.findById).toHaveBeenCalledWith(id, FAKE_SERVICE_TX);
         expect(model.update).toHaveBeenCalled();
     });
 
@@ -124,7 +140,7 @@ describe('AccommodationService.update', () => {
         expect(model.update).toHaveBeenCalledWith(
             { id },
             expect.objectContaining({ name: 'Nombre nuevo', slug: 'house-nombre-nuevo' }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 
@@ -154,7 +170,7 @@ describe('AccommodationService.update', () => {
         expect(model.update).toHaveBeenCalledWith(
             { id },
             expect.not.objectContaining({ slug: expect.anything() }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 
@@ -195,12 +211,12 @@ describe('AccommodationService.update', () => {
                 name: 'Publicado renombrado',
                 slug: 'house-publicado-renombrado'
             }),
-            undefined
+            FAKE_SERVICE_TX
         );
         expect(model.update).toHaveBeenCalledWith(
             { id },
             expect.not.objectContaining({ refreshSlugFromName: true }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 
@@ -242,7 +258,7 @@ describe('AccommodationService.update', () => {
         expect(model.update).toHaveBeenCalledWith(
             { id },
             expect.objectContaining({ slug: 'cabin-nombre-sin-cambios' }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 
@@ -272,7 +288,7 @@ describe('AccommodationService.update', () => {
         expect(model.update).toHaveBeenCalledWith(
             { id },
             expect.not.objectContaining({ slug: expect.anything() }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 
@@ -310,7 +326,7 @@ describe('AccommodationService.update', () => {
         expect(model.update).toHaveBeenCalledWith(
             { id },
             expect.objectContaining({ slug: 'cabin-nombre-sin-cambios' }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 
@@ -336,7 +352,7 @@ describe('AccommodationService.update', () => {
         expect(model.update).toHaveBeenCalledWith(
             { id },
             expect.not.objectContaining({ slug: expect.anything() }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 
