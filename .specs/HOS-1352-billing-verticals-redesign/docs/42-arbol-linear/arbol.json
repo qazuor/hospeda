@@ -1,6 +1,6 @@
 {
     "raiz": "HOS-1352",
-    "generado": "2026-10-07 (corte del MVP: CR a DD, Coord-1 a Coord-9)",
+    "generado": "2026-10-07 (corte del MVP: CR a DD, Coord-1 a Coord-10)",
     "fuente": "spec-consolidada + docs/41-corte-del-mvp/aristas.py + Linear (sólo lectura) + grafo reparado (deps-audit A y B) + decisiones del 2026-10-07",
     "nodos": [
         {
@@ -641,7 +641,7 @@
             "clave": "V2.2",
             "padre": "V2",
             "titulo": "V2 · Las tres consultas del contrato de planes (PR 2/5)",
-            "descripcion": "**Qué entrega:** Las tres consultas del contrato de planes.\n\n**Pieza:** `V2` — spec [V2.md](../../spec-consolidada/10-corte/V2.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V2:3` — `políticaDePlan` contesta sus cuatro campos y nunca una capacidad.\n- `AC:V2:4` — `direcciónDeCambio` decide por el delta, no por el `rank`, y cualquier baja manda.\n- `AC:V2:5` — `políticaDeAddon` contesta la política de una versión de complemento, nunca lo que\n\n**Depende de:** `V2.1` (2026-10-07).\n\n**Verificación:** tests `TEST:V2:4`, `TEST:V2:5`, `TEST:V2:6`, `TEST:V2:7`, `TEST:V2:8`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** Las tres consultas del contrato de planes.\n\n**Pieza:** `V2` — spec [V2.md](../../spec-consolidada/10-corte/V2.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V2:3` — `políticaDePlan` contesta sus cuatro campos y nunca una capacidad.\n- `AC:V2:4` — `direcciónDeCambio` decide por el delta, no por el `rank`, y cualquier baja manda.\n- `AC:V2:5` — `políticaDeAddon` contesta la política de una versión de complemento, nunca lo que\n\n**Depende de:** `V2.1` (2026-10-07).\n\n**Verificación:** tests `TEST:V2:4`, `TEST:V2:5`, `TEST:V2:7`, `TEST:V2:8`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V2:3", "AC:V2:4", "AC:V2:5"],
             "depende_de": ["V2.1"],
             "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
@@ -672,7 +672,7 @@
             "clave": "V2.4",
             "padre": "V2",
             "titulo": "V2 · Catálogo de producción y seed (PR 4/5)",
-            "descripcion": "**Qué entrega:** Catálogo de producción y seed.\n\n**Pieza:** `V2` — spec [V2.md](../../spec-consolidada/10-corte/V2.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V2:8` — La pieza que carga el catálogo de producción corre dentro de la migración estructural\n- `AC:V2:9` — El seed de demostración no pisa el catálogo que cargó la migración.\n\n**Depende de:** `V2.3` (2026-10-07).\n\n**Verificación:** tests `TEST:V2:11`, `TEST:V2:12`, `TEST:V2:13`; guards `G18`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** Catálogo de producción y seed.\n\n**Pieza:** `V2` — spec [V2.md](../../spec-consolidada/10-corte/V2.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V2:8` — La pieza que carga el catálogo de producción corre dentro de la migración estructural\n- `AC:V2:9` — El seed de demostración no pisa el catálogo que cargó la migración.\n\n**Depende de:** `V2.3` (2026-10-07).\n\n**Verificación:** tests `TEST:V2:6`, `TEST:V2:11`, `TEST:V2:12`, `TEST:V2:13`; guards `G18`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V2:8", "AC:V2:9"],
             "depende_de": ["V2.3"],
             "labels": ["area-api", "area-db", "kind-spec", "source-agent"],
