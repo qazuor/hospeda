@@ -27,6 +27,7 @@ import {
     ModerationStatusPgEnum,
     VisibilityPgEnum
 } from '../enums.dbschema.ts';
+import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { experienceFaqs } from './experience_faq.dbschema.ts';
 import { experienceReviews } from './experience_review.dbschema.ts';
@@ -255,6 +256,8 @@ export const experiences = pgTable(
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
+        // HOS-1478 (V6.8a): the listing publication model of V/03 §9.
+        ...listingPublicationColumns(),
         destinationId: uuid('destination_id')
             .notNull()
             .references(() => destinations.id, { onDelete: 'restrict' }),

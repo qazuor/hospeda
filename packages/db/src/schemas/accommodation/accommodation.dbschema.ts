@@ -28,6 +28,7 @@ import {
     ModerationStatusPgEnum,
     VisibilityPgEnum
 } from '../enums.dbschema.ts';
+import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodationFaqs } from './accommodation_faq.dbschema.ts';
@@ -132,6 +133,8 @@ export const accommodations = pgTable(
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
+        // HOS-1478 (V6.8a): the listing publication model of V/03 §9.
+        ...listingPublicationColumns(),
         destinationId: uuid('destination_id')
             .notNull()
             .references(() => destinations.id, {
