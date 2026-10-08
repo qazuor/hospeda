@@ -3,6 +3,10 @@
  * program. It talks to billing only through `@repo/billing-verticals-contract`
  * (GUARD:G14 lists `packages/verticals` as the verticals half).
  */
+
+export { foldPlegableSet } from './effective-set/fold';
+export { hasLiveNonTrialTitle, selectPlegableSources } from './effective-set/plegable';
+export type { FoldableSource, SourceGrant } from './effective-set/types';
 export type {
     AddonVersionPolicyRow,
     PlanCatalogReader,
