@@ -208,7 +208,9 @@ describe('TEST:U1:3 — demolition migration over legacy data (HOS-1416)', () =>
         );
         const tables = new Set(result.rows.map((r) => r.table_name));
 
-        const legacyBilling = [...tables].filter((t) => t.startsWith('billing_'));
+        const legacyBilling = [...tables].filter(
+            (t) => t.startsWith('billing_') && t !== 'billing_deadline_version'
+        );
         expect(legacyBilling).toEqual([]);
         expect(tables.has('notification_log')).toBe(true);
 

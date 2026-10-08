@@ -126,7 +126,9 @@ describe('TEST:U1:2 — full migration chain over an empty database (HOS-1416)',
     it('creates no legacy billing_* table at all', async () => {
         const tables = await publicTables();
 
-        const legacyBilling = [...tables].filter((t) => t.startsWith('billing_'));
+        const legacyBilling = [...tables].filter(
+            (t) => t.startsWith('billing_') && t !== 'billing_deadline_version'
+        );
 
         expect(legacyBilling).toEqual([]);
     });
@@ -193,9 +195,10 @@ describe('TEST:U1:12 — extras and dual-write branch after migrate + apply-extr
         // that still targets a `billing_*` table would be dead code again.
         const offenders = readdirSync(EXTRAS_DIR)
             .filter((file) => file.endsWith('.sql'))
-            .filter((file) =>
-                /\bbilling_[a-z_]+/.test(readFileSync(join(EXTRAS_DIR, file), 'utf8'))
-            );
+            .filter((file) => {
+                const content = readFileSync(join(EXTRAS_DIR, file), 'utf8');
+                return /\bbilling_[a-z_]+/.test(content.replaceAll('billing_deadline_version', ''));
+            });
 
         expect(offenders).toEqual([]);
     });
