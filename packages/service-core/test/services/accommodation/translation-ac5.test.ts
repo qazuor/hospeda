@@ -10,6 +10,21 @@
 import type { AccommodationModel } from '@repo/db';
 import { AccommodationTypeEnum, DestinationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+
+// HOS-1499: every listing write now runs in a transaction and records the
+// owner act; neither has a database here.
+vi.mock('../../../src/utils/transaction', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import {
     _resetTranslationService,

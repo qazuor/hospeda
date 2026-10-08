@@ -8,9 +8,9 @@
  *
  * {@link HALVES} lists the folders of each half, repo-relative. Today:
  * - billing: `packages/payments`;
- * - verticals: NONE yet. The guard says so in its output on every run: with an
- *   empty half, no import can cross yet. The first leaf that brings verticals
- *   code registers its folder here (noted on V2.1).
+ * - verticals: `packages/verticals` (`@repo/verticals`), registered by V2.1
+ *   (HOS-1434), the first leaf that brought verticals code. Were the half ever
+ *   empty again, the guard says so in its output on every run.
  *
  * {@link EXEMPT_PATHS} are never part of a half, whatever folder a half
  * declares: the contract package (importing it is never crossing), the shared
@@ -71,7 +71,7 @@ export type HalfRoots = Readonly<Record<Half, readonly string[]>>;
 /** The halves, as of today. A new verticals folder is registered here. */
 export const HALVES: HalfRoots = {
     billing: ['packages/payments'],
-    verticals: []
+    verticals: ['packages/verticals']
 };
 
 /** Never part of a half: the contract, the shared clock test package, the composition root. */

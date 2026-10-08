@@ -61,9 +61,9 @@ describe('EntityPageHeader — additive slots', () => {
                 extraActions={
                     <button
                         type="button"
-                        data-testid="impersonate"
+                        data-testid="extra-action"
                     >
-                        Suplantar
+                        Extra
                     </button>
                 }
             />
@@ -76,7 +76,7 @@ describe('EntityPageHeader — additive slots', () => {
         expect(modeActions).toBeInTheDocument();
         // Mode action set (Volver / Editar) still renders alongside the extras.
         expect(screen.getByRole('button', { name: /editar entidad/i })).toBeInTheDocument();
-        expect(screen.getByTestId('impersonate')).toBeInTheDocument();
+        expect(screen.getByTestId('extra-action')).toBeInTheDocument();
     });
 
     it('still renders mode actions when neither extraActions nor tabs are provided (existing entities keep working)', () => {

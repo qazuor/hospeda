@@ -88,7 +88,7 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
      */
     qualityScore?: ReactNode | ((options: { readonly isReduced: boolean }) => ReactNode);
     /**
-     * Extra header actions (e.g. impersonate, delete). Rendered to the left of
+     * Extra header actions (e.g. delete). Rendered to the left of
      * the mode-specific action set, with a divider between them.
      *
      * Forwarded as-is to `EntityPageHeader.extraActions`.

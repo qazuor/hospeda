@@ -42,15 +42,6 @@
         "title": "Access Denied",
         "description": "You don't have permission to access this page."
     },
-    "impersonation": {
-        "banner": "You are viewing as {{userName}}",
-        "stop": "Stop impersonating",
-        "start": "Impersonate user",
-        "confirm": "Are you sure you want to impersonate this user?",
-        "cancel": "Cancel",
-        "error": "Failed to impersonate user. Please try again.",
-        "unavailable": "Impersonation is temporarily unavailable"
-    },
     "createHost": {
         "trigger": "Create host",
         "title": "Create host account",

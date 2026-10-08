@@ -34,9 +34,10 @@ import { compare, hash } from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError } from 'better-auth/api';
-import { admin, createAccessControl } from 'better-auth/plugins';
+import { admin } from 'better-auth/plugins';
 import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
+import { adminPluginRoles } from './auth-admin-access';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
 import { captureSignupCompleted } from './auth-signup-analytics';
@@ -46,51 +47,6 @@ import { captureServerAnalyticsEvent } from './posthog';
 import { resolveVerificationUrl } from './verification-callback';
 
 const logger = createLogger('auth');
-
-/**
- * Better Auth access control configuration.
- * Defines what each role can do within Better Auth's admin plugin.
- * These are Better Auth-level permissions (user CRUD, session management),
- * separate from Hospeda's application-level PermissionEnum.
- */
-const statements = {
-    user: [
-        'create',
-        'list',
-        'set-role',
-        'ban',
-        'impersonate',
-        'delete',
-        'set-password',
-        'get',
-        'update'
-    ],
-    session: ['list', 'revoke', 'delete']
-} as const;
-
-const ac = createAccessControl(statements);
-
-/** Full admin access for SUPER_ADMIN and ADMIN roles */
-const fullAdminRole = ac.newRole({
-    user: [
-        'create',
-        'list',
-        'set-role',
-        'ban',
-        'impersonate',
-        'delete',
-        'set-password',
-        'get',
-        'update'
-    ],
-    session: ['list', 'revoke', 'delete']
-});
-
-/** No admin access for regular roles */
-const noAdminRole = ac.newRole({
-    user: [],
-    session: []
-});
 
 /** Bcrypt salt rounds for password hashing */
 const BCRYPT_SALT_ROUNDS = 12;
@@ -544,18 +500,19 @@ function buildAuth() {
              * **What this costs, deliberately.** `session.user.role` is now
              * always `undefined`, so the plugin's own `hasPermission()` falls
              * back to `defaultRole` → `noAdminRole` and every
-             * `/api/auth/admin/*` endpoint returns 403. In practice Hospeda only
-             * uses ONE of them — `impersonateUser`, from the admin panel's
-             * ImpersonateButton — so impersonation stops working until it is
-             * re-homed on a Hospeda-owned, `PermissionEnum`-gated route. That is
-             * a follow-up, and it FAILS CLOSED, which is the right direction for
-             * an unresolved gate.
+             * `/api/auth/admin/*` endpoint returns 403. Since HOS-1352 V5 that
+             * is also the declared design, not only the fallback: no plugin
+             * role grants any plugin action (`fullAdminRole` is empty, and
+             * `impersonate` / `set-role` are gone), so the outcome no longer
+             * depends on whether the plugin can resolve a role. See
+             * `./auth-admin-access.ts`.
              *
-             * **Why not remove the plugin instead.** It also owns the ban gate:
+             * **Why not remove the plugin instead.** It owns the ban gate:
              * its `databaseHooks.session.create.before` rejects a session for a
              * banned user (`users.banned`/`ban_expires`, both real columns that
              * survive this change). Dropping the plugin would silently disable
-             * that security control — strictly worse than losing impersonation.
+             * that security control. That gate is the only job the plugin
+             * keeps.
              *
              * **Why not keep a role column for it.** That is the scalar AC-7
              * deletes, and it would immediately become a second source of truth
@@ -584,16 +541,7 @@ function buildAuth() {
                 // privileged value.
                 defaultRole: RoleEnum.USER,
                 adminRoles: [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN],
-                roles: {
-                    SUPER_ADMIN: fullAdminRole,
-                    ADMIN: fullAdminRole,
-                    CLIENT_MANAGER: noAdminRole,
-                    EDITOR: noAdminRole,
-                    HOST: noAdminRole,
-                    SPONSOR: noAdminRole,
-                    USER: noAdminRole,
-                    GUEST: noAdminRole
-                }
+                roles: adminPluginRoles
             }),
             /**
              * Expo plugin for React Native / Expo mobile client support (SPEC-243 T-003).
