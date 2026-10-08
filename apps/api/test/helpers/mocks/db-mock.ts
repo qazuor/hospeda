@@ -471,6 +471,15 @@ export function createDbMock() {
             values: b
         })),
 
+        // HOS-1499: every listing create/update records the owner act through
+        // this singleton; without it a real service under this mock throws
+        // "Cannot read properties of undefined (reading 'insert')".
+        domainEventModel: {
+            insert: vi.fn(async () => ({})),
+            findByEntity: vi.fn(async () => []),
+            findByCorrelationId: vi.fn(async () => [])
+        },
+
         // Mock BaseModel class
         BaseModel: class MockBaseModel {
             public table = {};

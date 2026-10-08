@@ -33,6 +33,7 @@ import { ServiceError } from '../../../src/types';
 import { createMockAccommodation } from '../../factories/accommodationFactory';
 import { createActor, createHostActor, createSuperAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
+import { domainEventModelDouble } from '../../helpers/owner-act-doubles';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const grantRoleMock = vi.hoisted(() => vi.fn());
@@ -46,6 +47,15 @@ vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
     // — an INTERNAL_ERROR that looks nothing like a role problem.
     getUserRoles: getUserRolesMock
 }));
+
+// HOS-1499: listing writes record the owner act in `domain_event`; no DB here.
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
 
 vi.mock('../../../src/utils/transaction.js', () => ({
     /**
@@ -179,6 +189,31 @@ describe('AccommodationService.createForOnboarding', () => {
                 expect(result.data.accommodation.id).toBe('acc-001');
             }
             expect(accommodationModel.create).toHaveBeenCalledTimes(1);
+        });
+
+        // TEST:V9a:1 (unit) — AC:V9a:1, the accommodation owner-create path.
+        it('records the owner create as a listing.created event (HOS-1499)', async () => {
+            const actor = createActor({ id: 'user-001v' });
+            (accommodationModel.create as Mock).mockResolvedValue(
+                createMockAccommodation({ id: 'acc-001v', ownerId: 'user-001v' })
+            );
+            domainEventModelDouble.writes.length = 0;
+
+            const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+
+            expect(result.error).toBeUndefined();
+            expect(domainEventModelDouble.writes).toHaveLength(1);
+            expect(domainEventModelDouble.writes[0]).toMatchObject({
+                eventType: 'listing.created',
+                entityType: 'accommodation',
+                entityId: 'acc-001v',
+                actorId: 'user-001v',
+                actorType: 'owner'
+            });
+            // Content fields carry only their name — never the typed text.
+            expect(JSON.stringify(domainEventModelDouble.writes[0])).not.toContain(
+                VALID_DRAFT_INPUT.name
+            );
         });
 
         it('grants the HOST hat in the same transaction as the draft insert', async () => {

@@ -17,7 +17,22 @@
  */
 
 import { DestinationTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
-import { describe, expect, it, type Mock, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+
+// HOS-1499: every listing write now runs in a transaction and records the
+// owner act; neither has a database here.
+vi.mock('../../../src/utils/transaction', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 import { z } from 'zod';
 import type {
     ListingCatalogModel,
@@ -31,6 +46,7 @@ import type {
     PaginatedListOutput,
     ServiceConfig
 } from '../../../src/types';
+import { domainEventModelDouble, FAKE_SERVICE_TX } from '../../helpers/owner-act-doubles';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -603,7 +619,7 @@ describe('BaseListingService — draft rename slug sync (public update path)', (
         expect(model.update).toHaveBeenCalledWith(
             { id: ENTITY_ID },
             expect.objectContaining({ slug: 'mi-restaurante-nuevo' }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 
@@ -974,5 +990,55 @@ describe('BaseListingService — loadJunctionIds (junction read-back, SPEC-249)'
         const result = await svc.loadJunctionIds('listing-1');
 
         expect(result).toEqual({ amenityIds: [], featureIds: [] });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-1499 (V9a) — the owner-act event is written in the write's transaction
+// ---------------------------------------------------------------------------
+
+describe('BaseListingService — owner act rides the write transaction (HOS-1499)', () => {
+    const ownedListing = () =>
+        ({
+            id: ENTITY_ID,
+            name: 'Mi Restaurante',
+            slug: 'mi-restaurante',
+            type: 'RESTAURANT',
+            lifecycleState: 'DRAFT',
+            ownerId: OWNER_ID
+        }) as TestEntity;
+
+    beforeEach(() => {
+        domainEventModelDouble.writes.length = 0;
+    });
+
+    // TEST:V9a:1 (atomicity) — AC:V9a:1
+    it('writes listing.created with the transaction the create opened', async () => {
+        const { svc } = makeService();
+
+        const result = await svc.create(makeActor(), {
+            name: 'Mi Restaurante',
+            type: 'RESTAURANT',
+            ownerId: OWNER_ID
+        } as never);
+
+        expect(result.error).toBeUndefined();
+        expect(domainEventModelDouble.writes).toHaveLength(1);
+        expect(domainEventModelDouble.writes[0]?.eventType).toBe('listing.created');
+        expect(domainEventModelDouble.writes[0]?.tx).toBe(FAKE_SERVICE_TX);
+    });
+
+    // TEST:V9a:1 (atomicity) — AC:V9a:1
+    it('writes listing.edited with the transaction the update opened', async () => {
+        const { svc } = makeService(ownedListing());
+
+        const result = await svc.update(makeActor(), ENTITY_ID, {
+            type: 'CAFE'
+        } as never);
+
+        expect(result.error).toBeUndefined();
+        expect(domainEventModelDouble.writes).toHaveLength(1);
+        expect(domainEventModelDouble.writes[0]?.eventType).toBe('listing.edited');
+        expect(domainEventModelDouble.writes[0]?.tx).toBe(FAKE_SERVICE_TX);
     });
 });

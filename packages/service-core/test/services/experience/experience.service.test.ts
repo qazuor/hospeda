@@ -31,6 +31,21 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// HOS-1499: every listing write now runs in a transaction and records the
+// owner act; neither has a database here.
+vi.mock('../../../src/utils/transaction', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 import { ExperienceService } from '../../../src/services/experience/experience.service';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
