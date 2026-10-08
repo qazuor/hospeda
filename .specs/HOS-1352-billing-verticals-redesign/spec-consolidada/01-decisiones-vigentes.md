@@ -14298,3 +14298,15 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-deci
 - **Elegida**: 1
 - **Recomendada**: sí
 - **En una línea**: **se ratifica `DEC-ARCH-009`: el aviso sale después del commit, sin entrega durable, y el reconciliador diario es la red**. El outbox de `U2` sigue siendo sólo de correos. `coberturaPerdidaEn` se guarda en la misma transacción que registra la pérdida de cobertura, antes del aviso; su lectura no espera la entrega. Se conserva la dependencia de `B4` respecto de `U2` por las obligaciones de sus predecesores, incluidos los correos de `B3` (BR), no por encolar el aviso de cobertura. La red conserva su población y sus exclusiones: no corre la máquina de trial ni promete recuperar el aviso de primer pago; se acepta hasta un día de atraso en los casos cubiertos. La otra opción era agregar transporte durable de eventos con identidad, reintentos, recuperación y confirmación, distinto del outbox de correos
+
+#### Lote DF (2026-10-08)
+
+<a id="own-41-corte-del-mvp-t19-df"></a>
+**Letra DF**
+
+Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:306
+
+- **Pregunta**: cuánto dura la ventana `N` del resumen de conciliación (PLAZO:19)
+- **Elegida**: 60 minutos
+- **Recomendada**: —
+- **En una línea**: **el valor inicial del PLAZO:19 es 60 minutos.** Un desajuste de conciliación lo mira una persona: una ventana más corta vuelve ruido el resumen y una más larga deja un problema de cobro horas sin aviso. Es un plazo versionado; cambiarlo después publica una versión nueva
