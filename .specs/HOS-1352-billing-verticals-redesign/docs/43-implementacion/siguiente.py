@@ -36,14 +36,17 @@ def graphql(query: str) -> dict:
     return data["data"]
 
 
-def linear_blockers(issue: dict) -> list[str]:
-    """Identifiers of the issues that block this one in Linear and are not completed yet."""
+def linear_blockers(issue: dict) -> tuple[list[str], list[str]]:
+    """Linear "blocks" relations on this issue: (open blockers, canceled blockers).
+
+    A completed blocker no longer blocks. A canceled one does not block either
+    (otherwise the leaf would wait forever), but it is reported for review.
+    """
     relations = (issue.get("inverseRelations") or {}).get("nodes") or []
-    return [
-        r["issue"]["identifier"]
-        for r in relations
-        if r.get("type") == "blocks" and r["issue"]["state"]["type"] != "completed"
-    ]
+    blocking = [r["issue"] for r in relations if r.get("type") == "blocks"]
+    open_ = [b["identifier"] for b in blocking if b["state"]["type"] not in ("completed", "canceled")]
+    canceled = [b["identifier"] for b in blocking if b["state"]["type"] == "canceled"]
+    return open_, canceled
 
 
 def is_deferred(node: dict) -> bool:
@@ -55,9 +58,13 @@ def main() -> None:
     nodes = {n["clave"]: n for n in json.loads((ARBOL / "arbol.json").read_text())["nodos"]}
     created = json.loads((ARBOL / "creados.json").read_text())["creados"]
     parents = {n["padre"] for n in nodes.values()}
-    leaves = [k for k in nodes if k not in parents and k in created]
+    all_leaves = [k for k in nodes if k not in parents]
+    # A leaf without an issue in creados.json is reported, never hidden.
+    no_issue = [k for k in all_leaves if k not in created and not is_deferred(nodes[k])]
+    leaves = [k for k in all_leaves if k in created]
     state: dict[str, tuple[str, str, str]] = {}
     held: dict[str, list[str]] = {}
+    canceled: dict[str, list[str]] = {}
     for i in range(0, len(leaves), 50):
         chunk = leaves[i : i + 50]
         body = " ".join(
@@ -68,7 +75,7 @@ def main() -> None:
         for j, k in enumerate(chunk):
             issue = data[f"n{j}"]
             state[k] = (issue["identifier"], issue["state"]["type"], issue["title"])
-            held[k] = linear_blockers(issue)
+            held[k], canceled[k] = linear_blockers(issue)
 
     def done(key: str) -> bool:
         # A dependency on a container counts as done when all its leaves are done.
@@ -101,6 +108,11 @@ def main() -> None:
         print(f"  LISTA     {state[k][0]}  {k:10}  {state[k][2]}")
     for k in linear_held:
         print(f"  RETENIDA  {state[k][0]}  {k:10}  bloqueada en Linear por {', '.join(held[k])}")
+    for k in leaves:
+        if canceled[k] and state[k][1] != "completed":
+            print(f"  AVISO     {state[k][0]}  {k:10}  bloqueador cancelado, revisar: {', '.join(canceled[k])}")
+    for k in no_issue:
+        print(f"  SIN ISSUE {'':9}{k:10}  hoja sin issue en creados.json: {nodes[k]['titulo']}")
 
 
 if __name__ == "__main__":

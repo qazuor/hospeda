@@ -11,9 +11,11 @@ Falla con exit 1 si:
   (e) un `padre` no existe (sólo la raíz puede tener padre nulo).
   (f) una hoja no declara su fase (`corte`: hecha, mvp, fase-1..fase-4) o
       depende de una hoja de una fase posterior a la suya.
-  (g) una dependencia de una hoja del MVP no dice qué usa (`por_que`): la regla
-      es que cada hoja depende de la hoja que CREA lo que usa, no de un orden.
-  (h) una salida no espera a todas las hojas de su pieza en su misma fase.
+  (g) una dependencia de una hoja del MVP no dice qué usa (`por_que`), o su
+      motivo es un código de auditoría (CODE, ORDER, UNSURE, retarget, …): la
+      regla es que cada hoja depende de la hoja que CREA lo que usa.
+  (h) un grupo pieza/fase del MVP no tiene salida, tiene más de una, o su
+      salida no espera a todas las hojas del grupo.
 
 La forma vieja («una sola hoja de entrada por pieza» y «la entrada espera la
 salida de la pieza anterior») se retiró el 2026-10-07: describía un orden, no
@@ -163,6 +165,11 @@ def main():
     # «la entrada espera la salida de la pieza anterior»): cada hoja depende de
     # la hoja que crea lo que usa, sin ciclos (ya chequeado arriba), y cada
     # salida depende de todos los sumideros de su pieza en su fase.
+    # Un motivo dice qué usa la hoja; los códigos de las auditorías (y un UNSURE
+    # sin resolver) no lo dicen. Un UNSURE que sigue abierto se escribe
+    # «se presume que usa …».
+    CODIGO_DE_AUDITORIA = re.compile(
+        r"\b(CODE|ORDER|UNSURE|retarget|hallazgo|relocalizada|faltante|sumidero)\b|\binv\b|\((A|B)\)|A\+B")
     fases = {"hecha": 0, "mvp": 1, "fase-1": 2, "fase-2": 3, "fase-3": 4, "fase-4": 5}
     hojas_n = [by[k] for k in hojas]
     for n in hojas_n:
@@ -177,8 +184,11 @@ def main():
         if n.get("corte") == "mvp":
             motivos = n.get("por_que") or {}
             for dep in n["depende_de"]:
-                if not str(motivos.get(dep, "")).strip():
+                motivo = str(motivos.get(dep, "")).strip()
+                if not motivo:
                     fallos.append(f"(g) {n['clave']} → {dep}: dependencia sin motivo en `por_que`")
+                elif CODIGO_DE_AUDITORIA.search(motivo):
+                    fallos.append(f"(g) {n['clave']} → {dep}: el motivo es un código de auditoría, no dice qué usa: {motivo!r}")
             for dep in motivos:
                 if dep not in n["depende_de"]:
                     fallos.append(f"(g) {n['clave']}: motivo para {dep}, que no está en depende_de")
@@ -199,6 +209,8 @@ def main():
         grupos[(n["acs"][0].split(":")[1], n.get("corte"))].append(n["clave"])
     for (pieza, fase), claves_g in sorted(grupos.items(), key=lambda x: (x[0][0], str(x[0][1]))):
         salidas = [k for k in claves_g if by[k].get("salida")]
+        if fase == "mvp" and not salidas:
+            fallos.append(f"(h) {pieza}/{fase}: el grupo no tiene hoja de salida")
         if len(salidas) > 1:
             fallos.append(f"(h) {pieza}/{fase}: más de una salida: {salidas}")
         for ex in salidas:

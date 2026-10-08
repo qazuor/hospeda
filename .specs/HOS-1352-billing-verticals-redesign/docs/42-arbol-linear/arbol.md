@@ -1,10 +1,10 @@
 # Árbol Linear de HOS-1352 — de la spec consolidada a issues
 
-Fuentes: `spec-consolidada/10-corte/` y `20-fase-*/` (ACs nominales), `docs/41-corte-del-mvp/aristas.py` (dependencias entre piezas), el árbol real de Linear y, desde el 2026-10-07, el grafo de hojas reparado (las dos auditorías de dependencias) con las decisiones del corte del MVP (CR a DD y Coord-1 a Coord-5 en `docs/41-corte-del-mvp/10-decisiones-del-owner.md`). Cada nodo es una issue: `↻HOS-n` = contenedor existente que se reusa; `HOS-n` = hoja ya creada; *(nueva)* = issue a crear. Las hojas son unidades de PR; sólo las hojas llevan ACs. Cada hoja declara su fase (`corte`: hecha, mvp, fase-1 a fase-4), si es la salida de su pieza (`salida`) y, en el MVP, qué usa de cada hoja de la que depende (`por_que`). Validar: `python3 chequeo.py` (exit 0 = árbol sano).
+Fuentes: `spec-consolidada/10-corte/` y `20-fase-*/` (ACs nominales), `docs/41-corte-del-mvp/aristas.py` (dependencias entre piezas), el árbol real de Linear y, desde el 2026-10-07, el grafo de hojas reparado (las dos auditorías de dependencias) con las decisiones del corte del MVP (CR a DD y Coord-1 a Coord-8 en `docs/41-corte-del-mvp/10-decisiones-del-owner.md`). Cada nodo es una issue: `↻HOS-n` = contenedor existente que se reusa; `HOS-n` = hoja ya creada; *(nueva)* = issue a crear. Las hojas son unidades de PR; sólo las hojas llevan ACs. Cada hoja declara su fase (`corte`: hecha, mvp, fase-1 a fase-4), si es la salida de su pieza (`salida`) y, en el MVP, qué usa de cada hoja de la que depende (`por_que`). Validar: `python3 chequeo.py` (exit 0 = árbol sano).
 
 Estadísticas: 263 nodos · 28 existentes reusados · 209 hojas de PR · 526 ACs cubiertas (exactamente una hoja por AC).
 
-Por fase: 21 hechas · **130 del MVP por hacer (320 AC)** · 5 de la Fase 1 · 27 de la Fase 2 · 10 de la Fase 3 · 16 de la Fase 4. Camino crítico del MVP: **24 hojas**; calendario: **14 olas, 63 PRs** (abajo).
+Por fase: 21 hechas · **130 del MVP por hacer (320 AC)** · 5 de la Fase 1 · 27 de la Fase 2 · 10 de la Fase 3 · 16 de la Fase 4. Camino crítico del MVP: **24 hojas**; calendario: **14 olas, 64 PRs** (abajo).
 
 - **HOS-1352 ↻HOS-1352** — Rediseño integral de Verticales, Billing, Trials, Entitlements, Limits y Complementos
   - **HOS-1353 ↻HOS-1353** — Épica Verticales — capacidades, entitlements, limits y autorización, sin dependencia de la pasarela
@@ -131,7 +131,7 @@ Por fase: 21 hechas · **130 del MVP por hacer (320 AC)** · 5 de la Fase 1 · 2
         - **B9b.1 `HOS-1588`** — B9b · Composición de promos, piso y canje de extensión de trial (al corte) · 3 AC ← B11.3, B5.1, V4.7
         - **B9b.2 `HOS-1589`** — B9b · Cupo, ventana y contador de la promo (S30) (al corte) · 3 AC ← B9b.1
         - **B9b.3 `HOS-1590`** — B9b · Cortesías temporales y sus cruces (Fase 2) · 3 AC · **Fase 2** ← B9b.4, B8b.6, B9a.5
-        - **B9b.4 `HOS-1591`** — B9b · La acción 21 y el aviso del canje (al corte) · 2 AC ← B13a.4, B13a.9, B9b.2, V5.6
+        - **B9b.4 `HOS-1591`** — B9b · La acción 21, el aviso del canje y salida de la rebanada (al corte) · 2 AC ← B13a.4, B13a.9, B9b.2, V5.6
         - **B9b.5 `HOS-1592`** — B9b · La cortesía temporal auditada, re-emisión, textos y salida (Fase 2) · 3 AC · **Fase 2** ← B9b.3, B9a.6
     - **HOS-1376 ↻HOS-1376** — B13 · Superficies y la baja
       - **B13a** — B13a · Superficies y la baja, al corte ← B5, B7, B8a, B9a
@@ -144,7 +144,7 @@ Por fase: 21 hechas · **130 del MVP por hacer (320 AC)** · 5 de la Fase 1 · 2
         - **B13a.7 `HOS-1623`** — B13a · Las tres filas del corte: 10-bis, 11 y 22 (PR 7/8) · 2 AC ← B13a.1, B7.8
         - **B13a.8 `HOS-1624`** — B13a · La cancelación de punta a punta y salida (PR 8/8) · 2 AC ← B13a.10, B13a.2, B13a.5, B13a.6, B13a.7, B8a.5
         - **B13a.9 *(nueva)*** — B13a · Limpieza del cobro viejo en la web · 3 AC
-        - **B13a.10 *(nueva)*** — B13a · Limpieza del cobro viejo en el admin y el guard de endpoints · 2 AC ← B13a.9
+        - **B13a.10 *(nueva)*** — B13a · Limpieza del cobro viejo en el admin y el guard de endpoints · 2 AC ← B13a.9, V3.4
         - **B13a.11 *(nueva)*** — B13a · El contracargo en el listado accionable (Fase 2) · 1 AC · **Fase 2** ← B13a.8, B5.2b
         - **B13a.12 *(nueva)*** — B13a · La fila 10-bis del pago manual tardío (Fase 4) · 1 AC · **Fase 4** ← B13a.8, B5.4b
       - **B13b** — B13b · Las superficies de addons (después) ← B10, B13a
@@ -286,12 +286,12 @@ Un grupo = un PR: ≤3 hojas y ≤8 AC, de una sola pieza (así las piezas de pl
 
 Camino crítico: B13a.8 ← B13a.5 ← B13a.4 ← B13a.1 ← B8a.3 ← B8a.1 ← B7.5 ← B7.6 ← B8a.2 ← B5.6 ← B5.5 ← B5.3 ← B5.2 ← B5.1 ← B3.5b ← B3.5 ← B3.4 ← B3.3b ← B3.3 ← B3.1b ← B3.1 ← B3.9 ← B2.1 ← V2.1
 
-### Ola 1 — 6 PRs, 11 hojas, 23 AC
+### Ola 1 — 6 PRs, 10 hojas, 21 AC
 
 | PR | hojas | AC |
 |---|---|---|
 | 1.1 | B1.4 (HOS-1510) + B1.7 (HOS-1513) | 4 |
-| 1.2 | B13a.9 (nueva) + B13a.10 (nueva) | 5 |
+| 1.2 | B13a.9 (nueva) | 3 |
 | 1.3 | V2.1 (HOS-1434) + V2.2 (HOS-1435) | 5 |
 | 1.4 | V5.4 (HOS-1458) | 2 |
 | 1.5 | V6.10 (HOS-1480) + V6.11 (HOS-1481) + V6.8a (HOS-1478) | 4 |
@@ -314,14 +314,15 @@ Camino crítico: B13a.8 ← B13a.5 ← B13a.4 ← B13a.1 ← B8a.3 ← B8a.1 ←
 | 3.3 | B3.9 (HOS-1529) + B3.1 (HOS-1518) + B3.1b (HOS-1519) | 8 |
 | 3.4 | V2.3 (HOS-1436) + V2.4 (HOS-1437) + V2.5 (HOS-1438) | 5 |
 
-### Ola 4 — 4 PRs, 8 hojas, 21 AC
+### Ola 4 — 5 PRs, 9 hojas, 23 AC
 
 | PR | hojas | AC |
 |---|---|---|
-| 4.1 | B3.3 (HOS-1521) + B3.3b (HOS-1522) + B3.8 (HOS-1528) | 8 |
-| 4.2 | V4.2 (HOS-1444) + V4.3 (HOS-1445) | 6 |
-| 4.3 | V5.3 (HOS-1457) + V5.5 (HOS-1459) | 5 |
-| 4.4 | B3.2 (HOS-1520) | 2 |
+| 4.1 | B13a.10 (nueva) | 2 |
+| 4.2 | B3.3 (HOS-1521) + B3.3b (HOS-1522) + B3.8 (HOS-1528) | 8 |
+| 4.3 | V4.2 (HOS-1444) + V4.3 (HOS-1445) | 6 |
+| 4.4 | V5.3 (HOS-1457) + V5.5 (HOS-1459) | 5 |
+| 4.5 | B3.2 (HOS-1520) | 2 |
 
 ### Ola 5 — 2 PRs, 4 hojas, 15 AC
 
