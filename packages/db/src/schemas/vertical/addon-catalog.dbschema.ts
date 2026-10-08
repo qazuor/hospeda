@@ -72,6 +72,7 @@ export const addonVersions = pgTable(
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
     },
     (t) => ({
+        idAddonUnique: unique('uq_addon_version_id_addon').on(t.id, t.addonId),
         validityCheck: check(
             'ck_addon_version_validity',
             sql`${t.validity} IN (${quotedList(ADDON_VALIDITIES)})`

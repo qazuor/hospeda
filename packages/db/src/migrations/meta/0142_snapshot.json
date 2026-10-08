@@ -1,6 +1,6 @@
 {
-  "id": "3d61de46-a8f7-4ac6-a56d-a378d2c793b9",
-  "prevId": "664ae960-b760-406d-a061-96805ba44814",
+  "id": "b743f1ac-bd9d-45ee-a323-90cb030d33db",
+  "prevId": "3d61de46-a8f7-4ac6-a56d-a378d2c793b9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -29236,6 +29236,86 @@
           "value": "\"promo_redemption\".\"remaining_charges\" IS NULL OR \"promo_redemption\".\"remaining_charges\" >= 0"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.provider_link": {
+      "name": "provider_link",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_applied_version": {
+          "name": "last_applied_version",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_modified": {
+          "name": "last_modified",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "provider_link_subscription_id_subscription_id_fk": {
+          "name": "provider_link_subscription_id_subscription_id_fk",
+          "tableFrom": "provider_link",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_provider_link_subscription": {
+          "name": "uq_provider_link_subscription",
+          "nullsNotDistinct": false,
+          "columns": [
+            "subscription_id"
+          ]
+        },
+        "uq_provider_link_provider_id": {
+          "name": "uq_provider_link_provider_id",
+          "nullsNotDistinct": false,
+          "columns": [
+            "provider",
+            "provider_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.subscription_scheduled_change": {
