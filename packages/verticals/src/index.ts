@@ -43,6 +43,14 @@ export {
     type TrialSet
 } from './effective-set/trial-ratchet';
 export type { FoldableSource, SourceGrant } from './effective-set/types';
+export { createEffectiveSetCache } from './effective-set-cache/cache';
+export { subscribeCoverageInvalidation } from './effective-set-cache/coverage-invalidation';
+export { decodeFiniteOrInfinite, encodeFiniteOrInfinite } from './effective-set-cache/number-codec';
+export type {
+    EffectiveSetCacheLogger,
+    EffectiveSetCodec,
+    RedisLike
+} from './effective-set-cache/types';
 export type {
     AddonVersionPolicyRow,
     PlanCatalogReader,
