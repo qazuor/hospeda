@@ -40,7 +40,10 @@ export const databaseBillingOptionReader: BillingOptionReader = {
     }
 };
 
-/** Read the price of a subscription from its anchored version (AC:B2:3). */
+/**
+ * Read the price of a subscription from its anchored version (AC:B2:3).
+ * Billing services created in B3 consume this reader (Coord-19).
+ */
 export async function readAnchoredBillingOption({
     subscription,
     reader = databaseBillingOptionReader
