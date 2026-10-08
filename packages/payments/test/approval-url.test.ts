@@ -7,10 +7,10 @@
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
+import { FakePaymentProvider } from '../src/fake/index';
 import {
     ApprovalUrlRejectedError,
     BROKEN_APPROVAL_PARAMETER,
-    FakePaymentProvider,
     sanitizeApprovalUrl
 } from '../src/index';
 

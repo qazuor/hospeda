@@ -5,7 +5,7 @@
  * brings the honest path back.
  *
  * SCOPE (B1.4a, HOS-1510): the lies whose surface the payment interface carries
- * today: M3, M5, M6, M8, M10, M11 and M13. M1, M2, M4, M7, M9 and M12 keep their
+ * today: M1, M3, M5, M6, M8, M9, M10, M11 and M13. M2, M4, M7 and M12 keep their
  * row in the closed list and arrive with the units that add their surface.
  *
  * Every assertion reads the state back by id or takes the deliveries, never a
@@ -20,11 +20,9 @@ import {
     FAKE_NOTICE_CONTENT_TYPES,
     FAKE_NOTICE_DELAY_MS,
     FakePaymentProvider,
-    NOT_REFUNDABLE_MESSAGE,
-    type NoticeDelivery,
-    PaymentProviderError,
-    sanitizeApprovalUrl
-} from '../src/index';
+    NOT_REFUNDABLE_MESSAGE
+} from '../src/fake/index';
+import { type NoticeDelivery, PaymentProviderError, sanitizeApprovalUrl } from '../src/index';
 
 const ARS = (amountMinor: number) => ({ amountMinor, currency: 'ARS' }) as const;
 
@@ -97,6 +95,68 @@ describe('TEST:B1:13 the closed list of measured lies', () => {
             date: '2026-09-24',
             accounts: ['production']
         });
+    });
+});
+
+describe('TEST:B3:44 M1: creation can discard what was sent', () => {
+    const sent = {
+        ...AUTHORIZE,
+        cadence: { everyMonths: 3 },
+        firstChargeAt: '2026-10-10T03:00:00.000Z'
+    };
+
+    it('drops cadence and first charge date by default, while acknowledging creation', async () => {
+        const fake = new FakePaymentProvider({ clock });
+        const created = await fake.authorize(sent);
+        const read = await fake.readAuthorization({ authorizationId: created.authorizationId });
+
+        expect(read.snapshot.cadence).toEqual({ everyMonths: 1 });
+        expect(read.snapshot.firstChargeAt).toBeNull();
+        expect(defenseOf({ lie: 'M1' })).toBe('TEST:B3:44');
+    });
+
+    it('keeps both fields with M1 turned off by name', async () => {
+        const fake = new FakePaymentProvider({
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'show the honest creation fields' }]
+        });
+        const created = await fake.authorize(sent);
+        const read = await fake.readAuthorization({ authorizationId: created.authorizationId });
+
+        expect(read.snapshot.cadence).toEqual(sent.cadence);
+        expect(read.snapshot.firstChargeAt).toBe(sent.firstChargeAt);
+    });
+});
+
+describe('TEST:B3:44 M9: a future first charge gets a provider-added free period', () => {
+    const sent = { ...AUTHORIZE, firstChargeAt: '2026-10-10T03:00:00.000Z' };
+
+    it('adds a free period by default when the date is future', async () => {
+        const fake = new FakePaymentProvider({
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'isolate the date retained by M9' }]
+        });
+        const created = await fake.authorize(sent);
+        const read = await fake.readAuthorization({ authorizationId: created.authorizationId });
+
+        expect(read.snapshot.firstChargeAt).toBe(sent.firstChargeAt);
+        expect(read.snapshot.freePeriodDays).toBeGreaterThan(0);
+        expect(defenseOf({ lie: 'M9' })).toBe('TEST:B3:44');
+    });
+
+    it('adds no period with M9 turned off by name', async () => {
+        const fake = new FakePaymentProvider({
+            clock,
+            honestAbout: [
+                { lie: 'M1', why: 'isolate the date retained in the healthy path' },
+                { lie: 'M9', why: 'the healthy path adds no provider period' }
+            ]
+        });
+        const created = await fake.authorize(sent);
+        const read = await fake.readAuthorization({ authorizationId: created.authorizationId });
+
+        expect(read.snapshot.firstChargeAt).toBe(sent.firstChargeAt);
+        expect(read.snapshot.freePeriodDays).toBeNull();
     });
 });
 

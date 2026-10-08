@@ -18,6 +18,16 @@
                 "types": "./dist/index.d.cts",
                 "default": "./dist/index.cjs"
             }
+        },
+        "./fake": {
+            "import": {
+                "types": "./dist/fake/index.d.ts",
+                "default": "./dist/fake/index.js"
+            },
+            "require": {
+                "types": "./dist/fake/index.d.cts",
+                "default": "./dist/fake/index.cjs"
+            }
         }
     },
     "files": [

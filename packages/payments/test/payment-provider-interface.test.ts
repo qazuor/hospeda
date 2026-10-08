@@ -11,10 +11,10 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
+import { FakePaymentProvider } from '../src/fake/index';
 import {
     CAPABILITY_METHODS,
     type CapabilitySupportMap,
-    FakePaymentProvider,
     MercadoPagoPaymentProvider,
     NOT_ASKED_OF_THE_PROVIDER,
     PAYMENT_CAPABILITIES,

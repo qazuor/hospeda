@@ -5,10 +5,10 @@
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { FakePaymentProvider } from '../src/fake/index';
 import {
     type ActStart,
     assertFreshForAct,
-    FakePaymentProvider,
     type ProviderRead,
     ProviderReadRejectedError
 } from '../src/index';

@@ -13,11 +13,11 @@
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { FakePaymentProvider } from '../src/fake/index';
 import {
     type AuthorizationRef,
     type BillingCadence,
     confirmAuthorizationMutation,
-    FakePaymentProvider,
     type Money,
     type MutationAcknowledgement
 } from '../src/index';

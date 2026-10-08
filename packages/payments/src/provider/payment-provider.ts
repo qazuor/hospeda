@@ -54,6 +54,10 @@ export interface AuthorizeInput {
     /** Where the customer lands after deciding. */
     readonly returnUrl: string;
     readonly payerEmail?: string;
+    /** Requested instant of the first charge, in ISO 8601 format. */
+    readonly firstChargeAt?: string;
+    /** One-use token supplied by the customer for direct authorization. */
+    readonly paymentToken?: string;
 }
 
 /** Capability 1 output. */
@@ -121,6 +125,10 @@ export interface AuthorizationSnapshot {
     readonly status: AuthorizationStatus;
     readonly amount: Money;
     readonly cadence: BillingCadence;
+    /** First charge instant read back from the provider, if one was set. */
+    readonly firstChargeAt: string | null;
+    /** Provider-added free period; never our own trial state. */
+    readonly freePeriodDays: number | null;
 }
 
 /** Capability 7 output: a charge as read by id. */
