@@ -1,5 +1,5 @@
 {
-  "id": "3f6f3144-582b-4892-a1d1-c83e93d4d53a",
+  "id": "73f525e2-4949-4542-9b33-3dfd94fb8163",
   "prevId": "c6687b64-eb27-4b1e-a1ad-04eca9867705",
   "version": "7",
   "dialect": "postgresql",
@@ -27882,12 +27882,6 @@
           "notNull": true,
           "default": 0
         },
-        "role": {
-          "name": "role",
-          "type": "varchar(16)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -27903,30 +27897,7 @@
           "default": "now()"
         }
       },
-      "indexes": {
-        "uq_plan_vertical_role": {
-          "name": "uq_plan_vertical_role",
-          "columns": [
-            {
-              "expression": "vertical",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "role",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"plan\".\"role\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
         "plan_vertical_vertical_id_fk": {
           "name": "plan_vertical_vertical_id_fk",
@@ -27962,12 +27933,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "ck_plan_role": {
-          "name": "ck_plan_role",
-          "value": "\"plan\".\"role\" IS NULL OR \"plan\".\"role\" IN ('trial', 'pre_trial', 'floor')"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.vertical": {
@@ -28000,6 +27966,1623 @@
         "ck_vertical_activation_event": {
           "name": "ck_vertical_activation_event",
           "value": "\"vertical\".\"activation_event\" IS NULL OR \"vertical\".\"activation_event\" IN ('listing_published', 'start_button_pressed')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.subscription": {
+      "name": "subscription",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "vertical": {
+          "name": "vertical",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plan_version_id": {
+          "name": "plan_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "billing_option_id": {
+          "name": "billing_option_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payment_method": {
+          "name": "payment_method",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "class": {
+          "name": "class",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "next_charge_at": {
+          "name": "next_charge_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "service_ends_at": {
+          "name": "service_ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "first_charge_at": {
+          "name": "first_charge_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "succeeds_id": {
+          "name": "succeeds_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "succeeded_by_id": {
+          "name": "succeeded_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_subscription_commitment_origin": {
+          "name": "uq_subscription_commitment_origin",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vertical",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"subscription\".\"class\" = 'PRINCIPAL' AND \"subscription\".\"succeeds_id\" IS NULL AND \"subscription\".\"status\" IN ('PENDING_AUTHORIZATION', 'ACTIVE', 'GRACE_PERIOD', 'PAUSED', 'SUSPENDED', 'CANCEL_SCHEDULED')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_subscription_commitment_successor": {
+          "name": "uq_subscription_commitment_successor",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "vertical",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"subscription\".\"class\" = 'PRINCIPAL' AND \"subscription\".\"succeeds_id\" IS NOT NULL AND \"subscription\".\"status\" IN ('PENDING_AUTHORIZATION', 'ACTIVE', 'GRACE_PERIOD', 'PAUSED', 'SUSPENDED', 'CANCEL_SCHEDULED')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "subscription_user_id_users_id_fk": {
+          "name": "subscription_user_id_users_id_fk",
+          "tableFrom": "subscription",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subscription_vertical_vertical_id_fk": {
+          "name": "subscription_vertical_vertical_id_fk",
+          "tableFrom": "subscription",
+          "tableTo": "vertical",
+          "columnsFrom": [
+            "vertical"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subscription_succeeds_id_subscription_id_fk": {
+          "name": "subscription_succeeds_id_subscription_id_fk",
+          "tableFrom": "subscription",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "succeeds_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subscription_succeeded_by_id_subscription_id_fk": {
+          "name": "subscription_succeeded_by_id_subscription_id_fk",
+          "tableFrom": "subscription",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "succeeded_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_subscription_billing_option_version": {
+          "name": "fk_subscription_billing_option_version",
+          "tableFrom": "subscription",
+          "tableTo": "billing_option",
+          "columnsFrom": [
+            "billing_option_id",
+            "plan_version_id"
+          ],
+          "columnsTo": [
+            "id",
+            "plan_version_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_subscription_version_vertical": {
+          "name": "fk_subscription_version_vertical",
+          "tableFrom": "subscription",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "plan_version_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_subscription_payment_method": {
+          "name": "ck_subscription_payment_method",
+          "value": "\"subscription\".\"payment_method\" IN ('CARD', 'MANUAL')"
+        },
+        "ck_subscription_status": {
+          "name": "ck_subscription_status",
+          "value": "\"subscription\".\"status\" IN ('PENDING_AUTHORIZATION', 'ABANDONED', 'ACTIVE', 'GRACE_PERIOD', 'PAUSED', 'SUSPENDED', 'CANCEL_SCHEDULED', 'CANCELLED', 'CHARGE_DECLINED')"
+        },
+        "ck_subscription_class": {
+          "name": "ck_subscription_class",
+          "value": "\"subscription\".\"class\" IN ('PRINCIPAL', 'COMPLEMENTO', 'LAPIDA')"
+        },
+        "ck_subscription_succession_exclusive": {
+          "name": "ck_subscription_succession_exclusive",
+          "value": "NOT (\"subscription\".\"succeeds_id\" IS NOT NULL AND \"subscription\".\"succeeded_by_id\" IS NOT NULL)"
+        },
+        "ck_subscription_tombstone_cancelled": {
+          "name": "ck_subscription_tombstone_cancelled",
+          "value": "\"subscription\".\"class\" <> 'LAPIDA' OR \"subscription\".\"status\" = 'CANCELLED'"
+        },
+        "ck_subscription_identity_not_null": {
+          "name": "ck_subscription_identity_not_null",
+          "value": "\"subscription\".\"class\" = 'LAPIDA' OR (\"subscription\".\"user_id\" IS NOT NULL AND \"subscription\".\"vertical\" IS NOT NULL AND \"subscription\".\"payment_method\" IS NOT NULL)"
+        },
+        "ck_subscription_principal_anchor": {
+          "name": "ck_subscription_principal_anchor",
+          "value": "\"subscription\".\"class\" <> 'PRINCIPAL' OR (\"subscription\".\"plan_version_id\" IS NOT NULL AND \"subscription\".\"billing_option_id\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.subscription_scheduled_change": {
+      "name": "subscription_scheduled_change",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_plan_version_id": {
+          "name": "target_plan_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_billing_option_id": {
+          "name": "target_billing_option_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_at": {
+          "name": "effective_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plan_migration_subscription_id": {
+          "name": "plan_migration_subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "keep_selection": {
+          "name": "keep_selection",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_at": {
+          "name": "requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ix_subscription_scheduled_change_target_version": {
+          "name": "ix_subscription_scheduled_change_target_version",
+          "columns": [
+            {
+              "expression": "target_plan_version_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "subscription_scheduled_change_subscription_id_subscription_id_fk": {
+          "name": "subscription_scheduled_change_subscription_id_subscription_id_fk",
+          "tableFrom": "subscription_scheduled_change",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "subscription_scheduled_change_plan_migration_subscription_id_plan_migration_subscription_id_fk": {
+          "name": "subscription_scheduled_change_plan_migration_subscription_id_plan_migration_subscription_id_fk",
+          "tableFrom": "subscription_scheduled_change",
+          "tableTo": "plan_migration_subscription",
+          "columnsFrom": [
+            "plan_migration_subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_scheduled_change_target_option": {
+          "name": "fk_scheduled_change_target_option",
+          "tableFrom": "subscription_scheduled_change",
+          "tableTo": "billing_option",
+          "columnsFrom": [
+            "target_billing_option_id",
+            "target_plan_version_id"
+          ],
+          "columnsTo": [
+            "id",
+            "plan_version_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_subscription_scheduled_change_subscription": {
+          "name": "uq_subscription_scheduled_change_subscription",
+          "nullsNotDistinct": false,
+          "columns": [
+            "subscription_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.plan_migration_subscription": {
+      "name": "plan_migration_subscription",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "plan_migration_id": {
+          "name": "plan_migration_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "application_date": {
+          "name": "application_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "out_reason": {
+          "name": "out_reason",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "applied_at": {
+          "name": "applied_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_plan_migration_subscription_one_pending": {
+          "name": "uq_plan_migration_subscription_one_pending",
+          "columns": [
+            {
+              "expression": "subscription_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"plan_migration_subscription\".\"status\" = 'PENDIENTE'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "plan_migration_subscription_plan_migration_id_plan_migration_id_fk": {
+          "name": "plan_migration_subscription_plan_migration_id_plan_migration_id_fk",
+          "tableFrom": "plan_migration_subscription",
+          "tableTo": "plan_migration",
+          "columnsFrom": [
+            "plan_migration_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "plan_migration_subscription_subscription_id_subscription_id_fk": {
+          "name": "plan_migration_subscription_subscription_id_subscription_id_fk",
+          "tableFrom": "plan_migration_subscription",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_plan_migration_subscription_pair": {
+          "name": "uq_plan_migration_subscription_pair",
+          "nullsNotDistinct": false,
+          "columns": [
+            "plan_migration_id",
+            "subscription_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_plan_migration_subscription_status": {
+          "name": "ck_plan_migration_subscription_status",
+          "value": "\"plan_migration_subscription\".\"status\" IN ('PENDIENTE', 'APLICADA', 'FUERA', 'PARA_RESOLVER', 'CANCELADA')"
+        },
+        "ck_plan_migration_subscription_out_reason_values": {
+          "name": "ck_plan_migration_subscription_out_reason_values",
+          "value": "\"plan_migration_subscription\".\"out_reason\" IN ('CAMBIO_DE_PLAN', 'SE_DIO_DE_BAJA', 'TERMINO')"
+        },
+        "ck_plan_migration_subscription_out_reason": {
+          "name": "ck_plan_migration_subscription_out_reason",
+          "value": "(\"plan_migration_subscription\".\"status\" = 'FUERA') = (\"plan_migration_subscription\".\"out_reason\" IS NOT NULL)"
+        },
+        "ck_plan_migration_subscription_applied": {
+          "name": "ck_plan_migration_subscription_applied",
+          "value": "(\"plan_migration_subscription\".\"status\" = 'APLICADA') = (\"plan_migration_subscription\".\"applied_at\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.plan_migration": {
+      "name": "plan_migration",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "vertical": {
+          "name": "vertical",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_plan_version_id": {
+          "name": "source_plan_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_plan_version_id": {
+          "name": "target_plan_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "announced_at": {
+          "name": "announced_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notice_days": {
+          "name": "notice_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deadline_version": {
+          "name": "deadline_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "signed_by": {
+          "name": "signed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled_by": {
+          "name": "cancelled_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "plan_migration_vertical_vertical_id_fk": {
+          "name": "plan_migration_vertical_vertical_id_fk",
+          "tableFrom": "plan_migration",
+          "tableTo": "vertical",
+          "columnsFrom": [
+            "vertical"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "plan_migration_deadline_version_billing_deadline_version_version_fk": {
+          "name": "plan_migration_deadline_version_billing_deadline_version_version_fk",
+          "tableFrom": "plan_migration",
+          "tableTo": "billing_deadline_version",
+          "columnsFrom": [
+            "deadline_version"
+          ],
+          "columnsTo": [
+            "version"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "plan_migration_signed_by_users_id_fk": {
+          "name": "plan_migration_signed_by_users_id_fk",
+          "tableFrom": "plan_migration",
+          "tableTo": "users",
+          "columnsFrom": [
+            "signed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "plan_migration_cancelled_by_users_id_fk": {
+          "name": "plan_migration_cancelled_by_users_id_fk",
+          "tableFrom": "plan_migration",
+          "tableTo": "users",
+          "columnsFrom": [
+            "cancelled_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_plan_migration_source_vertical": {
+          "name": "fk_plan_migration_source_vertical",
+          "tableFrom": "plan_migration",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "source_plan_version_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_plan_migration_target_vertical": {
+          "name": "fk_plan_migration_target_vertical",
+          "tableFrom": "plan_migration",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "target_plan_version_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_plan_migration_reason": {
+          "name": "ck_plan_migration_reason",
+          "value": "\"plan_migration\".\"reason\" IN ('RETIREMENT', 'PRICE_INCREASE')"
+        },
+        "ck_plan_migration_notice_days": {
+          "name": "ck_plan_migration_notice_days",
+          "value": "\"plan_migration\".\"notice_days\" >= 60"
+        },
+        "ck_plan_migration_cancel_together": {
+          "name": "ck_plan_migration_cancel_together",
+          "value": "(\"plan_migration\".\"cancelled_at\" IS NULL) = (\"plan_migration\".\"cancelled_by\" IS NULL)"
+        },
+        "ck_plan_migration_distinct_versions": {
+          "name": "ck_plan_migration_distinct_versions",
+          "value": "\"plan_migration\".\"source_plan_version_id\" <> \"plan_migration\".\"target_plan_version_id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.promo_code": {
+      "name": "promo_code",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "code": {
+          "name": "code",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "discount_kind": {
+          "name": "discount_kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "all_verticals": {
+          "name": "all_verticals",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verticals": {
+          "name": "verticals",
+          "type": "varchar(32)[]",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_quota": {
+          "name": "total_quota",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_from": {
+          "name": "valid_from",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "valid_until": {
+          "name": "valid_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stackable": {
+          "name": "stackable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "usable_with_another_active": {
+          "name": "usable_with_another_active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration_kind": {
+          "name": "duration_kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duration_charges": {
+          "name": "duration_charges",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "closed_by": {
+          "name": "closed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "promo_code_closed_by_users_id_fk": {
+          "name": "promo_code_closed_by_users_id_fk",
+          "tableFrom": "promo_code",
+          "tableTo": "users",
+          "columnsFrom": [
+            "closed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_promo_code_code": {
+          "name": "uq_promo_code_code",
+          "nullsNotDistinct": false,
+          "columns": [
+            "code"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_promo_code_discount_kind": {
+          "name": "ck_promo_code_discount_kind",
+          "value": "\"promo_code\".\"discount_kind\" IN ('PERCENTAGE', 'FIXED')"
+        },
+        "ck_promo_code_value": {
+          "name": "ck_promo_code_value",
+          "value": "\"promo_code\".\"value\" > 0 AND (\"promo_code\".\"discount_kind\" <> 'PERCENTAGE' OR \"promo_code\".\"value\" <= 100)"
+        },
+        "ck_promo_code_verticals": {
+          "name": "ck_promo_code_verticals",
+          "value": "\"promo_code\".\"all_verticals\" = (\"promo_code\".\"verticals\" IS NULL) AND (\"promo_code\".\"verticals\" IS NULL OR (cardinality(\"promo_code\".\"verticals\") >= 1 AND \"promo_code\".\"verticals\" <@ ARRAY['accommodation', 'gastronomy', 'experience', 'tourist', 'partner']::varchar[]))"
+        },
+        "ck_promo_code_total_quota": {
+          "name": "ck_promo_code_total_quota",
+          "value": "\"promo_code\".\"total_quota\" > 0"
+        },
+        "ck_promo_code_window": {
+          "name": "ck_promo_code_window",
+          "value": "\"promo_code\".\"valid_until\" > \"promo_code\".\"valid_from\""
+        },
+        "ck_promo_code_duration_kind": {
+          "name": "ck_promo_code_duration_kind",
+          "value": "\"promo_code\".\"duration_kind\" IN ('FIRST_CHARGE', 'N_CHARGES', 'FOREVER')"
+        },
+        "ck_promo_code_duration_charges": {
+          "name": "ck_promo_code_duration_charges",
+          "value": "(\"promo_code\".\"duration_kind\" = 'N_CHARGES') = (\"promo_code\".\"duration_charges\" IS NOT NULL) AND (\"promo_code\".\"duration_charges\" IS NULL OR \"promo_code\".\"duration_charges\" >= 1)"
+        },
+        "ck_promo_code_close_together": {
+          "name": "ck_promo_code_close_together",
+          "value": "(\"promo_code\".\"closed_at\" IS NULL) = (\"promo_code\".\"closed_by\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.promo_redemption": {
+      "name": "promo_redemption",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "promo_code_id": {
+          "name": "promo_code_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "redeemed_at": {
+          "name": "redeemed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "remaining_charges": {
+          "name": "remaining_charges",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "promo_redemption_promo_code_id_promo_code_id_fk": {
+          "name": "promo_redemption_promo_code_id_promo_code_id_fk",
+          "tableFrom": "promo_redemption",
+          "tableTo": "promo_code",
+          "columnsFrom": [
+            "promo_code_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "promo_redemption_user_id_users_id_fk": {
+          "name": "promo_redemption_user_id_users_id_fk",
+          "tableFrom": "promo_redemption",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "promo_redemption_subscription_id_subscription_id_fk": {
+          "name": "promo_redemption_subscription_id_subscription_id_fk",
+          "tableFrom": "promo_redemption",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_promo_redemption_code_user": {
+          "name": "uq_promo_redemption_code_user",
+          "nullsNotDistinct": false,
+          "columns": [
+            "promo_code_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_promo_redemption_remaining_charges": {
+          "name": "ck_promo_redemption_remaining_charges",
+          "value": "\"promo_redemption\".\"remaining_charges\" IS NULL OR \"promo_redemption\".\"remaining_charges\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.courtesy_grant": {
+      "name": "courtesy_grant",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "beneficiary_user_id": {
+          "name": "beneficiary_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "months": {
+          "name": "months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "granted_by": {
+          "name": "granted_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "balance_months": {
+          "name": "balance_months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "balance_closed_at": {
+          "name": "balance_closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close_reason": {
+          "name": "close_reason",
+          "type": "varchar(48)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "courtesy_grant_beneficiary_user_id_users_id_fk": {
+          "name": "courtesy_grant_beneficiary_user_id_users_id_fk",
+          "tableFrom": "courtesy_grant",
+          "tableTo": "users",
+          "columnsFrom": [
+            "beneficiary_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "courtesy_grant_granted_by_users_id_fk": {
+          "name": "courtesy_grant_granted_by_users_id_fk",
+          "tableFrom": "courtesy_grant",
+          "tableTo": "users",
+          "columnsFrom": [
+            "granted_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "courtesy_grant_subscription_id_subscription_id_fk": {
+          "name": "courtesy_grant_subscription_id_subscription_id_fk",
+          "tableFrom": "courtesy_grant",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_courtesy_grant_months": {
+          "name": "ck_courtesy_grant_months",
+          "value": "\"courtesy_grant\".\"months\" > 0"
+        },
+        "ck_courtesy_grant_balance_months": {
+          "name": "ck_courtesy_grant_balance_months",
+          "value": "\"courtesy_grant\".\"balance_months\" IS NULL OR \"courtesy_grant\".\"balance_months\" >= 0"
+        },
+        "ck_courtesy_grant_close_reason": {
+          "name": "ck_courtesy_grant_close_reason",
+          "value": "\"courtesy_grant\".\"close_reason\" IN ('VENTANA_DE_AUTORIZACION_VENCIDA', 'GRANT_PERMANENTE_OTORGADO', 'DESTINO_DE_PLAN_NO_MENSUAL', 'CONTRACARGO_DE_LA_PREDECESORA')"
+        },
+        "ck_courtesy_grant_balance_close": {
+          "name": "ck_courtesy_grant_balance_close",
+          "value": "(\"courtesy_grant\".\"balance_closed_at\" IS NULL) = (\"courtesy_grant\".\"close_reason\" IS NULL) AND (\"courtesy_grant\".\"balance_closed_at\" IS NULL OR \"courtesy_grant\".\"balance_months\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.addon_instance": {
+      "name": "addon_instance",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "addon_version_id": {
+          "name": "addon_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "complement_subscription_id": {
+          "name": "complement_subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "order_request_id": {
+          "name": "order_request_id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "provider_order_id": {
+          "name": "provider_order_id",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_addon_instance_purchase_identity": {
+          "name": "uq_addon_instance_purchase_identity",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "product_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "coalesce(\"target_id\", '00000000-0000-0000-0000-000000000000'::uuid)",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"addon_instance\".\"status\" = 'PENDING_AUTHORIZATION' OR (\"addon_instance\".\"status\" = 'ACTIVE' AND \"addon_instance\".\"complement_subscription_id\" IS NOT NULL)",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "addon_instance_product_id_addon_product_id_fk": {
+          "name": "addon_instance_product_id_addon_product_id_fk",
+          "tableFrom": "addon_instance",
+          "tableTo": "addon_product",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "addon_instance_addon_version_id_addon_version_id_fk": {
+          "name": "addon_instance_addon_version_id_addon_version_id_fk",
+          "tableFrom": "addon_instance",
+          "tableTo": "addon_version",
+          "columnsFrom": [
+            "addon_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "addon_instance_owner_id_users_id_fk": {
+          "name": "addon_instance_owner_id_users_id_fk",
+          "tableFrom": "addon_instance",
+          "tableTo": "users",
+          "columnsFrom": [
+            "owner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "addon_instance_complement_subscription_id_subscription_id_fk": {
+          "name": "addon_instance_complement_subscription_id_subscription_id_fk",
+          "tableFrom": "addon_instance",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "complement_subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_addon_instance_complement": {
+          "name": "uq_addon_instance_complement",
+          "nullsNotDistinct": false,
+          "columns": [
+            "complement_subscription_id"
+          ]
+        },
+        "uq_addon_instance_order_request": {
+          "name": "uq_addon_instance_order_request",
+          "nullsNotDistinct": false,
+          "columns": [
+            "order_request_id"
+          ]
+        },
+        "uq_addon_instance_provider_order": {
+          "name": "uq_addon_instance_provider_order",
+          "nullsNotDistinct": false,
+          "columns": [
+            "provider_order_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_addon_instance_status": {
+          "name": "ck_addon_instance_status",
+          "value": "\"addon_instance\".\"status\" IN ('PENDING_AUTHORIZATION', 'ACTIVE', 'ABANDONED', 'EXPIRED', 'CANCELLED')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.addon_product": {
+      "name": "addon_product",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "version_id": {
+          "name": "version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "price": {
+          "name": "price",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "charge_kind": {
+          "name": "charge_kind",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cycle": {
+          "name": "cycle",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "compatible_verticals": {
+          "name": "compatible_verticals",
+          "type": "varchar(32)[]",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "addon_product_version_id_addon_version_id_fk": {
+          "name": "addon_product_version_id_addon_version_id_fk",
+          "tableFrom": "addon_product",
+          "tableTo": "addon_version",
+          "columnsFrom": [
+            "version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_addon_product_price": {
+          "name": "ck_addon_product_price",
+          "value": "\"addon_product\".\"price\" > 0"
+        },
+        "ck_addon_product_currency": {
+          "name": "ck_addon_product_currency",
+          "value": "\"addon_product\".\"currency\" = 'ARS'"
+        },
+        "ck_addon_product_charge_kind": {
+          "name": "ck_addon_product_charge_kind",
+          "value": "\"addon_product\".\"charge_kind\" IN ('UNA_VEZ', 'PERIODICO')"
+        },
+        "ck_addon_product_cycle": {
+          "name": "ck_addon_product_cycle",
+          "value": "(\"addon_product\".\"charge_kind\" = 'PERIODICO') = (\"addon_product\".\"cycle\" IS NOT NULL) AND (\"addon_product\".\"cycle\" IS NULL OR \"addon_product\".\"cycle\" IN ('monthly', 'quarterly', 'semiannual', 'annual'))"
+        },
+        "ck_addon_product_compatible_verticals": {
+          "name": "ck_addon_product_compatible_verticals",
+          "value": "cardinality(\"addon_product\".\"compatible_verticals\") >= 1 AND \"addon_product\".\"compatible_verticals\" <@ ARRAY['accommodation', 'gastronomy', 'experience', 'tourist', 'partner']::varchar[]"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.manual_payment": {
+      "name": "manual_payment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_start": {
+          "name": "period_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "registered_by": {
+          "name": "registered_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "registered_at": {
+          "name": "registered_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "proof_ref": {
+          "name": "proof_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "manual_payment_subscription_id_subscription_id_fk": {
+          "name": "manual_payment_subscription_id_subscription_id_fk",
+          "tableFrom": "manual_payment",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "manual_payment_registered_by_users_id_fk": {
+          "name": "manual_payment_registered_by_users_id_fk",
+          "tableFrom": "manual_payment",
+          "tableTo": "users",
+          "columnsFrom": [
+            "registered_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_manual_payment_status": {
+          "name": "ck_manual_payment_status",
+          "value": "\"manual_payment\".\"status\" IN ('AWAITING', 'REGISTERED', 'DECLARED_UNPAID')"
+        },
+        "ck_manual_payment_registration": {
+          "name": "ck_manual_payment_registration",
+          "value": "(\"manual_payment\".\"status\" = 'REGISTERED') = (\"manual_payment\".\"registered_by\" IS NOT NULL AND \"manual_payment\".\"registered_at\" IS NOT NULL)"
+        },
+        "ck_manual_payment_proof": {
+          "name": "ck_manual_payment_proof",
+          "value": "\"manual_payment\".\"proof_ref\" IS NULL OR \"manual_payment\".\"status\" = 'REGISTERED'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.idempotency_key": {
+      "name": "idempotency_key",
+      "schema": "",
+      "columns": {
+        "key": {
+          "name": "key",
+          "type": "varchar(255)",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "operation": {
+          "name": "operation",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "subject_id": {
+          "name": "subject_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "result": {
+          "name": "result",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_idempotency_key_operation": {
+          "name": "ck_idempotency_key_operation",
+          "value": "\"idempotency_key\".\"operation\" IN ('PREAPPROVAL_CREATE', 'ORDER_CREATE', 'REFUND_CREATE')"
+        },
+        "ck_idempotency_key_completion": {
+          "name": "ck_idempotency_key_completion",
+          "value": "(\"idempotency_key\".\"result\" IS NULL) = (\"idempotency_key\".\"completed_at\" IS NULL)"
         }
       },
       "isRLSEnabled": false
