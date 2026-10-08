@@ -220,14 +220,14 @@ describe('Notification Preferences Integration Tests', () => {
             });
 
             const payload: NotificationPayload = {
-                type: NotificationType.ADDON_EXPIRATION_WARNING,
+                type: NotificationType.RENEWAL_REMINDER,
                 recipientEmail: 'email-disabled@example.com',
                 recipientName: 'Email Disabled User',
                 userId,
                 customerId: 'cus_email_disabled',
-                addonName: 'Visibility Boost',
+                planName: 'Pro',
                 daysRemaining: 2,
-                expirationDate: '2026-02-05'
+                renewalDate: '2026-02-05'
             };
 
             // Act

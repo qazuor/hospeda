@@ -53,12 +53,7 @@
         },
         "trial": {
             "noCharge": "No charges have been made",
-            "subscribeNow": "Subscribe now",
-            "expiredBanner": {
-                "title": "Your free trial has ended",
-                "body": "Your trial of the {{planSlug}} plan expired on {{expiresAt}}. Subscribe to publish again.",
-                "cta": "View plans"
-            }
+            "subscribeNow": "Subscribe now"
         },
         "cancelled": {
             "title": "Subscription canceled",
@@ -183,34 +178,8 @@
     },
     "checkout": {
         "success": {
-            "title": "Your subscription is active!",
-            "subtitle": "Your payment was approved successfully",
             "planDetails": "Plan: {{planName}}",
-            "amountDetails": "Amount: {{amount}}",
-            "verifyingStatus": "Verifying payment status...",
-            "verifyingSubtitle": "We are confirming your payment. This may take a moment.",
-            "cta": "Go to my account",
-            "pageTitle": "Payment approved",
-            "promoIgnoredNote": "Your code was not applied: it extends a free trial, and this subscription does not have one.",
-            "linkErrorTitle": "We couldn't link your payment",
-            "linkErrorSubtitle": "There was a problem linking this payment to your account. If you already paid, contact support with the MercadoPago operation number.",
-            "unresolvedTitle": "We're still confirming your payment",
-            "unresolvedSubtitle": "Your payment was not lost. MercadoPago can take a few minutes to confirm it, and your plan activates automatically as soon as it does. You can close this page: check the status in My Account, or write to us if you still cannot see it in a while.",
-            "unresolvedSupportCta": "Contact us"
-        },
-        "pending": {
-            "title": "Your payment is being processed",
-            "body": "It may take up to 24 hours to confirm. We'll email you when it clears.",
-            "cta": "Check status",
-            "pageTitle": "Payment processing"
-        },
-        "partnerPending": {
-            "pageTitle": "Payment received",
-            "title": "We received your payment",
-            "body": "We are confirming the transaction with MercadoPago. It may take a few minutes, and in some cases up to 24 hours. Once the payment clears, your presence on Hospeda is activated automatically — there is nothing else for you to do.",
-            "note": "Keep the receipt MercadoPago sent you. If anything is unclear, write to us and we will look into it with you.",
-            "homeCta": "Go to homepage",
-            "contactCta": "Contact us"
+            "amountDetails": "Amount: {{amount}}"
         },
         "failure": {
             "title": "Your payment could not be processed",
@@ -227,48 +196,6 @@
             "retryCta": "Try again",
             "supportCta": "Contact support",
             "pageTitle": "Payment rejected"
-        },
-        "button": {
-            "cta": "Subscribe",
-            "processing": "Processing...",
-            "processingAriaLabel": "Processing payment",
-            "error": "We could not start the payment. Please try again.",
-            "unauthCta": "Sign in to subscribe",
-            "currentPlan": "Current plan",
-            "currentPlanAriaLabel": "This is your current plan",
-            "changePlan": "Switch to this plan",
-            "freeRegisterCta": "Sign up for free",
-            "freePlanLegend": "You already have this plan"
-        },
-        "promoApply": {
-            "label": "Discount code",
-            "inputPlaceholder": "Enter your code",
-            "applyButton": "Apply",
-            "applying": "Verifying...",
-            "removeButton": "Remove",
-            "discountPercentForever": "{{percent}}% discount forever",
-            "discountPercentCycle_one": "{{percent}}% discount for {{months}} month",
-            "discountPercentCycle_other": "{{percent}}% discount for {{months}} months",
-            "discountFixedForever": "${{amount}} discount forever",
-            "discountFixedCycle_one": "${{amount}} discount for {{months}} month",
-            "discountFixedCycle_other": "${{amount}} discount for {{months}} months",
-            "trialExtension_one": "{{days}} extra free trial day",
-            "trialExtension_other": "{{days}} extra free trial days",
-            "comp": "Free forever",
-            "compNotRedeemable": "This code cannot be redeemed. Get in touch if you were promised a complimentary subscription.",
-            "errorInvalid": "The code you entered is not valid. Please check it and try again.",
-            "errorAnnualOutsideTrial": "This discount code does not apply to annual plans outside the trial period.",
-            "errorGeneric": "We could not verify the code. Please try again.",
-            "errorNotFound": "We couldn't find that code. Check the spelling and try again.",
-            "errorInactive": "This code is no longer active.",
-            "errorExpired": "This code has expired.",
-            "errorMaxUses": "This code has reached its usage limit.",
-            "errorMaxUsesPerUser": "You've already used this code the maximum number of times.",
-            "errorPlanRestriction": "This code isn't valid for the selected plan.",
-            "errorNewUsersOnly": "This code is only for new customers.",
-            "errorMinAmount": "Your purchase doesn't meet the minimum required for this code.",
-            "pendingAuthMessage": "You'll be able to apply the code {{code}} as soon as you finish signing up.",
-            "registerCta": "Sign up"
         },
         "payerEmailConfirm": {
             "title": "Which email you'll be able to pay with",
@@ -287,21 +214,6 @@
             "title": "Publishing new listings is paused",
             "body": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume."
         }
-    },
-    "checkoutRetry": {
-        "checkingTitle": "Verifying your payment...",
-        "checkingBody": "We are checking the status of your subscription.",
-        "redirectingTitle": "Redirecting you to MercadoPago...",
-        "redirectingBody": "One moment, we're taking you to complete the payment.",
-        "activeTitle": "Your subscription is already active",
-        "activeBody": "No need to pay again: your plan is already up and running.",
-        "confirmingTitle": "We're confirming your payment",
-        "confirmingBody": "We may already be resolving this from another tab. Please wait a moment.",
-        "confirmingTimedOutTitle": "We're still confirming your payment",
-        "confirmingTimedOutBody": "This is taking longer than expected. You can try again in a moment.",
-        "errorTitle": "We couldn't verify your payment",
-        "errorBody": "Try again, or contact us if the problem continues.",
-        "retryButton": "Retry"
     },
     "limit": {
         "max_favorites": {

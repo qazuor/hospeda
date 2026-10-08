@@ -3,7 +3,8 @@
  *
  * ## Why this module exists
  *
- * The second instance of the defect `addon-link-metadata.ts` was written for,
+ * The second instance of the defect the (since removed, HOS-1637) add-on
+ * link metadata module was written for,
  * and the mechanism is identical: a notification that fails to send is written
  * to `notification_log`, and `notification-retry.service.ts` REBUILDS
  * the payload from that row's `metadata` column. `metadata` is the only channel

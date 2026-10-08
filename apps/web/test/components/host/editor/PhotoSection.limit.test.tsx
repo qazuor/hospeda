@@ -69,8 +69,6 @@ const ACC_ID = 'acc-uuid-123';
 
 const defaultProps: PhotoSectionProps = { locale: 'es', accommodationId: ACC_ID };
 
-/** The whole URL, both halves — `toContain('addons')` survives losing `?focus=`. */
-const ADDON_HREF = '/es/mi-cuenta/addons/?focus=extra-photos-20#addon-extra-photos-20';
 const PLAN_HREF = '/es/mi-cuenta/suscripcion/';
 
 /** The exact 403 body the API sends when the plan photo cap is full. */
@@ -183,29 +181,20 @@ describe('HOS-724 — photo upload refused by the plan cap', () => {
         expect(source).toContain('error.status === 403');
     });
 
-    it('offers the add-on in the PRIMARY slot and the plan in the SECONDARY slot', async () => {
+    it('offers the plan upgrade as the only action, and no link to the removed add-on page (HOS-1637)', async () => {
+        // HOS-724 put an add-on offer (`/mi-cuenta/addons/?focus=…`) in the
+        // primary slot. That page was removed with the old billing (HOS-1637,
+        // AC:B13a:20), so the plan upgrade is the toast's single action.
         mockAddMedia.mockReturnValue(makeLimitReached());
         await uploadOneGalleryPhoto();
 
         const { t } = createTranslations('es');
-        const addonLabel = t('account.subscription.usage.buyAddon');
         const planLabel = t('billing.limit.max_photos_per_accommodation.cta');
 
-        const addonLink = await screen.findByRole('link', { name: addonLabel });
-        const planLink = screen.getByRole('link', { name: planLabel });
-
-        // Whole URLs, so losing `?focus=` or the fragment fails here.
-        expect(addonLink).toHaveAttribute('href', ADDON_HREF);
+        const planLink = await screen.findByRole('link', { name: planLabel });
         expect(planLink).toHaveAttribute('href', PLAN_HREF);
-
-        // Naming the slot is the assertion: both links existing says nothing
-        // about which one leads. `ToastViewport` renders the primary action with
-        // `actionPrimary` and the secondary with `actionSecondary` (vitest is
-        // configured with non-scoped CSS-module class names).
-        expect(addonLink.className).toContain('actionPrimary');
-        expect(addonLink.className).not.toContain('actionSecondary');
-        expect(planLink.className).toContain('actionSecondary');
-        expect(planLink.className).not.toContain('actionPrimary');
+        expect(planLink.className).toContain('actionPrimary');
+        expect(document.body.innerHTML).not.toContain('mi-cuenta/addons');
     });
 
     it('does not add the photo to the gallery', async () => {
@@ -213,7 +202,7 @@ describe('HOS-724 — photo upload refused by the plan cap', () => {
         await uploadOneGalleryPhoto();
 
         await screen.findByRole('link', {
-            name: createTranslations('es').t('account.subscription.usage.buyAddon')
+            name: createTranslations('es').t('billing.limit.max_photos_per_accommodation.cta')
         });
         expect(screen.queryAllByRole('img')).toHaveLength(0);
     });
@@ -238,7 +227,7 @@ describe('HOS-724 — photo upload refused by the plan cap', () => {
         await waitFor(() => expect(mockAddMedia).toHaveBeenCalledTimes(1));
         expect(
             await screen.findAllByRole('link', {
-                name: createTranslations('es').t('account.subscription.usage.buyAddon')
+                name: createTranslations('es').t('billing.limit.max_photos_per_accommodation.cta')
             })
         ).toHaveLength(1);
     });

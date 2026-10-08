@@ -90,23 +90,19 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/planes/experiencias/', name: 'Sales Experience' },
     { url: '/es/planes/anfitriones/', name: 'Sales Host' },
     { url: '/es/planes/turistas/', name: 'Sales Tourist' },
-    { url: '/es/planes/aliados/', name: 'Sales Partner' },
-    // HOS-1032: the five level-3 pricing pages, replacing the two
+    // HOS-1032: the level-3 pricing pages, replacing the two
     // `/suscriptores/planes/<audiencia>/` entries this list used to carry.
     //
-    // All five are audited and not just the two that moved, because each one
+    // All are audited and not just the two that moved, because each one
     // renders a DIFFERENT combination of the grid's branches: the annual toggle
-    // (a radiogroup) appears only where a plan has an annual price, the
+    // (a radiogroup) appears only where a plan has an annual price, and the
     // comparison table (a scrollable region with a sticky header) only where
-    // the audience has curated rows, and aliados renders neither — it is the
-    // only page where the card CTA is a plain link and the price is replaced by
-    // "Consultar". Auditing one and assuming the rest would leave the branches
-    // this change actually added uncovered.
+    // the audience has curated rows. The aliados pages were removed with the
+    // old billing (HOS-1637, AC:B13a:21).
     { url: '/es/planes/anfitriones/precios/', name: 'Pricing Host' },
     { url: '/es/planes/turistas/precios/', name: 'Pricing Tourist' },
     { url: '/es/planes/gastronomia/precios/', name: 'Pricing Gastronomy' },
     { url: '/es/planes/experiencias/precios/', name: 'Pricing Experience' },
-    { url: '/es/planes/aliados/precios/', name: 'Pricing Partner' },
     // HOS-1156: the three publish pages. Swept SIGNED OUT, which is the state
     // this sweep runs in and also the one worth auditing hardest — it is what a
     // visitor arriving from the public "Publicar" button sees, and the signup

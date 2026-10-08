@@ -440,48 +440,7 @@
         "usageUnlimited": "Ilimitado",
         "usageWarning": "Estás cerca del límite",
         "usageAtLimit": "Límite alcanzado",
-        "usageOf": "{{current}} de {{max}}",
-        "usage": {
-            "title": "Uso de tu plan",
-            "subtitle": "Cuánto consumiste de cada límite incluido en tu plan.",
-            "loading": "Cargando el uso de tu plan...",
-            "unlimited": "Ilimitado",
-            "ofMax": "{{current}} de {{max}}",
-            "unlimitedUsage": "{{current}} en uso",
-            "addonBonus": "Incluye {{bonus}} extra por complementos",
-            "thresholdWarning": "Cerca del límite",
-            "thresholdCritical": "Casi sin margen",
-            "thresholdReached": "Llegaste al límite",
-            "thresholdExceeded": "Límite superado",
-            "audienceHost": "Como anfitrión",
-            "audienceTraveler": "Como viajero",
-            "monthlyNote": "Se reinicia al comenzar cada mes.",
-            "capOnly": "Hasta {{max}}",
-            "perAccommodationEmpty": "Todavía no publicaste ningún alojamiento.",
-            "upgradePlan": "Mejorar mi plan",
-            "buyAddon": "Ampliar con un complemento",
-            "limits": {
-                "max_accommodations": "Alojamientos publicados",
-                "max_gastronomies": "Gastronomías publicadas",
-                "max_experiences": "Experiencias publicadas",
-                "max_photos_per_accommodation": "Fotos por alojamiento",
-                "max_active_promotions": "Promociones activas",
-                "max_favorites": "Favoritos guardados",
-                "max_properties": "Propiedades del complejo",
-                "max_staff_accounts": "Cuentas de equipo",
-                "max_active_alerts": "Alertas de precio activas",
-                "max_compare_items": "Alojamientos en comparación",
-                "max_ai_text_improve_per_month": "Mejoras de texto con IA (por mes)",
-                "max_ai_chat_per_month": "Consultas de IA respondidas en tus alojamientos (por mes)",
-                "max_ai_chat_consumer_per_month": "Consultas al asistente de IA (por mes)",
-                "max_ai_search_per_month": "Búsquedas con IA (por mes)",
-                "max_ai_support_per_month": "Consultas al soporte con IA (por mes)",
-                "max_ai_translate_per_month": "Traducciones con IA (por mes)",
-                "max_ai_accommodation_import_per_month": "Importaciones de alojamiento con IA (por mes)",
-                "max_search_history_entries": "Búsquedas guardadas en el historial",
-                "max_collections": "Colecciones de favoritos"
-            }
-        }
+        "usageOf": "{{current}} de {{max}}"
     },
     "favorites": {
         "tabs": {
@@ -728,143 +687,8 @@
             "description": "Administrá tu plan y suscripción en Hospeda",
             "heading": "Mi suscripción",
             "headingDesc": "Administrá tu plan y preferencias de pago",
-            "loading": "Cargando suscripción...",
-            "emptyTitle": "Sin suscripción activa",
-            "emptyBody": "Todavía no tenés un plan activo. Explorá nuestros planes para acceder a beneficios exclusivos.",
-            "errorTitle": "Error al cargar la suscripción",
-            "planCardLabel": "Detalles del plan actual",
-            "statusLabel": "Estado",
-            "nextBillingLabel": "Próxima facturación",
-            "accessUntilLabel": "Acceso hasta",
-            "complimentaryLabel": "Plan de cortesía",
-            "complimentaryNoBilling": "Sin vencimiento",
-            "paymentMethodLabel": "Método de pago",
-            "paymentMercadoPago": "MercadoPago",
-            "paymentNone": "Sin método de pago",
-            "noBillingDate": "No hay fecha de facturación disponible",
-            "actionsLabel": "Acciones",
-            "actionsTitle": "Gestionar suscripción",
-            "downloadInvoice": "Descargar última factura",
-            "invoiceError": "No se pudo obtener la última factura.",
-            "noInvoices": "Todavía no tenés facturas disponibles.",
-            "invoiceNoPdf": "La factura no tiene un PDF disponible todavía.",
-            "cancelButton": "Cancelar suscripción",
-            "cancelAriaLabel": "Cancelar suscripción",
-            "adminLink": "Más opciones (panel admin)",
-            "viewPlans": "Ver planes",
-            "upgradeLink": "Ver planes disponibles",
-            "pauseButton": "Pausar suscripción",
-            "pauseAriaLabel": "Pausar suscripción",
-            "resumeButton": "Reanudar suscripción",
-            "pauseSuccess": "Suscripción pausada.",
-            "pauseError": "No se pudo pausar la suscripción.",
-            "resumeSuccess": "Suscripción reanudada.",
-            "resumeError": "No se pudo reanudar la suscripción.",
-            "uncancelButton": "Descartar cancelación",
-            "uncancelSuccess": "Cancelación descartada. Tu suscripción sigue activa.",
-            "uncancelError": "No se pudo descartar la cancelación.",
-            "replacePaymentMethodButton": "Actualizar medio de pago",
-            "replacePaymentMethodError": "No pudimos iniciar la actualización de tu medio de pago. Volvé a intentarlo; si sigue fallando, escribinos a soporte.",
-            "replacePaymentMethodContactSupport": "Escribir a soporte",
-            "replacePaymentMethodEmailSubject": "No puedo actualizar mi medio de pago",
-            "trialExtension": {
-                "title": "Extender tu prueba gratis",
-                "help": "Si tenés un código promocional, aplicalo ahora y sumás días a tu prueba.",
-                "label": "Código promocional",
-                "placeholder": "Ingresá tu código",
-                "apply": "Aplicar",
-                "applying": "Aplicando...",
-                "success": "Listo. Extendimos tu prueba gratis.",
-                "successWithDate": "Listo. Tu prueba gratis ahora termina el {{date}}.",
-                "errorGeneric": "No pudimos aplicar el código. Revisalo e intentá de nuevo."
-            },
-            "status": {
-                "active": "Activa",
-                "trial": "Prueba",
-                "cancelled": "Cancelada",
-                "cancelling": "Cancelación programada",
-                "expired": "Vencida",
-                "past_due": "Pago pendiente",
-                "pending": "Pendiente",
-                "paused": "Pausada",
-                "courtesy": "De regalo"
-            },
-            "cancelScheduled": {
-                "title": "Suscripción cancelada",
-                "body": "No se realizarán más cobros. Mantenés acceso a tu plan hasta el {date}.",
-                "planChangeBlocked": "No podés cambiar de plan mientras haya una cancelación pendiente. Vas a poder hacerlo cuando termine el período actual."
-            },
-            "pauseModal": {
-                "title": "Pausar suscripción",
-                "body": "Al pausar, dejás de pagar y tus alojamientos se ocultan del sitio y no podrás editarlos hasta reanudar. Toda tu configuración se conserva y vuelve igual al reanudar.",
-                "confirm": "Pausar"
-            },
             "cancelModal": {
-                "title": "Cancelar suscripción",
-                "emailSubject": "Cancelación de suscripción",
-                "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com.ar y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.",
-                "contactSupport": "Escribir a soporte",
-                "confirm": "Sí, cancelar suscripción",
-                "description": "Al cancelar tu suscripción mantenés el acceso a tu plan hasta el final del período actual. No se realizarán más cobros.",
-                "reasonLabel": "Motivo de cancelación (opcional)",
-                "reasonPlaceholder": "Contanos por qué cancelás para poder mejorar...",
-                "successTitle": "Suscripción cancelada",
-                "successBody": "Tu suscripción fue cancelada. Seguís teniendo acceso hasta el {date}.",
-                "flagOffFallback": "La cancelación en línea no está disponible en este momento. Por favor, contactá a soporte para cancelar tu suscripción.",
-                "cancelError": "No se pudo cancelar la suscripción. Intentá de nuevo."
-            },
-            "scheduledChange": {
-                "title": "Cambio de plan programado",
-                "body": "Tu plan cambiará a {plan} el {date}."
-            },
-            "changePlanButton": "Cambiar plan",
-            "changePlanAriaLabel": "Cambiar plan de suscripción",
-            "planPicker": {
-                "title": "Cambiar plan",
-                "subtitle": "Elegí el plan al que querés cambiar.",
-                "listLabel": "Planes disponibles",
-                "currentBadge": "Plan actual",
-                "upgradeBadge": "Mejora",
-                "downgradeBadge": "Reducción",
-                "selectMonthly": "Mensual",
-                "selectAnnual": "Anual"
-            },
-            "downgradePreview": {
-                "title": "Revisá los cambios antes de continuar",
-                "intro": "Al cambiar al plan {plan} se aplicarán restricciones a tu cuenta. Elegí qué querés conservar.",
-                "accommodationsTitle": "Alojamientos ({active} activos, máx. {cap})",
-                "accommodationsHint_one": "Seleccioná hasta {{count}} alojamiento para mantener activo. El resto quedará inactivo.",
-                "accommodationsHint_other": "Seleccioná hasta {{count}} alojamientos para mantener activos. El resto quedará inactivo.",
-                "accommodationsListLabel": "Lista de alojamientos",
-                "promotionsTitle": "Promociones ({active} activas, máx. {cap})",
-                "promotionsHint_one": "Seleccioná hasta {{count}} promoción para mantener activa.",
-                "promotionsHint_other": "Seleccioná hasta {{count}} promociones para mantener activas.",
-                "promotionsListLabel": "Lista de promociones",
-                "overCapWarningSelectedCount_one": "{{count}} seleccionado",
-                "overCapWarningSelectedCount_other": "{{count}} seleccionados",
-                "overCapWarning": "Tenés {{selectedPhrase}} pero el plan permite {cap}. Deseleccioná {extra}.",
-                "defaultKeep": "Sugerido",
-                "photosTitle": "Fotos excedidas",
-                "photosHint": "Algunos alojamientos tienen más fotos de las permitidas. Las excedidas se moverán al archivo.",
-                "photosOf": "fotos, máx.",
-                "photoOverflowLabel": "Fotos que se archivarán",
-                "keepPhotoLabel": "Conservar foto {url}",
-                "grandfatherTitle": "Contenido que quedará en modo lectura",
-                "grandfatherHint": "Estos alojamientos tienen contenido que no podrás editar con el nuevo plan, pero NO se eliminará.",
-                "richDescription": "Descripción enriquecida",
-                "videoEmbed": "Video embebido",
-                "confirmButton": "Continuar con el cambio"
-            },
-            "planChangeFlow": {
-                "scheduledTitle": "Cambio programado",
-                "scheduledBody": "Tu plan cambiará el {date}. Hasta entonces, seguís con tu plan actual.",
-                "restrictionHint": "Las restricciones se aplicarán en ese momento. El detalle exacto puede variar según tu uso al momento del cambio.",
-                "activeTitle": "Plan actualizado",
-                "activeBody": "Tu plan fue cambiado exitosamente.",
-                "redirecting": "Redirigiendo al pago...",
-                "previewError": "No se pudo obtener la vista previa del cambio. Intentá de nuevo.",
-                "changeError": "No se pudo cambiar el plan. Intentá de nuevo.",
-                "goToPlans": "Ver planes y suscribirme"
+                "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com.ar y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual."
             },
             "titleGastronomy": "Suscripción de gastronomía",
             "titleExperience": "Suscripción de experiencias",
@@ -875,8 +699,7 @@
                 "gastronomy": "Gastronomía",
                 "experience": "Experiencias",
                 "tourist": "Turista"
-            },
-            "courtesyUntilLabel": "Sin cargo hasta"
+            }
         },
         "whatsNew": {
             "title": "Novedades",
@@ -894,32 +717,9 @@
             "title": "Ofertas exclusivas",
             "description": "Descubrí ofertas y descuentos exclusivos para tu plan en Hospeda"
         },
-        "addons": {
-            "title": "Complementos",
-            "description": "Ampliá las funciones de tu cuenta con complementos adicionales en Hospeda"
-        },
         "recommendations": {
             "title": "Sugerencias para vos",
             "description": "Alojamientos elegidos especialmente para vos, según tus favoritos, búsquedas y visitas recientes en Hospeda"
-        },
-        "redeem": {
-            "title": "Canjear un código",
-            "description": "Ingresá un código promocional y aplicalo al instante a tu cuenta.",
-            "help": "Escribí el código tal cual te lo pasamos y lo aplicamos al instante.",
-            "dashboardLink": "¿Tenés un código promocional?",
-            "backToSubscription": "Volver a mi suscripción",
-            "plansCta": "Ver planes",
-            "errorNotFound": "No encontramos ese código. Revisá que esté bien escrito.",
-            "errorInactive": "Este código ya no está activo.",
-            "errorExpired": "Este código ya venció.",
-            "errorMaxUses": "Este código alcanzó su límite de usos.",
-            "errorMaxUsesPerUser": "Ya usaste este código la cantidad máxima de veces.",
-            "errorPlanRestriction": "Este código no es válido para tu plan.",
-            "errorNewUsersOnly": "Este código es solo para clientes nuevos.",
-            "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código.",
-            "discountNotice": "Este código es un descuento. No lo usamos: vas a poder aplicarlo cuando contrates un plan.",
-            "compNotice": "Este código no se puede canjear. Escribinos si te prometieron una suscripción de cortesía.",
-            "successDiscount": "Listo. Aplicamos el descuento a tu suscripción."
         }
     },
     "newsletter": {
@@ -1184,137 +984,11 @@
         }
     },
     "addons": {
-        "title": "Complementos",
         "subtitle": "Ampliá las funciones de tu cuenta con complementos adicionales",
         "loading": "Cargando complementos...",
-        "errorFetch": "No se pudieron cargar los complementos disponibles",
-        "empty": "No hay complementos disponibles en este momento.",
-        "groups": {
-            "perAccommodation": "Por alojamiento",
-            "account": "De cuenta"
-        },
-        "focus": {
-            "others": "Otros complementos",
-            "headings": {
-                "fallback": "El complemento que estabas buscando",
-                "extra-photos-20": "Para ampliar tus fotos",
-                "extra-accommodations-5": "Para publicar más alojamientos",
-                "extra-properties-5": "Para sumar más propiedades",
-                "visibility-boost-7d": "Para destacar tu alojamiento",
-                "visibility-boost-30d": "Para destacar tu alojamiento",
-                "ai-support-monthly": "Para sumar soporte con IA"
-            }
-        },
-        "featuredOffer": {
-            "notFeaturedNotice": "Tu alojamiento no está destacado. Con este complemento lo está automáticamente, sin ningún paso extra.",
-            "title": "Destacá este alojamiento",
-            "body": "Un impulso de visibilidad hace que este alojamiento aparezca destacado en los listados y en los resultados de búsqueda mientras dure el complemento.",
-            "scope": "Ojo: el impulso se aplica solo a esta ficha. Si tenés más de un alojamiento, cada uno necesita su propio complemento.",
-            "linkSr": "para este alojamiento"
-        },
-        "billingType": {
-            "one_time": "Pago único",
-            "recurring": "Mensual"
-        },
-        "recurringNotice": "Es una suscripción: se renueva sola y te la cobramos todos los meses mientras siga activa.",
-        "duration_one": "{{count}} día",
-        "duration_other": "{{count}} días",
         "priceLabel": "Precio",
-        "buyButton": "Comprar",
-        "buyingButton": "Procesando...",
-        "owned": "Activo",
         "accommodationSelect": {
-            "label": {
-                "accommodation": "Alojamiento",
-                "gastronomy": "Local gastronómico",
-                "experience": "Experiencia"
-            },
-            "placeholder": {
-                "accommodation": "Elegí un alojamiento",
-                "gastronomy": "Elegí un local",
-                "experience": "Elegí una experiencia"
-            },
-            "required": "Elegí un alojamiento para continuar",
-            "empty": {
-                "accommodation": "Necesitás un alojamiento primero",
-                "gastronomy": "Necesitás un local publicado primero",
-                "experience": "Necesitás una experiencia publicada primero"
-            }
-        },
-        "gate": {
-            "title": "Necesitás una suscripción activa",
-            "body": "Los complementos están disponibles para cuentas con una suscripción activa o en período de prueba.",
-            "cta": "Ver planes"
-        },
-        "result": {
-            "success": "¡Complemento adquirido con éxito!",
-            "failure": "La compra no se completó. Podés intentarlo de nuevo cuando quieras."
-        },
-        "errors": {
-            "purchaseFailed": "No se pudo iniciar la compra. Intentá de nuevo.",
-            "missingAccommodation": "Elegí un alojamiento para continuar."
-        },
-        "catalog": {
-            "visibility-boost-7d": {
-                "name": "Impulso de visibilidad (7 días)",
-                "description": "Tu alojamiento aparece destacado en los resultados de búsqueda durante 7 días."
-            },
-            "visibility-boost-30d": {
-                "name": "Impulso de visibilidad (30 días)",
-                "description": "Tu alojamiento aparece destacado en los resultados de búsqueda durante 30 días."
-            },
-            "visibility-boost-gastronomy-7d": {
-                "name": "Impulso de visibilidad — Restaurante (7 días)",
-                "description": "Tu restaurante aparece destacado en los resultados de búsqueda durante 7 días."
-            },
-            "visibility-boost-gastronomy-30d": {
-                "name": "Impulso de visibilidad — Restaurante (30 días)",
-                "description": "Tu restaurante aparece destacado en los resultados de búsqueda durante 30 días."
-            },
-            "visibility-boost-experience-7d": {
-                "name": "Impulso de visibilidad — Experiencia (7 días)",
-                "description": "Tu experiencia aparece destacada en los resultados de búsqueda durante 7 días."
-            },
-            "visibility-boost-experience-30d": {
-                "name": "Impulso de visibilidad — Experiencia (30 días)",
-                "description": "Tu experiencia aparece destacada en los resultados de búsqueda durante 30 días."
-            },
-            "extra-photos-20": {
-                "name": "Pack de fotos extra (+20 fotos)",
-                "description": "Agrega 20 fotos adicionales a cada alojamiento. Se renueva mensualmente."
-            },
-            "extra-accommodations-5": {
-                "name": "Pack de alojamientos extra (+5)",
-                "description": "Agrega 5 alojamientos adicionales a tu plan. Se renueva mensualmente."
-            },
-            "extra-properties-5": {
-                "name": "Pack de propiedades extra (+5)",
-                "description": "Agrega 5 propiedades adicionales a tu complejo. Se renueva mensualmente."
-            },
-            "ai-support-monthly": {
-                "name": "Soporte con IA (mensual)",
-                "description": "Desbloquea herramientas de soporte con IA para anfitriones, incluidas sugerencias de respuesta inteligentes y gestión automática de preguntas frecuentes de huéspedes. Se renueva mensualmente."
-            },
-            "extra-gastronomies-1": {
-                "name": "Gastronomía extra (+1)",
-                "description": "Agrega 1 gastronomía adicional a tu plan. Se renueva mensualmente."
-            },
-            "extra-experiences-1": {
-                "name": "Experiencia extra (+1)",
-                "description": "Agrega 1 experiencia adicional a tu plan. Se renueva mensualmente."
-            },
-            "private-galleries-5": {
-                "name": "Pack de galerías privadas (+5)",
-                "description": "Suma 5 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
-            },
-            "private-galleries-10": {
-                "name": "Pack de galerías privadas (+10)",
-                "description": "Suma 10 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
-            },
-            "private-galleries-20": {
-                "name": "Pack de galerías privadas (+20)",
-                "description": "Suma 20 galerías privadas activas para tus experiencias, y habilita las galerías privadas en los planes que no las incluyen. Se renueva mensualmente."
-            }
+            "required": "Elegí un alojamiento para continuar"
         }
     },
     "recommendations": {

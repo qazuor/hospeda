@@ -6,31 +6,10 @@ import { NotificationType } from '../types/notification.types.js';
  */
 const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.SUBSCRIPTION_PURCHASE]: 'Confirmación de compra - {planName}',
-    // `{addonName}` since HOS-722: this type is served by its own
-    // `AddonPurchaseConfirmationPayload`, which carries `addonName`. It was
-    // `{planName}` before that, because the type shared
-    // `PurchaseConfirmationPayload` with SUBSCRIPTION_PURCHASE and the emitter
-    // had to smuggle the add-on's name through the `planName` field. The
-    // placeholder must always name a field the payload actually has —
-    // naming one that does not is what made every addon receipt arrive titled
-    // "Add-on adquirido - {addonName}".
-    // "Complemento", not "add-on": the buyer never saw the word "add-on" on any
-    // screen — the web calls these complementos throughout, as the cancellation
-    // subject below already does. HOS-830.
-    [NotificationType.ADDON_PURCHASE]: 'Complemento adquirido - {addonName}',
     [NotificationType.PAYMENT_SUCCESS]: 'Pago recibido - ${amount}',
     [NotificationType.PAYMENT_FAILURE]: 'Error en tu pago - Acción requerida',
     [NotificationType.RENEWAL_REMINDER]: 'Tu suscripción se renueva pronto - {planName}',
     [NotificationType.PLAN_CHANGE_CONFIRMATION]: 'Cambio de plan confirmado',
-    [NotificationType.ADDON_EXPIRATION_WARNING]: 'Tu add-on {addonName} expira pronto',
-    [NotificationType.ADDON_EXPIRED]: 'Tu add-on {addonName} ha expirado',
-    [NotificationType.ADDON_RENEWAL_CONFIRMATION]: 'Add-on renovado - {addonName}',
-    // HOS-847 PR 5: the FIRST charge of a recurring add-on. It names the
-    // subscription, not a purchase — the inbox line is the first place a
-    // subscriber can be told the difference, and the body is where the cadence
-    // and the next charge date live. 'Complemento', not 'add-on', for the same
-    // reason as ADDON_PURCHASE above (HOS-830).
-    [NotificationType.ADDON_SUBSCRIPTION_STARTED]: 'Suscripción activa: complemento {addonName}',
     [NotificationType.TRIAL_ENDING_REMINDER]: 'Tu período de prueba termina pronto',
 
     // HOS-1012 — nine subjects, deliberately different from each other. The
@@ -74,7 +53,6 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // The IMMEDIATE cancellation: the benefit is already gone. A soft-cancel
     // that leaves the customer a paid period gets its own line — see
     // CONDITIONAL_SUBJECT_PATTERNS below.
-    [NotificationType.ADDON_CANCELLATION]: 'Tu complemento {addonName} ha sido cancelado',
 
     // Newsletter (SPEC-101)
     [NotificationType.NEWSLETTER_VERIFICATION]: 'Confirmá tu suscripción al newsletter de Hospeda',
@@ -171,23 +149,12 @@ interface ConditionalSubjectPattern {
  * instead would leave "…hasta el " hanging in the subject line. Both failures
  * happen where nobody can intercept them — an inbox list.
  *
- * HOS-847 PR 7c: an add-on cancellation reaches the customer in two very
- * different states. Non-payment and an admin cancel end the benefit on the
- * spot; `softCancelRecurringAddon` leaves it running until the end of the
- * period already paid for, and only that path supplies `accessUntil`. Saying
- * only "ha sido cancelado" above a body that reads "seguís teniendo el
- * beneficio hasta el 15 de abril" is the contradiction this split removes.
- *
- * The absent-variable branch keeps the ORIGINAL wording, byte for byte: the
- * immediate cancellation's subject did not change and a test pins that.
+ * Its only entry was the add-on cancellation subject (HOS-847 PR 7c), removed
+ * with the old add-on e-mails (HOS-1637). The mechanism stays for the next
+ * subject that needs two shapes.
  */
-const CONDITIONAL_SUBJECT_PATTERNS: Partial<Record<NotificationType, ConditionalSubjectPattern>> = {
-    [NotificationType.ADDON_CANCELLATION]: {
-        onKey: 'accessUntil',
-        pattern:
-            'Tu complemento {addonName} queda cancelado — lo seguís usando hasta el {accessUntil}'
-    }
-};
+const CONDITIONAL_SUBJECT_PATTERNS: Partial<Record<NotificationType, ConditionalSubjectPattern>> =
+    {};
 
 /**
  * Generic fallback subject for unknown notification types
@@ -324,8 +291,8 @@ function replacePlaceholders(pattern: string, data: Record<string, string>): str
  * // => 'Pago recibido - $1500'
  *
  * // Missing variables are preserved
- * getSubject(NotificationType.ADDON_PURCHASE, {})
- * // => 'Add-on adquirido - {addonName}'
+ * getSubject(NotificationType.RENEWAL_REMINDER, {})
+ * // => 'Tu suscripción se renueva pronto - {planName}'
  *
  * // Unknown types return generic fallback
  * getSubject('unknown_type' as NotificationType, {})

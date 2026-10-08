@@ -29,13 +29,12 @@ import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../../src/lib/pricing-plans';
 const PAGES_ROOT = resolve(__dirname, '../../src/pages/[lang]');
 
 describe('PRICING_PAGE_PATH_BY_AUDIENCE', () => {
-    it('names the five pricing pages under the /planes/ namespace', () => {
+    it('names the four pricing pages under the /planes/ namespace (aliados removed, HOS-1637)', () => {
         expect(PRICING_PAGE_PATH_BY_AUDIENCE).toEqual({
             owner: 'planes/anfitriones/precios',
             tourist: 'planes/turistas/precios',
             gastronomy: 'planes/gastronomia/precios',
-            experience: 'planes/experiencias/precios',
-            partner: 'planes/aliados/precios'
+            experience: 'planes/experiencias/precios'
         });
     });
 
