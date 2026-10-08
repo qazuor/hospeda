@@ -78,11 +78,15 @@ describe('TEST:V1:2 — every catalog key declares its four attributes', () => {
         expect(getCatalogKey({ key: 'recover_own_listing' })?.keyClass).toBe('BASE');
     });
 
-    it('keeps BASE for the two floor keys only', () => {
+    it('keeps BASE for the two floor keys and the activation capability only', () => {
         const access = CATALOG_KEY_DEFINITIONS.filter((d) => d.keyClass === 'BASE').map(
             (d) => d.key
         );
-        expect(access.sort()).toEqual(['recover_own_listing', 'subscribe_to_plan']);
+        expect(access.sort()).toEqual([
+            'activate_trial',
+            'recover_own_listing',
+            'subscribe_to_plan'
+        ]);
     });
 
     it('keeps every metered limit at vertical scope', () => {
@@ -132,7 +136,7 @@ describe('vertical activation events (DEC-TRIAL-006)', () => {
  * written by hand from the spec, NOT derived from the catalog, so a lockstep
  * change of the code and the migration still turns this file red.
  */
-const EXPECTED_BASE_KEYS = ['recover_own_listing', 'subscribe_to_plan'];
+const EXPECTED_BASE_KEYS = ['activate_trial', 'recover_own_listing', 'subscribe_to_plan'];
 const EXPECTED_GLOBAL_KEYS = ['has_verification_badge', 'priority_support', 'vip_support'];
 const EXPECTED_LISTING_CAPS = [
     'max_accommodations',

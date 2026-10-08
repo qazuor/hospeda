@@ -102,12 +102,16 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
         expect(rows).toEqual([{ key_class: 'COMMERCIAL', scope: 'vertical' }]);
     });
 
-    it('classifies the two floor keys as BASE and nothing else as BASE', async () => {
+    it('classifies the two floor keys and the activation capability as BASE, nothing else', async () => {
         const { rows } = await getTestPool().query<{ key: string }>(
             "SELECT key FROM catalog_key WHERE key_class = 'BASE' ORDER BY key"
         );
 
-        expect(rows.map((r) => r.key)).toEqual(['recover_own_listing', 'subscribe_to_plan']);
+        expect(rows.map((r) => r.key)).toEqual([
+            'activate_trial',
+            'recover_own_listing',
+            'subscribe_to_plan'
+        ]);
     });
 
     it.each([
@@ -127,14 +131,14 @@ describe('TEST:V1:3 — catalog_key table after db:migrate from empty', () => {
 });
 
 describe('reference rows survive the integration clean slate', () => {
-    it('keeps the 5 verticals and the 78 keys after withCleanSlate', async () => {
+    it('keeps the 5 verticals and the 79 keys after withCleanSlate', async () => {
         await withCleanSlate(async () => {
             const verticals = await getTestPool().query('SELECT 1 FROM vertical');
             const keys = await getTestPool().query('SELECT 1 FROM catalog_key');
 
             expect(verticals.rowCount).toBe(Object.values(VerticalEnum).length);
             expect(keys.rowCount).toBe(CATALOG_KEY_DEFINITIONS.length);
-            expect(keys.rowCount).toBe(78);
+            expect(keys.rowCount).toBe(79);
         });
     });
 });
@@ -148,7 +152,11 @@ describe('load-bearing catalog_key rows are pinned independently of the code cat
             "SELECT key FROM catalog_key WHERE scope = 'global' ORDER BY key"
         );
 
-        expect(base.rows.map((r) => r.key)).toEqual(['recover_own_listing', 'subscribe_to_plan']);
+        expect(base.rows.map((r) => r.key)).toEqual([
+            'activate_trial',
+            'recover_own_listing',
+            'subscribe_to_plan'
+        ]);
         expect(global.rows.map((r) => r.key)).toEqual([
             'has_verification_badge',
             'priority_support',

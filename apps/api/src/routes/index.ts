@@ -141,6 +141,7 @@ import {
     protectedPartnerRoutes,
     publicPartnersRoutes
 } from './partners';
+import { adminPlanCatalogRoutes } from './plan-catalog/admin/index.js';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
 // POI category catalog: admin list/search (HOS-144 NG-1) + public catalog (HOS-147)
@@ -648,6 +649,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
+        app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
 
         // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
         app.route('/api/v1/admin/ai/credentials', adminAiCredentialsRoutes);
