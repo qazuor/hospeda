@@ -6,19 +6,12 @@ import { NotificationCategory, NotificationType } from '../types/notification.ty
 export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCategory> = {
     // Transactional - Always sent, cannot be opted out
     [NotificationType.SUBSCRIPTION_PURCHASE]: NotificationCategory.TRANSACTIONAL,
-    [NotificationType.ADDON_PURCHASE]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.PAYMENT_SUCCESS]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.PAYMENT_FAILURE]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.PLAN_CHANGE_CONFIRMATION]: NotificationCategory.TRANSACTIONAL,
-    [NotificationType.ADDON_RENEWAL_CONFIRMATION]: NotificationCategory.TRANSACTIONAL,
-    // HOS-847 PR 5: transactional and NOT opt-out-able. It is the only notice
-    // that a card will be charged again, and on what date.
-    [NotificationType.ADDON_SUBSCRIPTION_STARTED]: NotificationCategory.TRANSACTIONAL,
 
     // Reminders - Can be opted out
     [NotificationType.RENEWAL_REMINDER]: NotificationCategory.REMINDER,
-    [NotificationType.ADDON_EXPIRATION_WARNING]: NotificationCategory.REMINDER,
-    [NotificationType.ADDON_EXPIRED]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_REMINDER]: NotificationCategory.REMINDER,
 
     // HOS-1012 — the nine sends of the Hospeda-owned trial series.
@@ -31,8 +24,7 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
      * listing HAS left the site. Someone who opted out of reminders and then
      * finds their listing gone with no notice reads it as the platform having
      * deleted it silently — that is operational information about their own
-     * account, not a nudge. `ADDON_EXPIRED` is a REMINDER because losing an
-     * add-on costs a feature; losing publication costs the whole point.
+     * account, not a nudge.
      */
     [NotificationType.TRIAL_EXPIRED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.TRIAL_WIN_BACK_1D]: NotificationCategory.REMINDER,
@@ -76,9 +68,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
 
     // Payment retry warning - Transactional (billing-critical)
     [NotificationType.PAYMENT_RETRY_WARNING]: NotificationCategory.TRANSACTIONAL,
-
-    // Addon cancellation - Transactional
-    [NotificationType.ADDON_CANCELLATION]: NotificationCategory.TRANSACTIONAL,
 
     // Newsletter (SPEC-101)
     // Verification is transactional: required by Ley 25.326 AR / GDPR — must
