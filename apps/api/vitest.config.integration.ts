@@ -68,6 +68,7 @@ export default defineConfig({
             'test/integration/ai/**/*.test.ts',
             'test/integration/webhooks/**/*.test.ts',
             'test/integration/outbox/**/*.test.ts',
+            'test/integration/billing-deadlines/**/*.test.ts',
             // TEST:V5:13 (HOS-1458): the ban gate is the one job the Better
             // Auth admin plugin keeps. Only this file, not auth/**.
             'test/integration/auth/banned-user-signin.test.ts'

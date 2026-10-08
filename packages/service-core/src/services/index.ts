@@ -64,6 +64,7 @@ export * from './amenity/amenity.service';
 export * from './appLog/index.js';
 export * from './attraction/attraction.service';
 export * from './auditLog/index.js';
+export * from './billing/deadlines/billing-deadlines.service.js';
 export {
     NotificationRetentionService,
     type RetentionSummary

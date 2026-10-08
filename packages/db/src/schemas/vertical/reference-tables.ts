@@ -1,4 +1,5 @@
 import { getTableName } from 'drizzle-orm';
+import { billingDeadlineVersions } from './billing-deadline-version.dbschema.ts';
 import { catalogKeys } from './catalog-key.dbschema.ts';
 import { verticals } from './vertical.dbschema.ts';
 
@@ -11,5 +12,6 @@ import { verticals } from './vertical.dbschema.ts';
  */
 export const REFERENCE_TABLES: readonly string[] = [
     getTableName(verticals),
-    getTableName(catalogKeys)
+    getTableName(catalogKeys),
+    getTableName(billingDeadlineVersions)
 ];
