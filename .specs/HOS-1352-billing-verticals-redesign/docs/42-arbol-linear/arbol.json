@@ -1366,7 +1366,7 @@
             "clave": "V6.11",
             "padre": "V6.G4",
             "titulo": "V6 · La migración de partners para V7 (PR 11/13)",
-            "descripcion": "**Qué entrega:** La migración de partners para V7.\n\n**Pieza:** `V6` — spec [V6.md](../../spec-consolidada/10-corte/V6.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V6:23` — La migración de `partners` del esquema de `V7`.\n- `AC:V6:24` — El resto del esquema de `V7`, sin migración estructural después.\n\n**Depende de:** `V6.10` (2026-10-07).\n\n**Verificación:** tests `TEST:V6:29`, `TEST:V6:30`, `TEST:V6:31`, `TEST:V6:32`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
+            "descripcion": "**Qué entrega:** La migración de partners para V7.\n\n**Pieza:** `V6` — spec [V6.md](../../spec-consolidada/10-corte/V6.md), secciones «Criterios de aceptación».\n\n**Cubre:**\n- `AC:V6:23` — La migración de `partners` del esquema de `V7`.\n- `AC:V6:24` — El resto del esquema de `V7`, sin migración estructural después.\n\n**Depende de:** `V6.10`, `V6.9` (2026-10-07).\n\n**Verificación:** tests `TEST:V6:29`, `TEST:V6:30`, `TEST:V6:31`, `TEST:V6:32`; y al cerrar la pieza, su «Lista cuando». PR chico a la rama épica de HOS-1352, título con `[HOS-<n>]`.",
             "acs": ["AC:V6:23", "AC:V6:24"],
             "depende_de": ["V6.10", "V6.9"],
             "labels": [
