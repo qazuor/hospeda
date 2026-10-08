@@ -3,7 +3,13 @@ import { billingOptions } from './billing-option.dbschema.ts';
 import { planMigrationSubscriptions } from './plan-migration.dbschema.ts';
 import { subscriptions } from './subscription.dbschema.ts';
 
-/** The one pending entitlement change for a subscription (ESQ:3). */
+/**
+ * Pending entitlement change for a subscription (AC:B3:29; ESQ:3).
+ * The unique subscription FK permits at most one queued change; the destination
+ * billing option must belong to the destination plan version. An optional FK records
+ * the plan-migration subscription that queued it. keepSelection stores limit keys
+ * mapped to selected string values (Coord-23 D1).
+ */
 export const subscriptionScheduledChanges = pgTable(
     'subscription_scheduled_change',
     {
@@ -41,3 +47,8 @@ export const subscriptionScheduledChanges = pgTable(
         )
     })
 );
+
+/** Insert shape for a scheduled subscription change. */
+export type InsertSubscriptionScheduledChange = typeof subscriptionScheduledChanges.$inferInsert;
+/** Select shape for a scheduled subscription change. */
+export type SelectSubscriptionScheduledChange = typeof subscriptionScheduledChanges.$inferSelect;

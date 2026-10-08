@@ -11,7 +11,12 @@ export const COURTESY_CLOSE_REASONS = [
     'CONTRACARGO_DE_LA_PREDECESORA'
 ] as const;
 
-/** Courtesy grant covering exactly the subscription it pauses. */
+/**
+ * Courtesy grant covering exactly the subscription it pauses, without a scope
+ * column (AC:B3:29; ESQ:7). Months are positive; a nonnegative balance can be
+ * closed only with a timestamp and a closed-catalog reason together. FKs identify
+ * the beneficiary, granting user and paused subscription.
+ */
 export const courtesyGrants = pgTable(
     'courtesy_grant',
     {
@@ -60,3 +65,8 @@ export const courtesyGrants = pgTable(
         )
     })
 );
+
+/** Insert shape for a courtesy grant. */
+export type InsertCourtesyGrant = typeof courtesyGrants.$inferInsert;
+/** Select shape for a courtesy grant. */
+export type SelectCourtesyGrant = typeof courtesyGrants.$inferSelect;

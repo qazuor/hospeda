@@ -25,7 +25,11 @@ export const ADDON_INSTANCE_STATUSES = [
     'CANCELLED'
 ] as const;
 
-/** Saleable addon product with price and current version. */
+/**
+ * Saleable addon product with a required FK to its version, positive ARS price
+ * and at least one compatible vertical (AC:B3:29; ESQ:8). A periodic product
+ * requires a billing cycle; a one-time product has none (DJ).
+ */
 export const addonProducts = pgTable(
     'addon_product',
     {
@@ -65,7 +69,12 @@ export const addonProducts = pgTable(
     })
 );
 
-/** An acquired addon; version is anchored at purchase, product fields are not copied. */
+/**
+ * Acquired addon anchored to its product and version at purchase (AC:B3:29; ESQ:8).
+ * FKs identify its product, version, owner and optional complement subscription;
+ * the polymorphic target has no FK. Purchase identity is unique for pending or
+ * active complemented rows, including rows with a null target; order IDs are unique.
+ */
 export const addonInstances = pgTable(
     'addon_instance',
     {
@@ -120,3 +129,12 @@ export const addonInstances = pgTable(
             )
     })
 );
+
+/** Insert shape for an addon product. */
+export type InsertAddonProduct = typeof addonProducts.$inferInsert;
+/** Select shape for an addon product. */
+export type SelectAddonProduct = typeof addonProducts.$inferSelect;
+/** Insert shape for an addon instance. */
+export type InsertAddonInstance = typeof addonInstances.$inferInsert;
+/** Select shape for an addon instance. */
+export type SelectAddonInstance = typeof addonInstances.$inferSelect;

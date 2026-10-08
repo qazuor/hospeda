@@ -27,7 +27,12 @@ export const PLAN_MIGRATION_SUBSCRIPTION_STATUSES = [
 ] as const;
 export const PLAN_MIGRATION_OUT_REASONS = ['CAMBIO_DE_PLAN', 'SE_DIO_DE_BAJA', 'TERMINO'] as const;
 
-/** Announced migration from one version to another. */
+/**
+ * Announced migration between distinct plan versions in the same vertical
+ * (AC:B3:29; ESQ:5). Both version FKs include the vertical; the notice is at least
+ * 60 days, and cancellation time and cancelling user are recorded together.
+ * FKs also identify the deadline version and signing user.
+ */
 export const planMigrations = pgTable(
     'plan_migration',
     {
@@ -87,7 +92,12 @@ export const planMigrations = pgTable(
     })
 );
 
-/** One subscription's state in an announced plan migration. */
+/**
+ * One subscription's participation in a plan migration (AC:B3:29; ESQ:5).
+ * The migration/subscription pair is unique and a subscription has at most one
+ * PENDIENTE row. FUERA requires its reason; APLICADA requires its applied timestamp.
+ * FKs point to the announced migration and the affected subscription.
+ */
 export const planMigrationSubscriptions = pgTable(
     'plan_migration_subscription',
     {
@@ -137,3 +147,12 @@ export const planMigrationSubscriptions = pgTable(
             .where(sql`${t.status} = 'PENDIENTE'`)
     })
 );
+
+/** Insert shape for a plan migration. */
+export type InsertPlanMigration = typeof planMigrations.$inferInsert;
+/** Select shape for a plan migration. */
+export type SelectPlanMigration = typeof planMigrations.$inferSelect;
+/** Insert shape for a subscription in a plan migration. */
+export type InsertPlanMigrationSubscription = typeof planMigrationSubscriptions.$inferInsert;
+/** Select shape for a subscription in a plan migration. */
+export type SelectPlanMigrationSubscription = typeof planMigrationSubscriptions.$inferSelect;

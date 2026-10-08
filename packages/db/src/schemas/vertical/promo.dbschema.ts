@@ -17,7 +17,12 @@ import { subscriptions } from './subscription.dbschema.ts';
 export const PROMO_DISCOUNT_KINDS = ['PERCENTAGE', 'FIXED'] as const;
 export const PROMO_DURATION_KINDS = ['FIRST_CHARGE', 'N_CHARGES', 'FOREVER'] as const;
 
-/** Code, quota, duration and vertical applicability of a promotion. */
+/**
+ * Promotion code with a unique code, positive quota, valid time window and
+ * bounded discount/duration values (AC:B3:29; ESQ:6). allVerticals plus the
+ * optional vertical array defines its scope (Coord-23 D4); closing it records
+ * both timestamp and user, with an FK to users.
+ */
 export const promoCodes = pgTable(
     'promo_code',
     {
@@ -84,7 +89,11 @@ export const promoCodes = pgTable(
     })
 );
 
-/** A person's redemption on a subscription. */
+/**
+ * A user's redemption of a promotion on a subscription (AC:B3:29; ESQ:6).
+ * Each promo/user pair is unique; remaining charges are nonnegative or null
+ * for an unlimited duration. FKs link the code, user and subscription.
+ */
 export const promoRedemptions = pgTable(
     'promo_redemption',
     {
@@ -114,3 +123,12 @@ export const promoRedemptions = pgTable(
         )
     })
 );
+
+/** Insert shape for a promotion code. */
+export type InsertPromoCode = typeof promoCodes.$inferInsert;
+/** Select shape for a promotion code. */
+export type SelectPromoCode = typeof promoCodes.$inferSelect;
+/** Insert shape for a promotion redemption. */
+export type InsertPromoRedemption = typeof promoRedemptions.$inferInsert;
+/** Select shape for a promotion redemption. */
+export type SelectPromoRedemption = typeof promoRedemptions.$inferSelect;

@@ -8,7 +8,12 @@ export const IDEMPOTENCY_OPERATIONS = [
     'REFUND_CREATE'
 ] as const;
 
-/** Key persisted before the provider call, with its result filled after response. */
+/**
+ * Idempotency key created here for S1 and persisted before the provider call
+ * (AC:B3:38; Coord-21). Its primary key is unique, its operation belongs to a
+ * closed set, and result and completion time are both null or both present.
+ * subjectId identifies the operation row without a polymorphic FK.
+ */
 export const idempotencyKeys = pgTable(
     'idempotency_key',
     {
@@ -34,3 +39,8 @@ export const idempotencyKeys = pgTable(
         )
     })
 );
+
+/** Insert shape for an idempotency key. */
+export type InsertIdempotencyKey = typeof idempotencyKeys.$inferInsert;
+/** Select shape for an idempotency key. */
+export type SelectIdempotencyKey = typeof idempotencyKeys.$inferSelect;

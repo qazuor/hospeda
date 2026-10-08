@@ -6,7 +6,13 @@ import { subscriptions } from './subscription.dbschema.ts';
 
 export const MANUAL_PAYMENT_STATUSES = ['AWAITING', 'REGISTERED', 'DECLARED_UNPAID'] as const;
 
-/** Manual payment for a period; MP6 may create another row for the same period. */
+/**
+ * Manual payment for a subscription period, created here for S1 (AC:B3:38;
+ * Coord-21). The period start is required and no amount is stored; REGISTERED
+ * requires both registering user and time, while proof remains optional
+ * (Coord-23 D5). FKs link the subscription and optional registering user.
+ * MP6 may create another row for the same period.
+ */
 export const manualPayments = pgTable(
     'manual_payment',
     {
@@ -43,3 +49,8 @@ export const manualPayments = pgTable(
         )
     })
 );
+
+/** Insert shape for a manual payment. */
+export type InsertManualPayment = typeof manualPayments.$inferInsert;
+/** Select shape for a manual payment. */
+export type SelectManualPayment = typeof manualPayments.$inferSelect;

@@ -37,7 +37,14 @@ export const LIVE_SUBSCRIPTION_STATUSES = [
     'CANCEL_SCHEDULED'
 ] as const;
 
-/** A vertical subscription and its anchored billing identity (AC:B3:29). */
+/**
+ * A vertical subscription, created in this cut (AC:B3:29; Coord-21).
+ * Live principal commitments are unique per user and vertical for each origin/successor
+ * slot; a row cannot point both ways, and a tombstone is cancelled (AC:B3:7; ESQ:4).
+ * Principals anchor a plan version and billing option, while COMPLEMENTO and LAPIDA
+ * are exempt; non-tombstones require a user, vertical and payment method (DJ; Coord-23 D3).
+ * FKs link the user, vertical, predecessor/successor, and matching option/version/vertical.
+ */
 export const subscriptions = pgTable(
     'subscription',
     {
@@ -120,3 +127,8 @@ export const subscriptions = pgTable(
             )
     })
 );
+
+/** Insert shape for a subscription. */
+export type InsertSubscription = typeof subscriptions.$inferInsert;
+/** Select shape for a subscription. */
+export type SelectSubscription = typeof subscriptions.$inferSelect;
