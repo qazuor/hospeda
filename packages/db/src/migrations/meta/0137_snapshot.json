@@ -1,6 +1,6 @@
 {
-  "id": "beca10e5-d8c0-4eb5-ba69-5c8e81b5d79b",
-  "prevId": "7f1bed7d-bebc-475a-bdbe-f75cd3f887f3",
+  "id": "1623a5a6-61d3-462e-9e33-a88f64acecb5",
+  "prevId": "beca10e5-d8c0-4eb5-ba69-5c8e81b5d79b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -26924,6 +26924,71 @@
       },
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.billing_deadline_version": {
+      "name": "billing_deadline_version",
+      "schema": "",
+      "columns": {
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "values": {
+          "name": "values",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "changed_key": {
+          "name": "changed_key",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "previous_value": {
+          "name": "previous_value",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "new_value": {
+          "name": "new_value",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "changed_by": {
+          "name": "changed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_billing_deadline_version_positive": {
+          "name": "ck_billing_deadline_version_positive",
+          "value": "\"billing_deadline_version\".\"version\" > 0"
+        },
+        "ck_billing_deadline_changed_key_range": {
+          "name": "ck_billing_deadline_changed_key_range",
+          "value": "\"billing_deadline_version\".\"changed_key\" BETWEEN 10 AND 19 OR \"billing_deadline_version\".\"changed_key\" IS NULL"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.billing_option": {

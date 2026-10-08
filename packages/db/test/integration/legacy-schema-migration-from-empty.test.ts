@@ -7,8 +7,8 @@
 // (carril 2, same global setup), must produce the post-demolition world:
 //
 //   TEST:U1:2 (AC:U1:1, AC:U1:2) — NO legacy billing table is created:
-//     - no `billing_*` table at all (the one survivor, the notification log,
-//       was renamed to the neutral `notification_log` by HOS-1419);
+//     - no legacy `billing_*` table (the notification log was renamed to the
+//       neutral `notification_log` by HOS-1419; B2 adds `billing_option`);
 //     - no `entity_subscriptions`, no `partner_subscriptions`, no
 //       `featured_listing_addon_grants`.
 //   And `accommodations` carries its three billing columns
@@ -123,14 +123,19 @@ afterAll(async () => {
 });
 
 describe('TEST:U1:2 — full migration chain over an empty database (HOS-1416)', () => {
-    it('creates no legacy billing_* table at all', async () => {
+    it('creates no legacy billing_* table', async () => {
         const tables = await publicTables();
 
         const legacyBilling = [...tables].filter(
-            (t) => t.startsWith('billing_') && t !== 'billing_deadline_version'
+            (t) =>
+                t.startsWith('billing_') &&
+                t !== 'billing_deadline_version' &&
+                t !== 'billing_option'
         );
 
         expect(legacyBilling).toEqual([]);
+        expect(tables.has('billing_deadline_version')).toBe(true);
+        expect(tables.has('billing_option')).toBe(true);
     });
 
     it('creates none of the named legacy subscription/grant tables', async () => {

@@ -6,9 +6,9 @@
 // applies the demolition migration 0125 and everything after it. It must end
 // in the post-demolition world with the surviving data intact:
 //
-//   - every legacy billing table is DROPPED (all `billing_*`, plus
+//   - every legacy billing table is DROPPED (old `billing_*`, plus
 //     `entity_subscriptions`, `partner_subscriptions`,
-//     `featured_listing_addon_grants`);
+//     `featured_listing_addon_grants`); B2's `billing_option` is new;
 //   - the notification log SURVIVES — renamed to `notification_log` by HOS-1419
 //     — without its `customer_id` column, keeping the row that was written
 //     before the migration;
@@ -209,9 +209,14 @@ describe('TEST:U1:3 — demolition migration over legacy data (HOS-1416)', () =>
         const tables = new Set(result.rows.map((r) => r.table_name));
 
         const legacyBilling = [...tables].filter(
-            (t) => t.startsWith('billing_') && t !== 'billing_deadline_version'
+            (t) =>
+                t.startsWith('billing_') &&
+                t !== 'billing_deadline_version' &&
+                t !== 'billing_option'
         );
         expect(legacyBilling).toEqual([]);
+        expect(tables.has('billing_deadline_version')).toBe(true);
+        expect(tables.has('billing_option')).toBe(true);
         expect(tables.has('notification_log')).toBe(true);
 
         for (const table of [
