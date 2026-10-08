@@ -31,6 +31,7 @@ export {
 export { hasLiveNonTrialTitle, selectPlegableSources } from './effective-set/plegable';
 export {
     assertMeteredKeyIsVertical,
+    isMeteredEntitlement,
     type KeyResolution,
     resolveKeyScope,
     type ScopedKeyValues,

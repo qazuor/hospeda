@@ -44,6 +44,7 @@ import {
 import { bestOf } from './ratchet';
 import {
     assertMeteredKeyIsVertical,
+    isMeteredEntitlement,
     resolveKeyScope,
     type ScopedKeyValues,
     scopeKeyValues
@@ -113,7 +114,10 @@ async function effectsOf(args: {
         // optional only so an older V2 fixture still typechecks).
         assertMeteredKeyIsVertical({
             definition,
-            isMetered: entitlement.planQuota !== null || (entitlement.trialQuota ?? null) !== null
+            isMetered: isMeteredEntitlement({
+                planQuota: entitlement.planQuota,
+                trialQuota: entitlement.trialQuota
+            })
         });
     }
     for (const limit of effects.limits) {
