@@ -18,6 +18,21 @@
 
 import { DestinationTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it, type Mock, vi } from 'vitest';
+
+// HOS-1499: every listing write now runs in a transaction and records the
+// owner act; neither has a database here.
+vi.mock('../../../src/utils/transaction', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 import { z } from 'zod';
 import type {
     ListingCatalogModel,
@@ -31,6 +46,7 @@ import type {
     PaginatedListOutput,
     ServiceConfig
 } from '../../../src/types';
+import { FAKE_SERVICE_TX } from '../../helpers/owner-act-doubles';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -603,7 +619,7 @@ describe('BaseListingService — draft rename slug sync (public update path)', (
         expect(model.update).toHaveBeenCalledWith(
             { id: ENTITY_ID },
             expect.objectContaining({ slug: 'mi-restaurante-nuevo' }),
-            undefined
+            FAKE_SERVICE_TX
         );
     });
 

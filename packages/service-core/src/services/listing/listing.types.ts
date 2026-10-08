@@ -42,4 +42,11 @@ export interface ListingHookState extends Record<string, unknown> {
     restoredEntity?: { ownerId?: string; slug?: string };
     /** Auto-regenerated slug for an unpublished rename (HOS-784 stage 1). */
     regeneratedSlug?: string;
+    /**
+     * The fields the create/update wrote, as they reached `_before*` (HOS-1499).
+     * Read by `_after*` to build the owner-act event's "what changed" list.
+     */
+    ownerActPayload?: Readonly<Record<string, unknown>>;
+    /** The row as it stood before the update (HOS-1499), for the event's old values. */
+    ownerActBefore?: Readonly<Record<string, unknown>> | null;
 }

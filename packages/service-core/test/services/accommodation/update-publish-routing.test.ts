@@ -39,11 +39,21 @@ vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
     getUserRoles: vi.fn().mockResolvedValue([])
 }));
 
-vi.mock('../../../src/utils/transaction.js', () => ({
-    withServiceTransaction: vi.fn(async (cb: (txCtx: unknown) => Promise<unknown>) => {
-        return cb({ tx: {} as unknown, hookState: {} });
-    })
-}));
+// HOS-1499: listing writes record the owner act in `domain_event`; no DB here.
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
+// HOS-1499: every update now opens a boundary, so the stand-in must merge the
+// caller's context (hookState carries `updateId`) like the real one does.
+vi.mock('../../../src/utils/transaction.js', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
 
 function createUserModelMock(): UserModel {
     return createModelMock() as unknown as UserModel;

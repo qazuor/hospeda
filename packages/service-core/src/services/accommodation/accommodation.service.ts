@@ -137,6 +137,7 @@ import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
+import { buildListingOwnerActChanges, recordListingOwnerAct } from '../listing/listing-owner-act';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
@@ -884,6 +885,8 @@ export class AccommodationService extends BaseCrudService<
                 | import('@repo/schemas').Media
                 | null
                 | undefined;
+            // HOS-1499: what the owner wrote, for the owner-act event.
+            ctx.hookState.ownerActPayload = data as Record<string, unknown>;
         }
 
         // Only generate a slug if one is not already provided
@@ -1008,7 +1011,7 @@ export class AccommodationService extends BaseCrudService<
 
     protected async _afterCreate(
         entity: Accommodation,
-        _actor: Actor,
+        actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Accommodation> {
         // SPEC-172: sync amenity/feature junctions transactionally.
@@ -1060,6 +1063,19 @@ export class AccommodationService extends BaseCrudService<
                 tx: ctx.tx
             });
         }
+
+        // HOS-1499 (AC:V9a:1): the owner's create is "fact 1" of the retention
+        // clock. Written in ctx.tx, so it commits or rolls back with the row.
+        await recordListingOwnerAct({
+            eventType: 'listing.created',
+            entityType: 'accommodation',
+            listing: entity,
+            actor,
+            ctx,
+            changes: buildListingOwnerActChanges({
+                payload: ctx.hookState?.ownerActPayload ?? {}
+            }).changes
+        });
 
         if (entity.destinationId) {
             await this.destinationService.updateAccommodationsCount(entity.destinationId, ctx);
@@ -1145,6 +1161,8 @@ export class AccommodationService extends BaseCrudService<
             const entityId = ctx.hookState.updateId;
             if (entityId) {
                 const current = await this.model.findById(entityId, ctx.tx);
+                // HOS-1499: the row before the edit, for the owner-act event's old values.
+                ctx.hookState.ownerActBefore = (current ?? null) as Record<string, unknown> | null;
 
                 if (
                     current &&
@@ -1195,6 +1213,8 @@ export class AccommodationService extends BaseCrudService<
             // Store as-is so `_afterUpdate` can distinguish undefined (no-op) from [] (clear all).
             ctx.hookState.pendingAmenityIds = data.amenityIds;
             ctx.hookState.pendingFeatureIds = data.featureIds;
+            // HOS-1499: what the owner wrote, for the owner-act event.
+            ctx.hookState.ownerActPayload = data as Record<string, unknown>;
             // SPEC-204 DIRECT CUTOVER: pendingMedia is no longer captured for update.
             // The accommodation_media table is the sole source of truth for photos;
             // UPDATE only writes videos to the JSONB blob. Gallery management is done
@@ -1244,13 +1264,13 @@ export class AccommodationService extends BaseCrudService<
      * management goes through dedicated media endpoints, not the bulk update path.
      *
      * @param entity - The updated accommodation entity.
-     * @param _actor - The actor performing the update.
+     * @param actor - The actor; when it is the owner, the edit is recorded as an owner act (HOS-1499).
      * @param ctx - Service execution context carrying transaction and hookState.
      * @returns The updated entity unchanged.
      */
     protected async _afterUpdate(
         entity: Accommodation,
-        _actor: Actor,
+        actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Accommodation> {
         // SPEC-172: sync amenity/feature junctions transactionally.
@@ -1289,6 +1309,25 @@ export class AccommodationService extends BaseCrudService<
         // SPEC-204 DIRECT CUTOVER: accommodation_media is NOT synced on update.
         // Photo gallery management is handled exclusively via granular media endpoints.
         // Videos remain in the JSONB blob and are written by the regular update path.
+
+        // HOS-1499 (AC:V9a:1-3): the owner's edit is "fact 1" of the retention
+        // clock. Content fields carry only their name. Ownership is read off the
+        // row BEFORE the edit when there is one.
+        const ownerActBefore = ctx.hookState?.ownerActBefore;
+        await recordListingOwnerAct({
+            eventType: 'listing.edited',
+            entityType: 'accommodation',
+            listing: {
+                id: entity.id,
+                ownerId: (ownerActBefore?.ownerId as string | null | undefined) ?? entity.ownerId
+            },
+            actor,
+            ctx,
+            changes: buildListingOwnerActChanges({
+                before: ownerActBefore ?? null,
+                payload: ctx.hookState?.ownerActPayload ?? {}
+            }).changes
+        });
 
         // HOS-203: skip public revalidation when the listing is private BOTH before
         // and after the update. Editing a DRAFT/PRIVATE listing has no public footprint,
@@ -1537,30 +1576,63 @@ export class AccommodationService extends BaseCrudService<
         data: AccommodationCreateInput,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<Accommodation>> {
-        const { amenityIds, featureIds } = data as {
-            amenityIds?: readonly string[];
-            featureIds?: readonly string[];
-        };
-        const needsMedia = (data as Record<string, unknown>).media !== undefined;
-        const needsTx = amenityIds !== undefined || featureIds !== undefined || needsMedia;
-
-        if (!needsTx) {
-            return super.create(actor, data, ctx);
-        }
-
-        // Junction sync requested — ensure everything runs in a single transaction.
-        // If the caller already provides ctx.tx, use it (no new boundary needed).
+        // Every create runs in a single transaction: the junction/media sync and
+        // the owner-act event (HOS-1499) must be atomic with the row. If the
+        // caller already provides ctx.tx, use it (no new boundary needed).
         if (ctx?.tx) {
             return super.create(actor, data, ctx);
         }
 
-        return withServiceTransaction(
-            async (txCtx) => {
-                return super.create(actor, data, txCtx);
-            },
-            ctx,
-            { timeoutMs: 10_000 }
-        );
+        return this._runInWriteTransaction({
+            ctx: ctx ?? {},
+            run: (txCtx) => super.create(actor, data, txCtx)
+        });
+    }
+
+    /**
+     * Runs a create/update inside its own transaction boundary and converts a
+     * thrown error back into the `ServiceOutput` envelope (HOS-1499).
+     *
+     * Every write opens one now, because the owner-act event written by
+     * `_afterCreate` / `_afterUpdate` must commit or roll back with the change
+     * it describes. The conversion keeps the method's contract: inside a
+     * transaction `runWithLoggingAndValidation` RE-THROWS instead of returning
+     * `{ error }`, and without catching it here a 400-class refusal would turn
+     * into a rejected promise. Mirrors `BaseListingService._runInWriteTransaction`.
+     *
+     * @param params.ctx - Base context to merge into the transaction context.
+     * @param params.run - The write to execute with the transactional context.
+     * @returns The write's `ServiceOutput`, or the rolled-back error as an envelope.
+     */
+    private async _runInWriteTransaction({
+        ctx,
+        run
+    }: {
+        readonly ctx: ServiceContext<AccommodationHookState>;
+        readonly run: (
+            txCtx: ServiceContext<AccommodationHookState>
+        ) => Promise<ServiceOutput<Accommodation>>;
+    }): Promise<ServiceOutput<Accommodation>> {
+        try {
+            return await withServiceTransaction(
+                async (txCtx) => run(txCtx as ServiceContext<AccommodationHookState>),
+                ctx,
+                { timeoutMs: 10_000 }
+            );
+        } catch (error) {
+            if (error instanceof ServiceError) {
+                return { error };
+            }
+            return {
+                error: new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to write ${this.entityName}: ${
+                        error instanceof Error ? error.message : String(error)
+                    }`,
+                    error
+                )
+            };
+        }
     }
 
     /**
@@ -1680,12 +1752,23 @@ export class AccommodationService extends BaseCrudService<
                 // via `super.update` below; publish must then NOT auto-promote it.
                 const callerSetVisibility = 'visibility' in restFields;
                 if (Object.keys(restFields).length > 0) {
-                    const updateResult = await super.update(
-                        actor,
-                        id,
-                        restFields as AccommodationUpdateInput,
-                        resolvedCtx
-                    );
+                    const updateResult = resolvedCtx.tx
+                        ? await super.update(
+                              actor,
+                              id,
+                              restFields as AccommodationUpdateInput,
+                              resolvedCtx
+                          )
+                        : await this._runInWriteTransaction({
+                              ctx: resolvedCtx,
+                              run: (txCtx) =>
+                                  super.update(
+                                      actor,
+                                      id,
+                                      restFields as AccommodationUpdateInput,
+                                      txCtx
+                                  )
+                          });
                     if (updateResult.error) return updateResult;
                 }
                 return this.publish(actor, id, resolvedCtx, { callerSetVisibility });
@@ -1711,22 +1794,13 @@ export class AccommodationService extends BaseCrudService<
             media?: unknown;
         };
 
-        // SPEC-172: if junction sync fields are present and no external tx exists,
-        // open a transaction so the accommodation update + junction sync are atomic.
-        const { amenityIds, featureIds } = normalizedData as {
-            amenityIds?: readonly string[];
-            featureIds?: readonly string[];
-        };
-        const needsTx = amenityIds !== undefined || featureIds !== undefined;
-
-        if (needsTx && !resolvedCtx?.tx) {
-            return withServiceTransaction(
-                async (txCtx) => {
-                    return super.update(actor, id, normalizedData, txCtx);
-                },
-                resolvedCtx,
-                { timeoutMs: 10_000 }
-            );
+        // SPEC-172 / HOS-1499: with no external tx, open one so the update, the
+        // junction sync and the owner-act event are atomic.
+        if (!resolvedCtx.tx) {
+            return this._runInWriteTransaction({
+                ctx: resolvedCtx,
+                run: (txCtx) => super.update(actor, id, normalizedData, txCtx)
+            });
         }
 
         return super.update(actor, id, normalizedData, resolvedCtx);

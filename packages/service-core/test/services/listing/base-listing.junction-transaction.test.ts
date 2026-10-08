@@ -22,8 +22,9 @@
  *  1. A payload carrying `amenityIds` / `featureIds` opens a transaction, and
  *     the junction sync runs INSIDE it (asserted on the `tx` argument the
  *     junction model receives, not merely on the absence of an error).
- *  2. A payload without them opens NO transaction — the boundary is not a new
- *     per-write cost for every editor save.
+ *  2. A payload without them ALSO opens a transaction (HOS-1499 reversed the
+ *     original "no boundary" rule): every write records the owner act in
+ *     `domain_event`, and that event must be atomic with the change.
  *  3. A caller-supplied `tx` is joined, never re-wrapped: `withServiceTransaction`
  *     always opens a NEW boundary, so re-entering would split one unit of work.
  *  4. A refusal raised inside the boundary comes back as a `ServiceOutput`
@@ -64,6 +65,15 @@ const { mockWithServiceTransaction, mockScheduleRevalidation } = vi.hoisted(() =
     mockWithServiceTransaction: vi.fn(),
     mockScheduleRevalidation: vi.fn()
 }));
+
+// HOS-1499: listing writes record the owner act in `domain_event`; no DB here.
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
 
 vi.mock('../../../src/utils/transaction', () => ({
     withServiceTransaction: mockWithServiceTransaction
@@ -341,13 +351,13 @@ describe('BaseListingService.update — junction transaction boundary (HOS-808)'
         expect(mockWithServiceTransaction).toHaveBeenCalledTimes(1);
     });
 
-    it('opens NO transaction when the payload carries no junction ids', async () => {
+    it('opens a transaction even when the payload carries no junction ids (HOS-1499)', async () => {
         const { svc, amenityJunction, featureJunction } = makeService();
 
         const result = await svc.update(makeActor(), ENTITY_ID, { name: 'Renamed' });
 
         expect(result.error).toBeUndefined();
-        expect(mockWithServiceTransaction).not.toHaveBeenCalled();
+        expect(mockWithServiceTransaction).toHaveBeenCalledTimes(1);
         expect(amenityJunction.create).not.toHaveBeenCalled();
         expect(featureJunction.create).not.toHaveBeenCalled();
     });
@@ -401,7 +411,7 @@ describe('BaseListingService.create — junction transaction boundary (HOS-808)'
         expect(amenityJunction.create.mock.calls[0]?.[1]).toBe(FAKE_TX);
     });
 
-    it('opens NO transaction when the payload carries no junction ids', async () => {
+    it('opens a transaction even when the payload carries no junction ids (HOS-1499)', async () => {
         const { svc } = makeService();
 
         const result = await svc.create(makeActor(), {
@@ -411,7 +421,7 @@ describe('BaseListingService.create — junction transaction boundary (HOS-808)'
         });
 
         expect(result.error).toBeUndefined();
-        expect(mockWithServiceTransaction).not.toHaveBeenCalled();
+        expect(mockWithServiceTransaction).toHaveBeenCalledTimes(1);
     });
 
     it("joins the caller's transaction instead of opening a second boundary", async () => {
