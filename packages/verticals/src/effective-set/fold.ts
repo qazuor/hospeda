@@ -2,6 +2,16 @@
  * The fold of the plegable set (HOS-1439, V3, AC:V3:1; `V/15` §2): each key is
  * aggregated with the strategy its catalog declares.
  *
+ * The strategy is a property of the KEY, declared once in the catalog
+ * (`V/15` §2.2 and §2.3): it never travels with a plan, so two plans of one
+ * vertical cannot declare different strategies for the same key. The fold
+ * therefore reads it from the catalog with the key and never trusts the first
+ * source it happens to see. A key the catalog does not declare (today `MIN` and
+ * `BEST_DECLARED` have no catalog key, Coord-12) has no catalog strategy to
+ * read: the fold then uses the strategy its sources unanimously declare and
+ * refuses a contradiction, so its result never depends on the order the sources
+ * arrive in either way.
+ *
  * The four strategies fold the SAME set — the one that survives the discard of
  * {@link selectPlegableSources}, not the one `cobertura` returns. `SUM` adds
  * every source; the three "does not accumulate" strategies are one rule said
@@ -16,15 +26,54 @@
  * be a silent hole. The key that adds the first `BEST_DECLARED` order replaces
  * this refusal with the comparison.
  */
-import type { AggregationStrategy } from '@repo/schemas';
+import { type AggregationStrategy, getCatalogKey } from '@repo/schemas';
 import { UndecidableKeyError } from '../plan-catalog/errors';
+import { ContradictoryStrategyError } from './errors';
 import { selectPlegableSources } from './plegable';
 import type { FoldableSource } from './types';
 
-/** One key accumulated across the plegable sources: its strategy and its values. */
+/** One key accumulated across the plegable sources: the strategies declared and the values. */
 interface KeyAccumulator {
-    readonly strategy: AggregationStrategy;
+    readonly declared: AggregationStrategy[];
     readonly values: number[];
+}
+
+/**
+ * Resolves the strategy that folds one key.
+ *
+ * The catalog is authoritative whenever it declares the key: the strategy is
+ * the key's, not the source's, so the strategies the sources carry are ignored
+ * and the fold cannot depend on which source it saw first. A key the catalog
+ * does not declare is resolved from its sources only when they agree; a
+ * contradiction is refused, never decided by order.
+ *
+ * @param args - Resolution input.
+ * @param args.key - The key being folded.
+ * @param args.declared - The strategies the plegable sources declare for it.
+ * @returns The strategy the key is folded with.
+ * @throws ContradictoryStrategyError if an uncatalogued key is declared with
+ * two different strategies.
+ */
+function resolveStrategy(args: {
+    readonly key: string;
+    readonly declared: readonly AggregationStrategy[];
+}): AggregationStrategy {
+    const catalogKey = getCatalogKey({ key: args.key });
+    if (catalogKey) return catalogKey.aggregationStrategy;
+
+    const [first, ...rest] = args.declared;
+    if (first === undefined) {
+        throw new UndecidableKeyError({
+            key: args.key,
+            reason: 'no source grants it and the catalog does not declare it'
+        });
+    }
+    for (const strategy of rest) {
+        if (strategy !== first) {
+            throw new ContradictoryStrategyError({ key: args.key, strategies: args.declared });
+        }
+    }
+    return first;
 }
 
 /**
@@ -64,6 +113,8 @@ function foldKey(args: {
  * @returns One value per folded key; the trial overrides and the ratchet are
  * never sources here (`V/15` §2: they act later, not in this aggregation).
  * @throws UndecidableKeyError if a folded key declares `BEST_DECLARED`
+ * @throws ContradictoryStrategyError if an uncatalogued key is declared with
+ * two different strategies
  */
 export function foldPlegableSet({
     sources
@@ -75,17 +126,19 @@ export function foldPlegableSet({
     for (const { grants } of plegable) {
         for (const grant of grants) {
             const accumulator = byKey.get(grant.key);
-            if (accumulator) accumulator.values.push(grant.value);
-            else byKey.set(grant.key, { strategy: grant.strategy, values: [grant.value] });
+            if (accumulator) {
+                accumulator.declared.push(grant.strategy);
+                accumulator.values.push(grant.value);
+            } else {
+                byKey.set(grant.key, { declared: [grant.strategy], values: [grant.value] });
+            }
         }
     }
 
     const folded = new Map<string, number>();
     for (const [key, accumulator] of byKey) {
-        folded.set(
-            key,
-            foldKey({ key, values: accumulator.values, strategy: accumulator.strategy })
-        );
+        const strategy = resolveStrategy({ key, declared: accumulator.declared });
+        folded.set(key, foldKey({ key, values: accumulator.values, strategy }));
     }
     return folded;
 }

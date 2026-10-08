@@ -4,6 +4,7 @@
  * (GUARD:G14 lists `packages/verticals` as the verticals half).
  */
 
+export { ContradictoryStrategyError } from './effective-set/errors';
 export { foldPlegableSet } from './effective-set/fold';
 export { hasLiveNonTrialTitle, selectPlegableSources } from './effective-set/plegable';
 export type { FoldableSource, SourceGrant } from './effective-set/types';

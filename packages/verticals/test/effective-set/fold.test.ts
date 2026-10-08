@@ -7,6 +7,7 @@
  * Type: unit. The fold is a pure function of the plegable set.
  */
 import { describe, expect, it } from 'vitest';
+import { ContradictoryStrategyError } from '../../src/effective-set/errors';
 import { foldPlegableSet } from '../../src/effective-set/fold';
 import { UndecidableKeyError } from '../../src/plan-catalog/errors';
 import { addon, grant, subscription } from './sources';
@@ -94,5 +95,38 @@ describe('TEST:V3:1 — each key folds with the strategy its catalog declares', 
         });
 
         expect([folded.get(PHOTOS), folded.get(COMPARE)]).toStrictEqual([50, 8]);
+    });
+
+    it('is order-independent: the catalog key decides, never the first source', () => {
+        // `max_photos_per_accommodation` declares SUM in the catalog. One source
+        // carries the declared strategy and the other a contradicting one, so a
+        // fold that read the strategy from its first source would return 50 with
+        // the plan first and 30 with the addon first. The catalog decides instead.
+        const declared = subscription([grant({ key: PHOTOS, value: 20, strategy: 'SUM' })]);
+        const contradicting = addon({
+            scope: 'USER',
+            grants: [grant({ key: PHOTOS, value: 30, strategy: 'MAX' })]
+        });
+
+        const planFirst = foldPlegableSet({ sources: [declared, contradicting] });
+        const addonFirst = foldPlegableSet({ sources: [contradicting, declared] });
+
+        expect(planFirst.get(PHOTOS)).toBe(50);
+        expect(addonFirst.get(PHOTOS)).toBe(50);
+        expect([...addonFirst]).toStrictEqual([...planFirst]);
+    });
+
+    it('refuses contradicting strategies on a key the catalog does not declare', () => {
+        expect(() =>
+            foldPlegableSet({
+                sources: [
+                    subscription([grant({ key: RESPONSE_HOURS, value: 24, strategy: 'MIN' })]),
+                    addon({
+                        scope: 'USER',
+                        grants: [grant({ key: RESPONSE_HOURS, value: 4, strategy: 'MAX' })]
+                    })
+                ]
+            })
+        ).toThrow(ContradictoryStrategyError);
     });
 });
