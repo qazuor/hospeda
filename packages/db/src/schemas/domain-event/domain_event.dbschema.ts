@@ -11,10 +11,18 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *
  * - `email.undeliverable`: a transactional mail that will never arrive
  *   (retries exhausted or hard bounce), escalated by the outbox sender
- *   (NUCLEO/07 §1.3, AC:U2:4). The only type until the pieces that write this
- *   table (V2, V4, B3, V9a) add theirs.
+ *   (NUCLEO/07 §1.3, AC:U2:4).
+ * - `listing.created` / `listing.edited`: an owner act on their own listing
+ *   that is not a state transition (HOS-1499, piece V9a, AC:V9a:1). They are
+ *   "fact 1" of the retention clock (NUCLEO/01 §1.2), read back from this
+ *   table. Content fields carry only their name (AC:V9a:2). `listing.exported`
+ *   is deliberately absent: no export operation exists yet.
  */
-export const DOMAIN_EVENT_TYPES = ['email.undeliverable'] as const;
+export const DOMAIN_EVENT_TYPES = [
+    'email.undeliverable',
+    'listing.created',
+    'listing.edited'
+] as const;
 
 /** One type of the closed domain event catalog. */
 export type DomainEventType = (typeof DOMAIN_EVENT_TYPES)[number];
