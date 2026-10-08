@@ -336,6 +336,12 @@ jobs:
       # exists; its message names which half of the condition is missing.
       - name: Check the effective set discards complements without a live non-TRIAL title (GUARD:G-R2)
         run: pnpm check:plegable-discard
+      # GUARD:G-R2-B (HOS-1440, AC:V3:5). Its own step, like every guard here. The
+      # resolution must take the GRANT source of the vertical and read its floor
+      # from the source's `floor` field, comparing the plan vertical; its message
+      # names which half is missing.
+      - name: Check the grant floor is read by vertical from the source (GUARD:G-R2-B)
+        run: pnpm check:grant-floor-by-vertical
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh
       - name: Check CSP-incompatible patterns

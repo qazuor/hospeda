@@ -17,6 +17,10 @@ export interface StoredPlanVersion extends PlanVersionPolicyRow {
     readonly rank: number;
     readonly trialDays: number;
     readonly inheritsTouristVip: boolean;
+    /** The plan the version belongs to; defaults to a fresh id per stored row. */
+    readonly planId?: string;
+    /** The vertical the version sells in; defaults to `accommodation`. */
+    readonly vertical?: string;
     readonly entitlements: readonly {
         readonly key: string;
         readonly planQuota: number | null;
@@ -45,7 +49,7 @@ export interface InMemoryCatalog {
 
 /** Builds an empty in-memory catalog. */
 export function createInMemoryCatalog(): InMemoryCatalog {
-    const planVersions = new Map<string, StoredPlanVersion>();
+    const planVersions = new Map<string, StoredPlanVersion & { readonly id: string }>();
     const addonVersions = new Map<string, StoredAddonVersion>();
 
     const reader: PlanCatalogReader = {
@@ -61,6 +65,50 @@ export function createInMemoryCatalog(): InMemoryCatalog {
         },
         async findAddonVersion({ id }) {
             return addonVersions.get(id) ?? null;
+        },
+        async findPlanVersionSummary({ id }) {
+            const version = planVersions.get(id);
+            if (!version) return null;
+            return {
+                id: version.id,
+                planId: version.planId ?? version.id,
+                vertical: version.vertical ?? 'accommodation',
+                rank: version.rank,
+                sellable: version.sellable,
+                current: version.current
+            };
+        },
+        async findSellableCurrentVersions({ vertical }) {
+            return [...planVersions.values()]
+                .filter(
+                    (version) =>
+                        (version.vertical ?? 'accommodation') === vertical &&
+                        version.sellable &&
+                        version.current
+                )
+                .sort((a, b) => a.rank - b.rank)
+                .map((version) => ({
+                    id: version.id,
+                    planId: version.planId ?? version.id,
+                    vertical: version.vertical ?? 'accommodation',
+                    rank: version.rank,
+                    sellable: version.sellable,
+                    current: version.current
+                }));
+        },
+        async findCurrentPlanVersion({ planId }) {
+            const version = [...planVersions.values()].find(
+                (candidate) => (candidate.planId ?? candidate.id) === planId && candidate.current
+            );
+            if (!version) return null;
+            return {
+                id: version.id,
+                planId: version.planId ?? version.id,
+                vertical: version.vertical ?? 'accommodation',
+                rank: version.rank,
+                sellable: version.sellable,
+                current: version.current
+            };
         }
     };
 
@@ -68,7 +116,7 @@ export function createInMemoryCatalog(): InMemoryCatalog {
         reader,
         addPlanVersion(row) {
             const id = randomUUID();
-            planVersions.set(id, row);
+            planVersions.set(id, { ...row, id });
             return id;
         },
         addAddonVersion(row) {
