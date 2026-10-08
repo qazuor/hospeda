@@ -4,25 +4,6 @@
     "recommended": "Recomendado",
     "trial_one": "{{count}} dia de teste grátis",
     "trial_other": "{{count}} dias de teste grátis",
-    "trialNotEligible": "Sem período de teste",
-    "trialWarning": {
-        "title": "Você vai perder seu teste grátis",
-        "body_one": "Resta {{count}} dia de teste grátis. Se assinar agora, você o perde.",
-        "body_other": "Restam {{count}} dias de teste grátis. Se assinar agora, você os perde.",
-        "bodyUnknown": "Talvez você tenha um teste grátis em andamento. Se assinar agora, você o perde.",
-        "immediateCharge": "A cobrança é imediata: acontece agora, não ao terminar o teste.",
-        "confirm": "Assinar mesmo assim",
-        "cancel": "Continuar com o teste"
-    },
-    "trialBanner": {
-        "message_one": "Seu teste grátis continua ativo: resta {{count}} dia.",
-        "message_other": "Seu teste grátis continua ativo: restam {{count}} dias.",
-        "hint": "Se assinar um plano agora, a cobrança é imediata e você perde os dias restantes."
-    },
-    "touristVipHeld": {
-        "cta": "Você já tem esses benefícios",
-        "note": "Sua assinatura ativa já inclui todos os benefícios VIP de turista."
-    },
     "includesEverything": "Tudo do plano {plan}, mais:",
     "includesAll": "Este plano inclui:",
     "limitsLabel": "Limites deste plano",
@@ -79,15 +60,12 @@
         "year": "/ano"
     },
     "monthlyOnly": "Apenas plano mensal",
-    "promoEntry": {
-        "label": "Tem um código de desconto? Você vai poder usá-lo no plano que escolher."
-    },
     "index": {
         "title": "Planos da Hospeda",
         "description": "Escolha o público ao qual você pertence e veja os planos feitos para você.",
         "tagline": "Planos e preços",
         "heading": "Um plano para cada público",
-        "subtitle": "A Hospeda tem cinco formas de participar. Escolha a sua e veja o que cada uma inclui.",
+        "subtitle": "A Hospeda tem quatro formas de participar. Escolha a sua e veja o que cada uma inclui.",
         "cardsHeading": "Escolha o seu público",
         "highlightsLabel": "O que você obtém",
         "from": "A partir de {{price}}",
@@ -132,16 +110,6 @@
                     "item1": "Publique excursões, passeios e atividades com fotos e horários.",
                     "item2": "Apareça entre as experiências procuradas no Litoral.",
                     "item3": "Um valor mensal fixo: nenhuma reserva cobra comissão à parte."
-                }
-            },
-            "partner": {
-                "title": "Ser parceiro da Hospeda",
-                "audience": "Para marcas e comércios que querem visibilidade em toda a plataforma.",
-                "cta": "Conhecer o programa de parceiros",
-                "highlights": {
-                    "item1": "Presença de marca no carrossel de parceiros da Hospeda.",
-                    "item2": "Visibilidade conjunta em nossas campanhas e canais de divulgação.",
-                    "item3": "Condições comerciais personalizadas de acordo com o tipo de parceria."
                 }
             }
         }

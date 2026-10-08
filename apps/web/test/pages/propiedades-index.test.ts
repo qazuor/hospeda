@@ -22,7 +22,7 @@ describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
             // then maybe fetch usage" rule is testable and cannot drift across
             // pages.
             expect(propiedadesIndexSource).toContain(
-                "import {\n    fetchHostUsageBadge,\n    MAX_ACCOMMODATIONS_LIMIT_KEY\n} from '@/lib/host/usage-badge'"
+                "import { fetchHostUsageBadge } from '@/lib/host/usage-badge'"
             );
             expect(propiedadesIndexSource).toContain('fetchHostUsageBadge({ apiUrl, headers })');
             expect(propiedadesIndexSource).not.toContain('billing/usage/MAX_ACCOMMODATIONS');
@@ -38,49 +38,16 @@ describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
             expect(propiedadesIndexSource).toContain('host.properties.usage.upgrade');
         });
 
-        // ── HOS-727: the add-on offer next to the quota ──────────────────
-        //
-        // What these can and cannot prove: vitest cannot render `.astro` in
-        // this repo (no Astro vite plugin in the test pipeline — see
-        // `PartnerMentionsSection.test.ts`), so they read the SOURCE and can
-        // only show the wiring is declared. The BEHAVIOUR they stand in for —
-        // that a sellable limit yields a focus URL and the other 15 yield
-        // nothing at all — executes for real in
-        // `test/lib/billing/limit-addon-offer.test.ts`, which is where the
-        // no-false-promise rule is actually pinned.
-
-        it('should resolve the add-on offer from the limit key, not from a hardcoded link', () => {
-            expect(propiedadesIndexSource).toContain(
-                "import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer'"
-            );
-            expect(propiedadesIndexSource).toContain(
-                'resolveLimitAddonOffer({\n    locale,\n    limitKey: MAX_ACCOMMODATIONS_LIMIT_KEY\n})'
-            );
-        });
-
-        it('should render the add-on CTA from the resolved offer href', () => {
-            expect(propiedadesIndexSource).toContain('href={accommodationsAddonOffer.href}');
-            expect(propiedadesIndexSource).toContain('props-page__usage-addon');
-            expect(propiedadesIndexSource).toContain('account.subscription.usage.buyAddon');
-        });
-
-        it('should gate the add-on CTA on BOTH a non-ok threshold and a resolved offer', () => {
-            // `accommodationsAddonOffer !== null` is the half that keeps the
-            // link off a cap with nothing to sell; dropping it would turn the
-            // badge into the false promise the issue forbids.
-            expect(propiedadesIndexSource).toContain(
-                "{usageData.threshold !== 'ok' && accommodationsAddonOffer !== null && ("
-            );
-        });
-
-        it('should NOT hardcode an add-on slug or the add-ons path in the page', () => {
-            expect(propiedadesIndexSource).not.toContain('extra-accommodations-5');
+        // HOS-727's add-on offer next to the quota pointed at the old add-on
+        // purchase page and was removed with it (HOS-1637, AC:B13a:20).
+        it('should NOT offer the removed add-on page from the quota badge', () => {
+            expect(propiedadesIndexSource).not.toContain('limit-addon-offer');
+            expect(propiedadesIndexSource).not.toContain('resolveLimitAddonOffer');
+            expect(propiedadesIndexSource).not.toContain('props-page__usage-addon');
             expect(propiedadesIndexSource).not.toContain('mi-cuenta/addons');
         });
 
-        it('should keep the plan-upgrade route offered alongside the add-on', () => {
-            // The add-on is an addition, not a replacement: a host whose real
-            // problem is the plan must still find the upgrade here.
+        it('should keep the plan-upgrade route offered on the quota badge', () => {
             expect(propiedadesIndexSource).toContain('props-page__usage-upgrade');
             expect(propiedadesIndexSource).toContain('path: PRICING_PAGE_PATH_BY_AUDIENCE.owner');
         });

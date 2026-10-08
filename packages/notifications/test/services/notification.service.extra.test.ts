@@ -5,10 +5,9 @@
  *   • selectTemplate() branches for notification types not exercised in the
  *     base suite (lines ~477-587): subscription_cancelled, subscription_paused,
  *     subscription_reactivated, plan_downgrade_limit_warning, payment_retry_warning,
- *     addon_cancellation, ai_cost_threshold_alert, subscription_cancel_confirmed,
- *     subscription_access_ending_soon, plan_being_retired, addon_purchase,
- *     payment_failure, plan_change_confirmation, addon_expired,
- *     addon_renewal_confirmation, and the default throw.
+ *     ai_cost_threshold_alert, subscription_cancel_confirmed,
+ *     subscription_access_ending_soon, plan_being_retired,
+ *     payment_failure, plan_change_confirmation, and the default throw.
  *   • generateSubject() branches (lines 570-671): admin_payment_failure with
  *     affectedUserEmail, admin_system_event with eventType, feedback_report,
  *     contact_submission with both types, payment_retry_warning fields,
@@ -98,28 +97,6 @@ describe('NotificationService — extended coverage', () => {
     // =========================================================================
 
     describe('selectTemplate — previously uncovered types', () => {
-        it('should select template for addon_purchase', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.ADDON_PURCHASE,
-                ...basePayload,
-                addonName: 'Fotos Extra',
-                addonDescription: '20 fotos adicionales',
-                orderId: 'mp-payment-1',
-                amount: 2000,
-                currency: 'ARS'
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-            expect(mockEmailTransport.send).toHaveBeenCalledWith(
-                expect.objectContaining({ to: 'user@example.com' })
-            );
-        });
-
         it('should select template for payment_failure', async () => {
             // Arrange
             const payload: NotificationPayload = {
@@ -147,39 +124,6 @@ describe('NotificationService — extended coverage', () => {
                 oldPlanName: 'Standard',
                 newPlanName: 'Premium',
                 amount: 10000,
-                currency: 'ARS'
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-        });
-
-        it('should select template for addon_expired', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.ADDON_EXPIRED,
-                ...basePayload,
-                addonName: 'Prioridad de soporte',
-                expirationDate: '2026-06-30'
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-        });
-
-        it('should select template for addon_renewal_confirmation', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.ADDON_RENEWAL_CONFIRMATION,
-                ...basePayload,
-                addonName: 'Fotos Extra',
-                amount: 1500,
                 currency: 'ARS'
             };
 
@@ -280,22 +224,6 @@ describe('NotificationService — extended coverage', () => {
                 failureCount: 2,
                 maxRetries: 3,
                 paymentMethodHint: 'Visa terminada en 4242'
-            };
-
-            // Act
-            const result = await service.send(payload);
-
-            // Assert
-            expect(result.success).toBe(true);
-        });
-
-        it('should select template for addon_cancellation', async () => {
-            // Arrange
-            const payload: NotificationPayload = {
-                type: NotificationType.ADDON_CANCELLATION,
-                ...basePayload,
-                addonName: 'Fotos Extra',
-                canceledAt: '2026-06-15T10:00:00.000Z'
             };
 
             // Act

@@ -13,24 +13,17 @@
  * sign-in CTA, sized to match this button, so the SSR/cached output is the
  * anonymous variant per D-11 and the swap costs no layout shift.
  *
- * With a session it renders one of four states, resolved by
- * `usePriceAlertGateState`. While those lookups are in flight the create button
- * shows disabled rather than guessing a branch, so no state the visitor could
- * act on is ever wrong:
- *  - **Locked** — the actor lacks the `PRICE_ALERTS` entitlement (free plan).
- *    Renders a link to the plans page instead of a button; no API call.
- *  - **Max reached** — the actor is entitled but is at their plan's
- *    `MAX_ACTIVE_ALERTS` limit and has no alert for THIS accommodation.
- *    Renders a disabled button with a tooltip.
- *  - **Create** — the actor is entitled, under the limit, and has no alert
- *    for this accommodation. `POST /api/v1/protected/price-alerts` on click,
- *    then optimistically flips to the active state using the created
- *    alert's `id` from the response (needed to support cancelling without a
- *    page reload).
- *  - **Active** — the actor already has an alert for this accommodation
- *    (checked FIRST, ahead of the locked/max-reached branches, so a
- *    downgraded actor still sees "Cancelar alerta" for an alert they already
- *    hold rather than a locked/maxed state that would strand them).
+ * With a session it renders one of two states, resolved by
+ * `usePriceAlertGateState`. While that lookup is in flight the create button
+ * shows disabled rather than guessing a branch:
+ *  - **Create** — the actor has no alert for this accommodation.
+ *    `POST /api/v1/protected/price-alerts` on click, then optimistically flips
+ *    to the active state using the created alert's `id` from the response
+ *    (needed to support cancelling without a page reload). Whether the actor's
+ *    plan allows it is the API's decision; a refusal surfaces as the error
+ *    toast. The old client-side plan gate (locked upsell, max-reached state)
+ *    was removed with the old billing client (HOS-1637, AC:B13a:21).
+ *  - **Active** — the actor already has an alert for this accommodation.
  *    `DELETE /api/v1/protected/price-alerts/:alertId` on click, then flips
  *    back to the create state.
  *
@@ -42,7 +35,7 @@
  * action, not needed for first interaction).
  */
 
-import { BellIcon, LockIcon } from '@repo/icons';
+import { BellIcon } from '@repo/icons';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
@@ -50,8 +43,6 @@ import { usePriceAlertGateState } from '@/hooks/use-price-alert-gate-state';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
-import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './PriceAlertButton.module.css';
 
@@ -98,7 +89,7 @@ type SubmitPhase = 'idle' | 'creating' | 'cancelling';
 /**
  * "Alert me for price drops" toggle island.
  *
- * Resolves session, entitlement, and existing-alert state on mount (see
+ * Resolves session and existing-alert state on mount (see
  * `usePriceAlertGateState`) because the page it lives on is edge-cached and can
  * carry no visitor state.
  */
@@ -241,8 +232,7 @@ export function PriceAlertButton({
         </p>
     );
 
-    // Active alert for THIS accommodation — checked first so a downgraded
-    // actor can still cancel an alert they already hold.
+    // Active alert for THIS accommodation.
     if (hasAlert) {
         return (
             <div className={styles.priceAlertWrapper}>
@@ -270,11 +260,9 @@ export function PriceAlertButton({
         );
     }
 
-    // Signed in, but the entitlement/alert lookups have not settled yet. Show
-    // the create button disabled rather than guessing: rendering the locked
-    // upsell here would flash a false "your plan does not include this" at an
-    // entitled visitor, and rendering it enabled would let them fire a create
-    // we cannot yet know is allowed.
+    // Signed in, but the alert lookup has not settled yet. Show the create
+    // button disabled rather than guessing: enabling it could fire a duplicate
+    // create for an alert the visitor already holds.
     if (gate.isResolving) {
         return (
             <div className={styles.priceAlertWrapper}>
@@ -295,55 +283,7 @@ export function PriceAlertButton({
         );
     }
 
-    // Free plan — locked state, links to the tourist plans page, no API call.
-    // PRICE_ALERTS is a tourist entitlement every owner plan already inherits
-    // (TOURIST_VIP_ENTITLEMENTS), so anyone seeing this locked state is a
-    // free-tier tourist — the upsell must target the tourist pricing page, not
-    // the owner one (BETA-201; mirrors the sibling AlertsList.client.tsx).
-    if (!gate.canCreateAlerts) {
-        const upgradeHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
-        return (
-            <div className={styles.priceAlertWrapper}>
-                <a
-                    href={upgradeHref}
-                    className={styles.priceAlertButtonLocked}
-                >
-                    <LockIcon
-                        size="sm"
-                        weight="duotone"
-                        aria-hidden="true"
-                    />
-                    {t('accommodations.detail.priceAlert.locked', 'Avisame si baja el precio')}
-                </a>
-            </div>
-        );
-    }
-
-    // Entitled but at the plan's MAX_ACTIVE_ALERTS limit.
-    if (gate.maxReached) {
-        return (
-            <div className={styles.priceAlertWrapper}>
-                <button
-                    type="button"
-                    className={styles.priceAlertButtonDisabled}
-                    disabled
-                    title={t(
-                        'accommodations.detail.priceAlert.maxReached',
-                        'Límite de alertas alcanzado'
-                    )}
-                >
-                    <BellIcon
-                        size="sm"
-                        weight="duotone"
-                        aria-hidden="true"
-                    />
-                    {t('accommodations.detail.priceAlert.create', 'Avisame si baja el precio')}
-                </button>
-            </div>
-        );
-    }
-
-    // Entitled, under the limit, no existing alert — the primary create action.
+    // No existing alert — the primary create action.
     return (
         <div className={styles.priceAlertWrapper}>
             <button

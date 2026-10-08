@@ -1,8 +1,14 @@
 /**
  * @file AnalyticsSection.client.tsx
  * @description Container component for the host analytics section.
- * Handles entitlement gating and parallel data fetching for the wired
- * analytics endpoints, then renders the available widgets or a locked state.
+ * Fetches the wired analytics endpoints in parallel, then renders the
+ * available widgets or a locked state.
+ *
+ * Which widgets a host may see is the API's decision: a 403 on the basic
+ * views read renders the locked state, and a 403 on the market-comparison read
+ * hides the two advanced widgets. The section used to pre-gate on the old
+ * billing's entitlements; that read was removed with the old billing client
+ * (HOS-1637, AC:B13a:22).
  *
  * @remarks
  * SPEC-207 Fase A: the ViewsWidget now receives a `dailySeries` prop from
@@ -17,7 +23,7 @@
  */
 
 import { type JSX, useCallback, useEffect, useState } from 'react';
-import { billingApi, hostAnalyticsApi } from '@/lib/api/endpoints-protected';
+import { hostAnalyticsApi } from '@/lib/api/endpoints-protected';
 import {
     transformAccommodationViews,
     transformFavoritesBreakdown,
@@ -28,6 +34,7 @@ import {
 } from '@/lib/api/transforms';
 import type {
     AccommodationViewsData,
+    ApiResult,
     FavoritesBreakdownData,
     HostViewDailySeriesData,
     InquiryTrendData,
@@ -47,15 +54,21 @@ import { ViewsWidget } from './ViewsWidget.client';
 // Constants
 // ---------------------------------------------------------------------------
 
+/** HTTP status the API answers when the host's plan does not grant a read. */
+const FORBIDDEN_STATUS = 403;
+
 /**
- * Entitlement key literals. Kept as plain strings (not coupled to the
- * `EntitlementKey` enum in `@repo/billing`) to avoid pulling server-only
- * billing deps into the client bundle — mirroring how `@repo/schemas` keeps
- * entitlement keys as plain strings. These MUST match the wire values emitted
- * by the backend (`EntitlementKey.VIEW_BASIC_STATS` / `VIEW_ADVANCED_STATS`).
+ * Whether a settled analytics read was refused by the API's authorization
+ * (as opposed to failing for any other reason, which surfaces as a widget
+ * error).
  */
-const ENTITLEMENT_VIEW_BASIC_STATS = 'view_basic_stats';
-const ENTITLEMENT_VIEW_ADVANCED_STATS = 'view_advanced_stats';
+function isForbidden(result: PromiseSettledResult<ApiResult<unknown>>): boolean {
+    return (
+        result.status === 'fulfilled' &&
+        !result.value.ok &&
+        result.value.error.status === FORBIDDEN_STATUS
+    );
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -82,7 +95,7 @@ interface AnalyticsData {
     readonly favorites: FavoritesBreakdownData | undefined;
     /** Stored names map so window toggle can re-cross without re-listing. */
     readonly accommodationNames: ReadonlyMap<string, string>;
-    /** Whether the user holds VIEW_ADVANCED_STATS — gates the market + favorites widgets. */
+    /** Whether the API granted the advanced reads — gates the market + favorites widgets. */
     readonly hasAdvanced: boolean;
 }
 
@@ -132,32 +145,9 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
         });
 
         try {
-            // Check entitlement first
-            const entitlementResult = await billingApi.getEntitlements();
-            if (!entitlementResult.ok) {
-                setState({
-                    status: 'error',
-                    message:
-                        entitlementResult.error.message ??
-                        t('host.dashboard.analytics.error', 'Error al cargar las estadísticas')
-                });
-                return;
-            }
-
-            const { entitlements } = entitlementResult.data;
-            const hasBasic = entitlements.includes(ENTITLEMENT_VIEW_BASIC_STATS);
-
-            if (!hasBasic) {
-                setState({ status: 'locked' });
-                return;
-            }
-
-            const hasAdvanced = entitlements.includes(ENTITLEMENT_VIEW_ADVANCED_STATS);
-
-            // Fetch all wired analytics endpoints in parallel. Market comparison
-            // and favorites require VIEW_ADVANCED_STATS; views + daily-series are
-            // gated by basic (already passed). Daily-series belongs in the basic
-            // group alongside getViews per SPEC-207 gate matrix (Card G).
+            // Fetch all wired analytics endpoints in parallel. The API decides
+            // which of them this host may read (views + daily-series need basic
+            // stats; market comparison and favorites need advanced stats).
             const [
                 responseRateResult,
                 inquiriesResult,
@@ -169,12 +159,19 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             ] = await Promise.allSettled([
                 hostAnalyticsApi.getResponseRate(),
                 hostAnalyticsApi.getInquiryTrend({ months: 6 }),
-                hasAdvanced ? hostAnalyticsApi.getMarketComparison() : Promise.resolve(undefined),
+                hostAnalyticsApi.getMarketComparison(),
                 hostAnalyticsApi.getViews({ window: viewsWindow }),
                 hostAnalyticsApi.listOwnAccommodations(),
-                hasAdvanced ? hostAnalyticsApi.getFavoritesBreakdown() : Promise.resolve(undefined),
+                hostAnalyticsApi.getFavoritesBreakdown(),
                 hostAnalyticsApi.getViewsDailySeries({ window: viewsWindow })
             ]);
+
+            if (isForbidden(viewsResult)) {
+                setState({ status: 'locked' });
+                return;
+            }
+
+            const hasAdvanced = !isForbidden(marketResult);
 
             const responseRateData =
                 responseRateResult.status === 'fulfilled' && responseRateResult.value.ok
@@ -193,10 +190,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                     : undefined;
 
             const marketData =
-                hasAdvanced &&
-                marketResult.status === 'fulfilled' &&
-                marketResult.value &&
-                marketResult.value.ok
+                hasAdvanced && marketResult.status === 'fulfilled' && marketResult.value.ok
                     ? transformMarketComparison({
                           // TYPE-WORKAROUND: apiClient returns a generic payload not inferred to the transform's input shape; the transform reads fields defensively.
                           item: marketResult.value.data as unknown as Record<string, unknown>
@@ -232,10 +226,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
 
             // Cross favorites with names map (advanced-stats only)
             const favoritesData =
-                hasAdvanced &&
-                favoritesResult.status === 'fulfilled' &&
-                favoritesResult.value &&
-                favoritesResult.value.ok
+                hasAdvanced && favoritesResult.status === 'fulfilled' && favoritesResult.value.ok
                     ? transformFavoritesBreakdown({
                           favorites: favoritesResult.value.data as ReadonlyArray<
                               Record<string, unknown>
@@ -266,9 +257,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                               'host.dashboard.analytics.marketComparison.error',
                               'Error al cargar comparación de mercado'
                           )
-                        : marketResult.status === 'fulfilled' &&
-                            marketResult.value &&
-                            !marketResult.value.ok
+                        : marketResult.status === 'fulfilled' && !marketResult.value.ok
                           ? marketResult.value.error.message
                           : null
                     : null,
@@ -281,9 +270,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                 favorites: hasAdvanced
                     ? favoritesResult.status === 'rejected'
                         ? t('host.dashboard.analytics.favorites.error', 'Error al cargar favoritos')
-                        : favoritesResult.status === 'fulfilled' &&
-                            favoritesResult.value &&
-                            !favoritesResult.value.ok
+                        : favoritesResult.status === 'fulfilled' && !favoritesResult.value.ok
                           ? favoritesResult.value.error.message
                           : null
                     : null

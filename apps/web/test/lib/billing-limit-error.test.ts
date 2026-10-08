@@ -85,59 +85,16 @@ describe('HOS-690 AC-24 — gastronomy/experience limits render their own copy',
 });
 
 /**
- * HOS-723 — the at-limit toast leads with the add-on that raises THIS limit,
- * and offers one only when it exists.
+ * HOS-723 → HOS-1637 — the at-limit toast carries the plan upgrade only.
  *
- * ## What "primary" means here, and why it is asserted directly
- *
- * The payload's two fields map onto the toast's `action` / `secondaryAction`,
- * and `action` IS the primary slot — it gets the filled pill and, since
- * HOS-723, renders first. So "the add-on is primary" is not a styling opinion
- * to eyeball: it is the assertion `payload.action.href` points at the add-on
- * while `payload.secondaryAction.href` points at the subscription page. Both
- * halves are needed. Asserting only that the add-on appears somewhere passed
- * just as well when it sat in the secondary slot, which is the exact state this
- * change moved away from.
- *
- * ## Why these assertions and not easier ones
- *
- * The fixture below spells the four slugs out by hand instead of iterating
- * `ADDON_SLUG_BY_LIMIT_KEY`. Deriving the expectation from the same table the
- * implementation reads makes the test agree with whatever that table says,
- * including a typo — it would still pass with `extra-accommodations-500`.
- *
- * Likewise the href is compared in full, not with `toContain('addons')`: the
- * whole point of routing through `buildAddonFocusUrl` (HOS-729) is the
- * `?focus=` parameter and the `#addon-` fragment, and a substring match on the
- * path is blind to losing either. Nothing here is mocked — the real `createT`,
- * the real locale JSON, the real URL builder — so a broken import surfaces as a
- * failure rather than as an `undefined` that silently satisfies a loose
- * assertion.
+ * HOS-723 made the toast lead with an add-on offer for the four limits an
+ * add-on raised, pointing at `/mi-cuenta/addons/?focus=…`. That page was
+ * removed with the old billing (HOS-1637, AC:B13a:20), so every limit now gets
+ * the single plan action, and no limit links to the removed page.
  */
 
-/** Where the plan upgrade always points, whichever slot it occupies. */
+/** Where the plan upgrade points. */
 const PLAN_HREF_ES = '/es/mi-cuenta/suscripcion/';
-
-/** The four limits an add-on raises today, with the slug each must offer. */
-const ADDON_LIMIT_EXPECTATIONS = [
-    { limitKey: 'max_accommodations', slug: 'extra-accommodations-5' },
-    { limitKey: 'max_photos_per_accommodation', slug: 'extra-photos-20' },
-    { limitKey: 'max_gastronomies', slug: 'extra-gastronomies-1' },
-    { limitKey: 'max_experiences', slug: 'extra-experiences-1' }
-] as const;
-
-/**
- * Limits that must NOT be offered an add-on. Each is a real, live limit key —
- * a made-up key would only prove the unknown-key path, not that a genuine
- * limit with no purchasable add-on stays silent.
- */
-const NO_ADDON_LIMIT_KEYS = [
-    'max_favorites',
-    'max_active_promotions',
-    'max_staff_accounts',
-    'max_collections',
-    'max_ai_chat_per_month'
-] as const;
 
 /** A LIMIT_REACHED `details` payload sitting exactly at the cap. */
 function detailsFor(limitKey: string) {
@@ -150,116 +107,55 @@ function detailsFor(limitKey: string) {
     };
 }
 
-describe('HOS-723 — the at-limit CTA leads with the add-on that raises that limit', () => {
-    for (const { limitKey, slug } of ADDON_LIMIT_EXPECTATIONS) {
-        it(`makes ${slug} the PRIMARY action when ${limitKey} is reached`, () => {
-            const payload = buildLimitReachedPayloadFromDetails({
-                details: detailsFor(limitKey),
-                locale: 'es'
-            });
-
-            // The add-on occupies the primary slot. Full href: the focus query
-            // param AND the fragment, both of which decide whether the user
-            // lands on the right card or on a catalog they have to search.
-            expect(payload.action.href).toBe(`/es/mi-cuenta/addons/?focus=${slug}#addon-${slug}`);
-
-            // The label is real translated copy, not the hardcoded fallback.
-            const expectedLabel = createT('es')(
-                'account.subscription.usage.buyAddon',
-                '__MISSING__'
-            );
-            expect(expectedLabel).not.toBe('__MISSING__');
-            expect(payload.action.label).toBe(expectedLabel);
-
-            // The plan upgrade is DEMOTED, not dropped — still reachable, one
-            // step down. Without this half the inversion could silently become
-            // "replace the plan with the add-on".
-            expect(payload.secondaryAction).toBeDefined();
-            expect(payload.secondaryAction?.href).toBe(PLAN_HREF_ES);
-            expect(payload.secondaryAction?.label.length).toBeGreaterThan(0);
-
-            // And the two are genuinely different destinations, so a helper that
-            // returned the same action twice could not pass.
-            expect(payload.action.href).not.toBe(payload.secondaryAction?.href);
-        });
-    }
-
-    for (const limitKey of NO_ADDON_LIMIT_KEYS) {
-        it(`keeps the plan PRIMARY and only for ${limitKey}, which no add-on raises`, () => {
-            const payload = buildLimitReachedPayloadFromDetails({
-                details: detailsFor(limitKey),
-                locale: 'es'
-            });
-
-            // The plan keeps the primary slot, exactly as before HOS-723.
-            expect(payload.action.href).toBe(PLAN_HREF_ES);
-            // A false promise is worse than no offer: there is no add-on card
-            // for this limit, so pointing at the add-ons page sends the user
-            // hunting for something that does not exist.
-            expect(payload.secondaryAction).toBeUndefined();
-        });
-    }
-
-    it('keeps the plan primary and only, for an unknown limit key', () => {
-        const payload = buildLimitReachedPayloadFromDetails({
-            details: detailsFor('max_definitely_not_a_real_key'),
-            locale: 'es'
-        });
-
-        expect(payload.action.href).toBe(PLAN_HREF_ES);
-        expect(payload.secondaryAction).toBeUndefined();
-    });
-
-    it('keeps the plan primary and only, when the error body carries no details', () => {
-        const payload = buildLimitReachedPayloadFromDetails({
-            details: undefined,
-            locale: 'es'
-        });
-
-        expect(payload.action.href).toBe(PLAN_HREF_ES);
-        expect(payload.secondaryAction).toBeUndefined();
-    });
-
-    it('builds the add-on link inside the active locale, not a hardcoded /es/', () => {
-        const payload = buildLimitReachedPayloadFromDetails({
-            details: detailsFor('max_accommodations'),
-            locale: 'en'
-        });
-
-        expect(payload.action.href).toBe(
-            '/en/mi-cuenta/addons/?focus=extra-accommodations-5#addon-extra-accommodations-5'
-        );
-        expect(payload.secondaryAction?.href).toBe('/en/mi-cuenta/suscripcion/');
-    });
-
-    it('the plan upgrade is reachable for EVERY known limit, in one slot or the other', () => {
+describe('HOS-1637 — the at-limit CTA is the plan upgrade, never the removed add-on page', () => {
+    it('points EVERY known limit at the plan upgrade', () => {
+        // Non-vacuity: the allowlist is not empty.
+        expect(KNOWN_LIMIT_KEYS.size).toBeGreaterThan(10);
         for (const limitKey of KNOWN_LIMIT_KEYS) {
             const payload = buildLimitReachedPayloadFromDetails({
                 details: detailsFor(limitKey as string),
                 locale: 'es'
             });
 
-            const planHrefs = [payload.action.href, payload.secondaryAction?.href];
-
-            // Invariant 1 of the payload contract: a limit toast is never a
-            // dead end. Demoting the plan must never become dropping it.
-            expect(planHrefs).toContain(PLAN_HREF_ES);
+            expect(payload.action.href).toBe(PLAN_HREF_ES);
+            expect(payload.action.label.length).toBeGreaterThan(0);
+            expect(JSON.stringify(payload)).not.toContain('mi-cuenta/addons');
         }
     });
 
-    it('exactly these four limits lead with an add-on, and no others', () => {
-        const addonLed = [...KNOWN_LIMIT_KEYS].filter((limitKey) =>
-            buildLimitReachedPayloadFromDetails({
-                details: detailsFor(limitKey as string),
+    it('does so for the four limits that used to lead with an add-on', () => {
+        for (const limitKey of [
+            'max_accommodations',
+            'max_photos_per_accommodation',
+            'max_gastronomies',
+            'max_experiences'
+        ]) {
+            const payload = buildLimitReachedPayloadFromDetails({
+                details: detailsFor(limitKey),
                 locale: 'es'
-            }).action.href.includes('/mi-cuenta/addons/')
-        );
+            });
 
-        // Frozen on purpose: a fifth purchasable add-on is a product decision
-        // that must be made here deliberately, not inherited from a table edit.
-        expect(addonLed.sort()).toEqual(
-            ADDON_LIMIT_EXPECTATIONS.map((entry) => entry.limitKey as string).sort()
-        );
+            expect(payload.action.href).toBe(PLAN_HREF_ES);
+            expect(payload).not.toHaveProperty('secondaryAction');
+        }
+    });
+
+    it('builds the plan link inside the active locale, not a hardcoded /es/', () => {
+        const payload = buildLimitReachedPayloadFromDetails({
+            details: detailsFor('max_accommodations'),
+            locale: 'en'
+        });
+
+        expect(payload.action.href).toBe('/en/mi-cuenta/suscripcion/');
+    });
+
+    it('keeps the plan action when the error body carries no details', () => {
+        const payload = buildLimitReachedPayloadFromDetails({
+            details: undefined,
+            locale: 'es'
+        });
+
+        expect(payload.action.href).toBe(PLAN_HREF_ES);
     });
 });
 

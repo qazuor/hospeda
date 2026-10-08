@@ -396,11 +396,11 @@ describe('NotificationService', () => {
                     paymentMethod: 'Credit Card'
                 },
                 {
-                    type: NotificationType.ADDON_EXPIRATION_WARNING,
+                    type: NotificationType.RENEWAL_REMINDER,
                     ...basePayload,
-                    addonName: 'Priority Support',
+                    planName: 'Priority',
                     daysRemaining: 5,
-                    expirationDate: '2024-12-31'
+                    renewalDate: '2024-12-31'
                 },
                 {
                     type: NotificationType.TRIAL_ENDING_REMINDER,

@@ -103,34 +103,6 @@ describe('Subject placeholders reach the inbox resolved (H-64 / H-75)', () => {
         return call.subject;
     };
 
-    describe('addon purchase — the twelfth case, found by the guard', () => {
-        it('ADDON_PURCHASE names the addon instead of leaking {addonName}', async () => {
-            // Not in the eleven the manual sweep reported, and reachable in
-            // production: the MercadoPago webhook emits this on every successful
-            // addon payment. The sweep cross-checked subjects against the keys
-            // the old chain ASSIGNED, and the chain did assign `addonName` —
-            // guarded by `if ('addonName' in payload)`. What it never checked is
-            // whether the payload serving ADDON_PURCHASE actually had such a
-            // field. The guard is over the whole set, so it caught what reading
-            // the chain could not. HOS-722 then gave the type its own
-            // `AddonPurchaseConfirmationPayload`, which does carry `addonName`,
-            // so the subject reads it directly instead of through `planName`.
-            const subject = await sentSubject({
-                type: NotificationType.ADDON_PURCHASE,
-                ...basePayload,
-                addonName: 'Fotos extra',
-                addonDescription: '20 fotos adicionales por alojamiento',
-                orderId: 'mp-payment-1',
-                amount: 250000,
-                currency: 'ARS',
-                expiresAt: '2026-09-15T00:00:00.000Z'
-            });
-
-            expect(subject).toContain('Fotos extra');
-            expect(subject).not.toMatch(UNRESOLVED_PLACEHOLDER);
-        });
-    });
-
     describe('alliance (HOS-278)', () => {
         it('ALLIANCE_CLAIM_INVITE resolves programLabel', async () => {
             const subject = await sentSubject({

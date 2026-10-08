@@ -14,25 +14,17 @@
 
 import { formatCalendarDate } from '@repo/utils';
 import { type JSX, useCallback, useEffect, useState } from 'react';
-import { billingApi, ownerPromotionApi } from '@/lib/api/endpoints-protected';
+import { ownerPromotionApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotionList } from '@/lib/api/transforms';
 import type { OwnerPromotionData, OwnerPromotionDiscountType } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './PromotionList.module.css';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-/**
- * Client-safe entitlement literal matching the backend wire value. Kept as a
- * plain string rather than imported from `@repo/billing` to avoid pulling
- * server-only deps into the client bundle (same convention as AnalyticsSection).
- */
-const ENTITLEMENT_CREATE_PROMOTIONS = 'create_promotions';
 
 /**
  * Renders a promotion validity boundary — a calendar day, not an instant.
@@ -65,12 +57,6 @@ type ListState =
     | {
           readonly status: 'ready';
           readonly items: ReadonlyArray<OwnerPromotionData>;
-          /**
-           * Whether the actor's plan includes the `create_promotions`
-           * entitlement. Gates the "new promotion" button so a host without it
-           * sees an upgrade prompt instead of a button that only fails on save.
-           */
-          readonly canCreate: boolean;
       }
     | { readonly status: 'error'; readonly message: string };
 
@@ -156,10 +142,11 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
         setState({ status: 'loading' });
         setDeleteError(null);
         try {
-            const [result, entitlementsResult] = await Promise.all([
-                ownerPromotionApi.list(),
-                billingApi.getEntitlements()
-            ]);
+            // The plan gate this list used to read (`create_promotions`, from
+            // the old billing's entitlements) was removed with the old billing
+            // client (HOS-1637, AC:B13a:22). It already failed open; the API
+            // still decides on save.
+            const result = await ownerPromotionApi.list();
             if (!result.ok) {
                 setState({
                     status: 'error',
@@ -173,13 +160,7 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
             const items = transformOwnerPromotionList({
                 items: result.data.items as ReadonlyArray<Record<string, unknown>>
             });
-            // Fail-open: if the entitlement read fails, keep the create button
-            // enabled — the server still enforces the gate on save, so the worst
-            // case is the pre-existing save-time 403, never a wrongly-hidden button.
-            const canCreate =
-                !entitlementsResult.ok ||
-                entitlementsResult.data.entitlements.includes(ENTITLEMENT_CREATE_PROMOTIONS);
-            setState({ status: 'ready', items, canCreate });
+            setState({ status: 'ready', items });
         } catch {
             setState({
                 status: 'error',
@@ -272,51 +253,22 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
     }
 
     // ── Render: ready ─────────────────────────────────────────────────────
-    const { items, canCreate } = state;
+    const { items } = state;
     const freeNightLabel = t('host.promotions.discountTypes.free_night', 'Noche gratis');
-    const upgradeUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 
     return (
         <div className={styles.container}>
             {/* ── Header ──
                 The page title lives at the page level (AccountLayout / index.astro),
                 so this island only renders the create-promotion action, right-aligned. */}
-            {canCreate ? (
-                <div className={styles.header}>
-                    <a
-                        href={buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' })}
-                        className={styles.createButton}
-                    >
-                        {t('host.promotions.createButton', 'Nueva promoción')}
-                    </a>
-                </div>
-            ) : null}
-
-            {/* ── Upgrade banner (plan without create_promotions) ── */}
-            {!canCreate && (
-                <div className={styles.upgradeBanner}>
-                    <div className={styles.upgradeTextGroup}>
-                        <span className={styles.upgradeTitle}>
-                            {t(
-                                'host.promotions.errors.entitlementRequired',
-                                'Tu plan no incluye promociones.'
-                            )}
-                        </span>
-                        <span className={styles.upgradeHint}>
-                            {t(
-                                'host.promotions.errors.entitlementRequiredHint',
-                                'Mejorá tu plan para crear promociones.'
-                            )}
-                        </span>
-                    </div>
-                    <a
-                        href={upgradeUrl}
-                        className={styles.upgradeLink}
-                    >
-                        {t('host.promotions.actions.upgradePlan', 'Ver planes')}
-                    </a>
-                </div>
-            )}
+            <div className={styles.header}>
+                <a
+                    href={buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' })}
+                    className={styles.createButton}
+                >
+                    {t('host.promotions.createButton', 'Nueva promoción')}
+                </a>
+            </div>
 
             {/* ── Delete error banner ── */}
             {deleteError !== null && (
@@ -330,17 +282,12 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
 
             {/* ── Empty state ── */}
             {items.length === 0 ? (
-                // When the plan can't create promotions the upgrade banner above
-                // already explains the state, so suppress the "create your first
-                // offer" CTA here to avoid a contradictory message.
-                canCreate ? (
-                    <p className={styles.emptyText}>
-                        {t(
-                            'host.promotions.empty',
-                            'Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!'
-                        )}
-                    </p>
-                ) : null
+                <p className={styles.emptyText}>
+                    {t(
+                        'host.promotions.empty',
+                        'Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!'
+                    )}
+                </p>
             ) : (
                 <ul className={styles.list}>
                     {items.map((promo) => {
