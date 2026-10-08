@@ -51,14 +51,14 @@ describe('HOS-1516 billing deadlines', () => {
 
     beforeEach(async () => {
         // Other integration files call testDb.clean(), which removes migration seed rows.
-        await getDb().execute(sql`TRUNCATE TABLE billing_deadline_version`);
+        await getDb().execute(sql`TRUNCATE TABLE billing_deadline_version CASCADE`);
         await getDb()
             .insert(billingDeadlineVersions)
             .values({ version: 1, values: version1Values });
     });
 
     afterEach(async () => {
-        await getDb().execute(sql`TRUNCATE TABLE billing_deadline_version`);
+        await getDb().execute(sql`TRUNCATE TABLE billing_deadline_version CASCADE`);
     });
 
     afterAll(async () => testDb.teardown());

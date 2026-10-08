@@ -974,6 +974,13 @@
       "when": 1791453224410,
       "tag": "0138_woozy_dagger",
       "breakpoints": true
+    },
+    {
+      "idx": 139,
+      "version": "7",
+      "when": 1791477743868,
+      "tag": "0139_serious_vampiro",
+      "breakpoints": true
     }
   ]
 }
