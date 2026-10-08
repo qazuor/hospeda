@@ -159,7 +159,6 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // USER: All permissions
         PermissionEnum.USER_READ_ALL,
-        PermissionEnum.USER_IMPERSONATE,
         PermissionEnum.USER_CREATE,
         PermissionEnum.USER_UPDATE_ROLES,
         PermissionEnum.USER_VISIBILITY_CHANGE,
@@ -573,7 +572,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_VIEW_DRAFT,
         PermissionEnum.POST_VIEW_ALL,
 
-        // USER: Most permissions (no impersonate, no hard delete)
+        // USER: Most permissions (no hard delete)
         PermissionEnum.USER_READ_ALL,
         PermissionEnum.USER_CREATE,
         PermissionEnum.USER_UPDATE_ROLES,

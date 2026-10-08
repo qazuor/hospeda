@@ -283,7 +283,6 @@ export enum PermissionEnum {
 
     // USER: Permissions related to user management and actions
     USER_READ_ALL = 'user.read.all', // Allows reading all user profiles.
-    USER_IMPERSONATE = 'user.impersonate', // Allows impersonating another user.
     USER_CREATE = 'user.create', // Allows creating a new user.
     USER_UPDATE_ROLES = 'user.update.roles', // Allows updating user roles.
     USER_UPDATE_ANY = 'user.update.any', // Allows updating any user's profile.
