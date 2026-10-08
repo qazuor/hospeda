@@ -1,6 +1,6 @@
 {
-  "id": "beca10e5-d8c0-4eb5-ba69-5c8e81b5d79b",
-  "prevId": "7f1bed7d-bebc-475a-bdbe-f75cd3f887f3",
+  "id": "e95e4f6e-f6a4-490a-9069-6b2aee38c770",
+  "prevId": "beca10e5-d8c0-4eb5-ba69-5c8e81b5d79b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -24843,6 +24843,341 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.canje_de_trial": {
+      "name": "canje_de_trial",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vertical": {
+          "name": "vertical",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "redemption_key": {
+          "name": "redemption_key",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "applied_days": {
+          "name": "applied_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "applied_at": {
+          "name": "applied_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "canje_de_trial_user_id_users_id_fk": {
+          "name": "canje_de_trial_user_id_users_id_fk",
+          "tableFrom": "canje_de_trial",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "canje_de_trial_vertical_vertical_id_fk": {
+          "name": "canje_de_trial_vertical_vertical_id_fk",
+          "tableFrom": "canje_de_trial",
+          "tableTo": "vertical",
+          "columnsFrom": [
+            "vertical"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_canje_de_trial_redemption_key": {
+          "name": "uq_canje_de_trial_redemption_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "redemption_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_canje_de_trial_applied_days": {
+          "name": "ck_canje_de_trial_applied_days",
+          "value": "\"canje_de_trial\".\"applied_days\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.trial": {
+      "name": "trial",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vertical": {
+          "name": "vertical",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "trial_plan_id": {
+          "name": "trial_plan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "floor_entitlements_version_id": {
+          "name": "floor_entitlements_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "floor_limits_version_id": {
+          "name": "floor_limits_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "floor_trial_plan_version_id": {
+          "name": "floor_trial_plan_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_pseudonym": {
+          "name": "email_pseudonym",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deadlines_version": {
+          "name": "deadlines_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "trial_user_id_users_id_fk": {
+          "name": "trial_user_id_users_id_fk",
+          "tableFrom": "trial",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "trial_vertical_vertical_id_fk": {
+          "name": "trial_vertical_vertical_id_fk",
+          "tableFrom": "trial",
+          "tableTo": "vertical",
+          "columnsFrom": [
+            "vertical"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_trial_trial_plan_vertical": {
+          "name": "fk_trial_trial_plan_vertical",
+          "tableFrom": "trial",
+          "tableTo": "plan",
+          "columnsFrom": [
+            "trial_plan_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_trial_floor_entitlements_version_vertical": {
+          "name": "fk_trial_floor_entitlements_version_vertical",
+          "tableFrom": "trial",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "floor_entitlements_version_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_trial_floor_limits_version_vertical": {
+          "name": "fk_trial_floor_limits_version_vertical",
+          "tableFrom": "trial",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "floor_limits_version_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_trial_floor_trial_plan_version_vertical": {
+          "name": "fk_trial_floor_trial_plan_version_vertical",
+          "tableFrom": "trial",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "floor_trial_plan_version_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_trial_floor_trial_plan_version_plan": {
+          "name": "fk_trial_floor_trial_plan_version_plan",
+          "tableFrom": "trial",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "floor_trial_plan_version_id",
+            "trial_plan_id"
+          ],
+          "columnsTo": [
+            "id",
+            "plan_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_trial_user_vertical": {
+          "name": "uq_trial_user_vertical",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "vertical"
+          ]
+        },
+        "uq_trial_email_pseudonym_vertical": {
+          "name": "uq_trial_email_pseudonym_vertical",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email_pseudonym",
+            "vertical"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_trial_status": {
+          "name": "ck_trial_status",
+          "value": "\"trial\".\"status\" IN ('TRIAL_ACTIVE', 'TRIAL_EXPIRED', 'TRIAL_CONVERTED')"
+        },
+        "ck_trial_email_pseudonym_format": {
+          "name": "ck_trial_email_pseudonym_format",
+          "value": "\"trial\".\"email_pseudonym\" ~ '^[0-9a-f]{64}$'"
+        },
+        "ck_trial_clock_together": {
+          "name": "ck_trial_clock_together",
+          "value": "(\"trial\".\"started_at\" IS NULL) = (\"trial\".\"ends_at\" IS NULL)"
+        },
+        "ck_trial_clock_order": {
+          "name": "ck_trial_clock_order",
+          "value": "\"trial\".\"started_at\" IS NULL OR \"trial\".\"ends_at\" >= \"trial\".\"started_at\""
+        },
+        "ck_trial_deadlines_version": {
+          "name": "ck_trial_deadlines_version",
+          "value": "\"trial\".\"deadlines_version\" IS NULL OR \"trial\".\"deadlines_version\" >= 1"
+        },
+        "ck_trial_active_complete": {
+          "name": "ck_trial_active_complete",
+          "value": "\"trial\".\"status\" <> 'TRIAL_ACTIVE' OR (\n                \"trial\".\"trial_plan_id\" IS NOT NULL\n                AND \"trial\".\"floor_entitlements_version_id\" IS NOT NULL\n                AND \"trial\".\"floor_limits_version_id\" IS NOT NULL\n                AND \"trial\".\"floor_trial_plan_version_id\" IS NOT NULL\n                AND \"trial\".\"started_at\" IS NOT NULL\n                AND \"trial\".\"ends_at\" IS NOT NULL\n                AND \"trial\".\"deadlines_version\" IS NOT NULL\n            )"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.account": {
