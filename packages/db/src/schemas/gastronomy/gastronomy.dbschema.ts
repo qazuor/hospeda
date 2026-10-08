@@ -27,6 +27,7 @@ import {
     PriceRangePgEnum,
     VisibilityPgEnum
 } from '../enums.dbschema.ts';
+import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { gastronomyEvents } from './gastronomy_event.dbschema.ts';
 import { gastronomyFaqs } from './gastronomy_faq.dbschema.ts';
@@ -135,6 +136,8 @@ export const gastronomies = pgTable(
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
+        // HOS-1478 (V6.8a): the listing publication model of V/03 §9.
+        ...listingPublicationColumns(),
         destinationId: uuid('destination_id')
             .notNull()
             .references(() => destinations.id, { onDelete: 'restrict' }),

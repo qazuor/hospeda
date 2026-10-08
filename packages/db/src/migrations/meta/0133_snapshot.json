@@ -1,6 +1,6 @@
 {
-  "id": "a3c4bdbf-5861-4d73-a1c2-829288f26a77",
-  "prevId": "0b9d1a3f-271c-4e03-bf4d-70bcdafe7bb8",
+  "id": "cb93c416-35f5-4428-b371-d907f0a0c700",
+  "prevId": "a3c4bdbf-5861-4d73-a1c2-829288f26a77",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -26627,6 +26627,305 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.addon_version_entitlement": {
+      "name": "addon_version_entitlement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "addon_version_id": {
+          "name": "addon_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "addon_version_entitlement_addon_version_id_addon_version_id_fk": {
+          "name": "addon_version_entitlement_addon_version_id_addon_version_id_fk",
+          "tableFrom": "addon_version_entitlement",
+          "tableTo": "addon_version",
+          "columnsFrom": [
+            "addon_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "addon_version_entitlement_key_catalog_key_key_fk": {
+          "name": "addon_version_entitlement_key_catalog_key_key_fk",
+          "tableFrom": "addon_version_entitlement",
+          "tableTo": "catalog_key",
+          "columnsFrom": [
+            "key"
+          ],
+          "columnsTo": [
+            "key"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_addon_version_entitlement_version_key": {
+          "name": "uq_addon_version_entitlement_version_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "addon_version_id",
+            "key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.addon_version_limit": {
+      "name": "addon_version_limit",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "addon_version_id": {
+          "name": "addon_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "addon_version_limit_addon_version_id_addon_version_id_fk": {
+          "name": "addon_version_limit_addon_version_id_addon_version_id_fk",
+          "tableFrom": "addon_version_limit",
+          "tableTo": "addon_version",
+          "columnsFrom": [
+            "addon_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "addon_version_limit_key_catalog_key_key_fk": {
+          "name": "addon_version_limit_key_catalog_key_key_fk",
+          "tableFrom": "addon_version_limit",
+          "tableTo": "catalog_key",
+          "columnsFrom": [
+            "key"
+          ],
+          "columnsTo": [
+            "key"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_addon_version_limit_version_key": {
+          "name": "uq_addon_version_limit_version_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "addon_version_id",
+            "key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_addon_version_limit_value": {
+          "name": "ck_addon_version_limit_value",
+          "value": "\"addon_version_limit\".\"value\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.addon_version": {
+      "name": "addon_version",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "addon_id": {
+          "name": "addon_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "validity": {
+          "name": "validity",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "validity_days": {
+          "name": "validity_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope_type": {
+          "name": "scope_type",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "addon_version_addon_id_addon_id_fk": {
+          "name": "addon_version_addon_id_addon_id_fk",
+          "tableFrom": "addon_version",
+          "tableTo": "addon",
+          "columnsFrom": [
+            "addon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_addon_version_validity": {
+          "name": "ck_addon_version_validity",
+          "value": "\"addon_version\".\"validity\" IN ('FIXED_DAYS', 'WHILE_SUBSCRIPTION_ALIVE')"
+        },
+        "ck_addon_version_scope_type": {
+          "name": "ck_addon_version_scope_type",
+          "value": "\"addon_version\".\"scope_type\" IN ('LISTING', 'VERTICAL_SUBSCRIPTION', 'USER', 'GLOBAL')"
+        },
+        "ck_addon_version_validity_days": {
+          "name": "ck_addon_version_validity_days",
+          "value": "(\"addon_version\".\"validity\" = 'FIXED_DAYS') = (\"addon_version\".\"validity_days\" IS NOT NULL) AND (\"addon_version\".\"validity_days\" IS NULL OR \"addon_version\".\"validity_days\" > 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.addon": {
+      "name": "addon",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_addon_slug": {
+          "name": "uq_addon_slug",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.catalog_key": {
       "name": "catalog_key",
       "schema": "",
@@ -26695,6 +26994,455 @@
           "value": "\"catalog_key\".\"key_class\" IN ('COMMERCIAL', 'BASE')"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.plan_version_entitlement": {
+      "name": "plan_version_entitlement",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "plan_version_id": {
+          "name": "plan_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "plan_quota": {
+          "name": "plan_quota",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "trial_quota": {
+          "name": "trial_quota",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "plan_version_entitlement_plan_version_id_plan_version_id_fk": {
+          "name": "plan_version_entitlement_plan_version_id_plan_version_id_fk",
+          "tableFrom": "plan_version_entitlement",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "plan_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "plan_version_entitlement_key_catalog_key_key_fk": {
+          "name": "plan_version_entitlement_key_catalog_key_key_fk",
+          "tableFrom": "plan_version_entitlement",
+          "tableTo": "catalog_key",
+          "columnsFrom": [
+            "key"
+          ],
+          "columnsTo": [
+            "key"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_plan_version_entitlement_version_key": {
+          "name": "uq_plan_version_entitlement_version_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "plan_version_id",
+            "key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_plan_version_entitlement_quotas_together": {
+          "name": "ck_plan_version_entitlement_quotas_together",
+          "value": "(\"plan_version_entitlement\".\"plan_quota\" IS NULL) = (\"plan_version_entitlement\".\"trial_quota\" IS NULL)"
+        },
+        "ck_plan_version_entitlement_quotas_non_negative": {
+          "name": "ck_plan_version_entitlement_quotas_non_negative",
+          "value": "\"plan_version_entitlement\".\"plan_quota\" IS NULL OR (\"plan_version_entitlement\".\"plan_quota\" >= 0 AND \"plan_version_entitlement\".\"trial_quota\" >= 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.plan_version_limit": {
+      "name": "plan_version_limit",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "plan_version_id": {
+          "name": "plan_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "key": {
+          "name": "key",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "plan_version_limit_plan_version_id_plan_version_id_fk": {
+          "name": "plan_version_limit_plan_version_id_plan_version_id_fk",
+          "tableFrom": "plan_version_limit",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "plan_version_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "plan_version_limit_key_catalog_key_key_fk": {
+          "name": "plan_version_limit_key_catalog_key_key_fk",
+          "tableFrom": "plan_version_limit",
+          "tableTo": "catalog_key",
+          "columnsFrom": [
+            "key"
+          ],
+          "columnsTo": [
+            "key"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_plan_version_limit_version_key": {
+          "name": "uq_plan_version_limit_version_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "plan_version_id",
+            "key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_plan_version_limit_value": {
+          "name": "ck_plan_version_limit_value",
+          "value": "\"plan_version_limit\".\"value\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.plan_version": {
+      "name": "plan_version",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "plan_id": {
+          "name": "plan_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vertical": {
+          "name": "vertical",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rank": {
+          "name": "rank",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sellable": {
+          "name": "sellable",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "current": {
+          "name": "current",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "grace_days": {
+          "name": "grace_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 10
+        },
+        "trial_days": {
+          "name": "trial_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "allows_pause": {
+          "name": "allows_pause",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inherits_tourist_vip": {
+          "name": "inherits_tourist_vip",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_plan_version_one_current_per_plan": {
+          "name": "uq_plan_version_one_current_per_plan",
+          "columns": [
+            {
+              "expression": "plan_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"plan_version\".\"current\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_plan_version_sellable_current_rank": {
+          "name": "uq_plan_version_sellable_current_rank",
+          "columns": [
+            {
+              "expression": "vertical",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "rank",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"plan_version\".\"sellable\" AND \"plan_version\".\"current\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "fk_plan_version_plan_vertical": {
+          "name": "fk_plan_version_plan_vertical",
+          "tableFrom": "plan_version",
+          "tableTo": "plan",
+          "columnsFrom": [
+            "plan_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_plan_version_id_plan": {
+          "name": "uq_plan_version_id_plan",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "plan_id"
+          ]
+        },
+        "uq_plan_version_id_vertical": {
+          "name": "uq_plan_version_id_vertical",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "vertical"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_plan_version_grace_days": {
+          "name": "ck_plan_version_grace_days",
+          "value": "\"plan_version\".\"grace_days\" >= 0"
+        },
+        "ck_plan_version_trial_days": {
+          "name": "ck_plan_version_trial_days",
+          "value": "\"plan_version\".\"trial_days\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.plan": {
+      "name": "plan",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "vertical": {
+          "name": "vertical",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar(120)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pricing_order": {
+          "name": "pricing_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "plan_vertical_vertical_id_fk": {
+          "name": "plan_vertical_vertical_id_fk",
+          "tableFrom": "plan",
+          "tableTo": "vertical",
+          "columnsFrom": [
+            "vertical"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_plan_vertical_slug": {
+          "name": "uq_plan_vertical_slug",
+          "nullsNotDistinct": false,
+          "columns": [
+            "vertical",
+            "slug"
+          ]
+        },
+        "uq_plan_id_vertical": {
+          "name": "uq_plan_id_vertical",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "vertical"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.vertical": {

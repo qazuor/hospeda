@@ -124,6 +124,8 @@ export * from './product-domain.enum.js';
 export * from './product-domain.schema.js';
 export * from './product-type.enum.js';
 export * from './product-type.schema.js';
+export * from './publication-status.enum.js';
+export * from './publication-status.schema.js';
 export * from './qr-code-center-logo.enum.js';
 export * from './qr-code-center-logo.schema.js';
 export * from './qr-code-error-correction-level.enum.js';

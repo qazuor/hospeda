@@ -94,6 +94,15 @@ posterior** (*«cómo se enciende sobre una rama `epic/**` lo fija `DEC-CI-001`�
 como lo que falta escribir al abrir la primera fase (`D/16-fase-7-del-paraguas.md:1023`;
 [GATE:FP.3](30-el-corte.md#gate-fp-3)).
 
+## 4-bis. Pendientes del owner agregados el 2026-10-07
+
+1. **El orden de `MIN` y `BEST_DECLARED`.** Cuando aparezca la primera clave del catálogo que declare
+   la estrategia `MÍNIMO` (`MIN`) o `MEJOR_DECLARADO` (`BEST_DECLARED`), el owner confirma el orden que
+   la clave declara —qué valor es «mejor» para el cliente— antes del merge de la hoja que la agrega
+   ([AC:V3:1](10-corte/V3.md#ac-v3-1), [AC:V2:4](10-corte/V2.md#ac-v2-4)).
+2. **Qué es exportar una ficha y qué pieza lo construye** (Coord-4,
+   `docs/41-corte-del-mvp/10-decisiones-del-owner.md`): la pieza natural es `V8a`.
+
 ## 5. Lo que cada capítulo declara que NO cierra
 
 Las secciones *«Lo que este capítulo (o esta mitad) NO cierra»* de los capítulos del diseño, en su
