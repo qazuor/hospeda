@@ -34,5 +34,6 @@ export * from './seed-migrations/index.ts';
 export * from './social/index.ts';
 export * from './sponsorship/index.ts';
 export * from './tag/index.ts';
+export * from './trial/index.ts';
 export * from './user/index.ts';
 export * from './vertical/index.ts';

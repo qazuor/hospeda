@@ -6,7 +6,7 @@ import { billingDeadlineVersions } from '../../src/schemas/vertical/billing-dead
 import { closeTestPool, getTestDb } from './helpers.ts';
 
 const migration = readFileSync(
-    resolve(import.meta.dirname, '../../src/migrations/0137_woozy_franklin_richards.sql'),
+    resolve(import.meta.dirname, '../../src/migrations/0138_woozy_dagger.sql'),
     'utf8'
 );
 
