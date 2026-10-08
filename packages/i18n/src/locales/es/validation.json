@@ -2504,6 +2504,9 @@
         "productType": {
             "invalid": "El product type no es válido"
         },
+        "publicationStatus": {
+            "invalid": "El estado de publicación no es válido"
+        },
         "qrCodeCenterLogo": {
             "invalid": "El logo central del código QR no es válido"
         },
