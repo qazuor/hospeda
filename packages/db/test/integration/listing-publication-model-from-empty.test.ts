@@ -73,6 +73,24 @@ async function columnsOf({
 let admin: Pool;
 let scratch: Pool;
 
+/** Swallows the FATAL 57P01 a forced DROP sends a closing client; rethrows anything else. */
+function ignoreAdminShutdown(error: Error & { readonly code?: string }): void {
+    if (error.code === '57P01') return;
+    throw error;
+}
+
+/** Waits (bounded) until no backend is connected to the scratch database, so the forced DROP has nothing to kill. */
+async function waitForNoConnections(): Promise<void> {
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+        const result = await admin.query<{ count: string }>(
+            'SELECT count(*)::text AS count FROM pg_stat_activity WHERE datname = $1',
+            [SCRATCH_DB]
+        );
+        if (Number(result.rows[0]?.count ?? 0) === 0) return;
+        await new Promise((resolveWait) => setTimeout(resolveWait, 100));
+    }
+}
+
 beforeAll(async () => {
     admin = new Pool({ connectionString: urlFor({ database: 'postgres' }) });
     await admin.query(`DROP DATABASE IF EXISTS "${SCRATCH_DB}"`);
@@ -94,10 +112,19 @@ beforeAll(async () => {
         }
     );
     scratch = new Pool({ connectionString: urlFor({ database: SCRATCH_DB }) });
+    // The teardown's DROP ... WITH (FORCE) can terminate a backend whose client
+    // is still closing; Postgres then sends that client FATAL 57P01
+    // (admin_shutdown). Without a listener it surfaces as an unhandled error and
+    // fails the whole run after every test passed. Only 57P01 is swallowed.
+    scratch.on('error', ignoreAdminShutdown);
+    scratch.on('connect', (client) => {
+        client.on('error', ignoreAdminShutdown);
+    });
 }, 200_000);
 
 afterAll(async () => {
     await scratch?.end();
+    await waitForNoConnections();
     await admin?.query(`DROP DATABASE IF EXISTS "${SCRATCH_DB}" WITH (FORCE)`);
     await admin?.end();
 });
