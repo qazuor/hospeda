@@ -304,6 +304,12 @@ jobs:
         run: pnpm check:sdk-outside-adapter
       - name: Check no decision comes out of a notice without re-reading by id (GUARD:G17)
         run: pnpm check:decision-rereads-by-id
+      # GUARD:G15 (HOS-1510, AC:B1:9). Its own step, like every guard here. The fake
+      # payment provider lies only from its closed list, each lie in one place and
+      # each row whole (a); a test turns a lie off only by naming it and saying
+      # why (b). Its message names which predicate failed.
+      - name: Check the fake provider lies only from its closed list (GUARD:G15)
+        run: pnpm check:fake-lies
       # GUARD:G18 (HOS-1431, AC:V1:4). Its own step, like every guard here. The
       # reference rows every migration inserts (catalog_key, vertical) are the
       # rows scripts/generate-catalog-sql.ts regenerates from the code catalog.
