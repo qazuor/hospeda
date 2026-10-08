@@ -53,6 +53,9 @@ export const RULE_MESSAGES: Readonly<Record<GR2Half, string>> = {
 
 const TEST_FILE = /\.(?:test|spec)\.[cm]?tsx?$/;
 
+/** The complement has to be DISTINGUISHED for the discard to exist at all. */
+const SELECTOR_EXCLUDES_COMPLEMENT = /['"]COMPLEMENT['"]/;
+
 /** A call, not the definition: the expression `= name(` or `(name(`. */
 function called(name: string): RegExp {
     return new RegExp(`[=(]\\s*${name}\\s*\\(`);
@@ -61,7 +64,9 @@ function called(name: string): RegExp {
 /**
  * The two halves over the resolution's source. A definition (`function name(`)
  * does not satisfy a call, so removing the call reddens the half even while the
- * definition stays behind.
+ * definition stays behind. The selector half also requires that the class
+ * COMPLEMENT be named, so calling the helper and then admitting every
+ * complement (the result ignored) is still red.
  *
  * @param args.code - The resolution's concatenated, comment-stripped source.
  * @returns One entry per half that is missing.
@@ -69,7 +74,9 @@ function called(name: string): RegExp {
 export function findMissingHalves({ code }: { readonly code: string }): readonly GR2Half[] {
     const missing: GR2Half[] = [];
     if (!called('selectPlegableSources').test(code)) missing.push('fold-through-selector');
-    if (!called('hasLiveNonTrialTitle').test(code)) missing.push('selector-gates-complement');
+    const selectorGates =
+        SELECTOR_EXCLUDES_COMPLEMENT.test(code) && called('hasLiveNonTrialTitle').test(code);
+    if (!selectorGates) missing.push('selector-gates-complement');
     return missing;
 }
 

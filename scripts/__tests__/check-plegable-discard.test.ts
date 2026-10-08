@@ -73,6 +73,20 @@ describe('TEST:V3:3 — GUARD:G-R2', () => {
         expect(result.output).not.toContain(`FAIL ${RULE_MESSAGES['fold-through-selector']}`);
     });
 
+    it('mutation: calling the helper and ignoring its result is still red', () => {
+        const result = run({
+            root: makeTree({
+                overrides: {
+                    'plegable.ts':
+                        "import { hasLiveNonTrialTitle } from './helper';\nconst admits = hasLiveNonTrialTitle({ sources: [] });\nvoid admits;\nexport function selectPlegableSources({ sources }: { readonly sources: readonly unknown[] }) {\n    return sources;\n}\n"
+                }
+            })
+        });
+
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`FAIL ${RULE_MESSAGES['selector-gates-complement']}`);
+    });
+
     it('mutation: a fold that bypasses the selector is red', () => {
         const result = run({
             root: makeTree({
