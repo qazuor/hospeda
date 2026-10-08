@@ -9,10 +9,15 @@
  *
  * Impersonation leaves the product entirely (DEC-AUTH-003 point 4): the
  * plugin actions, the `USER_IMPERSONATE` permission and the panel button. This
- * spec opens the two places the button used to render — the user detail header
- * and the users list row actions — and asserts that neither offers it. Each
+ * spec opens the user pages whose header used to render the button — the
+ * detail view and the edit view — and asserts that neither offers it. Each
  * check first waits for an action that IS still there (the delete button), so
  * an empty or still-loading page cannot pass the negative assertion.
+ *
+ * The users LIST row action is covered by the static guard
+ * `apps/admin/test/no-impersonation.guard.test.ts`, not here: in the e2e
+ * environment the list renders no rows for a fresh SUPER_ADMIN (observed in
+ * nightly run 37724822524), so a row-scoped check could only wait on nothing.
  */
 
 import { expect, type Locator, type Page, test } from '@playwright/test';
@@ -68,10 +73,14 @@ test.describe('ADM-05: no impersonation in the admin panel @p1 @admin', () => {
         await expectNoImpersonateControl(headerActions);
         await expectNoImpersonateControl(page);
 
-        // ── Act + Assert 2: the users list row actions ────────────────────
-        await page.goto(`${ADMIN_URL}/access/users`, { waitUntil: 'domcontentloaded' });
-        const firstEditLink = page.locator('a[href*="/access/users/"][href$="/edit"]').first();
-        await expect(firstEditLink).toBeVisible({ timeout: 30_000 });
+        // ── Act + Assert 2: the user edit header ──────────────────────────
+        await page.goto(`${ADMIN_URL}/access/users/${target.id}/edit`, {
+            waitUntil: 'domcontentloaded'
+        });
+        const editHeaderActions = page.getByTestId('header-extra-actions');
+        await expect(editHeaderActions).toBeVisible({ timeout: 30_000 });
+        await expect(editHeaderActions.getByRole('button').first()).toBeVisible();
+        await expectNoImpersonateControl(editHeaderActions);
         await expectNoImpersonateControl(page);
     });
 });
