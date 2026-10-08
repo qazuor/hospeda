@@ -237,7 +237,7 @@ export class TestDatabaseManager {
     }
 
     /**
-     * Clean all test data (truncate all tables)
+     * Clean test data while keeping the reference rows installed by migrations.
      * WARNING: This is destructive, use only in test environment
      *
      * ## One statement, not one per table
@@ -285,10 +285,12 @@ export class TestDatabaseManager {
         SELECT tablename
         FROM pg_tables
         WHERE schemaname = 'public'
-        AND tablename NOT IN ('drizzle_migrations')
+        AND tablename NOT IN ('drizzle_migrations', 'vertical', 'catalog_key')
       `);
 
-            // Truncate every table in ONE statement. An empty schema would make
+            // Keep migration-owned reference catalogs: later integration files
+            // need these rows even after another file calls clean().
+            // Truncate the remaining tables in ONE statement. An empty schema would make
             // `TRUNCATE TABLE  CASCADE` a syntax error, so nothing is sent when
             // there is nothing to truncate.
             const quoted = (tables.rows as Array<{ tablename: string }>).map(
