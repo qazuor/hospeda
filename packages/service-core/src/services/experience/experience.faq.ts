@@ -25,7 +25,12 @@
  * @module experience.faq
  */
 
-import { ExperienceFaqModel, type ExperienceModel } from '@repo/db';
+import {
+    type DrizzleClient,
+    ExperienceFaqModel,
+    type ExperienceModel,
+    withTransaction
+} from '@repo/db';
 import {
     type ExperienceFaq,
     type ExperienceFaqAddInput,
@@ -44,6 +49,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { checkExperienceCanEditFaqs, checkExperienceCanView } from './experience.permissions';
 
 // ---------------------------------------------------------------------------
@@ -108,29 +114,48 @@ export async function addExperienceFaq(
         }
         const validated = parseResult.data;
 
-        const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
-        checkExperienceCanEditFaqs(actor, experience);
+        // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
+        // transaction — the event commits or rolls back WITH the FAQ row.
+        const run = async (
+            tx: DrizzleClient
+        ): Promise<ServiceOutput<ExperienceFaqSingleOutput>> => {
+            const experience = await requireExperience(model, validated.experienceId, tx);
+            checkExperienceCanEditFaqs(actor, experience);
 
-        const faqModel = new ExperienceFaqModel();
+            const faqModel = new ExperienceFaqModel();
 
-        // Compute next displayOrder: max(existing) + 1 or 0 when none exist.
-        const existing = await faqModel.findAll(
-            { experienceId: validated.experienceId, deletedAt: null },
-            { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
-            undefined,
-            ctx?.tx
-        );
-        const topOrder = existing.items[0]?.displayOrder ?? -1;
-        const nextOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+            // Compute next displayOrder: max(existing) + 1 or 0 when none exist.
+            const existing = await faqModel.findAll(
+                { experienceId: validated.experienceId, deletedAt: null },
+                { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
+                undefined,
+                tx
+            );
+            const topOrder = existing.items[0]?.displayOrder ?? -1;
+            const nextOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
-        const faqToCreate = {
-            ...validated.faq,
-            experienceId: validated.experienceId,
-            displayOrder: nextOrder
+            const faqToCreate = {
+                ...validated.faq,
+                experienceId: validated.experienceId,
+                displayOrder: nextOrder
+            };
+
+            const createdFaq = await faqModel.create(faqToCreate, tx);
+            // Post-write, inside the tx; the field name only, never the
+            // question/answer text (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'faqs',
+                ctx: { ...ctx, tx }
+            });
+            return { data: { faq: createdFaq as ExperienceFaq } };
         };
-
-        const createdFaq = await faqModel.create(faqToCreate, ctx?.tx);
-        return { data: { faq: createdFaq as ExperienceFaq } };
+        if (ctx?.tx) {
+            return await run(ctx.tx);
+        }
+        return await withTransaction(run);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -177,28 +202,45 @@ export async function updateExperienceFaq(
         }
         const validated = parseResult.data;
 
-        const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
-        checkExperienceCanEditFaqs(actor, experience);
+        // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
+        const run = async (
+            tx: DrizzleClient
+        ): Promise<ServiceOutput<ExperienceFaqSingleOutput>> => {
+            const experience = await requireExperience(model, validated.experienceId, tx);
+            checkExperienceCanEditFaqs(actor, experience);
 
-        const faqModel = new ExperienceFaqModel();
-        const faq = await faqModel.findById(validated.faqId, ctx?.tx);
-        if (!faq || faq.experienceId !== validated.experienceId) {
-            throw new ServiceError(
-                ServiceErrorCode.NOT_FOUND,
-                'FAQ not found for this experience listing'
+            const faqModel = new ExperienceFaqModel();
+            const faq = await faqModel.findById(validated.faqId, tx);
+            if (!faq || faq.experienceId !== validated.experienceId) {
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    'FAQ not found for this experience listing'
+                );
+            }
+
+            const updatedFaq = await faqModel.update(
+                { id: validated.faqId },
+                { ...validated.faq, experienceId: validated.experienceId },
+                tx
             );
-        }
+            if (!updatedFaq) {
+                throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update FAQ');
+            }
 
-        const updatedFaq = await faqModel.update(
-            { id: validated.faqId },
-            { ...validated.faq, experienceId: validated.experienceId },
-            ctx?.tx
-        );
-        if (!updatedFaq) {
-            throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update FAQ');
+            // Post-write, inside the tx; field name only (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'faqs',
+                ctx: { ...ctx, tx }
+            });
+            return { data: { faq: updatedFaq as ExperienceFaq } };
+        };
+        if (ctx?.tx) {
+            return await run(ctx.tx);
         }
-
-        return { data: { faq: updatedFaq as ExperienceFaq } };
+        return await withTransaction(run);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -245,20 +287,35 @@ export async function removeExperienceFaq(
         }
         const validated = parseResult.data;
 
-        const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
-        checkExperienceCanEditFaqs(actor, experience);
+        // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
+        const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
+            const experience = await requireExperience(model, validated.experienceId, tx);
+            checkExperienceCanEditFaqs(actor, experience);
 
-        const faqModel = new ExperienceFaqModel();
-        const faq = await faqModel.findById(validated.faqId, ctx?.tx);
-        if (!faq || faq.experienceId !== validated.experienceId) {
-            throw new ServiceError(
-                ServiceErrorCode.NOT_FOUND,
-                'FAQ not found for this experience listing'
-            );
+            const faqModel = new ExperienceFaqModel();
+            const faq = await faqModel.findById(validated.faqId, tx);
+            if (!faq || faq.experienceId !== validated.experienceId) {
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    'FAQ not found for this experience listing'
+                );
+            }
+
+            await faqModel.softDelete({ id: validated.faqId }, actor.id, tx);
+            // Post-write, inside the tx; field name only (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'faqs',
+                ctx: { ...ctx, tx }
+            });
+            return { data: { success: true } };
+        };
+        if (ctx?.tx) {
+            return await run(ctx.tx);
         }
-
-        await faqModel.softDelete({ id: validated.faqId }, actor.id, ctx?.tx);
-        return { data: { success: true } };
+        return await withTransaction(run);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -375,39 +432,59 @@ export async function reorderExperienceFaqs(
         }
         const validated = parseResult.data;
 
-        const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
-        checkExperienceCanEditFaqs(actor, experience);
+        // HOS-1642 (AC:V9a:6): the whole reorder — previously N bare updates
+        // with a per-call `ctx?.tx` and no boundary — now runs in ONE
+        // transaction with its owner-act event, so a partial reorder is no
+        // longer possible and the event cannot outlive (or miss) the writes.
+        const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
+            const experience = await requireExperience(model, validated.experienceId, tx);
+            checkExperienceCanEditFaqs(actor, experience);
 
-        const faqModel = new ExperienceFaqModel();
+            const faqModel = new ExperienceFaqModel();
 
-        // Load all active FAQs to validate ownership of every faqId in `order`.
-        const { items: existingFaqs } = await faqModel.findAll(
-            { experienceId: validated.experienceId, deletedAt: null },
-            { pageSize: 200 },
-            undefined,
-            ctx?.tx
-        );
-        const existingIds = new Set(existingFaqs.map((f) => f.id));
-
-        const unknownIds = validated.order
-            .map((item) => item.faqId)
-            .filter((id) => !existingIds.has(id));
-
-        if (unknownIds.length > 0) {
-            throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
-                `Unknown or foreign faqId(s) for this experience listing: ${unknownIds.join(', ')}`
+            // Load all active FAQs to validate ownership of every faqId in `order`.
+            const { items: existingFaqs } = await faqModel.findAll(
+                { experienceId: validated.experienceId, deletedAt: null },
+                { pageSize: 200 },
+                undefined,
+                tx
             );
+            const existingIds = new Set(existingFaqs.map((f) => f.id));
+
+            const unknownIds = validated.order
+                .map((item) => item.faqId)
+                .filter((id) => !existingIds.has(id));
+
+            if (unknownIds.length > 0) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    `Unknown or foreign faqId(s) for this experience listing: ${unknownIds.join(', ')}`
+                );
+            }
+
+            // Apply each displayOrder update.
+            await Promise.all(
+                validated.order.map((item) =>
+                    faqModel.update({ id: item.faqId }, { displayOrder: item.displayOrder }, tx)
+                )
+            );
+
+            // One event for the whole reorder, post-write, inside the tx;
+            // field name only (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'faqs',
+                ctx: { ...ctx, tx }
+            });
+
+            return { data: { success: true } };
+        };
+        if (ctx?.tx) {
+            return await run(ctx.tx);
         }
-
-        // Apply each displayOrder update.
-        await Promise.all(
-            validated.order.map((item) =>
-                faqModel.update({ id: item.faqId }, { displayOrder: item.displayOrder }, ctx?.tx)
-            )
-        );
-
-        return { data: { success: true } };
+        return await withTransaction(run);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };

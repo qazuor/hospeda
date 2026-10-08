@@ -18,15 +18,18 @@ vi.mock('@repo/db', async (importOriginal) => {
 import {
     buildListingOwnerActChanges,
     LISTING_NON_CONTENT_FIELDS,
-    recordListingOwnerAct
+    type ListingOwnerActEntityType,
+    type ListingSubEntityField,
+    recordListingOwnerAct,
+    recordListingSubEntityEdit
 } from '../../../src/services/listing/listing-owner-act';
-import type { Actor } from '../../../src/types';
+import type { Actor, ServiceContext } from '../../../src/types';
 import {
     _resetCorrelationIdResolver,
     resolveServiceCorrelationId,
     setCorrelationIdResolver
 } from '../../../src/utils/correlation';
-import { domainEventModelDouble } from '../../helpers/owner-act-doubles';
+import { domainEventModelDouble, FAKE_SERVICE_TX } from '../../helpers/owner-act-doubles';
 
 const OWNER_ID = '00000000-0000-4000-a000-000000000001';
 const OTHER_ID = '00000000-0000-4000-a000-000000000002';
@@ -160,6 +163,89 @@ describe('recordListingOwnerAct', () => {
 
         expect(result.recorded).toBe(false);
         expect(domainEventModelDouble.writes).toEqual([]);
+    });
+});
+
+describe('recordListingSubEntityEdit', () => {
+    // TEST:V9a:6 (unit) — AC:V9a:6 / AC:V9a:7
+
+    const ALL_FIELDS: readonly ListingSubEntityField[] = [
+        'faqs',
+        'media',
+        'menu',
+        'dailySpecials',
+        'events',
+        'certificates',
+        'tags'
+    ];
+
+    it('records one listing.edited event carrying only the field name', async () => {
+        const result = await recordListingSubEntityEdit({
+            entityType: 'accommodation',
+            listing: { id: LISTING_ID, ownerId: OWNER_ID },
+            actor: actor(OWNER_ID),
+            field: 'faqs',
+            ctx: { correlationId: '11111111-1111-4111-8111-111111111111' }
+        });
+
+        expect(result.recorded).toBe(true);
+        expect(domainEventModelDouble.writes).toEqual([
+            {
+                eventType: 'listing.edited',
+                entityType: 'accommodation',
+                entityId: LISTING_ID,
+                actorId: OWNER_ID,
+                actorType: 'owner',
+                correlationId: '11111111-1111-4111-8111-111111111111',
+                changes: [{ field: 'faqs' }]
+            }
+        ]);
+    });
+
+    it.each(
+        ALL_FIELDS
+    )('carries the field name "%s" and nothing else in changes', async (field) => {
+        const result = await recordListingSubEntityEdit({
+            entityType: 'gastronomy' satisfies ListingOwnerActEntityType,
+            listing: { id: LISTING_ID, ownerId: OWNER_ID },
+            actor: actor(OWNER_ID),
+            field
+        });
+
+        expect(result.recorded).toBe(true);
+        expect(domainEventModelDouble.writes).toHaveLength(1);
+        const write = domainEventModelDouble.writes[0];
+        expect(write?.eventType).toBe('listing.edited');
+        expect(write?.changes).toEqual([{ field }]);
+        // The name-only guarantee: no old/new values, no content.
+        expect(JSON.stringify(write)).not.toContain('old');
+        expect(JSON.stringify(write)).not.toContain('new');
+    });
+
+    it('writes nothing when the actor is not the owner', async () => {
+        const result = await recordListingSubEntityEdit({
+            entityType: 'experience',
+            listing: { id: LISTING_ID, ownerId: OWNER_ID },
+            actor: actor(OTHER_ID),
+            field: 'media'
+        });
+
+        expect(result.recorded).toBe(false);
+        expect(domainEventModelDouble.writes).toEqual([]);
+    });
+
+    it('passes ctx.tx through so the event joins the write transaction', async () => {
+        const result = await recordListingSubEntityEdit({
+            entityType: 'accommodation',
+            listing: { id: LISTING_ID, ownerId: OWNER_ID },
+            actor: actor(OWNER_ID),
+            field: 'media',
+            ctx: { tx: FAKE_SERVICE_TX as unknown as ServiceContext['tx'] }
+        });
+
+        expect(result.recorded).toBe(true);
+        expect(domainEventModelDouble.writes).toHaveLength(1);
+        expect(domainEventModelDouble.writes[0]?.tx).toBe(FAKE_SERVICE_TX);
     });
 });
 

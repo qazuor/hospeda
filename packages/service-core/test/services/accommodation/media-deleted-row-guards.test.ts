@@ -16,6 +16,24 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { ServiceConfig } from '../../../src/types';
 
+// HOS-1642: the FAQ/media writes now run inside a transaction and write an
+// owner-act event to `domain_event`. Unit tests have no database, so both
+// need stand-ins: the DB-level transaction fake and the domain-event double
+// (same pattern as the listing owner-act tests).
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
+        // The real models run against the setDb(...) stub, so the fake
+        // transaction handle must BE that stubbed client (HOS-1642).
+        withTransaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+            fn((actual as typeof import('@repo/db')).getDb())
+        )
+    };
+});
+
 vi.mock('../../../src/services/destination/destination.service', () => ({
     DestinationService: vi.fn().mockImplementation(function () {
         return {};

@@ -15,7 +15,11 @@ import { Pool } from 'pg';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const DB_NAME = 'hospeda_service_integration_test';
+// A leaf can choose its own disposable database when other agents run in parallel.
+const DB_NAME = process.env.HOSPEDA_SERVICE_TEST_DB_NAME || 'hospeda_service_integration_test';
+if (!/^[a-z][a-z0-9_]{0,62}$/.test(DB_NAME)) {
+    throw new Error('HOSPEDA_SERVICE_TEST_DB_NAME must be a safe PostgreSQL identifier');
+}
 const CONNECTION_BASE =
     process.env.HOSPEDA_TEST_DATABASE_URL ||
     'postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres';

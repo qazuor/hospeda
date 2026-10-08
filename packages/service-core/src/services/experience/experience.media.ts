@@ -57,6 +57,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { scheduleListingMediaRevalidation } from '../listing/listing-revalidation.js';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
@@ -136,69 +137,91 @@ export async function addExperienceMedia(
         }
         const validated = parseResult.data;
 
-        const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
-        checkExperienceCanEditMedia(actor, experience);
+        // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
+        // transaction — the event commits or rolls back WITH the media row.
+        const run = async (
+            tx: DrizzleClient
+        ): Promise<ServiceOutput<ExperienceMediaSingleOutput>> => {
+            const experience = await requireExperience(model, validated.experienceId, tx);
+            checkExperienceCanEditMedia(actor, experience);
 
-        const mediaModel = new ExperienceMediaModel();
+            const mediaModel = new ExperienceMediaModel();
 
-        // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
-        const existing = await mediaModel.findAll(
-            { experienceId: validated.experienceId, state: 'visible', deletedAt: null },
-            { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
-            undefined,
-            ctx?.tx
-        );
-        const topOrder = existing.items[0]?.sortOrder ?? -1;
-        const nextSortOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+            // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
+            const existing = await mediaModel.findAll(
+                { experienceId: validated.experienceId, state: 'visible', deletedAt: null },
+                { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
+                undefined,
+                tx
+            );
+            const topOrder = existing.items[0]?.sortOrder ?? -1;
+            const nextSortOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
-        // HOS-389 §2: the per-entity cap was enforced only at the UPLOAD routes
-        // — the step that costs a Cloudinary asset. Registering the row was
-        // never capped, so anything reaching this function directly with an
-        // already-uploaded URL walked past the limit. Same `getGalleryCap`
-        // constant those routes read, and the same filter
-        // `resolveVisibleGalleryCount` applies: `state: 'visible'` AND
-        // `isFeatured: false` (HOS-791 — the featured image is not a gallery
-        // item and must not consume a gallery slot).
-        //
-        // This is a SECOND query rather than a reuse of `existing.total`:
-        // `existing` stays unfiltered because it also computes the next
-        // `sortOrder`, and skipping the featured row there would hand out a
-        // `sortOrder` already in use whenever that row holds the maximum.
-        const galleryCount = await mediaModel.count(
-            {
+            // HOS-389 §2: the per-entity cap was enforced only at the UPLOAD routes
+            // — the step that costs a Cloudinary asset. Registering the row was
+            // never capped, so anything reaching this function directly with an
+            // already-uploaded URL walked past the limit. Same `getGalleryCap`
+            // constant those routes read, and the same filter
+            // `resolveVisibleGalleryCount` applies: `state: 'visible'` AND
+            // `isFeatured: false` (HOS-791 — the featured image is not a gallery
+            // item and must not consume a gallery slot).
+            //
+            // This is a SECOND query rather than a reuse of `existing.total`:
+            // `existing` stays unfiltered because it also computes the next
+            // `sortOrder`, and skipping the featured row there would hand out a
+            // `sortOrder` already in use whenever that row holds the maximum.
+            const galleryCount = await mediaModel.count(
+                {
+                    experienceId: validated.experienceId,
+                    state: 'visible',
+                    isFeatured: false,
+                    deletedAt: null
+                },
+                { tx }
+            );
+            const galleryCap = getGalleryCap('experience');
+            if (galleryCount >= galleryCap) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.QUOTA_EXCEEDED,
+                        message: `Gallery limit of ${galleryCap} photos reached for this listing`
+                    }
+                };
+            }
+
+            const rowToCreate = {
+                ...validated.media,
                 experienceId: validated.experienceId,
-                state: 'visible',
+                moderationState: validated.media.moderationState ?? ModerationStatusEnum.PENDING,
+                state: 'visible' as const,
                 isFeatured: false,
-                deletedAt: null
-            },
-            { tx: ctx?.tx }
-        );
-        const galleryCap = getGalleryCap('experience');
-        if (galleryCount >= galleryCap) {
-            return {
-                error: {
-                    code: ServiceErrorCode.QUOTA_EXCEEDED,
-                    message: `Gallery limit of ${galleryCap} photos reached for this listing`
-                }
+                sortOrder: nextSortOrder
             };
-        }
 
-        const rowToCreate = {
-            ...validated.media,
-            experienceId: validated.experienceId,
-            moderationState: validated.media.moderationState ?? ModerationStatusEnum.PENDING,
-            state: 'visible' as const,
-            isFeatured: false,
-            sortOrder: nextSortOrder
+            const createdMedia = await mediaModel.create(rowToCreate, tx);
+            // Post-write, inside the tx; the field name only, never the
+            // photo's URL or alt text (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+            // HOS-389 §4: the gallery IS the public page's content, so a photo
+            // change has to purge it. Shares one implementation with the service's
+            // create/update path — see `listing-revalidation.ts`.
+            await scheduleListingMediaRevalidation({
+                entityType: 'experience',
+                listing: experience
+            });
+
+            return { data: { media: createdMedia } };
         };
-
-        const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
-        // HOS-389 §4: the gallery IS the public page's content, so a photo
-        // change has to purge it. Shares one implementation with the service's
-        // create/update path — see `listing-revalidation.ts`.
-        await scheduleListingMediaRevalidation({ entityType: 'experience', listing: experience });
-
-        return { data: { media: createdMedia } };
+        if (ctx?.tx) {
+            return await run(ctx.tx);
+        }
+        return await withTransaction(run);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -294,6 +317,15 @@ export async function removeExperienceMedia(
                     await mediaModel.update({ id: row.id }, { sortOrder: i }, tx);
                 }
             }
+
+            // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
         };
 
         if (ctx?.tx) {
@@ -414,6 +446,15 @@ export async function reorderExperienceMedia(
                     await mediaModel.update({ id }, { sortOrder: i }, tx);
                 }
             }
+            // Post-write, inside the tx: one event for the whole reorder,
+            // field name only (HOS-1642, AC:V9a:6).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
         };
 
         if (ctx?.tx) {
@@ -583,6 +624,14 @@ export async function setFeaturedExperienceMedia(
                 await mediaModel.update({ id: existing.id }, { isFeatured: false }, tx);
             }
             await mediaModel.update({ id: validated.mediaId }, { isFeatured: true }, tx);
+            // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
         };
 
         if (ctx?.tx) {
@@ -676,33 +725,60 @@ export async function updateExperienceMedia(
         }
         const validated = parseResult.data;
 
-        const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
-        checkExperienceCanEditMedia(actor, experience);
+        // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
+        // transaction.
+        const run = async (
+            tx: DrizzleClient
+        ): Promise<ServiceOutput<ExperienceMediaSingleOutput>> => {
+            const experience = await requireExperience(model, validated.experienceId, tx);
+            checkExperienceCanEditMedia(actor, experience);
 
-        const mediaModel = new ExperienceMediaModel();
-        const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.experienceId !== validated.experienceId || mediaRow.deletedAt) {
-            throw new ServiceError(
-                ServiceErrorCode.NOT_FOUND,
-                'Media not found for this experience listing'
+            const mediaModel = new ExperienceMediaModel();
+            const mediaRow = await mediaModel.findById(validated.mediaId, tx);
+            if (
+                !mediaRow ||
+                mediaRow.experienceId !== validated.experienceId ||
+                mediaRow.deletedAt
+            ) {
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_FOUND,
+                    'Media not found for this experience listing'
+                );
+            }
+
+            const updated = await mediaModel.update(
+                { id: validated.mediaId },
+                buildMediaTextPatch(validated),
+                tx
             );
+            if (!updated) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Failed to retrieve updated media row after text update'
+                );
+            }
+
+            // Post-write, inside the tx; field name only — a corrected caption
+            // is content, so no value is ever stored (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+
+            await scheduleListingMediaRevalidation({
+                entityType: 'experience',
+                listing: experience
+            });
+
+            return { data: { media: updated } };
+        };
+        if (ctx?.tx) {
+            return await run(ctx.tx);
         }
-
-        const updated = await mediaModel.update(
-            { id: validated.mediaId },
-            buildMediaTextPatch(validated),
-            ctx?.tx
-        );
-        if (!updated) {
-            throw new ServiceError(
-                ServiceErrorCode.INTERNAL_ERROR,
-                'Failed to retrieve updated media row after text update'
-            );
-        }
-
-        await scheduleListingMediaRevalidation({ entityType: 'experience', listing: experience });
-
-        return { data: { media: updated } };
+        return await withTransaction(run);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -778,18 +854,37 @@ export async function addExperienceFeaturedMedia(
 
         const mediaModel = new ExperienceMediaModel();
 
-        const { media, previousFeatured } = await addFeaturedMediaRow({
-            port: buildOwnedMediaFeaturedPort({
-                mediaModel,
-                ownerKey: 'experienceId',
-                ownerId: validated.experienceId,
-                media: validated.media,
-                findFeatured: (tx) =>
-                    mediaModel.findFeatured({ experienceId: validated.experienceId, tx }),
-                deletedById: actor.id
-            }),
-            tx: ctx?.tx
-        });
+        // HOS-1642 (AC:V9a:6): the swap and its owner-act event share one
+        // boundary. The tx is opened HERE (when the caller brought none) and
+        // passed down to the shared primitive — `addFeaturedMediaRow` joins an
+        // existing tx verbatim, so no shared-helper change is needed.
+        const run = async (tx: DrizzleClient) => {
+            const { media, previousFeatured } = await addFeaturedMediaRow({
+                port: buildOwnedMediaFeaturedPort({
+                    mediaModel,
+                    ownerKey: 'experienceId',
+                    ownerId: validated.experienceId,
+                    media: validated.media,
+                    findFeatured: (tx2) =>
+                        mediaModel.findFeatured({ experienceId: validated.experienceId, tx: tx2 }),
+                    deletedById: actor.id
+                }),
+                tx
+            });
+            // Post-write, inside the tx; field name only (DEC-DATA-005).
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: experience.id, ownerId: experience.ownerId },
+                actor,
+                field: 'media',
+                ctx: { ...ctx, tx }
+            });
+            return { media, previousFeatured };
+        };
+
+        const { media, previousFeatured } = ctx?.tx
+            ? await run(ctx.tx)
+            : await withTransaction(run);
 
         // HOS-389 §4 — see `addExperienceMedia` for the rationale. Loudest case: the
         // cover is what every listing card and social preview renders.
