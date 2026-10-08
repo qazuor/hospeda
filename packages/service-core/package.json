@@ -44,11 +44,13 @@
     },
     "dependencies": {
         "@repo/billing": "workspace:*",
+        "@repo/billing-verticals-contract": "workspace:*",
         "@repo/cache-tags": "workspace:*",
         "@repo/content-moderation": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/media": "workspace:*",
+        "@repo/payments": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
         "drizzle-orm": "^0.45.2",

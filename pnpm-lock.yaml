@@ -487,6 +487,9 @@ importers:
       '@repo/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
+      '@repo/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@repo/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
@@ -496,6 +499,9 @@ importers:
       '@repo/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@repo/verticals':
+        specifier: workspace:*
+        version: link:../../packages/verticals
       '@scalar/hono-api-reference':
         specifier: ^0.11.12
         version: 0.11.12(hono@4.13.7)
@@ -1821,6 +1827,9 @@ importers:
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
+      '@repo/billing-verticals-contract':
+        specifier: workspace:*
+        version: link:../billing-verticals-contract
       '@repo/cache-tags':
         specifier: workspace:*
         version: link:../cache-tags
@@ -1836,6 +1845,9 @@ importers:
       '@repo/media':
         specifier: workspace:*
         version: link:../media
+      '@repo/payments':
+        specifier: workspace:*
+        version: link:../payments
       '@repo/schemas':
         specifier: workspace:*
         version: link:../schemas

@@ -70,6 +70,7 @@ export {
     type RetentionSummary
 } from './billing/notification/notification-retention.service.js';
 export * from './billing/read-anchored-billing-option.js';
+export * from './billing/subscription/start-subscription.service.js';
 export * from './contentModeration';
 export * from './conversation/index.js';
 export * from './cronRun/index.js';
