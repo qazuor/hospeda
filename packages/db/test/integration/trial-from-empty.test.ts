@@ -326,8 +326,9 @@ describe('TEST:V4:2 - the shape of a trial row', () => {
 
     const INSERT_ACTIVE = `INSERT INTO trial
         (user_id, vertical, status, trial_plan_id, floor_entitlements_version_id,
-         floor_limits_version_id, started_at, ends_at, email_pseudonym, deadlines_version)
-        VALUES ($1, $2, 'TRIAL_ACTIVE', $3, $4, $5, now(), now() + interval '1 day', $6, 1)`;
+         floor_limits_version_id, floor_trial_plan_version_id, started_at, ends_at,
+         email_pseudonym, deadlines_version)
+        VALUES ($1, $2, 'TRIAL_ACTIVE', $3, $4, $5, $6, now(), now() + interval '1 day', $7, 1)`;
 
     it('accepts a complete TRIAL_ACTIVE row and a consumed row without a clock', async () => {
         await inRolledBackTx(async ({ client, attempt }) => {
@@ -339,6 +340,7 @@ describe('TEST:V4:2 - the shape of a trial row', () => {
                 userId,
                 'accommodation',
                 planId,
+                versionId,
                 versionId,
                 versionId,
                 pseudonymOf('active')
@@ -393,11 +395,128 @@ describe('TEST:V4:2 - the shape of a trial row', () => {
                 planId,
                 versionId,
                 versionId,
+                versionId,
                 pseudonymOf('cross')
             ]);
 
             expect(error?.code).toBe('23503');
             expect(error?.constraint).toBe('fk_trial_trial_plan_vertical');
+        });
+    });
+
+    /** A complete TRIAL_ACTIVE insert where ONE column is replaced by NULL. */
+    async function activeWithNull(
+        client: PoolClient,
+        attempt: (sqlText: string, params?: unknown[]) => Promise<DbError | null>,
+        column: string
+    ): Promise<DbError | null> {
+        const userId = await insertUser(client);
+        const { planId, versionId } = await insertPlanAndVersion(client, 'accommodation');
+        const columns = [
+            'user_id',
+            'vertical',
+            'status',
+            'trial_plan_id',
+            'floor_entitlements_version_id',
+            'floor_limits_version_id',
+            'floor_trial_plan_version_id',
+            'started_at',
+            'ends_at',
+            'email_pseudonym',
+            'deadlines_version'
+        ];
+        const values: Record<string, unknown> = {
+            user_id: userId,
+            vertical: 'accommodation',
+            status: 'TRIAL_ACTIVE',
+            trial_plan_id: planId,
+            floor_entitlements_version_id: versionId,
+            floor_limits_version_id: versionId,
+            floor_trial_plan_version_id: versionId,
+            started_at: '2026-10-01T00:00:00Z',
+            ends_at: '2026-10-02T00:00:00Z',
+            email_pseudonym: pseudonymOf(`null-${column}`),
+            deadlines_version: 1
+        };
+        values[column] = null;
+        // A NULL clock end alone would trip the together-check first, so null both.
+        if (column === 'started_at') values.ends_at = null;
+        if (column === 'ends_at') values.started_at = null;
+        return attempt(
+            `INSERT INTO trial (${columns.join(', ')})
+             VALUES (${columns.map((_, i) => `$${i + 1}`).join(', ')})`,
+            columns.map((c) => values[c])
+        );
+    }
+
+    it.each([
+        'trial_plan_id',
+        'floor_entitlements_version_id',
+        'floor_limits_version_id',
+        'floor_trial_plan_version_id',
+        'started_at',
+        'ends_at',
+        'deadlines_version'
+    ])('ck_trial_active_complete: a TRIAL_ACTIVE row without %s is rejected', async (column) => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const error = await activeWithNull(client, attempt, column);
+
+            expect(error?.code).toBe('23514');
+            expect(error?.constraint).toBe('ck_trial_active_complete');
+        });
+    });
+
+    it('rejects a deadlines version below 1 (ck_trial_deadlines_version)', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const userId = await insertUser(client);
+
+            const error = await attempt(
+                `INSERT INTO trial (user_id, vertical, status, email_pseudonym, deadlines_version)
+                 VALUES ($1, 'accommodation', 'TRIAL_CONVERTED', $2, 0)`,
+                [userId, pseudonymOf('deadlines-zero')]
+            );
+
+            expect(error?.code).toBe('23514');
+            expect(error?.constraint).toBe('ck_trial_deadlines_version');
+        });
+    });
+
+    it('rejects a redemption that applied zero or negative days (ck_canje_de_trial_applied_days)', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const userId = await insertUser(client);
+            const insert = `INSERT INTO canje_de_trial (user_id, vertical, redemption_key, applied_days)
+                VALUES ($1, 'accommodation', $2, $3)`;
+
+            const zero = await attempt(insert, [userId, 'key-zero', 0]);
+            const negative = await attempt(insert, [userId, 'key-negative', -3]);
+            const valid = await attempt(insert, [userId, 'key-valid', 7]);
+            const repeated = await attempt(insert, [userId, 'key-valid', 7]);
+
+            expect(zero?.constraint).toBe('ck_canje_de_trial_applied_days');
+            expect(negative?.constraint).toBe('ck_canje_de_trial_applied_days');
+            expect(valid).toBeNull();
+            expect(repeated?.constraint).toBe('uq_canje_de_trial_redemption_key');
+        });
+    });
+
+    it('rejects a trial-plan floor version that belongs to another vertical', async () => {
+        await inRolledBackTx(async ({ client, attempt }) => {
+            const userId = await insertUser(client);
+            const own = await insertPlanAndVersion(client, 'accommodation');
+            const foreign = await insertPlanAndVersion(client, 'gastronomy');
+
+            const error = await attempt(INSERT_ACTIVE, [
+                userId,
+                'accommodation',
+                own.planId,
+                own.versionId,
+                own.versionId,
+                foreign.versionId,
+                pseudonymOf('cross-third')
+            ]);
+
+            expect(error?.code).toBe('23503');
+            expect(error?.constraint).toBe('fk_trial_floor_trial_plan_version_vertical');
         });
     });
 
@@ -427,6 +546,10 @@ describe('TEST:V4:2 - the shape of a trial row', () => {
     });
 });
 
+// Coord-16 (owner decision on HOS-1443): the half of TEST:V4:4 that says "starting
+// a trial through T1 writes none of this data" moves to V4.2, the leaf that
+// creates T1. It cannot run before T1 exists. This leaf keeps the structural
+// half: no such column exists in either table.
 describe('TEST:V4:4 - no phone, tax id or device in the trial tables', () => {
     const FORBIDDEN =
         /phone|tel[ei_]|mobile|whats|cell|tax|fiscal|cuit|cuil|dni|device|fingerprint|user_agent|ip_addr|imei/i;
@@ -441,6 +564,7 @@ describe('TEST:V4:4 - no phone, tax id or device in the trial tables', () => {
             'ends_at',
             'floor_entitlements_version_id',
             'floor_limits_version_id',
+            'floor_trial_plan_version_id',
             'id',
             'started_at',
             'status',

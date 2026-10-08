@@ -1,5 +1,5 @@
 {
-  "id": "cb173a40-aa11-4167-a6e9-abdb3ddccc61",
+  "id": "bbc9c7b2-e0c9-43d3-9b4b-0ef231757ee5",
   "prevId": "7f1bed7d-bebc-475a-bdbe-f75cd3f887f3",
   "version": "7",
   "dialect": "postgresql",
@@ -24983,6 +24983,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "floor_trial_plan_version_id": {
+          "name": "floor_trial_plan_version_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "started_at": {
           "name": "started_at",
           "type": "timestamp with time zone",
@@ -25094,6 +25100,21 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "fk_trial_floor_trial_plan_version_vertical": {
+          "name": "fk_trial_floor_trial_plan_version_vertical",
+          "tableFrom": "trial",
+          "tableTo": "plan_version",
+          "columnsFrom": [
+            "floor_trial_plan_version_id",
+            "vertical"
+          ],
+          "columnsTo": [
+            "id",
+            "vertical"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -25139,7 +25160,7 @@
         },
         "ck_trial_active_complete": {
           "name": "ck_trial_active_complete",
-          "value": "\"trial\".\"status\" <> 'TRIAL_ACTIVE' OR (\n                \"trial\".\"trial_plan_id\" IS NOT NULL\n                AND \"trial\".\"floor_entitlements_version_id\" IS NOT NULL\n                AND \"trial\".\"floor_limits_version_id\" IS NOT NULL\n                AND \"trial\".\"started_at\" IS NOT NULL\n                AND \"trial\".\"ends_at\" IS NOT NULL\n                AND \"trial\".\"deadlines_version\" IS NOT NULL\n            )"
+          "value": "\"trial\".\"status\" <> 'TRIAL_ACTIVE' OR (\n                \"trial\".\"trial_plan_id\" IS NOT NULL\n                AND \"trial\".\"floor_entitlements_version_id\" IS NOT NULL\n                AND \"trial\".\"floor_limits_version_id\" IS NOT NULL\n                AND \"trial\".\"floor_trial_plan_version_id\" IS NOT NULL\n                AND \"trial\".\"started_at\" IS NOT NULL\n                AND \"trial\".\"ends_at\" IS NOT NULL\n                AND \"trial\".\"deadlines_version\" IS NOT NULL\n            )"
         }
       },
       "isRLSEnabled": false

@@ -17,6 +17,7 @@ CREATE TABLE "trial" (
 	"trial_plan_id" uuid,
 	"floor_entitlements_version_id" uuid,
 	"floor_limits_version_id" uuid,
+	"floor_trial_plan_version_id" uuid,
 	"started_at" timestamp with time zone,
 	"ends_at" timestamp with time zone,
 	"email_pseudonym" varchar(64) NOT NULL,
@@ -34,6 +35,7 @@ CREATE TABLE "trial" (
                 "trial"."trial_plan_id" IS NOT NULL
                 AND "trial"."floor_entitlements_version_id" IS NOT NULL
                 AND "trial"."floor_limits_version_id" IS NOT NULL
+                AND "trial"."floor_trial_plan_version_id" IS NOT NULL
                 AND "trial"."started_at" IS NOT NULL
                 AND "trial"."ends_at" IS NOT NULL
                 AND "trial"."deadlines_version" IS NOT NULL
@@ -46,4 +48,5 @@ ALTER TABLE "trial" ADD CONSTRAINT "trial_user_id_users_id_fk" FOREIGN KEY ("use
 ALTER TABLE "trial" ADD CONSTRAINT "trial_vertical_vertical_id_fk" FOREIGN KEY ("vertical") REFERENCES "public"."vertical"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trial" ADD CONSTRAINT "fk_trial_trial_plan_vertical" FOREIGN KEY ("trial_plan_id","vertical") REFERENCES "public"."plan"("id","vertical") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "trial" ADD CONSTRAINT "fk_trial_floor_entitlements_version_vertical" FOREIGN KEY ("floor_entitlements_version_id","vertical") REFERENCES "public"."plan_version"("id","vertical") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "trial" ADD CONSTRAINT "fk_trial_floor_limits_version_vertical" FOREIGN KEY ("floor_limits_version_id","vertical") REFERENCES "public"."plan_version"("id","vertical") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "trial" ADD CONSTRAINT "fk_trial_floor_limits_version_vertical" FOREIGN KEY ("floor_limits_version_id","vertical") REFERENCES "public"."plan_version"("id","vertical") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "trial" ADD CONSTRAINT "fk_trial_floor_trial_plan_version_vertical" FOREIGN KEY ("floor_trial_plan_version_id","vertical") REFERENCES "public"."plan_version"("id","vertical") ON DELETE no action ON UPDATE no action;

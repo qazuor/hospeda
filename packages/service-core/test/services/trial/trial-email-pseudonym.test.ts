@@ -5,12 +5,17 @@
  * `printf '<mailbox>' | sha256sum`, so a change to the hash function or to the
  * normalisation fails here instead of silently handing trials back.
  */
+import { execFileSync } from 'node:child_process';
+import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     computeTrialEmailPseudonym,
     MEASURED_RULES,
     normalizeEmailForTrial
 } from '../../../src/services/trial';
+
+const PACKAGE_ROOT = path.resolve(__dirname, '../../..');
+const PSEUDONYM_MODULE = path.resolve(PACKAGE_ROOT, 'src/services/trial/trial-email-pseudonym.ts');
 
 const pseudonymOf = (email: string): string => {
     const result = computeTrialEmailPseudonym({ email });
@@ -151,5 +156,40 @@ describe('TEST:V4:3 - invalid mailboxes', () => {
         if (!result.ok) {
             expect(result.error.code).toBe('INVALID_EMAIL');
         }
+    });
+});
+
+describe('TEST:V4:3 - the pseudonym is stable across processes', () => {
+    const MAILBOXES = [
+        'ana.maria@gmail.com',
+        'Ana.Maria+promo@Gmail.com',
+        'ana+1@hotel.com',
+        'ana.maria@hotmail.com',
+        'ana+1@yahoo.com'
+    ];
+
+    /** Computes the pseudonyms in a brand new Node process, from the source file. */
+    const computeInFreshProcess = (): string[] => {
+        const script = `
+            import { computeTrialEmailPseudonym } from ${JSON.stringify(PSEUDONYM_MODULE)};
+            const out = ${JSON.stringify(MAILBOXES)}.map((email) => computeTrialEmailPseudonym({ email }).pseudonym);
+            process.stdout.write(JSON.stringify(out));
+        `;
+        const stdout = execFileSync(
+            process.execPath,
+            ['--input-type=module', '--import', 'tsx', '-e', script],
+            { encoding: 'utf8', cwd: PACKAGE_ROOT, timeout: 60_000 }
+        );
+        return JSON.parse(stdout) as string[];
+    };
+
+    it('gives the same pseudonyms in two separate processes and in this one', () => {
+        const first = computeInFreshProcess();
+        const second = computeInFreshProcess();
+        const here = MAILBOXES.map(pseudonymOf);
+
+        expect(first).toEqual(second);
+        expect(first).toEqual(here);
+        expect(first.every((value) => /^[0-9a-f]{64}$/.test(value))).toBe(true);
     });
 });

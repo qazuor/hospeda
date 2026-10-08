@@ -59,13 +59,18 @@ export const trials = pgTable(
         trialPlanId: uuid('trial_plan_id'),
         /**
          * The floor of the ratchet (DEC-TRIAL-002), as REFERENCES to the plan
-         * versions in force when the trial started, never as a copy of values.
-         * The entitlements are derived from the highest-rank sellable current
-         * version and the limits from the lowest-rank one (`V/10` §2), so the
-         * floor keeps one reference for each.
+         * versions in force when the trial started, never as a copy of values
+         * (V4.md:839). Three references (Coord-15): the entitlements derive from
+         * the highest-rank sellable current version and the limits from the
+         * lowest-rank one (`V/10` section 2), and the overrides live in the trial
+         * plan inside the catalog (V2.md:78), so the VERSION of the trial plan in
+         * force at start lets a later reader rebuild an override that was in force
+         * and changed afterwards. DEC-TRIAL-002 implication 4 defines the floor as
+         * the effective set at start: derive, then apply the overrides.
          */
         floorEntitlementsVersionId: uuid('floor_entitlements_version_id'),
         floorLimitsVersionId: uuid('floor_limits_version_id'),
+        floorTrialPlanVersionId: uuid('floor_trial_plan_version_id'),
         /** When the trial clock started. `NULL` on a row born consumed. */
         startedAt: timestamp('started_at', { withTimezone: true }),
         /** When the trial clock ends. `NULL` on a row born consumed. */
@@ -105,6 +110,11 @@ export const trials = pgTable(
             columns: [t.floorLimitsVersionId, t.vertical],
             foreignColumns: [planVersions.id, planVersions.vertical]
         }),
+        floorTrialPlanVersionFk: foreignKey({
+            name: 'fk_trial_floor_trial_plan_version_vertical',
+            columns: [t.floorTrialPlanVersionId, t.vertical],
+            foreignColumns: [planVersions.id, planVersions.vertical]
+        }),
         statusCheck: check(
             'ck_trial_status',
             sql`${t.status} IN (${quotedList(Object.values(TrialStatusEnum))})`
@@ -131,6 +141,7 @@ export const trials = pgTable(
                 ${t.trialPlanId} IS NOT NULL
                 AND ${t.floorEntitlementsVersionId} IS NOT NULL
                 AND ${t.floorLimitsVersionId} IS NOT NULL
+                AND ${t.floorTrialPlanVersionId} IS NOT NULL
                 AND ${t.startedAt} IS NOT NULL
                 AND ${t.endsAt} IS NOT NULL
                 AND ${t.deadlinesVersion} IS NOT NULL
