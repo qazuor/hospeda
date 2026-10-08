@@ -246,4 +246,28 @@ describe('fix_request, spec pedido_de_arreglo (TEST:V6:17)', () => {
             client.release();
         }
     });
+
+    it('rejects a closer on a request that is still open (closed_by_id without closed_at)', async () => {
+        const client = await scratch.connect();
+        try {
+            await client.query('BEGIN');
+            const user = await client.query<{ id: string }>(
+                `INSERT INTO users (slug, display_name, email)
+                 VALUES ('fix-request-admin-3', 'Admin', 'fix-request-admin-3@local.test')
+                 RETURNING id`
+            );
+            const adminId = user.rows[0]?.id;
+            await expect(
+                client.query(
+                    `INSERT INTO fix_request
+                         (entity_type, entity_id, reason, opened_by_id, closed_by_id, closed_at)
+                     VALUES ('accommodation', gen_random_uuid(), 'x', $1, $1, NULL)`,
+                    [adminId]
+                )
+            ).rejects.toMatchObject({ code: '23514' });
+        } finally {
+            await client.query('ROLLBACK');
+            client.release();
+        }
+    });
 });
