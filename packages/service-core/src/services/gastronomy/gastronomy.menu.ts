@@ -62,6 +62,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { checkGastronomyCanEditFaqs } from './gastronomy.permissions';
 
 /**
@@ -331,6 +332,14 @@ export async function replaceGastronomyMenu(
                     );
                 }
             }
+            // AC:V9a:7 — the owner act commits with the whole carta.
+            await recordListingSubEntityEdit({
+                entityType: 'gastronomy',
+                listing: gastronomy,
+                actor,
+                field: 'menu',
+                ctx: { ...ctx, tx }
+            });
         };
 
         if (ctx?.tx) {
