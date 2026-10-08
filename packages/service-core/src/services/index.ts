@@ -145,6 +145,7 @@ export * from './stats';
 export * from './tag/post-tag.permissions';
 export * from './tag/post-tag.service';
 export * from './tag/tag.service';
+export * from './trial';
 export * from './user/user.service';
 // HOS-296: grant/revoke primitives for the multi-role capability set
 export * from './user-role/index.js';
