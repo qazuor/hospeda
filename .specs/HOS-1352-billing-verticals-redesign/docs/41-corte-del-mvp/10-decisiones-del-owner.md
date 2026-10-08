@@ -3,7 +3,7 @@ title: "Corte del MVP · decisiones del owner"
 linear: HOS-1352
 statusSource: linear
 created: 2026-10-01
-updated: 2026-10-02
+updated: 2026-10-07
 status: CURRENT
 fase: 10
 ---
@@ -11,7 +11,7 @@ fase: 10
 # Corte del MVP · decisiones del owner
 
 Respuestas del owner, 2026-10-01, sobre la propuesta de `00-propuesta.md` §6 (lote Y a AE), y
-después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ, BK a BV, BW a BX, BY a CB y CC a CD (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM se aplicó con la aclaración del owner. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
+después sobre los lotes AF a AO, AP a AU, AV, AW a AY, AZ, BA a BH, BI a BJ, BK a BV, BW a BX, BY a CB y CC a CD, y después CE a DD (abajo). Todas son la recomendada; BI quedó reemplazada por BJ, y BM se aplicó con la aclaración del owner. Los conteos de la propuesta salen de `contar.py` y `aristas.py`, en esta misma
 carpeta.
 
 | Letra | Pregunta | Elegida | Recomendada | En una línea |
@@ -263,6 +263,49 @@ una pregunta con opciones: el owner aprobó la hoja nueva `HOS-1627` con este al
 |---|---|---|---|---|
 | CQ | quién convierte un rebote duro real del proveedor en la fila `bounced` de la bitácora, de la que dependen la supresión (`AC:U2:7`), el escalado (`AC:U2:4`) y `B3` | la aprobada | sí | **`U2`, con una hoja nueva antes de la salida (`HOS-1627`, `AC:U2:12`)**: el transport traduce a `EmailHardBounceError` el rebote duro que detecta de forma sincrónica, y el webhook de Brevo traduce el evento de rebote duro en una fila `bounced` para ese destinatario, de forma idempotente. El test entra un rebote real por el webhook y comprueba que el próximo envío, de cualquier clase, queda suprimido; sacar el mapeo lo pone en rojo. Qué rechazo sincrónico es un rebote duro y si el evento de los correos transaccionales llega al mismo webhook con la misma forma no se dan por hechos: los confirma el PR de la hoja |
 
+## Lote CR a DD (2026-10-07)
+
+Respuestas del owner, 2026-10-07, al alcance del MVP medido sobre el grafo de hojas reparado (las dos
+auditorías de dependencias y los análisis de alcance del coordinador). No eran preguntas con opciones
+numeradas en este archivo: se registra lo que el owner decidió y cómo quedó aplicado en la spec y en
+el árbol (`docs/42-arbol-linear/arbol.json`). Las piezas `V` siguen enteras al corte.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| CR | qué quiere decir la regla 1 del corte («no hay segundo tren») | la aclarada | — | **todo lo que tiene que andar sale en el deploy del MVP**; después pueden salir, cuando sea, deploys con más funciones. **Las fases posteriores no están atadas a fechas**, salvo plazos reales de seguridad: hoy son dos, el de `V9b` (BV, ver DD) y el de la sucesión de `B8b` (DC) |
+| CS | dónde va Partner y qué pasa con `PP1` | Fase 4; opción (b) | sí | **`V7` y `V8b` siguen en la Fase 4.** La cláusula de `PP1` sale de `AC:V5:16` (que queda «el guest falla en el paso 1 salvo en la lectura pública») y pasa a `V7.1` como `AC:V7:20`. Así `V5.7` no espera a nada de Partner |
+| CT | qué pasa con `B6` (ejecutar la devolución por el proveedor) | se difiere entera a la Fase 2 | sí | al corte se devuelve desde el panel de Mercado Pago y se asienta con la acción 14 (`RF4`). **Entra una AC en `B5.3`** (`AC:B5:41`): asentar por `RF4` la devolución de un pago con un `REQUESTED` abierto (el que crea `S36`) **cierra ese `REQUESTED`** en vez de crear otra fila; sin eso no tiene salida sin `B6`. También pasa a la Fase 2 `AC:B11:14` (reenvío con la clave de `RF2`) |
+| CU | qué partes de los grants van al corte | sólo la herramienta del 3b | sí | **al corte un grant sólo se otorga desde la herramienta del paso 3b**. Revocar y la fuga de `USER`/`GLOBAL` (`AC:B9a:6`, `:7`), el grant a quien paga (`AC:B9a:13`, `:14`, `:17`), las confirmaciones de `B13a.3` (`AC:B13a:6`) y la orfandad por revocación (`AC:B5:26`) pasan a la Fase 2, en hojas nuevas `B9a.6`, `B9a.7` y `B5.10` |
+| CV | qué pasa con el pagador manual | Fase 4 | sí | **`B5.4` y `B5.4b` (`MP1`–`MP6`) van a la Fase 4**, con Partner, que es su único sujeto. Al corte quedan la tabla `manual_payment`, sus enums y la columna de método. Van con ellos `AC:B3:4`, `AC:B5:35`, `AC:B7:5`, `AC:B7:12`, `AC:B7:18` y `AC:B13a:18` (hojas `B3.14`, `B7.11`, `B13a.12`). El pedido decía «partes» de `AC:B7:5` y `:18`: leídas, **las dos son enteras del pagador manual**, así que van enteras; `AC:B7:13` y `AC:B7:16` se quedan y anotan que su rama de `MP1`/`MP4` llega en la Fase 4 |
+| CW | qué pasa con la acción 19 (fijar el precio, `B2.2`) | Fase 2 | sí | va a la Fase 2 con su predicado `AC:B3:40` (hoja `B3.13`), porque necesita `S38` de `B8b` y BM la prohíbe hasta el momento 5 |
+| CX | qué pasa con la batería mensual contra el proveedor real (`B1.6`) | Fase 4 | sí | se difiere **hasta que todo el programa esté desplegado**: va en la Fase 4, la última |
+| CY | qué pasa con los contracargos | se difieren, salvo la detección | sí | **al corte, leer `charged_back` (por el aviso o por la comprobación del barrido) sólo abre la marca 17** por una interfaz interna (patrón BL), sin `P6`, sin `S6`/`S12` y sin correo; la marca sale en el listado accionable y una persona cancela con la acción 8. La AC nueva es `AC:B11:27` (en `B11.4`). Los enums `CHARGED_BACK` y `CONTRACARGO` quedan al corte (AD). Pasan a la Fase 2 `B5.2b` (`P6`/`P7`), `AC:B7:10`, `AC:B7:27`, `AC:B8a:7`, `AC:B11:25` y las mitades de contracargo de `AC:B7:11`, `AC:B11:12` y `AC:B13a:9`, que se separan como `AC:B7:33`, `AC:B11:28` y `AC:B13a:25`. **Cómo se comporta Mercado Pago en un contracargo (`RC-8`) sigue sin medir**: no se puede fabricar uno, así que no hay smoke real posible |
+| CZ | qué pasa con los tests y guards que cubren código del MVP pero viven en piezas diferidas | entran al MVP | sí | **toda prueba de código del MVP va en el MVP.** `AC:B12:1` («retirar un plan no mueve a nadie», que prueba la acción 18 de `V2`, `S1` y las lecturas por versión anclada) pasa a `B4.5` como `AC:B4:12`. `G-R1-C` se queda con `B8b`: protege el cierre de una sucesión, que al corte no existe |
+| DA | la limpieza del sistema viejo | el 100 % en el MVP | sí | **entran dos hojas nuevas en `B13a`**, la pieza de superficies de `B` al corte, que es donde la decisión CM dejó las superficies del cobro viejo: `B13a.9` (web: `AC:B13a:20`–`:22`) y `B13a.10` (admin y el guard «ningún cliente llama a un endpoint que la API no registra»: `AC:B13a:23`, `:24`). Borran o reescriben toda superficie vieja que siga en la rama (`mi-cuenta/addons`, `AddonsPurchasePanel`, `canjear`, `PlanChangeFlow`/`PlanPicker`, las páginas de checkout de partners, las compuertas viejas del admin, las llamadas de `PlanPurchaseButton` a `validatePromoCode` y `createCheckout`, entre otras). **`B12` no es limpieza**: retira planes del catálogo **nuevo**, y sigue en la Fase 3 |
+| DB | qué promos y cortesías salen al corte | la rebanada básica de la spec | sí | **sale sólo lo que la spec ya diseña y funciona sin `B8b`**, sin inventar nada: `AC:B9b:1`–`:6`, `:9` y la parte 7-bis de `:12` (hojas `B9b.1`, `B9b.2` y `B9b.4`). El canje es el diseñado: **sobre una suscripción viva, mutando el monto**; no se agrega un canje en el checkout. **Limitación**: una promo de «primer cobro» canjeada después del alta no alcanza al primer cobro (`AC:B9b:4` ya lo cubre); al lanzamiento se usan promos de «N cobros». La cortesía básica del corte es la extensión de trial (acción 11 de `V4`) y su canje por código (`AC:B9b:6`); las cortesías temporales siguen en la Fase 2 con `B8b`. La parte 13-ter/13-quinquies de `AC:B9b:12` se separa como `AC:B9b:14` (Fase 2) |
+| DC | qué pasa con el suscriptor suspendido que quiere volver | queda después del MVP, con fecha límite | sí | un `SUSPENDED` con tarjeta **no puede volver a suscribirse sin la sucesión de `B8b`** (su fila es viva y ocupa el `UNIQUE` del invariante 8). Se queda después del MVP, con un **plazo de seguridad: la sucesión de `B8b` tiene que estar en producción antes de la primera renovación fallida posible ≈ el corte + la duración del trial + un mes de cobro** (el owner: «unos dos meses»). Los correos de las filas 10 y 10-ter **prometen «volvé a suscribirte»**: el texto se mantiene y el plazo existe para que la promesa sea verdad cuando alguien la lea |
+| DD | si `V9b` conserva su fecha límite | sí | sí | **`V9b` conserva la fecha de BV** (corte + plazo 1 − plazo 4): es un plazo real de seguridad, la excepción que CR admite |
+
+## Decisiones del coordinador (2026-10-07)
+
+No son letras del owner: las tomó el coordinador del programa sobre hallazgos de las hojas en curso,
+dentro de lo que el owner ya había decidido. Cada una dice cómo revertirla.
+
+| Id | Qué | Por qué | Cómo se revierte |
+|---|---|---|---|
+| Coord-1 | **`V6.8` se parte.** `V6.8a`, aditiva: el enum de seis valores, las columnas nuevas (anulables al nacer, nunca con `DEFAULT`, que sería un escritor fuera de la lista de `G-R6-B`) y la tabla de pedidos de arreglo con su índice parcial (`AC:V6:16`). `V6.9` llena las columnas con la escritura `C` y les pone el `NOT NULL` (`AC:V6:31`). **`V6.9b`**, hoja nueva, borra las seis columnas viejas y cambia sus lectores (`AC:V6:32`, `TEST:V6:18`). Nombres de código en inglés: `publication_status` (`PublicationStatusEnum`: `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING`, `ARCHIVED`, `MODERATED`, `PURGED`), `inactive_since`, `deadlines_version`, `deletion_announced_at` y la tabla `fix_request` | el implementador de `V6.8` midió que `AC:V6:16` entera toca unos 450 archivos y que esos lectores dependen de las transiciones `PB` de `V6.1`–`V6.7`. Por eso el borrado no puede ir en `V6.9`, que va antes de `V6.1`: va en `V6.9b`, que espera a `V6.1`–`V6.7` y a `V5.2`. **`V5` lee `publication_status` desde `V5.1`** (sigue esperando a `V6.8a`): el caso `RESTRICTED` de `AC:V5:5` es un valor de `visibility`, que no existe en el estado nuevo; deja de existir con `V6.9b` y no pide decisión de producto | juntar `V6.8a`, la parte de `AC:V6:31` y `V6.9b` en una sola hoja posterior a `V6.7` |
+| Coord-2 | **Las mentiras del falso entran con su superficie.** `B1.4` arranca `G15`, las dos listas como datos, el mecanismo de apagar una mentira nombrándola (`AC:B1:9`) y las mentiras cuya superficie ya existe: `M3`, `M5`, `M6`, `M8`, `M10`, `M11`, `M13`, `RP2`–`RP6` y `RP9`. **Regla nueva** (en `B1.md` y en el RUNBOOK): la hoja que agrega una superficie a la interfaz agrega al falso las mentiras de esa superficie, cada una con su fila y su prueba. Reparto: `M1` (al crear), `M9` y `RP1` → `AC:B3:42` (`B3.1`); `RP12` → `AC:B5:42` (`B5.2`); `M7`, `RP7`, `RP8` y `RP11` → `AC:B7:34` (`B7.1`); `M4` → cláusula de `AC:B11:1` (`B11.1`); `M1` sobre una suscripción viva y `M2` (lo que pedía `TEST:B1:3`) → `AC:B8b:27` (`B8b.3b`, la primera hoja que manda dos campos); `M12` y `RP10` → `AC:B8b:28` (`B8b.1`) | la interfaz de `B1.2` sigue a propósito sólo lo que el dominio necesita hoy, y la mitad de las mentiras cae sobre superficies que todavía no tiene; no se amplía la interfaz por adelantado. El pedido nombraba `B3`, `B5` y `B7`: `M4` va a `B11` (la superficie del buscador es suya) y `M2`, `M12` y `RP10` a `B8b` (en el MVP no hay mutación de dos campos ni pausa nuestra). `M12` no estaba en ninguna de las dos listas del hallazgo | volver a poner todas las mentiras en `B1.4` ampliando antes la interfaz |
+| Coord-3 | **`B1.5` pasa al criterio de `B3`** como `B3.12` (la misma issue, `AC:B3:43`, antes `AC:B1:16`), después de `B3.5b`: es la primera hoja que consume el adaptador desde la API y la web. `B1.7` se redefine con lo que queda en `B1`; `B3.6`, `V4.7`, `B5.9` y `B7.7b` pasan a esperar a `B3.12` | `TEST:B1:17` necesita un consumidor real de `@repo/payments` en las apps, que recién aparece en `B3`; igual que el grace pasó a `B7` (BL). **Abierto para `B3.12`**: `AC:B1:1` dice que el falso no nombra conceptos de Mercado Pago y `AC:B3:43` pide que el servidor responda como Mercado Pago; la lectura propuesta (el falso de dominio sin conceptos del proveedor y una cáscara HTTP aparte, con su forma) no pide decisión de producto | devolver `AC:B3:43` a `B1` como hoja posterior a `B3.5b` |
+| Coord-4 | **`V9a.1`**: la correlación viaja en `ServiceContext` y el evento se escribe en los hooks, dentro de la misma transacción del acto; «editar» incluye las subentidades de la ficha; de cada campo que no está en la lista cerrada de no-contenido se guarda sólo el nombre; el actor es sólo el dueño. **Exportar queda fuera de `V9a.1`** hasta que el owner conteste qué es (ver abajo) | `AC:V9a:1` pide registrar «exportar una ficha», que no existe en el epic: el PDF actual (`listing-brochure`) es premium, sólo cubre gastronomía y experiencias y exige la ficha publicada; la operación está especificada (`V5.md` §3, `04-catalogos.md`) pero ninguna pieza del corte la construye | registrar exportar en `V9a.1` cuando exista la operación |
+| Coord-5 | **Forma del árbol al aplicar CR a DD**: las AC que se difieren dentro de una pieza del corte viven en hojas propias de su fase (`B3.13`, `B3.14`, `B5.10`, `B7.10`, `B7.11`, `B8a.6`, `B9a.6`, `B9a.7`, `B11.11`, `B13a.11`, `B13a.12`), así cada issue es de una sola fase; `B7.4` se conserva con una sola AC (`AC:B7:13`) en vez de fundirla con `B7.4b`, para no borrar una issue; la detección del contracargo va en `B11.4` (y no en `B5.1`, que ya tiene cuatro AC) y la llaman el receptor y el barrido; `AC:B4:12` va en la salida de `B4`, que ya espera a `B3` y a `B5`, más la acción 18 de `V2.3`; las hojas de limpieza van en `B13a` sin dependencias de entrada; la rebanada de promos reusa `B9b.1`, `B9b.2` y `B9b.4`, y `B9b.3`/`B9b.5` quedan en la Fase 2; y `chequeo.py` reemplaza «una sola hoja de entrada» y «la entrada espera la salida de la pieza anterior» por la regla real (cada hoja depende de la que crea lo que usa, con su motivo; ninguna depende de una fase posterior; cada salida espera a todos los sumideros de su pieza) | aplicar las decisiones sin inventar contenido y con issues de una sola fase | cada punto es independiente; el árbol se regenera con el script de la reparación |
+
+**Pendientes para el owner que dejaron estos hallazgos** (no se decidieron):
+
+1. **Qué es exportar una ficha y qué pieza lo construye.** La spec lo autoriza en `V5` (paso 4 y la
+   versión de piso: «verla, exportarla, reactivarla y borrarla») y lo nombra `V9a`, pero nadie lo
+   construye. La pieza natural para construirlo es **`V8a`** (las superficies de fichas del corte), con
+   la autorización que `V5` ya escribe; `V9a.1` agrega el evento cuando exista.
+
 ## Resultado del corte
 
 - **Al corte, enteras (17)**: `U1`–`U3`, `V1`–`V6`, `B1`–`B7`, `B11`.
@@ -272,6 +315,11 @@ una pregunta con opciones: el owner aprobó la hoja nueva `HOS-1627` con este al
 - **Guards al corte**: 34 de 35; queda afuera `G-R1-C` (cierre de la sucesión, `B8b`).
 - **Las fases posteriores (AW)**: cuatro, en orden: Fase 1 `V9b`; Fase 2 `B8b` y `B9b`; Fase 3 `B10`,
   `B13b` y `B12`; Fase 4 `V7` y `V8b`. Cada una, una rama épica con su gate (AE, AT).
+- **Desde el 2026-10-07 (CR a DD)**: también van después, **en la Fase 2**, `B6` entera, `B2.2`, las
+  partes de `B9a` de revocar y de grant a quien paga, `B13a.3` y los contracargos (salvo detectarlos);
+  y **en la Fase 4**, el pagador manual, `PP1` (con `V7`) y `B1.6`. **Al corte**, en cambio, entran la
+  rebanada básica de `B9b`, `AC:B12:1` (como `AC:B4:12`) y dos hojas de limpieza del sistema viejo.
+  Dos plazos de seguridad: `V9b` (BV) y la sucesión de `B8b` (DC).
 
 ## Pendiente de aplicar
 

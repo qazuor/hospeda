@@ -148,6 +148,8 @@ Fuente: [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1), [LIS
   correlación (`NUCLEO/08` §1.2), aunque ninguno sea una transición de la máquina.
 Fuente: [FILA:V9a](#fila-v9a), [LISTA:V9a](#lista-v9a), [DEC-DATA-005#📌1](../01-decisiones-vigentes.md#dec-data-005-p1)
 
+> **Corte del MVP, 2026-10-07 ([Coord-4](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#decisiones-del-coordinador-2026-10-07))**: **exportar una ficha no existe en el epic.** El PDF de hoy (`listing-brochure`) no sirve: es premium, sólo cubre gastronomía y experiencias y exige la ficha publicada. Exportar está especificado (`V5.md` §3, precisión 1; [04-catalogos](../04-catalogos.md)) pero ninguna pieza del corte lo construye. **Abierto para el owner: qué es exportar y qué pieza lo construye.** Hasta que conteste, `V9a.1` registra **crear y editar**; el evento de exportar entra con la pieza que construya la operación. Decisiones del coordinador aplicadas en la hoja: la correlación (`correlationId`) viaja en `ServiceContext` y el evento se escribe en los hooks, dentro de la misma transacción del acto; **editar incluye las subentidades** de la ficha; de cada campo que no está en la lista cerrada de no-contenido se guarda sólo el nombre; y el actor es sólo el dueño.
+
 <a id="ac-v9a-2"></a>
 **AC:V9a:2** — De los campos de contenido, sólo el nombre.
 

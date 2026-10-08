@@ -9,6 +9,15 @@ Falla con exit 1 si:
   (c) hay ciclos en `depende_de`.
   (d) una hoja de PR cubre ACs de más de una pieza.
   (e) un `padre` no existe (sólo la raíz puede tener padre nulo).
+  (f) una hoja no declara su fase (`corte`: hecha, mvp, fase-1..fase-4) o
+      depende de una hoja de una fase posterior a la suya.
+  (g) una dependencia de una hoja del MVP no dice qué usa (`por_que`): la regla
+      es que cada hoja depende de la hoja que CREA lo que usa, no de un orden.
+  (h) una salida no espera a todas las hojas de su pieza en su misma fase.
+
+La forma vieja («una sola hoja de entrada por pieza» y «la entrada espera la
+salida de la pieza anterior») se retiró el 2026-10-07: describía un orden, no
+un uso, y forzaba aristas que estiraban el camino crítico sin razón.
 
 Extras defensivos: `depende_de` roto, valores `existente` duplicados o fuera del
 snapshot verificado de Linear (2026-10-04), piezas de la spec sin hojas, y nodos
@@ -150,17 +159,52 @@ def main():
     actual = {(d, k) for k, n in pieces.items() for d in n["depende_de"]}
     if expected != actual:
         fallos.append(f"aristas de piezas: faltan {sorted(expected - actual)}; sobran {sorted(actual - expected)}")
-    for piece, node in pieces.items():
-        descendants = [n for n in nodos if n["acs"] and n["acs"][0].split(":")[1] == piece]
-        entry = [n for n in descendants if not any(d in {v["clave"] for v in descendants} for d in n["depende_de"])]
-        if len(entry) != 1:
-            fallos.append(f"{piece}: esperaba una sola hoja de entrada, hay {len(entry)}")
-            continue
-        for predecessor in node["depende_de"]:
-            exits = [n["clave"] for n in nodos if n["acs"] and n["acs"][0].split(":")[1] == predecessor
-                     and not any(n["clave"] in other["depende_de"] for other in nodos if other["acs"] and other["acs"][0].split(":")[1] == predecessor)]
-            if len(exits) != 1 or exits[0] not in entry[0]["depende_de"]:
-                fallos.append(f"{piece}: hoja de entrada no depende de salida de {predecessor}: {exits}")
+    # Regla real del grafo (2026-10-07, reemplaza «una sola hoja de entrada» y
+    # «la entrada espera la salida de la pieza anterior»): cada hoja depende de
+    # la hoja que crea lo que usa, sin ciclos (ya chequeado arriba), y cada
+    # salida depende de todos los sumideros de su pieza en su fase.
+    fases = {"hecha": 0, "mvp": 1, "fase-1": 2, "fase-2": 3, "fase-3": 4, "fase-4": 5}
+    hojas_n = [by[k] for k in hojas]
+    for n in hojas_n:
+        if n.get("corte") not in fases:
+            fallos.append(f"(f) {n['clave']}: `corte` ausente o inválido: {n.get('corte')!r}")
+    for n in hojas_n:
+        for dep in n["depende_de"]:
+            if dep in hoja_set and n.get("corte") in fases and by[dep].get("corte") in fases \
+                    and fases[by[dep]["corte"]] > fases[n["corte"]]:
+                fallos.append(f"(f) {n['clave']} ({n['corte']}) depende de {dep} ({by[dep]['corte']}), de una fase posterior")
+        # (g) en el MVP cada dependencia dice qué usa de la hoja que lo crea
+        if n.get("corte") == "mvp":
+            motivos = n.get("por_que") or {}
+            for dep in n["depende_de"]:
+                if not str(motivos.get(dep, "")).strip():
+                    fallos.append(f"(g) {n['clave']} → {dep}: dependencia sin motivo en `por_que`")
+            for dep in motivos:
+                if dep not in n["depende_de"]:
+                    fallos.append(f"(g) {n['clave']}: motivo para {dep}, que no está en depende_de")
+
+    def alcanza(k):
+        vistos, pila = set(), list(by[k]["depende_de"])
+        while pila:
+            d = pila.pop()
+            if d in vistos or d not in by:
+                continue
+            vistos.add(d)
+            pila.extend(by[d]["depende_de"])
+        return vistos
+
+    # (h) cada salida espera a todas las hojas de su pieza en su misma fase
+    grupos = defaultdict(list)
+    for n in hojas_n:
+        grupos[(n["acs"][0].split(":")[1], n.get("corte"))].append(n["clave"])
+    for (pieza, fase), claves_g in sorted(grupos.items(), key=lambda x: (x[0][0], str(x[0][1]))):
+        salidas = [k for k in claves_g if by[k].get("salida")]
+        if len(salidas) > 1:
+            fallos.append(f"(h) {pieza}/{fase}: más de una salida: {salidas}")
+        for ex in salidas:
+            faltan = sorted(set(claves_g) - {ex} - alcanza(ex))
+            if faltan:
+                fallos.append(f"(h) salida {ex} no espera a {faltan}")
 
     # existentes
     vistos = Counter()
@@ -179,7 +223,8 @@ def main():
         for f in fallos:
             print("  ·", f)
         sys.exit(1)
-    print(f"✓ árbol sano: {len(nodos)} nodos · {len(hojas)} hojas · "
+    por_fase = Counter(by[k].get("corte") for k in hojas)
+    print(f"✓ árbol sano: {len(nodos)} nodos · {len(hojas)} hojas ({dict(sorted(por_fase.items()))}) · "
           f"{len(conteo)} ACs cubiertas (igual a spec: {len(conteo)==len(union_spec)}) · "
           f"{len(piezas_spec)} piezas · sin ciclos · padres y dependencias resueltos")
     sys.exit(0)

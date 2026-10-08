@@ -9,13 +9,17 @@ lleva hasta un PR verde. Las reglas de abajo reemplazan a la coordinación.
   0 BLOQUEA). Es la ÚNICA fuente para implementar (`DEC-METH-019`). Mientras #3360 no esté
   mergeado, se lee desde el worktree de la spec:
   `/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign`.
-- **El árbol**: 194 hojas, cada una un PR chico, en Linear bajo HOS-1352
-  (`42-arbol-linear/arbol.json`; `creados.json` mapea cada clave a su issue). Cada hoja dice qué
-  AC cubre, en qué archivo de la spec están y de qué depende.
+- **El árbol**: 209 hojas en Linear bajo HOS-1352 (`42-arbol-linear/arbol.json`; `creados.json`
+  mapea cada clave a su issue). Cada hoja dice qué AC cubre, en qué archivo de la spec están, de qué
+  depende y por qué (`por_que`), y en qué fase va (`corte`: `hecha`, `mvp`, `fase-1` a `fase-4`). Al
+  2026-10-07 quedan **130 hojas del MVP** (320 AC, camino crítico de 24 hojas); las de `fase-*` no se
+  implementan en esta épica. El calendario de olas está al final de `42-arbol-linear/arbol.md`.
 - **La rama épica**: `epic/HOS-1352-verticales-billing` (`DEC-ARCH-016`, `DEC-CI-001`). Todos los
   PR de las hojas van ahí, NO a `staging`. La épica se mergea a `staging` una sola vez, al final.
-- **El orden**: `python3 siguiente.py` (en esta carpeta) lista las hojas listas, que son las que tienen
-  todas sus dependencias en Done. Hoy hay una sola: **HOS-1416 = U1.1**.
+- **El orden**: `python3 siguiente.py` (en esta carpeta) lista las hojas listas: las del MVP cuyas
+  dependencias del árbol están todas en Done **y** que no tienen en Linear una relación «blocked by»
+  abierta (algunas existen sólo en Linear; el script las lee y muestra la hoja como RETENIDA). Nunca
+  propone una hoja de `fase-*`. Corre sólo con `LINEAR_API_KEY` y no escribe nada.
 
 ## Quién hace qué
 
@@ -26,8 +30,23 @@ lleva hasta un PR verde. Las reglas de abajo reemplazan a la coordinación.
 | Revisor de cada PR | Un modelo **distinto** del que implementó, con contexto limpio | Ojos frescos; nunca el mismo agente |
 | Merge | El owner | Nunca un agente (`CLAUDE.md`, ramas protegidas) |
 
-Al principio conviene ir de a una hoja por vez. Cuando `siguiente.py` muestre varias listas de
-piezas distintas, se pueden correr en paralelo, en worktrees separados.
+Cuando `siguiente.py` muestre varias listas de piezas distintas, se pueden correr en paralelo, en
+worktrees separados (uno por implementador: dos agentes sobre el mismo worktree se pisan).
+
+### PRs agrupados
+
+Una hoja es la unidad de revisión, pero un PR puede llevar **hasta 3 hojas y unas 8 AC** cuando
+están listas a la vez y encadenadas o vecinas. Reglas:
+
+- **Nunca se mezcla una pieza de plata (`B3`, `B4`, `B5`, `B7`, `B11`) con otra pieza** en el mismo
+  PR: un PR de plata es de una sola pieza. El calendario de `arbol.md` agrupa siempre dentro de una
+  pieza.
+- **Título**: el tag es el de la **primera** hoja (`[HOS-N] <tipo>(<scope>): …`); el cuerpo lista
+  **todas** las hojas con su `HOS-N` y, por hoja, sus AC con el archivo:línea de la implementación y
+  del TEST. Sin `Closes` ni otra palabra mágica.
+- El revisor revisa hoja por hoja dentro del PR, con la misma definición de hecho.
+- Al mergear, las hojas que no están en el título no se mueven solas en Linear: pasalas a Done a
+  mano.
 
 ## El ciclo de una hoja
 
@@ -37,6 +56,9 @@ piezas distintas, se pueden correr en paralelo, en worktrees separados.
    1. lee la hoja en Linear (por la API, con `LINEAR_API_KEY`) y la sección de la spec que cita;
    2. **si es la primera hoja de su pieza**: corre la verificación spec → fuente de esa pieza (regla del
       handoff) y, si encuentra un BLOQUEA, FRENA y lo reporta: no se codea sobre una spec rota;
+      **si la hoja agrega una superficie a la interfaz del proveedor** (`@repo/payments`), agrega también
+      al falso las mentiras y reglas de esa superficie, cada una con su fila en la lista de `G15` y su
+      prueba (Coord-2; el reparto está en `B1.md`, `AC:B1:13` y `AC:B1:14`);
    3. corta `feat/HOS-N-<slug>` desde `origin/epic/HOS-1352-verticales-billing`;
    4. implementa SÓLO los AC de la hoja, cada uno con el TEST que le asigna el mapa AC→test de
       la pieza (mismo ID: `TEST:<pieza>:<n>` en el nombre o en un comentario del test);
@@ -74,7 +96,7 @@ los AC.
 
 El agente NO improvisa. Frena, deja un comentario en la hoja de Linear con la evidencia (spec
 archivo:línea, fuente archivo:línea) y te avisa. Si hace falta una decisión, va al owner como letra
-nueva de `41-corte-del-mvp/10-decisiones-del-owner.md` (la próxima es **CR**). La spec se corrige en
+nueva de `41-corte-del-mvp/10-decisiones-del-owner.md` (la próxima es **DE**). La spec se corrige en
 la rama de la spec, no en la de la hoja.
 
 ## El worktree de implementación

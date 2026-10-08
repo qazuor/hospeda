@@ -444,6 +444,15 @@ Fuente: [INV:D3](../02-nucleo.md#inv-d3)
 
 Fuente: [TRANS:B:S10](../04-catalogos.md#trans-b-s10) · [TPZ:S10](#tpz-s10) · [INV:24](../02-nucleo.md#inv-24) · [DEC-SUB-010](../01-decisiones-vigentes.md#dec-sub-010)
 
+<a id="ac-b8b-28"></a>
+**AC:B8b:28** — las mentiras de la pausa nuestra llegan al falso con ella
+
+- **Dado** el falso con la mentira `M12` (una pausa no se reanuda sola) y la regla `RP10` (al reanudar, la fecha de cobro avanzó sin cobrar), que **agrega esta hoja** con su fila en la lista de `G15`
+- **Cuando** `S8` pausa y `S10` reanuda contra el falso con las dos encendidas
+- **Entonces** la reanudación en su fecha la hace `S10`, no se espera del proveedor; la fecha de cobro se relee después de reanudar y no se da por cobrado el período que avanzó; y con cada una apagada por nombre el caso sano pasa.
+
+Fuente: [M:M12](../04-catalogos.md#m-m12) · [RP:RP10](../04-catalogos.md#rp-rp10) · [GUARD:G15](../04-catalogos.md#guard-g15) · [Coord-2](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#decisiones-del-coordinador-2026-10-07)
+
 <a id="ac-b8b-4"></a>
 **AC:B8b:4** — un aumento que cae sobre una pausada
 
@@ -674,6 +683,15 @@ Fuente: [LOCK:C4](../04-catalogos.md#lock-c4)
   persona confirma o rechaza; ningún reembolso se dispara solo; y tras `S36` la rama no abre marca.
 
 Fuente: [DEC-RF-003](../01-decisiones-vigentes.md#dec-rf-003) · [MOT:1](../04-catalogos.md#mot-1)
+
+<a id="ac-b8b-27"></a>
+**AC:B8b:27** — las mentiras de la mutación sobre una suscripción viva llegan con el cambio de plan
+
+- **Dado** el falso con `M1` en su cara de mutación (dice «ok» y no aplica un cambio de ciclo, plan, fecha, prueba gratis o baja programada) y `M2` (con dos cambios en un pedido aplica uno y descarta el otro con un solo `200`), que **agrega esta hoja** —la primera que manda dos campos en un pedido— con su fila en la lista de `G15`
+- **Cuando** `S38` aplica un cambio de plan que manda monto y ciclo juntos
+- **Entonces** la relectura compara campo por campo cada campo que se mandó y no da por hecho el que no se aplicó; y con cada una apagada por nombre el caso sano pasa. Es la mitad de `M2` que pedía `TEST:B1:3`.
+
+Fuente: [M:M1](../04-catalogos.md#m-m1) · [M:M2](../04-catalogos.md#m-m2) · [INV:D5](../02-nucleo.md#inv-d5) · [Coord-2](../../docs/41-corte-del-mvp/10-decisiones-del-owner.md#decisiones-del-coordinador-2026-10-07)
 
 <a id="ac-b8b-21"></a>
 **AC:B8b:21** — `G-R1-C`, el guard del cierre
@@ -1023,6 +1041,17 @@ UI no lo ofrezca ([AC:B8b:17](#ac-b8b-17)): *«Autorización backend jamás depe
 | [AC:B8b:24](#ac-b8b-24) | [TEST:B8b:24](#test-b8b-24) | integración con DB |
 | [AC:B8b:25](#ac-b8b-25) | [TEST:B8b:25](#test-b8b-25) | e2e web |
 | [AC:B8b:26](#ac-b8b-26) | [TEST:B8b:26](#test-b8b-26) | e2e web |
+
+<a id="test-b8b-27"></a>
+**TEST:B8b:27** — las mentiras de la mutación y de la pausa
+
+Tipo: integración con DB
+
+Cubre: [AC:B8b:27](#ac-b8b-27), [AC:B8b:28](#ac-b8b-28)
+
+Fuente: [M:M2](../04-catalogos.md#m-m2) · [RP:RP10](../04-catalogos.md#rp-rp10)
+
+Con `M1` y `M2` encendidas, el cambio de plan con dos campos recibe `200` y la relectura detecta el campo no aplicado; con `M12` y `RP10`, la pausa no se reanuda sola y la fecha avanzada no cuenta como cobro; con cada una apagada por nombre, el caso sano pasa.
 
 <a id="test-b8b-1"></a>
 **TEST:B8b:1** — `S8` y su rama de fallo
