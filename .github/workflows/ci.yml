@@ -752,6 +752,21 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: build-outputs
+      # The migration chain runs in ONE transaction and takes ~3.5k locks; the four
+      # global setups (db, service-core, api, seed) run it concurrently. With the
+      # default max_locks_per_transaction (64) the shared lock table overflows and
+      # `drizzle-kit migrate` fails with "out of shared memory", intermittently and
+      # worse with every new table. A service container takes no server flags, so
+      # the setting is applied with ALTER SYSTEM and a restart.
+      - name: Raise max_locks_per_transaction on the integration Postgres
+        run: |
+          docker exec ${{ job.services.postgres.id }} psql -U hospeda_user -d postgres -c "ALTER SYSTEM SET max_locks_per_transaction = 1024"
+          docker restart ${{ job.services.postgres.id }}
+          for i in $(seq 1 30); do
+            docker exec ${{ job.services.postgres.id }} pg_isready -U hospeda_user && break
+            sleep 1
+          done
+          docker exec ${{ job.services.postgres.id }} psql -U hospeda_user -d postgres -tAc "SHOW max_locks_per_transaction" | grep -qx 1024
       - name: Run integration tests (SPEC-061 db + SPEC-080 service-core)
         run: pnpm test:integration
         env:
