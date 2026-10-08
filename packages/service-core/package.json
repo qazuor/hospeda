@@ -51,6 +51,7 @@
         "@repo/media": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
+        "@repo/verticals": "workspace:*",
         "drizzle-orm": "^0.45.2",
         "jose": "^6.2.8",
         "parse5": "^8.0.1",
