@@ -2592,6 +2592,9 @@
         "touristAudience": {
             "invalid": "El tourist audience no es válido"
         },
+        "trialStatus": {
+            "invalid": "El estado del trial no es válido"
+        },
         "visibility": {
             "invalid": "El visibility no es válido"
         },
