@@ -117,6 +117,7 @@ export default defineConfig({
             '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
             '@repo/config': resolve(__dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
+            '@repo/verticals': resolve(__dirname, '../../packages/verticals/src'),
             '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
             '@repo/email': resolve(__dirname, '../../packages/email/src'),
             '@repo/notifications': resolve(__dirname, '../../packages/notifications/src'),
