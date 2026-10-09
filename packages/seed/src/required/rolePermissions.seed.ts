@@ -352,6 +352,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MAINTENANCE_MODE_WRITE,
         PermissionEnum.BILLING_SETTINGS_VIEW,
         PermissionEnum.BILLING_SETTINGS_WRITE,
+        PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT,
+        PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
 
         // AI (SPEC-173): credential vault + settings management — SUPER_ADMIN-only.
@@ -720,6 +723,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.SETTINGS_GENERAL_WRITE,
         PermissionEnum.BILLING_SETTINGS_VIEW,
         PermissionEnum.BILLING_SETTINGS_WRITE,
+        PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT,
+        PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
 
         // MODERATION: Content auto-moderation management (SPEC-195)
@@ -852,6 +858,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCESS_API_PUBLIC,
 
         // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -977,6 +984,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.NEWSLETTER_SUBSCRIBER_VIEW,
 
         // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit only.
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1103,6 +1111,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
         // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
 
         // HOST_TRADE: read-only access to the admin-curated host trades directory (SPEC-241).
@@ -1166,6 +1175,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
         // Mi cuenta self-edit (mirrors HOST)
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1218,6 +1228,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.CONVERSATION_BLOCK_OWN,
 
         // Mi cuenta self-edit (mirrors HOST)
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1260,6 +1271,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCESS_API_PUBLIC,
 
         // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
@@ -1286,6 +1298,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCESS_API_PUBLIC,
 
         // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit.
+        PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
     ],
 
