@@ -90,3 +90,8 @@ export {
     createPlanCatalogInverse,
     type PlanCatalogInverse
 } from './plan-catalog/plan-catalog-inverse';
+export { consumeQuota } from './quota/consume-quota';
+export { MARKET_TIME_ZONE, marketCalendarDay, marketMidnight } from './quota/market-time';
+export { selectQuotaGrant } from './quota/quota-grant';
+export type { ConsumeQuotaResult, QuotaWindow, QuotaWindowStore } from './quota/types';
+export { computeWindowClose } from './quota/window-close';
