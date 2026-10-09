@@ -26,6 +26,8 @@ import { Pool } from 'pg';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { resolveListingAccess } from '../../src/authorization/resolve-listing-access';
 import { createBootstrapBillingForVerticals } from '../../src/coverage/bootstrap-billing-for-verticals';
+import { resolveEffectiveSet } from '../../src/effective-set/resolve-effective-set';
+import { rehydrateEffectiveSet } from '../../src/effective-set-cache/snapshot';
 import { createBootstrapCoverageReader } from './support/bootstrap-coverage-reader';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 3 });
@@ -179,9 +181,32 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
             const billing = createBootstrapBillingForVerticals({ reader });
             const coverageSpy = vi.spyOn(billing, 'coverage');
             const catalog = {
+                findPlanVersion: ({ id }: { readonly id: string }) =>
+                    planCatalogModel.findPlanVersion({ id, tx: db }),
                 findPlanVersionEffects: ({ id }: { readonly id: string }) =>
-                    planCatalogModel.findPlanVersionEffects({ id, tx: db })
+                    planCatalogModel.findPlanVersionEffects({ id, tx: db }),
+                findAddonVersion: ({ id }: { readonly id: string }) =>
+                    planCatalogModel.findAddonVersion({ id, tx: db }),
+                findPlanVersionSummary: ({ id }: { readonly id: string }) =>
+                    planCatalogModel.findPlanVersionSummary({ id, tx: db }),
+                findSellableCurrentVersions: ({ vertical }: { readonly vertical: string }) =>
+                    planCatalogModel.findSellableCurrentVersions({ vertical, tx: db }),
+                findCurrentPlanVersion: ({ planId }: { readonly planId: string }) =>
+                    planCatalogModel.findCurrentPlanVersion({ planId, tx: db })
             };
+            const effectiveSet = async (args: {
+                readonly userId: string;
+                readonly vertical: VerticalEnum;
+            }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    ...(await resolveEffectiveSet({
+                        reader: catalog,
+                        billing,
+                        trials: reader,
+                        ...args
+                    }))
+                });
             const gastroCoverage = await billing.coverage({
                 userId: user.id,
                 vertical: VerticalEnum.GASTRONOMY
@@ -221,16 +246,18 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                     )
                 },
                 billing,
-                catalog
+                effectiveSet
             };
             expect(await resolveListingAccess({ ...common, operation: 'READ_OWN' })).toEqual({
                 allowed: true,
+                subjectId: user.id,
                 evaluatedSteps: [4]
             });
             for (const operation of ['EXPORT', 'REACTIVATE', 'DELETE'] as const) {
                 expect(await resolveListingAccess({ ...common, operation })).toEqual({
                     allowed: true,
-                    evaluatedSteps: [4, 6]
+                    subjectId: user.id,
+                    evaluatedSteps: operation === 'EXPORT' ? [4, 6] : [4, 5, 6]
                 });
             }
             for (const operation of ['EDIT', 'PUBLISH'] as const) {
@@ -240,15 +267,23 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                 });
             }
 
-            const beforePending = coverageSpy.mock.calls.length;
+            const beforeDraft = coverageSpy.mock.calls.length;
             const draft = { ownerId: user.id, publicationStatus: PublicationStatusEnum.DRAFT };
-            for (const operation of ['EDIT', 'PUBLISH'] as const) {
-                expect(await resolveListingAccess({ ...common, facts: draft, operation })).toEqual({
-                    allowed: false,
-                    reason: 'NO_CAPABILITY'
-                });
-            }
-            expect(coverageSpy).toHaveBeenCalledTimes(beforePending);
+            expect(
+                await resolveListingAccess({ ...common, facts: draft, operation: 'EDIT' })
+            ).toEqual({
+                allowed: true,
+                subjectId: user.id,
+                evaluatedSteps: [4, 5]
+            });
+            expect(
+                await resolveListingAccess({ ...common, facts: draft, operation: 'PUBLISH' })
+            ).toEqual({
+                allowed: false,
+                reason: 'NO_CAPABILITY',
+                key: 'publish_gastronomy'
+            });
+            expect(coverageSpy.mock.calls.length).toBeGreaterThan(beforeDraft);
 
             const mirror = {
                 ...common,
@@ -267,12 +302,14 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
             expect(otherCoverage.covered).toBe(false);
             expect(await resolveListingAccess({ ...mirror, operation: 'READ_OWN' })).toEqual({
                 allowed: true,
+                subjectId: user.id,
                 evaluatedSteps: [4]
             });
             for (const operation of ['EXPORT', 'REACTIVATE', 'DELETE'] as const) {
                 expect(await resolveListingAccess({ ...mirror, operation })).toEqual({
                     allowed: false,
-                    reason: 'NO_CAPABILITY'
+                    reason: 'NO_CAPABILITY',
+                    key: 'recover_own_listing'
                 });
             }
         });
