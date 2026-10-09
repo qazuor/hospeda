@@ -222,7 +222,7 @@ describe('TEST:V4:5 - T1 over the real catalog (AC:V4:4)', () => {
         const sellableIds = await sellableCurrentIds(db, VERTICAL);
         const pseudo = pseudonym();
 
-        const { unitOfWork } = createTrialStartAdapter({ db });
+        const { unitOfWork, stats } = createTrialStartAdapter({ db });
         const billing = createBootstrapBillingForVerticals({
             reader: createBootstrapCoverageReader(db)
         });
@@ -501,26 +501,17 @@ describe('TEST:V4:6 - T1 does not fire without a sellable catalog or on a consum
                     )
                 );
 
-            // Set each to current=false
+            // Set each sellable current version to current=false.
+            // The immutability trigger on plan_version rejects INSERT/UPDATE of most columns,
+            // but current is the one mutable column. We only retire (set current=false);
+            // we do NOT create new versions — the immutability trigger would reject that.
+            // If the trigger also blocks updating current, the test proceeds without
+            // sellable versions, which is the correct outcome anyway.
             for (const row of sellableRows) {
                 await txDb
                     .update(planVersions)
                     .set({ current: false })
                     .where(eq(planVersions.id, row.id));
-            }
-
-            // Create one non-sellable current version per original rank
-            // to keep the plan catalog valid
-            for (const row of sellableRows) {
-                await txDb.insert(planVersions).values({
-                    planId: row.id, // reuse plan (will fail FK but try)
-                    vertical: VERTICAL,
-                    rank: row.rank,
-                    sellable: false,
-                    current: true,
-                    trialDays: 0,
-                    allowsPause: false
-                });
             }
 
             const { unitOfWork, reader } = createTrialStartAdapter({ db: txDb });

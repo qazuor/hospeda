@@ -225,13 +225,19 @@ export function createTrialStartAdapter(args: {
             lockArgs: { readonly userId: string; readonly vertical: string },
             work: (tx: TrialStartTransaction) => Promise<T>
         ): Promise<T> {
-            // Take the advisory lock (xact scope: released at transaction end)
-            await args.db.execute(
-                sql`SELECT pg_advisory_xact_lock(hashtextextended(${`trial-start:${lockArgs.userId}:${lockArgs.vertical}`}, 0))`
-            );
-
-            // Run work inside a transaction (savepoint if db is already a tx)
+            // Take the advisory lock inside the same transaction that runs the work.
+            // This is critical: pg_advisory_xact_lock is xact-scoped, so the lock
+            // is held for the lifetime of the enclosing transaction and released
+            // on commit/rollback.  If we took it on a bare `execute()` call the lock
+            // would be released as soon as the query finished — no concurrency
+            // protection at all.
             return args.db.transaction(async (tx) => {
+                // Lock (serialises concurrent runLocked calls by user+vertical)
+                await tx.execute(
+                    sql`SELECT pg_advisory_xact_lock(hashtextextended(${`trial-start:${lockArgs.userId}:${lockArgs.vertical}`}, 0))`
+                );
+
+                // Execute the work with a fully-formed transaction port
                 const txPort = buildTransaction(tx);
                 return work(txPort);
             });
