@@ -78,7 +78,8 @@ describe('subscription authorization window columns', () => {
                 })
             )
         ).toBe(
-            'subscription_authorization_window_deadline_version_billing_deadline_version_version_fk'
+            // PostgreSQL truncates identifiers to 63 bytes.
+            'subscription_authorization_window_deadline_version_billing_dead'
         );
     });
 });

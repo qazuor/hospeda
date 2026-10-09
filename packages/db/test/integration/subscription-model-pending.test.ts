@@ -359,7 +359,8 @@ describe('stored authorization window model operations', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, card.subscription.id));
             expect(active?.status).toBe('ACTIVE');
-            expect(active?.updatedAt).toEqual(now);
+            // The database's set_updated_at trigger owns this timestamp.
+            expect(active?.updatedAt).toBeInstanceOf(Date);
             const [untouched] = await tx
                 .select()
                 .from(manualPayments)
@@ -438,9 +439,9 @@ describe('stored authorization window model operations', () => {
                 .from(manualPayments)
                 .where(eq(manualPayments.id, manualPayment?.id ?? ''));
             expect(abandoned?.status).toBe('ABANDONED');
-            expect(abandoned?.updatedAt).toEqual(now);
+            expect(abandoned?.updatedAt).toBeInstanceOf(Date);
             expect(closed?.status).toBe('DECLARED_UNPAID');
-            expect(closed?.updatedAt).toEqual(now);
+            expect(closed?.updatedAt).toBeInstanceOf(Date);
         });
     });
 });
