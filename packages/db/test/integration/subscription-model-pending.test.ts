@@ -100,6 +100,37 @@ describe('findLiveCommitment (AC:B3:6)', () => {
         });
     });
 
+    it('returns the live row with a null key when the row has no idempotency key', async () => {
+        await withTestTransaction(async (tx) => {
+            const chain = await seedChain(tx, { vertical: 'accommodation' });
+            // Inserted directly (not through createPendingAuthorization, which
+            // always mints a key) so the read must tolerate a key-less row: the
+            // left join yields null for the PREAPPROVAL_CREATE key.
+            const [row] = await tx
+                .insert(subscriptions)
+                .values({
+                    userId: chain.userId,
+                    vertical: 'accommodation',
+                    planVersionId: chain.planVersionId,
+                    billingOptionId: chain.billingOptionId,
+                    paymentMethod: 'CARD',
+                    status: 'PENDING_AUTHORIZATION',
+                    class: 'PRINCIPAL'
+                })
+                .returning();
+            if (!row) throw new Error('Expected a subscription');
+
+            const live = await subscriptionModel.findLiveCommitment({
+                userId: chain.userId,
+                vertical: 'accommodation',
+                tx
+            });
+            expect(live?.subscription.id).toBe(row.id);
+            expect(live?.idempotencyKey).toBeNull();
+            expect(live?.providerLink).toBeNull();
+        });
+    });
+
     it('ignores a live row once it leaves the live statuses', async () => {
         for (const status of ['ABANDONED', 'CANCELLED', 'CHARGE_DECLINED'] as const) {
             await withTestTransaction(async (tx) => {

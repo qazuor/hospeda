@@ -105,18 +105,48 @@ describe('TEST:B3:6 protected S1 route reuses the live commitment', () => {
         });
         const secondBody = await second.json();
 
-        // The POST success status of this route is 201 (created); the reuse is
-        // answered by the same route, so both calls share status and the S1
-        // payload. Only the transport envelope's per-request metadata differs.
-        // The route is not editable from this leaf.
+        // The POST success status of this route is 201 (created) — the route
+        // factory's default for POST — and the reuse is answered by the same
+        // route, so both calls share it. The route is not editable from this
+        // leaf (Coord-40: 201/201 is the contract, not a test bug).
         expect(first.status).toBe(201);
         expect(second.status).toBe(201);
-        const firstData = (firstBody as { readonly data: unknown }).data;
-        expect((secondBody as { readonly data: unknown }).data).toEqual(firstData);
-        expect(firstData).toMatchObject({
-            subscriptionId: expect.any(String),
-            authorizationId: expect.any(String),
-            checkoutUrl: expect.any(String)
+
+        // Compare the COMPLETE body, not just `data`. The only fields that
+        // legitimately change per request are `metadata.timestamp` and
+        // `metadata.requestId`: `createResponse` stamps both on every response
+        // (apps/api/src/utils/response-helpers.ts:270). Mask exactly those two
+        // and deep-compare everything else — `success`, the whole `data`
+        // payload and the remaining `metadata` keys — between both calls.
+        const maskPerRequestMetadata = (body: unknown) => {
+            const envelope = body as {
+                readonly metadata: { readonly timestamp: string; readonly requestId: string };
+            };
+            return {
+                ...envelope,
+                metadata: {
+                    ...envelope.metadata,
+                    timestamp: 'PER_REQUEST',
+                    requestId: 'PER_REQUEST'
+                }
+            };
+        };
+        expect(maskPerRequestMetadata(secondBody)).toEqual(maskPerRequestMetadata(firstBody));
+
+        // The masked comparison keeps `metadata.timestamp` / `metadata.requestId`
+        // honest: both must be present strings, so the exclusion above is not
+        // hiding an absent field.
+        expect(firstBody).toMatchObject({
+            success: true,
+            data: {
+                subscriptionId: expect.any(String),
+                authorizationId: expect.any(String),
+                checkoutUrl: expect.any(String)
+            },
+            metadata: {
+                timestamp: expect.any(String),
+                requestId: expect.any(String)
+            }
         });
         expect(authorize).toHaveBeenCalledOnce();
         expect(
