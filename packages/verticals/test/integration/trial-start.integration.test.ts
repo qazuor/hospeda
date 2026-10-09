@@ -916,7 +916,7 @@ describe('FILA:V4 item 6 (lock) - one start at a time per user + vertical', () =
 
         const failure = failures[0]!;
         if (failure.started) throw new Error('unreachable');
-        expect(failure.reason).toBe('USER_ALREADY_HAS_TRIAL_ROW');
+        expect(failure.reason).toBe('ALREADY_COVERED');
 
         // One row only
         const rows = await db
