@@ -106,7 +106,7 @@ describe('TEST:V5:19 guest rejected at protected tier', () => {
         },
         {
             name: 'gastronomy review' as const,
-            permissions: [PermissionEnum.GASTRONOMY_REVIEW_CREATE]
+            permissions: [PermissionEnum.GASTRONOMY_CREATE]
         }
     ])('guest on $name protected route → 401 UNAUTHORIZED', async ({ permissions }) => {
         const app = buildApp(false, true);
@@ -127,7 +127,7 @@ describe('TEST:V5:19 unverified email rejected at step 2', () => {
         },
         {
             name: 'gastronomy review' as const,
-            permissions: [PermissionEnum.GASTRONOMY_REVIEW_CREATE]
+            permissions: [PermissionEnum.GASTRONOMY_CREATE]
         }
     ])('unverified-email on $name protected route → 403 EMAIL_NOT_VERIFIED', async ({
         permissions
@@ -148,7 +148,7 @@ describe('TEST:V5:19 unverified email rejected at step 2', () => {
         },
         {
             name: 'gastronomy review' as const,
-            permissions: [PermissionEnum.GASTRONOMY_REVIEW_CREATE]
+            permissions: [PermissionEnum.GASTRONOMY_CREATE]
         }
     ])('unverified-email on $name protected route is NOT 401', async ({ permissions }) => {
         const app = buildApp(false, false, permissions);
