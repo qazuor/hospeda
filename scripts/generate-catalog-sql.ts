@@ -34,7 +34,7 @@ import { VERTICAL_ACTIVATION_EVENT_BY_VERTICAL } from '../packages/schemas/src/c
 import { VerticalEnum } from '../packages/schemas/src/enums/vertical.enum.js';
 
 /** A generated SQL value: a string literal or SQL `NULL`. */
-export type SqlValue = string | null;
+export type SqlValue = string | number | boolean | null;
 
 /** One reference-row load: the table, its columns, and its rows in insert order. */
 export interface CatalogLoad {
@@ -120,7 +120,13 @@ export function buildLoads(): Readonly<Record<LoadName, CatalogLoad>> {
 
 /** Renders one value as a SQL literal. Only `[a-z0-9_A-Z]` reach here today; quotes are escaped anyway. */
 function renderValue({ value }: { readonly value: SqlValue }): string {
-    return value === null ? 'NULL' : `'${value.replaceAll("'", "''")}'`;
+    if (value === null) return 'NULL';
+    if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+    if (typeof value === 'number') {
+        if (!Number.isSafeInteger(value)) throw new Error(`Unsafe SQL integer: ${value}`);
+        return String(value);
+    }
+    return `'${value.replaceAll("'", "''")}'`;
 }
 
 /**
