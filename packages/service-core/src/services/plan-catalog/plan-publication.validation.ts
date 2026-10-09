@@ -4,7 +4,8 @@ import {
     PRE_TRIAL_PLAN_ROLE,
     ServiceErrorCode,
     TRIAL_PLAN_ROLE,
-    VERTICAL_ACTIVATION_KEY
+    VERTICAL_ACTIVATION_KEY,
+    VerticalEnum
 } from '@repo/schemas';
 import { isMeteredEntitlement } from '@repo/verticals';
 import { ServiceError } from '../../types';
@@ -88,7 +89,7 @@ export function validatePublication(input: { context: PublicationContext }): voi
     // in the exception with the matching value; anything else falls through to
     // the always-rule below.
     if (role !== null && NON_SELLABLE_PLAN_ROLES.includes(role)) {
-        const isTouristFloor = role === FLOOR_PLAN_ROLE && vertical === 'tourist';
+        const isTouristFloor = role === FLOOR_PLAN_ROLE && vertical === VerticalEnum.TOURIST;
 
         if (isTouristFloor) {
             // Validate entitlements against the exception for COMMERCIAL/measured
@@ -132,6 +133,25 @@ export function validatePublication(input: { context: PublicationContext }): voi
                     if (!match) {
                         reject(PLAN_PUBLICATION_REJECTIONS.extraKey);
                     }
+                }
+            }
+            // The Tourist floor MUST include the complete DO list — not a
+            // subset.  Reject with the missing key so the admin knows exactly
+            // what is absent.
+            const requestEntitlementKeys = new Set(content.entitlements.map((e) => e.key));
+            const requestLimitKeys = new Map(content.limits.map((e) => [e.key, e.value]));
+            for (const exp of expectedEntitlements) {
+                if (!requestEntitlementKeys.has(exp.key)) {
+                    reject(
+                        `el piso de Turista debe otorgar exactamente la lista cerrada: falta ${exp.key}`
+                    );
+                }
+            }
+            for (const exp of expectedLimits) {
+                if (!requestLimitKeys.has(exp.key)) {
+                    reject(
+                        `el piso de Turista debe otorgar exactamente la lista cerrada: falta ${exp.key}`
+                    );
                 }
             }
         } else {

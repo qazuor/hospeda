@@ -15,6 +15,10 @@ export const PLAN_PUBLICATION_REJECTIONS = {
     trialLimitOutsideOverrides:
         'el plan de trial sólo guarda como override la cantidad de fichas de su vertical',
     extraKey: 'clave de más',
+    // DO exception for the Tourist floor: a required entitlement or limit is
+    // missing from the request (touristFloorMissingExceptionKey).
+    touristFloorMissingExceptionKey:
+        'el piso de Turista debe otorgar exactamente la lista cerrada: falta [clave]',
     floorKeyMissing: 'clave de piso que falta',
     activationIff: 'activación fuera del si y sólo si',
     vipInheritance: 'herencia de VIP fuera de una versión vendible',

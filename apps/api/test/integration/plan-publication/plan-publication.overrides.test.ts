@@ -53,7 +53,7 @@ describe('HOS-1655 V2.4a — trial overrides and Tourist floor DO exception', ()
         // The trial override limit IS stored; entitlements are zero.
         const effects = await readVersionEffects({ versionId: published.id });
         expect(effects.limits).toHaveLength(1);
-        expect(effects.limits[0].key).toBe('max_accommodations');
+        expect(effects.limits[0]?.key).toBe('max_accommodations');
         expect(effects.entitlements).toEqual([]);
     });
 
@@ -121,9 +121,25 @@ describe('HOS-1655 V2.4a — trial overrides and Tourist floor DO exception', ()
         expect(response.status, JSON.stringify(await response.clone().json())).toBe(201);
         const published = (await response.json()).data;
         expect(published).toMatchObject({ planId, sellable: false, current: true });
+        // Verify the COMPLETE DO list is stored: keys, values, and quotas.
+        // NOTE: `readVersionEffects` only returns `{ key }` (helper at
+        // plan-publication.helpers.ts is out of permitidas.txt).  We verify
+        // stored keys here; values/quotas are implicitly verified by the
+        // unit test that asserts the exact exception constant.
         const effects = await readVersionEffects({ versionId: published.id });
         expect(effects.entitlements).toHaveLength(6);
+        const entKeys = new Set(effects.entitlements.map((e) => e.key));
+        expect(entKeys.has('save_favorites')).toBe(true);
+        expect(entKeys.has('write_reviews')).toBe(true);
+        expect(entKeys.has('subscribe_to_plan')).toBe(true);
+        expect(entKeys.has('recover_own_listing')).toBe(true);
+        expect(entKeys.has('ai_search')).toBe(true);
+        expect(entKeys.has('ai_chat')).toBe(true);
         expect(effects.limits).toHaveLength(3);
+        const limitKeys = new Set(effects.limits.map((e) => e.key));
+        expect(limitKeys.has('max_favorites')).toBe(true);
+        expect(limitKeys.has('max_ai_search_per_month')).toBe(true);
+        expect(limitKeys.has('max_ai_chat_consumer_per_month')).toBe(true);
     });
 
     /* ------------------------------------------------------------------ */

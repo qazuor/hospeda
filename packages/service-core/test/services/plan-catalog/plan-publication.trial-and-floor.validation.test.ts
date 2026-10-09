@@ -198,6 +198,77 @@ describe('TEST:V2:10 (a) Tourist floor accepts the DO list', () => {
     });
 });
 
+describe('TEST:V2:10 (a) Tourist floor rejects missing DO keys', () => {
+    it('sin save_favorites se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'tourist',
+            role: 'floor',
+            entitlements: [
+                { key: 'write_reviews' },
+                { key: 'ai_search', planQuota: 10, trialQuota: 10 },
+                { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
+                { key: 'subscribe_to_plan' },
+                { key: 'recover_own_listing' }
+            ],
+            limits: [
+                { key: 'max_favorites', value: 5 },
+                { key: 'max_ai_search_per_month', value: 10 },
+                { key: 'max_ai_chat_consumer_per_month', value: 10 }
+            ]
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            'el piso de Turista debe otorgar exactamente la lista cerrada: falta save_favorites'
+        );
+    });
+
+    it('sin ai_chat se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'tourist',
+            role: 'floor',
+            entitlements: [
+                { key: 'save_favorites' },
+                { key: 'write_reviews' },
+                { key: 'ai_search', planQuota: 10, trialQuota: 10 },
+                { key: 'subscribe_to_plan' },
+                { key: 'recover_own_listing' }
+            ],
+            limits: [
+                { key: 'max_favorites', value: 5 },
+                { key: 'max_ai_search_per_month', value: 10 },
+                { key: 'max_ai_chat_consumer_per_month', value: 10 }
+            ]
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            'el piso de Turista debe otorgar exactamente la lista cerrada: falta ai_chat'
+        );
+    });
+
+    it('sin max_favorites se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'tourist',
+            role: 'floor',
+            entitlements: [
+                { key: 'save_favorites' },
+                { key: 'write_reviews' },
+                { key: 'ai_search', planQuota: 10, trialQuota: 10 },
+                { key: 'ai_chat', planQuota: 10, trialQuota: 10 },
+                { key: 'subscribe_to_plan' },
+                { key: 'recover_own_listing' }
+            ],
+            limits: [
+                { key: 'max_ai_search_per_month', value: 10 },
+                { key: 'max_ai_chat_consumer_per_month', value: 10 }
+            ]
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            'el piso de Turista debe otorgar exactamente la lista cerrada: falta max_favorites'
+        );
+    });
+});
+
 describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () => {
     it('otra clave comercial se rechaza', () => {
         const ctx = contextOf({
@@ -372,18 +443,72 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
 /* ------------------------------------------------------------------ */
 
 describe('TEST:V2:10 (a) pisos de otras verticales rechazan claves DO', () => {
-    const doKeys = [
-        { key: 'save_favorites' },
-        { key: 'write_reviews' },
-        { key: 'ai_search', planQuota: 10, trialQuota: 10 },
-        { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
-    ];
+    // Each test isolates ONE DO key so the others cannot mask the rejection.
+    const baseFloorEntitlements = [{ key: 'subscribe_to_plan' }, { key: 'recover_own_listing' }];
 
     it('piso de accommodation: save_favorites se rechaza', () => {
         const ctx = contextOf({
             vertical: 'accommodation',
             role: 'floor',
-            entitlements: [...doKeys, { key: 'subscribe_to_plan' }, { key: 'recover_own_listing' }],
+            entitlements: [...baseFloorEntitlements, { key: 'save_favorites' }],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de accommodation: write_reviews se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'accommodation',
+            role: 'floor',
+            entitlements: [...baseFloorEntitlements, { key: 'write_reviews' }],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de accommodation: ai_search medido se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'accommodation',
+            role: 'floor',
+            entitlements: [
+                ...baseFloorEntitlements,
+                { key: 'ai_search', planQuota: 10, trialQuota: 10 }
+            ],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de accommodation: ai_chat medido se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'accommodation',
+            role: 'floor',
+            entitlements: [
+                ...baseFloorEntitlements,
+                { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
+            ],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de gastronomy: save_favorites se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'gastronomy',
+            role: 'floor',
+            entitlements: [...baseFloorEntitlements, { key: 'save_favorites' }],
             limits: []
         });
 
@@ -396,7 +521,65 @@ describe('TEST:V2:10 (a) pisos de otras verticales rechazan claves DO', () => {
         const ctx = contextOf({
             vertical: 'gastronomy',
             role: 'floor',
-            entitlements: [...doKeys, { key: 'subscribe_to_plan' }, { key: 'recover_own_listing' }],
+            entitlements: [...baseFloorEntitlements, { key: 'write_reviews' }],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de gastronomy: ai_search medido se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'gastronomy',
+            role: 'floor',
+            entitlements: [
+                ...baseFloorEntitlements,
+                { key: 'ai_search', planQuota: 10, trialQuota: 10 }
+            ],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de gastronomy: ai_chat medido se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'gastronomy',
+            role: 'floor',
+            entitlements: [
+                ...baseFloorEntitlements,
+                { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
+            ],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de experience: save_favorites se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'experience',
+            role: 'floor',
+            entitlements: [...baseFloorEntitlements, { key: 'save_favorites' }],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de experience: write_reviews se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'experience',
+            role: 'floor',
+            entitlements: [...baseFloorEntitlements, { key: 'write_reviews' }],
             limits: []
         });
 
@@ -409,7 +592,39 @@ describe('TEST:V2:10 (a) pisos de otras verticales rechazan claves DO', () => {
         const ctx = contextOf({
             vertical: 'experience',
             role: 'floor',
-            entitlements: [...doKeys, { key: 'subscribe_to_plan' }, { key: 'recover_own_listing' }],
+            entitlements: [
+                ...baseFloorEntitlements,
+                { key: 'ai_search', planQuota: 10, trialQuota: 10 }
+            ],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('piso de experience: ai_chat medido se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'experience',
+            role: 'floor',
+            entitlements: [
+                ...baseFloorEntitlements,
+                { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
+            ],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('pre_trial de Turista: save_favorites se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'tourist',
+            role: 'pre_trial',
+            entitlements: [...baseFloorEntitlements, { key: 'save_favorites' }],
             limits: []
         });
 
@@ -422,7 +637,39 @@ describe('TEST:V2:10 (a) pisos de otras verticales rechazan claves DO', () => {
         const ctx = contextOf({
             vertical: 'tourist',
             role: 'pre_trial',
-            entitlements: [...doKeys, { key: 'subscribe_to_plan' }, { key: 'recover_own_listing' }],
+            entitlements: [...baseFloorEntitlements, { key: 'write_reviews' }],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('pre_trial de Turista: ai_search medido se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'tourist',
+            role: 'pre_trial',
+            entitlements: [
+                ...baseFloorEntitlements,
+                { key: 'ai_search', planQuota: 10, trialQuota: 10 }
+            ],
+            limits: []
+        });
+
+        expect(() => validatePublication({ context: ctx })).toThrow(
+            PLAN_PUBLICATION_REJECTIONS.extraKey
+        );
+    });
+
+    it('pre_trial de Turista: ai_chat medido se rechaza', () => {
+        const ctx = contextOf({
+            vertical: 'tourist',
+            role: 'pre_trial',
+            entitlements: [
+                ...baseFloorEntitlements,
+                { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
+            ],
             limits: []
         });
 
