@@ -10,6 +10,10 @@ import {
     planPolicyCaseSet
 } from '@repo/billing-verticals-contract/testing';
 import {
+    addons,
+    addonVersionEntitlements,
+    addonVersionLimits,
+    addonVersions,
     catalogKeys,
     type DrizzleClient,
     planCatalogModel,
@@ -22,6 +26,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { PlanCatalogReader } from '../../src/plan-catalog/catalog-reader';
+import { CatalogVersionNotFoundError } from '../../src/plan-catalog/errors';
 import { createPlanCatalogInverse } from '../../src/plan-catalog/plan-catalog-inverse';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 3 });
@@ -116,6 +121,40 @@ async function seedVersion(args: {
                 .values({ planVersionId, key: l.key, value: l.value });
         }
         return planVersionId;
+    });
+}
+
+/** Seeds an addon with one version and its effects; returns the addon and version ids. */
+async function seedAddonVersion(args: {
+    readonly validity: 'FIXED_DAYS' | 'WHILE_SUBSCRIPTION_ALIVE';
+    readonly validityDays: number | null;
+    readonly scopeType: 'LISTING' | 'VERTICAL_SUBSCRIPTION' | 'USER' | 'GLOBAL';
+}): Promise<{ readonly addonId: string; readonly addonVersionId: string }> {
+    // An addon version and what it grants are written in ONE transaction, as
+    // the publish action does: extras 041 rejects a child row added later.
+    return db.transaction(async (tx) => {
+        const [addon] = await tx
+            .insert(addons)
+            .values({ slug: `addon-${randomUUID()}`, name: 'Addon' })
+            .returning({ id: addons.id });
+        const addonId = (addon as { id: string }).id;
+        const [version] = await tx
+            .insert(addonVersions)
+            .values({
+                addonId,
+                validity: args.validity,
+                validityDays: args.validityDays,
+                scopeType: args.scopeType
+            })
+            .returning({ id: addonVersions.id });
+        const addonVersionId = (version as { id: string }).id;
+        await tx
+            .insert(addonVersionEntitlements)
+            .values({ addonVersionId, key: 'respond_reviews' });
+        await tx
+            .insert(addonVersionLimits)
+            .values({ addonVersionId, key: 'max_photos_per_accommodation', value: 30 });
+        return { addonId, addonVersionId };
     });
 }
 
@@ -240,4 +279,46 @@ changeDirectionCaseSet({
             })
         })
     })
+});
+
+describe('TEST:V2:14 (DB half) — addonPolicy over the real catalog model', () => {
+    it('a FIXED_DAYS version answers its own days and scope', async () => {
+        const { addonId, addonVersionId } = await seedAddonVersion({
+            validity: 'FIXED_DAYS',
+            validityDays: 30,
+            scopeType: 'LISTING'
+        });
+
+        const answer = await subject.addonPolicy({ addonVersionId });
+
+        expect(answer).toStrictEqual({
+            addonId,
+            validity: 'FIXED_DAYS',
+            validityDays: 30,
+            scopeType: 'LISTING'
+        });
+    });
+
+    it('a WHILE_SUBSCRIPTION_ALIVE version answers a null day count and its scope', async () => {
+        const { addonId, addonVersionId } = await seedAddonVersion({
+            validity: 'WHILE_SUBSCRIPTION_ALIVE',
+            validityDays: null,
+            scopeType: 'VERTICAL_SUBSCRIPTION'
+        });
+
+        const answer = await subject.addonPolicy({ addonVersionId });
+
+        expect(answer).toStrictEqual({
+            addonId,
+            validity: 'WHILE_SUBSCRIPTION_ALIVE',
+            validityDays: null,
+            scopeType: 'VERTICAL_SUBSCRIPTION'
+        });
+    });
+
+    it('an unknown addon version is refused', async () => {
+        await expect(subject.addonPolicy({ addonVersionId: randomUUID() })).rejects.toBeInstanceOf(
+            CatalogVersionNotFoundError
+        );
+    });
 });
