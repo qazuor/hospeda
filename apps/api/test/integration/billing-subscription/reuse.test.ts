@@ -1,0 +1,150 @@
+import {
+    billingOptions,
+    eq,
+    getDb,
+    plans,
+    planVersions,
+    subscriptionModel,
+    subscriptions,
+    users
+} from '@repo/db';
+import { FakePaymentProvider } from '@repo/payments/fake';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { initApp } from '../../../src/app';
+import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+
+const path = '/api/v1/protected/billing/subscriptions';
+const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
+
+async function fixture(sellable: boolean) {
+    const db = getDb();
+    const [user] = await db
+        .insert(users)
+        .values({
+            email: `b3-reuse-${crypto.randomUUID()}@example.test`,
+            displayName: 'B3 reuse route user',
+            emailVerified: true,
+            lifecycleState: 'ACTIVE'
+        })
+        .returning();
+    if (!user) throw new Error('No user');
+    const [plan] = await db
+        .insert(plans)
+        .values({
+            vertical: 'accommodation',
+            slug: `b3-reuse-${crypto.randomUUID()}`,
+            name: 'Básico'
+        })
+        .returning();
+    if (!plan) throw new Error('No plan');
+    const [version] = await db
+        .insert(planVersions)
+        .values({
+            planId: plan.id,
+            vertical: 'accommodation',
+            rank: Math.floor(Math.random() * 100000000) + 1000,
+            sellable,
+            current: true,
+            trialDays: 0,
+            allowsPause: false
+        })
+        .returning();
+    if (!version) throw new Error('No version');
+    const [option] = await db
+        .insert(billingOptions)
+        .values({
+            planVersionId: version.id,
+            cycle: 'monthly',
+            amount: 100000,
+            currency: 'ARS'
+        })
+        .returning();
+    if (!option) throw new Error('No option');
+    return { user, version, option };
+}
+
+function headers(userId: string) {
+    return {
+        'content-type': 'application/json',
+        'user-agent': 'vitest',
+        'x-mock-actor-id': userId,
+        'x-mock-actor-role': 'USER',
+        'x-mock-actor-permissions': '[]'
+    };
+}
+
+describe('TEST:B3:6 protected S1 route reuses the live commitment', () => {
+    beforeAll(async () => {
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
+        await testDb.setup();
+        validateApiEnv();
+    });
+    afterAll(async () => testDb.teardown());
+
+    it('answers the same domain body on a retry without calling authorize again', async () => {
+        const { user, option } = await fixture(true);
+        const fake = new FakePaymentProvider({
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'inspect a healthy creation through the route' }]
+        });
+        const authorize = vi.spyOn(fake, 'authorize');
+        const app = initApp({ clock, paymentProvider: fake });
+        const body = JSON.stringify({ billingOptionId: option.id });
+
+        const first = await app.request(path, {
+            method: 'POST',
+            headers: headers(user.id),
+            body
+        });
+        const firstBody = await first.json();
+        const second = await app.request(path, {
+            method: 'POST',
+            headers: headers(user.id),
+            body
+        });
+        const secondBody = await second.json();
+
+        // The POST success status of this route is 201 (created); the reuse is
+        // answered by the same route, so both calls share status and the S1
+        // payload. Only the transport envelope's per-request metadata differs.
+        // The route is not editable from this leaf.
+        expect(first.status).toBe(201);
+        expect(second.status).toBe(201);
+        const firstData = (firstBody as { readonly data: unknown }).data;
+        expect((secondBody as { readonly data: unknown }).data).toEqual(firstData);
+        expect(firstData).toMatchObject({
+            subscriptionId: expect.any(String),
+            authorizationId: expect.any(String),
+            checkoutUrl: expect.any(String)
+        });
+        expect(authorize).toHaveBeenCalledOnce();
+        expect(
+            await getDb().select().from(subscriptions).where(eq(subscriptions.userId, user.id))
+        ).toHaveLength(1);
+    });
+
+    it('answers 409 COMMITMENT_TAKEN when the live commitment is another plan', async () => {
+        const mine = await fixture(true);
+        const other = await fixture(true);
+        await subscriptionModel.createPendingAuthorization({
+            userId: mine.user.id,
+            vertical: 'accommodation',
+            planVersionId: other.version.id,
+            billingOptionId: other.option.id
+        });
+        const fake = new FakePaymentProvider({ clock });
+        const authorize = vi.spyOn(fake, 'authorize');
+        const app = initApp({ clock, paymentProvider: fake });
+
+        const response = await app.request(path, {
+            method: 'POST',
+            headers: headers(mine.user.id),
+            body: JSON.stringify({ billingOptionId: mine.option.id })
+        });
+
+        expect(response.status).toBe(409);
+        expect((await response.json()).error.reason).toBe('COMMITMENT_TAKEN');
+        expect(authorize).not.toHaveBeenCalled();
+    });
+});
