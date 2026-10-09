@@ -44,8 +44,14 @@ async function fingerprints(): Promise<Record<string, Fingerprint>> {
         // Later migrations may add columns; compare the original row shape.
         const row =
             table === 'plan' ? "(row_to_json(t)::jsonb - 'role')::text" : 'row_to_json(t)::text';
+        const fixtureOnly =
+            table === 'plan'
+                ? "WHERE t.slug = 'b3-over-data'"
+                : table === 'plan_version'
+                  ? "WHERE t.plan_id = (SELECT id FROM plan WHERE slug = 'b3-over-data')"
+                  : '';
         const query = await db.query<Fingerprint>(
-            `SELECT count(*)::text AS count, md5(coalesce(string_agg(${row}, '|' ORDER BY ${row}), '')) AS digest FROM ${table} t`
+            `SELECT count(*)::text AS count, md5(coalesce(string_agg(${row}, '|' ORDER BY ${row}), '')) AS digest FROM ${table} t ${fixtureOnly}`
         );
         result[table] = query.rows[0] as Fingerprint;
     }
@@ -114,7 +120,9 @@ describe('TEST:B3:32 — B3 migration over existing rows', () => {
         expect(before.plan?.count).not.toBe('0');
         expect(before.plan_version?.count).not.toBe('0');
         expect(before.billing_option?.count).not.toBe('0');
-        const roles = await db.query<{ role: string | null }>('SELECT role FROM plan');
+        const roles = await db.query<{ role: string | null }>(
+            "SELECT role FROM plan WHERE slug = 'b3-over-data'"
+        );
         expect(roles.rows).toEqual([{ role: null }]);
     });
 

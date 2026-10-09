@@ -112,7 +112,7 @@ async function seedVersion(args: {
         .values({
             planId: args.planId,
             vertical,
-            rank: args.rank,
+            rank: args.rank + 1_000,
             sellable: args.sellable,
             current: args.current,
             graceDays: 10,

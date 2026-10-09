@@ -14,6 +14,7 @@ import {
 } from '@repo/db';
 import {
     FLOOR_PLAN_ROLE,
+    type PlanRole,
     PRE_TRIAL_PLAN_ROLE,
     PublicationStatusEnum,
     PublicationStatusEnumSchema,
@@ -48,14 +49,14 @@ async function inRollback(fn: (tx: DrizzleClient) => Promise<void>): Promise<voi
 async function seedVersion(
     db: DrizzleClient,
     vertical: string,
-    role: typeof PRE_TRIAL_PLAN_ROLE | typeof FLOOR_PLAN_ROLE,
+    _role: typeof PRE_TRIAL_PLAN_ROLE | typeof FLOOR_PLAN_ROLE,
     recover: boolean
 ) {
     const [plan] = await db
         .insert(plans)
         .values({
             vertical,
-            role,
+            role: null,
             slug: randomUUID(),
             name: 'Authorization fixture'
         })
@@ -107,13 +108,20 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                 .returning({ id: destinations.id });
             if (!destination) throw new Error('Destination insert failed');
 
+            const fixtureVersions = new Map<string, string>();
             for (const vertical of [VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE]) {
-                await seedVersion(db, vertical, PRE_TRIAL_PLAN_ROLE, false);
-                await seedVersion(
-                    db,
-                    vertical,
-                    FLOOR_PLAN_ROLE,
-                    vertical === VerticalEnum.GASTRONOMY
+                fixtureVersions.set(
+                    `${vertical}:${PRE_TRIAL_PLAN_ROLE}`,
+                    await seedVersion(db, vertical, PRE_TRIAL_PLAN_ROLE, false)
+                );
+                fixtureVersions.set(
+                    `${vertical}:${FLOOR_PLAN_ROLE}`,
+                    await seedVersion(
+                        db,
+                        vertical,
+                        FLOOR_PLAN_ROLE,
+                        vertical === VerticalEnum.GASTRONOMY
+                    )
                 );
             }
 
@@ -145,7 +153,29 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                 .returning({ id: experiences.id });
             if (!gastronomy || !experience) throw new Error('Listing insert failed');
 
-            const reader = createBootstrapCoverageReader(db);
+            const reader = {
+                ...createBootstrapCoverageReader(db),
+                async findCurrentVersionByRole(args: {
+                    readonly vertical: string;
+                    readonly role: PlanRole;
+                }) {
+                    const id = fixtureVersions.get(`${args.vertical}:${args.role}`);
+                    if (!id) return null;
+                    const [row] = await db
+                        .select({
+                            id: planVersions.id,
+                            planId: planVersions.planId,
+                            vertical: planVersions.vertical,
+                            rank: planVersions.rank,
+                            sellable: planVersions.sellable,
+                            current: planVersions.current
+                        })
+                        .from(planVersions)
+                        .where(eq(planVersions.id, id))
+                        .limit(1);
+                    return row ?? null;
+                }
+            };
             const billing = createBootstrapBillingForVerticals({ reader });
             const coverageSpy = vi.spyOn(billing, 'coverage');
             const catalog = {
