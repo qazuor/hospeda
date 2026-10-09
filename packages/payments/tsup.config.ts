@@ -5,7 +5,7 @@ export default defineConfig({
     outDir: 'dist',
     target: 'es2022',
     format: ['esm', 'cjs'],
-    splitting: false,
+    splitting: true,
     sourcemap: true,
     clean: true,
     dts: process.env.SKIP_PACKAGE_DTS !== 'true',
