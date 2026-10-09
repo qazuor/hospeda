@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FoldableSource } from '../../src/effective-set/types';
 import { consumeQuota } from '../../src/quota/consume-quota';
+import type { QuotaWindowStore } from '../../src/quota/types';
 import { at, KEY, source } from '../quota/fixtures';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 4 });
@@ -195,9 +196,62 @@ describe('TEST:V3:10 — monthly quota with a real cuota_ventana', () => {
 
     it('TEST:V3:10 — concurrent consumption of one triplet opens only one window', async () => {
         const userId = await user();
-        const { consume } = scenario(userId, '2026-01-15');
         const grant = [source('SUBSCRIPTION', at('2026-01-15'), 100)];
-        const results = await Promise.all([consume(80, grant), consume(80, grant)]);
+        let reads = 0;
+        let releaseReads!: () => void;
+        const bothReadsFinished = new Promise<void>((resolve) => {
+            releaseReads = resolve;
+        });
+        const store: QuotaWindowStore = {
+            withWindowLock: (input) =>
+                quotaWindowModel.withWindowLock({
+                    ...input,
+                    run: (operations) =>
+                        input.run({
+                            ...operations,
+                            findLatest: async () => {
+                                const latest = await operations.findLatest();
+                                reads += 1;
+                                if (reads === 2) releaseReads();
+                                await bothReadsFinished;
+                                return latest;
+                            }
+                        })
+                })
+        };
+        const consume = () =>
+            consumeQuota({
+                store,
+                clock: { now: () => at('2026-01-15') },
+                userId,
+                vertical: 'accommodation',
+                key: KEY,
+                amount: 80,
+                sources: grant
+            });
+        const releaseWhenSerialized = async () => {
+            try {
+                for (let attempt = 0; attempt < 1_000 && reads < 2; attempt += 1) {
+                    const { rows: locks } = await pool.query<{ waiting: boolean }>(
+                        `SELECT EXISTS (
+                            SELECT 1 FROM pg_locks
+                            WHERE locktype = 'advisory' AND NOT granted
+                              AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
+                        ) AS waiting`
+                    );
+                    if (locks[0]?.waiting) return;
+                    await new Promise((resolve) => setTimeout(resolve, 10));
+                }
+                if (reads < 2)
+                    throw new Error('Neither a second read nor an advisory-lock wait occurred');
+            } finally {
+                releaseReads();
+            }
+        };
+        const [results] = await Promise.all([
+            Promise.all([consume(), consume()]),
+            releaseWhenSerialized()
+        ]);
         expect(results.map((result) => result.status).sort()).toEqual(['CONSUMED', 'EXHAUSTED']);
         expect(await rows(userId)).toMatchObject([{ consumed: 80 }]);
     });
