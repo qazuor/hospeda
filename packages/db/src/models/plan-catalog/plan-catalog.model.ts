@@ -16,6 +16,8 @@ import { type AggregationStrategy, AggregationStrategySchema } from '@repo/schem
 import { and, asc, eq } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
+    addonVersionEntitlements,
+    addonVersionLimits,
     addonVersions,
     type SelectAddonVersion
 } from '../../schemas/vertical/addon-catalog.dbschema.ts';
@@ -69,6 +71,15 @@ export interface PlanVersionLimitEffect {
 /** What a plan version grants: its entitlements and its limits. */
 export interface PlanVersionEffects {
     readonly entitlements: readonly PlanVersionEntitlementEffect[];
+    readonly limits: readonly PlanVersionLimitEffect[];
+}
+
+/** Addon entitlements have no quota column; the resolver assigns Infinity. */
+export interface AddonVersionEffects {
+    readonly entitlements: readonly Pick<
+        PlanVersionEntitlementEffect,
+        'key' | 'aggregationStrategy'
+    >[];
     readonly limits: readonly PlanVersionLimitEffect[];
 }
 
@@ -265,6 +276,45 @@ export class PlanCatalogModel {
             return rows[0] ?? null;
         } catch (error) {
             this.fail('findAddonVersion', logContext, error);
+        }
+    }
+
+    /** Reads the entitlement and limit effects of one addon version. */
+    async findAddonVersionEffects(input: FindCatalogVersionInput): Promise<AddonVersionEffects> {
+        const logContext = { id: input.id };
+        try {
+            const client = this.client(input.tx);
+            const entitlements = await client
+                .select({
+                    key: addonVersionEntitlements.key,
+                    aggregationStrategy: catalogKeys.aggregationStrategy
+                })
+                .from(addonVersionEntitlements)
+                .innerJoin(catalogKeys, eq(catalogKeys.key, addonVersionEntitlements.key))
+                .where(eq(addonVersionEntitlements.addonVersionId, input.id));
+            const limits = await client
+                .select({
+                    key: addonVersionLimits.key,
+                    value: addonVersionLimits.value,
+                    aggregationStrategy: catalogKeys.aggregationStrategy
+                })
+                .from(addonVersionLimits)
+                .innerJoin(catalogKeys, eq(catalogKeys.key, addonVersionLimits.key))
+                .where(eq(addonVersionLimits.addonVersionId, input.id));
+            const effects = {
+                entitlements: entitlements.map((row) => ({
+                    ...row,
+                    aggregationStrategy: AggregationStrategySchema.parse(row.aggregationStrategy)
+                })),
+                limits: limits.map((row) => ({
+                    ...row,
+                    aggregationStrategy: AggregationStrategySchema.parse(row.aggregationStrategy)
+                }))
+            };
+            this.logOk('findAddonVersionEffects', logContext, effects);
+            return effects;
+        } catch (error) {
+            this.fail('findAddonVersionEffects', logContext, error);
         }
     }
 
