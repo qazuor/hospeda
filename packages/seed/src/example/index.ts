@@ -7,6 +7,7 @@ import { seedAccommodationExternalListings } from './accommodationExternalListin
 import { seedAccommodationExternalReputation } from './accommodationExternalReputation.seed.js';
 import { seedAccommodationReviews } from './accommodationReviews.seed.js';
 import { seedAccommodations } from './accommodations.seed.js';
+import { seedBillingCatalog } from './billingCatalog.seed.js';
 import { seedBookmarks } from './bookmarks.seed.js';
 import { seedDestinationReviews } from './destinationReviews.seed.js';
 import { seedEntityTagAssignments } from './entityTagAssignments.seed.js';
@@ -75,6 +76,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
     logger.info(`${STATUS_ICONS.Seed} Initializing example data load...\n`);
 
     try {
+        await seedBillingCatalog();
         // Accommodations modified the actor to set the owner id as actor,
         // so we save the old actor and restore it after the seed
         const oldContextActor = context.actor;

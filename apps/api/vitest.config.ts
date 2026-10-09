@@ -103,6 +103,7 @@ export default defineConfig({
                 import.meta.dirname,
                 '../../packages/billing-verticals-contract/src'
             ),
+            '@repo/verticals': resolve(import.meta.dirname, '../../packages/verticals/src'),
             // Test-only package (the adjustable clock): devDependency, never src.
             '@repo/test-clock': resolve(import.meta.dirname, '../../packages/test-clock/src'),
             '@repo/billing': resolve(import.meta.dirname, '../../packages/billing/src'),
