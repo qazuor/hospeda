@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger.js';
 import { createRouter } from '../../../utils/create-app.js';
+import { invalidateAllEffectiveSets } from '../../../utils/effective-set-cache.js';
 import { createAdminRoute } from '../../../utils/route-factory.js';
 
 /**
@@ -125,6 +126,7 @@ export const adminPublishPlanVersionRoute = createAdminRoute({
             planId: String(params.planId),
             content: parsed
         });
+        await invalidateAllEffectiveSets();
         auditLog({
             auditEvent: AuditEventType.BILLING_MUTATION,
             actorId: actor.id,
