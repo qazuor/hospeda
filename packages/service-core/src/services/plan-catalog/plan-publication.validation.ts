@@ -136,22 +136,20 @@ export function validatePublication(input: { context: PublicationContext }): voi
                 }
             }
             // The Tourist floor MUST include the complete DO list — not a
-            // subset.  Reject with the missing key so the admin knows exactly
-            // what is absent.
+            // subset. The missing-key text has a single source, the
+            // `touristFloorMissingExceptionKey` constant.
             const requestEntitlementKeys = new Set(content.entitlements.map((e) => e.key));
             const requestLimitKeys = new Map(content.limits.map((e) => [e.key, e.value]));
+            const missingExceptionKey = (key: string): string =>
+                PLAN_PUBLICATION_REJECTIONS.touristFloorMissingExceptionKey.replace('[clave]', key);
             for (const exp of expectedEntitlements) {
                 if (!requestEntitlementKeys.has(exp.key)) {
-                    reject(
-                        `el piso de Turista debe otorgar exactamente la lista cerrada: falta ${exp.key}`
-                    );
+                    reject(missingExceptionKey(exp.key));
                 }
             }
             for (const exp of expectedLimits) {
                 if (!requestLimitKeys.has(exp.key)) {
-                    reject(
-                        `el piso de Turista debe otorgar exactamente la lista cerrada: falta ${exp.key}`
-                    );
+                    reject(missingExceptionKey(exp.key));
                 }
             }
         } else {

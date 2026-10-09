@@ -1,13 +1,16 @@
 /**
- * TEST:V2:10 (a) — unit, without a database: trial override rules and the DO
- * exception for the Tourist floor (HOS-1655, piece V2.4a, AC:V2:7).
+ * TEST:V2:10 (a) — unit, without a database: the DO exception for the Tourist
+ * floor and the (a) rule on every other floor and on `pre_trial`
+ * (HOS-1655, piece V2.4a, AC:V2:7, AC-2, AC-3).
  *
  * Covers:
- * - trial: accepts its vertical's listing-count limit, rejects others
- * - trial: rejects any entitlement (stores effects)
  * - Tourist floor: accepts the exact DO list (+ required BASE keys)
- * - Tourist floor: rejects wrong value, wrong quota, extra commercial key
- * - Other floors: reject every DO list key
+ * - Tourist floor: rejects missing keys, wrong value, wrong quota, extra key
+ * - Every other floor and `pre_trial`: rejects each DO key, entitlement AND
+ *   limit, in isolation so a permissive rule cannot hide behind another key
+ *
+ * The trial override cases live in
+ * `plan-publication.trial-overrides.validation.test.ts`.
  */
 import { getCatalogKey, type PlanRole, type PlanVersionContentInput } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
@@ -74,101 +77,6 @@ function contextOf(input: {
         keyClasses: keys
     };
 }
-
-/* ------------------------------------------------------------------ */
-/*  AC-1 · trial override list                                         */
-/* ------------------------------------------------------------------ */
-
-describe('TEST:V2:10 (a) trial accepts its vertical listing-count limit', () => {
-    it('accommodation trial: max_accommodations passes', () => {
-        const ctx = contextOf({
-            vertical: 'accommodation',
-            role: 'trial',
-            entitlements: [],
-            limits: [{ key: 'max_accommodations', value: 1 }]
-        });
-
-        expect(() => validatePublication({ context: ctx })).not.toThrow();
-    });
-
-    it('gastronomy trial: max_gastronomies passes', () => {
-        const ctx = contextOf({
-            vertical: 'gastronomy',
-            role: 'trial',
-            entitlements: [],
-            limits: [{ key: 'max_gastronomies', value: 3 }]
-        });
-
-        expect(() => validatePublication({ context: ctx })).not.toThrow();
-    });
-
-    it('experience trial: max_experiences passes', () => {
-        const ctx = contextOf({
-            vertical: 'experience',
-            role: 'trial',
-            entitlements: [],
-            limits: [{ key: 'max_experiences', value: 2 }]
-        });
-
-        expect(() => validatePublication({ context: ctx })).not.toThrow();
-    });
-});
-
-describe('TEST:V2:10 (a) trial rejects a limit outside the override list', () => {
-    it('accommodation trial: max_gastronomies (OTHER vertical) is rejected', () => {
-        const ctx = contextOf({
-            vertical: 'accommodation',
-            role: 'trial',
-            entitlements: [],
-            limits: [{ key: 'max_gastronomies', value: 5 }]
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.trialLimitOutsideOverrides
-        );
-    });
-
-    it('trial: max_favorites (not a listing-count key) is rejected', () => {
-        const ctx = contextOf({
-            vertical: 'accommodation',
-            role: 'trial',
-            entitlements: [],
-            limits: [{ key: 'max_favorites', value: 10 }]
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.trialLimitOutsideOverrides
-        );
-    });
-
-    it('tourist trial: any limit is rejected (no mapping)', () => {
-        const ctx = contextOf({
-            vertical: 'tourist',
-            role: 'trial',
-            entitlements: [],
-            limits: [{ key: 'max_favorites', value: 5 }]
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.trialLimitOutsideOverrides
-        );
-    });
-});
-
-describe('TEST:V2:10 (a) trial rejects any entitlement', () => {
-    it('trial: a COMMERCIAL entitlement is rejected', () => {
-        const ctx = contextOf({
-            vertical: 'accommodation',
-            role: 'trial',
-            entitlements: [{ key: 'save_favorites' }],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.trialStoresEffects
-        );
-    });
-});
 
 /* ------------------------------------------------------------------ */
 /*  DO exception · Tourist floor                                       */
@@ -439,18 +347,48 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
 });
 
 /* ------------------------------------------------------------------ */
-/*  Other floors: DO keys are rejected                                 */
+/*  Other floors and pre_trial: each DO key is rejected on its own     */
 /* ------------------------------------------------------------------ */
 
-describe('TEST:V2:10 (a) pisos de otras verticales rechazan claves DO', () => {
-    // Each test isolates ONE DO key so the others cannot mask the rejection.
-    const baseFloorEntitlements = [{ key: 'subscribe_to_plan' }, { key: 'recover_own_listing' }];
+/** Each non-Tourist-floor context that must reject every DO key. */
+const OTHER_FLOOR_CONTEXTS: { label: string; vertical: string; role: PlanRole }[] = [
+    { label: 'piso de accommodation', vertical: 'accommodation', role: 'floor' },
+    { label: 'piso de gastronomy', vertical: 'gastronomy', role: 'floor' },
+    { label: 'piso de experience', vertical: 'experience', role: 'floor' },
+    { label: 'pre_trial de Turista', vertical: 'tourist', role: 'pre_trial' }
+];
 
-    it('piso de accommodation: save_favorites se rechaza', () => {
+/** The four DO entitlement keys, each in isolation. */
+const DO_ENTITLEMENT_SAMPLES: PlanVersionContentInput['entitlements'] = [
+    { key: 'save_favorites' },
+    { key: 'write_reviews' },
+    { key: 'ai_search', planQuota: 10, trialQuota: 10 },
+    { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
+];
+
+/** The three DO limit keys, each in isolation. */
+const DO_LIMIT_SAMPLES: PlanVersionContentInput['limits'] = [
+    { key: 'max_favorites', value: 5 },
+    { key: 'max_ai_search_per_month', value: 10 },
+    { key: 'max_ai_chat_consumer_per_month', value: 10 }
+];
+
+describe.each(OTHER_FLOOR_CONTEXTS)('TEST:V2:10 (a) $label rechaza cada clave DO aislada', ({
+    vertical,
+    role
+}) => {
+    // Both BASE keys are required by (b), so the only cause that can fire is
+    // the (a) rule under test.
+    const baseEntitlements: PlanVersionContentInput['entitlements'] = [
+        { key: 'subscribe_to_plan' },
+        { key: 'recover_own_listing' }
+    ];
+
+    it.each(DO_ENTITLEMENT_SAMPLES)('entitlement $key se rechaza', (entitlement) => {
         const ctx = contextOf({
-            vertical: 'accommodation',
-            role: 'floor',
-            entitlements: [...baseFloorEntitlements, { key: 'save_favorites' }],
+            vertical,
+            role,
+            entitlements: [...baseEntitlements, entitlement],
             limits: []
         });
 
@@ -459,218 +397,12 @@ describe('TEST:V2:10 (a) pisos de otras verticales rechazan claves DO', () => {
         );
     });
 
-    it('piso de accommodation: write_reviews se rechaza', () => {
+    it.each(DO_LIMIT_SAMPLES)('limit $key se rechaza', (limit) => {
         const ctx = contextOf({
-            vertical: 'accommodation',
-            role: 'floor',
-            entitlements: [...baseFloorEntitlements, { key: 'write_reviews' }],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de accommodation: ai_search medido se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'accommodation',
-            role: 'floor',
-            entitlements: [
-                ...baseFloorEntitlements,
-                { key: 'ai_search', planQuota: 10, trialQuota: 10 }
-            ],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de accommodation: ai_chat medido se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'accommodation',
-            role: 'floor',
-            entitlements: [
-                ...baseFloorEntitlements,
-                { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
-            ],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de gastronomy: save_favorites se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'gastronomy',
-            role: 'floor',
-            entitlements: [...baseFloorEntitlements, { key: 'save_favorites' }],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de gastronomy: write_reviews se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'gastronomy',
-            role: 'floor',
-            entitlements: [...baseFloorEntitlements, { key: 'write_reviews' }],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de gastronomy: ai_search medido se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'gastronomy',
-            role: 'floor',
-            entitlements: [
-                ...baseFloorEntitlements,
-                { key: 'ai_search', planQuota: 10, trialQuota: 10 }
-            ],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de gastronomy: ai_chat medido se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'gastronomy',
-            role: 'floor',
-            entitlements: [
-                ...baseFloorEntitlements,
-                { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
-            ],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de experience: save_favorites se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'experience',
-            role: 'floor',
-            entitlements: [...baseFloorEntitlements, { key: 'save_favorites' }],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de experience: write_reviews se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'experience',
-            role: 'floor',
-            entitlements: [...baseFloorEntitlements, { key: 'write_reviews' }],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de experience: ai_search medido se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'experience',
-            role: 'floor',
-            entitlements: [
-                ...baseFloorEntitlements,
-                { key: 'ai_search', planQuota: 10, trialQuota: 10 }
-            ],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('piso de experience: ai_chat medido se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'experience',
-            role: 'floor',
-            entitlements: [
-                ...baseFloorEntitlements,
-                { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
-            ],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('pre_trial de Turista: save_favorites se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'tourist',
-            role: 'pre_trial',
-            entitlements: [...baseFloorEntitlements, { key: 'save_favorites' }],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('pre_trial de Turista: write_reviews se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'tourist',
-            role: 'pre_trial',
-            entitlements: [...baseFloorEntitlements, { key: 'write_reviews' }],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('pre_trial de Turista: ai_search medido se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'tourist',
-            role: 'pre_trial',
-            entitlements: [
-                ...baseFloorEntitlements,
-                { key: 'ai_search', planQuota: 10, trialQuota: 10 }
-            ],
-            limits: []
-        });
-
-        expect(() => validatePublication({ context: ctx })).toThrow(
-            PLAN_PUBLICATION_REJECTIONS.extraKey
-        );
-    });
-
-    it('pre_trial de Turista: ai_chat medido se rechaza', () => {
-        const ctx = contextOf({
-            vertical: 'tourist',
-            role: 'pre_trial',
-            entitlements: [
-                ...baseFloorEntitlements,
-                { key: 'ai_chat', planQuota: 10, trialQuota: 10 }
-            ],
-            limits: []
+            vertical,
+            role,
+            entitlements: baseEntitlements,
+            limits: [limit]
         });
 
         expect(() => validatePublication({ context: ctx })).toThrow(
