@@ -51,9 +51,16 @@ export { foldPlegableSet } from './effective-set/fold';
 export {
     type GrantSet,
     resolveGrantSet,
+    resolveGrantValues,
     selectGrantForVertical
 } from './effective-set/grant-ratchet';
 export { hasLiveNonTrialTitle, selectPlegableSources } from './effective-set/plegable';
+export {
+    type ResolvedEffectiveSet,
+    type ResolveEffectiveSetArgs,
+    resolveEffectiveSet,
+    UnresolvedCoverageSourceError
+} from './effective-set/resolve-effective-set';
 export {
     assertMeteredKeyIsVertical,
     isMeteredEntitlement,
@@ -64,6 +71,7 @@ export {
 } from './effective-set/scope';
 export {
     resolveTrialSet,
+    resolveTrialValues,
     type TrialFloorReferences,
     type TrialInProgress,
     type TrialSet
@@ -72,6 +80,13 @@ export type { FoldableSource, SourceGrant } from './effective-set/types';
 export { createEffectiveSetCache } from './effective-set-cache/cache';
 export { subscribeCoverageInvalidation } from './effective-set-cache/coverage-invalidation';
 export { decodeFiniteOrInfinite, encodeFiniteOrInfinite } from './effective-set-cache/number-codec';
+export {
+    type EffectiveSetSnapshot,
+    effectiveSetSnapshotCodec,
+    type RehydratedEffectiveSet,
+    readEffectiveSet,
+    rehydrateEffectiveSet
+} from './effective-set-cache/snapshot';
 export type {
     EffectiveSetCacheLogger,
     EffectiveSetCodec,
@@ -96,3 +111,8 @@ export {
     createPlanCatalogInverse,
     type PlanCatalogInverse
 } from './plan-catalog/plan-catalog-inverse';
+export { consumeQuota } from './quota/consume-quota';
+export { MARKET_TIME_ZONE, marketCalendarDay, marketMidnight } from './quota/market-time';
+export { selectQuotaGrant } from './quota/quota-grant';
+export type { ConsumeQuotaResult, QuotaWindow, QuotaWindowStore } from './quota/types';
+export { computeWindowClose } from './quota/window-close';
