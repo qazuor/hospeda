@@ -7,11 +7,10 @@
  */
 import { GastronomyProtectedSchema, PermissionEnum } from '@repo/schemas';
 import { entityNotFoundError, GastronomyService, ServiceError } from '@repo/service-core';
-import { resolveResourceStep } from '@repo/verticals';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
-import { readListingAccessFacts } from '../../../utils/listing-access';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 

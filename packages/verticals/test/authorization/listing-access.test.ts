@@ -70,13 +70,54 @@ describe('listing access orchestration', () => {
             allowed: true,
             evaluatedSteps: [4]
         });
-        for (const operation of ['EDIT', 'PUBLISH'] as const) {
+        for (const operation of ['EDIT', 'PUBLISH', 'READ_OWN_COMMERCIAL'] as const) {
             expect(await resolveListingAccess({ ...common, operation })).toEqual({
                 allowed: false,
                 reason: 'NO_CAPABILITY'
             });
         }
         expect(port.coverage).not.toHaveBeenCalled();
+    });
+
+    it('TEST:V5:7 lets a suspended owner read without coverage and sends commercial reading through step 6', async () => {
+        const port = ports(true);
+        const common = {
+            actorId: 'suspended-owner',
+            vertical: VerticalEnum.GASTRONOMY,
+            facts: {
+                ownerId: 'suspended-owner',
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            },
+            ...port
+        };
+        expect(await resolveListingAccess({ ...common, operation: 'READ_OWN' })).toEqual({
+            allowed: true,
+            evaluatedSteps: [4]
+        });
+        expect(await resolveListingAccess({ ...common, operation: 'READ_OWN_COMMERCIAL' })).toEqual(
+            {
+                allowed: false,
+                reason: 'NO_CAPABILITY'
+            }
+        );
+        expect(port.coverage).not.toHaveBeenCalled();
+        expect(port.findPlanVersionEffects).not.toHaveBeenCalled();
+    });
+
+    it('TEST:V5:4 rejects a declared vertical mismatch before coverage or catalog', async () => {
+        const port = ports(true);
+        expect(
+            await resolveListingAccess({
+                actorId: 'owner',
+                vertical: VerticalEnum.GASTRONOMY,
+                declaredVertical: VerticalEnum.ACCOMMODATION,
+                facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.ARCHIVED },
+                operation: 'REACTIVATE',
+                ...port
+            })
+        ).toEqual({ allowed: false, reason: 'NOT_FOUND' });
+        expect(port.coverage).not.toHaveBeenCalled();
+        expect(port.findPlanVersionEffects).not.toHaveBeenCalled();
     });
 
     it.each([

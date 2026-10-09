@@ -21,6 +21,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -29,7 +30,7 @@ import {
     type GastronomyReviewModerateInput,
     GastronomyReviewService
 } from '../../../src/services/gastronomy/gastronomy.review.service';
-import type { Actor } from '../../../src/types';
+import { type Actor, ServiceError } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
 type AnyService = any;
@@ -117,6 +118,11 @@ function makeReviewModel(review: GastronomyReview | null = null) {
 
 function makeGastronomyModel() {
     return {
+        findById: vi.fn().mockResolvedValue({
+            id: GASTRONOMY_ID,
+            ownerId: OTHER_USER,
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        }),
         update: vi.fn().mockResolvedValue({ id: GASTRONOMY_ID, averageRating: 4.0 })
     };
 }
@@ -290,6 +296,31 @@ describe('GastronomyReviewService.listByGastronomy', () => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyReviewService._beforeCreate', () => {
+    it('masks a DRAFT listing exactly like a missing listing', async () => {
+        const service = makeService();
+        const model = (service as AnyService)._gastronomyModel;
+        model.findById
+            .mockResolvedValueOnce({
+                id: GASTRONOMY_ID,
+                ownerId: OTHER_USER,
+                publicationStatus: PublicationStatusEnum.DRAFT
+            })
+            .mockResolvedValueOnce(null);
+        const beforeCreate = (service as AnyService)._beforeCreate.bind(service);
+        const input = { gastronomyId: GASTRONOMY_ID, overallRating: 4 };
+        const capture = async () => {
+            try {
+                await beforeCreate(input, reviewerActor, { hookState: {} });
+            } catch (error) {
+                if (error instanceof ServiceError)
+                    return { code: error.code, message: error.message };
+                throw error;
+            }
+            throw new Error('expected review refusal');
+        };
+        expect(await capture()).toEqual(await capture());
+    });
+
     it('should throw ALREADY_EXISTS when user has an existing review', async () => {
         const existingReview = makeReview();
         const service = makeService();

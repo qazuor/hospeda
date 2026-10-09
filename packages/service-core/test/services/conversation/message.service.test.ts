@@ -53,6 +53,7 @@ import {
     MessageSenderTypeEnum,
     NotificationRecipientSideEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum
 } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -187,11 +188,21 @@ function makeMessage(overrides: Partial<SelectMessage> = {}): SelectMessage {
     };
 }
 
-function makeAccommodation(overrides: { deletedAt?: Date | null } = {}): {
+function makeAccommodation(
+    overrides: { deletedAt?: Date | null; publicationStatus?: PublicationStatusEnum } = {}
+): {
     deletedAt: Date | null | undefined;
     id: string;
+    ownerId: string;
+    publicationStatus: PublicationStatusEnum;
 } {
-    return { id: ACCOMMODATION_ID, deletedAt: null, ...overrides };
+    return {
+        id: ACCOMMODATION_ID,
+        ownerId: ADMIN_ACTOR.id,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
+        deletedAt: null,
+        ...overrides
+    };
 }
 
 // Fake DrizzleClient for ctx.tx
@@ -305,6 +316,34 @@ describe('MessageService', () => {
                 { conversationId: string; recipientSide: NotificationRecipientSideEnum }
             ];
             expect(cancelCall[1].recipientSide).toBe(NotificationRecipientSideEnum.GUEST);
+        });
+    });
+
+    describe('TEST:V5:30 guest messages after publication changes', () => {
+        it('masks PURGED as an absent conversation for the guest, while the owner can reply', async () => {
+            const conversation = makeConversation();
+            asMock(conversationModelMock.findById).mockResolvedValue(conversation);
+            asMock(accommodationModelMock.findById).mockResolvedValue(
+                makeAccommodation({ publicationStatus: PublicationStatusEnum.PURGED })
+            );
+            const guest = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'A guest message'
+            });
+            expect(guest.error).toMatchObject({
+                code: 'NOT_FOUND',
+                reason: 'CONVERSATION_NOT_FOUND'
+            });
+            asMock(messageModelMock.create).mockResolvedValue(makeMessage({ senderType: 'OWNER' }));
+            asMock(conversationModelMock.update).mockResolvedValue(conversation);
+            const owner = await service.createMessage(ADMIN_ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.OWNER,
+                body: 'An owner reply'
+            });
+            expect(owner.error).toBeUndefined();
+            expect(messageModelMock.create).toHaveBeenCalledOnce();
         });
     });
 

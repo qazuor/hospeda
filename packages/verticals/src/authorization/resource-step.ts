@@ -1,5 +1,9 @@
 import { PublicationStatusEnum } from '@repo/schemas';
-import { type ListingOperation, OWNER_ADMITTING_STATES } from './listing-operation';
+import {
+    FOREIGN_ADMITTING_STATES,
+    type ListingOperation,
+    OWNER_ADMITTING_STATES
+} from './listing-operation';
 
 export interface ListingAccessFacts {
     readonly ownerId: string | null;
@@ -25,10 +29,14 @@ export function resolveResourceStep(args: {
     if (facts === null || facts.publicationStatus === PublicationStatusEnum.PURGED) {
         return { allowed: false, reason: 'NOT_FOUND' };
     }
-    const isOwner = actorId !== null && facts.ownerId !== null && actorId === facts.ownerId;
-    if (!isOwner) return { allowed: false, reason: 'NOT_FOUND' };
-    if (facts.publicationStatus === null) return { allowed: true };
-    return OWNER_ADMITTING_STATES[operation].includes(facts.publicationStatus)
+    const isOwner = Boolean(actorId) && facts.ownerId !== null && actorId === facts.ownerId;
+    if (facts.publicationStatus === null) {
+        return isOwner && operation !== 'WRITE_ABOUT_LISTING'
+            ? { allowed: true }
+            : { allowed: false, reason: 'NOT_FOUND' };
+    }
+    const admitted = isOwner ? OWNER_ADMITTING_STATES : FOREIGN_ADMITTING_STATES;
+    return admitted[operation].includes(facts.publicationStatus)
         ? { allowed: true }
         : { allowed: false, reason: 'NOT_FOUND' };
 }

@@ -25,6 +25,12 @@ export const USER_ENTITY_NAME = 'user';
 /** `AccommodationService.ENTITY_NAME`. */
 export const ACCOMMODATION_ENTITY_NAME = 'accommodation';
 
+/** `GastronomyService.ENTITY_NAME`. */
+export const GASTRONOMY_ENTITY_NAME = 'gastronomy';
+
+/** `ExperienceService.ENTITY_NAME`. */
+export const EXPERIENCE_ENTITY_NAME = 'experience';
+
 /** `UserBookmarkService.ENTITY_NAME`. */
 export const USER_BOOKMARK_ENTITY_NAME = 'userBookmark';
 

@@ -336,6 +336,8 @@ jobs:
       # guard on binary vertical ternaries, whose rule it widens.
       - name: Check every vertical carries its Axis-2 item and no binary vertical ternary (GUARD:G1)
         run: pnpm check:vertical-axis-items
+      - name: Check listing vertical is immutable (GUARD:G2 c)
+        run: pnpm check:vertical-immutable
       # GUARD:G-R2 (HOS-1439, AC:V3:2). Its own step, like every guard here. The
       # effective set's fold must discard complements when no live non-TRIAL title
       # exists; its message names which half of the condition is missing.

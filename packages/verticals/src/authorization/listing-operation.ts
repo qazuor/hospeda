@@ -7,7 +7,10 @@ export const LISTING_OPERATIONS = [
     'REACTIVATE',
     'DELETE',
     'EDIT',
-    'PUBLISH'
+    'PUBLISH',
+    'READ_PUBLIC',
+    'WRITE_ABOUT_LISTING',
+    'READ_OWN_COMMERCIAL'
 ] as const;
 export type ListingOperation = (typeof LISTING_OPERATIONS)[number];
 
@@ -43,7 +46,37 @@ export const OWNER_ADMITTING_STATES: Readonly<
         PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
         PublicationStatusEnum.MODERATED
     ],
-    PUBLISH: [PublicationStatusEnum.DRAFT, PublicationStatusEnum.UNPUBLISHED_BY_BILLING]
+    PUBLISH: [PublicationStatusEnum.DRAFT, PublicationStatusEnum.UNPUBLISHED_BY_BILLING],
+    READ_PUBLIC: [
+        PublicationStatusEnum.DRAFT,
+        PublicationStatusEnum.PUBLISHED,
+        PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+        PublicationStatusEnum.ARCHIVED,
+        PublicationStatusEnum.MODERATED
+    ],
+    WRITE_ABOUT_LISTING: [PublicationStatusEnum.PUBLISHED],
+    READ_OWN_COMMERCIAL: [
+        PublicationStatusEnum.DRAFT,
+        PublicationStatusEnum.PUBLISHED,
+        PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+        PublicationStatusEnum.ARCHIVED,
+        PublicationStatusEnum.MODERATED
+    ]
+};
+
+/** States visible to a person who does not own the listing. */
+export const FOREIGN_ADMITTING_STATES: Readonly<
+    Record<ListingOperation, readonly PublicationStatusEnum[]>
+> = {
+    READ_OWN: [],
+    EXPORT: [],
+    REACTIVATE: [],
+    DELETE: [],
+    EDIT: [],
+    PUBLISH: [],
+    READ_PUBLIC: [PublicationStatusEnum.PUBLISHED],
+    WRITE_ABOUT_LISTING: [PublicationStatusEnum.PUBLISHED],
+    READ_OWN_COMMERCIAL: []
 };
 
 /** The floor capability that permits an owner to recover an archived listing. */
@@ -63,5 +96,8 @@ export const OPERATION_STEP6_KEY: Readonly<
     REACTIVATE: { kind: 'KEY', key: RECOVER_OWN_LISTING_KEY },
     DELETE: { kind: 'KEY', key: RECOVER_OWN_LISTING_KEY },
     EDIT: { kind: 'PENDING' },
-    PUBLISH: { kind: 'PENDING' }
+    PUBLISH: { kind: 'PENDING' },
+    READ_PUBLIC: { kind: 'NONE' },
+    WRITE_ABOUT_LISTING: { kind: 'NONE' },
+    READ_OWN_COMMERCIAL: { kind: 'PENDING' }
 };

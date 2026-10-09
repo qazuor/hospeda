@@ -211,7 +211,7 @@ describe.each(cases)('TEST:V5:1 $label resource step', ({ label, service, route 
         'ARCHIVED_EMAIL_VERIFIED',
         'LEGACY_EMAIL_VERIFIED',
         'ARCHIVED_EMAIL_UNVERIFIED'
-    ] as const)('lets the owner read %s', async (variant) => {
+    ] as const)('TEST:V5:7 lets the owner read %s without a billing gate', async (variant) => {
         const app = buildApp(await route(), variant !== 'ARCHIVED_EMAIL_UNVERIFIED');
         const row =
             variant === 'LEGACY_EMAIL_VERIFIED'
