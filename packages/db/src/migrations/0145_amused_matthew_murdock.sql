@@ -1,0 +1,4 @@
+ALTER TABLE "subscription" ADD COLUMN "authorization_window_deadline_version" integer;--> statement-breakpoint
+ALTER TABLE "subscription" ADD COLUMN "authorization_window_ends_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "subscription" ADD CONSTRAINT "subscription_authorization_window_deadline_version_billing_deadline_version_version_fk" FOREIGN KEY ("authorization_window_deadline_version") REFERENCES "public"."billing_deadline_version"("version") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "subscription" ADD CONSTRAINT "ck_subscription_authorization_window_pair" CHECK (("subscription"."authorization_window_deadline_version" IS NULL AND "subscription"."authorization_window_ends_at" IS NULL) OR ("subscription"."authorization_window_deadline_version" IS NOT NULL AND "subscription"."authorization_window_ends_at" IS NOT NULL));
