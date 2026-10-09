@@ -1,13 +1,17 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
-import { idempotencyKeys } from '../../schemas/vertical/idempotency-key.dbschema.ts';
+import {
+    idempotencyKeys,
+    type SelectIdempotencyKey
+} from '../../schemas/vertical/idempotency-key.dbschema.ts';
 import {
     type InsertProviderLink,
     providerLinks,
     type SelectProviderLink
 } from '../../schemas/vertical/provider-link.dbschema.ts';
 import {
+    LIVE_SUBSCRIPTION_STATUSES,
     type SelectSubscription,
     subscriptions
 } from '../../schemas/vertical/subscription.dbschema.ts';
@@ -38,6 +42,25 @@ export interface FindDeclinedInput {
 
 export interface DeclinedWithProviderLink {
     readonly subscription: SelectSubscription;
+    readonly providerLink: SelectProviderLink | null;
+}
+
+/** Subject of S1's live-commitment read (AC:B3:6). */
+export interface FindLiveCommitmentInput {
+    readonly userId: string;
+    readonly vertical: string;
+    readonly tx?: DrizzleClient;
+}
+
+/**
+ * The one live principal commitment of a `user + vertical`, with the pieces S1
+ * needs to decide whether it can be reused: its `PREAPPROVAL_CREATE` key and its
+ * provider link. Both are nullable — a row can exist with no key (impossible in
+ * S1's flow but honest in the model) or no link yet.
+ */
+export interface LiveCommitment {
+    readonly subscription: SelectSubscription;
+    readonly idempotencyKey: SelectIdempotencyKey | null;
     readonly providerLink: SelectProviderLink | null;
 }
 
@@ -100,6 +123,45 @@ export class SubscriptionModel {
                     eq(subscriptions.status, 'CHARGE_DECLINED')
                 )
             );
+    }
+
+    /**
+     * Reads the live principal commitment of a `user + vertical` — the row the
+     * partial unique index `uq_subscription_commitment_origin` protects — with
+     * its `PREAPPROVAL_CREATE` idempotency key and its provider link.
+     *
+     * The live statuses come from `LIVE_SUBSCRIPTION_STATUSES`, so
+     * `PENDING_AUTHORIZATION` is included: the row that occupies the lock before
+     * the provider call is the one S1 must find (AC:B3:6).
+     */
+    async findLiveCommitment(input: FindLiveCommitmentInput): Promise<LiveCommitment | null> {
+        const db = input.tx ?? getDb();
+        const [row] = await db
+            .select({
+                subscription: subscriptions,
+                idempotencyKey: idempotencyKeys,
+                providerLink: providerLinks
+            })
+            .from(subscriptions)
+            .leftJoin(
+                idempotencyKeys,
+                and(
+                    eq(idempotencyKeys.subjectId, subscriptions.id),
+                    eq(idempotencyKeys.operation, 'PREAPPROVAL_CREATE')
+                )
+            )
+            .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
+            .where(
+                and(
+                    eq(subscriptions.userId, input.userId),
+                    eq(subscriptions.vertical, input.vertical),
+                    eq(subscriptions.class, 'PRINCIPAL'),
+                    isNull(subscriptions.succeedsId),
+                    inArray(subscriptions.status, [...LIVE_SUBSCRIPTION_STATUSES])
+                )
+            )
+            .limit(1);
+        return row ?? null;
     }
 
     /** Atomically records the mandate id and completes its idempotency key. */

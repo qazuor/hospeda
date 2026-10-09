@@ -1,4 +1,5 @@
 import {
+    billingDeadlineVersions,
     billingOptions,
     emailOutbox,
     eq,
@@ -10,7 +11,8 @@ import {
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { BillingDeadlineValues } from '@repo/schemas';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { beforeCancelNotice } from '../../../src/routes/billing-subscription/before-cancel-notice';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -18,6 +20,37 @@ import { testDb } from '../../e2e/setup/test-database';
 
 const path = '/api/v1/protected/billing/subscriptions';
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
+
+/**
+ * The COMMITMENT_TAKEN cases below POST against a live commitment. Today they
+ * are answered by `resolve-live-commitment.ts:70-74`, which throws 409 BEFORE
+ * reading the reuse window, so this file does not strictly read
+ * `values['10'].cardHours` yet. The seed is kept anyway so the file is
+ * self-sufficient: `billing_deadline_version` is wiped by `testDb.clean()` and
+ * by `billing-deadlines.test.ts`, all `hospeda-api` integration files share one
+ * database and run in series, and any future case that completes a commitment
+ * would read the window (`resolve-live-commitment.ts:76`). Idempotent via
+ * `onConflictDoNothing`.
+ */
+const billingDeadlineVersion1Values = {
+    '10': { cardHours: 72, manualDays: 7 },
+    '11': { noticeDays: 60, contactDays: [30, 7] },
+    '12': { noticeDays: 60, contactDays: [30, 7] },
+    '13': { daysBefore: [5, 1] },
+    '14': { daysBefore: 7 },
+    '15': { hoursRemaining: 24 },
+    '16': { days: 7 },
+    '17': { days: 7 },
+    '18': { days: 180 },
+    '19': { minutes: 60 }
+} satisfies BillingDeadlineValues;
+
+async function ensureBillingDeadlineVersion1(): Promise<void> {
+    await getDb()
+        .insert(billingDeadlineVersions)
+        .values({ version: 1, values: billingDeadlineVersion1Values })
+        .onConflictDoNothing();
+}
 
 async function fixture(sellable: boolean, current = true) {
     const db = getDb();
@@ -82,6 +115,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
         await testDb.setup();
         validateApiEnv();
     });
+    beforeEach(ensureBillingDeadlineVersion1);
     afterAll(async () => testDb.teardown());
 
     it('orders auth, shape, missing id and plan policy before the provider, without creating a row', async () => {

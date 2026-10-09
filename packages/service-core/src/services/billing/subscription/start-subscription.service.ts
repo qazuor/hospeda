@@ -1,15 +1,12 @@
 import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import {
-    and,
     billingOptions,
     eq,
     getDb,
-    inArray,
     type PendingAuthorizationRow,
     plans,
     planVersions,
-    subscriptionModel,
-    subscriptions
+    subscriptionModel
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
@@ -22,7 +19,9 @@ import {
 } from '@repo/payments';
 import { BILLING_CYCLE_MONTHS, type BillingCycle, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
+import { extractPostgresErrorCause } from '../../../utils';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
+import { resolveLiveCommitmentReuse } from './resolve-live-commitment';
 
 const logger = createLogger('subscription-start');
 
@@ -229,39 +228,47 @@ export async function startSubscription(
             'PREVIOUS_ATTEMPT_CLOSING'
         );
 
-    const [commitment] = await getDb()
-        .select({ id: subscriptions.id })
-        .from(subscriptions)
-        .where(
-            and(
-                eq(subscriptions.userId, input.userId),
-                eq(subscriptions.vertical, choice.vertical),
-                eq(subscriptions.class, 'PRINCIPAL'),
-                inArray(subscriptions.status, [
-                    'PENDING_AUTHORIZATION',
-                    'ACTIVE',
-                    'GRACE_PERIOD',
-                    'PAUSED',
-                    'SUSPENDED',
-                    'CANCEL_SCHEDULED'
-                ])
-            )
-        )
-        .limit(1);
-    if (commitment)
-        throw new ServiceError(
-            ServiceErrorCode.ALREADY_EXISTS,
-            'A subscription commitment already exists',
-            undefined,
-            'COMMITMENT_TAKEN'
-        );
-
-    const pending = await subscriptionModel.createPendingAuthorization({
+    // AC:B3:6 — the live commitment decides first. If it is a reusable pending
+    // row, S1 answers with what is stored; otherwise it is the same 409 as
+    // before. No lock, no wait: the reuse is a consequence of the row and the
+    // partial unique index.
+    const existing = await subscriptionModel.findLiveCommitment({
         userId: input.userId,
-        vertical: choice.vertical,
-        planVersionId: choice.planVersionId,
-        billingOptionId: choice.id
+        vertical: choice.vertical
     });
+    if (existing)
+        return resolveLiveCommitmentReuse({
+            commitment: existing,
+            billingOptionId: choice.id,
+            clock: ports.clock
+        });
+
+    let pending: PendingAuthorizationRow;
+    try {
+        pending = await subscriptionModel.createPendingAuthorization({
+            userId: input.userId,
+            vertical: choice.vertical,
+            planVersionId: choice.planVersionId,
+            billingOptionId: choice.id
+        });
+    } catch (error) {
+        // The loser of a simultaneous race hits the partial unique index, not a
+        // pre-check: read the commitment the winner just committed and resolve
+        // it the same way (reuse, or COMMITMENT_TAKEN while it is in flight).
+        const cause = extractPostgresErrorCause(error);
+        if (cause?.code !== '23505' || cause.constraint !== 'uq_subscription_commitment_origin')
+            throw error;
+        const raced = await subscriptionModel.findLiveCommitment({
+            userId: input.userId,
+            vertical: choice.vertical
+        });
+        if (!raced) throw error;
+        return resolveLiveCommitmentReuse({
+            commitment: raced,
+            billingOptionId: choice.id,
+            clock: ports.clock
+        });
+    }
     return authorizePendingSubscription({
         pending,
         provider: ports.provider,
