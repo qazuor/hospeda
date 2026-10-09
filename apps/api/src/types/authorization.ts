@@ -4,7 +4,12 @@
  */
 
 import type { PermissionEnum } from '@repo/schemas';
-import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
+import type {
+    EmailUnverifiedAllowedOperation,
+    ListingOperation,
+    ListingVertical
+} from '@repo/verticals';
+import type { Context } from 'hono';
 import type { ZodTypeAny } from 'zod';
 
 /**
@@ -14,6 +19,24 @@ import type { ZodTypeAny } from 'zod';
  * - admin: Admin-level permissions required
  */
 export type AuthorizationLevel = 'public' | 'protected' | 'admin';
+
+/** Declares the listing operation resolved after request shape validation. */
+export type ListingAccessConfig = {
+    /** Resource vertical; the loaded row provides the immutable listing facts. */
+    vertical: ListingVertical;
+    /** Operation used to select coverage and capability steps. */
+    operation: ListingOperation;
+    /** Validated route parameter naming the listing; defaults to `id`, absent for CREATE. */
+    idParam?: string;
+    /** Explicit capability for operations whose key is supplied by the caller. */
+    step6Key?: string;
+    /** Requested limit, evaluated against the subject read from the listing row. */
+    limit?: (args: {
+        ctx: Context;
+        listingId: string;
+        subjectId: string;
+    }) => Promise<{ key: string; requested: number }>;
+};
 
 /**
  * Configuration for route authorization
