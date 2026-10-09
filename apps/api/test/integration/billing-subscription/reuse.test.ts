@@ -1,4 +1,5 @@
 import {
+    billingDeadlineVersions,
     billingOptions,
     eq,
     getDb,
@@ -9,13 +10,46 @@ import {
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import type { BillingDeadlineValues } from '@repo/schemas';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 
 const path = '/api/v1/protected/billing/subscriptions';
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
+
+/**
+ * Migration `0138_woozy_dagger.sql` owns billing deadline version 1, but every
+ * `hospeda-api` integration file shares one database and runs in series
+ * (`vitest.config.integration.ts`: `fileParallelism: false`). `testDb.clean()`
+ * truncates `billing_deadline_version` (it is not in the exempt catalog list)
+ * and `billing-deadlines.test.ts` truncates it explicitly after every test, so
+ * by the time this file runs the migration row is gone. The reuse path reads
+ * `values['10'].cardHours` (`resolve-live-commitment.ts:43`), therefore this
+ * file must recreate version 1 instead of assuming it survives.
+ * `onConflictDoNothing` keeps the seed idempotent and never triggers the
+ * UPDATE/DELETE-only immutability trigger.
+ */
+const billingDeadlineVersion1Values = {
+    '10': { cardHours: 72, manualDays: 7 },
+    '11': { noticeDays: 60, contactDays: [30, 7] },
+    '12': { noticeDays: 60, contactDays: [30, 7] },
+    '13': { daysBefore: [5, 1] },
+    '14': { daysBefore: 7 },
+    '15': { hoursRemaining: 24 },
+    '16': { days: 7 },
+    '17': { days: 7 },
+    '18': { days: 180 },
+    '19': { minutes: 60 }
+} satisfies BillingDeadlineValues;
+
+async function ensureBillingDeadlineVersion1(): Promise<void> {
+    await getDb()
+        .insert(billingDeadlineVersions)
+        .values({ version: 1, values: billingDeadlineVersion1Values })
+        .onConflictDoNothing();
+}
 
 async function fixture(sellable: boolean) {
     const db = getDb();
@@ -80,6 +114,7 @@ describe('TEST:B3:6 protected S1 route reuses the live commitment', () => {
         await testDb.setup();
         validateApiEnv();
     });
+    beforeEach(ensureBillingDeadlineVersion1);
     afterAll(async () => testDb.teardown());
 
     it('answers the same domain body on a retry without calling authorize again', async () => {

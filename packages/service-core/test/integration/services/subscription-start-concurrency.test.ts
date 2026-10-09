@@ -1,4 +1,5 @@
 import {
+    billingDeadlineVersions,
     eq,
     getDb,
     idempotencyKeys,
@@ -9,7 +10,8 @@ import {
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import type { BillingDeadlineValues } from '@repo/schemas';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { getCurrentBillingDeadlines } from '../../../src/services/billing/deadlines/billing-deadlines.service';
 import {
     type BeforeCancelNotice,
@@ -22,6 +24,37 @@ import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './he
 
 afterAll(closeServiceTestPool);
 afterEach(() => vi.restoreAllMocks());
+
+/**
+ * This file's own database is built from the versioned migrations (its
+ * `global-setup.ts` runs `drizzle-kit migrate`), so migration `0138` seeds
+ * billing deadline version 1 and no service-core integration test truncates
+ * `billing_deadline_version`. The reuse-resolution test still reads
+ * `values['10'].cardHours` (`resolve-live-commitment.ts:43`), so we re-assert
+ * the row here too: it keeps the file self-sufficient and immune to any future
+ * cross-file cleanup. Idempotent via `onConflictDoNothing`.
+ */
+const billingDeadlineVersion1Values = {
+    '10': { cardHours: 72, manualDays: 7 },
+    '11': { noticeDays: 60, contactDays: [30, 7] },
+    '12': { noticeDays: 60, contactDays: [30, 7] },
+    '13': { daysBefore: [5, 1] },
+    '14': { daysBefore: 7 },
+    '15': { hoursRemaining: 24 },
+    '16': { days: 7 },
+    '17': { days: 7 },
+    '18': { days: 180 },
+    '19': { minutes: 60 }
+} satisfies BillingDeadlineValues;
+
+async function ensureBillingDeadlineVersion1(): Promise<void> {
+    await getServiceTestDb()
+        .insert(billingDeadlineVersions)
+        .values({ version: 1, values: billingDeadlineVersion1Values })
+        .onConflictDoNothing();
+}
+
+beforeAll(ensureBillingDeadlineVersion1);
 
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
 const returnUrl = 'https://hospeda.example/account';
