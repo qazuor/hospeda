@@ -39,6 +39,7 @@ import {
     type ScopedKeyValues,
     scopeKeyValues
 } from './scope';
+import type { SourceGrant } from './types';
 
 /** A value with the aggregation strategy its key declares. */
 interface Valued {
@@ -233,10 +234,10 @@ function ratchet(args: {
  * and the resolution carries no vertical.
  * @throws UndecidableKeyError if a key declares `BEST_DECLARED`.
  */
-export async function resolveTrialSet(args: {
+export async function resolveTrialValues(args: {
     readonly reader: PlanCatalogReader;
     readonly trial: TrialInProgress;
-}): Promise<TrialSet> {
+}): Promise<readonly SourceGrant[]> {
     const derivedEntitlements = await deriveVerticalEntitlements({
         reader: args.reader,
         vertical: args.trial.vertical
@@ -279,17 +280,54 @@ export async function resolveTrialSet(args: {
         vertical: args.trial.vertical
     });
 
+    const currentLimits = applyOverrides({ derived: derivedLimits, overrides });
+    const floorLimits = applyOverrides({ derived: floorDerived, overrides: floorOverrides });
+    const grants: SourceGrant[] = [];
+    for (const [key, value] of ratchet({
+        current: derivedEntitlements,
+        floor: floorEntitlements
+    })) {
+        const sourceValue = derivedEntitlements.get(key) ?? floorEntitlements.get(key);
+        if (!sourceValue) throw new Error(`Ratcheted entitlement ${key} has no source`);
+        grants.push({
+            key,
+            value,
+            strategy: sourceValue.strategy
+        });
+    }
+    for (const [key, value] of ratchet({ current: currentLimits, floor: floorLimits })) {
+        const sourceValue = currentLimits.get(key) ?? floorLimits.get(key);
+        if (!sourceValue) throw new Error(`Ratcheted limit ${key} has no source`);
+        grants.push({
+            key,
+            value,
+            strategy: sourceValue.strategy
+        });
+    }
+    return grants;
+}
+
+/** Preserves the public scoped result while sharing the ratcheted values. */
+export async function resolveTrialSet(args: {
+    readonly reader: PlanCatalogReader;
+    readonly trial: TrialInProgress;
+}): Promise<TrialSet> {
+    const grants = await resolveTrialValues(args);
+    const entitlements = new Map<string, number>();
+    const limits = new Map<string, number>();
+    for (const grant of grants) {
+        const definition = getCatalogKey({ key: grant.key });
+        if (definition?.kind === 'entitlement') entitlements.set(grant.key, grant.value);
+        if (definition?.kind === 'limit') limits.set(grant.key, grant.value);
+    }
     return {
         entitlements: scopeKeyValues({
-            values: ratchet({ current: derivedEntitlements, floor: floorEntitlements }),
+            values: entitlements,
             userId: args.trial.userId,
             vertical: args.trial.vertical
         }),
         limits: scopeKeyValues({
-            values: ratchet({
-                current: applyOverrides({ derived: derivedLimits, overrides }),
-                floor: applyOverrides({ derived: floorDerived, overrides: floorOverrides })
-            }),
+            values: limits,
             userId: args.trial.userId,
             vertical: args.trial.vertical
         })

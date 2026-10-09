@@ -85,6 +85,14 @@ export interface PlanCatalogReader {
     findPlanVersion(args: { readonly id: string }): Promise<PlanVersionPolicyRow | null>;
     /** What one plan version grants (empty lists when it grants nothing). */
     findPlanVersionEffects(args: { readonly id: string }): Promise<PlanVersionEffectsRow>;
+    /** What one addon version grants; optional for readers used only by plan policy. */
+    findAddonVersionEffects?(args: { readonly id: string }): Promise<{
+        readonly entitlements: readonly Pick<
+            PlanVersionEntitlementRow,
+            'key' | 'aggregationStrategy'
+        >[];
+        readonly limits: readonly PlanVersionLimitRow[];
+    }>;
     /** One addon version, or `null` when no addon version has that id. */
     findAddonVersion(args: { readonly id: string }): Promise<AddonVersionPolicyRow | null>;
     /**

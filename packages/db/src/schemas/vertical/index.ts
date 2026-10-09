@@ -10,6 +10,7 @@ export * from './plan-catalog.dbschema.ts';
 export * from './plan-migration.dbschema.ts';
 export * from './promo.dbschema.ts';
 export * from './provider-link.dbschema.ts';
+export * from './quota-window.dbschema.ts';
 export * from './reference-tables.ts';
 export * from './scheduled-change.dbschema.ts';
 export * from './subscription.dbschema.ts';

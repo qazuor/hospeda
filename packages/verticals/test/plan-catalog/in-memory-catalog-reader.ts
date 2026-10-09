@@ -4,7 +4,7 @@
  * test can see that the queries pick only what they may return.
  */
 import { randomUUID } from 'node:crypto';
-import type { AggregationStrategy } from '@repo/schemas';
+import { type AggregationStrategy, getCatalogKey } from '@repo/schemas';
 import type {
     AddonVersionPolicyRow,
     PlanCatalogReader,
@@ -65,6 +65,25 @@ export function createInMemoryCatalog(): InMemoryCatalog {
         },
         async findAddonVersion({ id }) {
             return addonVersions.get(id) ?? null;
+        },
+        async findAddonVersionEffects({ id }) {
+            const version = addonVersions.get(id);
+            const strategyOf = (key: string) => {
+                const definition = getCatalogKey({ key });
+                if (!definition) throw new Error(`Unknown catalog key: ${key}`);
+                return definition.aggregationStrategy;
+            };
+            return {
+                entitlements: (version?.entitlements ?? []).map(({ key }) => ({
+                    key,
+                    aggregationStrategy: strategyOf(key)
+                })),
+                limits: (version?.limits ?? []).map(({ key, value }) => ({
+                    key,
+                    value,
+                    aggregationStrategy: strategyOf(key)
+                }))
+            };
         },
         async findPlanVersionSummary({ id }) {
             const version = planVersions.get(id);
