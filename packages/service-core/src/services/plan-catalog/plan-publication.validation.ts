@@ -11,7 +11,9 @@ import { ServiceError } from '../../types';
 import {
     CYCLE_MINIMUM_DAYS,
     FLOOR_REQUIRED_KEYS,
-    PLAN_PUBLICATION_REJECTIONS
+    PLAN_PUBLICATION_REJECTIONS,
+    TOURIST_FLOOR_EXCEPTION,
+    TRIAL_OVERRIDE_LIMIT_KEY_BY_VERTICAL
 } from './plan-publication.rejections.js';
 import type { PublicationContext } from './plan-publication.types.js';
 
@@ -35,8 +37,16 @@ function isCommercialKey(input: { key: string; keyClasses: ReadonlyMap<string, s
  * stored), per `G-R3` (04-catalogos.md:7774-7780, V2.md:507-520).
  */
 export function validatePublication(input: { context: PublicationContext }): void {
-    const { content, role, activationEvent, catalog, planId, keyClasses, previousCycles } =
-        input.context;
+    const {
+        content,
+        role,
+        activationEvent,
+        catalog,
+        planId,
+        keyClasses,
+        previousCycles,
+        vertical
+    } = input.context;
     const entitlementKeys = content.entitlements.map((item) => item.key);
     const reject = (message: string): never => {
         throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, message);
@@ -47,30 +57,96 @@ export function validatePublication(input: { context: PublicationContext }): voi
         reject(PLAN_PUBLICATION_REJECTIONS.sellableNonSellableRole);
     }
 
-    // A trial plan derives its entitlements and limits: it never stores them
+    // A trial plan derives its entitlements: it never stores them
     // (V2.md:412-416,457-462). Its own message, NOT G-R3(a).
-    if (
-        role === TRIAL_PLAN_ROLE &&
-        (content.entitlements.length > 0 || content.limits.length > 0)
-    ) {
+    if (role === TRIAL_PLAN_ROLE && content.entitlements.length > 0) {
         reject(PLAN_PUBLICATION_REJECTIONS.trialStoresEffects);
+    }
+
+    // A trial plan accepts limits only from the closed override list
+    // (Coord-22, DEC-TRIAL-001). If the vertical has no override key, any
+    // limit is rejected.
+    if (role === TRIAL_PLAN_ROLE && content.limits.length > 0) {
+        const allowedKey =
+            TRIAL_OVERRIDE_LIMIT_KEY_BY_VERTICAL[
+                vertical as keyof typeof TRIAL_OVERRIDE_LIMIT_KEY_BY_VERTICAL
+            ];
+        const outside = content.limits.some((item) => item.key !== allowedKey);
+        if (outside) {
+            reject(PLAN_PUBLICATION_REJECTIONS.trialLimitOutsideOverrides);
+        }
     }
 
     // (a) the two non-sellable plans that are not the trial plan grant no
     // commercial key and no metered entitlement. "Metered" is decided by
     // `@repo/verticals` (`isMeteredEntitlement`), the single definition of the
     // program, not by a rule of this module (HOS-1654).
+    //
+    // Exception: DO for the Tourist floor replaces the (a) rule. When
+    // `role === 'floor'` and `vertical === 'tourist'`, each entitlement must
+    // match TOURIST_FLOOR_EXCEPTION exactly, and each COMMERCIAL limit must be
+    // in the exception with the matching value; anything else falls through to
+    // the always-rule below.
     if (role !== null && NON_SELLABLE_PLAN_ROLES.includes(role)) {
-        const commercialEntitlement = content.entitlements.some(
-            (item) =>
-                isCommercialKey({ key: item.key, keyClasses }) ||
-                isMeteredEntitlement({ planQuota: item.planQuota, trialQuota: item.trialQuota })
-        );
-        const commercialLimit = content.limits.some((item) =>
-            isCommercialKey({ key: item.key, keyClasses })
-        );
-        if (commercialEntitlement || commercialLimit) {
-            reject(PLAN_PUBLICATION_REJECTIONS.extraKey);
+        const isTouristFloor = role === FLOOR_PLAN_ROLE && vertical === 'tourist';
+
+        if (isTouristFloor) {
+            // Validate entitlements against the exception for COMMERCIAL/measured
+            // keys. BASE keys (subscribe_to_plan, recover_own_listing) are not in
+            // the exception but are neither COMMERCIAL nor measured, so they pass
+            // the always-rule below.
+            const expectedEntitlements = TOURIST_FLOOR_EXCEPTION.entitlements;
+            for (const item of content.entitlements) {
+                const isCommercial = isCommercialKey({ key: item.key, keyClasses });
+                const isMeasured = isMeteredEntitlement({
+                    planQuota: item.planQuota,
+                    trialQuota: item.trialQuota
+                });
+                if (isCommercial || isMeasured) {
+                    // Must be in the exception with exact match.
+                    const match = expectedEntitlements.find((e) => {
+                        if (e.key !== item.key) return false;
+                        // Non-measured exception entries (save_favorites,
+                        // write_reviews) reject any quota on the request.
+                        if (!('planQuota' in e)) {
+                            return item.planQuota == null && item.trialQuota == null;
+                        }
+                        // Measured exception entries: both quotas must match.
+                        if (e.planQuota !== item.planQuota) return false;
+                        if (e.trialQuota !== item.trialQuota) return false;
+                        return true;
+                    });
+                    if (!match) {
+                        reject(PLAN_PUBLICATION_REJECTIONS.extraKey);
+                    }
+                }
+            }
+            // Validate limits: COMMERCIAL keys must be in the exception with
+            // the exact value.
+            const expectedLimits = TOURIST_FLOOR_EXCEPTION.limits;
+            for (const item of content.limits) {
+                if (isCommercialKey({ key: item.key, keyClasses })) {
+                    const match = expectedLimits.find(
+                        (e) => e.key === item.key && e.value === item.value
+                    );
+                    if (!match) {
+                        reject(PLAN_PUBLICATION_REJECTIONS.extraKey);
+                    }
+                }
+            }
+        } else {
+            // Always rule: no commercial key, no metered entitlement.
+            const commercialEntitlement = content.entitlements.some(
+                (item) =>
+                    isCommercialKey({ key: item.key, keyClasses }) ||
+                    isMeteredEntitlement({ planQuota: item.planQuota, trialQuota: item.trialQuota })
+            );
+            const commercialLimit = content.limits.some((item) =>
+                isCommercialKey({ key: item.key, keyClasses })
+            );
+            if (commercialEntitlement || commercialLimit) {
+                reject(PLAN_PUBLICATION_REJECTIONS.extraKey);
+            }
         }
     }
 
