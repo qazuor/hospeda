@@ -1,6 +1,6 @@
 /** TEST:V4:14 — bootstrap sources over the db:migrate database. */
 import { randomUUID } from 'node:crypto';
-import { plans, planVersions, trials, users } from '@repo/db';
+import { type DrizzleClient, plans, planVersions, trials, users } from '@repo/db';
 import {
     FLOOR_PLAN_ROLE,
     type PlanRole,
@@ -18,10 +18,23 @@ import type { BootstrapCoverageReader } from '../../src/coverage/trial-and-base-
 import { CatalogVersionNotFoundError } from '../../src/plan-catalog/errors';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 3 });
-const db = drizzle({ client: pool });
+const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 afterAll(async () => pool.end());
 
-const reader: BootstrapCoverageReader = {
+class Rollback extends Error {}
+
+async function inRollback(fn: (tx: DrizzleClient) => Promise<void>): Promise<void> {
+    try {
+        await db.transaction(async (tx) => {
+            await fn(tx as unknown as DrizzleClient);
+            throw new Rollback('rollback');
+        });
+    } catch (error) {
+        if (!(error instanceof Rollback)) throw error;
+    }
+}
+
+const createReader = (db: DrizzleClient): BootstrapCoverageReader => ({
     async findTrial({ userId, vertical }) {
         const [row] = await db
             .select()
@@ -79,10 +92,9 @@ const reader: BootstrapCoverageReader = {
             .limit(1);
         return row ?? null;
     }
-};
-const subject = createBootstrapBillingForVerticals({ reader });
+});
 
-async function seedVersion(vertical: string, role: PlanRole | null) {
+async function seedVersion(db: DrizzleClient, vertical: string, role: PlanRole | null) {
     const [plan] = await db
         .insert(plans)
         .values({
@@ -109,7 +121,7 @@ async function seedVersion(vertical: string, role: PlanRole | null) {
     return { planId: plan.id, versionId: version.id };
 }
 
-async function seedUser() {
+async function seedUser(db: DrizzleClient) {
     const [user] = await db
         .insert(users)
         .values({
@@ -123,87 +135,93 @@ async function seedUser() {
 
 describe('TEST:V4:14 migrated bootstrap coverage', () => {
     it('returns all eight fields with trial T1 and account creation instants', async () => {
-        const vertical = VerticalEnum.GASTRONOMY;
-        const user = await seedUser();
-        const preTrial = await seedVersion(vertical, PRE_TRIAL_PLAN_ROLE);
-        const floor = await seedVersion(vertical, FLOOR_PLAN_ROLE);
-        const trial = await seedVersion(vertical, TRIAL_PLAN_ROLE);
-        const sellable = await seedVersion(vertical, null);
-        const startedAt = new Date('2025-01-02T03:04:05.000Z');
-        const endsAt = new Date('2025-01-16T03:04:05.000Z');
+        await inRollback(async (db) => {
+            const subject = createBootstrapBillingForVerticals({ reader: createReader(db) });
+            const vertical = VerticalEnum.GASTRONOMY;
+            const user = await seedUser(db);
+            const preTrial = await seedVersion(db, vertical, PRE_TRIAL_PLAN_ROLE);
+            const floor = await seedVersion(db, vertical, FLOOR_PLAN_ROLE);
+            const trial = await seedVersion(db, vertical, TRIAL_PLAN_ROLE);
+            const sellable = await seedVersion(db, vertical, null);
+            const startedAt = new Date('2025-01-02T03:04:05.000Z');
+            const endsAt = new Date('2025-01-16T03:04:05.000Z');
 
-        const before = await subject.coverage({ userId: user.id, vertical });
-        expect(before).toEqual({
-            covered: false,
-            sources: [
-                {
-                    type: 'TRIAL',
-                    reference: { kind: 'PLAN_VERSION', planVersionId: preTrial.versionId },
-                    scope: 'VERTICAL',
-                    target: null,
-                    since: 'NOT_STARTED',
-                    until: 'NOT_STARTED',
-                    charged: null,
-                    floor: null
-                },
-                {
-                    type: 'BASE',
-                    reference: { kind: 'PLAN_VERSION', planVersionId: floor.versionId },
-                    scope: 'VERTICAL',
-                    target: null,
-                    since: user.createdAt,
-                    until: 'NEVER_EXPIRES',
-                    charged: null,
-                    floor: null
-                }
-            ]
-        });
+            const before = await subject.coverage({ userId: user.id, vertical });
+            expect(before).toEqual({
+                covered: false,
+                sources: [
+                    {
+                        type: 'TRIAL',
+                        reference: { kind: 'PLAN_VERSION', planVersionId: preTrial.versionId },
+                        scope: 'VERTICAL',
+                        target: null,
+                        since: 'NOT_STARTED',
+                        until: 'NOT_STARTED',
+                        charged: null,
+                        floor: null
+                    },
+                    {
+                        type: 'BASE',
+                        reference: { kind: 'PLAN_VERSION', planVersionId: floor.versionId },
+                        scope: 'VERTICAL',
+                        target: null,
+                        since: user.createdAt,
+                        until: 'NEVER_EXPIRES',
+                        charged: null,
+                        floor: null
+                    }
+                ]
+            });
 
-        await db.insert(trials).values({
-            userId: user.id,
-            vertical,
-            status: TrialStatusEnum.TRIAL_ACTIVE,
-            trialPlanId: trial.planId,
-            floorEntitlementsVersionId: sellable.versionId,
-            floorLimitsVersionId: sellable.versionId,
-            floorTrialPlanVersionId: trial.versionId,
-            startedAt,
-            endsAt,
-            emailPseudonym: randomUUID().replaceAll('-', '').padEnd(64, '0'),
-            deadlinesVersion: 1
-        });
+            await db.insert(trials).values({
+                userId: user.id,
+                vertical,
+                status: TrialStatusEnum.TRIAL_ACTIVE,
+                trialPlanId: trial.planId,
+                floorEntitlementsVersionId: sellable.versionId,
+                floorLimitsVersionId: sellable.versionId,
+                floorTrialPlanVersionId: trial.versionId,
+                startedAt,
+                endsAt,
+                emailPseudonym: randomUUID().replaceAll('-', '').padEnd(64, '0'),
+                deadlinesVersion: 1
+            });
 
-        expect(await subject.coverage({ userId: user.id, vertical })).toEqual({
-            covered: true,
-            sources: [
-                {
-                    type: 'TRIAL',
-                    reference: { kind: 'PLAN_VERSION', planVersionId: trial.versionId },
-                    scope: 'VERTICAL',
-                    target: null,
-                    since: startedAt,
-                    until: endsAt,
-                    charged: null,
-                    floor: null
-                },
-                {
-                    type: 'BASE',
-                    reference: { kind: 'PLAN_VERSION', planVersionId: floor.versionId },
-                    scope: 'VERTICAL',
-                    target: null,
-                    since: user.createdAt,
-                    until: 'NEVER_EXPIRES',
-                    charged: null,
-                    floor: null
-                }
-            ]
+            expect(await subject.coverage({ userId: user.id, vertical })).toEqual({
+                covered: true,
+                sources: [
+                    {
+                        type: 'TRIAL',
+                        reference: { kind: 'PLAN_VERSION', planVersionId: trial.versionId },
+                        scope: 'VERTICAL',
+                        target: null,
+                        since: startedAt,
+                        until: endsAt,
+                        charged: null,
+                        floor: null
+                    },
+                    {
+                        type: 'BASE',
+                        reference: { kind: 'PLAN_VERSION', planVersionId: floor.versionId },
+                        scope: 'VERTICAL',
+                        target: null,
+                        since: user.createdAt,
+                        until: 'NEVER_EXPIRES',
+                        charged: null,
+                        floor: null
+                    }
+                ]
+            });
         });
     });
 
     it('throws a typed error when the vertical has no floor plan version', async () => {
-        const user = await seedUser();
-        await expect(
-            subject.coverage({ userId: user.id, vertical: VerticalEnum.EXPERIENCE })
-        ).rejects.toBeInstanceOf(CatalogVersionNotFoundError);
+        await inRollback(async (db) => {
+            const subject = createBootstrapBillingForVerticals({ reader: createReader(db) });
+            const user = await seedUser(db);
+            await expect(
+                subject.coverage({ userId: user.id, vertical: VerticalEnum.EXPERIENCE })
+            ).rejects.toBeInstanceOf(CatalogVersionNotFoundError);
+        });
     });
 });
