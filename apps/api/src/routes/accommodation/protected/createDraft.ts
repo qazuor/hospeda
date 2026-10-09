@@ -15,7 +15,8 @@ import {
     AccommodationCreateDraftHttpSchema,
     AccommodationProtectedSchema,
     httpToDomainAccommodationCreateDraft,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -41,6 +42,7 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
     requiredPermissions: [PermissionEnum.ACCOMMODATION_CREATE],
     requestBody: AccommodationCreateDraftHttpSchema,
     responseSchema: AccommodationProtectedSchema,
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'CREATE' },
     // HOS-1352: transitional until V3 (HOS-1357), see PR — removed PUBLISH_ACCOMMODATIONS entitlement gate.
     handler: async (
         ctx: Context,

@@ -3,7 +3,12 @@
  * Requires authentication and ownership
  */
 import { AnalyticsEvents } from '@repo/analytics';
-import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
+import {
+    AccommodationIdSchema,
+    AccommodationProtectedSchema,
+    PermissionEnum,
+    VerticalEnum
+} from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { captureServerAnalyticsEvent } from '../../../lib/posthog';
@@ -48,6 +53,7 @@ export const protectedPublishAccommodationRoute = createProtectedRoute({
         id: AccommodationIdSchema
     },
     responseSchema: AccommodationProtectedSchema,
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'PUBLISH', idParam: 'id' },
     ownership: {
         entityType: 'accommodation',
         ownershipFields: ['ownerId', 'createdById'],
