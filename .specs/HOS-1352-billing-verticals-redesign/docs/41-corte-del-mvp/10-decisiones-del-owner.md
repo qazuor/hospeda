@@ -325,6 +325,21 @@ Respuesta del owner, 2026-10-08, a tres huecos que encontró la implementación 
 | DI | cómo se prueba la causa (c) de `G-R3` si `activate_trial` no existe como clave | `V2.3` agrega la clave `activate_trial`, clase BASE | — | **`V2.3` agrega al catálogo la clave `activate_trial`, de clase BASE,** para que la causa (c) de `G-R3` sea comprobable (`plan_version_entitlement.key` tiene FK a `catalog_key`). COMMERCIAL chocaría con la causa (a) |
 | DJ | qué ancla una suscripción de complemento y cómo tiene ciclo propio un addon periódico | los COMPLEMENTO quedan exentos; `addon_product.cycle` | — | **las suscripciones `COMPLEMENTO` quedan exentas de `plan_version_id` y `billing_option_id` no nulos, igual que la `LÁPIDA`; `addon_product.cycle` (mismo dominio que `billing_option.cycle`, nulo si no es periódico) le da su propio ciclo a un addon periódico.** Se descartó anclar la versión del principal: un principal anual cobraría anual a un addon «mensual», y el complemento contaría como cliente en la acción 19 |
 
+## Lote DK a DO (2026-10-08)
+
+Respuesta del owner, 2026-10-08, a los puntos que dejó abiertos el triage del catálogo de producción
+real (`V2.4b`, HOS-1656). Se midió producción en sólo lectura y los valores de los 17 planes en común
+coinciden al 100% con el config viejo `ea744781fa`. No eran preguntas con opciones: se registra lo que
+el owner decidió.
+
+| Letra | Pregunta | Elegida | Recomendada | En una línea |
+|---|---|---|---|---|
+| DK | si los planes vendibles de la versión 1 permiten pausa | todas permiten pausa | — | **toda versión vendible de la v1 se carga con `allows_pause = true`.** La versión es inmutable, así que el valor rige también cuando la pausa llegue con `B8b` |
+| DL | cuánta IA da la prueba | la del plan básico de cada vertical; Gastronomía y Experiencias replican a Alojamiento | — | **la cuota de IA del trial es la del plan básico de cada vertical; en Gastronomía y Experiencias se replica lo que da Alojamiento (chat 50 por mes, mejorar texto 50, traducir 200, importar 10 donde aplique la clave).** Las galerías privadas en el trial de Experiencias quedan en 0, sin override |
+| DM | cuántos días dura la prueba | 30 en Alojamiento, Gastronomía, Experiencias y Turista | — | **el trial dura 30 días en Alojamiento, Gastronomía, Experiencias y Turista; Partner sigue en 0.** Cierra el pendiente de `80-abiertos.md` sobre la duración del trial |
+| DN | si Turista VIP se sigue vendiendo en ciclo anual (ARS 150.000) | se sigue vendiendo; `DEC-ENT-004` se mantiene | — | **Turista VIP anual se sigue vendiendo y `DEC-ENT-004` se mantiene tal cual (cancelación sin reembolso al contratar un plan que hereda VIP).** Queda anotada su revisión para cuando llegue `B6` (devolución por proveedor, Fase 2) |
+| DO | qué conserva un turista gratis, dado que `G-R3` (a) y `AC:V5:28` (DG) se lo sacan | excepción escrita y cerrada a `G-R3` (a) para el piso de Turista | — | **el piso de Turista (`Turista Free`) otorga `save_favorites`, `write_reviews`, `max_favorites = 5` y las cuotas de IA de consumo de hoy (`max_ai_search_per_month = 10`, `max_ai_chat_consumer_per_month = 10`, con su clave medida correspondiente).** `G-R3` impide que dejar de pagar salga gratis en verticales de dueño, pero el piso de Turista ES el producto gratis; sin excepción, `G-R3` y `AC:V5:28` le sacaban a todo usuario logueado favoritos, reseñas e IA. Se descartó que las rutas no pidan clave: revertía DG. La excepción vive en el guard y en la validación de publicación, sólo para el piso de Turista, y no se puede ampliar sin que salte |
+
 ## Decisiones del coordinador (2026-10-07)
 
 No son letras del owner: las tomó el coordinador del programa sobre hallazgos de las hojas en curso,

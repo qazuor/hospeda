@@ -8,6 +8,7 @@ import { getCatalogKey, isCatalogKey } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     assertMeteredKeyIsVertical,
+    isMeteredEntitlement,
     MeteredKeyGlobalScopeError,
     MissingVerticalForVerticalKeyError,
     resolveKeyScope,
@@ -111,5 +112,40 @@ describe('TEST:V3:4 — the scope decides how a key resolves', () => {
         expect(
             accommodation.get({ key: 'priority_support', userId: 'user-b', vertical: null })
         ).toBeUndefined();
+    });
+});
+
+/**
+ * HOS-1654: `isMeteredEntitlement` is the SINGLE definition of "metered" of the
+ * program. The action 18 validation (V2.3 / HOS-1436, AC:V2:7 cause (a)) and
+ * this package's grant ratchet call it instead of repeating the rule, so its
+ * table is pinned here: a quota that is absent (`undefined`), not only `null`,
+ * counts as none carried.
+ */
+describe('isMeteredEntitlement — the single definition of metered (HOS-1654)', () => {
+    it('is not metered when both quotas are null', () => {
+        expect(isMeteredEntitlement({ planQuota: null, trialQuota: null })).toBe(false);
+    });
+
+    it('is metered when only the plan quota is carried', () => {
+        expect(isMeteredEntitlement({ planQuota: 5, trialQuota: null })).toBe(true);
+    });
+
+    it('is metered when only the trial quota is carried', () => {
+        expect(isMeteredEntitlement({ planQuota: null, trialQuota: 7 })).toBe(true);
+    });
+
+    it('is metered when both quotas are carried', () => {
+        expect(isMeteredEntitlement({ planQuota: 5, trialQuota: 7 })).toBe(true);
+    });
+
+    it('treats absent quotas (undefined) as none carried', () => {
+        expect(isMeteredEntitlement({})).toBe(false);
+        expect(isMeteredEntitlement({ planQuota: undefined, trialQuota: undefined })).toBe(false);
+    });
+
+    it('is metered when a quota is carried and the other is absent', () => {
+        expect(isMeteredEntitlement({ planQuota: 5 })).toBe(true);
+        expect(isMeteredEntitlement({ trialQuota: 7 })).toBe(true);
     });
 });

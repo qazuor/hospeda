@@ -6,6 +6,7 @@ import {
     TRIAL_PLAN_ROLE,
     VERTICAL_ACTIVATION_KEY
 } from '@repo/schemas';
+import { isMeteredEntitlement } from '@repo/verticals';
 import { ServiceError } from '../../types';
 import {
     CYCLE_MINIMUM_DAYS,
@@ -56,13 +57,14 @@ export function validatePublication(input: { context: PublicationContext }): voi
     }
 
     // (a) the two non-sellable plans that are not the trial plan grant no
-    // commercial key and no metered entitlement.
+    // commercial key and no metered entitlement. "Metered" is decided by
+    // `@repo/verticals` (`isMeteredEntitlement`), the single definition of the
+    // program, not by a rule of this module (HOS-1654).
     if (role !== null && NON_SELLABLE_PLAN_ROLES.includes(role)) {
         const commercialEntitlement = content.entitlements.some(
             (item) =>
                 isCommercialKey({ key: item.key, keyClasses }) ||
-                item.planQuota != null ||
-                item.trialQuota != null
+                isMeteredEntitlement({ planQuota: item.planQuota, trialQuota: item.trialQuota })
         );
         const commercialLimit = content.limits.some((item) =>
             isCommercialKey({ key: item.key, keyClasses })
