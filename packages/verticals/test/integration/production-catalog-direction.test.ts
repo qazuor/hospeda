@@ -2,8 +2,10 @@ import { type DrizzleClient, planCatalogModel } from '@repo/db';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
-import { catalogId } from '../../../../scripts/production-catalog/catalog.js';
-import { generatePlanCatalogSql } from '../../../../scripts/production-catalog/loads.js';
+import {
+    catalogId,
+    PRODUCTION_PLAN_CATALOG
+} from '../../../../scripts/production-catalog/catalog.js';
 import type { PlanCatalogReader } from '../../src/plan-catalog/catalog-reader.js';
 import { createPlanCatalogInverse } from '../../src/plan-catalog/plan-catalog-inverse.js';
 
@@ -12,14 +14,13 @@ afterAll(async () => {
     await pool.end();
 });
 
-describe('TEST:V2:6 — change direction over generated catalog on a fresh migrated database', () => {
-    it('decides by the version delta in both directions', async () => {
+const versionId = (vertical: string, slug: string) =>
+    catalogId(`plan:${vertical}:${slug}:version:1`);
+
+describe('TEST:V2:6 — direction from real catalog loaded by the complete migration chain', () => {
+    it('uses the entitlement and limit delta in both directions for each owner tier and the floor', async () => {
         const client = await pool.connect();
         try {
-            await client.query('BEGIN');
-            for (const statement of generatePlanCatalogSql().split('--> statement-breakpoint')) {
-                if (statement.trim()) await client.query(statement.trim());
-            }
             const db = drizzle({ client }) as unknown as DrizzleClient;
             const reader: PlanCatalogReader = {
                 findPlanVersion: ({ id }) => planCatalogModel.findPlanVersion({ id, tx: db }),
@@ -34,26 +35,42 @@ describe('TEST:V2:6 — change direction over generated catalog on a fresh migra
                     planCatalogModel.findCurrentPlanVersion({ planId, tx: db })
             };
             const subject = createPlanCatalogInverse({ reader });
-            const floor = catalogId('plan:experience:placeholder-floor:version:1');
-            const sellable = catalogId('plan:experience:placeholder-sellable:version:1');
-            expect(
-                (
-                    await subject.changeDirection({
-                        fromPlanVersionId: floor,
-                        toPlanVersionId: sellable
-                    })
-                ).direction
-            ).toBe('UP');
-            expect(
-                (
-                    await subject.changeDirection({
-                        fromPlanVersionId: sellable,
-                        toPlanVersionId: floor
-                    })
-                ).direction
-            ).toBe('DOWN');
+            for (const vertical of ['accommodation', 'gastronomy', 'experience'] as const) {
+                const tiers = PRODUCTION_PLAN_CATALOG.filter(
+                    (plan) => plan.vertical === vertical && plan.version.sellable
+                ).sort((a, b) => a.version.rank - b.version.rank);
+                expect(tiers).toHaveLength(3);
+                for (const [lower, higher] of [
+                    [tiers[0]!, tiers[1]!],
+                    [tiers[1]!, tiers[2]!]
+                ] as const) {
+                    expect(
+                        (
+                            await subject.changeDirection({
+                                fromPlanVersionId: versionId(vertical, lower.slug),
+                                toPlanVersionId: versionId(vertical, higher.slug)
+                            })
+                        ).direction
+                    ).toBe('UP');
+                    expect(
+                        (
+                            await subject.changeDirection({
+                                fromPlanVersionId: versionId(vertical, higher.slug),
+                                toPlanVersionId: versionId(vertical, lower.slug)
+                            })
+                        ).direction
+                    ).toBe('DOWN');
+                }
+                expect(
+                    (
+                        await subject.changeDirection({
+                            fromPlanVersionId: versionId(vertical, tiers[0]!.slug),
+                            toPlanVersionId: versionId(vertical, 'floor')
+                        })
+                    ).direction
+                ).toBe('DOWN');
+            }
         } finally {
-            await client.query('ROLLBACK');
             client.release();
         }
     });

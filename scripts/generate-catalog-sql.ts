@@ -5,22 +5,23 @@
  *
  * A migration cannot call code, so the reference rows the code catalog declares
  * travel inside a migration as generated SQL. This file is the ONE place that
- * turns the code catalog into that SQL. Two loads:
+ * turns the code catalog into that SQL. Six loads:
  *
  * - `catalog_key` (the key table): one row per entitlement and limit key of
  *   `packages/schemas/src/catalog`, with its four declared attributes.
  * - `vertical`: one row per `VerticalEnum` value with its declared activation
  *   event (`VERTICAL_ACTIVATION_EVENT_BY_VERTICAL`).
+ * - `plan`, `plan_version`, `plan_version_entitlement`, `plan_version_limit`:
+ *   the production plan catalog from `production-catalog/catalog.ts`.
  *
- * The output is byte-identical to the `INSERT` statements of
- * `packages/db/src/migrations/0129_gorgeous_storm.sql`, which were hand-written
- * before this generator existed (`scripts/__tests__/check-catalog-sql.test.ts`
+ * The first two loads remain byte-identical to the `INSERT` statements of
+ * `packages/db/src/migrations/0129_gorgeous_storm.sql` (`scripts/__tests__/check-catalog-sql.test.ts`
  * pins that). Row order is deterministic: verticals in enum order; keys
  * entitlements first then limits, each sorted by key (the catalog's own order).
  *
  * ## Usage
  *
- *     pnpm gen:catalog-sql                    # both loads
+ *     pnpm gen:catalog-sql                    # all six loads
  *     pnpm gen:catalog-sql --load=catalog_key # one load
  *
  * Paste the output into a NEW migration (never edit an applied one). GUARD:G18
@@ -32,6 +33,7 @@ import type { CatalogKeyDefinition } from '../packages/schemas/src/catalog/key-a
 import { CATALOG_KEY_DEFINITIONS } from '../packages/schemas/src/catalog/key-catalog.js';
 import { VERTICAL_ACTIVATION_EVENT_BY_VERTICAL } from '../packages/schemas/src/catalog/vertical-activation-event.js';
 import { VerticalEnum } from '../packages/schemas/src/enums/vertical.enum.js';
+import { buildPlanCatalogLoads } from './production-catalog/loads.js';
 
 /** A generated SQL value: a string literal or SQL `NULL`. */
 export type SqlValue = string | number | boolean | null;
@@ -49,7 +51,14 @@ export interface CatalogLoad {
 }
 
 /** The load names, in the order the generator emits them. */
-export const LOAD_NAMES = ['vertical', 'catalog_key'] as const;
+export const LOAD_NAMES = [
+    'vertical',
+    'catalog_key',
+    'plan',
+    'plan_version',
+    'plan_version_entitlement',
+    'plan_version_limit'
+] as const;
 export type LoadName = (typeof LOAD_NAMES)[number];
 
 /**
@@ -115,7 +124,16 @@ export function buildVerticalLoad({
  * @returns The loads keyed by name.
  */
 export function buildLoads(): Readonly<Record<LoadName, CatalogLoad>> {
-    return { vertical: buildVerticalLoad(), catalog_key: buildCatalogKeyLoad() };
+    const [plan, plan_version, plan_version_entitlement, plan_version_limit] =
+        buildPlanCatalogLoads();
+    return {
+        vertical: buildVerticalLoad(),
+        catalog_key: buildCatalogKeyLoad(),
+        plan,
+        plan_version,
+        plan_version_entitlement,
+        plan_version_limit
+    };
 }
 
 /** Renders one value as a SQL literal. Only `[a-z0-9_A-Z]` reach here today; quotes are escaped anyway. */

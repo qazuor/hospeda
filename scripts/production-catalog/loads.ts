@@ -1,6 +1,6 @@
 import type { CatalogLoad } from '../generate-catalog-sql.js';
 import { renderInsert } from '../generate-catalog-sql.js';
-import { catalogId, PLACEHOLDER_CATALOG, type PlanCatalogDefinition } from './catalog.js';
+import { catalogId, type PlanCatalogDefinition, PRODUCTION_PLAN_CATALOG } from './catalog.js';
 
 export const PLAN_CATALOG_LOAD_NAMES = [
     'plan',
@@ -9,20 +9,21 @@ export const PLAN_CATALOG_LOAD_NAMES = [
     'plan_version_limit'
 ] as const;
 
-/** Build the four plan-only loads. Kept separate from G18's migration defaults until V2.4b. */
+/** Build the four plan-only loads. */
 export function buildPlanCatalogLoads(
-    catalog: readonly PlanCatalogDefinition[] = PLACEHOLDER_CATALOG
-): readonly CatalogLoad[] {
+    catalog: readonly PlanCatalogDefinition[] = PRODUCTION_PLAN_CATALOG
+): readonly [CatalogLoad, CatalogLoad, CatalogLoad, CatalogLoad] {
     return [
         {
             table: 'plan',
             label: 'production catalog plan',
-            columns: ['id', 'vertical', 'slug', 'name', 'role'],
+            columns: ['id', 'vertical', 'slug', 'name', 'pricing_order', 'role'],
             rows: catalog.map((plan) => [
                 catalogId(`plan:${plan.vertical}:${plan.slug}`),
                 plan.vertical,
                 plan.slug,
                 plan.name,
+                plan.pricingOrder,
                 plan.role
             ])
         },
@@ -90,9 +91,9 @@ export function buildPlanCatalogLoads(
     ];
 }
 
-/** SQL to paste into the V2.4b migration after product values are approved. */
+/** SQL committed in the V2.4b structural migration. */
 export function generatePlanCatalogSql(
-    catalog: readonly PlanCatalogDefinition[] = PLACEHOLDER_CATALOG
+    catalog: readonly PlanCatalogDefinition[] = PRODUCTION_PLAN_CATALOG
 ): string {
     return `${buildPlanCatalogLoads(catalog)
         .filter((load) => load.rows.length > 0)
