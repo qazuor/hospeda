@@ -38,7 +38,16 @@ describe('readListingAccessFacts', () => {
 });
 
 describe('resolveEffectivePublicationStatus (transitory V6.9 bridge)', () => {
-    it.each([
+    const cases: ReadonlyArray<
+        readonly [
+            string,
+            PublicationStatusEnum | null,
+            unknown,
+            unknown,
+            PublicationStatusEnum | null,
+            { readonly ownerSuspended?: boolean; readonly planRestricted?: boolean }?
+        ]
+    > = [
         [
             'written DRAFT wins',
             PublicationStatusEnum.DRAFT,
@@ -51,9 +60,26 @@ describe('resolveEffectivePublicationStatus (transitory V6.9 bridge)', () => {
             PublicationStatusEnum.PUBLISHED,
             'DRAFT',
             'PRIVATE',
-            PublicationStatusEnum.PUBLISHED
+            PublicationStatusEnum.PUBLISHED,
+            { ownerSuspended: true, planRestricted: true }
         ],
         ['ACTIVE + PUBLIC', null, 'ACTIVE', 'PUBLIC', PublicationStatusEnum.PUBLISHED],
+        [
+            'ACTIVE + PUBLIC + ownerSuspended',
+            null,
+            'ACTIVE',
+            'PUBLIC',
+            null,
+            { ownerSuspended: true }
+        ],
+        [
+            'ACTIVE + PUBLIC + planRestricted',
+            null,
+            'ACTIVE',
+            'PUBLIC',
+            null,
+            { planRestricted: true }
+        ],
         ['ACTIVE + PRIVATE', null, 'ACTIVE', 'PRIVATE', null],
         ['DRAFT + PUBLIC', null, 'DRAFT', 'PUBLIC', null],
         ['ARCHIVED + PUBLIC', null, 'ARCHIVED', 'PUBLIC', null],
@@ -64,11 +90,19 @@ describe('resolveEffectivePublicationStatus (transitory V6.9 bridge)', () => {
         ['missing visibility', null, 'ACTIVE', undefined, null],
         ['unknown lifecycle', null, 'OTHER', 'PUBLIC', null],
         ['unknown visibility', null, 'ACTIVE', 'OTHER', null]
-    ] as const)('%s', (_name, publicationStatus, lifecycleState, visibility, expected) => {
-        expect(
-            resolveEffectivePublicationStatus({ publicationStatus, lifecycleState, visibility })
-        ).toBe(expected);
-    });
+    ];
+    for (const [name, publicationStatus, lifecycleState, visibility, expected, flags] of cases) {
+        it(name, () => {
+            expect(
+                resolveEffectivePublicationStatus({
+                    publicationStatus,
+                    lifecycleState,
+                    visibility,
+                    ...flags
+                })
+            ).toBe(expected);
+        });
+    }
 
     it('feeds the effective status into listing access facts', () => {
         expect(
@@ -81,5 +115,22 @@ describe('resolveEffectivePublicationStatus (transitory V6.9 bridge)', () => {
                 }
             })
         ).toEqual({ ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED });
+    });
+
+    it.each([
+        'ownerSuspended',
+        'planRestricted'
+    ] as const)('passes %s from the row into the NULL-status bridge', (restriction) => {
+        expect(
+            readListingAccessFacts({
+                entity: {
+                    ownerId: 'owner',
+                    publicationStatus: null,
+                    lifecycleState: 'ACTIVE',
+                    visibility: 'PUBLIC',
+                    [restriction]: true
+                }
+            })
+        ).toEqual({ ownerId: 'owner', publicationStatus: null });
     });
 });
