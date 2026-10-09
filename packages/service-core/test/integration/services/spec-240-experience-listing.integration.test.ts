@@ -50,6 +50,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
     VisibilityEnum
 } from '@repo/schemas';
@@ -360,7 +361,8 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
             await withServiceTestTransaction(async (tx) => {
                 const { experienceId } = await seedExperience(tx, {
                     visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    lifecycleState: 'ACTIVE',
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
                 const touristActor = createTouristActor(touristUserId);
@@ -441,7 +443,8 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
             await withServiceTestTransaction(async (tx) => {
                 const { experienceId } = await seedExperience(tx, {
                     visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    lifecycleState: 'ACTIVE',
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
                 const touristActor = createTouristActor(touristUserId);

@@ -33,6 +33,7 @@ import {
     userBookmarks,
     users
 } from '@repo/db';
+import type { PublicationStatusEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
@@ -766,6 +767,7 @@ interface SeedGastronomyOverrides {
     readonly visibility?: string;
     readonly lifecycleState?: string;
     readonly moderationState?: string;
+    readonly publicationStatus?: PublicationStatusEnum;
 }
 
 /**
@@ -835,7 +837,8 @@ export async function seedGastronomy(
         destinationId,
         visibility: overrides.visibility ?? 'PRIVATE',
         lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
-        moderationState: overrides.moderationState ?? 'PENDING'
+        moderationState: overrides.moderationState ?? 'PENDING',
+        publicationStatus: overrides.publicationStatus
     } as typeof gastronomies.$inferInsert);
 
     return { ownerId, destinationId, gastronomyId };
@@ -894,6 +897,7 @@ interface SeedExperienceOverrides {
     readonly visibility?: string;
     readonly lifecycleState?: string;
     readonly moderationState?: string;
+    readonly publicationStatus?: PublicationStatusEnum;
 }
 
 /**
@@ -968,7 +972,8 @@ export async function seedExperience(
         destinationId,
         visibility: overrides.visibility ?? 'PRIVATE',
         lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
-        moderationState: overrides.moderationState ?? 'PENDING'
+        moderationState: overrides.moderationState ?? 'PENDING',
+        publicationStatus: overrides.publicationStatus
     } as typeof experiences.$inferInsert);
 
     return { ownerId, destinationId, experienceId };
