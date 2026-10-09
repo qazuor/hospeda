@@ -11,7 +11,14 @@ export const PLAN_PUBLICATION_REJECTIONS = {
     // Own message, NOT G-R3(a): a trial plan's effects are derived, never
     // stored (V2.md:412-416,457-462). G-R3(a) covers only pre_trial and floor.
     trialStoresEffects: 'los limits y entitlements del plan de trial no se guardan: se derivan',
+    // Trial accepts limits only from the closed override list (Coord-22).
+    trialLimitOutsideOverrides:
+        'el plan de trial sólo guarda como override la cantidad de fichas de su vertical',
     extraKey: 'clave de más',
+    // DO exception for the Tourist floor: a required entitlement or limit is
+    // missing from the request (touristFloorMissingExceptionKey).
+    touristFloorMissingExceptionKey:
+        'el piso de Turista debe otorgar exactamente la lista cerrada: falta [clave]',
     floorKeyMissing: 'clave de piso que falta',
     activationIff: 'activación fuera del si y sólo si',
     vipInheritance: 'herencia de VIP fuera de una versión vendible',
@@ -21,8 +28,47 @@ export const PLAN_PUBLICATION_REJECTIONS = {
     graceNotShorter: 'la gracia debe ser menor que el ciclo más corto que la versión ofrece'
 } as const;
 
-/** The two keys the floor version must grant (G-R3 half (b)). */
+/**
+ * Closed list of trial overrides by vertical (Coord-22, DEC-TRIAL-001).
+ * The trial plan stores exactly one limit row: the number of listings of that
+ * vertical. Adding a vertical key is a recorded decision, not a config change.
+ * `tourist` and `partner` have no listings, so they do not appear.
+ */
+export const TRIAL_OVERRIDE_LIMIT_KEY_BY_VERTICAL = {
+    accommodation: 'max_accommodations',
+    gastronomy: 'max_gastronomies',
+    experience: 'max_experiences'
+} as const;
+
+/**
+ * The two keys the floor version must grant (G-R3 half (b)).
+ */
 export const FLOOR_REQUIRED_KEYS = ['subscribe_to_plan', 'recover_own_listing'] as const;
+
+/**
+ * DO exception for the Tourist floor only. A single data object — no branches —
+ * that replaces the (a) rule when `role === 'floor'` and `vertical === 'tourist'`.
+ *
+ * Entitlements without quotas (BASE keys with no commercial effect).
+ * Entitlements with quotas (measured): H-2 — the catalog uses `ai_search` and
+ * `ai_chat` as measured entitlement keys; their limit counterparts are
+ * `max_ai_search_per_month` and `max_ai_chat_consumer_per_month` respectively.
+ * The coordinator must confirm these mappings before V2.4b.
+ * Limits (COMMERCIAL keys with fixed values).
+ */
+export const TOURIST_FLOOR_EXCEPTION = {
+    entitlements: [
+        { key: 'save_favorites' as const },
+        { key: 'write_reviews' as const },
+        { key: 'ai_search' as const, planQuota: 10, trialQuota: 10 },
+        { key: 'ai_chat' as const, planQuota: 10, trialQuota: 10 }
+    ],
+    limits: [
+        { key: 'max_favorites' as const, value: 5 },
+        { key: 'max_ai_search_per_month' as const, value: 10 },
+        { key: 'max_ai_chat_consumer_per_month' as const, value: 10 }
+    ]
+} as const;
 
 /**
  * The minimum length in days of each cycle. Cause (h) compares the grace
