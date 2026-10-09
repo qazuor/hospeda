@@ -3,7 +3,6 @@ import type { LiveCommitment } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
-import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import type { StartSubscriptionResult } from './start-subscription.service';
 
 /**
@@ -30,22 +29,6 @@ function commitmentTaken(): ServiceError {
 }
 
 /**
- * Instant until which the live `PENDING_AUTHORIZATION` row can still be reused:
- * its creation instant plus the `cardHours` of the current PLAZO:10 version
- * (`DEC-SUB-016`).
- *
- * B3.3 (`AC:B3:9`, kit V-6) stores the deadline version and the exact instant on
- * the subscription when the window opens; when that column lands, this function
- * is replaced by that stored instant. Until then it is the SINGLE place that
- * answers "hasta cuándo vale la ventana".
- */
-async function reuseWindowEndsAt(createdAt: Date): Promise<Date> {
-    const deadlines = await getCurrentBillingDeadlines();
-    const { cardHours } = deadlines.values['10'];
-    return new Date(createdAt.getTime() + cardHours * 60 * 60 * 1000);
-}
-
-/**
  * The reuse decision of S1: does the live commitment answer this request with
  * what is already stored? Reuse requires ALL of:
  *
@@ -54,7 +37,7 @@ async function reuseWindowEndsAt(createdAt: Date): Promise<Date> {
  *   (another cycle or plan is another amount — §3.3.1, H3);
  * - its key is completed with an `applied === true` result carrying a
  *   `checkoutUrl`;
- * - it still has window remaining.
+ * - the clock is before the instant stored when its authorization window opened.
  *
  * When it does, the stored `{ subscriptionId, authorizationId, checkoutUrl }`
  * is returned WITHOUT calling the provider and WITHOUT writing anything. When
@@ -73,7 +56,8 @@ export async function resolveLiveCommitmentReuse(input: {
     if (!key || key.completedAt === null) throw commitmentTaken();
     const parsed = AppliedAuthorizationResultSchema.safeParse(key.result);
     if (!parsed.success) throw commitmentTaken();
-    const windowEndsAt = await reuseWindowEndsAt(subscription.createdAt);
+    const windowEndsAt = subscription.authorizationWindowEndsAt;
+    if (!windowEndsAt) throw commitmentTaken();
     if (input.clock.now().getTime() >= windowEndsAt.getTime()) throw commitmentTaken();
     return {
         subscriptionId: subscription.id,

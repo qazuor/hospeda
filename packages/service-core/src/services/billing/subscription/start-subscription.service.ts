@@ -20,6 +20,7 @@ import {
 import { BILLING_CYCLE_MONTHS, type BillingCycle, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
+import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import { resolveLiveCommitmentReuse } from './resolve-live-commitment';
 
@@ -243,13 +244,19 @@ export async function startSubscription(
             clock: ports.clock
         });
 
+    const deadlines = await getCurrentBillingDeadlines();
+    const authorizationWindowEndsAt = new Date(
+        ports.clock.now().getTime() + deadlines.values['10'].cardHours * 60 * 60 * 1000
+    );
     let pending: PendingAuthorizationRow;
     try {
         pending = await subscriptionModel.createPendingAuthorization({
             userId: input.userId,
             vertical: choice.vertical,
             planVersionId: choice.planVersionId,
-            billingOptionId: choice.id
+            billingOptionId: choice.id,
+            authorizationWindowDeadlineVersion: deadlines.version,
+            authorizationWindowEndsAt
         });
     } catch (error) {
         // The loser of a simultaneous race hits the partial unique index, not a
