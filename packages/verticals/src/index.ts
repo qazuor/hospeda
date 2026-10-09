@@ -5,7 +5,10 @@
  */
 
 export { NonBaseKeyError, resolveEntitlementStep } from './authorization/entitlement-step';
-export { readListingAccessFacts } from './authorization/listing-facts';
+export {
+    readListingAccessFacts,
+    resolveEffectivePublicationStatus
+} from './authorization/listing-facts';
 export {
     FOREIGN_ADMITTING_STATES,
     LISTING_OPERATIONS,
