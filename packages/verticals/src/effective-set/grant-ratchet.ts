@@ -49,6 +49,7 @@ import {
     type ScopedKeyValues,
     scopeKeyValues
 } from './scope';
+import type { SourceGrant } from './types';
 
 /** What a grant resolves: its entitlement quotas and its limits. */
 export interface GrantSet {
@@ -187,14 +188,21 @@ function ratchet(args: {
  * not exist.
  * @throws UndecidableKeyError if a key declares `BEST_DECLARED`.
  */
-export async function resolveGrantSet(args: {
+export async function resolveGrantValues(args: {
     readonly reader: PlanCatalogReader;
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
     readonly userId: string;
     readonly vertical: CoverageArgs['vertical'];
-}): Promise<GrantSet | null> {
-    const coverage = await args.billing.coverage({ userId: args.userId, vertical: args.vertical });
-    const grant = selectGrantForVertical({ sources: coverage.sources });
+    readonly selectedGrant?: CoverageSource | null;
+}): Promise<readonly SourceGrant[] | null> {
+    const grant =
+        args.selectedGrant === undefined
+            ? selectGrantForVertical({
+                  sources: (
+                      await args.billing.coverage({ userId: args.userId, vertical: args.vertical })
+                  ).sources
+              })
+            : args.selectedGrant;
     if (!grant) return null;
 
     const referenceId = referencePlanVersionIdOf({ reference: grant.reference });
@@ -249,16 +257,55 @@ export async function resolveGrantSet(args: {
         versionId: grant.floor,
         vertical: args.vertical
     });
+    const grants: SourceGrant[] = [];
+    for (const [key, value] of ratchet({
+        current: current.entitlements,
+        floor: floor.entitlements
+    })) {
+        const sourceValue = current.entitlements.get(key) ?? floor.entitlements.get(key);
+        if (!sourceValue) throw new Error(`Ratcheted entitlement ${key} has no source`);
+        grants.push({
+            key,
+            value,
+            strategy: sourceValue.strategy
+        });
+    }
+    for (const [key, value] of ratchet({ current: current.limits, floor: floor.limits })) {
+        const sourceValue = current.limits.get(key) ?? floor.limits.get(key);
+        if (!sourceValue) throw new Error(`Ratcheted limit ${key} has no source`);
+        grants.push({
+            key,
+            value,
+            strategy: sourceValue.strategy
+        });
+    }
+    return grants;
+}
+
+/** Preserves the public scoped result while sharing the ratcheted values. */
+export async function resolveGrantSet(args: {
+    readonly reader: PlanCatalogReader;
+    readonly billing: Pick<BillingForVerticals, 'coverage'>;
+    readonly userId: string;
+    readonly vertical: CoverageArgs['vertical'];
+}): Promise<GrantSet | null> {
+    const coverage = await args.billing.coverage({ userId: args.userId, vertical: args.vertical });
+    const grant = selectGrantForVertical({ sources: coverage.sources });
+    const grants = await resolveGrantValues({ ...args, selectedGrant: grant });
+    if (grants === null) return null;
+    const entitlements = new Map<string, number>();
+    const limits = new Map<string, number>();
+    for (const grant of grants) {
+        const definition = getCatalogKey({ key: grant.key });
+        if (definition?.kind === 'entitlement') entitlements.set(grant.key, grant.value);
+        if (definition?.kind === 'limit') limits.set(grant.key, grant.value);
+    }
     return {
         entitlements: scopeKeyValues({
-            values: ratchet({ current: current.entitlements, floor: floor.entitlements }),
+            values: entitlements,
             userId: args.userId,
             vertical: args.vertical
         }),
-        limits: scopeKeyValues({
-            values: ratchet({ current: current.limits, floor: floor.limits }),
-            userId: args.userId,
-            vertical: args.vertical
-        })
+        limits: scopeKeyValues({ values: limits, userId: args.userId, vertical: args.vertical })
     };
 }
