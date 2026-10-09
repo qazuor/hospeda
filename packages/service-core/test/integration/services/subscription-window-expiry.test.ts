@@ -6,10 +6,11 @@ import {
     subscriptions,
     users
 } from '@repo/db';
+import { type LogEntry, registerHook, unregisterHook } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { expireAuthorizationWindows } from '../../../src/services/billing/subscription/expire-authorization-windows.service';
 import {
     type BeforeCancelNotice,
@@ -47,6 +48,7 @@ beforeEach(() => {
     current = openedAt;
     vi.restoreAllMocks();
 });
+afterEach(() => unregisterHook('b3-window-expiry-test'));
 function advance(hours: number) {
     current = new Date(openedAt.getTime() + hours * 60 * 60 * 1000);
 }
@@ -292,6 +294,12 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         'NO_RECIPIENT',
         'DELIVERY_EXHAUSTED'
     ] as const)('cancels and escalates for %s', async (outcome) => {
+        const warnings: LogEntry[] = [];
+        registerHook('b3-window-expiry-test', (entry) => {
+            if (entry.level === 'WARN' && entry.category === 'subscription-window-expiry') {
+                warnings.push(entry);
+            }
+        });
         const { provider, ports, beforeCancel, cancel } = setup();
         beforeCancel.mockResolvedValue(outcome);
         const card = await startPending(provider);
@@ -302,6 +310,34 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         });
         expect(cancel).toHaveBeenCalledTimes(1);
         expect(await status(card.started.subscriptionId)).toBe('ABANDONED');
+        expect(
+            warnings.some(
+                (entry) =>
+                    JSON.stringify(entry.data).includes(card.started.subscriptionId) &&
+                    JSON.stringify(entry.data).includes(outcome)
+            )
+        ).toBe(true);
+    });
+
+    it('abandons even when the provider cancel call fails', async () => {
+        const errors: LogEntry[] = [];
+        registerHook('b3-window-expiry-test', (entry) => {
+            if (entry.level === 'ERROR' && entry.category === 'subscription-window-expiry') {
+                errors.push(entry);
+            }
+        });
+        const { provider, ports, cancel } = setup();
+        const card = await startPending(provider);
+        cancel.mockRejectedValueOnce(new Error('transient provider failure'));
+        advance(72);
+        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+            abandoned: 1,
+            cancelCalls: 1
+        });
+        expect(await status(card.started.subscriptionId)).toBe('ABANDONED');
+        expect(
+            errors.some((entry) => JSON.stringify(entry.data).includes(card.started.subscriptionId))
+        ).toBe(true);
     });
 
     it('skips notice and cancel if the provider is already cancelled', async () => {
