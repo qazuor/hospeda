@@ -6,6 +6,7 @@
  */
 
 import type { PermissionEnum } from '@repo/schemas';
+import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { MiddlewareHandler } from 'hono';
 import {
     type ApiKeyActorIdentity,
@@ -40,6 +41,8 @@ export interface PublicRouteOptions extends CreateOpenApiRouteInterface {
  * Interface for protected route options
  */
 export interface ProtectedRouteOptions extends CreateOpenApiRouteInterface {
+    /** Closed-list operation permitted before email verification. */
+    emailUnverifiedOperation?: EmailUnverifiedAllowedOperation;
     /** Required permissions for this route */
     requiredPermissions?: PermissionEnum[];
     /**
@@ -147,6 +150,7 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
         protectedTag = true,
         requiredPermissions,
         anyOfPermissions,
+        emailUnverifiedOperation,
         ownership,
         ...routeOptions
     } = options;
@@ -158,7 +162,7 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
 
     // Build middleware chain
     const middlewares: MiddlewareHandler[] = [
-        protectedAuthMiddleware(requiredPermissions, anyOfPermissions),
+        protectedAuthMiddleware(requiredPermissions, anyOfPermissions, emailUnverifiedOperation),
         ...(routeOptions.options?.middlewares || [])
     ];
 

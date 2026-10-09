@@ -11,10 +11,11 @@ the three tiers themselves.
 
 ```
 1. authentication        → 401
-2. route permission      → 403
-3. input shape           → 400   (params → query → body)
-4. existence / ownership → 404
-5. business rules        → 409 / 422 / 403-gate
+2. account state         → 403 EMAIL_NOT_VERIFIED
+3. route permission      → 403
+4. input shape           → 400   (params → query → body)
+5. existence / ownership → 404
+6. business rules        → 409 / 422 / 403-gate
 ```
 
 **No step may touch the database with a value an earlier step did not
@@ -34,6 +35,7 @@ check answers 403 to someone the server never identified.
 | Situation | Status | `error.code` |
 |---|---|---|
 | No session, protected or admin tier | **401** | `UNAUTHORIZED` |
+| Signed in, email not verified, operation outside the closed list | **403** | `EMAIL_NOT_VERIFIED` |
 | Signed in, lacks the declared permission | **403** | `FORBIDDEN` |
 | Malformed param, query or body (non-UUID id included) | **400** | `VALIDATION_ERROR` |
 | Resource does not exist | **404** | `NOT_FOUND` |
@@ -43,6 +45,16 @@ check answers 403 to someone the server never identified.
 | State conflict | **409** | `ALREADY_EXISTS` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
 | Server fault | **5xx** | `INTERNAL_ERROR` |
+
+### Step 2 — the person's state
+
+After authentication and before route permissions, an account with an unverified
+email receives `EMAIL_NOT_VERIFIED` for operations outside the closed list. The
+response is identical whether the account holds the permission or not, so it
+cannot be used to probe permissions. The allowed operations are `VERIFY_EMAIL`,
+`CHANGE_EMAIL` (except with a Partner link), `READ_OWN`, `EXPORT`,
+`REACTIVATE_LISTING`, `DELETE_LISTING`, `REGULARIZE_CHARGE`, and `CLOSE_ACCOUNT`.
+They are declared by `emailUnverifiedOperation` on `createProtectedRoute`.
 
 ## Five rules
 

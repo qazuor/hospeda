@@ -6,14 +6,17 @@
  * - admin: Admin-level permissions required
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
+import { resolvePersonStateStep } from '@repo/verticals';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { AuthorizationConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { AuditEventType, auditLog } from '../utils/audit-logger';
 import { apiLogger } from '../utils/logger';
+import { createErrorResponse } from '../utils/response-helpers';
 
 /**
  * Permissions that grant admin-level access
@@ -150,6 +153,7 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
             level,
             requiredPermissions,
             anyOfPermissions,
+            emailUnverifiedOperation,
             unauthorizedMessage,
             forbiddenMessage
         } = config;
@@ -200,6 +204,31 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                 });
             }
 
+            const personState = resolvePersonStateStep({
+                emailVerified: actor.emailVerified,
+                operation: emailUnverifiedOperation
+            });
+            if (!personState.allowed) {
+                apiLogger.warn('Email verification required for protected route');
+                auditLog({
+                    auditEvent: AuditEventType.ACCESS_DENIED,
+                    actorId: actor.id,
+                    actorRole: actor.roles.join(','),
+                    resource: c.req.path,
+                    method: c.req.method,
+                    statusCode: 403,
+                    reason: 'email_not_verified'
+                });
+                return createErrorResponse(
+                    {
+                        code: ServiceErrorCode.EMAIL_NOT_VERIFIED,
+                        message: 'Email verification required'
+                    },
+                    c,
+                    403
+                );
+            }
+
             // If specific permissions are required, check them
             if (hasPermissionGate(requiredPermissions, anyOfPermissions)) {
                 if (!passesPermissionGate(actor, requiredPermissions, anyOfPermissions)) {
@@ -246,6 +275,28 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                 throw new HTTPException(401, {
                     message: unauthorizedMessage || 'Authentication required'
                 });
+            }
+
+            const personState = resolvePersonStateStep({ emailVerified: actor.emailVerified });
+            if (!personState.allowed) {
+                apiLogger.warn('Email verification required for admin route');
+                auditLog({
+                    auditEvent: AuditEventType.ACCESS_DENIED,
+                    actorId: actor.id,
+                    actorRole: actor.roles.join(','),
+                    resource: c.req.path,
+                    method: c.req.method,
+                    statusCode: 403,
+                    reason: 'email_not_verified'
+                });
+                return createErrorResponse(
+                    {
+                        code: ServiceErrorCode.EMAIL_NOT_VERIFIED,
+                        message: 'Email verification required'
+                    },
+                    c,
+                    403
+                );
             }
 
             // Then check admin access
@@ -313,12 +364,14 @@ export const publicAuthMiddleware = (): MiddlewareHandler => {
  */
 export const protectedAuthMiddleware = (
     requiredPermissions?: PermissionEnum[],
-    anyOfPermissions?: readonly (readonly PermissionEnum[])[]
+    anyOfPermissions?: readonly (readonly PermissionEnum[])[],
+    emailUnverifiedOperation?: EmailUnverifiedAllowedOperation
 ): MiddlewareHandler => {
     return authorizationMiddleware({
         level: 'protected',
         requiredPermissions,
-        anyOfPermissions
+        anyOfPermissions,
+        emailUnverifiedOperation
     });
 };
 

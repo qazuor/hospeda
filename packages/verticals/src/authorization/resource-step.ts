@@ -1,0 +1,34 @@
+import { PublicationStatusEnum } from '@repo/schemas';
+import { type ListingOperation, OWNER_ADMITTING_STATES } from './listing-operation';
+
+export interface ListingAccessFacts {
+    readonly ownerId: string | null;
+    readonly publicationStatus: PublicationStatusEnum | null;
+}
+
+export type StepOutcome<TReason extends string> =
+    | { readonly allowed: true }
+    | { readonly allowed: false; readonly reason: TReason };
+
+/**
+ * Step 4 combines absence, foreign ownership and inadmissible state into NOT_FOUND.
+ * A null status temporarily admits the owner until V6.9 makes it NOT NULL; remove
+ * that branch then. V8a's row 20 (content already deleted) has its own reader,
+ * rather than READ_OWN.
+ */
+export function resolveResourceStep(args: {
+    readonly actorId: string | null;
+    readonly facts: ListingAccessFacts | null;
+    readonly operation: ListingOperation;
+}): StepOutcome<'NOT_FOUND'> {
+    const { actorId, facts, operation } = args;
+    if (facts === null || facts.publicationStatus === PublicationStatusEnum.PURGED) {
+        return { allowed: false, reason: 'NOT_FOUND' };
+    }
+    const isOwner = actorId !== null && facts.ownerId !== null && actorId === facts.ownerId;
+    if (!isOwner) return { allowed: false, reason: 'NOT_FOUND' };
+    if (facts.publicationStatus === null) return { allowed: true };
+    return OWNER_ADMITTING_STATES[operation].includes(facts.publicationStatus)
+        ? { allowed: true }
+        : { allowed: false, reason: 'NOT_FOUND' };
+}

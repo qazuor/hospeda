@@ -7,6 +7,8 @@ export enum ServiceErrorCode {
     UNAUTHORIZED = 'UNAUTHORIZED',
     /** User is not authorized to perform the action */
     FORBIDDEN = 'FORBIDDEN',
+    /** Authorization step 2: email verification required (HTTP 403). */
+    EMAIL_NOT_VERIFIED = 'EMAIL_NOT_VERIFIED',
     /** Unexpected internal error */
     INTERNAL_ERROR = 'INTERNAL_ERROR',
     /** Entity or assignment already exists */

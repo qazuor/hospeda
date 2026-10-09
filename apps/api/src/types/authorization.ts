@@ -4,6 +4,7 @@
  */
 
 import type { PermissionEnum } from '@repo/schemas';
+import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { ZodTypeAny } from 'zod';
 
 /**
@@ -20,6 +21,8 @@ export type AuthorizationLevel = 'public' | 'protected' | 'admin';
 export interface AuthorizationConfig {
     /** The required authorization level for the route */
     level: AuthorizationLevel;
+    /** Closed-list operation permitted before email verification. */
+    emailUnverifiedOperation?: EmailUnverifiedAllowedOperation;
     /** Additional specific permissions required (for admin level or specific checks) */
     requiredPermissions?: PermissionEnum[];
     /**

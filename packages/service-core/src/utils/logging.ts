@@ -42,6 +42,7 @@ export const resolveErrorLogLevel = (code: ServiceErrorCode | undefined): ErrorL
         case ServiceErrorCode.GONE:
             return 'info';
         case ServiceErrorCode.FORBIDDEN:
+        case ServiceErrorCode.EMAIL_NOT_VERIFIED:
         case ServiceErrorCode.ENTITLEMENT_REQUIRED:
         case ServiceErrorCode.LIMIT_REACHED:
         // An admin-paused signup is an expected refusal, not a fault: while the
