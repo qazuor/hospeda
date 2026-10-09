@@ -141,8 +141,8 @@ export async function publishPlanVersion(input: {
         if (!published) {
             throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'No se publicó la versión');
         }
-        // A trial plan's entitlements and limits are derived, never stored
-        // (V2.md:412-416,457-462); validation already rejected explicit effects.
+        // A trial plan's entitlements are derived, never stored (V2.md:412-416,
+        // 457-462); its limits are validated as overrides and stored.
         const storesEffects = context.role !== TRIAL_PLAN_ROLE;
         if (storesEffects && context.content.entitlements.length > 0) {
             await tx.insert(planVersionEntitlements).values(
@@ -164,7 +164,7 @@ export async function publishPlanVersion(input: {
                 })
             );
         }
-        if (storesEffects && context.content.limits.length > 0) {
+        if (context.content.limits.length > 0) {
             await tx.insert(planVersionLimits).values(
                 context.content.limits.map((item) => ({
                     planVersionId: published.id,
