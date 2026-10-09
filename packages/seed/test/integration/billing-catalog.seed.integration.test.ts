@@ -84,7 +84,7 @@ afterAll(async () => {
     }
 });
 
-describe('TEST:V2:11 — migrated catalog satisfies action 18 validation', () => {
+describe('AC:V2:8 support — migrated catalog satisfies action 18 validation', () => {
     it('validates each real version using the publication reader and validator', async () => {
         for (const plan of PRODUCTION_PLAN_CATALOG) {
             const planId = catalogId(`plan:${plan.vertical}:${plan.slug}`);
