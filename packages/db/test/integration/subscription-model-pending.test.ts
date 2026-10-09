@@ -366,6 +366,35 @@ describe('stored authorization window model operations', () => {
                 .where(eq(manualPayments.id, cardPayment?.id ?? ''));
             expect(untouched?.status).toBe('AWAITING');
 
+            const cardToAbandonChain = await seedChain(tx, { vertical: 'accommodation' });
+            const cardToAbandon = await subscriptionModel.createPendingAuthorization({
+                ...cardToAbandonChain,
+                vertical: 'accommodation',
+                authorizationWindowDeadlineVersion: 1,
+                authorizationWindowEndsAt: now,
+                tx
+            });
+            const [cardAwaiting] = await tx
+                .insert(manualPayments)
+                .values({
+                    subscriptionId: cardToAbandon.subscription.id,
+                    periodStart: now,
+                    status: 'AWAITING'
+                })
+                .returning();
+            expect(
+                await subscriptionModel.abandonPendingAuthorization({
+                    subscriptionId: cardToAbandon.subscription.id,
+                    now,
+                    tx
+                })
+            ).toBe(true);
+            const [cardPaymentAfterS3] = await tx
+                .select()
+                .from(manualPayments)
+                .where(eq(manualPayments.id, cardAwaiting?.id ?? ''));
+            expect(cardPaymentAfterS3?.status).toBe('AWAITING');
+
             const manualChain = await seedChain(tx, { vertical: 'accommodation' });
             const manual = await subscriptionModel.createPendingAuthorization({
                 ...manualChain,
