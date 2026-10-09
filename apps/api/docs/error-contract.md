@@ -55,6 +55,26 @@ cannot be used to probe permissions. The allowed operations are `VERIFY_EMAIL`,
 `REACTIVATE_LISTING`, `DELETE_LISTING`, `REGULARIZE_CHARGE`, and `CLOSE_ACCOUNT`.
 They are declared by `emailUnverifiedOperation` on `createProtectedRoute`.
 
+### The coverage step (V5.3, HOS-1457)
+
+Listing access runs inside business rules (step 6 of the HTTP order), after
+request shape and resource existence or ownership. The route factory wraps the
+validated handler, so an invalid body receives 400 before listing access runs.
+The listing resolver then evaluates its own steps 3 through 7 in order.
+
+| Listing decision | HTTP status | `error.code` | Public `error.details` |
+|---|---|---|---|
+| `NOT_FOUND` | 404 | `NOT_FOUND` | None; body matches the entity ownership 404 |
+| `FORBIDDEN` | 403 | `FORBIDDEN` | None |
+| `NO_COVERAGE` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey: null, reason: 'NO_COVERAGE' }` |
+| `NO_CAPABILITY` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey }` |
+| `LIMIT_REACHED` | 403 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed }` |
+
+An administrative action with actor and subject on the same account receives
+403 `FORBIDDEN` at listing step 3. For action 15, the subject is the owner read
+from the listing row; coverage, entitlements and limits (steps 5 through 7)
+are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
+
 ## Five rules
 
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
