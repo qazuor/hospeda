@@ -14,11 +14,10 @@ import {
 import type { AmenityProtected, FeatureProtected } from '@repo/schemas';
 import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
 import { AccommodationService, entityNotFoundError, ServiceError } from '@repo/service-core';
-import { resolveResourceStep } from '@repo/verticals';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
-import { readListingAccessFacts } from '../../../utils/listing-access';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 

@@ -2,6 +2,7 @@ import type { Accommodation, UserIdType } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode,
     VisibilityEnum
@@ -236,23 +237,25 @@ describe('Accommodation Permissions', () => {
         );
     });
 
-    it('checkCanView allows public', () => {
-        expect(() =>
-            checkCanView(createActor([]), withOwner(otherUserId, VisibilityEnum.PUBLIC))
-        ).not.toThrow();
+    it('checkCanView allows a published foreign listing', () => {
+        const published = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        };
+        expect(() => checkCanView(createActor([]), published)).not.toThrow();
     });
     it('checkCanView allows owner', () => {
         expect(() =>
             checkCanView(createActor([], mockUserId), withOwner(mockUserId, VisibilityEnum.PRIVATE))
         ).not.toThrow();
     });
-    it('checkCanView allows with ACCOMMODATION_VIEW_PRIVATE', () => {
+    it('checkCanView does not let ACCOMMODATION_VIEW_PRIVATE expose an unpublished foreign listing', () => {
         expect(() =>
             checkCanView(
                 createActor([PermissionEnum.ACCOMMODATION_VIEW_PRIVATE]),
                 withOwner(otherUserId, VisibilityEnum.PRIVATE)
             )
-        ).not.toThrow();
+        ).toThrow('accommodation not found');
     });
     it('checkCanView allows with ACCOMMODATION_VIEW_ALL', () => {
         expect(() =>
@@ -295,15 +298,17 @@ describe('Accommodation Permissions', () => {
         expect(foreignPrivate.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    // HOS-706, the deliberate exception. A RESTRICTED listing keeps its 403 and
-    // its "VIP access required" message because that refusal IS the upsell —
-    // owner decision, documented in `apps/api/docs/error-contract.md`. This test
-    // exists so unifying it needs an explicit, visible edit.
-    it('checkCanView keeps the VIP 403 for a foreign RESTRICTED listing', () => {
-        expectForbidden(
-            () => checkCanView(createActor([]), withOwner(otherUserId, VisibilityEnum.RESTRICTED)),
-            'VIP access required'
-        );
+    it('checkCanView returns NOT_FOUND for a foreign RESTRICTED listing without status', () => {
+        try {
+            checkCanView(createActor([]), withOwner(otherUserId, VisibilityEnum.RESTRICTED));
+            throw new Error('Expected ServiceError');
+        } catch (error) {
+            expect(error).toBeInstanceOf(ServiceError);
+            if (error instanceof ServiceError) {
+                expect(error.code).toBe(ServiceErrorCode.NOT_FOUND);
+                expect(error.message).toBe('accommodation not found');
+            }
+        }
     });
 
     // HOS-117 T-022: soft-deleted accommodations that were PUBLIC (indexable)

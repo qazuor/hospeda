@@ -81,10 +81,9 @@ function makeVipActor(): Actor {
 
 describe('SPEC-286 T-001 regression: VIP_VISIBILITY_ACCESS — checkCanView', () => {
     /**
-     * A VIP actor with 'vip_visibility_access' must be allowed to read a
-     * RESTRICTED accommodation without throwing.
+     * The VIP entitlement does not expose a listing without PUBLISHED status.
      */
-    it('allows VIP actor (vip_visibility_access) to read a RESTRICTED accommodation', () => {
+    it('returns NOT_FOUND to a VIP actor for a RESTRICTED accommodation without status', () => {
         // Arrange
         const vipActor = makeVipActor();
         const restrictedAccommodation = new AccommodationFactoryBuilder()
@@ -93,13 +92,13 @@ describe('SPEC-286 T-001 regression: VIP_VISIBILITY_ACCESS — checkCanView', ()
             })
             .build();
 
-        // Act & Assert — must NOT throw (VIP bypass of RESTRICTED check)
-        expect(() => checkCanView(vipActor, restrictedAccommodation)).not.toThrow();
+        expect(() => checkCanView(vipActor, restrictedAccommodation)).toThrow(
+            'accommodation not found'
+        );
     });
 
     /**
-     * A regular user (no VIP entitlement) MUST be denied RESTRICTED access.
-     * This is the control arm — confirms the bypass is entitlement-gated.
+     * A regular user gets the same refusal.
      */
     it('denies a non-VIP actor access to a RESTRICTED accommodation', () => {
         // Arrange
@@ -111,8 +110,9 @@ describe('SPEC-286 T-001 regression: VIP_VISIBILITY_ACCESS — checkCanView', ()
             })
             .build();
 
-        // Act & Assert — must throw FORBIDDEN
-        expect(() => checkCanView(regularActor, restrictedAccommodation)).toThrow();
+        expect(() => checkCanView(regularActor, restrictedAccommodation)).toThrow(
+            'accommodation not found'
+        );
     });
 });
 

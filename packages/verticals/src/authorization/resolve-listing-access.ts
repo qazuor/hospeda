@@ -3,11 +3,13 @@ import type { PlanCatalogReader } from '../plan-catalog/catalog-reader';
 import { resolveEntitlementStep } from './entitlement-step';
 import { type ListingOperation, OPERATION_STEP6_KEY } from './listing-operation';
 import { type ListingAccessFacts, resolveResourceStep } from './resource-step';
+import { resolveResourceVertical } from './resource-vertical';
 
 /** Resolve the resource first, then the BASE capability required by an operation. */
 export async function resolveListingAccess(args: {
     readonly actorId: string | null;
     readonly vertical: string;
+    readonly declaredVertical?: string | null;
     readonly facts: ListingAccessFacts | null;
     readonly operation: ListingOperation;
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
@@ -16,6 +18,11 @@ export async function resolveListingAccess(args: {
     | { readonly allowed: true; readonly evaluatedSteps: readonly (4 | 6)[] }
     | { readonly allowed: false; readonly reason: 'NOT_FOUND' | 'NO_CAPABILITY' }
 > {
+    const vertical = resolveResourceVertical({
+        resourceVertical: args.vertical,
+        declaredVertical: args.declaredVertical
+    });
+    if (!vertical.allowed) return vertical;
     const resource = resolveResourceStep(args);
     if (!resource.allowed) return resource;
     const requirement = OPERATION_STEP6_KEY[args.operation];

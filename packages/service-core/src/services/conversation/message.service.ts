@@ -8,6 +8,7 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
@@ -357,6 +358,22 @@ export class MessageService extends BaseService {
                             `Accommodation has been removed: ${conversation.accommodationId}`,
                             undefined,
                             'ACCOMMODATION_DELETED'
+                        );
+                    }
+
+                    if (
+                        senderType === MessageSenderTypeEnum.GUEST &&
+                        !resolveResourceStep({
+                            actorId: validatedActor.id,
+                            facts: readListingAccessFacts({ entity: accommodation }),
+                            operation: 'WRITE_ABOUT_LISTING'
+                        }).allowed
+                    ) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            `Conversation not found: ${conversationId}`,
+                            undefined,
+                            'CONVERSATION_NOT_FOUND'
                         );
                     }
 

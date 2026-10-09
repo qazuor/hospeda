@@ -40,7 +40,6 @@ check answers 403 to someone the server never identified.
 | Malformed param, query or body (non-UUID id included) | **400** | `VALIDATION_ERROR` |
 | Resource does not exist | **404** | `NOT_FOUND` |
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
-| …except a foreign RESTRICTED accommodation | **403** | `FORBIDDEN` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
 | State conflict | **409** | `ALREADY_EXISTS` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
@@ -244,26 +243,13 @@ real gate a few lines below, so "everything goes through `_getAndValidateEntity`
 was true of it while the leak stayed open. That shape is what the second static
 assertion in the guard exists to catch.
 
-#### Kept as 403 — the VIP hook, deliberately
+#### Resolved to 404 (V5.2, DEC-AUTH-001 📌1)
 
-`checkCanView` in `accommodation.permissions.ts` refuses a foreign RESTRICTED
-listing with **403 `'VIP access required'`**, and that is a **standing, deliberate
-exception to the 404 rule** — not an oversight, and not a leftover.
-
-The reasoning is commercial, not technical: a RESTRICTED listing is an upsell
-surface. Telling a visitor *"this exists and it is for VIPs"* is exactly what the
-visibility tier is sold to do, so hiding it behind a 404 would remove the feature
-rather than harden it. The disclosure is the product.
-
-Its sibling — a foreign **PRIVATE** listing — was unified to **404** in the same
-change. That one sold nothing: it only confirmed an id was real. So within one
-function, PRIVATE now answers 404 and RESTRICTED answers 403, and the difference
-is intentional.
-
-**Do not "fix" the VIP 403.** A future sweep for 403-on-foreign-row will find it,
-and it will look exactly like the twelve defects HOS-600 repaired. It is not one.
-Changing it is an owner decision: edit this section first, then the code and the
-test that pins it (`accommodation.permissions.test.ts`, *"keeps the VIP 403"*).
+`checkCanView` applies the resource's publication state. A foreign listing that
+is not `PUBLISHED` answers **404 `NOT_FOUND`**, with the same response as a
+listing that does not exist. This includes a `RESTRICTED` accommodation whose
+publication state is unknown. The VIP entitlement does not change this detail
+read decision.
 
 ## What enforces this
 

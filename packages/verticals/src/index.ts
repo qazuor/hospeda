@@ -5,7 +5,9 @@
  */
 
 export { NonBaseKeyError, resolveEntitlementStep } from './authorization/entitlement-step';
+export { readListingAccessFacts } from './authorization/listing-facts';
 export {
+    FOREIGN_ADMITTING_STATES,
     LISTING_OPERATIONS,
     type ListingOperation,
     OPERATION_STEP6_KEY,
@@ -23,6 +25,7 @@ export {
     resolveResourceStep,
     type StepOutcome
 } from './authorization/resource-step';
+export { resolveResourceVertical } from './authorization/resource-vertical';
 export {
     type BootstrapBillingForVerticals,
     createBootstrapBillingForVerticals

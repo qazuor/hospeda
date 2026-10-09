@@ -48,6 +48,7 @@ import {
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { inArray } from 'drizzle-orm';
 import { errors as joseErrors, jwtVerify, SignJWT } from 'jose';
 import { z } from 'zod';
@@ -471,7 +472,15 @@ export class ConversationService extends BaseService {
                 const accommodation = await this.accommodationModel.findById(
                     validated.accommodationId
                 );
-                if (!accommodation || accommodation.deletedAt !== null) {
+                if (
+                    !accommodation ||
+                    accommodation.deletedAt !== null ||
+                    !resolveResourceStep({
+                        actorId: actor.id,
+                        facts: readListingAccessFacts({ entity: accommodation }),
+                        operation: 'WRITE_ABOUT_LISTING'
+                    }).allowed
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         `Accommodation not found: ${validated.accommodationId}`,
@@ -599,7 +608,15 @@ export class ConversationService extends BaseService {
                 const accommodation = await this.accommodationModel.findById(
                     validated.accommodationId
                 );
-                if (!accommodation || accommodation.deletedAt !== null) {
+                if (
+                    !accommodation ||
+                    accommodation.deletedAt !== null ||
+                    !resolveResourceStep({
+                        actorId: validatedActor.id,
+                        facts: readListingAccessFacts({ entity: accommodation }),
+                        operation: 'WRITE_ABOUT_LISTING'
+                    }).allowed
+                ) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         `Accommodation not found: ${validated.accommodationId}`,

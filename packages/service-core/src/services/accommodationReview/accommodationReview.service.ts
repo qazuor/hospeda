@@ -35,6 +35,7 @@ import {
     ModerationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { type SQL, sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
@@ -47,6 +48,7 @@ import {
     ServiceError,
     type ServiceOutput
 } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
 import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
@@ -342,9 +344,19 @@ export class AccommodationReviewService extends BaseCrudService<
      */
     protected async _beforeCreate(
         data: AccommodationReviewCreateInput,
-        _actor: Actor,
-        _ctx: ServiceContext
+        actor: Actor,
+        ctx: ServiceContext
     ): Promise<Partial<AccommodationReview>> {
+        const accommodation = await this.accommodationModel.findById(data.accommodationId, ctx.tx);
+        if (
+            !resolveResourceStep({
+                actorId: actor.id,
+                facts: readListingAccessFacts({ entity: accommodation }),
+                operation: 'WRITE_ABOUT_LISTING'
+            }).allowed
+        ) {
+            throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
+        }
         const existing = await this.model.findOne({
             userId: data.userId,
             accommodationId: data.accommodationId,
