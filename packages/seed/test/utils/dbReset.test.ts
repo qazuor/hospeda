@@ -29,6 +29,10 @@ describe('partitionTablesForReset', () => {
         expect([...REFERENCE_TABLES].sort()).toEqual([
             'billing_deadline_version',
             'catalog_key',
+            'plan',
+            'plan_version',
+            'plan_version_entitlement',
+            'plan_version_limit',
             'vertical'
         ]);
         expect(result.tablesToReset).toEqual(['users']);
@@ -54,6 +58,10 @@ describe('partitionTablesForReset', () => {
             'vertical',
             'catalog_key',
             'billing_deadline_version',
+            'plan',
+            'plan_version',
+            'plan_version_entitlement',
+            'plan_version_limit',
             'accommodations'
         ];
 
@@ -65,7 +73,11 @@ describe('partitionTablesForReset', () => {
         expect(result.tablesSkipped).toEqual([
             'vertical',
             'catalog_key',
-            'billing_deadline_version'
+            'billing_deadline_version',
+            'plan',
+            'plan_version',
+            'plan_version_entitlement',
+            'plan_version_limit'
         ]);
     });
 

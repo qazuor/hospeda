@@ -1,11 +1,54 @@
 // TEST:V2:1, TEST:V2:2 and TEST:V2:3 (HOS-1434, piece V2): the plan and addon
 // catalog after db:migrate (and apply-extras) on an empty disposable database.
-import type { PoolClient } from 'pg';
-import { afterAll, describe, expect, it } from 'vitest';
-import { closeTestPool, getTestPool } from './helpers.ts';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Pool, type PoolClient } from 'pg';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+
+const migrationDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/migrations');
+const dbName = 'hospeda_v24b_plan_constraints_test';
+const baseUrl = process.env.HOSPEDA_TEST_DATABASE_URL;
+if (!baseUrl) throw new Error('HOSPEDA_TEST_DATABASE_URL is required');
+const adminUrl = new URL(baseUrl);
+adminUrl.pathname = '/postgres';
+const testUrl = new URL(baseUrl);
+testUrl.pathname = `/${dbName}`;
+const admin = new Pool({ connectionString: adminUrl.toString() });
+const pool = new Pool({ connectionString: testUrl.toString() });
+const getTestPool = () => pool;
+
+beforeAll(async () => {
+    await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
+    await admin.query(`CREATE DATABASE ${dbName}`);
+    for (const extension of ['uuid-ossp', 'pgcrypto', 'unaccent']) {
+        await pool.query(`CREATE EXTENSION IF NOT EXISTS "${extension}"`);
+    }
+    const journal = JSON.parse(readFileSync(join(migrationDir, 'meta/_journal.json'), 'utf8')) as {
+        entries: { idx: number; tag: string }[];
+    };
+    for (const entry of journal.entries
+        .filter((item) => item.idx < 144)
+        .sort((a, b) => a.idx - b.idx)) {
+        const sql = readFileSync(join(migrationDir, `${entry.tag}.sql`), 'utf8');
+        for (const chunk of sql.split('--> statement-breakpoint')) {
+            if (chunk.trim()) await pool.query(chunk.trim());
+        }
+    }
+    execFileSync('node', [
+        resolve(migrationDir, '../../scripts/apply-postgres-extras.mjs'),
+        testUrl.toString()
+    ]);
+}, 300_000);
 
 afterAll(async () => {
-    await closeTestPool();
+    await pool.end();
+    try {
+        await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
+    } finally {
+        await admin.end();
+    }
 });
 
 /** The database error a statement raised, or `null` when it succeeded. */
@@ -728,7 +771,7 @@ async function insertPlanWithRole(
 
 describe('TEST:V2:6/7 (HOS-1436) — plan.role: closed list, one per vertical, immutable', () => {
     it('accepts NULL and the three closed roles', async () => {
-        await inRolledBackTx(async ({ client, attempt }) => {
+        await inRolledBackTx(async ({ attempt }) => {
             const results = [
                 await attempt(
                     `INSERT INTO plan (vertical, slug, name) VALUES ('accommodation', 'sellable', 'Sellable')`

@@ -285,7 +285,7 @@ export class TestDatabaseManager {
         SELECT tablename
         FROM pg_tables
         WHERE schemaname = 'public'
-        AND tablename NOT IN ('drizzle_migrations', 'vertical', 'catalog_key')
+        AND tablename NOT IN ('drizzle_migrations', 'vertical', 'catalog_key', 'billing_deadline_version', 'plan', 'plan_version', 'plan_version_entitlement', 'plan_version_limit')
       `);
 
             // Keep migration-owned reference catalogs: later integration files

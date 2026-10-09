@@ -3,109 +3,121 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { generatePlanCatalogSql } from '../../../../scripts/production-catalog/loads.js';
+import { PRODUCTION_PLAN_CATALOG } from '../../../../scripts/production-catalog/catalog.js';
+import { buildPlanCatalogLoads } from '../../../../scripts/production-catalog/loads.js';
 
 const migrationDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/migrations');
-const dbName = 'hospeda_v24a_catalog_test';
 const baseUrl = process.env.HOSPEDA_TEST_DATABASE_URL;
 if (!baseUrl) throw new Error('HOSPEDA_TEST_DATABASE_URL is required');
 const adminUrl = new URL(baseUrl);
 adminUrl.pathname = '/postgres';
-const testUrl = new URL(baseUrl);
-testUrl.pathname = `/${dbName}`;
-let admin: Pool;
-let db: Pool;
+const admin = new Pool({ connectionString: adminUrl.toString() });
+const names = ['hospeda_v24b_catalog_full_test', 'hospeda_v24b_catalog_rollback_test'] as const;
+const pools: Pool[] = [];
+const journal = JSON.parse(readFileSync(join(migrationDir, 'meta/_journal.json'), 'utf8')) as {
+    entries: { idx: number; tag: string }[];
+};
 
-async function applyGenerated(
+async function applySql(
     client: { query(sql: string): Promise<unknown> },
-    sql = generatePlanCatalogSql()
-) {
+    sql: string
+): Promise<void> {
     for (const chunk of sql.split('--> statement-breakpoint')) {
         if (chunk.trim()) await client.query(chunk.trim());
     }
 }
 
-beforeAll(async () => {
-    admin = new Pool({ connectionString: adminUrl.toString() });
-    await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
-    await admin.query(`CREATE DATABASE ${dbName}`);
-    db = new Pool({ connectionString: testUrl.toString() });
+async function freshDatabase(name: string, lastIndex: number): Promise<Pool> {
+    await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    await admin.query(`CREATE DATABASE ${name}`);
+    const url = new URL(baseUrl as string);
+    url.pathname = `/${name}`;
+    const db = new Pool({ connectionString: url.toString() });
+    pools.push(db);
     for (const extension of ['uuid-ossp', 'pgcrypto', 'unaccent']) {
         await db.query(`CREATE EXTENSION IF NOT EXISTS "${extension}"`);
     }
-    const journal = JSON.parse(readFileSync(join(migrationDir, 'meta/_journal.json'), 'utf8')) as {
-        entries: { idx: number; tag: string }[];
-    };
-    for (const entry of journal.entries.sort((a, b) => a.idx - b.idx)) {
-        const sql = readFileSync(join(migrationDir, `${entry.tag}.sql`), 'utf8');
-        await applyGenerated(db, sql);
+    for (const entry of journal.entries
+        .filter((item) => item.idx <= lastIndex)
+        .sort((a, b) => a.idx - b.idx)) {
+        await applySql(db, readFileSync(join(migrationDir, `${entry.tag}.sql`), 'utf8'));
     }
+    return db;
+}
+
+let full: Pool;
+let beforeCatalog: Pool;
+beforeAll(async () => {
+    full = await freshDatabase(names[0], 144);
+    beforeCatalog = await freshDatabase(names[1], 143);
 }, 300_000);
 
 afterAll(async () => {
-    if (db) await db.end();
-    if (admin) {
-        await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
-        await admin.end();
-    }
+    for (const pool of pools) await pool.end();
+    for (const name of names) await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    await admin.end();
 });
 
-describe('TEST:V2:11 — generated catalog SQL on a database migrated from zero', () => {
-    it('loads four plans and their versions before any cutover C write', async () => {
-        const client = await db.connect();
-        try {
-            await client.query('BEGIN');
-            await applyGenerated(client);
-            const plans = await client.query<{ slug: string; role: string | null }>(
-                'SELECT slug, role FROM plan ORDER BY slug'
+describe('TEST:V2:11 — 0144 writes the exact production catalog from zero', () => {
+    it('matches every generated row and has one current version per plan and one role plan per vertical', async () => {
+        for (const load of buildPlanCatalogLoads()) {
+            const columns = load.columns.map((column) => `"${column}"`).join(', ');
+            const result = await full.query(`SELECT ${columns} FROM "${load.table}" ORDER BY "id"`);
+            const actual = result.rows.map((row) => load.columns.map((column) => row[column]));
+            const expected = [...load.rows].sort((a, b) =>
+                String(a[0]).localeCompare(String(b[0]))
             );
-            expect(plans.rows).toHaveLength(4);
-            expect(plans.rows.map((row) => row.role)).toEqual([
-                'floor',
-                'pre_trial',
-                null,
-                'trial'
-            ]);
-            const versions = await client.query<{ count: string }>(
-                'SELECT count(*)::text AS count FROM plan_version'
-            );
-            expect(versions.rows[0]?.count).toBe('4');
-        } finally {
-            await client.query('ROLLBACK');
-            client.release();
+            expect(actual, load.table).toEqual(expected);
         }
+        const versions = await full.query<{ plan_id: string; current_count: string }>(
+            'SELECT plan_id, count(*) FILTER (WHERE current)::text AS current_count FROM plan_version GROUP BY plan_id'
+        );
+        expect(versions.rows).toHaveLength(PRODUCTION_PLAN_CATALOG.length);
+        expect(versions.rows.every((row) => row.current_count === '1')).toBe(true);
+        const roles = await full.query<{ vertical: string; role: string; count: string }>(
+            'SELECT vertical, role, count(*)::text AS count FROM plan WHERE role IS NOT NULL GROUP BY vertical, role'
+        );
+        expect(roles.rows).toHaveLength(15);
+        expect(roles.rows.every((row) => row.count === '1')).toBe(true);
     });
 });
 
-describe('TEST:V2:12 — atomic catalog load over existing data', () => {
-    it('rolls back all catalog rows when a later statement fails', async () => {
-        await db.query(
-            "INSERT INTO plan (vertical, slug, name) VALUES ('accommodation', 'preexisting-v24a', 'Existing')"
+describe('TEST:V2:12 — 0144 is atomic over existing data', () => {
+    it('rolls back all four catalog tables when a later statement fails and keeps the earlier row', async () => {
+        await beforeCatalog.query(
+            "INSERT INTO plan (vertical, slug, name) VALUES ('accommodation', 'preexisting-v24b', 'Existing')"
         );
-        const client = await db.connect();
+        const client = await beforeCatalog.connect();
         try {
             await client.query('BEGIN');
-            const poisoned = `${generatePlanCatalogSql()}\n--> statement-breakpoint\nINSERT INTO plan (id) VALUES ('not-a-uuid');`;
-            await expect(applyGenerated(client, poisoned)).rejects.toThrow();
-            await client.query('ROLLBACK');
-            for (const table of [
-                'plan',
-                'plan_version',
-                'plan_version_entitlement',
-                'plan_version_limit'
-            ]) {
-                const result = await db.query<{ count: string }>(
-                    `SELECT count(*)::text AS count FROM "${table}"`
-                );
-                expect(result.rows[0]?.count).toBe(table === 'plan' ? '1' : '0');
-            }
-            const existing = await db.query<{ count: string }>(
-                "SELECT count(*)::text AS count FROM plan WHERE slug = 'preexisting-v24a'"
+            const sql = readFileSync(
+                join(migrationDir, '0144_production_plan_catalog.sql'),
+                'utf8'
             );
-            expect(existing.rows[0]?.count).toBe('1');
+            await expect(
+                applySql(
+                    client,
+                    `${sql}\n--> statement-breakpoint\nINSERT INTO plan (id) VALUES ('not-a-uuid');`
+                )
+            ).rejects.toThrow();
+            await client.query('ROLLBACK');
         } finally {
             client.release();
-            await db.query("DELETE FROM plan WHERE slug = 'preexisting-v24a'");
         }
+        for (const table of [
+            'plan',
+            'plan_version',
+            'plan_version_entitlement',
+            'plan_version_limit'
+        ]) {
+            const result = await beforeCatalog.query<{ count: string }>(
+                `SELECT count(*)::text AS count FROM "${table}"`
+            );
+            expect(result.rows[0]?.count, table).toBe(table === 'plan' ? '1' : '0');
+        }
+        const existing = await beforeCatalog.query(
+            "SELECT slug, name FROM plan WHERE slug = 'preexisting-v24b'"
+        );
+        expect(existing.rows).toEqual([{ slug: 'preexisting-v24b', name: 'Existing' }]);
     });
 });

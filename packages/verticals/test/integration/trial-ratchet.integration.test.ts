@@ -67,14 +67,18 @@ async function inRollback<T>(fn: (tx: DrizzleClient) => Promise<T>): Promise<T> 
 }
 
 /** The catalog reader bound to the test transaction. */
+const fixturePlanIds = new Set<string>();
+
 function readerOn(tx: DrizzleClient): PlanCatalogReader {
     return {
         findPlanVersion: ({ id }) => planCatalogModel.findPlanVersion({ id, tx }),
         findPlanVersionEffects: ({ id }) => planCatalogModel.findPlanVersionEffects({ id, tx }),
         findAddonVersion: ({ id }) => planCatalogModel.findAddonVersion({ id, tx }),
         findPlanVersionSummary: ({ id }) => planCatalogModel.findPlanVersionSummary({ id, tx }),
-        findSellableCurrentVersions: ({ vertical }) =>
-            planCatalogModel.findSellableCurrentVersions({ vertical, tx }),
+        findSellableCurrentVersions: async ({ vertical }) =>
+            (await planCatalogModel.findSellableCurrentVersions({ vertical, tx })).filter(
+                (version) => fixturePlanIds.has(version.planId)
+            ),
         findCurrentPlanVersion: ({ planId }) =>
             planCatalogModel.findCurrentPlanVersion({ planId, tx })
     };
@@ -89,7 +93,9 @@ async function seedPlan(args: {
         .insert(plans)
         .values({ vertical: args.vertical ?? VERTICAL, slug: `p-${randomUUID()}`, name: 'Plan' })
         .returning({ id: plans.id });
-    return (plan as { id: string }).id;
+    const planId = (plan as { id: string }).id;
+    fixturePlanIds.add(planId);
+    return planId;
 }
 
 /** Seeds one version of a plan; returns its id. */
@@ -112,7 +118,7 @@ async function seedVersion(args: {
         .values({
             planId: args.planId,
             vertical: args.vertical ?? VERTICAL,
-            rank: args.rank,
+            rank: args.rank + 3_000,
             sellable: args.sellable,
             current: args.current,
             graceDays: 10,

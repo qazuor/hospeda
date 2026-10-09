@@ -95,6 +95,22 @@ const createReader = (db: DrizzleClient): BootstrapCoverageReader => ({
 });
 
 async function seedVersion(db: DrizzleClient, vertical: string, role: PlanRole | null) {
+    if (role !== null) {
+        const [existing] = await db
+            .select({ planId: plans.id, versionId: planVersions.id })
+            .from(plans)
+            .innerJoin(planVersions, eq(planVersions.planId, plans.id))
+            .where(
+                and(
+                    eq(plans.vertical, vertical),
+                    eq(plans.role, role),
+                    eq(planVersions.current, true)
+                )
+            )
+            .limit(1);
+        if (!existing) throw new Error(`Missing migrated ${role} plan for ${vertical}`);
+        return existing;
+    }
     const [plan] = await db
         .insert(plans)
         .values({
@@ -217,7 +233,16 @@ describe('TEST:V4:14 migrated bootstrap coverage', () => {
 
     it('throws a typed error when the vertical has no floor plan version', async () => {
         await inRollback(async (db) => {
-            const subject = createBootstrapBillingForVerticals({ reader: createReader(db) });
+            const reader = createReader(db);
+            const subject = createBootstrapBillingForVerticals({
+                reader: {
+                    ...reader,
+                    findCurrentVersionByRole: (args) =>
+                        args.role === FLOOR_PLAN_ROLE
+                            ? Promise.resolve(null)
+                            : reader.findCurrentVersionByRole(args)
+                }
+            });
             const user = await seedUser(db);
             await expect(
                 subject.coverage({ userId: user.id, vertical: VerticalEnum.EXPERIENCE })

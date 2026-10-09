@@ -38,6 +38,10 @@ const PERSON_EMAIL = 'person.example@example.invalid';
 const MIGRATION_REFERENCE_TABLES: readonly string[] = [
     'billing_deadline_version',
     'catalog_key',
+    'plan',
+    'plan_version',
+    'plan_version_entitlement',
+    'plan_version_limit',
     'vertical'
 ];
 

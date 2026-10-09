@@ -6,11 +6,10 @@ import {
     planCatalogModel,
     plans,
     planVersionEntitlements,
-    planVersionLimits,
     planVersions,
     users
 } from '@repo/db';
-import { FLOOR_PLAN_ROLE, type PlanRole, PRE_TRIAL_PLAN_ROLE, VerticalEnum } from '@repo/schemas';
+import { FLOOR_PLAN_ROLE, PRE_TRIAL_PLAN_ROLE, VerticalEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -44,13 +43,12 @@ async function inRollback(fn: (tx: DrizzleClient) => Promise<void>): Promise<voi
 async function seedVersion(
     tx: DrizzleClient,
     vertical: VerticalEnum,
-    role: PlanRole | null,
     rank: number,
-    effects: { entitlement?: string; limit?: { key: string; value: number } } = {}
+    entitlement: string
 ) {
     const [plan] = await tx
         .insert(plans)
-        .values({ vertical, role, slug: randomUUID(), name: 'Simultaneous verticals' })
+        .values({ vertical, slug: randomUUID(), name: 'Simultaneous verticals' })
         .returning({ id: plans.id });
     const [version] = await tx
         .insert(planVersions)
@@ -58,25 +56,18 @@ async function seedVersion(
             planId: plan!.id,
             vertical,
             rank,
-            sellable: role === null,
+            sellable: true,
             current: true,
             trialDays: 14,
             allowsPause: false
         })
         .returning({ id: planVersions.id });
-    if (effects.entitlement)
-        await tx.insert(planVersionEntitlements).values({
-            planVersionId: version!.id,
-            key: effects.entitlement,
-            planQuota: null,
-            trialQuota: null
-        });
-    if (effects.limit)
-        await tx.insert(planVersionLimits).values({
-            planVersionId: version!.id,
-            key: effects.limit.key,
-            value: effects.limit.value
-        });
+    await tx.insert(planVersionEntitlements).values({
+        planVersionId: version!.id,
+        key: entitlement,
+        planQuota: null,
+        trialQuota: null
+    });
     return version!.id;
 }
 
@@ -107,24 +98,28 @@ describe('simultaneous verticals', () => {
             const userId = user!.id;
             const accommodation = VerticalEnum.ACCOMMODATION;
             const gastronomy = VerticalEnum.GASTRONOMY;
-            const accommodationFloor = await seedVersion(
+            const bootstrap = createBootstrapCoverageReader(tx);
+            const accommodationFloor = await bootstrap.findCurrentVersionByRole({
+                vertical: accommodation,
+                role: FLOOR_PLAN_ROLE
+            });
+            const gastronomyFloor = await bootstrap.findCurrentVersionByRole({
+                vertical: gastronomy,
+                role: FLOOR_PLAN_ROLE
+            });
+            const gastronomyPreTrial = await bootstrap.findCurrentVersionByRole({
+                vertical: gastronomy,
+                role: PRE_TRIAL_PLAN_ROLE
+            });
+            if (!accommodationFloor || !gastronomyFloor || !gastronomyPreTrial) {
+                throw new Error('Migrated catalog must provide floor and pre-trial versions');
+            }
+            const subscriptionVersion = await seedVersion(
                 tx,
                 accommodation,
-                FLOOR_PLAN_ROLE,
-                100,
-                {}
+                5_001,
+                'priority_support'
             );
-            const subscriptionVersion = await seedVersion(tx, accommodation, null, 101, {
-                entitlement: 'priority_support'
-            });
-            await seedVersion(tx, gastronomy, FLOOR_PLAN_ROLE, 102, {
-                limit: { key: 'max_gastronomies', value: 1 }
-            });
-            await seedVersion(tx, gastronomy, PRE_TRIAL_PLAN_ROLE, 103, {
-                limit: { key: 'max_gastronomies', value: 2 }
-            });
-
-            const bootstrap = createBootstrapCoverageReader(tx);
             const preTrial = await resolveTrialAndBaseSources({
                 reader: bootstrap,
                 input: { userId, vertical: gastronomy }
@@ -132,6 +127,10 @@ describe('simultaneous verticals', () => {
             expect(preTrial.sources.map((source) => [source.type, source.since])).toEqual([
                 ['TRIAL', 'NOT_STARTED'],
                 ['BASE', expect.any(Date)]
+            ]);
+            expect(preTrial.sources.map((source) => source.reference)).toEqual([
+                { kind: 'PLAN_VERSION', planVersionId: gastronomyPreTrial.id },
+                { kind: 'PLAN_VERSION', planVersionId: gastronomyFloor.id }
             ]);
             const subscription = CoverageSourceSchema.parse({
                 type: 'SUBSCRIPTION',
@@ -145,7 +144,7 @@ describe('simultaneous verticals', () => {
             });
             const base = CoverageSourceSchema.parse({
                 type: 'BASE',
-                reference: { kind: 'PLAN_VERSION', planVersionId: accommodationFloor },
+                reference: { kind: 'PLAN_VERSION', planVersionId: accommodationFloor.id },
                 scope: 'VERTICAL',
                 target: null,
                 since: new Date('2026-01-01'),
@@ -188,12 +187,12 @@ describe('simultaneous verticals', () => {
                     vertical: null
                 })
             ).toBeUndefined();
-            const gastronomyValue = gastronomyBefore.limits.get({
-                key: 'max_gastronomies',
+            const gastronomyValue = gastronomyBefore.entitlements.get({
+                key: 'activate_trial',
                 userId,
                 vertical: gastronomy
             });
-            expect(gastronomyValue).toBe(3);
+            expect(gastronomyValue).toBe(Infinity);
             expect(coverage).toHaveBeenCalledTimes(2);
             await read(accommodation);
             await read(gastronomy);
@@ -216,8 +215,8 @@ describe('simultaneous verticals', () => {
             const accommodationAfter = await read(accommodation);
             expect(coverage).toHaveBeenCalledTimes(4);
             expect(
-                gastronomyAfter.limits.get({
-                    key: 'max_gastronomies',
+                gastronomyAfter.entitlements.get({
+                    key: 'activate_trial',
                     userId,
                     vertical: gastronomy
                 })
@@ -235,7 +234,11 @@ describe('simultaneous verticals', () => {
             const accommodationLive = await read(accommodation);
             expect(coverage).toHaveBeenCalledTimes(6);
             expect(
-                gastronomyLive.limits.get({ key: 'max_gastronomies', userId, vertical: gastronomy })
+                gastronomyLive.entitlements.get({
+                    key: 'activate_trial',
+                    userId,
+                    vertical: gastronomy
+                })
             ).toBe(gastronomyValue);
             expect(
                 accommodationLive.entitlements.get({

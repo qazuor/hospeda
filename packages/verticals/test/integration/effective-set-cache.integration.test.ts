@@ -31,7 +31,7 @@ const VERTICALS = [
 ] as const;
 type Vertical = (typeof VERTICALS)[number];
 const KEY = 'priority_support';
-let nextRank = 1;
+let nextRank = 4_000;
 
 afterAll(async () => {
     await pool.end();
