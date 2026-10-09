@@ -148,11 +148,14 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
 
     it('returns a distinct 409 when the durable commitment is occupied', async () => {
         const { user, version, option } = await fixture(true);
+        // TEST:B3:10 (base: versión y vencimiento guardados al abrir la ventana)
         await subscriptionModel.createPendingAuthorization({
             userId: user.id,
             vertical: 'accommodation',
             planVersionId: version.id,
-            billingOptionId: option.id
+            billingOptionId: option.id,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const fake = new FakePaymentProvider({ clock });
         const authorize = vi.spyOn(fake, 'authorize');

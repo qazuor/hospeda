@@ -192,11 +192,14 @@ describe('TEST:B3:6 protected S1 route reuses the live commitment', () => {
     it('answers 409 COMMITMENT_TAKEN when the live commitment is another plan', async () => {
         const mine = await fixture(true);
         const other = await fixture(true);
+        // TEST:B3:10 (base: versión y vencimiento guardados al abrir la ventana)
         await subscriptionModel.createPendingAuthorization({
             userId: mine.user.id,
             vertical: 'accommodation',
             planVersionId: other.version.id,
-            billingOptionId: other.option.id
+            billingOptionId: other.option.id,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const fake = new FakePaymentProvider({ clock });
         const authorize = vi.spyOn(fake, 'authorize');
