@@ -20,7 +20,7 @@ import {
     type PaymentProvider,
     sanitizeApprovalUrl
 } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { BILLING_CYCLE_MONTHS, type BillingCycle, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 
@@ -101,13 +101,7 @@ export async function authorizePendingSubscription(input: {
     });
     if (!option)
         throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Anchored billing option missing');
-    const everyMonths: Record<string, number> = {
-        monthly: 1,
-        quarterly: 3,
-        semiannual: 6,
-        annual: 12
-    };
-    const cadence = everyMonths[option.cycle];
+    const cadence = BILLING_CYCLE_MONTHS[option.cycle as BillingCycle];
     if (!cadence)
         throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Unsupported billing cycle');
     const sent: AuthorizeInput = {

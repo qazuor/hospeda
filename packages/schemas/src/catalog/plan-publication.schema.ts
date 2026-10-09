@@ -17,6 +17,18 @@ export const BILLING_CYCLES = ['monthly', 'quarterly', 'semiannual', 'annual'] a
 export type BillingCycle = (typeof BILLING_CYCLES)[number];
 export const BillingCycleSchema = z.enum(BILLING_CYCLES);
 
+/**
+ * Calendar equivalence of each billing cycle in months, not a commercial value.
+ * A quarter is three months by definition, so G7's commercial-value rule does
+ * not apply to this canonical conversion.
+ */
+export const BILLING_CYCLE_MONTHS = {
+    monthly: 1,
+    quarterly: 3,
+    semiannual: 6,
+    annual: 12
+} as const satisfies Record<BillingCycle, number>;
+
 /** One entitlement a version grants; both quotas present for a metered one. */
 export const PlanVersionEntitlementInputSchema = z.object({
     key: z.string().min(1).max(64),
