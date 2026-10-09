@@ -868,6 +868,10 @@ export enum PermissionEnum {
     MAINTENANCE_MODE_WRITE = 'system.maintenanceMode.write', // Allows writing maintenance mode + global announcements (Plataforma → Configuración crítica). SUPER_ADMIN-only.
     BILLING_SETTINGS_VIEW = 'billing.settings.view', // Allows viewing Comercial → Configuración billing (trial/payment/webhook/notification fields).
     BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
+    // HOS-1457 AC:V5:8: action 15, subscription inspection, and own-billing access.
+    LISTING_FOREIGN_CONTENT_EDIT = 'listing.foreignContent.edit', // Allows editing another owner's listing content across all three verticals (action 15).
+    BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.
+    BILLING_VIEW_OWN = 'billing.viewOwn', // Allows reading the account's own billing.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
