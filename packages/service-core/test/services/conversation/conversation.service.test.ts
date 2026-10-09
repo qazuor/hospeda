@@ -98,7 +98,12 @@ vi.mock('@repo/db', async (importOriginal) => {
 import type { DrizzleClient, SelectConversation } from '@repo/db';
 import * as dbModule from '@repo/db';
 import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
-import { ConversationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    ConversationStatusEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    RoleEnum
+} from '@repo/schemas';
 import * as jose from 'jose';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { AccessTokenService } from '../../../src/services/conversation/access-token.service.js';
@@ -202,10 +207,18 @@ function makeConversation(overrides: Partial<SelectConversation> = {}): SelectCo
     };
 }
 
-function makeAccommodation(overrides: { deletedAt?: Date | null; name?: string } = {}) {
+function makeAccommodation(
+    overrides: {
+        deletedAt?: Date | null;
+        name?: string;
+        publicationStatus?: PublicationStatusEnum;
+    } = {}
+) {
     return {
         id: ACCOMMODATION_ID,
         name: 'Posada del Sol',
+        ownerId: OWNER_ACTOR.id,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
         deletedAt: null,
         ...overrides
     };
@@ -445,6 +458,23 @@ describe('ConversationService', () => {
     // =========================================================================
 
     describe('initiateAuthenticated', () => {
+        it('TEST:V5:30 masks a foreign DRAFT exactly like a missing accommodation', async () => {
+            asMock(accommodationModelMock.findById)
+                .mockResolvedValueOnce(
+                    makeAccommodation({ publicationStatus: PublicationStatusEnum.DRAFT })
+                )
+                .mockResolvedValueOnce(null);
+            const input = { accommodationId: ACCOMMODATION_ID, message: 'Hola' };
+            const draft = await service.initiateAuthenticated(ACTOR, input);
+            const missing = await service.initiateAuthenticated(ACTOR, input);
+            expect(draft.error).toEqual(missing.error);
+            expect(draft.error).toMatchObject({
+                code: 'NOT_FOUND',
+                reason: 'ACCOMMODATION_DELETED'
+            });
+            expect(conversationModelMock.findByUserIdAndAccommodationId).not.toHaveBeenCalled();
+        });
+
         it('should create a new PENDING_OWNER conversation and return isNew=true with messageId', async () => {
             // Arrange
             const accommodationMock = makeAccommodation();

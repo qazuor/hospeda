@@ -63,7 +63,9 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { assertListingReadable, entityNotFoundError } from '../../utils';
 import { hasPermission } from '../../utils/permission';
+import { EXPERIENCE_ENTITY_NAME } from '../entity-names';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
 import {
@@ -325,21 +327,11 @@ export class ExperienceService extends BaseListingService<
             if (entity.visibility === VisibilityEnum.PUBLIC) {
                 throw new ServiceError(ServiceErrorCode.GONE, 'Experience is gone');
             }
-            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
+            throw entityNotFoundError({ entityName: EXPERIENCE_ENTITY_NAME });
         }
 
-        // Non-admin / non-owner actors receive NOT_FOUND for non-ACTIVE or PRIVATE
-        // listings (mirrors AccommodationService._canView for public-read gating).
-        const isOwner = entity.ownerId === actor.id;
-        const isStaff = hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL);
-        if (!isOwner && !isStaff) {
-            if (entity.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
-                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
-            }
-            if (entity.visibility === VisibilityEnum.PRIVATE) {
-                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
-            }
-        }
+        if (hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)) return;
+        assertListingReadable({ actor, entity, entityName: EXPERIENCE_ENTITY_NAME });
     }
 
     protected _canList(actor: Actor): void {

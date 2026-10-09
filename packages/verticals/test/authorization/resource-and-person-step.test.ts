@@ -1,6 +1,7 @@
 import { getCatalogKey, PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    FOREIGN_ADMITTING_STATES,
     LISTING_OPERATIONS,
     OWNER_ADMITTING_STATES,
     RECOVER_OWN_LISTING_KEY
@@ -25,35 +26,44 @@ describe('step 4: resource ownership and publication state', () => {
                 ).toEqual(allowed ? { allowed: true } : { allowed: false, reason: 'NOT_FOUND' });
             });
 
-            it(`${operation} on foreign ${publicationStatus} is indistinguishable from absence`, () => {
+            it(`${operation} on foreign and guest ${publicationStatus} follows the foreign table`, () => {
                 const expected = { allowed: false, reason: 'NOT_FOUND' };
+                const foreignExpected = FOREIGN_ADMITTING_STATES[operation].includes(
+                    publicationStatus
+                )
+                    ? { allowed: true }
+                    : expected;
                 expect(
                     resolveResourceStep({
                         actorId: 'other',
                         facts: { ownerId: 'owner', publicationStatus },
                         operation
                     })
-                ).toEqual(expected);
+                ).toEqual(foreignExpected);
                 expect(
                     resolveResourceStep({
                         actorId: null,
                         facts: { ownerId: 'owner', publicationStatus },
                         operation
                     })
-                ).toEqual(expected);
+                ).toEqual(foreignExpected);
                 expect(resolveResourceStep({ actorId: 'owner', facts: null, operation })).toEqual(
                     expected
                 );
             });
         }
-        it(`${operation} admits a legacy null status for its owner only`, () => {
+        it(`${operation} handles a legacy null status for its owner only`, () => {
             expect(
                 resolveResourceStep({
                     actorId: 'owner',
                     facts: { ownerId: 'owner', publicationStatus: null },
                     operation
                 })
-            ).toEqual({ allowed: true });
+            ).toEqual(
+                operation === 'WRITE_ABOUT_LISTING'
+                    ? { allowed: false, reason: 'NOT_FOUND' }
+                    : { allowed: true }
+            );
             expect(
                 resolveResourceStep({
                     actorId: 'other',
@@ -75,6 +85,28 @@ describe('step 4: resource ownership and publication state', () => {
                 operation: 'READ_OWN'
             })
         ).toEqual({ allowed: false, reason: 'NOT_FOUND' });
+    });
+
+    it('does not treat an empty actor id as the owner', () => {
+        expect(
+            resolveResourceStep({
+                actorId: '',
+                facts: { ownerId: '', publicationStatus: PublicationStatusEnum.DRAFT },
+                operation: 'READ_OWN'
+            })
+        ).toEqual({ allowed: false, reason: 'NOT_FOUND' });
+    });
+
+    it('permits public reading and writing about only published foreign listings', () => {
+        expect(FOREIGN_ADMITTING_STATES.READ_PUBLIC).toEqual([PublicationStatusEnum.PUBLISHED]);
+        expect(FOREIGN_ADMITTING_STATES.WRITE_ABOUT_LISTING).toEqual([
+            PublicationStatusEnum.PUBLISHED
+        ]);
+        for (const operation of LISTING_OPERATIONS) {
+            if (operation !== 'READ_PUBLIC' && operation !== 'WRITE_ABOUT_LISTING') {
+                expect(FOREIGN_ADMITTING_STATES[operation]).toEqual([]);
+            }
+        }
     });
 });
 

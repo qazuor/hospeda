@@ -22,7 +22,7 @@
  * @module experience.review.service
  */
 
-import { type ExperienceReviewModel, experienceReviewModel } from '@repo/db';
+import { type ExperienceReviewModel, experienceModel, experienceReviewModel } from '@repo/db';
 import {
     type CountResponse,
     type ExperienceReview,
@@ -36,6 +36,7 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
@@ -45,6 +46,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
 import { ExperienceService } from './experience.service';
 
@@ -112,6 +114,7 @@ export class ExperienceReviewService extends BaseCrudService<
 
     /** Injectable for unit tests. */
     private _experienceService: ExperienceService;
+    private _experienceModel = experienceModel;
 
     constructor(config: ServiceConfig) {
         super(config, ExperienceReviewService.ENTITY_NAME);
@@ -261,8 +264,18 @@ export class ExperienceReviewService extends BaseCrudService<
     protected override async _beforeCreate(
         data: ExperienceReviewCreateInput,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<ExperienceReview>> {
+        const experience = await this._experienceModel.findById(data.experienceId, ctx.tx);
+        if (
+            !resolveResourceStep({
+                actorId: actor.id,
+                facts: readListingAccessFacts({ entity: experience }),
+                operation: 'WRITE_ABOUT_LISTING'
+            }).allowed
+        ) {
+            throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
+        }
         const existing = await this.model.findOne({
             userId: actor.id,
             experienceId: data.experienceId,

@@ -22,7 +22,7 @@
  * @module gastronomy.review.service
  */
 
-import { type GastronomyReviewModel, gastronomyReviewModel } from '@repo/db';
+import { type GastronomyReviewModel, gastronomyModel, gastronomyReviewModel } from '@repo/db';
 import {
     type CountResponse,
     type GastronomyReview,
@@ -36,6 +36,7 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
@@ -45,6 +46,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
 import { GastronomyService } from './gastronomy.service';
 
@@ -133,6 +135,7 @@ export class GastronomyReviewService extends BaseCrudService<
 
     /** Injectable for unit tests. */
     private _gastronomyService: GastronomyService;
+    private _gastronomyModel = gastronomyModel;
 
     constructor(config: ServiceConfig) {
         super(config, GastronomyReviewService.ENTITY_NAME);
@@ -282,8 +285,18 @@ export class GastronomyReviewService extends BaseCrudService<
     protected override async _beforeCreate(
         data: GastronomyReviewCreateInput,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<GastronomyReview>> {
+        const gastronomy = await this._gastronomyModel.findById(data.gastronomyId, ctx.tx);
+        if (
+            !resolveResourceStep({
+                actorId: actor.id,
+                facts: readListingAccessFacts({ entity: gastronomy }),
+                operation: 'WRITE_ABOUT_LISTING'
+            }).allowed
+        ) {
+            throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
+        }
         const existing = await this.model.findOne({
             userId: actor.id,
             gastronomyId: data.gastronomyId,

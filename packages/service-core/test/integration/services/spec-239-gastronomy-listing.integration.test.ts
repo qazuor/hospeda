@@ -34,6 +34,7 @@ import {
     ModerationStatusEnum,
     PermissionEnum,
     PriceRangeEnum,
+    PublicationStatusEnum,
     RoleEnum,
     VisibilityEnum
 } from '@repo/schemas';
@@ -362,7 +363,8 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 // Arrange: PUBLIC listing so the tourist reviewer can see it
                 const { gastronomyId } = await seedGastronomy(tx, {
                     visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    lifecycleState: 'ACTIVE',
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
                 const touristActor = createTouristActor(touristUserId);
@@ -449,7 +451,8 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 // Arrange: PUBLIC listing + tourist reviewer
                 const { gastronomyId } = await seedGastronomy(tx, {
                     visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    lifecycleState: 'ACTIVE',
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
                 const touristActor = createTouristActor(touristUserId);
@@ -500,7 +503,8 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
             await withServiceTestTransaction(async (tx) => {
                 const { gastronomyId } = await seedGastronomy(tx, {
                     visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    lifecycleState: 'ACTIVE',
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
                 const touristActor = createTouristActor(touristUserId);

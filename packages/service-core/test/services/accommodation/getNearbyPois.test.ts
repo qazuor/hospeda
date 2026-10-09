@@ -19,7 +19,12 @@
  */
 import type { AccommodationMediaModel, AccommodationModel } from '@repo/db';
 import type { NearbyPoi } from '@repo/schemas';
-import { LifecycleStatusEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    PublicationStatusEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { projectAccommodationApproximateLocation } from '../../../src/services/accommodation/accommodation.projections';
@@ -73,8 +78,11 @@ const buildNearbyPoi = (overrides: Partial<NearbyPoi> = {}): NearbyPoi =>
 const buildAccommodationWithCoords = (
     slug: string,
     coords: { lat: string; long: string } = { lat: '-32.4825', long: '-58.2372' }
-) =>
-    new AccommodationFactoryBuilder()
+): ReturnType<AccommodationFactoryBuilder['build']> & {
+    publicationStatus: PublicationStatusEnum;
+} => {
+    const publicationStatus: PublicationStatusEnum = PublicationStatusEnum.PUBLISHED;
+    const accommodation = new AccommodationFactoryBuilder()
         .with({
             slug,
             ownerId: getMockId('user', 'some-other-owner'),
@@ -85,6 +93,8 @@ const buildAccommodationWithCoords = (
             }
         })
         .build();
+    return { ...accommodation, publicationStatus };
+};
 
 describe('AccommodationService.getNearbyPois', () => {
     let model: ReturnType<typeof createModelMock>;
@@ -158,9 +168,10 @@ describe('AccommodationService.getNearbyPois', () => {
         expect(result.data).toEqual(pois);
     });
 
-    it('returns an empty array (AC-1/#1) and never calls getNearbyRanked when the accommodation is PRIVATE and the actor has no view-private permission', async () => {
+    it('returns an empty array (AC-1/#1) and never calls getNearbyRanked when the accommodation is unpublished and PRIVATE', async () => {
         const accommodation = buildAccommodationWithCoords('draft-hotel');
         accommodation.visibility = VisibilityEnum.PRIVATE;
+        accommodation.publicationStatus = PublicationStatusEnum.DRAFT;
         const getNearbyRanked = vi.fn();
         const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
@@ -175,6 +186,7 @@ describe('AccommodationService.getNearbyPois', () => {
     it('returns an empty array (AC-8) and never calls getNearbyRanked when the accommodation is DRAFT (non-ACTIVE lifecycleState)', async () => {
         const accommodation = buildAccommodationWithCoords('draft-lifecycle-hotel');
         accommodation.lifecycleState = LifecycleStatusEnum.DRAFT;
+        accommodation.publicationStatus = PublicationStatusEnum.DRAFT;
         const getNearbyRanked = vi.fn();
         const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);

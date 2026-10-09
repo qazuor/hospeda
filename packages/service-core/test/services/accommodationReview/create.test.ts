@@ -17,7 +17,7 @@ vi.mock('@repo/content-moderation', () => ({
     })
 }));
 
-import { AccommodationReviewModel } from '@repo/db';
+import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
 import type {
     AccommodationIdType,
     AccommodationRatingInput,
@@ -25,10 +25,16 @@ import type {
     AccommodationReviewIdType,
     UserIdType
 } from '@repo/schemas';
-import { LifecycleStatusEnum, ModerationStatusEnum, PermissionEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    PublicationStatusEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
 import type { ServiceConfig } from '../../../src/types';
+import { createMockAccommodation } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
@@ -44,6 +50,11 @@ describe('create', () => {
     let ctx: ServiceConfig;
 
     beforeEach(() => {
+        const published = {
+            ...createMockAccommodation({ ownerId: getMockId('user', 'owner') }),
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        };
+        vi.spyOn(AccommodationModel.prototype, 'findById').mockResolvedValue(published);
         reviewModel = new AccommodationReviewModel();
         logger = createLoggerMock();
         ctx = { logger } as ServiceConfig;

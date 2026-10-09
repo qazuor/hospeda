@@ -1,13 +1,9 @@
 import type { Accommodation, AccommodationCreateInput } from '@repo/schemas';
-import {
-    LifecycleStatusEnum,
-    PermissionEnum,
-    ServiceErrorCode,
-    VisibilityEnum
-} from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import {
+    assertListingReadable,
     checkGenericPermission,
     entityNotFoundError,
     getOwnershipDescriptor,
@@ -126,9 +122,7 @@ export function checkCanRestore(actor: Actor, entity: Accommodation): void {
 
 /**
  * Checks if an actor has permission to view an accommodation.
- * Public accommodations are always viewable. Private ones require specific permissions.
- * Restricted accommodations require VIP access or special permissions.
- * The owner of an accommodation can always view it, regardless of other permissions.
+ * Step 4 admits owned listings and published foreign listings.
  * @param actor The actor performing the action.
  * @param entity The accommodation entity to be viewed.
  * @throws {ServiceError} If the permission check fails.
@@ -149,78 +143,8 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
 
-    // Draft/inactive/archived accommodations are not visible to the public.
-    // Only the owner or staff with ACCOMMODATION_VIEW_ALL can see non-ACTIVE
-    // accommodations. This prevents DRAFT content from leaking to anonymous
-    // readers when lifecycle_state is set to a non-ACTIVE value via SQL or API.
-    if (
-        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE &&
-        !isOwner(actor, entity) &&
-        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
-    ) {
-        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
-    }
-
-    // SPEC-143 #29: a service-suspended owner's accommodations are hidden from
-    // public reads and behave as if they do not exist (NOT_FOUND, not FORBIDDEN,
-    // so existence is not leaked). The owner themselves and staff holding
-    // ACCOMMODATION_VIEW_ALL are exempt so they can still see the listing while
-    // the subscription is paused.
-    if (
-        entity.ownerSuspended &&
-        !isOwner(actor, entity) &&
-        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
-    ) {
-        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
-    }
-
-    // SPEC-167 T-004: plan-restricted accommodations behave identically to
-    // ownerSuspended for public reads — they do not exist (NOT_FOUND, not
-    // FORBIDDEN, so existence is not leaked).
-    // DIVERGENCE NOTE: for ownerSuspended, list queries use isOwnScope to let
-    // the owner see their suspended items; for planRestricted we do the same
-    // (owner is ALWAYS exempt). The host MUST see their own restricted
-    // accommodations to choose which to keep active / restore on re-upgrade.
-    if (
-        entity.planRestricted &&
-        !isOwner(actor, entity) &&
-        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
-    ) {
-        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
-    }
-
-    if (
-        entity.visibility === 'PUBLIC' ||
-        (entity.visibility === 'PRIVATE' &&
-            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_PRIVATE)) ||
-        hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) ||
-        isOwner(actor, entity)
-    ) {
-        return;
-    }
-
-    // The ONE deliberate exception to "a foreign resource answers 404" (HOS-706,
-    // owner decision). A RESTRICTED listing is a commercial hook: telling the
-    // visitor "this exists and it is for VIPs" is the product. Every other
-    // refusal in this function answers 404 precisely so this one reads as a
-    // choice rather than an oversight — do NOT unify it. It is documented as an
-    // exception in `apps/api/docs/error-contract.md`; change it there first.
-    if (entity.visibility === 'RESTRICTED') {
-        if (
-            actor.entitlements?.has('vip_visibility_access') ||
-            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL) ||
-            isOwner(actor, entity)
-        ) {
-            return;
-        }
-        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'VIP access required');
-    }
-
-    // Everything that reaches here is a foreign PRIVATE listing (HOS-706). It
-    // used to answer `403 'Permission denied to view accommodation'`, which sold
-    // nothing and confirmed the id was real — the deleted/non-active/suspended/
-    // plan-restricted branches above already answer 404 for exactly that reason.
-    throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
+    if (hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)) return;
+    assertListingReadable({ actor, entity, entityName: ACCOMMODATION_ENTITY_NAME });
 }
 
 /**

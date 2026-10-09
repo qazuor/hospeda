@@ -31,6 +31,7 @@ vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', 
 
 // Intercept the AccommodationReviewModel constructor so the service uses
 // our mock instead of the real model.
+const mockAccommodationFindById = vi.hoisted(() => vi.fn());
 const mockModel = {
     findById: vi.fn(),
     findOne: vi.fn(),
@@ -53,7 +54,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         }),
         AccommodationModel: vi.fn(function () {
             return {
-                findById: vi.fn(),
+                findById: mockAccommodationFindById,
                 findOne: vi.fn(),
                 create: vi.fn(),
                 update: vi.fn(),
@@ -90,7 +91,13 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 
 import * as contentModeration from '@repo/content-moderation';
 import type { AccommodationReview } from '@repo/schemas';
-import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    ModerationStatusEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
 import * as getThresholdModule from '../../../src/services/contentModeration/get-threshold-for-context.js';
@@ -211,6 +218,10 @@ describe('AccommodationReviewService — _beforeCreate content-moderation wiring
         vi.clearAllMocks();
         // No existing review → duplicate check passes
         mockModel.findOne.mockResolvedValue(null);
+        mockAccommodationFindById.mockResolvedValue({
+            ownerId: getMockId('user', 'owner'),
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        });
         service = makeService();
     });
 
