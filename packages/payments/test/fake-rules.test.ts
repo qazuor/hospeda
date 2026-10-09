@@ -3,7 +3,7 @@
  * test turns a rule off: they are not lies).
  *
  * SCOPE (B1.4a, HOS-1510): the rules whose surface the payment interface
- * carries today: RP2, RP3, RP4, RP5, RP6 and RP9. RP1, RP7, RP8, RP10, RP11 and
+ * carries today: RP1, RP2, RP3, RP4, RP5, RP6 and RP9. RP7, RP8, RP10, RP11 and
  * RP12 keep their row in the list and arrive with the units that add their
  * surface.
  */
@@ -13,9 +13,9 @@ import {
     AMOUNT_ABOVE_CEILING_MESSAGE,
     AMOUNT_BELOW_FLOOR_MESSAGE,
     FAKE_RULES,
-    FakePaymentProvider,
-    PaymentProviderError
-} from '../src/index';
+    FakePaymentProvider
+} from '../src/fake/index';
+import { PaymentProviderError } from '../src/index';
 
 const ARS = (amountMinor: number) => ({ amountMinor, currency: 'ARS' }) as const;
 
@@ -85,6 +85,28 @@ describe('TEST:B1:14 the list of rules and measured behaviour', () => {
             'RP5',
             'RP6'
         ]);
+    });
+});
+
+describe('TEST:B3:44 RP1: a card token is single use', () => {
+    it('rejects a second authorize with the same token and accepts a new token', async () => {
+        const first = await fake.authorize({ ...AUTHORIZE, paymentToken: 'token-one' });
+        const refused = await rejectionOf({
+            promise: fake.authorize({ ...AUTHORIZE, reference: 'sub-2', paymentToken: 'token-one' })
+        });
+        const fresh = await fake.authorize({
+            ...AUTHORIZE,
+            reference: 'sub-3',
+            paymentToken: 'token-two'
+        });
+
+        expect(refused.code).toBe('REJECTED');
+        expect(refused.message).toBe('Card token was used, please generate new');
+        expect(fresh.authorizationId).not.toBe(first.authorizationId);
+        expect(
+            (await fake.readAuthorization({ authorizationId: fresh.authorizationId })).snapshot
+                .reference
+        ).toBe('sub-3');
     });
 });
 

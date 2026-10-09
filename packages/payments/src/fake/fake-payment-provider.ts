@@ -57,7 +57,7 @@ import type { FakeLieId } from './fake-lists';
 import { decodeFakeNotice } from './fake-notice';
 import { type FakePaymentProviderOptions, parseFakeOptions } from './fake-options';
 import { FakeOutbox } from './fake-outbox';
-import { assertChargeableAmount, nextChargeBatch } from './fake-rules';
+import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
 import {
     APPROVAL_BASE_URL,
     assertSameCurrency,
@@ -79,6 +79,7 @@ export class FakePaymentProvider implements PaymentProvider {
     private readonly clock: Clock;
     private readonly honest: ReadonlySet<string>;
     private readonly simulating: ReadonlySet<string>;
+    private readonly usedPaymentTokens = new Set<string>();
 
     /**
      * @param options.clock - The clock every read and every delay runs on
@@ -115,6 +116,10 @@ export class FakePaymentProvider implements PaymentProvider {
             run: () => {
                 this.catchUp();
                 assertChargeableAmount({ amount: value.amount, capability: 'authorize' });
+                assertUnusedPaymentToken({
+                    paymentToken: value.paymentToken,
+                    usedTokens: this.usedPaymentTokens
+                });
                 const existing = [...this.ledger.authorizations.values()].find(
                     (stored) => stored.snapshot.reference === value.reference
                 );
@@ -125,18 +130,25 @@ export class FakePaymentProvider implements PaymentProvider {
                 const authorizationId = this.ledger.nextId({ prefix: 'auth' });
                 const link = `${APPROVAL_BASE_URL}${authorizationId}`;
                 const approvalUrl = this.lying({ lie: 'M10' }) ? `${link}?activation=true` : link;
+                const dropsSentFields = this.dropsWhatWasSent();
                 this.ledger.authorizations.set(authorizationId, {
                     snapshot: {
                         authorizationId,
                         reference: value.reference,
                         status: 'pending',
                         amount: { ...value.amount },
-                        cadence: { ...value.cadence }
+                        cadence: dropsSentFields ? { everyMonths: 1 } : { ...value.cadence },
+                        firstChargeAt: dropsSentFields ? null : (value.firstChargeAt ?? null),
+                        freePeriodDays: this.addedFreePeriodDays({
+                            firstChargeAt: value.firstChargeAt
+                        })
                     },
                     version: 1,
                     approvalUrl,
                     createdAt: this.now()
                 });
+                if (value.paymentToken !== undefined)
+                    this.usedPaymentTokens.add(value.paymentToken);
                 this.ledger.emit({
                     resourceKind: 'authorization',
                     resourceId: authorizationId,
@@ -418,6 +430,23 @@ export class FakePaymentProvider implements PaymentProvider {
 
     private lying(args: { readonly lie: FakeLieId }): boolean {
         return !this.honest.has(args.lie);
+    }
+
+    /** EX-5 measured discarded `items` at creation; dropping cycle/date extends AC:B3:42.
+     * M1 + M9: combinación no medida; comportamiento provisorio, Coord-33.
+     * M1 descarta la fecha guardada y M9 calcula el período desde la fecha enviada.
+     */
+    private dropsWhatWasSent(): boolean {
+        return this.lying({ lie: 'M1' });
+    }
+
+    /** A future first charge can carry a provider-added period; it is not our trial state. */
+    private addedFreePeriodDays(args: {
+        readonly firstChargeAt: string | undefined;
+    }): number | null {
+        const first = args.firstChargeAt ? Date.parse(args.firstChargeAt) : NaN;
+        if (!(first > this.now()) || !this.lying({ lie: 'M9' })) return null;
+        return Math.max(1, Math.ceil((first - this.now()) / 86_400_000));
     }
 
     /** Brings the time-driven state up to the clock: late charges land, open links expire. */

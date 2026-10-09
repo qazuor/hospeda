@@ -48,6 +48,7 @@
         "@repo/logger": "workspace:*",
         "@repo/media": "workspace:*",
         "@repo/notifications": "workspace:*",
+        "@repo/payments": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/service-core": "workspace:*",
         "@repo/utils": "workspace:*",

@@ -17,7 +17,8 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   from going vacuous.
 - **Two implementations**:
   - `FakePaymentProvider`, in memory, all eight capabilities, and it **lies
-    like the real one** (see "The fake lies, from a closed list" below).
+    like the real one** (see "The fake lies, from a closed list" below). It is
+    exported only from `@repo/payments/fake`, for tests.
   - `MercadoPagoPaymentProvider`, the adapter skeleton: same interface, validates
     each input, refuses with `NOT_IMPLEMENTED`. It does not call the provider and
     no SDK is installed.
@@ -33,6 +34,12 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   field the mutation sent. A field that did not land makes it `notApplied`
   (a failed mutation), naming each such field; a field that did land is not
   hidden by one that did not.
+- **Confirm creation** (AC:B3:42): `confirmAuthorizationCreation({ provider,
+  authorizationId, sent })` reads the created authorization by id and compares
+  its reference, amount, cadence and requested first charge instant. The
+  provider's added free period is never treated as our trial state.
+  `AuthorizeInput.paymentToken` carries a single-use payment token; RP1 rejects
+  reuse on a second authorization.
 - **A read by id carries its instant** (AC:B1:4, INV:D17): `readAuthorization`
   and `readCharge` return a `ProviderRead<T>` (`snapshot` + `readAt`). Only an
   implementation builds one (its builder is not exported, and the brand is a
@@ -68,14 +75,14 @@ Three rules, held at runtime by the constructor and statically by GUARD:G15
    `new FakePaymentProvider({ clock, honestAbout: [{ lie: 'M8', why: '…' }] })`.
    Simulations are the other way round: off unless `simulate: [{ simulation, why }]`.
 
-**What the fake tells today** (B1.4a, HOS-1510): the lies whose surface the
+**What the fake tells today** (B1.4a and B3.1): the lies whose surface the
 payment interface carries, M3 (a duplicate per equal request), M5 (no notice of
 an amount change), M6 (notices late, repeated or never; a refund in three
 deliveries and two formats; a charge once per channel), M8 (a charge lands at
 minute :02 of the next hour), M10 (the broken link), M11 (an open link never
-expires) and M13 (the first partial refund refused as not refundable); and the
-rules RP2, RP3, RP4, RP5, RP6 and RP9. The other rows (M1, M2, M4, M7, M9, M12;
-RP1, RP7, RP8, RP10, RP11, RP12) stay in the list and arrive with the units that
+expires), M13 (the first partial refund refused as not refundable), M1 on
+creation and M9 on a future first charge; and the rules RP1 to RP6 and RP9.
+The other rows (M2, M4, M7, M12; RP7, RP8, RP10, RP11, RP12) stay in the list and arrive with the units that
 add their surface to the interface.
 
 Every delay of the fake runs on the injected clock: advance it to see a late

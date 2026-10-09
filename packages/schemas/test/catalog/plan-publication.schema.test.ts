@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    BILLING_CYCLE_MONTHS,
     BILLING_CYCLES,
     CreatePlanRequestSchema,
     PlanPublicationConfirmationSchema,
@@ -8,6 +9,16 @@ import {
     PublishedPlanVersionSchema,
     PublishPlanVersionRequestSchema
 } from '../../src/catalog/plan-publication.schema.js';
+
+it('maps every closed billing cycle to its calendar months', () => {
+    expect(BILLING_CYCLE_MONTHS).toEqual({
+        monthly: 1,
+        quarterly: 3,
+        semiannual: 6,
+        annual: 12
+    });
+    expect(Object.keys(BILLING_CYCLE_MONTHS)).toEqual([...BILLING_CYCLES]);
+});
 
 const content = {
     rank: 20,

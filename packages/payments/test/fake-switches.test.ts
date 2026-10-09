@@ -12,9 +12,9 @@ import {
     FAKE_LIES,
     FAKE_SIMULATIONS,
     FakePaymentProvider,
-    type FakePaymentProviderOptions,
-    PaymentProviderError
-} from '../src/index';
+    type FakePaymentProviderOptions
+} from '../src/fake/index';
+import { PaymentProviderError } from '../src/index';
 
 const clock = createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') });
 const ARS = (amountMinor: number) => ({ amountMinor, currency: 'ARS' }) as const;

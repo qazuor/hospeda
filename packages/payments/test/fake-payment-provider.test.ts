@@ -7,11 +7,8 @@
  */
 import { type AdjustableClock, createAdjustableClock } from '@repo/test-clock';
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-    FakePaymentProvider,
-    PaymentProviderError,
-    type PaymentProviderErrorCode
-} from '../src/index';
+import { FakePaymentProvider } from '../src/fake/index';
+import { PaymentProviderError, type PaymentProviderErrorCode } from '../src/index';
 
 const ARS = (amountMinor: number) => ({ amountMinor, currency: 'ARS' }) as const;
 
@@ -75,7 +72,9 @@ describe('authorize and approve', () => {
             reference: 'sub-1',
             status: 'pending',
             amount: ARS(1_800_000),
-            cadence: { everyMonths: 1 }
+            cadence: { everyMonths: 1 },
+            firstChargeAt: null,
+            freePeriodDays: null
         });
         expect(after.status).toBe('active');
     });

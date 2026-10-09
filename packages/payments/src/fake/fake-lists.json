@@ -12,7 +12,7 @@
                 { "row": "CN-1", "date": "2026-09-15", "accounts": ["sandbox", "production"] },
                 { "row": "EX-5", "date": "2026-09-15", "accounts": ["sandbox"] }
             ],
-            "defenseTest": "TEST:B1:3"
+            "defenseTest": "TEST:B3:44"
         },
         {
             "id": "M2",
@@ -93,7 +93,7 @@
                 { "row": "EX-26", "date": "2026-09-15", "accounts": ["sandbox"] },
                 { "row": "EX-33", "date": "2026-09-16", "accounts": ["production"] }
             ],
-            "defenseTest": "TEST:B1:7"
+            "defenseTest": "TEST:B3:44"
         },
         {
             "id": "M10",

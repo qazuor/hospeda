@@ -38,7 +38,9 @@ export const AuthorizeInputSchema: z.ZodType<AuthorizeInput> = z.strictObject({
     cadence: z.strictObject({ everyMonths: z.number().int().min(1).max(12) }),
     reason: z.string().trim().min(1),
     returnUrl: z.url(),
-    payerEmail: z.email().optional()
+    payerEmail: z.email().optional(),
+    firstChargeAt: z.iso.datetime({ offset: true }).optional(),
+    paymentToken: NonEmptyId.optional()
 });
 
 /** Input of capability 2. */

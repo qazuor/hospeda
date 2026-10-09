@@ -28,5 +28,6 @@ export * from './qr-code/index.ts';
 export * from './revalidation/index.ts';
 export * from './social/index.ts';
 export * from './sponsorship/index.ts';
+export * from './subscription/index.ts';
 export * from './tag/index.ts';
 export * from './user/index.ts';

@@ -2,7 +2,7 @@
  * Entry point of `@repo/payments`, the payments package.
  *
  * - the eight-capability interface (`PaymentProvider`) and its types;
- * - its two implementations: the in-memory fake and the Mercado Pago adapter;
+ * - the Mercado Pago adapter; the in-memory fake is exported only by `./fake`;
  * - the probe manifest;
  * - the re-read rules every caller inherits: a mutation is confirmed by
  *   re-reading field by field (`confirmAuthorizationMutation`, INV:D5), and a
@@ -15,57 +15,6 @@
  */
 export { MERCADOPAGO_CAPABILITY_SUPPORT } from './adapters/mercadopago/mercadopago-capability-support';
 export { MercadoPagoPaymentProvider } from './adapters/mercadopago/mercadopago-payment-provider';
-export {
-    FAKE_LIES,
-    FAKE_LISTS,
-    FAKE_LISTS_PATH,
-    FAKE_RULES,
-    FAKE_SIMULATIONS,
-    type FakeLie,
-    type FakeLieId,
-    type FakeLists,
-    FakeListsSchema,
-    type FakeMeasurement,
-    type FakeRule,
-    type FakeSimulation,
-    type FakeSimulationId,
-    MEASUREMENT_ACCOUNTS,
-    parseFakeLists
-} from './fake/fake-lists';
-export {
-    decodeFakeNotice,
-    decodeFakeNoticeBody,
-    encodeFakeNotice,
-    encodeFakeNoticeBody,
-    FAKE_NOTICE_CONTENT_TYPES,
-    FakeNoticeBodySchema,
-    type FakeNoticeFormat
-} from './fake/fake-notice';
-export {
-    type FakePaymentProviderOptions,
-    FakePaymentProviderOptionsSchema,
-    type HonestAbout,
-    type Simulate
-} from './fake/fake-options';
-export {
-    FAKE_NOTICE_CHANNEL_HEADER,
-    FAKE_NOTICE_DELAY_MS,
-    type FakeNoticeChannel
-} from './fake/fake-outbox';
-export {
-    FAKE_CAPABILITY_SUPPORT,
-    FAKE_HONEST_LINK_LIFETIME_MS,
-    FakePaymentProvider,
-    NOT_REFUNDABLE_MESSAGE
-} from './fake/fake-payment-provider';
-export {
-    AMOUNT_ABOVE_CEILING_MESSAGE,
-    AMOUNT_BELOW_FLOOR_MESSAGE,
-    FAKE_AMOUNT_CEILING_MINOR,
-    FAKE_AMOUNT_FLOOR_MINOR,
-    FAKE_CURRENCY,
-    nextChargeBatch
-} from './fake/fake-rules';
 export {
     isProbeSubject,
     PROBE_MANIFEST,
@@ -94,6 +43,12 @@ export {
     type EveryMethodHasACapability,
     PROVIDER_METHODS
 } from './provider/capability-methods';
+export {
+    type AuthorizationCreationConfirmation,
+    type AuthorizationCreationField,
+    confirmAuthorizationCreation,
+    type UnappliedCreationField
+} from './provider/confirm-creation';
 export {
     type AuthorizationMutableField,
     type AuthorizationMutationConfirmation,
