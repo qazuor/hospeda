@@ -47,7 +47,6 @@ export const protectedRemoveGastronomyMediaRoute = createProtectedRoute({
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: SuccessSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_GASTRONOMY_INFO entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
@@ -70,8 +69,5 @@ export const protectedRemoveGastronomyMediaRoute = createProtectedRoute({
         }
 
         return result.data ?? { success: true };
-    },
-    options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

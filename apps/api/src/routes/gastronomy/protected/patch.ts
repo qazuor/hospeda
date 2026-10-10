@@ -14,8 +14,7 @@
  *   so any forged keys for those are silently stripped by Zod.
  * - GastronomyService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
  *   per-section GASTRONOMY_/EXPERIENCE_EDIT_OWN permission checks.
- * Owner updates run without the former plan entitlement during the billing transition.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
+ * Owner updates require the effective edit_gastronomy_info capability.
  */
 
 import {
@@ -56,7 +55,6 @@ export const protectedPatchGastronomyRoute = createProtectedRoute({
     },
     requestBody: GastronomyOwnerUpdateInputSchema,
     responseSchema: GastronomyProtectedSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_GASTRONOMY_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -74,8 +72,5 @@ export const protectedPatchGastronomyRoute = createProtectedRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });
