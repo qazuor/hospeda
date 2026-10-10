@@ -75,6 +75,14 @@ interface BillingMutationEntry extends BaseAuditEntry {
     readonly metadata?: Record<string, unknown>;
 }
 
+interface BillingReadEntry extends BaseAuditEntry {
+    readonly auditEvent: typeof AuditEventType.BILLING_READ;
+    readonly actorId: string;
+    readonly resourceType: string;
+    readonly resourceId: string;
+    readonly metadata: { readonly subjectId: string | null };
+}
+
 interface PermissionChangeEntry extends BaseAuditEntry {
     readonly auditEvent: typeof AuditEventType.PERMISSION_CHANGE;
     readonly actorId: string;
@@ -142,6 +150,7 @@ export type AuditEntry =
     | AuthPasswordChangedEntry
     | AccessDeniedEntry
     | BillingMutationEntry
+    | BillingReadEntry
     | PermissionChangeEntry
     | SessionSignoutEntry
     | UserAdminMutationEntry
