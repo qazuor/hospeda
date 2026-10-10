@@ -116,3 +116,22 @@ export { MARKET_TIME_ZONE, marketCalendarDay, marketMidnight } from './quota/mar
 export { selectQuotaGrant } from './quota/quota-grant';
 export type { ConsumeQuotaResult, QuotaWindow, QuotaWindowStore } from './quota/types';
 export { computeWindowClose } from './quota/window-close';
+export {
+    computePreExpiryMilestones,
+    PRE_EXPIRY_CAMPAIGN_OFFSETS_DAYS,
+    TRIAL_DEADLINES_VERSION
+} from './trial/trial-deadlines';
+export {
+    evaluateTrialStart,
+    type InsertTrialResult,
+    InvalidTrialStartInputError,
+    type NewTrialRow,
+    type StartTrialResult,
+    startTrial,
+    type TrialStartDecision,
+    type TrialStartDeniedReason,
+    type TrialStartInput,
+    type TrialStartReader,
+    type TrialStartTransaction,
+    type TrialStartUnitOfWork
+} from './trial/trial-start';
