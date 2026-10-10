@@ -10,7 +10,10 @@ import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -84,13 +87,11 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     //   fit in one page since the service caps at TOP_RATED_PAGE_SIZE items).
     //   z.number().int().min(0) accepts 0, so the empty case is valid.
 
-    // Data-level omission of BOTH premium rich-description fields. This endpoint
-    // serves a card listing that never renders rich text, and — unlike the sibling
-    // listing routes — it previously carried no rich-description stripping at all,
-    // so the full entity's `richDescription` / `richDescriptionI18n` flowed straight
-    // through AccommodationPublicSchema into the public payload.
-    const rawAccommodations = (result.data?.accommodations ?? []).map((accommodation) => ({
-        ...maskLegacyPremiumFields(accommodation),
+    // Apply each listing owner's effective paid-field grants before serialization.
+    const sourceAccommodations = result.data?.accommodations ?? [];
+    const grants = await resolvePublicFieldGrants(sourceAccommodations.map((item) => item.ownerId));
+    const rawAccommodations = sourceAccommodations.map((accommodation) => ({
+        ...filterPublicPaidFieldsForOwner(accommodation, grants),
         // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
         // (the only featuring source since HOS-1419); the raw column itself is
         // stripped by the public schema (never in its pick).
@@ -99,8 +100,6 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     const total = rawAccommodations.length;
     const totalPages = total === 0 ? 0 : 1;
 
-    // The SPEC-291 isVerified owner-entitlement gate was removed with the
-    // legacy billing system (HOS-1416); `isVerified` is emitted as stored.
     const accommodations = rawAccommodations;
 
     return {

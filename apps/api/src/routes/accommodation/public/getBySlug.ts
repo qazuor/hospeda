@@ -19,7 +19,10 @@ import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFields,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -205,7 +208,16 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
             ...result.data,
             isFeatured: resolvePublicIsFeatured(result.data)
         };
-        const filteredAccommodation = maskLegacyPremiumFields(accommodation);
+        const grants = await resolvePublicFieldGrants([accommodation.ownerId]);
+        const filteredAccommodation = filterPublicPaidFields(
+            accommodation,
+            grants.get(accommodation.ownerId ?? '') ?? {
+                richDescription: false,
+                video: false,
+                verification: false,
+                aiChat: false
+            }
+        );
 
         // Fetch related data in parallel
         const [owner, amenitiesData, featuresData, faqsData] = await Promise.all([

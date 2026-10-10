@@ -36,7 +36,10 @@ import {
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -226,24 +229,17 @@ export const publicListAccommodationsRoute = createPublicListRoute({
                 });
         }
 
-        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n
-        // sibling are PREMIUM fields gated per-owner by the entitlement system.
-        // This card-listing endpoint never renders them, so BOTH are stripped
-        // before reaching the response payload — fail-closed and independent of
-        // any schema change.
+        // Apply owner-effective paid-field grants before building the public page.
         const rawItems = result.data?.items || [];
 
-        // The owner-entitlement resolutions that served the "Chat IA" badge (F1)
-        // and the isVerified badge gate (SPEC-291 Phase 3b) were removed with
-        // the legacy billing system (HOS-1416). AI chat is no longer plan-gated,
-        // so the badge is unconditional; `isVerified` is emitted as stored.
+        const grants = await resolvePublicFieldGrants(rawItems.map((item) => item.ownerId));
         const items = rawItems.map((item) => ({
-            ...maskLegacyPremiumFields(item),
+            ...filterPublicPaidFieldsForOwner(item, grants),
             // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
             // (the only featuring source since HOS-1419); the raw column itself is
             // stripped by the public schema (never in its pick).
             isFeatured: resolvePublicIsFeatured(item as { featuredByEntitlement?: boolean }),
-            hasAiChat: true
+            hasAiChat: grants.get(item.ownerId ?? '')?.aiChat ?? false
         }));
 
         return {
