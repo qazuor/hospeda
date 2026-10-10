@@ -6,10 +6,12 @@ import type { BeforeCancelNotice } from './start-subscription.service';
 
 const logger = createLogger('cancel-inherited-tourist-vip');
 
+/** Reads whether the user's current effective plan grants Tourist VIP. */
 export interface TouristVipInheritancePort {
     inherits(args: { readonly userId: string }): Promise<boolean>;
 }
 
+/** Dependencies used to cancel inherited paid Tourist VIP mandates safely. */
 export interface CancelInheritedTouristVipPorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
@@ -17,6 +19,7 @@ export interface CancelInheritedTouristVipPorts {
     readonly touristVipInheritance: TouristVipInheritancePort;
 }
 
+/** Aggregate outcome of a cancellation clause or bounded retry sweep. */
 export interface CancelInheritedTouristVipSummary {
     readonly cancelled: number;
     readonly deferred: number;

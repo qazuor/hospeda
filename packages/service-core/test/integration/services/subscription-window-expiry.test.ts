@@ -490,3 +490,73 @@ describe('TEST:B3:37 inherited Tourist VIP at S3', () => {
         expect(inherits).not.toHaveBeenCalled();
     });
 });
+
+// TEST:B3:28 (7) — expiry that re-reads an active authorization runs S2's VIP clause.
+describe('TEST:B3:28 inherited Tourist VIP at S2 from expiry', () => {
+    it('cancels the inherited VIP when the expiring plan authorization is active', async () => {
+        const { fake, provider, ports } = setup();
+        const plan = await startPending(provider, true);
+        const [vipPlan] = await getServiceTestDb()
+            .insert(plans)
+            .values({
+                vertical: 'tourist',
+                slug: `b3-expiry-vip-${crypto.randomUUID()}`,
+                name: 'VIP'
+            })
+            .returning();
+        const [vipVersion] = await getServiceTestDb()
+            .insert(planVersions)
+            .values({
+                planId: vipPlan!.id,
+                vertical: 'tourist',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning();
+        const [vipOption] = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: vipVersion!.id,
+                cycle: 'monthly',
+                amount: 1000,
+                currency: 'ARS'
+            })
+            .returning();
+        const vipAuth = await fake.authorize({
+            reference: `vip-${crypto.randomUUID()}`,
+            amount: { amountMinor: 25000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'Tourist VIP',
+            returnUrl: 'https://hospeda.example/account'
+        });
+        const [vip] = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: plan.choice.userId,
+                vertical: 'tourist',
+                planVersionId: vipVersion!.id,
+                billingOptionId: vipOption!.id,
+                paymentMethod: 'CARD',
+                status: 'ACTIVE',
+                class: 'PRINCIPAL'
+            })
+            .returning();
+        await getServiceTestDb().insert(providerLinks).values({
+            subscriptionId: vip!.id,
+            provider: 'MERCADO_PAGO',
+            providerId: vipAuth.authorizationId
+        });
+        await fake.approve({ authorizationId: plan.fakeId });
+        advance(72);
+        const result = await expireAuthorizationWindows(20, {
+            ...ports,
+            touristVipInheritance: { inherits: async () => true }
+        });
+        expect(result).toMatchObject({ activated: 1, abandoned: 0, touristVipCancelled: 1 });
+        expect(await status(plan.started.subscriptionId)).toBe('ACTIVE');
+        expect(await status(vip!.id)).toBe('CANCELLED');
+    });
+});
