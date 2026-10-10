@@ -1,5 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import { execSQL, hasOldBillingSchema } from './db-helpers.ts';
+import { VerticalEnum } from '@repo/schemas';
+import { execSQL, getDbPool, hasOldBillingSchema } from './db-helpers.ts';
+import { ensureListingOwnerTrial } from './listing-owner-trial.ts';
 
 /**
  * API helpers for E2E tests (SPEC-092 T-031).
@@ -618,6 +620,7 @@ export async function createAccommodation(options: {
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createAccommodation: insert returned no id');
+    await ensureListingOwnerTrial(getDbPool(), options.ownerId, VerticalEnum.ACCOMMODATION);
     return {
         id,
         slug,
