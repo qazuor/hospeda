@@ -65,8 +65,15 @@ describe('effective-set snapshot', () => {
                 effectiveSetSnapshotCodec.decode(effectiveSetSnapshotCodec.encode(value))
             ).toEqual(value);
         }
-        const { inheritsTouristVip: _omitted, ...legacy } = snapshot;
+        const encoded = effectiveSetSnapshotCodec.encode(snapshot);
+        const legacy: Record<string, unknown> = JSON.parse(encoded);
+        delete legacy.inheritsTouristVip;
         expect(() => effectiveSetSnapshotCodec.decode(JSON.stringify(legacy))).toThrow();
+        expect(() =>
+            effectiveSetSnapshotCodec.decode(
+                JSON.stringify({ ...JSON.parse(encoded), inheritsTouristVip: 'true' })
+            )
+        ).toThrow();
     });
 
     it('treats a corrupt cached value as a miss', async () => {
