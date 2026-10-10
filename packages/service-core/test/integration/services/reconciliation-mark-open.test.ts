@@ -316,4 +316,69 @@ describe('TEST:B3:14 S14 reconciliation marks', () => {
             })
         ).rejects.toMatchObject({ reason: 'MARK_SUBJECT_REASON_MISMATCH' });
     });
+
+    it('hangs MOT:23 from an addon instance and rejects mismatched or missing subjects', async () => {
+        const { userId } = await fixture();
+        const addonId = (
+            await getServiceTestPool().query<{ id: string }>(
+                "INSERT INTO addon (slug, name) VALUES ($1, 'Mark addon') RETURNING id",
+                [`mark-addon-${crypto.randomUUID()}`]
+            )
+        ).rows[0]?.id;
+        const versionId = (
+            await getServiceTestPool().query<{ id: string }>(
+                "INSERT INTO addon_version (addon_id, validity, validity_days, scope_type) VALUES ($1, 'FIXED_DAYS', 30, 'USER') RETURNING id",
+                [addonId]
+            )
+        ).rows[0]?.id;
+        const productId = (
+            await getServiceTestPool().query<{ id: string }>(
+                "INSERT INTO addon_product (version_id, addon_id, price, currency, charge_kind, compatible_verticals) VALUES ($1, $2, 100, 'ARS', 'UNA_VEZ', ARRAY['accommodation']) RETURNING id",
+                [versionId, addonId]
+            )
+        ).rows[0]?.id;
+        const addonInstanceId = (
+            await getServiceTestPool().query<{ id: string }>(
+                "INSERT INTO addon_instance (product_id, addon_version_id, owner_id, status) VALUES ($1, $2, $3, 'ACTIVE') RETURNING id",
+                [productId, versionId, userId]
+            )
+        ).rows[0]?.id;
+        if (!addonInstanceId) throw new Error('No addon instance');
+        const mark = await openReconciliationMark({
+            subject: { kind: 'ADDON_INSTANCE', addonInstanceId },
+            reason: 'ORDEN_PAGADA_SIN_INSTANCIA',
+            actor: actor(userId),
+            correlationId: crypto.randomUUID()
+        });
+        expect(mark.mark.addonInstanceId).toBe(addonInstanceId);
+        const subscriptionId = crypto.randomUUID();
+        const mismatchCorrelationId = crypto.randomUUID();
+        await expect(
+            openReconciliationMark({
+                subject: { kind: 'SUBSCRIPTION', subscriptionId },
+                reason: 'ORDEN_PAGADA_SIN_INSTANCIA',
+                actor: actor(userId),
+                correlationId: mismatchCorrelationId
+            })
+        ).rejects.toMatchObject({ reason: 'MARK_SUBJECT_REASON_MISMATCH' });
+        await expect(
+            openReconciliationMark({
+                subject: { kind: 'ADDON_INSTANCE', addonInstanceId },
+                reason: 'DIVERGENCIA_DE_MONTO',
+                actor: actor(userId),
+                correlationId: crypto.randomUUID()
+            })
+        ).rejects.toMatchObject({ reason: 'MARK_SUBJECT_REASON_MISMATCH' });
+        await expect(
+            openReconciliationMark({
+                subject: { kind: 'SUBSCRIPTION', subscriptionId },
+                reason: 'DIVERGENCIA_DE_MONTO',
+                actor: actor(userId),
+                correlationId: crypto.randomUUID()
+            })
+        ).rejects.toMatchObject({ reason: 'MARK_SUBJECT_NOT_FOUND' });
+        expect(
+            await domainEventModel.findByCorrelationId({ correlationId: mismatchCorrelationId })
+        ).toHaveLength(0);
+    });
 });

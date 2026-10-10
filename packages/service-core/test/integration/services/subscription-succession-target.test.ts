@@ -161,6 +161,15 @@ describe('TEST:B3:14 succession target guard', () => {
             )
         ).resolves.toEqual({ allowed: false, reason: 'MARKED_NOT_SUCCEEDABLE' });
         expect(read).not.toHaveBeenCalled();
+        const cardStillLive = await fixture('SUSPENDED', 'CARD');
+        await mark(cardStillLive.id, cardStillLive.userId);
+        const liveProvider = await linkedProvider(cardStillLive.id);
+        await expect(
+            checkSuccessionTarget(
+                { targetSubscriptionId: cardStillLive.id },
+                { provider: liveProvider, clock }
+            )
+        ).resolves.toEqual({ allowed: false, reason: 'MARKED_PREAPPROVAL_STILL_LIVE' });
     });
     it('fails closed without link, ignores lifted marks and reports missing targets', async () => {
         const row = await fixture('CANCEL_SCHEDULED');
