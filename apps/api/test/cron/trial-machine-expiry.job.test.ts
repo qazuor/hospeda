@@ -20,7 +20,7 @@ import { trialMachineExpiryJob } from '../../src/cron/jobs/trial-machine-expiry.
 const context = (dryRun = false): CronJobContext => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
     startedAt: new Date('2026-10-08T19:00:00.000Z'),
-    runId: 'trial-expiry-run',
+    runId: 'trial-machine-expiry-run',
     correlationId: '00000000-0000-4000-8000-00000000c0de',
     dryRun
 });
@@ -30,7 +30,7 @@ beforeEach(() => {
     mockExpire.mockResolvedValue({ expired: 2, skipped: 1, failed: 0 });
 });
 
-describe('trial-expiry T3 cron', () => {
+describe('trial-machine-expiry T3 cron', () => {
     it('dry run makes no machine call', async () => {
         const result = await trialMachineExpiryJob.handler(context(true));
         expect(result).toMatchObject({ success: true, processed: 0 });
