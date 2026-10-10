@@ -184,7 +184,9 @@ describe('TEST:B3:5 — no route of the branch declares a succession (AC:B3:5)',
                 userId: mine.user.id,
                 vertical: 'accommodation',
                 planVersionId: other.version.id,
-                billingOptionId: other.option.id
+                billingOptionId: other.option.id,
+                authorizationWindowDeadlineVersion: 1,
+                authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
             });
             await getDb()
                 .update(subscriptions)
