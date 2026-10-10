@@ -37,11 +37,13 @@ import { protectedIssueExperienceCertificateRoute } from '../../src/routes/exper
 import { protectedCreateExperienceListingRoute } from '../../src/routes/experience/protected/create';
 import { protectedDeleteExperienceDraftRoute } from '../../src/routes/experience/protected/deleteDraft';
 import { protectedPatchExperienceRoute } from '../../src/routes/experience/protected/patch';
+import { protectedPublishExperienceRoute } from '../../src/routes/experience/protected/publish';
 import { protectedRemoveExperienceFaqRoute } from '../../src/routes/experience/protected/removeFaq.ts';
 import { protectedRemoveExperienceMediaRoute } from '../../src/routes/experience/protected/removeMedia.ts';
 import { protectedReorderExperienceFaqsRoute } from '../../src/routes/experience/protected/reorderFaqs.ts';
 import { protectedReorderExperienceMediaRoute } from '../../src/routes/experience/protected/reorderMedia.ts';
 import { protectedSetFeaturedExperienceMediaRoute } from '../../src/routes/experience/protected/setFeaturedMedia.ts';
+import { protectedUnpublishExperienceRoute } from '../../src/routes/experience/protected/unpublish';
 import { protectedUpdateExperienceFaqRoute } from '../../src/routes/experience/protected/updateFaq.ts';
 import { protectedUpdateExperienceMediaRoute } from '../../src/routes/experience/protected/updateMedia.ts';
 import { protectedAddGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/addFaq.ts';
@@ -51,6 +53,7 @@ import { protectedCreateGastronomyListingRoute } from '../../src/routes/gastrono
 import { protectedDeleteGastronomyDraftRoute } from '../../src/routes/gastronomy/protected/deleteDraft';
 import { protectedDeleteGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/deleteMenuFile';
 import { protectedPatchGastronomyRoute } from '../../src/routes/gastronomy/protected/patch';
+import { protectedPublishGastronomyRoute } from '../../src/routes/gastronomy/protected/publish';
 import { protectedPutGastronomyDailySpecialsRoute } from '../../src/routes/gastronomy/protected/putDailySpecials.ts';
 import { protectedPutGastronomyEventsRoute } from '../../src/routes/gastronomy/protected/putEvents.ts';
 import { protectedPutGastronomyMenuRoute } from '../../src/routes/gastronomy/protected/putMenu.ts';
@@ -59,6 +62,7 @@ import { protectedRemoveGastronomyMediaRoute } from '../../src/routes/gastronomy
 import { protectedReorderGastronomyFaqsRoute } from '../../src/routes/gastronomy/protected/reorderFaqs.ts';
 import { protectedReorderGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/reorderMedia.ts';
 import { protectedSetFeaturedGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/setFeaturedMedia.ts';
+import { protectedUnpublishGastronomyRoute } from '../../src/routes/gastronomy/protected/unpublish';
 import { protectedUpdateGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/updateFaq.ts';
 import { protectedUpdateGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/updateMedia.ts';
 import { protectedUploadGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/uploadMenuFile';
@@ -298,6 +302,24 @@ const cases = [
         vertical: VerticalEnum.EXPERIENCE
     },
     {
+        file: 'experience/protected/publish.ts',
+        route: protectedPublishExperienceRoute,
+        method: 'POST',
+        path: '/{id}/publish',
+        body: undefined,
+        operation: 'PUBLISH',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/unpublish.ts',
+        route: protectedUnpublishExperienceRoute,
+        method: 'POST',
+        path: '/{id}/unpublish',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
         file: 'experience/protected/patch.ts',
         route: protectedPatchExperienceRoute,
         method: 'PATCH',
@@ -322,6 +344,24 @@ const cases = [
         path: '/{id}',
         body: undefined,
         operation: 'DELETE',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/publish.ts',
+        route: protectedPublishGastronomyRoute,
+        method: 'POST',
+        path: '/{id}/publish',
+        body: undefined,
+        operation: 'PUBLISH',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/unpublish.ts',
+        route: protectedUnpublishGastronomyRoute,
+        method: 'POST',
+        path: '/{id}/unpublish',
+        body: undefined,
+        operation: 'EDIT',
         vertical: VerticalEnum.GASTRONOMY
     },
     {
@@ -698,6 +738,12 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
         operation,
         vertical
     }) => {
+        if (operation === 'PUBLISH') {
+            mocks.loadFacts.mockResolvedValue({
+                facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+                ownerId: OWNER
+            });
+        }
         const app = new Hono<AppBindings>();
         app.use((ctx, next) => {
             ctx.set('actor', {
@@ -731,6 +777,18 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
                 code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
                 details: { entitlementKey: `edit_${vertical.toLowerCase()}_info` }
             });
+            expect(
+                [
+                    mocks.createAccommodation,
+                    mocks.deleteAccommodation,
+                    mocks.createGastronomy,
+                    mocks.deleteGastronomy,
+                    mocks.createExperience,
+                    mocks.deleteExperience
+                ].every((service) => service.mock.calls.length === 0)
+            ).toBe(true);
+        } else if (operation === 'PUBLISH') {
+            expect(response.status).toBe(403);
             expect(
                 [
                     mocks.createAccommodation,

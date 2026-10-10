@@ -20,7 +20,13 @@ import {
     asc,
     desc,
     destinations,
+    ExperienceModel,
     eq,
+    experienceMedia,
+    experiences,
+    GastronomyModel,
+    gastronomies,
+    gastronomyMedia,
     getDb,
     plans,
     planVersionEntitlements,
@@ -31,7 +37,9 @@ import {
 } from '@repo/db';
 import {
     type Accommodation,
+    type Experience,
     FLOOR_PLAN_ROLE,
+    type Gastronomy,
     PermissionEnum,
     PRE_TRIAL_PLAN_ROLE,
     type PublicationStatusEnum,
@@ -51,6 +59,12 @@ type AfterCommit = PublicationPorts['afterCommit'];
 export const MATRIX_NOW = new Date('2026-10-10T12:00:00.000Z');
 const DAY = 86_400_000;
 const ACCOMMODATION = VerticalEnum.ACCOMMODATION;
+
+const LIMIT_KEY_BY_VERTICAL = {
+    accommodation: 'max_accommodations',
+    gastronomy: 'max_gastronomies',
+    experience: 'max_experiences'
+} as const;
 
 /** Mutable answers of the replaced publication ports; reset per test. */
 export const publicationControls = {
@@ -125,6 +139,10 @@ export function actorHeaders(args: {
 }
 
 async function ensureVersion(args: {
+    readonly vertical:
+        | typeof VerticalEnum.ACCOMMODATION
+        | typeof VerticalEnum.GASTRONOMY
+        | typeof VerticalEnum.EXPERIENCE;
     readonly role: string;
     readonly rank: number;
     readonly sellable: boolean;
@@ -140,7 +158,7 @@ async function ensureVersion(args: {
         .innerJoin(plans, eq(planVersions.planId, plans.id))
         .where(
             and(
-                eq(planVersions.vertical, ACCOMMODATION),
+                eq(planVersions.vertical, args.vertical),
                 eq(planVersions.current, true),
                 args.sellable ? eq(planVersions.sellable, true) : eq(plans.role, args.role)
             )
@@ -151,7 +169,7 @@ async function ensureVersion(args: {
         const [plan] = await tx
             .insert(plans)
             .values({
-                vertical: ACCOMMODATION,
+                vertical: args.vertical,
                 slug: `matrix-${args.role}-${randomUUID()}`,
                 name: `Matrix ${args.role}`,
                 role
@@ -162,7 +180,7 @@ async function ensureVersion(args: {
             .insert(planVersions)
             .values({
                 planId: plan.id,
-                vertical: ACCOMMODATION,
+                vertical: args.vertical,
                 rank: args.rank,
                 sellable: args.sellable,
                 current: true,
@@ -186,7 +204,7 @@ async function ensureVersion(args: {
         if (args.limit !== undefined) {
             await tx.insert(planVersionLimits).values({
                 planVersionId: version.id,
-                key: 'max_accommodations',
+                key: LIMIT_KEY_BY_VERTICAL[args.vertical],
                 value: args.limit
             });
         }
@@ -199,7 +217,28 @@ async function ensureVersion(args: {
  * catalog and all `hospeda-api` integration files share one database.
  */
 export async function ensureAccommodationCatalog(): Promise<void> {
+    return ensurePublicationCatalog(ACCOMMODATION);
+}
+
+/** Makes sure the V5 and T1 plan catalog exists for one listing vertical. */
+export async function ensurePublicationCatalog(
+    vertical:
+        | typeof VerticalEnum.ACCOMMODATION
+        | typeof VerticalEnum.GASTRONOMY
+        | typeof VerticalEnum.EXPERIENCE
+): Promise<void> {
+    const publishKey = {
+        accommodation: 'publish_accommodations',
+        gastronomy: 'publish_gastronomy',
+        experience: 'publish_experience'
+    }[vertical];
+    const editKey = {
+        accommodation: 'edit_accommodation_info',
+        gastronomy: 'edit_gastronomy_info',
+        experience: 'edit_experience_info'
+    }[vertical];
     await ensureVersion({
+        vertical,
         role: FLOOR_PLAN_ROLE,
         rank: 0,
         sellable: false,
@@ -207,6 +246,7 @@ export async function ensureAccommodationCatalog(): Promise<void> {
         entitlements: []
     });
     await ensureVersion({
+        vertical,
         role: PRE_TRIAL_PLAN_ROLE,
         rank: 0,
         sellable: false,
@@ -214,6 +254,7 @@ export async function ensureAccommodationCatalog(): Promise<void> {
         entitlements: [VERTICAL_ACTIVATION_KEY]
     });
     await ensureVersion({
+        vertical,
         role: TRIAL_PLAN_ROLE,
         rank: 0,
         sellable: false,
@@ -222,11 +263,12 @@ export async function ensureAccommodationCatalog(): Promise<void> {
         limit: 1
     });
     await ensureVersion({
+        vertical,
         role: 'sellable',
         rank: 10,
         sellable: true,
         trialDays: 30,
-        entitlements: ['publish_accommodations', 'edit_accommodation_info'],
+        entitlements: [publishKey, editKey],
         limit: 1
     });
 }
@@ -259,6 +301,27 @@ export async function createDestination(): Promise<string> {
             destinationType: 'CITY',
             level: 5,
             path: '/matrix',
+            pathIds: randomUUID(),
+            summary: 'Matrix fixture',
+            description: 'Matrix fixture destination',
+            location: { coordinates: { lat: '-32.49', long: '-58.23' } }
+        })
+        .returning({ id: destinations.id });
+    if (!destination) throw new Error('Destination insert failed');
+    return destination.id;
+}
+
+/** Inserts a destination with a unique path for multi-listing vertical fixtures. */
+export async function createVerticalDestination(): Promise<string> {
+    const path = `/matrix-${randomUUID()}`;
+    const [destination] = await getDb()
+        .insert(destinations)
+        .values({
+            name: `Matrix ${randomUUID()}`,
+            slug: `matrix-${randomUUID()}`,
+            destinationType: 'CITY',
+            level: 5,
+            path,
             pathIds: randomUUID(),
             summary: 'Matrix fixture',
             description: 'Matrix fixture destination',
@@ -309,27 +372,123 @@ export async function createListing(args: {
     return listing.id;
 }
 
+/** Creates a gastronomy or experience listing for TEST:V6:2/3. */
+export async function createVerticalListing(args: {
+    readonly vertical: typeof VerticalEnum.GASTRONOMY | typeof VerticalEnum.EXPERIENCE;
+    readonly ownerId: string;
+    readonly destinationId: string;
+    readonly status: PublicationStatusEnum;
+    readonly complete?: boolean;
+}): Promise<string> {
+    const published = args.status === 'PUBLISHED';
+    const common = {
+        name: 'Matrix listing',
+        slug: `matrix-${randomUUID()}`,
+        summary: 'A complete listing summary',
+        description: 'A complete listing description for publication tests.',
+        ownerId: args.ownerId,
+        createdById: args.ownerId,
+        destinationId: args.destinationId,
+        publicationStatus: args.status,
+        lifecycleState: published ? 'ACTIVE' : 'INACTIVE',
+        visibility: published ? 'PUBLIC' : 'PRIVATE',
+        contactInfo: { workPhone: '+541100000000' }
+    };
+    if (args.vertical === VerticalEnum.GASTRONOMY) {
+        const listing = await new GastronomyModel().create(
+            {
+                ...common,
+                type: 'RESTAURANT',
+                priceRange: 'MID',
+                openingHours: {
+                    timezone: 'America/Argentina/Buenos_Aires',
+                    days: {
+                        mon: { closed: false, shifts: [{ open: '09:00', close: '17:00' }] },
+                        tue: { closed: true, shifts: [] },
+                        wed: { closed: true, shifts: [] },
+                        thu: { closed: true, shifts: [] },
+                        fri: { closed: true, shifts: [] },
+                        sat: { closed: true, shifts: [] },
+                        sun: { closed: true, shifts: [] }
+                    }
+                }
+            } as unknown as Partial<Gastronomy>,
+            getDb()
+        );
+        if (args.complete !== false) {
+            await getDb().insert(gastronomyMedia).values({
+                gastronomyId: listing.id,
+                url: 'https://example.test/matrix.jpg',
+                moderationState: 'APPROVED',
+                state: 'visible',
+                isFeatured: true,
+                sortOrder: 0
+            });
+        }
+        return listing.id;
+    }
+    const listing = await new ExperienceModel().create(
+        { ...common, type: 'EXCURSION', priceFrom: 1000 } as Partial<Experience>,
+        getDb()
+    );
+    if (args.complete !== false) {
+        await getDb().insert(experienceMedia).values({
+            experienceId: listing.id,
+            url: 'https://example.test/matrix.jpg',
+            moderationState: 'APPROVED',
+            state: 'visible',
+            isFeatured: true,
+            sortOrder: 0
+        });
+    }
+    return listing.id;
+}
+
+/** Reads a listing's publication status from its vertical table. */
+export async function readVerticalStatus(
+    vertical: typeof VerticalEnum.GASTRONOMY | typeof VerticalEnum.EXPERIENCE,
+    id: string
+) {
+    if (vertical === VerticalEnum.GASTRONOMY) {
+        const [row] = await getDb()
+            .select({ status: gastronomies.publicationStatus })
+            .from(gastronomies)
+            .where(eq(gastronomies.id, id));
+        return row?.status;
+    }
+    const [row] = await getDb()
+        .select({ status: experiences.publicationStatus })
+        .from(experiences)
+        .where(eq(experiences.id, id));
+    return row?.status;
+}
+
 /** Inserts the trial row T1 would write, with the catalog's floor references. */
 export async function createTrial(args: {
     readonly userId: string;
+    readonly vertical?:
+        | typeof VerticalEnum.ACCOMMODATION
+        | typeof VerticalEnum.GASTRONOMY
+        | typeof VerticalEnum.EXPERIENCE;
     readonly status: 'TRIAL_ACTIVE' | 'TRIAL_EXPIRED';
     readonly emailPseudonym?: string;
 }): Promise<void> {
     const db = getDb();
+    const vertical = args.vertical ?? ACCOMMODATION;
     const [trialVersion] = await db
         .select({ id: planVersions.id, planId: planVersions.planId })
         .from(planVersions)
         .innerJoin(plans, eq(planVersions.planId, plans.id))
         .where(
             and(
-                eq(plans.vertical, ACCOMMODATION),
+                eq(plans.vertical, vertical),
                 eq(plans.role, TRIAL_PLAN_ROLE),
                 eq(planVersions.current, true)
             )
         )
         .limit(1);
     const sellable = and(
-        eq(planVersions.vertical, ACCOMMODATION),
+        eq(planVersions.vertical, vertical),
         eq(planVersions.sellable, true),
         eq(planVersions.current, true)
     );
@@ -349,7 +508,7 @@ export async function createTrial(args: {
     const active = args.status === 'TRIAL_ACTIVE';
     await db.insert(trials).values({
         userId: args.userId,
-        vertical: ACCOMMODATION,
+        vertical,
         status: args.status,
         trialPlanId: trialVersion.planId,
         floorEntitlementsVersionId: highest.id,
@@ -368,7 +527,12 @@ export async function createTrial(args: {
 export async function readResponse(response: Response): Promise<{
     readonly status: number;
     readonly body: {
-        readonly data?: { readonly id?: string };
+        readonly data?: {
+            readonly id?: string;
+            readonly amenityIds?: readonly string[];
+            readonly featureIds?: readonly string[];
+            readonly meetingPointDirectionsEnabled?: boolean;
+        };
         readonly error?: {
             readonly code?: string;
             readonly message?: string;

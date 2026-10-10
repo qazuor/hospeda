@@ -35,6 +35,7 @@ import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
 import { protectedListMyExperienceRoute } from './listMine';
 import { protectedPatchExperienceRoute } from './patch';
+import { protectedPublishExperienceRoute } from './publish';
 import { protectedGetExperienceQrCodeRoute } from './qrCode';
 import { protectedGetExperienceQrSheetRoute } from './qrSheet';
 import { protectedRemoveExperienceFaqRoute } from './removeFaq';
@@ -42,6 +43,7 @@ import { protectedRemoveExperienceMediaRoute } from './removeMedia';
 import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
 import { protectedReorderExperienceMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
+import { protectedUnpublishExperienceRoute } from './unpublish';
 import { protectedUpdateExperienceFaqRoute } from './updateFaq';
 import { protectedUpdateExperienceMediaRoute } from './updateMedia';
 import { protectedExperienceViewStatsRoute } from './viewStats';
@@ -91,6 +93,8 @@ app.route('/', protectedIssueExperienceCertificateRoute);
 app.route('/', protectedListExperienceCertificatesRoute);
 
 // GET /{id} — Owner view (protected projection).
+app.route('/', protectedPublishExperienceRoute);
+app.route('/', protectedUnpublishExperienceRoute);
 app.route('/', protectedGetExperienceByIdRoute);
 
 // PATCH /{id} — Owner operational update.
