@@ -3,13 +3,18 @@
  * Remove an existing FAQ from an accommodation
  */
 
-import { AccommodationFaqIdSchema, AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';
+import {
+    AccommodationFaqIdSchema,
+    AccommodationIdSchema,
+    DeleteResultSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -17,12 +22,14 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 /**
  * Route definition using createCRUDRoute factory
  */
-export const removeFaqRoute = createCRUDRoute({
+export const removeFaqRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from accommodation',
     description: 'Remove an FAQ from a specific accommodation',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'FAQs'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema,
         faqId: AccommodationFaqIdSchema

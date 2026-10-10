@@ -4,7 +4,8 @@ import {
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
     AccommodationMediaSingleOutputSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -12,7 +13,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -26,7 +27,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * Route requires `EDIT_ACCOMMODATION_INFO` entitlement (granted on all host plans)
  * plus an inline plan photo-count cap check.
  */
-export const protectedAddMediaRoute = createCRUDRoute({
+export const protectedAddMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media',
     summary: 'Add photo to accommodation gallery (owner)',
@@ -34,7 +35,9 @@ export const protectedAddMediaRoute = createCRUDRoute({
         'Register an already-uploaded URL as a new accommodation_media row. ' +
         'Requires EDIT_ACCOMMODATION_INFO entitlement. Plan photo cap is enforced ' +
         'inline. The service layer enforces UPDATE_OWN + ownership.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema
     },

@@ -16,14 +16,15 @@ import {
     AccommodationIdSchema,
     AccommodationMediaListOutputSchema,
     type AccommodationMediaReorderPayload,
-    AccommodationMediaReorderPayloadSchema
+    AccommodationMediaReorderPayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -39,7 +40,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * The service rejects any request where `orderedIds` does not exactly match the
  * current set of visible row ids with a `VALIDATION_ERROR`.
  */
-export const protectedReorderMediaRoute = createCRUDRoute({
+export const protectedReorderMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/reorder',
     summary: 'Reorder accommodation gallery photos (owner)',
@@ -48,7 +49,9 @@ export const protectedReorderMediaRoute = createCRUDRoute({
         'in the desired order. The supplied list must match the current visible rows ' +
         'exactly. Requires EDIT_ACCOMMODATION_INFO entitlement; the service layer ' +
         'enforces UPDATE_OWN + ownership.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema
     },

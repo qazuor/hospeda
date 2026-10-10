@@ -19,7 +19,8 @@
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
-    DeleteResultSchema
+    DeleteResultSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -27,7 +28,7 @@ import type { Context } from 'hono';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 /**
  * DELETE /api/v1/protected/accommodations/:id/media/:mediaId
@@ -38,7 +39,7 @@ import { createCRUDRoute } from '../../../utils/route-factory';
  * `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN` + ownership).
  * Route is ungated — removing one's own photo is always permitted.
  */
-export const protectedRemoveMediaRoute = createCRUDRoute({
+export const protectedRemoveMediaRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from accommodation gallery (owner)',
@@ -46,7 +47,9 @@ export const protectedRemoveMediaRoute = createCRUDRoute({
         'Soft-delete a media row and resequence remaining visible photos. ' +
         'Deletes the Cloudinary asset before the row. Ungated — removing own photos is always permitted; ' +
         'the service layer enforces UPDATE_OWN + ownership.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema,
         mediaId: AccommodationMediaIdSchema
