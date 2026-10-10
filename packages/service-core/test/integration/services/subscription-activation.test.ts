@@ -127,6 +127,7 @@ async function status(id: string) {
 describe('TEST:B3:9 authorization activation', () => {
     it('activates only after a fresh by-id re-read observes authorized, with no payment', async () => {
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'healthy signup fixture' }]
         });
@@ -148,6 +149,7 @@ describe('TEST:B3:9 authorization activation', () => {
 
     it('keeps pending when the provider still says pending, and does not write a non-pending row', async () => {
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'healthy signup fixture' }]
         });

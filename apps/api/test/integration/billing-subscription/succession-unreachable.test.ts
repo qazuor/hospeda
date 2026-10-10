@@ -154,6 +154,7 @@ describe('TEST:B3:5 — no route of the branch declares a succession (AC:B3:5)',
     it('creates a healthy pending subscription through the only route, with no succession', async () => {
         const { user, option } = await fixture(true);
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'inspect a healthy creation through the route' }]
         });
@@ -193,7 +194,7 @@ describe('TEST:B3:5 — no route of the branch declares a succession (AC:B3:5)',
                 .set({ status })
                 .where(eq(subscriptions.id, seeded.subscription.id));
 
-            const fake = new FakePaymentProvider({ clock });
+            const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
             const authorize = vi.spyOn(fake, 'authorize');
             const app = initApp({ clock, paymentProvider: fake });
             const response = await app.request(path, {

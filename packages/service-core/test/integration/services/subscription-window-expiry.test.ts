@@ -174,6 +174,7 @@ async function seedManual() {
 function setup() {
     // M11 remains enabled: a pending fake authorization never expires by itself.
     const fake = new FakePaymentProvider({
+        idNamespace: crypto.randomUUID(),
         clock,
         honestAbout: [{ lie: 'M1', why: 'healthy signup fixture' }]
     });
