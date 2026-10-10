@@ -12,10 +12,16 @@ const SystemActorInputSchema = z.object({
     permissions: z.array(z.nativeEnum(PermissionEnum))
 });
 
-/** Shared system identity for jobs; V5.md §3.3 and GUARD:G19 require this to be the only production file that builds a system actor. */
+/**
+ * Shared identity for system jobs under V5.md §3.3.
+ * GUARD:G19 reserves system actor construction for this production file.
+ */
 export const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000001' as const;
 
-/** Invalid system actor definition under V5.md §3.3; GUARD:G19 limits construction to this production file. */
+/**
+ * Typed failure for an invalid job, an administrative permission, or the full permission set.
+ * V5.md §3.3 requires rejection at construction; GUARD:G19 reserves construction for this file.
+ */
 export class SystemActorDefinitionError extends Error {
     readonly code: 'INVALID_INPUT' | 'ADMINISTRATIVE_PERMISSION' | 'ALL_PERMISSIONS';
     readonly permissions: readonly PermissionEnum[];
@@ -32,7 +38,14 @@ export class SystemActorDefinitionError extends Error {
     }
 }
 
-/** Build a SYSTEM actor with explicit job permissions under V5.md §3.3; GUARD:G19 makes this the only production file allowed to build one. */
+/**
+ * Build an immutable SYSTEM actor with only the permissions declared by its job.
+ * V5.md §3.3 and GUARD:G19 make this the only production file allowed to build one.
+ *
+ * @param input - Stable job ID and explicit permissions used by that job.
+ * @returns A frozen actor with a frozen permission list and SYSTEM role.
+ * @throws {SystemActorDefinitionError} For invalid input, all permissions, or an administrative permission.
+ */
 export function createSystemActor(input: {
     readonly jobId: string;
     readonly permissions: readonly PermissionEnum[];
@@ -75,7 +88,13 @@ export function createSystemActor(input: {
     });
 }
 
-/** Read the system marker for V5.md §3.3 callers; GUARD:G19 reserves actor construction for this file. */
+/**
+ * Read the system marker for V5.md §3.3 authorization callers.
+ * GUARD:G19 reserves construction of marked actors for this production file.
+ *
+ * @param actor - Actor whose system marker is being checked.
+ * @returns Whether the marker is exactly true.
+ */
 export function isSystemActor(actor: Pick<Actor, '_isSystemActor'>): boolean {
     return actor._isSystemActor === true;
 }
