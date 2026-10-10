@@ -28,9 +28,9 @@ import type { SectionConfig } from '@/components/entity-form/types/section-confi
 // Mocks for heavy hooks that EntityFormSection pulls in
 // ---------------------------------------------------------------------------
 
-// useMyEntitlements — always return has=true (no locks) so no premium block
-vi.mock('@/features/billing/use-my-entitlements', () => ({
-    useMyEntitlements: () => ({ has: () => true, isLoading: false })
+// useEffectiveSet — always return has=true (no locks) so no premium block
+vi.mock('@/features/billing/use-effective-set', () => ({
+    useEffectiveSet: () => ({ has: () => true, isLoading: false })
 }));
 
 // LimitProgressIndicator + PremiumBlock are not exercised here; stub them out

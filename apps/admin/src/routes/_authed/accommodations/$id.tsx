@@ -1,3 +1,4 @@
+import { VerticalEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -7,6 +8,8 @@ import { accommodationTabs, PageTabs } from '@/components/layout/PageTabs';
 import { AccommodationQualityScore } from '@/features/accommodations/components/AccommodationQualityScore';
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
+import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
+import { EffectiveSetSubjectProvider } from '@/features/billing/effective-set-subject';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /**
@@ -24,7 +27,22 @@ export const Route = createFileRoute('/_authed/accommodations/$id')({
  */
 function AccommodationViewPage() {
     const { id } = Route.useParams();
+    const { data: accommodation, isLoading, error } = useAccommodationQuery(id);
+    if (isLoading) return <AccommodationPending />;
+    if (error) throw error;
+    if (!accommodation) throw new Error('accommodation not found');
+    return (
+        <EffectiveSetSubjectProvider
+            value={{ userId: accommodation.ownerId, vertical: VerticalEnum.ACCOMMODATION }}
+        >
+            <AccommodationViewContent id={id} />
+        </EffectiveSetSubjectProvider>
+    );
+}
 
+const AccommodationPending = createPendingComponent();
+
+function AccommodationViewContent({ id }: { readonly id: string }) {
     const entityData = useAccommodationPage(id);
 
     // Determine section anchor order based on user permissions (spec §4.4):
