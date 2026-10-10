@@ -21,4 +21,9 @@ describe('listing publication HTTP mapping', () => {
             ServiceErrorCode.ALREADY_EXISTS
         );
     });
+
+    it('maps missing listings and non-owner decisions to the indistinguishable 404 code', () => {
+        expect(mapListingPublishDenial('LISTING_NOT_FOUND').code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(mapListingPublishDenial('NOT_OWNER').code).toBe(ServiceErrorCode.NOT_FOUND);
+    });
 });
