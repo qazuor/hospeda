@@ -48,8 +48,8 @@ CREATE TABLE "cutover_v6_deleted_listing" (
 --> statement-breakpoint
 DO $$
 DECLARE
-    -- CUT-LIST:BEGIN (DEC-MIG-006 📌2: owner's closed cut list (four listings, Coord-61))
-    cut_list jsonb := '[{"entityType":"accommodation","entityId":"2ad30000-7423-42b8-bb8f-3727136dc231"},{"entityType":"accommodation","entityId":"b2ae683f-d1fc-4216-a586-b9813f030b8e"},{"entityType":"accommodation","entityId":"3914545e-cc23-420a-851b-5f7619d08a32"},{"entityType":"accommodation","entityId":"8aa85d5f-5251-436d-a5a8-f02b84f4789e"}]'::jsonb;
+    -- CUT-LIST:BEGIN (DEC-MIG-006 📌2: owner's closed cut list (five listings, Coord-61))
+    cut_list jsonb := '[{"entityType":"accommodation","entityId":"2ad30000-7423-42b8-bb8f-3727136dc231"},{"entityType":"accommodation","entityId":"b2ae683f-d1fc-4216-a586-b9813f030b8e"},{"entityType":"accommodation","entityId":"3914545e-cc23-420a-851b-5f7619d08a32"},{"entityType":"accommodation","entityId":"8aa85d5f-5251-436d-a5a8-f02b84f4789e"},{"entityType":"accommodation","entityId":"e6f9d1d4-caca-4e2d-823b-888ae8ea8e31"}]'::jsonb;
     -- CUT-LIST:END
     cut_item jsonb;
     cut_type text;
