@@ -7,7 +7,12 @@ import {
     PublishedPlanVersionSchema,
     PublishPlanVersionRequestSchema
 } from '@repo/schemas';
-import { createPlan, previewPlanVersion, publishPlanVersion } from '@repo/service-core';
+import {
+    countAnchoredCustomersFromSubscriptions,
+    createPlan,
+    previewPlanVersion,
+    publishPlanVersion
+} from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -99,7 +104,8 @@ export const adminPreviewPlanVersionRoute = createAdminRoute({
         previewPlanVersion({
             actor: getActorFromContext(ctx),
             planId: String(params.planId),
-            content: PreviewPlanVersionRequestSchema.parse(body)
+            content: PreviewPlanVersionRequestSchema.parse(body),
+            countAnchoredCustomers: countAnchoredCustomersFromSubscriptions
         })
 });
 
