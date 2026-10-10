@@ -28,3 +28,7 @@
 - `5e32f5fe7b98e7e08ad6822ca81219e1c4db4e9f` · ACC-03.
 
 Estos SHAs y el commit del presente informe se pushean juntos a `origin/feat/HOS-1479-v69-migracion-paso3`; el SHA del informe consta en el `git log origin/...` de la verificación final.
+
+## Hallazgo adicional al verificar CI remoto
+
+La primera corrida sobre `183780a23d` pasó Build, Lint, Guards, Typecheck, Integration Tests y E2E P0. `Unit Tests (shard 2/5)` encontró otro fixture de `packages/service-core/test/services/experience/experience.service.test.ts` sin las columnas nuevas: `makeExperienceEntity` omitía `publicationStatus`, `inactiveSince` y `deadlinesVersion`; el caso «should allow owner to view their own PRIVATE listing» recibía `NOT_FOUND` porque `readListingAccessFacts` no podía resolver un estado escrito. El fixture ahora deriva el estado de lifecycle/visibility, agrega fecha y versión, y tipa los overrides como `Partial<Experience>`; completó `adminInfo.favorite` donde ese tipo lo exige. La aserción de acceso se conservó. Gates adicionales: archivo focalizado, 1 archivo y 31 tests passed; `CI=true pnpm --filter @repo/service-core typecheck`, exit 0; Biome, exit 0 (cuatro warnings de supresiones preexistentes). Commit: `c8192288e1`.
