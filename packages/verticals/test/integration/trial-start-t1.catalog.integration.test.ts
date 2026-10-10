@@ -110,7 +110,7 @@ describe('TEST:V4:5 - T1 over the real catalog (AC:V4:4)', () => {
         if (!result.started) throw new Error('unreachable');
 
         // The row: check via a separate connection so we see the committed data
-        const row = await trialRowOf(db, user.id, VERTICAL);
+        const row = await trialRowOf(pool, user.id, VERTICAL);
         expect(row).toBeDefined();
         expect(row!.status).toBe(TrialStatusEnum.TRIAL_ACTIVE);
         expect(row!.trial_plan_id).toBe(trialPlan.planId);
@@ -169,7 +169,7 @@ describe('TEST:V4:5 - T1 over the real catalog (AC:V4:4)', () => {
                 vertical: event.vertical,
                 sourceType: event.sourceType,
                 change: event.change,
-                row: await trialRowOf(db, event.userId, event.vertical)
+                row: await trialRowOf(pool, event.userId, event.vertical)
             };
         });
 
@@ -178,8 +178,11 @@ describe('TEST:V4:5 - T1 over the real catalog (AC:V4:4)', () => {
             billing,
             clock,
             emitCoverageChanged: async (event: CoverageChangedEvent) => {
-                // The bootstrap billing's emitCoverageChanged takes the event directly
-                await billing.emitCoverageChanged(event);
+                try {
+                    await billing.emitCoverageChanged(event);
+                } catch {
+                    // emit failed — coverageNotice will be 'FAILED'
+                }
             },
             input: {
                 userId: user.id,
@@ -232,7 +235,7 @@ describe('TEST:V4:5 - T1 over the real catalog (AC:V4:4)', () => {
         expect(trialSource!.charged).toBeNull();
 
         // The trial row to read exact dates
-        const row = await trialRowOf(db, user.id, VERTICAL);
+        const row = await trialRowOf(pool, user.id, VERTICAL);
         expect(trialSource!.since).toEqual(new Date(row!.started_at as string));
         expect(trialSource!.until).toEqual(new Date(row!.ends_at as string));
         // narrow: the reference is a PLAN_VERSION for trial sources

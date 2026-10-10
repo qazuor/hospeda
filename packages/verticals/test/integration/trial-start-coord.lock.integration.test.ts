@@ -78,7 +78,7 @@ describe('TEST:V4:4 (second half, Coord-16) - starting a trial writes no phone, 
             }
         });
 
-        const row = await trialRowOf(db, user.id, VERTICAL);
+        const row = await trialRowOf(pool, user.id, VERTICAL);
         expect(row).toBeDefined();
 
         // Expected column set
@@ -117,7 +117,7 @@ describe('TEST:V4:4 (second half, Coord-16) - starting a trial writes no phone, 
         expect(row!.email_pseudonym).toMatch(/^[0-9a-f]{64}$/);
 
         // No canje_de_trial rows
-        expect(await canjeCountOf(db, user.id)).toBe(0);
+        expect(await canjeCountOf(pool, user.id)).toBe(0);
     });
 });
 

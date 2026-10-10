@@ -166,7 +166,11 @@ describe('TEST:V4:6 - T1 does not fire without a sellable catalog or on a consum
                 unitOfWork,
                 billing: billingA,
                 clock,
-                emitCoverageChanged: async () => {},
+                emitCoverageChanged: async (event) => {
+                    // The bootstrap billing's emitCoverageChanged broadcasts
+                    // to all onCoverageChanged listeners (including noticeCallCount)
+                    await billingA.emitCoverageChanged(event);
+                },
                 input: inputA
             });
 
@@ -184,7 +188,9 @@ describe('TEST:V4:6 - T1 does not fire without a sellable catalog or on a consum
                 unitOfWork,
                 billing: billingB,
                 clock,
-                emitCoverageChanged: async () => {},
+                emitCoverageChanged: async (event) => {
+                    await billingB.emitCoverageChanged(event);
+                },
                 input: {
                     ...inputA,
                     userId: userB.id,
@@ -248,11 +254,14 @@ describe('TEST:V4:6 - T1 does not fire without a sellable catalog or on a consum
                 noticeCallCount += 1;
             });
 
+            // startTrial
             const result = await startTrial({
                 unitOfWork,
                 billing,
                 clock,
-                emitCoverageChanged: async () => {},
+                emitCoverageChanged: async (event) => {
+                    await billing.emitCoverageChanged(event);
+                },
                 input: {
                     userId: userSub.id,
                     vertical: VERTICAL,

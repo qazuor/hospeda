@@ -71,25 +71,36 @@ export async function sellableCurrentIds(db: DrizzleClient, vertical: string): P
 
 /** Query a trial row by userId using a raw pool (another connection). */
 export async function trialRowOf(
-    db: DrizzleClient,
+    pool: import('pg').Pool,
     userId: string,
     vertical: string
 ): Promise<Record<string, unknown> | undefined> {
-    const result = await db
-        .select()
-        .from(trials)
-        .where(and(eq(trials.userId, userId), eq(trials.vertical, vertical)));
-    if (result.length === 0) return undefined;
-    return result[0] as Record<string, unknown>;
+    // Use raw SQL to get snake_case column names (matching the DB schema)
+    const client = await pool.connect();
+    try {
+        const result = await client.query(
+            'SELECT * FROM trial WHERE user_id = $1 AND vertical = $2',
+            [userId, vertical]
+        );
+        if (result.rows.length === 0) return undefined;
+        return result.rows[0] as Record<string, unknown>;
+    } finally {
+        client.release();
+    }
 }
 
 /** Query the canje_de_trial count for a user. */
-export async function canjeCountOf(db: DrizzleClient, userId: string): Promise<number> {
-    const result = await db
-        .select({ count: trials.id })
-        .from(trials)
-        .where(eq(trials.userId, userId));
-    return result.length;
+export async function canjeCountOf(pool: import('pg').Pool, userId: string): Promise<number> {
+    const client = await pool.connect();
+    try {
+        const result = await client.query(
+            'SELECT count(*) FROM canje_de_trial WHERE user_id = $1',
+            [userId]
+        );
+        return Number(result.rows[0].count);
+    } finally {
+        client.release();
+    }
 }
 
 /* ------------------------------------------------------------------ */
