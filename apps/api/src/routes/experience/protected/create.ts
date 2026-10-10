@@ -38,6 +38,7 @@ import {
     ExperienceProtectedSchema,
     LifecycleStatusEnum,
     ServiceErrorCode,
+    VerticalEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
@@ -103,6 +104,7 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
 export const protectedCreateExperienceListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'CREATE' },
     summary: 'Create an experience listing (owner self-service)',
     description:
         'Creates an experience listing owned by the authenticated caller and grants them the EXPERIENCE_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes it. Requires an authenticated session and no experience permission.',

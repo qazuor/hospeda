@@ -40,6 +40,7 @@ import {
     PermissionEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
+    VerticalEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import {
@@ -148,6 +149,7 @@ function toOutput(certificate: {
 export const protectedIssueExperienceCertificateRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/certificates',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     summary: 'Issue a certificate for an experience',
     description:
         'Issues a certificate naming the person who did the experience and the day they did it. Owner-only. Requires the issue_experience_certificate entitlement, granted by the professional experience plan and upwards.',

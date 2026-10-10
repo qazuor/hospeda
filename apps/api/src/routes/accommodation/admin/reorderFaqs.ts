@@ -7,7 +7,8 @@ import {
     AccommodationIdSchema,
     type FaqReorderPayload,
     FaqReorderPayloadSchema,
-    SuccessSchema
+    SuccessSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -29,6 +30,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminReorderAccommodationFaqsRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs for an accommodation (admin)',
     description:

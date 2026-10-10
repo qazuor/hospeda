@@ -6,7 +6,7 @@ import {
     GastronomyAdminSchema,
     type GastronomyUpdateInput,
     GastronomyUpdateInputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -26,11 +26,11 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminUpdateGastronomyRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Update gastronomy listing (admin)',
     description: 'Updates a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',
     tags: ['Gastronomy'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

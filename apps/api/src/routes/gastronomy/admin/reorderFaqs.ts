@@ -9,8 +9,8 @@ import {
     type FaqReorderPayload,
     FaqReorderPayloadSchema,
     GastronomyFaqReorderInputSchema,
-    PermissionEnum,
-    SuccessSchema
+    SuccessSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -30,12 +30,12 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminReorderGastronomyFaqsRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs for a gastronomy listing (admin)',
     description:
         'Sets displayOrder for a set of FAQs belonging to a gastronomy listing. All faqId values must belong to the given listing. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

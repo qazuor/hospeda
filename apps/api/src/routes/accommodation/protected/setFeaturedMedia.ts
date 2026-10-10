@@ -23,14 +23,15 @@
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
-    AccommodationMediaSingleOutputSchema
+    AccommodationMediaSingleOutputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -46,7 +47,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * The target media row MUST be `state = 'visible'`. Archived photos are rejected
  * before reaching the DB (see DB invariant 2 above).
  */
-export const protectedSetFeaturedMediaRoute = createCRUDRoute({
+export const protectedSetFeaturedMediaRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for accommodation gallery (owner)',
@@ -56,7 +57,9 @@ export const protectedSetFeaturedMediaRoute = createCRUDRoute({
         'Archived photos cannot be featured — restore the photo to visible first. ' +
         'Requires EDIT_ACCOMMODATION_INFO entitlement; the service layer enforces ' +
         'UPDATE_OWN + ownership. No request body — ids come from URL params.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema,
         mediaId: AccommodationMediaIdSchema

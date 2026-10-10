@@ -9,7 +9,7 @@
  * so the asset is removed BEFORE the row, aborting the whole operation if
  * storage fails rather than leaving a permanently-billed orphan.
  */
-import { PermissionEnum, SuccessSchema } from '@repo/schemas';
+import { SuccessSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, removeGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -29,12 +29,12 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminRemoveGastronomyMediaRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from gastronomy listing gallery (admin)',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

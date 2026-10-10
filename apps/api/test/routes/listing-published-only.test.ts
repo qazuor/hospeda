@@ -8,10 +8,38 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     addGastronomyMedia: addMedia
 }));
 
-import { GastronomySchema, PublicationStatusEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    GastronomySchema,
+    PublicationStatusEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    VerticalEnum
+} from '@repo/schemas';
 import { assertListingReadable, GastronomyService, ServiceError } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import type { AppBindings } from '../../src/types';
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: {
+                ownerId: '11111111-1111-4111-8111-111111111111',
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            },
+            ownerId: '11111111-1111-4111-8111-111111111111'
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.GASTRONOMY,
+                hasLiveNonTrialTitle: false,
+                entries: [{ key: 'edit_gastronomy_info', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 const LISTING_ID = '33333333-3333-4333-8333-333333333333';
 const MISSING_ID = '44444444-4444-4444-8444-444444444444';

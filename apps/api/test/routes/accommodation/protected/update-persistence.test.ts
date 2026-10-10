@@ -35,8 +35,9 @@
  * @module test/routes/accommodation/protected/update-persistence
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -45,6 +46,29 @@ import {
 } from '../../../../src/middlewares/ownership.js';
 import { protectedUpdateAccommodationRoute } from '../../../../src/routes/accommodation/protected/update.js';
 import type { AppBindings } from '../../../../src/types.js';
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: OWNER_ID, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: OWNER_ID
+        }),
+        billing: {
+            coverage: async () => ({
+                covered: false,
+                sources: [{ type: 'BASE' }]
+            })
+        },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 const ACCOMMODATION_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';

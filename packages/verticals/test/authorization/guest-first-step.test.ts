@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { readListingAccessFacts } from '../../src/authorization/listing-facts';
 import { LISTING_OPERATIONS } from '../../src/authorization/listing-operation';
 import { resolveListingAccess } from '../../src/authorization/resolve-listing-access';
-import type { PlanCatalogReader } from '../../src/plan-catalog/catalog-reader';
+import { rehydrateEffectiveSet } from '../../src/effective-set-cache/snapshot';
 
 // ── Ports (fakes) ──────────────────────────────────────────────────────────────
 
@@ -22,15 +22,18 @@ const source = {
 
 function ports() {
     const coverage = vi.fn(async () => ({ covered: false, sources: [source] }));
-    const findPlanVersionEffects = vi.fn(async () => ({
-        entitlements: [
-            { key: 'recover_own_listing', planQuota: null, aggregationStrategy: 'MAX' as const }
-        ],
-        limits: []
-    }));
+    const effectiveSet = vi.fn(
+        async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                entries: [{ key: 'recover_own_listing', value: 1, strategy: 'MAX' }]
+            })
+    );
     const billing: Pick<BillingForVerticals, 'coverage'> = { coverage };
-    const catalog: Pick<PlanCatalogReader, 'findPlanVersionEffects'> = { findPlanVersionEffects };
-    return { billing, catalog, coverage, findPlanVersionEffects };
+    return { billing, effectiveSet, coverage };
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -56,7 +59,7 @@ describe('TEST:V5:19 guest rejects at step 1', () => {
         });
         expect(result).toEqual({ allowed: false, reason: 'UNAUTHENTICATED' });
         expect(port.coverage).not.toHaveBeenCalled();
-        expect(port.findPlanVersionEffects).not.toHaveBeenCalled();
+        expect(port.effectiveSet).not.toHaveBeenCalled();
     });
 
     it('TEST:V5:19 WRITE_ABOUT_LISTING on PUBLISHED foreign listing rejects the guest', async () => {
@@ -81,7 +84,7 @@ describe('TEST:V5:19 guest rejects at step 1', () => {
             operation: 'READ_PUBLIC',
             ...port
         });
-        expect(result).toEqual({ allowed: true, evaluatedSteps: [4] });
+        expect(result).toEqual({ allowed: true, subjectId: null, evaluatedSteps: [4] });
         expect(port.coverage).not.toHaveBeenCalled();
     });
 
@@ -174,7 +177,7 @@ describe('TEST:V5:19 authenticated actors are not affected', () => {
             operation: 'WRITE_ABOUT_LISTING',
             ...port
         });
-        expect(result).toEqual({ allowed: true, evaluatedSteps: [4] });
+        expect(result).toEqual({ allowed: true, subjectId: 'someone', evaluatedSteps: [4] });
     });
 
     it("actorId='someone' READ_PUBLIC on PUBLISHED foreign → allowed with step 4", async () => {
@@ -186,7 +189,7 @@ describe('TEST:V5:19 authenticated actors are not affected', () => {
             operation: 'READ_PUBLIC',
             ...port
         });
-        expect(result).toEqual({ allowed: true, evaluatedSteps: [4] });
+        expect(result).toEqual({ allowed: true, subjectId: 'someone', evaluatedSteps: [4] });
     });
 });
 
@@ -208,7 +211,7 @@ describe('TEST:V5:19 vertical pre-condition before step 1', () => {
             operation: 'READ_PUBLIC',
             ...port
         });
-        expect(result).toEqual({ allowed: true, evaluatedSteps: [4] });
+        expect(result).toEqual({ allowed: true, subjectId: null, evaluatedSteps: [4] });
     });
 
     it('TRANSITORY bridge: ownerSuspended=true → NULL status → guest READ_PUBLIC → NOT_FOUND', async () => {

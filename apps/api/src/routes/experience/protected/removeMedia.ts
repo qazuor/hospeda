@@ -14,7 +14,7 @@
  * enforced inside `removeExperienceMedia` via `checkExperienceCanEditMedia`.
  */
 
-import { SuccessSchema } from '@repo/schemas';
+import { SuccessSchema, VerticalEnum } from '@repo/schemas';
 import { ExperienceService, removeExperienceMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -22,7 +22,7 @@ import { z } from 'zod';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -32,14 +32,16 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
  */
-export const protectedRemoveExperienceMediaRoute = createCRUDRoute({
+export const protectedRemoveExperienceMediaRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from experience listing gallery',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. ' +
         'Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

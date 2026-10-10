@@ -38,7 +38,11 @@
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { GastronomyMenuItemPhotoUploadOutputSchema, PermissionEnum } from '@repo/schemas';
+import {
+    GastronomyMenuItemPhotoUploadOutputSchema,
+    PermissionEnum,
+    VerticalEnum
+} from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -71,6 +75,7 @@ const MENU_ITEM_PHOTO_UPLOAD_RATE_LIMIT_MAX = 40;
 export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/menu-item-photo',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     summary: 'Upload a photo for one dish of the menu',
     description:
         'Uploads a single dish photo and returns its delivery URL and Cloudinary public id. The caller attaches them to a dish in the next PUT /{id}/menu. Owner-only, and requires the menu_item_photos entitlement granted by the premium gastronomy plan.',

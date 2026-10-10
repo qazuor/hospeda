@@ -16,7 +16,7 @@ import {
     GastronomyMediaListOutputSchema,
     type GastronomyMediaReorderPayload,
     GastronomyMediaReorderPayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, reorderGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -36,6 +36,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminReorderGastronomyMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
     summary: 'Reorder gastronomy listing gallery photos (admin)',
     description:
@@ -43,7 +44,6 @@ export const adminReorderGastronomyMediaRoute = createAdminRoute({
         'in the desired order. The supplied list must match the current visible rows ' +
         'exactly. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

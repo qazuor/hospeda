@@ -10,7 +10,8 @@ import {
     AccommodationUpdateHttpSchema,
     type AccommodationUpdateInput,
     httpToDomainAccommodationUpdate,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -40,10 +41,11 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
     },
     requestBody: AccommodationUpdateHttpSchema,
     responseSchema: AccommodationProtectedSchema,
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     ownership: {
         entityType: 'accommodation',
         ownershipFields: ['ownerId', 'createdById'],
-        bypassPermission: PermissionEnum.ACCOMMODATION_UPDATE_ANY
+        bypassPermission: PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT
     },
     // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (

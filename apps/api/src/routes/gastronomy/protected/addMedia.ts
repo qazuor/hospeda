@@ -14,7 +14,8 @@ import {
     type GastronomyMediaAddInput,
     type GastronomyMediaAddPayload,
     GastronomyMediaAddPayloadSchema,
-    GastronomyMediaSingleOutputSchema
+    GastronomyMediaSingleOutputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyMedia, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -22,7 +23,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -32,14 +33,16 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
  */
-export const protectedAddGastronomyMediaRoute = createCRUDRoute({
+export const protectedAddGastronomyMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media',
     summary: 'Add photo to gastronomy listing gallery',
     description:
         'Registers an already-uploaded URL as a new gastronomy_media row. ' +
         'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

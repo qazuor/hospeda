@@ -65,6 +65,11 @@ export interface AppBindings {
     Variables: {
         logger: ApiLogger;
         actor: Actor;
+        /** Subject and completed authorization steps for route audit records. */
+        listingAccess?: {
+            subjectId: string | null;
+            evaluatedSteps: readonly (3 | 4 | 5 | 6 | 7)[];
+        };
         /** Better Auth session for the current request */
         session?: AuthSession;
         /** Better Auth user for the current request */

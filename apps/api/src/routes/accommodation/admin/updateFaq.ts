@@ -9,7 +9,8 @@ import {
     type AccommodationFaqUpdateInput,
     AccommodationIdSchema,
     FaqWithChannelVisibilityUpdatePayloadSchema,
-    type FaqWithChannelVisibilityUpdatePayloadType
+    type FaqWithChannelVisibilityUpdatePayloadType,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -30,6 +31,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminUpdateFaqRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ in accommodation (admin)',
     description:

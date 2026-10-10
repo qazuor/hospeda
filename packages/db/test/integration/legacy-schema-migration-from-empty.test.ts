@@ -108,7 +108,13 @@ const DROPPED_PERMISSION_CATEGORIES = [
 
 /** True for a permission value of the old billing family (decision 3). */
 function isOldBillingPermission(value: string): boolean {
-    if (value === 'billing.settings.view' || value === 'billing.settings.write') return false;
+    if (
+        value === 'billing.settings.view' ||
+        value === 'billing.settings.write' ||
+        value === 'billing.subscription.inspect' ||
+        value === 'billing.viewOwn'
+    )
+        return false;
     return (
         value.startsWith('billing.') ||
         value.startsWith('subscription.') ||

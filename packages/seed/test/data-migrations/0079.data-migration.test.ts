@@ -44,6 +44,24 @@ const {
     GRANTS
 } = migration;
 
+/**
+ * Grants that a LATER data migration added to a role. The seed is the sum of
+ * every migration, so the no-drift check compares 0079's lists plus these
+ * against it — still exactly, so a permission nobody migrated still fails.
+ */
+const later = await loadMigrationByNumber<{
+    readonly GRANTS: ReadonlyArray<{ role: RoleEnum; permission: PermissionEnum }>;
+}>({ number: '0110' });
+
+/** 0079's list for a role plus what later migrations granted to it. */
+function expectedSeedFor(args: {
+    readonly role: RoleEnum;
+    readonly own: readonly PermissionEnum[];
+}): PermissionEnum[] {
+    const added = later.GRANTS.filter((g) => g.role === args.role).map((g) => g.permission);
+    return [...new Set([...args.own, ...added])].sort();
+}
+
 /** Every `gastronomy.*` / `experience.*` value the enum defines. */
 const ALL_VERTICAL_PERMISSIONS = Object.values(PermissionEnum).filter(
     (value) => value.startsWith('gastronomy.') || value.startsWith('experience.')
@@ -186,15 +204,21 @@ describe('0079-hos-1077 vertical permissions — no drift against the seed', () 
     });
 
     it('the GASTRONOMY_OWNER list equals the seed exactly', () => {
-        expect([...GASTRONOMY_OWNER_PERMISSIONS].sort()).toEqual(
-            [...(ROLE_PERMISSIONS[RoleEnum.GASTRONOMY_OWNER] ?? [])].sort()
-        );
+        expect(
+            expectedSeedFor({
+                role: RoleEnum.GASTRONOMY_OWNER,
+                own: GASTRONOMY_OWNER_PERMISSIONS
+            })
+        ).toEqual([...(ROLE_PERMISSIONS[RoleEnum.GASTRONOMY_OWNER] ?? [])].sort());
     });
 
     it('the EXPERIENCE_OWNER list equals the seed exactly', () => {
-        expect([...EXPERIENCE_OWNER_PERMISSIONS].sort()).toEqual(
-            [...(ROLE_PERMISSIONS[RoleEnum.EXPERIENCE_OWNER] ?? [])].sort()
-        );
+        expect(
+            expectedSeedFor({
+                role: RoleEnum.EXPERIENCE_OWNER,
+                own: EXPERIENCE_OWNER_PERMISSIONS
+            })
+        ).toEqual([...(ROLE_PERMISSIONS[RoleEnum.EXPERIENCE_OWNER] ?? [])].sort());
     });
 
     it('no role outside SUPER_ADMIN/ADMIN and the two owners holds a vertical permission', () => {

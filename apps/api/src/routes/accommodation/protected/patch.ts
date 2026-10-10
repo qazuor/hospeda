@@ -9,7 +9,8 @@ import {
     AccommodationProtectedSchema,
     AccommodationUpdateHttpSchema,
     httpToDomainAccommodationUpdate,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -30,6 +31,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 export const protectedPatchAccommodationRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Patch accommodation',
     description:
         'Partially updates an accommodation. Requires ownership or ACCOMMODATION_UPDATE_ANY permission.',
@@ -42,7 +44,7 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
     ownership: {
         entityType: 'accommodation',
         ownershipFields: ['ownerId', 'createdById'],
-        bypassPermission: PermissionEnum.ACCOMMODATION_UPDATE_ANY
+        bypassPermission: PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT
     },
     // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (

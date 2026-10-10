@@ -21,7 +21,8 @@
 import {
     AccommodationIdSchema,
     AccommodationOccupancyCreateInputSchema,
-    AccommodationOccupancySchema
+    AccommodationOccupancySchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { addOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -38,6 +39,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 export const protectedAddOccupancyRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/occupancy',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Block a single day on the occupancy calendar (owner)',
     description:
         'Creates (or idempotently returns the existing) source=MANUAL occupancy row ' +

@@ -49,7 +49,8 @@ import {
     CalendarConnectionResponseSchema,
     ConnectIcalBodySchema,
     OccupancySourceEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { assertOccupancyManageAccess, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -80,6 +81,7 @@ const ICAL_PROVIDER_BY_TOKEN: Record<'airbnb' | 'booking' | 'other', IcalProvide
 export const protectedCalendarConnectIcalRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/calendar-sync/connect-ical',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Connect an Airbnb/Booking/generic iCal feed (owner)',
     description:
         'Validates the supplied .ics feed URL by fetching and parsing it live, persists the ' +

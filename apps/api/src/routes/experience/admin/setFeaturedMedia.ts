@@ -13,7 +13,7 @@
  *
  * No request body — experienceId and mediaId come from URL params.
  */
-import { ExperienceMediaSingleOutputSchema, PermissionEnum } from '@repo/schemas';
+import { ExperienceMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { ExperienceService, ServiceError, setFeaturedExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -32,6 +32,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminSetFeaturedExperienceMediaRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for experience listing gallery (admin)',
     description:
@@ -40,7 +41,6 @@ export const adminSetFeaturedExperienceMediaRoute = createAdminRoute({
         'photo to visible first. Requires EXPERIENCE_EDIT_ALL. No request body — ids ' +
         'come from URL params.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

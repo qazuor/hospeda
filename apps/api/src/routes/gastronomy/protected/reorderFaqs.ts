@@ -7,14 +7,18 @@
  * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
  */
 
-import { FaqReorderPayloadSchema, GastronomyFaqRemoveOutputSchema } from '@repo/schemas';
+import {
+    FaqReorderPayloadSchema,
+    GastronomyFaqRemoveOutputSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { GastronomyService, reorderGastronomyFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -28,12 +32,14 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedReorderGastronomyFaqsRoute = createCRUDRoute({
+export const protectedReorderGastronomyFaqsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs on gastronomy listing',
     description: 'Sets a new display order for FAQs belonging to the given gastronomy listing',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

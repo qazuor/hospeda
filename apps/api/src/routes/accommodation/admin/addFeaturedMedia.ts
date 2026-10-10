@@ -30,7 +30,8 @@ import {
     AccommodationIdSchema,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -53,6 +54,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminAddFeaturedMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/featured',
     summary: 'Upload the accommodation cover image (admin)',
     description:

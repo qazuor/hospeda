@@ -16,7 +16,8 @@
 import {
     AccommodationIdSchema,
     AccommodationOccupancyEventUpdateSchema,
-    AccommodationOccupancySchema
+    AccommodationOccupancySchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { updateOccupancyEvent } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -41,6 +42,7 @@ const UpdateOccupancyEventResponseSchema = z.object({
 export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/occupancy/event',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Edit a manual occupancy event (owner)',
     description:
         'Atomically moves a MANUAL occupancy event from [oldStartDate..oldEndDate] to ' +

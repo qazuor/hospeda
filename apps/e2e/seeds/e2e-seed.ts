@@ -30,6 +30,8 @@
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { exit } from 'node:process';
+import { Pool } from 'pg';
+import { ensureListingOwnerTrial } from '../fixtures/listing-owner-trial.ts';
 
 /**
  * Default DB URL precedence:
@@ -80,6 +82,34 @@ process.chdir(seedPackageRoot);
 
 const { describeError, runSeed } = await import('@repo/seed');
 
+/** Give each seeded listing owner a live fixture trial in that listing's vertical. */
+async function seedListingOwnerTrials(pool: Pool): Promise<void> {
+    const { accommodations, experiences, gastronomies, getDb } = await import('@repo/db');
+    const { VerticalEnum } = await import('@repo/schemas');
+    const db = getDb();
+    const listings = [
+        { vertical: VerticalEnum.ACCOMMODATION, table: accommodations },
+        { vertical: VerticalEnum.GASTRONOMY, table: gastronomies },
+        { vertical: VerticalEnum.EXPERIENCE, table: experiences }
+    ] as const;
+
+    for (const { vertical, table } of listings) {
+        const listingOwners = await db.select({ ownerId: table.ownerId }).from(table);
+        const ownerIds = [
+            ...new Set(
+                listingOwners
+                    .map(({ ownerId }) => ownerId)
+                    .filter((id): id is string => id !== null)
+            )
+        ];
+        if (ownerIds.length === 0) continue;
+
+        for (const ownerId of ownerIds) {
+            await ensureListingOwnerTrial(pool, ownerId, vertical);
+        }
+    }
+}
+
 async function main(): Promise<void> {
     console.info(`[e2e-seed] Resetting + seeding ${dbUrl}`);
     await runSeed({
@@ -99,6 +129,18 @@ async function main(): Promise<void> {
         // because the database is ephemeral.
         exclude: []
     });
+    // runSeed closes its own pool before returning. Open a fresh connection for
+    // these E2E-only rows, then release it before the runner exits.
+    const { initializeDb, resetDb } = await import('@repo/db');
+    const fixturePool = new Pool({ connectionString: dbUrl });
+    resetDb();
+    initializeDb(fixturePool);
+    try {
+        await seedListingOwnerTrials(fixturePool);
+    } finally {
+        await fixturePool.end();
+        resetDb();
+    }
     console.info('[e2e-seed] Done.');
 }
 

@@ -15,6 +15,7 @@ import { getPaymentProvider } from '../../utils/payment-provider';
 import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { beforeCancelNotice } from './before-cancel-notice';
+import { protectedReadSubscriptionRoute } from './read';
 
 export const protectedStartSubscriptionRoute = createProtectedRoute({
     method: 'post',
@@ -67,3 +68,8 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
 const router = createRouter();
 router.route('/', protectedStartSubscriptionRoute);
 export const protectedBillingSubscriptionRoutes = router;
+
+const readRouter = createRouter();
+readRouter.route('/', protectedReadSubscriptionRoute);
+
+export { readRouter as protectedBillingSubscriptionReadRoutes };

@@ -37,7 +37,8 @@ import {
     type ExperienceFeaturedMediaAddInput,
     ExperienceFeaturedMediaAddOutputSchema,
     type ExperienceMediaAddPayload,
-    ExperienceMediaAddPayloadSchema
+    ExperienceMediaAddPayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { addExperienceFeaturedMedia, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -45,7 +46,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -56,7 +57,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * instance to pass to the standalone media helper without requiring a public
  * accessor. Mirrors the sibling media routes.
  */
-export const protectedAddExperienceFeaturedMediaRoute = createCRUDRoute({
+export const protectedAddExperienceFeaturedMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media/featured',
     summary: 'Upload the experience listing cover image',
@@ -67,7 +68,9 @@ export const protectedAddExperienceFeaturedMediaRoute = createCRUDRoute({
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

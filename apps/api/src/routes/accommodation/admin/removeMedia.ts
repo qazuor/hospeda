@@ -16,7 +16,8 @@
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
-    DeleteResultSchema
+    DeleteResultSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -37,6 +38,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
  */
 export const adminRemoveMediaRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from accommodation gallery (admin)',
     description:

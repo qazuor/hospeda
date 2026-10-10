@@ -38,7 +38,8 @@
 import {
     GastronomyMediaSingleOutputSchema,
     type GastronomyMediaUpdatePayload,
-    GastronomyMediaUpdatePayloadSchema
+    GastronomyMediaUpdatePayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -46,7 +47,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -55,7 +56,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  *
  * Permission model: the service helper `updateGastronomyMedia` gates on `checkGastronomyCanEditMedia` — listing owner or staff — exactly like `setFeaturedGastronomyMedia`.
  */
-export const protectedUpdateGastronomyMediaRoute = createCRUDRoute({
+export const protectedUpdateGastronomyMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in gastronomy gallery',
@@ -64,7 +65,9 @@ export const protectedUpdateGastronomyMediaRoute = createCRUDRoute({
         'Each field is nullable: omit to leave unchanged, null to clear, a value ' +
         'to replace. At least one field must be present — an empty body is a ' +
         'VALIDATION_ERROR, not a silent 200. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

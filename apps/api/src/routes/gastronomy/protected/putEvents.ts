@@ -28,7 +28,8 @@
 import {
     GastronomyEventsOutputSchema,
     type GastronomyEventsReplacePayload,
-    GastronomyEventsReplacePayloadSchema
+    GastronomyEventsReplacePayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyEvents } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
@@ -39,7 +40,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -74,13 +75,15 @@ export async function handlePutGastronomyEvents(
     return result.data;
 }
 
-export const protectedPutGastronomyEventsRoute = createCRUDRoute({
+export const protectedPutGastronomyEventsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/events',
     summary: 'Replace the venue events agenda of a gastronomy listing',
     description:
         'Replaces the listing’s own events with the submitted document. Each entry is either dated (recurrence "once" with a date) or weekly (recurrence "weekly" with a weekday 0-6, Sunday-based); the two are mutually exclusive and the payload is rejected if an entry declares neither or both. An empty events array takes the agenda down. Owner-only, and requires the manage_gastronomy_events entitlement granted by the professional gastronomy plan and above.',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Events'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

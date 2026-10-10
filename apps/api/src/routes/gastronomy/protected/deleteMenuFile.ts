@@ -21,7 +21,7 @@
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { PermissionEnum, SuccessSchema } from '@repo/schemas';
+import { PermissionEnum, SuccessSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -37,6 +37,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
 export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/menu-file',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     summary: 'Remove the uploaded menu photo or PDF',
     description:
         'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',

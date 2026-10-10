@@ -53,6 +53,9 @@ const CLEANUP_TABLES = [
     'user_bookmarks',
     'accommodations',
     'user_role',
+    // Granted to every listing owner the fixtures create (HOS-1457 Coord-54);
+    // its `user_id` FK is ON DELETE RESTRICT, so it goes before `users`.
+    'trial',
     'users'
 ] as const;
 

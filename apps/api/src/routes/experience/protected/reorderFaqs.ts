@@ -7,14 +7,18 @@
  * Gated on EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).
  */
 
-import { ExperienceFaqRemoveOutputSchema, FaqReorderPayloadSchema } from '@repo/schemas';
+import {
+    ExperienceFaqRemoveOutputSchema,
+    FaqReorderPayloadSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { ExperienceService, reorderExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -28,12 +32,14 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedReorderExperienceFaqsRoute = createCRUDRoute({
+export const protectedReorderExperienceFaqsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs on experience listing',
     description: 'Sets a new display order for FAQs belonging to the given experience listing',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -35,13 +35,14 @@ import {
     AccommodationIdSchema,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -59,7 +60,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * Route requires the `EDIT_ACCOMMODATION_INFO` entitlement, matching every other
  * gallery mutation.
  */
-export const protectedAddFeaturedMediaRoute = createCRUDRoute({
+export const protectedAddFeaturedMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media/featured',
     summary: 'Upload the accommodation cover image (owner)',
@@ -71,7 +72,9 @@ export const protectedAddFeaturedMediaRoute = createCRUDRoute({
         'does not consume a plan photo slot, because the cover is not a gallery ' +
         'item (HOS-791). Requires ' +
         'EDIT_ACCOMMODATION_INFO; the service layer enforces UPDATE_OWN + ownership.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema
     },

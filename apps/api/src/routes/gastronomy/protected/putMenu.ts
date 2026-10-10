@@ -26,7 +26,8 @@
 import {
     GastronomyMenuOutputSchema,
     type GastronomyMenuReplacePayload,
-    GastronomyMenuReplacePayloadSchema
+    GastronomyMenuReplacePayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyMenu } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
@@ -36,7 +37,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -75,13 +76,15 @@ export async function handlePutGastronomyMenu(
     return result.data;
 }
 
-export const protectedPutGastronomyMenuRoute = createCRUDRoute({
+export const protectedPutGastronomyMenuRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/menu',
     summary: 'Replace the structured menu of a gastronomy listing',
     description:
         'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_gastronomy_menu (premium).',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Menu'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -16,7 +16,8 @@
 import {
     AccommodationIdSchema,
     AccommodationOccupancyBatchInputSchema,
-    AccommodationOccupancySchema
+    AccommodationOccupancySchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { batchToggleOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -40,6 +41,7 @@ const BatchOccupancyResponseSchema = z.object({
 export const protectedBatchOccupancyRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/occupancy/batch',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Batch block/unblock days on the occupancy calendar (owner)',
     description:
         'Toggles a set of dates blocked/unblocked. isBlocked=true idempotently upserts ' +

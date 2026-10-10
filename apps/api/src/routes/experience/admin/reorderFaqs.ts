@@ -9,8 +9,8 @@ import {
     ExperienceFaqReorderInputSchema,
     type FaqReorderPayload,
     FaqReorderPayloadSchema,
-    PermissionEnum,
-    SuccessSchema
+    SuccessSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, reorderExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -30,12 +30,12 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminReorderExperienceFaqsRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs for an experience listing (admin)',
     description:
         'Sets displayOrder for a set of FAQs belonging to an experience listing. All faqId values must belong to the given listing. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

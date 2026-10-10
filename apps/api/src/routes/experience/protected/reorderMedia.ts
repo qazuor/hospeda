@@ -20,7 +20,8 @@
 import {
     ExperienceMediaListOutputSchema,
     type ExperienceMediaReorderPayload,
-    ExperienceMediaReorderPayloadSchema
+    ExperienceMediaReorderPayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, reorderExperienceMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -28,7 +29,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -38,7 +39,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
  */
-export const protectedReorderExperienceMediaRoute = createCRUDRoute({
+export const protectedReorderExperienceMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/reorder',
     summary: 'Reorder experience listing gallery photos',
@@ -46,7 +47,9 @@ export const protectedReorderExperienceMediaRoute = createCRUDRoute({
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
         'exactly. Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

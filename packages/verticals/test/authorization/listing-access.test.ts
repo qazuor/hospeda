@@ -1,9 +1,12 @@
 import type { BillingForVerticals } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
-import { NonBaseKeyError, resolveEntitlementStep } from '../../src/authorization/entitlement-step';
+import {
+    resolveEntitlementStep,
+    UnknownStepKeyError
+} from '../../src/authorization/entitlement-step';
 import { resolveListingAccess } from '../../src/authorization/resolve-listing-access';
-import type { PlanCatalogReader } from '../../src/plan-catalog/catalog-reader';
+import { rehydrateEffectiveSet } from '../../src/effective-set-cache/snapshot';
 
 const source = {
     type: 'BASE' as const,
@@ -18,15 +21,18 @@ const source = {
 
 function ports(granted: boolean) {
     const coverage = vi.fn(async () => ({ covered: false, sources: [source] }));
-    const findPlanVersionEffects = vi.fn(async () => ({
-        entitlements: granted
-            ? [{ key: 'recover_own_listing', planQuota: null, aggregationStrategy: 'MAX' as const }]
-            : [],
-        limits: []
-    }));
+    const effectiveSet = vi.fn(
+        async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                entries: granted ? [{ key: 'recover_own_listing', value: 1, strategy: 'MAX' }] : []
+            })
+    );
     const billing: Pick<BillingForVerticals, 'coverage'> = { coverage };
-    const catalog: Pick<PlanCatalogReader, 'findPlanVersionEffects'> = { findPlanVersionEffects };
-    return { billing, catalog, coverage, findPlanVersionEffects };
+    return { billing, effectiveSet, coverage };
 }
 
 describe('listing access orchestration', () => {
@@ -58,24 +64,17 @@ describe('listing access orchestration', () => {
         expect(port.coverage).not.toHaveBeenCalled();
     });
 
-    it('reads own listing without step 6, and refuses PENDING without billing', async () => {
+    it('reads own listing without step 6', async () => {
         const port = ports(true);
-        const common = {
-            actorId: 'owner',
-            vertical: VerticalEnum.GASTRONOMY,
-            facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.DRAFT },
-            ...port
-        };
-        expect(await resolveListingAccess({ ...common, operation: 'READ_OWN' })).toEqual({
-            allowed: true,
-            evaluatedSteps: [4]
-        });
-        for (const operation of ['EDIT', 'PUBLISH', 'READ_OWN_COMMERCIAL'] as const) {
-            expect(await resolveListingAccess({ ...common, operation })).toEqual({
-                allowed: false,
-                reason: 'NO_CAPABILITY'
-            });
-        }
+        expect(
+            await resolveListingAccess({
+                actorId: 'owner',
+                vertical: VerticalEnum.GASTRONOMY,
+                facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.DRAFT },
+                operation: 'READ_OWN',
+                ...port
+            })
+        ).toEqual({ allowed: true, subjectId: 'owner', evaluatedSteps: [4] });
         expect(port.coverage).not.toHaveBeenCalled();
     });
 
@@ -92,19 +91,21 @@ describe('listing access orchestration', () => {
         };
         expect(await resolveListingAccess({ ...common, operation: 'READ_OWN' })).toEqual({
             allowed: true,
+            subjectId: 'suspended-owner',
             evaluatedSteps: [4]
         });
-        expect(await resolveListingAccess({ ...common, operation: 'READ_OWN_COMMERCIAL' })).toEqual(
-            {
-                allowed: false,
-                reason: 'NO_CAPABILITY'
-            }
-        );
+        expect(
+            await resolveListingAccess({
+                ...common,
+                operation: 'READ_OWN_COMMERCIAL',
+                step6Key: 'publish_gastronomy'
+            })
+        ).toEqual({ allowed: false, reason: 'NO_CAPABILITY', key: 'publish_gastronomy' });
         expect(port.coverage).not.toHaveBeenCalled();
-        expect(port.findPlanVersionEffects).not.toHaveBeenCalled();
+        expect(port.effectiveSet).toHaveBeenCalledOnce();
     });
 
-    it('TEST:V5:4 rejects a declared vertical mismatch before coverage or catalog', async () => {
+    it('TEST:V5:4 rejects a declared vertical mismatch before coverage', async () => {
         const port = ports(true);
         expect(
             await resolveListingAccess({
@@ -117,7 +118,7 @@ describe('listing access orchestration', () => {
             })
         ).toEqual({ allowed: false, reason: 'NOT_FOUND' });
         expect(port.coverage).not.toHaveBeenCalled();
-        expect(port.findPlanVersionEffects).not.toHaveBeenCalled();
+        expect(port.effectiveSet).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -130,43 +131,44 @@ describe('listing access orchestration', () => {
             await resolveListingAccess({
                 actorId: 'owner',
                 vertical: VerticalEnum.GASTRONOMY,
-                facts: {
-                    ownerId: 'owner',
-                    publicationStatus: PublicationStatusEnum.ARCHIVED
-                },
+                facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.ARCHIVED },
                 operation,
                 ...port
             })
-        ).toEqual({ allowed: true, evaluatedSteps: [4, 6] });
-        expect(port.coverage).toHaveBeenCalledOnce();
-        expect(port.findPlanVersionEffects).toHaveBeenCalledWith({ id: 'floor-version' });
+        ).toEqual({
+            allowed: true,
+            subjectId: 'owner',
+            evaluatedSteps: operation === 'EXPORT' ? [4, 6] : [4, 5, 6]
+        });
+        expect(port.coverage).toHaveBeenCalledTimes(operation === 'EXPORT' ? 0 : 1);
+        expect(port.effectiveSet).toHaveBeenCalledWith({
+            userId: 'owner',
+            vertical: VerticalEnum.GASTRONOMY
+        });
     });
 
-    it('denies when the floor does not grant the key', async () => {
+    it('denies when the effective set does not grant the floor key', async () => {
         const port = ports(false);
         expect(
             await resolveEntitlementStep({
                 userId: 'owner',
                 vertical: VerticalEnum.GASTRONOMY,
-                key: 'recover_own_listing',
-                ...port
+                keys: ['recover_own_listing'],
+                effectiveSet: port.effectiveSet
             })
-        ).toEqual({ allowed: false, reason: 'NO_CAPABILITY' });
+        ).toEqual({ allowed: false, reason: 'NO_CAPABILITY', key: 'recover_own_listing' });
     });
 
-    it.each([
-        'publish_gastronomy',
-        'unknown_key'
-    ])('throws NonBaseKeyError for %s before coverage', async (key) => {
+    it('throws UnknownStepKeyError for an unknown key before reading the set', async () => {
         const port = ports(true);
         await expect(
             resolveEntitlementStep({
                 userId: 'owner',
                 vertical: VerticalEnum.GASTRONOMY,
-                key,
-                ...port
+                keys: ['unknown_key'],
+                effectiveSet: port.effectiveSet
             })
-        ).rejects.toBeInstanceOf(NonBaseKeyError);
-        expect(port.coverage).not.toHaveBeenCalled();
+        ).rejects.toBeInstanceOf(UnknownStepKeyError);
+        expect(port.effectiveSet).not.toHaveBeenCalled();
     });
 });

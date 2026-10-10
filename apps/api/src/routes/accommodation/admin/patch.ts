@@ -5,7 +5,8 @@
 import {
     AccommodationAdminSchema,
     AccommodationIdSchema,
-    AccommodationPatchInputSchema
+    AccommodationPatchInputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -30,6 +31,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminPatchAccommodationRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Partial update accommodation (admin)',
     description:

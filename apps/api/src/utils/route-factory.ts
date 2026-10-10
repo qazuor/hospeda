@@ -569,6 +569,7 @@ export const createListRoute = (
 
     return app;
 };
+export type { ListingAccessConfig } from '../types/authorization';
 export type {
     AdminListRouteOptions,
     AdminRouteOptions,

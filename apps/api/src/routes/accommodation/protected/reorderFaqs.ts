@@ -20,14 +20,15 @@ import {
     AccommodationIdSchema,
     type FaqReorderPayload,
     FaqReorderPayloadSchema,
-    SuccessSchema
+    SuccessSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -40,7 +41,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN` + ownership).
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former FAQ plan gate is removed.
  */
-export const protectedReorderFaqsRoute = createCRUDRoute({
+export const protectedReorderFaqsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs on accommodation (owner)',
@@ -48,7 +49,9 @@ export const protectedReorderFaqsRoute = createCRUDRoute({
         'Set the displayOrder for a set of FAQs belonging to an accommodation. All faqId ' +
         'values must belong to the given accommodation. Requires EDIT_ACCOMMODATION_INFO ' +
         'entitlement; the service layer enforces UPDATE_OWN + ownership.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'FAQs'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema
     },

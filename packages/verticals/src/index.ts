@@ -4,7 +4,13 @@
  * (GUARD:G14 lists `packages/verticals` as the verticals half).
  */
 
-export { NonBaseKeyError, resolveEntitlementStep } from './authorization/entitlement-step';
+export { resolveAdministrativeActionStep } from './authorization/administrative-action-step';
+export {
+    type EffectiveSetPort,
+    resolveEntitlementStep,
+    UnknownStepKeyError
+} from './authorization/entitlement-step';
+export { resolveLimitStep } from './authorization/limit-step';
 export {
     readListingAccessFacts,
     resolveEffectivePublicationStatus
@@ -13,16 +19,22 @@ export {
     FOREIGN_ADMITTING_STATES,
     LISTING_OPERATIONS,
     type ListingOperation,
+    type ListingVertical,
+    OPERATION_PASSES_STEP5,
     OPERATION_STEP6_KEY,
     OWNER_ADMITTING_STATES,
-    RECOVER_OWN_LISTING_KEY
+    RECOVER_OWN_LISTING_KEY,
+    type Step6Requirement
 } from './authorization/listing-operation';
 export {
     EMAIL_UNVERIFIED_ALLOWED_OPERATIONS,
     type EmailUnverifiedAllowedOperation,
     resolvePersonStateStep
 } from './authorization/person-state-step';
-export { resolveListingAccess } from './authorization/resolve-listing-access';
+export {
+    type ListingAccessResult,
+    resolveListingAccess
+} from './authorization/resolve-listing-access';
 export {
     type ListingAccessFacts,
     resolveResourceStep,

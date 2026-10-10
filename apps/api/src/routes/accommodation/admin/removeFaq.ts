@@ -3,7 +3,12 @@
  * Remove an existing FAQ from an accommodation - Admin endpoint
  */
 
-import { AccommodationFaqIdSchema, AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';
+import {
+    AccommodationFaqIdSchema,
+    AccommodationIdSchema,
+    DeleteResultSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -23,6 +28,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminRemoveFaqRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from accommodation (admin)',
     description:
