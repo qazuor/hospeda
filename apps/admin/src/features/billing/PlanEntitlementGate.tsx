@@ -7,7 +7,7 @@
  *
  * Unlike `EntitlementGate`, this component does NOT require a `customerId`
  * prop or a customer wired into the `QZPayContext`. It reads entitlements
- * from `GET /api/v1/protected/users/me/entitlements` via `useMyEntitlements`
+ * from `GET /api/v1/admin/users/{id}/effective-set` via `useEffectiveSet`
  * and renders `children` or `fallback` accordingly.
  *
  * @module features/billing/PlanEntitlementGate
@@ -15,7 +15,7 @@
 
 import { EntitlementKey } from '@repo/billing';
 import type * as React from 'react';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
 
 export interface PlanEntitlementGateProps {
@@ -86,7 +86,7 @@ export function PlanEntitlementGate({
     nudgeVariant,
     upgradeUrl
 }: PlanEntitlementGateProps): React.ReactNode {
-    const { has, isLoading, error } = useMyEntitlements();
+    const { has, isLoading, error } = useEffectiveSet();
     const { t } = useTranslations();
 
     const resolvedNudgeVariant = deriveNudgeVariant(entitlementKey, nudgeVariant);

@@ -8,7 +8,7 @@
  *
  * Unlike `LimitGate`, this component does NOT require a `customerId` prop or
  * a customer wired into the `QZPayContext`. It reads limit values from
- * `GET /api/v1/protected/users/me/entitlements` via `useMyEntitlements` and
+ * `GET /api/v1/admin/users/{id}/effective-set` via `useEffectiveSet` and
  * compares them against the caller-supplied `currentCount`.
  *
  * @module features/billing/PlanLimitGate
@@ -16,7 +16,7 @@
 
 import type { LimitKey } from '@repo/billing';
 import type * as React from 'react';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
 
 export interface PlanLimitGateProps {
@@ -71,7 +71,7 @@ export function PlanLimitGate({
     fieldLabel,
     upgradeUrl
 }: PlanLimitGateProps): React.ReactNode {
-    const { limit, isLoading, error } = useMyEntitlements();
+    const { limit, isLoading, error } = useEffectiveSet();
     const { t } = useTranslations();
 
     // While loading — show children to avoid layout flash (fail-open during load).
@@ -97,13 +97,8 @@ export function PlanLimitGate({
 
     const maxAllowed = limit(limitKey);
 
-    // Unknown limit key (not in plan data yet) — fail-open.
-    if (maxAllowed === undefined) {
-        return children;
-    }
-
-    // -1 means unlimited — always allow.
-    if (maxAllowed === -1) {
+    // Positive infinity means unlimited.
+    if (maxAllowed === Number.POSITIVE_INFINITY) {
         return children;
     }
 
@@ -174,18 +169,19 @@ function DefaultFallback({
     });
 
     const upgradeLinkText = t('admin-entities.limitGate.upgradeLink');
-    const resolvedUpgradeUrl = upgradeUrl ?? '/billing/my-plan';
 
     return (
         <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30">
             <p className="font-medium text-foreground text-sm">{title}</p>
             <p className="mt-1 text-muted-foreground text-xs">{description}</p>
-            <a
-                href={resolvedUpgradeUrl}
-                className="mt-2 inline-block text-primary text-xs underline hover:no-underline"
-            >
-                {upgradeLinkText}
-            </a>
+            {upgradeUrl && (
+                <a
+                    href={upgradeUrl}
+                    className="mt-2 inline-block text-primary text-xs underline hover:no-underline"
+                >
+                    {upgradeLinkText}
+                </a>
+            )}
         </div>
     );
 }

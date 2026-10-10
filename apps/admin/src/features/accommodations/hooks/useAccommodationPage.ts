@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 // ✅ NUEVAS IMPORTACIONES PARA CONFIGURACIÓN CONSOLIDADA
 import { filterSectionsByMode } from '@/components/entity-form/utils/section-filter.utils';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
 import { createAccommodationConsolidatedConfig } from '../config';
@@ -31,7 +31,7 @@ export const useAccommodationPage = (entityId: string) => {
     const accommodationTypeOptions = useAccommodationTypeOptions(AccommodationTypeEnum);
 
     // SPEC-198: AI text-improve entitlement gate
-    const { has: hasEntitlement } = useMyEntitlements();
+    const { has: hasEntitlement } = useEffectiveSet();
     const canUseAiTextImprove = hasEntitlement(EntitlementKey.AI_TEXT_IMPROVE);
 
     // ✅ CONFIGURACIÓN CONSOLIDADA

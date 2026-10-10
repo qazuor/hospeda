@@ -11,7 +11,6 @@ import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
 import { AuthProviderBadge } from '../components/AuthProviderBadge';
-import { CustomerTypeBadge } from '../components/CustomerTypeBadge';
 import { UserRelationsSummaryCell } from '../components/UserRelationsSummaryCell';
 import { useDeleteUserMutation, useUpdateUserMutation } from '../hooks/useUserQuery';
 import type { User } from '../schemas/users.schemas';
@@ -116,14 +115,6 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         enableSorting: true,
         columnType: ColumnType.WIDGET,
         widgetRenderer: (row) => createElement(AuthProviderBadge, { row })
-    },
-    {
-        id: 'customerType',
-        header: t('admin-entities.columns.customerType'),
-        accessorKey: 'currentPlanSlug',
-        enableSorting: false,
-        columnType: ColumnType.WIDGET,
-        widgetRenderer: (row) => createElement(CustomerTypeBadge, { row })
     },
     {
         id: 'email',

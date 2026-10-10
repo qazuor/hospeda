@@ -8,6 +8,14 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
+import { useEffectiveSetSubject } from '@/features/billing/effective-set-subject';
+
+vi.mock('@/features/accommodations/hooks/useAccommodationQuery', () => ({
+    useAccommodationQuery: () => ({
+        data: { ownerId: '11111111-1111-4111-8111-111111111111' },
+        isLoading: false
+    })
+}));
 
 vi.mock('@/components/layout/Breadcrumbs', () => ({
     Breadcrumbs: ({ entityContext }: { entityContext?: { name?: string; type?: string } }) => (
@@ -112,5 +120,20 @@ describe('AccommodationSubTabLayout', () => {
         );
 
         expect(screen.getByTestId('section-content').textContent).toBe('Amenities list');
+    });
+
+    it('TEST:B13a:23 AC:B13a:23 binds the sub-tab gate to the accommodation owner', () => {
+        function SubjectProbe() {
+            const subject = useEffectiveSetSubject();
+            return <span data-testid="subject">{`${subject?.userId}:${subject?.vertical}`}</span>;
+        }
+        render(
+            <AccommodationSubTabLayout accommodationId={accommodationId}>
+                <SubjectProbe />
+            </AccommodationSubTabLayout>
+        );
+        expect(screen.getByTestId('subject')).toHaveTextContent(
+            '11111111-1111-4111-8111-111111111111:accommodation'
+        );
     });
 });

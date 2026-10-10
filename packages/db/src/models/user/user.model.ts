@@ -25,7 +25,6 @@ export type UserWithCounts = User & {
     experiencesCount: number;
     eventsCount: number;
     postsCount: number;
-    currentPlanSlug: string | null;
 };
 
 export class UserModel extends BaseModelImpl<User> {
@@ -340,7 +339,6 @@ export class UserModel extends BaseModelImpl<User> {
                   : and(...allConditions);
 
         const outerUserId = sql.raw('"users"."id"');
-        const outerUserIdText = sql.raw('"users"."id"::text');
 
         // Use correlated subqueries to get counts in a single query instead of N+1
         const accommodationsCountSq = sql<number>`(
@@ -378,22 +376,6 @@ export class UserModel extends BaseModelImpl<User> {
               AND p."deleted_at" IS NULL
         )`.as('posts_count');
 
-        const currentPlanSlugSq = sql<string | null>`(
-            SELECT bp."name"
-            FROM "billing_subscriptions" AS bs
-            INNER JOIN "billing_customers" AS bc
-                ON bc."id" = bs."customer_id"
-            INNER JOIN "billing_plans" AS bp
-                ON (bp."id"::text = bs."plan_id" OR bp."name" = bs."plan_id")
-            WHERE bc."external_id" = ${outerUserIdText}
-              AND bc."deleted_at" IS NULL
-              AND bs."deleted_at" IS NULL
-              AND bp."deleted_at" IS NULL
-              AND bs."status" IN ('active', 'trialing', 'comp')
-              AND (bs."product_domain" IS NULL OR bs."product_domain" = 'accommodation')
-            LIMIT 1
-        )`.as('current_plan_slug');
-
         const orderByClause = options?.sortBy
             ? buildOrderByClause(options.sortBy, this.table, options.sortOrder ?? 'asc')
             : undefined;
@@ -405,8 +387,7 @@ export class UserModel extends BaseModelImpl<User> {
                 gastronomiesCount: gastronomiesCountSq,
                 experiencesCount: experiencesCountSq,
                 eventsCount: eventsCountSq,
-                postsCount: postsCountSq,
-                currentPlanSlug: currentPlanSlugSq
+                postsCount: postsCountSq
             })
             .from(users)
             .where(finalWhereClause)
@@ -423,7 +404,6 @@ export class UserModel extends BaseModelImpl<User> {
             experiencesCount: number;
             eventsCount: number;
             postsCount: number;
-            currentPlanSlug: string | null;
         }>;
 
         // Safety cap for non-paginated path to prevent unbounded queries
@@ -443,8 +423,7 @@ export class UserModel extends BaseModelImpl<User> {
             gastronomiesCount: row.gastronomiesCount ?? 0,
             experiencesCount: row.experiencesCount ?? 0,
             eventsCount: row.eventsCount ?? 0,
-            postsCount: row.postsCount ?? 0,
-            currentPlanSlug: row.currentPlanSlug ?? null
+            postsCount: row.postsCount ?? 0
         }));
 
         // Get total count for pagination

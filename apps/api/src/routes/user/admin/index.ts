@@ -6,6 +6,7 @@ import { createRouter } from '../../../utils/create-app';
 import { adminUserBatchRoute } from './batch';
 import { adminCreateUserRoute } from './create';
 import { adminDeleteUserRoute } from './delete';
+import { adminGetUserEffectiveSetRoute } from './effective-set';
 import { adminGetUserByIdRoute } from './getById';
 import { adminHardDeleteUserRoute } from './hardDelete';
 import { adminListUsersRoute } from './list';
@@ -35,6 +36,9 @@ app.route('/', adminUserStatsRoute);
 // GET /options - Lightweight relation-selector lookup (SPEC-169 §5.5)
 // Registered before /:id so Hono does not resolve "options" as a UUID param
 app.route('/', adminUserOptionsRoute);
+
+// GET /:id/effective-set (HOS-1638, AC:B13a:23) — before the bare /:id routes.
+app.route('/', adminGetUserEffectiveSetRoute);
 
 // Per-user permission overrides (SPEC-170). Registered BEFORE the /:id routes
 // so "permissions" is never matched as a bare /:id segment.
