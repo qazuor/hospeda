@@ -40,6 +40,11 @@ export type ListingAccessResult =
  * guest actor has a UUID and must be identified with `isGuestActor(actor)`.
  * The vertical precondition runs first, so a mismatched declared vertical
  * returns NOT_FOUND even for a guest.
+ *
+ * `requiredKeys` — additional catalog capability keys that the route demands
+ * beyond the operation key. Evaluated in step 6 on the subject after the
+ * operation key and before the limit step (step 7). All keys are mandatory
+ * (AND logic); the first failure returns `NO_CAPABILITY` with that key.
  */
 export async function resolveListingAccess(args: {
     readonly actorId: string | null;
@@ -49,6 +54,7 @@ export async function resolveListingAccess(args: {
     readonly operation: ListingOperation;
     readonly adminAction?: { readonly permitted: boolean };
     readonly step6Key?: string;
+    readonly requiredKeys?: readonly string[];
     readonly limit?: { readonly key: string; readonly requested: number };
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
     readonly effectiveSet: EffectiveSetPort;
@@ -126,6 +132,19 @@ export async function resolveListingAccess(args: {
             effectiveSet: args.effectiveSet
         });
         if (!entitlement.allowed) return entitlement;
+    }
+    if (args.requiredKeys) {
+        if (evaluatedSteps.every((s) => s !== 6)) evaluatedSteps.push(6);
+        if (subjectId === null) return { allowed: false, reason: 'NOT_FOUND' };
+        for (const key of args.requiredKeys) {
+            const entitlement = await resolveEntitlementStep({
+                userId: subjectId,
+                vertical: VerticalEnumSchema.parse(args.vertical),
+                keys: [key],
+                effectiveSet: args.effectiveSet
+            });
+            if (!entitlement.allowed) return entitlement;
+        }
     }
     if (args.limit) {
         evaluatedSteps.push(7);
