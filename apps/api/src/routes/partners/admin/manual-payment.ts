@@ -1,6 +1,6 @@
 import { eq, getDb, partners } from '@repo/db';
 import { PermissionEnum, partnerSchema, ServiceErrorCode } from '@repo/schemas';
-import { PartnerService, ServiceError } from '@repo/service-core';
+import { isSystemActor, PartnerService, ServiceError } from '@repo/service-core';
 import { resolveAdministrativeActionStep } from '@repo/verticals';
 /**
  * Admin register manual payment endpoint
@@ -46,9 +46,11 @@ export const adminManualPaymentRoute = createAdminRoute({
         }
         const subjectId = partner.ownerUserId;
         const decision = resolveAdministrativeActionStep({
+            action: 'ACC_3',
             actorId: actor.id,
             subjectId,
-            permitted: true
+            permitted: true,
+            isSystemActor: isSystemActor(actor)
         });
         if (!decision.allowed) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');

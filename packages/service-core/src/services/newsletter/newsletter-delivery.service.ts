@@ -43,6 +43,7 @@ import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { createSystemActor } from '../../utils/system-actor.js';
 import { checkCanSendCampaign } from './newsletter-campaign.permissions.js';
 import type { INewsletterDeliveryService } from './newsletter-campaign.service.js';
 import { generateUnsubscribeToken } from './newsletter-token.helpers.js';
@@ -308,12 +309,10 @@ export interface ProcessBatchResult {
 // System actor for internal operations
 // ---------------------------------------------------------------------------
 
-const SYSTEM_ACTOR: Actor = {
-    id: '00000000-0000-0000-0000-000000000001',
-    roles: ['SUPER_ADMIN'] as never,
-    permissions: Object.values(PermissionEnum) as never,
-    _isSystemActor: true
-};
+const SYSTEM_ACTOR: Actor = createSystemActor({
+    jobId: 'newsletter.delivery',
+    permissions: [PermissionEnum.NEWSLETTER_CAMPAIGN_SEND]
+});
 
 // ---------------------------------------------------------------------------
 // Default no-op implementations (allow construction without full wiring)
