@@ -68,9 +68,9 @@ export async function readEffectiveKeys(args: {
                 }) ?? 0) > 0
             ])
         );
-    } catch (error) {
+    } catch {
         apiLogger.warn(
-            { userId: args.userId, vertical: args.vertical, error },
+            { userId: args.userId, vertical: args.vertical },
             'Effective keys lookup failed'
         );
         return denied;
