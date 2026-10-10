@@ -52,8 +52,6 @@ export const PremiumBlock = React.memo(function PremiumBlockComponent({
 
     if (items.length === 0) return null;
 
-    const resolvedUpgradeUrl = upgradeUrl ?? '/billing/my-plan';
-
     return (
         <div
             className={cn('rounded-lg border border-warning/30 bg-warning/5 p-4', className)}
@@ -97,16 +95,18 @@ export const PremiumBlock = React.memo(function PremiumBlockComponent({
                             </li>
                         ))}
                     </ul>
-                    <a
-                        href={resolvedUpgradeUrl}
-                        className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-xs hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-                    >
-                        <CrownIcon
-                            className="h-3.5 w-3.5"
-                            aria-hidden="true"
-                        />
-                        {t('admin-entities.premiumBlock.cta')}
-                    </a>
+                    {upgradeUrl && (
+                        <a
+                            href={upgradeUrl}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-xs hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                        >
+                            <CrownIcon
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                            />
+                            {t('admin-entities.premiumBlock.cta')}
+                        </a>
+                    )}
                 </div>
             </div>
         </div>

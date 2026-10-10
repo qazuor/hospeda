@@ -21,7 +21,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/faqs')({
     component: AccommodationFaqsPage
@@ -30,8 +30,6 @@ export const Route = createFileRoute('/_authed/accommodations/$id_/faqs')({
 function AccommodationFaqsPage() {
     const { id } = Route.useParams();
     const { data: accommodation } = useAccommodationQuery(id);
-    const { has: hasEntitlement } = useMyEntitlements();
-    const canUseAiTextImprove = hasEntitlement(EntitlementKey.AI_TEXT_IMPROVE);
 
     return (
         <AccommodationSubTabLayout
@@ -39,12 +37,19 @@ function AccommodationFaqsPage() {
             entityName={accommodation?.name}
         >
             <div className="rounded-lg border bg-card p-6">
-                <FaqManager
-                    entityType="accommodations"
-                    parentId={id}
-                    canUseAiTextImprove={canUseAiTextImprove}
-                />
+                <AccommodationFaqManager id={id} />
             </div>
         </AccommodationSubTabLayout>
+    );
+}
+
+function AccommodationFaqManager({ id }: { readonly id: string }) {
+    const { has } = useEffectiveSet();
+    return (
+        <FaqManager
+            entityType="accommodations"
+            parentId={id}
+            canUseAiTextImprove={has(EntitlementKey.AI_TEXT_IMPROVE)}
+        />
     );
 }

@@ -38,7 +38,7 @@ function readPath(source: Record<string, unknown>, path: string): unknown {
  * Quality signals for accommodation (spec §4.9).
  *
  * Premium signals live behind the host's plan. The caller passes the
- * resolved entitlement flag (from `useMyEntitlements` + the staff-bypass
+ * resolved entitlement flag (from `useEffectiveSet` + the staff-bypass
  * helper) so this config stays pure and trivially testable. When more
  * premium signals come online (virtual tour, calendar sync, etc.) extend
  * the input object rather than reaching into a hook from here.
