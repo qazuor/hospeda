@@ -55,6 +55,7 @@ import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
 import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
+import { adminBillingSubscriptionRoutes } from './billing-subscription/admin/inspect.js';
 import {
     protectedBillingSubscriptionReadRoutes,
     protectedBillingSubscriptionRoutes
@@ -655,6 +656,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
+        app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);
         app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
 
         // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
