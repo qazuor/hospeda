@@ -20,6 +20,7 @@ const snapshot = (vertical: VerticalEnum, entries: { key: string; value: number 
         userId: USER_ID,
         vertical,
         hasLiveNonTrialTitle: false,
+        inheritsTouristVip: false,
         entries: entries.map(({ key, value }) => ({ key, value, strategy: 'MAX' as const }))
     });
 

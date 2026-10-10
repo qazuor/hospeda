@@ -102,6 +102,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: `edit_${vertical.toLowerCase()}_info`, value: 1, strategy: 'MAX' }]
             })
     })

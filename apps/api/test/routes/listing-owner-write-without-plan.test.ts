@@ -58,6 +58,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical: VerticalEnum.GASTRONOMY,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: []
             })
     })

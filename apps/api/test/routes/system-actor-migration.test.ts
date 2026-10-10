@@ -228,6 +228,7 @@ describe('TEST:V5:14 — los actores de sistema de la API salen de la fábrica',
                 userId,
                 vertical: VerticalEnum.ACCOMMODATION,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
             })
         );

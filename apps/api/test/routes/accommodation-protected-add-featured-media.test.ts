@@ -67,6 +67,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical: VerticalEnum.ACCOMMODATION,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [
                     { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
                     { key: 'max_photos_per_accommodation', value: 15, strategy: 'SUM' }

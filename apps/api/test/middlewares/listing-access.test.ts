@@ -103,6 +103,7 @@ beforeEach(() => {
             userId,
             vertical,
             hasLiveNonTrialTitle: false,
+            inheritsTouristVip: false,
             entries: []
         })
     );
@@ -161,6 +162,7 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [
                     { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
                     { key: 'max_photos_per_accommodation', value: 10, strategy: 'MAX' }
@@ -190,6 +192,7 @@ describe('AC:V5:8 foreign listing subject', () => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
             })
         );
@@ -227,6 +230,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' as const }]
             })
         );
@@ -270,6 +274,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' as const }]
             })
         );
