@@ -225,9 +225,9 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
                     userId,
                     vertical
                 }) ?? 0) > 0;
-        } catch (error) {
+        } catch {
             apiLogger.warn(
-                { accommodationId: accommodation.id, error },
+                { accommodationId: accommodation.id },
                 'Rich description entitlement lookup failed'
             );
         }
