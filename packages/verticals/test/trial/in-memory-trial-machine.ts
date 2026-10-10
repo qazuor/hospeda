@@ -54,8 +54,13 @@ export function createInMemoryTrialMachine() {
     const locks = new Map<string, Promise<void>>();
     const held = new Set<string>();
     const markExpiredFailures = new Set<string>();
+    const ceilingReads: { readonly vertical: Vertical; readonly deadlinesVersion: number }[] = [];
     const log: string[] = [];
     let beforeWork: (() => void | Promise<void>) | undefined;
+    let redemptionInsertConflict:
+        | { readonly redemptionKey: string; readonly redemption: Redemption }
+        | undefined;
+    let failAdminRecord = false;
 
     const rowKey = (userId: string, vertical: Vertical) =>
         trialMachineLockKey({ userId, vertical }).key;
@@ -173,6 +178,7 @@ export function createInMemoryTrialMachine() {
                         }
                     },
                     async findRedemption({ redemptionKey }) {
+                        log.push('findRedemption');
                         const redemption = draftRedemptions.get(redemptionKey);
                         return redemption === undefined
                             ? null
@@ -186,6 +192,13 @@ export function createInMemoryTrialMachine() {
                         appliedAt
                     }) {
                         log.push('insertRedemption');
+                        if (redemptionInsertConflict?.redemptionKey === redemptionKey) {
+                            draftRedemptions.set(
+                                redemptionKey,
+                                redemptionInsertConflict.redemption
+                            );
+                            return { inserted: false };
+                        }
                         if (draftRedemptions.has(redemptionKey)) return { inserted: false };
                         draftRedemptions.set(redemptionKey, {
                             userId,
@@ -195,13 +208,15 @@ export function createInMemoryTrialMachine() {
                         });
                         return { inserted: true };
                     },
-                    async findTrialCeilingDays({ vertical }) {
+                    async findTrialCeilingDays({ vertical, deadlinesVersion }) {
+                        ceilingReads.push({ vertical, deadlinesVersion });
                         const ceiling = ceilingDays.get(vertical);
                         if (ceiling === undefined) throw new Error('Trial ceiling not configured');
                         return ceiling;
                     },
                     async recordAdminExtension(extension) {
                         log.push('recordAdmin');
+                        if (failAdminRecord) throw new Error('Injected admin record failure');
                         draftAdminExtensions.push(extension);
                     }
                 };
@@ -238,6 +253,18 @@ export function createInMemoryTrialMachine() {
         },
         get adminExtensions() {
             return [...adminExtensions];
+        },
+        get ceilingReads() {
+            return [...ceilingReads];
+        },
+        seedRedemption(redemptionKey: string, redemption: Redemption) {
+            redemptions.set(redemptionKey, redemption);
+        },
+        setRedemptionInsertConflict(redemptionKey: string, redemption: Redemption) {
+            redemptionInsertConflict = { redemptionKey, redemption };
+        },
+        failRecordAdminExtension() {
+            failAdminRecord = true;
         },
         seedTrial(row: TrialMachineRow) {
             rows.set(rowKey(row.userId, row.vertical), copyRow(row));
