@@ -49,7 +49,6 @@ describe('GET /api/v1/protected/owner-promotions/exclusive-deals (HOS-21 T-008)'
         expect(res.status).toBe(401);
     });
 
-    // HOS-1352: transitional until V3 (HOS-1357), see PR
     it('returns 200 with an empty collection', async () => {
         const res = await app.request(BASE, { headers: makeHeaders() });
         expect(res.status).toBe(200);
