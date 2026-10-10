@@ -992,7 +992,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             // HOST user with chat but no explicit search entitlement.
             // Confirms the route does not gate on AI_SEARCH (SPEC-211 §7.7).
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_CHAT]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 20]]);
 
             const res = await app.request(ENDPOINT, {
                 method: 'POST',
@@ -3503,7 +3503,9 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
         });
 
         it('still records success usage after the former quota is reached', async () => {
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_SEARCH_PER_MONTH, 50]]);
+            currentLimitsForTest.current = new Map([
+                [LimitKey.MAX_AI_SEARCH_PER_MONTH, 2147483647]
+            ]);
             nextSearchCallCount.current = 50;
 
             const res = await app.request(ENDPOINT, {

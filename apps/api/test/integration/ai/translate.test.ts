@@ -157,9 +157,24 @@ vi.mock('@repo/ai-core', () => {
         // whole-module mock leaves any export it omits as `undefined`, and
         // calling it throws inside the handler — surfacing as a bare 500 rather
         // than a missing-export message. Empty = nothing to alert about.
-        findUnconfiguredFeatures: vi.fn(() => [])
+        findUnconfiguredFeatures: vi.fn(() => []),
+        getMonthlyCallCount: vi.fn(async () => 0)
     };
 });
+
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async () => ({
+            entitlements: {
+                get: ({ key }: { key: string }) => (key === 'ai_translate' ? 1 : undefined)
+            },
+            limits: {
+                get: ({ key }: { key: string }) =>
+                    key === 'max_ai_translate_per_month' ? 50 : undefined
+            }
+        })
+    })
+}));
 
 // ---------------------------------------------------------------------------
 /**

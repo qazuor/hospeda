@@ -31,6 +31,7 @@ const {
     mockRecordAiUsage,
     mockGetMonthlyCallCount,
     mockRateLimitCallCount,
+    mockOwnerLimit,
     nextStreamDeltas,
     nextMeta,
     nextContextResult,
@@ -65,6 +66,7 @@ const {
         mockGetMonthlyCallCount,
         // Track rate-limit middleware calls
         mockRateLimitCallCount: { current: 0 },
+        mockOwnerLimit: { current: 20 },
         nextStreamDeltas: { current: ['Hola', ' mundo'] as string[] },
         nextMeta: {
             current: Promise.resolve({
@@ -150,6 +152,25 @@ vi.mock('@repo/ai-core', () => {
         }))
     };
 });
+
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async () => ({
+            entitlements: {
+                get: ({ key }: { key: string }) => (key === 'ai_chat' ? 1 : undefined)
+            },
+            limits: {
+                get: ({ key }: { key: string }) =>
+                    ({
+                        max_ai_chat_per_month: mockOwnerLimit.current,
+                        max_ai_chat_consumer_per_month: 20,
+                        max_ai_chat_gastronomy_per_month: 20,
+                        max_ai_chat_experience_per_month: 20
+                    })[key]
+            }
+        })
+    })
+}));
 
 /**
  * Mock @repo/db — stub only `getDb` to intercept the inline ownerId lookup.
@@ -371,6 +392,7 @@ describe('POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 T-009)', ()
         mockOwnerQueryResult.current = [{ ownerId: OWNER_ID }];
         getMonthlyCallCountReturn.current = 0;
         mockRateLimitCallCount.current = 0;
+        mockOwnerLimit.current = 20;
 
         // Reset mocks to their default implementations
         mockGetMonthlyCallCount.mockReset();
@@ -525,7 +547,8 @@ describe('POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 T-009)', ()
 
         it('invokes rate-limit middleware when historical usage is high', async () => {
             // Rate-limit runs BEFORE the handler's owner gate
-            mockGetMonthlyCallCount.mockResolvedValue(20);
+            mockGetMonthlyCallCount.mockResolvedValueOnce(20).mockResolvedValue(0);
+            mockOwnerLimit.current = 2147483647;
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -538,9 +561,9 @@ describe('POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 T-009)', ()
 
             // Rate-limit middleware executed (burst guard is in the middleware chain)
             expect(mockRateLimitCallCount.current).toBeGreaterThanOrEqual(1);
-            // A high monthly count no longer blocks the request.
+            // The configured effective limit is above this historical count.
             expect(res.status).toBe(200);
-            expect(mockGetMonthlyCallCount).not.toHaveBeenCalled();
+            expect(mockGetMonthlyCallCount).toHaveBeenCalled();
         });
     });
 
