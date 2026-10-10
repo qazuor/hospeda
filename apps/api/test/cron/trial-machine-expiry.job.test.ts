@@ -15,7 +15,7 @@ vi.mock('../../src/utils/trial/trial-machine-ports', () => ({
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 
-import { trialExpiryJob } from '../../src/cron/jobs/trial-expiry.job';
+import { trialMachineExpiryJob } from '../../src/cron/jobs/trial-machine-expiry.job';
 
 const context = (dryRun = false): CronJobContext => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -32,19 +32,19 @@ beforeEach(() => {
 
 describe('trial-expiry T3 cron', () => {
     it('dry run makes no machine call', async () => {
-        const result = await trialExpiryJob.handler(context(true));
+        const result = await trialMachineExpiryJob.handler(context(true));
         expect(result).toMatchObject({ success: true, processed: 0 });
         expect(mockExpire).not.toHaveBeenCalled();
     });
 
     it('runs a 100-row batch with the injected clock', async () => {
-        expect(trialExpiryJob).toMatchObject({
-            name: 'trial-expiry',
+        expect(trialMachineExpiryJob).toMatchObject({
+            name: 'trial-machine-expiry',
             schedule: '*/15 * * * *',
             enabled: true,
             timeoutMs: 120_000
         });
-        const result = await trialExpiryJob.handler(context());
+        const result = await trialMachineExpiryJob.handler(context());
         expect(mockExpire).toHaveBeenCalledWith({ ...mockPorts, clock: mockClock, batchSize: 100 });
         expect(result).toMatchObject({
             success: true,
@@ -56,7 +56,7 @@ describe('trial-expiry T3 cron', () => {
 
     it('reports row failures', async () => {
         mockExpire.mockResolvedValue({ expired: 2, skipped: 1, failed: 1 });
-        expect(await trialExpiryJob.handler(context())).toMatchObject({
+        expect(await trialMachineExpiryJob.handler(context())).toMatchObject({
             success: false,
             processed: 2,
             errors: 1
@@ -65,7 +65,7 @@ describe('trial-expiry T3 cron', () => {
 
     it('reports an exception without throwing', async () => {
         mockExpire.mockRejectedValue(new Error('database unavailable'));
-        expect(await trialExpiryJob.handler(context())).toMatchObject({
+        expect(await trialMachineExpiryJob.handler(context())).toMatchObject({
             success: false,
             message: 'Trial expiry failed: database unavailable'
         });

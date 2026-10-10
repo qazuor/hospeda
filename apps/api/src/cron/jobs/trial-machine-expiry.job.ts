@@ -4,8 +4,8 @@ import { getTrialMachinePorts } from '../../utils/trial/trial-machine-ports.js';
 import type { CronJobDefinition } from '../types.js';
 
 /** T3 sweep: each candidate is re-read inside its own trial lock. */
-export const trialExpiryJob: CronJobDefinition = {
-    name: 'trial-expiry',
+export const trialMachineExpiryJob: CronJobDefinition = {
+    name: 'trial-machine-expiry',
     description:
         'Expire running trials whose end date passed, re-reading it under the trial lock (HOS-1445, AC:V4:7)',
     schedule: '*/15 * * * *',
