@@ -2,9 +2,6 @@
  * POST /api/v1/protected/price-alerts
  * Subscribe to price-drop alerts for an accommodation — Protected endpoint.
  *
- * HOS-1352: transitional until V3 (HOS-1357), see PR: price alerts have no
- * monthly plan cap while effective limits are rebuilt.
- *
  * The response denormalizes `accommodationName` from a fresh accommodation
  * read — `AlertSubscriptionService.create()` does not re-fetch relations on
  * write (no `getDefaultWriteResponseRelations()` override), so the created
@@ -13,10 +10,11 @@
  * Returns 201 Created (default POST status).
  */
 
-import { CreatePriceAlertInputSchema, PriceAlertResponseSchema } from '@repo/schemas';
+import { CreatePriceAlertInputSchema, PriceAlertResponseSchema, VerticalEnum } from '@repo/schemas';
 import { AccommodationService, AlertSubscriptionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -39,6 +37,19 @@ export const createPriceAlertRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const input = body as { accommodationId: string; targetPercentDrop?: number };
+
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['price_alerts'],
+            limit: async () => {
+                const countResult = await alertSubscriptionService.countActive(actor);
+                return {
+                    key: 'max_active_alerts',
+                    requested: (countResult.error ? 0 : (countResult.data?.count ?? 0)) + 1
+                };
+            }
+        });
 
         const result = await alertSubscriptionService.create(actor, input);
 

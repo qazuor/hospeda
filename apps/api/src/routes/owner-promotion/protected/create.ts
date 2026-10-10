@@ -4,14 +4,17 @@
  */
 
 import {
+    LifecycleStatusEnum,
     OwnerPromotionCreateRequestSchema,
     OwnerPromotionProtectedSchema,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -36,7 +39,24 @@ export const protectedCreateOwnerPromotionRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        // HOS-1352: transitional until V3 (HOS-1357), see PR: promotion count has no plan cap while effective limits are rebuilt.
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['create_promotions'],
+            limit: async () => {
+                const countResult = await ownerPromotionService.count(actor, {
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    ownerId: actor.id
+                } as never);
+                if (countResult.error) {
+                    throw new ServiceError(countResult.error.code, countResult.error.message);
+                }
+                return {
+                    key: 'max_active_promotions',
+                    requested: (countResult.data?.count ?? 0) + 1
+                };
+            }
+        });
         // Inject ownerId from the authenticated session actor so the client
         // cannot supply or forge it. The body is validated against
         // OwnerPromotionCreateRequestSchema which omits ownerId entirely.

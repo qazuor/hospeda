@@ -7,19 +7,17 @@
  * — neither route strips it. These tests confirm the field reaches the
  * service call end-to-end for POST (create), PUT (update), and PATCH.
  *
- * Entitlement/limit gates are mocked as pass-through (following
- * `promo-code-t008.test.ts`'s convention) so the test exercises the real
- * success path instead of only the permissive 401/403 fallback used by
- * `create.test.ts` — this repo's mock actor requires
- * `x-mock-actor-permissions` to activate (see `actorMiddleware`), and the
- * CREATE_PROMOTIONS entitlement gate has no test-env mock data source.
+ * The effective set and the pre-update ownership read are fixture-mocked so
+ * the test reaches the real route behavior without a database.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, type VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PROMOTION_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const keys = ['create_promotions'];
 
 const createCaptures: Array<{ actor: unknown; data: unknown }> = [];
 const updateCaptures: Array<{ actor: unknown; id: unknown; data: unknown }> = [];
@@ -64,6 +62,43 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 } as unknown as ReturnType<typeof orig.OwnerPromotionService.prototype.create>;
             }
 
+            override async count(
+                ..._args: Parameters<typeof orig.OwnerPromotionService.prototype.count>
+            ): ReturnType<typeof orig.OwnerPromotionService.prototype.count> {
+                return { data: { count: 0 }, error: undefined } as Awaited<
+                    ReturnType<typeof orig.OwnerPromotionService.prototype.count>
+                >;
+            }
+
+            override async getById(
+                _actor: Parameters<typeof orig.OwnerPromotionService.prototype.getById>[0],
+                id: Parameters<typeof orig.OwnerPromotionService.prototype.getById>[1]
+            ): ReturnType<typeof orig.OwnerPromotionService.prototype.getById> {
+                return {
+                    data: {
+                        id,
+                        slug: 'vip-promo',
+                        ownerId: ACTOR_ID,
+                        accommodationId: null,
+                        title: 'VIP Promotion',
+                        description: null,
+                        discountType: 'percentage',
+                        discountValue: 10,
+                        validFrom: new Date('2025-01-01'),
+                        validUntil: null,
+                        maxRedemptions: null,
+                        currentRedemptions: 0,
+                        lifecycleState: 'DRAFT',
+                        touristAudience: 'plus',
+                        createdAt: new Date('2025-01-01'),
+                        updatedAt: new Date('2025-01-01')
+                    },
+                    error: undefined
+                } as unknown as Awaited<
+                    ReturnType<typeof orig.OwnerPromotionService.prototype.getById>
+                >;
+            }
+
             override async update(
                 actor: Parameters<typeof orig.OwnerPromotionService.prototype.update>[0],
                 id: Parameters<typeof orig.OwnerPromotionService.prototype.update>[1],
@@ -97,6 +132,22 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         }
     };
 });
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: true,
+                entries: [
+                    ...keys.map((key) => ({ key, value: 1, strategy: 'MAX' as const })),
+                    { key: 'max_active_promotions', value: 2147483647, strategy: 'MAX' as const }
+                ]
+            })
+    })
+}));
 
 // Imports after all vi.mock() calls.
 const { initApp } = await import('../../../../src/app.js');
