@@ -29,6 +29,7 @@ function ports(
             userId,
             vertical,
             hasLiveNonTrialTitle: false,
+            inheritsTouristVip: false,
             entries: keys.map((key) => ({ key, value: 1, strategy: 'MAX' as const }))
         })
     );
