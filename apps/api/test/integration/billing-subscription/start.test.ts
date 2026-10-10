@@ -120,7 +120,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
 
     it('orders auth, shape, missing id and plan policy before the provider, without creating a row', async () => {
         const { user, option } = await fixture(false);
-        const fake = new FakePaymentProvider({ clock });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
         const authorize = vi.spyOn(fake, 'authorize');
         const app = initApp({ clock, paymentProvider: fake });
         const request = (body: unknown, authenticated = true) =>
@@ -157,7 +157,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
             authorizationWindowDeadlineVersion: 1,
             authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
-        const fake = new FakePaymentProvider({ clock });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
         const authorize = vi.spyOn(fake, 'authorize');
         const app = initApp({ clock, paymentProvider: fake });
         const response = await app.request(path, {
@@ -172,7 +172,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
 
     it('rejects a version that is no longer current before reaching the provider', async () => {
         const { user, option } = await fixture(true, false);
-        const fake = new FakePaymentProvider({ clock });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
         const authorize = vi.spyOn(fake, 'authorize');
         const app = initApp({ clock, paymentProvider: fake });
         const response = await app.request(path, {

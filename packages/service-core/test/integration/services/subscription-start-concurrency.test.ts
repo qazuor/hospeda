@@ -209,6 +209,7 @@ describe('TEST:B3:6 ten simultaneous signups of one user + vertical', () => {
     it('leaves one row, one key and one provider id, persisting the key before the call', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'inspect a healthy creation under the race' }]
         });
@@ -263,6 +264,7 @@ describe('TEST:B3:6 ten simultaneous signups of one user + vertical', () => {
     it('holds the winner in authorize while the other nine are refused, then completes', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'make the fixture healthy' }]
         });
@@ -310,6 +312,7 @@ describe('TEST:B3:6 race and reuse', () => {
     it('reuses the live row when the insert loses the race and the database rejects it', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'make the fixture healthy' }]
         });
@@ -341,6 +344,7 @@ describe('TEST:B3:6 race and reuse', () => {
     it('answers the same stored result on a retry after the winner completed', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'make the fixture healthy' }]
         });
@@ -363,6 +367,7 @@ describe('TEST:B3:6 race and reuse', () => {
     it('refuses another billing option of the same version', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'make the fixture healthy' }]
         });
@@ -389,6 +394,7 @@ describe('TEST:B3:6 race and reuse', () => {
     it('refuses a live row whose reuse window has expired', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'make the fixture healthy' }]
         });
@@ -418,6 +424,7 @@ describe('TEST:B3:6 race and reuse', () => {
     it('refuses a live row whose key is still in flight (no result yet)', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'make the fixture healthy' }]
         });
@@ -446,6 +453,7 @@ describe('TEST:B3:6 race and reuse', () => {
     it('refuses a live row whose creation did not apply (applied false)', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'make the fixture healthy' }]
         });

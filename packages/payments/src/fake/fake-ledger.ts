@@ -14,12 +14,15 @@ export class FakeLedger {
     readonly charges = new Map<string, StoredCharge>();
     private sequence = 0;
     private readonly outbox: FakeOutbox;
+    private readonly idNamespace: string | undefined;
 
     /**
      * @param args.outbox - Where the notices of each change go
+     * @param args.idNamespace - Separates ids when integration tests share a database
      */
-    constructor(args: { readonly outbox: FakeOutbox }) {
+    constructor(args: { readonly outbox: FakeOutbox; readonly idNamespace?: string }) {
         this.outbox = args.outbox;
+        this.idNamespace = args.idNamespace;
     }
 
     /**
@@ -90,9 +93,11 @@ export class FakeLedger {
         });
     }
 
-    /** A new id, unique within this fake. */
+    /** A new id, scoped to this fake or to its integration test namespace. */
     nextId(args: { readonly prefix: string }): string {
         this.sequence += 1;
-        return `fake-${args.prefix}-${this.sequence}`;
+        return this.idNamespace === undefined
+            ? `fake-${args.prefix}-${this.sequence}`
+            : `fake-${args.prefix}-${this.idNamespace}-${this.sequence}`;
     }
 }

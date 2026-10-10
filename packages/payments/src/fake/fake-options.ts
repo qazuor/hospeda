@@ -32,6 +32,8 @@ export interface Simulate {
 export interface FakePaymentProviderOptions {
     /** The clock every read and every delay of the fake is measured on. */
     readonly clock: Clock;
+    /** Separates generated ids across integration test providers sharing a database. */
+    readonly idNamespace?: string;
     /** The lies this test turns off. Empty: the fake lies like the real one. */
     readonly honestAbout?: readonly HonestAbout[];
     /** The simulations this test turns on. Empty: none. */
@@ -51,6 +53,7 @@ export const FakePaymentProviderOptionsSchema = z.strictObject({
             typeof (value as { now?: unknown }).now === 'function',
         { message: 'clock must be an object with now(): Date' }
     ),
+    idNamespace: z.string().min(1).optional(),
     honestAbout: z
         .array(
             z.strictObject({
@@ -85,12 +88,14 @@ export const FakePaymentProviderOptionsSchema = z.strictObject({
  */
 export function parseFakeOptions(args: { readonly options: FakePaymentProviderOptions }): {
     readonly clock: Clock;
+    readonly idNamespace: string | undefined;
     readonly honest: ReadonlySet<string>;
     readonly simulating: ReadonlySet<string>;
 } {
     const parsed = FakePaymentProviderOptionsSchema.parse(args.options);
     return {
         clock: parsed.clock,
+        idNamespace: parsed.idNamespace,
         honest: new Set(parsed.honestAbout.map((entry) => entry.lie)),
         simulating: new Set(parsed.simulate.map((entry) => entry.simulation))
     };

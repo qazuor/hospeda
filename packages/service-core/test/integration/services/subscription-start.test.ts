@@ -131,6 +131,7 @@ describe('TEST:B3:1 S1 durable pending authorization', () => {
     it('commits the row and key before authorize, with amount, cycle, reason and reference from our catalog', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'inspect a healthy creation' }]
         });
@@ -213,7 +214,7 @@ describe('S1 reuse reads the stored authorization deadline', () => {
                     result: { authorizationId, applied: true, checkoutUrl },
                     completedAt: clock.now()
                 });
-                const fake = new FakePaymentProvider({ clock });
+                const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
                 const authorize = vi.spyOn(fake, 'authorize');
                 const retry = startSubscription(
                     { userId: choice.user.id, billingOptionId: choice.billingOptionId, returnUrl },
@@ -238,6 +239,7 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
     it('blocks a live mandate, sends notice before cancellation, and accepts a later call only after a cancelled reread', async () => {
         const choice = await seedChoice();
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'make the fixture healthy' }]
         });
@@ -332,7 +334,7 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
 
     it('holds the new signup while the before-cancel notice has not gone out', async () => {
         const choice = await seedChoice();
-        const fake = new FakePaymentProvider({ clock });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
         const provider = namespaceFake(fake);
         const prior = await subscriptionModel.createPendingAuthorization({
             userId: choice.user.id,
@@ -389,7 +391,7 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
             authorizationWindowDeadlineVersion: 1,
             authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
-        const lying = new FakePaymentProvider({ clock });
+        const lying = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
         const lyingProvider = namespaceFake(lying);
         await expect(
             authorizePendingSubscription({
@@ -408,6 +410,7 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
         expect(JSON.stringify(key?.result)).not.toContain('checkoutUrl');
         const other = await seedChoice();
         const healthy = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'M1 disabled by name' }]
         });
@@ -432,6 +435,7 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
             authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const lying = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'retain the sent date so M9 is isolated' }]
         });
@@ -464,6 +468,7 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
             authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const honest = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [
                 { lie: 'M1', why: 'retain requested fields' },
@@ -487,6 +492,7 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
 
     it('never retries the same one-use payment token after a rejected second call', async () => {
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'exercise RP1 without divergent fields' }]
         });
