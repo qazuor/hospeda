@@ -19,6 +19,7 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
+import { legacyPublicationStatus } from '@repo/db';
 import type { Experience } from '@repo/schemas';
 import {
     ExperiencePriceUnitEnum,
@@ -59,7 +60,7 @@ const OWNER_ID = '00000000-0000-4000-a000-000000000002';
 const DEST_ID = '00000000-0000-4000-a000-000000000003';
 const OTHER_USER = '00000000-0000-4000-a000-000000000099';
 
-function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}): Experience {
+function makeExperienceEntity(overrides: Partial<Experience> = {}): Experience {
     return {
         id: ENTITY_ID,
         name: 'City Kayak Tour',
@@ -73,6 +74,12 @@ function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}):
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         moderationState: ModerationStatusEnum.APPROVED,
         visibility: VisibilityEnum.PUBLIC,
+        publicationStatus: legacyPublicationStatus({
+            lifecycleState: overrides.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
+            visibility: overrides.visibility ?? VisibilityEnum.PUBLIC
+        }),
+        inactiveSince: new Date('2024-01-01'),
+        deadlinesVersion: 1,
         averageRating: 0,
         reviewsCount: 0,
         createdAt: new Date('2024-01-01'),
@@ -589,7 +596,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
 
 describe('ExperienceService._projectPublicEntity', () => {
     it('should strip adminInfo from the projected entity', () => {
-        const entity = makeExperienceEntity({ adminInfo: { notes: 'internal' } });
+        const entity = makeExperienceEntity({ adminInfo: { favorite: false, notes: 'internal' } });
         const service = makeService(entity);
         const result = (service as AnyService)._projectPublicEntity(entity);
         expect(result).not.toHaveProperty('adminInfo');
