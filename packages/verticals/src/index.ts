@@ -129,6 +129,7 @@ export {
     createPlanCatalogInverse,
     type PlanCatalogInverse
 } from './plan-catalog/plan-catalog-inverse';
+export * from './publication/index';
 export { consumeQuota } from './quota/consume-quota';
 export { MARKET_TIME_ZONE, marketCalendarDay, marketMidnight } from './quota/market-time';
 export { selectQuotaGrant } from './quota/quota-grant';
