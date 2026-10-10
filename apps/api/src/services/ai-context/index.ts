@@ -30,7 +30,7 @@ export * from './types.js';
  * most tests, and a rename would have put a large mechanical diff in the middle
  * of a feature change for no behavioural gain.
  *
- * `ownerEntitlements` is intentionally unused here — an accommodation's context
+ * Owner capabilities are intentionally unused here — an accommodation's context
  * carries no entitlement-gated sections, unlike gastronomy's carta and
  * experience's directions.
  */

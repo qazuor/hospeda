@@ -10,8 +10,7 @@
  * The carta, the menú del día and the venue agenda are ENTITLEMENT-GATED
  * content: the public routes withhold them from an owner whose plan does not
  * grant the key, and the service-core readers do not. So this assembler gates
- * them too, from the entitlement set the ROUTE resolved (see
- * `AssembleChatContextInput.ownerEntitlements`).
+ * them too, from the capability flag the ROUTE resolved for the owner.
  *
  * Today that gate never fires — every gastronomy or experience tier that grants `AI_CHAT` also
  * grants the carta keys — and it is written anyway, because "today's catalogue
@@ -50,7 +49,6 @@ import type { AssembleChatContextInput, AssembleChatContextOutput } from './type
 // ---------------------------------------------------------------------------
 
 /** Hard cap on the description length in the context block. */
-// HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
 export const GASTRONOMY_DESCRIPTION_MAX_CHARS = 800;
 
 /** Maximum FAQs included in the context block. */
@@ -114,18 +112,18 @@ export interface GastronomyContextMenuItem {
  *
  * @param venue - The gastronomy row.
  * @param faqs - The venue's FAQs. Capped at {@link GASTRONOMY_CONTEXT_FAQ_MAX}.
- * @param menuItems - The carta, already gated by the caller. Pass an EMPTY array
- *   when the owner's plan does not grant `MANAGE_GASTRONOMY_MENU` — this function
- *   does not re-check, it renders what it is given.
+ * @param menuItems - The carta rows loaded for the listing.
+ * @param includeMenu - Whether the owner has `manage_gastronomy_menu`.
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildGastronomyMarkdownContext(
     venue: GastronomyContextRow,
     faqs: ReadonlyArray<GastronomyContextFaq>,
-    menuItems: ReadonlyArray<GastronomyContextMenuItem>
+    menuItems: ReadonlyArray<GastronomyContextMenuItem>,
+    includeMenu: boolean
 ): string {
     const cappedFaqs = faqs.slice(0, GASTRONOMY_CONTEXT_FAQ_MAX);
-    const cappedItems = menuItems.slice(0, GASTRONOMY_CONTEXT_MENU_ITEM_MAX);
+    const cappedItems = includeMenu ? menuItems.slice(0, GASTRONOMY_CONTEXT_MENU_ITEM_MAX) : [];
     const truncatedDescription = truncate(
         sanitizeOwnerDelimiters(venue.description),
         GASTRONOMY_DESCRIPTION_MAX_CHARS
@@ -204,7 +202,7 @@ export function buildGastronomyMarkdownContext(
         lines.push(
             'La carta y los precios son los que el local guardó por última vez, no datos en vivo.'
         );
-    } else if (venue.menuUrl) {
+    } else if (includeMenu && venue.menuUrl) {
         // No structured carta reached us — either the venue has none, or its
         // plan does not grant it. Either way the link is public information.
         lines.push('', '### Carta', 'El local publica su carta en un enlace externo.');
@@ -260,7 +258,7 @@ function formatOpeningHours(openingHours: Record<string, unknown> | null): strin
  * Secondary reads (FAQs, carta) degrade to empty lists with a logged warning —
  * a chat request must not fail because one relation is unavailable.
  *
- * @param input - Actor, entity id, resolved prompt, locale, owner entitlements.
+ * @param input - Actor, entity id, resolved prompt, locale and owner capabilities.
  * @returns The context block, system message and venue name.
  */
 export async function assembleGastronomyContext(
@@ -296,7 +294,12 @@ export async function assembleGastronomyContext(
         safeLoadMenuItems(entityId)
     ]);
 
-    const contextBlock = buildGastronomyMarkdownContext(venue, faqs, menuItems);
+    const contextBlock = buildGastronomyMarkdownContext(
+        venue,
+        faqs,
+        menuItems,
+        input.ownerCapabilities.manageGastronomyMenu === true
+    );
 
     return {
         contextBlock,

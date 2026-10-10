@@ -85,7 +85,8 @@ import {
     type SearchIntentEntities,
     SearchIntentEntitiesSchema,
     type SearchIntentOutput,
-    SearchIntentOutputSchema
+    SearchIntentOutputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { DEFAULT_POI_PROXIMITY_RADIUS_KM, DestinationService } from '@repo/service-core';
 import { isUsableEntityId } from '@repo/utils';
@@ -95,6 +96,7 @@ import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { meterAiUsage } from '../../../utils/ai-usage-metering.js';
+import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
     createProtectedStreamingRoute,
@@ -542,6 +544,12 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // Step 1: Parse validated body fields.
         const { messages, currentFilters, locale, conversationId } = rawBody;
         const actor = getActorFromContext(c);
+        await enforceAiQuota({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            feature: 'search',
+            limitKey: 'max_ai_search_per_month'
+        });
 
         apiLogger.debug(
             {

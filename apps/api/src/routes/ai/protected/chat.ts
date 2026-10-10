@@ -12,9 +12,9 @@
  *   auth → rateLimit-perUser → rateLimit-perIP
  *
  * Per-tourist + per-IP rate limiting (`createAiRateLimitMiddlewares('chat')`)
- * is the burst guard (keyed by the requesting tourist). The entitlement and
- * quota gates were removed with the legacy billing system (HOS-1416); usage
- * metering (`ai_usage`) remains as non-gating telemetry.
+ * is the burst guard (keyed by the requesting tourist). The handler separately
+ * checks the listing owner's entitlement/quota and the consumer's quota before
+ * starting the stream; usage metering remains as telemetry.
  *
  * ## Flow
  *
@@ -57,7 +57,8 @@ import {
     type LanguageEnum,
     PermissionEnum,
     resolveAiChatTarget,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
@@ -71,6 +72,8 @@ import {
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
+import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
+import { readEffectiveKeys } from '../../../utils/listing-access/user-gate.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
     createProtectedStreamingRoute,
@@ -90,6 +93,24 @@ const DEFAULT_LOCALE: LanguageEnum = 'es';
  * request from `CHAT_FEATURE_BY_ENTITY_TYPE`.
  */
 const RATE_LIMIT_FEATURE: AiFeature = 'chat';
+
+const OWNER_CHAT_COPY_BY_ENTITY_TYPE = {
+    accommodation: 'accommodations.aiChat.unavailable',
+    gastronomy: 'gastronomy.aiChat.unavailable',
+    experience: 'experience.aiChat.unavailable'
+} as const;
+
+const VERTICAL_BY_ENTITY_TYPE = {
+    accommodation: VerticalEnum.ACCOMMODATION,
+    gastronomy: VerticalEnum.GASTRONOMY,
+    experience: VerticalEnum.EXPERIENCE
+} as const;
+
+const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
+    accommodation: 'max_ai_chat_per_month',
+    gastronomy: 'max_ai_chat_gastronomy_per_month',
+    experience: 'max_ai_chat_experience_per_month'
+} as const;
 
 const PERSISTENCE_TIMEOUT_MS = 1500;
 
@@ -179,7 +200,6 @@ function getLastUserTurn(messages: ReadonlyArray<AiChatMessage>): string {
     return lastUserMessage?.content ?? messages[messages.length - 1]?.content ?? '';
 }
 
-// HOS-1352: transitional until V3 (HOS-1357), see PR — removed AI_CHAT entitlement gate.
 export const protectedAiChatRoute = createProtectedStreamingRoute({
     path: '/',
     summary: 'AI accommodation chat (streaming SSE)',
@@ -189,7 +209,6 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
     tags: ['AI - Chat'],
     requestSchema: AiChatRequestSchema,
     options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         middlewares: [...createAiRateLimitMiddlewares(RATE_LIMIT_FEATURE)]
     },
     streamHandler: async ({ c }) => {
@@ -211,8 +230,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // gastronomy or experience owner-quota lookup are NOT wired yet. A gastronomy or experience target is
         // therefore refused explicitly rather than falling through into the
         // accommodation lookup below, which would 404 while talking about an
-        // accommodation nobody asked about. This branch is the seam the
-        // assemblers replace; it must not survive the feature.
+        // accommodation nobody asked about.
         // -----------------------------------------------------------------------
         const target = resolveAiChatTarget(body);
         const entityType = target.entityType;
@@ -251,6 +269,41 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             });
         }
         const ownerId = ownerRow.ownerId;
+        const ownerVertical = VERTICAL_BY_ENTITY_TYPE[entityType];
+        const ownerFeature = FEATURE;
+
+        await enforceAiQuota({
+            userId: ownerId,
+            vertical: ownerVertical,
+            feature: ownerFeature,
+            entitlementKey: 'ai_chat',
+            limitKey: OWNER_CHAT_LIMIT_BY_ENTITY_TYPE[entityType],
+            entitlementMessage: OWNER_CHAT_COPY_BY_ENTITY_TYPE[entityType],
+            limitMessage:
+                'El propietario de este alojamiento ha alcanzado el límite mensual de chats de IA.'
+        });
+        await enforceAiQuota({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            feature: ownerFeature,
+            limitKey: 'max_ai_chat_consumer_per_month',
+            limitMessage: 'accommodations.aiChat.consumerLimitReached'
+        });
+
+        const ownerCapabilities =
+            entityType === 'gastronomy'
+                ? await readEffectiveKeys({
+                      userId: ownerId,
+                      vertical: ownerVertical,
+                      keys: ['manage_gastronomy_menu']
+                  })
+                : entityType === 'experience'
+                  ? await readEffectiveKeys({
+                        userId: ownerId,
+                        vertical: ownerVertical,
+                        keys: ['manage_experience_directions']
+                    })
+                  : {};
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {
@@ -275,7 +328,11 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             actor,
             entityId,
             resolvedPrompt,
-            locale
+            locale,
+            ownerCapabilities: {
+                manageGastronomyMenu: ownerCapabilities.manage_gastronomy_menu === true,
+                manageExperienceDirections: ownerCapabilities.manage_experience_directions === true
+            }
         });
 
         const aiService = await createConfiguredAiService();
