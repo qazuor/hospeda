@@ -11,5 +11,6 @@ export * from './permission';
 export * from './postgres-error-cause';
 export * from './relations';
 export * from './service-logger';
+export * from './system-actor';
 export * from './transaction';
 export * from './validation';

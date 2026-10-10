@@ -47,7 +47,7 @@ export async function resolveListingAccess(args: {
     readonly declaredVertical?: string | null;
     readonly facts: ListingAccessFacts | null;
     readonly operation: ListingOperation;
-    readonly adminAction?: { readonly permitted: boolean };
+    readonly adminAction?: { readonly permitted: boolean; readonly isSystemActor: boolean };
     readonly step6Key?: string;
     readonly limit?: { readonly key: string; readonly requested: number };
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
@@ -67,9 +67,11 @@ export async function resolveListingAccess(args: {
         evaluatedSteps.push(3);
         if (args.actorId === null) return { allowed: false, reason: 'FORBIDDEN' };
         const action = resolveAdministrativeActionStep({
+            action: 'ACC_15',
             actorId: args.actorId,
             subjectId: args.facts?.ownerId ?? null,
-            permitted: args.adminAction.permitted
+            permitted: args.adminAction.permitted,
+            isSystemActor: args.adminAction.isSystemActor
         });
         if (!action.allowed) return action;
         if (args.operation !== 'EDIT') return { allowed: false, reason: 'FORBIDDEN' };

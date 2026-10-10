@@ -6,6 +6,12 @@
 
 export { resolveAdministrativeActionStep } from './authorization/administrative-action-step';
 export {
+    ADMINISTRATIVE_ACTION_PERMISSION_SET,
+    ADMINISTRATIVE_ACTION_PERMISSIONS,
+    ADMINISTRATIVE_ACTIONS,
+    type AdministrativeAction
+} from './authorization/administrative-actions';
+export {
     type EffectiveSetPort,
     resolveEntitlementStep,
     UnknownStepKeyError
