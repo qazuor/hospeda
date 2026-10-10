@@ -16,6 +16,7 @@ export function createPublicationTestAdapter(args: {
     readonly covered: { value: boolean };
     readonly limit: { value: number };
     readonly onLocked?: () => Promise<void>;
+    readonly beforeSetPublicationStatus?: () => Promise<void>;
 }): {
     readonly unitOfWork: PublicationUnitOfWork;
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
@@ -127,8 +128,10 @@ export function createPublicationTestAdapter(args: {
                         async readPublishLimit() {
                             return args.limit.value;
                         },
-                        setPublicationStatus: (input) =>
-                            listingPublicationModel.setPublicationStatus({ tx, ...input }),
+                        setPublicationStatus: async (input) => {
+                            await args.beforeSetPublicationStatus?.();
+                            return listingPublicationModel.setPublicationStatus({ tx, ...input });
+                        },
                         stampInactiveSince: (input) =>
                             listingPublicationModel.stampInactiveSince({ tx, ...input }),
                         insertStatusChangedEvent: (input) =>

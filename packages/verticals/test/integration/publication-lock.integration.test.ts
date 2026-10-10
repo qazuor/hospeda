@@ -49,14 +49,29 @@ describe('TEST:V6:3 - publication lock with two real connections', () => {
         const { userId, destinationId } = await seedPublicationOwner({ db });
         const first = await seedPublicationListing({ db, vertical, userId, destinationId });
         const second = await seedPublicationListing({ db, vertical, userId, destinationId });
-        const adapter = createPublicationTestAdapter({
+        let atWrite: () => void = () => {};
+        const firstCounted = new Promise<void>((resolve) => {
+            atWrite = resolve;
+        });
+        const firstAdapter = createPublicationTestAdapter({
+            db,
+            covered: { value: true },
+            limit: { value: 1 },
+            beforeSetPublicationStatus: async () => {
+                atWrite();
+                await new Promise<void>((resolve) => setTimeout(resolve, 250));
+            }
+        });
+        const secondAdapter = createPublicationTestAdapter({
             db,
             covered: { value: true },
             limit: { value: 1 }
         });
+        const publishingFirst = publish({ userId, listingId: first.id, adapter: firstAdapter });
+        await firstCounted;
         const outcomes = await Promise.all([
-            publish({ userId, listingId: first.id, adapter }),
-            publish({ userId, listingId: second.id, adapter })
+            publishingFirst,
+            publish({ userId, listingId: second.id, adapter: secondAdapter })
         ]);
         expect(outcomes.filter((outcome) => outcome.published)).toHaveLength(1);
         expect(outcomes.filter((outcome) => !outcome.published)).toMatchObject([
