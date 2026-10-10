@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { VerticalDeadlineValuesSchema } from '../../src/catalog/vertical-deadlines.schema.js';
 
-// OWNER-PENDING (HOS-1479, D-1): keys 3, 4, 7, 8 and 9 are placeholders.
+// HOS-1479 Coord-61 D-1: keys 3, 4, 7, 8 and 9 are final.
 const versionOne = {
     '1': { days: 90 },
     '2': { days: 180 },

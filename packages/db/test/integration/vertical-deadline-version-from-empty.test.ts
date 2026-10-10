@@ -27,7 +27,7 @@ describe('TEST:V6:20 structural vertical deadline migration from empty', () => {
             '8',
             '9'
         ]);
-        // OWNER-PENDING (HOS-1479, D-1): 3, 4, 7, 8 and 9 are placeholders.
+        // HOS-1479 Coord-61 D-1: 3, 4, 7, 8 and 9 are final.
         expect(rows[0]?.values).toEqual({
             '1': { days: 90 },
             '2': { days: 180 },

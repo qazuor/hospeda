@@ -10,7 +10,6 @@ CREATE TABLE "vertical_deadline_version" (
 	CONSTRAINT "ck_vertical_deadline_changed_key_range" CHECK ("vertical_deadline_version"."changed_key" BETWEEN 1 AND 9 OR "vertical_deadline_version"."changed_key" IS NULL)
 );
 --> statement-breakpoint
--- OWNER-PENDING (HOS-1479, D-1): PLAZO:3, :4, :7, :8 and :9 are placeholders until the owner fixes them; the PR does not merge with these values.
 DO $$
 DECLARE
     initial_values jsonb := '{
@@ -49,8 +48,8 @@ CREATE TABLE "cutover_v6_deleted_listing" (
 --> statement-breakpoint
 DO $$
 DECLARE
-    -- CUT-LIST:BEGIN (DEC-MIG-006 📌2: the owner's closed list of five listings; OWNER-PENDING, D-2)
-    cut_list jsonb := '[]'::jsonb;
+    -- CUT-LIST:BEGIN (DEC-MIG-006 📌2: owner's closed cut list (four listings, Coord-61))
+    cut_list jsonb := '[{"entityType":"accommodation","entityId":"2ad30000-7423-42b8-bb8f-3727136dc231"},{"entityType":"accommodation","entityId":"b2ae683f-d1fc-4216-a586-b9813f030b8e"},{"entityType":"accommodation","entityId":"3914545e-cc23-420a-851b-5f7619d08a32"},{"entityType":"accommodation","entityId":"8aa85d5f-5251-436d-a5a8-f02b84f4789e"}]'::jsonb;
     -- CUT-LIST:END
     cut_item jsonb;
     cut_type text;
@@ -62,8 +61,11 @@ BEGIN
     IF jsonb_typeof(cut_list) <> 'array' THEN
         RAISE EXCEPTION 'CUT-LIST must be an array';
     END IF;
-    IF jsonb_array_length(cut_list) = 0 THEN
-        RAISE NOTICE 'CUT-LIST is empty: placeholder mode keeps every listing';
+    IF jsonb_array_length(cut_list) = 0
+       OR (NOT EXISTS (SELECT 1 FROM accommodations)
+           AND NOT EXISTS (SELECT 1 FROM gastronomies)
+           AND NOT EXISTS (SELECT 1 FROM experiences)) THEN
+        RAISE NOTICE 'CUT-LIST is empty or the database has no listings: no listings deleted';
         UPDATE accommodations SET
             publication_status = CASE WHEN lifecycle_state = 'ACTIVE' AND visibility = 'PUBLIC'
                 AND owner_suspended IS NOT TRUE AND plan_restricted IS NOT TRUE

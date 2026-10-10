@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { Pool } from 'pg';
 
 /** Reserved structural migration tag for the paso-3 cut. */
-export const CUT_MIGRATION_TAG = '0147_cut_paso_3';
+export const CUT_MIGRATION_TAG = '0148_cut_paso_3';
 
 /** Reads the paso-3 migration from the package source. */
 export function readCutMigration(): string {
@@ -42,9 +42,9 @@ export function withCutList({
     readonly sql: string;
     readonly list: readonly object[];
 }): string {
-    const declaration = /cut_list jsonb := '\[\]'::jsonb;/;
+    const declaration = /(-- CUT-LIST:BEGIN[^\n]*\n\s*cut_list jsonb := ')[^']*('::jsonb;)/;
     if (!declaration.test(sql)) throw new Error('CUT-LIST declaration was not found');
-    return sql.replace(declaration, `cut_list jsonb := '${JSON.stringify(list)}'::jsonb;`);
+    return sql.replace(declaration, `$1${JSON.stringify(list)}$2`);
 }
 
 interface PreCutDatabase {

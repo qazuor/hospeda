@@ -25,6 +25,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { CUT_MIGRATION_TAG, withCutList } from './support/cut-migration.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -69,7 +70,9 @@ function readJournal(): JournalEntry[] {
  * the server as its own simple query, the same shape drizzle-kit feeds it.
  */
 async function applyMigrationFile(pool: Pool, tag: string): Promise<void> {
-    const sql = readFileSync(join(MIGRATIONS_DIR, `${tag}.sql`), 'utf8');
+    const migration = readFileSync(join(MIGRATIONS_DIR, `${tag}.sql`), 'utf8');
+    // This history test preserves its seeded listings through the cut.
+    const sql = tag === CUT_MIGRATION_TAG ? withCutList({ sql: migration, list: [] }) : migration;
     for (const statement of sql.split('--> statement-breakpoint')) {
         const trimmed = statement.trim();
         if (trimmed.length === 0) continue;
