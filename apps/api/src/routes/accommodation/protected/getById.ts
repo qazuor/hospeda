@@ -12,12 +12,19 @@ import {
     rAccommodationFeature
 } from '@repo/db';
 import type { AmenityProtected, FeatureProtected } from '@repo/schemas';
-import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
+import {
+    AccommodationIdSchema,
+    AccommodationProtectedSchema,
+    PermissionEnum,
+    VerticalEnum
+} from '@repo/schemas';
 import { AccommodationService, entityNotFoundError, ServiceError } from '@repo/service-core';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
+import { getListingAccessPorts } from '../../../utils/listing-access/ports';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -160,7 +167,6 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
         id: AccommodationIdSchema
     },
     responseSchema: AccommodationProtectedSchema.nullable(),
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_RICH_DESCRIPTION entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
@@ -206,11 +212,30 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
             fetchProtectedFeatures(accommodation.id)
         ]);
 
-        // BETA-199: the premium rich-description pair. The owner-plan gate was
-        // removed with the legacy billing system (HOS-1416); the pair is served
-        // unconditionally on this owner-facing editor GET.
+        // The editor can read its own listing, but paid rich content follows
+        // the listing owner's effective entitlement, including for admin readers.
+        let canUseRichDescription = false;
+        try {
+            const userId = accommodation.ownerId;
+            const vertical = VerticalEnum.ACCOMMODATION;
+            const effective = await getListingAccessPorts().effectiveSet({ userId, vertical });
+            canUseRichDescription =
+                (effective.entitlements.get({
+                    key: 'can_use_rich_description',
+                    userId,
+                    vertical
+                }) ?? 0) > 0;
+        } catch (error) {
+            apiLogger.warn(
+                { accommodationId: accommodation.id, error },
+                'Rich description entitlement lookup failed'
+            );
+        }
+        const visibleAccommodation = canUseRichDescription
+            ? accommodation
+            : stripRichDescriptionFields(accommodation);
         return {
-            ...accommodation,
+            ...visibleAccommodation,
             // `undefined` (not `[]`) when empty, mirroring the admin/public
             // routes: the field is `.optional()` on the response schema.
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
