@@ -17,11 +17,11 @@
  * provider selection to the UI.
  *
  * Gate model: ownership + `ACCOMMODATION_OCCUPANCY_MANAGE` inline via
- * `assertOccupancyManageAccess`; external sync runs without the former plan
+ * `assertOccupancyManageAccess`; external sync also requires the effective plan
  * entitlement. Neither sync service throws for operational failures — each
  * returns a discriminated result and records ERROR state — so a failed sync
  * surfaces as a 200 with `status: 'error'`, not a 5xx.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
+ * The listing access resolver requires the route capability on the owner.
  *
  * @module routes/accommodation/protected/calendarSync
  */
@@ -65,7 +65,12 @@ const ICAL_PROVIDER_BY_TOKEN: Record<'airbnb' | 'booking' | 'other', IcalProvide
 export const protectedCalendarSyncRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/calendar-sync/sync',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_sync_external_calendar'],
+        idParam: 'id'
+    },
     summary: 'Trigger an external calendar occupancy sync (owner)',
     description:
         'Runs one on-demand sync (Google Calendar OAuth or an Airbnb/Booking/generic iCal feed, ' +
@@ -79,7 +84,6 @@ export const protectedCalendarSyncRoute = createProtectedRoute({
     },
     requestBody: SyncCalendarBodySchema,
     responseSchema: CalendarSyncResultSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_SYNC_EXTERNAL_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -98,6 +102,5 @@ export const protectedCalendarSyncRoute = createProtectedRoute({
 
         const provider = ICAL_PROVIDER_BY_TOKEN[providerToken];
         return await syncAccommodationIcalCalendar({ accommodationId, provider });
-    },
-    options: {}
+    }
 });

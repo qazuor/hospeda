@@ -8,7 +8,7 @@
  * `ACCOMMODATION_OCCUPANCY_MANAGE` are enforced inline via
  * `assertOccupancyManageAccess`; external calendar connections run without
  * the former billing entitlement during the transition.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
+ * The listing access resolver requires the route capability on the owner.
  *
  * The handler does NOT redirect the browser itself — it returns the Google
  * authorization URL so the web app (which made an authenticated fetch) can
@@ -86,7 +86,12 @@ const ConnectGoogleBodySchema = z.object({
 export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/calendar-sync/connect-google',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_sync_external_calendar'],
+        idParam: 'id'
+    },
     summary: 'Start the Google Calendar connect flow (owner)',
     description:
         'Returns the Google OAuth authorization URL for connecting an accommodation to a ' +
@@ -98,7 +103,6 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
     },
     requestBody: ConnectGoogleBodySchema,
     responseSchema: ConnectGoogleResponseSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_SYNC_EXTERNAL_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -150,6 +154,5 @@ export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
         authorizeUrl.searchParams.set('state', state);
 
         return { authorizeUrl: authorizeUrl.toString() };
-    },
-    options: {}
+    }
 });

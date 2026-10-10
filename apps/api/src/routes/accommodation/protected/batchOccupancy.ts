@@ -9,8 +9,8 @@
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
  * enforced inside `batchToggleOccupancy`. Calendar operations run without the former
- * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
+ * `can_use_calendar` on the listing owner through listing access.
+ * The listing access resolver requires the route capability on the owner.
  */
 
 import {
@@ -41,7 +41,12 @@ const BatchOccupancyResponseSchema = z.object({
 export const protectedBatchOccupancyRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/occupancy/batch',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_use_calendar'],
+        idParam: 'id'
+    },
     summary: 'Batch block/unblock days on the occupancy calendar (owner)',
     description:
         'Toggles a set of dates blocked/unblocked. isBlocked=true idempotently upserts ' +
@@ -54,7 +59,6 @@ export const protectedBatchOccupancyRoute = createProtectedRoute({
     },
     requestBody: AccommodationOccupancyBatchInputSchema,
     responseSchema: BatchOccupancyResponseSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -74,6 +78,5 @@ export const protectedBatchOccupancyRoute = createProtectedRoute({
         });
 
         return { occupancy };
-    },
-    options: {}
+    }
 });
