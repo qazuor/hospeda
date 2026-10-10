@@ -31,6 +31,7 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { exit } from 'node:process';
+import { Pool } from 'pg';
 
 /**
  * Default DB URL precedence:
@@ -185,7 +186,18 @@ async function main(): Promise<void> {
         // because the database is ephemeral.
         exclude: []
     });
-    await seedListingOwnerTrials();
+    // runSeed closes its own pool before returning. Open a fresh connection for
+    // these E2E-only rows, then release it before the runner exits.
+    const { initializeDb, resetDb } = await import('@repo/db');
+    const fixturePool = new Pool({ connectionString: dbUrl });
+    resetDb();
+    initializeDb(fixturePool);
+    try {
+        await seedListingOwnerTrials();
+    } finally {
+        await fixturePool.end();
+        resetDb();
+    }
     console.info('[e2e-seed] Done.');
 }
 
