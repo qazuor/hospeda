@@ -1,5 +1,5 @@
 {
-  "id": "f40287a5-ad4a-4c3d-b2ab-00b0addb57d6",
+  "id": "9967c19f-c516-4c7f-98af-f5e3fdbc3214",
   "prevId": "98b6ee17-d185-476e-8a9b-725c504e37d0",
   "version": "7",
   "dialect": "postgresql",
@@ -177,19 +177,19 @@
           "type": "publication_status_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "inactive_since": {
           "name": "inactive_since",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "deadlines_version": {
           "name": "deadlines_version",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "deletion_announced_at": {
           "name": "deletion_announced_at",
@@ -8184,7 +8184,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'trial.extended')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -11215,19 +11215,19 @@
           "type": "publication_status_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "inactive_since": {
           "name": "inactive_since",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "deadlines_version": {
           "name": "deadlines_version",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "deletion_announced_at": {
           "name": "deletion_announced_at",
@@ -12081,19 +12081,19 @@
           "type": "publication_status_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "inactive_since": {
           "name": "inactive_since",
           "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "deadlines_version": {
           "name": "deadlines_version",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "deletion_announced_at": {
           "name": "deletion_announced_at",
@@ -29889,71 +29889,6 @@
         }
       },
       "isRLSEnabled": false
-    },
-    "public.vertical_deadline_version": {
-      "name": "vertical_deadline_version",
-      "schema": "",
-      "columns": {
-        "version": {
-          "name": "version",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "values": {
-          "name": "values",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "changed_key": {
-          "name": "changed_key",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "previous_value": {
-          "name": "previous_value",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "new_value": {
-          "name": "new_value",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "changed_by": {
-          "name": "changed_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ck_vertical_deadline_version_positive": {
-          "name": "ck_vertical_deadline_version_positive",
-          "value": "\"vertical_deadline_version\".\"version\" > 0"
-        },
-        "ck_vertical_deadline_changed_key_range": {
-          "name": "ck_vertical_deadline_changed_key_range",
-          "value": "\"vertical_deadline_version\".\"changed_key\" BETWEEN 1 AND 9 OR \"vertical_deadline_version\".\"changed_key\" IS NULL"
-        }
-      },
-      "isRLSEnabled": false
     }
   },
   "enums": {
@@ -31124,6 +31059,7 @@
         "listing.foreignContent.edit",
         "billing.subscription.inspect",
         "billing.viewOwn",
+        "trial.extend",
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",

@@ -200,6 +200,7 @@ import {
     adminUserTagModerationRoutes
 } from './tag/user-tag/index.js';
 import { publicTestimonialRoutes } from './testimonials/public';
+import { adminTrialRoutes } from './trial/admin/extend.js';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
@@ -659,6 +660,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);
+        app.route('/api/v1/admin/trials', adminTrialRoutes);
         app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
 
         // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)

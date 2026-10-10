@@ -17,11 +17,15 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   "fact 1" of the retention clock (NUCLEO/01 §1.2), read back from this
  *   table. Content fields carry only their name (AC:V9a:2). `listing.exported`
  *   is deliberately absent: no export operation exists yet.
+ * - `trial.extended`: a running trial extended by the administrative action 11
+ *   (origin `SUPER_ADMIN`, mandatory `reason`; HOS-1445, AC:V4:9). The
+ *   redemption extensions are NOT here: they live in `canje_de_trial`.
  */
 export const DOMAIN_EVENT_TYPES = [
     'email.undeliverable',
     'listing.created',
-    'listing.edited'
+    'listing.edited',
+    'trial.extended'
 ] as const;
 
 /** One type of the closed domain event catalog. */

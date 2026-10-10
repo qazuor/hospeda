@@ -1,0 +1,3 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'trial.extend' BEFORE 'user.update.self';--> statement-breakpoint
+ALTER TABLE "domain_event" DROP CONSTRAINT "domain_event_event_type_check";--> statement-breakpoint
+ALTER TABLE "domain_event" ADD CONSTRAINT "domain_event_event_type_check" CHECK ("domain_event"."event_type" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'trial.extended'));

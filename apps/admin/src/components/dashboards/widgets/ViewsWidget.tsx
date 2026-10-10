@@ -45,6 +45,7 @@
  */
 
 import { LockIcon } from '@repo/icons';
+import { AdminEffectiveSetResponseSchema, VerticalEnum } from '@repo/schemas';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import type { Widget } from '@/config/ia/schema';
@@ -320,21 +321,6 @@ interface RawAccommodationViewsResponse {
     }>;
 }
 
-/** Response shape from GET /api/v1/protected/users/me/entitlements. */
-interface RawEntitlementsResponse {
-    readonly success: boolean;
-    readonly data?: {
-        readonly entitlements: ReadonlyArray<string>;
-        readonly limits: Record<string, number>;
-        readonly plan: {
-            readonly slug: string;
-            readonly name: string;
-            readonly status: string;
-        } | null;
-        readonly asOf: string;
-    };
-}
-
 /** Response shape from GET /api/v1/admin/posts (list). */
 interface RawPostsListResponse {
     readonly success: boolean;
@@ -382,19 +368,19 @@ interface RawAdminViewsSummaryResponse {
  * @param window - Time window to fetch (`'7d'` or `'30d'`).
  * @returns HostViewsData payload.
  */
-async function fetchHostViews(window: TimeWindow): Promise<HostViewsData> {
+async function fetchHostViews(window: TimeWindow, userId: string): Promise<HostViewsData> {
     // Proactive entitlement check (mirrors host.stats.views resolver logic).
-    let hasViewBasicStats = true;
+    if (!userId) return { locked: true };
+    let hasViewBasicStats = false;
     try {
-        const entResult = await fetchApi<RawEntitlementsResponse>({
-            path: '/api/v1/protected/users/me/entitlements'
+        const entResult = await fetchApi<{ data: unknown }>({
+            path: `/api/v1/admin/users/${userId}/effective-set?vertical=${VerticalEnum.ACCOMMODATION}`
         });
-        const entitlements = entResult.data.data?.entitlements ?? [];
-        hasViewBasicStats = entitlements.includes('view_basic_stats');
+        const effective = AdminEffectiveSetResponseSchema.parse(entResult.data.data);
+        const value = effective.entitlements.view_basic_stats;
+        hasViewBasicStats = value === 'Infinity' || (typeof value === 'number' && value > 0);
     } catch (_err) {
-        // Both 503 (billing unavailable) and unknown errors fall through
-        // optimistically: try the views endpoint and let the 403 guard below
-        // handle the locked state if needed.
+        return { locked: true };
     }
 
     if (!hasViewBasicStats) {
@@ -612,7 +598,7 @@ export function ViewsWidget({ widget }: ViewsWidgetProps) {
     const windowAwareFn = async () => {
         switch (variant) {
             case 'host':
-                return fetchHostViews(currentWindow);
+                return fetchHostViews(currentWindow, userId);
             case 'editor-posts':
                 return fetchEditorPostViews(currentWindow);
             case 'editor-events':

@@ -872,6 +872,7 @@ export enum PermissionEnum {
     LISTING_FOREIGN_CONTENT_EDIT = 'listing.foreignContent.edit', // Allows editing another owner's listing content across all three verticals (action 15).
     BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.
     BILLING_VIEW_OWN = 'billing.viewOwn', // Allows reading the account's own billing.
+    TRIAL_EXTEND = 'trial.extend', // Allows extending another person's running trial past the ceiling with a mandatory reason (action 11, HOS-1445). SUPER_ADMIN-only.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).

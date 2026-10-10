@@ -84,6 +84,19 @@ global.ResizeObserver = class ResizeObserver {
     disconnect() {}
 };
 
+global.IntersectionObserver = class IntersectionObserver implements IntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = '0px';
+    readonly scrollMargin = '0px';
+    readonly thresholds = [0];
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+        return [];
+    }
+};
+
 // Mock Better Auth React client
 vi.mock('better-auth/react', () => {
     const mockSession = {
@@ -195,6 +208,7 @@ vi.mock('@repo/icons', () => {
         ICON_SIZES: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32, '2xl': 40 },
         // Entity icons
         AccommodationIcon: stub('AccommodationIcon'),
+        getAccommodationTypeIcon: () => stub('AccommodationIcon'),
         DestinationIcon: stub('DestinationIcon'),
         EventIcon: stub('EventIcon'),
         EventLocationIcon: stub('EventLocationIcon'),
