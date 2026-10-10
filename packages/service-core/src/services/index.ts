@@ -76,6 +76,7 @@ export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
 export * from './billing/subscription/activate-subscription.service.js';
 export * from './billing/subscription/expire-authorization-windows.service.js';
 export * from './billing/subscription/start-subscription.service.js';
+export * from './billing/subscription/succession-target-guard.js';
 export * from './contentModeration';
 export * from './conversation/index.js';
 export * from './cronRun/index.js';
