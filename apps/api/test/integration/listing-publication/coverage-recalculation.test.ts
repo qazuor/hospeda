@@ -314,9 +314,11 @@ describe('TEST:V6 API coverage recalculation', () => {
         const unsubscribe = subscribeListingCoverageRecalculation();
         try {
             await trialMachineExpiryJob.handler({
-                logger: { info() {}, error() {} },
+                logger: { info() {}, warn() {}, error() {}, debug() {} },
                 startedAt: now,
-                dryRun: false
+                dryRun: false,
+                runId: randomUUID(),
+                correlationId: randomUUID()
             });
             const publishedId = listingIds.find(
                 (listing) => listing.initialStatus === PublicationStatusEnum.PUBLISHED
