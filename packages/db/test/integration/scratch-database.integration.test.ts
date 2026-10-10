@@ -39,6 +39,7 @@ describe('scratch database shutdown protection', () => {
             await admin.query(`DROP DATABASE "${database}" WITH (FORCE)`);
             const error = await shutdown;
             expect(error.code).toBe('57P01');
+            expect(pool.listenerCount('error')).toBe(2);
         } finally {
             await pool.end();
         }
