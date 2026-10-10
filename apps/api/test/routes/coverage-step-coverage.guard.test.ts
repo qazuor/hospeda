@@ -223,7 +223,7 @@ function routeFiles(dir: string, prefix = ''): string[] {
 }
 
 const hasWriteMethod = /method:\s*'(?:post|put|patch|delete)'/;
-const accessOperation = /listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|DELETE)'/s;
+const accessOperation = /^\s*listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|DELETE)'/m;
 
 describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () => {
     const actual = ['accommodation', 'gastronomy', 'experience']
