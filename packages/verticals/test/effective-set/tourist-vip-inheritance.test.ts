@@ -72,19 +72,34 @@ describe('TEST:V3:8 Tourist VIP inheritance', () => {
         ).resolves.toEqual({ inherits: false });
     });
 
-    it('does not inherit from a version without the flag or from Tourist itself', async () => {
+    it('does not inherit from a version without the flag', async () => {
         const catalog = createInMemoryCatalog();
         const planVersionId = catalog.addPlanVersion(planVersionRow());
         const title = source({ type: 'SUBSCRIPTION', planVersionId });
-        for (const vertical of [VerticalEnum.ACCOMMODATION, VerticalEnum.TOURIST]) {
-            await expect(
-                resolveTouristVipInheritance({
-                    userId,
-                    reader: catalog.reader,
-                    billing: billingFor({ vertical, sources: [title] })
+        await expect(
+            resolveTouristVipInheritance({
+                userId,
+                reader: catalog.reader,
+                billing: billingFor({ vertical: VerticalEnum.ACCOMMODATION, sources: [title] })
+            })
+        ).resolves.toEqual({ inherits: false });
+    });
+
+    it('does not inherit from Tourist itself even when its version declares the flag', async () => {
+        const catalog = createInMemoryCatalog();
+        const planVersionId = catalog.addPlanVersion(
+            planVersionRow({ vertical: VerticalEnum.TOURIST, inheritsTouristVip: true })
+        );
+        await expect(
+            resolveTouristVipInheritance({
+                userId,
+                reader: catalog.reader,
+                billing: billingFor({
+                    vertical: VerticalEnum.TOURIST,
+                    sources: [source({ type: 'SUBSCRIPTION', planVersionId })]
                 })
-            ).resolves.toEqual({ inherits: false });
-        }
+            })
+        ).resolves.toEqual({ inherits: false });
     });
 
     it('rejects a dangling plan version reference', async () => {
