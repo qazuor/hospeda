@@ -5,7 +5,6 @@
  * All mock data for AccommodationService tests should be created here.
  */
 
-import { legacyPublicationStatus } from '@repo/db';
 import type {
     Accommodation,
     AccommodationCreateInput,
@@ -19,7 +18,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PriceCurrencyEnum,
-    type PublicationStatusEnum,
+    PublicationStatusEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
@@ -96,12 +95,13 @@ export const createMockAccommodation = (
 
     // Base visibility fields
     visibility: VisibilityEnum.PUBLIC,
-    publicationStatus: legacyPublicationStatus({
-        lifecycleState: overrides.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
-        visibility: overrides.visibility ?? VisibilityEnum.PUBLIC,
-        ownerSuspended: overrides.ownerSuspended ?? false,
-        planRestricted: overrides.planRestricted ?? false
-    }),
+    publicationStatus:
+        (overrides.lifecycleState ?? LifecycleStatusEnum.ACTIVE) === LifecycleStatusEnum.ACTIVE &&
+        (overrides.visibility ?? VisibilityEnum.PUBLIC) === VisibilityEnum.PUBLIC &&
+        overrides.ownerSuspended !== true &&
+        overrides.planRestricted !== true
+            ? PublicationStatusEnum.PUBLISHED
+            : PublicationStatusEnum.DRAFT,
     inactiveSince: new Date('2024-01-01'),
     deadlinesVersion: 1,
 
