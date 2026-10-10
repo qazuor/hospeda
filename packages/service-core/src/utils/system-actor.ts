@@ -55,7 +55,7 @@ export function createSystemActor(input: {
         ADMINISTRATIVE_ACTION_PERMISSION_SET.has(permission)
     );
     if (administrative.length > 0) {
-        const permission = administrative[0];
+        const permission = administrative[0] as PermissionEnum;
         const action = ADMINISTRATIVE_ACTIONS.find((candidate) =>
             ADMINISTRATIVE_ACTION_PERMISSIONS[candidate].permissions.includes(permission)
         );
