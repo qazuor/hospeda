@@ -71,7 +71,12 @@ async function fixture() {
     await getServiceTestPool().query("UPDATE subscription SET status='ACTIVE' WHERE id=$1", [
         row.subscription.id
     ]);
-    return { userId: user.id, subscriptionId: row.subscription.id, optionId };
+    return {
+        userId: user.id,
+        subscriptionId: row.subscription.id,
+        optionId,
+        planVersionId: versionId
+    };
 }
 const actor = (id: string) => ({ type: 'admin' as const, id });
 
@@ -281,6 +286,51 @@ describe('TEST:B3:14 S14 reconciliation marks', () => {
         expect(next.outcome).toBe('OPENED');
         expect(next.mark.id).not.toBe(previous.mark.id);
         expect(hung).toEqual([next.mark.id]);
+    });
+
+    it('leaves an already linked successor and both succession pointers unchanged', async () => {
+        const { subscriptionId, userId, optionId, planVersionId } = await fixture();
+        const [successorUser] = await getServiceTestDb()
+            .insert(users)
+            .values({
+                email: `mark-successor-${crypto.randomUUID()}@example.test`,
+                displayName: 'Successor test',
+                emailVerified: true,
+                lifecycleState: 'ACTIVE'
+            })
+            .returning();
+        if (!successorUser) throw new Error('No successor user');
+        const successor = await subscriptionModel.createPendingAuthorization({
+            userId: successorUser.id,
+            vertical: 'accommodation',
+            planVersionId,
+            billingOptionId: optionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date('2027-01-01T00:00:00Z')
+        });
+        await getServiceTestPool().query('UPDATE subscription SET succeeded_by_id=$2 WHERE id=$1', [
+            subscriptionId,
+            successor.subscription.id
+        ]);
+        await getServiceTestPool().query('UPDATE subscription SET succeeds_id=$2 WHERE id=$1', [
+            successor.subscription.id,
+            subscriptionId
+        ]);
+        const before = await getServiceTestPool().query(
+            'SELECT id, status, succeeds_id, succeeded_by_id FROM subscription WHERE id = ANY($1::uuid[]) ORDER BY id',
+            [[subscriptionId, successor.subscription.id]]
+        );
+        await openReconciliationMark({
+            subject: { kind: 'SUBSCRIPTION', subscriptionId },
+            reason: 'DIVERGENCIA_DE_MONTO',
+            actor: actor(userId),
+            correlationId: crypto.randomUUID()
+        });
+        const after = await getServiceTestPool().query(
+            'SELECT id, status, succeeds_id, succeeded_by_id FROM subscription WHERE id = ANY($1::uuid[]) ORDER BY id',
+            [[subscriptionId, successor.subscription.id]]
+        );
+        expect(after.rows).toEqual(before.rows);
     });
 
     it('rejects invalid reason, UUID and subject pair before database access', async () => {
