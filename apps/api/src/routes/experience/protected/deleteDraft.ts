@@ -22,6 +22,7 @@
  * @module routes/experience/protected/deleteDraft
  */
 
+import { VerticalEnum } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -41,6 +42,7 @@ const DeleteDraftResponseSchema = z.object({
 export const protectedDeleteExperienceDraftRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'DELETE', idParam: 'id' },
     summary: 'Delete one of my DRAFT experience listings',
     description:
         'Soft-deletes a DRAFT experience listing owned by the caller. Ownership is the gate: no experience permission is required, and a listing the caller does not own answers 404. A listing in any lifecycle state other than DRAFT is refused.',

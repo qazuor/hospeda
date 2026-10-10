@@ -21,7 +21,8 @@
 import {
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
-    ExperienceProtectedSchema
+    ExperienceProtectedSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against. The root
@@ -74,6 +75,7 @@ const _GATED_FIELD = 'meetingPointDirections' as const;
 export const protectedPatchExperienceRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     summary: 'Update experience listing (owner)',
     description:
         'Partially updates operational fields of an experience listing. Requires ownership.',
