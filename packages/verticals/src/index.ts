@@ -141,6 +141,12 @@ export {
     TRIAL_DEADLINES_VERSION
 } from './trial/trial-deadlines';
 export { expireDueTrials, expireTrial, type TrialExpiryResult } from './trial/trial-expiry';
+export {
+    type AdminTrialExtensionResult,
+    createExtendTrial,
+    extendTrialByAdmin,
+    TRIAL_EXTENSION_REJECTIONS
+} from './trial/trial-extension';
 export { trialMachineLockKey } from './trial/trial-lock-key';
 export {
     InvalidTrialMachineInputError,
