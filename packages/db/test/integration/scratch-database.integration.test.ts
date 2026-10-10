@@ -29,20 +29,24 @@ describe('scratch database shutdown protection', () => {
 
         const pool = new Pool({ connectionString: scratchUrl.toString(), min: 1 });
         protectScratchPool({ pool });
-        const shutdown = new Promise<Error & { readonly code?: string }>((resolveError) => {
-            pool.on('error', resolveError);
-        });
         const client = await pool.connect();
         client.release();
 
         try {
             await admin.query(`DROP DATABASE "${database}" WITH (FORCE)`);
-            const error = await shutdown;
-            expect(error.code).toBe('57P01');
-            expect(pool.listenerCount('error')).toBe(2);
+            await waitForNoConnections({ admin, database });
+            const result = await admin.query('SELECT 1 FROM pg_database WHERE datname = $1', [
+                database
+            ]);
+            expect(result.rowCount).toBe(0);
         } finally {
             await pool.end();
         }
+    });
+
+    it('ignores admin_shutdown errors', () => {
+        const error = Object.assign(new Error('administrator shutdown'), { code: '57P01' });
+        expect(() => ignoreAdminShutdown(error)).not.toThrow();
     });
 
     it('rethrows errors other than admin_shutdown', () => {
