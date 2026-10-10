@@ -17,7 +17,8 @@
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
-    AccommodationMediaSingleOutputSchema
+    AccommodationMediaSingleOutputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -45,6 +46,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminRestoreMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}/restore',
     summary: 'Restore archived photo to accommodation gallery (admin)',
     description:

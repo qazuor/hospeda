@@ -13,7 +13,7 @@
  *
  * No request body — gastronomyId and mediaId come from URL params.
  */
-import { GastronomyMediaSingleOutputSchema, PermissionEnum } from '@repo/schemas';
+import { GastronomyMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -32,6 +32,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for gastronomy listing gallery (admin)',
     description:
@@ -40,7 +41,6 @@ export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
         'photo to visible first. Requires GASTRONOMY_EDIT_ALL. No request body — ids ' +
         'come from URL params.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

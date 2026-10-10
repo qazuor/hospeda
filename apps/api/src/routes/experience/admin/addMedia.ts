@@ -11,7 +11,7 @@ import {
     type ExperienceMediaAddPayload,
     ExperienceMediaAddPayloadSchema,
     ExperienceMediaSingleOutputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addExperienceMedia, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -31,12 +31,12 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminAddExperienceMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media',
     summary: 'Add photo to experience listing gallery (admin)',
     description:
         'Registers an already-uploaded URL as a new experience_media row. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -16,7 +16,7 @@ import {
     ExperienceMediaListOutputSchema,
     type ExperienceMediaReorderPayload,
     ExperienceMediaReorderPayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, reorderExperienceMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -36,6 +36,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminReorderExperienceMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
     summary: 'Reorder experience listing gallery photos (admin)',
     description:
@@ -43,7 +44,6 @@ export const adminReorderExperienceMediaRoute = createAdminRoute({
         'in the desired order. The supplied list must match the current visible rows ' +
         'exactly. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

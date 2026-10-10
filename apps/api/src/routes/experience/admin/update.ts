@@ -6,7 +6,7 @@ import {
     ExperienceAdminSchema,
     type ExperienceUpdateInput,
     ExperienceUpdateInputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -26,11 +26,11 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminUpdateExperienceRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
     summary: 'Update experience listing (admin)',
     description: 'Updates an experience listing. Requires EXPERIENCE_EDIT_ALL permission.',
     tags: ['Experience'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

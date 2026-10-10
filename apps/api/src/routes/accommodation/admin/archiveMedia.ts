@@ -20,7 +20,8 @@
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
-    AccommodationMediaSingleOutputSchema
+    AccommodationMediaSingleOutputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -46,6 +47,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminArchiveMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}/archive',
     summary: 'Archive photo in accommodation gallery (admin)',
     description:

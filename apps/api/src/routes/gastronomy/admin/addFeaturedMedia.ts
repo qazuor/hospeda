@@ -34,7 +34,7 @@ import {
     GastronomyFeaturedMediaAddOutputSchema,
     type GastronomyMediaAddPayload,
     GastronomyMediaAddPayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyFeaturedMedia, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -54,6 +54,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminAddGastronomyFeaturedMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/featured',
     summary: 'Upload the gastronomy listing cover image (admin)',
     description:
@@ -64,7 +65,6 @@ export const adminAddGastronomyFeaturedMediaRoute = createAdminRoute({
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

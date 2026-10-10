@@ -7,7 +7,7 @@ import {
     ExperienceFaqSingleOutputSchema,
     FaqWithChannelVisibilityCreatePayloadSchema,
     type FaqWithChannelVisibilityCreatePayloadType,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addExperienceFaq, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -27,12 +27,12 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminAddExperienceFaqRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs',
     summary: 'Add FAQ to experience listing (admin)',
     description:
         'Adds a new frequently asked question to an experience listing. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

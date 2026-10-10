@@ -25,7 +25,8 @@ import {
     AccommodationMediaIdSchema,
     AccommodationMediaSingleOutputSchema,
     type AccommodationMediaUpdatePayload,
-    AccommodationMediaUpdatePayloadSchema
+    AccommodationMediaUpdatePayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -58,6 +59,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminUpdateMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in accommodation gallery (admin)',
     description:

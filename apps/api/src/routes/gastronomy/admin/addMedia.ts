@@ -11,7 +11,7 @@ import {
     type GastronomyMediaAddPayload,
     GastronomyMediaAddPayloadSchema,
     GastronomyMediaSingleOutputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyMedia, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -31,12 +31,12 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminAddGastronomyMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media',
     summary: 'Add photo to gastronomy listing gallery (admin)',
     description:
         'Registers an already-uploaded URL as a new gastronomy_media row. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -5,7 +5,7 @@
 import {
     type ExperienceFaqRemoveInput,
     ExperienceFaqRemoveOutputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, removeExperienceFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -25,11 +25,11 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminRemoveExperienceFaqRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from experience listing (admin)',
     description: 'Removes a FAQ from an experience listing. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

@@ -34,7 +34,7 @@ import {
     ExperienceFeaturedMediaAddOutputSchema,
     type ExperienceMediaAddPayload,
     ExperienceMediaAddPayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addExperienceFeaturedMedia, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -54,6 +54,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminAddExperienceFeaturedMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/featured',
     summary: 'Upload the experience listing cover image (admin)',
     description:
@@ -64,7 +65,6 @@ export const adminAddExperienceFeaturedMediaRoute = createAdminRoute({
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -38,7 +38,7 @@ import {
     ExperienceMediaSingleOutputSchema,
     type ExperienceMediaUpdatePayload,
     ExperienceMediaUpdatePayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -56,6 +56,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminUpdateExperienceMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in experience gallery (admin)',
     description:
@@ -64,7 +65,6 @@ export const adminUpdateExperienceMediaRoute = createAdminRoute({
         'to replace. At least one field must be present — an empty body is a ' +
         'VALIDATION_ERROR, not a silent 200. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

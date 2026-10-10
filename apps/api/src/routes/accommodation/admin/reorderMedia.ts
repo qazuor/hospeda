@@ -15,7 +15,8 @@ import {
     AccommodationIdSchema,
     AccommodationMediaListOutputSchema,
     type AccommodationMediaReorderPayload,
-    AccommodationMediaReorderPayloadSchema
+    AccommodationMediaReorderPayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -40,6 +41,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminReorderMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
     summary: 'Reorder accommodation gallery photos (admin)',
     description:

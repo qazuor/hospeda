@@ -7,7 +7,7 @@ import {
     type FaqWithChannelVisibilityUpdatePayloadType,
     GastronomyFaqSingleOutputSchema,
     type GastronomyFaqUpdateInput,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError, updateGastronomyFaq } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -27,11 +27,11 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  */
 export const adminUpdateGastronomyFaqRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ in gastronomy listing (admin)',
     description: 'Updates an existing FAQ in a gastronomy listing. Requires GASTRONOMY_EDIT_ALL.',
     tags: ['Gastronomy', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
