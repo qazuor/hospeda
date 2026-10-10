@@ -13,7 +13,7 @@
  * NOTE: the admin tier uses PATCH for the equivalent route (preexisting
  * inconsistency between tiers). This protected route intentionally mirrors
  * gastronomy/experience protected FAQ reorder (PUT), not the admin tier.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
+ * The listing access resolver requires the EDIT capability on the owner.
  */
 
 import {
@@ -39,7 +39,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * Permission model (SPEC-177): service layer `accommodationService.reorderFaqs`
  * calls `_canUpdate(actor, accommodation)` which enforces
  * `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN` + ownership).
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former FAQ plan gate is removed.
+ * The listing access resolver requires the EDIT capability on the owner.
  */
 export const protectedReorderFaqsRoute = createProtectedRoute({
     method: 'put',
@@ -57,7 +57,6 @@ export const protectedReorderFaqsRoute = createProtectedRoute({
     },
     requestBody: FaqReorderPayloadSchema,
     responseSchema: SuccessSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -75,8 +74,5 @@ export const protectedReorderFaqsRoute = createProtectedRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });
