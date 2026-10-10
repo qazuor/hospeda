@@ -16,8 +16,7 @@ export type StepOutcome<TReason extends string> =
 
 /**
  * Step 4 combines absence, foreign ownership and inadmissible state into NOT_FOUND.
- * A null status temporarily admits the owner until V6.9 makes it NOT NULL; remove
- * that branch then. V8a's row 20 (content already deleted) has its own reader,
+ * V8a's row 20 (content already deleted) has its own reader,
  * rather than READ_OWN.
  */
 export function resolveResourceStep(args: {
@@ -30,13 +29,8 @@ export function resolveResourceStep(args: {
         return { allowed: false, reason: 'NOT_FOUND' };
     }
     const isOwner = Boolean(actorId) && facts.ownerId !== null && actorId === facts.ownerId;
-    if (facts.publicationStatus === null) {
-        return isOwner && operation !== 'WRITE_ABOUT_LISTING'
-            ? { allowed: true }
-            : { allowed: false, reason: 'NOT_FOUND' };
-    }
     const admitted = isOwner ? OWNER_ADMITTING_STATES : FOREIGN_ADMITTING_STATES;
-    return admitted[operation].includes(facts.publicationStatus)
+    return admitted[operation].includes(facts.publicationStatus as PublicationStatusEnum)
         ? { allowed: true }
         : { allowed: false, reason: 'NOT_FOUND' };
 }

@@ -52,18 +52,14 @@ describe('step 4: resource ownership and publication state', () => {
                 );
             });
         }
-        it(`${operation} handles a legacy null status for its owner only`, () => {
+        it(`${operation} a null status is not found, even for its owner (V6.9 made the column NOT NULL)`, () => {
             expect(
                 resolveResourceStep({
                     actorId: 'owner',
                     facts: { ownerId: 'owner', publicationStatus: null },
                     operation
                 })
-            ).toEqual(
-                operation === 'WRITE_ABOUT_LISTING'
-                    ? { allowed: false, reason: 'NOT_FOUND' }
-                    : { allowed: true }
-            );
+            ).toEqual({ allowed: false, reason: 'NOT_FOUND' });
             expect(
                 resolveResourceStep({
                     actorId: 'other',
