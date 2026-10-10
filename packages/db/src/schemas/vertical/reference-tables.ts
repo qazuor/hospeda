@@ -8,6 +8,7 @@ import {
     planVersions
 } from './plan-catalog.dbschema.ts';
 import { verticals } from './vertical.dbschema.ts';
+import { verticalDeadlineVersions } from './vertical-deadline-version.dbschema.ts';
 
 /**
  * Tables whose rows are written BY A STRUCTURAL MIGRATION, not by any seed
@@ -20,6 +21,7 @@ export const REFERENCE_TABLES: readonly string[] = [
     getTableName(verticals),
     getTableName(catalogKeys),
     getTableName(billingDeadlineVersions),
+    getTableName(verticalDeadlineVersions),
     getTableName(plans),
     getTableName(planVersions),
     getTableName(planVersionEntitlements),

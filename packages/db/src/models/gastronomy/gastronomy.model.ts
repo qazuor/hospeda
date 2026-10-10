@@ -6,6 +6,7 @@ import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { withListingBirthColumns } from '../listing/listing-birth.ts';
 
 /**
  * Search input for gastronomy listings (basic subset — expand as routes are built).
@@ -31,6 +32,11 @@ interface GastronomySearchInput {
 export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     protected table = gastronomies;
     public entityName = 'gastronomies';
+
+    /** Creates a gastronomy with its initial publication clock. */
+    override async create(data: Partial<Gastronomy>, tx?: DrizzleClient): Promise<Gastronomy> {
+        return super.create(withListingBirthColumns({ data }).data, tx);
+    }
 
     protected override readonly validRelationKeys = [
         'owner',

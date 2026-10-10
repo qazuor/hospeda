@@ -18,6 +18,7 @@ export * from './experience/index.ts';
 export * from './feature-flags/index.ts';
 export * from './gastronomy/index.ts';
 export * from './hostTrade/index.ts';
+export * from './listing/index.ts';
 export * from './notification-log/index.ts';
 export * from './owner-promotion/index.ts';
 export * from './partner/index.ts';
