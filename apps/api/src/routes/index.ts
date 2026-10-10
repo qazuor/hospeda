@@ -203,6 +203,7 @@ import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
+import { adminVerticalDeadlineRoutes } from './vertical-deadlines/admin/index.js';
 import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
 import { brevoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
@@ -656,6 +657,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
+        app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);
         app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
 
