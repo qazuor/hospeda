@@ -137,8 +137,7 @@ const rows = [
         key: 'view_advanced_stats',
         vertical: VerticalEnum.ACCOMMODATION,
         denied: BASIC,
-        allowed: PREMIUM,
-        permission: PermissionEnum.ACCOMMODATION_VIEW_OWN
+        allowed: PREMIUM
     },
     {
         file: 'accommodation/market-comparison',
@@ -147,8 +146,7 @@ const rows = [
         key: 'view_advanced_stats',
         vertical: VerticalEnum.ACCOMMODATION,
         denied: BASIC,
-        allowed: PREMIUM,
-        permission: PermissionEnum.ACCOMMODATION_VIEW_OWN
+        allowed: PREMIUM
     },
     {
         file: 'gastronomy/views',

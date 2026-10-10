@@ -8,12 +8,7 @@
  * @route GET /api/v1/protected/accommodations/my/favorites-breakdown
  */
 
-import {
-    EntityTypeEnum,
-    HostFavoritesBreakdownSchema,
-    PermissionEnum,
-    VerticalEnum
-} from '@repo/schemas';
+import { EntityTypeEnum, HostFavoritesBreakdownSchema, VerticalEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 
@@ -48,7 +43,6 @@ export const hostFavoritesBreakdownRoute = createProtectedRoute({
         'authenticated host. Scoped to ownerId = actor.id. Intended for the host ' +
         'dashboard (SPEC-155 T-005).',
     tags: ['Accommodations'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN],
     responseSchema: HostFavoritesBreakdownSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);

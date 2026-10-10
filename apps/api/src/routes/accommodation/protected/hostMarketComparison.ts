@@ -9,7 +9,7 @@
  * @route GET /api/v1/protected/accommodations/my/market-comparison
  */
 
-import { PermissionEnum, VerticalEnum } from '@repo/schemas';
+import { VerticalEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -51,7 +51,6 @@ const HostMarketComparisonSchema = z.object({
  *
  * For each accommodation owned by the authenticated host, returns the
  * comparison row used by HOST card J. Scoped to `ownerId = actor.id`.
- * Requires `ACCOMMODATION_VIEW_OWN`.
  * Reads the owner's effective view_advanced_stats capability before returning statistics.
  */
 export const hostMarketComparisonRoute = createProtectedRoute({
@@ -63,7 +62,6 @@ export const hostMarketComparisonRoute = createProtectedRoute({
         'base price and the average rating + price of every other active ' +
         'accommodation in the same destination. Used by HOST card J.',
     tags: ['Accommodations'],
-    requiredPermissions: [PermissionEnum.ACCOMMODATION_VIEW_OWN],
     responseSchema: HostMarketComparisonSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
