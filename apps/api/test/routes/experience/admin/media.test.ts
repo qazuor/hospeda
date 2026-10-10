@@ -15,7 +15,8 @@
  *
  * @module test/routes/experience/admin/media
  */
-import { ModerationStatusEnum } from '@repo/schemas';
+import { ModerationStatusEnum, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -47,6 +48,27 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: {
+                ownerId: '22222222-2222-4222-8222-222222222222',
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            },
+            ownerId: '22222222-2222-4222-8222-222222222222'
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.EXPERIENCE,
+                hasLiveNonTrialTitle: false,
+                entries: [{ key: 'edit_experience_info', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
+
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks
 // ---------------------------------------------------------------------------
@@ -68,7 +90,11 @@ const ADMIN_HEADERS = {
     ...USER_AGENT,
     'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
     'x-mock-actor-role': 'ADMIN',
-    'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'experience.editAll'])
+    'x-mock-actor-permissions': JSON.stringify([
+        'access.panelAdmin',
+        'experience.editAll',
+        'listing.foreignContent.edit'
+    ])
 };
 const NO_PERMS_HEADERS = {
     ...USER_AGENT,
@@ -119,7 +145,7 @@ describe('Experience media routes — Admin tier (HOS-372)', () => {
             expect([400, 401, 403]).toContain(res.status);
         });
 
-        it('POST /media — returns 403 when actor lacks EXPERIENCE_EDIT_ALL', async () => {
+        it('POST /media — returns 403 when actor lacks LISTING_FOREIGN_CONTENT_EDIT', async () => {
             const res = await app.request(BASE, {
                 method: 'POST',
                 headers: { ...NO_PERMS_HEADERS, 'Content-Type': 'application/json' },
