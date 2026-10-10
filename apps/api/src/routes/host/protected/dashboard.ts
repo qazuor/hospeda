@@ -4,19 +4,19 @@
  * Single aggregation endpoint returning property counts, null plan info,
  * and unread conversation count for the authenticated host user.
  *
- * Dashboard reads run without the former stats plan entitlement during the billing transition.
+ * Dashboard statistics require the owner's effective view_basic_stats capability.
  *
  * GET /api/v1/protected/host/dashboard
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { AccommodationService, ConversationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import { z } from '../../../utils/zod';
@@ -182,22 +182,26 @@ async function resolveUnreadConversations(input: {
  * - Plan info: always null since HOS-1416 (legacy billing removed)
  * - Unread conversations count (coarse approximation)
  *
- * Robustness: each of the three sections is independently guarded and
- * degrades to safe defaults rather than failing the whole request. The
- * endpoint only errors on auth/entitlement (handled by middleware).
+ * The dashboard requires view_basic_stats; its plan field remains null because
+ * a plan summary is a separate data read, not an authorization gate.
  */
 export const hostDashboardRoute = createProtectedRoute({
     method: 'get',
     path: '/dashboard',
     summary: 'Host Dashboard',
     description:
-        'Returns aggregated host dashboard data: property counts, plan info, and unread conversation count. ' +
+        'Returns aggregated host dashboard data: property counts, a null plan field, and unread conversation count. ' +
         'Requires VIEW_BASIC_STATS entitlement.',
     tags: ['Host', 'Dashboard'],
     responseSchema: HostDashboardResponseSchema,
     handler: async (ctx: Context, _params: Record<string, unknown>) => {
+        const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_basic_stats']
+        });
         try {
-            const actor = getActorFromContext(ctx);
             apiLogger.debug({ actorId: actor.id, roles: actor.roles }, 'Host dashboard requested');
 
             // Section 1: property counts (owns its degradation, also yields the
@@ -213,7 +217,6 @@ export const hostDashboardRoute = createProtectedRoute({
 
             const response: HostDashboardResponse = {
                 properties,
-                // HOS-1352: transitional until V3 (HOS-1357), see PR — dashboard plan stays null.
                 plan: DASHBOARD_PLAN,
                 unreadConversations
             };
@@ -229,6 +232,5 @@ export const hostDashboardRoute = createProtectedRoute({
                 'Failed to load host dashboard data'
             );
         }
-    },
-    options: {}
+    }
 });

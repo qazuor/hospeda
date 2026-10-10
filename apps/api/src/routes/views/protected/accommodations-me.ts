@@ -19,11 +19,13 @@ import {
     EntityViewStatsListSchema,
     EntityViewWindowSchema,
     PermissionEnum,
-    type ServiceErrorCode
+    type ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { entityViewService, ServiceError } from '@repo/service-core';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /**
@@ -32,6 +34,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  * Authenticated host endpoint that returns view stats for all of the host's
  * own accommodations over the specified rolling window. Requires
  * `ACCOMMODATION_VIEW_OWN` permission (standard host-tier).
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const hostAccommodationViewStatsRoute = createProtectedRoute({
     method: 'get',
@@ -47,9 +50,13 @@ export const hostAccommodationViewStatsRoute = createProtectedRoute({
         window: EntityViewWindowSchema.default('30d')
     },
     responseSchema: EntityViewStatsListSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_basic_stats']
+        });
         const typedQuery = query as { window: '7d' | '30d' };
 
         const result = await entityViewService.getStatsForHostAccommodations({
@@ -64,7 +71,6 @@ export const hostAccommodationViewStatsRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
