@@ -12,7 +12,6 @@ import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { getCurrentBillingDeadlines } from '../../../src/services/billing/deadlines/billing-deadlines.service';
 import {
     type BeforeCancelNotice,
     type StartSubscriptionPorts,
@@ -160,7 +159,9 @@ async function completeCommitment(input: {
         userId: input.userId,
         vertical: 'accommodation',
         planVersionId: input.planVersionId,
-        billingOptionId: input.billingOptionId
+        billingOptionId: input.billingOptionId,
+        authorizationWindowDeadlineVersion: 1,
+        authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
     });
     const created = await input.provider.authorize({
         reference: prior.subscription.id,
@@ -398,11 +399,10 @@ describe('TEST:B3:6 race and reuse', () => {
             billingOptionId: choice.billingOptionId,
             provider
         });
-        const deadlines = await getCurrentBillingDeadlines();
-        const expiredAt = new Date(
-            prior.subscription.createdAt.getTime() +
-                (deadlines.values['10'].cardHours + 1) * 60 * 60 * 1000
-        );
+        // TEST:B3:10 (base: versión y vencimiento guardados al abrir la ventana)
+        const deadline = prior.subscription.authorizationWindowEndsAt;
+        if (!deadline) throw new Error('Expected a stored authorization deadline');
+        const expiredAt = new Date(deadline.getTime() + 1);
         const authorize = vi.spyOn(fake, 'authorize');
 
         await expect(
@@ -426,7 +426,9 @@ describe('TEST:B3:6 race and reuse', () => {
             userId: choice.user.id,
             vertical: 'accommodation',
             planVersionId: choice.planVersionId,
-            billingOptionId: choice.billingOptionId
+            billingOptionId: choice.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const authorize = vi.spyOn(fake, 'authorize');
 
@@ -452,7 +454,9 @@ describe('TEST:B3:6 race and reuse', () => {
             userId: choice.user.id,
             vertical: 'accommodation',
             planVersionId: choice.planVersionId,
-            billingOptionId: choice.billingOptionId
+            billingOptionId: choice.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         await subscriptionModel.recordAuthorizationResult({
             idempotencyKey: prior.idempotencyKey,
