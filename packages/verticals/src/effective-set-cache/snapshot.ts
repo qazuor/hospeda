@@ -9,8 +9,10 @@ import type { SourceGrant } from '../effective-set/types';
 import { decodeFiniteOrInfinite, encodeFiniteOrInfinite } from './number-codec';
 import type { EffectiveSetCodec } from './types';
 
-export interface EffectiveSetSnapshot extends ResolvedEffectiveSet {
+export interface EffectiveSetSnapshot extends Omit<ResolvedEffectiveSet, 'inheritsTouristVip'> {
     readonly version: 1;
+    /** Older cached/test snapshots omit the newly introduced flag; omission means false. */
+    readonly inheritsTouristVip?: boolean;
 }
 
 /** JSON codec for the raw, enumerable user + vertical values. */
@@ -34,7 +36,8 @@ export const effectiveSetSnapshotCodec: EffectiveSetCodec<EffectiveSetSnapshot> 
             typeof item.userId !== 'string' ||
             !VerticalEnumSchema.safeParse(item.vertical).success ||
             typeof item.hasLiveNonTrialTitle !== 'boolean' ||
-            typeof item.inheritsTouristVip !== 'boolean' ||
+            (item.inheritsTouristVip !== undefined &&
+                typeof item.inheritsTouristVip !== 'boolean') ||
             !Array.isArray(item.entries)
         )
             throw new TypeError('Invalid effective-set snapshot');
@@ -54,7 +57,7 @@ export const effectiveSetSnapshotCodec: EffectiveSetCodec<EffectiveSetSnapshot> 
             userId: item.userId,
             vertical: VerticalEnumSchema.parse(item.vertical),
             hasLiveNonTrialTitle: item.hasLiveNonTrialTitle,
-            inheritsTouristVip: item.inheritsTouristVip,
+            inheritsTouristVip: item.inheritsTouristVip === true,
             entries
         };
     }
