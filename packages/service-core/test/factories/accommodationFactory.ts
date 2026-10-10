@@ -5,6 +5,7 @@
  * All mock data for AccommodationService tests should be created here.
  */
 
+import { legacyPublicationStatus } from '@repo/db';
 import type {
     Accommodation,
     AccommodationCreateInput,
@@ -18,6 +19,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PriceCurrencyEnum,
+    type PublicationStatusEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
@@ -50,10 +52,19 @@ const basePrice: AccommodationPrice = {
     currency: PriceCurrencyEnum.USD
 };
 
+/** Accommodation row after the V6.9 publication cut. */
+export type MockAccommodation = Accommodation & {
+    publicationStatus: PublicationStatusEnum;
+    inactiveSince: Date;
+    deadlinesVersion: number;
+};
+
 /**
  * Creates a base Accommodation with sensible defaults for testing.
  */
-export const createMockAccommodation = (overrides: Partial<Accommodation> = {}): Accommodation => ({
+export const createMockAccommodation = (
+    overrides: Partial<MockAccommodation> = {}
+): MockAccommodation => ({
     id: getMockAccommodationId(),
     name: 'Default Test Hotel',
     slug: 'default-test-hotel',
@@ -85,6 +96,14 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
 
     // Base visibility fields
     visibility: VisibilityEnum.PUBLIC,
+    publicationStatus: legacyPublicationStatus({
+        lifecycleState: overrides.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
+        visibility: overrides.visibility ?? VisibilityEnum.PUBLIC,
+        ownerSuspended: overrides.ownerSuspended ?? false,
+        planRestricted: overrides.planRestricted ?? false
+    }),
+    inactiveSince: new Date('2024-01-01'),
+    deadlinesVersion: 1,
 
     // Postal address fields (SPEC-095): geographic context lives on destination relation.
     location: {
