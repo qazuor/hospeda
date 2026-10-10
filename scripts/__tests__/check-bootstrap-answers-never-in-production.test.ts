@@ -123,8 +123,21 @@ describe('TEST:V4:15 G13', () => {
         expect(result.output).toContain('watched module missing');
     });
 
-    it('passes on the real repository as a production build', () => {
+    // Until B4 replaces the bootstrap answers with real billing, the API's
+    // listing-access ports link them on purpose (HOS-1457 H-6), so a production
+    // build of the real repository is expected to FAIL — on that one file and no
+    // other. The frozen list keeps the guard live: a second link turns this red.
+    // B4 empties the list and flips the expectation back to exit 0 (HOS-1457
+    // Coord-53).
+    const KNOWN_BOOTSTRAP_LINKS = ['apps/api/src/utils/listing-access/ports.ts'] as const;
+
+    it('fails on the real repository as a production build only for the known bootstrap links', () => {
         const result = run({ root: ROOT, env: { HOSPEDA_PRODUCTION_BUILD: '1' } });
-        expect(result).toMatchObject({ exitCode: 0 });
+        const linked = [...result.output.matchAll(/^(\S+):\d+ links las seis\b/gm)].map(
+            (match) => match[1]
+        );
+
+        expect(result.exitCode).toBe(1);
+        expect([...new Set(linked)].sort()).toEqual([...KNOWN_BOOTSTRAP_LINKS].sort());
     });
 });
