@@ -8,6 +8,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { protectScratchPool, waitForNoConnections } from './support/scratch-database.ts';
 
 const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCRATCH_DB = `hospeda_scratch_migrate_${process.pid}`;
@@ -29,6 +30,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+    await waitForNoConnections({ admin, database: SCRATCH_DB });
     await admin.query(`DROP DATABASE IF EXISTS "${SCRATCH_DB}" WITH (FORCE)`);
     await admin.end();
 });
@@ -57,6 +59,7 @@ describe('db:migrate on a freshly created empty database', () => {
 
     it('leaves no retired role value behind', async () => {
         const scratch = new Pool({ connectionString: urlFor({ database: SCRATCH_DB }) });
+        protectScratchPool({ pool: scratch });
         try {
             const res = await scratch.query<{ enumlabel: string }>(
                 `SELECT e.enumlabel FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid WHERE t.typname = 'role_enum'`

@@ -5,6 +5,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool, type PoolClient } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { protectScratchPool, waitForNoConnections } from './support/scratch-database.ts';
 
 const migrationDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/migrations');
 const dbName = 'hospeda_v24b_plan_constraints_test';
@@ -16,9 +17,11 @@ const testUrl = new URL(baseUrl);
 testUrl.pathname = `/${dbName}`;
 const admin = new Pool({ connectionString: adminUrl.toString() });
 const pool = new Pool({ connectionString: testUrl.toString() });
+protectScratchPool({ pool });
 const getTestPool = () => pool;
 
 beforeAll(async () => {
+    await waitForNoConnections({ admin, database: dbName });
     await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
     await admin.query(`CREATE DATABASE ${dbName}`);
     for (const extension of ['uuid-ossp', 'pgcrypto', 'unaccent']) {
@@ -57,6 +60,7 @@ beforeAll(async () => {
 afterAll(async () => {
     await pool.end();
     try {
+        await waitForNoConnections({ admin, database: dbName });
         await admin.query(`DROP DATABASE IF EXISTS ${dbName} WITH (FORCE)`);
     } finally {
         await admin.end();
