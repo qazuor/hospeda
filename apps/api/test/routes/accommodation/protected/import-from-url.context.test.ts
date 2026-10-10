@@ -14,9 +14,10 @@ import { PermissionEnum } from '@repo/schemas';
 import { AccommodationImportService, type ImportContext } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockDispatchImportFromUrl, mockGetValidMercadoLibreToken } = vi.hoisted(() => ({
+const { mockDispatchImportFromUrl, mockGetValidMercadoLibreToken, gateState } = vi.hoisted(() => ({
     mockDispatchImportFromUrl: vi.fn(),
-    mockGetValidMercadoLibreToken: vi.fn(async () => 'mock-ml-access-token')
+    mockGetValidMercadoLibreToken: vi.fn(async () => 'mock-ml-access-token'),
+    gateState: { entitlement: true, limit: 10, count: 0 }
 }));
 
 vi.mock('@repo/service-core', async (importActual) => {
@@ -37,14 +38,14 @@ vi.mock('../../../../src/services/mercadolibre-oauth/ml-token.service', () => ({
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
         effectiveSet: async () => ({
-            entitlements: { get: () => 1 },
-            limits: { get: () => 10 }
+            entitlements: { get: () => (gateState.entitlement ? 1 : undefined) },
+            limits: { get: () => gateState.limit }
         })
     })
 }));
 vi.mock('@repo/ai-core', async (importActual) => ({
     ...(await importActual<typeof import('@repo/ai-core')>()),
-    getMonthlyCallCount: vi.fn(async () => 0),
+    getMonthlyCallCount: vi.fn(async () => gateState.count),
     recordAiUsage: vi.fn(async () => undefined)
 }));
 
@@ -72,13 +73,16 @@ function authHeaders(): Record<string, string> {
     };
 }
 
-describe('import-from-url ImportContext.mercadoLibreTokenProvider wiring', () => {
+describe('TEST:V5:32 import-from-url ImportContext and quota degradation', () => {
     let app: AppOpenAPI;
 
     beforeEach(() => {
         vi.clearAllMocks();
         mockDispatchImportFromUrl.mockResolvedValue({ kind: 'sync', response: MINIMAL_RESPONSE });
         mockGetValidMercadoLibreToken.mockResolvedValue('mock-ml-access-token');
+        gateState.entitlement = true;
+        gateState.limit = 10;
+        gateState.count = 0;
         app = initApp();
     });
 
@@ -105,6 +109,35 @@ describe('import-from-url ImportContext.mercadoLibreTokenProvider wiring', () =>
         const token = await context.mercadoLibreTokenProvider?.();
         expect(token).toBe('mock-ml-access-token');
         expect(mockGetValidMercadoLibreToken).toHaveBeenCalledOnce();
+    });
+
+    it.each([
+        ['missing entitlement', false, 10, 0, 'accommodation_import'],
+        ['zero limit', true, 0, 0, 'accommodation_import'],
+        ['exhausted quota', true, 10, 10, 'quota']
+    ] as const)('degrades with a notice when the AI gate has %s', async (_case, entitled, limit, count, reason) => {
+        gateState.entitlement = entitled;
+        gateState.limit = limit;
+        gateState.count = count;
+        mockDispatchImportFromUrl.mockImplementation(
+            async ({ context }: { context: ImportContext }) => {
+                await context.aiExtract?.({ text: 'page', locale: 'es' });
+                return { kind: 'sync', response: MINIMAL_RESPONSE };
+            }
+        );
+        const res = await app.request(ENDPOINT, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
+        });
+
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as { data: AccommodationImportResponse };
+        expect(body.data).toMatchObject({ draft: {}, source: 'none' });
+        expect(body.data.message).toContain(
+            reason === 'quota' ? 'límite mensual' : 'no está incluida'
+        );
+        expect(mockDispatchImportFromUrl).toHaveBeenCalledOnce();
     });
 
     it('constructs AccommodationImportService with exchange-rate deps wired (BETA-181)', async () => {
