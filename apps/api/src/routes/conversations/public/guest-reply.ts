@@ -11,10 +11,9 @@ import {
     MessageGuestPublicSchema,
     MessageSenderTypeEnum,
     PermissionEnum,
-    RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { AccessTokenService, MessageService } from '@repo/service-core';
+import { AccessTokenService, createSystemActor, MessageService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createPerRouteRateLimitMiddleware } from '../../../middlewares/rate-limit';
 import { createRouter } from '../../../utils/create-app';
@@ -26,19 +25,15 @@ import {
 } from '../../../utils/response-helpers';
 
 /** Minimal system actor for public endpoints that invoke services. */
-const PUBLIC_SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+const PUBLIC_SYSTEM_ACTOR = createSystemActor({
+    jobId: 'conversations.public.guest-reply',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
         PermissionEnum.CONVERSATION_REPLY_OWN,
         PermissionEnum.CONVERSATION_REPLY_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});
 
 /** IP rate limiter: 10 requests per 10 minutes. */
 const ipRateLimiter = createPerRouteRateLimitMiddleware({

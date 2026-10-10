@@ -353,7 +353,7 @@ describe('stored authorization window model operations', () => {
                     now,
                     tx
                 })
-            ).toBe(false);
+            ).toEqual({ wrote: false, closedCourtesyMonths: null });
             const [active] = await tx
                 .select()
                 .from(subscriptions)
@@ -389,7 +389,7 @@ describe('stored authorization window model operations', () => {
                     now,
                     tx
                 })
-            ).toBe(true);
+            ).toEqual({ wrote: true, closedCourtesyMonths: null });
             const [cardPaymentAfterS3] = await tx
                 .select()
                 .from(manualPayments)
@@ -422,14 +422,14 @@ describe('stored authorization window model operations', () => {
                     now,
                     tx
                 })
-            ).toBe(true);
+            ).toEqual({ wrote: true, closedCourtesyMonths: null });
             expect(
                 await subscriptionModel.abandonPendingAuthorization({
                     subscriptionId: manual.subscription.id,
                     now,
                     tx
                 })
-            ).toBe(false);
+            ).toEqual({ wrote: false, closedCourtesyMonths: null });
             const [abandoned] = await tx
                 .select()
                 .from(subscriptions)

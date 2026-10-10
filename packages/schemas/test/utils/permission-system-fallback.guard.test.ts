@@ -128,7 +128,8 @@ const KNOWN_SYSTEM_FALLBACK_KEYS: readonly string[] = [
     'TAG_VIEW_ALL_ASSIGNMENTS',
     'TAG_VIEW_ALL_USER_TAGS',
     'THEME_EDIT',
-    'TRANSLATIONS_MANAGE'
+    'TRANSLATIONS_MANAGE',
+    'TRIAL_EXTEND'
 ];
 
 const KEY_BY_VALUE = new Map(Object.entries(PermissionEnum).map(([key, value]) => [value, key]));

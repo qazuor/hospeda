@@ -1,7 +1,7 @@
 import type { LimitKey } from '@repo/billing';
 import { CrownIcon } from '@repo/icons';
 import * as React from 'react';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 
@@ -59,7 +59,7 @@ export const LimitProgressIndicator = React.memo(function LimitProgressIndicator
     className
 }: LimitProgressIndicatorProps) {
     const { t, tPlural } = useTranslations();
-    const { limit, isLoading, error } = useMyEntitlements();
+    const { limit, isLoading, error } = useEffectiveSet();
 
     // While loading or on error we keep silent rather than flashing — the
     // alternative (a placeholder bar) is noisier than just waiting.
@@ -69,7 +69,7 @@ export const LimitProgressIndicator = React.memo(function LimitProgressIndicator
     // Unlimited or unknown → no indicator. Staff (resolver returns -1 per
     // SPEC-171) and actors whose plan does not expose this limit (hook
     // defaults missing keys to -1) both land here. Fail-open by design.
-    if (maxAllowed === undefined || maxAllowed === -1) return null;
+    if (maxAllowed === Number.POSITIVE_INFINITY) return null;
     if (maxAllowed === 0) return null;
 
     const ratio = currentCount / maxAllowed;
@@ -89,7 +89,6 @@ export const LimitProgressIndicator = React.memo(function LimitProgressIndicator
         high: { bar: 'bg-destructive', text: 'text-destructive', border: 'border-destructive/30' }
     }[tone];
 
-    const resolvedUpgradeUrl = upgradeUrl ?? '/billing/my-plan';
     // `belowLimit` previously interpolated {max} and {current} verbatim
     // ("Te quedan 5 - 3 disponibles") instead of subtracting them — the
     // remaining count is computed here, once, and pluralized on that.
@@ -111,9 +110,9 @@ export const LimitProgressIndicator = React.memo(function LimitProgressIndicator
                         </span>
                     )}
                 </div>
-                {atLimit && (
+                {atLimit && upgradeUrl && (
                     <a
-                        href={resolvedUpgradeUrl}
+                        href={upgradeUrl}
                         className="inline-flex flex-none items-center gap-1 rounded text-primary text-xs hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
                     >
                         <CrownIcon

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
-import type { SponsorAnalytics, SponsorInvoice, SponsorSponsorship, SponsorSummary } from './types';
+import type { SponsorAnalytics, SponsorSponsorship, SponsorSummary } from './types';
 
 /**
  * Query keys for sponsor dashboard queries
@@ -13,7 +13,6 @@ export const sponsorDashboardQueryKeys = {
             [...sponsorDashboardQueryKeys.sponsorships.all, filters] as const
     },
     analytics: ['sponsor-dashboard', 'analytics'] as const,
-    invoices: ['sponsor-dashboard', 'invoices'] as const,
     activities: ['sponsor-dashboard', 'activities'] as const
 };
 
@@ -86,18 +85,6 @@ async function fetchSponsorAnalytics(): Promise<SponsorAnalytics[]> {
 }
 
 /**
- * Fetch sponsor invoices
- * Expected endpoint: GET /api/v1/protected/billing/invoices?sponsorId=current
- */
-async function fetchSponsorInvoices(): Promise<SponsorInvoice[]> {
-    const result = await fetchApi<{ success: boolean; data: { items?: SponsorInvoice[] } }>({
-        // HOS-1352: transitional until U1.4 — protected billing invoices endpoint no longer exists.
-        path: '/api/v1/protected/billing/invoices'
-    });
-    return result.data.data?.items || [];
-}
-
-/**
  * Hook to fetch sponsor summary
  */
 export const useSponsorSummaryQuery = () => {
@@ -126,17 +113,6 @@ export const useSponsorAnalyticsQuery = () => {
     return useQuery({
         queryKey: sponsorDashboardQueryKeys.analytics,
         queryFn: fetchSponsorAnalytics,
-        staleTime: 60_000
-    });
-};
-
-/**
- * Hook to fetch sponsor invoices
- */
-export const useSponsorInvoicesQuery = () => {
-    return useQuery({
-        queryKey: sponsorDashboardQueryKeys.invoices,
-        queryFn: fetchSponsorInvoices,
         staleTime: 60_000
     });
 };

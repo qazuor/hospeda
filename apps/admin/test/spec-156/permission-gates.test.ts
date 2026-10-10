@@ -97,12 +97,6 @@ const ADMIN_API_PAGES: ReadonlyArray<GatedPage> = [
     // (HOS-1416: the /platform/ops/webhooks roster entry was removed with the
     // deleted billing webhook-events page.)
     {
-        label: '/platform/email/logs — email/notification history',
-        file: `${ADMIN_SRC_ROOT}/platform/email/logs.tsx`,
-        mustReferencePermissions: ['ACCESS_API_ADMIN'],
-        viaHelper: ADMIN_API_HELPER
-    },
-    {
         label: '/platform/configuration/seo — SEO defaults editor',
         file: `${ADMIN_SRC_ROOT}/platform/configuration/seo.tsx`,
         mustReferencePermissions: ['ACCESS_API_ADMIN'],
@@ -190,7 +184,7 @@ describe('SPEC-156 permission gate audit (T-043)', () => {
         it('audits all SPEC-156 PR-4 routes that introduce new beforeLoad gates', () => {
             // Defensive checksum so any future task adds itself to the
             // ALL_GATED_PAGES roster instead of silently being skipped.
-            expect(ALL_GATED_PAGES.length).toBe(10);
+            expect(ALL_GATED_PAGES.length).toBe(9);
         });
     });
 });

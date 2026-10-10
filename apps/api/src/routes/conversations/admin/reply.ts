@@ -10,10 +10,9 @@ import {
     MessageSchema,
     MessageSenderTypeEnum,
     PermissionEnum,
-    RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { MessageService } from '@repo/service-core';
+import { createSystemActor, MessageService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
@@ -24,11 +23,8 @@ import {
 } from '../../../utils/response-helpers';
 
 /** System-level actor used for message write service calls. */
-const SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+const SYSTEM_ACTOR = createSystemActor({
+    jobId: 'conversations.admin.reply',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -40,9 +36,8 @@ const SYSTEM_ACTOR = {
         PermissionEnum.CONVERSATION_BLOCK_OWN,
         PermissionEnum.CONVERSATION_BLOCK_ANY,
         PermissionEnum.CONVERSATION_DELETE_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});
 
 const router = createRouter();
 

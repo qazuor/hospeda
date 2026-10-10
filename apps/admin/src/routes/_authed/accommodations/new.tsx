@@ -1,4 +1,3 @@
-import { LimitKey } from '@repo/billing';
 import {
     AccommodationCreateDraftHttpSchema,
     AccommodationTypeEnum,
@@ -9,13 +8,8 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { EntityCreatePageBase } from '@/components/entity-pages';
-import { Icon } from '@/components/icons';
-import { Button } from '@/components/ui-wrapped/Button';
-import { Card, CardContent } from '@/components/ui-wrapped/Card';
 import { createAccommodationMinimalCreateConfig } from '@/features/accommodations/config/accommodation-minimal-create.config';
 import { useCreateAccommodationMutation } from '@/features/accommodations/hooks/useAccommodationQuery';
-import { PlanLimitGate } from '@/features/billing/PlanLimitGate';
-import { useAccommodationCount } from '@/features/billing/use-limit-counts';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
@@ -50,7 +44,6 @@ function AccommodationCreatePage() {
     const { user } = useAuthContext();
     const createMutation = useCreateAccommodationMutation();
     const accommodationTypeOptions = useAccommodationTypeOptions(AccommodationTypeEnum);
-    const { count: accommodationCount } = useAccommodationCount();
 
     const entityName = t('admin-entities.entities.accommodation.singular');
     const entityNamePlural = t('admin-entities.entities.accommodation.plural');
@@ -92,59 +85,6 @@ function AccommodationCreatePage() {
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}
                 configDeps={[t, accommodationTypeOptions, includeOwnerField]}
-                formWrapper={(children) =>
-                    bypassesPlanLimit ? (
-                        <>{children}</>
-                    ) : (
-                        <PlanLimitGate
-                            limitKey={LimitKey.MAX_ACCOMMODATIONS}
-                            currentCount={accommodationCount}
-                            fallback={
-                                <Card>
-                                    <CardContent className="py-8">
-                                        <div className="mx-auto max-w-md space-y-4 text-center">
-                                            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-warning/15">
-                                                <Icon
-                                                    name="alertTriangle"
-                                                    className="h-8 w-8 text-warning"
-                                                />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-foreground text-lg">
-                                                    {t(
-                                                        'admin-entities.limits.accommodationLimitReached'
-                                                    )}
-                                                </h3>
-                                                <p className="mt-2 text-muted-foreground text-sm">
-                                                    {t(
-                                                        'admin-entities.limits.accommodationLimitDesc'
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="flex justify-center gap-3 pt-4">
-                                                <Button
-                                                    variant="outline"
-                                                    onClick={() =>
-                                                        navigate({ to: '/accommodations' })
-                                                    }
-                                                >
-                                                    {t('admin-entities.actions.back')}
-                                                </Button>
-                                                {/* HOS-1416: the "Ver planes" CTA
-                                                    navigated to the deleted
-                                                    /billing/plans page and was
-                                                    removed with the legacy
-                                                    billing surface. */}
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            }
-                        >
-                            {children}
-                        </PlanLimitGate>
-                    )
-                }
             />
         </RoutePermissionGuard>
     );

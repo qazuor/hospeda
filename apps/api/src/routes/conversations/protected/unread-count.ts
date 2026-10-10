@@ -5,8 +5,8 @@
  * authenticated guest. Used for the inbox badge.
  */
 
-import { PermissionEnum, RoleEnum, UnreadCountResponseSchema } from '@repo/schemas';
-import { ConversationService } from '@repo/service-core';
+import { PermissionEnum, UnreadCountResponseSchema } from '@repo/schemas';
+import { ConversationService, createSystemActor } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
@@ -18,17 +18,10 @@ import {
 } from '../../../utils/response-helpers';
 
 /** System-level actor used for service permission checks. */
-const SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
-    permissions: [
-        PermissionEnum.CONVERSATION_VIEW_OWN,
-        PermissionEnum.CONVERSATION_VIEW_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+const SYSTEM_ACTOR = createSystemActor({
+    jobId: 'conversations.protected.unread-count',
+    permissions: [PermissionEnum.CONVERSATION_VIEW_OWN, PermissionEnum.CONVERSATION_VIEW_ANY]
+});
 
 const router = createRouter();
 

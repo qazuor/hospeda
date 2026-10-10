@@ -5,6 +5,7 @@
 
 export * from './addon.schema.js';
 export * from './admin-billing-view.schema.js';
+export * from './admin-effective-set.schema.js';
 export * from './billing-plan.schema.js';
 export * from './billing-query.schema.js';
 export * from './billing-settings.schema.js';
@@ -28,3 +29,4 @@ export * from './subscription-read.schema.js';
 export * from './subscription-start.schema.js';
 export * from './subscription-status.schema.js';
 export * from './trial.schema.js';
+export * from './trial-admin-extend.schema.js';

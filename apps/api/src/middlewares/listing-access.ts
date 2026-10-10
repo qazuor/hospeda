@@ -1,5 +1,5 @@
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+import { isSystemActor, ServiceError } from '@repo/service-core';
 import { resolveListingAccess } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -31,9 +31,9 @@ export async function enforceListingAccess(args: {
         actor.permissions?.includes(PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT) ?? false;
     const adminAction = isForeign
         ? hasActionPermission
-            ? { permitted: true }
+            ? { permitted: true, isSystemActor: isSystemActor(actor) }
             : tier === 'admin'
-              ? { permitted: false }
+              ? { permitted: false, isSystemActor: isSystemActor(actor) }
               : undefined
         : undefined;
     const subjectId = adminAction?.permitted ? ownerId : actorId;

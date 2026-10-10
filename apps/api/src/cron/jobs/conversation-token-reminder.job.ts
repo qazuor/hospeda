@@ -83,8 +83,8 @@ import {
     ConversationTokenExpiringDay15,
     ConversationTokenExpiringDay25
 } from '@repo/notifications';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { AccessTokenService } from '@repo/service-core';
+import { PermissionEnum } from '@repo/schemas';
+import { AccessTokenService, createSystemActor } from '@repo/service-core';
 import { sendAppEmail } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -106,11 +106,8 @@ type ReminderType = 'day15' | 'day25';
 // ---------------------------------------------------------------------------
 
 /** System-level actor used for all service calls. */
-const SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+const SYSTEM_ACTOR = createSystemActor({
+    jobId: 'cron.conversation-token-reminder',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -122,9 +119,8 @@ const SYSTEM_ACTOR = {
         PermissionEnum.CONVERSATION_BLOCK_OWN,
         PermissionEnum.CONVERSATION_BLOCK_ANY,
         PermissionEnum.CONVERSATION_DELETE_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});
 
 // ---------------------------------------------------------------------------
 // Per-token dispatch + persist

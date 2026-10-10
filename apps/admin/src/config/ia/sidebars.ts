@@ -738,35 +738,6 @@ const plataformaSidebar: SidebarInput = {
                 }
             ]
         },
-        { type: 'separator', id: 'sep-email' },
-        // ── Email / notificaciones ────────────────────────────────────────
-        {
-            type: 'group',
-            id: 'email-infrastructure',
-            label: {
-                es: 'Infraestructura de email',
-                en: 'Email infrastructure',
-                pt: 'Infraestrutura de email'
-            },
-            icon: 'MailIcon',
-            defaultOpen: false,
-            permissions: ['ACCESS_API_ADMIN'],
-            onMissing: 'hide',
-            items: [
-                {
-                    type: 'link',
-                    id: 'email-logs',
-                    label: {
-                        es: 'Historial de envíos',
-                        en: 'Delivery history',
-                        pt: 'Histórico de envios'
-                    },
-                    icon: 'MailIcon',
-                    route: '/platform/email/logs',
-                    permissions: ['ACCESS_API_ADMIN']
-                }
-            ]
-        },
         { type: 'separator', id: 'sep-system-ops' },
         // ── Operaciones del sistema ───────────────────────────────────────
         {
