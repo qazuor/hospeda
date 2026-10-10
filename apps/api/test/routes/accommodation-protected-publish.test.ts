@@ -31,7 +31,8 @@
  * @module test/routes/accommodation-protected-publish
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { PublicationStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,24 @@ vi.mock('@repo/service-core', async () => {
         })
     };
 });
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: ACTOR_ID, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: ACTOR_ID
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                entries: [{ key: 'activate_trial', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // Actor: HOST owner — ownerId will match actor.id in the accommodation stub.
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -229,6 +248,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
             });
 
             expect(res.status).not.toBe(200);
+            expect(mockPublish).toHaveBeenCalledTimes(1);
         });
     });
 
