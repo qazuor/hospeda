@@ -81,7 +81,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
 
     it('EDIT on DRAFT without the required key still fails', async () => {
         const vertical = VerticalEnum.ACCOMMODATION;
-        const port = ports(vertical, ['can_use_calendar']);
+        const port = ports(vertical);
         const result = await resolveListingAccess({
             actorId: 'owner',
             vertical,
@@ -123,7 +123,8 @@ describe('AC:V5:26 route capabilities on the subject', () => {
 
     it('multiple required keys: missing the second returns that key', async () => {
         const vertical = VerticalEnum.ACCOMMODATION;
-        const port = ports(vertical, ['can_use_calendar']);
+        const editKey = 'edit_accommodation_info';
+        const port = ports(vertical, [editKey, 'can_use_calendar']);
         const result = await resolveListingAccess({
             actorId: 'owner',
             vertical,
@@ -219,7 +220,8 @@ describe('AC:V5:26 route capabilities on the subject', () => {
         const vertical = VerticalEnum.ACCOMMODATION;
         const owner = 'owner-id';
         const admin = 'admin-id';
-        const port = ports(vertical, [], []);
+        const editKey = 'edit_accommodation_info';
+        const port = ports(vertical, [editKey], [{ type: 'BASE' }]);
         const result = await resolveListingAccess({
             actorId: admin,
             vertical,
@@ -232,7 +234,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
         expect(result).toEqual({
             allowed: true,
             subjectId: owner,
-            evaluatedSteps: [3, 4, 5]
+            evaluatedSteps: [3, 4, 5, 6]
         });
         // The effectiveSet port was called with the OWNER's id, not admin's
         expect(port.effectiveSet).toHaveBeenCalledWith({ userId: owner, vertical });
@@ -281,7 +283,8 @@ describe('AC:V5:26 route capabilities on the subject', () => {
 
     it('non-existent catalog key throws UnknownStepKeyError', async () => {
         const vertical = VerticalEnum.ACCOMMODATION;
-        const port = ports(vertical);
+        const editKey = 'edit_accommodation_info';
+        const port = ports(vertical, [editKey]);
         await expect(
             resolveListingAccess({
                 actorId: 'owner',
@@ -294,7 +297,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
                 requiredKeys: ['this_key_does_not_exist'],
                 ...port
             })
-        ).rejects.toThrow();
+        ).rejects.toThrow('Unknown step key');
     });
 
     it('empty requiredKeys: identical result to omitting requiredKeys', async () => {
