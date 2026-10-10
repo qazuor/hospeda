@@ -135,10 +135,35 @@ export { selectQuotaGrant } from './quota/quota-grant';
 export type { ConsumeQuotaResult, QuotaWindow, QuotaWindowStore } from './quota/types';
 export { computeWindowClose } from './quota/window-close';
 export {
+    convertTrialOnTitle,
+    findConvertingTitle,
+    type TrialConversionResult
+} from './trial/trial-conversion';
+export {
     computePreExpiryMilestones,
+    computeRecoveryMilestones,
     PRE_EXPIRY_CAMPAIGN_OFFSETS_DAYS,
+    RECOVERY_CAMPAIGN_OFFSETS_DAYS,
     TRIAL_DEADLINES_VERSION
 } from './trial/trial-deadlines';
+export { expireDueTrials, expireTrial, type TrialExpiryResult } from './trial/trial-expiry';
+export {
+    type AdminTrialExtensionResult,
+    createExtendTrial,
+    extendTrialByAdmin,
+    TRIAL_EXTENSION_REJECTIONS
+} from './trial/trial-extension';
+export { trialMachineLockKey } from './trial/trial-lock-key';
+export {
+    InvalidTrialMachineInputError,
+    type TrialAfterCommit,
+    type TrialCampaignKind,
+    type TrialExpiryScanner,
+    type TrialMachineRow,
+    type TrialMachineTransaction,
+    type TrialMachineUnitOfWork,
+    type TrialPostCommitNotices
+} from './trial/trial-machine-types';
 export {
     evaluateTrialStart,
     type InsertTrialResult,

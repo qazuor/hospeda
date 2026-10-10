@@ -12,8 +12,9 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { plans, planVersions, trials, verticals } from '@repo/db';
-import type { VerticalActivationEvent } from '@repo/schemas';
+import type { Vertical, VerticalActivationEvent } from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
+import { trialMachineLockKey } from '../../../src/trial/trial-lock-key';
 import type {
     NewTrialRow,
     PlanVersionSummaryRow,
@@ -234,7 +235,7 @@ export function createTrialStartAdapter(args: {
             return args.db.transaction(async (tx) => {
                 // Lock (serialises concurrent runLocked calls by user+vertical)
                 await tx.execute(
-                    sql`SELECT pg_advisory_xact_lock(hashtextextended(${`trial-start:${lockArgs.userId}:${lockArgs.vertical}`}, 0))`
+                    sql`SELECT pg_advisory_xact_lock(hashtextextended(${trialMachineLockKey({ userId: lockArgs.userId, vertical: lockArgs.vertical as Vertical }).key}, 0))`
                 );
 
                 // Execute the work with a fully-formed transaction port
