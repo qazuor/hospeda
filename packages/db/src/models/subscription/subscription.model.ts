@@ -1,6 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, inArray, isNull, lte } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
+import {
+    type COURTESY_CLOSE_REASONS,
+    courtesyGrants
+} from '../../schemas/vertical/courtesy-grant.dbschema.ts';
 import {
     idempotencyKeys,
     type SelectIdempotencyKey
@@ -99,6 +103,14 @@ export interface RecordAuthorizationResultInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Result of S3's abandonment: whether the row was written and the courtesy balance that was closed. */
+export interface AbandonPendingAuthorizationResult {
+    /** `true` when the subscription row was transitioned. */
+    readonly wrote: boolean;
+    /** Sum of `balance_months` closed on `courtesy_grant`, or `null` when none was closed. */
+    readonly closedCourtesyMonths: number | null;
+}
+
 /** Minimal S1 persistence model; no BaseModelImpl CRUD surface. */
 export class SubscriptionModel {
     /** Writes the PENDING_AUTHORIZATION row and key in one transaction. */
@@ -169,11 +181,11 @@ export class SubscriptionModel {
         return rows.length > 0;
     }
 
-    /** S3 persistence: abandons only a pending row and closes its awaiting manual payment in the same transaction. */
+    /** S3 persistence: abandons only a pending row, closes its awaiting manual payment, and closes a deferred courtesy in the same transaction. */
     async abandonPendingAuthorization(
         input: PendingAuthorizationTransitionInput
-    ): Promise<boolean> {
-        const write = async (tx: DrizzleClient): Promise<boolean> => {
+    ): Promise<AbandonPendingAuthorizationResult> {
+        const write = async (tx: DrizzleClient): Promise<AbandonPendingAuthorizationResult> => {
             const [row] = await tx
                 .update(subscriptions)
                 .set({ status: 'ABANDONED', updatedAt: input.now })
@@ -184,7 +196,7 @@ export class SubscriptionModel {
                     )
                 )
                 .returning({ paymentMethod: subscriptions.paymentMethod });
-            if (!row) return false;
+            if (!row) return { wrote: false, closedCourtesyMonths: null };
             if (row.paymentMethod === 'MANUAL') {
                 await tx
                     .update(manualPayments)
@@ -196,7 +208,36 @@ export class SubscriptionModel {
                         )
                     );
             }
-            return true;
+            // Close a deferred courtesy whose predecesora was this abandoned row.
+            // S18 is the sole writer of `balance_months`; the grant points at the
+            // predecesora (`subscription_id`), reached via `succeeded_by_id` on the
+            // row that just left PENDING_AUTHORIZATION.
+            const grantResult = await tx
+                .update(courtesyGrants)
+                .set({
+                    balanceClosedAt: input.now,
+                    closeReason:
+                        'VENTANA_DE_AUTORIZACION_VENCIDA' satisfies (typeof COURTESY_CLOSE_REASONS)[number]
+                })
+                .where(
+                    and(
+                        isNotNull(courtesyGrants.balanceMonths),
+                        isNull(courtesyGrants.balanceClosedAt),
+                        inArray(
+                            courtesyGrants.subscriptionId,
+                            tx
+                                .select({ id: subscriptions.id })
+                                .from(subscriptions)
+                                .where(eq(subscriptions.succeededById, input.subscriptionId))
+                        )
+                    )
+                )
+                .returning({ balanceMonths: courtesyGrants.balanceMonths });
+            const totalMonths = grantResult.reduce((sum, g) => sum + (g.balanceMonths ?? 0), 0);
+            return {
+                wrote: true,
+                closedCourtesyMonths: grantResult.length > 0 ? totalMonths : null
+            };
         };
         return input.tx ? write(input.tx) : getDb().transaction(write);
     }

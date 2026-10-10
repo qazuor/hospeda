@@ -14,6 +14,7 @@
  * @module test/cron/refresh-external-reputation
  */
 
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types.js';
@@ -193,7 +194,12 @@ describe('Refresh External Reputation Cron Job', () => {
 
             expect(mockRefresh).toHaveBeenCalledWith(
                 ACC_1,
-                expect.objectContaining({ id: '00000000-0000-0000-0000-000000000002' }),
+                expect.objectContaining({
+                    id: '00000000-0000-0000-0000-000000000001',
+                    roles: [RoleEnum.SYSTEM],
+                    permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
+                    _systemJobId: 'cron.refresh-external-reputation'
+                }),
                 undefined,
                 { bypassRateLimit: true }
             );
