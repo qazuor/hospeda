@@ -6,6 +6,7 @@ import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { withListingBirthColumns } from '../listing/listing-birth.ts';
 
 /**
  * Search input for experience listings (basic subset — expand as routes are built).
@@ -30,6 +31,11 @@ interface ExperienceSearchInput {
 export class ExperienceModel extends BaseModelImpl<Experience> {
     protected table = experiences;
     public entityName = 'experiences';
+
+    /** Creates an experience with its initial publication clock. */
+    override async create(data: Partial<Experience>, tx?: DrizzleClient): Promise<Experience> {
+        return super.create(withListingBirthColumns({ data }).data, tx);
+    }
 
     protected override readonly validRelationKeys = [
         'owner',

@@ -6,6 +6,7 @@ import {
     destinations,
     eq,
     getDb,
+    legacyPublicationStatus,
     plans,
     planVersions,
     trials
@@ -250,7 +251,13 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
                 destinationId: seedDestId,
                 visibility: 'PUBLIC',
                 lifecycleState: 'ACTIVE',
-                moderationState: 'APPROVED'
+                moderationState: 'APPROVED',
+                publicationStatus: legacyPublicationStatus({
+                    lifecycleState: 'ACTIVE',
+                    visibility: 'PUBLIC'
+                }),
+                inactiveSince: new Date(),
+                deadlinesVersion: 1
             })
             .returning({ id: accommodations.id });
 

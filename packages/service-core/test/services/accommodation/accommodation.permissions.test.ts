@@ -1,4 +1,4 @@
-import type { Accommodation, UserIdType } from '@repo/schemas';
+import type { UserIdType } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     PermissionEnum,
@@ -21,7 +21,10 @@ import {
 } from '../../../src/services/accommodation/accommodation.permissions';
 import { ServiceError } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
-import { createMockAccommodation } from '../../factories/accommodationFactory';
+import {
+    createMockAccommodation,
+    type MockAccommodation
+} from '../../factories/accommodationFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
 const createActor = (
@@ -33,7 +36,7 @@ const createActor = (
 const withOwner = (
     ownerId: UserIdType,
     visibility: VisibilityEnum = VisibilityEnum.PRIVATE
-): Accommodation => {
+): MockAccommodation => {
     // Aseguramos que reviewsCount, averageRating y tags estén presentes
     return {
         ...createMockAccommodation({ ownerId, visibility }),
@@ -284,12 +287,12 @@ describe('Accommodation Permissions', () => {
             checkCanView(createActor([]), withOwner(otherUserId, VisibilityEnum.PRIVATE))
         );
         // The lifecycle gate above already answered 404 for a row that exists.
-        const hiddenByLifecycle = capture(() =>
-            checkCanView(createActor([]), {
-                ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-                lifecycleState: LifecycleStatusEnum.DRAFT
-            })
-        );
+        const draft = {
+            ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+            lifecycleState: LifecycleStatusEnum.DRAFT,
+            publicationStatus: PublicationStatusEnum.DRAFT
+        };
+        const hiddenByLifecycle = capture(() => checkCanView(createActor([]), draft));
 
         expect({ code: foreignPrivate.code, message: foreignPrivate.message }).toEqual({
             code: hiddenByLifecycle.code,
@@ -371,7 +374,8 @@ describe('Accommodation Permissions', () => {
     it('checkCanView hides a service-suspended owner accommodation as NOT_FOUND for the public', () => {
         const suspended = {
             ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-            ownerSuspended: true
+            ownerSuspended: true,
+            publicationStatus: PublicationStatusEnum.DRAFT
         };
         try {
             checkCanView(createActor([], 'someone-else'), suspended);
@@ -387,7 +391,8 @@ describe('Accommodation Permissions', () => {
     it('checkCanView lets the owner view their own service-suspended accommodation', () => {
         const suspended = {
             ...withOwner(mockUserId, VisibilityEnum.PUBLIC),
-            ownerSuspended: true
+            ownerSuspended: true,
+            publicationStatus: PublicationStatusEnum.DRAFT
         };
         expect(() => checkCanView(createActor([], mockUserId), suspended)).not.toThrow();
     });
@@ -395,7 +400,8 @@ describe('Accommodation Permissions', () => {
     it('checkCanView lets ACCOMMODATION_VIEW_ALL view a service-suspended accommodation', () => {
         const suspended = {
             ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-            ownerSuspended: true
+            ownerSuspended: true,
+            publicationStatus: PublicationStatusEnum.DRAFT
         };
         expect(() =>
             checkCanView(
@@ -409,7 +415,8 @@ describe('Accommodation Permissions', () => {
     it('checkCanView hides a plan-restricted accommodation as NOT_FOUND for the public', () => {
         const restricted = {
             ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-            planRestricted: true
+            planRestricted: true,
+            publicationStatus: PublicationStatusEnum.DRAFT
         };
         try {
             checkCanView(createActor([], 'someone-else'), restricted);
@@ -425,7 +432,8 @@ describe('Accommodation Permissions', () => {
     it('checkCanView lets the owner view their own plan-restricted accommodation', () => {
         const restricted = {
             ...withOwner(mockUserId, VisibilityEnum.PUBLIC),
-            planRestricted: true
+            planRestricted: true,
+            publicationStatus: PublicationStatusEnum.DRAFT
         };
         expect(() => checkCanView(createActor([], mockUserId), restricted)).not.toThrow();
     });
@@ -433,7 +441,8 @@ describe('Accommodation Permissions', () => {
     it('checkCanView lets ACCOMMODATION_VIEW_ALL view a plan-restricted accommodation', () => {
         const restricted = {
             ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-            planRestricted: true
+            planRestricted: true,
+            publicationStatus: PublicationStatusEnum.DRAFT
         };
         expect(() =>
             checkCanView(
@@ -446,7 +455,8 @@ describe('Accommodation Permissions', () => {
     it('checkCanView returns NOT_FOUND (not FORBIDDEN) for plan-restricted to avoid leaking existence', () => {
         const restricted = {
             ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-            planRestricted: true
+            planRestricted: true,
+            publicationStatus: PublicationStatusEnum.DRAFT
         };
         try {
             checkCanView(createActor([]), restricted);
@@ -472,7 +482,8 @@ describe('Accommodation Permissions', () => {
         it('hides a DRAFT accommodation as NOT_FOUND for an anonymous user', () => {
             const draft = {
                 ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                publicationStatus: PublicationStatusEnum.DRAFT
             };
             try {
                 checkCanView(createActor([], 'anonymous-id'), draft);
@@ -488,7 +499,8 @@ describe('Accommodation Permissions', () => {
         it('hides an INACTIVE accommodation as NOT_FOUND for a non-owner', () => {
             const inactive = {
                 ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-                lifecycleState: LifecycleStatusEnum.INACTIVE
+                lifecycleState: LifecycleStatusEnum.INACTIVE,
+                publicationStatus: PublicationStatusEnum.DRAFT
             };
             try {
                 checkCanView(createActor([], 'another-user'), inactive);
@@ -504,7 +516,8 @@ describe('Accommodation Permissions', () => {
         it('hides an ARCHIVED accommodation as NOT_FOUND for a non-owner', () => {
             const archived = {
                 ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-                lifecycleState: LifecycleStatusEnum.ARCHIVED
+                lifecycleState: LifecycleStatusEnum.ARCHIVED,
+                publicationStatus: PublicationStatusEnum.DRAFT
             };
             try {
                 checkCanView(createActor([], 'another-user'), archived);
@@ -520,7 +533,8 @@ describe('Accommodation Permissions', () => {
         it('lets the owner view their own DRAFT accommodation (key regression guard)', () => {
             const draft = {
                 ...withOwner(mockUserId, VisibilityEnum.PUBLIC),
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                publicationStatus: PublicationStatusEnum.DRAFT
             };
             // Owner must NOT get NOT_FOUND for their own DRAFTs.
             expect(() => checkCanView(createActor([], mockUserId), draft)).not.toThrow();
@@ -529,7 +543,8 @@ describe('Accommodation Permissions', () => {
         it('lets ACCOMMODATION_VIEW_ALL staff view a DRAFT accommodation', () => {
             const draft = {
                 ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                publicationStatus: PublicationStatusEnum.DRAFT
             };
             expect(() =>
                 checkCanView(
@@ -542,7 +557,8 @@ describe('Accommodation Permissions', () => {
         it('returns NOT_FOUND (not FORBIDDEN) for DRAFT to avoid leaking existence', () => {
             const draft = {
                 ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                publicationStatus: PublicationStatusEnum.DRAFT
             };
             try {
                 checkCanView(createActor([]), draft);

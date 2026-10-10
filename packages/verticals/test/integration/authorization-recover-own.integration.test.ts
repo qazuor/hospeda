@@ -137,7 +137,9 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                     type: 'RESTAURANT',
                     ownerId: user.id,
                     destinationId: destination.id,
-                    publicationStatus: PublicationStatusEnum.ARCHIVED
+                    publicationStatus: PublicationStatusEnum.ARCHIVED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1
                 })
                 .returning({ id: gastronomies.id });
             const [experience] = await db
@@ -150,7 +152,9 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                     type: 'EXCURSION',
                     ownerId: user.id,
                     destinationId: destination.id,
-                    publicationStatus: PublicationStatusEnum.ARCHIVED
+                    publicationStatus: PublicationStatusEnum.ARCHIVED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1
                 })
                 .returning({ id: experiences.id });
             if (!gastronomy || !experience) throw new Error('Listing insert failed');

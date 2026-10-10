@@ -79,7 +79,9 @@ describe('AC:V5:9 / TEST:V5:10 migrated coverage and effective set', () => {
                     description: 'Coverage listing',
                     ownerId: user.id,
                     destinationId: destination.id,
-                    publicationStatus: PublicationStatusEnum.PUBLISHED
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1
                 })
                 .returning({
                     id: accommodations.id,

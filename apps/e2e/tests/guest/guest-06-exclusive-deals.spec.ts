@@ -130,11 +130,13 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
                  slug, name, summary, description, type,
                  owner_id, destination_id, lifecycle_state,
                  visibility, moderation_state,
+                 publication_status, inactive_since, deadlines_version,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
                  $5, $6, 'ACTIVE'::lifecycle_status_enum,
                  'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum,
+                 CASE WHEN 'ACTIVE'::lifecycle_status_enum = 'ACTIVE' AND 'PUBLIC'::visibility_enum = 'PUBLIC' THEN 'PUBLISHED' ELSE 'DRAFT' END::publication_status_enum, NOW(), 1,
                  NOW(), NOW()
              ) RETURNING id`,
             [
@@ -153,11 +155,13 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
                  slug, name, summary, description, type,
                  owner_id, destination_id, lifecycle_state,
                  visibility, moderation_state,
+                 publication_status, inactive_since, deadlines_version,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
                  $5, $6, 'ACTIVE'::lifecycle_status_enum,
                  'RESTRICTED'::visibility_enum, 'APPROVED'::moderation_status_enum,
+                 CASE WHEN 'ACTIVE'::lifecycle_status_enum = 'ACTIVE' AND 'RESTRICTED'::visibility_enum = 'PUBLIC' THEN 'PUBLISHED' ELSE 'DRAFT' END::publication_status_enum, NOW(), 1,
                  NOW(), NOW()
              ) RETURNING id`,
             [

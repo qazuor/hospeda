@@ -3,6 +3,12 @@
  */
 
 export {
+    type CutoverTrialListing,
+    type CutoverTrialPlan,
+    type CutoverTrialResult,
+    writeCutoverTrials
+} from './cutover-v6-trials';
+export {
     type ComputeTrialEmailPseudonymResult,
     computeTrialEmailPseudonym,
     MEASURED_RULES,

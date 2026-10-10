@@ -20,7 +20,14 @@
  * Instead, seed data is inserted COMMITTED to the DB and manually cleaned up
  * in afterEach so the service's self-managed transaction can see the seed rows.
  */
-import { accommodationMedia, accommodations, destinations, eq, users } from '@repo/db';
+import {
+    accommodationMedia,
+    accommodations,
+    destinations,
+    eq,
+    legacyPublicationStatus,
+    users
+} from '@repo/db';
 import type { AccommodationCreateInput, AccommodationUpdateInput } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -171,7 +178,13 @@ async function seedCommittedAccommodation(opts: {
         },
         lifecycleState: 'ACTIVE',
         visibility: 'PUBLIC',
-        ownerSuspended: false
+        ownerSuspended: false,
+        publicationStatus: legacyPublicationStatus({
+            lifecycleState: 'ACTIVE',
+            visibility: 'PUBLIC'
+        }),
+        inactiveSince: new Date(),
+        deadlinesVersion: 1
     } as typeof accommodations.$inferInsert);
 
     cleanup.accommodationIds.push(accommodationId);

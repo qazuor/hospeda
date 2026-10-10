@@ -59,13 +59,14 @@ test.describe('ACC-03: host unpublishes — accommodation disappears @p0 @accomm
         const beforeBody = (await beforeRes.json()) as { data?: { id: string } | null };
         expect(beforeBody.data?.id).toBe(accommodation.id);
 
-        // ── 2. Unpublish: PATCH lifecycle_state to DRAFT ───────────────────
+        // ── 2. Unpublish: write both publication columns ───────────────────
         // We update via SQL because the protected/admin patch endpoints have
         // a wider validation surface; ACC-03 validates the public-visibility
         // contract, not the publish/unpublish UI flow (covered by HOST-01).
         await execSQL(
             `UPDATE accommodations
              SET lifecycle_state = 'DRAFT',
+                 publication_status = 'DRAFT',
                  updated_at = NOW()
              WHERE id = $1`,
             [accommodation.id]

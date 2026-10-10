@@ -41,7 +41,7 @@ describe.each([
     ['gastronomies', gastronomies],
     ['experiences', experiences]
 ] as const)('listing table %s (TEST:V6:17)', (_name, table) => {
-    it('declares the publication-model columns, nullable until V6.9', () => {
+    it('declares the publication-model columns with V6.9 nullability', () => {
         const columns = getTableColumns(table);
         expect(columns.publicationStatus.name).toBe('publication_status');
         expect(columns.inactiveSince.name).toBe('inactive_since');
@@ -50,11 +50,12 @@ describe.each([
         for (const column of [
             columns.publicationStatus,
             columns.inactiveSince,
-            columns.deadlinesVersion,
-            columns.deletionAnnouncedAt
+            columns.deadlinesVersion
         ]) {
-            expect(column.notNull).toBe(false);
+            expect(column.notNull).toBe(true);
             expect(column.hasDefault).toBe(false);
         }
+        expect(columns.deletionAnnouncedAt.notNull).toBe(false);
+        expect(columns.deletionAnnouncedAt.hasDefault).toBe(false);
     });
 });

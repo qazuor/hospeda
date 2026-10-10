@@ -6,6 +6,7 @@ import {
     gastronomyFaqs,
     gastronomyReviews,
     getDb,
+    legacyPublicationStatus,
     sql,
     users
 } from '@repo/db';
@@ -546,6 +547,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             // versioned data-migrations can target a specific gastronomy listing
             // by a fixed id.
             const gastronomyId = getGastronomyFixtureId(item.id);
+            const now = new Date();
 
             const [inserted] = await db
                 .insert(gastronomies)
@@ -571,6 +573,12 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     visibility: item.visibility as (typeof gastronomies.$inferInsert)['visibility'],
                     lifecycleState:
                         item.lifecycleState as (typeof gastronomies.$inferInsert)['lifecycleState'],
+                    publicationStatus: legacyPublicationStatus({
+                        lifecycleState: item.lifecycleState,
+                        visibility: item.visibility
+                    }),
+                    inactiveSince: now,
+                    deadlinesVersion: 1,
                     moderationState:
                         item.moderationState as (typeof gastronomies.$inferInsert)['moderationState'],
                     contactInfo: (item.contactInfo ??

@@ -42,7 +42,8 @@ const MIGRATION_REFERENCE_TABLES: readonly string[] = [
     'plan_version',
     'plan_version_entitlement',
     'plan_version_limit',
-    'vertical'
+    'vertical',
+    'vertical_deadline_version'
 ];
 
 let admin: PgClient;

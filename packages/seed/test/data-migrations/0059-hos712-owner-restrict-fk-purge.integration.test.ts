@@ -54,6 +54,7 @@ import {
     ExperienceTypeEnum,
     GastronomyTypeEnum,
     OccupancySourceEnum,
+    PublicationStatusEnum,
     RoleEnum
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
@@ -188,7 +189,10 @@ async function insertGastronomy(
             description: 'HOS-712 fixture gastronomy, rolled back after the test.',
             type: GastronomyTypeEnum.RESTAURANT,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof gastronomies.$inferInsert)
         .returning({ id: gastronomies.id });
     const row = inserted[0];
@@ -212,7 +216,10 @@ async function insertExperience(
             description: 'HOS-712 fixture experience, rolled back after the test.',
             type: ExperienceTypeEnum.KAYAK_RENTAL,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof experiences.$inferInsert)
         .returning({ id: experiences.id });
     const row = inserted[0];
@@ -236,7 +243,10 @@ async function insertAccommodation(
             description: 'HOS-712 fixture accommodation, rolled back after the test.',
             type: AccommodationTypeEnum.CABIN,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof accommodations.$inferInsert)
         .returning({ id: accommodations.id });
     const row = inserted[0];

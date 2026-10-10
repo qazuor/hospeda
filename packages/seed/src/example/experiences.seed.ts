@@ -34,7 +34,7 @@
  *  5. CULTURAL_TOUR   — Concepción del Uruguay, per_person, DRAFT+PUBLIC+hasActiveSub=false (non-visible)
  */
 
-import { ExperienceMediaModel } from '@repo/db';
+import { ExperienceMediaModel, legacyPublicationStatus } from '@repo/db';
 import { RoleEnum, RoleGrantReason } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { Pool } from 'pg';
@@ -475,12 +475,14 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                    (id, slug, name, summary, description, type,
                     price_from, price_unit, is_price_on_request,
                     visibility, lifecycle_state, moderation_state,
-                    owner_id, destination_id, created_by_id, updated_by_id)
+                    owner_id, destination_id, created_by_id, updated_by_id,
+                    publication_status, inactive_since, deadlines_version)
                  VALUES
                    ($1, $2, $3, $4, $5, $6,
                     $7, $8, $9,
                     $10, $11, $12,
-                    $13, $14, $15, $15)
+                    $13, $14, $15, $15,
+                    $16::publication_status_enum, now(), 1)
                  ON CONFLICT (slug) DO NOTHING
                  RETURNING id`,
                 [
@@ -498,7 +500,11 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                     input.moderationState,
                     input.ownerId,
                     input.destinationId,
-                    input.createdById
+                    input.createdById,
+                    legacyPublicationStatus({
+                        lifecycleState: input.lifecycleState,
+                        visibility: input.visibility
+                    })
                 ]
             );
 

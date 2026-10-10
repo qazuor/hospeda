@@ -69,6 +69,7 @@ export default defineConfig({
             'test/integration/webhooks/**/*.test.ts',
             'test/integration/outbox/**/*.test.ts',
             'test/integration/billing-deadlines/**/*.test.ts',
+            'test/integration/vertical-deadlines/**/*.test.ts',
             'test/integration/plan-publication/**/*.test.ts',
             'test/integration/billing-subscription/**/*.test.ts',
             'test/integration/trial/**/*.test.ts',

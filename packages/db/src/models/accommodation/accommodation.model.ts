@@ -26,6 +26,7 @@ import {
 } from '../../utils/geo.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
+import { withListingBirthColumns } from '../listing/listing-birth.ts';
 
 /**
  * Nullable numeric columns where Postgres' default NULLS handling causes UX surprises.
@@ -421,6 +422,14 @@ interface AccommodationIncludeDeletedOption {
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
     public entityName = 'accommodations';
+
+    /** Creates an accommodation with its initial publication clock. */
+    override async create(
+        data: Partial<Accommodation>,
+        tx?: DrizzleClient
+    ): Promise<Accommodation> {
+        return super.create(withListingBirthColumns({ data }).data, tx);
+    }
 
     protected override readonly validRelationKeys = [
         'owner',

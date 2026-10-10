@@ -28,6 +28,7 @@
  *      row, so it is unaffected by the source-scoped unique index allowing
  *      multiple rows per date.
  */
+import { PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import {
@@ -60,6 +61,9 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `hos43-occupancy-excl-${uid}`,
@@ -122,6 +126,9 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `hos43-occupancy-incl-${uid}`,
@@ -184,6 +191,9 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `hos43-occupancy-nodates-${uid}`,
@@ -230,6 +240,9 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `hos162-occupancy-multisource-${uid}`,

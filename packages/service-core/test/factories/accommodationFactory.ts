@@ -18,6 +18,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PriceCurrencyEnum,
+    PublicationStatusEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
@@ -50,10 +51,19 @@ const basePrice: AccommodationPrice = {
     currency: PriceCurrencyEnum.USD
 };
 
+/** Accommodation row after the V6.9 publication cut. */
+export type MockAccommodation = Accommodation & {
+    publicationStatus: PublicationStatusEnum;
+    inactiveSince: Date;
+    deadlinesVersion: number;
+};
+
 /**
  * Creates a base Accommodation with sensible defaults for testing.
  */
-export const createMockAccommodation = (overrides: Partial<Accommodation> = {}): Accommodation => ({
+export const createMockAccommodation = (
+    overrides: Partial<MockAccommodation> = {}
+): MockAccommodation => ({
     id: getMockAccommodationId(),
     name: 'Default Test Hotel',
     slug: 'default-test-hotel',
@@ -85,6 +95,15 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
 
     // Base visibility fields
     visibility: VisibilityEnum.PUBLIC,
+    publicationStatus:
+        (overrides.lifecycleState ?? LifecycleStatusEnum.ACTIVE) === LifecycleStatusEnum.ACTIVE &&
+        (overrides.visibility ?? VisibilityEnum.PUBLIC) === VisibilityEnum.PUBLIC &&
+        overrides.ownerSuspended !== true &&
+        overrides.planRestricted !== true
+            ? PublicationStatusEnum.PUBLISHED
+            : PublicationStatusEnum.DRAFT,
+    inactiveSince: new Date('2024-01-01'),
+    deadlinesVersion: 1,
 
     // Postal address fields (SPEC-095): geographic context lives on destination relation.
     location: {

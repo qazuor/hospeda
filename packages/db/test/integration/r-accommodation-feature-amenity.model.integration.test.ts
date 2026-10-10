@@ -29,6 +29,7 @@
  * `r_accommodation_amenity.model.test.ts`, both of which mock `getDb()` and
  * therefore stayed green while this bug was live in production).
  */
+import { PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setDb } from '../../src/client.ts';
 import { RAccommodationAmenityModel } from '../../src/models/accommodation/rAccommodationAmenity.model.ts';
@@ -57,7 +58,10 @@ function accommodationFixture(
         type: 'HOTEL' as const,
         description: 'Test description for the HOS-598 relation-model regression test.',
         ownerId,
-        destinationId
+        destinationId,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
+        inactiveSince: new Date(),
+        deadlinesVersion: 1
     };
 }
 

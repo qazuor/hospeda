@@ -27,6 +27,8 @@
  * `hospeda_integration_test` database is created and migrated exactly once per
  * run — so the schema here matches the migration carril as shipped.
  */
+
+import { PublicationStatusEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema.ts';
@@ -94,6 +96,9 @@ function makeAccommodation(
         description: 'SPEC-266 accommodation description for invariant test.',
         ownerId,
         destinationId,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
+        inactiveSince: new Date(),
+        deadlinesVersion: 1,
         lifecycleState: 'ACTIVE' as const,
         visibility: 'PUBLIC' as const,
         moderationState: 'PENDING' as const

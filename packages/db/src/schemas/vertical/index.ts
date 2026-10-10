@@ -15,3 +15,4 @@ export * from './reference-tables.ts';
 export * from './scheduled-change.dbschema.ts';
 export * from './subscription.dbschema.ts';
 export * from './vertical.dbschema.ts';
+export * from './vertical-deadline-version.dbschema.ts';

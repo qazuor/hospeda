@@ -33,7 +33,8 @@ describe('partitionTablesForReset', () => {
             'plan_version',
             'plan_version_entitlement',
             'plan_version_limit',
-            'vertical'
+            'vertical',
+            'vertical_deadline_version'
         ]);
         expect(result.tablesToReset).toEqual(['users']);
     });
@@ -58,6 +59,7 @@ describe('partitionTablesForReset', () => {
             'vertical',
             'catalog_key',
             'billing_deadline_version',
+            'vertical_deadline_version',
             'plan',
             'plan_version',
             'plan_version_entitlement',
@@ -74,6 +76,7 @@ describe('partitionTablesForReset', () => {
             'vertical',
             'catalog_key',
             'billing_deadline_version',
+            'vertical_deadline_version',
             'plan',
             'plan_version',
             'plan_version_entitlement',

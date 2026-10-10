@@ -1,6 +1,7 @@
 import { access, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PublicationStatusEnum } from '@repo/schemas';
 /**
  * Integration test: accommodation.description — strip-markdown migration (P0).
  *
@@ -160,6 +161,9 @@ describe('SPEC-187 P0 — accommodation.description strip-markdown migration', (
 
                 for (let i = 0; i < fixtures.length; i++) {
                     await tx.insert(accommodations).values({
+                        publicationStatus: PublicationStatusEnum.PUBLISHED,
+                        inactiveSince: new Date(),
+                        deadlinesVersion: 1,
                         slug: `strip-red-${i}`,
                         name: `Strip Red ${i}`,
                         summary: 'Strip test summary',
@@ -236,6 +240,9 @@ describe('SPEC-187 P0 — accommodation.description strip-markdown migration', (
                 const expected = 'Title\n\nbold\nlink\nitem\ncode';
 
                 await tx.insert(accommodations).values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     slug: 'strip-canonical',
                     name: 'Strip Canonical',
                     summary: 'Strip test summary',
@@ -271,6 +278,9 @@ describe('SPEC-187 P0 — accommodation.description strip-markdown migration', (
 
                 const cleanInput = 'A clean description with no markdown at all.';
                 await tx.insert(accommodations).values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     slug: 'strip-clean',
                     name: 'Strip Clean',
                     summary: 'Strip test summary',
@@ -331,6 +341,9 @@ describe('SPEC-187 P0 — accommodation.description strip-markdown migration', (
                 await tx.insert(destinations).values(dest);
 
                 await tx.insert(accommodations).values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     slug: 'restrip-underscore',
                     name: 'Restrip Underscore',
                     summary: 'Restrip test summary',
@@ -361,6 +374,9 @@ describe('SPEC-187 P0 — accommodation.description strip-markdown migration', (
                 await tx.insert(destinations).values(dest);
 
                 await tx.insert(accommodations).values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     slug: 'restrip-image',
                     name: 'Restrip Image',
                     summary: 'Restrip test summary',
@@ -393,6 +409,9 @@ describe('SPEC-187 P0 — accommodation.description strip-markdown migration', (
                 await tx.insert(destinations).values(dest);
 
                 await tx.insert(accommodations).values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     slug: 'restrip-idem',
                     name: 'Restrip Idem',
                     summary: 'Restrip test summary',
