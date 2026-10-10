@@ -65,7 +65,10 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical: VerticalEnum.ACCOMMODATION,
                 hasLiveNonTrialTitle: false,
-                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+                entries: [
+                    { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
+                    { key: 'can_use_calendar', value: 1, strategy: 'MAX' }
+                ]
             })
         )
     })
@@ -330,7 +333,7 @@ describe('PATCH /:id/occupancy/event (protected)', () => {
         expect(res.status).toBe(404);
     });
 
-    it('preserves calendar editing when the old plan entitlement is absent', async () => {
+    it('preserves calendar editing with the effective capability', async () => {
         const app = buildApp(ownerActor, { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/event`, {
             method: 'PATCH',

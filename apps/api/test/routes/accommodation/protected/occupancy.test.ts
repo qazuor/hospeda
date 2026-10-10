@@ -80,7 +80,10 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical: VerticalEnum.ACCOMMODATION,
                 hasLiveNonTrialTitle: false,
-                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+                entries: [
+                    { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
+                    { key: 'can_use_calendar', value: 1, strategy: 'MAX' }
+                ]
             })
         )
     })
@@ -332,7 +335,7 @@ describe('POST /:id/occupancy (protected)', () => {
         expect(res.status).toBe(403);
     });
 
-    it('preserves occupancy editing without the old plan entitlement', async () => {
+    it('preserves occupancy editing with the effective calendar capability', async () => {
         const app = buildApp(ownerActor, [protectedAddOccupancyRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy`, {
             method: 'POST',
@@ -343,7 +346,7 @@ describe('POST /:id/occupancy (protected)', () => {
         expect(mockAddOccupancy).toHaveBeenCalled();
     });
 
-    it('succeeds when the owner holds CAN_USE_CALENDAR via HOST draft defaults (real route-level gate)', async () => {
+    it('succeeds when the owner holds the effective calendar capability', async () => {
         const app = buildApp(ownerActor, [protectedAddOccupancyRoute], {
             entitlements: [EntitlementKey.CAN_USE_CALENDAR]
         });
@@ -429,7 +432,7 @@ describe('PATCH /:id/occupancy/batch (protected)', () => {
         expect(mockBatchToggleOccupancy).not.toHaveBeenCalled();
     });
 
-    it('preserves occupancy editing without the old plan entitlement', async () => {
+    it('preserves occupancy editing with the effective calendar capability', async () => {
         const app = buildApp(ownerActor, [protectedBatchOccupancyRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/batch`, {
             method: 'PATCH',
@@ -515,7 +518,7 @@ describe('DELETE /:id/occupancy/:date (protected)', () => {
         expect(res.status).toBe(403);
     });
 
-    it('preserves occupancy editing without the old plan entitlement', async () => {
+    it('preserves occupancy editing with the effective calendar capability', async () => {
         const app = buildApp(ownerActor, [protectedRemoveOccupancyRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/occupancy/2026-07-10`, {
             method: 'DELETE'
