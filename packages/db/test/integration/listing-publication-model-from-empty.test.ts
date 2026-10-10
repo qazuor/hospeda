@@ -9,14 +9,9 @@
 // `owner_id` NOT NULL; and `fix_request` (spec `pedido_de_arreglo`) with its
 // partial unique index: at most one OPEN request per listing.
 //
-// SCOPE OF V6.8a: this is the additive half of AC:V6:16. Two clauses arrive with
-// the paso-3 cut migration (V6.9), together with the write `C` that fills the
-// pre-existing rows: (1) «sin las seis viejas» — dropping `lifecycle_state`,
-// `visibility`, `moderation_state`, `owner_suspended`, `plan_restricted` and
-// `billing_unpublished_at` and migrating their readers (plus TEST:V6:18); and
-// (2) the NOT NULL on `publication_status`, `inactive_since` and
-// `deadlines_version`, which are born nullable and WITHOUT a default here, and
-// this file asserts exactly that, so V6.9 has to flip these assertions.
+// V6.8a added the publication columns as nullable. V6.9 fills them through
+// write `C` and enforces NOT NULL without a default. The six legacy columns
+// remain until V6.9b.
 //
 // Self-contained on purpose: it creates its OWN uniquely named database, applies
 // the chain with real `drizzle-kit migrate`, and drops only that database.
@@ -142,25 +137,24 @@ describe('the publication_status enum (TEST:V6:17)', () => {
 });
 
 describe.each(LISTING_TABLES)('listing table %s (TEST:V6:17)', (table) => {
-    it('carries publication_status typed by the enum, nullable and without default until V6.9', async () => {
+    it('carries publication_status typed by the enum, NOT NULL and without default', async () => {
         const column = (await columnsOf({ table })).get('publication_status');
         expect(column?.udt_name).toBe('publication_status_enum');
-        // V6.9's write C fills it and adds the NOT NULL; no default may write it before.
-        expect(column?.is_nullable).toBe('YES');
+        expect(column?.is_nullable).toBe('NO');
         expect(column?.column_default).toBeNull();
     });
 
-    it('carries inactive_since (spec inactiva_desde), nullable and without default until V6.9', async () => {
+    it('carries inactive_since (spec inactiva_desde), NOT NULL and without default', async () => {
         const column = (await columnsOf({ table })).get('inactive_since');
         expect(column?.data_type).toBe('timestamp with time zone');
-        expect(column?.is_nullable).toBe('YES');
+        expect(column?.is_nullable).toBe('NO');
         expect(column?.column_default).toBeNull();
     });
 
-    it('carries deadlines_version (spec plazos_version), nullable and without default until V6.9', async () => {
+    it('carries deadlines_version (spec plazos_version), NOT NULL and without default', async () => {
         const column = (await columnsOf({ table })).get('deadlines_version');
         expect(column?.data_type).toBe('integer');
-        expect(column?.is_nullable).toBe('YES');
+        expect(column?.is_nullable).toBe('NO');
         expect(column?.column_default).toBeNull();
     });
 
