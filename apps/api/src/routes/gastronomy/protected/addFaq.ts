@@ -10,7 +10,8 @@ import {
     FaqWithChannelVisibilityCreatePayloadSchema,
     type FaqWithChannelVisibilityCreatePayloadType,
     type GastronomyFaqAddInput,
-    GastronomyFaqSingleOutputSchema
+    GastronomyFaqSingleOutputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { addGastronomyFaq, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -18,7 +19,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -28,12 +29,14 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedAddGastronomyFaqRoute = createCRUDRoute({
+export const protectedAddGastronomyFaqRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/faqs',
     summary: 'Add FAQ to gastronomy listing',
     description: 'Adds a new frequently asked question to a gastronomy listing',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

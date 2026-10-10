@@ -27,7 +27,8 @@
 import {
     GastronomyDailySpecialsOutputSchema,
     type GastronomyDailySpecialsReplacePayload,
-    GastronomyDailySpecialsReplacePayloadSchema
+    GastronomyDailySpecialsReplacePayloadSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, replaceGastronomyDailySpecials } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against — see
@@ -38,7 +39,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -75,13 +76,15 @@ export async function handlePutGastronomyDailySpecials(
     return result.data;
 }
 
-export const protectedPutGastronomyDailySpecialsRoute = createCRUDRoute({
+export const protectedPutGastronomyDailySpecialsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/daily-specials',
     summary: 'Replace the menú del día of a gastronomy listing',
     description:
         'Replaces the listing’s daily specials with the submitted document. Each special carries its own inclusive validity window and stops being shown publicly once it passes — no job runs and nothing has to be taken down by hand. An empty specials array removes them immediately. Owner-only, and requires the manage_gastronomy_daily_special entitlement granted by the professional gastronomy plan and above.',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy Daily Specials'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

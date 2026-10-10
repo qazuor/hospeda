@@ -6,14 +6,14 @@
  * The FAQ must belong to the specified gastronomy (enforced inside removeGastronomyFaq).
  */
 
-import { GastronomyFaqRemoveOutputSchema } from '@repo/schemas';
+import { GastronomyFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, removeGastronomyFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -23,12 +23,14 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedRemoveGastronomyFaqRoute = createCRUDRoute({
+export const protectedRemoveGastronomyFaqRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from gastronomy listing',
     description: 'Soft-deletes a FAQ from a gastronomy listing',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     tags: ['Gastronomy', 'Gastronomy FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
