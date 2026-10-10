@@ -29,6 +29,7 @@
  * PG error 42703 "column accommodations.entity_id does not exist".
  * With the fix it passes.
  */
+import { PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import { accommodations, destinations, userBookmarks, users } from '../../src/schemas/index.ts';
@@ -57,6 +58,9 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `spec213-mostsaved-${uid}`,
@@ -119,6 +123,9 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
             const [accommodationA] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `spec213-order-a-${uid}`,
@@ -135,6 +142,9 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
             const [accommodationB] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `spec213-order-b-${uid}`,

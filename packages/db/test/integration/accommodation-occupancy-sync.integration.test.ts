@@ -16,7 +16,7 @@
  *   4. A pre-existing `GOOGLE_CALENDAR` row with `date < fromDate` is left
  *      untouched — only `date >= fromDate` is replaced.
  */
-import { OccupancySourceEnum } from '@repo/schemas';
+import { OccupancySourceEnum, PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationOccupancyModel } from '../../src/models/accommodation/accommodationOccupancy.model.ts';
 import { accommodations, destinations, users } from '../../src/schemas/index.ts';
@@ -41,6 +41,9 @@ async function seedAccommodation(tx: DrizzleClient, slugSuffix: string) {
     const [accommodation] = await tx
         .insert(accommodations)
         .values({
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1,
             ownerId: owner.id,
             destinationId: destination.id,
             slug: `hos157-occ-sync-${slugSuffix}-${uid}`,

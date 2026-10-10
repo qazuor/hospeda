@@ -20,7 +20,7 @@
  *   3. `deleteManualByDate` on a day that has both a `MANUAL` and a
  *      `GOOGLE_CALENDAR` row removes only the `MANUAL` row.
  */
-import { OccupancySourceEnum } from '@repo/schemas';
+import { OccupancySourceEnum, PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationOccupancyModel } from '../../src/models/accommodation/accommodationOccupancy.model.ts';
 import { accommodations, destinations, users } from '../../src/schemas/index.ts';
@@ -45,6 +45,9 @@ async function seedAccommodation(tx: DrizzleClient, slugSuffix: string) {
     const [accommodation] = await tx
         .insert(accommodations)
         .values({
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1,
             ownerId: owner.id,
             destinationId: destination.id,
             slug: `hos162-occ-cross-${slugSuffix}-${uid}`,

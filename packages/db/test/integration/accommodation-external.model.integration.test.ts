@@ -10,6 +10,7 @@
  *  - AccommodationExternalReputationModel.upsertReputation (idempotency)
  *  - AccommodationExternalReputationModel.findForDisplay (toggle filtering)
  */
+import { PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setDb } from '../../src/client.ts';
 import { AccommodationExternalListingModel } from '../../src/models/accommodationExternal/accommodation-external-listing.model.ts';
@@ -45,6 +46,9 @@ function accommodationFixture(
         description: 'Test description',
         ownerId,
         destinationId,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
+        inactiveSince: new Date(),
+        deadlinesVersion: 1,
         ...overrides
     };
 }
