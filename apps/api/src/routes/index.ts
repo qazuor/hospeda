@@ -55,7 +55,10 @@ import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
 import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
-import { protectedBillingSubscriptionRoutes } from './billing-subscription/index.js';
+import {
+    protectedBillingSubscriptionReadRoutes,
+    protectedBillingSubscriptionRoutes
+} from './billing-subscription/index.js';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
 import { contactRoutes } from './contact';
 import { adminContentModerationRoutes } from './content-moderation/admin';
@@ -506,6 +509,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // sibling spec handlers land; see ai/protected/index.ts for slots).
         app.route('/api/v1/protected/ai', protectedAiRoutes);
         app.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
+        app.route('/api/v1/protected/billing-subscription', protectedBillingSubscriptionReadRoutes);
 
         // Newsletter (SPEC-101 — subscribe / status / resend / unsubscribe live
         // under /api/v1/protected/newsletter/*, the routes mount themselves at
