@@ -33,19 +33,46 @@ async function fixture(withTrial = true, ended = false) {
         })
         .returning();
     if (!user) throw new Error('Missing user');
-    // The ephemeral database seeds the unique trial plan for each vertical.
-    const [plan] = await db
+    // Plan-publication suites truncate the migration-owned catalog between tests.
+    const [existingPlan] = await db
         .select()
         .from(plans)
         .where(and(eq(plans.vertical, 'accommodation'), eq(plans.role, 'trial')))
         .limit(1);
-    if (!plan) throw new Error('Missing seeded trial plan');
-    const [version] = await db
+    const [createdPlan] = existingPlan
+        ? [undefined]
+        : await db
+              .insert(plans)
+              .values({
+                  vertical: 'accommodation',
+                  slug: `admin-extend-trial-${randomUUID()}`,
+                  name: 'Administrative extension trial',
+                  role: 'trial'
+              })
+              .returning();
+    const plan = existingPlan ?? createdPlan;
+    if (!plan) throw new Error('Missing trial plan');
+    const [existingVersion] = await db
         .select()
         .from(planVersions)
         .where(and(eq(planVersions.planId, plan.id), eq(planVersions.current, true)))
         .limit(1);
-    if (!version) throw new Error('Missing seeded trial plan version');
+    const [createdVersion] = existingVersion
+        ? [undefined]
+        : await db
+              .insert(planVersions)
+              .values({
+                  planId: plan.id,
+                  vertical: 'accommodation',
+                  rank: 0,
+                  sellable: false,
+                  current: true,
+                  trialDays: 30,
+                  allowsPause: false
+              })
+              .returning();
+    const version = existingVersion ?? createdVersion;
+    if (!version) throw new Error('Missing trial plan version');
     const end = new Date(now.getTime() + (ended ? -1 : 20) * day);
     const [trial] = withTrial
         ? await db
