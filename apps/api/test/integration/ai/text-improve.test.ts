@@ -337,7 +337,7 @@ async function readSseFrames(response: Response): Promise<SseFrame[]> {
 // Test suite
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006)', () => {
+describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006)', () => {
     let app: OpenAPIHono<AppBindings>;
 
     beforeAll(async () => {

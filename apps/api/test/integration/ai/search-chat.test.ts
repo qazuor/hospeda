@@ -774,7 +774,7 @@ interface JsonErrorBody {
 // Test suite
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 T-004 / T-005)', () => {
+describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 T-004 / T-005)', () => {
     const app = buildTestApp();
 
     beforeEach(() => {

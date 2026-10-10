@@ -350,7 +350,7 @@ const POST = (
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('protected AI text-improve route (SPEC-198 T-005)', () => {
+describe('TEST:V5:32 protected AI text-improve route (SPEC-198 T-005)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockEffectiveSet.mockImplementation(async () => ({

@@ -366,7 +366,7 @@ function resetMockState() {
 // Test suite
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/protected/ai/translate (integration)', () => {
+describe('TEST:V5:32 POST /api/v1/protected/ai/translate (integration)', () => {
     let testApp: OpenAPIHono<AppBindings>;
 
     beforeAll(async () => {

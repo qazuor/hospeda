@@ -401,7 +401,7 @@ function makeMessages(count = 1): Array<{ role: 'user' | 'assistant'; content: s
     }));
 }
 
-describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () => {
+describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () => {
     const app = buildTestApp();
 
     beforeEach(() => {

@@ -382,7 +382,7 @@ async function readSseFrames(response: Response): Promise<SseFrame[]> {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 T-009)', () => {
+describe('TEST:V5:32 POST /api/v1/protected/ai/chat — owner-metered (SPEC-211 T-009)', () => {
     const app = buildTestApp();
 
     beforeEach(() => {
