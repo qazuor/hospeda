@@ -33,6 +33,7 @@ import {
     searchIndexRefreshJob,
     socialPublishDispatchJob,
     subscriptionWindowExpiryJob,
+    trialExpiryJob,
     viewMonthlyRollupJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -67,6 +68,7 @@ export const cronJobs: CronJobDefinition[] = [
     hostTradeUsageExpiryJob,
     hostTradeUsageReminderJob,
     subscriptionWindowExpiryJob,
+    trialExpiryJob,
     entityViewsPurgeJob,
     // Must be registered alongside the purge, not later: it is the only thing
     // that survives it (HOS-1063 A-6, R-4).

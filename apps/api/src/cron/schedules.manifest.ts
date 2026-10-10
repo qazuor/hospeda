@@ -60,6 +60,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Expire PENDING benefit usages whose 30-day confirmation window has run out. Notifies nobody: silence is not an accusation (HOS-376 §6.6).'
     },
     {
+        name: 'trial-expiry',
+        displayName: 'Vencimiento de trials',
+        category: 'billing',
+        schedule: '*/15 * * * *',
+        description:
+            'Expire running trials whose end date passed, re-reading it under the trial lock (HOS-1445, AC:V4:7).'
+    },
+    {
         name: 'subscription-window-expiry',
         displayName: 'Vencimiento de ventanas de autorización',
         category: 'billing',
