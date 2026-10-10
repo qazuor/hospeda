@@ -15,6 +15,8 @@ export interface PlanVersionPolicyRow {
     readonly allowsPause: boolean;
     readonly current: boolean;
     readonly sellable: boolean;
+    /** Whether this version grants Tourist VIP; absent means it does not. */
+    readonly inheritsTouristVip?: boolean;
 }
 
 /**
