@@ -16,8 +16,11 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { recalculateCoverage } from '../../../../../packages/verticals/src/publication/coverage-recalculation';
 import { publishListing } from '../../../../../packages/verticals/src/publication/publish-listing';
 import { unpublishListing } from '../../../../../packages/verticals/src/publication/unpublish-listing';
+import { trialMachineExpiryJob } from '../../../src/cron/jobs/trial-machine-expiry.job';
 import { injectClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
+import { getListingAccessPorts } from '../../../src/utils/listing-access/ports';
+import { subscribeListingCoverageRecalculation } from '../../../src/utils/listing-publication/coverage-listener';
 import { getListingPublicationPorts } from '../../../src/utils/listing-publication/ports';
 import { testDb } from '../../e2e/setup/test-database';
 
@@ -231,5 +234,135 @@ describe('TEST:V6 API coverage recalculation', () => {
         const [trial] = await db.select().from(trials).where(eq(trials.userId, user.id));
         expect(stored?.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
         expect(trial?.status).toBe('TRIAL_ACTIVE');
+    });
+
+    it('runs T3 through the coverage listener and restores only the system-unpublished listing', async () => {
+        const db = getDb();
+        const [user] = await db
+            .insert(users)
+            .values({ email: `t3-${randomUUID()}@example.test`, displayName: 'T3 owner' })
+            .returning({ id: users.id });
+        const [destination] = await db
+            .insert(destinations)
+            .values({
+                name: `T3 ${randomUUID()}`,
+                slug: `t3-${randomUUID()}`,
+                destinationType: 'CITY',
+                level: 5,
+                path: '/t3',
+                pathIds: randomUUID(),
+                summary: 'T3 fixture',
+                description: 'T3 fixture destination',
+                location: { coordinates: { lat: '-32.49', long: '-58.23' } }
+            })
+            .returning({ id: destinations.id });
+        if (!user || !destination) throw new Error('T3 fixture insert failed');
+
+        const [trialPlan] = await db
+            .select({ id: plans.id })
+            .from(plans)
+            .where(and(eq(plans.vertical, VerticalEnum.ACCOMMODATION), eq(plans.role, 'trial')))
+            .limit(1);
+        if (!trialPlan) throw new Error('Accommodation trial plan is missing');
+        const [trialVersion] = await db
+            .select({ id: planVersions.id })
+            .from(planVersions)
+            .where(and(eq(planVersions.planId, trialPlan.id), eq(planVersions.current, true)))
+            .limit(1);
+        if (!trialVersion) throw new Error('Accommodation trial plan version is missing');
+        const [trial] = await db
+            .insert(trials)
+            .values({
+                userId: user.id,
+                vertical: VerticalEnum.ACCOMMODATION,
+                status: 'TRIAL_ACTIVE',
+                trialPlanId: trialPlan.id,
+                floorEntitlementsVersionId: trialVersion.id,
+                floorLimitsVersionId: trialVersion.id,
+                floorTrialPlanVersionId: trialVersion.id,
+                startedAt: new Date(now.getTime() - 10 * 86_400_000),
+                endsAt: new Date(now.getTime() - 1_000),
+                emailPseudonym: randomUUID().replaceAll('-', '') + randomUUID().replaceAll('-', ''),
+                deadlinesVersion: 1
+            })
+            .returning({ id: trials.id });
+        if (!trial) throw new Error('Trial fixture insert failed');
+
+        const listingIds = await Promise.all(
+            [PublicationStatusEnum.PUBLISHED, PublicationStatusEnum.DRAFT].map(async (status) => {
+                const listing = await new AccommodationModel().create(
+                    {
+                        name: 'T3 listing',
+                        slug: `t3-${randomUUID()}`,
+                        summary: 'T3 fixture',
+                        description: 'T3 fixture listing',
+                        ownerId: user.id,
+                        destinationId: destination.id,
+                        type: 'CABIN',
+                        publicationStatus: status,
+                        lifecycleState:
+                            status === PublicationStatusEnum.PUBLISHED ? 'ACTIVE' : 'INACTIVE',
+                        visibility:
+                            status === PublicationStatusEnum.PUBLISHED ? 'PUBLIC' : 'PRIVATE'
+                    } as Partial<Accommodation>,
+                    db
+                );
+                return { id: listing.id, initialStatus: status };
+            })
+        );
+
+        const unsubscribe = subscribeListingCoverageRecalculation();
+        try {
+            await trialMachineExpiryJob.handler({
+                logger: { info() {}, error() {} },
+                startedAt: now,
+                dryRun: false
+            });
+            const publishedId = listingIds.find(
+                (listing) => listing.initialStatus === PublicationStatusEnum.PUBLISHED
+            )?.id;
+            const draftId = listingIds.find(
+                (listing) => listing.initialStatus === PublicationStatusEnum.DRAFT
+            )?.id;
+            if (!publishedId || !draftId) throw new Error('T3 listing fixtures are incomplete');
+            await expect
+                .poll(async () => {
+                    const [listing] = await db
+                        .select({ status: accommodations.publicationStatus })
+                        .from(accommodations)
+                        .where(eq(accommodations.id, publishedId));
+                    return listing?.status;
+                })
+                .toBe(PublicationStatusEnum.UNPUBLISHED_BY_BILLING);
+            const [expired] = await db.select().from(trials).where(eq(trials.id, trial.id));
+            expect(expired?.status).toBe('TRIAL_EXPIRED');
+
+            await db
+                .update(trials)
+                .set({ status: 'TRIAL_ACTIVE', endsAt: new Date(now.getTime() + 10 * 86_400_000) })
+                .where(eq(trials.id, trial.id));
+            await getListingAccessPorts().billing.emitCoverageChanged({
+                userId: user.id,
+                vertical: VerticalEnum.ACCOMMODATION,
+                sourceType: 'TRIAL',
+                change: 'CHANGED'
+            });
+            await expect
+                .poll(async () => {
+                    const [listing] = await db
+                        .select({ status: accommodations.publicationStatus })
+                        .from(accommodations)
+                        .where(eq(accommodations.id, publishedId));
+                    return listing?.status;
+                })
+                .toBe(PublicationStatusEnum.PUBLISHED);
+            const [ownerDraft] = await db
+                .select({ status: accommodations.publicationStatus })
+                .from(accommodations)
+                .where(eq(accommodations.id, draftId));
+            expect(ownerDraft?.status).toBe(PublicationStatusEnum.DRAFT);
+        } finally {
+            unsubscribe();
+        }
     });
 });
