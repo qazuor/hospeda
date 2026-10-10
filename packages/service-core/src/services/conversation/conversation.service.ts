@@ -45,7 +45,6 @@ import {
     MessageSenderTypeEnum,
     NotificationRecipientSideEnum,
     PermissionEnum,
-    RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
@@ -55,6 +54,7 @@ import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { createSystemActor } from '../../utils/system-actor.js';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { AccessTokenService } from './access-token.service.js';
 import {
@@ -114,9 +114,6 @@ const ALLOWED_TRANSITIONS: Readonly<
     ],
     [ConversationStatusEnum.BLOCKED]: []
 };
-
-/** Fixed UUID for the internal system actor used in cascaded service calls. */
-const SYSTEM_ACTOR_ID = '00000000-0000-0000-0000-000000000001';
 
 // ---------------------------------------------------------------------------
 // Input schemas (Zod — internal only)
@@ -403,11 +400,8 @@ export class ConversationService extends BaseService {
      * This actor is never exposed to external callers.
      */
     private _buildSystemActor(): Actor {
-        return {
-            id: SYSTEM_ACTOR_ID,
-            // HOS-296: an actor carries a SET of hats; this synthetic one wears
-            // exactly ADMIN, which is all the cascaded services check.
-            roles: [RoleEnum.ADMIN],
+        return createSystemActor({
+            jobId: 'conversation.service',
             permissions: [
                 PermissionEnum.CONVERSATION_VIEW_OWN,
                 PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -419,9 +413,8 @@ export class ConversationService extends BaseService {
                 PermissionEnum.CONVERSATION_BLOCK_OWN,
                 PermissionEnum.CONVERSATION_BLOCK_ANY,
                 PermissionEnum.CONVERSATION_DELETE_ANY
-            ] as readonly PermissionEnum[],
-            _isSystemActor: true
-        };
+            ]
+        });
     }
 
     // -------------------------------------------------------------------------
