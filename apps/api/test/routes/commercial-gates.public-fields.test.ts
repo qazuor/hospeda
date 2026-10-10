@@ -1,4 +1,4 @@
-import type { VerticalEnum } from '@repo/schemas';
+import { VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -258,10 +258,16 @@ describe('TEST:V5:32 public paid fields', () => {
         const secondBody = (await second.json()) as { data: Record<string, unknown> };
         expect(first.status).toBe(200);
         expect(firstBody.data.richDescription).toBe('<p>Paid description</p>');
+        expect(firstBody.data.isVerified).toBe(true);
         expect(secondBody.data).toEqual(firstBody.data);
         expect(mocks.effectiveSet.mock.calls.every(([args]) => args.userId === OWNER.premium)).toBe(
             true
         );
+        expect(
+            mocks.effectiveSet.mock.calls.every(
+                ([args]) => args.vertical === VerticalEnum.ACCOMMODATION
+            )
+        ).toBe(true);
     });
 
     it('resolves one effective set per distinct owner for a list page', async () => {
@@ -312,5 +318,23 @@ describe('TEST:V5:32 public paid fields', () => {
         expect('richDescription' in body.data).toBe(false);
         expect('richDescriptionI18n' in body.data).toBe(false);
         expect(body.data.isVerified).toBe(false);
+    });
+
+    it('resolves the basic-plan AI chat badge and leaves it off for trial owners', async () => {
+        mocks.search.mockResolvedValue({
+            data: { items: [accommodation(OWNER.basic), accommodation(OWNER.trial)], total: 2 }
+        });
+        const { publicListAccommodationsRoute } = await import(
+            '../../src/routes/accommodation/public/list'
+        );
+        const response = await appFor(publicListAccommodationsRoute).request('/');
+        const responseText = await response.text();
+        expect(response.status, responseText).toBe(200);
+        const body = JSON.parse(responseText) as {
+            data?: { items?: Array<Record<string, unknown>> };
+            items?: Array<Record<string, unknown>>;
+        };
+        const items = body.data?.items ?? body.items ?? [];
+        expect(items.map((item) => item.hasAiChat)).toEqual([true, false]);
     });
 });

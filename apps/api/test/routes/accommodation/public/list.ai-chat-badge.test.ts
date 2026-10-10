@@ -148,7 +148,7 @@ async function buildApp() {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
+describe('TEST:V5:32 publicListAccommodationsRoute — hasAiChat badge', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockEffectiveSet.mockImplementation(
