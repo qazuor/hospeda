@@ -155,7 +155,7 @@ describe('TEST:V4:6 - T1 does not fire without a sellable catalog or on a consum
                 emailPseudonym: sharedPseudo
             };
 
-            // Track onCoverageChanged calls per user
+            // Count notices from both billing instances.
             let noticeCallCount = 0;
             billingA.onCoverageChanged(async () => {
                 noticeCallCount += 1;
@@ -176,12 +176,12 @@ describe('TEST:V4:6 - T1 does not fire without a sellable catalog or on a consum
 
             expect(resultA.started).toBe(true);
 
-            // The pseudonym guard fired (not the DB UNIQUE), so uniqueConflicts stays 0
-            expect(stats.uniqueConflicts).toBe(0);
-
             // User B tries same pseudonym: should fail
             const billingB = createBootstrapBillingForVerticals({
                 reader: bootstrapReaderOf(txDb)
+            });
+            billingB.onCoverageChanged(async () => {
+                noticeCallCount += 1;
             });
 
             const resultB = await startTrial({
@@ -201,6 +201,9 @@ describe('TEST:V4:6 - T1 does not fire without a sellable catalog or on a consum
             expect(resultB.started).toBe(false);
             if (resultB.started) throw new Error('unreachable');
             expect(resultB.reason).toBe('EMAIL_PSEUDONYM_ALREADY_USED');
+
+            // B was stopped by the pseudonym guard, before the DB UNIQUE net.
+            expect(stats.uniqueConflicts).toBe(0);
 
             // The guard fired for B → no insert → no notice for B.
             // A already succeeded above, so exactly ONE notice call total.
