@@ -18,6 +18,7 @@ const snapshot: EffectiveSetSnapshot = {
     userId: 'A',
     vertical,
     hasLiveNonTrialTitle: true,
+    inheritsTouristVip: false,
     entries: [
         { key: 'priority_support', value: Infinity, strategy: 'MAX' },
         { key: 'max_photos_per_accommodation', value: 12, strategy: 'SUM' }
@@ -55,6 +56,17 @@ describe('effective-set snapshot', () => {
                 })
             )
         ).toThrow();
+    });
+
+    it('round trips the inherited Tourist VIP flag and rejects snapshots without it', () => {
+        for (const inheritsTouristVip of [true, false]) {
+            const value = { ...snapshot, inheritsTouristVip };
+            expect(
+                effectiveSetSnapshotCodec.decode(effectiveSetSnapshotCodec.encode(value))
+            ).toEqual(value);
+        }
+        const { inheritsTouristVip: _omitted, ...legacy } = snapshot;
+        expect(() => effectiveSetSnapshotCodec.decode(JSON.stringify(legacy))).toThrow();
     });
 
     it('treats a corrupt cached value as a miss', async () => {
