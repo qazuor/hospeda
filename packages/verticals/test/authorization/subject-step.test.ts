@@ -47,7 +47,7 @@ const base = {
     vertical: VerticalEnum.ACCOMMODATION,
     facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED },
     operation: 'EDIT' as const,
-    adminAction: { permitted: true }
+    adminAction: { permitted: true, isSystemActor: false }
 };
 const photoLimit = { key: 'max_photos_per_accommodation', requested: 11 };
 
@@ -55,30 +55,42 @@ describe('AC:V5:7 / TEST:V5:8 administrative account comparison', () => {
     it('rejects actor = subject', () => {
         expect(
             resolveAdministrativeActionStep({
+                action: 'ACC_15',
                 actorId: 'account',
                 subjectId: 'account',
-                permitted: true
+                permitted: true,
+                isSystemActor: false
             })
         ).toEqual({ allowed: false, reason: 'FORBIDDEN' });
     });
     it('accepts a null subject and a different account', () => {
         expect(
-            resolveAdministrativeActionStep({ actorId: 'staff', subjectId: null, permitted: true })
+            resolveAdministrativeActionStep({
+                action: 'ACC_15',
+                actorId: 'staff',
+                subjectId: null,
+                permitted: true,
+                isSystemActor: false
+            })
         ).toEqual({ allowed: true });
         expect(
             resolveAdministrativeActionStep({
+                action: 'ACC_15',
                 actorId: 'staff',
                 subjectId: 'partner',
-                permitted: true
+                permitted: true,
+                isSystemActor: false
             })
         ).toEqual({ allowed: true });
     });
     it('rejects absent permission', () => {
         expect(
             resolveAdministrativeActionStep({
+                action: 'ACC_15',
                 actorId: 'staff',
                 subjectId: 'partner',
-                permitted: false
+                permitted: false,
+                isSystemActor: false
             })
         ).toEqual({ allowed: false, reason: 'FORBIDDEN' });
     });
@@ -114,7 +126,11 @@ describe('AC:V5:8 / TEST:V5:9 subject and owner limit', () => {
     it('refuses absent permission, actor = owner, and administrative publish at step 3', async () => {
         const port = ports(10);
         expect(
-            await resolveListingAccess({ ...base, adminAction: { permitted: false }, ...port })
+            await resolveListingAccess({
+                ...base,
+                adminAction: { permitted: false, isSystemActor: false },
+                ...port
+            })
         ).toEqual({ allowed: false, reason: 'FORBIDDEN' });
         expect(await resolveListingAccess({ ...base, actorId: 'owner', ...port })).toEqual({
             allowed: false,

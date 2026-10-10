@@ -12,11 +12,10 @@ import { AccommodationModel, accommodations, getDb, MessageModel, UserModel } fr
 import {
     AdminThreadResponseSchema,
     PermissionEnum,
-    RoleEnum,
     ServiceErrorCode,
     ThreadQuerySchema
 } from '@repo/schemas';
-import { ConversationService } from '@repo/service-core';
+import { ConversationService, createSystemActor } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
@@ -33,11 +32,8 @@ const messageModel = new MessageModel();
 const userModel = new UserModel();
 
 /** System-level actor used for service calls requiring full conversation permissions. */
-const SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+const SYSTEM_ACTOR = createSystemActor({
+    jobId: 'conversations.admin.thread',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -49,9 +45,8 @@ const SYSTEM_ACTOR = {
         PermissionEnum.CONVERSATION_BLOCK_OWN,
         PermissionEnum.CONVERSATION_BLOCK_ANY,
         PermissionEnum.CONVERSATION_DELETE_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});
 
 const router = createRouter();
 

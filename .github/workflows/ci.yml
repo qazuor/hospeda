@@ -346,6 +346,10 @@ jobs:
         run: pnpm check:vertical-axis-items
       - name: Check listing vertical is immutable (GUARD:G2 c)
         run: pnpm check:vertical-immutable
+      # GUARD:G19 (HOS-1459, AC:V5:13). Its own step, like every guard here.
+      # A system actor must be built by createSystemActor in @repo/service-core.
+      - name: Check system actors are built only by the factory (GUARD:G19)
+        run: pnpm check:system-actor-factory
       # GUARD:G-R2 (HOS-1439, AC:V3:2). Its own step, like every guard here. The
       # effective set's fold must discard complements when no live non-TRIAL title
       # exists; its message names which half of the condition is missing.
