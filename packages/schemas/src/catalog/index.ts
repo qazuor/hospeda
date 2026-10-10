@@ -6,3 +6,4 @@ export * from './limit-keys.js';
 export * from './plan-publication.schema.js';
 export * from './plan-role.js';
 export * from './vertical-activation-event.js';
+export * from './vertical-deadlines.schema.js';
