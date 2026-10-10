@@ -8,6 +8,9 @@ import {
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { addFaqRoute } from '../../src/routes/accommodation/protected/addFaq.ts';
+import { protectedAddFeaturedMediaRoute } from '../../src/routes/accommodation/protected/addFeaturedMedia.ts';
+import { protectedAddMediaRoute } from '../../src/routes/accommodation/protected/addMedia.ts';
 import { protectedAddOccupancyRoute } from '../../src/routes/accommodation/protected/addOccupancy';
 import { protectedBatchOccupancyRoute } from '../../src/routes/accommodation/protected/batchOccupancy';
 import { protectedCalendarConnectGoogleRoute } from '../../src/routes/accommodation/protected/calendarConnectGoogle';
@@ -16,18 +19,48 @@ import { protectedCalendarDisconnectRoute } from '../../src/routes/accommodation
 import { protectedCalendarSyncRoute } from '../../src/routes/accommodation/protected/calendarSync';
 import { protectedCreateAccommodationRoute } from '../../src/routes/accommodation/protected/create';
 import { protectedPatchAccommodationRoute } from '../../src/routes/accommodation/protected/patch';
+import { removeFaqRoute } from '../../src/routes/accommodation/protected/removeFaq.ts';
+import { protectedRemoveMediaRoute } from '../../src/routes/accommodation/protected/removeMedia.ts';
 import { protectedRemoveOccupancyRoute } from '../../src/routes/accommodation/protected/removeOccupancy';
+import { protectedReorderFaqsRoute } from '../../src/routes/accommodation/protected/reorderFaqs.ts';
+import { protectedReorderMediaRoute } from '../../src/routes/accommodation/protected/reorderMedia.ts';
+import { protectedSetFeaturedMediaRoute } from '../../src/routes/accommodation/protected/setFeaturedMedia.ts';
 import { protectedSoftDeleteAccommodationRoute } from '../../src/routes/accommodation/protected/softDelete';
 import { protectedUnpublishAccommodationRoute } from '../../src/routes/accommodation/protected/unpublish';
+import { updateFaqRoute } from '../../src/routes/accommodation/protected/updateFaq.ts';
+import { protectedUpdateMediaRoute } from '../../src/routes/accommodation/protected/updateMedia.ts';
 import { protectedUpdateOccupancyEventRoute } from '../../src/routes/accommodation/protected/updateOccupancyEvent';
+import { protectedAddExperienceFaqRoute } from '../../src/routes/experience/protected/addFaq.ts';
+import { protectedAddExperienceFeaturedMediaRoute } from '../../src/routes/experience/protected/addFeaturedMedia.ts';
+import { protectedAddExperienceMediaRoute } from '../../src/routes/experience/protected/addMedia.ts';
 import { protectedIssueExperienceCertificateRoute } from '../../src/routes/experience/protected/certificates';
 import { protectedCreateExperienceListingRoute } from '../../src/routes/experience/protected/create';
 import { protectedDeleteExperienceDraftRoute } from '../../src/routes/experience/protected/deleteDraft';
 import { protectedPatchExperienceRoute } from '../../src/routes/experience/protected/patch';
+import { protectedRemoveExperienceFaqRoute } from '../../src/routes/experience/protected/removeFaq.ts';
+import { protectedRemoveExperienceMediaRoute } from '../../src/routes/experience/protected/removeMedia.ts';
+import { protectedReorderExperienceFaqsRoute } from '../../src/routes/experience/protected/reorderFaqs.ts';
+import { protectedReorderExperienceMediaRoute } from '../../src/routes/experience/protected/reorderMedia.ts';
+import { protectedSetFeaturedExperienceMediaRoute } from '../../src/routes/experience/protected/setFeaturedMedia.ts';
+import { protectedUpdateExperienceFaqRoute } from '../../src/routes/experience/protected/updateFaq.ts';
+import { protectedUpdateExperienceMediaRoute } from '../../src/routes/experience/protected/updateMedia.ts';
+import { protectedAddGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/addFaq.ts';
+import { protectedAddGastronomyFeaturedMediaRoute } from '../../src/routes/gastronomy/protected/addFeaturedMedia.ts';
+import { protectedAddGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/addMedia.ts';
 import { protectedCreateGastronomyListingRoute } from '../../src/routes/gastronomy/protected/create';
 import { protectedDeleteGastronomyDraftRoute } from '../../src/routes/gastronomy/protected/deleteDraft';
 import { protectedDeleteGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/deleteMenuFile';
 import { protectedPatchGastronomyRoute } from '../../src/routes/gastronomy/protected/patch';
+import { protectedPutGastronomyDailySpecialsRoute } from '../../src/routes/gastronomy/protected/putDailySpecials.ts';
+import { protectedPutGastronomyEventsRoute } from '../../src/routes/gastronomy/protected/putEvents.ts';
+import { protectedPutGastronomyMenuRoute } from '../../src/routes/gastronomy/protected/putMenu.ts';
+import { protectedRemoveGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/removeFaq.ts';
+import { protectedRemoveGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/removeMedia.ts';
+import { protectedReorderGastronomyFaqsRoute } from '../../src/routes/gastronomy/protected/reorderFaqs.ts';
+import { protectedReorderGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/reorderMedia.ts';
+import { protectedSetFeaturedGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/setFeaturedMedia.ts';
+import { protectedUpdateGastronomyFaqRoute } from '../../src/routes/gastronomy/protected/updateFaq.ts';
+import { protectedUpdateGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/updateMedia.ts';
 import { protectedUploadGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/uploadMenuFile';
 import { protectedUploadGastronomyMenuItemPhotoRoute } from '../../src/routes/gastronomy/protected/uploadMenuItemPhoto';
 import type { AppBindings } from '../../src/types';
@@ -118,6 +151,15 @@ const experienceCreate = {
     isPriceOnRequest: false,
     destinationId: DESTINATION
 };
+
+const FAQ = '55555555-5555-4555-8555-555555555555';
+const MEDIA = '66666666-6666-4666-8666-666666666666';
+const faqCreate = { question: 'What time is check in?', answer: 'After three in the afternoon.' };
+const faqUpdate = { answer: 'After four in the afternoon.' };
+const faqReorder = { order: [{ faqId: FAQ, displayOrder: 0 }] };
+const mediaAdd = { url: 'https://example.com/photo.jpg' };
+const mediaUpdate = { caption: 'Updated photo caption' };
+const mediaReorder = { orderedIds: [MEDIA] };
 
 const cases = [
     {
@@ -317,6 +359,303 @@ const cases = [
         body: undefined,
         operation: 'EDIT',
         vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'accommodation/protected/addFaq.ts',
+        route: addFaqRoute,
+        method: 'POST',
+        path: '/{id}/faqs',
+        body: faqCreate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/addFeaturedMedia.ts',
+        route: protectedAddFeaturedMediaRoute,
+        method: 'POST',
+        path: '/{id}/media/featured',
+        body: mediaAdd,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/addMedia.ts',
+        route: protectedAddMediaRoute,
+        method: 'POST',
+        path: '/{id}/media',
+        body: mediaAdd,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/removeFaq.ts',
+        route: removeFaqRoute,
+        method: 'DELETE',
+        path: '/{id}/faqs/{faqId}',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/removeMedia.ts',
+        route: protectedRemoveMediaRoute,
+        method: 'DELETE',
+        path: '/{id}/media/{mediaId}',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/reorderFaqs.ts',
+        route: protectedReorderFaqsRoute,
+        method: 'PUT',
+        path: '/{id}/faqs/reorder',
+        body: faqReorder,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/reorderMedia.ts',
+        route: protectedReorderMediaRoute,
+        method: 'PATCH',
+        path: '/{id}/media/reorder',
+        body: mediaReorder,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/setFeaturedMedia.ts',
+        route: protectedSetFeaturedMediaRoute,
+        method: 'PUT',
+        path: '/{id}/media/{mediaId}/featured',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/updateFaq.ts',
+        route: updateFaqRoute,
+        method: 'PUT',
+        path: '/{id}/faqs/{faqId}',
+        body: faqUpdate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'accommodation/protected/updateMedia.ts',
+        route: protectedUpdateMediaRoute,
+        method: 'PATCH',
+        path: '/{id}/media/{mediaId}',
+        body: mediaUpdate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.ACCOMMODATION
+    },
+    {
+        file: 'experience/protected/addFaq.ts',
+        route: protectedAddExperienceFaqRoute,
+        method: 'POST',
+        path: '/{id}/faqs',
+        body: faqCreate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/addFeaturedMedia.ts',
+        route: protectedAddExperienceFeaturedMediaRoute,
+        method: 'POST',
+        path: '/{id}/media/featured',
+        body: mediaAdd,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/addMedia.ts',
+        route: protectedAddExperienceMediaRoute,
+        method: 'POST',
+        path: '/{id}/media',
+        body: mediaAdd,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/removeFaq.ts',
+        route: protectedRemoveExperienceFaqRoute,
+        method: 'DELETE',
+        path: '/{id}/faqs/{faqId}',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/removeMedia.ts',
+        route: protectedRemoveExperienceMediaRoute,
+        method: 'DELETE',
+        path: '/{id}/media/{mediaId}',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/reorderFaqs.ts',
+        route: protectedReorderExperienceFaqsRoute,
+        method: 'PUT',
+        path: '/{id}/faqs/reorder',
+        body: faqReorder,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/reorderMedia.ts',
+        route: protectedReorderExperienceMediaRoute,
+        method: 'PATCH',
+        path: '/{id}/media/reorder',
+        body: mediaReorder,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/setFeaturedMedia.ts',
+        route: protectedSetFeaturedExperienceMediaRoute,
+        method: 'PUT',
+        path: '/{id}/media/{mediaId}/featured',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/updateFaq.ts',
+        route: protectedUpdateExperienceFaqRoute,
+        method: 'PUT',
+        path: '/{id}/faqs/{faqId}',
+        body: faqUpdate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'experience/protected/updateMedia.ts',
+        route: protectedUpdateExperienceMediaRoute,
+        method: 'PATCH',
+        path: '/{id}/media/{mediaId}',
+        body: mediaUpdate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.EXPERIENCE
+    },
+    {
+        file: 'gastronomy/protected/addFaq.ts',
+        route: protectedAddGastronomyFaqRoute,
+        method: 'POST',
+        path: '/{id}/faqs',
+        body: faqCreate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/addFeaturedMedia.ts',
+        route: protectedAddGastronomyFeaturedMediaRoute,
+        method: 'POST',
+        path: '/{id}/media/featured',
+        body: mediaAdd,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/addMedia.ts',
+        route: protectedAddGastronomyMediaRoute,
+        method: 'POST',
+        path: '/{id}/media',
+        body: mediaAdd,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/putDailySpecials.ts',
+        route: protectedPutGastronomyDailySpecialsRoute,
+        method: 'PUT',
+        path: '/{id}/daily-specials',
+        body: { specials: [] },
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/putEvents.ts',
+        route: protectedPutGastronomyEventsRoute,
+        method: 'PUT',
+        path: '/{id}/events',
+        body: { events: [] },
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/putMenu.ts',
+        route: protectedPutGastronomyMenuRoute,
+        method: 'PUT',
+        path: '/{id}/menu',
+        body: { sections: [] },
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/removeFaq.ts',
+        route: protectedRemoveGastronomyFaqRoute,
+        method: 'DELETE',
+        path: '/{id}/faqs/{faqId}',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/removeMedia.ts',
+        route: protectedRemoveGastronomyMediaRoute,
+        method: 'DELETE',
+        path: '/{id}/media/{mediaId}',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/reorderFaqs.ts',
+        route: protectedReorderGastronomyFaqsRoute,
+        method: 'PUT',
+        path: '/{id}/faqs/reorder',
+        body: faqReorder,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/reorderMedia.ts',
+        route: protectedReorderGastronomyMediaRoute,
+        method: 'PATCH',
+        path: '/{id}/media/reorder',
+        body: mediaReorder,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/setFeaturedMedia.ts',
+        route: protectedSetFeaturedGastronomyMediaRoute,
+        method: 'PUT',
+        path: '/{id}/media/{mediaId}/featured',
+        body: undefined,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/updateFaq.ts',
+        route: protectedUpdateGastronomyFaqRoute,
+        method: 'PUT',
+        path: '/{id}/faqs/{faqId}',
+        body: faqUpdate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
+    },
+    {
+        file: 'gastronomy/protected/updateMedia.ts',
+        route: protectedUpdateGastronomyMediaRoute,
+        method: 'PATCH',
+        path: '/{id}/media/{mediaId}',
+        body: mediaUpdate,
+        operation: 'EDIT',
+        vertical: VerticalEnum.GASTRONOMY
     }
 ] as const;
 
@@ -373,7 +712,7 @@ describe('TEST:V5:10 protected listing write coverage step', () => {
         const url =
             path === '/'
                 ? '/case'
-                : `/case${path.replaceAll('{id}', LISTING).replaceAll('{date}', DAY).replaceAll('{provider}', 'airbnb')}`;
+                : `/case${path.replaceAll('{id}', LISTING).replaceAll('{date}', DAY).replaceAll('{provider}', 'airbnb').replaceAll('{faqId}', FAQ).replaceAll('{mediaId}', MEDIA)}`;
         const response = await app.request(url, {
             method,
             headers: { 'content-type': 'application/json' },
