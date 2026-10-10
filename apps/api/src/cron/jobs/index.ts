@@ -41,4 +41,5 @@ export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js'
 export { refreshExternalReputationJob } from './refresh-external-reputation.job.js';
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
+export { subscriptionWindowExpiryJob } from './subscription-window-expiry.job.js';
 export { viewMonthlyRollupJob } from './view-monthly-rollup.job.js';

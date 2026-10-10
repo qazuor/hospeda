@@ -1,4 +1,6 @@
 import {
+    billingDeadlineVersions,
+    desc,
     eq,
     getDb,
     idempotencyKeys,
@@ -9,7 +11,8 @@ import {
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import type { BillingDeadlineValues } from '@repo/schemas';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     authorizePendingSubscription,
     type BeforeCancelNotice,
@@ -19,6 +22,26 @@ import {
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 
 afterAll(closeServiceTestPool);
+
+const billingDeadlineVersion1Values = {
+    '10': { cardHours: 72, manualDays: 7 },
+    '11': { noticeDays: 60, contactDays: [30, 7] },
+    '12': { noticeDays: 60, contactDays: [30, 7] },
+    '13': { daysBefore: [5, 1] },
+    '14': { daysBefore: 7 },
+    '15': { hoursRemaining: 24 },
+    '16': { days: 7 },
+    '17': { days: 7 },
+    '18': { days: 180 },
+    '19': { minutes: 60 }
+} satisfies BillingDeadlineValues;
+
+beforeAll(async () => {
+    await getServiceTestDb()
+        .insert(billingDeadlineVersions)
+        .values({ version: 1, values: billingDeadlineVersion1Values })
+        .onConflictDoNothing();
+});
 
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
 const returnUrl = 'https://hospeda.example/account';
@@ -138,6 +161,20 @@ describe('TEST:B3:1 S1 durable pending authorization', () => {
             { userId: choice.user.id, billingOptionId: choice.billingOptionId, returnUrl },
             ports(provider)
         );
+        // TEST:B3:10 (base: versión y vencimiento guardados al abrir la ventana)
+        const [currentDeadlines] = await getDb()
+            .select()
+            .from(billingDeadlineVersions)
+            .orderBy(desc(billingDeadlineVersions.version))
+            .limit(1);
+        const [opened] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, result.subscriptionId));
+        expect(opened?.authorizationWindowDeadlineVersion).toBe(currentDeadlines?.version);
+        expect(opened?.authorizationWindowEndsAt?.getTime()).toBe(
+            clock.now().getTime() + (currentDeadlines?.values['10'].cardHours ?? 0) * 60 * 60 * 1000
+        );
         expect(sent).toHaveBeenCalledOnce();
         const [link] = await getDb()
             .select()
@@ -146,6 +183,55 @@ describe('TEST:B3:1 S1 durable pending authorization', () => {
         expect(link?.providerId).toBe(result.authorizationId);
         expect(result.checkoutUrl).not.toContain('activation=');
     });
+});
+
+// TEST:B3:10 (base: versión y vencimiento guardados al abrir la ventana)
+describe('S1 reuse reads the stored authorization deadline', () => {
+    for (const expired of [true, false]) {
+        it(
+            expired
+                ? 'rejects a stored past deadline despite a recent creation'
+                : 'reuses before the stored future deadline',
+            async () => {
+                const choice = await seedChoice();
+                const windowEndsAt = new Date(clock.now().getTime() + (expired ? -60_000 : 60_000));
+                const pending = await subscriptionModel.createPendingAuthorization({
+                    userId: choice.user.id,
+                    vertical: 'accommodation',
+                    planVersionId: choice.planVersionId,
+                    billingOptionId: choice.billingOptionId,
+                    authorizationWindowDeadlineVersion: 1,
+                    authorizationWindowEndsAt: windowEndsAt
+                });
+                const authorizationId = `stored-${crypto.randomUUID()}`;
+                const checkoutUrl = 'https://mp.test/checkout/stored';
+                await subscriptionModel.recordAuthorizationResult({
+                    idempotencyKey: pending.idempotencyKey,
+                    subscriptionId: pending.subscription.id,
+                    provider: 'MERCADO_PAGO',
+                    providerId: authorizationId,
+                    result: { authorizationId, applied: true, checkoutUrl },
+                    completedAt: clock.now()
+                });
+                const fake = new FakePaymentProvider({ clock });
+                const authorize = vi.spyOn(fake, 'authorize');
+                const retry = startSubscription(
+                    { userId: choice.user.id, billingOptionId: choice.billingOptionId, returnUrl },
+                    ports(namespaceFake(fake))
+                );
+                if (expired) {
+                    await expect(retry).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
+                } else {
+                    await expect(retry).resolves.toEqual({
+                        subscriptionId: pending.subscription.id,
+                        authorizationId,
+                        checkoutUrl
+                    });
+                }
+                expect(authorize).not.toHaveBeenCalled();
+            }
+        );
+    }
 });
 
 describe('TEST:B3:3 every declined predecessor is reread before new signup', () => {
@@ -160,7 +246,9 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
             userId: choice.user.id,
             vertical: 'accommodation',
             planVersionId: choice.planVersionId,
-            billingOptionId: choice.billingOptionId
+            billingOptionId: choice.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const created = await provider.authorize({
             reference: prior.subscription.id,
@@ -185,7 +273,9 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
             userId: choice.user.id,
             vertical: 'accommodation',
             planVersionId: choice.planVersionId,
-            billingOptionId: choice.billingOptionId
+            billingOptionId: choice.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const otherCreated = await provider.authorize({
             reference: otherPrior.subscription.id,
@@ -248,7 +338,9 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
             userId: choice.user.id,
             vertical: 'accommodation',
             planVersionId: choice.planVersionId,
-            billingOptionId: choice.billingOptionId
+            billingOptionId: choice.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const created = await provider.authorize({
             reference: prior.subscription.id,
@@ -293,7 +385,9 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
             userId: choice.user.id,
             vertical: 'accommodation',
             planVersionId: choice.planVersionId,
-            billingOptionId: choice.billingOptionId
+            billingOptionId: choice.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const lying = new FakePaymentProvider({ clock });
         const lyingProvider = namespaceFake(lying);
@@ -333,7 +427,9 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
             userId: choice.user.id,
             vertical: 'accommodation',
             planVersionId: choice.planVersionId,
-            billingOptionId: choice.billingOptionId
+            billingOptionId: choice.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const lying = new FakePaymentProvider({
             clock,
@@ -363,7 +459,9 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
             userId: other.user.id,
             vertical: 'accommodation',
             planVersionId: other.planVersionId,
-            billingOptionId: other.billingOptionId
+            billingOptionId: other.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const honest = new FakePaymentProvider({
             clock,
@@ -399,13 +497,17 @@ describe('TEST:B3:44 M1 M9 RP1 creation defenses', () => {
             userId: first.user.id,
             vertical: 'accommodation',
             planVersionId: first.planVersionId,
-            billingOptionId: first.billingOptionId
+            billingOptionId: first.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const b = await subscriptionModel.createPendingAuthorization({
             userId: second.user.id,
             vertical: 'accommodation',
             planVersionId: second.planVersionId,
-            billingOptionId: second.billingOptionId
+            billingOptionId: second.billingOptionId,
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
         const authorize = vi.spyOn(fake, 'authorize');
         await authorizePendingSubscription({
