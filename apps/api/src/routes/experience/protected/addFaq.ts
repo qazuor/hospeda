@@ -10,7 +10,8 @@ import {
     type ExperienceFaqAddInput,
     ExperienceFaqSingleOutputSchema,
     FaqWithChannelVisibilityCreatePayloadSchema,
-    type FaqWithChannelVisibilityCreatePayloadType
+    type FaqWithChannelVisibilityCreatePayloadType,
+    VerticalEnum
 } from '@repo/schemas';
 import { addExperienceFaq, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -18,7 +19,7 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -28,12 +29,14 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedAddExperienceFaqRoute = createCRUDRoute({
+export const protectedAddExperienceFaqRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/faqs',
     summary: 'Add FAQ to experience listing',
     description: 'Adds a new frequently asked question to an experience listing',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

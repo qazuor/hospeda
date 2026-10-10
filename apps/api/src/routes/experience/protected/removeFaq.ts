@@ -6,14 +6,14 @@
  * The FAQ must belong to the specified experience (enforced inside removeExperienceFaq).
  */
 
-import { ExperienceFaqRemoveOutputSchema } from '@repo/schemas';
+import { ExperienceFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
 import { ExperienceService, removeExperienceFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -23,12 +23,14 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedRemoveExperienceFaqRoute = createCRUDRoute({
+export const protectedRemoveExperienceFaqRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from experience listing',
     description: 'Soft-deletes a FAQ from an experience listing',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
