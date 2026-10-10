@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray, isNull, lte } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     idempotencyKeys,
     type SelectIdempotencyKey
 } from '../../schemas/vertical/idempotency-key.dbschema.ts';
+import { manualPayments } from '../../schemas/vertical/manual-payment.dbschema.ts';
 import {
     type InsertProviderLink,
     providerLinks,
@@ -23,6 +24,8 @@ export interface CreatePendingAuthorizationInput {
     readonly vertical: string;
     readonly planVersionId: string;
     readonly billingOptionId: string;
+    readonly authorizationWindowDeadlineVersion: number;
+    readonly authorizationWindowEndsAt: Date;
     /** Optional outer transaction; its caller must commit before the provider call. */
     readonly tx?: DrizzleClient;
 }
@@ -64,6 +67,26 @@ export interface LiveCommitment {
     readonly providerLink: SelectProviderLink | null;
 }
 
+/** One principal authorization whose stored window has expired, with its provider mandate if any. */
+export interface ExpiredAuthorizationWindow {
+    readonly subscription: SelectSubscription;
+    readonly providerLink: SelectProviderLink | null;
+}
+
+/** The caller supplies the decision instant and a bounded batch size. */
+export interface FindExpiredAuthorizationWindowsInput {
+    readonly now: Date;
+    readonly limit: number;
+    readonly tx?: DrizzleClient;
+}
+
+/** Conditional status transition at the caller's decision instant. */
+export interface PendingAuthorizationTransitionInput {
+    readonly subscriptionId: string;
+    readonly now: Date;
+    readonly tx?: DrizzleClient;
+}
+
 /** Provider result persisted after the external authorization call. */
 export interface RecordAuthorizationResultInput {
     readonly idempotencyKey: string;
@@ -92,7 +115,9 @@ export class SubscriptionModel {
                     billingOptionId: input.billingOptionId,
                     paymentMethod: 'CARD',
                     status: 'PENDING_AUTHORIZATION',
-                    class: 'PRINCIPAL'
+                    class: 'PRINCIPAL',
+                    authorizationWindowDeadlineVersion: input.authorizationWindowDeadlineVersion,
+                    authorizationWindowEndsAt: input.authorizationWindowEndsAt
                 })
                 .returning();
             if (!subscription) throw new Error('Subscription insert returned no row');
@@ -103,6 +128,75 @@ export class SubscriptionModel {
                 subjectId: subscription.id
             });
             return { subscription, idempotencyKey };
+        };
+        return input.tx ? write(input.tx) : getDb().transaction(write);
+    }
+
+    /** Reads at most `limit` principal pending rows whose stored window ended by `now`; null windows do not qualify. */
+    async findExpiredAuthorizationWindows(
+        input: FindExpiredAuthorizationWindowsInput
+    ): Promise<ExpiredAuthorizationWindow[]> {
+        const db = input.tx ?? getDb();
+        return db
+            .select({ subscription: subscriptions, providerLink: providerLinks })
+            .from(subscriptions)
+            .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
+            .where(
+                and(
+                    eq(subscriptions.class, 'PRINCIPAL'),
+                    eq(subscriptions.status, 'PENDING_AUTHORIZATION'),
+                    lte(subscriptions.authorizationWindowEndsAt, input.now)
+                )
+            )
+            .limit(input.limit);
+    }
+
+    /** S2 persistence: activates only a still-pending row, returning false when another actor moved it. */
+    async activatePendingAuthorization(
+        input: PendingAuthorizationTransitionInput
+    ): Promise<boolean> {
+        const db = input.tx ?? getDb();
+        const rows = await db
+            .update(subscriptions)
+            .set({ status: 'ACTIVE', updatedAt: input.now })
+            .where(
+                and(
+                    eq(subscriptions.id, input.subscriptionId),
+                    eq(subscriptions.status, 'PENDING_AUTHORIZATION')
+                )
+            )
+            .returning({ id: subscriptions.id });
+        return rows.length > 0;
+    }
+
+    /** S3 persistence: abandons only a pending row and closes its awaiting manual payment in the same transaction. */
+    async abandonPendingAuthorization(
+        input: PendingAuthorizationTransitionInput
+    ): Promise<boolean> {
+        const write = async (tx: DrizzleClient): Promise<boolean> => {
+            const [row] = await tx
+                .update(subscriptions)
+                .set({ status: 'ABANDONED', updatedAt: input.now })
+                .where(
+                    and(
+                        eq(subscriptions.id, input.subscriptionId),
+                        eq(subscriptions.status, 'PENDING_AUTHORIZATION')
+                    )
+                )
+                .returning({ paymentMethod: subscriptions.paymentMethod });
+            if (!row) return false;
+            if (row.paymentMethod === 'MANUAL') {
+                await tx
+                    .update(manualPayments)
+                    .set({ status: 'DECLARED_UNPAID', updatedAt: input.now })
+                    .where(
+                        and(
+                            eq(manualPayments.subscriptionId, input.subscriptionId),
+                            eq(manualPayments.status, 'AWAITING')
+                        )
+                    );
+            }
+            return true;
         };
         return input.tx ? write(input.tx) : getDb().transaction(write);
     }

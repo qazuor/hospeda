@@ -3,6 +3,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
     check,
     foreignKey,
+    integer,
     pgTable,
     timestamp,
     uniqueIndex,
@@ -10,6 +11,7 @@ import {
     varchar
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
+import { billingDeadlineVersions } from './billing-deadline-version.dbschema.ts';
 import { billingOptions } from './billing-option.dbschema.ts';
 import { planVersions } from './plan-catalog.dbschema.ts';
 import { quotedList } from './quoted-list.ts';
@@ -44,6 +46,7 @@ export const LIVE_SUBSCRIPTION_STATUSES = [
  * Principals anchor a plan version and billing option, while COMPLEMENTO and LAPIDA
  * are exempt; non-tombstones require a user, vertical and payment method (DJ; Coord-23 D3).
  * FKs link the user, vertical, predecessor/successor, and matching option/version/vertical.
+ * La ventana de autorización guarda su versión de plazos y su vencimiento juntos (PLAZO:10).
  */
 export const subscriptions = pgTable(
     'subscription',
@@ -69,6 +72,14 @@ export const subscriptions = pgTable(
         serviceEndsAt: timestamp('service_ends_at', { withTimezone: true }),
         /** fecha de primer cobro con la que nació */
         firstChargeAt: timestamp('first_charge_at', { withTimezone: true }),
+        /** versión de plazos de la ventana (PLAZO:10) */
+        authorizationWindowDeadlineVersion: integer(
+            'authorization_window_deadline_version'
+        ).references(() => billingDeadlineVersions.version),
+        /** vence la ventana de autorización */
+        authorizationWindowEndsAt: timestamp('authorization_window_ends_at', {
+            withTimezone: true
+        }),
         /** sucede_a */
         succeedsId: uuid('succeeds_id').references((): AnyPgColumn => subscriptions.id),
         /** sucedida_por */
@@ -104,6 +115,10 @@ export const subscriptions = pgTable(
         principalAnchor: check(
             'ck_subscription_principal_anchor',
             sql`${t.class} <> 'PRINCIPAL' OR (${t.planVersionId} IS NOT NULL AND ${t.billingOptionId} IS NOT NULL)`
+        ),
+        authorizationWindowPair: check(
+            'ck_subscription_authorization_window_pair',
+            sql`(${t.authorizationWindowDeadlineVersion} IS NULL AND ${t.authorizationWindowEndsAt} IS NULL) OR (${t.authorizationWindowDeadlineVersion} IS NOT NULL AND ${t.authorizationWindowEndsAt} IS NOT NULL)`
         ),
         optionVersionFk: foreignKey({
             name: 'fk_subscription_billing_option_version',

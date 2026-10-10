@@ -26,7 +26,8 @@ export type ListingAccessResult =
               | 'FORBIDDEN'
               | 'NO_COVERAGE'
               | 'NO_CAPABILITY'
-              | 'LIMIT_REACHED';
+              | 'LIMIT_REACHED'
+              | 'UNAUTHENTICATED';
           readonly key?: string;
           readonly max?: number;
           readonly requested?: number;
@@ -34,7 +35,11 @@ export type ListingAccessResult =
 
 /**
  * Resolve the vertical precondition, then steps 3, 4, 5, 6 and 7 in order
- * (V5.md §1.2). Step 1 is inserted by V5.7 before step 3.
+ * (V5.md §1.2). Step 1 rejects a guest (`actorId` null or empty) on every
+ * operation except READ_PUBLIC. Callers must pass null for a guest; the API's
+ * guest actor has a UUID and must be identified with `isGuestActor(actor)`.
+ * The vertical precondition runs first, so a mismatched declared vertical
+ * returns NOT_FOUND even for a guest.
  */
 export async function resolveListingAccess(args: {
     readonly actorId: string | null;
@@ -53,7 +58,9 @@ export async function resolveListingAccess(args: {
         declaredVertical: args.declaredVertical
     });
     if (!vertical.allowed) return vertical;
-    // REBASE V5.7: step 1 goes here
+    // Step 1 — "quién es": guest fails except for READ_PUBLIC.
+    if (!args.actorId && args.operation !== 'READ_PUBLIC')
+        return { allowed: false, reason: 'UNAUTHENTICATED' };
     const evaluatedSteps: (3 | 4 | 5 | 6 | 7)[] = [];
     let subjectId = args.actorId;
     if (args.adminAction) {

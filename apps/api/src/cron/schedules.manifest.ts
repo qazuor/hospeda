@@ -60,6 +60,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Expire PENDING benefit usages whose 30-day confirmation window has run out. Notifies nobody: silence is not an accusation (HOS-376 §6.6).'
     },
     {
+        name: 'subscription-window-expiry',
+        displayName: 'Vencimiento de ventanas de autorización',
+        category: 'billing',
+        schedule: '*/15 * * * *',
+        description:
+            'Expire subscription authorization windows after provider re-read and prior notice (HOS-1521, AC:B3:9-10).'
+    },
+    {
         name: 'host-trade-usage-reminder',
         displayName: 'Recordatorio de usos del beneficio',
         category: 'notifications',

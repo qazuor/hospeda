@@ -1,5 +1,5 @@
 {
-  "id": "adf3be24-ad06-4d8c-af95-8af94eaee7a7",
+  "id": "eec576f8-4c4a-44df-8cbb-620b51cf8d3d",
   "prevId": "2e695782-879d-4655-9de1-5512ac46fc5c",
   "version": "7",
   "dialect": "postgresql",
@@ -29635,6 +29635,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "authorization_window_deadline_version": {
+          "name": "authorization_window_deadline_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "authorization_window_ends_at": {
+          "name": "authorization_window_ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "succeeds_id": {
           "name": "succeeds_id",
           "type": "uuid",
@@ -29735,6 +29747,19 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+        "subscription_authorization_window_deadline_version_billing_deadline_version_version_fk": {
+          "name": "subscription_authorization_window_deadline_version_billing_deadline_version_version_fk",
+          "tableFrom": "subscription",
+          "tableTo": "billing_deadline_version",
+          "columnsFrom": [
+            "authorization_window_deadline_version"
+          ],
+          "columnsTo": [
+            "version"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "subscription_succeeds_id_subscription_id_fk": {
           "name": "subscription_succeeds_id_subscription_id_fk",
           "tableFrom": "subscription",
@@ -29823,6 +29848,10 @@
         "ck_subscription_principal_anchor": {
           "name": "ck_subscription_principal_anchor",
           "value": "\"subscription\".\"class\" <> 'PRINCIPAL' OR (\"subscription\".\"plan_version_id\" IS NOT NULL AND \"subscription\".\"billing_option_id\" IS NOT NULL)"
+        },
+        "ck_subscription_authorization_window_pair": {
+          "name": "ck_subscription_authorization_window_pair",
+          "value": "(\"subscription\".\"authorization_window_deadline_version\" IS NULL AND \"subscription\".\"authorization_window_ends_at\" IS NULL) OR (\"subscription\".\"authorization_window_deadline_version\" IS NOT NULL AND \"subscription\".\"authorization_window_ends_at\" IS NOT NULL)"
         }
       },
       "isRLSEnabled": false
@@ -31027,9 +31056,6 @@
         "system.maintenanceMode.write",
         "billing.settings.view",
         "billing.settings.write",
-        "listing.foreignContent.edit",
-        "billing.subscription.inspect",
-        "billing.viewOwn",
         "user.update.self",
         "ai.settings.manage",
         "platform.featureFlag.manage",
