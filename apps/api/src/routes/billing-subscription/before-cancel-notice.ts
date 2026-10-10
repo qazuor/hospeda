@@ -11,14 +11,17 @@ import type { BeforeCancelNotice } from '@repo/service-core';
 
 /** Outbox contract for S1's closure of a declined earlier attempt. */
 export const beforeCancelNotice: BeforeCancelNotice = {
-    async beforeCancel({ subscriptionId, userId }) {
+    async beforeCancel({ subscriptionId, userId, kind }) {
         const [recipient] = await getDb()
             .select({ email: users.email, deletedAt: users.deletedAt })
             .from(users)
             .where(eq(users.id, userId))
             .limit(1);
         if (!recipient) return 'NO_RECIPIENT';
-        const template = 'billing.before-cancel';
+        const template =
+            kind === 'TOURIST_VIP_INHERITED'
+                ? 'billing.tourist-vip-inherited-cancel'
+                : 'billing.before-cancel';
         const dedupKey = buildEmailDedupKey({
             recipient: userId,
             template,

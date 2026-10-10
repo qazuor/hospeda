@@ -16,6 +16,7 @@ import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { beforeCancelNotice } from './before-cancel-notice';
 import { protectedReadSubscriptionRoute } from './read';
+import { touristVipInheritance } from './tourist-vip-inheritance';
 
 export const protectedStartSubscriptionRoute = createProtectedRoute({
     method: 'post',
@@ -45,7 +46,8 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                     provider: getPaymentProvider(),
                     clock: getClock().clock,
                     planPolicy: createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy,
-                    beforeCancelNotice
+                    beforeCancelNotice,
+                    touristVipInheritance
                 }
             );
         } catch (error) {

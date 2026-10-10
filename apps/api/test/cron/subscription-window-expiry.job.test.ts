@@ -1,21 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockExpire, mockClock, mockProvider } = vi.hoisted(() => ({
+const { mockExpire, mockSweep, mockClock, mockProvider } = vi.hoisted(() => ({
     mockExpire: vi.fn(),
+    mockSweep: vi.fn(),
     mockClock: { now: vi.fn(() => new Date('2026-10-08T20:00:00.000Z')) },
     mockProvider: { readAuthorization: vi.fn() }
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
-    expireAuthorizationWindows: mockExpire
+    expireAuthorizationWindows: mockExpire,
+    sweepInheritedTouristVips: mockSweep
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 vi.mock('../../src/utils/payment-provider.js', () => ({ getPaymentProvider: () => mockProvider }));
 
 import { subscriptionWindowExpiryJob } from '../../src/cron/jobs/subscription-window-expiry.job';
 import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
+import { touristVipInheritance } from '../../src/routes/billing-subscription/tourist-vip-inheritance';
 
 const context = (dryRun = false): CronJobContext => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -34,6 +37,7 @@ beforeEach(() => {
         noticePending: 1,
         skipped: 0
     });
+    mockSweep.mockResolvedValue({ cancelled: 1, deferred: 2, skipped: 0 });
 });
 
 describe('subscription-window-expiry cron', () => {
@@ -48,9 +52,21 @@ describe('subscription-window-expiry cron', () => {
         expect(mockExpire).toHaveBeenCalledWith(100, {
             provider: mockProvider,
             clock: mockClock,
-            beforeCancelNotice
+            beforeCancelNotice,
+            touristVipInheritance
         });
-        expect(result).toMatchObject({ success: true, processed: 5, errors: 0 });
+        expect(mockSweep).toHaveBeenCalledWith(100, {
+            provider: mockProvider,
+            clock: mockClock,
+            beforeCancelNotice,
+            touristVipInheritance
+        });
+        expect(result).toMatchObject({
+            success: true,
+            processed: 5,
+            errors: 0,
+            details: { cancelled: 1, deferred: 2 }
+        });
     });
 
     it('does not call the service in dry run', async () => {
