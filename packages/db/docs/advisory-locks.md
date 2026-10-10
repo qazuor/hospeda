@@ -6,6 +6,7 @@ All PostgreSQL advisory locks used in the Hospeda platform. Lock IDs must be uni
 
 | Lock ID | Owner File | Purpose | Type | Spec |
 |---------|-----------|---------|------|------|
+| (1479, 22) | `packages/service-core/src/services/vertical-deadlines/vertical-deadlines.service.ts` | Action 22, vertical half: serialize publishing `vertical_deadline_version` versions | `pg_advisory_xact_lock` (blocking) | HOS-1479 |
 | 1001 | `apps/api/src/cron/jobs/webhook-retry.job.ts` | Prevent overlapping webhook retry cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-009 |
 | 1002 | `apps/api/src/cron/jobs/notification-schedule.job.ts` | Prevent overlapping notification schedule cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-034 |
 | 1003 | `apps/api/src/cron/jobs/dunning.job.ts` | Prevent overlapping dunning cron executions | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-021 |

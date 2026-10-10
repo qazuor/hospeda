@@ -158,4 +158,5 @@ export * from './user-role/index.js';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';
 export * from './userSearchHistory/index.js';
+export * from './vertical-deadlines/vertical-deadlines.service.js';
 export * from './weather/index.js';
