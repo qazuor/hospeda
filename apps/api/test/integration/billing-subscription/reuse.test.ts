@@ -120,6 +120,7 @@ describe('TEST:B3:6 protected S1 route reuses the live commitment', () => {
     it('answers the same domain body on a retry without calling authorize again', async () => {
         const { user, option } = await fixture(true);
         const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
             clock,
             honestAbout: [{ lie: 'M1', why: 'inspect a healthy creation through the route' }]
         });
@@ -201,7 +202,7 @@ describe('TEST:B3:6 protected S1 route reuses the live commitment', () => {
             authorizationWindowDeadlineVersion: 1,
             authorizationWindowEndsAt: new Date(clock.now().getTime() + 72 * 60 * 60 * 1000)
         });
-        const fake = new FakePaymentProvider({ clock });
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
         const authorize = vi.spyOn(fake, 'authorize');
         const app = initApp({ clock, paymentProvider: fake });
 
