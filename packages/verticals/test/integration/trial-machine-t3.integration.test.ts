@@ -56,6 +56,7 @@ describe('TEST:V4:8 - T3 expires due trials and rereads the deadline', () => {
             })
             .returning({ id: destinations.id });
         if (!destination) throw new Error('Destination insert failed');
+        const inactiveSince = new Date('2026-09-01T12:00:00.000Z');
         await db.insert(accommodations).values({
             type: 'HOTEL',
             slug: randomUUID(),
@@ -65,7 +66,8 @@ describe('TEST:V4:8 - T3 expires due trials and rereads the deadline', () => {
             ownerId: userId,
             destinationId: destination.id,
             publicationStatus: PublicationStatusEnum.PUBLISHED,
-            inactiveSince: null
+            inactiveSince,
+            deadlinesVersion: 1
         });
         const billing = createBootstrapBillingForVerticals({ reader: bootstrapReaderOf(db) });
         current = end.getTime() - 60_000;
@@ -77,7 +79,8 @@ describe('TEST:V4:8 - T3 expires due trials and rereads the deadline', () => {
                 )
             ).rows;
         const before = await inactiveSinceOfOwner();
-        expect(before).toEqual([{ inactive_since: null }]);
+        expect(before).toHaveLength(1);
+        expect(new Date(String(before[0]?.inactive_since)).getTime()).toBe(inactiveSince.getTime());
         const adapter = createTrialMachineAdapter({ db, ceilingDays: () => 60 });
         current = end.getTime() + 60_000;
         expect(
