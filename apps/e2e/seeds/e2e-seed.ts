@@ -27,6 +27,7 @@
  *   environment.
  */
 
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { exit } from 'node:process';
@@ -80,6 +81,91 @@ process.chdir(seedPackageRoot);
 
 const { describeError, runSeed } = await import('@repo/seed');
 
+/** Give each seeded listing owner a live fixture trial in that listing's vertical. */
+async function seedListingOwnerTrials(): Promise<void> {
+    const {
+        accommodations,
+        and,
+        eq,
+        experiences,
+        gastronomies,
+        getDb,
+        inArray,
+        plans,
+        planVersions,
+        trials,
+        users
+    } = await import('@repo/db');
+    const { TRIAL_PLAN_ROLE, TrialStatusEnum, VerticalEnum } = await import('@repo/schemas');
+    const db = getDb();
+    const listings = [
+        { vertical: VerticalEnum.ACCOMMODATION, table: accommodations },
+        { vertical: VerticalEnum.GASTRONOMY, table: gastronomies },
+        { vertical: VerticalEnum.EXPERIENCE, table: experiences }
+    ] as const;
+
+    for (const { vertical, table } of listings) {
+        const listingOwners = await db.select({ ownerId: table.ownerId }).from(table);
+        const ownerIds = [
+            ...new Set(
+                listingOwners
+                    .map(({ ownerId }) => ownerId)
+                    .filter((id): id is string => id !== null)
+            )
+        ];
+        if (ownerIds.length === 0) continue;
+
+        const owners = await db
+            .select({ id: users.id, email: users.email })
+            .from(users)
+            .where(inArray(users.id, ownerIds));
+        if (owners.length !== ownerIds.length)
+            throw new Error(`Missing seeded ${vertical} owner account`);
+
+        const versions = await db
+            .select({
+                id: planVersions.id,
+                planId: planVersions.planId,
+                rank: planVersions.rank,
+                trialDays: planVersions.trialDays,
+                sellable: planVersions.sellable,
+                role: plans.role
+            })
+            .from(planVersions)
+            .innerJoin(plans, eq(planVersions.planId, plans.id))
+            .where(and(eq(plans.vertical, vertical), eq(planVersions.current, true)));
+        const trial = versions.find((version) => version.role === TRIAL_PLAN_ROLE);
+        const sellable = versions
+            .filter((version) => version.sellable)
+            .sort((a, b) => a.rank - b.rank);
+        const lowest = sellable[0];
+        const highest = sellable.at(-1);
+        if (!trial || !lowest || !highest || !trial.trialDays || trial.trialDays < 1) {
+            throw new Error(`Missing current trial or sellable plan catalog for ${vertical}`);
+        }
+
+        const startedAt = new Date();
+        const endsAt = new Date(startedAt.getTime() + trial.trialDays * 24 * 60 * 60 * 1000);
+        await db.insert(trials).values(
+            owners.map((owner) => ({
+                userId: owner.id,
+                vertical,
+                status: TrialStatusEnum.TRIAL_ACTIVE,
+                trialPlanId: trial.planId,
+                floorEntitlementsVersionId: highest.id,
+                floorLimitsVersionId: lowest.id,
+                floorTrialPlanVersionId: trial.id,
+                startedAt,
+                endsAt,
+                emailPseudonym: createHash('sha256')
+                    .update(owner.email.trim().toLowerCase())
+                    .digest('hex'),
+                deadlinesVersion: 1
+            }))
+        );
+    }
+}
+
 async function main(): Promise<void> {
     console.info(`[e2e-seed] Resetting + seeding ${dbUrl}`);
     await runSeed({
@@ -99,6 +185,7 @@ async function main(): Promise<void> {
         // because the database is ephemeral.
         exclude: []
     });
+    await seedListingOwnerTrials();
     console.info('[e2e-seed] Done.');
 }
 
