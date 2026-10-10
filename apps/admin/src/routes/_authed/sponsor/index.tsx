@@ -130,23 +130,6 @@ function SponsorDashboardPage() {
                                     </div>
                                 </Button>
                             </Link>
-
-                            <Link to="/sponsor/invoices">
-                                <Button
-                                    variant="outline"
-                                    className="h-auto w-full flex-col items-start gap-2 p-4"
-                                >
-                                    <ActivityIcon className="size-5" />
-                                    <div className="text-left">
-                                        <div className="font-semibold">
-                                            {t('admin-pages.sponsor.dashboard.invoices')}
-                                        </div>
-                                        <div className="text-muted-foreground text-xs">
-                                            {t('admin-pages.sponsor.dashboard.invoicesDesc')}
-                                        </div>
-                                    </div>
-                                </Button>
-                            </Link>
                         </div>
                     </CardContent>
                 </Card>

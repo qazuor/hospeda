@@ -56,7 +56,6 @@ vi.mock('@tanstack/react-router', () => ({
 import { Route as SponsorAnalyticsRoute } from '@/routes/_authed/sponsor/analytics';
 // Sponsor dashboard routes
 import { Route as SponsorDashboardRoute } from '@/routes/_authed/sponsor/index';
-import { Route as SponsorInvoicesRoute } from '@/routes/_authed/sponsor/invoices';
 import { Route as SponsorSponsorshipsRoute } from '@/routes/_authed/sponsor/sponsorships';
 import { Route as SponsorViewRoute } from '@/routes/_authed/sponsors/$id';
 import { Route as SponsorEditRoute } from '@/routes/_authed/sponsors/$id_.edit';
@@ -141,20 +140,6 @@ describe('Sponsors smoke tests', () => {
 
     it('renders sponsor sponsorships page without crashing', async () => {
         const Page = SponsorSponsorshipsRoute.options.component;
-        if (!Page) throw new Error('Component not found in Route.options');
-
-        renderWithProviders(<Page />);
-
-        await waitFor(
-            () => {
-                expect(document.body.textContent?.length).toBeGreaterThan(0);
-            },
-            { timeout: 5000 }
-        );
-    });
-
-    it('renders sponsor invoices page without crashing', async () => {
-        const Page = SponsorInvoicesRoute.options.component;
         if (!Page) throw new Error('Component not found in Route.options');
 
         renderWithProviders(<Page />);
