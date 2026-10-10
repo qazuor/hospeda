@@ -6,11 +6,10 @@
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
  * returned URL + metadata as a new `accommodation_media` row.
  *
- * Gallery registration runs without the former plan photo cap during the billing transition.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
+ * Gallery registration enforces the owner's effective photo cap.
+ * The listing access resolver enforces the owner photo limit.
  */
 
-import { accommodationMediaModel } from '@repo/db';
 import {
     AccommodationIdSchema,
     type AccommodationMediaAddInput,
@@ -24,7 +23,7 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
-
+import { accommodationGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -42,7 +41,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  *
  * Plan cap: enforced here (not in the service) because `checkLimit` needs the
  * Hono Context. Mirrors the cap logic in `apps/api/src/routes/media/admin/upload.ts`
- * §3d-i exactly. Only applies when the actor IS the owner; admin overrides bypass.
+ * §3d-i exactly and applies to the listing owner for every actor.
  */
 export const adminAddMediaRoute = createAdminRoute({
     method: 'post',
@@ -62,16 +61,8 @@ export const adminAddMediaRoute = createAdminRoute({
         vertical: VerticalEnum.ACCOMMODATION,
         operation: 'EDIT',
         idParam: 'id',
-        limit: async ({ listingId }) => {
-            const { total } = await accommodationMediaModel.findByAccommodation({
-                accommodationId: listingId,
-                state: 'visible',
-                isFeatured: false
-            });
-            return { key: 'max_photos_per_accommodation', requested: total + 1 };
-        }
+        limit: accommodationGalleryPhotoLimit
     },
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -80,22 +71,11 @@ export const adminAddMediaRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
 
-        // ── Plan cap enforcement (mirrors upload.ts §3d-i) ────────────────────
-        // Only enforces when the actor is the owner. Admins uploading on behalf
-        // of an owner bypass the plan limit — this matches `validateEntityMedia
-        // Permission` where admins with ACCOMMODATION_UPDATE_ANY skip ownership.
-        // The count is GALLERY-ONLY (`isFeatured: false`, HOS-791). The featured
-        // image is not a gallery item and does not consume a plan photo slot, so
-        // an owner on a 15-photo plan keeps 15 gallery photos plus their featured
-        // one. Counting them together closed the gallery one photo early and
-        // reported "15/15" while the owner could only see 14.
+        // Listing access already checked the owner's visible gallery limit.
         const accommodation = await accommodationService.getById(actor, accommodationId);
         if (accommodation.error || !accommodation.data) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
-
-        // The per-plan gallery photo cap (MAX_PHOTOS_PER_ACCOMMODATION) was
-        // removed with the legacy billing system (HOS-1416).
 
         // ── Delegate to service ───────────────────────────────────────────────
         const input: AccommodationMediaAddInput = {

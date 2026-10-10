@@ -7,8 +7,8 @@
  *
  * Setting a cover used to be two requests against that endpoint: register an
  * ordinary gallery row, then promote it via
- * `PUT /:id/media/:mediaId/featured`. During the billing transition, this
- * route registers the cover directly without a gallery photo cap.
+ * `PUT /:id/media/:mediaId/featured`. This route registers the cover directly
+ * and requires a plan allowing at least one photo.
  *
  * ## Why a separate route rather than a flag on the existing one
  *
@@ -27,7 +27,7 @@
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
+ * The listing access resolver enforces the owner photo limit.
  */
 
 import {
@@ -72,7 +72,12 @@ export const protectedAddFeaturedMediaRoute = createProtectedRoute({
         'does not consume a plan photo slot, because the cover is not a gallery ' +
         'item (HOS-791). Requires ' +
         'EDIT_ACCOMMODATION_INFO; the service layer enforces UPDATE_OWN + ownership.',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        idParam: 'id',
+        limit: async () => ({ key: 'max_photos_per_accommodation', requested: 1 })
+    },
     tags: ['Accommodations', 'Media'],
     protectedTag: false,
     requestParams: {
@@ -83,7 +88,6 @@ export const protectedAddFeaturedMediaRoute = createProtectedRoute({
     // neither `isFeatured` nor any cap is reachable from this body.
     requestBody: AccommodationMediaAddPayloadSchema,
     responseSchema: AccommodationFeaturedMediaAddOutputSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -92,9 +96,6 @@ export const protectedAddFeaturedMediaRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
 
-        // The per-plan gallery cap (MAX_PHOTOS_PER_ACCOMMODATION) was removed
-        // with the legacy billing system (HOS-1416); `planGalleryCap` stays
-        // unset so only the service's own per-entity cap applies.
         const result = await accommodationService.addFeaturedMedia(actor, {
             accommodationId,
             media: body as AccommodationMediaAddPayload
@@ -112,9 +113,5 @@ export const protectedAddFeaturedMediaRoute = createProtectedRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // Gallery mutation gate, same as every sibling media route.
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });
