@@ -15,11 +15,9 @@
  * THE ORDER OF THE CHECKS, WHICH IS THE WHOLE SECURITY MODEL
  *
  * 1. `protectedAuthMiddleware` — a session, or 401.
- * 2. Certificate issuance and reads run without the former plan entitlement
- *    during the billing transition.
+ * 2. Listing access requires issue_experience_certificate for the owner.
  * 3. Ownership, inside the handler — 404, never 403, because a 403 would
  *    confirm that the experience id exists (`docs/error-contract.md`).
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * ## Who may read a certificate
  *
@@ -69,9 +67,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const experienceService = new ExperienceService({ logger: apiLogger });
 
 /**
- * The gate every route in this module carries, spelled once. The vertical
- * entitlement + ISSUES_EXPERIENCE_CERTIFICATE gates were removed with the
- * legacy billing system (HOS-1416); only burst rate limits remain per route.
+ * Rate-limit middleware shared by the three certificate routes.
  */
 const CERTIFICATE_GATE: never[] = [];
 
@@ -149,7 +145,12 @@ function toOutput(certificate: {
 export const protectedIssueExperienceCertificateRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/certificates',
-    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['issue_experience_certificate']
+    },
     summary: 'Issue a certificate for an experience',
     description:
         'Issues a certificate naming the person who did the experience and the day they did it. Owner-only. Requires the issue_experience_certificate entitlement, granted by the professional experience plan and upwards.',
@@ -159,7 +160,6 @@ export const protectedIssueExperienceCertificateRoute = createProtectedRoute({
     },
     requestBody: ExperienceCertificateCreateInputSchema,
     responseSchema: z.object({ certificate: ExperienceCertificateOutputSchema }),
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed ISSUE_EXPERIENCE_CERTIFICATE entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -197,6 +197,12 @@ export const protectedIssueExperienceCertificateRoute = createProtectedRoute({
 export const protectedListExperienceCertificatesRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/certificates',
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'issue_experience_certificate'
+    },
     summary: 'List the certificates issued for an experience',
     description:
         'Returns the certificates this experience has issued, newest first. Owner-only. Requires the issue_experience_certificate entitlement.',
@@ -246,6 +252,12 @@ export const protectedListExperienceCertificatesRoute = createProtectedRoute({
 export const protectedGetExperienceCertificatePdfRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/certificates/{certificateId}/pdf',
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'issue_experience_certificate'
+    },
     summary: 'Download the certificate as a printable PDF',
     description:
         'Returns a print-ready landscape A4 PDF of one issued certificate — the recipient, the experience, the date and a QR back to the public listing. Owner-only, and only for a listing that is publicly visible. Requires the issue_experience_certificate entitlement.',
