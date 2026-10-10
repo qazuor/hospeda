@@ -26,7 +26,7 @@
  * Runs under the default `apps/api` vitest config.
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** Per-test control over what the stubbed models return. Hoisted so the
  * `vi.mock` factory below (which is hoisted too) can close over it. */
@@ -240,6 +240,15 @@ beforeEach(() => {
 afterEach(() => {
     vi.restoreAllMocks();
 });
+
+// The first `buildApp()` pays the cold import of the route and the REAL
+// service-core graph behind it. On a loaded CI runner that alone exceeded the
+// 30s test timeout, and it always landed on whichever test ran first. Paying it
+// once here, under a hook timeout sized for it, keeps every test measuring only
+// its own work.
+beforeAll(async () => {
+    await import('../../../src/routes/qr-code/public/resolve.js');
+}, 120_000);
 
 // ---------------------------------------------------------------------------
 // The paired probe
