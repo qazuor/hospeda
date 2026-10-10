@@ -21,7 +21,14 @@
  * @module test/integration/ai/faq-ai-context-visibility
  */
 
-import { accommodationFaqs, accommodations, destinations, getDb, users } from '@repo/db';
+import {
+    accommodationFaqs,
+    accommodations,
+    destinations,
+    getDb,
+    legacyPublicationStatus,
+    users
+} from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -107,7 +114,13 @@ async function seedAccommodationWithFaqs(): Promise<void> {
         },
         lifecycleState: 'ACTIVE',
         visibility: 'PUBLIC',
-        ownerSuspended: false
+        ownerSuspended: false,
+        publicationStatus: legacyPublicationStatus({
+            lifecycleState: 'ACTIVE',
+            visibility: 'PUBLIC'
+        }),
+        inactiveSince: new Date(),
+        deadlinesVersion: 1
     } as typeof accommodations.$inferInsert);
 
     await db.insert(accommodationFaqs).values([
