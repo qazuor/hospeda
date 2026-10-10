@@ -42,6 +42,7 @@ import {
     GastronomyOwnerCreateInputSchema,
     GastronomyProtectedSchema,
     LifecycleStatusEnum,
+    VerticalEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
@@ -95,6 +96,7 @@ export async function handleCreateGastronomyListing(ctx: Context, body: Record<s
 export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'CREATE' },
     summary: 'Create a gastronomy listing (owner self-service)',
     description:
         'Creates a gastronomy listing owned by the authenticated caller and grants them the GASTRONOMY_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes it. Requires an authenticated session and no gastronomy permission.',

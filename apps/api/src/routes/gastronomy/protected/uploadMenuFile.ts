@@ -39,7 +39,8 @@
 import {
     type GastronomyMenuFileKind,
     GastronomyMenuFileUploadOutputSchema,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -115,6 +116,7 @@ function validatePdf(buffer: Buffer): { code: string; message: string; status: n
 export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/menu-file',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     summary: 'Upload a photo or PDF of the menu',
     description:
         'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above.',

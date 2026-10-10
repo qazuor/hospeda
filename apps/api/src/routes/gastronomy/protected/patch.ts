@@ -21,7 +21,8 @@
 import {
     type GastronomyOwnerUpdateInput,
     GastronomyOwnerUpdateInputSchema,
-    GastronomyProtectedSchema
+    GastronomyProtectedSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -45,6 +46,7 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
 export const protectedPatchGastronomyRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
+    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
     summary: 'Update gastronomy listing (owner)',
     description:
         'Partially updates operational fields of a gastronomy listing. Requires ownership.',
