@@ -104,15 +104,15 @@ describe.each(verticals)('PB1 route — %s (TEST:V6:2/3)', (vertical) => {
         expect(answer.body.error?.code).toBe('FORBIDDEN');
     });
 
-    // open question AC:V6:2 — V5 step 6 currently answers before PB1 when T1 is spent.
-    it('records the current 403 ENTITLEMENT_REQUIRED for an owner whose trial is spent', async () => {
+    it('answers 403 FORBIDDEN subscription_required to an owner whose trial is spent', async () => {
         const { owner, listingId } = await listing(vertical, PublicationStatusEnum.DRAFT);
         await createTrial({ userId: owner.id, vertical, status: 'TRIAL_EXPIRED' });
         const answer = await readResponse(
             await publish(vertical, listingId, actorHeaders({ id: owner.id }))
         );
         expect(answer.status).toBe(403);
-        expect(answer.body.error?.code).toBe('ENTITLEMENT_REQUIRED');
+        expect(answer.body.error?.code).toBe('FORBIDDEN');
+        expect(answer.body.error?.message).toBe('subscription_required');
     });
 
     it('answers 400 VALIDATION_ERROR to a malformed id', async () => {

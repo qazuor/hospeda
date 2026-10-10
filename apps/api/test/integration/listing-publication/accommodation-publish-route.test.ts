@@ -114,18 +114,15 @@ describe('publish route — authentication, permission, shape and ownership', ()
         expect(await statusOf(listingId)).toBe(PublicationStatusEnum.DRAFT);
     });
 
-    // Records today's answer, not a settled contract: an owner whose trial is
-    // spent is AC:V6:2's third case ("suscribite para publicar"), but the V5
-    // chain refuses at step 6 before PB1 can answer `subscription_required`,
-    // which is the only message the web keys on. Open question in HOS-1471.
-    it('answers 403 ENTITLEMENT_REQUIRED to an owner without the PUBLISH capability (step 6)', async () => {
+    it('answers 403 FORBIDDEN subscription_required to an owner whose trial is spent', async () => {
         const { owner, listingId } = await ownerWithListing(PublicationStatusEnum.DRAFT);
         await createTrial({ userId: owner.id, status: 'TRIAL_EXPIRED' });
         const { status, body } = await readResponse(
             await publish(listingId, actorHeaders({ id: owner.id }))
         );
         expect(status).toBe(403);
-        expect(body.error?.code).toBe('ENTITLEMENT_REQUIRED');
+        expect(body.error?.code).toBe('FORBIDDEN');
+        expect(body.error?.message).toBe('subscription_required');
         expect(await statusOf(listingId)).toBe(PublicationStatusEnum.DRAFT);
     });
 

@@ -1,6 +1,6 @@
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { isSystemActor, ServiceError } from '@repo/service-core';
-import { resolveListingAccess } from '@repo/verticals';
+import { OPERATION_STEP6_KEY, resolveListingAccess } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ListingAccessConfig } from '../types/authorization';
@@ -78,6 +78,22 @@ export async function enforceListingAccess(args: {
                 reason: 'NO_COVERAGE'
             });
         case 'NO_CAPABILITY':
+            if (
+                config.operation === 'PUBLISH' &&
+                subjectId !== null &&
+                result.key &&
+                (OPERATION_STEP6_KEY.PUBLISH.keys[config.vertical] as readonly string[]).includes(
+                    result.key
+                ) &&
+                !(
+                    await ports.effectiveSet({
+                        userId: subjectId,
+                        vertical: config.vertical
+                    })
+                ).hasLiveNonTrialTitle
+            ) {
+                throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
+            }
             throw new ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, 'Entitlement required', {
                 entitlementKey: result.key
             });
