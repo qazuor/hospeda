@@ -1,7 +1,6 @@
 // TEST:V2:1, TEST:V2:2 and TEST:V2:3 (HOS-1434, piece V2): the plan and addon
 // catalog after db:migrate (and apply-extras) on an empty disposable database.
-import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool, type PoolClient } from 'pg';
@@ -36,10 +35,23 @@ beforeAll(async () => {
             if (chunk.trim()) await pool.query(chunk.trim());
         }
     }
-    execFileSync('node', [
-        resolve(migrationDir, '../../scripts/apply-postgres-extras.mjs'),
-        testUrl.toString()
+    const extrasDir = join(migrationDir, 'extras');
+    const extrasRequiringLaterTables = new Map([
+        ['049-vertical-deadline-immutability.trigger.sql', 'vertical_deadline_version']
     ]);
+    for (const file of readdirSync(extrasDir)
+        .filter((name) => name.endsWith('.sql') && !name.endsWith('_down.sql'))
+        .sort()) {
+        const requiredTable = extrasRequiringLaterTables.get(file);
+        if (requiredTable) {
+            const { rows } = await pool.query<{ table_name: string | null }>(
+                'SELECT to_regclass($1)::text AS table_name',
+                [requiredTable]
+            );
+            if (!rows[0]?.table_name) continue;
+        }
+        await pool.query(readFileSync(join(extrasDir, file), 'utf8'));
+    }
 }, 300_000);
 
 afterAll(async () => {
