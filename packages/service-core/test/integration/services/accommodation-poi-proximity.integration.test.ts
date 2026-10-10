@@ -20,7 +20,14 @@
  * unknown `poiSlug` yields a clean `NOT_FOUND` rather than a silent empty
  * page.
  */
-import { accommodations, destinations, eq, pointsOfInterest, users } from '@repo/db';
+import {
+    accommodations,
+    destinations,
+    eq,
+    legacyPublicationStatus,
+    pointsOfInterest,
+    users
+} from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -116,7 +123,13 @@ describe('HOS-113 T-036 — AccommodationService "near POI" search (AC-4)', () =
             },
             lifecycleState: 'ACTIVE',
             visibility: 'PUBLIC',
-            ownerSuspended: false
+            ownerSuspended: false,
+            publicationStatus: legacyPublicationStatus({
+                lifecycleState: 'ACTIVE',
+                visibility: 'PUBLIC'
+            }),
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof accommodations.$inferInsert);
 
         insertedAccommodationIds.push(accommodationId);

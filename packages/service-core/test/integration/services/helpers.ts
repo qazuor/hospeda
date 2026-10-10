@@ -19,6 +19,7 @@ import {
     experiences,
     gastronomies,
     gastronomyReviews,
+    legacyPublicationStatus,
     ownerPromotions,
     postSponsors,
     postSponsorships,
@@ -129,6 +130,9 @@ interface SeedAccommodationOverrides {
     readonly accommodationId?: string;
     readonly visibility?: string;
     readonly ownerSuspended?: boolean;
+    readonly publicationStatus?: PublicationStatusEnum;
+    readonly inactiveSince?: Date;
+    readonly deadlinesVersion?: number;
 }
 
 /**
@@ -204,7 +208,16 @@ export async function seedAccommodation(
         },
         lifecycleState: 'ACTIVE',
         visibility: overrides.visibility ?? 'PUBLIC',
-        ownerSuspended: overrides.ownerSuspended ?? false
+        ownerSuspended: overrides.ownerSuspended ?? false,
+        publicationStatus:
+            overrides.publicationStatus ??
+            legacyPublicationStatus({
+                lifecycleState: 'ACTIVE',
+                visibility: overrides.visibility ?? 'PUBLIC',
+                ownerSuspended: overrides.ownerSuspended ?? false
+            }),
+        inactiveSince: overrides.inactiveSince ?? new Date(),
+        deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof accommodations.$inferInsert);
 
     return { userId, destinationId, accommodationId };
@@ -768,6 +781,8 @@ interface SeedGastronomyOverrides {
     readonly lifecycleState?: string;
     readonly moderationState?: string;
     readonly publicationStatus?: PublicationStatusEnum;
+    readonly inactiveSince?: Date;
+    readonly deadlinesVersion?: number;
 }
 
 /**
@@ -838,7 +853,14 @@ export async function seedGastronomy(
         visibility: overrides.visibility ?? 'PRIVATE',
         lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
         moderationState: overrides.moderationState ?? 'PENDING',
-        publicationStatus: overrides.publicationStatus
+        publicationStatus:
+            overrides.publicationStatus ??
+            legacyPublicationStatus({
+                lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
+                visibility: overrides.visibility ?? 'PRIVATE'
+            }),
+        inactiveSince: overrides.inactiveSince ?? new Date(),
+        deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof gastronomies.$inferInsert);
 
     return { ownerId, destinationId, gastronomyId };
@@ -898,6 +920,8 @@ interface SeedExperienceOverrides {
     readonly lifecycleState?: string;
     readonly moderationState?: string;
     readonly publicationStatus?: PublicationStatusEnum;
+    readonly inactiveSince?: Date;
+    readonly deadlinesVersion?: number;
 }
 
 /**
@@ -973,7 +997,14 @@ export async function seedExperience(
         visibility: overrides.visibility ?? 'PRIVATE',
         lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
         moderationState: overrides.moderationState ?? 'PENDING',
-        publicationStatus: overrides.publicationStatus
+        publicationStatus:
+            overrides.publicationStatus ??
+            legacyPublicationStatus({
+                lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
+                visibility: overrides.visibility ?? 'PRIVATE'
+            }),
+        inactiveSince: overrides.inactiveSince ?? new Date(),
+        deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof experiences.$inferInsert);
 
     return { ownerId, destinationId, experienceId };
