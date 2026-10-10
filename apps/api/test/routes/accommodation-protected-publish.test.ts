@@ -237,6 +237,52 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
         });
     });
 
+    describe('HTTP error contract for PB1 denials', () => {
+        it.each([
+            ['no coverage and no trial', ServiceErrorCode.FORBIDDEN, 'subscription_required', 403],
+            ['full vertical quota', ServiceErrorCode.LIMIT_REACHED, 'Listing limit reached', 403],
+            ['changed source state', ServiceErrorCode.ALREADY_EXISTS, 'Listing state changed', 409],
+            [
+                'covered listing must use PB3',
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Listing state changed',
+                409
+            ],
+            ['invalid owner email', ServiceErrorCode.VALIDATION_ERROR, 'Invalid owner email', 400],
+            ['incomplete listing', ServiceErrorCode.VALIDATION_ERROR, 'Listing is incomplete', 400],
+            [
+                'missing or foreign listing',
+                ServiceErrorCode.NOT_FOUND,
+                'Accommodation not found',
+                404
+            ]
+        ])('returns the contract status and code for %s', async (_label, code, message, status) => {
+            mockPublish.mockRejectedValue(new ServiceError(code, message));
+
+            const res = await app.request(BASE_URL, {
+                method: 'POST',
+                headers: { Authorization: 'Bearer test-protected-token', 'User-Agent': 'vitest' }
+            });
+
+            expect(res.status).toBe(status);
+            const body = await res.json();
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe(code);
+            expect(body.error.message).toBe(message);
+        });
+
+        it('returns 400 VALIDATION_ERROR before ownership when the id is malformed', async () => {
+            const res = await app.request('/api/v1/protected/accommodations/not-a-uuid/publish', {
+                method: 'POST',
+                headers: { Authorization: 'Bearer test-protected-token', 'User-Agent': 'vitest' }
+            });
+            expect(res.status).toBe(400);
+            const body = await res.json();
+            expect(body.error.code).toBe('VALIDATION_ERROR');
+            expect(mockPublish).not.toHaveBeenCalled();
+        });
+    });
+
     // ── Error handling ────────────────────────────────────────────────────
 
     describe('Error handling', () => {
