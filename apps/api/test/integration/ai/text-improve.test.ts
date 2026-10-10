@@ -209,6 +209,20 @@ const { currentEntitlementsForTest, currentLimitsForTest, currentBillingLoadFail
         currentBillingLoadFailedForTest: { current: false }
     }));
 
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async () => ({
+            entitlements: {
+                get: ({ key }: { key: string }) =>
+                    currentEntitlementsForTest.current.has(key as EntitlementKey) ? 1 : undefined
+            },
+            limits: {
+                get: ({ key }: { key: string }) => currentLimitsForTest.current.get(key as LimitKey)
+            }
+        })
+    })
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (post-mock).
 // ---------------------------------------------------------------------------
@@ -385,8 +399,8 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
     // the user does not have `ai_text_improve` in their entitlement set.
     // =========================================================================
 
-    describe('temporary access without the retired plan entitlement', () => {
-        it('streams for an authenticated user without ai_text_improve', async () => {
+    describe('effective entitlement gate', () => {
+        it('rejects an authenticated user without ai_text_improve', async () => {
             // Tourist plan: no AI entitlements at all
             currentEntitlementsForTest.current = new Set<EntitlementKey>();
             currentLimitsForTest.current = new Map<LimitKey, number>();
@@ -400,10 +414,14 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
                 })
             });
 
-            // HOS-1352: transitional until V3 (HOS-1357), see PR.
-            expect(res.status).toBe(200);
-            await readSseFrames(res);
-            expect(streamTextCalls).toHaveLength(1);
+            expect(res.status).toBe(403);
+            expect(await res.json()).toMatchObject({
+                error: {
+                    code: 'ENTITLEMENT_REQUIRED',
+                    details: { entitlementKey: 'ai_text_improve' }
+                }
+            });
+            expect(streamTextCalls).toHaveLength(0);
         });
     });
 
