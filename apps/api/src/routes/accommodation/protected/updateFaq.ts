@@ -39,7 +39,6 @@ export const updateFaqRoute = createProtectedRoute({
     },
     requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
     responseSchema: AccommodationFaqSingleOutputSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (c: Context, params, body) => {
         // Get actor from context (authenticated user for protected endpoint)
         const actor = getActorFromContext(c);
@@ -59,9 +58,6 @@ export const updateFaqRoute = createProtectedRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });
 

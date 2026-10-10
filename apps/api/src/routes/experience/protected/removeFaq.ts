@@ -36,7 +36,6 @@ export const protectedRemoveExperienceFaqRoute = createProtectedRoute({
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: ExperienceFaqRemoveOutputSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_EXPERIENCE_INFO entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
@@ -54,8 +53,5 @@ export const protectedRemoveExperienceFaqRoute = createProtectedRoute({
         }
 
         return result.data ?? { success: true };
-    },
-    options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

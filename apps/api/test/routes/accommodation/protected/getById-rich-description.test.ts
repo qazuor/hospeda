@@ -1,5 +1,4 @@
-/** Protected accommodation editor retains rich content after the old plan gate. */
-import { EntitlementKey } from '@repo/billing';
+/** Protected accommodation editor filters rich content by the owner capability. */
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -22,10 +21,10 @@ const RICH_I18N = {
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockGetById, mockSelect, mockResolveOwnerEntitlements } = vi.hoisted(() => ({
+const { mockGetById, mockSelect, mockEffectiveSet } = vi.hoisted(() => ({
     mockGetById: vi.fn(),
     mockSelect: vi.fn(),
-    mockResolveOwnerEntitlements: vi.fn()
+    mockEffectiveSet: vi.fn()
 }));
 
 vi.mock('@repo/service-core', async (importActual) => {
@@ -64,8 +63,8 @@ vi.mock('@repo/db', async (importActual) => {
     };
 });
 
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlements
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
 }));
 
 vi.mock('../../../../src/utils/logger', () => ({
@@ -180,7 +179,7 @@ const ownerActor = {
 
 beforeEach(() => {
     mockGetById.mockResolvedValue({ data: ACCOMMODATION, error: undefined });
-    mockResolveOwnerEntitlements.mockResolvedValue([EntitlementKey.CAN_USE_RICH_DESCRIPTION]);
+    mockEffectiveSet.mockImplementation(async () => ({ entitlements: { get: () => 1 } }));
     queueEmptySelects();
 });
 
@@ -192,7 +191,7 @@ afterEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-199)', () => {
+describe('TEST:V5:31 GET /api/v1/protected/accommodations/:id — owner rich description', () => {
     it('returns both rich-description fields when the owner is entitled', async () => {
         const app = buildApp(ownerActor);
         const res = await app.request(`/${ACCOMMODATION_ID}`);
@@ -205,16 +204,16 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
         expect(body.data.richDescription).toBe(RICH_HTML);
     });
 
-    it('keeps both fields available to the editor without the old plan entitlement', async () => {
-        mockResolveOwnerEntitlements.mockResolvedValue([EntitlementKey.CAN_EMBED_VIDEO]);
+    it('omits both fields when the owner lacks the effective capability', async () => {
+        mockEffectiveSet.mockImplementation(async () => ({ entitlements: { get: () => 0 } }));
 
         const app = buildApp(ownerActor);
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.data.richDescriptionI18n).toEqual(RICH_I18N);
-        expect(body.data.richDescription).toBe(RICH_HTML);
+        expect(body.data).not.toHaveProperty('richDescriptionI18n');
+        expect(body.data).not.toHaveProperty('richDescription');
         expect(body.data.id).toBe(ACCOMMODATION_ID);
         expect(body.data.nameI18n).toEqual(ACCOMMODATION.nameI18n);
     });
@@ -229,6 +228,9 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
             error: undefined
         });
 
+        mockEffectiveSet.mockImplementation(async ({ userId }: { userId: string }) => ({
+            entitlements: { get: () => (userId === OTHER_USER_ID ? 1 : 0) }
+        }));
         const app = buildApp({
             id: OWNER_ID,
             roles: [RoleEnum.ADMIN],
@@ -237,25 +239,31 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
         expect(res.status).toBe(200);
-        expect(mockResolveOwnerEntitlements).not.toHaveBeenCalled();
+        expect(mockEffectiveSet).toHaveBeenCalledWith({
+            userId: OTHER_USER_ID,
+            vertical: 'accommodation'
+        });
+        const body = await res.json();
+        expect(body.data.richDescription).toBe(RICH_HTML);
+        expect(body.data.richDescriptionI18n).toEqual(RICH_I18N);
     });
 
-    it('serves the editor independently of the retired entitlement lookup', async () => {
+    it('keeps the editor available when the effective set lookup fails', async () => {
         // The entitlement lookup hits billing. Letting it throw would 500 the GET,
         // and `editar.astro` redirects the owner away on a failed fetch: a billing
         // hiccup would lock the host out of editing their own accommodation
         // entirely (the HOS-190 lock-out). So the failure is contained, and it
         // resolves to "no entitlement proven" → the premium pair is withheld while
         // every other field is still served.
-        mockResolveOwnerEntitlements.mockRejectedValue(new Error('billing unreachable'));
+        mockEffectiveSet.mockRejectedValue(new Error('billing unreachable'));
 
         const app = buildApp(ownerActor);
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.data.richDescriptionI18n).toEqual(RICH_I18N);
-        expect(body.data.richDescription).toBe(RICH_HTML);
+        expect(body.data).not.toHaveProperty('richDescriptionI18n');
+        expect(body.data).not.toHaveProperty('richDescription');
         expect(body.data.name).toBe('Casa BETA-199');
     });
 
@@ -269,7 +277,7 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
         expect(res.status).toBe(404);
-        expect(mockResolveOwnerEntitlements).not.toHaveBeenCalled();
+        expect(mockEffectiveSet).not.toHaveBeenCalled();
     });
 
     it('keeps the entitled response usable when the columns are empty', async () => {

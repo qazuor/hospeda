@@ -35,7 +35,6 @@
  *    confirms that the id exists.
  *
  * @module routes/gastronomy/protected/uploadMenuItemPhoto
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -75,7 +74,12 @@ const MENU_ITEM_PHOTO_UPLOAD_RATE_LIMIT_MAX = 40;
 export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/menu-item-photo',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['menu_item_photos']
+    },
     summary: 'Upload a photo for one dish of the menu',
     description:
         'Uploads a single dish photo and returns its delivery URL and Cloudinary public id. The caller attaches them to a dish in the next PUT /{id}/menu. Owner-only, and requires the menu_item_photos entitlement granted by the premium gastronomy plan.',
@@ -85,7 +89,6 @@ export const protectedUploadGastronomyMenuItemPhotoRoute = createProtectedRoute(
     },
     responseSchema: GastronomyMenuItemPhotoUploadOutputSchema,
     successStatusCode: 200,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MENU_ITEM_PHOTOS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         ctx.header('Cache-Control', 'no-store');
 

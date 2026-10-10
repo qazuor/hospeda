@@ -15,10 +15,9 @@
  * single orphaned asset, which is recoverable; leaving a withdrawn menu on the
  * public page is not.
  *
- * Menu file deletion runs without the former plan entitlement during the billing transition.
+ * Menu file deletion requires manage_gastronomy_menu on the listing owner.
  *
  * @module routes/gastronomy/protected/deleteMenuFile
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import { PermissionEnum, SuccessSchema, VerticalEnum } from '@repo/schemas';
@@ -37,7 +36,12 @@ const gastronomyService = new GastronomyService({ logger: apiLogger });
 export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/menu-file',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['manage_gastronomy_menu']
+    },
     summary: 'Remove the uploaded menu photo or PDF',
     description:
         'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
@@ -46,7 +50,6 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: SuccessSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const gastronomyId = params.id as string;
@@ -112,6 +115,5 @@ export const protectedDeleteGastronomyMenuFileRoute = createProtectedRoute({
         }
 
         return { success: true } as const;
-    },
-    options: {}
+    }
 });

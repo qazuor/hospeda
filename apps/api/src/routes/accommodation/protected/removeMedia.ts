@@ -55,7 +55,6 @@ export const protectedRemoveMediaRoute = createProtectedRoute({
         mediaId: AccommodationMediaIdSchema
     },
     responseSchema: DeleteResultSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const accommodationService = new AccommodationService(
@@ -77,8 +76,5 @@ export const protectedRemoveMediaRoute = createProtectedRoute({
             success: true,
             data: result.data
         };
-    },
-    options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

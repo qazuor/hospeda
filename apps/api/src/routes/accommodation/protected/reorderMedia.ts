@@ -9,7 +9,7 @@
  *
  * IMPORTANT: Must be mounted BEFORE `/:id/media/:mediaId` routes so Hono does
  * not resolve the literal path segment "reorder" as a `mediaId` UUID param.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
+ * The listing access resolver requires the EDIT capability on the owner.
  */
 
 import {
@@ -57,7 +57,6 @@ export const protectedReorderMediaRoute = createProtectedRoute({
     },
     requestBody: AccommodationMediaReorderPayloadSchema,
     responseSchema: AccommodationMediaListOutputSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

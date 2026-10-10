@@ -56,9 +56,6 @@ export const addFaqRoute = createProtectedRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — removed FAQ entitlement gate.
     }
 });
 

@@ -65,7 +65,10 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical: VerticalEnum.ACCOMMODATION,
                 hasLiveNonTrialTitle: false,
-                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+                entries: [
+                    { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
+                    { key: 'can_sync_external_calendar', value: 1, strategy: 'MAX' }
+                ]
             })
         )
     })
@@ -411,7 +414,7 @@ describe('POST /:id/calendar-sync/connect-ical (protected)', () => {
         expect(mockFetchAndParseIcsFeed).not.toHaveBeenCalled();
     });
 
-    it('preserves iCal connection without the old plan entitlement', async () => {
+    it('preserves iCal connection with the effective sync capability', async () => {
         const app = buildApp(ownerActor, [protectedCalendarConnectIcalRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/connect-ical`, {
             method: 'POST',
@@ -482,7 +485,7 @@ describe('POST /:id/calendar-sync/sync (protected, widened)', () => {
         expect(mockSyncAccommodationCalendar).not.toHaveBeenCalled();
     });
 
-    it('preserves iCal sync without the old plan entitlement', async () => {
+    it('preserves iCal sync with the effective sync capability', async () => {
         const app = buildApp(ownerActor, [protectedCalendarSyncRoute], { entitlements: [] });
         const res = await app.request(`/${ACCOMMODATION_ID}/calendar-sync/sync`, {
             method: 'POST',

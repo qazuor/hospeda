@@ -29,16 +29,25 @@ import { createAuthenticatedRequest, createMockAdminActor } from '../../helpers/
 // Provider mock (hoisted so vi.mock() can reference it)
 // ---------------------------------------------------------------------------
 
-const { mockUpload, mockDelete, providerState, mockFindByAccommodation, mockContentMediaCount } =
-    vi.hoisted(() => ({
-        mockUpload: vi.fn(),
-        mockDelete: vi.fn(),
-        providerState: { configured: true as boolean },
-        // SPEC-204: accommodation gallery count now comes from the relational table.
-        mockFindByAccommodation: vi.fn(),
-        // HOS-1164: post/event gallery count comes from their relational rows.
-        mockContentMediaCount: vi.fn()
-    }));
+const {
+    mockUpload,
+    mockDelete,
+    providerState,
+    mockFindByAccommodation,
+    mockContentMediaCount,
+    mockEffectiveSet,
+    planMax
+} = vi.hoisted(() => ({
+    mockUpload: vi.fn(),
+    mockDelete: vi.fn(),
+    providerState: { configured: true as boolean },
+    // SPEC-204: accommodation gallery count now comes from the relational table.
+    mockFindByAccommodation: vi.fn(),
+    // HOS-1164: post/event gallery count comes from their relational rows.
+    mockContentMediaCount: vi.fn(),
+    mockEffectiveSet: vi.fn(),
+    planMax: { value: 100 }
+}));
 
 vi.mock('../../../src/services/media', () => ({
     getMediaProvider: () =>
@@ -58,6 +67,10 @@ vi.mock('@repo/db', async (importOriginal) => {
         eventMediaModel: { count: mockContentMediaCount }
     };
 });
+
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
+}));
 
 import {
     AccommodationService,
@@ -137,11 +150,11 @@ const buildGalleryFormData = (entityType: string): FormData => {
  * The route only reads `data.ownerId` and `data.media.gallery` from the
  * resolved value, so the partial stub is functionally complete.
  */
-const buildEntityStubFn = (galleryCount: number) =>
+const buildEntityStubFn = (galleryCount: number, ownerId: string = ACTOR_ID) =>
     vi.fn().mockResolvedValue({
         data: {
             id: ENTITY_ID,
-            ownerId: ACTOR_ID,
+            ownerId,
             media: {
                 gallery: Array.from({ length: galleryCount }, (_, i) => ({
                     url: `https://example.com/img${i}.jpg`,
@@ -197,11 +210,41 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
         mockFindByAccommodation.mockResolvedValue({ items: [], total: 0 });
         mockContentMediaCount.mockReset();
         mockContentMediaCount.mockResolvedValue(0);
+        planMax.value = 100;
+        mockEffectiveSet.mockImplementation(async () => ({ limits: { get: () => planMax.value } }));
         resetMetrics();
     });
 
     afterAll(() => {
         providerState.configured = true;
+    });
+
+    it('TEST:V5:31 enforces the owner photo cap for an admin upload', async () => {
+        const ownerId = '00000000-0000-4000-8000-000000000088';
+        planMax.value = 15;
+        vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+            buildEntityStubFn(15, ownerId)
+        );
+        mockFindByAccommodation.mockResolvedValue({ items: [], total: 15 });
+        const denied = await upload(app, 'accommodation', PermissionEnum.ACCOMMODATION_UPDATE_ANY);
+        expect(mockEffectiveSet).toHaveBeenCalled();
+        expect(denied.status).toBe(403);
+        expect((await denied.json()).error).toMatchObject({
+            code: 'LIMIT_REACHED',
+            details: { limitKey: 'max_photos_per_accommodation' }
+        });
+        expect(mockEffectiveSet).toHaveBeenCalledWith({
+            userId: ownerId,
+            vertical: 'accommodation'
+        });
+        expect(mockUpload).not.toHaveBeenCalled();
+
+        planMax.value = 30;
+        vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+            buildEntityStubFn(15, ownerId)
+        );
+        const allowed = await upload(app, 'accommodation', PermissionEnum.ACCOMMODATION_UPDATE_ANY);
+        expect(allowed.status).toBe(200);
     });
 
     // ── accommodation (cap = 50) ───────────────────────────────────────────

@@ -12,7 +12,7 @@
  * `ACCOMMODATION_OCCUPANCY_MANAGE` are enforced inline via
  * `assertOccupancyManageAccess`; external calendar connections run without
  * the former billing entitlement during the transition.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
+ * The listing access resolver requires the route capability on the owner.
  *
  * ## Probe-before-save
  *
@@ -81,7 +81,12 @@ const ICAL_PROVIDER_BY_TOKEN: Record<'airbnb' | 'booking' | 'other', IcalProvide
 export const protectedCalendarConnectIcalRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/calendar-sync/connect-ical',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_sync_external_calendar'],
+        idParam: 'id'
+    },
     summary: 'Connect an Airbnb/Booking/generic iCal feed (owner)',
     description:
         'Validates the supplied .ics feed URL by fetching and parsing it live, persists the ' +
@@ -94,7 +99,6 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
     },
     requestBody: ConnectIcalBodySchema,
     responseSchema: CalendarConnectionResponseSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_SYNC_EXTERNAL_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -169,6 +173,5 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
                 isActive: row.isActive
             }
         };
-    },
-    options: {}
+    }
 });

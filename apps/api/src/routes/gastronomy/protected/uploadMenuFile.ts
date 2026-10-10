@@ -30,10 +30,9 @@
  * `validateFile`; only the PDF branch is new, and it is deliberately small:
  * a size cap plus a magic-byte check.
  *
- * Menu file uploads run without the former plan entitlement during the billing transition.
+ * Menu file uploads require manage_gastronomy_menu on the listing owner.
  *
  * @module routes/gastronomy/protected/uploadMenuFile
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -116,7 +115,12 @@ function validatePdf(buffer: Buffer): { code: string; message: string; status: n
 export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/menu-file',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['manage_gastronomy_menu']
+    },
     summary: 'Upload a photo or PDF of the menu',
     description:
         'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above.',
@@ -126,7 +130,6 @@ export const protectedUploadGastronomyMenuFileRoute = createProtectedRoute({
     },
     responseSchema: GastronomyMenuFileUploadOutputSchema,
     successStatusCode: 200,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         ctx.header('Cache-Control', 'no-store');
 

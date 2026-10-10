@@ -8,15 +8,14 @@
  * ## What it answers, and in what order
  *
  * 1. **Authentication** — `createProtectedRoute`, before anything else.
- * 2. **Billing transition** — PDF generation runs without the former plan
- *    entitlement.
+ * 2. **Listing access** — PDF generation requires download_listing_pdf for
+ *    the owner after ownership is established.
  * 3. **Ownership** — the service's owner-tier read, then the same explicit
  *    `ownerId === actor.id || GASTRONOMY_VIEW_ALL` check `protected/getById.ts`
  *    makes, answering NOT_FOUND for a listing that is not the caller's. A 403
  *    would confirm the id exists.
  * 4. **Is there a public ficha at all** — a listing that is not `PUBLIC` has no
  *    public page to print, and the QR would point at a 404. NOT_FOUND.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * ## Why the response is a raw `Response`
  *
@@ -36,6 +35,7 @@ import {
     PermissionEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
+    VerticalEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { entityNotFoundError, GastronomyService } from '@repo/service-core';
@@ -137,6 +137,12 @@ export async function handleGetGastronomyBrochure(
 export const protectedGetGastronomyBrochureRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/brochure',
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'download_listing_pdf'
+    },
     summary: 'Download the printable PDF sheet of a gastronomy listing',
     description:
         'Returns a print-ready A4 PDF of the listing’s PUBLIC page — cover photo, opening hours, contact, services and a QR back to the online sheet. Owner-only, and only for a listing that is publicly visible. Requires the download_listing_pdf entitlement, granted by the premium gastronomy plan.',
@@ -148,7 +154,6 @@ export const protectedGetGastronomyBrochureRoute = createProtectedRoute({
     // the factory requires a concrete schema, and `z.null()` is the honest
     // description of "this route answers with a file, not with JSON".
     responseSchema: z.null(),
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed DOWNLOAD_LISTING_PDF entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetGastronomyBrochure(ctx, params),
     options: {

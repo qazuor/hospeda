@@ -6,12 +6,11 @@
  * ## What it answers, and in what order
  *
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
- * 2. **Billing transition** — the agenda write runs without the former plan
- *    entitlement or payload-specific billing gates.
+ * 2. **Listing access** — the write requires manage_gastronomy_events
+ *    for the listing owner.
  * 3. **Ownership** — inside `replaceGastronomyEvents`, via the same
  *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
  *
- * The agenda read and write have no plan entitlement gate during the billing transition.
  *
  * ## Whole document, one transaction
  *
@@ -22,7 +21,6 @@
  * the agenda is written whole where `gastronomy_media` is written per row.
  *
  * @module routes/gastronomy/protected/putEvents
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -81,7 +79,12 @@ export const protectedPutGastronomyEventsRoute = createProtectedRoute({
     summary: 'Replace the venue events agenda of a gastronomy listing',
     description:
         'Replaces the listing’s own events with the submitted document. Each entry is either dated (recurrence "once" with a date) or weekly (recurrence "weekly" with a weekday 0-6, Sunday-based); the two are mutually exclusive and the payload is rejected if an entry declares neither or both. An empty events array takes the agenda down. Owner-only, and requires the manage_gastronomy_events entitlement granted by the professional gastronomy plan and above.',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['manage_gastronomy_events']
+    },
     tags: ['Gastronomy', 'Gastronomy Events'],
     protectedTag: false,
     requestParams: {
@@ -89,8 +92,6 @@ export const protectedPutGastronomyEventsRoute = createProtectedRoute({
     },
     requestBody: GastronomyEventsReplacePayloadSchema,
     responseSchema: GastronomyEventsOutputSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_EVENTS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
-        handlePutGastronomyEvents(ctx, params, body),
-    options: {}
+        handlePutGastronomyEvents(ctx, params, body)
 });
