@@ -73,6 +73,7 @@ import { createConfiguredAiService } from '../../../services/ai-service.factory.
 import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
 import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
+import { getListingAccessPorts } from '../../../utils/listing-access/ports.js';
 import { readEffectiveKeys } from '../../../utils/listing-access/user-gate.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
@@ -104,6 +105,12 @@ const VERTICAL_BY_ENTITY_TYPE = {
     accommodation: VerticalEnum.ACCOMMODATION,
     gastronomy: VerticalEnum.GASTRONOMY,
     experience: VerticalEnum.EXPERIENCE
+} as const;
+
+const OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE = {
+    accommodation: [],
+    gastronomy: ['manage_gastronomy_menu'],
+    experience: ['manage_experience_directions']
 } as const;
 
 const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
@@ -225,12 +232,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // `entityId` spelling. `resolveAiChatTarget` is the single place that
         // knows about the alias.
         //
-        // The request schema already accepts `entityType: 'gastronomy' |
-        // 'experience'`, but this route's per-vertical context assemblers and
-        // gastronomy or experience owner-quota lookup are NOT wired yet. A gastronomy or experience target is
-        // therefore refused explicitly rather than falling through into the
-        // accommodation lookup below, which would 404 while talking about an
-        // accommodation nobody asked about.
+        // The request schema and exhaustive registries support all three
+        // verticals; lookup and context assembly stay scoped to the requested type.
         // -----------------------------------------------------------------------
         const target = resolveAiChatTarget(body);
         const entityType = target.entityType;
@@ -271,6 +274,10 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const ownerId = ownerRow.ownerId;
         const ownerVertical = VERTICAL_BY_ENTITY_TYPE[entityType];
         const ownerFeature = FEATURE;
+        const ownerEffectiveSet = await getListingAccessPorts().effectiveSet({
+            userId: ownerId,
+            vertical: ownerVertical
+        });
 
         await enforceAiQuota({
             userId: ownerId,
@@ -279,6 +286,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             entitlementKey: 'ai_chat',
             limitKey: OWNER_CHAT_LIMIT_BY_ENTITY_TYPE[entityType],
             entitlementMessage: OWNER_CHAT_COPY_BY_ENTITY_TYPE[entityType],
+            effectiveSetSnapshot: ownerEffectiveSet,
             limitMessage:
                 'El propietario de este alojamiento ha alcanzado el límite mensual de chats de IA.'
         });
@@ -290,20 +298,12 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             limitMessage: 'accommodations.aiChat.consumerLimitReached'
         });
 
-        const ownerCapabilities =
-            entityType === 'gastronomy'
-                ? await readEffectiveKeys({
-                      userId: ownerId,
-                      vertical: ownerVertical,
-                      keys: ['manage_gastronomy_menu']
-                  })
-                : entityType === 'experience'
-                  ? await readEffectiveKeys({
-                        userId: ownerId,
-                        vertical: ownerVertical,
-                        keys: ['manage_experience_directions']
-                    })
-                  : {};
+        const ownerCapabilities = await readEffectiveKeys({
+            userId: ownerId,
+            vertical: ownerVertical,
+            keys: OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE[entityType],
+            effectiveSetSnapshot: ownerEffectiveSet
+        });
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {

@@ -147,12 +147,12 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
         const { locale } = body;
         // HOS-1075: absent means 'accommodation'.
         const entityType = body.entityType ?? 'accommodation';
-        const vertical =
-            entityType === 'gastronomy'
-                ? VerticalEnum.GASTRONOMY
-                : entityType === 'experience'
-                  ? VerticalEnum.EXPERIENCE
-                  : VerticalEnum.ACCOMMODATION;
+        const VERTICAL_BY_ENTITY_TYPE = {
+            accommodation: VerticalEnum.ACCOMMODATION,
+            gastronomy: VerticalEnum.GASTRONOMY,
+            experience: VerticalEnum.EXPERIENCE
+        } as const;
+        const vertical = VERTICAL_BY_ENTITY_TYPE[entityType];
         await enforceAiQuota({
             userId: actor.id,
             vertical,

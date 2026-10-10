@@ -1,7 +1,4 @@
-/**
- * Temporary AI access policy: no monthly quota while billing is replaced.
- * Every protected AI feature must still apply burst limits and record usage.
- */
+/** AI access policy: routes enforce monthly quotas inline after validation. */
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +20,7 @@ function routeSource(name: string): string {
 
 describe('temporary AI access policy', () => {
     for (const { name, usage } of routes) {
-        it(`${name} has no monthly quota middleware`, () => {
+        it(`${name} enforces monthly quota outside middleware`, () => {
             expect(routeSource(name)).not.toMatch(/\bcreateAiQuotaMiddleware\s*\(/);
         });
 
