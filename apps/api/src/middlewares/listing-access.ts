@@ -13,8 +13,9 @@ export async function enforceListingAccess(args: {
     params: Record<string, unknown>;
     config: ListingAccessConfig;
     tier: 'protected' | 'admin';
+    body?: Record<string, unknown>;
 }): Promise<void> {
-    const { ctx, params, config, tier } = args;
+    const { ctx, params, config, tier, body } = args;
     const actor = getActorFromContext(ctx);
     // The API guest carries a real UUID; the resolver's step 1 recognises a
     // guest only as `actorId: null` (V5.7).
@@ -38,6 +39,11 @@ export async function enforceListingAccess(args: {
     const subjectId = adminAction?.permitted ? ownerId : actorId;
     const limit =
         config.limit && subjectId ? await config.limit({ ctx, listingId, subjectId }) : undefined;
+    // Resolve route-level capabilities (HOS-1643): array as-is, function with body.
+    const requiredKeys =
+        typeof config.capabilities === 'function'
+            ? config.capabilities({ body })
+            : config.capabilities;
     const result = await resolveListingAccess({
         actorId,
         vertical: config.vertical,
@@ -46,6 +52,7 @@ export async function enforceListingAccess(args: {
         operation: config.operation,
         adminAction,
         step6Key: config.step6Key,
+        requiredKeys,
         limit,
         billing: ports.billing,
         effectiveSet: ports.effectiveSet

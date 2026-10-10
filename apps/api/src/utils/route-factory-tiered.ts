@@ -218,7 +218,8 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
                       ctx,
                       params,
                       config: listingAccess,
-                      tier: 'protected'
+                      tier: 'protected',
+                      body
                   });
                   return routeOptions.handler(ctx, params, body, query);
               }
@@ -280,7 +281,13 @@ export const createAdminRoute = (options: AdminRouteOptions) => {
         tags,
         handler: listingAccess
             ? async (ctx, params, body, query) => {
-                  await enforceListingAccess({ ctx, params, config: listingAccess, tier: 'admin' });
+                  await enforceListingAccess({
+                      ctx,
+                      params,
+                      config: listingAccess,
+                      tier: 'admin',
+                      body
+                  });
                   return routeOptions.handler(ctx, params, body, query);
               }
             : routeOptions.handler,

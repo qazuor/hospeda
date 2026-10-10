@@ -30,6 +30,15 @@ export type ListingAccessConfig = {
     idParam?: string;
     /** Explicit capability for operations whose key is supplied by the caller. */
     step6Key?: string;
+    /**
+     * Catalog capability keys the route demands beyond the operation key,
+     * evaluated at step 6 on the subject. A function receives the
+     * already-validated body so keys can depend on payload content
+     * (e.g. dish photos or experience translations).
+     */
+    capabilities?:
+        | readonly string[]
+        | ((args: { readonly body: Record<string, unknown> | undefined }) => readonly string[]);
     /** Requested limit, evaluated against the subject read from the listing row. */
     limit?: (args: {
         ctx: Context;
