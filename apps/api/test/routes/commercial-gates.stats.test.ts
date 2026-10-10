@@ -287,6 +287,22 @@ beforeEach(() => {
 });
 
 describe('TEST:V5:32 stats gates', () => {
+    it('dashboard keeps plan null only after view_basic_stats is granted', async () => {
+        const row = rows.find((candidate) => candidate.file === 'host/dashboard');
+        if (!row) throw new Error('Dashboard route case missing');
+        const denied = await request(row, TRIAL);
+        expect(denied.status).toBe(403);
+        expect((await denied.json()).error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: 'view_basic_stats' }
+        });
+        expect(mocks.service).not.toHaveBeenCalled();
+        mocks.service.mockResolvedValue({ data: { accommodations: [] } });
+        const allowed = await request(row, BASIC);
+        expect(allowed.status).toBe(200);
+        expect((await allowed.json()).data.plan).toBeNull();
+    });
+
     it.each(
         rows
     )('$file rejects the owner without the effective key before calling its service', async (row) => {
