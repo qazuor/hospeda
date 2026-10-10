@@ -83,6 +83,7 @@ export class FakePaymentProvider implements PaymentProvider {
 
     /**
      * @param options.clock - The clock every read and every delay runs on
+     * @param options.idNamespace - Keeps generated ids unique across integration test providers sharing a database
      * @param options.honestAbout - The lies this test turns off, each with why
      * @param options.simulate - The simulations this test turns on, each with why
      */
@@ -96,7 +97,7 @@ export class FakePaymentProvider implements PaymentProvider {
             isHonestAbout: ({ lie }) => this.honest.has(lie),
             outOfOrder: this.simulating.has('noticesOutOfOrder')
         });
-        this.ledger = new FakeLedger({ outbox: this.outbox });
+        this.ledger = new FakeLedger({ outbox: this.outbox, idNamespace: parsed.idNamespace });
     }
 
     /**
