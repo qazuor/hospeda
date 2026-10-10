@@ -1,7 +1,8 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { subscriptionModel } from '@repo/db';
+import { getDb, subscriptionModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { enqueueSignupIncompleteNotice } from './signup-incomplete-notice.ts';
 import type { BeforeCancelNotice } from './start-subscription.service';
 
 const logger = createLogger('subscription-window-expiry');
@@ -82,11 +83,22 @@ export async function expireAuthorizationWindows(
             }
         }
 
-        const wrote = await subscriptionModel.abandonPendingAuthorization({
-            subscriptionId: subscription.id,
-            now: ports.clock.now()
+        const result = await getDb().transaction(async (tx) => {
+            const wrote = await subscriptionModel.abandonPendingAuthorization({
+                subscriptionId: subscription.id,
+                now: ports.clock.now(),
+                tx
+            });
+            if (wrote.wrote) {
+                await enqueueSignupIncompleteNotice({
+                    tx,
+                    subscription,
+                    closedCourtesyMonths: wrote.closedCourtesyMonths
+                });
+            }
+            return wrote;
         });
-        if (wrote) abandoned++;
+        if (result.wrote) abandoned++;
         else skipped++;
     }
 
