@@ -27,20 +27,29 @@ export const TOURIST_VIP_CANCELLABLE_STATUSES = [
 ] as const;
 
 export interface TouristVipTitleRow {
+    /** Database identity of the principal title-emitting subscription. */
     readonly id: string;
+    /** Non-Tourist vertical that provides the inherited capability. */
     readonly vertical: string;
+    /** Version anchor used to resolve the title's current capabilities. */
     readonly planVersionId: string;
+    /** Emitting subscription state. */
     readonly status: string;
+    /** End of service for scheduled cancellation, when present. */
     readonly serviceEndsAt: Date | null;
+    /** Creation instant used as the coverage source start. */
     readonly createdAt: Date;
 }
 
+/** A Tourist VIP subscription that may be closed, with its provider mandate if present. */
 export interface TouristVipCancellableRow {
     readonly subscription: SelectSubscription;
     readonly providerLink: SelectProviderLink | null;
 }
 
+/** Queries title subscriptions and paid Tourist VIP mandates for inheritance handling. */
 export class TouristVipModel {
+    /** Finds principal title rows in states that emit coverage sources. */
     async findTitleRows(input: {
         readonly userId: string;
         readonly tx?: DrizzleClient;
@@ -72,6 +81,7 @@ export class TouristVipModel {
         );
     }
 
+    /** Finds cancellable Tourist VIP rows and their optional provider mandate. */
     async findCancellableRows(input: {
         readonly userId: string;
         readonly tx?: DrizzleClient;
@@ -91,7 +101,7 @@ export class TouristVipModel {
             );
     }
 
-    /** Cheap sweep prefilter only; the inheritance port makes the decision. */
+    /** Finds bounded sweep candidates with an emitting title and cancellable VIP; inheritance is re-read separately. */
     async findUserIdsWithCancellableVip(input: {
         readonly limit: number;
         readonly tx?: DrizzleClient;
@@ -113,6 +123,7 @@ export class TouristVipModel {
         return rows.flatMap(({ userId }) => (userId ? [userId] : []));
     }
 
+    /** Closes one still-cancellable Tourist VIP row without issuing a refund. */
     async closeCancelledVip(input: {
         readonly subscriptionId: string;
         readonly now: Date;
@@ -135,4 +146,5 @@ export class TouristVipModel {
     }
 }
 
+/** Shared Tourist VIP query model. */
 export const touristVipModel = new TouristVipModel();

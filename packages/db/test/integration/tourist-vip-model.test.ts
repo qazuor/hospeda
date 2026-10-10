@@ -120,6 +120,14 @@ describe('TouristVipModel (TEST:B3:28, TEST:B3:37, TEST:B3:29)', () => {
                 data.vip.optionId,
                 'ACTIVE'
             );
+            await row(
+                tx,
+                pendingTitleUser.id,
+                'tourist',
+                data.vip.versionId,
+                data.vip.optionId,
+                'ACTIVE'
+            );
             const [pendingVipUser] = await tx.insert(users).values(testData.user()).returning();
             const [abandonedVipUser] = await tx.insert(users).values(testData.user()).returning();
             const [cancelledVipUser] = await tx.insert(users).values(testData.user()).returning();
@@ -157,6 +165,9 @@ describe('TouristVipModel (TEST:B3:28, TEST:B3:37, TEST:B3:29)', () => {
                     planVersionId: data.title.versionId
                 })
             ]);
+            expect(
+                await touristVipModel.findTitleRows({ userId: pendingTitleUser.id, tx })
+            ).toEqual([]);
             const cancellable = await touristVipModel.findCancellableRows({
                 userId: data.userId,
                 tx
@@ -223,6 +234,23 @@ describe('TouristVipModel (TEST:B3:28, TEST:B3:37, TEST:B3:29)', () => {
             expect(
                 await touristVipModel.findUserIdsWithCancellableVip({ limit: 10, tx })
             ).not.toContain(data.userId);
+        });
+    });
+
+    it('does not select a pending Tourist VIP as cancellable', async () => {
+        await withTestTransaction(async (tx) => {
+            const data = await seed(tx);
+            await row(
+                tx,
+                data.userId,
+                'tourist',
+                data.vip.versionId,
+                data.vip.optionId,
+                'PENDING_AUTHORIZATION'
+            );
+            expect(await touristVipModel.findCancellableRows({ userId: data.userId, tx })).toEqual(
+                []
+            );
         });
     });
 });
