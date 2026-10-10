@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Pool } from 'pg';
+import { protectScratchPool, waitForNoConnections } from './scratch-database.ts';
 
 /** Reserved structural migration tag for the paso-3 cut. */
 export const CUT_MIGRATION_TAG = '0148_cut_paso_3';
@@ -67,9 +68,11 @@ export async function createPreCutDatabase({
     const databaseUrl = new URL(base);
     databaseUrl.pathname = `/${name}`;
     const admin = new Pool({ connectionString: adminUrl.toString() });
+    await waitForNoConnections({ admin, database: name });
     await admin.query(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`);
     await admin.query(`CREATE DATABASE "${name}"`);
     const database = new Pool({ connectionString: databaseUrl.toString() });
+    protectScratchPool({ pool: database });
     for (const extension of ['uuid-ossp', 'pgcrypto', 'unaccent']) {
         await database.query(`CREATE EXTENSION IF NOT EXISTS "${extension}"`);
     }
@@ -92,6 +95,7 @@ export async function createPreCutDatabase({
 /** Drops only the isolated database created by createPreCutDatabase. */
 export async function dropPreCutDatabase({ admin, database, name }: PreCutDatabase): Promise<void> {
     await database.end();
+    await waitForNoConnections({ admin, database: name });
     await admin.query(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`);
     await admin.end();
 }
