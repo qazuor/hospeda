@@ -4,7 +4,7 @@
  * Returns null (404) when the listing is not found or not publicly visible.
  */
 
-import { GastronomyPublicSchema } from '@repo/schemas';
+import { GastronomyPublicSchema, VerticalEnum } from '@repo/schemas';
 import {
     GastronomyService,
     getGastronomyDailySpecials,
@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
+import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import {
     fetchGastronomyAmenities,
     fetchGastronomyFeatures
@@ -48,7 +49,6 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         slug: z.string().min(1).max(255)
     },
     responseSchema: GastronomyPublicSchema.nullable(),
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_MENU entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await gastronomyService.getBySlug(actor, params.slug as string);
@@ -118,6 +118,18 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
         // reads of the same subscription if a plan change landed mid-render,
         // publishing one paid feature while withholding another for no reason a
         // reader could see. See `resolveOwnerGastronomyPlanEntitlements`.
+        const ownerGrants = await readEffectiveKeys({
+            userId: gastronomy.ownerId,
+            vertical: VerticalEnum.GASTRONOMY,
+            keys: [
+                'manage_gastronomy_menu',
+                'menu_item_photos',
+                'multilingual_gastronomy_menu',
+                'manage_gastronomy_events',
+                'manage_gastronomy_daily_special'
+            ]
+        });
+
         const [amenitiesData, featuresData, menuResult, eventsResult, dailySpecialsResult] =
             await Promise.all([
                 fetchGastronomyAmenities(gastronomy.id),
@@ -127,24 +139,22 @@ export const publicGetGastronomyBySlugRoute = createPublicRoute({
                 getGastronomyDailySpecials(model, { gastronomyId: gastronomy.id, validOn: today })
             ]);
 
-        // Until replacement coverage is available, formerly plan-gated menu,
-        // events and daily-specials data stay hidden on public reads.
         const menuGate = applyGastronomyMenuManagementGate({
             gastronomy,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement: false,
-            ownerGrantsMenuItemPhotos: false,
-            ownerGrantsMenuTranslations: false
+            ownerGrantsMenuManagement: ownerGrants.manage_gastronomy_menu ?? false,
+            ownerGrantsMenuItemPhotos: ownerGrants.menu_item_photos ?? false,
+            ownerGrantsMenuTranslations: ownerGrants.multilingual_gastronomy_menu ?? false
         });
 
         const eventsGate = applyGastronomyVenueEventsGate({
             events: eventsResult.error ? [] : eventsResult.data.events,
-            ownerGrantsVenueEvents: false
+            ownerGrantsVenueEvents: ownerGrants.manage_gastronomy_events ?? false
         });
 
         const dailySpecialsGate = applyGastronomyDailySpecialsGate({
             dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
-            ownerGrantsDailySpecial: false
+            ownerGrantsDailySpecial: ownerGrants.manage_gastronomy_daily_special ?? false
         });
 
         return {

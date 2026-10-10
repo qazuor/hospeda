@@ -1,14 +1,15 @@
 /**
  * GET /api/v1/protected/accommodations/:id/whatsapp.
- * Per-viewer response stays uncached; legacy paid contact data is hidden
- * during the billing transition.
+ * Per-viewer response stays uncached; contact fields follow the viewer’s
+ * effective tourist capabilities.
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
+import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -101,11 +102,15 @@ app.get('/:id/whatsapp', async (c) => {
             ? contactInfo.whatsapp.trim()
             : null;
 
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — hide the former paid WhatsApp number.
+    const grants = await readEffectiveKeys({
+        userId: actor.id,
+        vertical: VerticalEnum.TOURIST,
+        keys: ['can_contact_whatsapp_display', 'can_contact_whatsapp_direct']
+    });
     const payload = resolveWhatsAppPayload({
         rawNumber,
-        entitled: false,
-        canDirect: false
+        entitled: grants.can_contact_whatsapp_display ?? false,
+        canDirect: grants.can_contact_whatsapp_direct ?? false
     });
 
     apiLogger.debug(
