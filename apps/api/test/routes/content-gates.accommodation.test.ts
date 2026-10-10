@@ -431,6 +431,27 @@ beforeEach(() => {
 });
 
 describe('TEST:V5:31 accommodation content gates', () => {
+    it('keeps route capability and photo limit active on a draft', async () => {
+        const calendar = cases.find((row) => row.file === 'protected/addOccupancy');
+        const media = cases.find((row) => row.file === 'protected/addMedia');
+        if (!calendar || !media) throw new Error('Required route cases are missing');
+        configureSet(OWNER_A, [], null);
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER_A, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER_A
+        });
+        const calendarDenied = await request(calendar);
+        expect((await calendarDenied.json()).error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: 'can_use_calendar' }
+        });
+        const mediaDenied = await request(media);
+        expect((await mediaDenied.json()).error).toMatchObject({
+            code: ServiceErrorCode.LIMIT_REACHED,
+            details: { limitKey: 'max_photos_per_accommodation', maxAllowed: 0 }
+        });
+    });
+
     it.each(cases)('$file requires its effective key on a published listing', async (row) => {
         if (row.key === 'none') {
             configureSet(OWNER_A, [], null);
