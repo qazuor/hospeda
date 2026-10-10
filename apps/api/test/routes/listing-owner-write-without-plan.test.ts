@@ -14,7 +14,8 @@
  * `x-mock-actor-*` needs all three headers (id, role, permissions); a request
  * with only some of them falls through to the guest actor.
  */
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../src/app.js';
 import type { AppOpenAPI } from '../../src/types.js';
@@ -43,6 +44,24 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         }
     };
 });
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: OWNER_ID, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER_ID
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.GASTRONOMY,
+                hasLiveNonTrialTitle: false,
+                entries: []
+            })
+    })
+}));
 
 const listingRow = (): Record<string, unknown> => ({
     id: LISTING_ID,
