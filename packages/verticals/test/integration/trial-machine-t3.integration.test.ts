@@ -1,6 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import type { DrizzleClient } from '@repo/db';
-import { trials } from '@repo/db';
-import { TrialStatusEnum, VerticalEnum } from '@repo/schemas';
+import { accommodations, destinations, trials } from '@repo/db';
+import { PublicationStatusEnum, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
@@ -42,13 +43,41 @@ describe('TEST:V4:8 - T3 expires due trials and rereads the deadline', () => {
             startedAt: new Date(end.getTime() - 10 * day),
             endsAt: end
         });
+        const [destination] = await db
+            .insert(destinations)
+            .values({
+                destinationType: 'CITY',
+                path: `/trial-machine-t3-${randomUUID()}`,
+                slug: randomUUID(),
+                name: 'Trial city',
+                summary: 'Trial city',
+                description: 'Trial city',
+                location: { coordinates: { lat: '-32.49', long: '-58.23' } }
+            })
+            .returning({ id: destinations.id });
+        if (!destination) throw new Error('Destination insert failed');
+        await db.insert(accommodations).values({
+            type: 'HOTEL',
+            slug: randomUUID(),
+            name: 'Trial listing',
+            summary: 'Trial listing',
+            description: 'Trial listing',
+            ownerId: userId,
+            destinationId: destination.id,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: null
+        });
         const billing = createBootstrapBillingForVerticals({ reader: bootstrapReaderOf(db) });
         current = end.getTime() - 60_000;
         expect((await billing.coverage({ userId, vertical })).covered).toBe(true);
-        const before = await db.execute(
-            sql`SELECT inactive_since FROM accommodations WHERE owner_id = ${userId}`
-        );
-        expect(before.rows.every((row) => row.inactive_since === null)).toBe(true);
+        const inactiveSinceOfOwner = async () =>
+            (
+                await db.execute(
+                    sql`SELECT inactive_since FROM accommodations WHERE owner_id = ${userId}`
+                )
+            ).rows;
+        const before = await inactiveSinceOfOwner();
+        expect(before).toEqual([{ inactive_since: null }]);
         const adapter = createTrialMachineAdapter({ db, ceilingDays: () => 60 });
         current = end.getTime() + 60_000;
         expect(
@@ -68,10 +97,15 @@ describe('TEST:V4:8 - T3 expires due trials and rereads the deadline', () => {
         expect(adapter.stats.recoveryCampaigns[0]?.milestones).toEqual(
             [1, 5, 15, 30, 60].map((days) => new Date(end.getTime() + days * day))
         );
-        const after = await db.execute(
-            sql`SELECT inactive_since FROM accommodations WHERE owner_id = ${userId}`
+        const after = await inactiveSinceOfOwner();
+        expect(after).toEqual(before);
+        await db.execute(
+            sql`UPDATE accommodations SET inactive_since = now() WHERE owner_id = ${userId}`
         );
-        expect(after.rows).toEqual(before.rows);
+        const changed = await inactiveSinceOfOwner();
+        expect(changed).toHaveLength(1);
+        expect(changed[0]?.inactive_since).not.toBeNull();
+        expect(changed).not.toEqual(before);
     });
 
     it('skips a scanned row whose end was extended before T3 takes the lock', async () => {
