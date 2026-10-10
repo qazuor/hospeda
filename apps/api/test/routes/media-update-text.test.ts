@@ -35,7 +35,14 @@
  * @module test/routes/media-update-text
  */
 
-import { ModerationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    ModerationStatusEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    ServiceErrorCode,
+    type VerticalEnum
+} from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -81,6 +88,24 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         removeExperienceMedia: mockRemoveExperience
     };
 });
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: ACTOR_ID, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: ACTOR_ID
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                entries: [{ key: `edit_${vertical.toLowerCase()}_info`, value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks are set up
@@ -320,6 +345,7 @@ describe('PATCH media text metadata (HOS-1036)', () => {
             });
 
             expect(res.status).toBe(404);
+            expect(c.mock).toHaveBeenCalledTimes(1);
             const body = (await res.json()) as { error?: { code?: string } };
             expect(body.error?.code).not.toBe('INTERNAL_ERROR');
         });
