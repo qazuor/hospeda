@@ -1,7 +1,11 @@
 import {
     billingDeadlineVersions,
+    billingOptions,
     eq,
     manualPayments,
+    plans,
+    planVersions,
+    providerLinks,
     subscriptionModel,
     subscriptions,
     users
@@ -11,13 +15,14 @@ import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { sweepInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service';
 import { expireAuthorizationWindows } from '../../../src/services/billing/subscription/expire-authorization-windows.service';
 import {
     type BeforeCancelNotice,
     startSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
-import { noTouristVip } from './support/tourist-vip.ts';
+import { noTouristVip, touristVipInheritanceFromDb } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
 
@@ -80,7 +85,7 @@ function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
     };
 }
 
-async function seedChoice() {
+async function seedChoice(inheritsTouristVip = false) {
     const [user] = await getServiceTestDb()
         .insert(users)
         .values({
@@ -100,9 +105,9 @@ async function seedChoice() {
     if (!planId) throw new Error('No plan');
     const planVersionId = (
         await getServiceTestPool().query<{ id: string }>(
-            `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause)
-         VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id`,
-            [planId, Math.floor(Math.random() * 100000000) + 1000]
+            `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip)
+         VALUES ($1, 'accommodation', $2, true, true, 0, false, $3) RETURNING id`,
+            [planId, Math.floor(Math.random() * 100000000) + 1000, inheritsTouristVip]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('No version');
@@ -117,8 +122,8 @@ async function seedChoice() {
     return { userId: user.id, planVersionId, billingOptionId };
 }
 
-async function startPending(provider: PaymentProvider) {
-    const choice = await seedChoice();
+async function startPending(provider: PaymentProvider, inheritsTouristVip = false) {
+    const choice = await seedChoice(inheritsTouristVip);
     const started = await startSubscription(
         {
             userId: choice.userId,
@@ -401,5 +406,87 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
             .from(subscriptions)
             .where(eq(subscriptions.id, successor.subscription.id));
         expect(row).toEqual({ status: 'ABANDONED', succeedsId: predecessor.subscription.id });
+    });
+});
+
+// TEST:B3:37 — S3 abandons the pending title and leaves an existing VIP mandate alone.
+describe('TEST:B3:37 inherited Tourist VIP at S3', () => {
+    it('abandons the plan at 72 hours; its VIP remains active after the retry sweep', async () => {
+        const { fake, provider, ports, cancel } = setup();
+        const plan = await startPending(provider, true);
+        const vipPlan = await getServiceTestDb()
+            .insert(plans)
+            .values({
+                vertical: 'tourist',
+                slug: `b3-vip-${crypto.randomUUID()}`,
+                name: 'Tourist VIP'
+            })
+            .returning();
+        const vipVersion = await getServiceTestDb()
+            .insert(planVersions)
+            .values({
+                planId: vipPlan[0]!.id,
+                vertical: 'tourist',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning();
+        const vipOption = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: vipVersion[0]!.id,
+                cycle: 'monthly',
+                amount: 1000,
+                currency: 'ARS'
+            })
+            .returning();
+        const vipAuth = await fake.authorize({
+            reference: `vip-${crypto.randomUUID()}`,
+            amount: { amountMinor: 250000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'Tourist VIP',
+            returnUrl: 'https://hospeda.example/account'
+        });
+        const vip = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: plan.choice.userId,
+                vertical: 'tourist',
+                planVersionId: vipVersion[0]!.id,
+                billingOptionId: vipOption[0]!.id,
+                paymentMethod: 'CARD',
+                status: 'ACTIVE',
+                class: 'PRINCIPAL'
+            })
+            .returning();
+        await getServiceTestDb().insert(providerLinks).values({
+            subscriptionId: vip[0]!.id,
+            provider: 'MERCADO_PAGO',
+            providerId: vipAuth.authorizationId
+        });
+        const inherits = vi.spyOn(touristVipInheritanceFromDb, 'inherits');
+        const inheritingPorts = { ...ports, touristVipInheritance: touristVipInheritanceFromDb };
+        advance(72);
+        expect(await expireAuthorizationWindows(20, inheritingPorts)).toMatchObject({
+            abandoned: 1,
+            activated: 0
+        });
+        expect(await status(plan.started.subscriptionId)).toBe('ABANDONED');
+        expect(await status(vip[0]!.id)).toBe('ACTIVE');
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(cancel).toHaveBeenCalledWith({ authorizationId: plan.started.authorizationId });
+        expect(
+            await sweepInheritedTouristVips(100, {
+                provider,
+                clock,
+                beforeCancelNotice: ports.beforeCancelNotice,
+                touristVipInheritance: touristVipInheritanceFromDb
+            })
+        ).toEqual({ cancelled: 0, deferred: 0, skipped: 0 });
+        expect(await status(vip[0]!.id)).toBe('ACTIVE');
+        expect(inherits).not.toHaveBeenCalled();
     });
 });

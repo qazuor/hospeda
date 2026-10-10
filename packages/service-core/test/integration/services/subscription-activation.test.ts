@@ -1,9 +1,19 @@
-import { billingDeadlineVersions, eq, subscriptions, users } from '@repo/db';
+import {
+    billingDeadlineVersions,
+    billingOptions,
+    eq,
+    plans,
+    planVersions,
+    providerLinks,
+    subscriptions,
+    users
+} from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activateSubscription } from '../../../src/services/billing/subscription/activate-subscription.service';
+import { cancelInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { noTouristVip } from './support/tourist-vip.ts';
@@ -59,7 +69,7 @@ function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
     };
 }
 
-async function seedChoice() {
+async function seedChoice(inheritsTouristVip = false) {
     const [user] = await getServiceTestDb()
         .insert(users)
         .values({
@@ -79,9 +89,9 @@ async function seedChoice() {
     if (!planId) throw new Error('No plan');
     const planVersionId = (
         await getServiceTestPool().query<{ id: string }>(
-            `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause)
-         VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id`,
-            [planId, Math.floor(Math.random() * 100000000) + 1000]
+            `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip)
+         VALUES ($1, 'accommodation', $2, true, true, 0, false, $3) RETURNING id`,
+            [planId, Math.floor(Math.random() * 100000000) + 1000, inheritsTouristVip]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('No version');
@@ -93,11 +103,15 @@ async function seedChoice() {
         )
     ).rows[0]?.id;
     if (!billingOptionId) throw new Error('No option');
-    return { userId: user.id, billingOptionId };
+    return { userId: user.id, billingOptionId, planVersionId };
 }
 
-async function startPending(fake: FakePaymentProvider, provider: PaymentProvider) {
-    const choice = await seedChoice();
+async function startPending(
+    _fake: FakePaymentProvider,
+    provider: PaymentProvider,
+    inheritsTouristVip = false
+) {
+    const choice = await seedChoice(inheritsTouristVip);
     const started = await startSubscription(
         { ...choice, returnUrl: 'https://hospeda.example/account' },
         {
@@ -113,7 +127,7 @@ async function startPending(fake: FakePaymentProvider, provider: PaymentProvider
             touristVipInheritance: noTouristVip
         }
     );
-    return { started, fakeId: started.authorizationId.split(':').at(-1) ?? '', provider };
+    return { started, fakeId: started.authorizationId.split(':').at(-1) ?? '', provider, choice };
 }
 
 async function status(id: string) {
@@ -192,5 +206,250 @@ describe('TEST:B3:9 authorization activation', () => {
         ).toBe(false);
         expect(read).not.toHaveBeenCalled();
         expect(await status(started.subscriptionId)).toBe('ABANDONED');
+    });
+});
+
+// TEST:B3:28 — S2 activates the inherited title before the notice-gated VIP cancellation.
+describe('TEST:B3:28 inherited Tourist VIP at S2', () => {
+    it('leaves VIP alive while the plan is pending; then sends notice before cancel with no refund', async () => {
+        const fake = new FakePaymentProvider({
+            idNamespace: crypto.randomUUID(),
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'healthy fixture' }]
+        });
+        const provider = namespaceFake(fake);
+        const plan = await startPending(fake, provider, true);
+        const [vipPlan] = await getServiceTestDb()
+            .insert(plans)
+            .values({ vertical: 'tourist', slug: `b3-s2-vip-${crypto.randomUUID()}`, name: 'VIP' })
+            .returning();
+        const [vipVersion] = await getServiceTestDb()
+            .insert(planVersions)
+            .values({
+                planId: vipPlan!.id,
+                vertical: 'tourist',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning();
+        const [vipOption] = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: vipVersion!.id,
+                cycle: 'monthly',
+                amount: 1000,
+                currency: 'ARS'
+            })
+            .returning();
+        const vipAuth = await fake.authorize({
+            reference: `vip-${crypto.randomUUID()}`,
+            amount: { amountMinor: 250000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'Tourist VIP',
+            returnUrl: 'https://hospeda.example/account'
+        });
+        const [vip] = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: plan.choice.userId,
+                vertical: 'tourist',
+                planVersionId: vipVersion!.id,
+                billingOptionId: vipOption!.id,
+                paymentMethod: 'CARD',
+                status: 'ACTIVE',
+                class: 'PRINCIPAL'
+            })
+            .returning();
+        await getServiceTestDb().insert(providerLinks).values({
+            subscriptionId: vip!.id,
+            provider: 'MERCADO_PAGO',
+            providerId: vipAuth.authorizationId
+        });
+        expect(await status(vip!.id)).toBe('ACTIVE');
+        const events: string[] = [];
+        const notice = vi.fn(async () => {
+            events.push('notice');
+            return 'SENT' as const;
+        });
+        const originalCancel = provider.cancel.bind(provider);
+        const cancel = vi.spyOn(provider, 'cancel').mockImplementation(async (input) => {
+            events.push('cancel');
+            return originalCancel(input);
+        });
+        const refund = vi.spyOn(provider, 'refund');
+        const ports = {
+            provider,
+            clock,
+            beforeCancelNotice: { beforeCancel: notice },
+            touristVipInheritance: { inherits: async (_args: { readonly userId: string }) => true }
+        };
+        expect(await status(vip!.id)).toBe('ACTIVE');
+        await fake.approve({ authorizationId: plan.fakeId });
+        const result = await activateSubscription(plan.started.subscriptionId, ports);
+        expect(result).toEqual({ activated: true, subscriptionId: plan.started.subscriptionId });
+        expect(await status(plan.started.subscriptionId)).toBe('ACTIVE');
+        expect(await status(vip!.id)).toBe('CANCELLED');
+        expect(events).toEqual(['notice', 'cancel']);
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(cancel).toHaveBeenCalledWith({ authorizationId: vipAuth.authorizationId });
+        expect(refund).not.toHaveBeenCalled();
+        expect(await ports.touristVipInheritance.inherits({ userId: plan.choice.userId })).toBe(
+            true
+        );
+        expect(await cancelInheritedTouristVips({ userId: plan.choice.userId }, ports)).toEqual({
+            cancelled: 0,
+            deferred: 0,
+            skipped: 0
+        });
+        expect(cancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('defers while the email is pending, then cancels through the same outbox event', async () => {
+        const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
+        const provider = namespaceFake(fake);
+        const plan = await startPending(fake, provider);
+        const [vipPlan] = await getServiceTestDb()
+            .insert(plans)
+            .values({
+                vertical: 'tourist',
+                slug: `b3-s2-retry-${crypto.randomUUID()}`,
+                name: 'VIP'
+            })
+            .returning();
+        const [vipVersion] = await getServiceTestDb()
+            .insert(planVersions)
+            .values({
+                planId: vipPlan!.id,
+                vertical: 'tourist',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning();
+        const [vipOption] = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: vipVersion!.id,
+                cycle: 'monthly',
+                amount: 1000,
+                currency: 'ARS'
+            })
+            .returning();
+        const vipAuth = await fake.authorize({
+            reference: `vip-${crypto.randomUUID()}`,
+            amount: { amountMinor: 250000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'Tourist VIP',
+            returnUrl: 'https://hospeda.example/account'
+        });
+        const [vip] = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: plan.choice.userId,
+                vertical: 'tourist',
+                planVersionId: vipVersion!.id,
+                billingOptionId: vipOption!.id,
+                paymentMethod: 'CARD',
+                status: 'ACTIVE',
+                class: 'PRINCIPAL'
+            })
+            .returning();
+        await getServiceTestDb().insert(providerLinks).values({
+            subscriptionId: vip!.id,
+            provider: 'MERCADO_PAGO',
+            providerId: vipAuth.authorizationId
+        });
+        let delivery: 'NOT_YET_SENT' | 'SENT' = 'NOT_YET_SENT';
+        const ports = {
+            provider,
+            clock,
+            beforeCancelNotice: { beforeCancel: async () => delivery },
+            touristVipInheritance: { inherits: async (_args: { readonly userId: string }) => true }
+        };
+        expect(
+            await cancelInheritedTouristVips({ userId: plan.choice.userId }, ports)
+        ).toMatchObject({ deferred: 1 });
+        expect(await status(vip!.id)).toBe('ACTIVE');
+        delivery = 'SENT';
+        expect(
+            await cancelInheritedTouristVips({ userId: plan.choice.userId }, ports)
+        ).toMatchObject({ cancelled: 1 });
+        expect(await status(vip!.id)).toBe('CANCELLED');
+    });
+
+    it.each([
+        'NO_RECIPIENT',
+        'DELIVERY_EXHAUSTED'
+    ] as const)('cancels the VIP after recording the non-deliverable outcome %s', async (outcome) => {
+        const fake = new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
+        const provider = namespaceFake(fake);
+        const plan = await startPending(fake, provider, true);
+        const [vipPlan] = await getServiceTestDb()
+            .insert(plans)
+            .values({ vertical: 'tourist', slug: `b3-s2-${crypto.randomUUID()}`, name: 'VIP' })
+            .returning();
+        const [vipVersion] = await getServiceTestDb()
+            .insert(planVersions)
+            .values({
+                planId: vipPlan!.id,
+                vertical: 'tourist',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning();
+        const [vipOption] = await getServiceTestDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: vipVersion!.id,
+                cycle: 'monthly',
+                amount: 250000,
+                currency: 'ARS'
+            })
+            .returning();
+        const vipAuth = await fake.authorize({
+            reference: `vip-${crypto.randomUUID()}`,
+            amount: { amountMinor: 250000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'Tourist VIP',
+            returnUrl: 'https://hospeda.example/account'
+        });
+        const [vip] = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: plan.choice.userId,
+                vertical: 'tourist',
+                planVersionId: vipVersion!.id,
+                billingOptionId: vipOption!.id,
+                paymentMethod: 'CARD',
+                status: 'ACTIVE',
+                class: 'PRINCIPAL'
+            })
+            .returning();
+        await getServiceTestDb().insert(providerLinks).values({
+            subscriptionId: vip!.id,
+            provider: 'MERCADO_PAGO',
+            providerId: vipAuth.authorizationId
+        });
+        const cancel = vi.spyOn(provider, 'cancel');
+        const result = await cancelInheritedTouristVips(
+            { userId: plan.choice.userId },
+            {
+                provider,
+                clock,
+                beforeCancelNotice: { beforeCancel: async () => outcome },
+                touristVipInheritance: { inherits: async () => true }
+            }
+        );
+        expect(result).toMatchObject({ cancelled: 1, deferred: 0 });
+        expect(cancel).toHaveBeenCalledWith({ authorizationId: vipAuth.authorizationId });
+        expect(await status(vip!.id)).toBe('CANCELLED');
     });
 });
