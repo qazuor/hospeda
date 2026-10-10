@@ -43,7 +43,7 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
     requestBody: AccommodationCreateDraftHttpSchema,
     responseSchema: AccommodationProtectedSchema,
     listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'CREATE' },
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed PUBLISH_ACCOMMODATIONS entitlement gate.
+    // CREATE keeps drafts unlimited; PB1 counts published listings at publication (V6.1; V2.md:434-438).
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -71,6 +71,6 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
         return stripRichDescriptionFields(result.data);
     },
     options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
+        // CREATE keeps drafts unlimited; PB1 counts published listings at publication (V6.1; V2.md:434-438).
     }
 });

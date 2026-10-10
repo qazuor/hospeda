@@ -9,8 +9,8 @@
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
  * enforced inside `updateOccupancyEvent`. Calendar operations run without the former
- * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
+ * `can_use_calendar` on the listing owner through listing access.
+ * The listing access resolver requires the route capability on the owner.
  */
 
 import {
@@ -42,7 +42,12 @@ const UpdateOccupancyEventResponseSchema = z.object({
 export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/occupancy/event',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_use_calendar'],
+        idParam: 'id'
+    },
     summary: 'Edit a manual occupancy event (owner)',
     description:
         'Atomically moves a MANUAL occupancy event from [oldStartDate..oldEndDate] to ' +
@@ -58,7 +63,6 @@ export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
     },
     requestBody: AccommodationOccupancyEventUpdateSchema,
     responseSchema: UpdateOccupancyEventResponseSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -85,6 +89,5 @@ export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
         });
 
         return { occupancy };
-    },
-    options: {}
+    }
 });

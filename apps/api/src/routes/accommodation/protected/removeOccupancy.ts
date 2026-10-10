@@ -6,8 +6,8 @@
  * No declarative `ownership:` config — MANAGE permission + ownership are
  * enforced inside `removeOccupancy`. Only removes a `source=MANUAL` row; a
  * sync-sourced row for the same date is untouched. Calendar operations run without the former
- * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
+ * `can_use_calendar` on the listing owner through listing access.
+ * The listing access resolver requires the route capability on the owner.
  */
 
 import { AccommodationIdSchema, OccupancyDateSchema, VerticalEnum } from '@repo/schemas';
@@ -29,7 +29,12 @@ const RemoveOccupancyResponseSchema = z.object({ deleted: z.boolean() });
 export const protectedRemoveOccupancyRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/occupancy/{date}',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_use_calendar'],
+        idParam: 'id'
+    },
     summary: 'Unblock a single day on the occupancy calendar (owner)',
     description:
         'Deletes the source=MANUAL occupancy row for a single date, if any. A ' +
@@ -42,13 +47,11 @@ export const protectedRemoveOccupancyRoute = createProtectedRoute({
         date: OccupancyDateSchema
     },
     responseSchema: RemoveOccupancyResponseSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_CALENDAR entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
         const date = params.date as string;
 
         return await removeOccupancy({ actor, accommodationId, date });
-    },
-    options: {}
+    }
 });

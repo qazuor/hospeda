@@ -27,6 +27,7 @@ import {
     PermissionEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
+    VerticalEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { ExperienceService, entityNotFoundError } from '@repo/service-core';
@@ -118,6 +119,12 @@ export async function handleGetExperienceBrochure(
 export const protectedGetExperienceBrochureRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/brochure',
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'download_listing_pdf'
+    },
     summary: 'Download the printable PDF sheet of an experience listing',
     description:
         'Returns a print-ready A4 PDF of the listing’s PUBLIC page — cover photo, meeting point, opening hours, contact, services and a QR back to the online sheet. Owner-only, and only for a listing that is publicly visible. Requires the download_listing_pdf entitlement, granted by the premium experience plan.',
@@ -126,7 +133,6 @@ export const protectedGetExperienceBrochureRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: z.null(),
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed DOWNLOAD_LISTING_PDF entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetExperienceBrochure(ctx, params),
     options: {

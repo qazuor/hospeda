@@ -218,3 +218,126 @@ describe('AC:V5:8 foreign listing subject', () => {
         expect(result.body).toMatchObject({ subjectId: OWNER, evaluatedSteps: [4, 5] });
     });
 });
+
+describe('AC:V5:26 route capabilities on the subject', () => {
+    it('passes capabilities array as requiredKeys to the resolver', async () => {
+        mocks.effectiveSet.mockImplementation(async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' as const }]
+            })
+        );
+        const app = new Hono<AppBindings>();
+        app.get('/:id', async (c) => {
+            c.set('actor', {
+                id: OWNER,
+                roles: [RoleEnum.ADMIN],
+                permissions: [],
+                emailVerified: true
+            });
+            try {
+                await enforceListingAccess({
+                    ctx: c,
+                    params: { id: c.req.param('id') },
+                    config: {
+                        vertical,
+                        operation: 'EDIT',
+                        capabilities: ['can_use_calendar']
+                    },
+                    tier: 'protected',
+                    body: {}
+                });
+                return c.json(c.get('listingAccess'));
+            } catch (error) {
+                return handleRouteError(error, c);
+            }
+        });
+        const result = await probe(app);
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: 'can_use_calendar' }
+        });
+    });
+
+    it('capabilities function receives body and resolves requiredKeys', async () => {
+        mocks.effectiveSet.mockImplementation(async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' as const }]
+            })
+        );
+        let capturedBody: Record<string, unknown> | undefined;
+        const app = new Hono<AppBindings>();
+        app.get('/:id', async (c) => {
+            c.set('actor', {
+                id: OWNER,
+                roles: [RoleEnum.ADMIN],
+                permissions: [],
+                emailVerified: true
+            });
+            try {
+                await enforceListingAccess({
+                    ctx: c,
+                    params: { id: c.req.param('id') },
+                    config: {
+                        vertical,
+                        operation: 'EDIT',
+                        capabilities: ({ body }) => {
+                            capturedBody = body;
+                            return body && 'photo' in body ? ['can_use_calendar'] : [];
+                        }
+                    },
+                    tier: 'protected',
+                    body: { photo: true }
+                });
+                return c.json(c.get('listingAccess'));
+            } catch (error) {
+                return handleRouteError(error, c);
+            }
+        });
+        const result = await probe(app);
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: 'can_use_calendar' }
+        });
+        expect(capturedBody).toEqual({ photo: true });
+    });
+
+    it('no capabilities: no requiredKeys passed', async () => {
+        const app = new Hono<AppBindings>();
+        app.get('/:id', async (c) => {
+            c.set('actor', {
+                id: OWNER,
+                roles: [RoleEnum.ADMIN],
+                permissions: [],
+                emailVerified: true
+            });
+            try {
+                await enforceListingAccess({
+                    ctx: c,
+                    params: { id: c.req.param('id') },
+                    config: { vertical, operation: 'EDIT' },
+                    tier: 'protected',
+                    body: undefined
+                });
+                return c.json(c.get('listingAccess'));
+            } catch (error) {
+                return handleRouteError(error, c);
+            }
+        });
+        const result = await probe(app);
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: 'edit_accommodation_info' }
+        });
+    });
+});

@@ -46,7 +46,6 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         ownershipFields: ['ownerId', 'createdById'],
         bypassPermission: PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT
     },
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed EDIT_ACCOMMODATION_INFO entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -93,8 +92,5 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         // the pair was declared, with no entitlement lookup and no gate to
         // get wrong. See the schema comment for the full contract.
         return stripRichDescriptionFields(result.data);
-    },
-    options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
     }
 });

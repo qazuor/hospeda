@@ -6,12 +6,11 @@
  * ## What it answers, and in what order
  *
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
- * 2. **Billing transition** — the menú del día write runs without the former plan
- *    entitlement or payload-specific billing gates.
+ * 2. **Listing access** — the write requires manage_gastronomy_daily_special
+ *    for the listing owner.
  * 3. **Ownership** — inside `replaceGastronomyDailySpecials`, via the same
  *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
  *
- * The menú del día read and write have no plan entitlement gate during the billing transition.
  *
  * ## Whole document, one transaction
  *
@@ -21,7 +20,6 @@
  * `packages/service-core/src/services/gastronomy/gastronomy.daily-specials.ts`.
  *
  * @module routes/gastronomy/protected/putDailySpecials
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -82,7 +80,12 @@ export const protectedPutGastronomyDailySpecialsRoute = createProtectedRoute({
     summary: 'Replace the menú del día of a gastronomy listing',
     description:
         'Replaces the listing’s daily specials with the submitted document. Each special carries its own inclusive validity window and stops being shown publicly once it passes — no job runs and nothing has to be taken down by hand. An empty specials array removes them immediately. Owner-only, and requires the manage_gastronomy_daily_special entitlement granted by the professional gastronomy plan and above.',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['manage_gastronomy_daily_special']
+    },
     tags: ['Gastronomy', 'Gastronomy Daily Specials'],
     protectedTag: false,
     requestParams: {
@@ -90,8 +93,6 @@ export const protectedPutGastronomyDailySpecialsRoute = createProtectedRoute({
     },
     requestBody: GastronomyDailySpecialsReplacePayloadSchema,
     responseSchema: GastronomyDailySpecialsOutputSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_GASTRONOMY_DAILY_SPECIAL entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
-        handlePutGastronomyDailySpecials(ctx, params, body),
-    options: {}
+        handlePutGastronomyDailySpecials(ctx, params, body)
 });

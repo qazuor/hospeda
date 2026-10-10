@@ -6,12 +6,11 @@
  * ## What it answers, and in what order
  *
  * 1. **Authentication** — `createCRUDRoute` over the protected router.
- * 2. **Billing transition** — the carta write runs without the former plan
- *    entitlement or payload-specific billing gates.
+ * 2. **Listing access** — the owner needs menu management, plus photo or
+ *    translation capability when the payload carries those fields.
  * 3. **Ownership** — inside `replaceGastronomyMenu`, via the same
  *    `GASTRONOMY_EDIT_OWN` / `GASTRONOMY_EDIT_ALL` gate the sibling writes use.
  *
- * The carta read and write have no plan entitlement gate during the billing transition.
  *
  * ## Whole document, one transaction
  *
@@ -20,7 +19,6 @@
  * for why the carta is written whole where `gastronomy_media` is written per row.
  *
  * @module routes/gastronomy/protected/putMenu
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import {
@@ -38,6 +36,8 @@ import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { menuPayloadCarriesItemPhoto } from './menu-item-photo-gate';
+import { menuPayloadCarriesTranslations } from './menu-translations-gate';
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
 
@@ -48,10 +48,6 @@ export async function handlePutGastronomyMenu(
     body: Record<string, unknown>
 ) {
     const actor = getActorFromContext(ctx);
-
-    // The payload-conditional gates on MENU_ITEM_PHOTOS (HOS-1045) and
-    // MULTILINGUAL_GASTRONOMY_MENU (HOS-1043) were removed with the legacy
-    // billing system (HOS-1416); the menu is written unconditionally.
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ and media routes use.
@@ -82,7 +78,16 @@ export const protectedPutGastronomyMenuRoute = createProtectedRoute({
     summary: 'Replace the structured menu of a gastronomy listing',
     description:
         'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_gastronomy_menu (premium).',
-    listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ({ body }) => [
+            'manage_gastronomy_menu',
+            ...(menuPayloadCarriesItemPhoto(body) ? ['menu_item_photos'] : []),
+            ...(menuPayloadCarriesTranslations(body) ? ['multilingual_gastronomy_menu'] : [])
+        ]
+    },
     tags: ['Gastronomy', 'Gastronomy Menu'],
     protectedTag: false,
     requestParams: {
@@ -90,8 +95,6 @@ export const protectedPutGastronomyMenuRoute = createProtectedRoute({
     },
     requestBody: GastronomyMenuReplacePayloadSchema,
     responseSchema: GastronomyMenuOutputSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MENU_ITEM_PHOTOS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
-        handlePutGastronomyMenu(ctx, params, body),
-    options: {}
+        handlePutGastronomyMenu(ctx, params, body)
 });

@@ -14,8 +14,8 @@
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
  * enforced inside `addOccupancy`. Calendar operations run without the former
- * `CAN_USE_CALENDAR` plan entitlement during the billing transition.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
+ * `can_use_calendar` on the listing owner through listing access.
+ * The listing access resolver requires the route capability on the owner.
  */
 
 import {
@@ -39,7 +39,12 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 export const protectedAddOccupancyRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/occupancy',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_use_calendar'],
+        idParam: 'id'
+    },
     summary: 'Block a single day on the occupancy calendar (owner)',
     description:
         'Creates (or idempotently returns the existing) source=MANUAL occupancy row ' +
@@ -51,7 +56,6 @@ export const protectedAddOccupancyRoute = createProtectedRoute({
     },
     requestBody: AccommodationOccupancyCreateInputSchema,
     responseSchema: AccommodationOccupancySchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_USE_CALENDAR entitlement gate.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -65,6 +69,5 @@ export const protectedAddOccupancyRoute = createProtectedRoute({
             actor,
             input: { accommodationId, date, note }
         });
-    },
-    options: {}
+    }
 });

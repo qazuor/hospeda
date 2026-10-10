@@ -34,6 +34,12 @@ import {
 const mockUpload = vi.fn();
 const mockDelete = vi.fn();
 
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async () => ({ limits: { get: () => 100 } })
+    })
+}));
+
 vi.mock('../../../src/services/media', () => ({
     getMediaProvider: () => ({
         upload: mockUpload,

@@ -29,7 +29,9 @@ import {
     ENTITY_FOLDER_MAP,
     getGalleryCap,
     PermissionEnum,
-    UploadResponseDataSchema
+    ServiceErrorCode,
+    UploadResponseDataSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import {
     AccommodationService,
@@ -41,6 +43,8 @@ import {
     PostService,
     PostSponsorService
 } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core/types';
+import { resolveLimitStep } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { Sentry } from '../../../lib/sentry';
@@ -50,7 +54,8 @@ import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-l
 import { getMediaProvider } from '../../../services/media';
 import { getEntityMaxFileSizeMb } from '../../../services/media/upload-helpers';
 import { getActorFromContext } from '../../../utils/actor';
-
+import { accommodationGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
+import { getListingAccessPorts } from '../../../utils/listing-access/ports';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -76,7 +81,7 @@ const ActorIdSchema = z.string().uuid();
  * truth shared with the admin frontend, preventing cap drift between the two
  * layers.
  *
- * TODO(billing): respect billing-tier addon entitlements for gallery cap.
+ * The owner plan cap is resolved before the per-entity cap for accommodation galleries.
  */
 
 /**
@@ -146,7 +151,6 @@ export const adminUploadMediaRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.MEDIA_UPLOAD],
     responseSchema: UploadResponseDataSchema,
     successStatusCode: 200,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -399,38 +403,27 @@ export const adminUploadMediaRoute = createAdminRoute({
             );
         }
 
-        // ── 3d-i. Enforce per-plan MAX_PHOTOS_PER_ACCOMMODATION (SPEC-143 Finding #15).
-        // The hardcoded per-entity cap below (`getGalleryCap`) is the absolute
-        // upper bound. ABOVE that bound, the user's billing plan defines a
-        // tighter cap that differentiates plans (e.g., owner-basico = 5,
-        // owner-pro = 10). Without this check, the plan limit is purely
-        // UI-gated and trivially bypassable via direct API call.
-        //
-        // Semantics:
-        //   - Only applies when entityType === 'accommodation' && role === 'gallery'.
-        //     Featured images and non-accommodation entities (destination, event,
-        //     post) use the hardcoded per-entity cap below as their sole limit.
-        //   - Only enforces when the actor IS the owner (actor.id === accommodation.ownerId).
-        //     Admins uploading on behalf of an owner bypass the plan limit — this
-        //     matches the existing `validateEntityMediaPermission` contract where
-        //     admins with `ACCOMMODATION_UPDATE_ANY` skip ownership checks. The
-        //     limit is a billing concern, and admin operations are trusted manual
-        //     interventions (refund, recovery, support).
-        //   - `c.get('userLimits')` is populated by `entitlementMiddleware` at the
-        //     app level (`create-app.ts`), so by the time we reach here the actor's
-        //     plan limits are available in context. `getRemainingLimit(c, MAX_PHOTOS_PER_ACCOMMODATION)`
-        //     returns -1 when the limit is not defined for the actor (admin with
-        //     no plan, or plan that doesn't cap photos) — that resolves naturally
-        //     to "unlimited" via the standard `checkLimit` helper.
+        // ── 3d-i. Enforce the accommodation owner's effective gallery cap.
+        // Administrative uploads use the listing owner's limit after permission
+        // validation and before the per-entity gallery cap.
         if (entityType === 'accommodation' && role === 'gallery') {
-            const _accommodation = entityResult.data as {
-                ownerId?: string | null;
-            };
-
-            // Only enforce when the actor is the owner. Admin override is by
-            // design — see semantic note above.
-            // The per-plan gallery photo cap (MAX_PHOTOS_PER_ACCOMMODATION) was
-            // removed with the legacy billing system (HOS-1416).
+            const ownerId = (entityResult.data as { ownerId?: string | null }).ownerId;
+            if (ownerId) {
+                const limit = await accommodationGalleryPhotoLimit({ listingId: entityId });
+                const decision = await resolveLimitStep({
+                    userId: ownerId,
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    limit,
+                    effectiveSet: getListingAccessPorts().effectiveSet
+                });
+                if (!decision.allowed) {
+                    throw new ServiceError(ServiceErrorCode.LIMIT_REACHED, 'Limit reached', {
+                        limitKey: decision.key,
+                        currentCount: decision.requested - 1,
+                        maxAllowed: decision.max
+                    });
+                }
+            }
         }
 
         // ── 3d. Enforce per-entity gallery cap (SPEC-078-GAPS T-033 / GAP-078-071).
@@ -443,10 +436,8 @@ export const adminUploadMediaRoute = createAdminRoute({
         // a doomed insert.
         // Featured / avatar / sponsorLogo / organizerLogo roles bypass this
         // check — only the gallery role is capped.
-        // The per-plan billing-tier cap is enforced in 3d-i above (SPEC-143
-        // Finding #15); the hardcoded per-entity cap here is the absolute
-        // upper bound applied to non-accommodation entities and to admin
-        // uploads where the plan limit is bypassed.
+        // The owner plan cap is enforced in 3d-i for accommodation galleries;
+        // this cap is the absolute upper bound for every entity gallery.
         if (role === 'gallery') {
             // Counted via the shared resolver so this path and the protected
             // upload path can never disagree about where an entity type's photos

@@ -10,8 +10,8 @@
  * ## Why this exists next to `POST /:id/media`
  *
  * Setting a cover used to be two requests: register an ordinary gallery row,
- * then promote it. During the billing transition, a cover can be registered
- * directly without a gallery photo cap.
+ * then promote it. This route registers the cover directly and requires
+ * a plan allowing at least one photo.
  *
  * The swap cannot move the gallery: the replaced cover is DELETED
  * (soft-deleted) in the same transaction, so one row enters the featured slot
@@ -22,7 +22,7 @@
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
+ * The listing access resolver enforces the owner photo limit.
  */
 
 import {
@@ -54,7 +54,12 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminAddFeaturedMediaRoute = createAdminRoute({
     method: 'post',
-    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        idParam: 'id',
+        limit: async () => ({ key: 'max_photos_per_accommodation', requested: 1 })
+    },
     path: '/{id}/media/featured',
     summary: 'Upload the accommodation cover image (admin)',
     description:
@@ -74,7 +79,6 @@ export const adminAddFeaturedMediaRoute = createAdminRoute({
     // `isFeatured` nor the cap is reachable from this body.
     requestBody: AccommodationMediaAddPayloadSchema,
     responseSchema: AccommodationFeaturedMediaAddOutputSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -83,17 +87,12 @@ export const adminAddFeaturedMediaRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
 
-        // Owner-only, mirroring addMedia: staff acting on someone else's listing
-        // are not spending that host's plan. `undefined` means "no plan cap",
-        // leaving only the per-entity cap the service applies itself.
+        // The listing access step has already checked the owner's photo allowance.
         const accommodation = await accommodationService.getById(actor, accommodationId);
         if (accommodation.error || !accommodation.data) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
 
-        // The per-plan gallery cap (MAX_PHOTOS_PER_ACCOMMODATION) was removed
-        // with the legacy billing system (HOS-1416); `planGalleryCap` stays
-        // unset so only the service's own per-entity cap applies.
         const result = await accommodationService.addFeaturedMedia(actor, {
             accommodationId,
             media: body as AccommodationMediaAddPayload

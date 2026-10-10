@@ -42,13 +42,15 @@ import {
     type createMockUserActor
 } from '../../helpers/auth';
 
-const { mockUpload, mockDelete, providerState, mockFindByAccommodation } = vi.hoisted(() => ({
-    mockUpload: vi.fn(),
-    mockDelete: vi.fn(),
-    providerState: { configured: true as boolean },
-    // SPEC-204: accommodation gallery count now comes from the relational table.
-    mockFindByAccommodation: vi.fn()
-}));
+const { mockUpload, mockDelete, providerState, mockFindByAccommodation, mockEffectiveSet } =
+    vi.hoisted(() => ({
+        mockUpload: vi.fn(),
+        mockDelete: vi.fn(),
+        providerState: { configured: true as boolean },
+        // SPEC-204: accommodation gallery count now comes from the relational table.
+        mockFindByAccommodation: vi.fn(),
+        mockEffectiveSet: vi.fn()
+    }));
 
 vi.mock('../../../src/services/media', () => ({
     getMediaProvider: () =>
@@ -71,6 +73,10 @@ vi.mock('@repo/db', async (importOriginal) => {
         }
     };
 });
+
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
+}));
 
 import {
     AccommodationService,
@@ -198,6 +204,8 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
         // gallery-cap and plan-cap checks resolve cleanly without a DB.
         mockFindByAccommodation.mockReset();
         mockFindByAccommodation.mockResolvedValue({ items: [], total: 0 });
+        mockEffectiveSet.mockReset();
+        mockEffectiveSet.mockResolvedValue({ limits: { get: () => 100 } });
         resetMetrics();
     });
 
@@ -308,6 +316,10 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
 
             // Assert
             expect(res.status).toBe(200);
+            expect(mockEffectiveSet).toHaveBeenCalledWith({
+                userId: ADMIN_ACTOR_ID,
+                vertical: 'accommodation'
+            });
             const arg = mockUpload.mock.calls[0]?.[0] as { publicId: string; folder: string };
             // Server-generated shape: `gallery/{10-char nanoid}`.
             expect(arg.publicId).toMatch(/^gallery\/[A-Za-z0-9_-]{10}$/);
