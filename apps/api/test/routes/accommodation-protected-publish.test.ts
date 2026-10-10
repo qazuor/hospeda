@@ -32,6 +32,7 @@
  */
 
 import { PublicationStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -41,6 +42,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const { mockPublish, mockGetById } = vi.hoisted(() => ({
     mockPublish: vi.fn(),
     mockGetById: vi.fn()
+}));
+
+vi.mock('../../src/services/listing-publication/listing-publication.service', () => ({
+    ListingPublicationService: vi.fn().mockImplementation(function () {
+        return { publish: mockPublish };
+    })
 }));
 
 vi.mock('@repo/service-core', async () => {
@@ -157,7 +164,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
         app = initApp();
 
         mockGetById.mockResolvedValue({ data: ACCOMMODATION_STUB, error: undefined });
-        mockPublish.mockResolvedValue({ data: PUBLISHED_ACCOMMODATION, error: undefined });
+        mockPublish.mockResolvedValue(PUBLISHED_ACCOMMODATION);
     });
 
     // ── Authentication ─────────────────────────────────────────────────────
@@ -172,7 +179,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
     // ── Happy path ────────────────────────────────────────────────────────
 
     describe('Happy path', () => {
-        it('calls AccommodationService.publish with the correct actor and accommodation id', async () => {
+        it('calls ListingPublicationService.publish with the correct actor and accommodation id', async () => {
             // This is the decisive regression guard for HOS-110: the route
             // must call `publish()` directly (not `update()` with a
             // silently-stripped `lifecycleState`), which is what actually
@@ -183,9 +190,10 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
             });
 
             expect(mockPublish).toHaveBeenCalledTimes(1);
-            const [actorArg, idArg] = mockPublish.mock.calls[0] as [{ id: string }, string];
-            expect(actorArg.id).toBe(ACTOR_ID);
-            expect(idArg).toBe(ACCOMMODATION_ID);
+            expect(mockPublish).toHaveBeenCalledWith({
+                actor: expect.objectContaining({ id: ACTOR_ID }),
+                id: ACCOMMODATION_ID
+            });
         });
 
         it('should return 200 with the published accommodation when the schema is satisfied', async () => {
@@ -212,13 +220,9 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
 
     describe('subscription_required (owner already consumed their one-per-life trial)', () => {
         it('passes through 403 FORBIDDEN with message "subscription_required" unmodified', async () => {
-            mockPublish.mockResolvedValue({
-                data: undefined,
-                error: {
-                    code: ServiceErrorCode.FORBIDDEN,
-                    message: 'subscription_required'
-                }
-            });
+            mockPublish.mockRejectedValue(
+                new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required')
+            );
 
             const res = await app.request(BASE_URL, {
                 method: 'POST',
@@ -237,10 +241,9 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
 
     describe('Error handling', () => {
         it('should return 4xx when accommodation is not found', async () => {
-            mockPublish.mockResolvedValue({
-                data: undefined,
-                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Accommodation not found' }
-            });
+            mockPublish.mockRejectedValue(
+                new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found')
+            );
 
             const res = await app.request(BASE_URL, {
                 method: 'POST',

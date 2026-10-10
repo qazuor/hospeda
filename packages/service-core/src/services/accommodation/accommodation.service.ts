@@ -2077,60 +2077,7 @@ export class AccommodationService extends BaseCrudService<
                     }
                 }
 
-                // Publish-completeness guard (HOS-152, rewritten for H-101/H-94).
-                // `extraInfo` is intentionally relaxed on the read/write schemas so a
-                // DRAFT can be fetched/PATCHed while the host is still filling it in
-                // (see `AccommodationExtraInfoSchema`'s docblock). Publishing is the
-                // one place completeness MUST be enforced. This guard covers every
-                // path that reaches `publish()`, including `update()`'s
-                // ACTIVE-transition dispatch (see the override above). A direct
-                // `create({ lifecycleState: 'ACTIVE' })` (reachable via
-                // `POST /api/v1/admin/accommodations`) does NOT reach `publish()`, so
-                // the same completeness check is mirrored in `_beforeCreate` (HOS-153).
-                //
-                // The requirement list is deliberately NOT spelled out here. It lives
-                // in `ACCOMMODATION_PUBLISH_REQUIREMENTS`, which the editor hub reads
-                // too — that one shared definition IS the fix for H-101, where this
-                // gate and the editor's warnings had no field in common at all.
-                //
-                // The rejection names the fields that actually failed, and carries
-                // them in `reason`, never `details`: production forces
-                // `HOSPEDA_API_DEBUG_ERRORS=false`, which strips `details` from every
-                // ServiceError response, while `reason` is emitted unconditionally.
-                // Putting the field list in `details` would reproduce H-94 exactly —
-                // the server knowing which field failed and the host never told.
-                // Composed from the relational rows directly, NOT via
-                // `attachComposedMedia`. That helper falls back to the entity's own
-                // `media` value when no rows exist, and `media` is the JSONB blob
-                // HOS-372 dropped — so the fallback can only ever return something
-                // stale, and here it would answer "has a main image" for a listing
-                // whose photos table is empty. The pure composer has no fallback.
-                const mediaRowsById = await this._accommodationMediaModel.findByAccommodations({
-                    accommodationIds: [accommodation.id],
-                    ...(execCtx?.tx === undefined ? {} : { tx: execCtx.tx })
-                });
-                const composedMedia = composeAccommodationMedia({
-                    rows: mediaRowsById.get(accommodation.id) ?? [],
-                    videos: accommodation.videos
-                });
-                const publishExtraInfo = accommodation.extraInfo ?? {};
-                const missingRequirements = resolveMissingPublishRequirements({
-                    input: {
-                        capacity: publishExtraInfo.capacity,
-                        minNights: publishExtraInfo.minNights,
-                        bedrooms: publishExtraInfo.bedrooms,
-                        bathrooms: publishExtraInfo.bathrooms,
-                        hasMainImage: Boolean(composedMedia.featuredImage?.url)
-                    }
-                });
-                if (missingRequirements.length > 0) {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        `Cannot publish accommodation: missing ${missingRequirements.join(', ')}`,
-                        undefined,
-                        buildPublishRequirementsReason({ missing: missingRequirements })
-                    );
-                }
+                await this.assertPublishCompleteness({ accommodation, ctx: execCtx });
 
                 // Visibility promotion (SPEC-217): onboarding drafts are created
                 // PRIVATE (intentionally hidden while unpublished). Publishing must
@@ -2249,6 +2196,40 @@ export class AccommodationService extends BaseCrudService<
                 return updated;
             }
         });
+    }
+
+    /** Enforces the accommodation's existing publish-completeness requirements. */
+    public async assertPublishCompleteness(args: {
+        readonly accommodation: Accommodation;
+        readonly ctx?: ServiceContext;
+    }): Promise<void> {
+        const { accommodation, ctx } = args;
+        const mediaRowsById = await this._accommodationMediaModel.findByAccommodations({
+            accommodationIds: [accommodation.id],
+            ...(ctx?.tx === undefined ? {} : { tx: ctx.tx })
+        });
+        const composedMedia = composeAccommodationMedia({
+            rows: mediaRowsById.get(accommodation.id) ?? [],
+            videos: accommodation.videos
+        });
+        const extraInfo = accommodation.extraInfo ?? {};
+        const missingRequirements = resolveMissingPublishRequirements({
+            input: {
+                capacity: extraInfo.capacity,
+                minNights: extraInfo.minNights,
+                bedrooms: extraInfo.bedrooms,
+                bathrooms: extraInfo.bathrooms,
+                hasMainImage: Boolean(composedMedia.featuredImage?.url)
+            }
+        });
+        if (missingRequirements.length > 0) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Cannot publish accommodation: missing ${missingRequirements.join(', ')}`,
+                undefined,
+                buildPublishRequirementsReason({ missing: missingRequirements })
+            );
+        }
     }
 
     /**

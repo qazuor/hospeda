@@ -8,21 +8,17 @@ import {
     PermissionEnum,
     VerticalEnum
 } from '@repo/schemas';
-import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-
+import { ListingPublicationService } from '../../../services/listing-publication/listing-publication.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
-import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-// The publish-deps (trial eligibility + local trial) went down with the legacy
-// billing system (HOS-1416); `publishDeps` is optional in `AccommodationService`.
-const accommodationService = new AccommodationService({ logger: apiLogger });
+const listingPublicationService = new ListingPublicationService();
 
 /**
  * POST /api/v1/protected/accommodations/:id/unpublish
- * Unpublish accommodation - Transitions ACTIVE → INACTIVE.
+ * Unpublish accommodation - Transitions PUBLISHED → DRAFT through PB6.
  * Protected endpoint with ownership check. No entitlement gate — unpublish
  * is a basic lifecycle action available to all plan tiers.
  */
@@ -45,11 +41,7 @@ export const protectedUnpublishAccommodationRoute = createProtectedRoute({
     },
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const result = await accommodationService.unpublish(actor, params.id as string);
-
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
-        }
+        const data = await listingPublicationService.unpublish({ actor, id: params.id as string });
 
         // BETA-199: `AccommodationProtectedSchema` declares the premium
         // rich-description pair so the owner's editor GET can show translation
@@ -59,6 +51,6 @@ export const protectedUnpublishAccommodationRoute = createProtectedRoute({
         // an unconditional drop keeps the payload identical to what it was before
         // the pair was declared, with no entitlement lookup and no gate to
         // get wrong. See the schema comment for the full contract.
-        return stripRichDescriptionFields(result.data);
+        return stripRichDescriptionFields(data);
     }
 });
