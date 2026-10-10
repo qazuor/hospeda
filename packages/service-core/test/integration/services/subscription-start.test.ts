@@ -20,6 +20,7 @@ import {
     startSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
 
@@ -123,7 +124,8 @@ function ports(
             current: true,
             sellable: true
         }),
-        beforeCancelNotice: notice
+        beforeCancelNotice: notice,
+        touristVipInheritance: noTouristVip
     };
 }
 

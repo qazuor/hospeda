@@ -6,6 +6,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activateSubscription } from '../../../src/services/billing/subscription/activate-subscription.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
 
@@ -108,7 +109,8 @@ async function startPending(fake: FakePaymentProvider, provider: PaymentProvider
                 current: true,
                 sellable: true
             }),
-            beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: noTouristVip
         }
     );
     return { started, fakeId: started.authorizationId.split(':').at(-1) ?? '', provider };
@@ -135,7 +137,14 @@ describe('TEST:B3:9 authorization activation', () => {
         const { started, fakeId } = await startPending(fake, provider);
         const read = vi.spyOn(provider, 'readAuthorization');
         await fake.approve({ authorizationId: fakeId });
-        expect(await activateSubscription(started.subscriptionId, { provider, clock })).toEqual({
+        expect(
+            await activateSubscription(started.subscriptionId, {
+                provider,
+                clock,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                touristVipInheritance: noTouristVip
+            })
+        ).toEqual({
             activated: true,
             subscriptionId: started.subscriptionId
         });
@@ -156,7 +165,14 @@ describe('TEST:B3:9 authorization activation', () => {
         const provider = namespaceFake(fake);
         const { started } = await startPending(fake, provider);
         expect(
-            (await activateSubscription(started.subscriptionId, { provider, clock })).activated
+            (
+                await activateSubscription(started.subscriptionId, {
+                    provider,
+                    clock,
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                    touristVipInheritance: noTouristVip
+                })
+            ).activated
         ).toBe(false);
         expect(await status(started.subscriptionId)).toBe('PENDING_AUTHORIZATION');
         await getServiceTestDb()
@@ -165,7 +181,14 @@ describe('TEST:B3:9 authorization activation', () => {
             .where(eq(subscriptions.id, started.subscriptionId));
         const read = vi.spyOn(provider, 'readAuthorization');
         expect(
-            (await activateSubscription(started.subscriptionId, { provider, clock })).activated
+            (
+                await activateSubscription(started.subscriptionId, {
+                    provider,
+                    clock,
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                    touristVipInheritance: noTouristVip
+                })
+            ).activated
         ).toBe(false);
         expect(read).not.toHaveBeenCalled();
         expect(await status(started.subscriptionId)).toBe('ABANDONED');

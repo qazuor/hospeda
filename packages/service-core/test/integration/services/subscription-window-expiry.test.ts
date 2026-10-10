@@ -17,6 +17,7 @@ import {
     startSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
 
@@ -133,7 +134,8 @@ async function startPending(provider: PaymentProvider) {
                 current: true,
                 sellable: true
             }),
-            beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: noTouristVip
         }
     );
     return { started, fakeId: started.authorizationId.split(':').at(-1) ?? '', choice };
@@ -188,7 +190,12 @@ function setup() {
         events.push('cancel');
         return fake.cancel({ authorizationId: input.authorizationId.split(':').at(-1) ?? '' });
     });
-    const ports = { provider, clock, beforeCancelNotice: { beforeCancel } };
+    const ports = {
+        provider,
+        clock,
+        beforeCancelNotice: { beforeCancel },
+        touristVipInheritance: noTouristVip
+    };
     return { fake, provider, events, beforeCancel, cancel, ports };
 }
 
