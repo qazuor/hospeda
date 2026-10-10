@@ -17,6 +17,12 @@ import { invalidateEffectiveSetsForUser } from '../effective-set-cache';
 import { getListingAccessPorts } from '../listing-access/ports';
 import { apiLogger } from '../logger';
 
+const LISTING_TABLE_BY_VERTICAL: Readonly<Record<PublicationVertical, string>> = {
+    accommodation: 'accommodations',
+    gastronomy: 'gastronomies',
+    experience: 'experiences'
+};
+
 /** Transaction-bound adapter shared by owner transitions and coverage reconciliation. */
 export function getListingPublicationPorts(): {
     readonly unitOfWork: PublicationUnitOfWork;
@@ -156,7 +162,7 @@ export function getListingPublicationPorts(): {
                         destinationSlug: string | null;
                     }>`
                         SELECT l.slug, d.slug AS "destinationSlug"
-                        FROM ${sql.identifier(vertical === 'accommodation' ? 'accommodations' : vertical === 'gastronomy' ? 'gastronomies' : 'experiences')} l
+                        FROM ${sql.identifier(LISTING_TABLE_BY_VERTICAL[vertical])} l
                         LEFT JOIN destinations d ON d.id = l.destination_id
                         WHERE l.id = ${id}`);
                     const row = result.rows[0];
