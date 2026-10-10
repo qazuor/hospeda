@@ -42,7 +42,8 @@ const {
     featureConfigMaxTokensForTest,
     nextPersistPromise,
     mockPostHogCapture,
-    mockApiLogger
+    mockApiLogger,
+    effectiveSetSpy
 } = vi.hoisted(() => ({
     streamTextCalls: [] as Array<{
         feature: string;
@@ -104,7 +105,8 @@ const {
         warn: vi.fn(),
         debug: vi.fn(),
         error: vi.fn()
-    }
+    },
+    effectiveSetSpy: vi.fn()
 }));
 
 vi.mock('@repo/ai-core', () => {
@@ -206,6 +208,7 @@ vi.mock('../../../src/middlewares/owner-entitlement', () => ({
 vi.mock('../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
         effectiveSet: async ({ userId }: { userId: string }) => {
+            effectiveSetSpy({ userId });
             const isOwner = userId === '11111111-1111-1111-1111-111111111111';
             const entitlements = new Set<string>(
                 isOwner ? mockOwnerEntitlements.current : currentEntitlementsForTest.current
@@ -305,6 +308,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
 import { protectedAiChatRoute } from '../../../src/routes/ai/protected/chat';
+import { CHAT_CONTEXT_ASSEMBLERS } from '../../../src/services/ai-context';
 import type { AppBindings } from '../../../src/types';
 
 const TEST_PATH = '/test-chat';
@@ -440,6 +444,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         });
 
         streamTextCalls.length = 0;
+        effectiveSetSpy.mockReset();
         mockPostHogCapture.mockReset();
         mockApiLogger.info.mockReset();
         mockApiLogger.warn.mockReset();
@@ -448,6 +453,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.clearAllMocks();
     });
 
@@ -463,6 +469,56 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
 
         expect(res.status).toBe(401);
         expect(streamTextCalls).toHaveLength(0);
+    });
+
+    it.each([
+        { entityType: 'gastronomy' as const, key: 'manage_gastronomy_menu', enabled: true },
+        { entityType: 'gastronomy' as const, key: 'manage_gastronomy_menu', enabled: false },
+        {
+            entityType: 'experience' as const,
+            key: 'manage_experience_directions',
+            enabled: true
+        },
+        {
+            entityType: 'experience' as const,
+            key: 'manage_experience_directions',
+            enabled: false
+        }
+    ])('passes effective $entityType capabilities to its context assembler', async (testCase) => {
+        const assembler = vi.spyOn(CHAT_CONTEXT_ASSEMBLERS, testCase.entityType).mockResolvedValue({
+            contextBlock: 'context',
+            systemMessage: 'system',
+            entityName: 'test listing'
+        });
+        mockOwnerEntitlements.current = [
+            EntitlementKey.AI_CHAT,
+            ...(testCase.enabled ? [testCase.key] : [])
+        ];
+
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                entityType: testCase.entityType,
+                entityId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(200);
+        expect(assembler).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ownerCapabilities: {
+                    manageGastronomyMenu: testCase.entityType === 'gastronomy' && testCase.enabled,
+                    manageExperienceDirections:
+                        testCase.entityType === 'experience' && testCase.enabled
+                }
+            })
+        );
+        expect(
+            effectiveSetSpy.mock.calls.filter(([args]) => args.userId === OWNER_ID)
+        ).toHaveLength(1);
+        assembler.mockRestore();
     });
 
     it('rejects the chat when the listing owner lacks ai_chat', async () => {

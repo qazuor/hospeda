@@ -1,7 +1,11 @@
 import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
 import { type AiFeature, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
-import { resolveEntitlementStep, resolveLimitStep } from '@repo/verticals';
+import {
+    type RehydratedEffectiveSet,
+    resolveEntitlementStep,
+    resolveLimitStep
+} from '@repo/verticals';
 import { apiLogger } from '../logger';
 import { getListingAccessPorts } from './ports';
 
@@ -54,8 +58,10 @@ export async function evaluateAiQuota(args: {
     readonly feature: AiFeature;
     readonly entitlementKey?: string;
     readonly limitKey: string;
+    readonly effectiveSetSnapshot?: RehydratedEffectiveSet;
 }): Promise<AiQuotaDecision> {
-    const effectiveSet = getListingAccessPorts().effectiveSet;
+    const snapshot = args.effectiveSetSnapshot;
+    const effectiveSet = snapshot ? async () => snapshot : getListingAccessPorts().effectiveSet;
     if (args.entitlementKey) {
         const entitlement = await resolveEntitlementStep({
             userId: args.userId,
@@ -107,6 +113,7 @@ export async function enforceAiQuota(args: {
     readonly limitKey: string;
     readonly entitlementMessage?: string;
     readonly limitMessage?: string;
+    readonly effectiveSetSnapshot?: RehydratedEffectiveSet;
 }): Promise<void> {
     const decision = await evaluateAiQuota(args);
     if (decision.allowed) return;

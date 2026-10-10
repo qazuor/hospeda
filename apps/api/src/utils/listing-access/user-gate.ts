@@ -1,5 +1,6 @@
 import { getCatalogKey, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import type { RehydratedEffectiveSet } from '@repo/verticals';
 import { resolveEntitlementStep, resolveLimitStep, UnknownStepKeyError } from '@repo/verticals';
 import { apiLogger } from '../logger';
 import { getListingAccessPorts } from './ports';
@@ -48,16 +49,19 @@ export async function readEffectiveKeys(args: {
     readonly userId: string;
     readonly vertical: VerticalEnum;
     readonly keys: readonly string[];
+    readonly effectiveSetSnapshot?: RehydratedEffectiveSet;
 }): Promise<Readonly<Record<string, boolean>>> {
     for (const key of args.keys) {
         if (!getCatalogKey({ key })) throw new UnknownStepKeyError(key);
     }
     const denied = Object.fromEntries(args.keys.map((key) => [key, false]));
     try {
-        const effective = await getListingAccessPorts().effectiveSet({
-            userId: args.userId,
-            vertical: args.vertical
-        });
+        const effective =
+            args.effectiveSetSnapshot ??
+            (await getListingAccessPorts().effectiveSet({
+                userId: args.userId,
+                vertical: args.vertical
+            }));
         return Object.fromEntries(
             args.keys.map((key) => [
                 key,
