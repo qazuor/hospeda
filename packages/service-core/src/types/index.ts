@@ -147,7 +147,7 @@ export type Actor = {
     mustChangePassword?: boolean;
     /** Flag indicating this is a system actor, not a real user */
     _isSystemActor?: boolean;
-    /** Identificador del job que construyó este actor de sistema; sólo lo escribe `createSystemActor`. */
+    /** Identifier of the job that built this system actor; only `createSystemActor` writes it. */
     _systemJobId?: string;
 };
 
