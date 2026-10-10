@@ -32,7 +32,8 @@ import {
     type CalendarSyncResult,
     CalendarSyncResultSchema,
     OccupancySourceEnum,
-    SyncCalendarBodySchema
+    SyncCalendarBodySchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { assertOccupancyManageAccess } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -64,6 +65,7 @@ const ICAL_PROVIDER_BY_TOKEN: Record<'airbnb' | 'booking' | 'other', IcalProvide
 export const protectedCalendarSyncRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/calendar-sync/sync',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Trigger an external calendar occupancy sync (owner)',
     description:
         'Runs one on-demand sync (Google Calendar OAuth or an Airbnb/Booking/generic iCal feed, ' +

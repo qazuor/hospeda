@@ -10,7 +10,7 @@
  * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  */
 
-import { AccommodationIdSchema, OccupancyDateSchema } from '@repo/schemas';
+import { AccommodationIdSchema, OccupancyDateSchema, VerticalEnum } from '@repo/schemas';
 import { removeOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -29,6 +29,7 @@ const RemoveOccupancyResponseSchema = z.object({ deleted: z.boolean() });
 export const protectedRemoveOccupancyRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/occupancy/{date}',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Unblock a single day on the occupancy calendar (owner)',
     description:
         'Deletes the source=MANUAL occupancy row for a single date, if any. A ' +

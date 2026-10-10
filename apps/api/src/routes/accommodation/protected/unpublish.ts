@@ -2,7 +2,12 @@
  * Protected unpublish accommodation endpoint
  * Requires authentication and ownership
  */
-import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
+import {
+    AccommodationIdSchema,
+    AccommodationProtectedSchema,
+    PermissionEnum,
+    VerticalEnum
+} from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
@@ -24,6 +29,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 export const protectedUnpublishAccommodationRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/unpublish',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Unpublish accommodation',
     description:
         'Transitions an accommodation from ACTIVE to INACTIVE. Requires ownership or ACCOMMODATION_UPDATE_ANY permission.',
@@ -35,7 +41,7 @@ export const protectedUnpublishAccommodationRoute = createProtectedRoute({
     ownership: {
         entityType: 'accommodation',
         ownershipFields: ['ownerId', 'createdById'],
-        bypassPermission: PermissionEnum.ACCOMMODATION_UPDATE_ANY
+        bypassPermission: PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT
     },
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);

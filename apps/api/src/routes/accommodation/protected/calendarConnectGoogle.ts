@@ -19,7 +19,7 @@
  * @module routes/accommodation/protected/calendarConnectGoogle
  */
 
-import { AccommodationIdSchema } from '@repo/schemas';
+import { AccommodationIdSchema, VerticalEnum } from '@repo/schemas';
 import { assertOccupancyManageAccess } from '@repo/service-core';
 import type { Context } from 'hono';
 import { setCookie } from 'hono/cookie';
@@ -86,6 +86,7 @@ const ConnectGoogleBodySchema = z.object({
 export const protectedCalendarConnectGoogleRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/calendar-sync/connect-google',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Start the Google Calendar connect flow (owner)',
     description:
         'Returns the Google OAuth authorization URL for connecting an accommodation to a ' +

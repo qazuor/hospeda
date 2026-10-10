@@ -8,7 +8,8 @@ import {
     AccommodationCreateHttpSchema,
     AccommodationProtectedSchema,
     httpToDomainAccommodationCreate,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -27,6 +28,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 export const protectedCreateAccommodationRoute = createProtectedRoute({
     method: 'post',
     path: '/',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'CREATE' },
     summary: 'Create accommodation',
     description: 'Creates a new accommodation. Requires ACCOMMODATION_CREATE permission.',
     tags: ['Accommodations'],

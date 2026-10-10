@@ -2,7 +2,7 @@
  * Protected soft delete accommodation endpoint
  * Requires authentication and ownership
  */
-import { AccommodationIdSchema, PermissionEnum } from '@repo/schemas';
+import { AccommodationIdSchema, PermissionEnum, VerticalEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -19,6 +19,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 export const protectedSoftDeleteAccommodationRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'DELETE', idParam: 'id' },
     summary: 'Soft delete accommodation',
     description:
         'Soft deletes an accommodation. Requires ownership or ACCOMMODATION_DELETE_ANY permission.',

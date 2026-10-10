@@ -30,7 +30,8 @@ import {
     CalendarDisconnectResponseSchema,
     type CalendarProviderToken,
     CalendarProviderTokenSchema,
-    OccupancySourceEnum
+    OccupancySourceEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { assertOccupancyManageAccess, disconnectCalendarConnection } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -56,6 +57,7 @@ const PROVIDER_BY_TOKEN: Record<CalendarProviderToken, OccupancySourceEnum> = {
 export const protectedCalendarDisconnectRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/calendar-sync/{provider}',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     summary: 'Disconnect an external calendar connection (owner)',
     description:
         "Soft-disconnects (isActive=false, row kept for audit) the accommodation's calendar " +
