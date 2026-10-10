@@ -221,13 +221,13 @@ describe('AC:V5:26 route capabilities on the subject', () => {
         const owner = 'owner-id';
         const admin = 'admin-id';
         const editKey = 'edit_accommodation_info';
-        const port = ports(vertical, [editKey], [{ type: 'BASE' }]);
+        const port = ports(vertical, [editKey], [source]);
         const result = await resolveListingAccess({
             actorId: admin,
             vertical,
             facts: { ownerId: owner, publicationStatus: PublicationStatusEnum.PUBLISHED },
             operation: 'EDIT',
-            adminAction: { permitted: true },
+            adminAction: { permitted: true, isSystemActor: false },
             requiredKeys: [],
             ...port
         });
@@ -238,6 +238,29 @@ describe('AC:V5:26 route capabilities on the subject', () => {
         });
         // The effectiveSet port was called with the OWNER's id, not admin's
         expect(port.effectiveSet).toHaveBeenCalledWith({ userId: owner, vertical });
+    });
+
+    it('admin required key uses the owner id, never the actor id', async () => {
+        const vertical = VerticalEnum.ACCOMMODATION;
+        const owner = 'owner-id';
+        const admin = 'admin-id';
+        const port = ports(vertical, ['can_use_calendar']);
+        const result = await resolveListingAccess({
+            actorId: admin,
+            vertical,
+            facts: { ownerId: owner, publicationStatus: PublicationStatusEnum.DRAFT },
+            operation: 'EDIT',
+            adminAction: { permitted: true, isSystemActor: false },
+            requiredKeys: ['can_use_calendar'],
+            ...port
+        });
+        expect(result).toEqual({
+            allowed: true,
+            subjectId: owner,
+            evaluatedSteps: [3, 4, 5, 6]
+        });
+        expect(port.effectiveSet).toHaveBeenCalledWith({ userId: owner, vertical });
+        expect(port.effectiveSet).not.toHaveBeenCalledWith({ userId: admin, vertical });
     });
 
     it('READ_OWN_COMMERCIAL with step6Key + requiredKeys checks both', async () => {
