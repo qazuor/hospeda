@@ -292,6 +292,10 @@ jobs:
       # `pnpm check:guards` is NOT what makes a guard run in this job.
       - name: Check no code reads a table the old billing dropped (HOS-1638)
         run: pnpm check:no-legacy-billing-tables
+
+      # Compare client paths with the committed live API route manifest.
+      - name: Check no client calls a route the API does not register (HOS-1638, AC:B13a:24)
+        run: pnpm check:api-calls-registered
       # GUARD:G13 (HOS-1447, AC:V4:12). Production builds must not link bootstrap billing answers.
       - name: Check bootstrap billing answers never reach production (GUARD:G13)
         env:
