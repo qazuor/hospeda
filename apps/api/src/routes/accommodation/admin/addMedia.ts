@@ -10,13 +10,15 @@
  * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
+import { accommodationMediaModel } from '@repo/db';
 import {
     AccommodationIdSchema,
     type AccommodationMediaAddInput,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
     AccommodationMediaSingleOutputSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -56,6 +58,19 @@ export const adminAddMediaRoute = createAdminRoute({
     },
     requestBody: AccommodationMediaAddPayloadSchema,
     responseSchema: AccommodationMediaSingleOutputSchema,
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        idParam: 'id',
+        limit: async ({ listingId }) => {
+            const { total } = await accommodationMediaModel.findByAccommodation({
+                accommodationId: listingId,
+                state: 'visible',
+                isFeatured: false
+            });
+            return { key: 'max_photos_per_accommodation', requested: total + 1 };
+        }
+    },
     // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_PHOTOS_PER_ACCOMMODATION plan limit.
     handler: async (
         ctx: Context,
