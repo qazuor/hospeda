@@ -134,7 +134,7 @@ export async function resolveListingAccess(args: {
         if (!entitlement.allowed) return entitlement;
     }
     if (args.requiredKeys) {
-        if (evaluatedSteps.every((s) => s !== 6)) evaluatedSteps.push(6);
+        if (!evaluatedSteps.includes(6)) evaluatedSteps.push(6);
         if (subjectId === null) return { allowed: false, reason: 'NOT_FOUND' };
         for (const key of args.requiredKeys) {
             const entitlement = await resolveEntitlementStep({
