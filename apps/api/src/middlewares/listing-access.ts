@@ -4,7 +4,7 @@ import { resolveListingAccess } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ListingAccessConfig } from '../types/authorization';
-import { getActorFromContext } from '../utils/actor';
+import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { getListingAccessPorts } from '../utils/listing-access/ports';
 
 /** Enforce a listing decision inside a validated route handler. */
@@ -16,8 +16,9 @@ export async function enforceListingAccess(args: {
 }): Promise<void> {
     const { ctx, params, config, tier } = args;
     const actor = getActorFromContext(ctx);
-    // REBASE V5.7: isGuestActor(actor) → actorId: null
-    const actorId = actor.id;
+    // The API guest carries a real UUID; the resolver's step 1 recognises a
+    // guest only as `actorId: null` (V5.7).
+    const actorId = isGuestActor(actor) ? null : actor.id;
     const listingId = config.operation === 'CREATE' ? '' : String(params[config.idParam ?? 'id']);
     const ports = getListingAccessPorts();
     const { facts, ownerId } =
@@ -58,6 +59,8 @@ export async function enforceListingAccess(args: {
     }
     const reason = result.reason;
     switch (reason) {
+        case 'UNAUTHENTICATED':
+            throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
         case 'NOT_FOUND':
             throw new HTTPException(404, { message: `${config.vertical} not found` });
         case 'FORBIDDEN':
@@ -78,7 +81,6 @@ export async function enforceListingAccess(args: {
                 maxAllowed: result.max
             });
         default: {
-            // REBASE V5.7: 'UNAUTHENTICATED' → 401 UNAUTHORIZED
             const exhaustive: never = reason;
             throw new Error(`Unhandled listing access result: ${exhaustive}`);
         }

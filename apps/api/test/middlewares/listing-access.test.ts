@@ -11,6 +11,7 @@ import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { enforceListingAccess } from '../../src/middlewares/listing-access';
 import type { AppBindings } from '../../src/types';
+import { createGuestActor } from '../../src/utils/actor';
 import { handleRouteError } from '../../src/utils/response-helpers';
 
 vi.mock(
@@ -42,16 +43,22 @@ function appFor(args: {
     tier?: 'protected' | 'admin';
     operation?: 'EDIT' | 'PUBLISH';
     limit?: number;
+    guest?: boolean;
 }) {
     const app = new Hono<AppBindings>();
     const requested = args.limit;
     app.get('/:id', async (c) => {
-        c.set('actor', {
-            id: args.actorId ?? OWNER,
-            roles: [RoleEnum.ADMIN],
-            permissions: args.permissions ?? [],
-            emailVerified: true
-        });
+        c.set(
+            'actor',
+            args.guest
+                ? createGuestActor()
+                : {
+                      id: args.actorId ?? OWNER,
+                      roles: [RoleEnum.ADMIN],
+                      permissions: args.permissions ?? [],
+                      emailVerified: true
+                  }
+        );
         try {
             await enforceListingAccess({
                 ctx: c,
@@ -102,6 +109,14 @@ beforeEach(() => {
 });
 
 describe('AC:V5:9 listing access HTTP mapping', () => {
+    it('maps UNAUTHENTICATED for the API guest to 401 before reading coverage', async () => {
+        const result = await probe(appFor({ guest: true }));
+        expect(result.status).toBe(401);
+        expect(result.body.error).toMatchObject({ code: ServiceErrorCode.UNAUTHORIZED });
+        expect(mocks.coverage).not.toHaveBeenCalled();
+        expect(mocks.effectiveSet).not.toHaveBeenCalled();
+    });
+
     it('maps NOT_FOUND to the identical ownership 404 body', async () => {
         mocks.loadFacts.mockResolvedValue({ facts: null, ownerId: null });
         const app = appFor({});
