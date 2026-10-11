@@ -129,6 +129,24 @@ describe.each(verticals)('TEST:V8a:1 subscribe destination parity — %s', (vert
         );
     });
 
+    it('COVERED with an active trial keeps the existing V5 decision without a second PB1 trial', async () => {
+        const { owner, listingId } = await makeDraft(vertical);
+        await createTrial({ userId: owner.id, vertical, status: 'TRIAL_ACTIVE' });
+        const get = await app.request(subscribePath(vertical), { headers: auth(owner.id) });
+        expect((await get.json()).data.destination).toBe('COVERED');
+        const publish = await readResponse(
+            await app.request(publishPath(vertical, listingId), {
+                method: 'POST',
+                headers: auth(owner.id)
+            })
+        );
+        expect(publish.status).toBe(403);
+        expect(publish.body.error?.message).toBe('subscription_required');
+        expect(await getDb().select().from(trials).where(eq(trials.userId, owner.id))).toHaveLength(
+            1
+        );
+    });
+
     it('CHECKOUT after a consumed trial agrees with PB1 and leaves the draft unchanged', async () => {
         const { owner, listingId } = await makeDraft(vertical);
         await createTrial({ userId: owner.id, vertical, status: 'TRIAL_EXPIRED' });
