@@ -17,6 +17,12 @@ import {
     type PaymentProvider
 } from '@repo/payments';
 import { z } from 'zod';
+import type {
+    CoverageNotices,
+    PromoChargePolicy,
+    PromoExhaustion
+} from '../payment/payment-ports.js';
+import { recordChargeFact } from '../payment/record-charge-fact.service.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
@@ -50,6 +56,9 @@ type Outcome =
     | 'DIVERGENCE_MARKED'
     | 'DELEGATED'
     | 'S16'
+    | 'PAYMENT_CREDITED'
+    | 'PAYMENT_ALREADY_CREDITED'
+    | 'PAYMENT_RECORDED'
     | 'WAITING_FIRST_CHARGE_READING'
     | 'UNKNOWN_RESOURCE'
     | 'RESOURCE_KIND_NOT_HANDLED'
@@ -63,6 +72,9 @@ export interface ProcessProviderNoticePorts {
     readonly successionCloser?: SuccessionCloser;
     readonly cancellationSeen?: CancellationSeenAnnotator;
     readonly delegates?: MirrorDelegates;
+    readonly promoCharges?: PromoChargePolicy;
+    readonly promoExhaustion?: PromoExhaustion;
+    readonly coverageNotices?: CoverageNotices;
 }
 
 /** Processes a provider delivery by re-reading its resource; the delivery never supplies state. */
@@ -75,10 +87,22 @@ export async function processProviderNotice(
         if (value.channel === 'IPN') return { ack: 'OK', outcome: 'IPN_NOT_PROCESSED' };
         const notice = await ports.provider.decodeNotice(value.delivery);
         if (notice.resourceKind === 'charge') {
-            const result = await declineFirstCharge({ chargeId: notice.resourceId }, ports);
+            const result = await recordChargeFact({ chargeId: notice.resourceId }, ports);
+            if (result.outcome === 'NO_SUBSCRIPTION')
+                return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
+            if (result.outcome === 'RECORDED_PENDING')
+                return { ack: 'OK', outcome: 'PAYMENT_RECORDED' };
+            if (result.outcome === 'CREDITED')
+                return {
+                    ack: 'OK',
+                    outcome:
+                        result.credit.outcome === 'CREDITED'
+                            ? 'PAYMENT_CREDITED'
+                            : 'PAYMENT_ALREADY_CREDITED'
+                };
             return {
                 ack: 'OK',
-                outcome: result.outcome === 'DECLINED' ? 'S16' : 'RESOURCE_KIND_NOT_HANDLED'
+                outcome: result.decline.outcome === 'DECLINED' ? 'S16' : 'RESOURCE_KIND_NOT_HANDLED'
             };
         }
         if (notice.resourceKind === 'refund')

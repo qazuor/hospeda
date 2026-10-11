@@ -158,6 +158,8 @@ export interface AuthorizationSearchResult {
 /** Capability 7 output: a charge as read by id. */
 export interface ChargeSnapshot {
     readonly chargeId: string;
+    /** The ISO 8601 instant this charge record was created, read by id; it identifies its covered period and does not move across retries within the same record (`date_created`, 02 §2.3, RC-5). */
+    readonly createdAt: string;
     readonly authorizationId: string;
     readonly reference: string;
     readonly status: ChargeStatus;
