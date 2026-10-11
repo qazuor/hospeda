@@ -39,8 +39,6 @@ import {
     type AllianceLeadKind,
     AllianceLeadMarkHandledSchema,
     AllianceLeadSubmissionSchema,
-    type PartnerTierEnum,
-    PartnerTierEnumSchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -222,9 +220,8 @@ export interface ApproveAndProvisionPartnerInput {
     readonly actor: Actor;
     /** UUID of the `partner` lead to approve and provision. */
     readonly id: string;
-    /** The tier to grant, plus an optional admin note. */
+    /** Optional admin note. */
     readonly input: {
-        readonly tier: PartnerTierEnum;
         readonly adminNote?: string;
     };
 }
@@ -253,10 +250,9 @@ const markHandledInputSchema = AllianceLeadMarkHandledSchema.extend({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
-/** Validates the `{ id, tier, adminNote? }` shape for partner provisioning. */
+/** Validates the `{ id, adminNote? }` shape for partner provisioning. */
 const approveAndProvisionPartnerInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    tier: PartnerTierEnumSchema,
     adminNote: z.string().max(1000, { message: 'zodError.allianceLead.adminNote.max' }).optional()
 });
 
@@ -1198,7 +1194,7 @@ export class AllianceLeadService extends BaseService {
      * provisioning into `markHandled` would have changed the meaning of a
      * button admins already use.
      *
-     * The tier is taken from the ADMIN, not the lead: it is a commercial
+     * The admin note is supplied by the ADMIN, not the lead: it is a
      * decision about what Hospeda is granting, so no public form asks for it
      * and no applicant can assert it.
      *
@@ -1207,7 +1203,7 @@ export class AllianceLeadService extends BaseService {
      * admin builds the partner by hand. Refusing would strand every partner
      * lead submitted before the typed columns existed.
      *
-     * @param params - `{ actor, id, input: { tier, adminNote? } }`.
+     * @param params - `{ actor, id, input: { adminNote? } }`.
      * @param ctx - Optional service execution context.
      * @returns `ServiceOutput<ApproveAndProvisionPartnerOutput>`.
      * @throws `FORBIDDEN` without `ALLIANCE_LEAD_MANAGE`.
@@ -1267,7 +1263,6 @@ export class AllianceLeadService extends BaseService {
                     const result = await provisionPartnerFromLead({
                         lead: existing,
                         partnerModel: this._partnerModel,
-                        tier: validated.tier,
                         actorId: a.id,
                         logger: this.logger,
                         tx: txCtx?.tx

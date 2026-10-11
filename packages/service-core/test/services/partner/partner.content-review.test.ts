@@ -14,7 +14,6 @@ import type { PartnerModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
     PartnerContentReviewStateEnum,
-    PartnerTierEnum,
     PartnerTypeEnum,
     PermissionEnum,
     ServiceErrorCode
@@ -44,15 +43,12 @@ const makePartner = (overrides: Record<string, unknown> = {}) => ({
     slug: 'acme-turismo',
     name: 'Acme Turismo',
     type: PartnerTypeEnum.BUSINESS,
-    tier: PartnerTierEnum.SILVER,
     logoUrl: null,
     websiteUrl: null,
     description: null,
     lifecycleState: LifecycleStatusEnum.DRAFT,
     analytics: {},
     ownerUserId: getMockId('user', 'partner-owner-1'),
-    startsAt: null,
-    endsAt: null,
     pendingLogoUrl: 'https://cdn.example.com/acme-logo.png',
     pendingDescription: 'Excursiones por el Litoral.',
     pendingWebsiteUrl: 'https://acme-turismo.example.com',
@@ -374,7 +370,6 @@ describe('PartnerService.create — a hand-created partner is payable immediatel
             slug: 'acme-turismo',
             name: 'Acme Turismo',
             type: PartnerTypeEnum.BUSINESS,
-            tier: PartnerTierEnum.SILVER,
             lifecycleState: LifecycleStatusEnum.DRAFT
         });
 
@@ -424,47 +419,15 @@ describe('PartnerService.registerManualPayment — AC-11 gate', () => {
     });
 });
 
-describe('PartnerService.registerManualPayment — startsAt (HOS-409)', () => {
-    it('stamps startsAt when the partner had none', async () => {
-        // Arrange — a partner provisioned from a lead carries `startsAt: null`,
-        // and the unpaid reaper reads exactly that column to decide who never
-        // paid. Activating without stamping it leaves a paying partner looking
-        // unpaid forever, so the reaper archives them on day 90.
-        const approved = makePartner({
-            contentApprovedAt: new Date('2026-07-10T12:00:00Z'),
-            startsAt: null
-        });
+describe('PartnerService.registerManualPayment — V6 partner migration', () => {
+    it('activates an approved partner without writing a start date', async () => {
+        const approved = makePartner({ contentApprovedAt: new Date('2026-07-10T12:00:00Z') });
         const { service, model } = buildService({
             findById: vi.fn(async () => approved),
-            update: vi.fn(async () => approved)
+            update: vi.fn(async () => ({ ...approved, lifecycleState: LifecycleStatusEnum.ACTIVE }))
         });
-
-        // Act
-        await service.registerManualPayment(adminActor, PARTNER_ID);
-
-        // Assert
-        expect(writtenPatch(model).startsAt).toBeInstanceOf(Date);
-    });
-
-    it('leaves an existing startsAt untouched', async () => {
-        // Arrange — the admin may have set the real start date by hand on the
-        // partner edit form. A later payment must not overwrite the date the
-        // alliance actually began with "today".
-        const originalStart = new Date('2026-02-01T00:00:00Z');
-        const approved = makePartner({
-            contentApprovedAt: new Date('2026-07-10T12:00:00Z'),
-            startsAt: originalStart
-        });
-        const { service, model } = buildService({
-            findById: vi.fn(async () => approved),
-            update: vi.fn(async () => approved)
-        });
-
-        // Act
-        await service.registerManualPayment(adminActor, PARTNER_ID);
-
-        // Assert — the key is absent from the patch entirely, not written back
-        // as the same value: a no-op write would still bump `updatedAt`.
-        expect(writtenPatch(model)).not.toHaveProperty('startsAt');
+        const result = await service.registerManualPayment(adminActor, PARTNER_ID);
+        expect(result.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        expect(writtenPatch(model)).toEqual({ lifecycleState: LifecycleStatusEnum.ACTIVE });
     });
 });
