@@ -36,3 +36,19 @@ export const unimplementedSuccessionCloser: SuccessionCloser = {
         );
     }
 };
+
+export interface FirstChargeReader {
+    readFirstCharge(input: {
+        readonly subscriptionId: string;
+    }): Promise<
+        | { readonly outcome: 'REJECTED'; readonly chargeId: string }
+        | { readonly outcome: 'NOT_REJECTED' }
+        | { readonly outcome: 'UNKNOWN' }
+    >;
+}
+
+export const unknownFirstCharge: FirstChargeReader = {
+    async readFirstCharge() {
+        return { outcome: 'UNKNOWN' };
+    }
+};
