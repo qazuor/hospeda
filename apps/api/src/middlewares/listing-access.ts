@@ -1,8 +1,9 @@
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { NO_PLANS_AVAILABLE_MESSAGE, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { isSystemActor, ServiceError } from '@repo/service-core';
 import { OPERATION_STEP6_KEY, resolveListingAccess } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { resolveSubscribeDestinationForUser } from '../services/listing-publication/subscribe-destination.service';
 import type { ListingAccessConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { getListingAccessPorts } from '../utils/listing-access/ports';
@@ -112,6 +113,12 @@ export async function enforceListingAccess(args: {
                     })
                 ).hasLiveNonTrialTitle
             ) {
+                const destination = await resolveSubscribeDestinationForUser({
+                    userId: subjectId,
+                    vertical: config.vertical
+                });
+                if (destination.destination === 'NO_PLANS_AVAILABLE')
+                    throw new ServiceError(ServiceErrorCode.FORBIDDEN, NO_PLANS_AVAILABLE_MESSAGE);
                 throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
             }
             throw new ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, 'Entitlement required', {

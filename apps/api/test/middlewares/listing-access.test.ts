@@ -22,7 +22,11 @@ vi.mock(
 const mocks = vi.hoisted(() => ({
     loadFacts: vi.fn(),
     coverage: vi.fn(),
-    effectiveSet: vi.fn()
+    effectiveSet: vi.fn(),
+    subscribeDestination: vi.fn()
+}));
+vi.mock('../../src/services/listing-publication/subscribe-destination.service', () => ({
+    resolveSubscribeDestinationForUser: (...args: unknown[]) => mocks.subscribeDestination(...args)
 }));
 vi.mock('../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
@@ -97,6 +101,10 @@ beforeEach(() => {
         ownerId: OWNER
     });
     mocks.coverage.mockResolvedValue({ covered: false, sources: [{ type: 'BASE' }] });
+    mocks.subscribeDestination.mockResolvedValue({
+        destination: 'CHECKOUT',
+        reason: 'USER_ALREADY_HAS_TRIAL_ROW'
+    });
     mocks.effectiveSet.mockImplementation(async ({ userId }: { userId: string }) =>
         rehydrateEffectiveSet({
             version: 1,
@@ -166,6 +174,21 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
             code: ServiceErrorCode.FORBIDDEN,
             message: 'subscription_required'
         });
+    });
+
+    it('maps a PUBLISH denial to no_plans_available only when the canonical destination has no plans', async () => {
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER
+        });
+        mocks.subscribeDestination.mockResolvedValue({ destination: 'NO_PLANS_AVAILABLE' });
+        const result = await probe(appFor({ operation: 'PUBLISH' }));
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.FORBIDDEN,
+            message: 'no_plans_available'
+        });
+        expect(mocks.subscribeDestination).toHaveBeenCalledWith({ userId: OWNER, vertical });
     });
 
     it('keeps ENTITLEMENT_REQUIRED when covered but missing the PUBLISH capability', async () => {
