@@ -78,6 +78,14 @@ describe('TEST:V6:26 (ledgers)', () => {
             const a = await connect({ url: aUrl });
             const b = await connect({ url: bUrl });
             try {
+                const connectWithoutClosing = async ({ url }: { readonly url: string }) => {
+                    const client = url === aUrl ? a : b;
+                    return {
+                        query: (sql: string, params?: readonly unknown[]) =>
+                            client.query(sql, params),
+                        end: async () => {}
+                    };
+                };
                 await runDrizzleMigrate({
                     url: aUrl,
                     outDir: path.join(ROOT, 'packages/db/src/migrations')
@@ -132,7 +140,7 @@ describe('TEST:V6:26 (ledgers)', () => {
                         builtUrl: bUrl,
                         migrationsDir: baselineDir,
                         confirmFullBackup: fullBackup,
-                        connect: async ({ url }) => (url === aUrl ? a : b)
+                        connect: connectWithoutClosing
                     })
                 ).rejects.toBeInstanceOf(RehearsalMismatchError);
                 expect(
