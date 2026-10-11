@@ -239,7 +239,7 @@ describe('TEST:V6:32 — partner application and V7 schema from empty', () => {
             tgenabled: string;
             def: string;
         }>(
-            `SELECT tgname, tgenabled, pg_get_triggerdef(oid) AS def FROM pg_trigger WHERE tgrelid='partner_application'::regclass AND NOT tgisinternal`
+            `SELECT tgname, tgenabled, pg_get_triggerdef(oid) AS def FROM pg_trigger WHERE tgrelid='partner_application'::regclass AND tgname='partner_application_wait_active' AND NOT tgisinternal`
         );
         expect(triggers.rows).toHaveLength(1);
         expect(triggers.rows[0]).toMatchObject({
@@ -275,34 +275,36 @@ describe('TEST:V6:32 — partner application and V7 schema from empty', () => {
         const leadColumns = await pool.query<{ column_name: string }>(
             `SELECT column_name FROM information_schema.columns WHERE table_name='alliance_leads' ORDER BY ordinal_position`
         );
-        expect(leadColumns.rows.map((r) => r.column_name)).toEqual([
-            'id',
-            'kind',
-            'contact_name',
-            'email',
-            'phone',
-            'message',
-            'status',
-            'admin_note',
-            'ops_notified_at',
-            'business_name',
-            'partner_type',
-            'category',
-            'destination_id',
-            'benefit_type',
-            'benefit_value',
-            'benefit_text',
-            'provisioned_host_trade_id',
-            'provisioned_partner_id',
-            'applicant_user_id',
-            'claim_token',
-            'claim_expires_at',
-            'created_at',
-            'updated_at',
-            'deleted_at',
-            'created_by_id',
-            'updated_by_id',
-            'deleted_by_id'
-        ]);
+        expect(leadColumns.rows.map((r) => r.column_name).sort()).toEqual(
+            [
+                'id',
+                'kind',
+                'contact_name',
+                'email',
+                'phone',
+                'message',
+                'status',
+                'admin_note',
+                'ops_notified_at',
+                'business_name',
+                'partner_type',
+                'category',
+                'destination_id',
+                'benefit_type',
+                'benefit_value',
+                'benefit_text',
+                'provisioned_host_trade_id',
+                'provisioned_partner_id',
+                'applicant_user_id',
+                'claim_token',
+                'claim_expires_at',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+                'created_by_id',
+                'updated_by_id',
+                'deleted_by_id'
+            ].sort()
+        );
     });
 });

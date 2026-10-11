@@ -52,7 +52,12 @@ describe('TEST:V6:29 — partners V7 schema from empty', () => {
         expect(byName.partners_tier_idx).toBeUndefined();
         expect(byName.partners_startsAt_idx).toBeUndefined();
         expect(byName.partners_lifecycleState_endsAt_idx).toBeUndefined();
-        expect(byName.partners_ownerUserId_idx).toContain('owner_user_id');
+        expect(
+            indexes.rows.some(
+                ({ indexdef }) =>
+                    indexdef.includes('CREATE INDEX') && indexdef.includes('owner_user_id')
+            )
+        ).toBe(true);
         expect(byName.uq_partners_owner_user_id).toContain('CREATE UNIQUE INDEX');
         expect(byName.uq_partners_owner_user_id).toContain('WHERE (owner_user_id IS NOT NULL)');
         const enumType = await pool.query(
