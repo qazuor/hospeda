@@ -20,7 +20,7 @@ interface Entry {
 let admin: Pool;
 let db: Pool;
 let duplicateDb: Pool | undefined;
-const targetTag = '0151_v611_partners_for_v7';
+const targetTag = '0152_v611_partners_for_v7';
 
 async function apply(tag: string): Promise<void> {
     const content = readFileSync(join(migrationDir, `${tag}.sql`), 'utf8');
