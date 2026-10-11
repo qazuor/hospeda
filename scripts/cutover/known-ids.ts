@@ -5,7 +5,10 @@ import type { KnownIds, KnownIdsReader } from './types.ts';
 
 /** Minimal slice of a Postgres client: enough to read, nothing else is used. */
 export interface ReadOnlyClient {
-    readonly query: (sql: string) => Promise<{ readonly rows: readonly Record<string, unknown>[] }>;
+    readonly query: (
+        sql: string,
+        params?: readonly unknown[]
+    ) => Promise<{ readonly rows: readonly Record<string, unknown>[] }>;
     readonly end: () => Promise<void>;
 }
 

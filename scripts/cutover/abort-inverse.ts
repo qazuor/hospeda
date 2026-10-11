@@ -98,7 +98,7 @@ async function inverseProbe({
 }
 
 /** Re-reads a refund by id (never re-sending it) until it is done or the waits run out. */
-async function confirmRefund({
+export async function confirmRefund({
     api,
     paymentId,
     refundId,
@@ -121,7 +121,7 @@ async function confirmRefund({
 }
 
 /** Finds the refund to confirm: the manifest's, one the payment already carries, or a new one. */
-async function resolveRefund({
+export async function resolveRefund({
     api,
     paymentId,
     knownRefundId,
