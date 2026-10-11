@@ -214,6 +214,19 @@ async function seedManual() {
     return { id: pending.subscription.id, paymentId: payment.id };
 }
 
+/** Seeds expired rows owned by other fixtures to exercise this test's ID filter. */
+async function seedForeignExpiredSubscriptions(count: number): Promise<void> {
+    for (let index = 0; index < count; index += 1) {
+        const choice = await seedChoice();
+        await subscriptionModel.createPendingAuthorization({
+            ...choice,
+            vertical: 'accommodation',
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(openedAt.getTime() + 72 * 60 * 60 * 1000)
+        });
+    }
+}
+
 function setup() {
     // M11 remains enabled: a pending fake authorization never expires by itself.
     const fake = new FakePaymentProvider({
@@ -351,6 +364,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
             }
         });
         const { provider, ports, beforeCancel, cancel } = setup();
+        await seedForeignExpiredSubscriptions(20);
         beforeCancel.mockResolvedValue(outcome);
         const card = await startPending(provider);
         advance(72);
