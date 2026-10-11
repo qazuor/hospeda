@@ -1232,6 +1232,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_SELF
     ],
 
+    /** Sin permisos hasta V7. */
+    [RoleEnum.PARTNER_OWNER]: [],
+
     [RoleEnum.USER]: [
         // SPEC-165: registered users (tourist role) may comment on posts and events.
         PermissionEnum.POST_COMMENT_CREATE,
