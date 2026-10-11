@@ -232,18 +232,20 @@ describe('TEST:B3:15 S15 reconciliation mark lift', () => {
         ).toBeNull();
     });
 
-    it('TEST:B3:40 default port lifts when reconciliation_mark_payment is absent', async () => {
+    it('TEST:B3:40 default port lifts a mark with no hung payment', async () => {
         const { subscriptionId, userId } = await fixture();
-        const relation = await getServiceTestPool().query(
-            "SELECT to_regclass('reconciliation_mark_payment') AS relation"
-        );
-        expect(relation.rows[0]?.relation).toBeNull();
         const opened = await openReconciliationMark({
             subject: { kind: 'SUBSCRIPTION', subscriptionId },
             reason: 'DIVERGENCIA_DE_MONTO',
             actor: admin(userId),
             correlationId: crypto.randomUUID()
         });
+        // Since B5 (HOS-1549) the table exists: the premise is that no payment hangs from this mark.
+        const hung = await getServiceTestPool().query<{ count: string }>(
+            'SELECT count(*)::text AS count FROM reconciliation_mark_payment WHERE mark_id = $1',
+            [opened.mark.id]
+        );
+        expect(hung.rows[0]?.count).toBe('0');
         await expect(
             liftReconciliationMark(
                 { markId: opened.mark.id, expectedVersion: 1, liftedBy: userId },
