@@ -271,6 +271,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Checks the status of pending/running Apify actor runs for external reputation data and persists results when runs complete.'
     },
     {
+        name: 'provider-notification-retention',
+        displayName: 'Retención de entregas del proveedor',
+        category: 'billing',
+        schedule: '30 3 * * *',
+        description: 'Purge provider delivery log entries beyond the retention window.'
+    },
+    {
         name: 'social-publish-dispatch',
         displayName: 'Despacho de publicaciones sociales',
         category: 'content',
