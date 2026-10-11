@@ -1,10 +1,10 @@
 import type { DrizzleClient } from '@repo/db';
 import { sql } from '@repo/db';
 import { extractPublicId } from '@repo/media';
+import { PASSAGE_TABLE } from './passage-table.js';
 import type { CalendarGrantRevoker, DecryptSecret, PassageRow, PhotoStorage } from './ports.js';
 import { passageRowSchema } from './ports.js';
 
-const PASSAGE_TABLE = 'cutover_v6_deleted_listing';
 const GOOGLE_PROVIDER = 'GOOGLE_CALENDAR';
 
 /** Result for one failed external action, containing no credential or URL data. */
