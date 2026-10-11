@@ -187,7 +187,7 @@ describe('TEST:B3:39 S1 succession branch refusals', () => {
     });
 
     it('AC:B3:2 rejects a destination plan that is no longer for sale', async () => {
-        const choice = await seedSuccessionChoice();
+        const choice = await seedSuccessionChoice({ targetSellable: false });
         const seeded = await seedPredecessor({
             userId: choice.user.id,
             planVersionId: choice.planVersionId,
@@ -195,9 +195,6 @@ describe('TEST:B3:39 S1 succession branch refusals', () => {
             status: 'ACTIVE',
             honestAboutM1: true
         });
-        await getServiceTestPool().query('UPDATE plan_version SET sellable = false WHERE id = $1', [
-            choice.planVersionId
-        ]);
         const authorize = vi.spyOn(seeded.fake, 'authorize');
         await expect(
             startSuccession(
