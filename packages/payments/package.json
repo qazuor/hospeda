@@ -28,6 +28,16 @@
                 "types": "./dist/fake/index.d.cts",
                 "default": "./dist/fake/index.cjs"
             }
+        },
+        "./fake-server": {
+            "import": {
+                "types": "./dist/fake-server/index.d.ts",
+                "default": "./dist/fake-server/index.js"
+            },
+            "require": {
+                "types": "./dist/fake-server/index.d.cts",
+                "default": "./dist/fake-server/index.cjs"
+            }
         }
     },
     "files": [

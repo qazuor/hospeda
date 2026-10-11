@@ -34,7 +34,7 @@ describe('TEST:B3:44 fake subpath boundary', () => {
             })
         );
         const offenders = files.filter((file) =>
-            /['"]@repo\/payments\/fake['"]/.test(readFileSync(file, 'utf8'))
+            /['"]@repo\/payments\/(?:fake|fake-server)['"]/.test(readFileSync(file, 'utf8'))
         );
         expect(files.length).toBeGreaterThan(1000);
         expect(offenders).toEqual([]);
@@ -43,11 +43,15 @@ describe('TEST:B3:44 fake subpath boundary', () => {
     it('exports the fake only from its own package subpath', async () => {
         const main = await import('../src/index');
         const fake = await import('../src/fake/index');
+        const fakeServer = await import('../src/fake-server/index');
         expect('FakePaymentProvider' in main).toBe(false);
+        expect('startFakeProviderServer' in main).toBe(false);
         expect(typeof fake.FakePaymentProvider).toBe('function');
+        expect(typeof fakeServer.startFakeProviderServer).toBe('function');
         const manifest = JSON.parse(
             readFileSync(resolve(import.meta.dirname, '../package.json'), 'utf8')
         ) as { readonly exports: Readonly<Record<string, unknown>> };
         expect(manifest.exports['./fake']).toBeDefined();
+        expect(manifest.exports['./fake-server']).toBeDefined();
     });
 });
