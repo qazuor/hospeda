@@ -75,21 +75,23 @@ export async function paymentFixture({ honestM8 = true }: { readonly honestM8?: 
     ).rows[0]?.id;
     if (!optionId) throw new Error('payment fixture option missing');
 
-    const provider = new FakePaymentProvider({
-        clock,
-        idNamespace: crypto.randomUUID(),
-        honestAbout: [
-            { lie: 'M1', why: 'signup fixture needs the authorization creation to land' },
-            ...(honestM8
-                ? [
-                      {
-                          lie: 'M8' as const,
-                          why: 'the immediate charge case needs an approved charge'
-                      }
-                  ]
-                : [])
-        ]
-    });
+    const idNamespace = crypto.randomUUID();
+    const provider = honestM8
+        ? new FakePaymentProvider({
+              clock,
+              idNamespace,
+              honestAbout: [
+                  { lie: 'M1', why: 'signup fixture needs the authorization creation to land' },
+                  { lie: 'M8', why: 'the immediate charge case needs an approved charge' }
+              ]
+          })
+        : new FakePaymentProvider({
+              clock,
+              idNamespace,
+              honestAbout: [
+                  { lie: 'M1', why: 'signup fixture needs the authorization creation to land' }
+              ]
+          });
     const started = await startSubscription(
         { userId: user.id, billingOptionId: optionId, returnUrl: 'https://example.test/return' },
         {
