@@ -268,6 +268,50 @@ describe('TEST:B3:42 cancellation seen is annotated by the handler and S16', () 
         expect(await rowStatus(own.started.subscriptionId)).toBe('CHARGE_DECLINED');
     });
 
+    it('S6 logs a failed cancellation confirmation reread and still declines the row', async () => {
+        const own = await setup();
+        let authorizationReads = 0;
+        const provider = new Proxy(own.provider, {
+            get(target, property) {
+                if (property === 'readAuthorization')
+                    return async (input: Parameters<PaymentProvider['readAuthorization']>[0]) => {
+                        authorizationReads += 1;
+                        if (authorizationReads === 2) throw new Error('confirmation reread failed');
+                        return own.provider.readAuthorization(input);
+                    };
+                const value = Reflect.get(target, property, target) as unknown;
+                return typeof value === 'function' ? value.bind(target) : value;
+            }
+        }) as PaymentProvider;
+        const cancel = vi.spyOn(provider, 'cancel');
+        const errors: LogEntry[] = [];
+        registerHook('cancellation-seen-test', (entry) => {
+            if (entry.level === 'ERROR' && entry.category === 'decline-first-charge')
+                errors.push(entry);
+        });
+
+        const result = await declineFirstCharge(
+            { chargeId: own.chargeId },
+            {
+                provider,
+                clock,
+                beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+            }
+        );
+
+        expect(result).toMatchObject({ outcome: 'DECLINED', cancelCall: 'SENT' });
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(authorizationReads).toBe(2);
+        expect(await rowStatus(own.started.subscriptionId)).toBe('CHARGE_DECLINED');
+        expect(errors).toHaveLength(1);
+        expect(errors[0]).toMatchObject({
+            message: 'Could not confirm declined signup authorization cancellation',
+            data: expect.objectContaining({
+                error: expect.objectContaining({ message: 'confirmation reread failed' })
+            })
+        });
+    });
+
     it('S4 swallows annotation errors in S16 and handler and logs them', async () => {
         const own = await setup();
         await own.provider.cancel({ authorizationId: own.started.authorizationId });
