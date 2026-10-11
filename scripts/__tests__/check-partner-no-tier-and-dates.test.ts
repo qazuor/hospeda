@@ -37,6 +37,63 @@ describe('TEST:V6:31 · static partner field guard', () => {
         });
     });
 
+    it('reports raw.tier on the public partner page', () => {
+        expect(
+            findPartnerLegacyReferences([
+                {
+                    file: 'apps/web/src/pages/[lang]/partners/[slug].astro',
+                    content: 'tier: raw.tier as string | null'
+                }
+            ])
+        ).toContainEqual({
+            file: 'apps/web/src/pages/[lang]/partners/[slug].astro',
+            line: 1,
+            name: 'tier'
+        });
+    });
+
+    it('reports destructured tier in a partner file', () => {
+        expect(
+            findPartnerLegacyReferences([
+                { file: 'apps/api/src/routes/partners/mine.ts', content: 'const { tier } = row;' }
+            ])
+        ).toContainEqual({
+            file: 'apps/api/src/routes/partners/mine.ts',
+            line: 1,
+            name: 'tier'
+        });
+    });
+
+    it('reports startsAt object keys in a partner file', () => {
+        expect(
+            findPartnerLegacyReferences([
+                {
+                    file: 'packages/service-core/src/services/partner/partner.service.ts',
+                    content: 'const value = { startsAt: date };'
+                }
+            ])
+        ).toContainEqual({
+            file: 'packages/service-core/src/services/partner/partner.service.ts',
+            line: 1,
+            name: 'startsAt'
+        });
+    });
+
+    it('reports retired names inside string literals in partner files', () => {
+        expect(
+            findPartnerLegacyReferences([
+                {
+                    file: 'packages/db/src/schemas/partner/partner.dbschema.ts',
+                    content: "const retired = 'ends_at';"
+                }
+            ])
+        ).toContainEqual({
+            file: 'packages/db/src/schemas/partner/partner.dbschema.ts',
+            line: 1,
+            name: 'ends_at'
+        });
+    });
+
     it('ignores legacy spellings in line and block comments', () => {
         expect(
             findPartnerLegacyReferences([
@@ -56,7 +113,7 @@ describe('TEST:V6:31 · static partner field guard', () => {
         ).toEqual([]);
     });
 
-    it('classifies a file by its partners table identifier as well as its path', () => {
+    it('checks partner model references outside partner paths contextually', () => {
         expect(
             findPartnerLegacyReferences([
                 {
@@ -97,6 +154,34 @@ describe('TEST:V6:31 · static partner field guard', () => {
         ).toEqual([]);
     });
 
+    it('accepts the unrelated system actor tier outside partner paths', () => {
+        expect(
+            findPartnerLegacyReferences([
+                {
+                    file: 'apps/api/test/routes/system-actor-migration.test.ts',
+                    content: "config: { tier: 'admin' }"
+                }
+            ])
+        ).toEqual([]);
+    });
+
+    it('reports one occurrence per line and name when repeated', () => {
+        expect(
+            findPartnerLegacyReferences([
+                {
+                    file: 'apps/web/src/pages/partners/detail.astro',
+                    content: 'tier: raw.tier as string | null'
+                }
+            ])
+        ).toEqual([
+            {
+                file: 'apps/web/src/pages/partners/detail.astro',
+                line: 1,
+                name: 'tier'
+            }
+        ]);
+    });
+
     it('reports global retired schema identifiers in every file', () => {
         expect(
             findPartnerLegacyReferences([
@@ -127,7 +212,7 @@ describe('TEST:V6:31 · static partner field guard', () => {
         const violations = findPartnerLegacyReferences([
             {
                 file: 'apps/web/src/pages/[lang]/partners/[slug].astro',
-                content: 'const partner = partners.tier;'
+                content: 'tier: raw.tier as string | null'
             }
         ]);
 

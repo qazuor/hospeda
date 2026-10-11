@@ -70,22 +70,25 @@ beforeAll(async () => {
 }, 300_000);
 
 afterAll(async () => {
-    if (db) await db.end();
-    if (duplicateDb) await duplicateDb.end();
-    if (admin) {
-        try {
-            await admin.query(
-                'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',
-                [dbName]
-            );
-            await admin.query(`DROP DATABASE IF EXISTS ${dbName}`);
-            await admin.query(
-                'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',
-                [duplicateDbName]
-            );
-            await admin.query(`DROP DATABASE IF EXISTS ${duplicateDbName}`);
-        } finally {
-            await admin.end();
+    try {
+        if (db) await db.end();
+        if (duplicateDb) await duplicateDb.end();
+    } finally {
+        if (admin) {
+            try {
+                await admin.query(
+                    'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',
+                    [dbName]
+                );
+                await admin.query(`DROP DATABASE IF EXISTS ${dbName}`);
+                await admin.query(
+                    'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=$1 AND pid<>pg_backend_pid()',
+                    [duplicateDbName]
+                );
+                await admin.query(`DROP DATABASE IF EXISTS ${duplicateDbName}`);
+            } finally {
+                await admin.end();
+            }
         }
     }
 });
@@ -161,24 +164,28 @@ describe('TEST:V6:30 — partners V7 migration over existing data', () => {
     });
 
     it('TEST:V6:30 fails atomically on duplicate non-null owners and leaves the old columns intact', async () => {
+        await admin.query(`DROP DATABASE IF EXISTS ${duplicateDbName}`);
         await admin.query(`CREATE DATABASE ${duplicateDbName}`);
         const mainDb = db;
         const duplicateUrl = new URL(baseUrl!);
         duplicateUrl.pathname = `/${duplicateDbName}`;
         duplicateDb = new Pool({ connectionString: duplicateUrl.toString() });
         db = duplicateDb;
-        await buildBeforeTarget();
-        await insertRows(true);
-        await expect(applyTargetAtomically()).rejects.toMatchObject({
-            code: '23505',
-            constraint: 'uq_partners_owner_user_id'
-        });
-        const columns = await db.query<{ column_name: string }>(
-            `SELECT column_name FROM information_schema.columns WHERE table_name='partners'`
-        );
-        expect(columns.rows.map((r) => r.column_name)).toEqual(
-            expect.arrayContaining(['tier', 'starts_at', 'ends_at'])
-        );
-        db = mainDb;
+        try {
+            await buildBeforeTarget();
+            await insertRows(true);
+            await expect(applyTargetAtomically()).rejects.toMatchObject({
+                code: '23505',
+                constraint: 'uq_partners_owner_user_id'
+            });
+            const columns = await db.query<{ column_name: string }>(
+                `SELECT column_name FROM information_schema.columns WHERE table_name='partners'`
+            );
+            expect(columns.rows.map((r) => r.column_name)).toEqual(
+                expect.arrayContaining(['tier', 'starts_at', 'ends_at'])
+            );
+        } finally {
+            db = mainDb;
+        }
     });
 });

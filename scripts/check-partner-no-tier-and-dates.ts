@@ -1,6 +1,16 @@
 /**
  * Static TEST:V6:31 guard: retired partner tier and lifecycle date names must
- * not return to application or package code.
+ * not return to application or package code. A partner file is a scanned file
+ * whose repo-relative path has a complete `partner` or `partners` segment
+ * (for example, routes, features, pages, services, models, and schemas).
+ * Within those files, any occurrence of `tier`, `startsAt`, `endsAt`,
+ * `starts_at`, or `ends_at` in code or a string literal is forbidden, regardless
+ * of syntax (property access, object key, destructuring, or other identifier
+ * use). Comments are ignored. Outside those files, these field names are
+ * forbidden only when contextually referenced as `partners.tier`,
+ * `partner.tier`, or `PartnerModel.tier`; retired global schema identifiers
+ * remain forbidden everywhere. The historical exclusions below are the
+ * closed, unchanged list of migration-history artifacts.
  *
  * Exit 0 means clean; exit 1 means a violation or a broken/empty scan.
  */
@@ -117,13 +127,6 @@ function stripComments(source: string): string {
     return output.join('');
 }
 
-/** Removes string contents only for deciding whether code names the table identifier. */
-function stripLiterals(source: string): string {
-    return source.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`/gs, (value) =>
-        value.replace(/[^\n]/g, ' ')
-    );
-}
-
 function isExcluded(file: string): boolean {
     // The guard and its own tests contain forbidden spellings to define the check.
     if (file === 'scripts/check-partner-no-tier-and-dates.ts') return true;
@@ -132,7 +135,7 @@ function isExcluded(file: string): boolean {
     return (HISTORICAL_FILE_EXCLUSIONS as readonly string[]).includes(file);
 }
 
-/** A tier mention counts only when it is attached to the partners model/table. */
+/** Outside partner files, a tier mention counts only in its existing context. */
 function isPartnerTierReference(line: string): boolean {
     return /\b(?:partners?|PartnerModel)\s*(?:\.\s*tier\b|\[['"]tier['"]\])/i.test(line);
 }
@@ -157,21 +160,22 @@ export function findPartnerLegacyReferences(
     for (const { file, content } of files) {
         const code = stripComments(content);
         if (isExcluded(file)) continue;
-        const isPartnerFile = /partner/i.test(file) || /\bpartners\b/.test(stripLiterals(code));
+        const isPartnerFile = /(?:^|\/)partners?(?:\/|$)/.test(file);
         const pattern = new RegExp(allNamesPattern.source, 'g');
         const lines = code.split('\n');
 
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
             const line = lines[lineIndex] ?? '';
+            const namesOnLine = new Set<string>();
             pattern.lastIndex = 0;
             for (const match of line.matchAll(pattern)) {
                 const name = match[1] ?? '';
                 const partnerFieldReference =
-                    isPartnerFile &&
                     partnerNamesPattern.test(name) &&
-                    (name !== 'tier' || isPartnerTierReference(line));
-                if (globalNames.has(name) || partnerFieldReference) {
+                    (isPartnerFile || (name === 'tier' && isPartnerTierReference(line)));
+                if ((globalNames.has(name) || partnerFieldReference) && !namesOnLine.has(name)) {
                     violations.push({ file, line: lineIndex + 1, name });
+                    namesOnLine.add(name);
                 }
                 partnerNamesPattern.lastIndex = 0;
             }
@@ -211,9 +215,17 @@ export function run(args: { readonly root?: string } = {}): {
     const inputs = files.map((file) => ({ file, content: readFileSync(join(root, file), 'utf8') }));
     const violations = findPartnerLegacyReferences(inputs);
     if (violations.length > 0) {
+        const uniqueViolations = [
+            ...new Map(
+                violations.map((violation) => [
+                    `${violation.file}\0${violation.line}\0${violation.name}`,
+                    violation
+                ])
+            ).values()
+        ];
         const output = [
-            `FAIL: ${violations.length} retired partner field/name reference(s):`,
-            ...violations.map(({ file, line, name }) => `  ${file}:${line} — ${name}`)
+            `FAIL: ${uniqueViolations.length} retired partner field/name reference(s):`,
+            ...uniqueViolations.map(({ file, line, name }) => `  ${file}:${line} — ${name}`)
         ].join('\n');
         return { exitCode: 1, output };
     }
