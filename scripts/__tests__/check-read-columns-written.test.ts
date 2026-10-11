@@ -75,3 +75,39 @@ describe('G-R6 (unitaria) - a read column that no transition writes', () => {
         expect(run({ root, machines: MACHINES }).exitCode).toBe(0);
     });
 });
+
+describe('TEST:V4:18 - G-R6 over the declared corpus of the ten machines, broken on purpose', () => {
+    it('checks all declared reads in the complete corpus', () => {
+        const result = run();
+        expect(result.exitCode).toBe(0);
+        expect(result.output).toMatch(/verified [1-9][0-9]* read columns/);
+    });
+    it('rejects an invented MP5 read', () => {
+        const root = tempTree();
+        const corpus = read(root);
+        const row = corpus.transitions.find((item) => item.id === 'TRANS:B:MP5') as {
+            reads: readonly string[];
+        };
+        row.reads = [...row.reads, 'manual_payment.no_writer_column'];
+        save(root, corpus);
+        const result = run({ root });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain('TRANS:B:MP5');
+        expect(result.output).toContain('manual_payment.no_writer_column');
+    });
+    it('requires a declared writer for MP5 next_charge_at', () => {
+        const root = tempTree();
+        const corpus = read(root);
+        for (const row of corpus.transitions) {
+            (row.writes as string[]) = row.writes.filter(
+                (column) => column !== 'subscription.next_charge_at'
+            );
+        }
+        save(root, corpus);
+        const result = run({ root });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(
+            'TRANS:B:MP5 reads unwritten column subscription.next_charge_at'
+        );
+    });
+});

@@ -37,6 +37,27 @@ function save(root: string, corpus: TransitionCorpus): void {
 }
 
 describe('TEST:V4:16 - G-R4 over the declared tables, broken on purpose', () => {
+    it('counts exactly the four shared pairs across all ten machines', () => {
+        const result = run();
+        expect(result.exitCode).toBe(0);
+        expect(result.output).toContain('TRANS:V:T1/TRANS:V:T6');
+        expect(result.output).toContain('TRANS:B:S5/TRANS:B:S19');
+        expect(result.output).toContain('TRANS:B:S7/TRANS:B:S19');
+        expect(result.output).toContain('TRANS:V:PB11/TRANS:V:PB13');
+        expect(result.output).toContain('count 4');
+    });
+    it('rejects S5 after its succession discriminator is removed', () => {
+        const root = tempTree();
+        const corpus = read(root);
+        const row = corpus.transitions.find((item) => item.id === 'TRANS:B:S5') as {
+            guard: Readonly<Record<string, boolean>>;
+        };
+        row.guard = {};
+        save(root, corpus);
+        const result = run({ root });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain('TRANS:B:S5/TRANS:B:S19');
+    });
     it('counts only the two shared vertical pairs and names their disjoint guards', () => {
         const result = run({ machines: MACHINES });
         expect(result.exitCode).toBe(0);

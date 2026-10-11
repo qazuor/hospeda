@@ -16,15 +16,42 @@ describe('TEST:V4:16/17 - transition corpus shape and catalog anchoring', () => 
     it('accepts the real vertical declarations and validates their shape', () => {
         const corpus = loadCorpus({ root: ROOT });
         expect(validateCorpus({ corpus })).toEqual([]);
-        expect(
-            checkAnchoring({
-                corpus,
-                catalog: parseCatalog({ root: ROOT }),
-                machines: ['trial', 'publication', 'partner_application']
-            })
-        ).toEqual([]);
+        expect(checkAnchoring({ corpus, catalog: parseCatalog({ root: ROOT }) })).toEqual([]);
         expect(Object.keys(corpus.machines)).toHaveLength(10);
-        expect(corpus.transitions).toHaveLength(23);
+        expect(corpus.transitions).toHaveLength(83);
+        expect(
+            Object.fromEntries(
+                Object.keys(corpus.machines).map((machine) => [
+                    machine,
+                    corpus.transitions.filter((row) => row.machine === machine).length
+                ])
+            )
+        ).toEqual({
+            trial: 7,
+            publication: 13,
+            partner_application: 3,
+            subscription: 34,
+            grace: 0,
+            pause: 0,
+            payment: 7,
+            refund: 5,
+            manual_payment: 6,
+            addon_instance: 8
+        });
+        for (const [name, machine] of Object.entries(corpus.machines)) {
+            if (machine.table === null) continue;
+            const declared = new Set(
+                corpus.transitions
+                    .filter((row) => row.machine === name)
+                    .flatMap((row) => [
+                        ...row.from.filter((state) => !state.startsWith('*')),
+                        ...(Array.isArray(row.to) ? row.to : [row.to]).filter(
+                            (state) => !state.startsWith('*')
+                        )
+                    ])
+            );
+            expect([...machine.states].sort()).toEqual([...declared].sort());
+        }
         expect(
             corpus.transitions.filter((row) => row.machine === 'trial').map((row) => row.id)
         ).toEqual([
@@ -76,6 +103,13 @@ describe('TEST:V4:16/17 - transition corpus shape and catalog anchoring', () => 
         const corpus = copyCorpus();
         mutate(corpus);
         expect(validateCorpus({ corpus }).length).toBeGreaterThan(0);
+    });
+    it('rejects the non-canonical on_EXPIRED event marker', () => {
+        const corpus = copyCorpus();
+        (corpus.transitions[0] as { events: readonly string[] }).events = ['on_EXPIRED'];
+        expect(validateCorpus({ corpus }).join('\n')).toContain(
+            'events must be non-empty lower_snake_case'
+        );
     });
     it.each([
         [
