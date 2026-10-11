@@ -6,7 +6,7 @@
  * `CollectionDetailActions.client.tsx` mounted from the collection detail
  * page so the wiring is covered in CI.
  *
- * Actors: Authenticated regular user.
+ * Actors: Authenticated USER with an active Tourist VIP subscription.
  *
  * Tags: @p1 @favorites @collections @ui @spec-098
  *
@@ -25,7 +25,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createUser, markProfileCompleted } from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -104,7 +104,7 @@ test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @u
 
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
-        // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
+        await makeTouristVip(user.id);
         // SPEC-113 bounces users with profile_completed = false to the completion
         // form, so a UI spec never reaches the account page it asserts on.
         await markProfileCompleted({ userId: user.id });

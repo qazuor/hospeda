@@ -378,6 +378,32 @@ export async function createUser(
     return user;
 }
 
+/** Gives an existing user an active Tourist VIP subscription from the catalog. */
+export async function makeTouristVip(userId: string): Promise<void> {
+    const rows = await execSQL<{ id: string }>(
+        `INSERT INTO subscription (
+             user_id, vertical, plan_version_id, billing_option_id,
+             payment_method, status, class
+         )
+         SELECT $1, plan_version.vertical, plan_version.id, billing_option.id,
+                'CARD', 'ACTIVE', 'PRINCIPAL'
+         FROM plan
+         JOIN plan_version ON plan_version.plan_id = plan.id
+         JOIN billing_option ON billing_option.plan_version_id = plan_version.id
+         WHERE plan.vertical = 'tourist'
+           AND plan.slug = 'tourist-vip'
+           AND plan_version.vertical = 'tourist'
+           AND plan_version.current = true
+           AND billing_option.cycle = 'monthly'
+         LIMIT 1
+         RETURNING id`,
+        [userId]
+    );
+    if (!rows[0]) {
+        throw new Error('makeTouristVip: current Tourist VIP catalog option not found');
+    }
+}
+
 /**
  * Forces the user's set of hats to be exactly `{USER, role}` in `user_role`.
  *
