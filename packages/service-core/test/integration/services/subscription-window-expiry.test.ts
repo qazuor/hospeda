@@ -1,10 +1,7 @@
 import {
-    and,
     billingDeadlineVersions,
     billingOptions,
     eq,
-    inArray,
-    lte,
     manualPayments,
     plans,
     planVersions,
@@ -25,6 +22,10 @@ import {
     startSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import {
+    seededSubscriptionIds,
+    withSeededSubscriptionSweep
+} from './support/subscription-window-sweep';
 import { noTouristVip, touristVipInheritanceFromDb } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
@@ -58,46 +59,13 @@ beforeEach(() => {
     vi.restoreAllMocks();
 });
 afterEach(() => unregisterHook('b3-window-expiry-test'));
-const seededSubscriptionIds = new Set<string>();
 afterEach(() => seededSubscriptionIds.clear());
-const foreignSubscriptionIds = new Set<string>();
-afterEach(async () => {
-    if (foreignSubscriptionIds.size > 0) {
-        await getServiceTestDb()
-            .update(subscriptions)
-            .set({ status: 'ABANDONED' })
-            .where(inArray(subscriptions.id, [...foreignSubscriptionIds]));
-        foreignSubscriptionIds.clear();
-    }
-});
-
-/** Runs the expiry service against only this test's pending subscriptions. */
-async function expireOwnAuthorizationWindows(
+/** Runs the expiry service against only this test's seeded subscriptions. */
+function expireOwnAuthorizationWindows(
     limit: number,
     ports: Parameters<typeof expireAuthorizationWindows>[1]
 ) {
-    const findExpired = vi.spyOn(subscriptionModel, 'findExpiredAuthorizationWindows');
-    findExpired.mockImplementation(async ({ now }) => {
-        if (seededSubscriptionIds.size === 0) return [];
-        return getServiceTestDb()
-            .select({ subscription: subscriptions, providerLink: providerLinks })
-            .from(subscriptions)
-            .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
-            .where(
-                and(
-                    inArray(subscriptions.id, [...seededSubscriptionIds]),
-                    eq(subscriptions.class, 'PRINCIPAL'),
-                    eq(subscriptions.status, 'PENDING_AUTHORIZATION'),
-                    lte(subscriptions.authorizationWindowEndsAt, now)
-                )
-            )
-            .limit(limit);
-    });
-    try {
-        return await expireAuthorizationWindows(limit, ports);
-    } finally {
-        findExpired.mockRestore();
-    }
+    return withSeededSubscriptionSweep(limit, () => expireAuthorizationWindows(limit, ports));
 }
 function advance(hours: number) {
     current = new Date(openedAt.getTime() + hours * 60 * 60 * 1000);
@@ -222,20 +190,6 @@ async function seedManual() {
         .returning();
     if (!payment) throw new Error('No manual payment');
     return { id: pending.subscription.id, paymentId: payment.id };
-}
-
-/** Seeds expired rows owned by other fixtures to exercise this test's ID filter. */
-async function seedForeignExpiredSubscriptions(count: number): Promise<void> {
-    for (let index = 0; index < count; index += 1) {
-        const choice = await seedChoice();
-        const pending = await subscriptionModel.createPendingAuthorization({
-            ...choice,
-            vertical: 'accommodation',
-            authorizationWindowDeadlineVersion: 1,
-            authorizationWindowEndsAt: new Date(openedAt.getTime() + 72 * 60 * 60 * 1000)
-        });
-        foreignSubscriptionIds.add(pending.subscription.id);
-    }
 }
 
 function setup() {
@@ -375,7 +329,6 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
             }
         });
         const { provider, ports, beforeCancel, cancel } = setup();
-        await seedForeignExpiredSubscriptions(20);
         beforeCancel.mockResolvedValue(outcome);
         const card = await startPending(provider);
         advance(72);
