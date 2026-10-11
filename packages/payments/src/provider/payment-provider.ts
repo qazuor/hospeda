@@ -129,6 +129,26 @@ export interface AuthorizationSnapshot {
     readonly firstChargeAt: string | null;
     /** Provider-added free period; never our own trial state. */
     readonly freePeriodDays: number | null;
+    /** Instant (ISO 8601) when the provider last modified this resource; null when unavailable. */
+    readonly lastModifiedAt: string | null;
+}
+
+/** Capability 7 input: narrow, non-authoritative search criteria. */
+export interface AuthorizationSearchInput {
+    readonly reference?: string;
+    readonly status?: AuthorizationStatus;
+}
+
+/** Capability 7 search result for one authorization, deliberately smaller than a read by id. */
+export interface AuthorizationSummary {
+    readonly authorizationId: string;
+    readonly reference: string;
+    readonly status: AuthorizationStatus;
+}
+
+/** Capability 7 search result; it is not a ProviderRead. */
+export interface AuthorizationSearchResult {
+    readonly authorizations: readonly AuthorizationSummary[];
 }
 
 /** Capability 7 output: a charge as read by id. */
@@ -137,6 +157,8 @@ export interface ChargeSnapshot {
     readonly authorizationId: string;
     readonly reference: string;
     readonly status: ChargeStatus;
+    /** Why the provider rejected this attempt, in a domain string; null when not rejected or unavailable. */
+    readonly declineReason: string | null;
     readonly amount: Money;
     /** Cumulative amount refunded so far. */
     readonly refundedAmount: Money;
@@ -187,6 +209,13 @@ export interface PaymentProvider {
      * (AC:B1:4): a decision takes it through `assertFreshForAct`.
      */
     readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>>;
+    /**
+     * Capability 7 · search authorizations. It may return only part of the matches without error
+     * and is not a source of truth (INV:D6). This is not a ProviderRead, so no decision may rely
+     * on it (`assertFreshForAct` rejects it with `NOT_A_PROVIDER_READ`). The portfolio sweep
+     * never calls this method.
+     */
+    searchAuthorizations(input: AuthorizationSearchInput): Promise<AuthorizationSearchResult>;
     /**
      * Capability 7 · read a charge by id. The read carries its instant
      * (AC:B1:4): a decision takes it through `assertFreshForAct`.

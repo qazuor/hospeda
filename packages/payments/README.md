@@ -82,7 +82,7 @@ deliveries and two formats; a charge once per channel), M8 (a charge lands at
 minute :02 of the next hour), M10 (the broken link), M11 (an open link never
 expires), M13 (the first partial refund refused as not refundable), M1 on
 creation and M9 on a future first charge; and the rules RP1 to RP6 and RP9.
-The other rows (M2, M4, M7, M12; RP7, RP8, RP10, RP11, RP12) stay in the list and arrive with the units that
+The other rows (M2, M7, M12; RP7, RP8, RP10, RP11, RP12) stay in the list and arrive with the units that
 add their surface to the interface.
 
 Every delay of the fake runs on the injected clock: advance it to see a late

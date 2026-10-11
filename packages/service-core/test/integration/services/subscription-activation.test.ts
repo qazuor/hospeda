@@ -16,6 +16,7 @@ import { activateSubscription } from '../../../src/services/billing/subscription
 import { cancelInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { namespaceFake } from './support/payment-provider';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
@@ -42,32 +43,6 @@ async function ensureBillingDeadlineVersion1() {
 beforeAll(ensureBillingDeadlineVersion1);
 
 const clock = { now: () => new Date('2026-10-08T20:00:00.000Z') };
-
-/** Namespace the fake's resettable ids because all integration files share a database. */
-function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
-    const prefix = `${crypto.randomUUID()}:`;
-    const external = (id: string) => `${prefix}${id}`;
-    const internal = (id: string) => (id.startsWith(prefix) ? id.slice(prefix.length) : id);
-    return {
-        capabilitySupport: fake.capabilitySupport,
-        async authorize(input) {
-            const result = await fake.authorize(input);
-            return { ...result, authorizationId: external(result.authorizationId) };
-        },
-        charge: (input) =>
-            fake.charge({ ...input, authorizationId: internal(input.authorizationId) }),
-        changeAmount: (input) =>
-            fake.changeAmount({ ...input, authorizationId: internal(input.authorizationId) }),
-        pause: (input) => fake.pause({ authorizationId: internal(input.authorizationId) }),
-        resume: (input) => fake.resume({ authorizationId: internal(input.authorizationId) }),
-        cancel: (input) => fake.cancel({ authorizationId: internal(input.authorizationId) }),
-        refund: (input) => fake.refund(input),
-        readAuthorization: (input) =>
-            fake.readAuthorization({ authorizationId: internal(input.authorizationId) }),
-        readCharge: (input) => fake.readCharge(input),
-        decodeNotice: (input) => fake.decodeNotice(input)
-    };
-}
 
 async function seedChoice(inheritsTouristVip = false) {
     const [user] = await getServiceTestDb()
@@ -164,10 +139,12 @@ describe('TEST:B3:9 authorization activation', () => {
         });
         expect(read).toHaveBeenCalledWith({ authorizationId: started.authorizationId });
         expect(await status(started.subscriptionId)).toBe('ACTIVE');
-        const paymentTable = await getServiceTestPool().query<{ present: boolean }>(
-            "SELECT to_regclass('public.payment') IS NOT NULL AS present"
+        // Since B5 (HOS-1549) the payment table exists: activation must write no row to it.
+        const payments = await getServiceTestPool().query<{ count: string }>(
+            'SELECT count(*)::text AS count FROM payment WHERE subscription_id = $1',
+            [started.subscriptionId]
         );
-        expect(paymentTable.rows[0]?.present).toBe(false);
+        expect(payments.rows[0]?.count).toBe('0');
     });
 
     it('keeps pending when the provider still says pending, and does not write a non-pending row', async () => {

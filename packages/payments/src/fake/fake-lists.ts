@@ -18,8 +18,8 @@
  * the JSON by that path. Do not move or rename it.
  *
  * Not every row is implemented by the fake yet: the rows whose surface the
- * payment interface does not carry today (M1, M2, M4, M7, M9, M12; RP1, RP7,
- * RP8, RP10, RP11, RP12) arrive with the units that add that surface. The list
+ * payment interface does not carry today (M2, M7, M12; RP7, RP8, RP10, RP11,
+ * RP12) arrive with the units that add that surface. The list
  * is closed regardless: a lie the fake tells must have its row here.
  */
 import { z } from 'zod';

@@ -44,6 +44,14 @@ export interface CronScheduleEntry {
  */
 export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
     {
+        name: 'billing-reconciliation-sweep',
+        displayName: 'Barrido de conciliación de cobros',
+        category: 'billing',
+        schedule: '0 6 * * *',
+        description:
+            'Read owned billing inventory by provider id and open marks for divergences (HOS-1602, AC:B11:1).'
+    },
+    {
         name: 'alerts-digest',
         displayName: 'Digest de alertas y ofertas',
         category: 'notifications',

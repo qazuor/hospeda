@@ -1,0 +1,68 @@
+{
+    "fila_viva": [
+        {
+            "file": "packages/db/src/models/subscription/subscription.model.ts",
+            "symbol": "findLiveCommitment",
+            "row": null,
+            "why": "Consumidor real del candado del §11; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
+            "symbol": "listSweepInventoryPage",
+            "row": null,
+            "why": "B11 lista desde nuestro inventario las suscripciones vivas con vínculo para leerlas por id; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/plan-catalog/plan-publication.anchored-customers.ts",
+            "symbol": "countAnchoredCustomersFromSubscriptions",
+            "row": null,
+            "why": "Consumidor real declarado por docblock; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
+            "symbol": "processProviderNotice",
+            "row": null,
+            "why": "AC:B3:19 (HOS-1524): al espejar la baja del proveedor busca una sucesora viva para cerrar la sucesión dentro de la transacción; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/decline-first-charge.service.ts",
+            "symbol": "declineFirstCharge",
+            "row": null,
+            "why": "AC:B3:17 (HOS-1524, S16): busca una sucesora viva para cerrar la sucesión (S18) dentro de la transacción; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        }
+    ],
+    "grant_vivo_ancla_viva": [],
+    "marca_abierta": [
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/open-reconciliation-mark.service.ts",
+            "symbol": "openReconciliationMark",
+            "row": 10,
+            "why": "S14 consulta la marca abierta antes de abrir otra."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/lift-reconciliation-mark.service.ts",
+            "symbol": "liftReconciliationMark",
+            "row": 1,
+            "why": "S15 relee levantada_en para decidir el desde."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/succession-target-guard.ts",
+            "symbol": "checkSuccessionTarget",
+            "row": 2,
+            "why": "La prohibición de ser sucedida consulta marcas abiertas."
+        }
+    ],
+    "cortesia_diferida": [
+        {
+            "file": "packages/db/src/models/subscription/subscription.model.ts",
+            "symbol": "abandonPendingAuthorization",
+            "row": 9,
+            "why": "S3 cierra el saldo diferido de la cortesía."
+        }
+    ]
+}
