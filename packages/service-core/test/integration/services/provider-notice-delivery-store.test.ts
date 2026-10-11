@@ -26,6 +26,7 @@ const ports = {
 const url = (suffix: string) => `https://api.example.test/api/v1/webhooks/mercadopago?t=${suffix}`;
 
 describe('TEST:B3:22 provider delivery storage and retention', () => {
+    // TEST:B3:22
     it('stores each delivery with URL-derived channel, exact body, and arrival time; IPN has no provider activity', async () => {
         getServiceTestDb();
         const insertSpy = vi.spyOn(providerNotificationModel, 'insertDelivery');
@@ -77,6 +78,7 @@ describe('TEST:B3:22 provider delivery storage and retention', () => {
         expect(insertSpy).toHaveBeenCalledTimes(3);
     });
 
+    // TEST:B3:22
     it('purges only rows strictly older than 180 days and does not update survivors', async () => {
         getServiceTestDb();
         const token = crypto.randomUUID();
@@ -108,6 +110,7 @@ describe('TEST:B3:22 provider delivery storage and retention', () => {
         ).toBe(true);
     });
 
+    // TEST:B3:22
     it('does not save invalid input and returns a save error for a rejected body', async () => {
         getServiceTestDb();
         const insertSpy = vi.spyOn(providerNotificationModel, 'insertDelivery');
