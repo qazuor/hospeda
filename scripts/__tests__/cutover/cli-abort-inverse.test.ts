@@ -40,6 +40,7 @@ function setup({ args }: { readonly args: (manifest: string) => readonly string[
             apisCreated += 1;
             return fake.api;
         },
+        createDeliveryReader: () => async () => true,
         createKnownIdsReader: () => {
             oldDbReaders += 1;
             return async () => ({ planIds: [], preapprovalIds: [] });
