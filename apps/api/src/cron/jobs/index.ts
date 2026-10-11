@@ -13,10 +13,11 @@
  * ```
  */
 
-// Import job definitions
 export { alertsDigestJob } from './alerts-digest.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';
 export { archiveExpiredPromotionsJob } from './archive-expired-promotions.job.js';
+// Import job definitions
+export { billingReconciliationSweepJob } from './billing-reconciliation-sweep.job.js';
 export { calendarSyncGoogleJob } from './calendar-sync-google.job.js';
 export { calendarSyncIcalJob } from './calendar-sync-ical.job.js';
 export { cloudinaryE2eCleanupJob } from './cloudinary-e2e-cleanup.job.js';

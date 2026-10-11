@@ -8,6 +8,7 @@ import {
     alertsDigestJob,
     appLogPurgeJob,
     archiveExpiredPromotionsJob,
+    billingReconciliationSweepJob,
     calendarSyncGoogleJob,
     calendarSyncIcalJob,
     cloudinaryE2eCleanupJob,
@@ -43,6 +44,7 @@ import type { CronJobDefinition } from './types';
  * Jobs are registered by importing and adding them to this array
  */
 export const cronJobs: CronJobDefinition[] = [
+    billingReconciliationSweepJob,
     alertsDigestJob,
     exchangeRateFetchJob,
     destinationWeatherFetchJob,
