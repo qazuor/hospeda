@@ -60,6 +60,16 @@ beforeEach(() => {
 afterEach(() => unregisterHook('b3-window-expiry-test'));
 const seededSubscriptionIds = new Set<string>();
 afterEach(() => seededSubscriptionIds.clear());
+const foreignSubscriptionIds = new Set<string>();
+afterEach(async () => {
+    if (foreignSubscriptionIds.size > 0) {
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'ABANDONED' })
+            .where(inArray(subscriptions.id, [...foreignSubscriptionIds]));
+        foreignSubscriptionIds.clear();
+    }
+});
 
 /** Runs the expiry service against only this test's pending subscriptions. */
 async function expireOwnAuthorizationWindows(
@@ -218,12 +228,13 @@ async function seedManual() {
 async function seedForeignExpiredSubscriptions(count: number): Promise<void> {
     for (let index = 0; index < count; index += 1) {
         const choice = await seedChoice();
-        await subscriptionModel.createPendingAuthorization({
+        const pending = await subscriptionModel.createPendingAuthorization({
             ...choice,
             vertical: 'accommodation',
             authorizationWindowDeadlineVersion: 1,
             authorizationWindowEndsAt: new Date(openedAt.getTime() + 72 * 60 * 60 * 1000)
         });
+        foreignSubscriptionIds.add(pending.subscription.id);
     }
 }
 
