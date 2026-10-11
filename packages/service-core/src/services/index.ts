@@ -70,9 +70,12 @@ export {
     type RetentionSummary
 } from './billing/notification/notification-retention.service.js';
 export * from './billing/read-anchored-billing-option.js';
+export * from './billing/reconciliation/handle-unknown-authorization.service.js';
 export * from './billing/reconciliation/lift-reconciliation-mark.service.js';
 export * from './billing/reconciliation/open-reconciliation-mark.service.js';
 export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
+export * from './billing/reconciliation/sweep/reconciliation-divergence.js';
+export * from './billing/reconciliation/sweep/reconciliation-sweep.service.js';
 export * from './billing/subscription/activate-subscription.service.js';
 export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
 export * from './billing/subscription/expire-authorization-windows.service.js';
