@@ -61,10 +61,14 @@ export interface FindSubscriptionIdsWithoutLiveSuccessorInput {
 /** Read-only queries that supply the first, second, and sixth zero-call checks. */
 export class ReconciliationZeroCallModel {
     /**
-     * Lists live successor rows whose predecessor is no longer live.
+     * Lists keyset pages of live successor subscriptions whose predecessor is no longer live.
      * "Live" means the six states in LIVE_SUBSCRIPTION_STATUSES; the successor is the subject
      * because it is the row reached by the sweep, including pending rows without provider links.
-     * This feeds row 15 of the live-row inventory.
+     * This supplies the first zero-call check, which records the succession on the successor
+     * without reading from a provider.
+     *
+     * @param input Page limit, optional exclusive successor id cursor, and optional transaction.
+     * @returns Successor and predecessor rows ordered by successor id.
      */
     async listOpenSuccessionsOnDeadPredecessorsPage(
         input: ListOpenSuccessionsOnDeadPredecessorsPageInput
@@ -90,9 +94,13 @@ export class ReconciliationZeroCallModel {
     }
 
     /**
-     * Lists open-balance deferred courtesies whose predecessor points to an ACTIVE successor.
-     * The deferred-courtesy definition is a non-null balanceMonths and null balanceClosedAt;
-     * this query is the row 4 consumer of the deferred-courtesy inventory.
+     * Lists keyset pages of deferred courtesy grants with an open balance whose successor is ACTIVE.
+     * The subject row is the courtesy grant owned by the predecessor; the result also includes
+     * that predecessor and its ACTIVE successor. This supplies the sixth zero-call check for a
+     * courtesy that S9 has not re-emitted, without reading from a provider.
+     *
+     * @param input Page limit, optional exclusive courtesy grant id cursor, and optional transaction.
+     * @returns Courtesy grant, predecessor, and ACTIVE successor rows ordered by grant id.
      */
     async listDeferredCourtesiesWithActiveSuccessorPage(
         input: ListDeferredCourtesiesWithActiveSuccessorPageInput
@@ -121,8 +129,13 @@ export class ReconciliationZeroCallModel {
     }
 
     /**
-     * Returns existing candidates with no successor in a live state; empty input avoids a query.
-     * A live successor requires both succeedsId = candidate and status in the six live states.
+     * Filters candidate subscriptions to those without a successor in a live state.
+     * The subject row is each candidate subscription; the query returns its id only when no live
+     * successor points to it. The second zero-call check uses this filter before resolving retained
+     * payments by branch, so only payments on rows without a live successor are considered.
+     *
+     * @param input Candidate subscription ids and an optional transaction.
+     * @returns IDs of existing candidates that have no live successor; empty for empty input.
      */
     async findSubscriptionIdsWithoutLiveSuccessor(
         input: FindSubscriptionIdsWithoutLiveSuccessorInput
