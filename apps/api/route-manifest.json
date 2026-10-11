@@ -3242,6 +3242,10 @@
             "path": "/api/v1/protected/users/:id"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/users/me/effective-set"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/users/me/newsletter/toggle"
         },

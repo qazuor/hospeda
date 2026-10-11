@@ -21,6 +21,7 @@ vi.mock('../../../src/lib/api/client', () => ({
 import {
     accommodationCalendarSyncApi,
     accommodationFaqApi,
+    effectiveSetApi,
     publishApi
 } from '../../../src/lib/api/endpoints-protected';
 
@@ -177,5 +178,26 @@ describe('publishApi.precheck path per vertical (HOS-1156 T-016)', () => {
     it('uses the credentialed getProtected, never a bare get', async () => {
         await publishApi.precheck({ vertical: 'experience' });
         expect(getProtected).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('HOS-1646 · cliente web de capacidades · effective set endpoint', () => {
+    it('requests the protected effective set with the vertical query and cookie', async () => {
+        getProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                userId: 'u',
+                vertical: 'tourist',
+                hasLiveNonTrialTitle: false,
+                entitlements: {},
+                limits: {}
+            }
+        });
+        await effectiveSetApi.get({ vertical: 'tourist', cookieHeader: 'session=abc' });
+        expect(getProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/users/me/effective-set',
+            params: { vertical: 'tourist' },
+            cookieHeader: 'session=abc'
+        });
     });
 });

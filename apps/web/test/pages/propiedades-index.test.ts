@@ -22,9 +22,9 @@ describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
             // then maybe fetch usage" rule is testable and cannot drift across
             // pages.
             expect(propiedadesIndexSource).toContain(
-                "import { fetchHostUsageBadge } from '@/lib/host/usage-badge'"
+                "import { buildUsageBadge, fetchHostUsageBadge } from '@/lib/host/usage-badge'"
             );
-            expect(propiedadesIndexSource).toContain('fetchHostUsageBadge({ apiUrl, headers })');
+            expect(propiedadesIndexSource).toContain('fetchHostUsageBadge({ cookieHeader })');
             expect(propiedadesIndexSource).not.toContain('billing/usage/MAX_ACCOMMODATIONS');
         });
 

@@ -37,13 +37,11 @@ import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitch
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
-import { syncPlanPersonProperties } from '@/lib/analytics/plan-properties';
 import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/posthog-client';
 import { AUTH_ME_CACHE_KEY, type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
 import { cn } from '@/lib/cn';
-import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getCuratedAccountNav } from '@/lib/nav-avatar';
@@ -237,15 +235,6 @@ export function UserMenu({
                   };
         identifyUser(user.id, props);
     }, [user, permissions, rolesKey]);
-
-    // ── PostHog plan/tier person property ────────────────────────────────
-    // Resolved from the PROTECTED entitlements endpoint (NOT /auth/me, which
-    // must stay a cheap public hot path), client-side and non-blocking, once
-    // the visitor is known. Guarded to run at most once per page load.
-    useEffect(() => {
-        if (!user) return;
-        void syncPlanPersonProperties({ apiUrl: getApiUrl() });
-    }, [user]);
 
     // ── PostHog locale person property ───────────────────────────────────
     // The active locale is already known client-side, so this is free (no

@@ -30,24 +30,6 @@ const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const WILDCARD = '${*}';
 export const KNOWN_UNREGISTERED_CALLS: readonly KnownCall[] = [
     {
-        file: 'apps/web/src/lib/entitlements-cache.ts',
-        route: '/api/v1/protected/users/me/entitlements',
-        owner: 'HOS-1646 B13a.13',
-        reason: 'Web effective set reader is owned by B13a.13.'
-    },
-    {
-        file: 'apps/web/src/lib/host/usage-badge.ts',
-        route: '/api/v1/protected/users/me/entitlements',
-        owner: 'HOS-1646 B13a.13',
-        reason: 'Web effective set reader is owned by B13a.13.'
-    },
-    {
-        file: 'apps/web/src/lib/host/usage-badge.ts',
-        route: '/api/v1/protected/billing/usage/*',
-        owner: 'HOS-1646 B13a.13',
-        reason: 'Usage badge replacement is owned by B13a.13.'
-    },
-    {
         file: 'apps/web/src/lib/billing/fetch-plans.ts',
         route: '/api/v1/public/plans',
         owner: 'HOS-1621 B13a.5',

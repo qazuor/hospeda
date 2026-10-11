@@ -4,13 +4,14 @@
  * delete flow (inline confirm → api call → refresh), and error state.
  */
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock before any imports — vitest hoists vi.mock to top of file
 const mockOwnerPromotionList = vi.fn();
 const mockOwnerPromotionRemove = vi.fn();
+const mockGetEffectiveSet = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     get ownerPromotionApi() {
@@ -20,6 +21,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         };
     }
 }));
+vi.mock('@/lib/entitlements-cache', () => ({ getEntitlementsCached: () => mockGetEffectiveSet() }));
 
 // Import AFTER mock setup
 import { PromotionList } from '../../../src/components/host/PromotionList.client';
@@ -88,7 +90,36 @@ function makeListResponse(items: (typeof mockPromo1)[]) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('PromotionList', () => {
+describe('TEST:B13a:25 PromotionList effective-set gate', () => {
+    beforeEach(() =>
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { create_promotions: 1 },
+            limits: {},
+            failed: false
+        })
+    );
+    it('shows the CTA with the key', async () => {
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        render(<PromotionList locale="es" />);
+        expect(await screen.findByRole('link', { name: 'Nueva promoción' })).toBeInTheDocument();
+    });
+    it('fails closed on missing capability and failed read', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: true });
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        render(<PromotionList locale="es" />);
+        expect(await screen.findByText('Tu plan no incluye promociones.')).toBeInTheDocument();
+        await waitFor(() =>
+            expect(screen.queryByRole('link', { name: 'Nueva promoción' })).not.toBeInTheDocument()
+        );
+    });
+    it('shows the upgrade banner and omits the empty-state CTA without the key', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        render(<PromotionList locale="es" />);
+        expect(await screen.findByText('Tu plan no incluye promociones.')).toBeInTheDocument();
+        expect(screen.queryByText(/creá tu primera oferta/i)).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Nueva promoción' })).not.toBeInTheDocument();
+    });
     it('renders loading skeleton on mount while data is pending', () => {
         mockOwnerPromotionList.mockReturnValue(new Promise(() => {})); // never resolves
 

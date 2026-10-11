@@ -22,14 +22,19 @@
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
         t: (_key: string, fallback?: string) => fallback ?? _key
-    })
+    }),
+    createT: () => (key: string, fallback?: string) =>
+        key === 'common.apiError.ENTITLEMENT_REQUIRED'
+            ? 'Tu plan no incluye esta función. Actualizalo para continuar.'
+            : (fallback ?? key)
 }));
 
 vi.mock('@/components/accommodation/PriceAlertButton.module.css', () => ({
@@ -46,13 +51,18 @@ vi.mock('@/lib/auth-cache', () => ({
 }));
 
 const mockAlertsList = vi.fn();
+const mockGetEffectiveSet = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
-    priceAlertsApi: { list: (params: unknown) => mockAlertsList(params) }
+    priceAlertsApi: { list: (params: unknown) => mockAlertsList(params) },
+    effectiveSetApi: { get: vi.fn() }
 }));
+vi.mock('@/lib/entitlements-cache', () => ({ getEntitlementsCached: () => mockGetEffectiveSet() }));
 
 // Imported after the mocks so the module graph picks them up.
 import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
+
+afterEach(() => vi.unstubAllGlobals());
 
 const PROPS = {
     accommodationId: 'acc-1',
@@ -85,11 +95,17 @@ describe('PriceAlertButton — anonymous variant', () => {
     });
 });
 
-describe('PriceAlertButton — resolved lookup', () => {
+describe('TEST:B13a:25 PriceAlertButton effective-set gate', () => {
     beforeEach(() => {
         mockReadCachedAuthMe.mockReset();
         mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
         mockAlertsList.mockReset();
+        mockGetEffectiveSet.mockReset();
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { price_alerts: 1 },
+            limits: { max_active_alerts: 10 },
+            failed: false
+        });
     });
 
     it('shows a disabled button while resolving', async () => {
@@ -114,9 +130,7 @@ describe('PriceAlertButton — resolved lookup', () => {
         const button = await screen.findByRole('button', { name: /avisame si baja el precio/i });
         await waitFor(() => expect(button).not.toBeDisabled());
         expect(mockAlertsList).toHaveBeenCalledWith({});
-        // No plan upsell link and no max-reached state: the old gate is gone.
         expect(screen.queryByRole('link')).not.toBeInTheDocument();
-        expect(screen.queryByTitle(/límite/i)).not.toBeInTheDocument();
     });
 
     it('offers cancel when an alert exists for THIS accommodation', async () => {
@@ -130,12 +144,91 @@ describe('PriceAlertButton — resolved lookup', () => {
         expect(await screen.findByRole('button', { name: /cancelar alerta/i })).toBeEnabled();
     });
 
-    it('offers the create action when the alert lookup fails', async () => {
+    it('locks when the alert lookup fails', async () => {
         mockAlertsList.mockRejectedValue(new Error('network'));
 
         render(<PriceAlertButton {...PROPS} />);
 
-        const button = await screen.findByRole('button', { name: /avisame si baja el precio/i });
-        await waitFor(() => expect(button).not.toBeDisabled());
+        expect(
+            await screen.findByRole('link', { name: /avisame si baja el precio/i })
+        ).toBeInTheDocument();
+    });
+    it('locks without capability and disables at the exact quota', async () => {
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: {},
+            limits: { max_active_alerts: 2 },
+            failed: false
+        });
+        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
+        const { unmount } = render(<PriceAlertButton {...PROPS} />);
+        expect(
+            await screen.findByRole('link', { name: /avisame si baja el precio/i })
+        ).toBeInTheDocument();
+        unmount();
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { price_alerts: 1 },
+            limits: { max_active_alerts: 2 },
+            failed: false
+        });
+        mockAlertsList.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [
+                    { id: 'a', accommodationId: 'elsewhere' },
+                    { id: 'b', accommodationId: 'elsewhere' }
+                ]
+            }
+        });
+        render(<PriceAlertButton {...PROPS} />);
+        expect(
+            await screen.findByRole('button', { name: /límite de alertas alcanzado/i })
+        ).toBeDisabled();
+    });
+    it('keeps cancel available for this listing when capability is absent', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        mockAlertsList.mockResolvedValue({
+            ok: true,
+            data: { items: [{ id: 'own', accommodationId: 'acc-1' }] }
+        });
+        render(<PriceAlertButton {...PROPS} />);
+        expect(await screen.findByRole('button', { name: /cancelar alerta/i })).toBeEnabled();
+    });
+    it('locks when the effective-set read failed', async () => {
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { price_alerts: 1 },
+            limits: {},
+            failed: true
+        });
+        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
+        render(<PriceAlertButton {...PROPS} />);
+        expect(
+            await screen.findByRole('link', { name: /avisame si baja el precio/i })
+        ).toBeInTheDocument();
+    });
+    it('translates an ENTITLEMENT_REQUIRED refusal and hides the API English message', async () => {
+        const user = userEvent.setup();
+        mockAlertsList.mockResolvedValue({ ok: true, data: { items: [] } });
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        success: false,
+                        error: {
+                            code: 'ENTITLEMENT_REQUIRED',
+                            message: 'English API refusal',
+                            status: 403
+                        }
+                    }),
+                    { status: 403, headers: { 'Content-Type': 'application/json' } }
+                )
+            )
+        );
+        render(<PriceAlertButton {...PROPS} />);
+        await user.click(await screen.findByRole('button', { name: /avisame si baja el precio/i }));
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Tu plan no incluye esta función. Actualizalo para continuar.'
+        );
+        expect(screen.queryByText('English API refusal')).not.toBeInTheDocument();
     });
 });
