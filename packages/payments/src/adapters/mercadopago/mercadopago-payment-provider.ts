@@ -14,6 +14,8 @@ import type { CapabilitySupportMap, PaymentCapability } from '../../provider/cap
 import { PaymentProviderError } from '../../provider/errors';
 import type {
     AuthorizationRef,
+    AuthorizationSearchInput,
+    AuthorizationSearchResult,
     AuthorizationSnapshot,
     AuthorizeInput,
     AuthorizeResult,
@@ -32,6 +34,7 @@ import type {
 import type { ProviderRead } from '../../provider/provider-read';
 import {
     AuthorizationRefSchema,
+    AuthorizationSearchInputSchema,
     AuthorizeInputSchema,
     ChangeAmountInputSchema,
     ChargeInputSchema,
@@ -105,6 +108,14 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     /** Capability 7 · read an authorization by id. */
     async readAuthorization(input: AuthorizationRef): Promise<ProviderRead<AuthorizationSnapshot>> {
         parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'read' });
+        throw notImplemented({ capability: 'read' });
+    }
+
+    /** Capability 7 · search authorizations. */
+    async searchAuthorizations(
+        input: AuthorizationSearchInput
+    ): Promise<AuthorizationSearchResult> {
+        parseProviderInput({ schema: AuthorizationSearchInputSchema, input, capability: 'read' });
         throw notImplemented({ capability: 'read' });
     }
 

@@ -9,6 +9,7 @@ import type { PaymentCapability } from './capabilities';
 import { PaymentProviderError } from './errors';
 import type {
     AuthorizationRef,
+    AuthorizationSearchInput,
     AuthorizeInput,
     ChangeAmountInput,
     ChargeInput,
@@ -19,6 +20,12 @@ import type {
 } from './payment-provider';
 
 const NonEmptyId = z.string().trim().min(1);
+
+/** Narrow search criteria for capability 7. */
+export const AuthorizationSearchInputSchema: z.ZodType<AuthorizationSearchInput> = z.strictObject({
+    reference: NonEmptyId.optional(),
+    status: z.enum(['pending', 'active', 'paused', 'cancelled']).optional()
+});
 
 /** Money in integer minor units and an ISO 4217 code. Floats are refused. */
 export const MoneySchema: z.ZodType<Money> = z.strictObject({

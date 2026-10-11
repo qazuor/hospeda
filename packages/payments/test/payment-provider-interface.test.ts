@@ -73,7 +73,7 @@ describe('the eight capabilities', () => {
         expect(Object.keys(CAPABILITY_METHODS)).toEqual([...PAYMENT_CAPABILITIES]);
         expect(new Set(mapped).size).toBe(mapped.length);
         expect([...PROVIDER_METHODS]).toEqual(mapped);
-        expect(PROVIDER_METHODS).toHaveLength(10);
+        expect(PROVIDER_METHODS).toHaveLength(11);
     });
 });
 
