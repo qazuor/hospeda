@@ -7,6 +7,7 @@ import {
     insertPlan,
     publishBody,
     publishUrl,
+    restoreProductionPlanCatalog,
     superAdmin,
     truncatePlanCatalog
 } from './plan-publication.helpers.js';
@@ -49,7 +50,10 @@ describe('HOS-1655 V2.4a — trial overrides and Tourist floor DO exception', ()
 
     beforeEach(async () => truncatePlanCatalog());
 
-    afterAll(async () => testDb.teardown());
+    afterAll(async () => {
+        await restoreProductionPlanCatalog();
+        await testDb.teardown();
+    });
 
     /* ------------------------------------------------------------------ */
     /*  (i) trial publishes its override limit; readVersionEffects confirms */

@@ -20,6 +20,7 @@ import {
     previewUrl,
     publishBody,
     publishUrl,
+    restoreProductionPlanCatalog,
     superAdmin,
     truncatePlanCatalog
 } from './plan-publication.helpers.js';
@@ -40,7 +41,10 @@ describe('HOS-1436 V2.3 — action 18 (route, TEST:V2:9)', () => {
 
     afterEach(() => __resetAuditLogPersisterForTests());
 
-    afterAll(async () => testDb.teardown());
+    afterAll(async () => {
+        await restoreProductionPlanCatalog();
+        await testDb.teardown();
+    });
 
     it('TEST:V2:9 SUPER_ADMIN previews key by key with the reach, publishes, and the action is audited', async () => {
         const app = initApp();

@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
     eq,
     getDb,
@@ -200,4 +203,29 @@ export async function truncatePlanCatalog(): Promise<void> {
     await getDb().execute(
         sql`TRUNCATE TABLE plan_version_entitlement, plan_version_limit, billing_option, plan_version, plan CASCADE`
     );
+}
+
+/**
+ * Restores the production catalog after these suites truncate it for isolated
+ * fixtures, so later integration suites see the catalog seeded by migration 0144.
+ * @returns A promise that resolves after every migration statement has run.
+ */
+export async function restoreProductionPlanCatalog(): Promise<void> {
+    const migrationPath = resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../../../../packages/db/src/migrations/0144_production_plan_catalog.sql'
+    );
+    const migration = readFileSync(migrationPath, 'utf8');
+    const statements = migration
+        .split('--> statement-breakpoint')
+        .map((statement) => statement.trim());
+
+    await getDb().transaction(async (tx) => {
+        await tx.execute(
+            sql`TRUNCATE TABLE plan_version_entitlement, plan_version_limit, billing_option, plan_version, plan CASCADE`
+        );
+        for (const statement of statements) {
+            if (statement) await tx.execute(sql.raw(statement));
+        }
+    });
 }
