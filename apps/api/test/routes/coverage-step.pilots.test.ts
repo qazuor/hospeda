@@ -130,9 +130,11 @@ describe('TEST:V5:10 coverage step on three accommodation pilots', () => {
         });
         const result = await post(app(), `/publish/${LISTING}/publish`);
         expect(result.status).toBe(403);
+        // HOS-1471 (AC:V6:2, owner decision): with no live title and no publication
+        // capability the owner is told to subscribe, as PB1 would answer.
         expect(result.body.error).toMatchObject({
-            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            details: { entitlementKey: 'publish_accommodations' }
+            code: ServiceErrorCode.FORBIDDEN,
+            message: 'subscription_required'
         });
         expect(mocks.coverage).toHaveBeenCalledWith({ userId: OWNER, vertical });
         expect(mocks.publish).not.toHaveBeenCalled();
