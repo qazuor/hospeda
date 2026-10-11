@@ -32,27 +32,24 @@ afterEach(async () => {
     activeServer = undefined;
 });
 
-async function server(
-    args: {
-        readonly honestAbout?: {
-            readonly lie: 'M10' | 'M11' | 'M1' | 'M6';
-            readonly why: string;
-        }[];
-        readonly clockFile?: string;
-    } = {}
-) {
+async function server(args: { readonly clockFile?: string } = {}) {
     const clock = createAdjustableClock({ start: START });
-    const provider = new FakePaymentProvider({
-        clock,
-        idNamespace: crypto.randomUUID(),
-        ...(args.honestAbout ? { honestAbout: args.honestAbout } : {})
-    });
+    const provider = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+    const http = await startServer({ provider, clock, clockFile: args.clockFile });
+    return { clock, provider, http };
+}
+
+async function startServer(args: {
+    readonly provider: FakePaymentProvider;
+    readonly clock: ReturnType<typeof createAdjustableClock>;
+    readonly clockFile?: string;
+}) {
     activeServer = await startFakeProviderServer({
-        provider,
-        clock,
+        provider: args.provider,
+        clock: args.clock,
         ...(args.clockFile ? { clockFile: args.clockFile } : {})
     });
-    return { clock, provider, http: activeServer };
+    return activeServer;
 }
 
 async function postAuthorization(url: string, body: unknown = BASE) {
@@ -80,9 +77,13 @@ describe('fake provider HTTP server', () => {
 
     it('returns a healthy link when M10 is named in the test', async () => {
         // TEST:B3:43 (soporte): la mentira se apaga por nombre y con motivo literal.
-        const { http } = await server({
+        const clock = createAdjustableClock({ start: START });
+        const provider = new FakePaymentProvider({
+            clock,
+            idNamespace: crypto.randomUUID(),
             honestAbout: [{ lie: 'M10', why: 'the case checks the honest link path' }]
         });
+        const http = await startServer({ provider, clock });
         const created = await responseJson(await postAuthorization(http.url));
         expect(created.init_point).not.toContain('activation=');
     });
@@ -145,10 +146,13 @@ describe('fake provider HTTP server', () => {
         const directory = mkdtempSync(join(tmpdir(), 'payments-fake-clock-'));
         const clockFile = join(directory, 'clock.json');
         try {
-            const { http } = await server({
-                clockFile,
+            const clock = createAdjustableClock({ start: START });
+            const provider = new FakePaymentProvider({
+                clock,
+                idNamespace: crypto.randomUUID(),
                 honestAbout: [{ lie: 'M11', why: 'the case checks expiration on the honest path' }]
             });
+            const http = await startServer({ provider, clock, clockFile });
             const created = await responseJson(await postAuthorization(http.url));
             const advanced = new Date(START.getTime() + FAKE_HONEST_LINK_LIFETIME_MS + 1);
             await http.advanceClock({ ms: FAKE_HONEST_LINK_LIFETIME_MS + 1 });
