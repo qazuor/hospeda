@@ -35,6 +35,7 @@ const mockGetViews = vi.fn();
 const mockListOwnAccommodations = vi.fn();
 const mockGetFavoritesBreakdown = vi.fn();
 const mockGetViewsDailySeries = vi.fn();
+const mockGetEffectiveSet = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     get hostAnalyticsApi() {
@@ -49,6 +50,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         };
     }
 }));
+vi.mock('@/lib/entitlements-cache', () => ({ getEntitlementsCached: () => mockGetEffectiveSet() }));
 
 // Import component AFTER mock setup (vitest handles hoisting)
 import { AnalyticsSection } from '../../../src/components/host/AnalyticsSection.client';
@@ -102,7 +104,40 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-describe('AnalyticsSection', () => {
+describe('TEST:B13a:25 AnalyticsSection effective-set gate', () => {
+    beforeEach(() =>
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { view_basic_stats: 1, view_advanced_stats: 1 },
+            limits: {},
+            failed: false
+        })
+    );
+    it('locks without basic capability or when the effective-set read fails and makes no stats requests', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        render(<AnalyticsSection locale="es" />);
+        expect(await screen.findByText(/Estadísticas disponibles/i)).toBeInTheDocument();
+        expect(mockGetViews).not.toHaveBeenCalled();
+    });
+    it('fails closed on a failed effective-set read', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: true });
+        render(<AnalyticsSection locale="es" />);
+        expect(await screen.findByText(/Estadísticas disponibles/i)).toBeInTheDocument();
+        expect(mockGetViews).not.toHaveBeenCalled();
+    });
+    it('calls only basic and daily-series endpoints for the basic set', async () => {
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { view_basic_stats: 1 },
+            limits: {},
+            failed: false
+        });
+        stubWiredEndpoints();
+        render(<AnalyticsSection locale="es" />);
+        await screen.findAllByText(/Tiempo de respuesta/i);
+        expect(mockGetViews).toHaveBeenCalled();
+        expect(mockGetViewsDailySeries).toHaveBeenCalled();
+        expect(mockGetMarketComparison).not.toHaveBeenCalled();
+        expect(mockGetFavoritesBreakdown).not.toHaveBeenCalled();
+    });
     it('renders loading skeleton while fetching', () => {
         stubWiredEndpoints();
         mockGetViews.mockReturnValue(new Promise(() => {})); // never resolves
