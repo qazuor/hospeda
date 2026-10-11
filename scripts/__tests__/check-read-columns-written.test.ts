@@ -76,6 +76,32 @@ describe('G-R6 (unitaria) - a read column that no transition writes', () => {
     });
 });
 
+describe('HOS-1448 corrida 2b - exhaustive billing transition annotations', () => {
+    it('declares reads for all five billing machines at the audited total', () => {
+        const corpus = JSON.parse(
+            readFileSync(path.join(ROOT, CORPUS_PATH), 'utf8')
+        ) as TransitionCorpus;
+        const billingMachines = [
+            'subscription',
+            'payment',
+            'refund',
+            'manual_payment',
+            'addon_instance'
+        ];
+        const counts = Object.fromEntries(
+            billingMachines.map((machine) => [
+                machine,
+                corpus.transitions
+                    .filter((row) => row.machine === machine)
+                    .reduce((total, row) => total + row.reads.length, 0)
+            ])
+        );
+        expect(Object.values(counts).every((count) => count > 0)).toBe(true);
+        // 2026-10-11, HOS-1448 corrida 2b: audited complete corpus baseline is 170 reads.
+        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(170);
+    });
+});
+
 describe('TEST:V4:18 - G-R6 over the declared corpus of the ten machines, broken on purpose', () => {
     it('checks all declared reads in the complete corpus', () => {
         const result = run();
