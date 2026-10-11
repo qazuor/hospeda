@@ -44,6 +44,13 @@ export interface CronScheduleEntry {
  */
 export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
     {
+        name: 'listing-inactivity-archive',
+        displayName: 'Archivado de fichas por inactividad',
+        category: 'system',
+        schedule: '30 5 * * *',
+        description: 'Archive inactive listings through PB4 and PB5 once per day.'
+    },
+    {
         name: 'listing-coverage-reconciler',
         displayName: 'Reconciliador diario de cobertura de fichas',
         category: 'system',
