@@ -28,9 +28,9 @@ describe('subscription billing ports defaults', () => {
     it('keeps the default annotation a no-op and logs but swallows annotator errors', async () => {
         const subscriptionId = crypto.randomUUID();
         const seenAt = new Date('2026-10-01T03:00:00.000Z');
-        const annotations = vi.fn(async () => undefined);
-        await noCancellationSeenAnnotation.annotateCancellationSeen({ subscriptionId, seenAt });
-        expect(annotations).not.toHaveBeenCalled();
+        await expect(
+            noCancellationSeenAnnotation.annotateCancellationSeen({ subscriptionId, seenAt })
+        ).resolves.toBeUndefined();
 
         const errors: LogEntry[] = [];
         registerHook('cancellation-seen-port-test', (entry) => {
