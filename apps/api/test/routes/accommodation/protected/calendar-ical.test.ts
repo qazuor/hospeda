@@ -65,6 +65,7 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical: VerticalEnum.ACCOMMODATION,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [
                     { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
                     { key: 'can_sync_external_calendar', value: 1, strategy: 'MAX' }

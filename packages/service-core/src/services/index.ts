@@ -74,6 +74,7 @@ export * from './billing/reconciliation/lift-reconciliation-mark.service.js';
 export * from './billing/reconciliation/open-reconciliation-mark.service.js';
 export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
 export * from './billing/subscription/activate-subscription.service.js';
+export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
 export * from './billing/subscription/expire-authorization-windows.service.js';
 export * from './billing/subscription/start-subscription.service.js';
 export * from './billing/subscription/succession-target-guard.js';

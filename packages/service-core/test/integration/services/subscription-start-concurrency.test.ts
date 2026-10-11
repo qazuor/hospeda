@@ -20,6 +20,7 @@ import {
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { ServiceError } from '../../../src/types';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
 afterEach(() => vi.restoreAllMocks());
@@ -144,7 +145,8 @@ function ports(
             current: true,
             sellable: true
         }),
-        beforeCancelNotice: notice
+        beforeCancelNotice: notice,
+        touristVipInheritance: noTouristVip
     };
 }
 

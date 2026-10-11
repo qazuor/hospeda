@@ -14,6 +14,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { activateSubscription } from '../../../src/services/billing/subscription/activate-subscription.service.ts';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.ts';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { noTouristVip } from './support/tourist-vip.ts';
 
 const values = {
     '10': { cardHours: 72, manualDays: 7 },
@@ -123,7 +124,8 @@ async function start(
                 current: true,
                 sellable: true
             }),
-            beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: noTouristVip
         }
     );
 }
@@ -159,7 +161,14 @@ describe('TEST:B3:13 ABANDONED never returns to ACTIVE', () => {
         await abandon(first.subscriptionId);
         await fake.cancel({ authorizationId: first.authorizationId.split(':').at(-1)! });
         expect(
-            (await activateSubscription(first.subscriptionId, { provider, clock })).activated
+            (
+                await activateSubscription(first.subscriptionId, {
+                    provider,
+                    clock,
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                    touristVipInheritance: noTouristVip
+                })
+            ).activated
         ).toBe(false);
         expect(await status(first.subscriptionId)).toBe('ABANDONED');
     });
@@ -171,7 +180,14 @@ describe('TEST:B3:13 ABANDONED never returns to ACTIVE', () => {
         await abandon(first.subscriptionId);
         await fake.approve({ authorizationId: first.authorizationId.split(':').at(-1)! });
         expect(
-            (await activateSubscription(first.subscriptionId, { provider, clock })).activated
+            (
+                await activateSubscription(first.subscriptionId, {
+                    provider,
+                    clock,
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                    touristVipInheritance: noTouristVip
+                })
+            ).activated
         ).toBe(false);
         expect(await status(first.subscriptionId)).toBe('ABANDONED');
         expect(

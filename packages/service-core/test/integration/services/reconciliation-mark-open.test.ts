@@ -11,6 +11,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
 const deadlines = {
@@ -235,7 +236,8 @@ describe('TEST:B3:14 S14 reconciliation marks', () => {
                         current: true,
                         sellable: true
                     }),
-                    beforeCancelNotice: { beforeCancel: async () => 'SENT' }
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+                    touristVipInheritance: noTouristVip
                 }
             )
         ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });

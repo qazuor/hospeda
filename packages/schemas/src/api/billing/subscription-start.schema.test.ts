@@ -29,6 +29,7 @@ describe('TEST:B3:2 subscription start request', () => {
             'PLAN_NOT_FOR_SALE',
             'PREVIOUS_ATTEMPT_CLOSING',
             'COMMITMENT_TAKEN',
+            'TOURIST_VIP_INHERITED',
             'CREATION_NOT_APPLIED'
         ]);
         expect(StartSubscriptionRejectionReasonSchema.safeParse('OTHER').success).toBe(false);

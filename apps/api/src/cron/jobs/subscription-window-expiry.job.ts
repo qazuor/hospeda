@@ -1,5 +1,6 @@
-import { expireAuthorizationWindows } from '@repo/service-core';
+import { expireAuthorizationWindows, sweepInheritedTouristVips } from '@repo/service-core';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
+import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
 import { getClock } from '../../utils/clock.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
@@ -30,7 +31,14 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
             const summary = await expireAuthorizationWindows(100, {
                 provider: getPaymentProvider(),
                 clock: getClock().clock,
-                beforeCancelNotice
+                beforeCancelNotice,
+                touristVipInheritance
+            });
+            const vipSummary = await sweepInheritedTouristVips(100, {
+                provider: getPaymentProvider(),
+                clock: getClock().clock,
+                beforeCancelNotice,
+                touristVipInheritance
             });
             const durationMs = Date.now() - startedAt.getTime();
             logger.info('Authorization window expiry completed', { ...summary, durationMs });
@@ -40,7 +48,7 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
                 processed: summary.abandoned + summary.activated,
                 errors: 0,
                 durationMs,
-                details: { ...summary }
+                details: { ...summary, ...vipSummary }
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);

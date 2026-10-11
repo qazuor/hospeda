@@ -64,6 +64,7 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical: VerticalEnum.EXPERIENCE,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'edit_experience_info', value: 1, strategy: 'MAX' }]
             })
     })

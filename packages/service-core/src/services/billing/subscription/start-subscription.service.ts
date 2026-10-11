@@ -22,6 +22,7 @@ import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
+import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import { resolveLiveCommitmentReuse } from './resolve-live-commitment';
 
 const logger = createLogger('subscription-start');
@@ -38,6 +39,7 @@ export interface BeforeCancelNotice {
     beforeCancel(input: {
         readonly subscriptionId: string;
         readonly userId: string;
+        readonly kind?: 'TOURIST_VIP_INHERITED';
     }): Promise<BeforeCancelNoticeStatus>;
 }
 
@@ -46,6 +48,7 @@ export interface StartSubscriptionPorts {
     readonly clock: Clock;
     readonly planPolicy: VerticalsForBilling['planPolicy'];
     readonly beforeCancelNotice: BeforeCancelNotice;
+    readonly touristVipInheritance: TouristVipInheritancePort;
 }
 
 export interface StartSubscriptionInput {
@@ -183,6 +186,17 @@ export async function startSubscription(
         .limit(1);
     if (!choice) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Billing option not found');
     await assertPlanForSale({ planVersionId: choice.planVersionId, planPolicy: ports.planPolicy });
+    if (
+        choice.vertical === 'tourist' &&
+        (await ports.touristVipInheritance.inherits({ userId: input.userId }))
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Your current plan already includes Tourist VIP',
+            undefined,
+            'TOURIST_VIP_INHERITED'
+        );
+    }
 
     const declined = await subscriptionModel.findDeclinedWithProviderLinks({
         userId: input.userId,

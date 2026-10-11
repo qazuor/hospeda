@@ -13,6 +13,7 @@ import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { expireAuthorizationWindows } from '../../../src/services/billing/subscription/expire-authorization-windows.service.ts';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { noTouristVip } from './support/tourist-vip.ts';
 
 const values = {
     '10': { cardHours: 72, manualDays: 7 },
@@ -48,7 +49,12 @@ function setup() {
         clock,
         honestAbout: [{ lie: 'M1', why: 'healthy signup fixture' }]
     });
-    return { provider, clock, beforeCancelNotice: { beforeCancel: async () => 'SENT' as const } };
+    return {
+        provider,
+        clock,
+        beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
+        touristVipInheritance: noTouristVip
+    };
 }
 
 async function seedChoice() {
