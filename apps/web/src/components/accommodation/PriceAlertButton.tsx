@@ -166,7 +166,12 @@ export function PriceAlertButton({
                 try {
                     const body = (await res.json()) as ErrorResponse;
                     message = translateApiError({
-                        error: { ...body.error, status: body.error?.status ?? res.status },
+                        error: {
+                            code: body.error?.code,
+                            reason: body.error?.reason,
+                            status: body.error?.status ?? res.status,
+                            details: body.error?.details
+                        },
                         locale,
                         fallback: createErrorMsg
                     });
@@ -208,7 +213,12 @@ export function PriceAlertButton({
                 try {
                     const body = (await res.json()) as ErrorResponse;
                     message = translateApiError({
-                        error: { ...body.error, status: body.error?.status ?? res.status },
+                        error: {
+                            code: body.error?.code,
+                            reason: body.error?.reason,
+                            status: body.error?.status ?? res.status,
+                            details: body.error?.details
+                        },
                         locale,
                         fallback: cancelErrorMsg
                     });
