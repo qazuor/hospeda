@@ -3131,6 +3131,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/publish/subscribe-destination/:vertical"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/recommendations"
         },
         {

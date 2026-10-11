@@ -6,8 +6,10 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { protectedPublishPrecheckRoute } from './precheck';
+import { protectedSubscribeDestinationRoute } from './subscribe-destination';
 
 const app = createRouter();
 app.route('/', protectedPublishPrecheckRoute);
+app.route('/', protectedSubscribeDestinationRoute);
 
 export { app as protectedPublishRoutes };

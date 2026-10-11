@@ -27,12 +27,14 @@ import type {
     PriceAlertResponse,
     ProtectedEffectiveSetResponse,
     PublishEligibilityResponse,
+    SubscribeDestinationResponseSchema,
     UserBookmark,
     UserProtected,
     UserPublic,
     VerticalEnum
 } from '@repo/schemas';
 import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
+import type { z } from 'zod';
 import type { MediaAttribution } from '../media';
 import { apiClient } from './client';
 import { transformProtectedEffectiveSet } from './transforms';
@@ -2854,6 +2856,7 @@ export const hostOnboardingApi = {
  * sites rather than silently reshaping a rendered page.
  */
 export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
+export type SubscribeDestinationResponse = z.infer<typeof SubscribeDestinationResponseSchema>;
 
 /**
  * Publish precheck API (HOS-1156 D-7).
@@ -2890,6 +2893,19 @@ export const publishApi = {
     }): Promise<ApiResult<HostOnboardingPrecheckResponse>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/publish/precheck/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    subscribeDestination({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<SubscribeDestinationResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/subscribe-destination/${vertical}`,
             cookieHeader
         });
     },

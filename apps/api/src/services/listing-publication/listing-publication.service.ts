@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { accommodations, getDb, users } from '@repo/db';
-import { resolveListingCompleteness, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import {
+    NO_PLANS_AVAILABLE_MESSAGE,
+    resolveListingCompleteness,
+    ServiceErrorCode,
+    VerticalEnum
+} from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import {
     AccommodationService,
@@ -14,6 +19,7 @@ import type { PublicationVertical } from '../../../../../packages/verticals/src/
 import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/publication/publication-types';
 import { getListingPublicationPorts } from '../../utils/listing-publication/ports';
 import { loadListingMedia } from '../listing-media';
+import { resolveSubscribeDestinationForUser } from './subscribe-destination.service';
 
 const accommodationService = new AccommodationService({});
 const gastronomyService = new GastronomyService({});
@@ -110,7 +116,17 @@ export class ListingPublicationService {
             emailPseudonym: email.pseudonym,
             correlationId: randomUUID()
         });
-        if (!result.published) throw mapListingPublishDenial(result.reason, vertical);
+        if (!result.published) {
+            if (isTrialStartDeniedReason(result.reason)) {
+                const destination = await resolveSubscribeDestinationForUser({
+                    userId: ownerId,
+                    vertical
+                });
+                if (destination.destination === 'NO_PLANS_AVAILABLE')
+                    throw new ServiceError(ServiceErrorCode.FORBIDDEN, NO_PLANS_AVAILABLE_MESSAGE);
+            }
+            throw mapListingPublishDenial(result.reason, vertical);
+        }
 
         if (vertical === VerticalEnum.ACCOMMODATION) {
             const [updated] = await db
@@ -226,4 +242,15 @@ export function mapListingPublishDenial(
     if (reason === 'LISTING_NOT_FOUND' || reason === 'NOT_OWNER')
         return new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
     return new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
+}
+
+function isTrialStartDeniedReason(reason: string): boolean {
+    return [
+        'EVENT_NOT_DECLARED_BY_VERTICAL',
+        'TRIAL_DAYS_NOT_POSITIVE',
+        'ALREADY_COVERED',
+        'NO_SELLABLE_CURRENT_VERSION',
+        'USER_ALREADY_HAS_TRIAL_ROW',
+        'EMAIL_PSEUDONYM_ALREADY_USED'
+    ].includes(reason);
 }

@@ -100,6 +100,7 @@ import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedN
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { NO_PLANS_AVAILABLE_MESSAGE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishButton.module.css';
 
@@ -120,6 +121,7 @@ type PublishState =
     | 'pending'
     | 'error'
     | 'subscriptionRequired'
+    | 'noPlans'
     | 'missingRequirements';
 
 /**
@@ -280,6 +282,13 @@ export function PublishButton({
                 setState('subscriptionRequired');
                 return;
             }
+            if (
+                result.error.status === 403 &&
+                result.error.message === NO_PLANS_AVAILABLE_MESSAGE
+            ) {
+                setState('noPlans');
+                return;
+            }
             // Admin-paused signups reached the API (the page's verdict was
             // stale). The listing stays a draft; retrying cannot help.
             if (result.error.code === 'NEW_PAID_SIGNUPS_FROZEN') {
@@ -333,6 +342,19 @@ export function PublishButton({
                 variant="firstPublish"
                 testId="publish-paused-notice"
             />
+        );
+    }
+
+    if (state === 'noPlans') {
+        return (
+            <span
+                className={styles.noPlans}
+                role="alert"
+                data-testid="publish-no-plans"
+            >
+                <strong>{t('publish.noPlans.title')}</strong>
+                <span>{t('publish.noPlans.body')}</span>
+            </span>
         );
     }
 

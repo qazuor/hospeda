@@ -23,6 +23,7 @@
  */
 
 import PricingCardItemLine from '@/components/billing/PricingCardItem.astro';
+import { SubscribeButton } from '@/components/billing/SubscribeButton.client';
 import { buildPricingCardViews } from '@/components/billing/pricing-card-view';
 import { resolvePlanWatermarkIcon } from '@/components/billing/plan-watermark-icon';
 import type { PricingPlan } from '@/components/billing/pricing-card-view';
@@ -31,6 +32,7 @@ import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { SUBSCRIBE_VERTICAL_BY_AUDIENCE } from '@/lib/publish/subscribe-button';
 
 export type { PricingPlan };
 
@@ -131,6 +133,7 @@ if (ctaMode === 'link' && !ctaHref) {
 
 const { t, tPlural } = createTranslations(locale);
 const hasPlans = plans.length > 0;
+const subscribeVertical = SUBSCRIBE_VERTICAL_BY_AUDIENCE[audience];
 
 // Annual toggle: only render the UI when at least one plan in the grid has
 // an annual price configured. If every plan is monthly-only, the toggle is
@@ -530,6 +533,10 @@ const selectGroupName = `pricing-select-${audience}`;
 		</div>
 	)}
 </div>
+
+{ctaMode === 'checkout' && subscribeVertical !== null && (
+	<SubscribeButton client:visible locale={locale} vertical={subscribeVertical} />
+)}
 
 <style>
 	.pricing-cards__container {

@@ -1,11 +1,13 @@
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { NO_PLANS_AVAILABLE_MESSAGE, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { isSystemActor, ServiceError } from '@repo/service-core';
 import { OPERATION_STEP6_KEY, resolveListingAccess } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { resolveSubscribeDestinationForUser } from '../services/listing-publication/subscribe-destination.service';
 import type { ListingAccessConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { getListingAccessPorts } from '../utils/listing-access/ports';
+import { apiLogger } from '../utils/logger';
 
 /** Whether `key` is one of the step-6 capabilities that admit publishing in `vertical`. */
 function isPublishCapabilityKey({
@@ -112,6 +114,25 @@ export async function enforceListingAccess(args: {
                     })
                 ).hasLiveNonTrialTitle
             ) {
+                let destination: Awaited<ReturnType<typeof resolveSubscribeDestinationForUser>>;
+                try {
+                    destination = await resolveSubscribeDestinationForUser({
+                        userId: subjectId,
+                        vertical: config.vertical
+                    });
+                } catch (error) {
+                    apiLogger.error(
+                        {
+                            userId: subjectId,
+                            vertical: config.vertical,
+                            error: error instanceof Error ? error.message : String(error)
+                        },
+                        'Failed to resolve listing publication subscribe destination'
+                    );
+                    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
+                }
+                if (destination.destination === 'NO_PLANS_AVAILABLE')
+                    throw new ServiceError(ServiceErrorCode.FORBIDDEN, NO_PLANS_AVAILABLE_MESSAGE);
                 throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
             }
             throw new ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, 'Entitlement required', {

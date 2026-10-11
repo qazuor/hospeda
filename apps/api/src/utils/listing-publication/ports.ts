@@ -6,11 +6,9 @@ import {
     emailOutboxModel,
     getDb,
     listingPublicationModel,
-    planCatalogModel,
     trials,
     users
 } from '@repo/db';
-import { TRIAL_PLAN_ROLE, VERTICAL_ACTIVATION_EVENT_BY_VERTICAL } from '@repo/schemas';
 import { getRevalidationService } from '@repo/service-core';
 import { and, eq, sql } from 'drizzle-orm';
 import { LISTING_RESTITUTION_TEMPLATE } from '../../../../../packages/verticals/src/publication/publication-notices';
@@ -26,6 +24,7 @@ import { getClock } from '../clock';
 import { invalidateEffectiveSetsForUser } from '../effective-set-cache';
 import { getListingAccessPorts } from '../listing-access/ports';
 import { apiLogger } from '../logger';
+import { buildTrialStartReader } from './trial-start-reader';
 
 const LISTING_TABLE_BY_VERTICAL: Readonly<Record<PublicationVertical, string>> = {
     accommodation: 'accommodations',
@@ -110,6 +109,7 @@ export function getListingPublicationPorts(options?: {
                             correlationId: input.correlationId || randomUUID()
                         });
                     },
+                    ...buildTrialStartReader({ client: tx }),
                     async enqueueRestitutionNotice(input) {
                         const [owner] = await tx
                             .select({ email: users.email })
@@ -140,50 +140,6 @@ export function getListingPublicationPorts(options?: {
                             },
                             tx
                         );
-                    },
-                    async findActivationEvent({ vertical }) {
-                        return VERTICAL_ACTIVATION_EVENT_BY_VERTICAL[vertical];
-                    },
-                    async findTrialPlan({ vertical }) {
-                        const planResult = await tx.execute(sql<{ id: string }>`
-                            SELECT id FROM plan WHERE vertical = ${vertical} AND role = ${TRIAL_PLAN_ROLE} LIMIT 1`);
-                        const plan = planResult.rows[0];
-                        if (!plan) return null;
-                        const versions = await tx.execute(sql<{ id: string; trialDays: number }>`
-                            SELECT id, trial_days AS "trialDays" FROM plan_version
-                            WHERE plan_id = ${plan.id} AND current = true LIMIT 1`);
-                        const version = versions.rows[0];
-                        return version
-                            ? {
-                                  planId: String(plan.id),
-                                  planVersionId: String(version.id),
-                                  trialDays: Number(version.trialDays)
-                              }
-                            : null;
-                    },
-                    async findSellableCurrentVersions({ vertical }) {
-                        return planCatalogModel.findSellableCurrentVersions({ vertical, tx });
-                    },
-                    async findTrialOfUser({ userId, vertical }) {
-                        const [row] = await tx
-                            .select()
-                            .from(trials)
-                            .where(and(eq(trials.userId, userId), eq(trials.vertical, vertical)))
-                            .limit(1);
-                        return row ? { id: row.id } : null;
-                    },
-                    async findTrialByPseudonym({ emailPseudonym, vertical }) {
-                        const [row] = await tx
-                            .select({ userId: trials.userId })
-                            .from(trials)
-                            .where(
-                                and(
-                                    eq(trials.emailPseudonym, emailPseudonym),
-                                    eq(trials.vertical, vertical)
-                                )
-                            )
-                            .limit(1);
-                        return row ?? null;
                     },
                     async insertTrial({ row }) {
                         const inserted = await tx
