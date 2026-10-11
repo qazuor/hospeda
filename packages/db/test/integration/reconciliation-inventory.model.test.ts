@@ -103,7 +103,7 @@ async function addSubscription(args: {
     return { subscription, providerLink };
 }
 
-describe('reconciliation inventory and re-link persistence (TEST:B11:1, 2, 7)', () => {
+describe('reconciliation inventory and re-link persistence', () => {
     it('lists only linked live principal and complement rows in keyset order', async () => {
         await withTestTransaction(async (tx) => {
             const anchors = await anchor(tx);
