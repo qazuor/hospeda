@@ -170,7 +170,7 @@ describe('provider cancellation mirror', () => {
             declineReason: 'risk'
         });
         await provider.cancel({ authorizationId: started.authorizationId });
-        const [delivery] = provider.takeDeliveries().deliveries;
+        const delivery = await takeAuthorizationDelivery(provider);
         if (!delivery) throw new Error('missing cancellation delivery');
         const result = await processProviderNotice(
             { channel: 'WEBHOOKS', delivery },
