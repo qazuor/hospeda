@@ -59,7 +59,7 @@ describe('TEST:B13a:25 effective-set consumers', () => {
         expect(await screen.findByText('paid feature')).toBeInTheDocument();
         first.unmount();
         state.response = effectiveSet({}, {});
-        render(
+        const second = render(
             <PlanEntitlementGate
                 entitlementKey="rich_description"
                 fallback={<span>upgrade</span>}
@@ -69,9 +69,21 @@ describe('TEST:B13a:25 effective-set consumers', () => {
         );
         await waitFor(() => expect(screen.queryByText('paid feature')).not.toBeInTheDocument());
         expect(screen.getByText('upgrade')).toBeInTheDocument();
+        second.unmount();
+        state.response = { ...effectiveSet({}, {}), failed: true };
+        render(
+            <PlanEntitlementGate
+                entitlementKey="rich_description"
+                fallback={<span>upgrade after failure</span>}
+            >
+                <span>paid feature after failure</span>
+            </PlanEntitlementGate>
+        );
+        expect(await screen.findByText('upgrade after failure')).toBeInTheDocument();
+        expect(screen.queryByText('paid feature after failure')).not.toBeInTheDocument();
     });
 
-    it('CalendarSyncLauncher opens the panel with the key and upsell without it', async () => {
+    it('CalendarSyncLauncher opens only with the key and upsells when absent or failed', async () => {
         const user = (await import('@testing-library/user-event')).default.setup();
         state.response = effectiveSet({ can_sync_external_calendar: 1 }, {});
         const first = render(
@@ -84,6 +96,17 @@ describe('TEST:B13a:25 effective-set consumers', () => {
         expect(await screen.findByTestId('sync-panel')).toBeInTheDocument();
         first.unmount();
         state.response = effectiveSet({}, {});
+        const second = render(
+            <CalendarSyncLauncher
+                locale="es"
+                accommodationId="acc-1"
+            />
+        );
+        await user.click(screen.getByRole('button', { name: /Conectar calendarios externos/ }));
+        expect(await screen.findByText('Función premium')).toBeInTheDocument();
+        expect(screen.queryByTestId('sync-panel')).not.toBeInTheDocument();
+        second.unmount();
+        state.response = { ...effectiveSet({}, {}), failed: true };
         render(
             <CalendarSyncLauncher
                 locale="es"
