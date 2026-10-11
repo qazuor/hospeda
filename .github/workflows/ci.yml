@@ -324,6 +324,9 @@ jobs:
         run: pnpm check:sdk-outside-adapter
       - name: Check no decision comes out of a notice without re-reading by id (GUARD:G17)
         run: pnpm check:decision-rereads-by-id
+      # GUARD:G5 (HOS-1473, AC:V6:6)
+      - name: Check coverage sources reach surplus reconciliation (GUARD:G5)
+        run: pnpm check:surplus-reconciler
       # GUARD:G15 (HOS-1510, AC:B1:9). Its own step, like every guard here. The fake
       # payment provider lies only from its closed list, each lie in one place and
       # each row whole (a); a test turns a lie off only by naming it and saying
