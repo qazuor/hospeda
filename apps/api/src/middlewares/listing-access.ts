@@ -7,6 +7,28 @@ import type { ListingAccessConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { getListingAccessPorts } from '../utils/listing-access/ports';
 
+/** Whether `key` is one of the step-6 capabilities that admit publishing in `vertical`. */
+function isPublishCapabilityKey({
+    vertical,
+    key
+}: {
+    readonly vertical: ListingAccessConfig['vertical'];
+    readonly key: string;
+}): boolean {
+    const requirement = OPERATION_STEP6_KEY.PUBLISH;
+    switch (requirement.kind) {
+        case 'ANY_OF_VERTICAL':
+            return requirement.keys[vertical].includes(key);
+        case 'VERTICAL_KEY':
+            return requirement.keys[vertical] === key;
+        case 'KEY':
+            return requirement.key === key;
+        case 'NONE':
+        case 'CALLER_KEY':
+            return false;
+    }
+}
+
 /** Enforce a listing decision inside a validated route handler. */
 export async function enforceListingAccess(args: {
     ctx: Context;
@@ -82,9 +104,7 @@ export async function enforceListingAccess(args: {
                 config.operation === 'PUBLISH' &&
                 subjectId !== null &&
                 result.key &&
-                (OPERATION_STEP6_KEY.PUBLISH.keys[config.vertical] as readonly string[]).includes(
-                    result.key
-                ) &&
+                isPublishCapabilityKey({ vertical: config.vertical, key: result.key }) &&
                 !(
                     await ports.effectiveSet({
                         userId: subjectId,
