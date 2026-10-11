@@ -65,6 +65,9 @@ export * from './appLog/index.js';
 export * from './attraction/attraction.service';
 export * from './auditLog/index.js';
 export * from './billing/deadlines/billing-deadlines.service.js';
+export * from './billing/notice/process-provider-notice.service.js';
+export * from './billing/notice/provider-notice-mirror.js';
+export * from './billing/notice/provider-notice-ports.js';
 export {
     NotificationRetentionService,
     type RetentionSummary
