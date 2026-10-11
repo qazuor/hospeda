@@ -363,6 +363,21 @@ export function readMigrations({ migrationsDir }: { readonly migrationsDir: stri
 }
 
 /**
+ * Detects the cutover baseline by its sole versioned filename. INFERIDO: the
+ * step 6 generator emits `0000_baseline.sql`; the journal is not inspected.
+ * @param input - Detection input.
+ * @param input.files - Versioned migration files in apply order.
+ * @returns Whether these files identify the generated baseline history.
+ */
+export function isBaselineHistory({
+    files
+}: {
+    readonly files: readonly { readonly name: string; readonly sql: string }[];
+}): boolean {
+    return files.length === 1 && files[0]?.name === '0000_baseline.sql';
+}
+
+/**
  * Runs GUARD:G18.
  *
  * @param args - Run input.
@@ -375,7 +390,7 @@ export function run(
 ): { readonly exitCode: number; readonly output: string } {
     const repoRoot = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
     const migrationsDir = args.migrationsDir ?? join(repoRoot, MIGRATIONS_DIR);
-    const loads = args.loads ?? LOAD_NAMES.map((name) => buildLoads()[name]);
+    const allLoads = args.loads ?? LOAD_NAMES.map((name) => buildLoads()[name]);
     const lines = ['=== GUARD:G18 - migration reference rows match the code catalog ==='];
 
     let files: ReturnType<typeof readMigrations>;
@@ -391,6 +406,17 @@ export function run(
         );
         return { exitCode: 1, output: lines.join('\n') };
     }
+
+    const baselineMode = isBaselineHistory({ files });
+    const mode =
+        args.loads === undefined
+            ? baselineMode
+                ? 'baseline history: catalog_key and vertical only'
+                : 'full migration history: all catalog loads'
+            : 'explicit load selection';
+    const loads =
+        args.loads ?? (baselineMode ? [buildLoads().catalog_key, buildLoads().vertical] : allLoads);
+    lines[0] = `=== GUARD:G18 - migration reference rows match the code catalog (${mode}) ===`;
 
     const violations = loads.flatMap((load) => compareLoad({ files, load }));
     if (violations.length > 0) {
@@ -412,7 +438,7 @@ export function run(
     }
 
     lines.push(
-        `OK: ${files.length} migration file(s) read; ${loads
+        `OK: ${mode}; ${files.length} migration file(s) read; ${loads
             .map((l) => `${l.table} ${l.rows.length} row(s)`)
             .join(', ')} match the code catalog.`
     );
