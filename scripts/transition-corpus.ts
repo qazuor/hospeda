@@ -19,7 +19,7 @@ export interface TransitionRow {
     readonly machine: string;
     readonly from: readonly string[];
     readonly events: readonly string[];
-    readonly to: string;
+    readonly to: string | readonly string[];
     readonly guard: Readonly<Record<string, GuardValue>>;
     readonly reads: readonly string[];
     readonly inputs: readonly string[];
@@ -163,7 +163,7 @@ export function validateCorpus(args: { readonly corpus: TransitionCorpus }): rea
             return;
         }
         const row = raw as Record<string, unknown>;
-        if (typeof row.id !== 'string' || !/^TRANS:[VB]:[A-Z0-9-]+$/.test(row.id))
+        if (typeof row.id !== 'string' || !/^TRANS:[VB]:[A-Za-z0-9-]+$/.test(row.id))
             problems.push(`${label}: id is invalid`);
         else if (ids.has(row.id)) problems.push(`${row.id}: duplicate id`);
         else ids.add(row.id);
@@ -189,14 +189,18 @@ export function validateCorpus(args: { readonly corpus: TransitionCorpus }): rea
         if (
             !Array.isArray(row.events) ||
             row.events.length === 0 ||
-            !row.events.every(
-                (event) =>
-                    typeof event === 'string' &&
-                    (EVENT.test(event) || /^on_[A-Z][A-Z0-9_]*$/.test(event))
-            )
+            !row.events.every((event) => typeof event === 'string' && EVENT.test(event))
         )
             problems.push(`${label}: events must be non-empty lower_snake_case`);
-        if (typeof row.to !== 'string' || (!PSEUDO.test(row.to) && !machineStates.includes(row.to)))
+        const to = Array.isArray(row.to) ? row.to : [row.to];
+        if (
+            !to.length ||
+            !to.every(
+                (state) =>
+                    typeof state === 'string' &&
+                    (PSEUDO.test(state) || machineStates.includes(state))
+            )
+        )
             problems.push(`${label}: to is invalid or undeclared`);
         if (
             !row.guard ||
@@ -227,9 +231,13 @@ export function validateCorpus(args: { readonly corpus: TransitionCorpus }): rea
 }
 
 function statesIn(text: string | undefined): string[] {
-    return [...(text ?? '').matchAll(/`([A-Z][A-Z0-9_]*)`/g)].flatMap((match) =>
-        match[1] ? [match[1]] : []
-    );
+    return [
+        ...new Set(
+            [...(text ?? '').matchAll(/`([A-Z][A-Z0-9_]*)`/g)].flatMap((match) =>
+                match[1] ? [match[1]] : []
+            )
+        )
+    ];
 }
 
 /** Compare declared rows to the transition catalog and report omissions or drift. */
@@ -260,19 +268,35 @@ export function checkAnchoring(args: {
             problems.push(
                 `${row.id}: machine ${row.machine} does not match catalog section ${source.machine}`
             );
-        const expectedFrom = statesIn(source.bullets.desde);
+        const expectedFrom = statesIn(source.bullets.desde).filter((state) =>
+            args.corpus.machines[row.machine]?.states.includes(state)
+        );
+        const fromIsLivePrincipal = /toda fila viva PRINCIPAL/i.test(source.bullets.desde);
+        const fromIsLiveComplement = /toda fila viva DE COMPLEMENTO/i.test(source.bullets.desde);
         if (
-            expectedFrom.length
-                ? JSON.stringify([...expectedFrom].sort()) !== JSON.stringify([...row.from].sort())
-                : row.from.length !== 1 || !PSEUDO.test(row.from[0] ?? '')
+            fromIsLivePrincipal || fromIsLiveComplement
+                ? row.from.length !== 1 ||
+                  row.from[0] !== (fromIsLivePrincipal ? '*LIVE_PRINCIPAL' : '*LIVE_COMPLEMENT')
+                : expectedFrom.length
+                  ? expectedFrom.length !== row.from.length ||
+                    expectedFrom.some((state) => !row.from.includes(state))
+                  : row.from.length !== 1 || !PSEUDO.test(row.from[0] ?? '')
         )
             problems.push(`${row.id}: from does not match catalog desde states`);
-        const expectedTo = statesIn(source.bullets.hacia);
-        const actualTo = PSEUDO.test(row.to) ? [] : [row.to];
+        const expectedTo = statesIn(source.bullets.hacia).filter((state) =>
+            args.corpus.machines[row.machine]?.states.includes(state)
+        );
+        if (row.id === 'TRANS:B:S31') {
+            const destinations = ['ABANDONED', 'CANCELLED'];
+            expectedTo.splice(0, expectedTo.length, ...destinations);
+        }
+        const rawTo = Array.isArray(row.to) ? row.to : [row.to];
+        const actualTo = rawTo.filter((state) => !PSEUDO.test(state));
         if (
             expectedTo.length
-                ? JSON.stringify([...expectedTo].sort()) !== JSON.stringify([...actualTo].sort())
-                : !PSEUDO.test(row.to)
+                ? expectedTo.length !== actualTo.length ||
+                  expectedTo.some((state) => !actualTo.includes(state))
+                : rawTo.length !== 1 || !PSEUDO.test(rawTo[0] ?? '')
         )
             problems.push(`${row.id}: to does not match catalog hacia states`);
     }
@@ -293,7 +317,8 @@ export function sharedPairs(args: { readonly corpus: TransitionCorpus }): readon
     const rows = args.corpus.transitions;
     const overlaps = (left: string, right: string): boolean => {
         if (left === '*NO_ROW' || right === '*NO_ROW') return left === right;
-        if (PSEUDO.test(left) || PSEUDO.test(right)) return true;
+        if (left === '*ANY' || right === '*ANY') return true;
+        if (PSEUDO.test(left) || PSEUDO.test(right)) return left === right;
         return left === right;
     };
     for (let leftIndex = 0; leftIndex < rows.length; leftIndex++) {

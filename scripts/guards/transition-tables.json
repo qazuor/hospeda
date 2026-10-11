@@ -35,15 +35,15 @@
             "subStateOf": null,
             "stateColumn": "subscription.status",
             "states": [
-                "PENDING_AUTHORIZATION",
                 "ABANDONED",
                 "ACTIVE",
+                "CANCELLED",
+                "CANCEL_SCHEDULED",
+                "CHARGE_DECLINED",
                 "GRACE_PERIOD",
                 "PAUSED",
-                "SUSPENDED",
-                "CANCEL_SCHEDULED",
-                "CANCELLED",
-                "CHARGE_DECLINED"
+                "PENDING_AUTHORIZATION",
+                "SUSPENDED"
             ]
         },
         "grace": {
@@ -93,7 +93,7 @@
             "table": "addon_instance",
             "subStateOf": null,
             "stateColumn": "addon_instance.status",
-            "states": ["PENDING_AUTHORIZATION", "ABANDONED", "ACTIVE", "EXPIRED", "CANCELLED"]
+            "states": ["ABANDONED", "ACTIVE", "CANCELLED", "EXPIRED", "PENDING_AUTHORIZATION"]
         }
     },
     "transitions": [
@@ -417,6 +417,701 @@
             "reads": [],
             "inputs": [],
             "writes": ["partner_application.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S1",
+            "machine": "subscription",
+            "from": ["*NO_ROW"],
+            "events": ["plan_chosen"],
+            "to": ["PENDING_AUTHORIZATION"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": [
+                "subscription.status",
+                "domain_event.changes",
+                "subscription.next_charge_at",
+                "subscription.authorization_window_ends_at",
+                "subscription.payment_method",
+                "subscription.succeeds_id"
+            ]
+        },
+        {
+            "id": "TRANS:B:S2",
+            "machine": "subscription",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["authorization_confirmed"],
+            "to": ["ACTIVE"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes", "subscription.next_charge_at"]
+        },
+        {
+            "id": "TRANS:B:S3",
+            "machine": "subscription",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["authorization_window_expired"],
+            "to": ["ABANDONED"],
+            "guard": {},
+            "reads": ["subscription.authorization_window_ends_at", "subscription.payment_method"],
+            "inputs": ["provider:read_by_id", "catalog:authorization_window"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S4",
+            "machine": "subscription",
+            "from": ["ACTIVE"],
+            "events": ["charge_failed"],
+            "to": ["GRACE_PERIOD"],
+            "guard": {},
+            "reads": ["subscription.payment_method", "subscription.succeeds_id"],
+            "inputs": ["provider:read_by_id", "provider:payment_period_status"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S5",
+            "machine": "subscription",
+            "from": ["GRACE_PERIOD"],
+            "events": ["payment_received"],
+            "to": ["ACTIVE"],
+            "guard": {
+                "is_succession_predecessor": false
+            },
+            "reads": [],
+            "inputs": ["provider:payment_by_id"],
+            "writes": ["subscription.status", "domain_event.changes", "subscription.next_charge_at"]
+        },
+        {
+            "id": "TRANS:B:S6",
+            "machine": "subscription",
+            "from": ["GRACE_PERIOD", "ACTIVE", "PAUSED"],
+            "events": [
+                "grace_period_expired",
+                "provider_pause_observed",
+                "payment_chargeback_observed",
+                "manual_payment_declared_unpaid",
+                "successor_provider_cancelled"
+            ],
+            "to": ["SUSPENDED"],
+            "guard": {},
+            "reads": ["subscription.payment_method", "subscription.succeeds_id"],
+            "inputs": [
+                "provider:read_by_id",
+                "provider:preapproval_by_id",
+                "provider:payment_by_id"
+            ],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S7",
+            "machine": "subscription",
+            "from": ["SUSPENDED"],
+            "events": ["payment_received"],
+            "to": ["ACTIVE", "CANCEL_SCHEDULED"],
+            "guard": {
+                "is_succession_predecessor": false
+            },
+            "reads": [],
+            "inputs": ["provider:payment_by_id"],
+            "writes": ["subscription.status", "domain_event.changes", "subscription.next_charge_at"]
+        },
+        {
+            "id": "TRANS:B:S8",
+            "machine": "subscription",
+            "from": ["ACTIVE"],
+            "events": ["pause_requested"],
+            "to": ["PAUSED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S9",
+            "machine": "subscription",
+            "from": ["ACTIVE"],
+            "events": ["courtesy_granted"],
+            "to": ["PAUSED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S10",
+            "machine": "subscription",
+            "from": ["PAUSED"],
+            "events": ["pause_ended"],
+            "to": ["ACTIVE"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S11",
+            "machine": "subscription",
+            "from": ["ACTIVE"],
+            "events": ["cancellation_requested"],
+            "to": ["CANCEL_SCHEDULED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S12",
+            "machine": "subscription",
+            "from": ["CANCEL_SCHEDULED"],
+            "events": ["service_end_reached", "payment_chargeback_observed"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S13",
+            "machine": "subscription",
+            "from": ["*LIVE_PRINCIPAL"],
+            "events": ["permanent_grant_awarded"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S14",
+            "machine": "subscription",
+            "from": ["*ANY"],
+            "events": ["domain_divergence_detected"],
+            "to": ["*SAME"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S15",
+            "machine": "subscription",
+            "from": ["*ANY"],
+            "events": ["reconciliation_resolved"],
+            "to": ["*SAME"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S16",
+            "machine": "subscription",
+            "from": ["ACTIVE"],
+            "events": ["first_charge_declined"],
+            "to": ["CHARGE_DECLINED"],
+            "guard": {},
+            "reads": ["subscription.succeeds_id"],
+            "inputs": ["provider:read_by_id", "provider:payment_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S17",
+            "machine": "subscription",
+            "from": ["ACTIVE", "GRACE_PERIOD", "CANCEL_SCHEDULED", "PAUSED", "SUSPENDED"],
+            "events": ["successor_authorized"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S18",
+            "machine": "subscription",
+            "from": ["ACTIVE", "PENDING_AUTHORIZATION"],
+            "events": ["succession_reconciliation_triggered"],
+            "to": ["*SAME"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S19",
+            "machine": "subscription",
+            "from": ["GRACE_PERIOD", "SUSPENDED"],
+            "events": ["payment_received"],
+            "to": ["*SAME"],
+            "guard": {
+                "is_succession_predecessor": true
+            },
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S20",
+            "machine": "subscription",
+            "from": ["*LIVE_COMPLEMENT"],
+            "events": ["permanent_grant_awarded"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S21",
+            "machine": "subscription",
+            "from": ["*LIVE_COMPLEMENT"],
+            "events": ["addon_instance_cancelled"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S22",
+            "machine": "subscription",
+            "from": ["PAUSED"],
+            "events": ["cancellation_requested"],
+            "to": ["CANCELLED", "CANCEL_SCHEDULED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S23",
+            "machine": "subscription",
+            "from": ["SUSPENDED"],
+            "events": ["cancellation_requested"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S24",
+            "machine": "subscription",
+            "from": ["GRACE_PERIOD"],
+            "events": ["cancellation_requested"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S29",
+            "machine": "subscription",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["first_manual_payment_registered"],
+            "to": ["ACTIVE"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S30",
+            "machine": "subscription",
+            "from": ["ACTIVE", "GRACE_PERIOD"],
+            "events": ["promotional_charge_recorded"],
+            "to": ["*SAME"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S31",
+            "machine": "subscription",
+            "from": ["PENDING_AUTHORIZATION", "ACTIVE"],
+            "events": ["predecessor_chargeback_cut"],
+            "to": ["ABANDONED", "CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S32",
+            "machine": "subscription",
+            "from": ["*LIVE_COMPLEMENT"],
+            "events": ["principal_liveness_changed"],
+            "to": ["PAUSED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S33",
+            "machine": "subscription",
+            "from": ["PAUSED"],
+            "events": ["complementary_title_available"],
+            "to": ["ACTIVE"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S34",
+            "machine": "subscription",
+            "from": ["PAUSED"],
+            "events": ["courtesy_granted"],
+            "to": ["*SAME"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S35",
+            "machine": "subscription",
+            "from": ["PAUSED"],
+            "events": ["customer_pause_requested"],
+            "to": ["PAUSED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S36",
+            "machine": "subscription",
+            "from": ["ACTIVE", "GRACE_PERIOD", "CANCEL_SCHEDULED", "PAUSED"],
+            "events": ["cooling_off_revoked"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S37",
+            "machine": "subscription",
+            "from": ["ACTIVE"],
+            "events": ["migration_deadline_reached"],
+            "to": ["*SAME"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:S38",
+            "machine": "subscription",
+            "from": ["ACTIVE", "GRACE_PERIOD", "CANCEL_SCHEDULED"],
+            "events": ["scheduled_change_deadline_reached"],
+            "to": ["*SAME"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["subscription.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:P1",
+            "machine": "payment",
+            "from": ["PENDING"],
+            "events": ["provider_payment_credited"],
+            "to": ["SUCCEEDED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:P2",
+            "machine": "payment",
+            "from": ["PENDING"],
+            "events": ["provider_payment_window_expired"],
+            "to": ["FAILED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:P3",
+            "machine": "payment",
+            "from": ["SUCCEEDED"],
+            "events": ["full_refund"],
+            "to": ["REFUNDED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:P4",
+            "machine": "payment",
+            "from": ["SUCCEEDED"],
+            "events": ["partial_refund"],
+            "to": ["PARTIALLY_REFUNDED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:P5",
+            "machine": "payment",
+            "from": ["PARTIALLY_REFUNDED"],
+            "events": ["additional_partial_refund"],
+            "to": ["PARTIALLY_REFUNDED", "REFUNDED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:P6",
+            "machine": "payment",
+            "from": ["SUCCEEDED", "PARTIALLY_REFUNDED"],
+            "events": ["provider_chargeback_observed"],
+            "to": ["CHARGED_BACK"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:P7",
+            "machine": "payment",
+            "from": ["CHARGED_BACK"],
+            "events": ["provider_reimbursed"],
+            "to": ["SUCCEEDED", "PARTIALLY_REFUNDED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:RF1",
+            "machine": "refund",
+            "from": ["*NO_ROW"],
+            "events": ["refund_requested"],
+            "to": ["REQUESTED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["refund.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:RF2",
+            "machine": "refund",
+            "from": ["REQUESTED"],
+            "events": ["refund_confirmed"],
+            "to": ["CONFIRMED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["refund.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:RF3",
+            "machine": "refund",
+            "from": ["CONFIRMED"],
+            "events": ["refund_settled"],
+            "to": ["EXECUTED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["refund.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:RF4",
+            "machine": "refund",
+            "from": ["*NO_ROW"],
+            "events": ["external_refund_recorded"],
+            "to": ["EXECUTED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["refund.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:RF5",
+            "machine": "refund",
+            "from": ["REQUESTED", "CONFIRMED"],
+            "events": ["refund_failed"],
+            "to": ["FAILED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["refund.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:MP1",
+            "machine": "manual_payment",
+            "from": ["AWAITING"],
+            "events": ["manual_payment_registered"],
+            "to": ["REGISTERED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": [
+                "manual_payment.status",
+                "domain_event.changes",
+                "subscription.next_charge_at"
+            ]
+        },
+        {
+            "id": "TRANS:B:MP2",
+            "machine": "manual_payment",
+            "from": ["AWAITING"],
+            "events": ["manual_payment_declared_unpaid"],
+            "to": ["DECLARED_UNPAID"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["manual_payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:MP3",
+            "machine": "manual_payment",
+            "from": ["AWAITING"],
+            "events": ["manual_payment_window_elapsed"],
+            "to": ["DECLARED_UNPAID"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["manual_payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:MP4",
+            "machine": "manual_payment",
+            "from": ["DECLARED_UNPAID"],
+            "events": ["late_manual_payment_registered"],
+            "to": ["REGISTERED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": [
+                "manual_payment.status",
+                "domain_event.changes",
+                "subscription.next_charge_at"
+            ]
+        },
+        {
+            "id": "TRANS:B:MP5",
+            "machine": "manual_payment",
+            "from": ["*NO_ROW"],
+            "events": ["manual_payment_period_opened"],
+            "to": ["AWAITING"],
+            "guard": {},
+            "reads": ["subscription.next_charge_at"],
+            "inputs": ["clock:now"],
+            "writes": [
+                "manual_payment.status",
+                "domain_event.changes",
+                "subscription.next_charge_at"
+            ]
+        },
+        {
+            "id": "TRANS:B:MP6",
+            "machine": "manual_payment",
+            "from": ["*NO_ROW"],
+            "events": ["unallocated_manual_payment_registered"],
+            "to": ["REGISTERED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["manual_payment.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A1",
+            "machine": "addon_instance",
+            "from": ["*NO_ROW"],
+            "events": ["addon_purchased"],
+            "to": ["PENDING_AUTHORIZATION"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A1-bis",
+            "machine": "addon_instance",
+            "from": ["*NO_ROW"],
+            "events": ["free_addon_selected"],
+            "to": ["ACTIVE"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A2",
+            "machine": "addon_instance",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["addon_authorized"],
+            "to": ["ACTIVE"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A3",
+            "machine": "addon_instance",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["addon_authorization_window_expired"],
+            "to": ["ABANDONED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A4",
+            "machine": "addon_instance",
+            "from": ["ACTIVE"],
+            "events": ["addon_end_date_reached"],
+            "to": ["EXPIRED"],
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A5",
+            "machine": "addon_instance",
+            "from": ["PENDING_AUTHORIZATION", "ACTIVE"],
+            "events": ["addon_cancel_requested", "addon_orphaned", "grant_anchor_revoked"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A6",
+            "machine": "addon_instance",
+            "from": ["ACTIVE", "PENDING_AUTHORIZATION"],
+            "events": ["listing_purged"],
+            "to": ["CANCELLED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["addon_instance.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:B:A7",
+            "machine": "addon_instance",
+            "from": ["PENDING_AUTHORIZATION"],
+            "events": ["one_time_order_rejected"],
+            "to": ["ABANDONED"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:read_by_id"],
+            "writes": ["addon_instance.status", "domain_event.changes"]
         }
     ]
 }

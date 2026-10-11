@@ -10,11 +10,15 @@ import {
 } from './transition-corpus';
 
 const VERTICALS = ['trial', 'publication', 'partner_application'] as const;
-function words(value: string, forbidden: ReadonlySet<string>): readonly string[] {
-    return [...forbidden].filter(
+/** Return forbidden billing states named in one structured vocabulary value. */
+export function forbiddenStateWords(args: {
+    readonly value: string;
+    readonly forbidden: ReadonlySet<string>;
+}): readonly string[] {
+    return [...args.forbidden].filter(
         (state) =>
-            new RegExp(`\\b${state}\\b`, 'i').test(value) ||
-            new RegExp(`\\bon_${state}\\b`, 'i').test(value)
+            new RegExp(`\\b${state}\\b`, 'i').test(args.value) ||
+            new RegExp(`\\bon_${state}\\b`, 'i').test(args.value)
     );
 }
 function flatten(value: unknown): string[] {
@@ -80,7 +84,9 @@ export function run(
             ...row.reads,
             ...row.inputs
         ];
-        const badState = fields.flatMap((field) => words(field, stateSet));
+        const badState = fields.flatMap((field) =>
+            forbiddenStateWords({ value: field, forbidden: stateSet })
+        );
         const badColumn = fields.flatMap((field) =>
             [...columns].filter((column) => field.includes(column))
         );
