@@ -158,6 +158,12 @@ describe('TEST:V6:26 (ledgers)', () => {
                         connect: async ({ url }) => (url === aUrl ? a : b)
                     })
                 ).rejects.toThrow('confirm-full-backup');
+                expect(
+                    (await a.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows
+                ).toEqual(oldMigrations.rows);
+                expect(
+                    (await a.query('SELECT * FROM public.seed_migrations ORDER BY name')).rows
+                ).toEqual(originalSeedRows);
                 const emptyBackup = path.join(baselineDir, 'empty.dump');
                 writeFileSync(emptyBackup, '');
                 await expect(
@@ -169,6 +175,12 @@ describe('TEST:V6:26 (ledgers)', () => {
                         connect: async ({ url }) => (url === aUrl ? a : b)
                     })
                 ).rejects.toThrow('non-empty');
+                expect(
+                    (await a.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows
+                ).toEqual(oldMigrations.rows);
+                expect(
+                    (await a.query('SELECT * FROM public.seed_migrations ORDER BY name')).rows
+                ).toEqual(originalSeedRows);
 
                 const stamp = new Date('2026-10-11T12:30:00.000Z');
                 const expectedBackups = {
@@ -287,12 +299,24 @@ describe('TEST:V6:26 (ledgers)', () => {
                     'CREATE TABLE public.cutover_v6_deleted_listing (id integer)'
                 );
                 expect(passage).toBeDefined();
+                const ledgerBeforePassageGuard = await a.query(
+                    'SELECT * FROM drizzle.__drizzle_migrations ORDER BY id'
+                );
+                const seedBeforePassageGuard = await a.query(
+                    'SELECT * FROM public.seed_migrations ORDER BY name'
+                );
                 await expect(
                     rewriteLedgers({
                         client: a,
                         entry: readBaselineEntry({ migrationsDir: baselineDir })
                     })
                 ).rejects.toThrow('cutover_v6_deleted_listing');
+                expect(
+                    (await a.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows
+                ).toEqual(ledgerBeforePassageGuard.rows);
+                expect(
+                    (await a.query('SELECT * FROM public.seed_migrations ORDER BY name')).rows
+                ).toEqual(seedBeforePassageGuard.rows);
                 await a.query('DROP TABLE public.cutover_v6_deleted_listing');
 
                 const originalLedger = oldMigrations.rows;
