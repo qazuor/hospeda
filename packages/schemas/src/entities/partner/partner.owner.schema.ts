@@ -9,7 +9,7 @@ import { PARTNER_SAFE_WRITE_URL_FIELDS, partnerSchema } from './partner.schema.j
  * Follows the `host_trades` precedent exactly: the identity and commercial
  * fields are not "validated as forbidden", they are ABSENT FROM THE SCHEMA. Zod
  * strips keys an object schema does not declare, so a payload carrying `name`,
- * `slug` or `tier` loses them at parse time and the
+ * `slug` loses them at parse time and the
  * update never sees them. A field the owner cannot edit is one this file does
  * not mention — the mechanism fails closed by construction rather than by
  * remembering to add a check.
@@ -76,7 +76,7 @@ export type PartnerOwnerUpdate = z.infer<typeof PartnerOwnerUpdateSchema>;
  * - **Identity** (`name`, `slug`, `type`) — what the partner IS, and what the
  *   public URL resolves to. An owner who could rewrite their slug would break
  *   every link to their own ficha.
- * - **Commercial** (`tier`, `startsAt`, `endsAt`, `lifecycleState`) — an owner
+ * - **Commercial** (`lifecycleState`) — an owner
  *   who could set `lifecycleState` would publish themselves.
  * - **Review** (the pending trio, the review state and note, and the approval
  *   stamp) — an owner who could set `contentApprovedAt` would approve their own
@@ -89,11 +89,10 @@ export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'name',
     'slug',
     'type',
-    'tier',
     'lifecycleState',
-    'startsAt',
-    'endsAt',
     'ownerUserId',
+    'presenceModerated',
+    'claimSecretHash',
     'analytics',
     'pendingLogoUrl',
     'pendingDescription',
@@ -128,15 +127,12 @@ export const PartnerOwnerViewSchema = partnerSchema.pick({
     slug: true,
     name: true,
     type: true,
-    tier: true,
     logoUrl: true,
     description: true,
     websiteUrl: true,
     contactInfo: true,
     socialNetworks: true,
     lifecycleState: true,
-    startsAt: true,
-    endsAt: true,
     pendingLogoUrl: true,
     pendingDescription: true,
     pendingWebsiteUrl: true,

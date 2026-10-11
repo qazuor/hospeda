@@ -37,6 +37,8 @@ export enum RoleEnum {
      * permissions.
      */
     EXPERIENCE_OWNER = 'EXPERIENCE_OWNER',
+    /** Partner owner role, granted by V7 when a claim is redeemed and never removed (V/17 §4.1). */
+    PARTNER_OWNER = 'PARTNER_OWNER',
     SPONSOR = 'SPONSOR',
     USER = 'USER',
     GUEST = 'GUEST',

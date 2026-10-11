@@ -12,12 +12,8 @@
  *
  * It carries the NUMBERS and the few partner fields needed to resolve the
  * partner's logo link, and it does not say which cards to render. That decision
- * belongs to exactly one function — `resolvePartnerLogoLink` in `apps/web` — for
- * the reason spelled out in spec §7.2: any card whose visibility were derived
- * here, from `tier`, would be a SECOND source of truth about what the home
- * carousel actually renders, and the two would part ways the moment HOS-1159
- * changes silver's clickability. Shipping the inputs instead of the verdict is
- * what makes the panel structurally unable to contradict the carousel.
+ * belongs to the client presentation layer; this endpoint ships only the
+ * stable identifiers and partner-owned destination details.
  *
  * A consequence worth stating: `views` and `clicks` are always present, even for
  * a partner whose logo links nowhere. They are the honest count of a thing that
@@ -91,8 +87,6 @@ export const PartnerStatsSubjectSchema = z.object({
     name: z.string(),
     /** Slug, when the partner has one. Half of the "has a public page" test. */
     slug: z.string().optional(),
-    /** Commercial tier. Read ONLY by `resolvePartnerLogoLink`, never rendered. */
-    tier: z.string().optional(),
     /** The partner's own website, when they filled one in. */
     websiteUrl: z.string().optional()
 });

@@ -33,7 +33,9 @@ export const createPartnerSchema = partnerSchema
         updatedById: true,
         deletedById: true,
         ownerUserId: true,
-        analytics: true // Will default to {}
+        analytics: true, // Will default to {}
+        presenceModerated: true,
+        claimSecretHash: true
     })
     .extend(PARTNER_SAFE_WRITE_URL_FIELDS);
 
