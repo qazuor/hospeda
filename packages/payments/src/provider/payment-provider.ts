@@ -129,6 +129,8 @@ export interface AuthorizationSnapshot {
     readonly firstChargeAt: string | null;
     /** Provider-added free period; never our own trial state. */
     readonly freePeriodDays: number | null;
+    /** Instant (ISO 8601) when the provider last modified this resource; null when unavailable. */
+    readonly lastModifiedAt: string | null;
 }
 
 /** Capability 7 input: narrow, non-authoritative search criteria. */
@@ -155,6 +157,8 @@ export interface ChargeSnapshot {
     readonly authorizationId: string;
     readonly reference: string;
     readonly status: ChargeStatus;
+    /** Why the provider rejected this attempt, in a domain string; null when not rejected or unavailable. */
+    readonly declineReason: string | null;
     readonly amount: Money;
     /** Cumulative amount refunded so far. */
     readonly refundedAmount: Money;
