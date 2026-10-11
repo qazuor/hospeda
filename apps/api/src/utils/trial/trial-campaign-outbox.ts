@@ -9,6 +9,7 @@ import {
     users,
     withdrawScheduledEmails
 } from '@repo/db';
+import { NotificationType } from '@repo/notifications';
 import type { TrialCampaignKind, TrialMachineTransaction } from '@repo/verticals';
 import {
     marketCalendarDay,
@@ -19,22 +20,22 @@ import {
 import { eq } from 'drizzle-orm';
 import { apiLogger } from '../logger';
 
-/** Template identifiers for each campaign offset; three are added by run four. */
+/** Tipos de plantilla por campaña y desplazamiento de días. */
 export const TRIAL_CAMPAIGN_TEMPLATES: Readonly<
     Record<TrialCampaignKind, Readonly<Record<number, string>>>
 > = {
     PRE_EXPIRY: {
-        10: 'trial_ending_10d',
-        5: 'trial_ending_5d',
-        2: 'trial_ending_2d',
-        0: 'trial_ending_today'
+        10: NotificationType.TRIAL_ENDING_10D,
+        5: NotificationType.TRIAL_ENDING_5D,
+        2: NotificationType.TRIAL_ENDING_2D,
+        0: NotificationType.TRIAL_ENDING_TODAY
     },
     RECOVERY: {
-        1: 'trial_win_back_1d',
-        5: 'trial_win_back_5d',
-        15: 'trial_win_back_15d',
-        30: 'trial_win_back_30d',
-        60: 'trial_win_back_60d'
+        1: NotificationType.TRIAL_WIN_BACK_1D,
+        5: NotificationType.TRIAL_WIN_BACK_5D,
+        15: NotificationType.TRIAL_WIN_BACK_15D,
+        30: NotificationType.TRIAL_WIN_BACK_30D,
+        60: NotificationType.TRIAL_WIN_BACK_60D
     }
 };
 

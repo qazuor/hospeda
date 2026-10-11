@@ -33,7 +33,9 @@ import {
     createEmailClient,
     createOutboxMailRenderer,
     createOutboxOptOutReader,
+    createTrialCampaignRenderers,
     type EmailOutboxDeliveryDeps,
+    OUTBOX_MAIL_RENDERERS,
     type OutboxEscalation,
     PreferenceService,
     processEmailOutboxBatch
@@ -129,7 +131,12 @@ function buildDefaultDeps(): EmailOutboxSenderDeps | null {
         outbox: emailOutboxModel,
         log: notificationLogModel,
         isOptedOut: createOutboxOptOutReader({ preferenceService }),
-        render: createOutboxMailRenderer(),
+        render: createOutboxMailRenderer({
+            renderers: {
+                ...OUTBOX_MAIL_RENDERERS,
+                ...createTrialCampaignRenderers({ siteUrl: env.HOSPEDA_SITE_URL })
+            }
+        }),
         transport: new BrevoEmailTransport(
             createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY }),
             getEmailSender()
