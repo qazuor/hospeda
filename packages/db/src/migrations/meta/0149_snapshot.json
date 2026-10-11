@@ -1,5 +1,5 @@
 {
-  "id": "065ab812-f628-410f-9138-141277612e84",
+  "id": "4a3fc76a-e37b-408a-96dd-a385e248c74c",
   "prevId": "cf05f274-ff2b-4440-a129-d0aef6061ba5",
   "version": "7",
   "dialect": "postgresql",
@@ -8184,7 +8184,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'trial.extended')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'trial.extended', 'reconciliation.mark_opened')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -29431,6 +29431,176 @@
         "ck_cuota_ventana_consumed_nonnegative": {
           "name": "ck_cuota_ventana_consumed_nonnegative",
           "value": "\"cuota_ventana\".\"consumed\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reconciliation_mark": {
+      "name": "reconciliation_mark",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "addon_instance_id": {
+          "name": "addon_instance_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reason": {
+          "name": "reason",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "placed_at": {
+          "name": "placed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "lifted_at": {
+          "name": "lifted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "lifted_by": {
+          "name": "lifted_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {
+        "uq_reconciliation_mark_open_subscription_reason": {
+          "name": "uq_reconciliation_mark_open_subscription_reason",
+          "columns": [
+            {
+              "expression": "subscription_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "reason",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"reconciliation_mark\".\"lifted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "uq_reconciliation_mark_open_addon_instance_reason": {
+          "name": "uq_reconciliation_mark_open_addon_instance_reason",
+          "columns": [
+            {
+              "expression": "addon_instance_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "reason",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"reconciliation_mark\".\"lifted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "reconciliation_mark_subscription_id_subscription_id_fk": {
+          "name": "reconciliation_mark_subscription_id_subscription_id_fk",
+          "tableFrom": "reconciliation_mark",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "reconciliation_mark_addon_instance_id_addon_instance_id_fk": {
+          "name": "reconciliation_mark_addon_instance_id_addon_instance_id_fk",
+          "tableFrom": "reconciliation_mark",
+          "tableTo": "addon_instance",
+          "columnsFrom": [
+            "addon_instance_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "reconciliation_mark_lifted_by_users_id_fk": {
+          "name": "reconciliation_mark_lifted_by_users_id_fk",
+          "tableFrom": "reconciliation_mark",
+          "tableTo": "users",
+          "columnsFrom": [
+            "lifted_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_reconciliation_mark_reason": {
+          "name": "ck_reconciliation_mark_reason",
+          "value": "\"reconciliation_mark\".\"reason\" IN ('REEMBOLSO_POR_CONFIRMAR', 'COBRO_POSTERIOR_A_LA_BAJA', 'COBRO_POSTERIOR_AL_GRANT', 'PAGO_PENDIENTE_SIN_RAMA', 'DIVERGENCIA_DE_MONTO', 'TRANSICION_NO_DECLARADA', 'PAGO_TARDIO_RECHAZADO', 'REANUDACION_NO_APLICADA', 'SUCESION_ABIERTA_SOBRE_FILA_MUERTA', 'FAN_OUT_DE_GRANT_INCOMPLETO', 'ADDON_SIN_APAGAR', 'COBRO_DURANTE_CORTESIA', 'CORTESIA_SIN_RE_EMITIR', 'COMPLEMENTO_CON_PERIODO_COBRADO_POR_OTRA_CAUSA', 'COMPLEMENTO_CON_PERIODO_COBRADO_POR_REVOCACION', 'CANCELACION_SIN_CONFIRMAR', 'CONTRACARGO', 'REEMBOLSO_FUERA_DEL_FLUJO', 'COBRO_SIN_REGISTRAR', 'COBRO_DUPLICADO', 'COBRO_DEL_PERIODO_SIN_RESOLVER', 'PAUSA_NO_APLICADA', 'ORDEN_PAGADA_SIN_INSTANCIA', 'IMPORTE_COBRADO_DE_MAS')"
+        },
+        "ck_reconciliation_mark_one_reference": {
+          "name": "ck_reconciliation_mark_one_reference",
+          "value": "(\"reconciliation_mark\".\"subscription_id\" IS NOT NULL) <> (\"reconciliation_mark\".\"addon_instance_id\" IS NOT NULL)"
+        },
+        "ck_reconciliation_mark_instance_only_for_order": {
+          "name": "ck_reconciliation_mark_instance_only_for_order",
+          "value": "(\"reconciliation_mark\".\"addon_instance_id\" IS NOT NULL) = (\"reconciliation_mark\".\"reason\" = 'ORDEN_PAGADA_SIN_INSTANCIA')"
+        },
+        "ck_reconciliation_mark_lifted_pair": {
+          "name": "ck_reconciliation_mark_lifted_pair",
+          "value": "(\"reconciliation_mark\".\"lifted_at\" IS NULL) = (\"reconciliation_mark\".\"lifted_by\" IS NULL)"
+        },
+        "ck_reconciliation_mark_version_positive": {
+          "name": "ck_reconciliation_mark_version_positive",
+          "value": "\"reconciliation_mark\".\"version\" >= 1"
         }
       },
       "isRLSEnabled": false

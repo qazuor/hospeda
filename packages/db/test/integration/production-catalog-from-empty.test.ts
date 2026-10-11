@@ -5,6 +5,7 @@ import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PRODUCTION_PLAN_CATALOG } from '../../../../scripts/production-catalog/catalog.js';
 import { buildPlanCatalogLoads } from '../../../../scripts/production-catalog/loads.js';
+import { protectScratchPool, waitForNoConnections } from './support/scratch-database.ts';
 
 const migrationDir = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/migrations');
 const baseUrl = process.env.HOSPEDA_TEST_DATABASE_URL;
@@ -28,11 +29,13 @@ async function applySql(
 }
 
 async function freshDatabase(name: string, lastIndex: number): Promise<Pool> {
+    await waitForNoConnections({ admin, database: name });
     await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
     await admin.query(`CREATE DATABASE ${name}`);
     const url = new URL(baseUrl as string);
     url.pathname = `/${name}`;
     const db = new Pool({ connectionString: url.toString() });
+    protectScratchPool({ pool: db });
     pools.push(db);
     for (const extension of ['uuid-ossp', 'pgcrypto', 'unaccent']) {
         await db.query(`CREATE EXTENSION IF NOT EXISTS "${extension}"`);
@@ -54,7 +57,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
     for (const pool of pools) await pool.end();
-    for (const name of names) await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    for (const name of names) {
+        await waitForNoConnections({ admin, database: name });
+        await admin.query(`DROP DATABASE IF EXISTS ${name} WITH (FORCE)`);
+    }
     await admin.end();
 });
 

@@ -40,6 +40,7 @@ import { validatePublication } from './plan-publication.validation.js';
  * modules; this file is the public surface.
  */
 
+export { countAnchoredCustomersFromSubscriptions } from './plan-publication.anchored-customers.js';
 export { CYCLE_MINIMUM_DAYS, PLAN_PUBLICATION_REJECTIONS } from './plan-publication.rejections.js';
 export type { CountAnchoredCustomersPort } from './plan-publication.types.js';
 export { zeroAnchoredCustomers } from './plan-publication.types.js';

@@ -18,6 +18,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { protectScratchPool, waitForNoConnections } from './support/scratch-database.ts';
 
 const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const REPO_ROOT = resolve(pkgDir, '../..');
@@ -131,10 +132,12 @@ beforeAll(async () => {
         }
     );
     scratch = new Pool({ connectionString: urlFor({ database: SCRATCH_DB }) });
+    protectScratchPool({ pool: scratch });
 }, 200_000);
 
 afterAll(async () => {
     await scratch?.end();
+    await waitForNoConnections({ admin, database: SCRATCH_DB });
     await admin.query(`DROP DATABASE IF EXISTS "${SCRATCH_DB}" WITH (FORCE)`);
     await admin.end();
 });
