@@ -109,13 +109,6 @@ describe('listingPublicationModel.hasOwnerPublished', () => {
                 ownerId: owner.id,
                 destinationId: destination.id
             });
-            const noEvent = await makeListing({
-                tx,
-                vertical: 'accommodation',
-                ownerId: owner.id,
-                destinationId: destination.id
-            });
-
             expect(
                 await listingPublicationModel.hasOwnerPublished({
                     tx,
@@ -329,6 +322,9 @@ describe('listingPublicationModel.hasOwnerPublished', () => {
             await tx.execute(
                 sql`UPDATE ${deletedTable} SET deleted_at = now() WHERE id = ${draftToPublished.id}`
             );
+            await tx.execute(
+                sql`UPDATE ${deletedTable} SET deleted_at = now() WHERE id = ${billingRestored.id}`
+            );
             expect(
                 await listingPublicationModel.hasOwnerPublished({
                     tx,
@@ -336,7 +332,6 @@ describe('listingPublicationModel.hasOwnerPublished', () => {
                     userId: owner.id
                 })
             ).toBe(true);
-            expect(noEvent.id).toBeTruthy();
         });
     });
 });
