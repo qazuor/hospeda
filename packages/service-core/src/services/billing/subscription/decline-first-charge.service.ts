@@ -14,7 +14,10 @@ import { z } from 'zod';
 import { enqueueSignupDeclinedNotice } from './signup-declined-notice';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
+    type CancellationSeenAnnotator,
+    noCancellationSeenAnnotation,
     noCreditedPayments,
+    recordCancellationSeen,
     type SubscriptionPayments,
     type SuccessionCloser,
     unimplementedSuccessionCloser
@@ -48,6 +51,7 @@ export interface DeclineFirstChargePorts {
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly payments?: SubscriptionPayments;
     readonly successionCloser?: SuccessionCloser;
+    readonly cancellationSeen?: CancellationSeenAnnotator;
 }
 
 /** S16: the first rejected charge of a signup closes its authorization and signup row. */
@@ -91,12 +95,18 @@ export async function declineFirstCharge(
         const read = await ports.provider.readAuthorization({
             authorizationId: providerLink.providerId
         });
-        return assertFreshForAct({ read, act }).snapshot;
+        const fresh = assertFreshForAct({ read, act });
+        return { status: fresh.snapshot.status, readAt: fresh.readAt };
     };
 
     const authorization = await rereadAuthorization();
     let cancelCall: 'SENT' | 'FAILED' | 'DEFERRED' | 'NOT_NEEDED';
     if (authorization.status === 'cancelled') {
+        await recordCancellationSeen({
+            annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+            subscriptionId: subscription.id,
+            seenAt: authorization.readAt
+        });
         cancelCall = 'NOT_NEEDED';
     } else {
         const notice = await ports.beforeCancelNotice.beforeCancel({
@@ -126,6 +136,27 @@ export async function declineFirstCharge(
                 );
                 cancelCall = 'FAILED';
             }
+        }
+    }
+
+    if (cancelCall === 'SENT') {
+        try {
+            const confirmed = await rereadAuthorization();
+            if (confirmed.status === 'cancelled')
+                await recordCancellationSeen({
+                    annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                    subscriptionId: subscription.id,
+                    seenAt: confirmed.readAt
+                });
+        } catch (error) {
+            logger.error(
+                {
+                    subscriptionId: subscription.id,
+                    authorizationId: providerLink.providerId,
+                    error
+                },
+                'Could not confirm declined signup authorization cancellation'
+            );
         }
     }
 

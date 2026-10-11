@@ -1,8 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import type { DrizzleClient } from '@repo/db';
-import { getDb, listingPublicationModel, trials } from '@repo/db';
+import {
+    buildEmailDedupKey,
+    buildEventOccurrence,
+    emailOutboxModel,
+    getDb,
+    listingPublicationModel,
+    trials,
+    users
+} from '@repo/db';
 import { getRevalidationService } from '@repo/service-core';
 import { and, eq, sql } from 'drizzle-orm';
+import { LISTING_RESTITUTION_TEMPLATE } from '../../../../../packages/verticals/src/publication/publication-notices';
 import type {
     PublicationAfterCommit,
     PublicationTransaction,
@@ -24,7 +33,12 @@ const LISTING_TABLE_BY_VERTICAL: Readonly<Record<PublicationVertical, string>> =
 };
 
 /** Transaction-bound adapter shared by owner transitions and coverage reconciliation. */
-export function getListingPublicationPorts(): {
+export function getListingPublicationPorts(options?: {
+    readonly liveLimit?: (input: {
+        readonly userId: string;
+        readonly vertical: PublicationVertical;
+    }) => Promise<number | null>;
+}): {
     readonly unitOfWork: PublicationUnitOfWork;
     readonly afterCommit: PublicationAfterCommit;
     readonly billing: ReturnType<typeof getListingAccessPorts>['billing'];
@@ -51,7 +65,11 @@ export function getListingPublicationPorts(): {
                     async listByOwner(input) {
                         return listingPublicationModel.listByOwner({ ...input, tx });
                     },
+                    async readPublicationInstants(input) {
+                        return listingPublicationModel.readPublicationInstants({ ...input, tx });
+                    },
                     async readPublishLimit(input) {
+                        if (options?.liveLimit) return (await options.liveLimit(input)) ?? 0;
                         const effective = await access.effectiveSet({
                             userId: input.userId,
                             vertical: input.vertical
@@ -62,6 +80,20 @@ export function getListingPublicationPorts(): {
                                 userId: input.userId,
                                 vertical: input.vertical
                             }) ?? 0
+                        );
+                    },
+                    async readDeclaredPublishLimit(input) {
+                        if (options?.liveLimit) return options.liveLimit(input);
+                        const effective = await access.effectiveSet({
+                            userId: input.userId,
+                            vertical: input.vertical
+                        });
+                        return (
+                            effective.limits.get({
+                                key: PUBLICATION_LIMIT_KEYS[input.vertical],
+                                userId: input.userId,
+                                vertical: input.vertical
+                            }) ?? null
                         );
                     },
                     async setPublicationStatus(input) {
@@ -78,6 +110,37 @@ export function getListingPublicationPorts(): {
                         });
                     },
                     ...buildTrialStartReader({ client: tx }),
+                    async enqueueRestitutionNotice(input) {
+                        const [owner] = await tx
+                            .select({ email: users.email })
+                            .from(users)
+                            .where(eq(users.id, input.ownerId))
+                            .limit(1);
+                        if (!owner?.email) {
+                            apiLogger.warn(
+                                { ownerId: input.ownerId, correlationId: input.correlationId },
+                                'Listing restitution notice has no owner email'
+                            );
+                            return;
+                        }
+                        const template = LISTING_RESTITUTION_TEMPLATE;
+                        const dedupKey = buildEmailDedupKey({
+                            recipient: input.ownerId,
+                            template,
+                            occurrence: buildEventOccurrence({ eventId: input.correlationId })
+                        });
+                        await emailOutboxModel.enqueue(
+                            {
+                                recipientUserId: input.ownerId,
+                                recipientEmail: owner.email,
+                                template,
+                                payload: { ...input.payload },
+                                dedupKey,
+                                correlationId: input.correlationId
+                            },
+                            tx
+                        );
+                    },
                     async insertTrial({ row }) {
                         const inserted = await tx
                             .insert(trials)

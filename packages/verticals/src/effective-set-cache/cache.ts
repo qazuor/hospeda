@@ -51,6 +51,44 @@ export function createEffectiveSetCache<T>(args: {
     };
 
     return {
+        /** Reads a valid cached value without loading or writing a miss. */
+        async peek(input: {
+            readonly userId: string;
+            readonly vertical: string;
+        }): Promise<T | undefined> {
+            const redis = await client();
+            if (!redis) return undefined;
+            const instant = now();
+            for (const [userId, until] of suspectUsers) {
+                if (until <= instant) suspectUsers.delete(userId);
+            }
+            if (suspectAllUntil > instant || (suspectUsers.get(input.userId) ?? 0) > instant)
+                return undefined;
+            try {
+                const current = await generations(redis, input.userId);
+                const raw = await redis.hget(`${PREFIX}u:${input.userId}`, input.vertical);
+                if (raw === null) return undefined;
+                const envelope: unknown = JSON.parse(raw);
+                const readAt = now();
+                if (
+                    !isEnvelope(envelope) ||
+                    envelope.userGeneration !== current.userGeneration ||
+                    envelope.allGeneration !== current.allGeneration ||
+                    envelope.computedAt > readAt ||
+                    readAt - envelope.computedAt >= ENTRY_MAX_AGE_MS
+                )
+                    return undefined;
+                const latest = await generations(redis, input.userId);
+                if (
+                    latest.userGeneration !== current.userGeneration ||
+                    latest.allGeneration !== current.allGeneration
+                )
+                    return undefined;
+                return args.codec.decode(envelope.value);
+            } catch {
+                return undefined;
+            }
+        },
         async readThrough(input: {
             readonly userId: string;
             readonly vertical: string;

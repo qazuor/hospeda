@@ -304,5 +304,18 @@
                 "experience": "Não conseguimos criar a experiência. Tente novamente."
             }
         }
+    },
+    "notices": {
+        "surplus": {
+            "criterion": "Os anúncios publicados mais recentemente são despublicados primeiro, até respeitar o limite do seu plano. Nada é apagado.",
+            "recurringFeatured": "Os destaques recorrentes dos anúncios que saíram continuam sendo cobrados até você cancelá-los.",
+            "noWindowDone": "Não houve período de carência: os anúncios mais recentes foram despublicados primeiro; nenhum período foi simulado."
+        },
+        "restitution": {
+            "restored": "Estes anúncios voltaram: {{listings}}.",
+            "notRestored": "Estes anúncios não puderam voltar: {{listings}}.",
+            "criterion": "Volta primeiro o anúncio que caiu por último, até preencher as vagas. Anúncios do sistema antigo que nunca foram publicados aqui vêm primeiro, pela data de criação mais antiga.",
+            "nothingDeleted": "Os anúncios que não voltaram continuam aqui; nenhum é apagado."
+        }
     }
 }

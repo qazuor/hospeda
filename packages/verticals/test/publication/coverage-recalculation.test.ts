@@ -20,7 +20,7 @@ describe('PB6 and coverage recalculation (AC:V6:1, AC:V6:4)', () => {
         expect(harness.calls).toEqual(['lock', 'read', 'set', 'event', 'commit', 'revalidate']);
     });
 
-    it('PB2 lowers only without coverage and stamps the loss fact', async () => {
+    it('TEST:V6:4 PB2 lowers without coverage and stamps the loss fact', async () => {
         const harness = makeHarness({ status: PublicationStatusEnum.PUBLISHED, covered: false });
         const result = await recalculateCoverage({
             ...harness,
@@ -29,7 +29,12 @@ describe('PB6 and coverage recalculation (AC:V6:1, AC:V6:4)', () => {
             vertical,
             correlationId: listingId
         });
-        expect(result).toMatchObject({ lowered: [listingId], restored: [], stamped: [listingId] });
+        expect(result).toMatchObject({
+            lowered: [listingId],
+            loweredBySurplus: [],
+            restored: [],
+            stamped: [listingId]
+        });
         expect(harness.getStatus()).toBe(PublicationStatusEnum.UNPUBLISHED_BY_BILLING);
         expect(harness.calls).toEqual([
             'lock',
@@ -42,7 +47,7 @@ describe('PB6 and coverage recalculation (AC:V6:1, AC:V6:4)', () => {
         ]);
     });
 
-    it('PB3 restores one billing-lowered listing when covered', async () => {
+    it('TEST:V6:5 PB3 restores one billing-lowered listing when covered', async () => {
         const harness = makeHarness({ status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING });
         const result = await recalculateCoverage({
             ...harness,
@@ -51,14 +56,22 @@ describe('PB6 and coverage recalculation (AC:V6:1, AC:V6:4)', () => {
             vertical,
             correlationId: listingId
         });
-        expect(result).toMatchObject({ lowered: [], restored: [listingId], stamped: [listingId] });
+        expect(result).toMatchObject({
+            lowered: [],
+            loweredBySurplus: [],
+            restored: [listingId],
+            stamped: [listingId]
+        });
         expect(harness.getStatus()).toBe(PublicationStatusEnum.PUBLISHED);
         expect(harness.calls).toEqual([
             'lock',
             'list',
+            'declaredLimit',
+            'instants',
             'stamp',
             'set',
             'event',
+            'enqueueRestitutionNotice',
             'commit',
             'invalidate',
             'revalidate'

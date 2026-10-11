@@ -44,6 +44,14 @@ export interface CronScheduleEntry {
  */
 export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
     {
+        name: 'listing-coverage-reconciler',
+        displayName: 'Reconciliador diario de cobertura de fichas',
+        category: 'system',
+        schedule: '0 5 * * *',
+        description:
+            'Reconcile listing publication coverage and Partner presence cache once per day.'
+    },
+    {
         name: 'billing-reconciliation-sweep',
         displayName: 'Barrido de conciliación de cobros',
         category: 'billing',

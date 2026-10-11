@@ -9,6 +9,7 @@ import {
     insertPlan,
     publishBody,
     publishUrl,
+    restoreProductionPlanCatalog,
     superAdmin,
     truncatePlanCatalog
 } from './plan-publication.helpers.js';
@@ -41,7 +42,10 @@ describe('TEST:V3:8 plan publication invalidates the effective-set cache', () =>
         redis.incr.mockClear();
         vi.mocked(getRedisClient).mockResolvedValue(redis as never);
     });
-    afterAll(async () => testDb.teardown());
+    afterAll(async () => {
+        await restoreProductionPlanCatalog();
+        await testDb.teardown();
+    });
 
     it('TEST:V3:8 publishing any plan version increments the global generation after commit', async () => {
         const app = initApp();

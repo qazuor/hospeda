@@ -62,6 +62,60 @@ const snapshot = (userId: string, vertical: string, value: number): TestSnapshot
 });
 
 describe('TEST:V3:8 cache invalidation', () => {
+    it('peek returns a live value and never loads or writes', async () => {
+        const h = harness();
+        const cache = h.create();
+        await cache.readThrough({
+            userId: 'peek',
+            vertical: 'ACCOMMODATION',
+            load: async () => snapshot('peek', 'ACCOMMODATION', 7)
+        });
+        const before = new Map(h.redis.hashes.get('vset:v1:u:peek'));
+        await expect(cache.peek({ userId: 'peek', vertical: 'ACCOMMODATION' })).resolves.toEqual(
+            snapshot('peek', 'ACCOMMODATION', 7)
+        );
+        await expect(
+            cache.peek({ userId: 'missing', vertical: 'ACCOMMODATION' })
+        ).resolves.toBeUndefined();
+        expect(h.redis.hashes.get('vset:v1:u:peek')).toEqual(before);
+        h.advance(15 * 60 * 1000);
+        await expect(
+            cache.peek({ userId: 'peek', vertical: 'ACCOMMODATION' })
+        ).resolves.toBeUndefined();
+    });
+
+    it('peek rejects stale generations and corrupt envelopes', async () => {
+        const h = harness();
+        const cache = h.create();
+        await cache.readThrough({
+            userId: 'stale',
+            vertical: 'ACCOMMODATION',
+            load: async () => snapshot('stale', 'ACCOMMODATION', 2)
+        });
+        await cache.invalidateUser({ userId: 'stale' });
+        await expect(
+            cache.peek({ userId: 'stale', vertical: 'ACCOMMODATION' })
+        ).resolves.toBeUndefined();
+        h.redis.hashes.set('vset:v1:u:bad', new Map([['ACCOMMODATION', '{bad']]));
+        await expect(
+            cache.peek({ userId: 'bad', vertical: 'ACCOMMODATION' })
+        ).resolves.toBeUndefined();
+    });
+
+    it('peek treats an unavailable Redis client as a miss', async () => {
+        const cache = createEffectiveSetCache({
+            getClient: async () => {
+                throw new Error('redis unavailable');
+            },
+            clock: { now: () => new Date('2026-10-08T00:00:00.000Z') },
+            logger: { warn: vi.fn() },
+            codec
+        });
+        await expect(
+            cache.peek({ userId: 'offline', vertical: 'ACCOMMODATION' })
+        ).resolves.toBeUndefined();
+    });
+
     it.each([
         'user',
         'all'

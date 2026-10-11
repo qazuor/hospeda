@@ -81,6 +81,48 @@ export async function assertPlanForSale(input: {
     }
 }
 
+/** Reads the selected billing option and its plan identity for an S1 purchase. */
+export async function readBillingChoice(input: { readonly billingOptionId: string }): Promise<{
+    readonly id: string;
+    readonly planVersionId: string;
+    readonly vertical: string;
+    readonly planName: string;
+}> {
+    const [choice] = await getDb()
+        .select({
+            id: billingOptions.id,
+            planVersionId: billingOptions.planVersionId,
+            vertical: planVersions.vertical,
+            planName: plans.name
+        })
+        .from(billingOptions)
+        .innerJoin(planVersions, eq(planVersions.id, billingOptions.planVersionId))
+        .innerJoin(plans, eq(plans.id, planVersions.planId))
+        .where(eq(billingOptions.id, input.billingOptionId))
+        .limit(1);
+    if (!choice) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Billing option not found');
+    return choice;
+}
+
+/** Rejects Tourist VIP purchases already inherited from the current plan. */
+export async function assertTouristVipPurchaseAllowed(input: {
+    readonly vertical: string;
+    readonly userId: string;
+    readonly touristVipInheritance: TouristVipInheritancePort;
+}): Promise<void> {
+    if (
+        input.vertical === 'tourist' &&
+        (await input.touristVipInheritance.inherits({ userId: input.userId }))
+    ) {
+        throw new ServiceError(
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Your current plan already includes Tourist VIP',
+            undefined,
+            'TOURIST_VIP_INHERITED'
+        );
+    }
+}
+
 /** Provider phase, after the durable row/key transaction has committed. */
 export async function authorizePendingSubscription(input: {
     readonly pending: PendingAuthorizationRow;
@@ -172,31 +214,13 @@ export async function startSubscription(
     input: StartSubscriptionInput,
     ports: StartSubscriptionPorts
 ): Promise<StartSubscriptionResult> {
-    const [choice] = await getDb()
-        .select({
-            id: billingOptions.id,
-            planVersionId: billingOptions.planVersionId,
-            vertical: planVersions.vertical,
-            planName: plans.name
-        })
-        .from(billingOptions)
-        .innerJoin(planVersions, eq(planVersions.id, billingOptions.planVersionId))
-        .innerJoin(plans, eq(plans.id, planVersions.planId))
-        .where(eq(billingOptions.id, input.billingOptionId))
-        .limit(1);
-    if (!choice) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Billing option not found');
+    const choice = await readBillingChoice({ billingOptionId: input.billingOptionId });
     await assertPlanForSale({ planVersionId: choice.planVersionId, planPolicy: ports.planPolicy });
-    if (
-        choice.vertical === 'tourist' &&
-        (await ports.touristVipInheritance.inherits({ userId: input.userId }))
-    ) {
-        throw new ServiceError(
-            ServiceErrorCode.ALREADY_EXISTS,
-            'Your current plan already includes Tourist VIP',
-            undefined,
-            'TOURIST_VIP_INHERITED'
-        );
-    }
+    await assertTouristVipPurchaseAllowed({
+        vertical: choice.vertical,
+        userId: input.userId,
+        touristVipInheritance: ports.touristVipInheritance
+    });
 
     const declined = await subscriptionModel.findDeclinedWithProviderLinks({
         userId: input.userId,

@@ -41,6 +41,17 @@ describe('TEST:V6:1 and TEST:V6:4 - PB2, PB3 and PB6 with DB', () => {
             destinationId,
             status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
         });
+        await listingPublicationModel.insertStatusChangedEvent({
+            tx: db,
+            vertical,
+            listingId: alreadyDown.id,
+            from: PublicationStatusEnum.DRAFT,
+            to: PublicationStatusEnum.PUBLISHED,
+            actorType: 'owner',
+            actorId: userId,
+            correlationId: randomUUID(),
+            occurredAt: new Date('2026-12-01T00:00:00.000Z')
+        });
         const covered = { value: false };
         const limit = { value: 2 };
         const adapter = createPublicationTestAdapter({ db, covered, limit });
