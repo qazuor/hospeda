@@ -113,15 +113,26 @@ export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Pro
     };
 }
 
+/** A change on an entity whose cache tags carry the entity's own slug or id. */
+type SlugTaggedChange = Extract<
+    EntityChangeData,
+    { entityType: 'destination' | 'accommodation' | 'gastronomy' | 'experience' }
+>;
+
+/** Entity types whose cache tags carry the entity's own slug or id. */
+const SLUG_TAGGED_ENTITY_TYPES: ReadonlySet<EntityChangeData['entityType']> = new Set<
+    SlugTaggedChange['entityType']
+>(['destination', 'accommodation', 'gastronomy', 'experience']);
+
+function isSlugTagged(event: EntityChangeData): event is SlugTaggedChange {
+    return SLUG_TAGGED_ENTITY_TYPES.has(event.entityType);
+}
+
 function entityTags(event: EntityChangeData): string[] {
-    const identifiers = [
-        ...(event.entityType === 'destination' ||
-        event.entityType === 'accommodation' ||
-        event.entityType === 'gastronomy' ||
-        event.entityType === 'experience'
-            ? [event.slug, event.id]
-            : [])
-    ].filter((value): value is string => value !== undefined);
+    if (!isSlugTagged(event)) return [];
+    const identifiers = [event.slug, event.id].filter(
+        (value): value is string => value !== undefined
+    );
     return getAffectedCacheTags(event).filter((tag) =>
         identifiers.some((identifier) => tag.endsWith(`-${identifier}`))
     );
