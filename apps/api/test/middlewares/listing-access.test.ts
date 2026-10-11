@@ -179,6 +179,7 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
                 entries: []
             })
         );
