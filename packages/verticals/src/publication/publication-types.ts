@@ -44,6 +44,14 @@ export interface PublicationTransaction extends TrialStartTransaction {
         readonly vertical: PublicationVertical;
         readonly ownerId: string;
     }): Promise<readonly PublicationListing[]>;
+    readPublicationInstants(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingIds: readonly string[];
+    }): Promise<ReadonlyMap<string, Date>>;
+    readDeclaredPublishLimit(args: {
+        readonly userId: string;
+        readonly vertical: PublicationVertical;
+    }): Promise<number | null>;
     readPublishLimit(args: {
         readonly userId: string;
         readonly vertical: PublicationVertical;
@@ -71,6 +79,7 @@ export interface PublicationTransaction extends TrialStartTransaction {
         readonly actorType: 'owner' | 'job';
         readonly actorId?: string;
         readonly correlationId: string;
+        readonly occurredAt?: Date;
     }): Promise<void>;
 }
 

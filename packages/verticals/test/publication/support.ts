@@ -20,8 +20,10 @@ export function makeHarness(
         readonly status?: PublicationStatusEnum;
         readonly covered?: boolean;
         readonly limit?: number;
+        readonly declaredLimit?: number | null;
         readonly failTransaction?: boolean;
         readonly trialAvailable?: boolean;
+        readonly setReturnsFalse?: boolean;
     } = {}
 ) {
     let locked = false;
@@ -83,7 +85,16 @@ export function makeHarness(
         async readPublishLimit() {
             return args.limit ?? 1;
         },
+        async readDeclaredPublishLimit() {
+            calls.push('declaredLimit');
+            return args.declaredLimit === undefined ? (args.limit ?? 1) : args.declaredLimit;
+        },
+        async readPublicationInstants({ listingIds }) {
+            calls.push('instants');
+            return new Map(listingIds.map((id, index) => [id, new Date(at.getTime() + index)]));
+        },
         async setPublicationStatus({ from, to }) {
+            if (args.setReturnsFalse) return false;
             if (status !== from) return false;
             status = to;
             publishedCount = to === PublicationStatusEnum.PUBLISHED ? 1 : 0;
