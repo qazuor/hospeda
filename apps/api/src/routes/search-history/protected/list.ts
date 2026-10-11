@@ -2,30 +2,22 @@
  * GET /api/v1/protected/search-history
  *
  * Returns the authenticated user's search history entries, newest first,
- * without the former `MAX_SEARCH_HISTORY_ENTRIES` plan cap during the billing transition.
- *
- * Search history reads run without the former plan entitlement or entry cap.
+ * capped to the actor’s effective plan limit.
  *
  * @route GET /api/v1/protected/search-history
  * @module routes/search-history/protected/list
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { UserSearchHistoryListItemSchema } from '@repo/schemas';
+import { UserSearchHistoryListItemSchema, VerticalEnum } from '@repo/schemas';
 import { SearchHistoryService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate, readEffectiveLimit } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 const searchHistoryService = new SearchHistoryService({ logger: apiLogger });
-
-/**
- * Default plan limit when the limit is not yet configured in the entitlement
- * context (e.g. unrecognised plan). Mirrors the Plus plan limit (50).
- */
-const DEFAULT_PLAN_LIMIT = 50;
 
 /**
  * GET /api/v1/protected/search-history
@@ -36,7 +28,7 @@ export const listSearchHistoryRoute = createProtectedRoute({
     path: '/',
     summary: 'List search history',
     description:
-        "Returns the authenticated user's accommodation search history entries, newest first, capped to the plan's MAX_SEARCH_HISTORY_ENTRIES limit (Plus = 50, VIP = 200).",
+        "Returns the authenticated user's accommodation search history entries, newest first, capped to the effective plan limit.",
     tags: ['Search History'],
     responseSchema: z.object({
         items: z.array(UserSearchHistoryListItemSchema),
@@ -45,13 +37,20 @@ export const listSearchHistoryRoute = createProtectedRoute({
     options: {
         customRateLimit: { requests: 120, windowMs: 60000 }
     },
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_SEARCH_HISTORY_ENTRIES plan limit.
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
 
-        // The per-plan MAX_SEARCH_HISTORY_ENTRIES limit was removed with the
-        // legacy billing system (HOS-1416); the hard cap (200) always applies.
-        const planLimit = DEFAULT_PLAN_LIMIT;
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_view_search_history'],
+            limit: async () => ({ key: 'max_search_history_entries', requested: 1 })
+        });
+        const planLimit = await readEffectiveLimit({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            key: 'max_search_history_entries'
+        });
 
         const result = await searchHistoryService.list(actor, { planLimit });
 

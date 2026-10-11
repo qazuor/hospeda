@@ -1,6 +1,7 @@
 /** TEST:V5:19 — real protected review routes reject guests before their handlers. */
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,6 +9,11 @@ import { protectedCreateAccommodationReviewRoute } from '../../src/routes/accomm
 import { protectedCreateGastronomyReviewRoute } from '../../src/routes/gastronomy/protected/createReview';
 import type { AppBindings } from '../../src/types';
 import { createGuestActor } from '../../src/utils/actor';
+
+const mockEffectiveSet = vi.hoisted(() => vi.fn());
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
+}));
 
 const mockServices = vi.hoisted(() => ({
     accommodationCreate: vi.fn(),
@@ -101,6 +107,17 @@ async function postReview(actor: Actor, testCase: (typeof routes)[number]) {
 }
 
 beforeEach(() => {
+    mockEffectiveSet.mockImplementation(
+        async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'write_reviews', value: 1, strategy: 'MAX' }]
+            })
+    );
     mockServices.accommodationCreate.mockReset();
     mockServices.gastronomyCreate.mockReset();
 });
