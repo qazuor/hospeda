@@ -13,6 +13,7 @@ import {
 import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
+import { ListingPublicationService } from '../../../src/services/listing-publication/listing-publication.service';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import {
@@ -190,6 +191,22 @@ describe.each(verticals)('TEST:V8a:1 subscribe destination parity — %s', (vert
         );
         expect(publish.status).toBe(403);
         expect(publish.body.error?.message).toBe('no_plans_available');
+        const serviceActor = {
+            id: owner.id,
+            roles: [RoleEnum.HOST],
+            permissions: [
+                PermissionEnum.ACCOMMODATION_UPDATE_OWN,
+                PermissionEnum.GASTRONOMY_EDIT_OWN,
+                PermissionEnum.EXPERIENCE_EDIT_OWN
+            ]
+        };
+        await expect(
+            new ListingPublicationService().publish({
+                actor: serviceActor,
+                id: listingId,
+                vertical
+            })
+        ).rejects.toMatchObject({ code: 'FORBIDDEN', message: 'no_plans_available' });
         expect(await getDb().select().from(trials).where(eq(trials.userId, owner.id))).toHaveLength(
             1
         );
