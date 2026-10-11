@@ -172,6 +172,42 @@ describe('TEST:V6:26 step 6 baseline rehearsal', () => {
                 expect(g18.exitCode).toBe(0);
                 expect(g18.output).toContain('baseline history: catalog_key and vertical only');
 
+                await b.query(
+                    `CREATE FUNCTION public.step6_extra_function() RETURNS integer LANGUAGE sql AS $$ SELECT 1 $$`
+                );
+                expect(
+                    diffFingerprints({ a: aFingerprint, b: await fingerprintSchema({ client: b }) })
+                ).toEqual(['function step6_extra_function() only in B']);
+                await b.query('DROP FUNCTION public.step6_extra_function()');
+
+                await b.query(
+                    `CREATE TRIGGER step6_extra_trigger BEFORE INSERT ON public.domain_event FOR EACH ROW EXECUTE FUNCTION public.domain_event_reject_mutation()`
+                );
+                expect(
+                    diffFingerprints({ a: aFingerprint, b: await fingerprintSchema({ client: b }) })
+                ).toEqual(['trigger domain_event.step6_extra_trigger only in B']);
+                await b.query('DROP TRIGGER step6_extra_trigger ON public.domain_event');
+
+                await b.query(
+                    'ALTER TABLE public.domain_event DISABLE TRIGGER domain_event_append_only'
+                );
+                expect(
+                    diffFingerprints({ a: aFingerprint, b: await fingerprintSchema({ client: b }) })
+                ).toEqual([
+                    expect.stringMatching(
+                        /^trigger domain_event\.domain_event_append_only differs:.*enabled=O; B=.*enabled=D$/
+                    )
+                ]);
+                await b.query(
+                    'ALTER TABLE public.domain_event ENABLE TRIGGER domain_event_append_only'
+                );
+
+                await b.query('CREATE VIEW public.step6_extra_view AS SELECT 1 AS value');
+                expect(
+                    diffFingerprints({ a: aFingerprint, b: await fingerprintSchema({ client: b }) })
+                ).toEqual(['view step6_extra_view only in B']);
+                await b.query('DROP VIEW public.step6_extra_view');
+
                 const index = await b.query(
                     "SELECT i.indexname FROM pg_indexes i WHERE i.schemaname='public' AND NOT EXISTS (SELECT 1 FROM pg_constraint c WHERE c.conname=i.indexname) ORDER BY i.indexname LIMIT 1"
                 );
