@@ -28,9 +28,15 @@ const GLOBAL_LEGACY_NAMES = [
     'partners_lifecycleState_endsAt_idx'
 ] as const;
 const SOURCE_EXTENSION = /\.(?:ts|tsx|astro|mjs|cjs)$/;
-const HISTORICAL_MIGRATION_FIXTURES = [
-    'packages/db/test/integration/old-billing-untangle-over-data.test.ts',
-    'packages/db/test/integration/old-grouping-over-data.test.ts'
+const HISTORICAL_FILE_EXCLUSIONS = [
+    // These tests construct the pre-HOS-1481 schema to prove the structural migration.
+    'packages/db/test/integration/partners-v7-schema-from-empty.test.ts',
+    // This test inserts legacy partner columns before asserting the migration removes them.
+    'packages/db/test/integration/partners-v7-schema-over-data.test.ts',
+    // This no-op migration documents that the old fixture rows need no data rewrite.
+    'packages/seed/src/data-migrations/0119-hos1481-partner-fixtures-without-tier-and-dates.ts',
+    // This test verifies the migration marker and its no-op result.
+    'packages/seed/test/data-migrations/0119-hos1481-partner-fixtures-without-tier-and-dates.test.ts'
 ] as const;
 
 /** Removes line and block comments while preserving source line positions. */
@@ -118,28 +124,17 @@ function stripLiterals(source: string): string {
     );
 }
 
-function isHistoricalFixtureExclusion(file: string, code: string): boolean {
-    const namesColumns = new RegExp(`\\b(?:${PARTNER_FIELD_NAMES.join('|')})\\b`).test(code);
-    if (!namesColumns) return false;
-
-    // These fixtures replay pre-cut schemas, so their legacy names are history,
-    // not current partner readers. Exclude only while they still need them.
-    if ((HISTORICAL_MIGRATION_FIXTURES as readonly string[]).includes(file)) return true;
-    return (
-        file.startsWith('packages/db/test/integration/') &&
-        /^legacy-schema-migration-.*\.test\.ts$/.test(
-            file.slice('packages/db/test/integration/'.length)
-        )
-    );
-}
-
-function isExcluded(file: string, code: string): boolean {
-    // Migration SQL/TS files are historical schema evidence.
-    if (file.startsWith('packages/db/src/migrations/')) return true;
+function isExcluded(file: string): boolean {
     // The guard and its own tests contain forbidden spellings to define the check.
     if (file === 'scripts/check-partner-no-tier-and-dates.ts') return true;
     if (file === 'scripts/__tests__/check-partner-no-tier-and-dates.test.ts') return true;
-    return isHistoricalFixtureExclusion(file, code);
+    // Closed list: each item is a migration-history artifact, not a live reader.
+    return (HISTORICAL_FILE_EXCLUSIONS as readonly string[]).includes(file);
+}
+
+/** A tier mention counts only when it is attached to the partners model/table. */
+function isPartnerTierReference(line: string): boolean {
+    return /\b(?:partners?|PartnerModel)\s*(?:\.\s*tier\b|\[['"]tier['"]\])/i.test(line);
 }
 
 /**
@@ -161,9 +156,9 @@ export function findPartnerLegacyReferences(
 
     for (const { file, content } of files) {
         const code = stripComments(content);
-        if (isExcluded(file, code)) continue;
+        if (isExcluded(file)) continue;
         const isPartnerFile = /partner/i.test(file) || /\bpartners\b/.test(stripLiterals(code));
-        const pattern = isPartnerFile ? allNamesPattern : new RegExp(allNamesPattern.source, 'g');
+        const pattern = new RegExp(allNamesPattern.source, 'g');
         const lines = code.split('\n');
 
         for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
@@ -171,7 +166,11 @@ export function findPartnerLegacyReferences(
             pattern.lastIndex = 0;
             for (const match of line.matchAll(pattern)) {
                 const name = match[1] ?? '';
-                if (globalNames.has(name) || (isPartnerFile && partnerNamesPattern.test(name))) {
+                const partnerFieldReference =
+                    isPartnerFile &&
+                    partnerNamesPattern.test(name) &&
+                    (name !== 'tier' || isPartnerTierReference(line));
+                if (globalNames.has(name) || partnerFieldReference) {
                     violations.push({ file, line: lineIndex + 1, name });
                 }
                 partnerNamesPattern.lastIndex = 0;

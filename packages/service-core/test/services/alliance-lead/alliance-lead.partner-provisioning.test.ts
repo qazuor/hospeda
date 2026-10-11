@@ -175,8 +175,15 @@ describe('provisionPartnerFromLead', () => {
         // The whole point of making the column nullable (HOS-278 D1). Asserted
         // as absent rather than "not today", because writing ANY date here is
         // the invented value the change exists to stop.
-        expect(inserted).not.toHaveProperty('startsAt');
-        expect(inserted).not.toHaveProperty('tier');
+        expect(Object.keys(inserted).sort()).toEqual([
+            'createdById',
+            'lifecycleState',
+            'name',
+            'ownerUserId',
+            'slug',
+            'type',
+            'updatedById'
+        ]);
 
         expect(inserted.name).toBe('Fundación Acme');
         expect(inserted.type).toBe(PartnerTypeEnum.NGO);

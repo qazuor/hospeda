@@ -121,12 +121,22 @@ describe('0019-backfill-example-partners', () => {
         });
     });
 
-    it('does not write removed partner date fields', async () => {
+    it('writes only the current partner fixture keys', async () => {
         const store = new Map<string, { id: string; slug: string }>();
         await partnersMigration.up(buildCtx(store));
         for (const row of store.values()) {
-            expect(row).not.toHaveProperty('startsAt');
-            expect(row).not.toHaveProperty('endsAt');
+            expect(Object.keys(row).sort()).toEqual([
+                'createdById',
+                'description',
+                'id',
+                'lifecycleState',
+                'logoUrl',
+                'name',
+                'slug',
+                'type',
+                'updatedById',
+                'websiteUrl'
+            ]);
         }
     });
 });

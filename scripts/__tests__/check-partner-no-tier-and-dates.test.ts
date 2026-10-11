@@ -71,6 +71,32 @@ describe('TEST:V6:31 · static partner field guard', () => {
         });
     });
 
+    it('reports a partners field in an unlisted file that names the table', () => {
+        expect(
+            findPartnerLegacyReferences([
+                {
+                    file: 'apps/api/test/routes/partners/unlisted.test.ts',
+                    content: 'partners.tier;'
+                }
+            ])
+        ).toContainEqual({
+            file: 'apps/api/test/routes/partners/unlisted.test.ts',
+            line: 1,
+            name: 'tier'
+        });
+    });
+
+    it('ignores a tier field belonging to another concept in a partners-aware file', () => {
+        expect(
+            findPartnerLegacyReferences([
+                {
+                    file: 'apps/api/test/routes/system-actor-migration.test.ts',
+                    content: "import { partners } from '@repo/db';\nconfig: { tier: 'admin' }"
+                }
+            ])
+        ).toEqual([]);
+    });
+
     it('reports global retired schema identifiers in every file', () => {
         expect(
             findPartnerLegacyReferences([
@@ -83,22 +109,14 @@ describe('TEST:V6:31 · static partner field guard', () => {
         });
     });
 
-    it('runs the real repository scan and exposes the out-of-scope corrida 1 references', () => {
+    it('runs the real repository scan and reports remaining out-of-scope references', () => {
         const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
         const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         try {
             const exitCode = main();
-            expect([0, 1]).toContain(exitCode);
-            if (exitCode === 0) {
-                expect(log).toHaveBeenCalledWith(expect.stringContaining('OK:'));
-                expect(error).not.toHaveBeenCalled();
-            } else {
-                expect(error).toHaveBeenCalledWith(
-                    expect.stringContaining(
-                        'packages/db/test/integration/partners-v7-schema-from-empty.test.ts'
-                    )
-                );
-            }
+            expect(exitCode).toBe(0);
+            expect(log).toHaveBeenCalledWith(expect.stringContaining('OK:'));
+            expect(error).not.toHaveBeenCalled();
         } finally {
             log.mockRestore();
             error.mockRestore();
