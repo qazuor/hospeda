@@ -30,15 +30,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { isConstantTruthy } from './check-no-unconditional-fixme.js';
 import { loadInventories } from './live-term-inventory.js';
+import {
+    checkLifecycleRules,
+    S14_FILE,
+    S15_FILE
+} from './reconciliation-mark-discipline-lifecycle.js';
 import { run as runListingInventory } from './reconciliation-mark-listing-and-inventory.js';
 import { listProductionFiles } from './succession-writers-scan.js';
 
-export const S14_FILE =
-    'packages/service-core/src/services/billing/reconciliation/open-reconciliation-mark.service.ts';
-export const S15_FILE =
-    'packages/service-core/src/services/billing/reconciliation/lift-reconciliation-mark.service.ts';
+export { S14_FILE, S15_FILE } from './reconciliation-mark-discipline-lifecycle.js';
 export const MARK_MODEL_FILE =
     'packages/db/src/models/reconciliation-mark/reconciliation-mark.model.ts';
 export const REASONS_FILE = 'packages/db/src/schemas/vertical/reconciliation-mark-reasons.ts';
@@ -184,9 +185,11 @@ function runChecks(root: string, files: readonly string[]): Finding[] {
         for (const call of openCalls) {
             const obj = objectArg(call),
                 reason = obj && properties(obj).get('reason');
-            let literal: string | null = null;
-            if (reason && ts.isStringLiteral(unwrapLiteral(reason)))
-                literal = (unwrapLiteral(reason) as ts.StringLiteral).text;
+            const unwrappedReason = reason ? unwrapLiteral(reason) : null;
+            const literal =
+                unwrappedReason && ts.isStringLiteral(unwrappedReason)
+                    ? unwrappedReason.text
+                    : null;
             if (
                 !reason ||
                 (literal !== null && !reasonSet.has(literal)) ||
@@ -318,22 +321,7 @@ function runChecks(root: string, files: readonly string[]): Finding[] {
             const sf = fn.getSourceFile();
             report(sf, sf.fileName, '(d)', fn, 'one function opens motives 14 and 15');
         }
-    const s14 = asts.get(S14_FILE),
-        s15 = asts.get(S15_FILE);
-    if (!s14)
-        findings.push({
-            file: S14_FILE,
-            line: 1,
-            rule: '(e)',
-            detail: 'S14 source is missing from the scanned tree'
-        });
-    if (!s15)
-        findings.push({
-            file: S15_FILE,
-            line: 1,
-            rule: '(f)',
-            detail: 'S15 source is missing from the scanned tree'
-        });
+    findings.push(...checkLifecycleRules(asts));
     if (!asts.has(MARK_MODEL_FILE))
         findings.push({
             file: MARK_MODEL_FILE,
@@ -341,48 +329,6 @@ function runChecks(root: string, files: readonly string[]): Finding[] {
             rule: '(b)',
             detail: 'reconciliation mark model source is missing from the scanned tree'
         });
-    if (s14) {
-        const fn = findNamedFunction(s14, 'openReconciliationMark');
-        const inserts = fn ? calls(fn, 'insertOpen') : [],
-            finds = fn ? calls(fn, 'findOpen') : [],
-            firstInsert = inserts[0];
-        if (!fn || !firstInsert || !finds.some((f) => f.getStart(s14) < firstInsert.getStart(s14)))
-            report(
-                s14,
-                S14_FILE,
-                '(e)',
-                fn ?? s14,
-                'S14 must find an open mark before its first insertOpen'
-            );
-        const hangs = fn ? calls(fn, 'hang') : [];
-        if (!fn || !hangs.some((h) => insideIfPayment(h, fn)))
-            report(s14, S14_FILE, '(e)', fn ?? s14, 'S14 must call hang inside if (input.payment)');
-        for (const [file, sf] of asts)
-            if (file !== S14_FILE)
-                for (const h of calls(sf, 'hang'))
-                    report(sf, file, '(e)', h, 'payment hang is only called from S14');
-    }
-    if (s15) {
-        const fn = findNamedFunction(s15, 'liftReconciliationMark');
-        const count = fn ? calls(fn, 'countUnresolved') : [],
-            lifts = fn ? calls(fn, 'lift') : [],
-            countCall = count[0],
-            liftCall = lifts[0];
-        const valid =
-            !!fn &&
-            !!countCall &&
-            !!liftCall &&
-            countCall.getStart(s15) < liftCall.getStart(s15) &&
-            hasUnresolvedThrow(fn, countCall);
-        if (!valid)
-            report(
-                s15,
-                S15_FILE,
-                '(f)',
-                fn ?? s15,
-                'S15 must compare countUnresolved > 0, >= 1, or !== 0 in a non-neutralized if whose then branch throws, before lift'
-            );
-    }
     // S3's current writer is checked by the generic paired-column predicate above.
     return findings;
 }
@@ -414,75 +360,6 @@ function hasTypedReason(expr: ts.Expression, fn: Fn): boolean {
     };
     walk(root);
     return ok;
-}
-function findNamedFunction(sf: ts.SourceFile, name: string): ts.FunctionLikeDeclaration | null {
-    let found: ts.FunctionLikeDeclaration | null = null;
-    const walk = (n: ts.Node) => {
-        if (found) return;
-        if (
-            functionLike(n) &&
-            ((ts.isFunctionDeclaration(n) && n.name?.text === name) ||
-                (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === name))
-        ) {
-            found = n;
-            return;
-        }
-        ts.forEachChild(n, walk);
-    };
-    walk(sf);
-    return found;
-}
-function insideIfPayment(node: ts.Node, fn: Fn): boolean {
-    for (let p = node.parent; p && p !== fn; p = p.parent)
-        if (
-            ts.isIfStatement(p) &&
-            p.expression.getText().replace(/\s/g, '') === 'input.payment' &&
-            p.thenStatement.getStart() <= node.getStart() &&
-            p.thenStatement.getEnd() >= node.getEnd()
-        )
-            return true;
-    return false;
-}
-function hasUnresolvedThrow(fn: Fn, count: ts.CallExpression): boolean {
-    let valid = false;
-    const references = new Set<string>();
-    for (let p: ts.Node | undefined = count; p; p = p.parent) {
-        if (ts.isVariableDeclaration(p) && ts.isIdentifier(p.name)) {
-            references.add(p.name.text);
-            break;
-        }
-        if (p === fn) break;
-    }
-    const walk = (n: ts.Node) => {
-        if (ts.isIfStatement(n)) {
-            const text = n.expression.getText();
-            const uses =
-                text.includes(count.getText()) ||
-                [...references].some((v) => new RegExp(`\\b${v}\\b`).test(text));
-            const comparison = /(?:>\s*0|>=\s*1|!==\s*0)/.test(text);
-            let neutral = false;
-            const findNeutral = (x: ts.Node) => {
-                if (
-                    ts.isBinaryExpression(x) &&
-                    x.operatorToken.kind === ts.SyntaxKind.BarBarToken &&
-                    (isConstantTruthy(x.left) || isConstantTruthy(x.right))
-                )
-                    neutral = true;
-                ts.forEachChild(x, findNeutral);
-            };
-            findNeutral(n.expression);
-            let throws = false;
-            const findThrow = (x: ts.Node) => {
-                if (ts.isThrowStatement(x)) throws = true;
-                ts.forEachChild(x, findThrow);
-            };
-            findThrow(n.thenStatement);
-            if (uses && comparison && throws && !neutral) valid = true;
-        }
-        ts.forEachChild(n, walk);
-    };
-    walk(fn);
-    return valid;
 }
 export function run(args: { readonly root?: string; readonly minScannedFiles?: number } = {}): {
     readonly exitCode: number;

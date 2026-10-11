@@ -30,12 +30,6 @@ export const GATE_NAME = 'admitSuccessionPredecessor';
 export const GATE_FILE =
     'packages/service-core/src/services/billing/subscription/admit-succession-predecessor.ts';
 export const MIN_SCANNED_FILES = 1000;
-export const RULE_MESSAGES = {
-    ungatedWriter: 'UNGATED_WRITER',
-    rawSqlWrite: 'RAW_SQL_WRITE',
-    gateMissing: 'GATE_MISSING',
-    gateBody: 'GATE_BODY'
-} as const;
 type Finding = { file: string; line: number; rule: string; detail: string };
 function literals(sf: ts.SourceFile): Set<string> {
     const found = new Set<string>();

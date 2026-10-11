@@ -14,11 +14,6 @@ import ts from 'typescript';
 import { findSuccessionWrites, listProductionFiles } from './succession-writers-scan.js';
 export const SUSPENDED_CARD_BASIS = 'CARD_SUSPENDED_CONFIRMED_CANCELLED';
 export const MIN_SCANNED_FILES = 1000;
-export const RULE_MESSAGES = {
-    noFirstCharge: 'NO_FIRST_CHARGE',
-    notProviderDate: 'NOT_PROVIDER_DATE',
-    noStrictAfter: 'NO_STRICT_AFTER'
-} as const;
 type Finding = { file: string; line: number; rule: string; detail: string };
 function name(p: ts.PropertyName): string | null {
     return ts.isIdentifier(p) || ts.isStringLiteral(p) ? p.text : null;

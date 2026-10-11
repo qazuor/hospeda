@@ -22,12 +22,12 @@ function tree(files: Record<string, string>): string {
     }
     return root;
 }
-const empty = {
+const empty: Partial<Record<InventoryKey, readonly unknown[]>> = {
     fila_viva: [],
     grant_vivo_ancla_viva: [],
     marca_abierta: [],
     cortesia_diferida: []
-} satisfies Partial<Record<InventoryKey, readonly unknown[]>>;
+};
 const entry = (file: string, symbol = 'consumer'): InventoryEntry => ({
     file,
     symbol,

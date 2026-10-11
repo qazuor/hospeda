@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { loadInventories } from '../live-term-inventory.js';
+import { type InventoryKey, loadInventories } from '../live-term-inventory.js';
 import { inspect, run } from '../reconciliation-mark-listing-and-inventory.js';
 
 const repo = path.resolve(import.meta.dirname, '../..');
@@ -11,7 +11,10 @@ const dirs: string[] = [];
 afterEach(() => {
     for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
-const emptyInventories = { marca_abierta: [], cortesia_diferida: [] } as const;
+const emptyInventories: Partial<Record<InventoryKey, readonly unknown[]>> = {
+    marca_abierta: [],
+    cortesia_diferida: []
+};
 function tree(files: Record<string, string>): string {
     const root = mkdtempSync(path.join(tmpdir(), 'reconciliation-listing-'));
     dirs.push(root);
