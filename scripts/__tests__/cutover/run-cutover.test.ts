@@ -194,12 +194,14 @@ const BASE_KEYS = [
 
 /** The optional step-4b ids (HOS-1427): ids only, absent until step 4b creates them. */
 const STEP_4B_KEYS = ['paymentId', 'probeId', 'refundId'] as const;
+const STEP_KEYS = ['step'] as const;
 
 /**
  * Pins the full key set of the manifest TYPE: `Required<>` makes a missing key a type error and
  * the object literal makes an extra one a type error, so a new field cannot slip in unpinned.
  */
 const EVERY_FIELD: Required<CutoverManifest> = {
+    step: '4b',
     schemaVersion: 1,
     outcome: 'ok',
     startedAt: '',
@@ -232,7 +234,9 @@ describe('TEST:U3:6 manifest carries ids only (AC:U3:5)', () => {
         const { manifest } = await promise;
         // Assert
         expect(Object.keys(manifest).sort()).toEqual([...BASE_KEYS].sort());
-        expect(Object.keys(EVERY_FIELD).sort()).toEqual([...BASE_KEYS, ...STEP_4B_KEYS].sort());
+        expect(Object.keys(EVERY_FIELD).sort()).toEqual(
+            [...BASE_KEYS, ...STEP_4B_KEYS, ...STEP_KEYS].sort()
+        );
         expect(checkpoints.length).toBeGreaterThan(1);
         for (const record of [...checkpoints, manifest]) {
             expect(Object.keys(record).every((k) => k in EVERY_FIELD)).toBe(true);

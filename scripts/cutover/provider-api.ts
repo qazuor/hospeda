@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type {
     CancelCallResult,
+    CreateCallResult,
     ListPage,
     ObjectKind,
     PaymentRead,
@@ -31,6 +32,14 @@ const SAFE_ID = /^[A-Za-z0-9_-]{1,128}$/;
 const RETRYABLE_STATUS = new Set([429, 500, 502, 503, 504]);
 const MAX_ATTEMPTS = 4;
 const DEFAULT_RETRY_DELAY_MS = 1_000;
+
+type JsonValue =
+    | string
+    | number
+    | boolean
+    | null
+    | readonly JsonValue[]
+    | { readonly [key: string]: JsonValue };
 
 const idSchema = z.union([z.string(), z.number()]).transform((value) => String(value));
 const objectSchema = z.object({ id: idSchema, status: z.string() });
@@ -100,7 +109,7 @@ export function createProviderApi({
     }: {
         readonly method: 'GET' | 'PUT' | 'POST';
         readonly path: string;
-        readonly body?: Readonly<Record<string, string>>;
+        readonly body?: Readonly<Record<string, JsonValue>>;
         readonly idempotencyKey?: string;
     }): Promise<{ readonly httpStatus: number; readonly json: unknown }> => {
         let lastStatus = 0;
@@ -132,6 +141,53 @@ export function createProviderApi({
     };
 
     return {
+        createProbe: async ({ payerEmail, idempotencyKey }): Promise<CreateCallResult> => {
+            const { httpStatus, json } = await request({
+                method: 'POST',
+                path: '/preapproval',
+                idempotencyKey,
+                body: {
+                    reason: 'Hospeda cutover probe (step 4b)',
+                    payer_email: payerEmail,
+                    back_url: 'https://hospeda.com.ar',
+                    status: 'pending',
+                    auto_recurring: {
+                        frequency: 1,
+                        frequency_type: 'months',
+                        transaction_amount: 15,
+                        currency_id: 'ARS'
+                    }
+                }
+            });
+            const accepted = httpStatus >= 200 && httpStatus < 300;
+            const parsed = createdSchema.safeParse(json);
+            return { accepted, httpStatus, id: accepted && parsed.success ? parsed.data.id : null };
+        },
+        createPayment: async ({
+            amountArs,
+            cardToken,
+            paymentMethodId,
+            payerEmail,
+            idempotencyKey
+        }): Promise<CreateCallResult> => {
+            const path = PAYMENTS_PATH;
+            const { httpStatus, json } = await request({
+                method: 'POST',
+                path,
+                idempotencyKey,
+                body: {
+                    transaction_amount: amountArs,
+                    token: cardToken,
+                    description: 'Hospeda cutover step 4b',
+                    installments: 1,
+                    payment_method_id: paymentMethodId,
+                    payer: { email: payerEmail }
+                }
+            });
+            const accepted = httpStatus >= 200 && httpStatus < 300;
+            const parsed = createdSchema.safeParse(json);
+            return { accepted, httpStatus, id: accepted && parsed.success ? parsed.data.id : null };
+        },
         listPage: async ({ kind, offset, limit }): Promise<ListPage> => {
             const path = `${KIND_PATH[kind]}/search?limit=${limit}&offset=${offset}`;
             const { httpStatus, json } = await request({ method: 'GET', path });
