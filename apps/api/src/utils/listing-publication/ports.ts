@@ -34,7 +34,12 @@ const LISTING_TABLE_BY_VERTICAL: Readonly<Record<PublicationVertical, string>> =
 };
 
 /** Transaction-bound adapter shared by owner transitions and coverage reconciliation. */
-export function getListingPublicationPorts(): {
+export function getListingPublicationPorts(options?: {
+    readonly liveLimit?: (input: {
+        readonly userId: string;
+        readonly vertical: PublicationVertical;
+    }) => Promise<number | null>;
+}): {
     readonly unitOfWork: PublicationUnitOfWork;
     readonly afterCommit: PublicationAfterCommit;
     readonly billing: ReturnType<typeof getListingAccessPorts>['billing'];
@@ -65,6 +70,7 @@ export function getListingPublicationPorts(): {
                         return listingPublicationModel.readPublicationInstants({ ...input, tx });
                     },
                     async readPublishLimit(input) {
+                        if (options?.liveLimit) return (await options.liveLimit(input)) ?? 0;
                         const effective = await access.effectiveSet({
                             userId: input.userId,
                             vertical: input.vertical
@@ -78,6 +84,7 @@ export function getListingPublicationPorts(): {
                         );
                     },
                     async readDeclaredPublishLimit(input) {
+                        if (options?.liveLimit) return options.liveLimit(input);
                         const effective = await access.effectiveSet({
                             userId: input.userId,
                             vertical: input.vertical
