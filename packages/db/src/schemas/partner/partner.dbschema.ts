@@ -1,10 +1,19 @@
 import type { ContactInfo, SocialNetwork } from '@repo/schemas';
-import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
+import {
+    boolean,
+    index,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import {
     LifecycleStatusPgEnum,
     PartnerContentReviewStatePgEnum,
-    PartnerTierPgEnum,
     PartnerTypePgEnum
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
@@ -24,7 +33,6 @@ export const partners = pgTable(
         slug: varchar('slug', { length: 255 }).notNull().unique(),
         name: varchar('name', { length: 255 }).notNull(),
         type: PartnerTypePgEnum('type').notNull(),
-        tier: PartnerTierPgEnum('tier').notNull(),
         logoUrl: text('logo_url'),
         websiteUrl: text('website_url'),
         description: text('description'),
@@ -63,20 +71,10 @@ export const partners = pgTable(
          * owner at all and are meant to stay that way.
          */
         ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
-        /**
-         * When the alliance actually began — NULL until it does (HOS-278 D1).
-         *
-         * Nullable because provisioning creates the row BEFORE any payment:
-         * a DRAFT partner has been approved but has not started, and this
-         * column previously had no way to say so. It was NOT NULL with no
-         * default, so every writer had to invent a date — the admin form
-         * still defaults to today — and that invented date was indexed by
-         * `partners_startsAt_idx` alongside the real ones, indistinguishable
-         * from them. NULL is now the honest answer, written for real only
-         * when the partner subscription activates.
-         */
-        startsAt: timestamp('starts_at', { withTimezone: true }),
-        endsAt: timestamp('ends_at', { withTimezone: true }),
+        /** Spec «bit de moderación de la presencia»; lo escribe V7 sólo mediante la acción administrativa 12/PB10/PB11. */
+        presenceModerated: boolean('presence_moderated').notNull().default(false),
+        /** Spec «secreto_de_reclamo»: hash del secreto de un solo uso, escrito por V7 al emitirlo. */
+        claimSecretHash: text('claim_secret_hash'),
         /**
          * Logo the partner submitted, awaiting an admin's verdict (HOS-278 AC-11).
          *
@@ -160,21 +158,17 @@ export const partners = pgTable(
     (table) => ({
         partners_slug_idx: index('partners_slug_idx').on(table.slug),
         partners_type_idx: index('partners_type_idx').on(table.type),
-        partners_tier_idx: index('partners_tier_idx').on(table.tier),
         partners_lifecycleState_idx: index('partners_lifecycleState_idx').on(table.lifecycleState),
-        partners_startsAt_idx: index('partners_startsAt_idx').on(table.startsAt),
         partners_ownerUserId_idx: index('partners_ownerUserId_idx').on(table.ownerUserId),
+        uq_partners_owner_user_id: uniqueIndex('uq_partners_owner_user_id')
+            .on(table.ownerUserId)
+            .where(sql`${table.ownerUserId} IS NOT NULL`),
         // Drives the admin review queue ("what is waiting on me"), which reads
         // exactly one value out of a column that is null for most rows.
         partners_contentReviewState_idx: index('partners_contentReviewState_idx').on(
             table.contentReviewState
         ),
-        partners_deletedAt_idx: index('partners_deletedAt_idx').on(table.deletedAt),
-        // Anticipatory composite for partner-expiry cron
-        partners_lifecycleState_endsAt_idx: index('partners_lifecycleState_endsAt_idx').on(
-            table.lifecycleState,
-            table.endsAt
-        )
+        partners_deletedAt_idx: index('partners_deletedAt_idx').on(table.deletedAt)
     })
 );
 

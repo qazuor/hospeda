@@ -1,5 +1,5 @@
 import type { LifecycleStatusEnum, Partner } from '@repo/schemas';
-import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull, or } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
 import type { LifecycleStatusPgEnum } from '../../schemas/enums.dbschema.ts';
@@ -9,7 +9,6 @@ import { safeIlike } from '../../utils/drizzle-helpers.ts';
 export interface SearchPartnerFilters {
     q?: string;
     type?: string;
-    tier?: string;
     includeInactive?: boolean;
     page?: number;
     pageSize?: number;
@@ -83,11 +82,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             conditions.push(eq(partners.type, filters.type));
         }
 
-        // Tier filter
-        if (filters.tier) {
-            conditions.push(eq(partners.tier, filters.tier));
-        }
-
         // Soft delete filter
         conditions.push(isNull(partners.deletedAt));
 
@@ -98,26 +92,14 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             query.where(and(...conditions));
         }
 
-        // Sorting: tier order (gold > silver) then startsAt.
-        //
-        // The `bronze` branch was dropped by HOS-294 along with the tier itself.
-        // It is raw SQL, so nothing in the type system would ever have flagged
-        // it — the enum could lose a value and this CASE would keep naming it
-        // forever, silently dead. `ELSE 99` still catches anything unexpected.
-        const sortBy = filters.sort || 'tier';
+        // Sorting defaults to newest partners; legacy commercial dates no longer exist.
+        const sortBy = filters.sort;
         const sortOrder = filters.sortOrder || 'desc';
 
-        if (sortBy === 'tier') {
-            query.orderBy(
-                sql`CASE ${partners.tier} WHEN 'gold' THEN 0 WHEN 'silver' THEN 1 ELSE 99 END`,
-                desc(partners.startsAt)
-            );
-        } else if (sortBy === 'startsAt') {
-            query.orderBy(sortOrder === 'asc' ? asc(partners.startsAt) : desc(partners.startsAt));
-        } else if (sortBy === 'name') {
+        if (sortBy === 'name') {
             query.orderBy(sortOrder === 'asc' ? asc(partners.name) : desc(partners.name));
         } else {
-            query.orderBy(desc(partners.startsAt));
+            query.orderBy(desc(partners.createdAt));
         }
 
         // Pagination
@@ -136,9 +118,7 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      * that {@link findByFilters} uses so the total is always consistent with
      * the paginated results returned for the same query.
      */
-    async countActivePartners(
-        filters: { q?: string; type?: string; tier?: string } = {}
-    ): Promise<number> {
+    async countActivePartners(filters: { q?: string; type?: string } = {}): Promise<number> {
         const db = getDb();
         const conditions = [eq(partners.lifecycleState, 'ACTIVE'), isNull(partners.deletedAt)];
 
@@ -157,10 +137,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             conditions.push(eq(partners.type, filters.type));
         }
 
-        if (filters.tier) {
-            conditions.push(eq(partners.tier, filters.tier));
-        }
-
         const result = await db
             .select({ count: count() })
             .from(partners)
@@ -174,50 +150,6 @@ export class PartnerModel extends BaseModelImpl<Partner> {
      */
     async findBySlug(slug: string): Promise<Partner | null> {
         return this.findOne({ slug });
-    }
-
-    /**
-     * Find partners expiring soon (for cron)
-     */
-    async findExpiringSoon(days = 7): Promise<Partner[]> {
-        const db = getDb();
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() + days);
-
-        const result = await db
-            .select()
-            .from(partners)
-            .where(
-                and(
-                    eq(partners.lifecycleState, 'ACTIVE'),
-                    isNull(partners.deletedAt),
-                    gte(partners.endsAt, new Date()),
-                    lte(partners.endsAt, cutoffDate)
-                )
-            );
-
-        return result as Partner[];
-    }
-
-    /**
-     * Find expired partners that need status update (for cron)
-     */
-    async findExpired(): Promise<Partner[]> {
-        const db = getDb();
-        const now = new Date();
-
-        const result = await db
-            .select()
-            .from(partners)
-            .where(
-                and(
-                    eq(partners.lifecycleState, 'ACTIVE'),
-                    isNull(partners.deletedAt),
-                    lte(partners.endsAt, now)
-                )
-            );
-
-        return result as Partner[];
     }
 
     /**
