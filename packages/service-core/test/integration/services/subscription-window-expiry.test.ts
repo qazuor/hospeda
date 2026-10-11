@@ -22,6 +22,10 @@ import {
     startSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import {
+    seededSubscriptionIds,
+    withSeededSubscriptionSweep
+} from './support/subscription-window-sweep';
 import { noTouristVip, touristVipInheritanceFromDb } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
@@ -55,6 +59,14 @@ beforeEach(() => {
     vi.restoreAllMocks();
 });
 afterEach(() => unregisterHook('b3-window-expiry-test'));
+afterEach(() => seededSubscriptionIds.clear());
+/** Runs the expiry service against only this test's seeded subscriptions. */
+function expireOwnAuthorizationWindows(
+    limit: number,
+    ports: Parameters<typeof expireAuthorizationWindows>[1]
+) {
+    return withSeededSubscriptionSweep(limit, () => expireAuthorizationWindows(limit, ports));
+}
 function advance(hours: number) {
     current = new Date(openedAt.getTime() + hours * 60 * 60 * 1000);
 }
@@ -143,6 +155,7 @@ async function startPending(provider: PaymentProvider, inheritsTouristVip = fals
             touristVipInheritance: noTouristVip
         }
     );
+    seededSubscriptionIds.add(started.subscriptionId);
     return { started, fakeId: started.authorizationId.split(':').at(-1) ?? '', choice };
 }
 
@@ -162,6 +175,7 @@ async function seedManual() {
         authorizationWindowDeadlineVersion: 1,
         authorizationWindowEndsAt: new Date(openedAt.getTime() + 7 * 24 * 60 * 60 * 1000)
     });
+    seededSubscriptionIds.add(pending.subscription.id);
     await getServiceTestDb()
         .update(subscriptions)
         .set({ paymentMethod: 'MANUAL' })
@@ -211,12 +225,12 @@ describe('TEST:B3:10 authorization window expiry', () => {
         const card = await startPending(provider);
         const manual = await seedManual();
         advance(72 - 1 / 60);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             abandoned: 0,
             activated: 0
         });
         advance(72);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             abandoned: 1,
             activated: 0,
             cancelCalls: 1
@@ -224,7 +238,7 @@ describe('TEST:B3:10 authorization window expiry', () => {
         expect(await status(card.started.subscriptionId)).toBe('ABANDONED');
         expect(await status(manual.id)).toBe('PENDING_AUTHORIZATION');
         advance(7 * 24);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             abandoned: 1,
             cancelCalls: 0
         });
@@ -244,7 +258,7 @@ describe('TEST:B3:10 authorization window expiry', () => {
         advance(72 - 1 / 60);
         await fake.approve({ authorizationId: card.fakeId });
         advance(72);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             activated: 1,
             abandoned: 0
         });
@@ -262,10 +276,11 @@ describe('TEST:B3:10 authorization window expiry', () => {
             authorizationWindowDeadlineVersion: 1,
             authorizationWindowEndsAt: new Date(openedAt.getTime() + 10 * 60 * 60 * 1000)
         });
+        seededSubscriptionIds.add(pending.subscription.id);
         advance(10 - 1 / 60);
-        expect((await expireAuthorizationWindows(20, ports)).abandoned).toBe(0);
+        expect((await expireOwnAuthorizationWindows(20, ports)).abandoned).toBe(0);
         advance(10);
-        expect((await expireAuthorizationWindows(20, ports)).abandoned).toBe(1);
+        expect((await expireOwnAuthorizationWindows(20, ports)).abandoned).toBe(1);
         expect(await status(pending.subscription.id)).toBe('ABANDONED');
     });
 });
@@ -276,7 +291,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         const { fake, provider, ports, events, beforeCancel, cancel } = setup();
         const card = await startPending(provider);
         advance(72);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             abandoned: 1,
             cancelCalls: 1
         });
@@ -284,7 +299,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         expect(
             (await fake.readAuthorization({ authorizationId: card.fakeId })).snapshot.status
         ).toBe('cancelled');
-        await expireAuthorizationWindows(20, ports);
+        await expireOwnAuthorizationWindows(20, ports);
         expect(beforeCancel).toHaveBeenCalledTimes(1);
         expect(cancel).toHaveBeenCalledTimes(1);
     });
@@ -294,7 +309,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         beforeCancel.mockResolvedValue('NOT_YET_SENT');
         const card = await startPending(provider);
         advance(72);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             abandoned: 1,
             noticePending: 1,
             cancelCalls: 0
@@ -317,7 +332,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         beforeCancel.mockResolvedValue(outcome);
         const card = await startPending(provider);
         advance(72);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             abandoned: 1,
             cancelCalls: 1
         });
@@ -343,7 +358,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         const card = await startPending(provider);
         cancel.mockRejectedValueOnce(new Error('transient provider failure'));
         advance(72);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             abandoned: 1,
             cancelCalls: 1
         });
@@ -358,7 +373,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         const card = await startPending(provider);
         await fake.cancel({ authorizationId: card.fakeId });
         advance(72);
-        expect(await expireAuthorizationWindows(20, ports)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, ports)).toMatchObject({
             abandoned: 1,
             cancelCalls: 0
         });
@@ -370,7 +385,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
         const { ports, beforeCancel, cancel } = setup();
         const manual = await seedManual();
         advance(7 * 24);
-        expect((await expireAuthorizationWindows(20, ports)).abandoned).toBe(1);
+        expect((await expireOwnAuthorizationWindows(20, ports)).abandoned).toBe(1);
         expect(await status(manual.id)).toBe('ABANDONED');
         expect(beforeCancel).not.toHaveBeenCalled();
         expect(cancel).not.toHaveBeenCalled();
@@ -385,6 +400,7 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
             authorizationWindowDeadlineVersion: 1,
             authorizationWindowEndsAt: new Date(openedAt.getTime() + 24 * 60 * 60 * 1000)
         });
+        seededSubscriptionIds.add(predecessor.subscription.id);
         await getServiceTestDb()
             .update(subscriptions)
             .set({ status: 'CANCELLED' })
@@ -395,12 +411,13 @@ describe('TEST:B3:11 notice and provider cancellation', () => {
             authorizationWindowDeadlineVersion: 1,
             authorizationWindowEndsAt: new Date(openedAt.getTime() + 10 * 60 * 60 * 1000)
         });
+        seededSubscriptionIds.add(successor.subscription.id);
         await getServiceTestDb()
             .update(subscriptions)
             .set({ succeedsId: predecessor.subscription.id })
             .where(eq(subscriptions.id, successor.subscription.id));
         advance(10);
-        expect((await expireAuthorizationWindows(20, ports)).abandoned).toBe(1);
+        expect((await expireOwnAuthorizationWindows(20, ports)).abandoned).toBe(1);
         const [row] = await getServiceTestDb()
             .select({ status: subscriptions.status, succeedsId: subscriptions.succeedsId })
             .from(subscriptions)
@@ -470,7 +487,7 @@ describe('TEST:B3:37 inherited Tourist VIP at S3', () => {
         const inherits = vi.spyOn(touristVipInheritanceFromDb, 'inherits');
         const inheritingPorts = { ...ports, touristVipInheritance: touristVipInheritanceFromDb };
         advance(72);
-        expect(await expireAuthorizationWindows(20, inheritingPorts)).toMatchObject({
+        expect(await expireOwnAuthorizationWindows(20, inheritingPorts)).toMatchObject({
             abandoned: 1,
             activated: 0
         });
@@ -551,7 +568,7 @@ describe('TEST:B3:28 inherited Tourist VIP at S2 from expiry', () => {
         });
         await fake.approve({ authorizationId: plan.fakeId });
         advance(72);
-        const result = await expireAuthorizationWindows(20, {
+        const result = await expireOwnAuthorizationWindows(20, {
             ...ports,
             touristVipInheritance: { inherits: async () => true }
         });

@@ -10,9 +10,13 @@ import {
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { expireAuthorizationWindows } from '../../../src/services/billing/subscription/expire-authorization-windows.service.ts';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import {
+    seededSubscriptionIds,
+    withSeededSubscriptionSweep
+} from './support/subscription-window-sweep';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 const values = {
@@ -40,6 +44,7 @@ const clock = { now: () => current };
 beforeEach(() => {
     current = openedAt;
 });
+afterEach(() => seededSubscriptionIds.clear());
 function advance(hours: number) {
     current = new Date(openedAt.getTime() + hours * 60 * 60 * 1000);
 }
@@ -113,6 +118,7 @@ async function seedPending(withCourtesy: boolean) {
         authorizationWindowDeadlineVersion: 1,
         authorizationWindowEndsAt: new Date(openedAt.getTime() + 72 * 60 * 60 * 1000)
     });
+    seededSubscriptionIds.add(pending.subscription.id);
     await getServiceTestDb()
         .update(subscriptions)
         .set({ succeededById: pending.subscription.id })
@@ -162,7 +168,7 @@ describe('TEST:B3:12 S3 courtesy closure and notice', () => {
     it('abandons the successor, closes the predecessor’s balance, and queues one email', async () => {
         const own = await seedPending(true);
         advance(73);
-        await expireAuthorizationWindows(100, setup());
+        await withSeededSubscriptionSweep(100, () => expireAuthorizationWindows(100, setup()));
         expect(await ownStatus(own.subscriptionId)).toBe('ABANDONED');
         const [grant] = await getServiceTestDb()
             .select()
@@ -182,7 +188,7 @@ describe('TEST:B3:12 S3 courtesy closure and notice', () => {
     it('abandons without courtesy, writes no grants, and queues null balance', async () => {
         const own = await seedPending(false);
         advance(73);
-        await expireAuthorizationWindows(100, setup());
+        await withSeededSubscriptionSweep(100, () => expireAuthorizationWindows(100, setup()));
         expect(await ownStatus(own.subscriptionId)).toBe('ABANDONED');
         expect(
             await getServiceTestDb()
@@ -199,8 +205,8 @@ describe('TEST:B3:12 S3 courtesy closure and notice', () => {
         const own = await seedPending(false);
         advance(73);
         const ports = setup();
-        await expireAuthorizationWindows(100, ports);
-        await expireAuthorizationWindows(100, ports);
+        await withSeededSubscriptionSweep(100, () => expireAuthorizationWindows(100, ports));
+        await withSeededSubscriptionSweep(100, () => expireAuthorizationWindows(100, ports));
         expect(await ownStatus(own.subscriptionId)).toBe('ABANDONED');
         expect(await ownOutbox(own.userId, own.subscriptionId)).toHaveLength(1);
     });
@@ -208,7 +214,7 @@ describe('TEST:B3:12 S3 courtesy closure and notice', () => {
     it('does not touch a still-open window, courtesy, or outbox', async () => {
         const own = await seedPending(true);
         advance(30);
-        await expireAuthorizationWindows(100, setup());
+        await withSeededSubscriptionSweep(100, () => expireAuthorizationWindows(100, setup()));
         expect(await ownStatus(own.subscriptionId)).toBe('PENDING_AUTHORIZATION');
         const [grant] = await getServiceTestDb()
             .select()

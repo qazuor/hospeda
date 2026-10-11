@@ -40,6 +40,8 @@ interface SeededListing {
 const cutoverInstant = new Date('2026-10-10T12:00:00.000Z');
 
 async function hideOtherPublishedListings(tx: DrizzleClient): Promise<void> {
+    // The caller owns a rollback-only transaction, so this creates an isolated
+    // five-listing cutover world without persisting changes to shared fixtures.
     await tx
         .update(accommodations)
         .set({ publicationStatus: 'DRAFT' })
@@ -126,6 +128,8 @@ describe('TEST:V6:21 cutover V6 trials', () => {
 
     it('writes five active catalog-backed trials and schedules five campaigns; a rerun skips them', async () => {
         await withServiceTestTransaction(async (tx) => {
+            // Simulate a PUBLISHED listing left by another integration suite.
+            await seedPublished(tx, 'accommodation');
             await hideOtherPublishedListings(tx);
             const seeded = await Promise.all([
                 seedPublished(tx, 'accommodation'),
