@@ -126,6 +126,21 @@ describe('TEST:B3:5 — no route of the branch declares a succession (AC:B3:5)',
     beforeEach(ensureBillingDeadlineVersion1);
     afterAll(async () => testDb.teardown());
 
+    it('keeps the S1 succession branch unreachable from every API source file', () => {
+        const sourceDir = fileURLToPath(new URL('../../../src', import.meta.url));
+        const entries = readdirSync(sourceDir, { recursive: true, encoding: 'utf8' })
+            .map((entry) => entry.split(sep).join('/'))
+            .filter(
+                (entry) => /\.(?:ts|tsx|js|mjs|cjs)$/.test(entry) && !/\.test\.[^.]+$/.test(entry)
+            );
+        for (const entry of entries) {
+            const source = readFileSync(join(sourceDir, entry), 'utf8');
+            expect(source, `${entry} must not reach the S1 succession branch`).not.toMatch(
+                /\b(?:startSuccession|admitSuccessionPredecessor)\b/
+            );
+        }
+    });
+
     it('inventories the routes that create a subscription and finds no succession writer', () => {
         const routesDir = fileURLToPath(new URL('../../../src/routes', import.meta.url));
         const entries = readdirSync(routesDir, { recursive: true, encoding: 'utf8' })

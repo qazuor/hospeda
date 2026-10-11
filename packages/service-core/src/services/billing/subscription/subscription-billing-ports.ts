@@ -1,6 +1,42 @@
 import type { DrizzleClient } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
+
+const cancellationSeenLogger = createLogger('cancellation-seen');
+
+/** Internal observation port for a provider authorization re-read as cancelled. */
+export interface CancellationSeenAnnotator {
+    /** Records the instant a subscription's authorization was observed cancelled. */
+    annotateCancellationSeen(input: {
+        readonly subscriptionId: string;
+        readonly seenAt: Date;
+    }): Promise<void>;
+}
+
+/** No-op until B4 supplies the implementation backed by provider_link. */
+export const noCancellationSeenAnnotation: CancellationSeenAnnotator = {
+    async annotateCancellationSeen() {}
+};
+
+/** Records a best-effort cancellation observation without interrupting billing transitions. */
+export async function recordCancellationSeen(input: {
+    readonly annotator: CancellationSeenAnnotator;
+    readonly subscriptionId: string;
+    readonly seenAt: Date;
+}): Promise<void> {
+    try {
+        await input.annotator.annotateCancellationSeen({
+            subscriptionId: input.subscriptionId,
+            seenAt: input.seenAt
+        });
+    } catch (error) {
+        cancellationSeenLogger.error(
+            { subscriptionId: input.subscriptionId, error },
+            'Could not record provider cancellation observation'
+        );
+    }
+}
 
 /** B5 injects the implementation over payment/manual_payment, replacing the default. */
 export interface SubscriptionPayments {

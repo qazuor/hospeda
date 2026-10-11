@@ -21,8 +21,11 @@ import { openReconciliationMark } from '../reconciliation/open-reconciliation-ma
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
+    type CancellationSeenAnnotator,
     type FirstChargeReader,
+    noCancellationSeenAnnotation,
     noCreditedPayments,
+    recordCancellationSeen,
     type SubscriptionPayments,
     type SuccessionCloser,
     unimplementedSuccessionCloser,
@@ -58,6 +61,7 @@ export interface ProcessProviderNoticePorts {
     readonly payments?: SubscriptionPayments;
     readonly firstCharge?: FirstChargeReader;
     readonly successionCloser?: SuccessionCloser;
+    readonly cancellationSeen?: CancellationSeenAnnotator;
     readonly delegates?: MirrorDelegates;
 }
 
@@ -96,6 +100,12 @@ export async function processProviderNotice(
         actStartInstant({ act });
         const read = await ports.provider.readAuthorization({ authorizationId: link.providerId });
         const { snapshot, readAt } = assertFreshForAct({ read, act });
+        if (snapshot.status === 'cancelled')
+            await recordCancellationSeen({
+                annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                subscriptionId: link.subscriptionId,
+                seenAt: readAt
+            });
         let finalOutcome: Outcome = 'APPLIED';
         const payments = ports.payments ?? noCreditedPayments;
         const firstCharge = ports.firstCharge ?? unknownFirstCharge;
