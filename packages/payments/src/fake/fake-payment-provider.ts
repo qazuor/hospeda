@@ -142,7 +142,8 @@ export class FakePaymentProvider implements PaymentProvider {
                         firstChargeAt: dropsSentFields ? null : (value.firstChargeAt ?? null),
                         freePeriodDays: this.addedFreePeriodDays({
                             firstChargeAt: value.firstChargeAt
-                        })
+                        }),
+                        lastModifiedAt: this.clock.now().toISOString()
                     },
                     version: 1,
                     approvalUrl,
@@ -304,7 +305,11 @@ export class FakePaymentProvider implements PaymentProvider {
                     actual: value.amount,
                     capability: 'changeAmount'
                 });
-                stored.snapshot = { ...stored.snapshot, amount: { ...value.amount } };
+                stored.snapshot = {
+                    ...stored.snapshot,
+                    amount: { ...value.amount },
+                    lastModifiedAt: this.clock.now().toISOString()
+                };
                 this.ledger.bump({
                     stored,
                     resourceKind: 'authorization',
@@ -537,7 +542,11 @@ export class FakePaymentProvider implements PaymentProvider {
                     reason: `cannot go from ${stored.snapshot.status} to ${args.to}`
                 });
             }
-            stored.snapshot = { ...stored.snapshot, status: args.to };
+            stored.snapshot = {
+                ...stored.snapshot,
+                status: args.to,
+                lastModifiedAt: this.clock.now().toISOString()
+            };
             this.ledger.bump({
                 stored,
                 resourceKind: 'authorization',

@@ -129,6 +129,8 @@ export interface AuthorizationSnapshot {
     readonly firstChargeAt: string | null;
     /** Provider-added free period; never our own trial state. */
     readonly freePeriodDays: number | null;
+    /** Instant (ISO 8601) when the provider last modified this resource; null when unavailable. */
+    readonly lastModifiedAt: string | null;
 }
 
 /** Capability 7 output: a charge as read by id. */
