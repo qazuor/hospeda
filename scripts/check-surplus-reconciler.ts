@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 export const MIN_SCANNED_FILES = 1000;
-export const PENDING_CEILING = 7;
+export const PENDING_CEILING = 5;
 const TABLES = new Set(['trials', 'subscriptions', 'courtesyGrants', 'addonInstances']);
 const CODE = /\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
 const TEST = /(?:\.(?:test|spec)\.[cm]?[jt]sx?$)|(?:^|\/)(?:test|tests|__tests__|e2e)\//;

@@ -4,18 +4,16 @@
         "symbol": "markConverted",
         "table": "trials",
         "effect": "turns-off",
-        "via": "pending",
-        "owner": "V4 trial-machine post-commit unit",
-        "reason": "Conversion ends trial coverage; this adapter does not emit the coverage notice."
+        "via": "notice",
+        "reason": "This transition ends trial coverage and the trial-machine adapter emits the post-commit coverage notice."
     },
     {
         "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
         "symbol": "markExpired",
         "table": "trials",
         "effect": "turns-off",
-        "via": "pending",
-        "owner": "V4 trial-machine post-commit unit",
-        "reason": "Expiry ends trial coverage; this adapter does not emit the coverage notice."
+        "via": "notice",
+        "reason": "This transition ends trial coverage and the trial-machine adapter emits the post-commit coverage notice."
     },
     {
         "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
@@ -39,7 +37,7 @@
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "pending",
-        "owner": "B4 subscription coverage notice (HOS-1532–HOS-1536)",
+        "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
         "reason": "Abandoning pending authorization terminates its subscription source."
     },
     {
@@ -57,7 +55,7 @@
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "pending",
-        "owner": "B4 subscription coverage notice (HOS-1532–HOS-1536)",
+        "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
         "reason": "Cancellation and service end remove the VIP coverage source."
     },
     {
@@ -66,7 +64,7 @@
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "pending",
-        "owner": "B4 subscription coverage notice (HOS-1532–HOS-1536)",
+        "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
         "reason": "Declined first charge terminates the active subscription source."
     },
     {
@@ -75,7 +73,7 @@
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "pending",
-        "owner": "B4 subscription coverage notice (HOS-1532–HOS-1536)",
+        "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
         "reason": "Provider cancellation notice ends active subscription coverage."
     }
 ]
