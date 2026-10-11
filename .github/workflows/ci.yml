@@ -358,6 +358,10 @@ jobs:
       # first charge follows the authorization window, except confirmed suspension.
       - name: Check successor first charge after its window (GUARD:G-R1-B)
         run: pnpm check:succession-first-charge
+      # GUARD:G-R1-E (HOS-1527, AC:B3:25). Its own step, like every guard here. The
+      # live term must be queried completely and with the correct subject's status set.
+      - name: Check live succession terms and subject sets (GUARD:G-R1-E)
+        run: pnpm check:live-term-inventories
       # GUARD:G-R2 (HOS-1439, AC:V3:2). Its own step, like every guard here. The
       # effective set's fold must discard complements when no live non-TRIAL title
       # exists; its message names which half of the condition is missing.
