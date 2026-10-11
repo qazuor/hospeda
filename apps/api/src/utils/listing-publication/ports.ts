@@ -51,6 +51,9 @@ export function getListingPublicationPorts(): {
                     async listByOwner(input) {
                         return listingPublicationModel.listByOwner({ ...input, tx });
                     },
+                    async readPublicationInstants(input) {
+                        return listingPublicationModel.readPublicationInstants({ ...input, tx });
+                    },
                     async readPublishLimit(input) {
                         const effective = await access.effectiveSet({
                             userId: input.userId,
@@ -62,6 +65,19 @@ export function getListingPublicationPorts(): {
                                 userId: input.userId,
                                 vertical: input.vertical
                             }) ?? 0
+                        );
+                    },
+                    async readDeclaredPublishLimit(input) {
+                        const effective = await access.effectiveSet({
+                            userId: input.userId,
+                            vertical: input.vertical
+                        });
+                        return (
+                            effective.limits.get({
+                                key: PUBLICATION_LIMIT_KEYS[input.vertical],
+                                userId: input.userId,
+                                vertical: input.vertical
+                            }) ?? null
                         );
                     },
                     async setPublicationStatus(input) {
