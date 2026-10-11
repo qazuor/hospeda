@@ -40,9 +40,12 @@ import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { usePriceAlertGateState } from '@/hooks/use-price-alert-gate-state';
+import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './PriceAlertButton.module.css';
 
@@ -62,6 +65,9 @@ interface ErrorResponse {
     readonly error?: {
         readonly code?: string | null;
         readonly message?: string | null;
+        readonly reason?: string | null;
+        readonly status?: number;
+        readonly details?: unknown;
     };
 }
 
@@ -101,6 +107,7 @@ export function PriceAlertButton({
 }: PriceAlertButtonProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
+    const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.tourist });
 
     // Simple mode (no `initialUser`): `user` starts null, so the anonymous
     // branch is what renders on the server and on first paint.
@@ -158,7 +165,11 @@ export function PriceAlertButton({
                 let message = createErrorMsg;
                 try {
                     const body = (await res.json()) as ErrorResponse;
-                    message = body.error?.message ?? createErrorMsg;
+                    message = translateApiError({
+                        error: { ...body.error, status: body.error?.status ?? res.status },
+                        locale,
+                        fallback: createErrorMsg
+                    });
                 } catch {
                     // Non-JSON error body — keep the generic message.
                 }
@@ -177,7 +188,7 @@ export function PriceAlertButton({
         } finally {
             setPhase('idle');
         }
-    }, [base, accommodationId, createErrorMsg, createSuccessMsg]);
+    }, [base, accommodationId, createErrorMsg, createSuccessMsg, locale]);
 
     // ── Cancel ────────────────────────────────────────────────────────────────
 
@@ -196,7 +207,11 @@ export function PriceAlertButton({
                 let message = cancelErrorMsg;
                 try {
                     const body = (await res.json()) as ErrorResponse;
-                    message = body.error?.message ?? cancelErrorMsg;
+                    message = translateApiError({
+                        error: { ...body.error, status: body.error?.status ?? res.status },
+                        locale,
+                        fallback: cancelErrorMsg
+                    });
                 } catch {
                     // Non-JSON error body — keep the generic message.
                 }
@@ -214,7 +229,7 @@ export function PriceAlertButton({
         } finally {
             setPhase('idle');
         }
-    }, [base, alertId, cancelErrorMsg, cancelSuccessMsg]);
+    }, [base, alertId, cancelErrorMsg, cancelSuccessMsg, locale]);
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -233,7 +248,7 @@ export function PriceAlertButton({
     );
 
     // Active alert for THIS accommodation.
-    if (hasAlert) {
+    if (hasAlert || gate.hasAlert) {
         return (
             <div className={styles.priceAlertWrapper}>
                 <button
@@ -278,6 +293,36 @@ export function PriceAlertButton({
                         aria-hidden="true"
                     />
                     {t('accommodations.detail.priceAlert.create', 'Avisame si baja el precio')}
+                </button>
+            </div>
+        );
+    }
+
+    if (gate.readFailed || !gate.canCreateAlerts) {
+        return (
+            <div className={styles.priceAlertWrapper}>
+                <a
+                    className={styles.priceAlertButtonCreate}
+                    href={pricingHref}
+                >
+                    {t('accommodations.detail.priceAlert.locked', 'Avisame si baja el precio')}
+                </a>
+            </div>
+        );
+    }
+
+    if (gate.maxReached) {
+        return (
+            <div className={styles.priceAlertWrapper}>
+                <button
+                    type="button"
+                    className={styles.priceAlertButtonDisabled}
+                    disabled
+                >
+                    {t(
+                        'accommodations.detail.priceAlert.maxReached',
+                        'Límite de alertas alcanzado'
+                    )}
                 </button>
             </div>
         );
