@@ -5,14 +5,17 @@
  * @route POST /api/v1/protected/user-bookmarks
  */
 import {
+    ServiceErrorCode,
     type UserBookmarkCreateInput,
     UserBookmarkCreateInputSchema,
-    UserBookmarkSchema
+    UserBookmarkSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -47,6 +50,12 @@ export const createUserBookmarkRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const input = body as Omit<UserBookmarkCreateInput, 'userId'>;
 
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['save_favorites']
+        });
+
         // Check if bookmark already exists for this user + entity + entityType
         const existingResult = await bookmarkService.findExistingBookmark(actor, {
             userId: actor.id,
@@ -63,7 +72,22 @@ export const createUserBookmarkRoute = createProtectedRoute({
             return { toggled: false, bookmark: null };
         }
 
-        // HOS-1352: transitional until V3 (HOS-1357), see PR: favorites have no monthly plan cap while effective limits are rebuilt.
+        const countResult = await bookmarkService
+            .countBookmarksForUser(actor, { userId: actor.id })
+            .catch(() => {
+                throw new ServiceError(
+                    ServiceErrorCode.SERVICE_UNAVAILABLE,
+                    'Usage count unavailable'
+                );
+            });
+        if (countResult.error || !countResult.data) {
+            throw new ServiceError(ServiceErrorCode.SERVICE_UNAVAILABLE, 'Usage count unavailable');
+        }
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            limit: async () => ({ key: 'max_favorites', requested: countResult.data.count + 1 })
+        });
         const result = await bookmarkService.create(actor, {
             ...input,
             userId: actor.id

@@ -211,6 +211,34 @@ export const listingPublicationModel = {
         return result.rows.map(listingRow);
     },
 
+    /**
+     * Reports whether the owner completed PB1 for this vertical. PB1 is the
+     * activation event for listing verticals; job-driven PB3/PB7 events do not count.
+     * Deleted listings still count because the append-only domain event remains.
+     */
+    async hasOwnerPublished(args: {
+        readonly tx: DrizzleClient;
+        readonly vertical: ListingVertical;
+        readonly userId: string;
+    }): Promise<boolean> {
+        const result = await args.tx.execute(sql<{ readonly found: boolean }>`
+            SELECT EXISTS (
+                SELECT 1
+                FROM ${table(args.vertical)} AS l
+                INNER JOIN domain_event AS e ON l.id::text = e.entity_id
+                WHERE l.owner_id = ${args.userId}
+                  AND e.event_type = 'listing.status_changed'
+                  AND e.entity_type = ${args.vertical}
+                  AND e.actor_type = 'owner'
+                  AND (
+                    e.changes @> '[{"field":"publicationStatus","old":"DRAFT","new":"PUBLISHED"}]'::jsonb
+                    OR e.changes @> '[{"field":"publicationStatus","old":"UNPUBLISHED_BY_BILLING","new":"PUBLISHED"}]'::jsonb
+                  )
+                LIMIT 1
+            ) AS found`);
+        return result.rows[0]?.found === true;
+    },
+
     /** Conditionally changes status and writes the clock columns as a pair. */
     async setPublicationStatus(args: {
         readonly tx: DrizzleClient;

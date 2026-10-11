@@ -1072,6 +1072,13 @@
       "when": 1791711333749,
       "tag": "0152_v611_partners_for_v7",
       "breakpoints": true
+    },
+    {
+      "idx": 153,
+      "version": "7",
+      "when": 1791724822269,
+      "tag": "0153_b35b_provider_notification",
+      "breakpoints": true
     }
   ]
 }

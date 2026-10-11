@@ -15,6 +15,8 @@
 
 import type { Vertical, VerticalActivationEvent } from '@repo/schemas';
 import type {
+    NewConsumedTrialRow,
+    NewTrialRow,
     PlanVersionSummaryRow,
     TrialStartReader,
     TrialStartTransaction,
@@ -25,20 +27,7 @@ import type {
 /* Stored state                                                        */
 /* ------------------------------------------------------------------ */
 
-interface StoredTrialRow {
-    readonly id: string;
-    readonly userId: string;
-    readonly vertical: Vertical;
-    readonly status: string;
-    readonly trialPlanId: string;
-    readonly floorEntitlementsVersionId: string;
-    readonly floorLimitsVersionId: string;
-    readonly floorTrialPlanVersionId: string;
-    readonly startedAt: Date;
-    readonly endsAt: Date;
-    readonly emailPseudonym: string;
-    readonly deadlinesVersion: number;
-}
+type StoredTrialRow = { readonly id: string } & (NewTrialRow | NewConsumedTrialRow);
 
 interface StoredCampaign {
     readonly userId: string;

@@ -1,7 +1,11 @@
 import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet, UnknownStepKeyError } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { enforceUserGate, readEffectiveKeys } from '../../../src/utils/listing-access/user-gate';
+import {
+    enforceUserGate,
+    readEffectiveKeys,
+    readEffectiveLimit
+} from '../../../src/utils/listing-access/user-gate';
 import { apiLogger } from '../../../src/utils/logger';
 
 const mocks = vi.hoisted(() => ({ effectiveSet: vi.fn() }));
@@ -143,5 +147,39 @@ describe('user-level effective gate', () => {
         await expect(
             readEffectiveKeys({ userId, vertical, keys: ['unknown_stats_capability'] })
         ).rejects.toBeInstanceOf(UnknownStepKeyError);
+    });
+
+    it('reads the effective limit for the supplied user and vertical', async () => {
+        grant([{ key: 'max_favorites', value: 12 }]);
+        await expect(
+            readEffectiveLimit({ userId, vertical: VerticalEnum.TOURIST, key: 'max_favorites' })
+        ).resolves.toBe(12);
+        expect(mocks.effectiveSet).toHaveBeenCalledWith({
+            userId,
+            vertical: VerticalEnum.TOURIST
+        });
+    });
+
+    it('returns zero for an absent effective limit', async () => {
+        await expect(readEffectiveLimit({ userId, vertical, key: 'max_favorites' })).resolves.toBe(
+            0
+        );
+    });
+
+    it('returns zero and warns when the effective set cannot be read', async () => {
+        const warn = vi.spyOn(apiLogger, 'warn').mockImplementation(() => apiLogger);
+        mocks.effectiveSet.mockRejectedValue(new Error('set unavailable'));
+        await expect(readEffectiveLimit({ userId, vertical, key: 'max_favorites' })).resolves.toBe(
+            0
+        );
+        expect(warn).toHaveBeenCalledOnce();
+        warn.mockRestore();
+    });
+
+    it('throws for a limit key outside the catalog', async () => {
+        await expect(
+            readEffectiveLimit({ userId, vertical, key: 'unknown_limit_key' })
+        ).rejects.toBeInstanceOf(UnknownStepKeyError);
+        expect(mocks.effectiveSet).not.toHaveBeenCalled();
     });
 });

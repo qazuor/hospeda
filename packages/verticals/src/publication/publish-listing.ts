@@ -1,5 +1,6 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum, type VerticalActivationEvent } from '@repo/schemas';
+import { consumeTrialInTransaction } from '../trial/trial-consume';
 import { evaluateTrialStart, startTrialInTransaction } from '../trial/trial-start';
 import type { TrialStartDeniedReason } from '../trial/trial-start-types';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
@@ -28,6 +29,7 @@ export type PublishListingResult =
     | {
           readonly published: true;
           readonly trialStarted: boolean;
+          readonly trialConsumed: boolean;
           readonly warnings: readonly PostCommitWarning[];
       };
 
@@ -68,6 +70,7 @@ export async function publishListing(args: {
                 vertical: args.vertical
             });
             let trialStarted = false;
+            let trialConsumed = false;
             if (coverage.covered) {
                 if (from === PublicationStatusEnum.UNPUBLISHED_BY_BILLING) {
                     return { published: false, reason: 'COVERED_USE_PB3' } as const;
@@ -81,6 +84,17 @@ export async function publishListing(args: {
                     ownerId: args.userId
                 });
                 if (count >= limit) return { published: false, reason: 'LIMIT_REACHED' } as const;
+                const consumed = await consumeTrialInTransaction({
+                    tx,
+                    coverage,
+                    input: {
+                        userId: args.userId,
+                        vertical: args.vertical,
+                        emailPseudonym: args.emailPseudonym,
+                        expectedEvent: args.event
+                    }
+                });
+                trialConsumed = consumed.consumed;
             } else {
                 const count = await tx.countPublished({
                     vertical: args.vertical,
@@ -130,7 +144,7 @@ export async function publishListing(args: {
                 actorId: args.userId,
                 correlationId: args.correlationId
             });
-            return { published: true, trialStarted } as const;
+            return { published: true, trialStarted, trialConsumed } as const;
         }
     });
     if (!decision.published) return decision;
@@ -146,6 +160,20 @@ export async function publishListing(args: {
                                   vertical: args.vertical,
                                   sourceType: 'TRIAL',
                                   change: 'CHANGED'
+                              })
+                      }
+                  ]
+                : []),
+            ...(decision.trialConsumed
+                ? [
+                      {
+                          warning: 'COVERAGE_NOTICE_FAILED' as const,
+                          run: () =>
+                              args.afterCommit.emitCoverageChanged({
+                                  userId: args.userId,
+                                  vertical: args.vertical,
+                                  sourceType: 'TRIAL',
+                                  change: 'REMOVED'
                               })
                       }
                   ]

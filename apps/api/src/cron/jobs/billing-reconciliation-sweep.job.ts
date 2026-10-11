@@ -30,19 +30,33 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 {},
                 {
                     provider: getPaymentProvider(),
-                    clock: getClock().clock
+                    clock: getClock().clock,
+                    zeroCallChecks: {}
                 }
             );
             const { failures, ...details } = summary;
+            const zeroCallFailures = summary.zeroCallChecks?.failures ?? [];
+            const { failures: _zeroCallFailures, ...zeroCallDetails } = summary.zeroCallChecks ?? {
+                results: [],
+                failures: []
+            };
             return {
-                success: summary.rowsFailed === 0,
+                success: summary.rowsFailed === 0 && zeroCallFailures.length === 0,
                 message: `Processed ${summary.rowsRead} billing subscriptions`,
                 processed: summary.rowsRead,
-                errors: summary.rowsFailed,
+                errors: summary.rowsFailed + zeroCallFailures.length,
                 durationMs: Date.now() - startedAt.getTime(),
                 details: {
                     ...details,
-                    failedSubscriptionIds: failures.map(({ subscriptionId }) => subscriptionId)
+                    failedSubscriptionIds: failures.map(({ subscriptionId }) => subscriptionId),
+                    ...(summary.zeroCallChecks
+                        ? {
+                              zeroCallChecks: {
+                                  ...zeroCallDetails,
+                                  failedChecks: zeroCallFailures.map(({ check }) => check)
+                              }
+                          }
+                        : {})
                 }
             };
         } catch (error) {

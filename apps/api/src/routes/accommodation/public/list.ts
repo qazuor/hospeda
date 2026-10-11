@@ -31,7 +31,8 @@ import {
     type AccommodationSearchHttp,
     AccommodationSearchHttpSchema,
     httpToDomainAccommodationSearch,
-    type SortField
+    type SortField,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
@@ -40,6 +41,7 @@ import {
     filterPublicPaidFieldsForOwner,
     resolvePublicFieldGrants
 } from '../../../utils/entitlement-filter';
+import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -120,7 +122,6 @@ export const publicListAccommodationsRoute = createPublicListRoute({
     tags: ['Accommodations'],
     requestQuery: AccommodationSearchHttpSchema.shape,
     responseSchema: AccommodationPublicSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed CAN_VIEW_SEARCH_HISTORY entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
@@ -182,16 +183,17 @@ export const publicListAccommodationsRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // SPEC-289 write-hook: fire-and-forget search history recording.
-        // Gate conditions (all must be true to record):
-        //   1. Actor is authenticated (not a GUEST)
-        //   2. User has not opted out (checked inside service.record())
-        // (The per-plan entitlement condition was removed with the legacy
-        // billing system, HOS-1416.)
-        // Never blocks or fails the search response — errors are caught and logged.
+        // SPEC-289 write-hook: record only for authenticated actors with effective history access.
+        // This remains fire-and-forget so history lookup cannot delay or break the public search.
         if (!isGuestActor(actor)) {
-            void searchHistoryService
-                .record(actor, {
+            void (async () => {
+                const access = await readEffectiveKeys({
+                    userId: actor.id,
+                    vertical: VerticalEnum.TOURIST,
+                    keys: ['can_view_search_history']
+                });
+                if (!access.can_view_search_history) return;
+                await searchHistoryService.record(actor, {
                     queryText: httpQuery.q ?? null,
                     filters: {
                         destinationId: httpQuery.destinationId,
@@ -220,13 +222,13 @@ export const publicListAccommodationsRoute = createPublicListRoute({
                         checkOut: httpQuery.checkOut ? new Date(httpQuery.checkOut) : undefined
                     },
                     resultCount: result.data?.total ?? null
-                })
-                .catch((err) => {
-                    apiLogger.warn(
-                        'SPEC-289 write-hook: search history record failed (fire-and-forget)',
-                        err instanceof Error ? err.message : String(err)
-                    );
                 });
+            })().catch((err: unknown) => {
+                apiLogger.warn(
+                    'SPEC-289 write-hook: search history record failed (fire-and-forget)',
+                    err instanceof Error ? err.message : String(err)
+                );
+            });
         }
 
         // Apply owner-effective paid-field grants before building the public page.

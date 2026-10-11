@@ -1,4 +1,6 @@
-import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import type { CoverageSource } from '@repo/billing-verticals-contract';
+import { CoverageResponseSchema, coverageSourceClassOf } from '@repo/billing-verticals-contract';
+import { PublicationStatusEnum, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
 import { expect, vi } from 'vitest';
 import type {
     PublicationAfterCommit,
@@ -25,6 +27,12 @@ export function makeHarness(
         readonly trialAvailable?: boolean;
         readonly setReturnsFalse?: boolean;
         readonly listings?: readonly PublicationListing[];
+        readonly sources?: readonly CoverageSource[];
+        readonly declaredEvent?: typeof event | null;
+        readonly trialPlanDays?: number | null;
+        readonly userHasTrialRow?: boolean;
+        readonly pseudonymOwnedByOther?: boolean;
+        readonly insertConflict?: 'USER_VERTICAL' | 'EMAIL_PSEUDONYM';
     } = {}
 ) {
     let locked = false;
@@ -52,12 +60,34 @@ export function makeHarness(
     const calls: string[] = [];
     const restitutionNotices: Parameters<PublicationTransaction['enqueueRestitutionNotice']>[0][] =
         [];
+    const insertedRows: unknown[] = [];
+    const sources =
+        args.sources ??
+        (args.covered === false
+            ? []
+            : [
+                  {
+                      type: 'SUBSCRIPTION' as const,
+                      reference: { kind: 'PLAN_VERSION' as const, planVersionId: listingId },
+                      scope: 'VERTICAL' as const,
+                      target: null,
+                      since: at,
+                      until: 'NO_KNOWN_DATE' as const,
+                      charged: false,
+                      floor: null
+                  }
+              ]);
     const tx: PublicationTransaction = {
         async findActivationEvent() {
-            return event;
+            return args.declaredEvent === undefined ? event : args.declaredEvent;
         },
         async findTrialPlan() {
-            return { planId: listingId, planVersionId: listingId, trialDays: 14 };
+            if (args.trialPlanDays === null) return null;
+            return {
+                planId: listingId,
+                planVersionId: listingId,
+                trialDays: args.trialPlanDays ?? 14
+            };
         },
         async findSellableCurrentVersions() {
             return [
@@ -72,13 +102,17 @@ export function makeHarness(
             ];
         },
         async findTrialOfUser() {
-            return args.trialAvailable === false ? { id: listingId } : null;
+            return args.userHasTrialRow || args.trialAvailable === false ? { id: listingId } : null;
         },
         async findTrialByPseudonym() {
-            return null;
+            return args.pseudonymOwnedByOther
+                ? { userId: '00000000-0000-4000-8000-000000000009' }
+                : null;
         },
-        async insertTrial() {
-            calls.push('trial');
+        async insertTrial({ row }) {
+            insertedRows.push(row);
+            calls.push(row.status === TrialStatusEnum.TRIAL_ACTIVE ? 'trial' : 'consumedTrial');
+            if (args.insertConflict) return { inserted: false, conflict: args.insertConflict };
             return { inserted: true };
         },
         async scheduleExpiryCampaign() {
@@ -146,7 +180,14 @@ export function makeHarness(
         }
     };
     const billing = {
-        coverage: vi.fn(async () => ({ covered: args.covered ?? true, sources: [] }))
+        coverage: vi.fn(async () =>
+            CoverageResponseSchema.parse({
+                covered: sources.some(
+                    (source) => coverageSourceClassOf({ source }).sourceClass === 'TITLE'
+                ),
+                sources
+            })
+        )
     };
     const afterCommit: PublicationAfterCommit = {
         emitCoverageChanged: vi.fn(async () => {
@@ -159,5 +200,13 @@ export function makeHarness(
             calls.push('revalidate');
         })
     };
-    return { unitOfWork, billing, afterCommit, calls, restitutionNotices, getStatus: () => status };
+    return {
+        unitOfWork,
+        billing,
+        afterCommit,
+        calls,
+        insertedRows,
+        restitutionNotices,
+        getStatus: () => status
+    };
 }
