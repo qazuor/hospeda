@@ -44,3 +44,28 @@ describe('vertical deadline values (TEST:V6:20)', () => {
         ).toBe(false);
     });
 });
+
+describe('TEST:V6:9 G-R5-B PB5 month bound', () => {
+    it.each([
+        { months: 6, deletionDays: 186, accepted: false },
+        { months: 6, deletionDays: 187, accepted: true },
+        { months: 3, deletionDays: 93, accepted: false },
+        { months: 3, deletionDays: 94, accepted: true }
+    ])('TEST:V6:9 validates $months months against $deletionDays deletion days', ({
+        months,
+        deletionDays,
+        accepted
+    }) => {
+        const result = VerticalDeadlineValuesSchema.safeParse({
+            ...versionOne,
+            '2': { days: deletionDays },
+            '3': { months },
+            '4': { beforeArchiveDays: 1, beforeDeletionDays: Math.min(15, deletionDays - 91) }
+        });
+        expect(result.success).toBe(accepted);
+        if (!accepted && !result.success)
+            expect(result.error.issues.some((issue) => issue.path.join('.') === '3.months')).toBe(
+                true
+            );
+    });
+});
