@@ -123,11 +123,36 @@ async function runScenario(expireFirst: boolean) {
     const sweep = () =>
         withSeededSubscriptionSweep(20, () => expireAuthorizationWindows(20, ports));
     if (expireFirst) {
+        const [gastronomyBeforeExpiry] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, gastronomy.subscriptionId));
+        const [gastronomyLinkBeforeExpiry] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
+        const gastronomyAuthorizationBeforeExpiry = await provider.readAuthorization({
+            authorizationId: gastronomy.authorizationId
+        });
         now = new Date(startAt.getTime() + 73 * 60 * 60 * 1000);
         expect(await sweep()).toMatchObject({ abandoned: 1, activated: 0 });
         expect(
             await provider.readAuthorization({ authorizationId: accommodation.authorizationId })
         ).toMatchObject({ snapshot: { status: 'cancelled' } });
+        const [gastronomyAfterExpiry] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, gastronomy.subscriptionId));
+        const [gastronomyLinkAfterExpiry] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, gastronomy.subscriptionId));
+        expect(gastronomyAfterExpiry).toEqual(gastronomyBeforeExpiry);
+        expect(gastronomyLinkAfterExpiry).toEqual(gastronomyLinkBeforeExpiry);
+        expect(gastronomyAuthorizationBeforeExpiry.snapshot.status).toBe('pending');
+        expect(
+            await provider.readAuthorization({ authorizationId: gastronomy.authorizationId })
+        ).toMatchObject({ snapshot: { status: 'pending' } });
         await provider.approve({ authorizationId: gastronomy.authorizationId });
         seededSubscriptionIds.add(gastronomy.subscriptionId);
         expect(await activateSubscription(gastronomy.subscriptionId, ports)).toMatchObject({
