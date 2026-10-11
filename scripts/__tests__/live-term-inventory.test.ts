@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -8,13 +9,12 @@ import {
     validateEntries
 } from '../live-term-inventory.js';
 
-const rootRepo = path.resolve(import.meta.dirname, '../..');
 const dirs: string[] = [];
 afterEach(() => {
     for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 function tree(json?: string): string {
-    const root = mkdtempSync(path.join(rootRepo, '.hoja/tmp/live-inventory-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'live-inventory-'));
     dirs.push(root);
     if (json !== undefined) {
         const file = path.join(root, INVENTORY_FILE);

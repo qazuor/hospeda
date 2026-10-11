@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { inspectFile, run } from '../check-live-term-inventories.js';
@@ -11,7 +12,7 @@ afterEach(() => {
     for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 function tree(files: Record<string, string>): string {
-    const root = mkdtempSync(path.join(rootRepo, '.hoja/tmp/live-guard-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'live-guard-'));
     dirs.push(root);
     execFileSync('git', ['init', '-q'], { cwd: root });
     for (const [file, source] of Object.entries(files)) {
