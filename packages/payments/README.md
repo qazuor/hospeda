@@ -19,9 +19,9 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   - `FakePaymentProvider`, in memory, all eight capabilities, and it **lies
     like the real one** (see "The fake lies, from a closed list" below). It is
     exported only from `@repo/payments/fake`, for tests.
-  - `MercadoPagoPaymentProvider`, the adapter skeleton: same interface, validates
-    each input, refuses with `NOT_IMPLEMENTED`. It does not call the provider and
-    no SDK is installed.
+  - `MercadoPagoPaymentProvider`: `authorize` and `readAuthorization` call the
+    provider over native `fetch`; the other capabilities still refuse with
+    `NOT_IMPLEMENTED`. No SDK is installed.
 - **Capability support, declared per provider** (`capabilitySupport`): for each
   capability, `full`, `partial` with every gap and whether our side emulates,
   degrades or blocks it, or `none`. Mercado Pago's three half-capabilities

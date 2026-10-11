@@ -66,12 +66,14 @@ function call(args: {
     return fn.call(args.provider, args.input);
 }
 
-describe('MercadoPagoPaymentProvider (skeleton)', () => {
+describe('MercadoPagoPaymentProvider', () => {
     it('covers all eleven interface methods in this table', () => {
         expect(VALID_CALLS).toHaveLength(11);
     });
 
-    it.each(VALID_CALLS)('$method refuses with NOT_IMPLEMENTED for $capability', async ({
+    it.each(
+        VALID_CALLS.filter(({ method }) => method !== 'authorize' && method !== 'readAuthorization')
+    )('$method refuses with NOT_IMPLEMENTED for $capability', async ({
         method,
         capability,
         input
@@ -95,6 +97,14 @@ describe('MercadoPagoPaymentProvider (skeleton)', () => {
             input: { bogus: true }
         });
         await expect(outcome).rejects.toMatchObject({ code: 'INVALID_INPUT', capability });
+    });
+
+    it('leaves the six other capabilities unimplemented', () => {
+        expect(
+            VALID_CALLS.filter(
+                ({ method }) => method !== 'authorize' && method !== 'readAuthorization'
+            )
+        ).toHaveLength(9);
     });
 
     it('receives its clock injected and refuses to be built without one', () => {
