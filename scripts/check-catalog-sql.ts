@@ -409,9 +409,11 @@ export function run(
 
     const baselineMode = isBaselineHistory({ files });
     const mode =
-        baselineMode && args.loads === undefined
-            ? 'baseline history: catalog_key and vertical only'
-            : 'full migration history: all catalog loads';
+        args.loads === undefined
+            ? baselineMode
+                ? 'baseline history: catalog_key and vertical only'
+                : 'full migration history: all catalog loads'
+            : 'explicit load selection';
     const loads =
         args.loads ?? (baselineMode ? [buildLoads().catalog_key, buildLoads().vertical] : allLoads);
     lines[0] = `=== GUARD:G18 - migration reference rows match the code catalog (${mode}) ===`;

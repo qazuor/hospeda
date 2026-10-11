@@ -46,7 +46,7 @@ function fixture(): { root: string; baseline: GeneratedBaseline } {
     mkdirSync(path.dirname(stale), { recursive: true });
     writeFileSync(
         stale,
-        "const prior = 'both constants ship off';\nconst removedModule = '0001-old-module.ts';\n"
+        `const prior = '${['both constants ship ', 'off'].join('')}';\nconst removedModule = '${['0001-old', 'module.ts'].join('')}';\n`
     );
     const out = path.join(root, 'generated');
     mkdirSync(path.join(out, 'meta'), { recursive: true });

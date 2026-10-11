@@ -102,7 +102,7 @@ function findStaleReferences({
             /* git grep exit 1 means no matches */
         }
     }
-    for (const phrase of ['both constants ship off']) {
+    for (const phrase of [['both constants ship ', 'off'].join('')]) {
         try {
             const hits = execFileSync('git', ['grep', '-Il', '-e', phrase, '--', 'scripts'], {
                 cwd: repoRoot,

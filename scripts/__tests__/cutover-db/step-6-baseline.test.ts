@@ -19,7 +19,6 @@ import {
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 const tempDirs: string[] = [];
-const dbNames: string[] = [];
 afterAll(() => {
     for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
@@ -47,7 +46,6 @@ describe('TEST:V6:26 step 6 baseline rehearsal', () => {
             for (const name of [aName, bName]) {
                 await createScratch({ admin, name });
                 created.push(name);
-                dbNames.push(name);
             }
             const aUrl = withDatabase({ url: adminUrl, database: aName });
             const bUrl = withDatabase({ url: adminUrl, database: bName });
