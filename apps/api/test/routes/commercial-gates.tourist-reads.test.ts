@@ -106,11 +106,13 @@ function effective(userId: string, vertical: VerticalEnum) {
         vertical,
         hasLiveNonTrialTitle: false,
         inheritsTouristVip: false,
-        entries: (entries[userId] ?? []).map(([key, value]) => ({
-            key,
-            value,
-            strategy: 'MAX' as const
-        }))
+        entries: (vertical === VerticalEnum.TOURIST ? (entries[userId] ?? []) : []).map(
+            ([key, value]) => ({
+                key,
+                value,
+                strategy: 'MAX' as const
+            })
+        )
     });
 }
 async function request(
