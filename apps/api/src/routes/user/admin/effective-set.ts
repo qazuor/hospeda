@@ -2,13 +2,12 @@ import { UserModel } from '@repo/db';
 import {
     AdminEffectiveSetQuerySchema,
     AdminEffectiveSetResponseSchema,
-    CATALOG_KEY_DEFINITIONS,
     PermissionEnum,
     UserIdSchema,
     type VerticalEnum
 } from '@repo/schemas';
 import { entityNotFoundError } from '@repo/service-core';
-import { encodeFiniteOrInfinite } from '@repo/verticals';
+import { toEffectiveSetView } from '../../../utils/listing-access/effective-set-view';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -32,26 +31,6 @@ export const adminGetUserEffectiveSetRoute = createAdminRoute({
             throw entityNotFoundError({ entityName: 'User' });
         }
         const effective = await getListingAccessPorts().effectiveSet({ userId, vertical });
-        const entitlements: Record<string, number | 'Infinity'> = {};
-        const limits: Record<string, number | 'Infinity'> = {};
-        for (const definition of CATALOG_KEY_DEFINITIONS) {
-            const value = (
-                definition.kind === 'entitlement' ? effective.entitlements : effective.limits
-            ).get({
-                key: definition.key,
-                userId,
-                vertical
-            });
-            if (value === undefined) continue;
-            (definition.kind === 'entitlement' ? entitlements : limits)[definition.key] =
-                encodeFiniteOrInfinite(value);
-        }
-        return {
-            userId,
-            vertical,
-            hasLiveNonTrialTitle: effective.hasLiveNonTrialTitle,
-            entitlements,
-            limits
-        };
+        return toEffectiveSetView({ effective, userId, vertical });
     }
 });

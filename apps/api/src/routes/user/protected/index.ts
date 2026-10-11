@@ -3,6 +3,7 @@
  * Routes that require authentication
  */
 import { createRouter } from '../../../utils/create-app';
+import { protectedGetMyEffectiveSetRoute } from './effective-set';
 import { protectedGetUserByIdRoute } from './getById';
 import { newsletterToggleRoute } from './newsletter';
 import { protectedPatchUserRoute } from './patch';
@@ -22,6 +23,9 @@ app.route('/', userStatsRoute);
 
 // POST /me/newsletter/toggle - Toggle newsletter subscription
 app.route('/', newsletterToggleRoute);
+
+// GET /me/effective-set - Read own effective capabilities (before /:id)
+app.route('/', protectedGetMyEffectiveSetRoute);
 
 // GET /:id - Get by ID
 app.route('/', protectedGetUserByIdRoute);
