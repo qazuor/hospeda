@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -59,9 +60,7 @@ describe('TEST:V6:26 step 6 baseline rehearsal', () => {
                 });
                 await a.query('DROP TABLE cutover_v6_deleted_listing');
 
-                const outBase = path.join(ROOT, '.hoja/tmp');
-                mkdirSync(outBase, { recursive: true });
-                const outDir = mkdtempSync(path.join(outBase, 'step6-baseline-db-'));
+                const outDir = mkdtempSync(path.join(tmpdir(), 'step6-baseline-db-'));
                 tempDirs.push(outDir);
                 const baseline = generateBaselineMigration({ outDir });
                 const referenceSql = await buildReferenceRowsSql({ source: a });
@@ -73,6 +72,24 @@ describe('TEST:V6:26 step 6 baseline rehearsal', () => {
                     cwd: ROOT,
                     stdio: 'pipe'
                 });
+
+                const trigger = await b.query(
+                    `SELECT 1 FROM pg_trigger
+                     WHERE tgrelid = 'public.domain_event'::regclass
+                       AND tgname = 'domain_event_append_only' AND NOT tgisinternal`
+                );
+                expect(trigger.rows).toHaveLength(1);
+                const inserted = await b.query(
+                    `INSERT INTO public.domain_event
+                       (event_type, entity_type, entity_id, actor_type, correlation_id)
+                     VALUES ('email.undeliverable', 'step6', $1, 'job', $2) RETURNING id`,
+                    [randomUUID(), randomUUID()]
+                );
+                await expect(
+                    b.query(`UPDATE public.domain_event SET reason = 'edited' WHERE id = $1`, [
+                        inserted.rows[0]?.id
+                    ])
+                ).rejects.toMatchObject({ code: 'P0001' });
 
                 const aFingerprint = await fingerprintSchema({ client: a });
                 const bFingerprint = await fingerprintSchema({ client: b });
@@ -203,9 +220,7 @@ describe('TEST:V6:26 step 6 baseline rehearsal', () => {
             ['status', '--porcelain', '--', 'packages/db/src/migrations'],
             { cwd: ROOT, encoding: 'utf8' }
         );
-        const outBase = path.join(ROOT, '.hoja/tmp');
-        mkdirSync(outBase, { recursive: true });
-        const outDir = mkdtempSync(path.join(outBase, 'step6-baseline-dry-'));
+        const outDir = mkdtempSync(path.join(tmpdir(), 'step6-baseline-dry-'));
         tempDirs.push(outDir);
         const baseline = generateBaselineMigration({ outDir });
         expect(baseline.tag).toBe('0000_baseline');
