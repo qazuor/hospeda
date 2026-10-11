@@ -11,7 +11,6 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import type { MirrorDelegates } from '../../../../src/services/billing/notice/provider-notice-ports';
 import { getServiceTestDb, getServiceTestPool } from '../helpers';
-import { namespaceFake } from './payment-provider';
 import { noTouristVip } from './tourist-vip';
 
 export const successionClock = { now: () => new Date('2026-10-11T13:00:00.000Z') };
@@ -127,7 +126,7 @@ export async function seedPredecessor(input: {
             idNamespace: crypto.randomUUID()
         });
     }
-    const provider = namespaceFake(fake);
+    const provider: PaymentProvider = fake;
     const { startSubscription } = await import(
         '../../../../src/services/billing/subscription/start-subscription.service'
     );
