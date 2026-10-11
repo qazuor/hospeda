@@ -378,29 +378,54 @@ export async function createUser(
     return user;
 }
 
-/** Gives an existing user an active Tourist VIP subscription from the catalog. */
+/**
+ * Gives an existing user an active Tourist VIP subscription from the catalog.
+ *
+ * The production catalog migration (`0144`) seeds plans and versions but no
+ * `billing_option` rows, so the helper creates the monthly option of the
+ * current Tourist VIP version when it is missing and reuses it otherwise. A
+ * data-modifying CTE is invisible to its sibling SELECT, so exactly one of the
+ * two branches of `option_row` yields the id.
+ */
 export async function makeTouristVip(userId: string): Promise<void> {
     const rows = await execSQL<{ id: string }>(
-        `INSERT INTO subscription (
+        `WITH vip_version AS (
+             SELECT plan_version.id, plan_version.vertical
+             FROM plan
+             JOIN plan_version ON plan_version.plan_id = plan.id
+             WHERE plan.vertical = 'tourist'
+               AND plan.slug = 'tourist-vip'
+               AND plan_version.vertical = 'tourist'
+               AND plan_version.current = true
+             LIMIT 1
+         ),
+         inserted_option AS (
+             INSERT INTO billing_option (plan_version_id, cycle, amount, currency)
+             SELECT id, 'monthly', 250000, 'ARS' FROM vip_version
+             ON CONFLICT (plan_version_id, cycle) DO NOTHING
+             RETURNING id
+         ),
+         option_row AS (
+             SELECT id FROM inserted_option
+             UNION ALL
+             SELECT billing_option.id
+             FROM billing_option
+             JOIN vip_version ON billing_option.plan_version_id = vip_version.id
+             WHERE billing_option.cycle = 'monthly'
+         )
+         INSERT INTO subscription (
              user_id, vertical, plan_version_id, billing_option_id,
              payment_method, status, class
          )
-         SELECT $1, plan_version.vertical, plan_version.id, billing_option.id,
+         SELECT $1, vip_version.vertical, vip_version.id, option_row.id,
                 'CARD', 'ACTIVE', 'PRINCIPAL'
-         FROM plan
-         JOIN plan_version ON plan_version.plan_id = plan.id
-         JOIN billing_option ON billing_option.plan_version_id = plan_version.id
-         WHERE plan.vertical = 'tourist'
-           AND plan.slug = 'tourist-vip'
-           AND plan_version.vertical = 'tourist'
-           AND plan_version.current = true
-           AND billing_option.cycle = 'monthly'
+         FROM vip_version, option_row
          LIMIT 1
          RETURNING id`,
         [userId]
     );
     if (!rows[0]) {
-        throw new Error('makeTouristVip: current Tourist VIP catalog option not found');
+        throw new Error('makeTouristVip: current Tourist VIP catalog version not found');
     }
 }
 
