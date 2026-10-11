@@ -21,9 +21,11 @@ const TABLE_MENTION = new RegExp(`\\b(?:${TABLE_SNAKE}|${TABLE_CAMEL})s?\\b`, 'g
  */
 export function findForbiddenNotificationMentions({
     file,
+    source,
     masked
 }: {
     readonly file: string;
+    readonly source: string;
     readonly masked: MaskedSource;
 }): readonly { readonly offset: number; readonly mention: string }[] {
     const found: { offset: number; mention: string }[] = [];
@@ -33,6 +35,18 @@ export function findForbiddenNotificationMentions({
         for (const literal of masked.strings)
             if (new RegExp(`\\b${TABLE_SNAKE}\\b`).test(literal.value))
                 found.push({ offset: literal.start, mention: TABLE_SNAKE });
+        const codeOffsets = new Set(
+            [...masked.code.matchAll(TABLE_MENTION)].map((match) => match.index)
+        );
+        for (const match of source.matchAll(TABLE_MENTION)) {
+            if (codeOffsets.has(match.index)) continue;
+            if (masked.comments.some(({ start, end }) => match.index >= start && match.index < end))
+                continue;
+            if (masked.strings.some(({ start, end }) => match.index >= start && match.index < end))
+                continue;
+            if (found.some(({ offset }) => offset === match.index)) continue;
+            found.push({ offset: match.index, mention: match[0] });
+        }
         return found.sort((a, b) => a.offset - b.offset);
     }
     for (const match of masked.code.matchAll(TABLE_MENTION)) {
@@ -46,6 +60,18 @@ export function findForbiddenNotificationMentions({
         const before = masked.code.slice(Math.max(0, literal.start - 80), literal.start);
         if (/pgTable\s*\(\s*$/.test(before)) continue;
         found.push({ offset: literal.start, mention: TABLE_SNAKE });
+    }
+    const codeOffsets = new Set(
+        [...masked.code.matchAll(TABLE_MENTION)].map((match) => match.index)
+    );
+    for (const match of source.matchAll(TABLE_MENTION)) {
+        if (codeOffsets.has(match.index)) continue;
+        if (masked.comments.some(({ start, end }) => match.index >= start && match.index < end))
+            continue;
+        if (masked.strings.some(({ start, end }) => match.index >= start && match.index < end))
+            continue;
+        if (found.some(({ offset }) => offset === match.index)) continue;
+        found.push({ offset: match.index, mention: match[0] });
     }
     return found.sort((a, b) => a.offset - b.offset);
 }

@@ -10,7 +10,7 @@ const TABLE = ['provider', 'notification'].join('_');
 const IDENTIFIER = ['provider', 'Notification'].join('');
 
 function forbidden(file: string, source: string): readonly string[] {
-    return findForbiddenNotificationMentions({ file, masked: maskSource({ source }) }).map(
+    return findForbiddenNotificationMentions({ file, source, masked: maskSource({ source }) }).map(
         ({ mention }) => mention
     );
 }

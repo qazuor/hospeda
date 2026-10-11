@@ -195,12 +195,6 @@ function withValidTargets({ masked }: { readonly masked: MaskedSource }): string
 /** A provider state type: only allowed inside `ProviderRead<…>`. */
 const STATE_TYPE = /\b(?:AuthorizationSnapshot|ChargeSnapshot|AuthorizationStatus|ChargeStatus)\b/g;
 
-/** `provider_notification` / `providerNotification`, assembled so this file does not name it. */
-const NOTIFICATION_TABLE = new RegExp(
-    `\\b(?:${NOTIFICATION_TABLE_NAME}|${['provider', 'Notification'].join('')})s?\\b`,
-    'g'
-);
-
 const IDENT = /^[A-Za-z_$][\w$]*/;
 
 /** Whether a read of `members` off a notice body stays within kind, id and version. */
@@ -368,22 +362,11 @@ export function findNotificationTableReads(args: {
 }): readonly Violation[] {
     if (args.file.startsWith(CUTOVER_DIR)) return [];
     const masked = maskSource({ source: args.source });
-    const allowedWriter = (NOTIFICATION_WRITER_FILES as readonly string[]).includes(args.file);
-    const found = allowedWriter
-        ? findForbiddenNotificationMentions({ file: args.file, masked }).map(
-              ({ offset, mention }) => ({
-                  offset,
-                  detail: `names ${mention}`
-              })
-          )
-        : [...args.source.matchAll(NOTIFICATION_TABLE)]
-              .filter(
-                  (match) =>
-                      !masked.comments.some(
-                          ({ start, end }) => match.index >= start && match.index < end
-                      )
-              )
-              .map((match) => ({ offset: match.index, detail: `names ${match[0]}` }));
+    const found = findForbiddenNotificationMentions({
+        file: args.file,
+        source: args.source,
+        masked
+    }).map(({ offset, mention }) => ({ offset, detail: `names ${mention}` }));
     return toViolations({ rule: 'G17(c)', file: args.file, source: args.source, found });
 }
 
