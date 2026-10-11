@@ -147,6 +147,23 @@ const collection = {
     deletedById: null,
     adminInfo: null
 };
+const collectionBookmark = {
+    id: IDS.bookmark,
+    userId: IDS.vip,
+    entityId: IDS.entity,
+    entityType: 'ACCOMMODATION',
+    collectionId: IDS.collection,
+    name: null,
+    description: null,
+    lifecycleState: 'ACTIVE',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deletedAt: null,
+    createdById: null,
+    updatedById: null,
+    deletedById: null,
+    adminInfo: null
+};
 
 beforeEach(() => {
     vi.clearAllMocks();
@@ -186,8 +203,8 @@ beforeEach(() => {
     mocks.collectionDelete.mockResolvedValue({
         data: { id: IDS.collection, nullifiedBookmarks: 0 }
     });
-    mocks.collectionAdd.mockResolvedValue({ data: {} });
-    mocks.collectionRemove.mockResolvedValue({ data: {} });
+    mocks.collectionAdd.mockResolvedValue({ data: collectionBookmark });
+    mocks.collectionRemove.mockResolvedValue({ data: collectionBookmark });
 });
 
 describe('TEST:V5:33 favorites and collections gates', () => {
@@ -342,7 +359,7 @@ describe('TEST:V5:33 favorites and collections gates', () => {
                 vertical: VerticalEnum.TOURIST
             });
             expect(service).toHaveBeenCalled();
-            expect(response.status).not.toBe(403);
+            expect([200, 201], `${method} ${path}`).toContain(response.status);
         }
     });
 
