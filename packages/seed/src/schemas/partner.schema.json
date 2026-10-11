@@ -26,11 +26,6 @@
             "enum": ["business", "ngo", "institution"],
             "description": "Partner type (PartnerTypeEnum)"
         },
-        "tier": {
-            "type": "string",
-            "enum": ["silver", "gold"],
-            "description": "Partner tier (PartnerTierEnum)"
-        },
         "logoUrl": {
             "type": "string",
             "format": "uri",
@@ -49,18 +44,8 @@
             "type": "string",
             "enum": ["ACTIVE", "INACTIVE", "ARCHIVED", "SUSPENDED"],
             "description": "Lifecycle state (LifecycleStatusEnum)"
-        },
-        "startsAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Date the partnership started"
-        },
-        "endsAt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "Date the partnership ends (omit for ongoing)"
         }
     },
-    "required": ["id", "slug", "name", "type", "tier", "lifecycleState", "startsAt"],
+    "required": ["id", "slug", "name", "type", "lifecycleState"],
     "additionalProperties": false
 }

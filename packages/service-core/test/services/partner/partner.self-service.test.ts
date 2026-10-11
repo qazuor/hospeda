@@ -14,7 +14,6 @@ import type { PartnerModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
     PartnerContentReviewStateEnum,
-    PartnerTierEnum,
     PartnerTypeEnum,
     PermissionEnum,
     ServiceErrorCode
@@ -41,7 +40,6 @@ const makeOwnedPartner = (ownerUserId: string, overrides: Record<string, unknown
     slug: 'acme-turismo',
     name: 'Acme Turismo',
     type: PartnerTypeEnum.BUSINESS,
-    tier: PartnerTierEnum.SILVER,
     logoUrl: 'https://cdn.example.com/live.png',
     description: 'Texto vivo.',
     websiteUrl: 'https://acme.example.com',
@@ -50,8 +48,6 @@ const makeOwnedPartner = (ownerUserId: string, overrides: Record<string, unknown
     lifecycleState: LifecycleStatusEnum.DRAFT,
     analytics: {},
     ownerUserId,
-    startsAt: null,
-    endsAt: null,
     pendingLogoUrl: null,
     pendingDescription: null,
     pendingWebsiteUrl: null,

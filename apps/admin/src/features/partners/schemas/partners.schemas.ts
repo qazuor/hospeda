@@ -11,14 +11,11 @@ export const PartnerListItemSchema = partnerSchema.pick({
     slug: true,
     name: true,
     type: true,
-    tier: true,
     logoUrl: true,
     websiteUrl: true,
     description: true,
     lifecycleState: true,
     analytics: true,
-    startsAt: true,
-    endsAt: true,
     createdAt: true,
     updatedAt: true
 });

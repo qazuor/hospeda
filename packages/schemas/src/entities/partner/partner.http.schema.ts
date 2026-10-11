@@ -15,10 +15,10 @@ import { updatePartnerSchema } from './partner.update.schema.js';
  * so that the active-only filter is always enforced on public endpoints.
  *
  * PAGINATION ONLY, deliberately (HOS-294 D-5). It used to carry `q`, `type`,
- * `tier` and `subscriptionStatus` — the filter surface of the public partner
+ * `subscriptionStatus` — an old filter surface of the public partner
  * DIRECTORY, a page the owner retired and that is not coming back. Leaving the
  * params accepted would have meant the directory survived as an API: anyone
- * could rebuild it with `?tier=gold&type=ngo&q=…` long after the page was
+ * could rebuild it with old commercial params long after the page was
  * deleted. The only remaining caller is the home carousel, which sends
  * `pageSize` alone.
  *
@@ -38,8 +38,12 @@ export type HttpPartnerSearch = z.infer<typeof PartnerSearchHttpSchema>;
 /**
  * Public API response schemas
  */
-export const publicPartnerResponseSchema = createSingleItemResponseSchema(partnerSchema);
-export const publicPartnersListResponseSchema = createPaginatedResponseSchema(partnerSchema);
+export const publicPartnerResponseSchema = createSingleItemResponseSchema(
+    partnerSchema.omit({ claimSecretHash: true })
+);
+export const publicPartnersListResponseSchema = createPaginatedResponseSchema(
+    partnerSchema.omit({ claimSecretHash: true })
+);
 
 /**
  * Admin API request schemas
@@ -74,8 +78,12 @@ export const adminSearchPartnerRequestSchema = z.object({
 /**
  * Admin API response schemas
  */
-export const adminPartnerResponseSchema = createSingleItemResponseSchema(partnerSchema);
-export const adminPartnersListResponseSchema = createPaginatedResponseSchema(partnerSchema);
+export const adminPartnerResponseSchema = createSingleItemResponseSchema(
+    partnerSchema.omit({ claimSecretHash: true })
+);
+export const adminPartnersListResponseSchema = createPaginatedResponseSchema(
+    partnerSchema.omit({ claimSecretHash: true })
+);
 
 /**
  * Admin action request schemas

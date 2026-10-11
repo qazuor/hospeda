@@ -1065,6 +1065,13 @@
       "when": 1791705842365,
       "tag": "0151_b58_payment_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 152,
+      "version": "7",
+      "when": 1791711333749,
+      "tag": "0152_v611_partners_for_v7",
+      "breakpoints": true
     }
   ]
 }

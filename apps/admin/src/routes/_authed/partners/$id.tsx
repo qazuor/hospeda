@@ -8,7 +8,7 @@ import {
     useRegisterPartnerManualPaymentMutation
 } from '@/features/partners/hooks/usePartnerQuery';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { formatCalendarShortDate, formatShortDate } from '@/lib/format-helpers';
+import { formatShortDate } from '@/lib/format-helpers';
 
 /** Spanish labels for {@link PartnerContentReviewStateEnum}, plus "never submitted". */
 const CONTENT_REVIEW_STATE_LABELS: Record<PartnerContentReviewStateEnum, string> = {
@@ -64,9 +64,6 @@ function PartnerViewPage() {
                         <span className="font-medium">Tipo:</span> {partner.type}
                     </div>
                     <div>
-                        <span className="font-medium">Tier:</span> {partner.tier}
-                    </div>
-                    <div>
                         <span className="font-medium">Lifecycle:</span> {partner.lifecycleState}
                     </div>
                     <div>
@@ -80,24 +77,6 @@ function PartnerViewPage() {
                         {partner.contentApprovedAt
                             ? formatShortDate({ date: partner.contentApprovedAt })
                             : 'Sin aprobar'}
-                    </div>
-                    <div>
-                        <span className="font-medium">Inicio:</span>{' '}
-                        {/*
-                          startsAt/endsAt are calendar dates: PartnerForm writes them from a
-                          bare <input type="date">, which pins them to UTC midnight. Format
-                          with the UTC-pinned helper so a reader at UTC-3 doesn't see the
-                          date roll back a day.
-                        */}
-                        {partner.startsAt
-                            ? formatCalendarShortDate({ date: partner.startsAt })
-                            : 'Sin iniciar'}
-                    </div>
-                    <div>
-                        <span className="font-medium">Fin:</span>{' '}
-                        {partner.endsAt
-                            ? formatCalendarShortDate({ date: partner.endsAt })
-                            : 'Sin fecha'}
                     </div>
                     <div className="md:col-span-2">
                         <span className="font-medium">Website:</span>{' '}

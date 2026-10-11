@@ -15,7 +15,7 @@
  * @module routes/alliance/admin/approve-and-provision-partner
  */
 
-import { AllianceLeadSchema, PartnerTierEnum, PermissionEnum } from '@repo/schemas';
+import { AllianceLeadSchema, PermissionEnum } from '@repo/schemas';
 import { AllianceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -34,22 +34,17 @@ const allianceLeadService = new AllianceLeadService(
 );
 
 /**
- * Request body: the tier the admin is granting, plus an optional note.
+ * Request body: an optional internal note.
  *
- * `tier` is required and has NO default. A default would silently pick a
- * commercial package on the admin's behalf, and the one it picked would be
- * indistinguishable afterwards from a tier somebody actually chose.
- *
- * Declared with `z.nativeEnum` rather than a local `z.enum([...])` copy because
- * this set is the SAME closed set as the `partners.tier` Postgres enum — a
- * hand-copied literal list here would drift the moment a tier is added.
+ * Strict parsing deliberately rejects legacy or unknown fields instead of
+ * silently accepting a contract this route no longer supports.
  */
-const ApproveAndProvisionPartnerBodySchema = z.object({
-    /** Commercial tier granted to the partner (`silver` | `gold`). */
-    tier: z.nativeEnum(PartnerTierEnum),
-    /** Optional internal note from the admin explaining the decision. */
-    adminNote: z.string().max(1000).optional()
-});
+const ApproveAndProvisionPartnerBodySchema = z
+    .object({
+        /** Optional internal note from the admin explaining the decision. */
+        adminNote: z.string().max(1000).optional()
+    })
+    .strict();
 
 /** Typed body for use inside the handler after the cast. */
 type ApproveAndProvisionPartnerBody = z.infer<typeof ApproveAndProvisionPartnerBodySchema>;
@@ -93,7 +88,7 @@ export const adminApproveAndProvisionPartnerRoute = createAdminRoute({
     summary: 'Approve a partner lead and provision its partner (admin)',
     description:
         'Approves the specified partner alliance lead and materializes its partners row in a ' +
-        'single action, at the tier the admin grants. The partner is created dormant (DRAFT + ' +
+        'single action. The partner is created dormant (DRAFT + ' +
         'pending) and is not publicly visible until it pays. Idempotent — re-running never ' +
         'creates a second partner. Requires ALLIANCE_LEAD_MANAGE permission.',
     tags: ['Alliance'],
@@ -110,12 +105,12 @@ export const adminApproveAndProvisionPartnerRoute = createAdminRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const { tier, adminNote } = body as ApproveAndProvisionPartnerBody;
+        const { adminNote } = body as ApproveAndProvisionPartnerBody;
 
         const result = await allianceLeadService.approveAndProvisionPartner({
             actor,
             id: params.id as string,
-            input: { tier, ...(adminNote === undefined ? {} : { adminNote }) }
+            input: { ...(adminNote === undefined ? {} : { adminNote }) }
         });
 
         if (result.error) {

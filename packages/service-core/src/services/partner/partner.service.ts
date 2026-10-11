@@ -7,7 +7,6 @@ import {
     PartnerContentReviewStateEnum,
     type PartnerOwnerUpdate,
     PartnerOwnerUpdateSchema,
-    PartnerTierEnum,
     RoleEnum,
     ServiceErrorCode,
     searchPartnerSchema,
@@ -359,7 +358,7 @@ export class PartnerService extends BaseCrudService<
             filterParams as Parameters<PartnerModel['findByFilters']>[0]
         );
         const total = await this.model.countActivePartners(
-            filterParams as { q?: string; type?: string; tier?: string }
+            filterParams as { q?: string; type?: string }
         );
         return { items, total };
     }
@@ -376,7 +375,7 @@ export class PartnerService extends BaseCrudService<
         const { page: _page, pageSize: _pageSize, ...filterParams } = params;
         (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
         const count = await this.model.countActivePartners(
-            filterParams as { q?: string; type?: string; tier?: string }
+            filterParams as { q?: string; type?: string }
         );
         return { count };
     }
@@ -408,21 +407,10 @@ export class PartnerService extends BaseCrudService<
             );
         }
 
-        // Activate the partner.
-        //
-        // `startsAt` is sealed here because THIS is the moment the alliance
-        // begins (HOS-409). Provisioning deliberately leaves it null — at that
-        // point nothing has started.
-        //
-        // Only when it is absent: an admin who typed the real start date on the
-        // edit form outranks "today", and a later reactivation must not rewrite
-        // the date the alliance actually began.
+        // Manual payment activates the partner; V7 owns the later claim flow.
         const updated = await this.model.update(
             { id: partnerId },
-            {
-                lifecycleState: LifecycleStatusEnum.ACTIVE,
-                ...(partner.startsAt ? {} : { startsAt: new Date() })
-            }
+            { lifecycleState: LifecycleStatusEnum.ACTIVE }
         );
 
         if (!updated) {
@@ -515,39 +503,8 @@ export class PartnerService extends BaseCrudService<
     }
 
     /**
-     * The partner behind a public `/partners/<slug>/` request (HOS-294 D-6).
-     *
-     * Gated on the conditions below, all of which must hold:
-     *
-     * - `tier === GOLD` — the page is what separates the two paid plans. This
-     *   is the only condition this method adds; the other two are the filters
-     *   every public partner read already applies.
-     * - `lifecycleState === ACTIVE` — the same condition
-     *   `PartnerModel.findByFilters` forces on the carousel, so the ficha can
-     *   never outlive a partner's presence in the listing.
-     *
-     * Gated by {@link checkCanSearch}, NOT `checkCanView`. The distinction is
-     * load-bearing: `checkCanSearch` accepts `ACCESS_API_PUBLIC`, which is what
-     * an anonymous visitor carries, while `checkCanView` demands
-     * `PARTNER_VIEW_ALL`/`PARTNER_MANAGE` and would 403 every real reader. This
-     * is the same gate the public partner LIST uses, so both public surfaces
-     * move together if that permission is ever tightened.
-     *
-     * The soft-delete check is deliberate redundancy. `findOne` already
-     * excludes deleted rows; repeating it here costs one comparison and means a
-     * regression in that filter cannot turn into a public leak.
-     *
-     * ### Which failure answers 410, and which answers 404 (HOS-562)
-     *
-     * Only a partner carrying `revokedAt` answers `gone` (410). Every other way
-     * of failing the visibility check — never published, or taken offline —
-     * answers `notFound` (404), because 410 is the only irreversible signal we
-     * can send a crawler and neither of those states is irreversible.
-     *
-     * @param actor - The requesting actor, typically anonymous.
-     * @param input - `{ slug }` — the slug from the URL, never a UUID.
-     * @param ctx - Optional service execution context.
-     * @returns One of the three outcomes in {@link PartnerPublicLookup}.
+     * Public partner pages remain dark until V7 rewrites this lookup over the
+     * claim key «página propia» (V6.md:85; V7.md:512). Every slug returns 404.
      */
     public async getPublicBySlug(
         actor: Actor,
@@ -559,42 +516,8 @@ export class PartnerService extends BaseCrudService<
             input: { actor, slug: input.slug },
             schema: z.object({ slug: z.string().min(1) }),
             ctx,
-            execute: async (validated, a) => {
+            execute: async (_validated, a) => {
                 checkCanSearch(a);
-
-                const partner = await this.model.findOne({ slug: validated.slug }, ctx?.tx);
-
-                if (!partner || partner.deletedAt) {
-                    return { outcome: 'notFound' } as const;
-                }
-
-                // Not gold: this URL was never served for this partner, so the
-                // answer is "no such page", not "the page is gone".
-                if (partner.tier !== PartnerTierEnum.GOLD) {
-                    return { outcome: 'notFound' } as const;
-                }
-
-                const isVisible = partner.lifecycleState === LifecycleStatusEnum.ACTIVE;
-
-                if (isVisible) {
-                    return { outcome: 'found', partner } as const;
-                }
-
-                // HOS-562: "not visible" covers two situations that HTTP answers
-                // differently.
-                //
-                // 410 Gone is the one irreversible answer: it tells a crawler to
-                // drop the URL for good. That is right for a deliberate takedown
-                // and wrong for everything else. A gold partner still in DRAFT
-                // never had a page at all, and one taken offline may come back.
-                //
-                // `revokedAt` is precisely the "we took them down, on purpose,
-                // and it does not come back" marker. So 410 keys off
-                // `revokedAt`; every other non-visible state answers 404.
-                if (partner.revokedAt) {
-                    return { outcome: 'gone' } as const;
-                }
-
                 return { outcome: 'notFound' } as const;
             }
         });

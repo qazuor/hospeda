@@ -2,9 +2,7 @@
  * HOS-294 T-016 / T-017 — the partner detail client call and its transform.
  *
  * The transform assertions all target one property: what the detail page is
- * allowed to know. `tier` decides whether the page exists at all, and that
- * decision is already made by the API before the payload arrives — so carrying
- * it into the props would only invite someone to render it.
+ * allowed to know. V6 keeps the page dark until V7 restores it on the public key.
  *
  * @module test/lib/api/partner-detail
  */
@@ -19,12 +17,9 @@ const apiPayload = {
     name: 'Acme Litoral',
     description: 'Excursiones por el Litoral.',
     type: 'business',
-    tier: 'gold',
     logoUrl: 'https://cdn.example.com/acme.png',
     websiteUrl: 'https://acme.example.com',
     lifecycleState: 'ACTIVE',
-    startsAt: '2026-01-01T00:00:00.000Z',
-    endsAt: null,
     contactInfo: { workEmail: 'hola@acme.com' },
     socialNetworks: { instagram: 'https://instagram.com/acme' }
 };
@@ -43,28 +38,6 @@ describe('toPartnerDetailProps', () => {
         expect(props.websiteUrl).toBe('https://acme.example.com');
         expect(props.contactInfo).toEqual({ workEmail: 'hola@acme.com' });
         expect(props.socialNetworks).toEqual({ instagram: 'https://instagram.com/acme' });
-    });
-
-    it('never carries the tier into the page props', () => {
-        // Arrange / Act — the payload HAS a tier; the props must not.
-        const props = toPartnerDetailProps({ item: apiPayload });
-
-        // Assert
-        expect(apiPayload.tier).toBe('gold');
-        expect(props).not.toHaveProperty('tier');
-    });
-
-    it('does not carry the directory-era fields either', () => {
-        // Arrange / Act
-        const props = toPartnerDetailProps({
-            item: { ...apiPayload, isFeatured: true }
-        });
-
-        // Assert — `isFeatured` and the subscription window belonged to the
-        // retired card, not to a business card.
-        expect(props).not.toHaveProperty('isFeatured');
-        expect(props).not.toHaveProperty('startsAt');
-        expect(props).not.toHaveProperty('endsAt');
     });
 
     it('degrades every optional field to null rather than to "undefined"', () => {

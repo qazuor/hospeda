@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { PartnerContentReviewStateEnum } from '../../../enums/partner-content-review-state.enum.js';
-import { PartnerTierEnum } from '../../../enums/partner-tier.enum.js';
 import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import {
     PARTNER_OWNER_FORBIDDEN_FIELDS,
@@ -14,10 +13,9 @@ const smuggled: Record<string, unknown> = {
     name: 'Renamed By Owner',
     slug: 'renamed-by-owner',
     type: PartnerTypeEnum.NGO,
-    tier: PartnerTierEnum.GOLD,
     lifecycleState: 'ACTIVE',
-    startsAt: new Date().toISOString(),
-    endsAt: new Date().toISOString(),
+    presenceModerated: true,
+    claimSecretHash: 'hashed-one-time-secret',
     ownerUserId: '00000000-0000-4000-a000-000000000004',
     analytics: { impressions: 999 },
     pendingLogoUrl: 'https://cdn.example.com/sneaky.png',

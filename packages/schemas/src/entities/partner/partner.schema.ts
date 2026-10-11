@@ -6,7 +6,6 @@ import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { PartnerContentReviewStateEnumSchema } from '../../enums/partner-content-review-state.schema.js';
-import { PartnerTierEnumSchema } from '../../enums/partner-tier.schema.js';
 import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
 
 /**
@@ -63,7 +62,6 @@ export const partnerSchema = z.object({
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     name: z.string().min(1).max(255),
     type: PartnerTypeEnumSchema,
-    tier: PartnerTierEnumSchema,
     logoUrl: z.string().url().nullable().optional(),
     websiteUrl: z.string().url().nullable().optional(),
     description: z.string().max(5000).nullable().optional(),
@@ -92,16 +90,10 @@ export const partnerSchema = z.object({
      * claim token yet. Ownership queries must therefore fail CLOSED on null.
      */
     ownerUserId: UserIdSchema.nullish(),
-    /**
-     * When the alliance began — null until it actually does.
-     *
-     * Relaxed from required (HOS-278 D1): provisioning creates the row before
-     * any payment, so a DRAFT partner genuinely has no start date and must not
-     * be forced to invent one. Written for real when the subscription
-     * activates.
-     */
-    startsAt: z.coerce.date().nullable().optional(),
-    endsAt: z.coerce.date().nullable().optional(),
+    /** Spec «bit de moderación de la presencia»; lo escribe V7 sólo mediante la acción administrativa 12/PB10/PB11. */
+    presenceModerated: z.boolean().default(false),
+    /** Spec «secreto_de_reclamo»: hash de un solo uso, escrito por V7; sólo vive en el esquema base. */
+    claimSecretHash: z.string().nullable().optional(),
     /**
      * Logo the partner submitted and an admin has not resolved yet.
      *

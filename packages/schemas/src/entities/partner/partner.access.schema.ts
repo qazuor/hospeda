@@ -22,12 +22,9 @@ export const PartnerPublicSchema = partnerSchema.pick({
     name: true,
     description: true,
     type: true,
-    tier: true,
     logoUrl: true,
     websiteUrl: true,
     lifecycleState: true,
-    startsAt: true,
-    endsAt: true,
     contactInfo: true,
     socialNetworks: true
 });

@@ -38,7 +38,6 @@ import {
     PartnerContentReviewStateEnum,
     PartnerLogoClickDestinationEnum,
     PartnerMentionChannelEnum,
-    PartnerTierEnum,
     PartnerTypeEnum,
     PermissionCategoryEnum,
     PermissionEffectEnum,
@@ -401,8 +400,6 @@ export const SocialSourcePgEnum = pgEnum('social_source_enum', enumToTuple(Socia
 
 // Partner enums (SPEC-271)
 export const PartnerTypePgEnum = pgEnum('partner_type_enum', enumToTuple(PartnerTypeEnum));
-
-export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(PartnerTierEnum));
 
 /**
  * Channels a manual partner promotion can be logged against (HOS-377).

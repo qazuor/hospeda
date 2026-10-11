@@ -33,9 +33,7 @@ function partnerFixture(
         slug: `partner-${uid}`,
         name: `Partner ${uid}`,
         type: 'business' as const,
-        tier: 'gold' as const,
         lifecycleState: 'ACTIVE' as const,
-        startsAt: new Date(),
         ...overrides
     };
 }

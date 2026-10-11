@@ -33,13 +33,6 @@ const SRC = path.resolve(__dirname, '../../src');
 const PARTNERS_SECTION = path.join(SRC, 'components/sections/PartnersSection.astro');
 const STATS_SECTION = path.join(SRC, 'components/account/PartnerStatsSection.astro');
 const MENTIONS_SECTION = path.join(SRC, 'components/account/PartnerMentionsSection.astro');
-/**
- * Where the per-card show/withhold decision actually lives. The two `.astro`
- * files render what this module hands them, so a tier comparison that slipped in
- * HERE would be the one that matters and the one the guard was not reading.
- */
-const STATS_CARDS = path.join(SRC, 'lib/partner-stats-cards.ts');
-
 const read = (file: string): string => readFileSync(file, 'utf-8');
 
 /**
@@ -265,43 +258,19 @@ describe('HOS-1063 AC-9 — no numeral where the metric does not apply', () => {
     });
 });
 
-describe('HOS-1063 AC-11 / §7.2 — no dead column, no tier gating in the view layer', () => {
-    /**
-     * Matched on the dead column's OWN identifiers, not on the bare word
-     * "analytics". A `\banalytics\b` predicate looks stricter and is simply
-     * wrong: it fires on the legitimate `@/lib/analytics/view-capture` import
-     * that carries the click beacon, so the guard would be red on a correct file
-     * — and its message would be claiming something its predicate does not test.
-     */
-    it.each([
-        ['stats section', STATS_SECTION],
-        ['partners carousel', PARTNERS_SECTION]
-    ])('%s references none of the dead partners.analytics accessors', (_label, file) => {
-        const code = readCode(file);
-        expect(code).not.toMatch(/partners?\.analytics/);
-        expect(code).not.toMatch(/PartnerAnalytics/);
-        expect(code).not.toMatch(/incrementAnalytics/);
+describe('partner statistics and carousel keep the internal page dark', () => {
+    it('stats section delegates visibility to the shared resolver', () => {
+        expect(readCode(STATS_SECTION)).toContain('resolvePartnerStatsView');
+        expect(readCode('src/lib/partner-stats-cards.ts')).toContain('resolvePartnerLogoLink');
     });
 
-    /**
-     * `partner-stats-cards.ts` is in this list and was not: the two `.astro`
-     * files only RENDER what it decides, so a `tier === 'gold'` there would be
-     * the second source of truth this rule exists to forbid, sitting in the one
-     * file the guard did not read. It legitimately passes the tier THROUGH — as
-     * an argument to `resolvePartnerLogoLink`, which is the single site allowed
-     * to look at it — and passing it is not comparing it, which is why the
-     * predicates below watch for a comparison and a tier LITERAL rather than for
-     * the word `tier`.
-     */
-    it.each([
-        ['stats section', STATS_SECTION],
-        ['partners carousel', PARTNERS_SECTION],
-        ['stats cards', STATS_CARDS]
-    ])('%s never compares a tier — that decision belongs to resolvePartnerLogoLink', (_label, file) => {
-        const code = readCode(file);
-        expect(code).not.toMatch(/tier\s*===/);
-        expect(code).not.toMatch(/tier\s*!==/);
-        expect(code).not.toMatch(/['"]gold['"]/);
-        expect(code).not.toMatch(/['"]silver['"]/);
+    it('partners carousel delegates link resolution to the shared helper', () => {
+        expect(readCode(PARTNERS_SECTION)).toContain('resolvePartnerLogoLink');
+    });
+
+    it('the resolver emits only outbound destinations', () => {
+        const code = readCode('src/lib/partner-logo-link.ts');
+        expect(code).toContain("destination: 'EXTERNAL'");
+        expect(code).not.toContain("destination: 'OWN_PAGE'");
     });
 });

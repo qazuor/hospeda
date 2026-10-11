@@ -47,6 +47,7 @@ const ROLE_VISUALS: Record<RoleEnum, RoleVisual> = {
     // replace — each carries strictly LESS authority than it, never more.
     [RoleEnum.GASTRONOMY_OWNER]: { level: 'medium', icon: HomeIcon },
     [RoleEnum.EXPERIENCE_OWNER]: { level: 'medium', icon: HomeIcon },
+    [RoleEnum.PARTNER_OWNER]: { level: 'medium', icon: HomeIcon },
     [RoleEnum.USER]: { level: 'low', icon: UserIcon },
     [RoleEnum.SPONSOR]: { level: 'low', icon: UserIcon },
     [RoleEnum.GUEST]: { level: 'low', icon: GlobeIcon },

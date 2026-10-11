@@ -260,11 +260,5 @@
         "business": "Business",
         "ngo": "NGO",
         "institution": "Institution"
-    },
-    "partnerTier": {
-        "label": "Tier",
-        "bronze": "Bronze",
-        "silver": "Silver",
-        "gold": "Gold"
     }
 }

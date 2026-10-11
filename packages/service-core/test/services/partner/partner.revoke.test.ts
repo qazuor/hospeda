@@ -13,7 +13,6 @@
 import type { PartnerModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
-    PartnerTierEnum,
     PartnerTypeEnum,
     PermissionEnum,
     ServiceErrorCode
@@ -37,7 +36,6 @@ const makePartner = (overrides: Record<string, unknown> = {}) => ({
     slug: 'acme-turismo',
     name: 'Acme Turismo',
     type: PartnerTypeEnum.BUSINESS,
-    tier: PartnerTierEnum.SILVER,
     logoUrl: null,
     websiteUrl: null,
     description: null,
@@ -46,8 +44,6 @@ const makePartner = (overrides: Record<string, unknown> = {}) => ({
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     analytics: {},
     ownerUserId: OWNER_ID,
-    startsAt: new Date('2026-07-01T00:00:00Z'),
-    endsAt: null,
     pendingLogoUrl: null,
     pendingDescription: null,
     pendingWebsiteUrl: null,

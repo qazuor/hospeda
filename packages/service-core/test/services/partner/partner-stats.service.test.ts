@@ -42,7 +42,6 @@ const goldPartner = {
     id: PARTNER_ID,
     name: 'Bodega Ejemplo',
     slug: 'bodega-ejemplo',
-    tier: 'gold',
     websiteUrl: 'https://bodega.example'
 };
 
@@ -161,11 +160,10 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
 
     /**
      * §7.2 / OQ-7: the payload must carry the three fields
-     * `resolvePartnerLogoLink` reads, because the WEB decides which cards render
-     * and this service must not. If these stop being shipped, the panel loses
-     * the only inputs that let it agree with the carousel.
+     * `resolvePartnerLogoLink` needs; this service keeps the presentation decision
+     * outside its stats payload.
      */
-    it('ships tier, slug and websiteUrl so the web can resolve the logo link itself', async () => {
+    it('ships slug and websiteUrl so the web can resolve the logo link itself', async () => {
         const { service } = makeService({ partner: goldPartner });
 
         const result = await service.getForOwner(ownerActor, { windowDays: 30 });
@@ -174,7 +172,6 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
             id: PARTNER_ID,
             name: 'Bodega Ejemplo',
             slug: 'bodega-ejemplo',
-            tier: 'gold',
             websiteUrl: 'https://bodega.example'
         });
     });
@@ -191,7 +188,6 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
                 id: PARTNER_ID,
                 name: 'Recién creado',
                 slug: null,
-                tier: null,
                 websiteUrl: null
             },
             viewStats: [],
@@ -203,7 +199,6 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
         expect(result.data?.available).toBe(true);
         expect(result.data?.views).toEqual({ unique: 0, total: 0 });
         expect(result.data?.clicks).toEqual({ unique: 0, total: 0 });
-        expect(result.data?.partner?.tier).toBeUndefined();
         expect(result.data?.partner?.slug).toBeUndefined();
     });
 

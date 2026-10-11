@@ -223,7 +223,7 @@ const ALL_SPEC_156_PERMS = [
 describe('ROLE_PERMISSIONS — SPEC-156 Platform Settings V1 (D1)', () => {
     type RoleKey = keyof typeof ROLE_PERMISSIONS;
     const get = (role: string): readonly string[] =>
-        ROLE_PERMISSIONS[role as unknown as RoleKey] as readonly string[];
+        (ROLE_PERMISSIONS[role as unknown as RoleKey] ?? []) as readonly string[];
 
     const superAdmin = get(SUPER_ADMIN);
     const admin = get(ADMIN);
@@ -444,6 +444,7 @@ const ALL_ROLES = [
     'HOST',
     'GASTRONOMY_OWNER',
     'EXPERIENCE_OWNER',
+    'PARTNER_OWNER',
     'SPONSOR',
     'USER',
     'GUEST',
@@ -453,7 +454,7 @@ const ALL_ROLES = [
 describe('ROLE_PERMISSIONS — ACCESS_PANEL_ADMIN restricted to staff roles (HOS-152, HOS-374 D-1)', () => {
     type RoleKey = keyof typeof ROLE_PERMISSIONS;
     const get = (role: string): readonly string[] =>
-        ROLE_PERMISSIONS[role as unknown as RoleKey] as readonly string[];
+        (ROLE_PERMISSIONS[role as unknown as RoleKey] ?? []) as readonly string[];
 
     it('does NOT grant ACCESS_PANEL_ADMIN to HOST', () => {
         expect(get('HOST')).not.toContain(ACCESS_PANEL_ADMIN);

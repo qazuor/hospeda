@@ -21,13 +21,14 @@ describe('RoleEnum', () => {
         });
 
         it('should have exactly 11 roles', () => {
-            expect(Object.values(RoleEnum)).toHaveLength(11);
+            expect(Object.values(RoleEnum)).toHaveLength(12);
         });
 
         // HOS-1077: the per-vertical owner roles.
         it('should define GASTRONOMY_OWNER and EXPERIENCE_OWNER', () => {
             expect(RoleEnum.GASTRONOMY_OWNER).toBe('GASTRONOMY_OWNER');
             expect(RoleEnum.EXPERIENCE_OWNER).toBe('EXPERIENCE_OWNER');
+            expect(RoleEnum.PARTNER_OWNER).toBe('PARTNER_OWNER');
         });
 
         it('the two vertical owner roles are distinct from each other and HOST', () => {
