@@ -1,0 +1,422 @@
+{
+    "$comment": "Corpus declarado de las tablas de transiciones de HOS-1352 (G-R4, G-R4-B, G-R6, AC:V4:13); anclado a .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md por scripts/transition-corpus.ts",
+    "machines": {
+        "trial": {
+            "epic": "verticals",
+            "table": "trial",
+            "subStateOf": null,
+            "stateColumn": "trial.status",
+            "states": ["PRE_TRIAL", "TRIAL_ACTIVE", "TRIAL_CONVERTED", "TRIAL_EXPIRED"]
+        },
+        "publication": {
+            "epic": "verticals",
+            "table": "listing",
+            "subStateOf": null,
+            "stateColumn": "listing.publication_status",
+            "states": [
+                "ARCHIVED",
+                "DRAFT",
+                "MODERATED",
+                "PUBLISHED",
+                "PURGED",
+                "UNPUBLISHED_BY_BILLING"
+            ]
+        },
+        "partner_application": {
+            "epic": "verticals",
+            "table": "partner_application",
+            "subStateOf": null,
+            "stateColumn": "partner_application.status",
+            "states": ["APROBADA", "PENDIENTE", "RECHAZADA"]
+        },
+        "subscription": {
+            "epic": "billing",
+            "table": "subscription",
+            "subStateOf": null,
+            "stateColumn": "subscription.status",
+            "states": [
+                "PENDING_AUTHORIZATION",
+                "ABANDONED",
+                "ACTIVE",
+                "GRACE_PERIOD",
+                "PAUSED",
+                "SUSPENDED",
+                "CANCEL_SCHEDULED",
+                "CANCELLED",
+                "CHARGE_DECLINED"
+            ]
+        },
+        "grace": {
+            "epic": "billing",
+            "table": null,
+            "subStateOf": "subscription",
+            "stateColumn": null,
+            "states": []
+        },
+        "pause": {
+            "epic": "billing",
+            "table": null,
+            "subStateOf": "subscription",
+            "stateColumn": null,
+            "states": []
+        },
+        "payment": {
+            "epic": "billing",
+            "table": "payment",
+            "subStateOf": null,
+            "stateColumn": "payment.status",
+            "states": [
+                "CHARGED_BACK",
+                "FAILED",
+                "PARTIALLY_REFUNDED",
+                "PENDING",
+                "REFUNDED",
+                "SUCCEEDED"
+            ]
+        },
+        "refund": {
+            "epic": "billing",
+            "table": "refund",
+            "subStateOf": null,
+            "stateColumn": "refund.status",
+            "states": ["CONFIRMED", "EXECUTED", "FAILED", "REQUESTED"]
+        },
+        "manual_payment": {
+            "epic": "billing",
+            "table": "manual_payment",
+            "subStateOf": null,
+            "stateColumn": "manual_payment.status",
+            "states": ["AWAITING", "DECLARED_UNPAID", "REGISTERED"]
+        },
+        "addon_instance": {
+            "epic": "billing",
+            "table": "addon_instance",
+            "subStateOf": null,
+            "stateColumn": "addon_instance.status",
+            "states": ["PENDING_AUTHORIZATION", "ABANDONED", "ACTIVE", "EXPIRED", "CANCELLED"]
+        }
+    },
+    "transitions": [
+        {
+            "id": "TRANS:V:T1",
+            "machine": "trial",
+            "from": ["PRE_TRIAL"],
+            "events": ["activation_event"],
+            "to": "TRIAL_ACTIVE",
+            "guard": {
+                "covered": false
+            },
+            "reads": ["trial.email_pseudonym"],
+            "inputs": [
+                "contract:covered",
+                "catalog:trial_plan.trial_days",
+                "catalog:plan_version.sellable_current"
+            ],
+            "writes": [
+                "trial.status",
+                "trial.user_id",
+                "trial.vertical",
+                "trial.email_pseudonym",
+                "trial.started_at",
+                "trial.ends_at",
+                "trial.trial_plan_id",
+                "trial.floor_entitlements_version_id",
+                "trial.floor_limits_version_id",
+                "trial.floor_trial_plan_version_id",
+                "trial.deadlines_version",
+                "domain_event.changes"
+            ]
+        },
+        {
+            "id": "TRANS:V:T2",
+            "machine": "trial",
+            "from": ["TRIAL_ACTIVE"],
+            "events": ["converting_title_appears"],
+            "to": "TRIAL_CONVERTED",
+            "guard": {},
+            "reads": [],
+            "inputs": ["contract:title_conversion_event"],
+            "writes": ["trial.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:T3",
+            "machine": "trial",
+            "from": ["TRIAL_ACTIVE"],
+            "events": ["trial_end_date_reached"],
+            "to": "TRIAL_EXPIRED",
+            "guard": {},
+            "reads": ["trial.ends_at"],
+            "inputs": ["clock:now"],
+            "writes": ["trial.status", "trial.deadlines_version", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:T4",
+            "machine": "trial",
+            "from": ["TRIAL_ACTIVE"],
+            "events": ["trial_extension_requested"],
+            "to": "TRIAL_ACTIVE",
+            "guard": {},
+            "reads": ["trial.ends_at"],
+            "inputs": ["clock:now", "config:trial_extension_limit"],
+            "writes": ["trial.ends_at", "canje_de_trial.redemption_key", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:T5",
+            "machine": "trial",
+            "from": ["TRIAL_EXPIRED"],
+            "events": ["converting_title_appears"],
+            "to": "TRIAL_CONVERTED",
+            "guard": {},
+            "reads": [],
+            "inputs": ["contract:title_conversion_event"],
+            "writes": ["trial.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:T6",
+            "machine": "trial",
+            "from": ["PRE_TRIAL"],
+            "events": ["activation_event"],
+            "to": "TRIAL_CONVERTED",
+            "guard": {
+                "covered": true,
+                "converting_title": true
+            },
+            "reads": ["trial.email_pseudonym"],
+            "inputs": ["contract:covered", "catalog:trial_plan.trial_days"],
+            "writes": [
+                "trial.status",
+                "trial.user_id",
+                "trial.vertical",
+                "trial.email_pseudonym",
+                "domain_event.changes"
+            ]
+        },
+        {
+            "id": "TRANS:V:T8",
+            "machine": "trial",
+            "from": ["PRE_TRIAL"],
+            "events": ["converting_title_appears"],
+            "to": "TRIAL_CONVERTED",
+            "guard": {},
+            "reads": ["trial.email_pseudonym", "domain_event.changes"],
+            "inputs": ["contract:title_conversion_event", "catalog:trial_plan.trial_days"],
+            "writes": [
+                "trial.status",
+                "trial.user_id",
+                "trial.vertical",
+                "trial.email_pseudonym",
+                "domain_event.changes"
+            ]
+        },
+        {
+            "id": "TRANS:V:PB1",
+            "machine": "publication",
+            "from": ["DRAFT", "UNPUBLISHED_BY_BILLING"],
+            "events": ["owner_publishes"],
+            "to": "PUBLISHED",
+            "guard": {},
+            "reads": [],
+            "inputs": ["contract:covered", "catalog:trial_plan.trial_days"],
+            "writes": ["listing.publication_status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PB2",
+            "machine": "publication",
+            "from": ["PUBLISHED"],
+            "events": ["coverage_becomes_false", "capacity_exceeded"],
+            "to": "UNPUBLISHED_BY_BILLING",
+            "guard": {},
+            "reads": [],
+            "inputs": ["contract:covered", "clock:now"],
+            "writes": [
+                "listing.publication_status",
+                "listing.inactiva_desde",
+                "domain_event.changes"
+            ]
+        },
+        {
+            "id": "TRANS:V:PB3",
+            "machine": "publication",
+            "from": ["UNPUBLISHED_BY_BILLING"],
+            "events": ["coverage_becomes_true", "capacity_returns"],
+            "to": "PUBLISHED",
+            "guard": {},
+            "reads": [],
+            "inputs": ["contract:covered"],
+            "writes": ["listing.publication_status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PB4",
+            "machine": "publication",
+            "from": ["PUBLISHED", "UNPUBLISHED_BY_BILLING"],
+            "events": ["inactivity_archive_deadline_reached"],
+            "to": "ARCHIVED",
+            "guard": {},
+            "reads": ["listing.inactiva_desde", "listing.borrado_anunciado"],
+            "inputs": [
+                "clock:now",
+                "catalog:archive_days",
+                "contract:retention_stopped",
+                "provider:coverage_lost_at"
+            ],
+            "writes": [
+                "listing.publication_status",
+                "listing.borrado_anunciado",
+                "domain_event.changes"
+            ]
+        },
+        {
+            "id": "TRANS:V:PB5",
+            "machine": "publication",
+            "from": ["DRAFT"],
+            "events": ["draft_inactivity_deadline_reached"],
+            "to": "ARCHIVED",
+            "guard": {},
+            "reads": ["listing.inactiva_desde"],
+            "inputs": ["clock:now", "catalog:draft_archive_months", "contract:retention_stopped"],
+            "writes": [
+                "listing.publication_status",
+                "listing.borrado_anunciado",
+                "domain_event.changes"
+            ]
+        },
+        {
+            "id": "TRANS:V:PB6",
+            "machine": "publication",
+            "from": ["PUBLISHED"],
+            "events": ["owner_unpublishes"],
+            "to": "DRAFT",
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["listing.publication_status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PB7",
+            "machine": "publication",
+            "from": ["ARCHIVED"],
+            "events": ["coverage_becomes_true", "capacity_returns"],
+            "to": "PUBLISHED",
+            "guard": {},
+            "reads": [],
+            "inputs": ["contract:covered"],
+            "writes": ["listing.publication_status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PB8",
+            "machine": "publication",
+            "from": ["ARCHIVED"],
+            "events": ["owner_reactivates_listing"],
+            "to": "DRAFT",
+            "guard": {},
+            "reads": [],
+            "inputs": ["catalog:floor_entitlement"],
+            "writes": ["listing.publication_status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PB9",
+            "machine": "publication",
+            "from": ["ARCHIVED"],
+            "events": ["listing_purge_deadline_reached"],
+            "to": "PURGED",
+            "guard": {},
+            "reads": ["listing.inactiva_desde", "listing.borrado_anunciado"],
+            "inputs": [
+                "clock:now",
+                "catalog:purge_days",
+                "contract:retention_stopped",
+                "contract:coverage_lost_at"
+            ],
+            "writes": ["listing.publication_status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PB10",
+            "machine": "publication",
+            "from": ["DRAFT", "PUBLISHED", "UNPUBLISHED_BY_BILLING", "ARCHIVED"],
+            "events": ["admin_moderates_listing"],
+            "to": "MODERATED",
+            "guard": {},
+            "reads": [],
+            "inputs": ["config:moderation_reason"],
+            "writes": ["listing.publication_status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PB11",
+            "machine": "publication",
+            "from": ["MODERATED"],
+            "events": ["admin_lifts_moderation"],
+            "to": "DRAFT",
+            "guard": {
+                "moderation_origin": "DRAFT"
+            },
+            "reads": ["domain_event.changes"],
+            "inputs": ["clock:now"],
+            "writes": [
+                "listing.publication_status",
+                "listing.inactiva_desde",
+                "domain_event.changes"
+            ]
+        },
+        {
+            "id": "TRANS:V:PB12",
+            "machine": "publication",
+            "from": ["DRAFT", "PUBLISHED", "UNPUBLISHED_BY_BILLING", "ARCHIVED", "MODERATED"],
+            "events": ["owner_or_support_purges_listing"],
+            "to": "PURGED",
+            "guard": {},
+            "reads": [],
+            "inputs": ["config:purge_reason"],
+            "writes": ["listing.publication_status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PB13",
+            "machine": "publication",
+            "from": ["MODERATED"],
+            "events": ["admin_lifts_moderation"],
+            "to": "UNPUBLISHED_BY_BILLING",
+            "guard": {
+                "moderation_origin": ["PUBLISHED", "UNPUBLISHED_BY_BILLING"]
+            },
+            "reads": ["domain_event.changes"],
+            "inputs": [],
+            "writes": [
+                "listing.publication_status",
+                "listing.inactiva_desde",
+                "domain_event.changes"
+            ]
+        },
+        {
+            "id": "TRANS:V:PP1",
+            "machine": "partner_application",
+            "from": ["*NO_ROW"],
+            "events": ["partner_application_submitted"],
+            "to": "PENDIENTE",
+            "guard": {},
+            "reads": [],
+            "inputs": ["config:partner_rejection_wait"],
+            "writes": ["partner_application.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PP2",
+            "machine": "partner_application",
+            "from": ["PENDIENTE"],
+            "events": ["admin_approves_partner_application"],
+            "to": "APROBADA",
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["partner_application.status", "domain_event.changes"]
+        },
+        {
+            "id": "TRANS:V:PP3",
+            "machine": "partner_application",
+            "from": ["PENDIENTE"],
+            "events": ["admin_rejects_partner_application"],
+            "to": "RECHAZADA",
+            "guard": {},
+            "reads": [],
+            "inputs": [],
+            "writes": ["partner_application.status", "domain_event.changes"]
+        }
+    ]
+}
