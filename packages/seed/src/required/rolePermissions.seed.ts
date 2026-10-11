@@ -1232,7 +1232,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_SELF
     ],
 
-    /** Sin permisos hasta V7. */
+    /** sin permisos hasta V7 */
     [RoleEnum.PARTNER_OWNER]: [],
 
     [RoleEnum.USER]: [
