@@ -13,6 +13,20 @@
             "row": null,
             "why": "Consumidor real declarado por docblock; no tiene fila en el inventario del glosario.",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
+            "symbol": "processProviderNotice",
+            "row": null,
+            "why": "AC:B3:19 (HOS-1524): al espejar la baja del proveedor busca una sucesora viva para cerrar la sucesión dentro de la transacción; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/decline-first-charge.service.ts",
+            "symbol": "declineFirstCharge",
+            "row": null,
+            "why": "AC:B3:17 (HOS-1524, S16): busca una sucesora viva para cerrar la sucesión (S18) dentro de la transacción; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
         }
     ],
     "grant_vivo_ancla_viva": [],
