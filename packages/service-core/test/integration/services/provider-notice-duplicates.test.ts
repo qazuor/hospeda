@@ -111,13 +111,20 @@ describe('TEST:B3:20 provider notice duplicates', () => {
             ['I', 'W', 'W']
         ] as const;
         for (const order of orders) {
-            const { provider, started } = await setup();
+            const { provider, started, userId } = await setup();
             const read = vi.spyOn(provider, 'readAuthorization');
             const decode = vi.spyOn(provider, 'decodeNotice');
             const token = crypto.randomUUID();
             const webhooksUrl = `https://api.example.test/api/v1/webhooks/mercadopago?source_news=webhooks&t=${token}`;
             const ipnUrl = `https://api.example.test/api/v1/webhooks/mercadopago?topic=payment&t=${token}`;
             const outcomes = [];
+            const outboxBefore = await getServiceTestDb()
+                .select()
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, userId));
+            let firstWebhookXmins:
+                | { readonly subscription: string | undefined; readonly link: string | undefined }
+                | undefined;
             for (const item of order) {
                 if (item === 'W') millis += 500;
                 outcomes.push(
@@ -129,6 +136,24 @@ describe('TEST:B3:20 provider notice duplicates', () => {
                         { provider, clock, beforeCancelNotice }
                     )
                 );
+                if (item === 'W' && firstWebhookXmins === undefined) {
+                    const [subscription] = await getServiceTestPool()
+                        .query<{ xmin: string }>(
+                            'SELECT xmin::text FROM subscription WHERE id = $1',
+                            [started.subscriptionId]
+                        )
+                        .then((result) => result.rows);
+                    const [link] = await getServiceTestPool()
+                        .query<{ xmin: string }>(
+                            'SELECT xmin::text FROM provider_link WHERE subscription_id = $1',
+                            [started.subscriptionId]
+                        )
+                        .then((result) => result.rows);
+                    firstWebhookXmins = {
+                        subscription: subscription?.xmin,
+                        link: link?.xmin
+                    };
+                }
             }
             expect(
                 outcomes.filter((result) => result.outcome === 'DISCARDED_OLD_VERSION')
@@ -138,6 +163,32 @@ describe('TEST:B3:20 provider notice duplicates', () => {
             ).toHaveLength(1);
             expect(read).toHaveBeenCalledTimes(1);
             expect(decode).toHaveBeenCalledTimes(2);
+            const finalSubscriptionXmin = (
+                await getServiceTestPool().query<{ xmin: string }>(
+                    'SELECT xmin::text FROM subscription WHERE id = $1',
+                    [started.subscriptionId]
+                )
+            ).rows[0]?.xmin;
+            const finalLinkXmin = (
+                await getServiceTestPool().query<{ xmin: string }>(
+                    'SELECT xmin::text FROM provider_link WHERE subscription_id = $1',
+                    [started.subscriptionId]
+                )
+            ).rows[0]?.xmin;
+            expect(firstWebhookXmins?.subscription).toBe(finalSubscriptionXmin);
+            expect(firstWebhookXmins?.link).toBe(finalLinkXmin);
+            expect(
+                await getServiceTestDb()
+                    .select()
+                    .from(emailOutbox)
+                    .where(eq(emailOutbox.recipientUserId, userId))
+            ).toHaveLength(outboxBefore.length);
+            expect(
+                await getServiceTestDb()
+                    .select()
+                    .from(reconciliationMarks)
+                    .where(eq(reconciliationMarks.subscriptionId, started.subscriptionId))
+            ).toHaveLength(0);
             expect(
                 (
                     await getServiceTestDb()
@@ -275,6 +326,14 @@ describe('TEST:B3:20 provider notice duplicates', () => {
                         .where(eq(subscriptions.id, started.subscriptionId))
                 )[0]?.status
             ).toBe('ACTIVE');
+            expect(
+                (
+                    await getServiceTestDb()
+                        .select()
+                        .from(providerLinks)
+                        .where(eq(providerLinks.subscriptionId, started.subscriptionId))
+                )[0]?.lastAppliedVersion
+            ).toBe('7');
         }
     });
 });
