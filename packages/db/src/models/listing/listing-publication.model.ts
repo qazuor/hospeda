@@ -53,6 +53,26 @@ function legacyPublicationWrite(args: {
 
 /** Transaction-bound persistence for PB1, PB2, PB3 and PB6. */
 export const listingPublicationModel = {
+    /** Reads the latest owner-initiated publication instant for each requested listing. */
+    async readPublicationInstants(args: {
+        readonly tx: DrizzleClient;
+        readonly vertical: ListingVertical;
+        readonly listingIds: readonly string[];
+    }): Promise<ReadonlyMap<string, Date>> {
+        if (args.listingIds.length === 0) return new Map();
+        const result = await args.tx.execute(sql<{ entityId: string; occurredAt: Date }>`
+            SELECT entity_id AS "entityId", max(occurred_at) AS "occurredAt"
+            FROM domain_event
+            WHERE entity_type = ${args.vertical}
+              AND entity_id = ANY(${sql.param([...args.listingIds])}::text[])
+              AND event_type = 'listing.status_changed'
+              AND actor_type = 'owner'
+              AND changes @> '[{"field":"publicationStatus","new":"PUBLISHED"}]'::jsonb
+            GROUP BY entity_id`);
+        return new Map<string, Date>(
+            result.rows.map((row) => [String(row.entityId), new Date(String(row.occurredAt))])
+        );
+    },
     /** Serializes every transition for one owner and vertical. The caller supplies the key. */
     async lock(args: { readonly tx: DrizzleClient; readonly key: string }): Promise<void> {
         await args.tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${args.key}, 0))`);
@@ -147,6 +167,7 @@ export const listingPublicationModel = {
         readonly actorType: 'owner' | 'job';
         readonly actorId?: string;
         readonly correlationId: string;
+        readonly occurredAt?: Date;
     }): Promise<void> {
         await domainEventModel.insert({
             tx: args.tx,
@@ -156,6 +177,7 @@ export const listingPublicationModel = {
             actorType: args.actorType,
             actorId: args.actorId,
             correlationId: args.correlationId,
+            occurredAt: args.occurredAt,
             changes: [
                 { field: 'publicationStatus', old: args.from, new: args.to },
                 ...(args.inactiveSince
