@@ -59,6 +59,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     },
     'accommodation/protected/patch.ts': { operation: 'EDIT' },
     'accommodation/protected/publish.ts': { operation: 'PUBLISH' },
+    'accommodation/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'accommodation/protected/removeFaq.ts': { operation: 'EDIT' },
     'accommodation/protected/removeMedia.ts': { operation: 'EDIT' },
     'accommodation/protected/removeOccupancy.ts': { operation: 'EDIT' },
@@ -132,6 +133,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     },
     'experience/protected/deleteDraft.ts': { operation: 'DELETE' },
     'experience/protected/publish.ts': { operation: 'PUBLISH' },
+    'experience/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'experience/protected/patch.ts': { operation: 'EDIT' },
     'experience/protected/unpublish.ts': { operation: 'EDIT' },
     'experience/protected/removeFaq.ts': { operation: 'EDIT' },
@@ -192,6 +194,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     },
     'gastronomy/protected/deleteDraft.ts': { operation: 'DELETE' },
     'gastronomy/protected/publish.ts': { operation: 'PUBLISH' },
+    'gastronomy/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'gastronomy/protected/deleteMenuFile.ts': { operation: 'EDIT' },
     'gastronomy/protected/unpublish.ts': { operation: 'EDIT' },
     'gastronomy/protected/patch.ts': { operation: 'EDIT' },
@@ -227,7 +230,8 @@ function routeFiles(dir: string, prefix = ''): string[] {
 }
 
 const hasWriteMethod = /method:\s*'(?:post|put|patch|delete)'/;
-const accessOperation = /^\s*listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|DELETE)'/m;
+const accessOperation =
+    /^\s*listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|DELETE|REACTIVATE)'/m;
 
 describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () => {
     const actual = ['accommodation', 'gastronomy', 'experience']
@@ -235,9 +239,9 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))
         .sort();
 
-    it('discovers exactly the frozen 133 route files', () => {
+    it('discovers exactly the frozen 140 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(137);
+        expect(Object.keys(EXPECTED)).toHaveLength(140);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {

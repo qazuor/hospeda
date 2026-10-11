@@ -38,6 +38,7 @@ import { protectedPatchExperienceRoute } from './patch';
 import { protectedPublishExperienceRoute } from './publish';
 import { protectedGetExperienceQrCodeRoute } from './qrCode';
 import { protectedGetExperienceQrSheetRoute } from './qrSheet';
+import { protectedReactivateExperienceRoute } from './reactivate';
 import { protectedRemoveExperienceFaqRoute } from './removeFaq';
 import { protectedRemoveExperienceMediaRoute } from './removeMedia';
 import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
@@ -95,6 +96,7 @@ app.route('/', protectedListExperienceCertificatesRoute);
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedPublishExperienceRoute);
 app.route('/', protectedUnpublishExperienceRoute);
+app.route('/', protectedReactivateExperienceRoute);
 app.route('/', protectedGetExperienceByIdRoute);
 
 // PATCH /{id} — Owner operational update.

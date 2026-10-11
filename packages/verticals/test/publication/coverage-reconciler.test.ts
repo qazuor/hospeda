@@ -19,7 +19,12 @@ function ports(overrides: Partial<ReconcilerPorts> = {}) {
             listPartnerUsers: vi.fn(async () => ({ items: [], next: null }))
         },
         reader: {
-            summarize: vi.fn(async () => ({ published: 0, unpublishedByBilling: 0, archived: 0 }))
+            summarize: vi.fn(async () => ({
+                published: 0,
+                unpublishedByBilling: 0,
+                archived: 0,
+                archivedReturnable: 0
+            }))
         },
         liveLimit: vi.fn(async () => 2),
         billing: { coverage: vi.fn(async () => ({ covered: true, sources: [] })) },
@@ -31,6 +36,9 @@ function ports(overrides: Partial<ReconcilerPorts> = {}) {
         unitOfWork: {
             runLocked: async (_key, work) =>
                 work({
+                    readListing: async () => null,
+                    readRetentionListing: async () => null,
+                    readArchiveOrigins: async () => new Map(),
                     listByOwner: async () => [],
                     readDeclaredPublishLimit: async () => 2,
                     readPublicationInstants: async () => new Map(),
@@ -59,11 +67,38 @@ describe('TEST:V6:7 daily coverage reconciler', () => {
             covered: false,
             published: 2,
             unpublishedByBilling: 0,
-            limit: null
+            limit: null,
+            archived: 0,
+            archivedReturnable: 0
         },
-        { label: 'PB2 surplus', covered: true, published: 3, unpublishedByBilling: 0, limit: 2 },
-        { label: 'PB3 restoration', covered: true, published: 1, unpublishedByBilling: 1, limit: 2 }
-    ])('runs the $label row after the unlocked decision', async (scenario) => {
+        {
+            label: 'PB2 surplus',
+            covered: true,
+            published: 3,
+            unpublishedByBilling: 0,
+            limit: 2,
+            archived: 0,
+            archivedReturnable: 0
+        },
+        {
+            label: 'PB3 restoration',
+            covered: true,
+            published: 1,
+            unpublishedByBilling: 1,
+            limit: 2,
+            archived: 0,
+            archivedReturnable: 0
+        },
+        {
+            label: 'PB7 archived return',
+            covered: true,
+            published: 1,
+            unpublishedByBilling: 0,
+            limit: 2,
+            archived: 1,
+            archivedReturnable: 1
+        }
+    ])('TEST:V6:7 runs the $label row after the unlocked decision', async (scenario) => {
         const pair: { readonly userId: string; readonly vertical: PublicationVertical } = {
             userId: 'owner',
             vertical: VerticalEnum.ACCOMMODATION
@@ -77,7 +112,8 @@ describe('TEST:V6:7 daily coverage reconciler', () => {
                 summarize: async () => ({
                     published: scenario.published,
                     unpublishedByBilling: scenario.unpublishedByBilling,
-                    archived: 0
+                    archived: scenario.archived,
+                    archivedReturnable: scenario.archivedReturnable
                 })
             },
             liveLimit: async () => scenario.limit,
@@ -88,7 +124,7 @@ describe('TEST:V6:7 daily coverage reconciler', () => {
         expect(result.complete).toBe(true);
     });
 
-    it('does no writes for unchanged coverage and pings only after full completion', async () => {
+    it('TEST:V6:7 does not run for archived rows without a public archive origin', async () => {
         const h = ports({
             population: {
                 listOwnerVerticals: async () => ({
@@ -98,7 +134,12 @@ describe('TEST:V6:7 daily coverage reconciler', () => {
                 listPartnerUsers: async () => ({ items: [], next: null })
             },
             reader: {
-                summarize: async () => ({ published: 2, unpublishedByBilling: 0, archived: 0 })
+                summarize: async () => ({
+                    published: 2,
+                    unpublishedByBilling: 0,
+                    archived: 2,
+                    archivedReturnable: 0
+                })
             }
         });
         const result = await runDailyCoverageReconciler({ ports: h.ports });

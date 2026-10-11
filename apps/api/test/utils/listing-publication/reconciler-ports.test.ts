@@ -4,11 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
     effectiveSet: vi.fn(),
     coverage: vi.fn(),
-    transaction: vi.fn()
+    transaction: vi.fn(),
+    summarizeOwnerListings: vi.fn()
 }));
 vi.mock('@repo/db', () => ({
     getDb: () => ({ transaction: mocks.transaction }),
-    listingPublicationModel: {},
+    listingPublicationModel: { summarizeOwnerListings: mocks.summarizeOwnerListings },
     planCatalogModel: {}
 }));
 vi.mock('../../../src/utils/listing-access/ports', () => ({
@@ -40,6 +41,8 @@ describe('listing reconciler production ports', () => {
     beforeEach(() => {
         mocks.effectiveSet.mockReset();
         mocks.coverage.mockReset().mockResolvedValue({ covered: false, sources: [] });
+        mocks.summarizeOwnerListings.mockReset();
+        mocks.transaction.mockImplementation((callback) => callback('transaction'));
     });
 
     it('resolves the publication limit live without the effective-set cache port', async () => {
@@ -52,5 +55,18 @@ describe('listing reconciler production ports', () => {
             vertical: VerticalEnum.ACCOMMODATION
         });
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
+    });
+
+    it('TEST:V6:10 passes archivedReturnable through the production summary port', async () => {
+        mocks.summarizeOwnerListings.mockResolvedValue({
+            published: 0,
+            unpublishedByBilling: 0,
+            archived: 2,
+            archivedReturnable: 1
+        });
+        const ports = getListingReconcilerPorts();
+        await expect(
+            ports.reader.summarize({ userId: 'owner', vertical: VerticalEnum.ACCOMMODATION })
+        ).resolves.toMatchObject({ archivedReturnable: 1 });
     });
 });

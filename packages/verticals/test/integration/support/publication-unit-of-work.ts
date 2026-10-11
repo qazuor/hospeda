@@ -3,6 +3,7 @@ import { type DrizzleClient, plans, planVersions, trials, verticals } from '@rep
 import type { VerticalActivationEvent } from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
 import { listingPublicationModel } from '../../../../db/src/models/listing/listing-publication.model';
+import { listingRetentionModel } from '../../../../db/src/models/listing/listing-retention.model';
 import type {
     PublicationUnitOfWork,
     PublicationVertical
@@ -17,15 +18,22 @@ export function createPublicationTestAdapter(args: {
     readonly limit: { value: number };
     readonly declaredLimit?: { value: number | null };
     readonly billing?: Pick<BillingForVerticals, 'coverage'>;
+    readonly retention?: { readonly stopped: boolean; readonly pauseEndedAt: Date | null };
     readonly onLocked?: () => Promise<void>;
     readonly beforeSetPublicationStatus?: () => Promise<void>;
 }): {
     readonly unitOfWork: PublicationUnitOfWork;
-    readonly billing: Pick<BillingForVerticals, 'coverage'>;
+    readonly billing: Pick<BillingForVerticals, 'coverage' | 'retentionStopped'>;
 } {
-    const billing: Pick<BillingForVerticals, 'coverage'> = args.billing ?? {
-        async coverage() {
-            return { covered: args.covered.value, sources: [] };
+    const billing: Pick<BillingForVerticals, 'coverage' | 'retentionStopped'> = {
+        coverage:
+            args.billing?.coverage.bind(args.billing) ??
+            (async () => ({ covered: args.covered.value, sources: [] })),
+        async retentionStopped() {
+            return {
+                ...(args.retention ?? { stopped: false, pauseEndedAt: null }),
+                coverageLostAt: null
+            };
         }
     };
     const unitOfWork: PublicationUnitOfWork = {
@@ -123,6 +131,10 @@ export function createPublicationTestAdapter(args: {
                         async scheduleExpiryCampaign() {},
                         readListing: ({ vertical, listingId }) =>
                             listingPublicationModel.readListing({ tx, vertical, listingId }),
+                        readRetentionListing: ({ vertical, listingId }) =>
+                            listingRetentionModel.readRetentionListing({ tx, vertical, listingId }),
+                        readArchiveOrigins: (input) =>
+                            listingRetentionModel.readArchiveOrigins({ ...input, tx }),
                         countPublished: ({ vertical, ownerId }) =>
                             listingPublicationModel.countPublished({ tx, vertical, ownerId }),
                         listByOwner: ({ vertical, ownerId }) =>

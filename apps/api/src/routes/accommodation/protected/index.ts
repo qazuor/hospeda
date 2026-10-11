@@ -38,6 +38,7 @@ import { protectedPublishAccommodationRoute } from './publish';
 import { protectedGetPublishEligibilityRoute } from './publishEligibility';
 import { protectedGetAccommodationQrCodeRoute } from './qrCode';
 import { protectedGetAccommodationQrSheetRoute } from './qrSheet';
+import { protectedReactivateAccommodationRoute } from './reactivate';
 import { removeFaqRoute } from './removeFaq';
 import { protectedRemoveMediaRoute } from './removeMedia';
 import { protectedRemoveOccupancyRoute } from './removeOccupancy';
@@ -61,6 +62,7 @@ ownershipRoutes.route('/', protectedPatchAccommodationRoute);
 ownershipRoutes.route('/', protectedSoftDeleteAccommodationRoute);
 // POST /:id/unpublish - Transition ACTIVE → INACTIVE
 ownershipRoutes.route('/', protectedUnpublishAccommodationRoute);
+ownershipRoutes.route('/', protectedReactivateAccommodationRoute);
 // POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)
 ownershipRoutes.route('/', protectedPublishAccommodationRoute);
 
