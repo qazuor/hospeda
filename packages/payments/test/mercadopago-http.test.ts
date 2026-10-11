@@ -72,6 +72,16 @@ describe('MercadoPagoPaymentProvider HTTP (TEST:B3:43 soporte)', () => {
         expect(actual.readAt).toEqual(clock.now());
     });
 
+    it('maps an authorized provider resource to the active domain status', async () => {
+        const { server, adapter } = await setup();
+        const created = await adapter.authorize(input);
+        await server.provider.approve({ authorizationId: created.authorizationId });
+        const actual = await adapter.readAuthorization({
+            authorizationId: created.authorizationId
+        });
+        expect(actual.snapshot.status).toBe('active');
+    });
+
     it('creation confirmation catches M1 and accepts the literal exemption', async () => {
         const ordinary = await setup();
         const created = await ordinary.adapter.authorize(input);
