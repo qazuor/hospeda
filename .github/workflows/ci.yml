@@ -350,6 +350,14 @@ jobs:
       # A system actor must be built by createSystemActor in @repo/service-core.
       - name: Check system actors are built only by the factory (GUARD:G19)
         run: pnpm check:system-actor-factory
+      # GUARD:G-R1-A (HOS-1527, AC:B3:23). Its own step, like every guard here. The
+      # successor writer must pass through the predecessor admission gate.
+      - name: Check succession predecessor admission (GUARD:G-R1-A)
+        run: pnpm check:succession-predecessor
+      # GUARD:G-R1-B (HOS-1527, AC:B3:24). Its own step, like every guard here. The
+      # first charge follows the authorization window, except confirmed suspension.
+      - name: Check successor first charge after its window (GUARD:G-R1-B)
+        run: pnpm check:succession-first-charge
       # GUARD:G-R2 (HOS-1439, AC:V3:2). Its own step, like every guard here. The
       # effective set's fold must discard complements when no live non-TRIAL title
       # exists; its message names which half of the condition is missing.
