@@ -15,8 +15,9 @@
  * override only UserBookmarkCollectionService here.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, type VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -25,11 +26,11 @@ import type { AppOpenAPI } from '../../../src/types.js';
 // vi.hoisted runs before module imports so the mock factory has the fn references
 // before @repo/service-core is resolved.
 
-const { mockCollectionService } = vi.hoisted(() => {
+const { mockCollectionService, effectiveSet } = vi.hoisted(() => {
     const mockCollectionService = {
         listCollectionsByUser: vi.fn()
     };
-    return { mockCollectionService };
+    return { mockCollectionService, effectiveSet: vi.fn() };
 });
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -49,6 +50,9 @@ vi.mock('@repo/db', async (importOriginal) => {
 
 vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
+}));
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet })
 }));
 
 /**
@@ -127,6 +131,20 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
 
     beforeEach(() => {
         vi.clearAllMocks();
+        effectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [
+                        { key: 'can_use_collections', value: 1, strategy: 'MAX' as const },
+                        { key: 'max_collections', value: 25, strategy: 'MAX' as const }
+                    ]
+                })
+        );
     });
 
     afterEach(() => {

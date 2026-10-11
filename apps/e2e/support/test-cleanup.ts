@@ -51,6 +51,7 @@ const CLEANUP_TABLES = [
     'messages',
     'conversations',
     'user_bookmarks',
+    'subscription',
     'accommodations',
     'user_role',
     // Granted to every listing owner the fixtures create (HOS-1457 Coord-54);

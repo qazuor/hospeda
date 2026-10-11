@@ -1,52 +1,20 @@
 /**
  * Protected accommodation comparison endpoint
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 import {
     AccommodationComparisonRequestSchema,
-    AccommodationComparisonResponseSchema
+    AccommodationComparisonResponseSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
-import type { AppMiddleware } from '../../../types';
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
-
-/**
- * Middleware that reads the `ids` array from the (not-yet-validated) JSON body
- * and stores its length in the Hono context so {@link gateComparator} can check
- * the per-plan `MAX_COMPARE_ITEMS` limit BEFORE OpenAPI body validation runs.
- *
- * Hono caches the parsed body on the raw Request object, so the later
- * `ctx.req.valid('json')` call in the route handler reuses the same parsed
- * value without a second parse or stream-consumption error.
- *
- * On malformed / missing body the count defaults to 0 and we let the OpenAPI
- * validator reject the request with a proper 400 response further down the
- * middleware chain.
- */
-const setCompareCount: AppMiddleware = async (c, next) => {
-    let count = 0;
-    try {
-        const raw = await c.req.json();
-        if (raw && Array.isArray((raw as { ids?: unknown }).ids)) {
-            // gateComparator delegates to checkLimit(), whose rule is
-            // `currentCount < maxAllowed` — it models "I already hold N items, may I
-            // add one more?". A comparison is a batch of N items, so to permit exactly
-            // `max_compare_items` items we report N-1: (N-1) < max  ⟺  N <= max.
-            // e.g. Plus (max 2) allows comparing 2 ids; VIP (max 4) allows 4.
-            count = Math.max(0, (raw as { ids: unknown[] }).ids.length - 1);
-        }
-    } catch {
-        // Malformed / empty body — leave count at 0; OpenAPI validator will reject it
-    }
-    c.set('currentCompareItemsCount' as never, count as never);
-    await next();
-};
 
 /**
  * POST /api/v1/protected/accommodations/compare
@@ -56,11 +24,8 @@ const setCompareCount: AppMiddleware = async (c, next) => {
  * accommodations in the shared summary shape used by listing cards and the
  * comparison matrix.
  *
- * Gate order (all run BEFORE OpenAPI body validation):
- * 1. `protectedAuthMiddleware` — enforces session / JWT (injected by `createProtectedRoute`)
- * 2. `entitlementMiddleware` — loads the actor's entitlement + limit set into context
- * 3. `setCompareCount` — reads `ids.length` from the raw body and stores it in context
- * 4. `gateComparator` — throws ENTITLEMENT_REQUIRED or LIMIT_REACHED when appropriate
+ * Gate order: authentication and validated request shape run before the plan
+ * capability and batch-size limit; the comparison service runs last.
  *
  * Items that the actor cannot view (inactive, plan-restricted, suspended, etc.)
  * are silently excluded from the response rather than causing a 404/403.
@@ -76,14 +41,9 @@ export const compareAccommodationsRoute = createProtectedRoute({
         'Requires the CAN_COMPARE_ACCOMMODATIONS entitlement (Plus / VIP plans). ' +
         'Non-viewable items are silently omitted. Returns 200 OK.',
     tags: ['Accommodations'],
-    // No extra requiredPermissions beyond authentication — the entitlement gate
-    // (`gateComparator`) is enforced by the middleware array below. This mirrors
-    // the pattern of GET /:id (protectedGetOwnAccommodationByIdRoute) which also
-    // carries no permission gate at the route level.
     requestBody: AccommodationComparisonRequestSchema,
     responseSchema: AccommodationComparisonResponseSchema,
     successStatusCode: 200,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed comparator gate.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -91,6 +51,12 @@ export const compareAccommodationsRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const input = body as { ids: string[] };
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_compare_accommodations'],
+            limit: async () => ({ key: 'max_compare_items', requested: input.ids.length })
+        });
 
         const result = await accommodationService.compareByIds(actor, input);
 
@@ -99,8 +65,5 @@ export const compareAccommodationsRoute = createProtectedRoute({
         }
 
         return result.data;
-    },
-    options: {
-        middlewares: [setCompareCount]
     }
 });

@@ -379,6 +379,81 @@ export async function createUser(
 }
 
 /**
+ * Gives an existing user an active Tourist VIP subscription from the catalog.
+ *
+ * The production catalog migration (`0144`) seeds plans and versions but no
+ * `billing_option` rows, so the helper creates the monthly option of the
+ * current Tourist VIP version when it is missing and reuses it otherwise. A
+ * data-modifying CTE is invisible to its sibling SELECT, so exactly one of the
+ * two branches of `option_row` yields the id.
+ */
+export async function makeTouristVip(userId: string): Promise<void> {
+    const rows = await execSQL<{ id: string }>(
+        `WITH vip_version AS (
+             SELECT plan_version.id, plan_version.vertical
+             FROM plan
+             JOIN plan_version ON plan_version.plan_id = plan.id
+             WHERE plan.vertical = 'tourist'
+               AND plan.slug = 'tourist-vip'
+               AND plan_version.vertical = 'tourist'
+               AND plan_version.current = true
+             LIMIT 1
+         ),
+         inserted_option AS (
+             INSERT INTO billing_option (plan_version_id, cycle, amount, currency)
+             SELECT id, 'monthly', 250000, 'ARS' FROM vip_version
+             ON CONFLICT (plan_version_id, cycle) DO NOTHING
+             RETURNING id
+         ),
+         option_row AS (
+             SELECT id FROM inserted_option
+             UNION ALL
+             SELECT billing_option.id
+             FROM billing_option
+             JOIN vip_version ON billing_option.plan_version_id = vip_version.id
+             WHERE billing_option.cycle = 'monthly'
+         )
+         INSERT INTO subscription (
+             user_id, vertical, plan_version_id, billing_option_id,
+             payment_method, status, class
+         )
+         SELECT $1, vip_version.vertical, vip_version.id, option_row.id,
+                'CARD', 'ACTIVE', 'PRINCIPAL'
+         FROM vip_version, option_row
+         LIMIT 1
+         RETURNING id`,
+        [userId]
+    );
+    if (!rows[0]) {
+        throw new Error('makeTouristVip: current Tourist VIP catalog version not found');
+    }
+}
+
+/**
+ * Checks whether the current bootstrap coverage reader still denies the
+ * Tourist VIP collection gate after `makeTouristVip` seeded a subscription.
+ * This read-only probe is used to conditionally defer the affected E2E specs
+ * until HOS-1352 wires subscriptions into coverage; remove it with HOS-1665.
+ */
+export async function touristVipNotYetGranted(
+    user: Pick<CreatedUser, 'sessionCookie'>,
+    config?: ApiHelperConfig
+): Promise<boolean> {
+    const { apiBaseUrl } = resolveBaseUrls(config);
+    const response = await fetch(`${apiBaseUrl}/api/v1/protected/user-bookmark-collections`, {
+        headers: { cookie: user.sessionCookie }
+    });
+    if (response.status !== 403) return false;
+
+    try {
+        const body = (await response.json()) as { error?: { code?: string } };
+        return body.error?.code === 'ENTITLEMENT_REQUIRED';
+    } catch {
+        return false;
+    }
+}
+
+/**
  * Forces the user's set of hats to be exactly `{USER, role}` in `user_role`.
  *
  * Bypasses any business rule that would normally produce the hat (host

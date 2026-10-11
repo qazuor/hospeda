@@ -9,12 +9,14 @@ import {
     ServiceErrorCode,
     type UserBookmarkCollectionCreateInput,
     UserBookmarkCollectionCreateInputSchema,
-    UserBookmarkCollectionSchema
+    UserBookmarkCollectionSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ServiceError, UserBookmarkCollectionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate, readEffectiveLimit } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -28,9 +30,6 @@ const CreateCollectionRequestSchema = UserBookmarkCollectionCreateInputSchema.om
     userId: true
 });
 
-/** Temporary fixed collection cap until effective limits are rebuilt. */
-const DEFAULT_PLAN_LIMIT = 25;
-
 export const createUserBookmarkCollectionRoute = createProtectedRoute({
     method: 'post',
     path: '/',
@@ -40,7 +39,6 @@ export const createUserBookmarkCollectionRoute = createProtectedRoute({
     tags: ['User Bookmark Collections'],
     requestBody: CreateCollectionRequestSchema,
     responseSchema: UserBookmarkCollectionSchema,
-    options: {},
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -48,9 +46,33 @@ export const createUserBookmarkCollectionRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const input = body as Omit<UserBookmarkCollectionCreateInput, 'userId'>;
-
-        // HOS-1352: transitional until V3 (HOS-1357), see PR: every actor uses the temporary 25-collection cap.
-        const planLimit = DEFAULT_PLAN_LIMIT;
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_use_collections'],
+            limit: async () => {
+                const countResult = await collectionService
+                    .countActiveCollections(actor)
+                    .catch(() => {
+                        throw new ServiceError(
+                            ServiceErrorCode.SERVICE_UNAVAILABLE,
+                            'Usage count unavailable'
+                        );
+                    });
+                if (countResult.error || !countResult.data) {
+                    throw new ServiceError(
+                        ServiceErrorCode.SERVICE_UNAVAILABLE,
+                        'Usage count unavailable'
+                    );
+                }
+                return { key: 'max_collections', requested: countResult.data.count + 1 };
+            }
+        });
+        const planLimit = await readEffectiveLimit({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            key: 'max_collections'
+        });
 
         const result = await collectionService.createCollection(
             actor,
@@ -62,11 +84,29 @@ export const createUserBookmarkCollectionRoute = createProtectedRoute({
         );
 
         if (result.error) {
-            const { code, message } = result.error;
+            const { code, message, details } = result.error;
 
-            // QUOTA_EXCEEDED maps to 403 Forbidden (per spec section "API Design")
+            // Preserve the service quota details in the standard plan-limit response.
             if (code === ServiceErrorCode.QUOTA_EXCEEDED) {
-                throw new HTTPException(403, { message });
+                const currentCount =
+                    typeof details === 'object' &&
+                    details !== null &&
+                    'currentCount' in details &&
+                    typeof details.currentCount === 'number'
+                        ? details.currentCount
+                        : 0;
+                const maxAllowed =
+                    typeof details === 'object' &&
+                    details !== null &&
+                    'maxAllowed' in details &&
+                    typeof details.maxAllowed === 'number'
+                        ? details.maxAllowed
+                        : planLimit;
+                throw new ServiceError(ServiceErrorCode.LIMIT_REACHED, 'Limit reached', {
+                    limitKey: 'max_collections',
+                    currentCount,
+                    maxAllowed
+                });
             }
 
             // ALREADY_EXISTS (NAME_TAKEN reason) maps to 409 Conflict
