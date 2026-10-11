@@ -213,6 +213,53 @@ describe.each([
             });
             if (vertical === 'accommodation')
                 expect(draftLegacy.rows[0]?.billing_unpublished_at).toBeNull();
+            const announced = new Date('2026-10-12T12:00:00.000Z');
+            expect(
+                await listingPublicationModel.setPublicationStatus({
+                    tx,
+                    vertical,
+                    listingId: first.id,
+                    from: PublicationStatusEnum.DRAFT,
+                    to: PublicationStatusEnum.ARCHIVED,
+                    deletionAnnouncedAt: announced
+                })
+            ).toBe(true);
+            expect(
+                await listingPublicationModel.setPublicationStatus({
+                    tx,
+                    vertical,
+                    listingId: first.id,
+                    from: PublicationStatusEnum.ARCHIVED,
+                    to: PublicationStatusEnum.DRAFT
+                })
+            ).toBe(true);
+            const announcementRow = await tx.execute(
+                sql`SELECT deletion_announced_at FROM ${sql.identifier(table)} WHERE id = ${first.id}`
+            );
+            expect(new Date(String(announcementRow.rows[0]?.deletion_announced_at))).toEqual(
+                announced
+            );
+            await listingPublicationModel.insertStatusChangedEvent({
+                tx,
+                vertical,
+                listingId: first.id,
+                from: PublicationStatusEnum.DRAFT,
+                to: PublicationStatusEnum.ARCHIVED,
+                actorType: 'job',
+                correlationId: crypto.randomUUID(),
+                deletionAnnouncedAt: announced,
+                oldDeletionAnnouncedAt: null
+            });
+            const audited = await domainEventModel.findByEntity({
+                tx,
+                entityType: vertical,
+                entityId: first.id
+            });
+            expect(audited.at(-1)?.changes).toContainEqual({
+                field: 'deletionAnnouncedAt',
+                old: null,
+                new: announced.toISOString()
+            });
         });
     });
 });

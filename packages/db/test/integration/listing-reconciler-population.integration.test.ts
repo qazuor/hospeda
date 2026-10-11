@@ -73,6 +73,40 @@ describe('TEST:V6:7 reconciler population and summaries', () => {
                     destination.id,
                     PublicationStatusEnum.UNPUBLISHED_BY_BILLING
                 );
+                const returnable = await makeListing(
+                    tx,
+                    vertical,
+                    user.id,
+                    destination.id,
+                    PublicationStatusEnum.ARCHIVED
+                );
+                await listingPublicationModel.insertStatusChangedEvent({
+                    tx,
+                    vertical,
+                    listingId: returnable.id,
+                    from: PublicationStatusEnum.PUBLISHED,
+                    to: PublicationStatusEnum.ARCHIVED,
+                    actorType: 'job',
+                    correlationId: crypto.randomUUID(),
+                    occurredAt: new Date('2026-01-01T00:00:00Z')
+                });
+                const draftArchived = await makeListing(
+                    tx,
+                    vertical,
+                    user.id,
+                    destination.id,
+                    PublicationStatusEnum.ARCHIVED
+                );
+                await listingPublicationModel.insertStatusChangedEvent({
+                    tx,
+                    vertical,
+                    listingId: draftArchived.id,
+                    from: PublicationStatusEnum.DRAFT,
+                    to: PublicationStatusEnum.ARCHIVED,
+                    actorType: 'job',
+                    correlationId: crypto.randomUUID(),
+                    occurredAt: new Date('2026-02-01T00:00:00Z')
+                });
                 await makeListing(
                     tx,
                     vertical,
@@ -180,7 +214,12 @@ describe('TEST:V6:7 reconciler population and summaries', () => {
                         ownerId: user.id,
                         vertical
                     })
-                ).resolves.toEqual({ published: 1, unpublishedByBilling: 1, archived: 1 });
+                ).resolves.toEqual({
+                    published: 1,
+                    unpublishedByBilling: 1,
+                    archived: 3,
+                    archivedReturnable: 1
+                });
             }
         });
     });

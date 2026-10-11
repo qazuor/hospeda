@@ -113,22 +113,37 @@ export const listingPublicationModel = {
         readonly published: number;
         readonly unpublishedByBilling: number;
         readonly archived: number;
+        readonly archivedReturnable: number;
     }> {
         const result = await args.tx.execute(sql<{
             published: string;
             unpublishedByBilling: string;
             archived: string;
+            archivedReturnable: string;
         }>`SELECT
-            count(*) FILTER (WHERE publication_status = 'PUBLISHED')::text AS published,
-            count(*) FILTER (WHERE publication_status = 'UNPUBLISHED_BY_BILLING')::text AS "unpublishedByBilling",
-            count(*) FILTER (WHERE publication_status = 'ARCHIVED')::text AS archived
-          FROM ${table(args.vertical)}
-          WHERE owner_id = ${args.ownerId} AND deleted_at IS NULL`);
+            count(*) FILTER (WHERE l.publication_status = 'PUBLISHED')::text AS published,
+            count(*) FILTER (WHERE l.publication_status = 'UNPUBLISHED_BY_BILLING')::text AS "unpublishedByBilling",
+            count(*) FILTER (WHERE l.publication_status = 'ARCHIVED')::text AS archived,
+            count(*) FILTER (WHERE l.publication_status = 'ARCHIVED' AND EXISTS (
+                SELECT 1 FROM (
+                    SELECT (change->>'old') AS origin
+                    FROM domain_event AS e
+                    CROSS JOIN LATERAL jsonb_array_elements(e.changes) AS changes(change)
+                    WHERE e.entity_type = ${args.vertical} AND e.entity_id = l.id::text
+                      AND e.event_type = 'listing.status_changed'
+                      AND change->>'field' = 'publicationStatus'
+                      AND change->>'new' = 'ARCHIVED'
+                    ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1
+                ) latest WHERE origin IN ('PUBLISHED', 'UNPUBLISHED_BY_BILLING')
+            ))::text AS "archivedReturnable"
+          FROM ${table(args.vertical)} AS l
+          WHERE l.owner_id = ${args.ownerId} AND l.deleted_at IS NULL`);
         const row = result.rows[0];
         return {
             published: Number(row?.published ?? 0),
             unpublishedByBilling: Number(row?.unpublishedByBilling ?? 0),
-            archived: Number(row?.archived ?? 0)
+            archived: Number(row?.archived ?? 0),
+            archivedReturnable: Number(row?.archivedReturnable ?? 0)
         };
     },
     /** Pages distinct owners with a live Partner row. */
@@ -247,14 +262,18 @@ export const listingPublicationModel = {
         readonly from: PublicationStatusEnum;
         readonly to: PublicationStatusEnum;
         readonly inactiveSince?: Date;
+        readonly deletionAnnouncedAt?: Date;
         readonly actorId?: string;
     }): Promise<boolean> {
         const clock = args.inactiveSince
             ? sql`, inactive_since = ${args.inactiveSince}, deadlines_version = (SELECT max("version") FROM "vertical_deadline_version")`
             : sql``;
+        const deletion = args.deletionAnnouncedAt
+            ? sql`, deletion_announced_at = ${args.deletionAnnouncedAt}`
+            : sql``;
         const result = await args.tx.execute(sql<{ id: string }>`
             UPDATE ${table(args.vertical)}
-            SET publication_status = ${args.to}, ${legacyPublicationWrite(args)} ${clock}
+            SET publication_status = ${args.to}, ${legacyPublicationWrite(args)} ${clock} ${deletion}
             WHERE id = ${args.listingId} AND publication_status = ${args.from}
               AND deleted_at IS NULL RETURNING id`);
         return result.rows.length === 1;
@@ -288,6 +307,8 @@ export const listingPublicationModel = {
         readonly actorId?: string;
         readonly correlationId: string;
         readonly occurredAt?: Date;
+        readonly deletionAnnouncedAt?: Date;
+        readonly oldDeletionAnnouncedAt?: Date | null;
     }): Promise<void> {
         await domainEventModel.insert({
             tx: args.tx,
@@ -300,6 +321,15 @@ export const listingPublicationModel = {
             occurredAt: args.occurredAt,
             changes: [
                 { field: 'publicationStatus', old: args.from, new: args.to },
+                ...(args.deletionAnnouncedAt
+                    ? [
+                          {
+                              field: 'deletionAnnouncedAt',
+                              old: args.oldDeletionAnnouncedAt,
+                              new: args.deletionAnnouncedAt
+                          }
+                      ]
+                    : []),
                 ...(args.inactiveSince
                     ? [
                           {
