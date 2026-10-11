@@ -226,6 +226,8 @@ describe('TEST:V6:24 step 4c', () => {
         await withRollback(async (tx) => {
             await seedRows(tx);
             await seedDestinations(tx);
+            const liveDestinations = await tx.execute(sql`SELECT id::text AS id, slug
+                FROM destinations WHERE deleted_at IS NULL ORDER BY slug, id`);
             const calls: Call[] = [];
             const result = await runStep4c({
                 db: tx,
@@ -236,7 +238,7 @@ describe('TEST:V6:24 step 4c', () => {
             expect(result).toMatchObject({
                 status: 'dry_run',
                 listingCount: 3,
-                destinationCount: 22
+                destinationCount: liveDestinations.rows.length
             });
         });
     });
