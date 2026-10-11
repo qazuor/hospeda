@@ -1,0 +1,81 @@
+[
+    {
+        "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
+        "symbol": "markConverted",
+        "table": "trials",
+        "effect": "turns-off",
+        "via": "pending",
+        "owner": "V4 trial-machine post-commit unit",
+        "reason": "Conversion ends trial coverage; this adapter does not emit the coverage notice."
+    },
+    {
+        "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
+        "symbol": "markExpired",
+        "table": "trials",
+        "effect": "turns-off",
+        "via": "pending",
+        "owner": "V4 trial-machine post-commit unit",
+        "reason": "Expiry ends trial coverage; this adapter does not emit the coverage notice."
+    },
+    {
+        "file": "apps/api/src/utils/trial/trial-machine-ports.ts",
+        "symbol": "moveEndsAt",
+        "table": "trials",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "Extending the trial preserves or increases coverage."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "activatePendingAuthorization",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "Activates newly authorized coverage."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "abandonPendingAuthorization",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "pending",
+        "owner": "B4 subscription coverage notice (HOS-1532–HOS-1536)",
+        "reason": "Abandoning pending authorization terminates its subscription source."
+    },
+    {
+        "file": "packages/db/src/models/subscription/subscription.model.ts",
+        "symbol": "abandonPendingAuthorization",
+        "table": "courtesyGrants",
+        "effect": "turns-off",
+        "via": "pending",
+        "owner": "Courtesy grant unit",
+        "reason": "Closes the deferred courtesy balance in the same transaction."
+    },
+    {
+        "file": "packages/db/src/models/subscription/tourist-vip.model.ts",
+        "symbol": "closeCancelledVip",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "pending",
+        "owner": "B4 subscription coverage notice (HOS-1532–HOS-1536)",
+        "reason": "Cancellation and service end remove the VIP coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/decline-first-charge.service.ts",
+        "symbol": "declineFirstCharge",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "pending",
+        "owner": "B4 subscription coverage notice (HOS-1532–HOS-1536)",
+        "reason": "Declined first charge terminates the active subscription source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
+        "symbol": "processProviderNotice",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "pending",
+        "owner": "B4 subscription coverage notice (HOS-1532–HOS-1536)",
+        "reason": "Provider cancellation notice ends active subscription coverage."
+    }
+]
