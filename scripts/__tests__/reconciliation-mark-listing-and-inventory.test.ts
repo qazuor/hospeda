@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { loadInventories } from '../live-term-inventory.js';
@@ -12,7 +13,7 @@ afterEach(() => {
 });
 const emptyInventories = { marca_abierta: [], cortesia_diferida: [] } as const;
 function tree(files: Record<string, string>): string {
-    const root = mkdtempSync(path.join(repo, '.hoja/tmp/reconciliation-listing-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'reconciliation-listing-'));
     dirs.push(root);
     execFileSync('git', ['init', '-q'], { cwd: root });
     for (const [file, source] of Object.entries(files)) {
