@@ -47,6 +47,13 @@ describe('TEST:B3:27 G-R1-F listing and inventories', () => {
         expect(absent.exitCode).toBe(0);
         expect(absent.listingCount).toBe(0);
     });
+    it('requires listing fields as direct members', () => {
+        const result = check({
+            'apps/api/src/list.ts':
+                'interface ActionableReconciliationMarkRow { reason: string; openedAt: Date; payments: unknown[]; totalAmount: number; metadata: { defaultProposal: string } }'
+        });
+        expect(result.output).toContain('declaration is missing defaultProposal');
+    });
     it.each([
         'reason',
         'openedAt',

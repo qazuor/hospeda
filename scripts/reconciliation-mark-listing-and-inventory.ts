@@ -60,17 +60,26 @@ function declarationName(node: ts.Node): ts.Identifier | null {
 }
 function memberNames(node: ts.Node): Set<string> {
     const names = new Set<string>();
-    const walk = (child: ts.Node): void => {
+    const add = (member: ts.Node): void => {
         if (
-            (ts.isPropertySignature(child) ||
-                ts.isPropertyDeclaration(child) ||
-                ts.isPropertyAssignment(child)) &&
-            (ts.isIdentifier(child.name) || ts.isStringLiteral(child.name))
+            (ts.isPropertySignature(member) ||
+                ts.isPropertyDeclaration(member) ||
+                ts.isPropertyAssignment(member)) &&
+            (ts.isIdentifier(member.name) || ts.isStringLiteral(member.name))
         )
-            names.add(child.name.text);
-        ts.forEachChild(child, walk);
+            names.add(member.name.text);
     };
-    walk(node);
+    if (ts.isInterfaceDeclaration(node)) node.members.forEach(add);
+    else if (ts.isTypeAliasDeclaration(node) && ts.isTypeLiteralNode(node.type))
+        node.type.members.forEach(add);
+    else if (ts.isVariableDeclaration(node) && node.initializer) {
+        if (ts.isObjectLiteralExpression(node.initializer))
+            node.initializer.properties.forEach(add);
+        else if (ts.isCallExpression(node.initializer)) {
+            const shape = node.initializer.arguments[0];
+            if (shape && ts.isObjectLiteralExpression(shape)) shape.properties.forEach(add);
+        }
+    }
     return names;
 }
 function inventoryConsumers(file: string, sf: ts.SourceFile): Consumer[] {
