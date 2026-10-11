@@ -35,7 +35,6 @@
  * billing transition.
  *
  * @module apps/api/routes/accommodation/protected/import-from-url
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
 import type { AiService } from '@repo/ai-core';
@@ -49,7 +48,8 @@ import {
     AccommodationImportResponseSchema,
     type AiFeature,
     type LanguageEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import {
@@ -71,6 +71,7 @@ import { createConfiguredAiService } from '../../../services/ai-service.factory'
 import { getValidMercadoLibreToken } from '../../../services/mercadolibre-oauth/ml-token.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
+import { type AiQuotaDecision, evaluateAiQuota } from '../../../utils/listing-access/ai-quota-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import {
@@ -94,6 +95,14 @@ const DEFAULT_LOCALE: LanguageEnum = 'es';
 
 /** One hour, in milliseconds — the rate-limit window. */
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+/** Map a non-throwing quota decision to the import route's structured-only notice. */
+export function getImportAiBlockedReason(
+    decision: AiQuotaDecision
+): 'entitlement' | 'quota' | null {
+    if (decision.allowed) return null;
+    return decision.reason === 'entitlement' || decision.max === 0 ? 'entitlement' : 'quota';
+}
 
 /**
  * Extracts just the hostname from a URL for analytics, never the full URL
@@ -130,8 +139,8 @@ type GenerateObjectSchema = Parameters<AiService['generateObject']>[1];
  *   2. Returns `null` (degrading) on any provider/model error — that is a
  *      server-side condition.
  *
- * (The lazy entitlement/quota gate was removed with the legacy billing system,
- * HOS-1416.)
+ * The route applies the effective-set gate before assembling this lazy provider
+ * port; a blocked gate returns `null` without making a provider call.
  *
  * @param deps - The Hono context, the authenticated actor, and the gate flag.
  * @returns The `aiExtract` port for {@link ImportContext}.
@@ -144,6 +153,7 @@ export function buildImportAiExtract(deps: {
     const { actor } = deps;
 
     return async ({ text, locale }) => {
+        if (deps.gate.blockedReason !== null) return null;
         const startedAt = Date.now();
         try {
             const aiService = await createConfiguredAiService();
@@ -285,7 +295,6 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             })
         ]
     },
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed quota check.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -312,6 +321,14 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
 
         const locale = input.locale ?? DEFAULT_LOCALE;
         const gate: AiGateState = { blockedReason: null };
+        const quota = await evaluateAiQuota({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            feature: FEATURE,
+            entitlementKey: 'ai_accommodation_import',
+            limitKey: 'max_ai_accommodation_import_per_month'
+        });
+        gate.blockedReason = getImportAiBlockedReason(quota);
 
         const context: ImportContext = {
             locale,

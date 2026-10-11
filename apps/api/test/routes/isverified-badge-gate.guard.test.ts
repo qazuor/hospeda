@@ -1,6 +1,6 @@
 /**
- * HOS-341: every public accommodation route keeps the verification badge hidden
- * while the replacement coverage contract is being built.
+ * Every public route applies owner-scoped grants before returning paid fields,
+ * including the verification badge.
  *
  * This scans route definitions so a newly added endpoint cannot accidentally
  * return the database value through AccommodationPublicSchema.
@@ -50,10 +50,11 @@ function guardedRoutes(): Array<{ name: string; source: string }> {
         .filter(({ source }) => /\bAccommodationPublicSchema\b/.test(source));
 }
 
-function callsPublicMask(source: string): boolean {
+function appliesOwnerGrantFilter(source: string): boolean {
     return (
-        /\bmaskLegacyPremiumFields\s*\(/.test(source) ||
-        /\.map\s*\(\s*maskLegacyPremiumFields\s*\)/.test(source)
+        /\bfilterPublicPaidFieldsForOwner\s*\(/.test(source) ||
+        (/\bresolvePublicFieldGrants\s*\(/.test(source) &&
+            /\bfilterPublicPaidFields\s*\(/.test(source))
     );
 }
 
@@ -65,19 +66,33 @@ describe('public accommodation badge masking', () => {
         for (const known of KNOWN_ROUTES) expect(names).toContain(known);
     });
 
-    it('applies the transitory mask in every route', () => {
+    it('filters paid public fields using grants resolved for each owner', () => {
         const offenders = routes
-            .filter(({ source }) => !callsPublicMask(source))
+            .filter(({ source }) => !appliesOwnerGrantFilter(source))
             .map(({ name }) => name);
         expect(offenders).toEqual([]);
     });
 
-    it('requires a call, not a comment, string or import', () => {
-        expect(callsPublicMask(executableSource('// maskLegacyPremiumFields(row)'))).toBe(false);
+    it('requires executable owner-grant filtering, not comments, strings or imports', () => {
         expect(
-            callsPublicMask(executableSource("const text = 'maskLegacyPremiumFields(row)';"))
+            appliesOwnerGrantFilter(
+                executableSource('// filterPublicPaidFieldsForOwner(row, grants)')
+            )
         ).toBe(false);
-        expect(callsPublicMask(executableSource('maskLegacyPremiumFields(row)'))).toBe(true);
-        expect(callsPublicMask(executableSource('rows.map(maskLegacyPremiumFields)'))).toBe(true);
+        expect(
+            appliesOwnerGrantFilter(
+                executableSource("const text = 'filterPublicPaidFieldsForOwner(row, grants)';")
+            )
+        ).toBe(false);
+        expect(
+            appliesOwnerGrantFilter(executableSource('filterPublicPaidFieldsForOwner(row, grants)'))
+        ).toBe(true);
+        expect(
+            appliesOwnerGrantFilter(
+                executableSource(
+                    'resolvePublicFieldGrants(ids); filterPublicPaidFields(row, grants)'
+                )
+            )
+        ).toBe(true);
     });
 });

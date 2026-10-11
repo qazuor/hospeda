@@ -11,6 +11,7 @@
  * 2. **Ownership**, as a 404 — before anything is minted, so a caller who
  *    does not own the listing cannot create a `qr_codes` row for someone
  *    else's venue, and so no 403 ever confirms that the id exists.
+ * 3. **Capability** — menu_qr_scan_metrics on the listing owner's effective set.
  *
  * ## Minting happens ONLY here (§6.2, AC-4)
  *
@@ -38,7 +39,7 @@
  */
 
 import { defaultLocale } from '@repo/i18n';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import {
     buildGastronomyMenuQrLabel,
     buildGastronomyMenuQrTargetUrl,
@@ -95,11 +96,8 @@ export async function handleGetGastronomyMenuQr(
     const listing = await gastronomyService.getById(actor, gastronomyId);
     const entity = listing.error ? null : listing.data;
 
-    // Same gate, same wording as `protected/getById.ts` / `protected/brochure.ts`
-    // — a divergent message here would tell a caller that the id they hold is
-    // real (HOS-600). A 403 would confirm the id exists, so this is a 404.
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
-    if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
+    // Listing access has already checked ownership; retain the missing-row 404.
+    if (!entity) {
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }
 
@@ -147,11 +145,17 @@ export async function handleGetGastronomyMenuQr(
 /**
  * GET /api/v1/protected/gastronomies/:id/menu-qr
  *
- * Owner-only. The former plan entitlement was removed with HOS-1416.
+ * Owner-only menu QR read requiring menu_qr_scan_metrics on the listing owner.
  */
 export const protectedGetGastronomyMenuQrRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/menu-qr',
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'menu_qr_scan_metrics'
+    },
     summary: 'Get the menu QR for a gastronomy listing',
     description:
         'Returns the SVG of the venue’s menu QR, the URL it encodes (`{site}/qr/{qrSlug}/`), and the carta page that URL redirects to. The code is created on the first call and reused afterwards, so the image stays byte-identical for the life of the listing even if the listing is renamed. Owner-only.',
@@ -160,7 +164,6 @@ export const protectedGetGastronomyMenuQrRoute = createProtectedRoute({
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: GastronomyMenuQrResponseSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MENU_QR_SCAN_METRICS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetGastronomyMenuQr(ctx, params),
     options: {

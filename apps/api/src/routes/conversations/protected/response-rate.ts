@@ -12,11 +12,12 @@
  * @see SPEC-155 T-006
  */
 
-import { HostConversationResponseRateSchema, PermissionEnum } from '@repo/schemas';
+import { HostConversationResponseRateSchema, PermissionEnum, VerticalEnum } from '@repo/schemas';
 import { ConversationService, ServiceError } from '@repo/service-core';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -38,6 +39,7 @@ const conversationService = new ConversationService(
  *
  * Requires `CONVERSATION_VIEW_OWN` permission (standard host-tier).
  * Returns 200 even when the host has zero conversations (zeroed values).
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const hostConversationResponseRateRoute = createProtectedRoute({
     method: 'get',
@@ -50,9 +52,13 @@ export const hostConversationResponseRateRoute = createProtectedRoute({
     tags: ['Conversations'],
     requiredPermissions: [PermissionEnum.CONVERSATION_VIEW_OWN],
     responseSchema: HostConversationResponseRateSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_basic_stats']
+        });
 
         const result = await conversationService.getHostResponseRate(actor);
 
@@ -63,7 +69,6 @@ export const hostConversationResponseRateRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

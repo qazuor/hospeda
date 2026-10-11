@@ -10,7 +10,10 @@ import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -46,21 +49,17 @@ const getByDestinationHandler = async (c: Context) => {
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n
-    // sibling are PREMIUM fields gated per-owner by the entitlement system. This
-    // card-listing endpoint never renders them, so BOTH are stripped here before
-    // reaching the response payload — fail-closed and independent of any schema
-    // change.
+    // Apply owner-effective paid-field grants before the public response is cached.
     const data = result.data ?? { accommodations: [] };
-    const strippedAccommodations = Array.isArray(data.accommodations)
-        ? data.accommodations.map((accommodation) => ({
-              ...maskLegacyPremiumFields(accommodation),
-              // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
-              // (the only featuring source since HOS-1419); the raw column itself is
-              // stripped by the public schema (never in its pick).
-              isFeatured: resolvePublicIsFeatured(accommodation)
-          }))
-        : [];
+    const pageItems = Array.isArray(data.accommodations) ? data.accommodations : [];
+    const grants = await resolvePublicFieldGrants(pageItems.map((item) => item.ownerId));
+    const strippedAccommodations = pageItems.map((accommodation) => ({
+        ...filterPublicPaidFieldsForOwner(accommodation, grants),
+        // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+        // (the only featuring source since HOS-1419); the raw column itself is
+        // stripped by the public schema (never in its pick).
+        isFeatured: resolvePublicIsFeatured(accommodation)
+    }));
 
     // The SPEC-291 isVerified owner-entitlement gate was removed with the
     // legacy billing system (HOS-1416); `isVerified` is emitted as stored.

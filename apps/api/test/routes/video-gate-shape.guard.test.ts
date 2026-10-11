@@ -64,7 +64,7 @@ describe('video gate — dead shapes cannot come back', () => {
         expect(stripped).not.toContain(COMMENT_ONLY_PROBE);
         // And the code itself survived — a stripper that ate everything would
         // satisfy every `not.toMatch` below.
-        expect(stripped).toContain('export function maskLegacyPremiumFields');
+        expect(stripped).toContain('export function filterPublicPaidFields');
         expect(stripped.length).toBeGreaterThan(1000);
     });
 
@@ -117,10 +117,16 @@ describe('video gate — dead shapes cannot come back', () => {
         expect(src).toMatch(/stripVideoEmbeds\s*\(/);
     });
 
-    it('keeps the transitory public mask independent of old plan lookups', () => {
+    it('applies the video grant in the current owner-grant filter', () => {
         const src = executableSource();
-        const publicMask = src.slice(src.indexOf('export function maskLegacyPremiumFields'));
-        expect(publicMask).toMatch(/delete\s+filtered\.videos/);
-        expect(publicMask).not.toMatch(/hasEntitlement\s*\(/);
+        const filterStart = src.indexOf('export function filterPublicPaidFields');
+        const filterEnd = src.indexOf(
+            'export function filterPublicPaidFieldsForOwner',
+            filterStart
+        );
+        const paidFilter = src.slice(filterStart, filterEnd);
+        expect(paidFilter).toMatch(/grants\.video/);
+        expect(paidFilter).toMatch(/delete\s+filtered\.videos/);
+        expect(paidFilter).not.toMatch(/hasEntitlement\s*\(/);
     });
 });

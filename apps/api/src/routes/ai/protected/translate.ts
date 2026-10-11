@@ -12,7 +12,7 @@
  * @module apps/api/routes/ai/protected/translate
  */
 
-import type { AiFeature } from '@repo/schemas';
+import { type AiFeature, VerticalEnum } from '@repo/schemas';
 import { z } from 'zod';
 
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
@@ -27,6 +27,7 @@ import {
 import { getActorFromContext } from '../../../utils/actor';
 import { meterAiUsage } from '../../../utils/ai-usage-metering';
 import { createRouter } from '../../../utils/create-app';
+import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate';
 import { apiLogger } from '../../../utils/logger';
 import { mayTranslateEntity, PROTECTED_TRANSLATABLE_ENTITY_TYPES } from './translate.authorization';
 
@@ -176,6 +177,14 @@ protectedAiTranslateRoute.post('/', async (c) => {
                 400
             );
         }
+
+        await enforceAiQuota({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            feature: FEATURE,
+            entitlementKey: 'ai_translate',
+            limitKey: 'max_ai_translate_per_month'
+        });
 
         // Run translation
         const result = await translateEntity({

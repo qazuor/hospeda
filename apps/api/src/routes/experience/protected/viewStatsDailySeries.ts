@@ -12,10 +12,16 @@
  */
 
 import type { ServiceErrorCode } from '@repo/schemas';
-import { EntityTypeEnum, EntityViewWindowSchema, HostViewDailySeriesSchema } from '@repo/schemas';
+import {
+    EntityTypeEnum,
+    EntityViewWindowSchema,
+    HostViewDailySeriesSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { entityViewService, ServiceError } from '@repo/service-core';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /**
@@ -23,7 +29,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  *
  * Authenticated owner endpoint that returns a gap-filled daily view-count
  * series aggregated across all of the caller's own experience listings.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the stats plan gate is removed.
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const protectedExperienceViewStatsDailySeriesRoute = createProtectedRoute({
     method: 'get',
@@ -39,9 +45,13 @@ export const protectedExperienceViewStatsDailySeriesRoute = createProtectedRoute
         window: EntityViewWindowSchema.default('30d')
     },
     responseSchema: HostViewDailySeriesSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.EXPERIENCE,
+            keys: ['view_basic_stats']
+        });
         const typedQuery = query as { window: '7d' | '30d' };
 
         const result = await entityViewService.getDailySeriesForOwnListings({

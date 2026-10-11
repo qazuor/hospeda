@@ -11,9 +11,9 @@
  *                          node). All AI routes require login, so per-user is the
  *                          primary identity; per-IP is secondary.
  *
- * During the billing transition, these burst guards remain active while the
- * per-plan monthly quota is suspended. The configured USD cost ceiling and
- * usage metering are enforced separately by each AI route and service.
+ * These burst guards are independent of the monthly plan quota. The configured
+ * USD cost ceiling and usage metering are enforced separately by each AI route
+ * and service.
  *
  * @module middlewares/ai-rate-limit
  */
@@ -22,8 +22,6 @@ import type { AiFeature } from '@repo/schemas';
 import type { MiddlewareHandler } from 'hono';
 import type { AppBindings } from '../types';
 import { createSlidingWindowPerUserRateLimit, getClientIp } from './rate-limit';
-
-// HOS-1352: transitional until V3 (HOS-1357), see PR: AI has burst limits and metering without a monthly plan quota.
 
 // ---------------------------------------------------------------------------
 // AiRateLimitOptions

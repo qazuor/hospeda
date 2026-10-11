@@ -24,6 +24,20 @@
 import { PermissionEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async () => ({
+            entitlements: { get: () => 1 },
+            limits: { get: () => 10 }
+        })
+    })
+}));
+vi.mock('@repo/ai-core', async (importActual) => ({
+    ...(await importActual<typeof import('@repo/ai-core')>()),
+    getMonthlyCallCount: vi.fn(async () => 0),
+    recordAiUsage: vi.fn(async () => undefined)
+}));
+
 // Force both credentials OFF regardless of the ambient shell/.env.local —
 // the dev machine running this suite may have a real HOSPEDA_GOOGLE_PLACES_API_KEY
 // set, which would otherwise fire a real, non-deterministic network call.

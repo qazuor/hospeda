@@ -9,7 +9,10 @@ import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -37,18 +40,16 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
             pageSize: 100
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        // Service wraps the value as { accommodations: [...] }; the responseSchema
-        // is the bare array, so unwrap before returning. Strip BOTH premium
-        // rich-description fields — this is a public card listing (SPEC-187), and
-        // the SPEC-212 i18n sibling must never be gated separately from the plain
-        // field. The static `AccommodationListItem` type declares neither, but the
-        // underlying `findAll` runs `SELECT *`, so both are present at runtime.
-        const strippedAccommodations = (result.data?.accommodations ?? []).map((a) =>
-            maskLegacyPremiumFields(a)
+        // The service wraps the value as { accommodations: [...] }; resolve paid
+        // fields from each row owner before returning the bare response array.
+        const rawAccommodations = result.data?.accommodations ?? [];
+        const grants = await resolvePublicFieldGrants(
+            rawAccommodations.map((item) => item.ownerId)
+        );
+        const strippedAccommodations = rawAccommodations.map((a) =>
+            filterPublicPaidFieldsForOwner(a, grants)
         );
 
-        // The isVerified owner-entitlement gate was removed with the legacy
-        // billing system (HOS-1416); `isVerified` is emitted as stored.
         return strippedAccommodations as AccommodationData[];
     },
     options: {

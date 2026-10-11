@@ -15,7 +15,10 @@ import type { Context } from 'hono';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFields,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -75,7 +78,16 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
             isFeatured: resolvePublicIsFeatured(result.data)
         };
 
-        return maskLegacyPremiumFields(accommodation);
+        const grants = await resolvePublicFieldGrants([accommodation.ownerId]);
+        return filterPublicPaidFields(
+            accommodation,
+            grants.get(accommodation.ownerId ?? '') ?? {
+                richDescription: false,
+                video: false,
+                verification: false,
+                aiChat: false
+            }
+        );
     },
     options: {
         cacheTTL: 300,

@@ -17,10 +17,10 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { maskLegacyPremiumFields, stripMarkdown } from '../../src/utils/entitlement-filter';
+import { filterPublicPaidFields, stripMarkdown } from '../../src/utils/entitlement-filter';
 
-describe('public fields during the billing transition', () => {
-    it('hides formerly plan-gated content without mutating the stored listing', () => {
+describe('public paid fields by effective owner grants', () => {
+    it('restores paid fields for granted owners without mutating the stored listing', () => {
         const listing = {
             id: 'listing-1',
             description: 'Visit https://youtube.com/watch?v=abc123 today',
@@ -33,18 +33,51 @@ describe('public fields during the billing transition', () => {
             media: { featuredImage: 'photo', videos: [{ url: 'https://vimeo.com/123' }] }
         };
 
-        const result = maskLegacyPremiumFields(listing);
+        const result = filterPublicPaidFields(listing, {
+            richDescription: true,
+            video: true,
+            verification: true,
+            aiChat: true
+        });
 
-        expect(result).not.toHaveProperty('richDescription');
-        expect(result).not.toHaveProperty('richDescriptionI18n');
-        expect(result).not.toHaveProperty('videos');
-        expect(result.description).toBe('Visit today');
-        expect(result.isVerified).toBe(false);
-        expect(result.hasWhatsapp).toBe(false);
+        expect(result.richDescription).toBe('<p>Premium</p>');
+        expect(result.richDescriptionI18n).toEqual({ es: '<p>Premium</p>' });
+        expect(result.videos).toEqual([{ url: 'https://vimeo.com/123' }]);
+        expect(result.description).toBe('Visit https://youtube.com/watch?v=abc123 today');
+        expect(result.isVerified).toBe(true);
+        expect(result.hasWhatsapp).toBe(true);
         expect(result.contactInfo).toEqual({ email: 'owner@example.test' });
-        expect(result.media).toEqual({ featuredImage: 'photo', videos: [] });
+        expect(result.media).toEqual({
+            featuredImage: 'photo',
+            videos: [{ url: 'https://vimeo.com/123' }]
+        });
         expect(listing.isVerified).toBe(true);
         expect(listing.media.videos).toHaveLength(1);
+    });
+
+    it('omits the rich pair together and hides video and verification without grants', () => {
+        const result = filterPublicPaidFields(
+            {
+                id: 'listing-2',
+                ownerId: 'owner',
+                richDescription: 'premium',
+                richDescriptionI18n: { es: 'premium' },
+                isVerified: true,
+                description: 'Watch https://youtu.be/abc',
+                videos: ['v'],
+                media: { videos: ['v'] },
+                contactInfo: { whatsapp: 42 }
+            },
+            { richDescription: false, video: false, verification: false, aiChat: false }
+        );
+        expect('richDescription' in result).toBe(false);
+        expect('richDescriptionI18n' in result).toBe(false);
+        expect(result.isVerified).toBe(false);
+        expect((result as typeof result & { hasWhatsapp: boolean }).hasWhatsapp).toBe(false);
+        expect(result.description).toBe('Watch');
+        expect(result).not.toHaveProperty('videos');
+        expect(result.media).toEqual({ videos: [] });
+        expect(result.contactInfo).toEqual({});
     });
 });
 

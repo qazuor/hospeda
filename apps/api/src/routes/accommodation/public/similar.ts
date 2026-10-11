@@ -10,7 +10,10 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 /**
@@ -231,17 +234,12 @@ export const publicGetSimilarRoute = createPublicRoute({
         // The Web transform's `deriveCityFields()` reads `cityDestination`
         // (preferred) before falling back to legacy `destination`.
         //
-        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n sibling
-        // are PREMIUM fields gated per-owner by the entitlement system. Similar-card
-        // listings never render them. We strip BOTH explicitly here as a second layer of
-        // defense (the DB projection above is the first layer — this ensures the fields
-        // are absent even if the query layer changes or is mocked in tests). Using the
-        // shared helper keeps this layer complete: the previous hand-rolled destructure
-        // dropped only the plain field, so the "survives a query-layer change" guarantee
-        // this block advertises did not actually hold for richDescriptionI18n.
+        // Apply the owner-effective paid-field grants to each similar listing.
+        const grants = await resolvePublicFieldGrants(rows.map((row) => row.ownerId));
         const mappedRows = rows.map((row) => {
-            const { destination, ...rest } = maskLegacyPremiumFields(
-                row as Record<string, unknown> & { destination?: unknown }
+            const { destination, ...rest } = filterPublicPaidFieldsForOwner(
+                row as Record<string, unknown> & { destination?: unknown },
+                grants
             );
             const media = composeAccommodationMedia({
                 rows: mediaByAccommodationId.get(row.id) ?? [],

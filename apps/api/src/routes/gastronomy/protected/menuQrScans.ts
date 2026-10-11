@@ -5,7 +5,7 @@
  * GET /api/v1/protected/gastronomies/{id}/menu-qr/scans
  * ```
  *
- * The same ownership rule as `menuQr.ts` applies; the former plan gate is disabled during the billing transition.
+ * The same ownership and menu_qr_scan_metrics gate as `menuQr.ts` applies.
  *
  * ## The one thing this route does differently from `menuQr.ts`: it never mints
  *
@@ -17,10 +17,9 @@
  * (`buildEmptyQrCodeScanStats`), never a 404 and never a freshly minted row.
  *
  * @module routes/gastronomy/protected/menuQrScans
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
 
-import { PermissionEnum, QrCodeScanStatsSchema, QrCodeScanWindowSchema } from '@repo/schemas';
+import { QrCodeScanStatsSchema, QrCodeScanWindowSchema, VerticalEnum } from '@repo/schemas';
 import {
     buildEmptyQrCodeScanStats,
     entityNotFoundError,
@@ -60,11 +59,8 @@ export async function handleGetGastronomyMenuQrScans(
     const listing = await gastronomyService.getById(actor, gastronomyId);
     const entity = listing.error ? null : listing.data;
 
-    // Same gate, same wording as `menuQr.ts` / `protected/getById.ts` — a
-    // divergent message here would tell a caller that the id they hold is
-    // real (HOS-600). A 403 would confirm the id exists, so this is a 404.
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
-    if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
+    // Listing access has already checked ownership; retain the missing-row 404.
+    if (!entity) {
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }
 
@@ -101,11 +97,17 @@ export async function handleGetGastronomyMenuQrScans(
 /**
  * GET /api/v1/protected/gastronomies/:id/menu-qr/scans
  *
- * Owner-only. The former plan entitlement was removed with HOS-1416.
+ * Owner-only scan aggregate requiring menu_qr_scan_metrics on the listing owner.
  */
 export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/menu-qr/scans',
+    listingAccess: {
+        vertical: VerticalEnum.GASTRONOMY,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'menu_qr_scan_metrics'
+    },
     summary: 'Get the scan aggregate for a gastronomy listing’s menu QR',
     description:
         'Returns the total scans, a gap-filled daily series, and device/OS/language breakdowns ' +
@@ -119,7 +121,6 @@ export const protectedGetGastronomyMenuQrScansRoute = createProtectedRoute({
         window: QrCodeScanWindowSchema.default('30d')
     },
     responseSchema: QrCodeScanStatsSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MENU_QR_SCAN_METRICS entitlement gate.
     handler: async (ctx: Context, params: Record<string, unknown>, _body, query) =>
         handleGetGastronomyMenuQrScans(ctx, params, query as Record<string, unknown>),
     options: {

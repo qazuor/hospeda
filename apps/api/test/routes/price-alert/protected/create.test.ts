@@ -1,5 +1,6 @@
-/** Price-alert route regression after removal of the legacy plan gate. */
-import { RoleEnum } from '@repo/schemas';
+/** Price-alert route regression for effective key and active-count gates. */
+import { RoleEnum, type VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -27,6 +28,23 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         })
     };
 });
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
+                entries: [
+                    { key: 'price_alerts', value: 1, strategy: 'MAX' as const },
+                    { key: 'max_active_alerts', value: 2147483647, strategy: 'MAX' as const }
+                ]
+            })
+    })
+}));
 
 vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
@@ -63,12 +81,13 @@ function makeBody(): string {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/protected/price-alerts — legacy plan removed', () => {
+describe('POST /api/v1/protected/price-alerts — effective set gate', () => {
     let app: AppOpenAPI;
 
     beforeEach(() => {
         app = initApp() as unknown as AppOpenAPI;
         vi.clearAllMocks();
+        countActiveMock.mockResolvedValue({ data: { count: 0 }, error: undefined });
         createAlertMock.mockResolvedValue({
             data: {
                 id: ALERT_ID,
@@ -85,7 +104,7 @@ describe('POST /api/v1/protected/price-alerts — legacy plan removed', () => {
         getByIdMock.mockResolvedValue({ data: { name: 'Test Accommodation' } });
     });
 
-    it('creates the alert without querying an obsolete plan counter', async () => {
+    it('creates the alert after counting active subscriptions against the effective cap', async () => {
         const res = await app.request(BASE, {
             method: 'POST',
             headers: makeHeaders(),
@@ -93,7 +112,7 @@ describe('POST /api/v1/protected/price-alerts — legacy plan removed', () => {
         });
 
         expect([200, 201]).toContain(res.status);
-        expect(countActiveMock).not.toHaveBeenCalled();
+        expect(countActiveMock).toHaveBeenCalledTimes(1);
         expect(createAlertMock).toHaveBeenCalledTimes(1);
         const body = await res.json();
         expect(body.data.accommodationName).toBe('Test Accommodation');
