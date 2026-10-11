@@ -8,7 +8,23 @@
  * tests. This module holds the real implementation and the injected instance;
  * it never imports the test package.
  */
+
+import { existsSync, readFileSync } from 'node:fs';
 import type { Clock } from '@repo/billing-verticals-contract';
+import { z } from 'zod';
+
+const ClockFileSchema = z.strictObject({ now: z.string().datetime({ offset: true }) });
+
+/** Clock whose instant is read synchronously from an E2E-controlled file. */
+export function createFileClock(input: { readonly path: string }): Clock {
+    return Object.freeze({
+        now: (): Date => {
+            if (!existsSync(input.path)) return systemClock.now();
+            const parsed = ClockFileSchema.parse(JSON.parse(readFileSync(input.path, 'utf8')));
+            return new Date(parsed.now);
+        }
+    });
+}
 
 /** The real clock: the system time. Injected by the composition root in production. */
 export const systemClock: Clock = Object.freeze({
