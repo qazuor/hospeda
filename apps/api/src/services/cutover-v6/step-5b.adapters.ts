@@ -31,8 +31,13 @@ export function createPhotoStorage(input: {
             ['HOSPEDA_CLOUDINARY_API_SECRET', env.HOSPEDA_CLOUDINARY_API_SECRET]
         ] as const;
         const missing = required.filter(([, value]) => !value).map(([name]) => name);
+        if (missing.length > 0) {
+            throw new CutoverPhotoStorageError(
+                `Cloudinary provider is unavailable; missing variables: ${missing.join(', ')}`
+            );
+        }
         throw new CutoverPhotoStorageError(
-            `Cloudinary provider is unavailable; missing variables: ${missing.join(', ') || 'provider initialization'}`
+            'Cloudinary provider is unavailable; all required variables are set, but provider initialization failed'
         );
     }
     if (!(input.provider instanceof CloudinaryProvider)) {

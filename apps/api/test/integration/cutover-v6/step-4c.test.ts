@@ -98,7 +98,14 @@ describe('TEST:V6:24 step 4c', () => {
     it('purges all groups in stable order and produces the same calls on a second run', async () => {
         await withRollback(async (tx) => {
             await seedRows(tx);
-            const destinationIds = await seedDestinations(tx);
+            await seedDestinations(tx);
+            await tx.execute(sql`INSERT INTO destinations
+                (id, destination_type, path, slug, name, summary, description, location)
+                VALUES ('14820000-0000-4000-8000-000000009999'::uuid, 'CITY', '/ci-extra-destination',
+                    'ci-extra-destination', 'CI extra destination', 'Summary', 'Description',
+                    '{"coordinates":{"lat":"-32","long":"-58"}}'::jsonb)`);
+            const liveDestinations = await tx.execute(sql`SELECT id::text AS id, slug
+                FROM destinations WHERE deleted_at IS NULL ORDER BY slug, id`);
             const independentCount =
                 await tx.execute(sql`SELECT count(*)::int AS count FROM destinations
                 WHERE deleted_at IS NULL AND slug LIKE 'hos-1482-dest-%'`);
@@ -128,17 +135,14 @@ describe('TEST:V6:24 step 4c', () => {
             ]);
             expect(first[1]?.tags).toEqual(['home', 'list-accom', 'list-exp', 'list-gastro']);
             expect(first[2]?.tags).toEqual(
-                [
-                    ...destinationIds.flatMap((id, index) => [
-                        `dest-hos-1482-dest-${index + 1}`,
-                        `dest-${id}`
-                    ])
-                ].sort()
+                liveDestinations.rows
+                    .flatMap(({ id, slug }) => [`dest-${slug}`, `dest-${id}`])
+                    .sort()
             );
             expect(firstResult).toMatchObject({
                 status: 'completed',
                 listingCount: 3,
-                destinationCount: 22
+                destinationCount: liveDestinations.rows.length
             });
             expect(secondResult).toEqual(firstResult);
         });
@@ -160,18 +164,26 @@ describe('TEST:V6:24 step 4c', () => {
 
     it('omits logically deleted destinations', async () => {
         await withRollback(async (tx) => {
-            const [id] = await seedDestinations(tx);
+            const ids = await seedDestinations(tx);
+            const [id] = ids;
             await tx.execute(
                 sql`UPDATE destinations SET deleted_at = now() WHERE id = ${id}::uuid`
             );
+            const liveDestinations = await tx.execute(sql`SELECT id::text AS id, slug
+                FROM destinations WHERE deleted_at IS NULL ORDER BY slug, id`);
             const calls: Call[] = [];
             const result = await runStep4c({
                 db: tx,
                 pagePurger: fakePurger(undefined, calls),
                 dryRun: false
             });
-            expect(result.destinationCount).toBe(21);
-            expect(calls[1]?.tags).not.toContain(`dest-${id}`);
+            expect(result.destinationCount).toBe(liveDestinations.rows.length);
+            expect(calls.at(-1)?.tags).toEqual(
+                liveDestinations.rows
+                    .flatMap(({ id: liveId, slug }) => [`dest-${slug}`, `dest-${liveId}`])
+                    .sort()
+            );
+            expect(calls.at(-1)?.tags).not.toContain(`dest-${id}`);
         });
     });
 

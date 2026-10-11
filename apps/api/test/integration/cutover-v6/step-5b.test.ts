@@ -2,7 +2,7 @@ import type { DrizzleClient } from '@repo/db';
 import { getDb, sql } from '@repo/db';
 import type { ImageProvider } from '@repo/media/server';
 import { InMemoryImageProvider } from '@repo/media/test-utils';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { CalendarGrantRevoker, PhotoStorage } from '../../../src/services/cutover-v6/ports.js';
 import {
     CutoverPhotoStorageError,
@@ -132,6 +132,10 @@ describe('TEST:V6:22 step 5b', () => {
         validateApiEnv();
     });
     afterAll(async () => testDb.teardown());
+    afterEach(() => {
+        vi.unstubAllEnvs();
+        validateApiEnv();
+    });
 
     it('cleans passage resources, drops the table, and makes the next run a no-op', async () => {
         resetCalls();
@@ -358,11 +362,27 @@ describe('TEST:V6:22 step 5b', () => {
         );
     });
 
-    it('refuses a memory provider and explains missing Cloudinary variables', () => {
+    it('refuses a memory provider and names missing Cloudinary variables', () => {
         expect(() => createPhotoStorage({ provider: new InMemoryImageProvider() })).toThrow(
             CutoverPhotoStorageError
         );
-        expect(() => createPhotoStorage({ provider: null })).toThrow(/HOSPEDA_CLOUDINARY_/);
+        vi.stubEnv('HOSPEDA_CLOUDINARY_CLOUD_NAME', '');
+        vi.stubEnv('HOSPEDA_CLOUDINARY_API_KEY', '');
+        vi.stubEnv('HOSPEDA_CLOUDINARY_API_SECRET', '');
+        validateApiEnv();
+        expect(() => createPhotoStorage({ provider: null })).toThrow(
+            /missing variables: HOSPEDA_CLOUDINARY_CLOUD_NAME, HOSPEDA_CLOUDINARY_API_KEY, HOSPEDA_CLOUDINARY_API_SECRET/
+        );
+    });
+
+    it('explains that Cloudinary provider initialization failed when variables are present', () => {
+        vi.stubEnv('HOSPEDA_CLOUDINARY_CLOUD_NAME', 'test-cloud');
+        vi.stubEnv('HOSPEDA_CLOUDINARY_API_KEY', 'test-key');
+        vi.stubEnv('HOSPEDA_CLOUDINARY_API_SECRET', 'test-secret');
+        validateApiEnv();
+        expect(() => createPhotoStorage({ provider: null })).toThrow(
+            /all required variables are set, but provider initialization failed/
+        );
         expect(() => createPhotoStorage({ provider: {} as ImageProvider })).toThrow(
             CutoverPhotoStorageError
         );
