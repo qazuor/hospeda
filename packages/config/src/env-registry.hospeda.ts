@@ -492,6 +492,32 @@ export const HOSPEDA_ENV_VARS = [
             'true = usar el sandbox de Mercado Pago (tarjetas de prueba, sin cobros reales). false = cobros reales de producción. Dejá true en development y preview; false solo en producción.'
     },
     {
+        name: 'HOSPEDA_MERCADO_PAGO_API_BASE_URL',
+        description: 'Mercado Pago API base URL',
+        descriptionEs: 'URL base de la API de Mercado Pago',
+        type: 'url',
+        required: false,
+        secret: false,
+        defaultValue: 'https://api.mercadopago.com',
+        exampleValue: 'https://api.mercadopago.com',
+        apps: ['api'],
+        category: 'billing',
+        howToObtainEs:
+            'Usa el endpoint oficial de Mercado Pago; sólo cambiá este valor para un servidor compatible de pruebas.'
+    },
+    {
+        name: 'HOSPEDA_E2E_CLOCK_FILE',
+        description: 'Local E2E clock control file',
+        descriptionEs: 'Archivo de control del reloj E2E local',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: './test-results/provider-clock.json',
+        apps: ['api'],
+        category: 'billing',
+        howToObtainEs: 'Sólo para pruebas E2E locales; está prohibida fuera de localhost.'
+    },
+    {
         name: 'HOSPEDA_MERCADO_PAGO_TIMEOUT',
         description: 'MercadoPago API request timeout in ms',
         descriptionEs: 'Timeout en ms para los requests a la API de MercadoPago',

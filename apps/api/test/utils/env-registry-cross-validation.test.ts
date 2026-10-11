@@ -31,7 +31,6 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // Note: HOSPEDA_MERCADO_PAGO_SANDBOX is already validated by ApiEnvSchema
     // (added during the VPS migration sprint so Coolify env validation catches
     // a missing sandbox toggle); kept out of this gap set.
-    'HOSPEDA_MERCADO_PAGO_TIMEOUT',
     'HOSPEDA_MERCADO_PAGO_PLATFORM_ID',
     'HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID',
 
