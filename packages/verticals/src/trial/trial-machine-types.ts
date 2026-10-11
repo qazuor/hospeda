@@ -1,6 +1,6 @@
 import type { CoverageChangedEvent } from '@repo/billing-verticals-contract';
 import type { TrialStatusEnum, Vertical } from '@repo/schemas';
-import type { TrialStartTransaction } from './trial-start-types';
+import type { TrialConsumeTransaction, TrialStartTransaction } from './trial-start-types';
 
 /** Persisted fields needed by the trial machine. */
 export interface TrialMachineRow {
@@ -18,7 +18,13 @@ export type TrialCampaignKind = 'PRE_EXPIRY' | 'RECOVERY';
 
 /** Transactional trial machine operations under the shared lock. */
 export interface TrialMachineTransaction
-    extends Pick<TrialStartTransaction, 'scheduleExpiryCampaign'> {
+    extends Pick<TrialStartTransaction, 'scheduleExpiryCampaign'>,
+        TrialConsumeTransaction {
+    /** Reads the append-only event record to see whether the activation event was exercised. */
+    hasExercisedActivationEvent(args: {
+        readonly userId: string;
+        readonly vertical: Vertical;
+    }): Promise<boolean>;
     findTrialForUpdate(args: {
         readonly userId: string;
         readonly vertical: Vertical;

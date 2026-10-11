@@ -163,6 +163,10 @@ export {
     extendTrialByAdmin,
     TRIAL_EXTENSION_REJECTIONS
 } from './trial/trial-extension';
+export {
+    consumeTrialOnFirstPayment,
+    type TrialFirstPaymentResult
+} from './trial/trial-first-payment';
 export { trialMachineLockKey } from './trial/trial-lock-key';
 export {
     InvalidTrialMachineInputError,
