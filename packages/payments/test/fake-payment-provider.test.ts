@@ -102,6 +102,7 @@ describe('charge', () => {
         // Assert
         expect((await fake.readCharge({ chargeId })).snapshot).toEqual({
             chargeId,
+            createdAt: expect.any(String),
             authorizationId,
             reference: 'cycle-1',
             status: 'approved',
