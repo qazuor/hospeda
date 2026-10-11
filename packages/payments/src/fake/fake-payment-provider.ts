@@ -197,6 +197,7 @@ export class FakePaymentProvider implements PaymentProvider {
         this.ledger.charges.set(chargeId, {
             snapshot: {
                 chargeId,
+                createdAt: this.clock.now().toISOString(),
                 authorizationId: input.authorizationId,
                 reference: authorization.snapshot.reference,
                 status: 'rejected',
@@ -259,6 +260,7 @@ export class FakePaymentProvider implements PaymentProvider {
                 this.ledger.charges.set(chargeId, {
                     snapshot: {
                         chargeId,
+                        createdAt: this.clock.now().toISOString(),
                         authorizationId: value.authorizationId,
                         reference: value.reference,
                         status: late ? 'pending' : 'approved',

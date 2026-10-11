@@ -75,6 +75,10 @@ export {
     NotificationRetentionService,
     type RetentionSummary
 } from './billing/notification/notification-retention.service.js';
+export * from './billing/payment/credit-payment.service.js';
+export * from './billing/payment/payment-ledger.js';
+export * from './billing/payment/payment-ports.js';
+export * from './billing/payment/record-charge-fact.service.js';
 export * from './billing/read-anchored-billing-option.js';
 export * from './billing/reconciliation/creations/creations-sweep.service.js';
 export * from './billing/reconciliation/handle-unknown-authorization.service.js';
