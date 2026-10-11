@@ -46,8 +46,17 @@ describe('TEST:B3:22 provider delivery storage and retention', () => {
             .where(eq(providerNotifications.url, entries[0]!.url));
         expect(rows).toHaveLength(1);
         const all = await getServiceTestPool().query(
-            'SELECT channel, url, body, received_at FROM provider_notification WHERE url LIKE $1 ORDER BY id',
+            'SELECT channel, url, body, received_at, xmin::text AS xmin FROM provider_notification WHERE url LIKE $1 ORDER BY id',
             [`%t=${token}%`]
+        );
+        const xminBeforeRetention = new Map(all.rows.map((row) => [row.url, row.xmin]));
+        await purgeProviderNotifications({}, { clock });
+        const retained = await getServiceTestPool().query(
+            'SELECT url, xmin::text AS xmin FROM provider_notification WHERE url LIKE $1',
+            [`%t=${token}%`]
+        );
+        expect(retained.rows.every((row) => xminBeforeRetention.get(row.url) === row.xmin)).toBe(
+            true
         );
         const byUrl = new Map(all.rows.map((row) => [row.url, row]));
         expect(all.rows).toHaveLength(3);
