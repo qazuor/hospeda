@@ -30,6 +30,7 @@ import {
     notificationScheduleJob,
     pageRevalidationJob,
     pollApifyReputationRunsJob,
+    providerNotificationRetentionJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
@@ -45,6 +46,7 @@ import type { CronJobDefinition } from './types';
  */
 export const cronJobs: CronJobDefinition[] = [
     billingReconciliationSweepJob,
+    providerNotificationRetentionJob,
     alertsDigestJob,
     exchangeRateFetchJob,
     destinationWeatherFetchJob,

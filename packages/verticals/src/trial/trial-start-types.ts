@@ -120,6 +120,25 @@ export interface NewTrialRow {
     readonly deadlinesVersion: number;
 }
 
+/**
+ * A trial row written by T6 or T8, born consumed without a clock or campaign.
+ * The DDL admits it because `ck_trial_active_complete` requires completeness
+ * only for `TRIAL_ACTIVE` rows.
+ */
+export interface NewConsumedTrialRow {
+    readonly userId: string;
+    readonly vertical: Vertical;
+    readonly status: TrialStatusEnum.TRIAL_CONVERTED;
+    readonly emailPseudonym: string;
+    readonly trialPlanId: null;
+    readonly floorEntitlementsVersionId: null;
+    readonly floorLimitsVersionId: null;
+    readonly floorTrialPlanVersionId: null;
+    readonly startedAt: null;
+    readonly endsAt: null;
+    readonly deadlinesVersion: null;
+}
+
 /* ------------------------------------------------------------------ */
 /* Write port (inside the lock)                                       */
 /* ------------------------------------------------------------------ */
@@ -141,10 +160,10 @@ export type InsertTrialResult =
  */
 export interface TrialStartTransaction extends TrialStartReader {
     /**
-     * Inserts the trial row. Returns `false` when the UNIQUE constraint
-     * fires (the row already exists in that range).
+     * Inserts an active or consumed trial row. Returns `false` when a UNIQUE
+     * constraint fires because the user or pseudonym already has a row.
      */
-    insertTrial(args: { row: NewTrialRow }): Promise<InsertTrialResult>;
+    insertTrial(args: { row: NewTrialRow | NewConsumedTrialRow }): Promise<InsertTrialResult>;
 
     /**
      * Schedules the pre-expiry campaign for this trial. The campaign
@@ -160,6 +179,19 @@ export interface TrialStartTransaction extends TrialStartReader {
         readonly milestones: readonly Date[];
     }): Promise<void>;
 }
+
+/**
+ * The transaction ports needed by T6 and T8 to evaluate and write consumption.
+ * Kept here so trial-machine-types can import it without a module cycle.
+ */
+export type TrialConsumeTransaction = Pick<
+    TrialStartTransaction,
+    | 'findActivationEvent'
+    | 'findTrialPlan'
+    | 'findTrialOfUser'
+    | 'findTrialByPseudonym'
+    | 'insertTrial'
+>;
 
 /* ------------------------------------------------------------------ */
 /* Unit-of-work port                                                  */
