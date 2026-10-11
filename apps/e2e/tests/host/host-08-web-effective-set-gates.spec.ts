@@ -15,8 +15,16 @@ const EFFECTIVE_SET_PATH = '/api/v1/protected/users/me/effective-set?vertical=ac
 
 test.describe('TEST:B13a:25 AC:B13a:27 web effective-set gates @p1 @host', () => {
     const userIdsToCleanup: string[] = [];
+    let owner: Awaited<ReturnType<typeof createUser>> | null = null;
 
-    test.afterEach(async () => {
+    test.beforeAll(async () => {
+        owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
+        userIdsToCleanup.push(owner.id);
+        await markProfileCompleted({ userId: owner.id });
+        await ensureListingOwnerTrial(getDbPool(), owner.id, VerticalEnum.ACCOMMODATION);
+    });
+
+    test.afterAll(async () => {
         if (userIdsToCleanup.length > 0) {
             await cleanupTestUsers(getDbPool(), [...userIdsToCleanup]);
             userIdsToCleanup.length = 0;
@@ -24,10 +32,7 @@ test.describe('TEST:B13a:25 AC:B13a:27 web effective-set gates @p1 @host', () =>
     });
 
     async function prepareOwner(page: Page) {
-        const owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
-        userIdsToCleanup.push(owner.id);
-        await markProfileCompleted({ userId: owner.id });
-        await ensureListingOwnerTrial(getDbPool(), owner.id, VerticalEnum.ACCOMMODATION);
+        if (!owner) throw new Error('Shared E2E owner was not initialized');
         await page.context().addCookies(
             owner.sessionCookie.split('; ').map((cookie) => {
                 const [name, ...value] = cookie.split('=');
