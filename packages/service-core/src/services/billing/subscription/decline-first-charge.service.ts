@@ -96,12 +96,12 @@ export async function declineFirstCharge(
             authorizationId: providerLink.providerId
         });
         const fresh = assertFreshForAct({ read, act });
-        return { snapshot: fresh.snapshot, readAt: fresh.readAt };
+        return { status: fresh.snapshot.status, readAt: fresh.readAt };
     };
 
     const authorization = await rereadAuthorization();
     let cancelCall: 'SENT' | 'FAILED' | 'DEFERRED' | 'NOT_NEEDED';
-    if (authorization.snapshot.status === 'cancelled') {
+    if (authorization.status === 'cancelled') {
         await recordCancellationSeen({
             annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
             subscriptionId: subscription.id,
@@ -142,7 +142,7 @@ export async function declineFirstCharge(
     if (cancelCall === 'SENT') {
         try {
             const confirmed = await rereadAuthorization();
-            if (confirmed.snapshot.status === 'cancelled')
+            if (confirmed.status === 'cancelled')
                 await recordCancellationSeen({
                     annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
                     subscriptionId: subscription.id,
