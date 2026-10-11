@@ -6,13 +6,15 @@
 import {
     ServiceErrorCode,
     UserBookmarkCollectionBookmarkParamsSchema,
-    UserBookmarkSchema
+    UserBookmarkSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ServiceError, UserBookmarkCollectionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -28,11 +30,22 @@ export const addBookmarkToCollectionRoute = createProtectedRoute({
     requestParams: UserBookmarkCollectionBookmarkParamsSchema.shape,
     responseSchema: UserBookmarkSchema,
     successStatusCode: 200,
-    options: {},
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed collections gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const { id, bookmarkId } = params as { id: string; bookmarkId: string };
+
+        const existing = await collectionService.getCollectionById(actor, { collectionId: id });
+        if (existing.error) {
+            const { code, message } = existing.error;
+            if (code === ServiceErrorCode.NOT_FOUND) throw new HTTPException(404, { message });
+            if (code === ServiceErrorCode.FORBIDDEN) throw new HTTPException(403, { message });
+            throw new ServiceError(code, message, existing.error.details);
+        }
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_use_collections']
+        });
 
         const result = await collectionService.addBookmarkToCollection(actor, {
             collectionId: id,
