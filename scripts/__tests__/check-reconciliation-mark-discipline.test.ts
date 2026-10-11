@@ -88,6 +88,13 @@ describe('TEST:B3:27 GUARD:G-R1-F', () => {
             expect(r.output).toContain('caller.ts');
         }
     });
+    it('rejects a reason identifier with no local type declaration (a1)', () => {
+        const r = check({
+            'packages/service-core/src/services/billing/caller.ts': `async function call(){openReconciliationMark({reason: unknownReason});}`
+        });
+        expect(r.output).toContain('G-R1-F (a)');
+        expect(r.output).toContain('caller.ts');
+    });
     it('accepts catalog literals and locally typed reason values', () => {
         expect(
             check({

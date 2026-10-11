@@ -284,7 +284,6 @@ function runChecks(root: string, files: readonly string[]): Finding[] {
                     report(sf, file, '(h)', c, 'both courtesy close columns must be null together');
             }
         }
-        for (const n of sf.statements) void n;
         const visitUpdates = (n: ts.Node) => {
             if (
                 ts.isCallExpression(n) &&
