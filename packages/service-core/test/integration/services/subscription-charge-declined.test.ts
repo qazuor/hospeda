@@ -244,7 +244,7 @@ describe('TEST:B3:17 declineFirstCharge', () => {
                 if (
                     entry.level === 'WARN' &&
                     entry.category === 'decline-first-charge' &&
-                    JSON.stringify(entry.data).includes(own.started.subscriptionId)
+                    JSON.stringify(entry.data).includes(notice)
                 )
                     warnings.push(entry);
             });
