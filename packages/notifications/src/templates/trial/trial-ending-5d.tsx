@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
+import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
@@ -22,7 +22,8 @@ export function TrialEnding5Days({
     planName,
     trialEndDate,
     upgradeUrl,
-    productDomain
+    productDomain,
+    verticals
 }: TrialSeriesEmailProps) {
     const formattedEndDate = formatDate({ dateString: trialEndDate });
     const copy = resolveTrialSeriesCopy(productDomain);
@@ -35,6 +36,11 @@ export function TrialEnding5Days({
             <Heading>Te quedan 5 días de prueba</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
+            {verticals && verticals.length > 1 ? (
+                <Text style={styles.paragraph}>
+                    Tu prueba incluye {formatTrialVerticals({ verticals })}.
+                </Text>
+            ) : null}
 
             <Text style={styles.paragraph}>
                 Queríamos avisarte con tiempo: tu prueba gratis termina en cinco días. Después de

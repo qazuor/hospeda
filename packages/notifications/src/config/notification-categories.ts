@@ -18,6 +18,8 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // The warnings and the win-backs are opt-out-able reminders.
     [NotificationType.TRIAL_ENDING_10D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_5D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_ENDING_2D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_ENDING_TODAY]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_1D]: NotificationCategory.REMINDER,
     /**
      * TRANSACTIONAL, unlike its eight siblings: this one reports that the
@@ -30,6 +32,7 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.TRIAL_WIN_BACK_1D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_WIN_BACK_5D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_WIN_BACK_10D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_15D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_WIN_BACK_30D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_WIN_BACK_60D]: NotificationCategory.REMINDER,
 
