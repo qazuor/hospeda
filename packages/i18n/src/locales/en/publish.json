@@ -1,4 +1,13 @@
 {
+    "subscribe": {
+        "publishCta": "Publish my listing",
+        "trialNote_one": "Your {{trialDays}}-day free trial starts when you publish.",
+        "trialNote_other": "Your {{trialDays}}-day free trial starts when you publish."
+    },
+    "noPlans": {
+        "title": "This vertical has no available plans",
+        "body": "Your listing is still unpublished. There is nothing to purchase and no free trial to start."
+    },
     "signedOut": {
         "tagline": "First step",
         "title": "Create your account and publish",

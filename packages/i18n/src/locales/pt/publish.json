@@ -1,4 +1,13 @@
 {
+    "subscribe": {
+        "publishCta": "Publicar meu anúncio",
+        "trialNote_one": "O período grátis de {{trialDays}} dia começa quando você publicar.",
+        "trialNote_other": "O período grátis de {{trialDays}} dias começa quando você publicar."
+    },
+    "noPlans": {
+        "title": "Esta categoria não tem planos disponíveis",
+        "body": "Seu anúncio continua sem publicação. Não há nada para contratar nem período grátis para iniciar."
+    },
     "signedOut": {
         "tagline": "Primeiro passo",
         "title": "Crie sua conta e publique",
