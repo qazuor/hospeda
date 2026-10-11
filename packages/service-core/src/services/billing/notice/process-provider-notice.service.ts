@@ -28,7 +28,11 @@ import {
     unimplementedSuccessionCloser,
     unknownFirstCharge
 } from '../subscription/subscription-billing-ports.js';
-import { PROVIDER_NOTICE_MIRROR, type ReadState } from './provider-notice-mirror.js';
+import {
+    getProviderNoticeMirror,
+    type ProviderNoticeMirror,
+    type ReadState
+} from './provider-notice-mirror.js';
 import { type MirrorDelegates, unregisteredMirrorDelegates } from './provider-notice-ports.js';
 
 const inputSchema = z.strictObject({
@@ -107,8 +111,8 @@ export async function processProviderNotice(
                 .limit(1);
             if (!row) return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
             const action =
-                PROVIDER_NOTICE_MIRROR[snapshot.status as ReadState][
-                    row.status as keyof typeof PROVIDER_NOTICE_MIRROR.pending
+                getProviderNoticeMirror()[snapshot.status as ReadState][
+                    row.status as keyof ProviderNoticeMirror['pending']
                 ];
             if (action.kind === 'NOOP') finalOutcome = 'NOOP';
             if (action.kind === 'S2') {

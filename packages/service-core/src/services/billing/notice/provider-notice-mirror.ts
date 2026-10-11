@@ -18,7 +18,24 @@ const row = (overrides: Partial<Record<RowStatus, PairAction>>): Record<RowStatu
         SUBSCRIPTION_STATUSES.map((status) => [status, overrides[status] ?? noop])
     ) as Record<RowStatus, PairAction>;
 
-export const PROVIDER_NOTICE_MIRROR: Record<ReadState, Record<RowStatus, PairAction>> = {
+/** The mirror grid: for each state read by id from the provider, what each local row status does. */
+export type ProviderNoticeMirror = Record<ReadState, Record<RowStatus, PairAction>>;
+
+let mirror: ProviderNoticeMirror | undefined;
+
+/**
+ * Returns the provider-notice mirror grid, built on first use.
+ *
+ * Built lazily on purpose: `@repo/service-core` re-exports this module from its
+ * barrel, and consumers that replace `@repo/db` with a whole-module mock would
+ * otherwise crash at import time on `SUBSCRIPTION_STATUSES.map`.
+ */
+export function getProviderNoticeMirror(): ProviderNoticeMirror {
+    mirror ??= buildProviderNoticeMirror();
+    return mirror;
+}
+
+const buildProviderNoticeMirror = (): ProviderNoticeMirror => ({
     pending: row({
         ACTIVE: { kind: 'DIVERGENCE' },
         GRACE_PERIOD: { kind: 'DIVERGENCE' },
@@ -55,4 +72,4 @@ export const PROVIDER_NOTICE_MIRROR: Record<ReadState, Record<RowStatus, PairAct
         PAUSED: delegate('CANCELLED_ON_PAUSE'),
         PENDING_AUTHORIZATION: delegate('CANCELLED_WHILE_PENDING')
     })
-};
+});
