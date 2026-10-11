@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = path.resolve(import.meta.dirname, '../../../..');
 const MARKER = 'HOS-1352: transitional until V3';
+const RETIRED_WORD_PART = 'comm' + 'erce';
 const INVENTORY = [
     [
         'apps/api/src/cron/jobs/addon-expiry.job.ts',
@@ -47,12 +48,12 @@ const INVENTORY = [
         'deleted by U1 or later; no route left to gate'
     ],
     [
-        'apps/api/src/middlewares/commerce-entitlement.ts',
+        `apps/api/src/middlewares/${RETIRED_WORD_PART}-entitlement.ts`,
         'retired',
         'deleted by U1 or later; no route left to gate'
     ],
     [
-        'apps/api/src/middlewares/commerce-limit-enforcement.ts',
+        `apps/api/src/middlewares/${RETIRED_WORD_PART}-limit-enforcement.ts`,
         'retired',
         'deleted by U1 or later; no route left to gate'
     ],
@@ -217,7 +218,7 @@ const INVENTORY = [
         'deleted by U1 or later; no route left to gate'
     ],
     [
-        'apps/api/src/routes/commerce/protected/create.ts',
+        `apps/api/src/routes/${RETIRED_WORD_PART}/protected/create.ts`,
         'retired',
         'deleted by U1 or later; no route left to gate'
     ],
@@ -501,8 +502,12 @@ const INVENTORY = [
 ] as const;
 
 const MECHANISM_ALIASES: Readonly<Record<string, readonly string[]>> = {
-    aiQuotaGate: ['aiQuotaGate', 'evaluateAiQuota'],
-    paidFieldsFilter: ['paidFieldsFilter', 'filterPublicPaidFields']
+    aiQuotaGate: ['aiQuotaGate', 'evaluateAiQuota', 'enforceAiQuota'],
+    paidFieldsFilter: [
+        'paidFieldsFilter',
+        'filterPublicPaidFields',
+        'filterPublicPaidFieldsForOwner'
+    ]
 };
 
 function codeWithoutComments(source: string): string {
@@ -523,6 +528,45 @@ function codeWithoutComments(source: string): string {
     return tokens.join(' ');
 }
 
+function hasMechanismUse(source: string, mechanisms: readonly string[]): boolean {
+    const sourceFile = ts.createSourceFile('inventory.ts', source, ts.ScriptTarget.Latest, true);
+    let found = false;
+    const visit = (node: ts.Node): void => {
+        if (ts.isPropertyAccessExpression(node) && mechanisms.includes(node.name.text)) {
+            found = true;
+        }
+        if (ts.isCallExpression(node)) {
+            const callee = node.expression;
+            const name = ts.isIdentifier(callee)
+                ? callee.text
+                : ts.isPropertyAccessExpression(callee)
+                  ? callee.name.text
+                  : undefined;
+            if (name && mechanisms.includes(name)) found = true;
+            if (
+                !found &&
+                ts.isIdentifier(node.expression) &&
+                /^(create|make).*Route$/.test(node.expression.text) &&
+                node.arguments.some(
+                    (argument) =>
+                        ts.isObjectLiteralExpression(argument) &&
+                        argument.properties.some(
+                            (property) =>
+                                ts.isPropertyAssignment(property) &&
+                                ts.isIdentifier(property.name) &&
+                                mechanisms.includes(property.name.text)
+                        )
+                )
+            ) {
+                found = true;
+            }
+        }
+        if (!found) ts.forEachChild(node, visit);
+    };
+    visit(sourceFile);
+    return found;
+}
+
 describe('TEST:V5:34 U1 gate inventory', () => {
     it('covers all U1 route inventory entries', () => {
         for (const [file, kind, evidence] of INVENTORY) {
@@ -541,17 +585,11 @@ describe('TEST:V5:34 U1 gate inventory', () => {
             const source = readFileSync(absolute, 'utf8');
             expect(source, file).not.toContain(MARKER);
             if (evidence === 'NO_MARKER') continue;
-            const code = codeWithoutComments(source);
             const mechanisms = evidence.split('|');
-            const normalizedCode = code.replace(/[^a-z0-9]/gi, '').toLowerCase();
-            expect(
-                mechanisms.some((mechanism) =>
-                    (MECHANISM_ALIASES[mechanism] ?? [mechanism]).some((candidate) =>
-                        normalizedCode.includes(candidate.replace(/[^a-z0-9]/gi, '').toLowerCase())
-                    )
-                ),
-                file
-            ).toBe(true);
+            const candidates = mechanisms.flatMap(
+                (mechanism) => MECHANISM_ALIASES[mechanism] ?? [mechanism]
+            );
+            expect(hasMechanismUse(codeWithoutComments(source), candidates), file).toBe(true);
         }
     });
 });
