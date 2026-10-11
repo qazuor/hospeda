@@ -39,6 +39,8 @@ export interface EnqueueEmailInput {
     readonly template: string;
     /** Template variables. */
     readonly payload?: Record<string, unknown>;
+    /** Earliest instant the sender may take the row; NULL or omitted means immediately. */
+    readonly sendAfter?: Date | null;
     /** Dedup key from `buildEmailDedupKey`, computed before this call. */
     readonly dedupKey: string;
     /** Delivery channel. Defaults to `email`. */
@@ -165,6 +167,7 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
                     template: input.template,
                     channel: input.channel ?? 'email',
                     payload: input.payload ?? {},
+                    sendAfter: input.sendAfter ?? null,
                     dedupKey: input.dedupKey,
                     correlationId: input.correlationId ?? null
                 })
@@ -180,6 +183,7 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
 
     /**
      * Takes up to `limit` sendable rows (`pending` or `retry`, oldest first),
+     * only when `send_after` is NULL or no later than the reference instant,
      * moving them to `processing` with an owner and a lease.
      *
      * One statement with `FOR UPDATE SKIP LOCKED`, so two senders running at
@@ -203,6 +207,7 @@ export class EmailOutboxModel extends BaseModelImpl<EmailOutboxRow> {
                 WHERE id IN (
                     SELECT id FROM email_outbox
                     WHERE status IN ('pending', 'retry')
+                      AND (send_after IS NULL OR send_after <= ${now.toISOString()}::timestamptz)
                     ORDER BY created_at ASC
                     LIMIT ${input.limit}
                     FOR UPDATE SKIP LOCKED

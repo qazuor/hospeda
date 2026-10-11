@@ -71,6 +71,9 @@ export const emailOutbox = pgTable(
         /** Template variables, captured at enqueue so the send needs no re-read of domain state. */
         payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
 
+        /** Earliest instant the sender may take the row; NULL means immediately. Scheduled mail uses market midnight of its target date. */
+        sendAfter: timestamp('send_after', { withTimezone: true }),
+
         /** Lifecycle state. See {@link EMAIL_OUTBOX_STATUSES}. */
         status: varchar('status', { length: 20 })
             .$type<EmailOutboxStatus>()
