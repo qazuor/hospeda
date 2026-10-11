@@ -39,6 +39,8 @@ export interface CreditPaymentPorts {
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
     readonly markPayments?: import('../reconciliation/reconciliation-mark-payments.port').ReconciliationMarkPayments;
+    readonly beforeOptimisticUpdate?: (input: { readonly paymentId: string }) => Promise<void>;
+    readonly onOptimisticUpdateMiss?: (input: { readonly paymentId: string }) => Promise<void>;
 }
 
 export interface CreditPaymentResult {
@@ -101,6 +103,7 @@ export async function creditPayment(
                               tx
                           }))
                         : false;
+                await ports.beforeOptimisticUpdate?.({ paymentId: payment.id });
                 const [credited] = await tx
                     .update(payments)
                     .set({
@@ -117,6 +120,7 @@ export async function creditPayment(
                     )
                     .returning();
                 if (!credited) {
+                    await ports.onOptimisticUpdateMiss?.({ paymentId: payment.id });
                     const [latest] = await tx
                         .select({ status: payments.status })
                         .from(payments)

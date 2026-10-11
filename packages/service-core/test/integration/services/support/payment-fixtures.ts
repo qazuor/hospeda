@@ -37,7 +37,16 @@ function adjustableClock() {
     } satisfies Clock & { advance(input: { readonly ms: number }): void };
 }
 
-export async function paymentFixture({ honestM8 = true }: { readonly honestM8?: boolean } = {}) {
+export async function paymentFixture({
+    honestM8 = true,
+    simulate
+}: {
+    readonly honestM8?: boolean;
+    readonly simulate?: readonly {
+        readonly simulation: 'noticesOutOfOrder';
+        readonly why: string;
+    }[];
+} = {}) {
     const clock = adjustableClock();
     await getServiceTestDb()
         .insert(billingDeadlineVersions)
@@ -83,14 +92,16 @@ export async function paymentFixture({ honestM8 = true }: { readonly honestM8?: 
               honestAbout: [
                   { lie: 'M1', why: 'signup fixture needs the authorization creation to land' },
                   { lie: 'M8', why: 'the immediate charge case needs an approved charge' }
-              ]
+              ],
+              simulate
           })
         : new FakePaymentProvider({
               clock,
               idNamespace,
               honestAbout: [
                   { lie: 'M1', why: 'signup fixture needs the authorization creation to land' }
-              ]
+              ],
+              simulate
           });
     const started = await startSubscription(
         { userId: user.id, billingOptionId: optionId, returnUrl: 'https://example.test/return' },
