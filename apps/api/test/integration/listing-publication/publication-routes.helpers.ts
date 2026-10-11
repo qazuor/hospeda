@@ -28,6 +28,8 @@ import {
     gastronomies,
     gastronomyMedia,
     getDb,
+    inArray,
+    max,
     plans,
     planVersionEntitlements,
     planVersionLimits,
@@ -64,6 +66,18 @@ const LIMIT_KEY_BY_VERTICAL = {
     accommodation: 'max_accommodations',
     gastronomy: 'max_gastronomies',
     experience: 'max_experiences'
+} as const;
+
+const PUBLISH_KEY_BY_VERTICAL = {
+    accommodation: 'publish_accommodations',
+    gastronomy: 'publish_gastronomy',
+    experience: 'publish_experience'
+} as const;
+
+const EDIT_KEY_BY_VERTICAL = {
+    accommodation: 'edit_accommodation_info',
+    gastronomy: 'edit_gastronomy_info',
+    experience: 'edit_experience_info'
 } as const;
 
 /** Mutable answers of the replaced publication ports; reset per test. */
@@ -138,6 +152,22 @@ export function actorHeaders(args: {
     };
 }
 
+/** Ids of the plan versions that grant `key`, as a subquery. */
+function versionsHolding(key: string) {
+    return getDb()
+        .select({ id: planVersionEntitlements.planVersionId })
+        .from(planVersionEntitlements)
+        .where(eq(planVersionEntitlements.key, key));
+}
+
+/** Ids of the plan versions that carry a `key` limit row, as a subquery. */
+function versionsLimiting(key: string) {
+    return getDb()
+        .select({ id: planVersionLimits.planVersionId })
+        .from(planVersionLimits)
+        .where(eq(planVersionLimits.key, key));
+}
+
 async function ensureVersion(args: {
     readonly vertical:
         | typeof VerticalEnum.ACCOMMODATION
@@ -149,6 +179,12 @@ async function ensureVersion(args: {
     readonly trialDays: number;
     readonly entitlements: readonly string[];
     readonly limit?: number;
+    /**
+     * An entitlement the reused version must hold. Other suites sharing this
+     * database leave current sellable versions with no entitlements at all, so
+     * "some current sellable version exists" does not mean the matrix's does.
+     */
+    readonly requiredKey?: string;
 }): Promise<void> {
     const db = getDb();
     const role = args.sellable ? null : args.role;
@@ -160,28 +196,59 @@ async function ensureVersion(args: {
             and(
                 eq(planVersions.vertical, args.vertical),
                 eq(planVersions.current, true),
-                args.sellable ? eq(planVersions.sellable, true) : eq(plans.role, args.role)
+                args.sellable ? eq(planVersions.sellable, true) : eq(plans.role, args.role),
+                args.requiredKey === undefined
+                    ? undefined
+                    : inArray(planVersions.id, versionsHolding(args.requiredKey))
             )
         )
         .limit(1);
     if (existing) return;
     await db.transaction(async (tx) => {
-        const [plan] = await tx
-            .insert(plans)
-            .values({
-                vertical: args.vertical,
-                slug: `matrix-${args.role}-${randomUUID()}`,
-                name: `Matrix ${args.role}`,
-                role
-            })
-            .returning({ id: plans.id });
+        // `uq_plan_version_sellable_current_rank`: a sellable version takes the
+        // next free rank above whatever current sellable versions are left behind.
+        const [top] = args.sellable
+            ? await tx
+                  .select({ rank: max(planVersions.rank) })
+                  .from(planVersions)
+                  .where(
+                      and(
+                          eq(planVersions.vertical, args.vertical),
+                          eq(planVersions.sellable, true),
+                          eq(planVersions.current, true)
+                      )
+                  )
+            : [];
+        const rank = Math.max(args.rank, (top?.rank ?? -1) + 1);
+        // A non-sellable role is unique per vertical (`uq_plan_vertical_role`), and other
+        // suites sharing this database can leave that plan behind without a current
+        // version: reuse it instead of inserting a second one.
+        const [rolePlan] =
+            role === null
+                ? []
+                : await tx
+                      .select({ id: plans.id })
+                      .from(plans)
+                      .where(and(eq(plans.vertical, args.vertical), eq(plans.role, role)))
+                      .limit(1);
+        const [plan] = rolePlan
+            ? [rolePlan]
+            : await tx
+                  .insert(plans)
+                  .values({
+                      vertical: args.vertical,
+                      slug: `matrix-${args.role}-${randomUUID()}`,
+                      name: `Matrix ${args.role}`,
+                      role
+                  })
+                  .returning({ id: plans.id });
         if (!plan) throw new Error('Catalog plan insert failed');
         const [version] = await tx
             .insert(planVersions)
             .values({
                 planId: plan.id,
                 vertical: args.vertical,
-                rank: args.rank,
+                rank,
                 sellable: args.sellable,
                 current: true,
                 trialDays: args.trialDays,
@@ -227,16 +294,8 @@ export async function ensurePublicationCatalog(
         | typeof VerticalEnum.GASTRONOMY
         | typeof VerticalEnum.EXPERIENCE
 ): Promise<void> {
-    const publishKey = {
-        accommodation: 'publish_accommodations',
-        gastronomy: 'publish_gastronomy',
-        experience: 'publish_experience'
-    }[vertical];
-    const editKey = {
-        accommodation: 'edit_accommodation_info',
-        gastronomy: 'edit_gastronomy_info',
-        experience: 'edit_experience_info'
-    }[vertical];
+    const publishKey = PUBLISH_KEY_BY_VERTICAL[vertical];
+    const editKey = EDIT_KEY_BY_VERTICAL[vertical];
     await ensureVersion({
         vertical,
         role: FLOOR_PLAN_ROLE,
@@ -269,7 +328,8 @@ export async function ensurePublicationCatalog(
         sellable: true,
         trialDays: 30,
         entitlements: [publishKey, editKey],
-        limit: 1
+        limit: 1,
+        requiredKey: editKey
     });
 }
 
@@ -487,6 +547,10 @@ export async function createTrial(args: {
             )
         )
         .limit(1);
+    // The floors are anchored on versions that carry what the matrix needs, not
+    // on the catalog's extremes: other suites sharing this database leave current
+    // sellable versions with no entitlements and no limits at the top rank, and a
+    // trial floored on one of those has no EDIT capability at all.
     const sellable = and(
         eq(planVersions.vertical, vertical),
         eq(planVersions.sellable, true),
@@ -495,13 +559,20 @@ export async function createTrial(args: {
     const [highest] = await db
         .select({ id: planVersions.id })
         .from(planVersions)
-        .where(sellable)
+        .where(
+            and(sellable, inArray(planVersions.id, versionsHolding(EDIT_KEY_BY_VERTICAL[vertical])))
+        )
         .orderBy(desc(planVersions.rank))
         .limit(1);
     const [lowest] = await db
         .select({ id: planVersions.id })
         .from(planVersions)
-        .where(sellable)
+        .where(
+            and(
+                sellable,
+                inArray(planVersions.id, versionsLimiting(LIMIT_KEY_BY_VERTICAL[vertical]))
+            )
+        )
         .orderBy(asc(planVersions.rank))
         .limit(1);
     if (!trialVersion || !highest || !lowest) throw new Error('Trial catalog is missing');
