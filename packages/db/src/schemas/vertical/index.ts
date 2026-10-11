@@ -11,6 +11,8 @@ export * from './plan-migration.dbschema.ts';
 export * from './promo.dbschema.ts';
 export * from './provider-link.dbschema.ts';
 export * from './quota-window.dbschema.ts';
+export * from './reconciliation-mark.dbschema.ts';
+export * from './reconciliation-mark-reasons.ts';
 export * from './reference-tables.ts';
 export * from './scheduled-change.dbschema.ts';
 export * from './subscription.dbschema.ts';

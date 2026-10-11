@@ -28,6 +28,7 @@ function ports(granted: boolean) {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: granted ? [{ key: 'recover_own_listing', value: 1, strategy: 'MAX' }] : []
             })
     );

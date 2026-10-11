@@ -2,6 +2,10 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { getDb, subscriptionModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import {
+    cancelInheritedTouristVips,
+    type TouristVipInheritancePort
+} from './cancel-inherited-tourist-vip.service';
 import { enqueueSignupIncompleteNotice } from './signup-incomplete-notice.ts';
 import type { BeforeCancelNotice } from './start-subscription.service';
 
@@ -11,6 +15,7 @@ export interface ExpireAuthorizationWindowsPorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
+    readonly touristVipInheritance: TouristVipInheritancePort;
 }
 
 export interface ExpireAuthorizationWindowsSummary {
@@ -19,6 +24,7 @@ export interface ExpireAuthorizationWindowsSummary {
     readonly cancelCalls: number;
     readonly noticePending: number;
     readonly skipped: number;
+    readonly touristVipCancelled: number;
 }
 
 /** S3: stored row deadlines determine eligibility; provider state is re-read by id. */
@@ -35,6 +41,7 @@ export async function expireAuthorizationWindows(
     let cancelCalls = 0;
     let noticePending = 0;
     let skipped = 0;
+    let touristVipCancelled = 0;
 
     for (const row of rows) {
         const { subscription, providerLink } = row;
@@ -53,6 +60,20 @@ export async function expireAuthorizationWindows(
                 });
                 if (wrote) activated++;
                 else skipped++;
+                if (wrote && subscription.userId) {
+                    try {
+                        const result = await cancelInheritedTouristVips(
+                            { userId: subscription.userId },
+                            ports
+                        );
+                        touristVipCancelled += result.cancelled;
+                    } catch (error) {
+                        logger.error(
+                            { subscriptionId: subscription.id, error },
+                            'Inherited Tourist VIP cancellation will be retried'
+                        );
+                    }
+                }
                 continue;
             }
 
@@ -102,5 +123,5 @@ export async function expireAuthorizationWindows(
         else skipped++;
     }
 
-    return { abandoned, activated, cancelCalls, noticePending, skipped };
+    return { abandoned, activated, cancelCalls, noticePending, skipped, touristVipCancelled };
 }

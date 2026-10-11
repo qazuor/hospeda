@@ -9,6 +9,7 @@ import {
     readCutMigration,
     splitCutStatements
 } from './support/cut-migration.ts';
+import { protectScratchPool, waitForNoConnections } from './support/scratch-database.ts';
 
 const scratchName = `hospeda_cut_not_null_scratch_${process.pid}`;
 const preCutName = `hospeda_cut_not_null_pre_${process.pid}`;
@@ -28,6 +29,7 @@ function connectionFor(database: string): string {
 
 beforeAll(async () => {
     scratchAdmin = new Pool({ connectionString: connectionFor('postgres') });
+    await waitForNoConnections({ admin: scratchAdmin, database: scratchName });
     await scratchAdmin.query(`DROP DATABASE IF EXISTS "${scratchName}" WITH (FORCE)`);
     await scratchAdmin.query(`CREATE DATABASE "${scratchName}"`);
     const pkgDir = resolve(import.meta.dirname, '../..');
@@ -48,6 +50,7 @@ beforeAll(async () => {
         }
     );
     scratch = new Pool({ connectionString: connectionFor(scratchName) });
+    protectScratchPool({ pool: scratch });
     preCut = await createPreCutDatabase({ name: preCutName });
     await preCut.database.query(`INSERT INTO users (id, slug, email)
         VALUES ('00000000-0000-4000-8000-000000000091', 'cut-null-owner', 'cut-null-owner@example.test')`);
@@ -65,6 +68,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
     await scratch?.end();
+    await waitForNoConnections({ admin: scratchAdmin, database: scratchName });
     await scratchAdmin?.query(`DROP DATABASE IF EXISTS "${scratchName}" WITH (FORCE)`);
     await scratchAdmin?.end();
     if (preCut) await dropPreCutDatabase(preCut);

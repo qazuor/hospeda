@@ -27,6 +27,7 @@ function ports(
             userId,
             vertical,
             hasLiveNonTrialTitle: false,
+            inheritsTouristVip: false,
             entries: keys.map((key) => ({ key, value: 1, strategy: 'MAX' as const }))
         })
     );
@@ -163,6 +164,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
                     userId,
                     vertical,
                     hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
                     entries: [
                         { key: editKey, value: 1, strategy: 'MAX' as const },
                         { key: 'can_use_calendar', value: 1, strategy: 'MAX' as const },
@@ -201,6 +203,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
                     userId,
                     vertical,
                     hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
                     entries: [
                         { key: editKey, value: 1, strategy: 'MAX' as const },
                         { key: 'max_photos_per_accommodation', value: 1, strategy: 'MAX' as const }

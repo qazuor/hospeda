@@ -112,6 +112,7 @@ beforeEach(() => {
             userId,
             vertical: VerticalEnum.ACCOMMODATION,
             hasLiveNonTrialTitle: false,
+            inheritsTouristVip: false,
             entries: [
                 { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
                 {

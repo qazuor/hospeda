@@ -394,6 +394,7 @@ beforeEach(() => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: []
             })
     );

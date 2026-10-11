@@ -1,10 +1,20 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { eq, getDb, providerLinks, subscriptionModel, subscriptions } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import {
+    cancelInheritedTouristVips,
+    type TouristVipInheritancePort
+} from './cancel-inherited-tourist-vip.service';
+import type { BeforeCancelNotice } from './start-subscription.service';
+
+const logger = createLogger('subscription-activation');
 
 export interface ActivateSubscriptionPorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
+    readonly beforeCancelNotice: BeforeCancelNotice;
+    readonly touristVipInheritance: TouristVipInheritancePort;
 }
 
 export interface ActivateSubscriptionResult {
@@ -40,5 +50,15 @@ export async function activateSubscription(
         subscriptionId,
         now: ports.clock.now()
     });
+    if (activated && row.subscription.userId) {
+        try {
+            await cancelInheritedTouristVips({ userId: row.subscription.userId }, ports);
+        } catch (error) {
+            logger.error(
+                { subscriptionId, error },
+                'Inherited Tourist VIP cancellation will be retried'
+            );
+        }
+    }
     return { activated, subscriptionId };
 }

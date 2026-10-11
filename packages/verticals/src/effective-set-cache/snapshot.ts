@@ -34,6 +34,7 @@ export const effectiveSetSnapshotCodec: EffectiveSetCodec<EffectiveSetSnapshot> 
             typeof item.userId !== 'string' ||
             !VerticalEnumSchema.safeParse(item.vertical).success ||
             typeof item.hasLiveNonTrialTitle !== 'boolean' ||
+            typeof item.inheritsTouristVip !== 'boolean' ||
             !Array.isArray(item.entries)
         )
             throw new TypeError('Invalid effective-set snapshot');
@@ -53,6 +54,7 @@ export const effectiveSetSnapshotCodec: EffectiveSetCodec<EffectiveSetSnapshot> 
             userId: item.userId,
             vertical: VerticalEnumSchema.parse(item.vertical),
             hasLiveNonTrialTitle: item.hasLiveNonTrialTitle,
+            inheritsTouristVip: item.inheritsTouristVip,
             entries
         };
     }
