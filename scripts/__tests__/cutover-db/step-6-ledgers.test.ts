@@ -111,6 +111,57 @@ describe('TEST:V6:26 (ledgers)', () => {
                     stdio: 'pipe'
                 });
                 const originalSeedRows = [...seedRowsBefore.rows, ...seedInsert.rows];
+                await assertRehearsalMatches({ cutClient: a, builtClient: b });
+                const fullBackup = path.join(baselineDir, 'database.dump');
+                writeFileSync(fullBackup, 'test backup placeholder');
+                const indexDefinition = await b.query(
+                    "SELECT indexname, indexdef FROM pg_indexes WHERE schemaname = 'public' ORDER BY indexname LIMIT 1"
+                );
+                const indexName = String(indexDefinition.rows[0]?.indexname);
+                const dropIndexName = indexName.replaceAll('"', '""');
+                await b.query(`DROP INDEX public."${dropIndexName}"`);
+                await expect(
+                    assertRehearsalMatches({ cutClient: a, builtClient: b })
+                ).rejects.toMatchObject({
+                    name: 'RehearsalMismatchError',
+                    differences: expect.arrayContaining([expect.stringContaining(indexName)])
+                });
+                await expect(
+                    runDatabaseSide({
+                        targetUrl: aUrl,
+                        builtUrl: bUrl,
+                        migrationsDir: baselineDir,
+                        confirmFullBackup: fullBackup,
+                        connect: async ({ url }) => (url === aUrl ? a : b)
+                    })
+                ).rejects.toBeInstanceOf(RehearsalMismatchError);
+                expect(
+                    (await a.query('SELECT * FROM drizzle.__drizzle_migrations ORDER BY id')).rows
+                ).toEqual(oldMigrations.rows);
+                expect(
+                    (await a.query('SELECT * FROM public.seed_migrations ORDER BY name')).rows
+                ).toEqual(originalSeedRows);
+                await b.query(String(indexDefinition.rows[0]?.indexdef));
+                await expect(
+                    runDatabaseSide({
+                        targetUrl: aUrl,
+                        builtUrl: bUrl,
+                        migrationsDir: baselineDir,
+                        connect: async ({ url }) => (url === aUrl ? a : b)
+                    })
+                ).rejects.toThrow('confirm-full-backup');
+                const emptyBackup = path.join(baselineDir, 'empty.dump');
+                writeFileSync(emptyBackup, '');
+                await expect(
+                    runDatabaseSide({
+                        targetUrl: aUrl,
+                        builtUrl: bUrl,
+                        migrationsDir: baselineDir,
+                        confirmFullBackup: emptyBackup,
+                        connect: async ({ url }) => (url === aUrl ? a : b)
+                    })
+                ).rejects.toThrow('non-empty');
+
                 const stamp = new Date('2026-10-11T12:30:00.000Z');
                 const expectedBackups = {
                     migrations: 'drizzle.__drizzle_migrations_bak_20261011123000000',
@@ -223,50 +274,6 @@ describe('TEST:V6:26 (ledgers)', () => {
                         )
                     ).rows[0]?.name
                 ).toBe('step6_new_migration_probe');
-
-                await assertRehearsalMatches({ cutClient: a, builtClient: b });
-                await b.query('DROP INDEX public."catalog_key_slug_idx"');
-                await expect(
-                    assertRehearsalMatches({ cutClient: a, builtClient: b })
-                ).rejects.toMatchObject({
-                    name: 'RehearsalMismatchError',
-                    differences: expect.arrayContaining([
-                        expect.stringContaining('catalog_key_slug_idx')
-                    ])
-                });
-                const fullBackup = path.join(baselineDir, 'database.dump');
-                writeFileSync(fullBackup, 'test backup placeholder');
-                await expect(
-                    runDatabaseSide({
-                        targetUrl: aUrl,
-                        builtUrl: bUrl,
-                        migrationsDir: baselineDir,
-                        confirmFullBackup: fullBackup,
-                        connect: async ({ url }) => (url === aUrl ? a : b)
-                    })
-                ).rejects.toBeInstanceOf(RehearsalMismatchError);
-                expect(
-                    (await a.query('SELECT * FROM drizzle.__drizzle_migrations')).rows
-                ).toHaveLength(2);
-                await expect(
-                    runDatabaseSide({
-                        targetUrl: aUrl,
-                        builtUrl: bUrl,
-                        migrationsDir: baselineDir,
-                        connect: async ({ url }) => (url === aUrl ? a : b)
-                    })
-                ).rejects.toThrow('confirm-full-backup');
-                const emptyBackup = path.join(baselineDir, 'empty.dump');
-                writeFileSync(emptyBackup, '');
-                await expect(
-                    runDatabaseSide({
-                        targetUrl: aUrl,
-                        builtUrl: bUrl,
-                        migrationsDir: baselineDir,
-                        confirmFullBackup: emptyBackup,
-                        connect: async ({ url }) => (url === aUrl ? a : b)
-                    })
-                ).rejects.toThrow('non-empty');
 
                 const passage = await a.query(
                     'CREATE TABLE public.cutover_v6_deleted_listing (id integer)'
