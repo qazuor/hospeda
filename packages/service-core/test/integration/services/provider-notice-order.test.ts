@@ -158,6 +158,10 @@ describe('provider notices, order and acknowledgements', () => {
             { channel: 'WEBHOOKS', delivery: delivery(second.started.authorizationId, '9') },
             { provider: second.provider, clock, beforeCancelNotice }
         );
+        const duplicate = await processProviderNotice(
+            { channel: 'WEBHOOKS', delivery: delivery(second.started.authorizationId, '9') },
+            { provider: second.provider, clock, beforeCancelNotice }
+        );
         const [pendingRow] = await getServiceTestDb()
             .select()
             .from(subscriptions)
@@ -171,6 +175,7 @@ describe('provider notices, order and acknowledgements', () => {
             .from(reconciliationMarks)
             .where(eq(reconciliationMarks.subscriptionId, second.started.subscriptionId));
         expect(noop.outcome).toBe('NOOP');
+        expect(duplicate.outcome).toBe('DISCARDED_OLD_VERSION');
         expect(pendingRow?.status).toBe('PENDING_AUTHORIZATION');
         expect(pendingLink?.lastAppliedVersion).toBe('9');
         expect(pendingMarks).toHaveLength(0);

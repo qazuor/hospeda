@@ -1,7 +1,9 @@
 import {
     billingDeadlineVersions,
+    emailOutbox,
     eq,
     providerLinks,
+    reconciliationMarks,
     subscriptionModel,
     subscriptions,
     users
@@ -97,7 +99,7 @@ async function setup() {
         subscriptionId: started.subscriptionId,
         now: clock.now()
     });
-    return { provider, started };
+    return { provider, started, userId: user.id };
 }
 
 async function takeAuthorizationDelivery(provider: FakePaymentProvider) {
@@ -110,7 +112,7 @@ async function takeAuthorizationDelivery(provider: FakePaymentProvider) {
 
 describe('provider cancellation mirror', () => {
     it('TEST:B3:19 mirrors a payer cancellation immediately without cancelling again', async () => {
-        const { provider, started } = await setup();
+        const { provider, started, userId } = await setup();
         await provider.cancel({ authorizationId: started.authorizationId });
         const cancel = vi.spyOn(provider, 'cancel');
         const delivery = await takeAuthorizationDelivery(provider);
@@ -131,6 +133,21 @@ describe('provider cancellation mirror', () => {
             .where(eq(subscriptions.id, started.subscriptionId));
         expect(row?.status).toBe('CANCELLED');
         expect(row?.serviceEndsAt).toEqual(now);
+        const marks = await getServiceTestDb()
+            .select()
+            .from(reconciliationMarks)
+            .where(eq(reconciliationMarks.subscriptionId, started.subscriptionId));
+        const notices = await getServiceTestDb()
+            .select()
+            .from(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, userId));
+        expect(marks).toHaveLength(0);
+        expect(notices).toHaveLength(0);
+        const [link] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, started.subscriptionId));
+        expect(link?.lastModified).toEqual(now);
     });
 
     it('TEST:B3:19 waits without writing while the first charge is unknown', async () => {
