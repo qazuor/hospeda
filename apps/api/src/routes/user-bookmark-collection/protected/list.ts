@@ -5,22 +5,17 @@
  * @route GET /api/v1/protected/user-bookmark-collections
  */
 
-import { UserBookmarkCollectionListItemSchema } from '@repo/schemas';
+import { UserBookmarkCollectionListItemSchema, VerticalEnum } from '@repo/schemas';
 import { ServiceError, UserBookmarkCollectionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate, readEffectiveLimit } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams } from '../../../utils/pagination';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 const collectionService = new UserBookmarkCollectionService({ logger: apiLogger });
-
-/**
- * Default plan limit when the limit is not yet configured in the entitlement
- * context (e.g. unrecognised plan). Mirrors the VIP plan limit (25).
- */
-const DEFAULT_PLAN_LIMIT = 25;
 
 /** Response schema for the list endpoint, including the usage block. */
 const ListCollectionsResponseSchema = z.object({
@@ -50,8 +45,6 @@ export const listUserBookmarkCollectionsRoute = createProtectedRoute({
             .transform((v) => v === 'true')
     },
     responseSchema: ListCollectionsResponseSchema,
-    options: {},
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed MAX_COLLECTIONS plan limit.
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -59,6 +52,23 @@ export const listUserBookmarkCollectionsRoute = createProtectedRoute({
         query?: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_use_collections']
+        });
+        const max = await readEffectiveLimit({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            key: 'max_collections'
+        });
+        if (max < 1) {
+            await enforceUserGate({
+                userId: actor.id,
+                vertical: VerticalEnum.TOURIST,
+                limit: async () => ({ key: 'max_collections', requested: 1 })
+            });
+        }
         const { page, pageSize } = extractPaginationParams(query || {});
         const includeBookmarkCount = query?.includeBookmarkCount === true;
 
@@ -76,10 +86,6 @@ export const listUserBookmarkCollectionsRoute = createProtectedRoute({
         // result.data is always defined when result.error is absent
         // biome-ignore lint/style/noNonNullAssertion: result.data is guaranteed when result.error is absent
         const { rows, total } = result.data!;
-
-        // The per-plan MAX_COLLECTIONS limit was removed with the legacy
-        // billing system (HOS-1416); the hard cap (25) always applies.
-        const max = DEFAULT_PLAN_LIMIT;
 
         return {
             items: rows,

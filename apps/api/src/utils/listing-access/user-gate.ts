@@ -80,3 +80,34 @@ export async function readEffectiveKeys(args: {
         return denied;
     }
 }
+
+/** Read one effective limit without rejecting the request; a failed lookup returns zero. */
+export async function readEffectiveLimit(args: {
+    readonly userId: string;
+    readonly vertical: VerticalEnum;
+    readonly key: string;
+    readonly effectiveSetSnapshot?: RehydratedEffectiveSet;
+}): Promise<number> {
+    if (!getCatalogKey({ key: args.key })) throw new UnknownStepKeyError(args.key);
+    try {
+        const effective =
+            args.effectiveSetSnapshot ??
+            (await getListingAccessPorts().effectiveSet({
+                userId: args.userId,
+                vertical: args.vertical
+            }));
+        return (
+            effective.limits.get({
+                key: args.key,
+                userId: args.userId,
+                vertical: args.vertical
+            }) ?? 0
+        );
+    } catch {
+        apiLogger.warn(
+            { userId: args.userId, vertical: args.vertical, key: args.key },
+            'Effective limit lookup failed'
+        );
+        return 0;
+    }
+}

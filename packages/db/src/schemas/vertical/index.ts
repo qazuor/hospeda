@@ -12,6 +12,7 @@ export * from './plan-catalog.dbschema.ts';
 export * from './plan-migration.dbschema.ts';
 export * from './promo.dbschema.ts';
 export * from './provider-link.dbschema.ts';
+export * from './provider-notification.dbschema.ts';
 export * from './quota-window.dbschema.ts';
 export * from './receipt.dbschema.ts';
 export * from './reconciliation-mark.dbschema.ts';

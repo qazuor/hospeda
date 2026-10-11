@@ -12,7 +12,7 @@
  * tree is green.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,6 +32,8 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 const RECEIVER = 'apps/api/src/routes/payments/notices.ts';
 const TRANSITION = 'apps/api/src/services/billing/authorization-transitions.ts';
 const SWEEP = 'apps/api/src/cron/jobs/billing-sweep.job.ts';
+const SCHEMA = 'packages/db/src/schemas/vertical/provider-notification.dbschema.ts';
+const MODEL = 'packages/db/src/models/provider-notification/provider-notification.model.ts';
 const TABLE = NOTIFICATION_TABLE_NAME;
 
 const tempDirs: string[] = [];
@@ -94,6 +96,8 @@ export function activate({ read, act }: { ${params} }) {
 
 const GREEN: Readonly<Record<string, string>> = {
     [RECEIVER]: receiver(),
+    [SCHEMA]: `export const providerNotifications = pgTable('${TABLE}', { id: uuid('id') });\n`,
+    [MODEL]: `import { providerNotifications } from './provider-notification.dbschema.ts';\nexport const add = (db: Db) => db.insert(providerNotifications).values({});\n`,
     [TRANSITION]: transition(),
     // An email webhook reads its own body freely: it receives no provider notice.
     'apps/api/src/routes/webhooks/brevo.ts':
@@ -254,6 +258,81 @@ describe('the predicates, unit by unit', () => {
                 source: 'export const s = (r: R) => r.snapshot.status;\n'
             })
         ).toEqual([]);
+    });
+});
+
+describe('TEST:B3:21 / G17(c) writer allowlist', () => {
+    it('allows the table declaration, insert and retention delete in the two writer files', () => {
+        const result = guardOver();
+        expect(result.exitCode).toBe(0);
+        expect(result.output).toContain('OK:');
+    });
+
+    it('keeps a read inside the write model red', () => {
+        const result = guardOver({
+            overrides: {
+                [MODEL]: `import { providerNotifications } from './schema';\nexport const read = (db: Db) => db.select().from(providerNotifications);\n`
+            }
+        });
+        expectOnly({ result, rule: 'G17(c)' });
+        expect(result.output).toContain(MODEL);
+    });
+
+    it.each([
+        ['the API receiver', RECEIVER],
+        ['a service-core service', 'packages/service-core/src/services/notices.ts']
+    ])('does not allow the same insert in %s', (_label, file) => {
+        const result = guardOver({
+            overrides: {
+                [file]: `export const add = (db: Db) => db.insert(providerNotifications).values({});\n`
+            }
+        });
+        expectOnly({ result, rule: 'G17(c)' });
+        expect(result.output).toContain(file);
+    });
+
+    it('keeps a SQL string in the receiver red', () => {
+        const result = guardOver({
+            overrides: {
+                [RECEIVER]: `export const read = (db: Db) => db.execute(sql\`select * from ${TABLE}\`);\n`
+            }
+        });
+        expectOnly({ result, rule: 'G17(c)' });
+    });
+
+    it('keeps a model-shaped file in another route red', () => {
+        const result = guardOver({
+            overrides: {
+                'packages/db/src/models/other/provider-notification.model.ts': `export const add = (db: Db) => db.insert(providerNotifications).values({});\n`
+            }
+        });
+        expectOnly({ result, rule: 'G17(c)' });
+    });
+
+    it('freezes the allowlist to the two specified routes', async () => {
+        const { NOTIFICATION_WRITER_FILES } = await import(
+            '../check-decision-rereads-notification-writes.js'
+        );
+        expect(NOTIFICATION_WRITER_FILES).toEqual([SCHEMA, MODEL]);
+        expect(Object.isFrozen(NOTIFICATION_WRITER_FILES)).toBe(true);
+    });
+
+    it('TEST:B3:38 matches the migration table name and excludes the retired name', () => {
+        const migrationDir = path.join(REPO_ROOT, 'packages/db/src/migrations');
+        const migration = readdirSync(migrationDir).find((file) => /^0153_.*\.sql$/.test(file));
+        expect(migration).toBeDefined();
+        const sql = readFileSync(path.join(migrationDir, migration as string), 'utf8');
+        expect(sql).toContain(`CREATE TABLE "${TABLE}"`);
+        const sourceFiles = [
+            ...readdirSync(migrationDir)
+                .filter((file) => file.endsWith('.sql'))
+                .map((file) => path.join(migrationDir, file)),
+            ...readdirSync(path.join(REPO_ROOT, 'packages/db/src/schemas'), { recursive: true })
+                .filter((file) => String(file).endsWith('.dbschema.ts'))
+                .map((file) => path.join(REPO_ROOT, 'packages/db/src/schemas', String(file)))
+        ];
+        for (const file of sourceFiles)
+            expect(readFileSync(file, 'utf8')).not.toContain('ipn_delivery');
     });
 });
 

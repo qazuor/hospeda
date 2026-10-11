@@ -61,7 +61,7 @@ export interface AuthUser {
 }
 
 export interface AppBindings {
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — billing entitlement and limit context was removed.
+    // Plan capabilities and limits are read from the effective set by utils/listing-access/user-gate.ts, not from context.
     Variables: {
         logger: ApiLogger;
         actor: Actor;

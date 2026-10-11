@@ -1,5 +1,5 @@
 {
-  "id": "0a36e37f-4161-49ac-b7ba-7194767630a8",
+  "id": "7305fb3f-a97d-455c-8b67-f56ed32a6922",
   "prevId": "b96922e2-9d52-48f2-941c-4ac9b6741139",
   "version": "7",
   "dialect": "postgresql",
@@ -29698,6 +29698,72 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.provider_notification": {
+      "name": "provider_notification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "channel": {
+          "name": "channel",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_provider_notification_received_at": {
+          "name": "idx_provider_notification_received_at",
+          "columns": [
+            {
+              "expression": "received_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_provider_notification_channel": {
+          "name": "ck_provider_notification_channel",
+          "value": "\"provider_notification\".\"channel\" IN ('IPN', 'WEBHOOKS')"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.cuota_ventana": {
       "name": "cuota_ventana",
       "schema": "",
@@ -30234,83 +30300,6 @@
         "ck_reconciliation_mark_payment_one_payment": {
           "name": "ck_reconciliation_mark_payment_one_payment",
           "value": "(\"reconciliation_mark_payment\".\"payment_id\" IS NOT NULL) <> (\"reconciliation_mark_payment\".\"manual_payment_id\" IS NOT NULL)"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.reconciliation_sweep_run": {
-      "name": "reconciliation_sweep_run",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "correlation_id": {
-          "name": "correlation_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "started_at": {
-          "name": "started_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "finished_at": {
-          "name": "finished_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "rows_read": {
-          "name": "rows_read",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "rows_failed": {
-          "name": "rows_failed",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        }
-      },
-      "indexes": {
-        "idx_reconciliation_sweep_run_started_at": {
-          "name": "idx_reconciliation_sweep_run_started_at",
-          "columns": [
-            {
-              "expression": "started_at",
-              "isExpression": false,
-              "asc": false,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ck_reconciliation_sweep_run_counts": {
-          "name": "ck_reconciliation_sweep_run_counts",
-          "value": "\"reconciliation_sweep_run\".\"rows_read\" >= 0 AND \"reconciliation_sweep_run\".\"rows_failed\" >= 0"
-        },
-        "ck_reconciliation_sweep_run_span": {
-          "name": "ck_reconciliation_sweep_run_span",
-          "value": "\"reconciliation_sweep_run\".\"finished_at\" IS NULL OR \"reconciliation_sweep_run\".\"finished_at\" >= \"reconciliation_sweep_run\".\"started_at\""
         }
       },
       "isRLSEnabled": false

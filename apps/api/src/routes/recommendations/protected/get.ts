@@ -7,7 +7,6 @@
  * popular/featured cold-start fallback when that profile has no signal yet
  * (`isColdStart: true`).
  *
- * Recommendations run without the former plan entitlement during the billing transition.
  * The service still enforces `PermissionEnum.RECOMMENDATION_VIEW` (role axis) —
  * see `RecommendationService.getFeed` for the authorization breakdown.
  *
@@ -16,13 +15,13 @@
  *
  * @route GET /api/v1/protected/recommendations
  * @module routes/recommendations/protected/get
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the former plan gate or limit is removed.
  */
-import { RecommendationFeedResponseSchema } from '@repo/schemas';
+import { RecommendationFeedResponseSchema, VerticalEnum } from '@repo/schemas';
 import { RecommendationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -44,9 +43,13 @@ export const getRecommendationsRoute = createProtectedRoute({
     options: {
         customRateLimit: { requests: 120, windowMs: 60000 }
     },
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed recommendations gate.
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_view_recommendations']
+        });
 
         const result = await recommendationService.getFeed(actor);
 

@@ -7,13 +7,15 @@ import {
     DestinationIdSchema,
     DestinationReviewCreateBodySchema,
     DestinationReviewProtectedSchema,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { createSlidingWindowPerUserRateLimit } from '../../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../../utils/actor';
+import { enforceUserGate } from '../../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
 import type { z } from '../../../../utils/zod';
@@ -47,10 +49,14 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
     },
     requestBody: DestinationReviewCreateBodySchema,
     responseSchema: DestinationReviewProtectedSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed WRITE_REVIEWS entitlement gate.
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
         const input = body as z.infer<typeof DestinationReviewCreateBodySchema>;
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['write_reviews']
+        });
         const payload = {
             ...input,
             destinationId: params.destinationId as z.infer<typeof DestinationIdSchema>,
@@ -62,7 +68,6 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         middlewares: [writeReviewRateLimit]
     }
 });

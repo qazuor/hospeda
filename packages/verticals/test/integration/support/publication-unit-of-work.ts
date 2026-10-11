@@ -15,13 +15,14 @@ export function createPublicationTestAdapter(args: {
     readonly db: DrizzleClient;
     readonly covered: { value: boolean };
     readonly limit: { value: number };
+    readonly billing?: Pick<BillingForVerticals, 'coverage'>;
     readonly onLocked?: () => Promise<void>;
     readonly beforeSetPublicationStatus?: () => Promise<void>;
 }): {
     readonly unitOfWork: PublicationUnitOfWork;
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
 } {
-    const billing: Pick<BillingForVerticals, 'coverage'> = {
+    const billing: Pick<BillingForVerticals, 'coverage'> = args.billing ?? {
         async coverage() {
             return { covered: args.covered.value, sources: [] };
         }

@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import type { DrizzleClient } from '@repo/db';
-import { domainEventModel, getDb, trialRedemptions, trials } from '@repo/db';
+import { domainEventModel, getDb, plans, planVersions, trialRedemptions, trials } from '@repo/db';
 import type { TrialStatusEnum, Vertical } from '@repo/schemas';
+import {
+    TRIAL_PLAN_ROLE,
+    VERTICAL_ACTIVATION_EVENT_BY_VERTICAL,
+    VerticalEnum
+} from '@repo/schemas';
 import type {
     TrialAfterCommit,
     TrialExpiryScanner,
@@ -10,11 +15,85 @@ import type {
 } from '@repo/verticals';
 import { trialMachineLockKey } from '@repo/verticals';
 import { and, eq, sql } from 'drizzle-orm';
+import {
+    type ListingVertical,
+    listingPublicationModel
+} from '../../../../../packages/db/src/models/listing/listing-publication.model';
 import { invalidateEffectiveSetsForUser } from '../effective-set-cache';
 import { getListingAccessPorts } from '../listing-access/ports';
 
 function portOf(tx: DrizzleClient): TrialMachineTransaction {
+    const listingVerticalByVertical: Readonly<Record<Vertical, ListingVertical | null>> = {
+        [VerticalEnum.ACCOMMODATION]: VerticalEnum.ACCOMMODATION,
+        [VerticalEnum.GASTRONOMY]: VerticalEnum.GASTRONOMY,
+        [VerticalEnum.EXPERIENCE]: VerticalEnum.EXPERIENCE,
+        [VerticalEnum.TOURIST]: null,
+        [VerticalEnum.PARTNER]: null
+    };
     return {
+        async findActivationEvent({ vertical }) {
+            return VERTICAL_ACTIVATION_EVENT_BY_VERTICAL[vertical];
+        },
+        async findTrialPlan({ vertical }) {
+            const [row] = await tx
+                .select({
+                    planId: plans.id,
+                    planVersionId: planVersions.id,
+                    trialDays: planVersions.trialDays
+                })
+                .from(planVersions)
+                .innerJoin(plans, eq(planVersions.planId, plans.id))
+                .where(
+                    sql`${plans.vertical} = ${vertical} AND ${plans.role} = ${TRIAL_PLAN_ROLE} AND ${planVersions.current} = true`
+                )
+                .limit(1);
+            return row ?? null;
+        },
+        async findTrialOfUser({ userId, vertical }) {
+            const [row] = await tx
+                .select({ id: trials.id })
+                .from(trials)
+                .where(and(eq(trials.userId, userId), eq(trials.vertical, vertical)))
+                .limit(1);
+            return row ?? null;
+        },
+        async findTrialByPseudonym({ emailPseudonym, vertical }) {
+            const [row] = await tx
+                .select({ userId: trials.userId })
+                .from(trials)
+                .where(
+                    and(eq(trials.emailPseudonym, emailPseudonym), eq(trials.vertical, vertical))
+                )
+                .limit(1);
+            return row ?? null;
+        },
+        async insertTrial({ row }) {
+            const inserted = await tx
+                .insert(trials)
+                .values({ ...row })
+                .onConflictDoNothing()
+                .returning({ id: trials.id });
+            if (inserted.length > 0) return { inserted: true } as const;
+            const [existing] = await tx
+                .select({ id: trials.id })
+                .from(trials)
+                .where(and(eq(trials.userId, row.userId), eq(trials.vertical, row.vertical)))
+                .limit(1);
+            return {
+                inserted: false,
+                conflict: existing ? 'USER_VERTICAL' : 'EMAIL_PSEUDONYM'
+            } as const;
+        },
+        async hasExercisedActivationEvent({ userId, vertical }) {
+            const listingVertical = listingVerticalByVertical[vertical];
+            return listingVertical === null
+                ? false
+                : listingPublicationModel.hasOwnerPublished({
+                      tx,
+                      vertical: listingVertical,
+                      userId
+                  });
+        },
         async findTrialForUpdate({ userId, vertical }) {
             const [row] = await tx
                 .select()
