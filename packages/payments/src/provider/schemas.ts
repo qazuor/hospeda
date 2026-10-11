@@ -24,6 +24,7 @@ const NonEmptyId = z.string().trim().min(1);
 /** Narrow search criteria for capability 7. */
 export const AuthorizationSearchInputSchema: z.ZodType<AuthorizationSearchInput> = z.strictObject({
     reference: NonEmptyId.optional(),
+    payerEmail: z.email().optional(),
     status: z.enum(['pending', 'active', 'paused', 'cancelled']).optional()
 });
 

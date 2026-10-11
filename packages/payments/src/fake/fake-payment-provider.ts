@@ -151,7 +151,8 @@ export class FakePaymentProvider implements PaymentProvider {
                     },
                     version: 1,
                     approvalUrl,
-                    createdAt: this.now()
+                    createdAt: this.now(),
+                    payerEmail: value.payerEmail ?? null
                 });
                 if (value.paymentToken !== undefined)
                     this.usedPaymentTokens.add(value.paymentToken);
