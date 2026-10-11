@@ -764,6 +764,13 @@
                         "cap5": "Ver análises da sua experiência"
                     }
                 },
+                "PARTNER_OWNER": {
+                    "name": "Sócio",
+                    "description": "Titular da presença pública de um Partner (página e carrossel). Concedido quando reclama a sua presença",
+                    "capabilities": {
+                        "cap1": "Gerir a presença do seu Partner"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Patrocinador",
                     "description": "Empresa externa com acesso a gerenciamento e análises de patrocínios",

@@ -260,11 +260,5 @@
         "business": "Comercio",
         "ngo": "ONG",
         "institution": "Institución"
-    },
-    "partnerTier": {
-        "label": "Nivel",
-        "bronze": "Bronce",
-        "silver": "Plata",
-        "gold": "Oro"
     }
 }
