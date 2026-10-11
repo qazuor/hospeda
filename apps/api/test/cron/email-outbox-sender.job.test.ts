@@ -40,6 +40,7 @@ function row(overrides: Partial<EmailOutboxRow> = {}): EmailOutboxRow {
         providerMessageId: null,
         lastError: null,
         correlationId: null,
+        sendAfter: null,
         createdAt: new Date(STARTED_AT.getTime() - 1000),
         updatedAt: STARTED_AT,
         ...overrides
