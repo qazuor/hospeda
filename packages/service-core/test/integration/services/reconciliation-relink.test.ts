@@ -178,7 +178,7 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
         });
 
         const noRowId = await authorize(fake, crypto.randomUUID());
-        const before = await getServiceTestDb().select().from(subscriptions);
+        const chargeCorrelationId = crypto.randomUUID();
         await expect(
             handleUnknownAuthorization(
                 {
@@ -187,12 +187,22 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
                         kind: 'CHARGE',
                         payment: { source: 'PAYMENT', id: crypto.randomUUID() }
                     },
-                    correlationId: crypto.randomUUID()
+                    correlationId: chargeCorrelationId
                 },
                 { provider, clock: reconciliationClock }
             )
         ).rejects.toMatchObject({ reason: 'UNOWNED_CHARGE_NEEDS_RECEIPT_TOMBSTONE' });
-        expect(await getServiceTestDb().select().from(subscriptions)).toHaveLength(before.length);
+        expect(
+            await getServiceTestDb()
+                .select()
+                .from(providerLinks)
+                .where(eq(providerLinks.providerId, noRowId))
+        ).toHaveLength(0);
+        expect(
+            (
+                await domainEventModel.findByCorrelationId({ correlationId: chargeCorrelationId })
+            ).filter((event) => event.eventType === 'reconciliation.mark_opened')
+        ).toHaveLength(0);
     });
 
     it('TEST:B11:2 is idempotent and serializes concurrent notices for a row without a link', async () => {
