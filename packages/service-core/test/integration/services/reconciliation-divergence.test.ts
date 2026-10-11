@@ -42,6 +42,11 @@ describe('TEST:B11:7 divergence opens a mark without applying provider values', 
         if (family === 'status') await fake.cancel({ authorizationId: owned.providerId! });
         const cancel = vi.spyOn(fake, 'cancel');
         cancel.mockClear();
+        const changeAmount = vi.spyOn(fake, 'changeAmount');
+        const pause = vi.spyOn(fake, 'pause');
+        const resume = vi.spyOn(fake, 'resume');
+        const charge = vi.spyOn(fake, 'charge');
+        const refund = vi.spyOn(fake, 'refund');
         const hang = vi.fn(async () => {});
         const comparison: ReconciliationComparison = ({ read, act }) => {
             const { snapshot } = assertFreshForAct({ read, act });
@@ -98,6 +103,11 @@ describe('TEST:B11:7 divergence opens a mark without applying provider values', 
             )
         ).toHaveLength(2);
         expect(cancel).not.toHaveBeenCalled();
+        expect(changeAmount).not.toHaveBeenCalled();
+        expect(pause).not.toHaveBeenCalled();
+        expect(resume).not.toHaveBeenCalled();
+        expect(charge).not.toHaveBeenCalled();
+        expect(refund).not.toHaveBeenCalled();
         if (family === 'charge') expect(hang).toHaveBeenCalledTimes(2);
     });
 

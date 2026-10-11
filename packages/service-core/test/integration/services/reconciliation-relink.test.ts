@@ -74,15 +74,37 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
     it('TEST:B11:2 marks an already linked named row; a charge hangs once through the injected port', async () => {
         const { fake, provider } = createReconciliationFake();
         const owned = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
-        const secondId = await authorize(fake, owned.subscription.id);
         const linkInsert = vi.spyOn(reconciliationInventoryModel, 'insertProviderLink');
+        const authorizationId = await authorize(fake, owned.subscription.id);
+        const authCorrelationId = crypto.randomUUID();
+        const authorizationResult = await handleUnknownAuthorization(
+            {
+                authorizationId,
+                arrival: { kind: 'AUTHORIZATION' },
+                correlationId: authCorrelationId
+            },
+            { provider, clock: reconciliationClock }
+        );
+        expect(authorizationResult).toMatchObject({
+            outcome: 'MARKED',
+            subscriptionId: owned.subscription.id,
+            reason: 'TRANSICION_NO_DECLARADA'
+        });
+        expect(
+            (
+                await domainEventModel.findByCorrelationId({ correlationId: authCorrelationId })
+            ).filter((event) => event.eventType === 'reconciliation.mark_opened')
+        ).toHaveLength(1);
+
+        const secondId = await authorize(fake, owned.subscription.id);
         const payment = { source: 'PAYMENT' as const, id: crypto.randomUUID() };
         const hang = vi.fn(async () => {});
+        const chargeCorrelationId = crypto.randomUUID();
         const marks = await handleUnknownAuthorization(
             {
                 authorizationId: secondId,
                 arrival: { kind: 'CHARGE', payment },
-                correlationId: crypto.randomUUID()
+                correlationId: chargeCorrelationId
             },
             {
                 provider,
@@ -96,6 +118,11 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
             reason: 'PAGO_TARDIO_RECHAZADO'
         });
         expect(hang).toHaveBeenCalledTimes(1);
+        expect(
+            (
+                await domainEventModel.findByCorrelationId({ correlationId: chargeCorrelationId })
+            ).filter((event) => event.eventType === 'reconciliation.mark_opened')
+        ).toHaveLength(1);
         expect(linkInsert).not.toHaveBeenCalled();
         expect(
             await getServiceTestDb()
