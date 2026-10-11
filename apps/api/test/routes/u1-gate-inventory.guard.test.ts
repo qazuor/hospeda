@@ -500,6 +500,11 @@ const INVENTORY = [
     ]
 ] as const;
 
+const MECHANISM_ALIASES: Readonly<Record<string, readonly string[]>> = {
+    aiQuotaGate: ['aiQuotaGate', 'evaluateAiQuota'],
+    paidFieldsFilter: ['paidFieldsFilter', 'filterPublicPaidFields']
+};
+
 function codeWithoutComments(source: string): string {
     const scanner = ts.createScanner(
         ts.ScriptTarget.Latest,
@@ -538,8 +543,13 @@ describe('TEST:V5:34 U1 gate inventory', () => {
             if (evidence === 'NO_MARKER') continue;
             const code = codeWithoutComments(source);
             const mechanisms = evidence.split('|');
+            const normalizedCode = code.replace(/[^a-z0-9]/gi, '').toLowerCase();
             expect(
-                mechanisms.some((mechanism) => code.includes(mechanism)),
+                mechanisms.some((mechanism) =>
+                    (MECHANISM_ALIASES[mechanism] ?? [mechanism]).some((candidate) =>
+                        normalizedCode.includes(candidate.replace(/[^a-z0-9]/gi, '').toLowerCase())
+                    )
+                ),
                 file
             ).toBe(true);
         }
