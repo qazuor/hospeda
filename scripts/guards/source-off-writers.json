@@ -75,5 +75,13 @@
         "via": "pending",
         "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
         "reason": "Provider cancellation notice ends active subscription coverage."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/start-succession.service.ts",
+        "symbol": "startSuccession",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Only links the predecessor to its successor (succeededById); the predecessor keeps its status and its coverage until the successor activates, so no coverage source turns off here (HOS-1530, inventoried at merge by HOS-1491)."
     }
 ]
