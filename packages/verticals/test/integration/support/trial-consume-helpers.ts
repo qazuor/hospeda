@@ -192,6 +192,25 @@ export function registerSupplementalTrialConsumeCases(args: {
         )?.publicationStatus;
 
     it('TEST:V4:12 atomicity rolls back T6 and publication together when PB1 fails', async () => {
+        const capped = await fixture();
+        const cappedBilling = new BillingForVerticalsSimulator();
+        setCoverage(cappedBilling, capped.userId, args.vertical, true);
+        const cappedAdapter = createPublicationTestAdapter({
+            db: args.db,
+            covered: { value: true },
+            limit: { value: 0 },
+            billing: cappedBilling
+        });
+        expect(
+            await publish({
+                userId: capped.userId,
+                listingId: capped.listing.id,
+                adapter: cappedAdapter
+            })
+        ).toEqual({ published: false, reason: 'LIMIT_REACHED' });
+        expect(await subjectRows(capped.userId)).toHaveLength(0);
+        expect(await statusOf(capped.listing.id)).toBe(PublicationStatusEnum.DRAFT);
+
         const subject = await fixture();
         const billing = new BillingForVerticalsSimulator();
         setCoverage(billing, subject.userId, args.vertical, true);
