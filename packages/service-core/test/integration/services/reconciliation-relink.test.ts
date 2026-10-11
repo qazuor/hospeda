@@ -2,6 +2,7 @@ import {
     domainEventModel,
     eq,
     providerLinks,
+    reconciliationInventoryModel,
     reconciliationMarkModel,
     subscriptions
 } from '@repo/db';
@@ -73,6 +74,7 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
         const { fake, provider } = createReconciliationFake();
         const owned = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
         const secondId = await authorize(fake, owned.subscription.id);
+        const linkInsert = vi.spyOn(reconciliationInventoryModel, 'insertProviderLink');
         const payment = { source: 'PAYMENT' as const, id: crypto.randomUUID() };
         const hang = vi.fn(async () => {});
         const marks = await handleUnknownAuthorization(
@@ -93,6 +95,7 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
             reason: 'PAGO_TARDIO_RECHAZADO'
         });
         expect(hang).toHaveBeenCalledTimes(1);
+        expect(linkInsert).not.toHaveBeenCalled();
         expect(
             await getServiceTestDb()
                 .select()
@@ -168,6 +171,7 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
         const { fake, provider } = createReconciliationFake();
         const owned = await seedSubscription({ status: 'ABANDONED' });
         const authorizationId = await authorize(fake, owned.subscription.id);
+        const linkInsert = vi.spyOn(reconciliationInventoryModel, 'insertProviderLink');
         const results = await Promise.all(
             Array.from({ length: 5 }, () =>
                 handleUnknownAuthorization(
@@ -182,6 +186,7 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
         );
         expect(results.filter((result) => result.outcome === 'RELINKED')).toHaveLength(1);
         expect(results.filter((result) => result.outcome === 'KNOWN')).toHaveLength(4);
+        expect(linkInsert).toHaveBeenCalledTimes(1);
         expect(
             await getServiceTestDb()
                 .select()
