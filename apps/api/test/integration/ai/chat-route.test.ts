@@ -494,6 +494,14 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             EntitlementKey.AI_CHAT,
             ...(testCase.enabled ? [testCase.key] : [])
         ];
+        mockOwnerLimits.current = new Map([
+            [
+                testCase.entityType === 'gastronomy'
+                    ? 'max_ai_chat_gastronomy_per_month'
+                    : 'max_ai_chat_experience_per_month',
+                20
+            ]
+        ]);
 
         const res = await app.request(STREAM_PATH, {
             method: 'POST',
