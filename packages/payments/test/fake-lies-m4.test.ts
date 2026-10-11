@@ -52,7 +52,12 @@ describe('TEST:B1:13 M4 search defense (supports TEST:B11:1)', () => {
             ids[2]
         ]);
         for (const summary of byReference.authorizations) {
-            expect(Object.keys(summary).sort()).toEqual(['authorizationId', 'reference', 'status']);
+            expect(Object.keys(summary).sort()).toEqual([
+                'authorizationId',
+                'createdAt',
+                'reference',
+                'status'
+            ]);
         }
         const read = await fake.readAuthorization({ authorizationId: ids[0]! });
         expect(read.snapshot).toHaveProperty('amount');

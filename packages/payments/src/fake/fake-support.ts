@@ -37,6 +37,7 @@ export interface StoredAuthorization {
     version: number;
     readonly approvalUrl: string;
     readonly createdAt: number;
+    readonly payerEmail: string | null;
 }
 
 /** A charge as the fake keeps it. */

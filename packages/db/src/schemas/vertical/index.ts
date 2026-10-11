@@ -18,6 +18,7 @@ export * from './receipt.dbschema.ts';
 export * from './reconciliation-mark.dbschema.ts';
 export * from './reconciliation-mark-payment.dbschema.ts';
 export * from './reconciliation-mark-reasons.ts';
+export * from './reconciliation-sweep-run.dbschema.ts';
 export * from './reference-tables.ts';
 export * from './refund.dbschema.ts';
 export * from './refund-call.dbschema.ts';

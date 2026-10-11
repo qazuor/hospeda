@@ -13,7 +13,9 @@ export function searchStoredAuthorizations(args: {
 }): AuthorizationSearchResult {
     const matches = [...args.stored]
         .filter(
-            ({ snapshot }) =>
+            ({ snapshot, payerEmail }) =>
+                (args.input.payerEmail === undefined ||
+                    payerEmail?.toLowerCase() === args.input.payerEmail.toLowerCase()) &&
                 (args.partial ||
                     args.input.reference === undefined ||
                     snapshot.reference === args.input.reference) &&
@@ -21,8 +23,9 @@ export function searchStoredAuthorizations(args: {
         )
         .filter((_, index) => !args.partial || args.input.status === undefined || index % 2 === 0)
         .map(
-            ({ snapshot }): AuthorizationSummary => ({
+            ({ snapshot, createdAt }): AuthorizationSummary => ({
                 authorizationId: snapshot.authorizationId,
+                createdAt: new Date(createdAt).toISOString(),
                 reference: snapshot.reference,
                 status: snapshot.status
             })
