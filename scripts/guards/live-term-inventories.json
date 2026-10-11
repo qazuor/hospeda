@@ -16,6 +16,32 @@
         }
     ],
     "grant_vivo_ancla_viva": [],
-    "marca_abierta": [],
-    "cortesia_diferida": []
+    "marca_abierta": [
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/open-reconciliation-mark.service.ts",
+            "symbol": "openReconciliationMark",
+            "row": 10,
+            "why": "S14 consulta la marca abierta antes de abrir otra."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/lift-reconciliation-mark.service.ts",
+            "symbol": "liftReconciliationMark",
+            "row": 1,
+            "why": "S15 relee levantada_en para decidir el desde."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/succession-target-guard.ts",
+            "symbol": "checkSuccessionTarget",
+            "row": 2,
+            "why": "La prohibición de ser sucedida consulta marcas abiertas."
+        }
+    ],
+    "cortesia_diferida": [
+        {
+            "file": "packages/db/src/models/subscription/subscription.model.ts",
+            "symbol": "abandonPendingAuthorization",
+            "row": 9,
+            "why": "S3 cierra el saldo diferido de la cortesía."
+        }
+    ]
 }

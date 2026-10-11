@@ -26,11 +26,13 @@
  *
  * Exit codes: 0 = no findings; 1 = a predicate failed or a catalog was unreadable.
  */
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { isConstantTruthy } from './check-no-unconditional-fixme.js';
+import { loadInventories } from './live-term-inventory.js';
+import { run as runListingInventory } from './reconciliation-mark-listing-and-inventory.js';
 import { listProductionFiles } from './succession-writers-scan.js';
 
 export const S14_FILE =
@@ -549,9 +551,23 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
             }).length,
         0
     );
+    const hasInventory = existsSync(join(root, 'scripts/guards/live-term-inventories.json'));
+    const inventory = hasInventory ? loadInventories({ root }) : { inventories: {}, findings: [] };
+    const listing = runListingInventory({
+        root,
+        minScannedFiles: min,
+        inventories: inventory.inventories
+    });
+    const extra = [
+        ...inventory.findings.map(
+            (f) => `G-R1-F (g): scripts/guards/live-term-inventories.json:${f.key} ${f.detail}`
+        ),
+        ...(hasInventory && listing.output ? listing.output.split('\n') : [])
+    ];
+    if (extra.length) return { exitCode: 1, output: extra.join('\n') };
     return {
         exitCode: 0,
-        output: `G-R1-F: OK; ${open} open calls; ${lifts} lift calls; ${closes} saldo closes; ${files.length} production files scanned (c) and (g) are covered by the next run`
+        output: `G-R1-F: OK; ${open} open calls; ${lifts} lift calls; ${closes} saldo closes; (c) ${listing.listingCount ? `${listing.listingCount} listings checked` : 'not evaluated: no ActionableReconciliationMark* declaration in the tree yet'}; ${listing.consumerCount} mark consumers registered; ${files.length} production files scanned`
     };
 }
 if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {

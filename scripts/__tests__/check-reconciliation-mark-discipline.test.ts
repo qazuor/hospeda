@@ -76,8 +76,21 @@ function check(overrides: Record<string, string> = {}) {
 }
 
 describe('TEST:B3:27 GUARD:G-R1-F', () => {
-    it('is green over the real tree', () => expect(run().exitCode).toBe(0), 30000);
-    it('is green on the minimum valid source tree', () => expect(check().exitCode).toBe(0));
+    it('is green over the real tree', () => {
+        const result = run();
+        expect(result.exitCode).toBe(0);
+        expect(result.output).toContain(
+            '(c) not evaluated: no ActionableReconciliationMark* declaration in the tree yet'
+        );
+        expect(result.output).toContain('mark consumers registered');
+    }, 30000);
+    it('is green on the minimum valid source tree', () => {
+        const result = check();
+        expect(result.exitCode).toBe(0);
+        expect(result.output).toContain(
+            '(c) not evaluated: no ActionableReconciliationMark* declaration in the tree yet'
+        );
+    });
     it('mutation 1: rejects unknown and missing opening reasons (a1)', () => {
         for (const source of [
             `async function call(){openReconciliationMark({reason:'MOTIVO_INVENTADO'});}`,
