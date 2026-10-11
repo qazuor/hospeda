@@ -110,6 +110,8 @@ describe('TEST:B3:22 provider delivery storage and retention', () => {
 
     it('does not save invalid input and returns a save error for a rejected body', async () => {
         getServiceTestDb();
+        const insertSpy = vi.spyOn(providerNotificationModel, 'insertDelivery');
+        const insertsBeforeInvalid = insertSpy.mock.calls.length;
         const failedUrl = `${url(crypto.randomUUID())}&source_news=webhooks`;
         const decodeCalls = decodeSpy.mock.calls.length;
         const invalid = await receiveProviderDelivery(
@@ -117,6 +119,7 @@ describe('TEST:B3:22 provider delivery storage and retention', () => {
             ports
         );
         expect(invalid.outcome).toBe('INVALID_DELIVERY');
+        expect(insertSpy).toHaveBeenCalledTimes(insertsBeforeInvalid);
         const failed = await receiveProviderDelivery(
             {
                 url: failedUrl,
