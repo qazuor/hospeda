@@ -8,6 +8,7 @@ import {
     rmSync,
     writeFileSync
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -21,9 +22,7 @@ afterEach(() => {
 });
 
 function fixture(): { root: string; baseline: GeneratedBaseline } {
-    const temp = path.join(ROOT, '.hoja/tmp');
-    mkdirSync(temp, { recursive: true });
-    const root = mkdtempSync(path.join(temp, 'step6-repo-'));
+    const root = mkdtempSync(path.join(tmpdir(), 'step6-repo-'));
     dirs.push(root);
     const migrations = path.join(root, 'packages/db/src/migrations');
     const seed = path.join(root, 'packages/seed/src/data-migrations');

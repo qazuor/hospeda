@@ -1,20 +1,17 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { isBaselineHistory, run } from '../check-catalog-sql.ts';
 import { buildLoads, renderInsert } from '../generate-catalog-sql.ts';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const dirs: string[] = [];
 afterEach(() => {
     for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
 function migrations({ files }: { readonly files: Readonly<Record<string, string>> }): string {
-    const base = path.join(ROOT, '.hoja/tmp');
-    mkdirSync(base, { recursive: true });
-    const dir = mkdtempSync(path.join(base, 'g18-baseline-'));
+    const dir = mkdtempSync(path.join(tmpdir(), 'g18-baseline-'));
     dirs.push(dir);
     for (const [name, sql] of Object.entries(files)) writeFileSync(path.join(dir, name), sql);
     return dir;
