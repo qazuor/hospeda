@@ -304,5 +304,18 @@
                 "experience": "We couldn't create the experience. Please try again."
             }
         }
+    },
+    "notices": {
+        "surplus": {
+            "criterion": "The most recently published listings are unpublished first, until your plan limit is met. Nothing is deleted.",
+            "recurringFeatured": "Recurring featured placements for listings that were unpublished will keep being charged until you cancel them.",
+            "noWindowDone": "There was no grace period: we explain what changed without suggesting that one took place."
+        },
+        "restitution": {
+            "restored": "These listings are back: {{listings}}.",
+            "notRestored": "These listings could not return: {{listings}}.",
+            "criterion": "The listing that dropped last returns first, until the available slots are filled. Listings from the old system that were never published here go first, by oldest creation date.",
+            "nothingDeleted": "Listings that could not return are still there; none are deleted."
+        }
     }
 }
