@@ -3,14 +3,13 @@ import { emailOutbox, eq, subscriptionModel, subscriptions, users } from '@repo/
 import { type LogEntry, registerHook, unregisterHook } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { declineFirstCharge } from '../../../src/services/billing/subscription/decline-first-charge.service';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { noTouristVip } from './support/tourist-vip';
 
 afterAll(closeServiceTestPool);
-afterEach(() => unregisterHook('b3-charge-declined-test'));
 
 const openedAt = new Date('2026-10-01T03:00:00.000Z');
 let current = openedAt;
@@ -166,8 +165,13 @@ describe('TEST:B3:17 declineFirstCharge', () => {
         current = openedAt;
         const own = await seedActive();
         const errors: LogEntry[] = [];
-        registerHook('b3-charge-declined-test', (entry) => {
-            if (entry.level === 'ERROR' && entry.category === 'decline-first-charge')
+        const hookId = `b3-charge-declined-${own.started.subscriptionId}`;
+        registerHook(hookId, (entry) => {
+            if (
+                entry.level === 'ERROR' &&
+                entry.category === 'decline-first-charge' &&
+                JSON.stringify(entry.data).includes(own.started.subscriptionId)
+            )
                 errors.push(entry);
         });
         const provider = providerWithCancel(own.fake, async () => {
@@ -185,6 +189,7 @@ describe('TEST:B3:17 declineFirstCharge', () => {
             .from(subscriptions)
             .where(eq(subscriptions.id, own.started.subscriptionId));
         expect(row?.status).toBe('CHARGE_DECLINED');
+        unregisterHook(hookId);
     });
 
     it('TEST:B3:17 c — already cancelled skips notice and cancel', async () => {
@@ -233,8 +238,13 @@ describe('TEST:B3:17 declineFirstCharge', () => {
             const own = await seedActive();
             vi.mocked(own.beforeCancelNotice.beforeCancel).mockResolvedValue(notice);
             const warnings: LogEntry[] = [];
-            registerHook('b3-charge-declined-test', (entry) => {
-                if (entry.level === 'WARN' && entry.category === 'decline-first-charge')
+            const hookId = `b3-charge-declined-${own.started.subscriptionId}`;
+            registerHook(hookId, (entry) => {
+                if (
+                    entry.level === 'WARN' &&
+                    entry.category === 'decline-first-charge' &&
+                    JSON.stringify(entry.data).includes(own.started.subscriptionId)
+                )
                     warnings.push(entry);
             });
             const provider = providerWithCancel(own.fake);
@@ -247,6 +257,7 @@ describe('TEST:B3:17 declineFirstCharge', () => {
             expect(warnings.some((entry) => JSON.stringify(entry.data).includes(notice))).toBe(
                 true
             );
+            unregisterHook(hookId);
         }
     });
 

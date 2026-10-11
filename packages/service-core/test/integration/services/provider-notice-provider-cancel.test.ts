@@ -150,6 +150,115 @@ describe('provider cancellation mirror', () => {
         expect(link?.lastModified).toEqual(now);
     });
 
+    it('TEST:B3:19 closes a live successor in the transaction and rolls back when closing fails', async () => {
+        const successful = await setup();
+        const [successor] = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: successful.userId,
+                vertical: 'accommodation',
+                planVersionId: (
+                    await getServiceTestDb()
+                        .select({ planVersionId: subscriptions.planVersionId })
+                        .from(subscriptions)
+                        .where(eq(subscriptions.id, successful.started.subscriptionId))
+                )[0]!.planVersionId,
+                billingOptionId: (
+                    await getServiceTestDb()
+                        .select({ billingOptionId: subscriptions.billingOptionId })
+                        .from(subscriptions)
+                        .where(eq(subscriptions.id, successful.started.subscriptionId))
+                )[0]!.billingOptionId,
+                paymentMethod: 'CARD',
+                class: 'PRINCIPAL',
+                status: 'PENDING_AUTHORIZATION',
+                succeedsId: successful.started.subscriptionId
+            })
+            .returning();
+        if (!successor) throw new Error('missing successor');
+        await successful.provider.cancel({ authorizationId: successful.started.authorizationId });
+        const delivery = await takeAuthorizationDelivery(successful.provider);
+        if (!delivery) throw new Error('missing cancellation delivery');
+        const closer = vi.fn(
+            async ({
+                predecessorSubscriptionId,
+                tx
+            }: {
+                predecessorSubscriptionId: string;
+                tx: Parameters<
+                    NonNullable<
+                        Parameters<typeof processProviderNotice>[1]['successionCloser']
+                    >['closeSuccession']
+                >[0]['tx'];
+            }) => {
+                const [row] = await tx
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, predecessorSubscriptionId));
+                expect(row?.status).toBe('CANCELLED');
+            }
+        );
+        const result = await processProviderNotice(
+            { channel: 'WEBHOOKS', delivery },
+            {
+                provider: successful.provider,
+                clock,
+                beforeCancelNotice,
+                payments: { hasCreditedPayment: async () => true },
+                successionCloser: { closeSuccession: closer }
+            }
+        );
+        expect(result).toEqual({ ack: 'OK', outcome: 'APPLIED' });
+        expect(closer).toHaveBeenCalledTimes(1);
+
+        const failed = await setup();
+        const failedRow = (
+            await getServiceTestDb()
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, failed.started.subscriptionId))
+        )[0];
+        if (!failedRow?.planVersionId || !failedRow.billingOptionId)
+            throw new Error('missing subscription fixture anchors');
+        await getServiceTestDb().insert(subscriptions).values({
+            userId: failed.userId,
+            vertical: failedRow.vertical,
+            planVersionId: failedRow.planVersionId,
+            billingOptionId: failedRow.billingOptionId,
+            paymentMethod: 'CARD',
+            class: 'PRINCIPAL',
+            status: 'PENDING_AUTHORIZATION',
+            succeedsId: failed.started.subscriptionId
+        });
+        await failed.provider.cancel({ authorizationId: failed.started.authorizationId });
+        const failedDelivery = await takeAuthorizationDelivery(failed.provider);
+        if (!failedDelivery) throw new Error('missing cancellation delivery');
+        const [linkBefore] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, failed.started.subscriptionId));
+        const failedResult = await processProviderNotice(
+            { channel: 'WEBHOOKS', delivery: failedDelivery },
+            {
+                provider: failed.provider,
+                clock,
+                beforeCancelNotice,
+                payments: { hasCreditedPayment: async () => true }
+            }
+        );
+        const [failedRowAfter] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, failed.started.subscriptionId));
+        const [linkAfter] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, failed.started.subscriptionId));
+        expect(failedResult).toEqual({ ack: 'ERROR', outcome: 'FAILED' });
+        expect(failedRowAfter?.status).toBe('ACTIVE');
+        expect(linkAfter?.lastAppliedVersion).toBe(linkBefore?.lastAppliedVersion);
+    });
+
     it('TEST:B3:19 waits without writing while the first charge is unknown', async () => {
         const { provider, started } = await setup();
         await provider.cancel({ authorizationId: started.authorizationId });
@@ -206,5 +315,110 @@ describe('provider cancellation mirror', () => {
             .where(eq(subscriptions.id, started.subscriptionId));
         expect(result).toEqual({ ack: 'OK', outcome: 'S16' });
         expect(row?.status).toBe('CHARGE_DECLINED');
+    });
+
+    it('TEST:B3:19 mirrors when the first charge is not rejected', async () => {
+        const { provider, started } = await setup();
+        await provider.cancel({ authorizationId: started.authorizationId });
+        const delivery = await takeAuthorizationDelivery(provider);
+        if (!delivery) throw new Error('missing cancellation delivery');
+        const result = await processProviderNotice(
+            { channel: 'WEBHOOKS', delivery },
+            {
+                provider,
+                clock,
+                beforeCancelNotice,
+                payments: { hasCreditedPayment: async () => false },
+                firstCharge: { readFirstCharge: async () => ({ outcome: 'NOT_REJECTED' }) }
+            }
+        );
+        const [row] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, started.subscriptionId));
+        expect(result).toEqual({ ack: 'OK', outcome: 'APPLIED' });
+        expect(row?.status).toBe('CANCELLED');
+    });
+
+    it('TEST:B3:19 delegates paused on ACTIVE to PROVIDER_PAUSE_IS_ARREARS without writing', async () => {
+        const { provider, started } = await setup();
+        await provider.pause({ authorizationId: started.authorizationId });
+        const delivery = await takeAuthorizationDelivery(provider);
+        if (!delivery) throw new Error('missing pause delivery');
+        const [rowBefore] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, started.subscriptionId));
+        const delegate = vi.fn(async () => undefined);
+        const result = await processProviderNotice(
+            { channel: 'WEBHOOKS', delivery },
+            {
+                provider,
+                clock,
+                beforeCancelNotice,
+                delegates: {
+                    delegate: async (input) => {
+                        expect(input).toEqual({
+                            pair: 'PROVIDER_PAUSE_IS_ARREARS',
+                            subscriptionId: started.subscriptionId
+                        });
+                        await delegate();
+                    }
+                }
+            }
+        );
+        const [row] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, started.subscriptionId));
+        const [after] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, started.subscriptionId));
+        const marks = await getServiceTestDb()
+            .select()
+            .from(reconciliationMarks)
+            .where(eq(reconciliationMarks.subscriptionId, started.subscriptionId));
+        expect(result).toEqual({ ack: 'OK', outcome: 'DELEGATED' });
+        expect(delegate).toHaveBeenCalledTimes(1);
+        expect(row?.status).toBe('ACTIVE');
+        expect(row?.updatedAt).toEqual(rowBefore?.updatedAt);
+        expect(after?.lastAppliedVersion).toBe('3');
+        expect(marks).toHaveLength(0);
+    });
+
+    it.each([
+        'CANCEL_SCHEDULED',
+        'SUSPENDED',
+        'CANCELLED'
+    ] as const)('TEST:B3:19 treats cancelled notice on %s as NOOP', async (status) => {
+        const { provider, started } = await setup();
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status })
+            .where(eq(subscriptions.id, started.subscriptionId));
+        await provider.cancel({ authorizationId: started.authorizationId });
+        const delivery = await takeAuthorizationDelivery(provider);
+        if (!delivery) throw new Error('missing cancellation delivery');
+        const [rowBefore] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, started.subscriptionId));
+        const result = await processProviderNotice(
+            { channel: 'WEBHOOKS', delivery },
+            { provider, clock, beforeCancelNotice }
+        );
+        const [row] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, started.subscriptionId));
+        const [after] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, started.subscriptionId));
+        expect(result).toEqual({ ack: 'OK', outcome: 'NOOP' });
+        expect(row?.status).toBe(status);
+        expect(row?.updatedAt).toEqual(rowBefore?.updatedAt);
+        expect(after?.lastAppliedVersion).toBe('3');
     });
 });

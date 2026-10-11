@@ -127,6 +127,7 @@ describe('provider notices, order and acknowledgements', () => {
             .where(eq(providerLinks.subscriptionId, started.subscriptionId));
         expect(row?.status).toBe('ACTIVE');
         expect(link?.lastAppliedVersion).toBe('8');
+        expect(link?.lastModified).toEqual(now);
     });
 
     it('TEST:B3:18 converges when versions arrive in ascending order and never trusts notice state', async () => {
@@ -151,6 +152,7 @@ describe('provider notices, order and acknowledgements', () => {
             .where(eq(providerLinks.subscriptionId, first.started.subscriptionId));
         expect(activeRow?.status).toBe('ACTIVE');
         expect(activeLink?.lastAppliedVersion).toBe('8');
+        expect(activeLink?.lastModified).toEqual(now);
         expect(reads).toHaveBeenCalledTimes(2);
 
         const second = await setup();
@@ -184,6 +186,7 @@ describe('provider notices, order and acknowledgements', () => {
     it('TEST:B3:18 acknowledges unknown resources and IPN without provider calls', async () => {
         const { provider } = await setup();
         const decode = vi.spyOn(provider, 'decodeNotice');
+        const reads = vi.spyOn(provider, 'readAuthorization');
         expect(
             await processProviderNotice(
                 { channel: 'WEBHOOKS', delivery: delivery('missing', '1') },
@@ -197,6 +200,45 @@ describe('provider notices, order and acknowledgements', () => {
             )
         ).toEqual({ ack: 'OK', outcome: 'IPN_NOT_PROCESSED' });
         expect(decode).toHaveBeenCalledTimes(1);
+        expect(reads).not.toHaveBeenCalled();
+    });
+
+    it('TEST:B3:18 acknowledges charge and refund notices without processing them', async () => {
+        const { provider, started } = await setup();
+        await provider.approve({ authorizationId: started.authorizationId });
+        const { chargeId } = await provider.declineCharge({
+            authorizationId: started.authorizationId,
+            declineReason: 'risk'
+        });
+        const charge = vi.spyOn(provider, 'readCharge');
+        const resultFor = (resourceKind: 'charge' | 'refund') =>
+            processProviderNotice(
+                {
+                    channel: 'WEBHOOKS',
+                    delivery: (() => {
+                        const encoded = encodeFakeNotice({
+                            notice: {
+                                resourceKind,
+                                resourceId: resourceKind === 'charge' ? chargeId : 'refund-id',
+                                version: '1'
+                            },
+                            format: 'json'
+                        });
+                        return {
+                            headers: { 'content-type': encoded.contentType },
+                            body: encoded.body
+                        };
+                    })()
+                },
+                { provider, clock, beforeCancelNotice }
+            );
+
+        expect(await resultFor('charge')).toEqual({ ack: 'OK', outcome: 'S16' });
+        expect(await resultFor('refund')).toEqual({
+            ack: 'OK',
+            outcome: 'RESOURCE_KIND_NOT_HANDLED'
+        });
+        expect(charge).toHaveBeenCalledTimes(1);
     });
 
     it('TEST:B3:18 returns ERROR and preserves the link version when the provider read fails', async () => {
