@@ -18,6 +18,18 @@ export interface PublicationListing {
     readonly inactiveSince: Date;
 }
 
+/** Stable cursor for the daily listing reconciler. */
+export interface ListingReconcilerCursor {
+    readonly userId: string;
+    readonly vertical: ListingVertical;
+}
+
+/** A page of distinct owner and vertical pairs. */
+export interface ListingReconcilerPage {
+    readonly items: readonly { readonly userId: string; readonly vertical: ListingVertical }[];
+    readonly next: ListingReconcilerCursor | null;
+}
+
 const TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodations',
     gastronomy: 'gastronomies',
@@ -53,6 +65,86 @@ function legacyPublicationWrite(args: {
 
 /** Transaction-bound persistence for PB1, PB2, PB3 and PB6. */
 export const listingPublicationModel = {
+    /** Pages owners with at least one eligible, non-deleted listing. */
+    async listReconcilerPopulation(args: {
+        readonly tx: DrizzleClient;
+        readonly after: ListingReconcilerCursor | null;
+        readonly limit: number;
+    }): Promise<ListingReconcilerPage> {
+        const branches = Object.entries(TABLES).map(
+            ([
+                vertical,
+                name
+            ]) => sql`SELECT owner_id::text AS "userId", ${vertical}::text AS vertical
+                FROM ${sql.identifier(name)}
+                WHERE deleted_at IS NULL
+                  AND publication_status IN ('PUBLISHED', 'UNPUBLISHED_BY_BILLING', 'ARCHIVED')
+                GROUP BY owner_id`
+        );
+        const union = sql.join(branches, sql` UNION ALL `);
+        const result = await args.tx.execute(sql<{ userId: string; vertical: ListingVertical }>`
+            SELECT "userId", vertical FROM (${union}) population
+            WHERE ${
+                args.after === null
+                    ? sql`true`
+                    : sql`("userId", vertical) > (${args.after.userId}, ${args.after.vertical})`
+            }
+            ORDER BY "userId", vertical LIMIT ${args.limit + 1}`);
+        const rows = result.rows.slice(0, args.limit).map((row) => {
+            const vertical = Object.keys(TABLES).find((candidate) => candidate === row.vertical);
+            if (!vertical) throw new Error(`Unexpected listing vertical: ${String(row.vertical)}`);
+            return { userId: String(row.userId), vertical: vertical as ListingVertical };
+        });
+        const last = rows.at(-1);
+        return {
+            items: rows,
+            next:
+                result.rows.length > args.limit && last
+                    ? { userId: last.userId, vertical: last.vertical }
+                    : null
+        };
+    },
+    /** Reads owner listing state counts without locking rows. */
+    async summarizeOwnerListings(args: {
+        readonly tx: DrizzleClient;
+        readonly vertical: ListingVertical;
+        readonly ownerId: string;
+    }): Promise<{
+        readonly published: number;
+        readonly unpublishedByBilling: number;
+        readonly archived: number;
+    }> {
+        const result = await args.tx.execute(sql<{
+            published: string;
+            unpublishedByBilling: string;
+            archived: string;
+        }>`SELECT
+            count(*) FILTER (WHERE publication_status = 'PUBLISHED')::text AS published,
+            count(*) FILTER (WHERE publication_status = 'UNPUBLISHED_BY_BILLING')::text AS "unpublishedByBilling",
+            count(*) FILTER (WHERE publication_status = 'ARCHIVED')::text AS archived
+          FROM ${table(args.vertical)}
+          WHERE owner_id = ${args.ownerId} AND deleted_at IS NULL`);
+        const row = result.rows[0];
+        return {
+            published: Number(row?.published ?? 0),
+            unpublishedByBilling: Number(row?.unpublishedByBilling ?? 0),
+            archived: Number(row?.archived ?? 0)
+        };
+    },
+    /** Pages distinct owners with a live Partner row. */
+    async listPartnerPresenceUsers(args: {
+        readonly tx: DrizzleClient;
+        readonly after: string | null;
+        readonly limit: number;
+    }): Promise<{ readonly items: readonly string[]; readonly next: string | null }> {
+        const result = await args.tx.execute(sql<{ userId: string }>`
+            SELECT owner_user_id::text AS "userId" FROM partners
+            WHERE owner_user_id IS NOT NULL AND deleted_at IS NULL
+              AND (${args.after}::text IS NULL OR owner_user_id::text > ${args.after})
+            GROUP BY owner_user_id ORDER BY owner_user_id LIMIT ${args.limit + 1}`);
+        const items = result.rows.slice(0, args.limit).map((row) => String(row.userId));
+        return { items, next: result.rows.length > args.limit ? (items.at(-1) ?? null) : null };
+    },
     /** Reads the latest owner-initiated publication instant for each requested listing. */
     async readPublicationInstants(args: {
         readonly tx: DrizzleClient;
