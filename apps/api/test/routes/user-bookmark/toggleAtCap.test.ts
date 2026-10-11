@@ -30,8 +30,9 @@
  *    and HOSPEDA_DISABLE_AUTH=true are set in test/setup.ts).
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, type VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -53,14 +54,14 @@ const MAX_FAVORITES = 3;
 // Hoisted mock references — must be created before any import is resolved.
 // ---------------------------------------------------------------------------
 
-const { mockBookmarkService } = vi.hoisted(() => {
+const { mockBookmarkService, effectiveSet } = vi.hoisted(() => {
     const mockBookmarkService = {
         findExistingBookmark: vi.fn(),
         softDelete: vi.fn(),
         create: vi.fn(),
         countBookmarksForUser: vi.fn()
     };
-    return { mockBookmarkService };
+    return { mockBookmarkService, effectiveSet: vi.fn() };
 });
 
 // ---------------------------------------------------------------------------
@@ -92,6 +93,9 @@ vi.mock('@repo/db', async (importOriginal) => {
 
 vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
+}));
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet })
 }));
 
 // ---------------------------------------------------------------------------
@@ -163,6 +167,20 @@ describe('POST /api/v1/protected/user-bookmarks — BETA-42 toggle-at-cap regres
 
     beforeEach(() => {
         vi.clearAllMocks();
+        effectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [
+                        { key: 'save_favorites', value: 1, strategy: 'MAX' as const },
+                        { key: 'max_favorites', value: MAX_FAVORITES, strategy: 'MAX' as const }
+                    ]
+                })
+        );
     });
 
     // =========================================================================
@@ -216,7 +234,7 @@ describe('POST /api/v1/protected/user-bookmarks — BETA-42 toggle-at-cap regres
     // 2. Toggle-ON at cap IS blocked
     // =========================================================================
 
-    it('toggle-ON remains available after the old plan cap is retired', async () => {
+    it('toggle-ON at the effective plan cap returns LIMIT_REACHED', async () => {
         // Arrange — no existing bookmark (toggle-on branch)
         mockBookmarkService.findExistingBookmark.mockResolvedValue({
             data: null
@@ -237,11 +255,18 @@ describe('POST /api/v1/protected/user-bookmarks — BETA-42 toggle-at-cap regres
             body: makeToggleBody()
         });
 
-        expect([200, 201]).toContain(res.status);
+        expect(res.status).toBe(403);
         const body = await res.json();
-        expect(body.data.toggled).toBe(true);
-        expect(mockBookmarkService.create).toHaveBeenCalled();
-        expect(mockBookmarkService.countBookmarksForUser).not.toHaveBeenCalled();
+        expect(body.error).toMatchObject({
+            code: 'LIMIT_REACHED',
+            details: {
+                limitKey: 'max_favorites',
+                currentCount: MAX_FAVORITES,
+                maxAllowed: MAX_FAVORITES
+            }
+        });
+        expect(mockBookmarkService.create).not.toHaveBeenCalled();
+        expect(mockBookmarkService.countBookmarksForUser).toHaveBeenCalledOnce();
     });
 
     // =========================================================================

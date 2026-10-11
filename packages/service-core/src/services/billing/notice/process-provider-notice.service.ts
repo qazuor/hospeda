@@ -196,7 +196,20 @@ export async function processProviderNotice(
             .set({ lastAppliedVersion: notice.version, lastModified })
             .where(and(eq(providerLinks.id, link.id), versionCondition))
             .returning();
-        if (!saved) throw new Error('Provider link version changed concurrently');
+        if (!saved) {
+            const [currentLink] = await getDb()
+                .select({ lastAppliedVersion: providerLinks.lastAppliedVersion })
+                .from(providerLinks)
+                .where(eq(providerLinks.id, link.id))
+                .limit(1);
+            if (
+                /^\d+$/.test(currentLink?.lastAppliedVersion ?? '') &&
+                /^\d+$/.test(notice.version) &&
+                BigInt(currentLink?.lastAppliedVersion ?? '0') >= BigInt(notice.version)
+            )
+                return { ack: 'OK', outcome: 'DISCARDED_OLD_VERSION' };
+            throw new Error('Provider link version changed concurrently');
+        }
         return { ack: 'OK', outcome: finalOutcome };
     } catch {
         return { ack: 'ERROR', outcome: 'FAILED' };

@@ -8,13 +8,15 @@
 import {
     ServiceErrorCode,
     UserBookmarkCollectionBookmarkParamsSchema,
-    UserBookmarkSchema
+    UserBookmarkSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ServiceError, UserBookmarkCollectionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -29,10 +31,13 @@ export const removeBookmarkFromCollectionRoute = createProtectedRoute({
     tags: ['User Bookmark Collections'],
     requestParams: UserBookmarkCollectionBookmarkParamsSchema.shape,
     responseSchema: UserBookmarkSchema,
-    options: {},
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed collections gate.
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['can_use_collections']
+        });
         // id (collection) is present in URL for REST semantics; service only uses bookmarkId
         const { bookmarkId } = params as { id: string; bookmarkId: string };
 

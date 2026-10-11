@@ -18,8 +18,15 @@
  */
 import { EntitlementKey } from '@repo/billing';
 import type { RecommendationFeedResponse } from '@repo/schemas';
-import { AccommodationTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    AccommodationTypeEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    type VerticalEnum
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -36,6 +43,11 @@ import { createGuestActor } from '../../../src/utils/actor';
 // ---------------------------------------------------------------------------
 
 const getFeedMock = vi.fn();
+const effectiveSetMock = vi.fn();
+
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: effectiveSetMock })
+}));
 
 vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
@@ -99,6 +111,17 @@ function ok(data: RecommendationFeedResponse) {
 }
 
 beforeEach(() => {
+    effectiveSetMock.mockImplementation(
+        async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'can_view_recommendations', value: 1, strategy: 'MAX' }]
+            })
+    );
     getFeedMock.mockReset();
     getFeedMock.mockResolvedValue(ok(buildFeedResponse()));
 });
@@ -167,7 +190,17 @@ function injectActor(
  * runs `protectedAuthMiddleware()` then `gateRecommendations()` before the handler).
  */
 function buildApp(entitlementKeys: EntitlementKey[]): Hono<AppBindings> {
-    void entitlementKeys;
+    effectiveSetMock.mockImplementation(
+        async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: entitlementKeys.map((key) => ({ key, value: 1, strategy: 'MAX' as const }))
+            })
+    );
     const app = new Hono<AppBindings>();
     attachTestErrorHandler(app);
     injectActor(app, {
@@ -214,7 +247,7 @@ describe('GET /api/v1/protected/recommendations (SPEC-284 T-015)', () => {
     });
 
     describe('entitlement gate (CAN_VIEW_RECOMMENDATIONS)', () => {
-        it('keeps recommendations available without the old plan entitlement', async () => {
+        it('rejects recommendations when the effective set lacks the capability', async () => {
             // Arrange
             const app = buildApp([]);
 
@@ -223,9 +256,10 @@ describe('GET /api/v1/protected/recommendations (SPEC-284 T-015)', () => {
             const body = await res.json();
 
             // Assert
-            expect(res.status).toBe(200);
-            expect(body.data.items).toHaveLength(1);
-            expect(getFeedMock).toHaveBeenCalledTimes(1);
+            expect(res.status).toBe(403);
+            expect(body.error.code).toBe(ServiceErrorCode.ENTITLEMENT_REQUIRED);
+            expect(body.error.details.entitlementKey).toBe('can_view_recommendations');
+            expect(getFeedMock).not.toHaveBeenCalled();
         });
     });
 

@@ -10,7 +10,8 @@ const mocks = vi.hoisted(() => ({
     effectiveSet: vi.fn(),
     getBySlug: vi.fn(),
     search: vi.fn(),
-    loggerError: vi.fn()
+    loggerError: vi.fn(),
+    historyRecord: vi.fn()
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
@@ -20,7 +21,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
         search = mocks.search;
     },
     SearchHistoryService: class {
-        record = vi.fn();
+        record = mocks.historyRecord;
     }
 }));
 vi.mock('../../src/utils/listing-access/ports', () => ({
@@ -105,11 +106,14 @@ const OWNER = {
     premium: '11111111-1111-4111-8111-111111111111',
     pro: '22222222-2222-4222-8222-222222222222',
     basic: '33333333-3333-4333-8333-333333333333',
-    trial: '44444444-4444-4444-8444-444444444444'
+    trial: '44444444-4444-4444-8444-444444444444',
+    touristVip: '77777777-7777-4777-8777-777777777777',
+    touristFloor: '88888888-8888-4888-8888-888888888888'
 } as const;
 const KEYS = ['can_use_rich_description', 'can_embed_video', 'has_verification_badge', 'ai_chat'];
 
 function entriesFor(userId: string): string[] {
+    if (userId === OWNER.touristVip) return ['can_view_search_history'];
     if (userId === OWNER.premium) return KEYS;
     if (userId === OWNER.pro) return ['can_use_rich_description', 'can_embed_video'];
     if (userId === OWNER.basic) return ['ai_chat'];
@@ -158,13 +162,18 @@ function accommodation(ownerId: string) {
     };
 }
 
-function appFor(route: Hono<AppBindings>) {
+function appFor(route: Hono<AppBindings>, userId?: string) {
     const app = new Hono<AppBindings>();
     app.onError((error, ctx) =>
         ctx.text(error instanceof Error ? (error.stack ?? error.message) : String(error), 500)
     );
     app.use((ctx, next) => {
-        ctx.set('actor', createGuestActor());
+        ctx.set(
+            'actor',
+            userId
+                ? { id: userId, roles: [], permissions: [], emailVerified: true }
+                : createGuestActor()
+        );
         return next();
     });
     app.route('/', route);
@@ -173,6 +182,8 @@ function appFor(route: Hono<AppBindings>) {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mocks.historyRecord.mockResolvedValue({ data: undefined });
+    mocks.search.mockResolvedValue({ data: { items: [], total: 0 } });
     mocks.effectiveSet.mockImplementation(
         async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
             rehydrateEffectiveSet({
@@ -301,6 +312,57 @@ describe('TEST:V5:32 public paid fields', () => {
         expect(mocks.effectiveSet.mock.calls.map(([args]) => args.userId).sort()).toEqual(
             [OWNER.premium, OWNER.pro].sort()
         );
+    });
+
+    it('TEST:V5:33 records public searches only for tourists with history access and never blocks search', async () => {
+        const { publicListAccommodationsRoute } = await import(
+            '../../src/routes/accommodation/public/list'
+        );
+        for (const userId of [OWNER.touristVip, OWNER.touristFloor, undefined]) {
+            vi.clearAllMocks();
+            mocks.effectiveSet.mockImplementation(
+                async ({ userId: id, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                    rehydrateEffectiveSet({
+                        version: 1,
+                        userId: id,
+                        vertical,
+                        hasLiveNonTrialTitle: false,
+                        inheritsTouristVip: false,
+                        entries: (id === OWNER.touristVip ? ['can_view_search_history'] : []).map(
+                            (key) => ({ key, value: 1, strategy: 'MAX' as const })
+                        )
+                    })
+            );
+            mocks.search.mockResolvedValue({ data: { items: [], total: 0 } });
+            mocks.historyRecord.mockResolvedValue({ data: undefined });
+            const response = await appFor(publicListAccommodationsRoute, userId).request('/');
+            expect(response.status).toBe(200);
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            if (userId === OWNER.touristVip) {
+                expect(mocks.historyRecord).toHaveBeenCalledTimes(1);
+                expect(mocks.effectiveSet).toHaveBeenCalledWith({
+                    userId,
+                    vertical: VerticalEnum.TOURIST
+                });
+            } else {
+                expect(mocks.historyRecord).not.toHaveBeenCalled();
+                if (userId === undefined) {
+                    expect(mocks.effectiveSet).not.toHaveBeenCalled();
+                } else {
+                    expect(mocks.effectiveSet).toHaveBeenCalledWith({
+                        userId,
+                        vertical: VerticalEnum.TOURIST
+                    });
+                }
+            }
+        }
+        vi.clearAllMocks();
+        mocks.search.mockResolvedValue({ data: { items: [], total: 0 } });
+        mocks.effectiveSet.mockRejectedValue(new Error('lookup failed'));
+        const response = await appFor(publicListAccommodationsRoute, OWNER.touristVip).request('/');
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(response.status).toBe(200);
+        expect(mocks.historyRecord).not.toHaveBeenCalled();
     });
 
     it('returns 200 with paid fields hidden when reading the effective set fails', async () => {
