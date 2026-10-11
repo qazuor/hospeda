@@ -24,6 +24,7 @@ import { getClock } from '../clock';
 import { invalidateEffectiveSetsForUser } from '../effective-set-cache';
 import { getListingAccessPorts } from '../listing-access/ports';
 import { apiLogger } from '../logger';
+import { buildTrialCampaignOutbox } from '../trial/trial-campaign-outbox';
 import { buildTrialStartReader } from './trial-start-reader';
 
 const LISTING_TABLE_BY_VERTICAL: Readonly<Record<PublicationVertical, string>> = {
@@ -163,7 +164,10 @@ export function getListingPublicationPorts(options?: {
                             conflict: pseudonymMatch ? 'EMAIL_PSEUDONYM' : 'USER_VERTICAL'
                         };
                     },
-                    async scheduleExpiryCampaign() {}
+                    scheduleExpiryCampaign: buildTrialCampaignOutbox({
+                        tx,
+                        clock: getClock().clock
+                    }).scheduleExpiryCampaign
                 } as PublicationTransaction;
                 return work(publication);
             });
