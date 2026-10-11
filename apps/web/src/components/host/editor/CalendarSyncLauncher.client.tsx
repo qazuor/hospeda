@@ -58,7 +58,7 @@ type DialogMode = 'none' | 'sync' | 'upsell';
 export function CalendarSyncLauncher({ locale, accommodationId }: CalendarSyncLauncherProps) {
     // Memoize so `t` keeps a stable identity across renders (mirrors the panel).
     const { t } = useMemo(() => createTranslations(locale), [locale]);
-    const { has, isLoading } = useMyEntitlements();
+    const { has, isLoading } = useMyEntitlements({ vertical: 'accommodation' });
     const [mode, setMode] = useState<DialogMode>('none');
 
     // Fail-open while entitlements load (matches PlanEntitlementGate): only a

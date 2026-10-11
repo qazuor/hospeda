@@ -25,14 +25,17 @@ import type {
     HostTradeReviewUpdateBody,
     OccupancySourceEnum,
     PriceAlertResponse,
+    ProtectedEffectiveSetResponse,
     PublishEligibilityResponse,
     UserBookmark,
     UserProtected,
-    UserPublic
+    UserPublic,
+    VerticalEnum
 } from '@repo/schemas';
 import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
 import type { MediaAttribution } from '../media';
 import { apiClient } from './client';
+import { transformProtectedEffectiveSet } from './transforms';
 import type { ApiResult, PaginatedResponse } from './types';
 
 /**
@@ -5354,5 +5357,24 @@ export const contentMediaApi = {
             path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/${mediaId}`,
             body
         });
+    }
+};
+
+export const effectiveSetApi = {
+    async get({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: `${VerticalEnum}`;
+        readonly cookieHeader?: string;
+    }) {
+        const result = await apiClient.getProtected<ProtectedEffectiveSetResponse>({
+            path: `${PROTECTED}/users/me/effective-set`,
+            params: { vertical },
+            cookieHeader
+        });
+        return result.ok
+            ? { ok: true as const, data: transformProtectedEffectiveSet(result.data) }
+            : result;
     }
 };
