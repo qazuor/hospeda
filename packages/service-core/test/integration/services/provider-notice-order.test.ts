@@ -7,6 +7,7 @@ import {
     users
 } from '@repo/db';
 import { encodeFakeNotice, FakePaymentProvider } from '@repo/payments/fake';
+import type { BillingDeadlineValues } from '@repo/schemas';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service.js';
@@ -29,7 +30,7 @@ const values = {
     '17': { days: 7 },
     '18': { days: 180 },
     '19': { minutes: 60 }
-} as const;
+} satisfies BillingDeadlineValues;
 
 async function setup() {
     await getServiceTestDb()
