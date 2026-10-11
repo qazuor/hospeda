@@ -193,6 +193,54 @@ export async function evaluateTrialStart(args: {
 /* startTrial — with lock, write, campaign, post-commit notice         */
 /* ------------------------------------------------------------------ */
 
+/** Runs T1 inside an already locked transaction, without post-commit effects. */
+export async function startTrialInTransaction(args: {
+    tx: TrialStartTransaction;
+    billing: Pick<BillingForVerticals, 'coverage'>;
+    clock: Clock;
+    input: TrialStartInput;
+}): Promise<
+    | { readonly started: true; readonly row: NewTrialRow }
+    | { readonly started: false; readonly reason: TrialStartDeniedReason }
+> {
+    const { tx, billing, clock, input } = args;
+    assertValidInput(input);
+    const outcome = await evaluateTrialStart({ reader: tx, billing, input });
+    if (!outcome.starts) return { started: false, reason: outcome.reason };
+
+    const startedAt = clock.now();
+    const endsAt = new Date(startedAt.getTime() + outcome.plan.trialDays * 86_400_000);
+    const row: NewTrialRow = {
+        userId: input.userId,
+        vertical: input.vertical,
+        status: TrialStatusEnum.TRIAL_ACTIVE,
+        trialPlanId: outcome.plan.trialPlanId,
+        floorEntitlementsVersionId: outcome.plan.entitlementsVersionId,
+        floorLimitsVersionId: outcome.plan.limitsVersionId,
+        floorTrialPlanVersionId: outcome.plan.trialPlanVersionId,
+        startedAt,
+        endsAt,
+        emailPseudonym: input.emailPseudonym,
+        deadlinesVersion: TRIAL_DEADLINES_VERSION
+    };
+    const insertResult = await tx.insertTrial({ row });
+    if (!insertResult.inserted) {
+        const reason: TrialStartDeniedReason =
+            insertResult.conflict === 'EMAIL_PSEUDONYM'
+                ? 'EMAIL_PSEUDONYM_ALREADY_USED'
+                : 'USER_ALREADY_HAS_TRIAL_ROW';
+        return { started: false, reason };
+    }
+    await tx.scheduleExpiryCampaign({
+        userId: input.userId,
+        vertical: input.vertical,
+        endsAt,
+        deadlinesVersion: TRIAL_DEADLINES_VERSION,
+        milestones: computePreExpiryMilestones({ endsAt })
+    });
+    return { started: true, row };
+}
+
 /**
  * Runs the full T1 transition:
  * 1. Validates input
@@ -220,61 +268,7 @@ export async function startTrial(args: {
     // Run inside lock
     const decision = await unitOfWork.runLocked(
         { userId: input.userId, vertical: input.vertical },
-        async (tx: TrialStartTransaction) => {
-            // Re-evaluate inside lock (don't trust pre-lock reads)
-            const outcome = await evaluateTrialStart({
-                reader: tx,
-                billing,
-                input
-            });
-
-            if (!outcome.starts) {
-                return { started: false, reason: outcome.reason } as const;
-            }
-
-            // Clock
-            const startedAt = clock.now();
-            const endsAt = new Date(startedAt.getTime() + outcome.plan.trialDays * 86_400_000);
-
-            // Build the row
-            const row: NewTrialRow = {
-                userId: input.userId,
-                vertical: input.vertical,
-                status: TrialStatusEnum.TRIAL_ACTIVE,
-                trialPlanId: outcome.plan.trialPlanId,
-                floorEntitlementsVersionId: outcome.plan.entitlementsVersionId,
-                floorLimitsVersionId: outcome.plan.limitsVersionId,
-                floorTrialPlanVersionId: outcome.plan.trialPlanVersionId,
-                startedAt,
-                endsAt,
-                emailPseudonym: input.emailPseudonym,
-                deadlinesVersion: TRIAL_DEADLINES_VERSION
-            };
-
-            // Insert
-            const insertResult = await tx.insertTrial({ row });
-
-            if (!insertResult.inserted) {
-                // Map conflict to reason
-                const reason: TrialStartDeniedReason =
-                    insertResult.conflict === 'EMAIL_PSEUDONYM'
-                        ? 'EMAIL_PSEUDONYM_ALREADY_USED'
-                        : 'USER_ALREADY_HAS_TRIAL_ROW';
-                return { started: false, reason } as const;
-            }
-
-            // Schedule pre-expiry campaign
-            const milestones = computePreExpiryMilestones({ endsAt });
-            await tx.scheduleExpiryCampaign({
-                userId: input.userId,
-                vertical: input.vertical,
-                endsAt,
-                deadlinesVersion: TRIAL_DEADLINES_VERSION,
-                milestones
-            });
-
-            return { started: true, row } as const;
-        }
+        async (tx: TrialStartTransaction) => startTrialInTransaction({ tx, billing, clock, input })
     );
 
     // If denied, return without emitting

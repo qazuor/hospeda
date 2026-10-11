@@ -2654,12 +2654,20 @@
             "path": "/api/v1/protected/experiences/:id/media/reorder"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/experiences/:id/publish"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/experiences/:id/qr"
         },
         {
             "method": "GET",
             "path": "/api/v1/protected/experiences/:id/qr-sheet"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/experiences/:id/unpublish"
         },
         {
             "method": "GET",
@@ -2806,12 +2814,20 @@
             "path": "/api/v1/protected/gastronomies/:id/menu-qr/scans"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/gastronomies/:id/publish"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/gastronomies/:id/qr"
         },
         {
             "method": "GET",
             "path": "/api/v1/protected/gastronomies/:id/qr-sheet"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/gastronomies/:id/unpublish"
         },
         {
             "method": "GET",

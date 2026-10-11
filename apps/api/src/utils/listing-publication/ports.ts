@@ -1,0 +1,191 @@
+import { randomUUID } from 'node:crypto';
+import type { DrizzleClient } from '@repo/db';
+import { getDb, listingPublicationModel, planCatalogModel, trials } from '@repo/db';
+import { TRIAL_PLAN_ROLE, VERTICAL_ACTIVATION_EVENT_BY_VERTICAL } from '@repo/schemas';
+import { getRevalidationService } from '@repo/service-core';
+import { and, eq, sql } from 'drizzle-orm';
+import type {
+    PublicationAfterCommit,
+    PublicationTransaction,
+    PublicationUnitOfWork,
+    PublicationVertical
+} from '../../../../../packages/verticals/src/publication/publication-types';
+import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/publication/publication-types';
+import { trialMachineLockKey } from '../../../../../packages/verticals/src/trial/trial-lock-key';
+import { getClock } from '../clock';
+import { invalidateEffectiveSetsForUser } from '../effective-set-cache';
+import { getListingAccessPorts } from '../listing-access/ports';
+import { apiLogger } from '../logger';
+
+const LISTING_TABLE_BY_VERTICAL: Readonly<Record<PublicationVertical, string>> = {
+    accommodation: 'accommodations',
+    gastronomy: 'gastronomies',
+    experience: 'experiences'
+};
+
+/** Transaction-bound adapter shared by owner transitions and coverage reconciliation. */
+export function getListingPublicationPorts(): {
+    readonly unitOfWork: PublicationUnitOfWork;
+    readonly afterCommit: PublicationAfterCommit;
+    readonly billing: ReturnType<typeof getListingAccessPorts>['billing'];
+    readonly clock: ReturnType<typeof getClock>['clock'];
+} {
+    const access = getListingAccessPorts();
+    const unitOfWork: PublicationUnitOfWork = {
+        runLocked<T>(
+            args: { readonly userId: string; readonly vertical: PublicationVertical },
+            work: (tx: PublicationTransaction) => Promise<T>
+        ) {
+            return getDb().transaction(async (rawTx) => {
+                const tx = rawTx as DrizzleClient;
+                await tx.execute(
+                    sql`SELECT pg_advisory_xact_lock(hashtextextended(${trialMachineLockKey(args).key}, 0))`
+                );
+                const publication: PublicationTransaction = {
+                    async readListing(input) {
+                        return listingPublicationModel.readListing({ ...input, tx });
+                    },
+                    async countPublished(input) {
+                        return listingPublicationModel.countPublished({ ...input, tx });
+                    },
+                    async listByOwner(input) {
+                        return listingPublicationModel.listByOwner({ ...input, tx });
+                    },
+                    async readPublishLimit(input) {
+                        const effective = await access.effectiveSet({
+                            userId: input.userId,
+                            vertical: input.vertical
+                        });
+                        return (
+                            effective.limits.get({
+                                key: PUBLICATION_LIMIT_KEYS[input.vertical],
+                                userId: input.userId,
+                                vertical: input.vertical
+                            }) ?? 0
+                        );
+                    },
+                    async setPublicationStatus(input) {
+                        return listingPublicationModel.setPublicationStatus({ ...input, tx });
+                    },
+                    async stampInactiveSince(input) {
+                        await listingPublicationModel.stampInactiveSince({ ...input, tx });
+                    },
+                    async insertStatusChangedEvent(input) {
+                        await listingPublicationModel.insertStatusChangedEvent({
+                            ...input,
+                            tx,
+                            correlationId: input.correlationId || randomUUID()
+                        });
+                    },
+                    async findActivationEvent({ vertical }) {
+                        return VERTICAL_ACTIVATION_EVENT_BY_VERTICAL[vertical];
+                    },
+                    async findTrialPlan({ vertical }) {
+                        const planResult = await tx.execute(sql<{ id: string }>`
+                            SELECT id FROM plan WHERE vertical = ${vertical} AND role = ${TRIAL_PLAN_ROLE} LIMIT 1`);
+                        const plan = planResult.rows[0];
+                        if (!plan) return null;
+                        const versions = await tx.execute(sql<{ id: string; trialDays: number }>`
+                            SELECT id, trial_days AS "trialDays" FROM plan_version
+                            WHERE plan_id = ${plan.id} AND current = true LIMIT 1`);
+                        const version = versions.rows[0];
+                        return version
+                            ? {
+                                  planId: String(plan.id),
+                                  planVersionId: String(version.id),
+                                  trialDays: Number(version.trialDays)
+                              }
+                            : null;
+                    },
+                    async findSellableCurrentVersions({ vertical }) {
+                        return planCatalogModel.findSellableCurrentVersions({ vertical, tx });
+                    },
+                    async findTrialOfUser({ userId, vertical }) {
+                        const [row] = await tx
+                            .select()
+                            .from(trials)
+                            .where(and(eq(trials.userId, userId), eq(trials.vertical, vertical)))
+                            .limit(1);
+                        return row ? { id: row.id } : null;
+                    },
+                    async findTrialByPseudonym({ emailPseudonym, vertical }) {
+                        const [row] = await tx
+                            .select({ userId: trials.userId })
+                            .from(trials)
+                            .where(
+                                and(
+                                    eq(trials.emailPseudonym, emailPseudonym),
+                                    eq(trials.vertical, vertical)
+                                )
+                            )
+                            .limit(1);
+                        return row ?? null;
+                    },
+                    async insertTrial({ row }) {
+                        const inserted = await tx
+                            .insert(trials)
+                            .values(row)
+                            .onConflictDoNothing()
+                            .returning({ id: trials.id });
+                        if (inserted.length > 0) return { inserted: true };
+                        const [pseudonymMatch] = await tx
+                            .select({ id: trials.id })
+                            .from(trials)
+                            .where(
+                                and(
+                                    eq(trials.emailPseudonym, row.emailPseudonym),
+                                    eq(trials.vertical, row.vertical)
+                                )
+                            )
+                            .limit(1);
+                        return {
+                            inserted: false,
+                            conflict: pseudonymMatch ? 'EMAIL_PSEUDONYM' : 'USER_VERTICAL'
+                        };
+                    },
+                    async scheduleExpiryCampaign() {}
+                } as PublicationTransaction;
+                return work(publication);
+            });
+        }
+    };
+    const afterCommit: PublicationAfterCommit = {
+        emitCoverageChanged: (event) => access.billing.emitCoverageChanged(event),
+        async invalidateUser({ userId }) {
+            invalidateEffectiveSetsForUser(userId);
+        },
+        async revalidate({ vertical, listingIds }) {
+            for (const id of listingIds) {
+                try {
+                    const result = await getDb().execute(sql<{
+                        slug: string;
+                        destinationSlug: string | null;
+                    }>`
+                        SELECT l.slug, d.slug AS "destinationSlug"
+                        FROM ${sql.identifier(LISTING_TABLE_BY_VERTICAL[vertical])} l
+                        LEFT JOIN destinations d ON d.id = l.destination_id
+                        WHERE l.id = ${id}`);
+                    const row = result.rows[0];
+                    if (row && typeof row.slug === 'string') {
+                        getRevalidationService()?.scheduleRevalidation({
+                            entityType: vertical,
+                            id,
+                            slug: row.slug,
+                            destinationSlug:
+                                typeof row.destinationSlug === 'string'
+                                    ? row.destinationSlug
+                                    : undefined
+                        });
+                    }
+                } catch (error) {
+                    // Revalidation is best-effort after a committed state change.
+                    apiLogger.warn(
+                        { error, vertical, listingId: id },
+                        'Listing revalidation scheduling failed'
+                    );
+                }
+            }
+        }
+    };
+    return { unitOfWork, afterCommit, billing: access.billing, clock: getClock().clock };
+}

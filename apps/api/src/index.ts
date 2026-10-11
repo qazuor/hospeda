@@ -46,6 +46,7 @@ import { AuditEventType, auditLog } from './utils/audit-logger';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
+import { subscribeListingCoverageRecalculation } from './utils/listing-publication/coverage-listener';
 import { apiLogger } from './utils/logger';
 import { disconnectRedis } from './utils/redis';
 import { resolveLogFormat } from './utils/resolve-log-format';
@@ -350,6 +351,7 @@ const startServer = async (): Promise<void> => {
         setCorrelationIdResolver(getRequestCorrelationId);
 
         const app = initApp();
+        const unsubscribeCoverage = subscribeListingCoverageRecalculation();
 
         // Newsletter dispatch worker handle — populated below after serve() resolves.
         // Hoisted here so gracefulShutdown can await its drain.
@@ -452,6 +454,7 @@ const startServer = async (): Promise<void> => {
         // Graceful shutdown
         const gracefulShutdown = async (signal: string) => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
+            unsubscribeCoverage?.();
 
             try {
                 // Drain in-flight BullMQ jobs first — must complete BEFORE Redis

@@ -1,11 +1,33 @@
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { isSystemActor, ServiceError } from '@repo/service-core';
-import { resolveListingAccess } from '@repo/verticals';
+import { OPERATION_STEP6_KEY, resolveListingAccess } from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ListingAccessConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { getListingAccessPorts } from '../utils/listing-access/ports';
+
+/** Whether `key` is one of the step-6 capabilities that admit publishing in `vertical`. */
+function isPublishCapabilityKey({
+    vertical,
+    key
+}: {
+    readonly vertical: ListingAccessConfig['vertical'];
+    readonly key: string;
+}): boolean {
+    const requirement = OPERATION_STEP6_KEY.PUBLISH;
+    switch (requirement.kind) {
+        case 'ANY_OF_VERTICAL':
+            return requirement.keys[vertical].includes(key);
+        case 'VERTICAL_KEY':
+            return requirement.keys[vertical] === key;
+        case 'KEY':
+            return requirement.key === key;
+        case 'NONE':
+        case 'CALLER_KEY':
+            return false;
+    }
+}
 
 /** Enforce a listing decision inside a validated route handler. */
 export async function enforceListingAccess(args: {
@@ -78,6 +100,20 @@ export async function enforceListingAccess(args: {
                 reason: 'NO_COVERAGE'
             });
         case 'NO_CAPABILITY':
+            if (
+                config.operation === 'PUBLISH' &&
+                subjectId !== null &&
+                result.key &&
+                isPublishCapabilityKey({ vertical: config.vertical, key: result.key }) &&
+                !(
+                    await ports.effectiveSet({
+                        userId: subjectId,
+                        vertical: config.vertical
+                    })
+                ).hasLiveNonTrialTitle
+            ) {
+                throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
+            }
             throw new ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, 'Entitlement required', {
                 entitlementKey: result.key
             });

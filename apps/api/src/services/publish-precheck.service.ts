@@ -40,11 +40,12 @@
 
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
+import type { PublicationVertical } from '../../../../packages/verticals/src/publication/publication-types';
 import type { AppBindings } from '../types';
+import { getListingPublicationPorts } from '../utils/listing-publication/ports';
 import { apiLogger } from '../utils/logger';
 import { deriveOnboardingDecision, type OnboardingPrecheckDecision } from './onboarding-precheck';
 import {
-    countOwnListings,
     listOwnDraftListings,
     type PublishDraft,
     type PublishVertical
@@ -68,7 +69,7 @@ export interface PublishPrecheckResult {
  */
 const FAIL_OPEN: PublishPrecheckResult = {
     currentCount: 0,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR: replace the uncapped sentinel with the effective vertical limit.
+    // Unknown or absent effective limits intentionally fail open.
     maxAllowed: -1,
     hasQuota: true,
     draftCount: 0,
@@ -91,16 +92,25 @@ export async function resolvePublishPrecheck(input: {
     vertical: PublishVertical;
 }): Promise<PublishPrecheckResult> {
     const { ctx: _ctx, actor, vertical } = input;
+    const publicationVertical = vertical as PublicationVertical;
 
     try {
         // Both reads are independent, so they go out together. Neither throws;
         // each answers `null` when it could not resolve.
-        const [currentCount, drafts] = await Promise.all([
-            countOwnListings({ vertical, actor }),
+        const publication = getListingPublicationPorts();
+        const [[publishedCount, maxAllowed], drafts] = await Promise.all([
+            publication.unitOfWork.runLocked(
+                { userId: actor.id, vertical: publicationVertical },
+                async (tx) =>
+                    Promise.all([
+                        tx.countPublished({ vertical: publicationVertical, ownerId: actor.id }),
+                        tx.readPublishLimit({ userId: actor.id, vertical: publicationVertical })
+                    ])
+            ),
             listOwnDraftListings({ vertical, actor })
         ]);
 
-        if (currentCount === null || drafts === null) {
+        if (publishedCount === null || maxAllowed === null || drafts === null) {
             apiLogger.warn(
                 { vertical, ownerId: actor.id },
                 'publish precheck could not resolve its inputs — failing open to create_direct'
@@ -108,18 +118,19 @@ export async function resolvePublishPrecheck(input: {
             return FAIL_OPEN;
         }
 
-        // The per-plan listing cap was removed with the legacy billing system
-        // (HOS-1416); without a cap the precheck always has quota.
+        // PRE_TRIAL has no max_accommodations in its effective set. Keep its
+        // prior fail-open behavior while returning the resolved public count.
+        const effectiveMax = maxAllowed > 0 ? maxAllowed : -1;
+        const hasQuota = effectiveMax < 0 || publishedCount < effectiveMax;
         const decision = deriveOnboardingDecision({
             draftCount: drafts.length,
-            hasQuota: true
+            hasQuota
         });
 
         return {
-            currentCount,
-            // HOS-1352: transitional until V3 (HOS-1357), see PR: replace the uncapped sentinel with the effective vertical limit.
-            maxAllowed: -1,
-            hasQuota: true,
+            currentCount: publishedCount,
+            maxAllowed: effectiveMax,
+            hasQuota,
             draftCount: drafts.length,
             drafts,
             decision

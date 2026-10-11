@@ -17,6 +17,7 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   "fact 1" of the retention clock (NUCLEO/01 §1.2), read back from this
  *   table. Content fields carry only their name (AC:V9a:2). `listing.exported`
  *   is deliberately absent: no export operation exists yet.
+ * - `listing.status_changed`: an audited publication state transition (V6 §9).
  * - `reconciliation.mark_opened`: una marca de conciliación abierta o acumulada por
  *   `S14` (HOS-1523, AC:B3:13; NUCLEO/08 §4.1: el evento crítico se escribe uno por uno).
  * - `trial.extended`: a running trial extended by the administrative action 11
@@ -27,6 +28,7 @@ export const DOMAIN_EVENT_TYPES = [
     'email.undeliverable',
     'listing.created',
     'listing.edited',
+    'listing.status_changed',
     'trial.extended',
     'reconciliation.mark_opened'
 ] as const;

@@ -155,6 +155,51 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
         });
     });
 
+    it('maps a PUBLISH denial without commercial coverage to PB1 subscription_required', async () => {
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER
+        });
+        const result = await probe(appFor({ operation: 'PUBLISH' }));
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.FORBIDDEN,
+            message: 'subscription_required'
+        });
+    });
+
+    it('keeps ENTITLEMENT_REQUIRED when covered but missing the PUBLISH capability', async () => {
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER
+        });
+        mocks.effectiveSet.mockImplementation(async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
+                entries: []
+            })
+        );
+        const result = await probe(appFor({ operation: 'PUBLISH' }));
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            message: 'Entitlement required'
+        });
+    });
+
+    it('keeps EDIT denials as ENTITLEMENT_REQUIRED without commercial coverage', async () => {
+        const result = await probe(appFor({ operation: 'EDIT' }));
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            message: 'Entitlement required'
+        });
+    });
+
     it('maps LIMIT_REACHED with requested minus one and the subject limit', async () => {
         mocks.effectiveSet.mockImplementation(async ({ userId }: { userId: string }) =>
             rehydrateEffectiveSet({

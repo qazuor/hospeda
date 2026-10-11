@@ -36,6 +36,7 @@ import { protectedListMyGastronomyRoute } from './listMine';
 import { protectedGetGastronomyMenuQrRoute } from './menuQr';
 import { protectedGetGastronomyMenuQrScansRoute } from './menuQrScans';
 import { protectedPatchGastronomyRoute } from './patch';
+import { protectedPublishGastronomyRoute } from './publish';
 import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutGastronomyEventsRoute } from './putEvents';
 import { protectedPutGastronomyMenuRoute } from './putMenu';
@@ -46,6 +47,7 @@ import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
 import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
+import { protectedUnpublishGastronomyRoute } from './unpublish';
 import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
 import { protectedUpdateGastronomyMediaRoute } from './updateMedia';
 import { protectedUploadGastronomyMenuFileRoute } from './uploadMenuFile';
@@ -154,6 +156,8 @@ app.route('/', protectedGetGastronomyEventsRoute);
 app.route('/', protectedPutGastronomyEventsRoute);
 
 // GET /{id} — Owner view (protected projection).
+app.route('/', protectedPublishGastronomyRoute);
+app.route('/', protectedUnpublishGastronomyRoute);
 app.route('/', protectedGetGastronomyByIdRoute);
 
 // PATCH /{id} — Owner operational update.

@@ -68,6 +68,7 @@ The listing resolver then evaluates its own steps 3 through 7 in order.
 | `FORBIDDEN` | 403 | `FORBIDDEN` | None |
 | `NO_COVERAGE` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey: null, reason: 'NO_COVERAGE' }` |
 | `NO_CAPABILITY` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey }` |
+| `NO_CAPABILITY` on `PUBLISH` without a live non-trial title | 403 | `FORBIDDEN` | Message: `subscription_required` (same response as PB1 when the trial cannot start) |
 | `LIMIT_REACHED` | 403 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed }` |
 
 An administrative action with actor and subject on the same account receives

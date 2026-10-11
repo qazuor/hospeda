@@ -21,9 +21,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 // Hoisted mocks
 // ---------------------------------------------------------------------------
-const { mockCount, mockList } = vi.hoisted(() => ({
+const { mockCount, mockList, mockResolve } = vi.hoisted(() => ({
     mockCount: vi.fn(),
-    mockList: vi.fn()
+    mockList: vi.fn(),
+    mockResolve: vi.fn()
+}));
+
+vi.mock('../../src/services/publish-precheck.service', () => ({
+    resolvePublishPrecheck: (...args: unknown[]) => mockResolve(...args)
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -94,6 +99,14 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockResolve.mockResolvedValue({
+            currentCount: 0,
+            maxAllowed: 1,
+            hasQuota: true,
+            draftCount: 0,
+            drafts: [],
+            decision: 'create_direct'
+        });
         app = initApp();
     });
 
@@ -108,7 +121,7 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
         expect(body.success).toBe(true);
         expect(body.data).toEqual({
             currentCount: 0,
-            maxAllowed: -1,
+            maxAllowed: 1,
             hasQuota: true,
             draftCount: 0,
             drafts: [],
@@ -118,10 +131,13 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
 
     it('1 draft + quota available -> resume_or_create, drafts array populated', async () => {
         const draft = makeDraft();
-        mockCount.mockResolvedValue({ data: { count: 1 }, error: undefined });
-        mockList.mockResolvedValue({
-            data: { items: [draft], total: 1 },
-            error: undefined
+        mockResolve.mockResolvedValue({
+            currentCount: 0,
+            maxAllowed: 1,
+            hasQuota: true,
+            draftCount: 1,
+            drafts: [draft],
+            decision: 'resume_or_create'
         });
 
         const res = await app.request(BASE_URL, { method: 'GET', headers: actorHeaders(actor) });
@@ -132,7 +148,7 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
         expect(body.data.draftCount).toBe(1);
         expect(body.data.drafts).toEqual([{ id: draft.id, slug: draft.slug, name: draft.name }]);
         expect(body.data.hasQuota).toBe(true);
-        expect(body.data.currentCount).toBe(1);
+        expect(body.data.currentCount).toBe(0);
     });
 
     it('>1 drafts -> pick_draft_delete_or_upgrade (quota is always available since HOS-1416)', async () => {
@@ -140,39 +156,32 @@ describe('GET /api/v1/protected/host-onboarding/precheck (BETA-197)', () => {
             makeDraft({ id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', slug: 'draft-1' }),
             makeDraft({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', slug: 'draft-2' })
         ];
-        mockCount.mockResolvedValue({ data: { count: 2 }, error: undefined });
-        mockList.mockResolvedValue({
-            data: { items: drafts, total: drafts.length },
-            error: undefined
+        mockResolve.mockResolvedValue({
+            currentCount: 1,
+            maxAllowed: 1,
+            hasQuota: false,
+            draftCount: drafts.length,
+            drafts,
+            decision: 'pick_draft_delete_or_upgrade'
         });
 
         const res = await app.request(BASE_URL, { method: 'GET', headers: actorHeaders(actor) });
 
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.data.decision).toBe('pick_draft_or_create');
+        expect(body.data.decision).toBe('pick_draft_delete_or_upgrade');
         expect(body.data.draftCount).toBe(2);
-        // The per-plan cap was removed with the legacy billing system
-        // (HOS-1416); hasQuota is always true and -1 means unlimited.
-        expect(body.data.hasQuota).toBe(true);
-        expect(body.data.maxAllowed).toBe(-1);
+        expect(body.data.hasQuota).toBe(false);
+        expect(body.data.maxAllowed).toBe(1);
         expect(body.data.drafts).toHaveLength(2);
     });
 
-    it('queries with the ownerId + DRAFT + not-deleted filter', async () => {
-        mockCount.mockResolvedValue({ data: { count: 0 }, error: undefined });
-        mockList.mockResolvedValue({ data: { items: [], total: 0 }, error: undefined });
-
+    it('delegates the authenticated actor to the shared precheck service', async () => {
         await app.request(BASE_URL, { method: 'GET', headers: actorHeaders(actor) });
-
-        expect(mockList).toHaveBeenCalledWith(
-            expect.objectContaining({ id: actor.id }),
+        expect(mockResolve).toHaveBeenCalledWith(
             expect.objectContaining({
-                where: expect.objectContaining({
-                    ownerId: actor.id,
-                    lifecycleState: 'DRAFT',
-                    deletedAt: null
-                })
+                actor: expect.objectContaining({ id: actor.id }),
+                vertical: 'accommodation'
             })
         );
     });

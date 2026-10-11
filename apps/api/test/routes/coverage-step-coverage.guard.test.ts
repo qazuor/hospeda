@@ -131,7 +131,9 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
     'experience/protected/deleteDraft.ts': { operation: 'DELETE' },
+    'experience/protected/publish.ts': { operation: 'PUBLISH' },
     'experience/protected/patch.ts': { operation: 'EDIT' },
+    'experience/protected/unpublish.ts': { operation: 'EDIT' },
     'experience/protected/removeFaq.ts': { operation: 'EDIT' },
     'experience/protected/removeMedia.ts': { operation: 'EDIT' },
     'experience/protected/reorderFaqs.ts': { operation: 'EDIT' },
@@ -189,7 +191,9 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
     'gastronomy/protected/deleteDraft.ts': { operation: 'DELETE' },
+    'gastronomy/protected/publish.ts': { operation: 'PUBLISH' },
     'gastronomy/protected/deleteMenuFile.ts': { operation: 'EDIT' },
+    'gastronomy/protected/unpublish.ts': { operation: 'EDIT' },
     'gastronomy/protected/patch.ts': { operation: 'EDIT' },
     'gastronomy/protected/putDailySpecials.ts': { operation: 'EDIT' },
     'gastronomy/protected/putEvents.ts': { operation: 'EDIT' },
@@ -233,7 +237,7 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
 
     it('discovers exactly the frozen 133 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(133);
+        expect(Object.keys(EXPECTED)).toHaveLength(137);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {
