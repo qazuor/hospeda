@@ -56,6 +56,13 @@ export interface RefundCallResult {
     readonly refundId: string | null;
 }
 
+/** Result of a provider create call; only the newly created id is retained. */
+export interface CreateCallResult {
+    readonly accepted: boolean;
+    readonly httpStatus: number;
+    readonly id: string | null;
+}
+
 /** Payment status that can (and must) be refunded by inverse (c). */
 export const REFUNDABLE_PAYMENT_STATUS = 'approved';
 
@@ -76,6 +83,19 @@ export const REFUND_DONE_STATUS = 'approved';
  * the abort inverses need (HOS-1427); U3.3 reuses them for the real step 4b.
  */
 export interface ProviderApi {
+    /** Creates the Webhooks delivery probe as a pending preapproval without charging. */
+    readonly createProbe: (input: {
+        readonly payerEmail: string;
+        readonly idempotencyKey: string;
+    }) => Promise<CreateCallResult>;
+    /** Creates the small step-4b payment directly through the provider payments API. */
+    readonly createPayment: (input: {
+        readonly amountArs: number;
+        readonly cardToken: string;
+        readonly paymentMethodId: string;
+        readonly payerEmail: string;
+        readonly idempotencyKey: string;
+    }) => Promise<CreateCallResult>;
     readonly listPage: (input: {
         readonly kind: ObjectKind;
         readonly offset: number;
@@ -107,6 +127,15 @@ export interface KnownIds {
 /** Resolves the ids the old database knows. Read-only by contract. */
 export type KnownIdsReader = () => Promise<KnownIds>;
 
+/** Delivery channel whose matching resource was stored by the new receiver. */
+export type DeliveryChannel = 'IPN' | 'WEBHOOKS';
+
+/** Read-only port: answers whether this exact channel/resource id has a stored delivery. */
+export type DeliveryReader = (input: {
+    readonly channel: DeliveryChannel;
+    readonly resourceId: string;
+}) => Promise<boolean>;
+
 /** Stable failure codes. The run stops the cutover on any of them. */
 export type FailureCode =
     | 'WALK_COUNT_MISMATCH'
@@ -117,6 +146,9 @@ export type FailureCode =
     | 'MANIFEST_WRITE_FAILED'
     | 'PROVIDER_ERROR'
     | 'OLD_DB_ERROR'
+    | 'DELIVERY_NOT_SEEN'
+    | 'PAYMENT_NOT_APPROVED'
+    | 'NEW_DB_ERROR'
     | 'UNEXPECTED_ERROR';
 
 /** One failure. `detail` is fixed text plus ids: never provider payloads. */
@@ -148,6 +180,8 @@ export type ManifestOutcome = 'in-progress' | 'ok' | 'failed' | 'dry-run';
  * `schemaVersion`: every version-1 reader keeps working (HOS-1427, owner decision 17).
  */
 export interface CutoverManifest {
+    /** `4b` identifies the standalone delivery probe and small payment run. */
+    readonly step?: '4b';
     readonly schemaVersion: 1;
     readonly outcome: ManifestOutcome;
     readonly startedAt: string;
