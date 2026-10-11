@@ -86,8 +86,10 @@ export function loadInventories(args: { readonly root: string }): {
             findings: [{ key: 'registry', detail: 'top-level JSON value must be an object' }]
         };
     const findings: InventoryFinding[] = [];
-    for (const key of Object.keys(parsed))
-        findings.push(...validateEntries({ key, entries: parsed[key] }));
+    for (const key of Object.keys(parsed)) {
+        if (!(INVENTORY_KEYS as readonly string[]).includes(key))
+            findings.push(...validateEntries({ key, entries: parsed[key] }));
+    }
     for (const key of INVENTORY_KEYS) {
         if (key in parsed) findings.push(...validateEntries({ key, entries: parsed[key] }));
         else findings.push({ key, detail: 'missing top-level key' });
