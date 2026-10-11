@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lte } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type COURTESY_CLOSE_REASONS,
@@ -268,6 +268,8 @@ export class SubscriptionModel {
      * The live statuses come from `LIVE_SUBSCRIPTION_STATUSES`, so
      * `PENDING_AUTHORIZATION` is included: the row that occupies the lock before
      * the provider call is the one S1 must find (AC:B3:6).
+     * When the creation sweep mints another key for this row, the newest key
+     * decides which attempt is reused.
      */
     async findLiveCommitment(input: FindLiveCommitmentInput): Promise<LiveCommitment | null> {
         const db = input.tx ?? getDb();
@@ -295,6 +297,7 @@ export class SubscriptionModel {
                     inArray(subscriptions.status, [...LIVE_SUBSCRIPTION_STATUSES])
                 )
             )
+            .orderBy(desc(idempotencyKeys.createdAt))
             .limit(1);
         return row ?? null;
     }

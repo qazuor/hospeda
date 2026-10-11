@@ -137,11 +137,15 @@ export interface AuthorizationSnapshot {
 export interface AuthorizationSearchInput {
     readonly reference?: string;
     readonly status?: AuthorizationStatus;
+    /** The creation sweep's only provider-side criterion; production filter completeness is unmeasured. */
+    readonly payerEmail?: string;
 }
 
 /** Capability 7 search result for one authorization, deliberately smaller than a read by id. */
 export interface AuthorizationSummary {
     readonly authorizationId: string;
+    /** Provider creation instant as ISO 8601; the creation sweep selects the most recent. */
+    readonly createdAt: string;
     readonly reference: string;
     readonly status: AuthorizationStatus;
 }
@@ -213,7 +217,8 @@ export interface PaymentProvider {
      * Capability 7 · search authorizations. It may return only part of the matches without error
      * and is not a source of truth (INV:D6). This is not a ProviderRead, so no decision may rely
      * on it (`assertFreshForAct` rejects it with `NOT_A_PROVIDER_READ`). The portfolio sweep
-     * never calls this method.
+     * never calls this method; the only declared caller is the creation sweep after a lost
+     * response (the declared G17 exception).
      */
     searchAuthorizations(input: AuthorizationSearchInput): Promise<AuthorizationSearchResult>;
     /**

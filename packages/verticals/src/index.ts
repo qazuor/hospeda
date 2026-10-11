@@ -140,6 +140,11 @@ export { selectQuotaGrant } from './quota/quota-grant';
 export type { ConsumeQuotaResult, QuotaWindow, QuotaWindowStore } from './quota/types';
 export { computeWindowClose } from './quota/window-close';
 export {
+    consumeTrialInTransaction,
+    evaluateTrialConsume,
+    type TrialConsumeDeniedReason
+} from './trial/trial-consume';
+export {
     convertTrialOnTitle,
     findConvertingTitle,
     type TrialConversionResult
@@ -158,6 +163,10 @@ export {
     extendTrialByAdmin,
     TRIAL_EXTENSION_REJECTIONS
 } from './trial/trial-extension';
+export {
+    consumeTrialOnFirstPayment,
+    type TrialFirstPaymentResult
+} from './trial/trial-first-payment';
 export { trialMachineLockKey } from './trial/trial-lock-key';
 export {
     InvalidTrialMachineInputError,
@@ -183,3 +192,4 @@ export {
     type TrialStartTransaction,
     type TrialStartUnitOfWork
 } from './trial/trial-start';
+export type { NewConsumedTrialRow, TrialConsumeTransaction } from './trial/trial-start-types';

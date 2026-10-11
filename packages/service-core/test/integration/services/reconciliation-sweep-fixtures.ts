@@ -151,3 +151,38 @@ export async function seedSubscription(
     }
     return { subscription: row, providerId };
 }
+
+/** Fixture for AC:B11:23: one fresh pending creation with its durable key and recipient. */
+export async function seedPendingCreation() {
+    const seeded = await seedSubscription({ status: 'PENDING_AUTHORIZATION' });
+    const [user] = await getServiceTestDb()
+        .select({ email: users.email })
+        .from(users)
+        .where(eq(users.id, seeded.subscription.userId!));
+    const keys = await getServiceTestPool().query<{ key: string }>(
+        "SELECT key FROM idempotency_key WHERE subject_id = $1 AND operation = 'PREAPPROVAL_CREATE' ORDER BY created_at DESC LIMIT 1",
+        [seeded.subscription.id]
+    );
+    return { ...seeded, userEmail: user?.email ?? null, key: keys.rows[0]?.key ?? null };
+}
+
+/** Isolates creation-sweep inventory from pending rows left by parallel suites. */
+export async function withSeededPendingCreations<T>(run: () => Promise<T>): Promise<T> {
+    const { creationSweepModel } = await import('@repo/db');
+    const original = creationSweepModel.listPendingCreationPage.bind(creationSweepModel);
+    const spy = vi.spyOn(creationSweepModel, 'listPendingCreationPage');
+    spy.mockImplementation(async (input) => {
+        const rows = await original({ ...input, limit: 10_000 });
+        const owned = rows.filter(({ subscription }) => seededIds.has(subscription.id));
+        const after =
+            input.afterSubscriptionId === undefined
+                ? owned
+                : owned.filter(({ subscription }) => subscription.id > input.afterSubscriptionId!);
+        return after.slice(0, input.limit);
+    });
+    try {
+        return await run();
+    } finally {
+        spy.mockRestore();
+    }
+}
