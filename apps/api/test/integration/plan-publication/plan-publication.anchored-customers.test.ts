@@ -8,6 +8,7 @@ import {
     insertVersion,
     previewBody,
     previewUrl,
+    restoreProductionPlanCatalog,
     superAdmin,
     truncatePlanCatalog
 } from './plan-publication.helpers.js';
@@ -19,7 +20,10 @@ describe('HOS-1653 anchored customers in action 18 preview', () => {
         validateApiEnv();
     });
     beforeEach(async () => truncatePlanCatalog());
-    afterAll(async () => testDb.teardown());
+    afterAll(async () => {
+        await restoreProductionPlanCatalog();
+        await testDb.teardown();
+    });
 
     async function seedSubscription(input: {
         planVersionId: string;

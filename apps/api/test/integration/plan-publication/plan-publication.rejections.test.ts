@@ -9,6 +9,7 @@ import {
     publishBody,
     publishUrl,
     readVersionEffects,
+    restoreProductionPlanCatalog,
     superAdmin,
     truncatePlanCatalog
 } from './plan-publication.helpers.js';
@@ -26,7 +27,10 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
 
     beforeEach(async () => truncatePlanCatalog());
 
-    afterAll(async () => testDb.teardown());
+    afterAll(async () => {
+        await restoreProductionPlanCatalog();
+        await testDb.teardown();
+    });
 
     it('TEST:V2:10 (a) a non-sellable version that grants a commercial key is rejected: clave de más', async () => {
         const app = initApp();

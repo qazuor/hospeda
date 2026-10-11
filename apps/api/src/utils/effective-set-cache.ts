@@ -3,12 +3,8 @@ import { getClock } from './clock';
 import { apiLogger } from './logger';
 import { getRedisClient } from './redis';
 
-type InvalidationPort = Pick<
-    ReturnType<typeof createEffectiveSetCache<unknown>>,
-    'invalidateUser' | 'invalidateAll'
->;
-
-let activeCache: InvalidationPort | undefined;
+type CachePort = ReturnType<typeof createEffectiveSetCache<unknown>>;
+let activeCache: CachePort | undefined;
 
 /** The snapshot codec belongs to V3.4; this composition only supplies API infrastructure. */
 export function createApiEffectiveSetCache<T>(codec: EffectiveSetCodec<T>) {
@@ -24,7 +20,7 @@ export function createApiEffectiveSetCache<T>(codec: EffectiveSetCodec<T>) {
     return cache;
 }
 
-function getInvalidator(): InvalidationPort {
+function getInvalidator(): CachePort {
     if (activeCache) return activeCache;
     return createApiEffectiveSetCache<never>({
         encode: () => {
@@ -47,6 +43,15 @@ export async function invalidateEffectiveSetsForUser(userId: string): Promise<vo
             userId
         });
     }
+}
+
+/** Reads the API effective-set cache without loading or mutating it. */
+export async function peekEffectiveSetForUser(args: {
+    readonly userId: string;
+    readonly vertical: string;
+}): Promise<unknown | undefined> {
+    if (!activeCache) return undefined;
+    return activeCache.peek(args);
 }
 
 /** Call after any plan version is published. Failure does not roll back publication. */

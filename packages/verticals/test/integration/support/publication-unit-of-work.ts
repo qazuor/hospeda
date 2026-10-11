@@ -15,6 +15,7 @@ export function createPublicationTestAdapter(args: {
     readonly db: DrizzleClient;
     readonly covered: { value: boolean };
     readonly limit: { value: number };
+    readonly declaredLimit?: { value: number | null };
     readonly billing?: Pick<BillingForVerticals, 'coverage'>;
     readonly onLocked?: () => Promise<void>;
     readonly beforeSetPublicationStatus?: () => Promise<void>;
@@ -126,6 +127,13 @@ export function createPublicationTestAdapter(args: {
                             listingPublicationModel.countPublished({ tx, vertical, ownerId }),
                         listByOwner: ({ vertical, ownerId }) =>
                             listingPublicationModel.listByOwner({ tx, vertical, ownerId }),
+                        readPublicationInstants: (input) =>
+                            listingPublicationModel.readPublicationInstants({ ...input, tx }),
+                        async readDeclaredPublishLimit() {
+                            return args.declaredLimit === undefined
+                                ? args.limit.value
+                                : args.declaredLimit.value;
+                        },
                         async readPublishLimit() {
                             return args.limit.value;
                         },
@@ -136,7 +144,8 @@ export function createPublicationTestAdapter(args: {
                         stampInactiveSince: (input) =>
                             listingPublicationModel.stampInactiveSince({ tx, ...input }),
                         insertStatusChangedEvent: (input) =>
-                            listingPublicationModel.insertStatusChangedEvent({ tx, ...input })
+                            listingPublicationModel.insertStatusChangedEvent({ tx, ...input }),
+                        async enqueueRestitutionNotice() {}
                     };
                 return work(port);
             });
