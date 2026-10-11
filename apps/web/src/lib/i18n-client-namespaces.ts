@@ -131,6 +131,10 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'auth.verifyEmail',
     'billing.checkout',
     'billing.limit',
+    // HOS-1491 — the subscribe button and the publish button's no-plans
+    // rejection render these keys in the browser.
+    'publish.noPlans',
+    'publish.subscribe',
     'blog.categories',
     'comments.form',
     'comments.thread',
