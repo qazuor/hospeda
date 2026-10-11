@@ -66,8 +66,11 @@ function isStatusCheck(node: ts.Node): boolean {
 function isImportOrExportOrDeclarationName(node: ts.Identifier): boolean {
     const p = node.parent;
     return (
-        (ts.isImportSpecifier(p) && p.name === node) ||
-        (ts.isExportSpecifier(p) && p.name === node) ||
+        ts.isImportSpecifier(p) ||
+        ts.isExportSpecifier(p) ||
+        (ts.isImportClause(p) && p.name === node) ||
+        (ts.isNamespaceImport(p) && p.name === node) ||
+        (ts.isNamespaceExport(p) && p.name === node) ||
         ((ts.isVariableDeclaration(p) || ts.isParameter(p)) && p.name === node) ||
         (ts.isPropertyAssignment(p) && p.name === node)
     );
