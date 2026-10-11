@@ -1536,18 +1536,7 @@ export interface ExperienceDetailData extends ExperienceCardData {
     } | null;
 }
 
-/**
- * Detail data for a gold partner's own page at `/partners/<slug>/` (HOS-294).
- *
- * Deliberately NOT a rename of the deleted `PartnerCardData`. That shape
- * belonged to the retired directory and carried its model — a tier badge,
- * `isFeatured`, a description clamped to three lines — and reusing it would
- * have carried that model into the thing meant to replace it.
- *
- * `tier` is absent on purpose: it decides WHETHER this page exists, and is
- * never rendered on it. It is internal commercial state, and printing "Gold" on
- * a page only gold partners have says nothing to a reader.
- */
+/** Detail data for a partner page, which V7 restores on the public key. */
 export interface PartnerDetailData {
     readonly slug: string;
     readonly name: string;

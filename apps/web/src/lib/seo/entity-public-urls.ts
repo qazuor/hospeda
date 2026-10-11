@@ -22,9 +22,8 @@
  * That last clause is what keeps three sitemap entities out, and each for a
  * reason that would otherwise mean advertising a dead URL:
  *
- * - `partner` — only GOLD partners have a page. A silver partner's URL 404s,
- *   and a gold one that was unpublished answers 410. The tier is not knowable
- *   at the hook that fires the notification.
+ * - `partner` — the detail page returns 404 until V7 restores it on the public
+ *   key, so it is deliberately omitted from this notification map.
  * - `pointOfInterest` — only the curated few carrying `hasOwnPage` render; the
  *   other ~839 catalog rows 404 by design (see the sitemap's own note).
  * - `attraction` — its landing lists the destinations that have it, so it is
