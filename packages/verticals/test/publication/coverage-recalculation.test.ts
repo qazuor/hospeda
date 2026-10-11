@@ -71,6 +71,7 @@ describe('PB6 and coverage recalculation (AC:V6:1, AC:V6:4)', () => {
             'stamp',
             'set',
             'event',
+            'enqueueRestitutionNotice',
             'commit',
             'invalidate',
             'revalidate'

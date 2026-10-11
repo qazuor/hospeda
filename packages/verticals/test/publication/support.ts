@@ -24,11 +24,24 @@ export function makeHarness(
         readonly failTransaction?: boolean;
         readonly trialAvailable?: boolean;
         readonly setReturnsFalse?: boolean;
+        readonly listings?: readonly PublicationListing[];
     } = {}
 ) {
     let locked = false;
     let status = args.status ?? PublicationStatusEnum.DRAFT;
-    let publishedCount = 0;
+    const records = args.listings ?? [
+        {
+            id: listingId,
+            ownerId: userId,
+            publicationStatus: status,
+            createdAt: at,
+            inactiveSince: at
+        }
+    ];
+    const statuses = new Map(records.map((row) => [row.id, row.publicationStatus]));
+    let publishedCount = records.filter(
+        (row) => row.publicationStatus === PublicationStatusEnum.PUBLISHED
+    ).length;
     const listing: PublicationListing = {
         id: listingId,
         ownerId: userId,
@@ -37,6 +50,8 @@ export function makeHarness(
         inactiveSince: at
     };
     const calls: string[] = [];
+    const restitutionNotices: Parameters<PublicationTransaction['enqueueRestitutionNotice']>[0][] =
+        [];
     const tx: PublicationTransaction = {
         async findActivationEvent() {
             return event;
@@ -72,7 +87,7 @@ export function makeHarness(
         async readListing() {
             expect(locked).toBe(true);
             calls.push('read');
-            return { ...listing, publicationStatus: status };
+            return { ...listing, publicationStatus: statuses.get(listingId) ?? status };
         },
         async countPublished() {
             return publishedCount;
@@ -80,7 +95,10 @@ export function makeHarness(
         async listByOwner() {
             expect(locked).toBe(true);
             calls.push('list');
-            return [{ ...listing, publicationStatus: status }];
+            return records.map((row) => ({
+                ...row,
+                publicationStatus: statuses.get(row.id) ?? row.publicationStatus
+            }));
         },
         async readPublishLimit() {
             return args.limit ?? 1;
@@ -93,11 +111,12 @@ export function makeHarness(
             calls.push('instants');
             return new Map(listingIds.map((id, index) => [id, new Date(at.getTime() + index)]));
         },
-        async setPublicationStatus({ from, to }) {
+        async setPublicationStatus({ listingId: targetId, from, to }) {
             if (args.setReturnsFalse) return false;
-            if (status !== from) return false;
-            status = to;
-            publishedCount = to === PublicationStatusEnum.PUBLISHED ? 1 : 0;
+            if ((statuses.get(targetId) ?? status) !== from) return false;
+            statuses.set(targetId, to);
+            if (targetId === listingId) status = to;
+            publishedCount += to === PublicationStatusEnum.PUBLISHED ? 1 : -1;
             calls.push('set');
             return true;
         },
@@ -106,6 +125,10 @@ export function makeHarness(
         },
         async insertStatusChangedEvent() {
             calls.push('event');
+        },
+        async enqueueRestitutionNotice(args) {
+            calls.push('enqueueRestitutionNotice');
+            restitutionNotices.push(args);
         }
     };
     const unitOfWork: PublicationUnitOfWork = {
@@ -113,7 +136,10 @@ export function makeHarness(
             calls.push('lock');
             locked = true;
             const result = await work(tx);
-            if (args.failTransaction) throw new Error('rollback');
+            if (args.failTransaction) {
+                restitutionNotices.splice(0);
+                throw new Error('rollback');
+            }
             locked = false;
             calls.push('commit');
             return result;
@@ -133,5 +159,5 @@ export function makeHarness(
             calls.push('revalidate');
         })
     };
-    return { unitOfWork, billing, afterCommit, calls, getStatus: () => status };
+    return { unitOfWork, billing, afterCommit, calls, restitutionNotices, getStatus: () => status };
 }

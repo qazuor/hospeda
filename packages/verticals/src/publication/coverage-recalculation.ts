@@ -1,6 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
+import { buildRestitutionPayload } from './publication-notices';
 import { orderReturningCandidates, selectSurplusToLower } from './publication-order';
 import type {
     PostCommitWarning,
@@ -177,6 +178,21 @@ export async function recalculateCoverage(args: {
                     });
                     restored.push(candidate.id);
                     available -= 1;
+                }
+                if (restored.length > 0) {
+                    const restoredIds = new Set(restored);
+                    await tx.enqueueRestitutionNotice({
+                        vertical: args.vertical,
+                        ownerId: args.userId,
+                        payload: buildRestitutionPayload({
+                            vertical: args.vertical,
+                            restoredListingIds: restored,
+                            notRestoredListingIds: ordered
+                                .filter((candidate) => !restoredIds.has(candidate.id))
+                                .map((candidate) => candidate.id)
+                        }),
+                        correlationId: args.correlationId
+                    });
                 }
             }
             return { lowered, loweredBySurplus, restored, stamped };

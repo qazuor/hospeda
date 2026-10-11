@@ -1,5 +1,6 @@
 export * from './coverage-recalculation';
 export * from './publication-lock';
+export * from './publication-notices';
 export * from './publication-order';
 export * from './publication-types';
 export * from './publish-listing';

@@ -143,7 +143,8 @@ export function createPublicationTestAdapter(args: {
                         stampInactiveSince: (input) =>
                             listingPublicationModel.stampInactiveSince({ tx, ...input }),
                         insertStatusChangedEvent: (input) =>
-                            listingPublicationModel.insertStatusChangedEvent({ tx, ...input })
+                            listingPublicationModel.insertStatusChangedEvent({ tx, ...input }),
+                        async enqueueRestitutionNotice() {}
                     };
                 return work(port);
             });

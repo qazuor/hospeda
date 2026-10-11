@@ -1,9 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import type { DrizzleClient } from '@repo/db';
-import { getDb, listingPublicationModel, planCatalogModel, trials } from '@repo/db';
+import {
+    buildEmailDedupKey,
+    buildEventOccurrence,
+    emailOutboxModel,
+    getDb,
+    listingPublicationModel,
+    planCatalogModel,
+    trials,
+    users
+} from '@repo/db';
 import { TRIAL_PLAN_ROLE, VERTICAL_ACTIVATION_EVENT_BY_VERTICAL } from '@repo/schemas';
 import { getRevalidationService } from '@repo/service-core';
 import { and, eq, sql } from 'drizzle-orm';
+import { LISTING_RESTITUTION_TEMPLATE } from '../../../../../packages/verticals/src/publication/publication-notices';
 import type {
     PublicationAfterCommit,
     PublicationTransaction,
@@ -92,6 +102,37 @@ export function getListingPublicationPorts(): {
                             tx,
                             correlationId: input.correlationId || randomUUID()
                         });
+                    },
+                    async enqueueRestitutionNotice(input) {
+                        const [owner] = await tx
+                            .select({ email: users.email })
+                            .from(users)
+                            .where(eq(users.id, input.ownerId))
+                            .limit(1);
+                        if (!owner?.email) {
+                            apiLogger.warn(
+                                { ownerId: input.ownerId, correlationId: input.correlationId },
+                                'Listing restitution notice has no owner email'
+                            );
+                            return;
+                        }
+                        const template = LISTING_RESTITUTION_TEMPLATE;
+                        const dedupKey = buildEmailDedupKey({
+                            recipient: input.ownerId,
+                            template,
+                            occurrence: buildEventOccurrence({ eventId: input.correlationId })
+                        });
+                        await emailOutboxModel.enqueue(
+                            {
+                                recipientUserId: input.ownerId,
+                                recipientEmail: owner.email,
+                                template,
+                                payload: { ...input.payload },
+                                dedupKey,
+                                correlationId: input.correlationId
+                            },
+                            tx
+                        );
                     },
                     async findActivationEvent({ vertical }) {
                         return VERTICAL_ACTIVATION_EVENT_BY_VERTICAL[vertical];
