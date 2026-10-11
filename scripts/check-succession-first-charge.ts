@@ -25,13 +25,14 @@ function name(p: ts.PropertyName): string | null {
 }
 function providerRead(expr: ts.Expression, fn: ts.FunctionLikeDeclaration): boolean {
     if (ts.isPropertyAccessExpression(expr) && expr.name.text === 'firstChargeAt') return true;
-    if (!ts.isIdentifier(expr) || !ts.isBlock(fn.body)) return false;
+    if (!ts.isIdentifier(expr) || !fn.body || !ts.isBlock(fn.body)) return false;
+    const identifier = expr.text;
     let ok = false;
     function visit(n: ts.Node): void {
         if (
             ts.isVariableDeclaration(n) &&
             ts.isIdentifier(n.name) &&
-            n.name.text === expr.text &&
+            n.name.text === identifier &&
             n.initializer &&
             ts.isPropertyAccessExpression(n.initializer) &&
             n.initializer.name.text === 'firstChargeAt'
@@ -44,7 +45,7 @@ function providerRead(expr: ts.Expression, fn: ts.FunctionLikeDeclaration): bool
             n.name.elements.some(
                 (e) =>
                     ts.isIdentifier(e.name) &&
-                    e.name.text === expr.text &&
+                    e.name.text === identifier &&
                     (e.propertyName?.getText() ?? e.name.text) === 'firstChargeAt'
             )
         )
@@ -80,7 +81,7 @@ function contains(node: ts.Node, text: string): boolean {
     return node.getText().includes(text);
 }
 function hasStrictComparison(fn: ts.FunctionLikeDeclaration, source: ts.SourceFile): boolean {
-    if (!ts.isBlock(fn.body)) return false;
+    if (!fn.body || !ts.isBlock(fn.body)) return false;
     let found = false;
     function has(n: ts.Expression, word: RegExp): boolean {
         return word.test(n.getText(source));

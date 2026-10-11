@@ -41,7 +41,16 @@ function functionFor(
     sourceFile: ts.SourceFile
 ): ts.FunctionLikeDeclaration | ts.SourceFile {
     for (let parent = node.parent; parent; parent = parent.parent) {
-        if (ts.isFunctionLike(parent)) return parent;
+        if (
+            ts.isFunctionDeclaration(parent) ||
+            ts.isFunctionExpression(parent) ||
+            ts.isArrowFunction(parent) ||
+            ts.isMethodDeclaration(parent) ||
+            ts.isGetAccessorDeclaration(parent) ||
+            ts.isSetAccessorDeclaration(parent) ||
+            ts.isConstructorDeclaration(parent)
+        )
+            return parent;
     }
     return sourceFile;
 }
