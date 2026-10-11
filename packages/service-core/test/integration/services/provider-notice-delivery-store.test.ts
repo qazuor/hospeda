@@ -69,6 +69,7 @@ describe('TEST:B3:22 provider delivery storage and retention', () => {
     });
 
     it('purges only rows strictly older than 180 days and does not update survivors', async () => {
+        getServiceTestDb();
         const token = crypto.randomUUID();
         const urls = ['181', '180', '179'].map((age) => `${url(token)}&age=${age}`);
         const pool = getServiceTestPool();

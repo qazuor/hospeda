@@ -32,9 +32,11 @@ export async function receiveProviderDelivery(
             body: parsed.data.delivery.body,
             receivedAt
         });
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        logger.error({ channel, message }, 'Provider delivery could not be saved');
+    } catch {
+        logger.error(
+            { channel, message: 'Delivery insert failed' },
+            'Provider delivery could not be saved'
+        );
         return { ack: 'ERROR', outcome: 'DELIVERY_NOT_SAVED' };
     }
     return await processProviderNotice({ channel, delivery: parsed.data.delivery }, ports);
