@@ -22,6 +22,7 @@ import {
     startSubscription
 } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
+import { namespaceFake } from './support/payment-provider';
 import {
     seededSubscriptionIds,
     withSeededSubscriptionSweep
@@ -69,32 +70,6 @@ function expireOwnAuthorizationWindows(
 }
 function advance(hours: number) {
     current = new Date(openedAt.getTime() + hours * 60 * 60 * 1000);
-}
-
-/** Namespace the fake's resettable ids because all integration files share a database. */
-function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
-    const prefix = `${crypto.randomUUID()}:`;
-    const external = (id: string) => `${prefix}${id}`;
-    const internal = (id: string) => (id.startsWith(prefix) ? id.slice(prefix.length) : id);
-    return {
-        capabilitySupport: fake.capabilitySupport,
-        async authorize(input) {
-            const result = await fake.authorize(input);
-            return { ...result, authorizationId: external(result.authorizationId) };
-        },
-        charge: (input) =>
-            fake.charge({ ...input, authorizationId: internal(input.authorizationId) }),
-        changeAmount: (input) =>
-            fake.changeAmount({ ...input, authorizationId: internal(input.authorizationId) }),
-        pause: (input) => fake.pause({ authorizationId: internal(input.authorizationId) }),
-        resume: (input) => fake.resume({ authorizationId: internal(input.authorizationId) }),
-        cancel: (input) => fake.cancel({ authorizationId: internal(input.authorizationId) }),
-        refund: (input) => fake.refund(input),
-        readAuthorization: (input) =>
-            fake.readAuthorization({ authorizationId: internal(input.authorizationId) }),
-        readCharge: (input) => fake.readCharge(input),
-        decodeNotice: (input) => fake.decodeNotice(input)
-    };
 }
 
 async function seedChoice(inheritsTouristVip = false) {
