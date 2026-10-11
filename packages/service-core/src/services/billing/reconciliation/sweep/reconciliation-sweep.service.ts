@@ -1,10 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
-import { reconciliationInventoryModel } from '@repo/db';
+import {
+    isReconciliationSweepRunComplete,
+    reconciliationInventoryModel,
+    reconciliationSweepRunModel
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
+import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
 import {
     runZeroCallChecks,
     type ZeroCallChecksPorts,
@@ -24,6 +29,7 @@ export interface ReconciliationSweepPorts {
     readonly comparisons?: readonly ReconciliationComparison[];
     readonly markPayments?: ReconciliationMarkPayments;
     readonly zeroCallChecks?: ZeroCallChecksPorts;
+    readonly livenessPing?: SweepLivenessPing;
 }
 
 export interface ReconciliationSweepFailure {
@@ -33,6 +39,9 @@ export interface ReconciliationSweepFailure {
 
 export interface ReconciliationSweepSummary {
     readonly rowsRead: number;
+    readonly runId: string;
+    readonly complete: boolean;
+    readonly pinged: boolean;
     readonly rowsFailed: number;
     readonly divergences: number;
     readonly marksOpened: number;
@@ -54,6 +63,7 @@ export async function runReconciliationSweep(
     const pageSize = input.pageSize ?? 100;
     const correlationId = input.correlationId ?? randomUUID();
     const startedAt = ports.clock.now();
+    const run = await reconciliationSweepRunModel.open({ correlationId, startedAt });
     const failures: ReconciliationSweepFailure[] = [];
     let rowsRead = 0;
     let rowsFailed = 0;
@@ -109,7 +119,26 @@ export async function runReconciliationSweep(
           )
         : undefined;
 
+    const finishedAt = ports.clock.now();
+    await reconciliationSweepRunModel.close({ id: run.id, finishedAt, rowsRead, rowsFailed });
+    const complete = isReconciliationSweepRunComplete({ finishedAt, rowsFailed });
+    let pinged = false;
+    if (complete && ports.livenessPing) {
+        try {
+            await ports.livenessPing.ping({ sweep: 'RECONCILIATION', runId: run.id, finishedAt });
+            pinged = true;
+        } catch (error) {
+            logger.error(
+                { runId: run.id, error: errorMessage(error) },
+                'Reconciliation sweep ping failed'
+            );
+        }
+    }
+
     return {
+        runId: run.id,
+        complete,
+        pinged,
         rowsRead,
         rowsFailed,
         divergences,
@@ -117,7 +146,7 @@ export async function runReconciliationSweep(
         marksAccumulated,
         failures,
         startedAt,
-        finishedAt: ports.clock.now(),
+        finishedAt,
         ...(zeroCallChecks ? { zeroCallChecks } : {})
     };
 }
