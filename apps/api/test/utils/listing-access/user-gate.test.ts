@@ -20,6 +20,7 @@ function grant(entries: readonly { key: string; value: number }[]): void {
                 userId: scope.userId,
                 vertical: scope.vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: entries.map((entry) => ({ ...entry, strategy: 'MAX' as const }))
             })
     );

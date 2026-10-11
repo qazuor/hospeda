@@ -196,6 +196,7 @@ beforeEach(() => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: userId === OWNER.premium,
+                inheritsTouristVip: false,
                 entries: (userId === OWNER.premium ? KEYS : []).map((key) => ({
                     key,
                     value: 1,

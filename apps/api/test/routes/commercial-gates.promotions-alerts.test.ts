@@ -259,6 +259,7 @@ beforeEach(() => {
             userId,
             vertical,
             hasLiveNonTrialTitle: true,
+            inheritsTouristVip: false,
             entries: effectiveKeys(userId, vertical)
                 .map((key) => ({
                     key,

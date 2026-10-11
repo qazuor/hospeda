@@ -53,6 +53,7 @@ function effectiveSetFor(userId: string, vertical: VerticalEnum) {
         userId,
         vertical,
         hasLiveNonTrialTitle: true,
+        inheritsTouristVip: false,
         entries: [
             ...grants.map((key) => ({ key, value: 1, strategy: 'MAX' as const })),
             ...Object.entries(limits).map(([key, value]) => ({

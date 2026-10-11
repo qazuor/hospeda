@@ -47,6 +47,7 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'view_basic_stats', value: 1, strategy: 'MAX' }]
             })
     })

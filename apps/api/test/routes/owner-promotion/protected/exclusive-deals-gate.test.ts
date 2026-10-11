@@ -45,6 +45,7 @@ describe('GET /owner-promotions/exclusive-deals', () => {
                     userId,
                     vertical,
                     hasLiveNonTrialTitle: true,
+                    inheritsTouristVip: false,
                     entries: [{ key: 'exclusive_deals', value: 1, strategy: 'MAX' as const }]
                 })
         );

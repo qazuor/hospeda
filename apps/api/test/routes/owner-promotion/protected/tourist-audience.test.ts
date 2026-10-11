@@ -141,6 +141,7 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
                 entries: [
                     ...keys.map((key) => ({ key, value: 1, strategy: 'MAX' as const })),
                     { key: 'max_active_promotions', value: 2147483647, strategy: 'MAX' as const }

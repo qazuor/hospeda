@@ -158,6 +158,7 @@ describe('TEST:V5:32 publicListAccommodationsRoute — hasAiChat badge', () => {
                     userId,
                     vertical,
                     hasLiveNonTrialTitle: true,
+                    inheritsTouristVip: false,
                     entries:
                         userId === OWNER_WITH_AI
                             ? [{ key: 'ai_chat', value: 1, strategy: 'MAX' }]

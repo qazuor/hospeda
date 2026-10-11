@@ -37,6 +37,7 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
                 entries: [
                     { key: 'price_alerts', value: 1, strategy: 'MAX' as const },
                     { key: 'max_active_alerts', value: 2147483647, strategy: 'MAX' as const }

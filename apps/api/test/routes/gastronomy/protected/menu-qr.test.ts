@@ -44,6 +44,7 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'menu_qr_scan_metrics', value: 1, strategy: 'MAX' }]
             })
     })

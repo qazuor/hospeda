@@ -180,6 +180,7 @@ beforeEach(() => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
                 entries: entriesFor(userId).map((key) => ({
                     key,
                     value: 1,

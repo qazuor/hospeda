@@ -36,6 +36,7 @@ function grantEffectiveSet(): void {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
                 entries: [
                     { key: 'exclusive_deals', value: 1, strategy: 'MAX' as const },
                     ...(hasVipPromotionsAccess
@@ -85,6 +86,7 @@ describe('TEST:V5:32 GET /api/v1/protected/owner-promotions/exclusive-deals', ()
                     userId,
                     vertical,
                     hasLiveNonTrialTitle: true,
+                    inheritsTouristVip: false,
                     entries: []
                 })
         );
