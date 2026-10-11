@@ -8,6 +8,7 @@ import {
     alertsDigestJob,
     appLogPurgeJob,
     archiveExpiredPromotionsJob,
+    billingCreationsSweepJob,
     billingReconciliationSweepJob,
     calendarSyncGoogleJob,
     calendarSyncIcalJob,
@@ -45,6 +46,7 @@ import type { CronJobDefinition } from './types';
  */
 export const cronJobs: CronJobDefinition[] = [
     billingReconciliationSweepJob,
+    billingCreationsSweepJob,
     alertsDigestJob,
     exchangeRateFetchJob,
     destinationWeatherFetchJob,

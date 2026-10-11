@@ -52,6 +52,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Read owned billing inventory by provider id and open marks for divergences (HOS-1602, AC:B11:1).'
     },
     {
+        name: 'billing-creations-sweep',
+        displayName: 'Barrido de creaciones de cobros',
+        category: 'billing',
+        schedule: '*/5 * * * *',
+        description:
+            'Recover unanswered subscription creations and cancel duplicates (HOS-1610, AC:B11:23).'
+    },
+    {
         name: 'alerts-digest',
         displayName: 'Digest de alertas y ofertas',
         category: 'notifications',

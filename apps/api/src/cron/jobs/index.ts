@@ -16,6 +16,7 @@
 export { alertsDigestJob } from './alerts-digest.job.js';
 export { appLogPurgeJob } from './app-log-purge.job.js';
 export { archiveExpiredPromotionsJob } from './archive-expired-promotions.job.js';
+export { billingCreationsSweepJob } from './billing-creations-sweep.job.js';
 // Import job definitions
 export { billingReconciliationSweepJob } from './billing-reconciliation-sweep.job.js';
 export { calendarSyncGoogleJob } from './calendar-sync-google.job.js';
