@@ -230,44 +230,46 @@ describe('TEST:V6:24 step 4c', () => {
     });
 
     it('prefixes tags for prod and treats unresolved environments and no-op adapters as failures', async () => {
-        const { adapter, received } = recordingAdapter();
-        const prod = new RevalidationService({ adapter, cacheTagEnvironment: 'prod' });
-        const purger = createRevalidationPagePurger({ service: prod });
-        expect(
-            await purger.purge({ group: 'collections', tags: ['home', 'list-accom'] })
-        ).toMatchObject({ ok: true });
-        expect(received[0]).toEqual(['prod:home', 'prod:list-accom']);
+        await withRollback(async () => {
+            const { adapter, received } = recordingAdapter();
+            const prod = new RevalidationService({ adapter, cacheTagEnvironment: 'prod' });
+            const purger = createRevalidationPagePurger({ service: prod });
+            expect(
+                await purger.purge({ group: 'collections', tags: ['home', 'list-accom'] })
+            ).toMatchObject({ ok: true });
+            expect(received[0]).toEqual(['prod:home', 'prod:list-accom']);
 
-        const failedRecorder = recordingAdapter([
-            { target: 'prod:home', success: false, error: 'failure', durationMs: 1 }
-        ]);
-        const failed = new RevalidationService({
-            adapter: failedRecorder.adapter,
-            cacheTagEnvironment: 'prod'
+            const failedRecorder = recordingAdapter([
+                { target: 'prod:home', success: false, error: 'failure', durationMs: 1 }
+            ]);
+            const failed = new RevalidationService({
+                adapter: failedRecorder.adapter,
+                cacheTagEnvironment: 'prod'
+            });
+            expect(
+                await createRevalidationPagePurger({ service: failed }).purge({
+                    group: 'collections',
+                    tags: ['home']
+                })
+            ).toEqual({ ok: false, failed: ['home'] });
+
+            const unresolvedRecorder = recordingAdapter();
+            const unresolved = new RevalidationService({ adapter: unresolvedRecorder.adapter });
+            expect(
+                await createRevalidationPagePurger({ service: unresolved }).purge({
+                    group: 'collections',
+                    tags: ['home']
+                })
+            ).toEqual({ ok: false, failed: ['home'] });
+            expect(unresolvedRecorder.received).toEqual([]);
+
+            const noOp = new RevalidationService({
+                adapter: new NoOpRevalidationAdapter(),
+                cacheTagEnvironment: 'prod'
+            });
+            expect(() => createRevalidationPagePurger({ service: noOp })).toThrow(
+                Step4cNoOpAdapterError
+            );
         });
-        expect(
-            await createRevalidationPagePurger({ service: failed }).purge({
-                group: 'collections',
-                tags: ['home']
-            })
-        ).toEqual({ ok: false, failed: ['home'] });
-
-        const unresolvedRecorder = recordingAdapter();
-        const unresolved = new RevalidationService({ adapter: unresolvedRecorder.adapter });
-        expect(
-            await createRevalidationPagePurger({ service: unresolved }).purge({
-                group: 'collections',
-                tags: ['home']
-            })
-        ).toEqual({ ok: false, failed: ['home'] });
-        expect(unresolvedRecorder.received).toEqual([]);
-
-        const noOp = new RevalidationService({
-            adapter: new NoOpRevalidationAdapter(),
-            cacheTagEnvironment: 'prod'
-        });
-        expect(() => createRevalidationPagePurger({ service: noOp })).toThrow(
-            Step4cNoOpAdapterError
-        );
     });
 });
