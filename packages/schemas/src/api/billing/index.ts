@@ -21,6 +21,7 @@ export * from './promo-code.schema.js';
 export * from './publish-eligibility.schema.js';
 export * from './replace-payment-method.schema.js';
 export * from './start-paid.schema.js';
+export * from './subscribe-destination.schema.js';
 export * from './subscription-cancel.schema.js';
 export * from './subscription-event.schema.js';
 export * from './subscription-pause.schema.js';
