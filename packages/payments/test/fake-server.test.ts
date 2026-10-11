@@ -245,8 +245,22 @@ describe('fake provider HTTP server', () => {
             method: 'GET',
             path: '/preapproval/nonexistent'
         });
-        expect((await postAuthorization(http.url)).status).toBe(201);
-        expect(http.requests()[1]?.at).toBe(START.toISOString());
+        const created = await responseJson(await postAuthorization(http.url));
+        expect(created).toMatchObject({
+            external_reference: BASE.external_reference,
+            status: 'pending',
+            auto_recurring: {
+                frequency: 1,
+                transaction_amount: 18000,
+                currency_id: 'ARS'
+            }
+        });
+        expect(http.requests()[2]).toMatchObject({
+            method: 'POST',
+            path: '/preapproval',
+            at: START.toISOString(),
+            body: BASE
+        });
     });
 
     it('switches providers without releasing the listening port', async () => {
