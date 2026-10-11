@@ -45,4 +45,26 @@ describe('declineCharge test handle', () => {
             fake.declineCharge({ authorizationId: 'missing', declineReason: null })
         ).rejects.toMatchObject({ code: 'NOT_FOUND' } satisfies Partial<PaymentProviderError>);
     });
+
+    it('can record a rejected attempt after the authorization was cancelled', async () => {
+        const { authorizationId } = await fake.authorize({
+            reference: 'signup-2',
+            amount,
+            cadence: { everyMonths: 1 },
+            reason: 'Plan monthly',
+            returnUrl: 'https://hospeda.test/return'
+        });
+        await fake.approve({ authorizationId });
+        await fake.cancel({ authorizationId });
+
+        const { chargeId } = await fake.declineCharge({
+            authorizationId,
+            declineReason: null
+        });
+
+        expect((await fake.readCharge({ chargeId })).snapshot.status).toBe('rejected');
+        expect((await fake.readAuthorization({ authorizationId })).snapshot.status).toBe(
+            'cancelled'
+        );
+    });
 });

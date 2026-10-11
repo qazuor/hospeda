@@ -219,6 +219,14 @@ describe('TEST:B3:17 declineFirstCharge', () => {
             await resultFor(deferred, ports(deferredProvider, deferred.beforeCancelNotice))
         ).toMatchObject({ outcome: 'DECLINED', cancelCall: 'DEFERRED' });
         expect(deferredCancel).not.toHaveBeenCalled();
+        expect(
+            (
+                await getServiceTestDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, deferred.row.id))
+            )[0]?.status
+        ).toBe('CHARGE_DECLINED');
 
         for (const notice of ['NO_RECIPIENT', 'DELIVERY_EXHAUSTED'] as const) {
             current = openedAt;
@@ -344,15 +352,10 @@ describe('TEST:B3:17 declineFirstCharge', () => {
                 ports(
                     providerWithCancel(unpaidPredecessor.fake),
                     unpaidPredecessor.beforeCancelNotice,
-                    {
-                        payments: {
-                            hasCreditedPayment: async ({ subscriptionId }) =>
-                                subscriptionId === predecessor.id
-                        }
-                    }
+                    { payments: { hasCreditedPayment: async () => false } }
                 )
             )
-        ).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'LEFT_TO_S4' });
+        ).toMatchObject({ outcome: 'DECLINED', successionClosed: false });
     });
 
     it('TEST:B3:17 f — skips approved charges, inactive rows, and credited-payment cases', async () => {
@@ -360,9 +363,7 @@ describe('TEST:B3:17 declineFirstCharge', () => {
         const own = await seedActive();
         const approved = await own.fake.charge({
             authorizationId: own.started.authorizationId,
-            amount: own.row.billingOptionId
-                ? { amountMinor: 250000, currency: 'ARS' }
-                : { amountMinor: 250000, currency: 'ARS' },
+            amount: { amountMinor: 250000, currency: 'ARS' },
             reference: 'approved-charge'
         });
         expect(
@@ -379,6 +380,14 @@ describe('TEST:B3:17 declineFirstCharge', () => {
             outcome: 'NOT_APPLICABLE',
             reason: 'NOT_ACTIVE'
         });
+        expect(
+            (
+                await getServiceTestDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, own.row.id))
+            )[0]?.status
+        ).toBe('SUSPENDED');
 
         current = openedAt;
         const credited = await seedActive();
@@ -390,6 +399,53 @@ describe('TEST:B3:17 declineFirstCharge', () => {
                 })
             )
         ).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'HAS_CREDITED_PAYMENT' });
+        expect(
+            (
+                await getServiceTestDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, credited.row.id))
+            )[0]?.status
+        ).toBe('ACTIVE');
+
+        current = openedAt;
+        const leftToS4 = await seedActive();
+        const [predecessor] = await getServiceTestDb()
+            .insert(subscriptions)
+            .values({
+                userId: leftToS4.row.userId,
+                vertical: leftToS4.row.vertical,
+                planVersionId: leftToS4.row.planVersionId,
+                billingOptionId: leftToS4.row.billingOptionId,
+                paymentMethod: 'CARD',
+                class: 'PRINCIPAL',
+                status: 'CANCELLED'
+            })
+            .returning();
+        if (!predecessor) throw new Error('No predecessor');
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ succeedsId: predecessor.id })
+            .where(eq(subscriptions.id, leftToS4.row.id));
+        expect(
+            await resultFor(
+                leftToS4,
+                ports(providerWithCancel(leftToS4.fake), leftToS4.beforeCancelNotice, {
+                    payments: {
+                        hasCreditedPayment: async ({ subscriptionId }) =>
+                            subscriptionId === predecessor.id
+                    }
+                })
+            )
+        ).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'LEFT_TO_S4' });
+        expect(
+            (
+                await getServiceTestDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, leftToS4.row.id))
+            )[0]?.status
+        ).toBe('ACTIVE');
     });
 
     it('TEST:B3:17 g — conditional active update reports a lost race without declined notice', async () => {
