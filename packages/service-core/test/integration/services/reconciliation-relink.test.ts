@@ -7,7 +7,7 @@ import {
     subscriptions
 } from '@repo/db';
 import type { FakePaymentProvider } from '@repo/payments/fake';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { handleUnknownAuthorization } from '../../../src/services/billing/reconciliation/handle-unknown-authorization.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
 import {
@@ -17,6 +17,7 @@ import {
 } from './reconciliation-sweep-fixtures.js';
 
 afterAll(closeServiceTestPool);
+beforeEach(() => vi.restoreAllMocks());
 
 async function authorize(fake: FakePaymentProvider, reference: string) {
     const result = await fake.authorize({
