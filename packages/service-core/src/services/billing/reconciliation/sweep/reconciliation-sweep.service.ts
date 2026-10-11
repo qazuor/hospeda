@@ -5,6 +5,11 @@ import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
+import {
+    runZeroCallChecks,
+    type ZeroCallChecksPorts,
+    type ZeroCallChecksSummary
+} from './zero-call-checks.service.js';
 
 const logger = createLogger('billing-reconciliation-sweep');
 
@@ -18,6 +23,7 @@ export interface ReconciliationSweepPorts {
     readonly clock: Clock;
     readonly comparisons?: readonly ReconciliationComparison[];
     readonly markPayments?: ReconciliationMarkPayments;
+    readonly zeroCallChecks?: ZeroCallChecksPorts;
 }
 
 export interface ReconciliationSweepFailure {
@@ -34,6 +40,7 @@ export interface ReconciliationSweepSummary {
     readonly failures: readonly ReconciliationSweepFailure[];
     readonly startedAt: Date;
     readonly finishedAt: Date;
+    readonly zeroCallChecks?: ZeroCallChecksSummary;
 }
 
 function errorMessage(error: unknown): string {
@@ -95,6 +102,13 @@ export async function runReconciliationSweep(
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }
 
+    const zeroCallChecks = ports.zeroCallChecks
+        ? await runZeroCallChecks(
+              { correlationId, pageSize },
+              { ...ports.zeroCallChecks, markPayments: ports.markPayments }
+          )
+        : undefined;
+
     return {
         rowsRead,
         rowsFailed,
@@ -103,6 +117,7 @@ export async function runReconciliationSweep(
         marksAccumulated,
         failures,
         startedAt,
-        finishedAt: ports.clock.now()
+        finishedAt: ports.clock.now(),
+        ...(zeroCallChecks ? { zeroCallChecks } : {})
     };
 }

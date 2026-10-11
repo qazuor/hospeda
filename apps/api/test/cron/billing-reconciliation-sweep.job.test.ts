@@ -51,10 +51,58 @@ describe('billing reconciliation sweep cron', () => {
             finishedAt: new Date()
         });
         const result = await billingReconciliationSweepJob.handler(context());
-        expect(mockSweep).toHaveBeenCalledWith({}, { provider: mockProvider, clock: mockClock });
+        expect(mockSweep).toHaveBeenCalledWith(
+            {},
+            { provider: mockProvider, clock: mockClock, zeroCallChecks: {} }
+        );
         expect(result).toMatchObject({ processed: 8, errors: 2, success: false });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['failed-id']);
         expect(result.details).not.toHaveProperty('failures');
+    });
+
+    it('counts zero-call check failures in the job result', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 4,
+            rowsFailed: 1,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [{ subscriptionId: 'row', message: 'failed' }],
+            zeroCallChecks: {
+                results: [],
+                failures: [
+                    {
+                        check: 'PAYMENT_PENDING_WITHOUT_BRANCH',
+                        subjectId: null,
+                        message: 'port absent'
+                    }
+                ]
+            },
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const result = await billingReconciliationSweepJob.handler(context());
+        expect(result).toMatchObject({ success: false, processed: 4, errors: 2 });
+        expect(result.details).toMatchObject({
+            zeroCallChecks: { failedChecks: ['PAYMENT_PENDING_WITHOUT_BRANCH'] }
+        });
+        expect(result.details?.zeroCallChecks).not.toHaveProperty('failures');
+    });
+
+    it('preserves existing counters when the summary omits zero-call checks', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 3,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const result = await billingReconciliationSweepJob.handler(context());
+        expect(result).toMatchObject({ success: true, processed: 3, errors: 0 });
+        expect(result.details).not.toHaveProperty('zeroCallChecks');
     });
 
     it('does not call the service during dry run', async () => {

@@ -15,6 +15,20 @@
             "subject": "subscription"
         },
         {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "listOpenSuccessionsOnDeadPredecessorsPage",
+            "row": 15,
+            "why": "Consumidor de la primera comprobación de cero llamadas de B11.8: encuentra sucesoras vivas cuya predecesora terminó.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "findSubscriptionIdsWithoutLiveSuccessor",
+            "row": 8,
+            "why": "Consumidor de la segunda comprobación de cero llamadas de B11.8: filtra pagos cuya predecesora ya no tiene sucesora viva. ",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/service-core/src/services/plan-catalog/plan-publication.anchored-customers.ts",
             "symbol": "countAnchoredCustomersFromSubscriptions",
             "row": null,
@@ -58,6 +72,18 @@
         }
     ],
     "cortesia_diferida": [
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "balanceMonths",
+            "row": 4,
+            "why": "La sexta comprobación de cero llamadas de B11.8 detecta cortesías diferidas por su saldo abierto."
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "balanceClosedAt",
+            "row": 4,
+            "why": "La sexta comprobación de cero llamadas de B11.8 excluye cortesías cuyo saldo ya se cerró."
+        },
         {
             "file": "packages/db/src/models/subscription/subscription.model.ts",
             "symbol": "abandonPendingAuthorization",
