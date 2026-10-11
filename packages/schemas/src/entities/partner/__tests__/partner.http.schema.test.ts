@@ -63,7 +63,11 @@ describe('PartnerSearchHttpSchema — the directory filters are gone (HOS-294 AC
 
 describe('Partner HTTP response schemas — claim hash stays private', () => {
     it('omits claimSecretHash from public and admin output', () => {
-        expect(publicPartnerResponseSchema.shape.data.shape.claimSecretHash).toBeUndefined();
-        expect(adminPartnerResponseSchema.shape.data.shape.claimSecretHash).toBeUndefined();
+        expect(Object.keys(publicPartnerResponseSchema.shape.data.shape)).not.toContain(
+            'claimSecretHash'
+        );
+        expect(Object.keys(adminPartnerResponseSchema.shape.data.shape)).not.toContain(
+            'claimSecretHash'
+        );
     });
 });
