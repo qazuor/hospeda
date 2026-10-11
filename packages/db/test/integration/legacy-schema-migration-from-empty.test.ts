@@ -240,11 +240,11 @@ describe('TEST:U1:13 — old billing untangled from the surviving schema (HOS-14
         }
     });
 
-    it('keeps the partner alliance window intact', async () => {
+    it('TEST:V6:23 removes the retired partner alliance window', async () => {
         const columns = await columnsOf('partners');
 
-        expect(columns.has('starts_at')).toBe(true);
-        expect(columns.has('ends_at')).toBe(true);
+        expect(columns.has('starts_at')).toBe(false);
+        expect(columns.has('ends_at')).toBe(false);
     });
 
     it('drops the two partner billing enum types', async () => {
