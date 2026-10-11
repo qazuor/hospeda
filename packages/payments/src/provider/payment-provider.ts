@@ -137,6 +137,8 @@ export interface ChargeSnapshot {
     readonly authorizationId: string;
     readonly reference: string;
     readonly status: ChargeStatus;
+    /** Why the provider rejected this attempt, in a domain string; null when not rejected or unavailable. */
+    readonly declineReason: string | null;
     readonly amount: Money;
     /** Cumulative amount refunded so far. */
     readonly refundedAmount: Money;

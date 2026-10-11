@@ -104,6 +104,7 @@ describe('charge', () => {
             authorizationId,
             reference: 'cycle-1',
             status: 'approved',
+            declineReason: null,
             amount: ARS(1_800_000),
             refundedAmount: ARS(0)
         });

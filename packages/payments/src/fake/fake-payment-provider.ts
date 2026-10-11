@@ -177,6 +177,39 @@ export class FakePaymentProvider implements PaymentProvider {
         });
     }
 
+    /** Test handle: records a rejected charge without requiring a live authorization. */
+    async declineCharge(input: {
+        readonly authorizationId: string;
+        readonly declineReason: string | null;
+    }): Promise<{ readonly chargeId: string }> {
+        this.catchUp();
+        const authorization = this.ledger.authorizationOrThrow({
+            id: input.authorizationId,
+            capability: 'charge'
+        });
+        const chargeId = this.ledger.nextId({ prefix: 'charge' });
+        this.ledger.charges.set(chargeId, {
+            snapshot: {
+                chargeId,
+                authorizationId: input.authorizationId,
+                reference: authorization.snapshot.reference,
+                status: 'rejected',
+                declineReason: input.declineReason,
+                amount: { ...authorization.snapshot.amount },
+                refundedAmount: {
+                    amountMinor: 0,
+                    currency: authorization.snapshot.amount.currency
+                }
+            },
+            version: 1,
+            settleAt: null,
+            refundAttempts: 0,
+            refundsByReference: new Map()
+        });
+        this.ledger.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
+        return { chargeId };
+    }
+
     /**
      * Capability 2 · charge: only an active authorization is charged (RP9), in
      * its currency and within the amount range (RP3, RP4). The charge lands in
@@ -223,6 +256,7 @@ export class FakePaymentProvider implements PaymentProvider {
                         authorizationId: value.authorizationId,
                         reference: value.reference,
                         status: late ? 'pending' : 'approved',
+                        declineReason: null,
                         amount: { ...value.amount },
                         refundedAmount: { amountMinor: 0, currency: value.amount.currency }
                     },
