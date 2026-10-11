@@ -1,7 +1,16 @@
 import type { DrizzleClient } from '@repo/db';
-import { trialRedemptions, trials } from '@repo/db';
-import type { TrialStatusEnum, Vertical } from '@repo/schemas';
+import { plans, planVersions, trialRedemptions, trials, verticals } from '@repo/db';
+import {
+    type TrialStatusEnum,
+    type Vertical,
+    type VerticalActivationEvent,
+    VerticalEnum
+} from '@repo/schemas';
 import { and, eq, sql } from 'drizzle-orm';
+import {
+    type ListingVertical,
+    listingPublicationModel
+} from '../../../../db/src/models/listing/listing-publication.model';
 import { trialMachineLockKey } from '../../../src/trial/trial-lock-key';
 import type {
     TrialExpiryScanner,
@@ -19,10 +28,19 @@ type Campaign = {
 };
 type AdminExtension = Parameters<TrialMachineTransaction['recordAdminExtension']>[0];
 
+const LISTING_VERTICAL_BY_VERTICAL: Readonly<Record<Vertical, ListingVertical | null>> = {
+    [VerticalEnum.ACCOMMODATION]: VerticalEnum.ACCOMMODATION,
+    [VerticalEnum.GASTRONOMY]: VerticalEnum.GASTRONOMY,
+    [VerticalEnum.EXPERIENCE]: VerticalEnum.EXPERIENCE,
+    [VerticalEnum.TOURIST]: null,
+    [VerticalEnum.PARTNER]: null
+};
+
 export function createTrialMachineAdapter(args: {
     readonly db: DrizzleClient;
     readonly ceilingDays: (args: { vertical: string; deadlinesVersion: number }) => number;
     readonly failOn?: 'markExpired' | 'recordAdminExtension';
+    readonly onLocked?: () => Promise<void>;
 }): {
     unitOfWork: TrialMachineUnitOfWork;
     scanner: TrialExpiryScanner;
@@ -42,6 +60,77 @@ export function createTrialMachineAdapter(args: {
 
     function transactionPortOf(tx: DrizzleClient): TrialMachineTransaction {
         return {
+            async findActivationEvent({ vertical }) {
+                const [row] = await tx
+                    .select({ event: verticals.activationEvent })
+                    .from(verticals)
+                    .where(eq(verticals.id, vertical))
+                    .limit(1);
+                return (row?.event ?? null) as VerticalActivationEvent | null;
+            },
+            async findTrialPlan({ vertical }) {
+                const [row] = await tx
+                    .select({
+                        planId: plans.id,
+                        planVersionId: planVersions.id,
+                        trialDays: planVersions.trialDays
+                    })
+                    .from(planVersions)
+                    .innerJoin(plans, eq(planVersions.planId, plans.id))
+                    .where(
+                        sql`${plans.vertical} = ${vertical} AND ${plans.role} = 'trial' AND ${planVersions.current} = true`
+                    )
+                    .limit(1);
+                return row ?? null;
+            },
+            async findTrialOfUser({ userId, vertical }) {
+                const [row] = await tx
+                    .select({ id: trials.id })
+                    .from(trials)
+                    .where(and(eq(trials.userId, userId), eq(trials.vertical, vertical)))
+                    .limit(1);
+                return row ?? null;
+            },
+            async findTrialByPseudonym({ emailPseudonym, vertical }) {
+                const [row] = await tx
+                    .select({ userId: trials.userId })
+                    .from(trials)
+                    .where(
+                        and(
+                            eq(trials.emailPseudonym, emailPseudonym),
+                            eq(trials.vertical, vertical)
+                        )
+                    )
+                    .limit(1);
+                return row ?? null;
+            },
+            async insertTrial({ row }) {
+                const inserted = await tx
+                    .insert(trials)
+                    .values({ ...row })
+                    .onConflictDoNothing()
+                    .returning({ id: trials.id });
+                if (inserted.length > 0) return { inserted: true } as const;
+                const [existing] = await tx
+                    .select({ id: trials.id })
+                    .from(trials)
+                    .where(and(eq(trials.userId, row.userId), eq(trials.vertical, row.vertical)))
+                    .limit(1);
+                return {
+                    inserted: false,
+                    conflict: existing ? 'USER_VERTICAL' : 'EMAIL_PSEUDONYM'
+                } as const;
+            },
+            async hasExercisedActivationEvent({ userId, vertical }) {
+                const listingVertical = LISTING_VERTICAL_BY_VERTICAL[vertical];
+                return listingVertical === null
+                    ? false
+                    : listingPublicationModel.hasOwnerPublished({
+                          tx,
+                          vertical: listingVertical,
+                          userId
+                      });
+            },
             async findTrialForUpdate({ userId, vertical }) {
                 const [row] = await tx
                     .select()
@@ -129,6 +218,7 @@ export function createTrialMachineAdapter(args: {
                     await tx.execute(
                         sql`SELECT pg_advisory_xact_lock(hashtextextended(${trialMachineLockKey(lockArgs).key}, 0))`
                     );
+                    await args.onLocked?.();
                     return work(transactionPortOf(tx as DrizzleClient));
                 });
             }

@@ -1,4 +1,9 @@
-import { TrialStatusEnum, type Vertical } from '@repo/schemas';
+import {
+    TrialStatusEnum,
+    VERTICAL_ACTIVATION_EVENTS,
+    type Vertical,
+    type VerticalActivationEvent
+} from '@repo/schemas';
 import { trialMachineLockKey } from '../../src/trial/trial-lock-key';
 import type {
     TrialCampaignKind,
@@ -7,6 +12,7 @@ import type {
     TrialMachineTransaction,
     TrialMachineUnitOfWork
 } from '../../src/trial/trial-machine-types';
+import type { NewConsumedTrialRow } from '../../src/trial/trial-start-types';
 
 interface Campaign {
     readonly userId: string;
@@ -61,6 +67,18 @@ export function createInMemoryTrialMachine() {
         | { readonly redemptionKey: string; readonly redemption: Redemption }
         | undefined;
     let failAdminRecord = false;
+    const declaredEvents = new Map<Vertical, VerticalActivationEvent | null>();
+    const planDays = new Map<Vertical, number | null>();
+    const exercised = new Set<string>();
+    let pseudonyms = new Map<string, string>();
+    let insertConflict:
+        | {
+              readonly userId: string;
+              readonly vertical: Vertical;
+              readonly emailPseudonym: string;
+              readonly conflict: 'USER_VERTICAL' | 'EMAIL_PSEUDONYM';
+          }
+        | undefined;
 
     const rowKey = (userId: string, vertical: Vertical) =>
         trialMachineLockKey({ userId, vertical }).key;
@@ -96,12 +114,68 @@ export function createInMemoryTrialMachine() {
                 const draftCampaigns = [...campaigns];
                 const draftRedemptions = new Map(redemptions);
                 const draftAdminExtensions = [...adminExtensions];
+                const draftPseudonyms = new Map(pseudonyms);
                 const rowById = (id: string) => {
                     const row = [...draftRows.values()].find((candidate) => candidate.id === id);
                     if (row === undefined) throw new Error('Trial row missing');
                     return row;
                 };
                 const transaction: TrialMachineTransaction = {
+                    async findActivationEvent({ vertical }) {
+                        return declaredEvents.has(vertical)
+                            ? (declaredEvents.get(vertical) ?? null)
+                            : VERTICAL_ACTIVATION_EVENTS.LISTING_PUBLISHED;
+                    },
+                    async findTrialPlan({ vertical }) {
+                        const days = planDays.has(vertical) ? (planDays.get(vertical) ?? null) : 14;
+                        return days === null
+                            ? null
+                            : {
+                                  planId: `plan:${vertical}`,
+                                  planVersionId: `version:${vertical}`,
+                                  trialDays: days
+                              };
+                    },
+                    async findTrialOfUser({ userId, vertical }) {
+                        const row = draftRows.get(rowKey(userId, vertical));
+                        return row ? { id: row.id } : null;
+                    },
+                    async findTrialByPseudonym({ emailPseudonym, vertical }) {
+                        const userId = draftPseudonyms.get(`${vertical}:${emailPseudonym}`);
+                        return userId === undefined ? null : { userId };
+                    },
+                    async insertTrial({ row }) {
+                        if (
+                            insertConflict?.userId === row.userId &&
+                            insertConflict.vertical === row.vertical &&
+                            insertConflict.emailPseudonym === row.emailPseudonym
+                        ) {
+                            return { inserted: false, conflict: insertConflict.conflict };
+                        }
+                        const pseudonymKey = `${row.vertical}:${row.emailPseudonym}`;
+                        if (draftRows.has(rowKey(row.userId, row.vertical)))
+                            return { inserted: false, conflict: 'USER_VERTICAL' };
+                        if (draftPseudonyms.has(pseudonymKey))
+                            return { inserted: false, conflict: 'EMAIL_PSEUDONYM' };
+                        const consumed = row as NewConsumedTrialRow;
+                        const id = crypto.randomUUID();
+                        draftRows.set(rowKey(row.userId, row.vertical), {
+                            id,
+                            userId: row.userId,
+                            vertical: row.vertical,
+                            status: consumed.status,
+                            startedAt: consumed.startedAt,
+                            endsAt: consumed.endsAt,
+                            deadlinesVersion: consumed.deadlinesVersion
+                        });
+                        draftPseudonyms.set(pseudonymKey, row.userId);
+                        log.push('insertConsumedTrial');
+                        return { inserted: true };
+                    },
+                    async hasExercisedActivationEvent({ userId, vertical }) {
+                        log.push('hasExercised');
+                        return exercised.has(rowKey(userId, vertical));
+                    },
                     async findTrialForUpdate({ userId, vertical }) {
                         const row = draftRows.get(rowKey(userId, vertical));
                         return row === undefined ? null : copyRow(row);
@@ -225,6 +299,7 @@ export function createInMemoryTrialMachine() {
                 campaigns = draftCampaigns;
                 redemptions = draftRedemptions;
                 adminExtensions = draftAdminExtensions;
+                pseudonyms = draftPseudonyms;
                 log.push('commit');
                 return result;
             } catch (error) {
@@ -275,6 +350,30 @@ export function createInMemoryTrialMachine() {
         },
         setCeilingDays(vertical: Vertical, days: number) {
             ceilingDays.set(vertical, days);
+        },
+        setDeclaredEvent(vertical: Vertical, event: VerticalActivationEvent | null) {
+            declaredEvents.set(vertical, event);
+        },
+        setTrialPlanDays(vertical: Vertical, days: number | null) {
+            planDays.set(vertical, days);
+        },
+        seedExercised(args: { readonly userId: string; readonly vertical: Vertical }) {
+            exercised.add(rowKey(args.userId, args.vertical));
+        },
+        seedPseudonym(args: {
+            readonly emailPseudonym: string;
+            readonly vertical: Vertical;
+            readonly userId: string;
+        }) {
+            pseudonyms.set(`${args.vertical}:${args.emailPseudonym}`, args.userId);
+        },
+        forceInsertConflict(args: {
+            readonly userId: string;
+            readonly vertical: Vertical;
+            readonly emailPseudonym: string;
+            readonly conflict: 'USER_VERTICAL' | 'EMAIL_PSEUDONYM';
+        }) {
+            insertConflict = args;
         },
         setBeforeWork(hook: (() => void | Promise<void>) | undefined) {
             beforeWork = hook;
