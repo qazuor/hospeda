@@ -237,13 +237,13 @@ describe('TEST:B3:31 — B3 schema from empty', () => {
 });
 
 describe('TEST:B3:40 — early manual payment and idempotency schema', () => {
-    it('has manual period and nullable registration fields, no amount, and no reconciliation payment table', async () => {
+    it('has manual period and nullable registration fields, no amount', async () => {
         const columns = await getTestPool().query<{
             table_name: string;
             column_name: string;
             is_nullable: string;
         }>(
-            "SELECT table_name, column_name, is_nullable FROM information_schema.columns WHERE table_name IN ('manual_payment', 'idempotency_key', 'reconciliation_mark_payment')"
+            "SELECT table_name, column_name, is_nullable FROM information_schema.columns WHERE table_name IN ('manual_payment', 'idempotency_key')"
         );
         const manual = columns.rows.filter((r) => r.table_name === 'manual_payment');
         const byName = Object.fromEntries(manual.map((r) => [r.column_name, r.is_nullable]));
@@ -254,9 +254,6 @@ describe('TEST:B3:40 — early manual payment and idempotency schema', () => {
         expect(
             manual.some((r) => r.column_name.includes('amount') || r.column_name.includes('monto'))
         ).toBe(false);
-        expect(columns.rows.some((r) => r.table_name === 'reconciliation_mark_payment')).toBe(
-            false
-        );
     });
 
     it('rejects duplicate idempotency keys', async () => {

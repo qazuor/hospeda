@@ -164,10 +164,12 @@ describe('TEST:B3:9 authorization activation', () => {
         });
         expect(read).toHaveBeenCalledWith({ authorizationId: started.authorizationId });
         expect(await status(started.subscriptionId)).toBe('ACTIVE');
-        const paymentTable = await getServiceTestPool().query<{ present: boolean }>(
-            "SELECT to_regclass('public.payment') IS NOT NULL AS present"
+        // Since B5 (HOS-1549) the payment table exists: activation must write no row to it.
+        const payments = await getServiceTestPool().query<{ count: string }>(
+            'SELECT count(*)::text AS count FROM payment WHERE subscription_id = $1',
+            [started.subscriptionId]
         );
-        expect(paymentTable.rows[0]?.present).toBe(false);
+        expect(payments.rows[0]?.count).toBe('0');
     });
 
     it('keeps pending when the provider still says pending, and does not write a non-pending row', async () => {
