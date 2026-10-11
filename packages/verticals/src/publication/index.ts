@@ -1,4 +1,6 @@
 export * from './coverage-recalculation';
+export * from './coverage-reconciler';
+export * from './coverage-reconciler-types';
 export * from './publication-lock';
 export * from './publication-notices';
 export * from './publication-order';

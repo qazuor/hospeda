@@ -30,6 +30,10 @@ export async function recalculateCoverage(args: {
     readonly userId: string;
     readonly vertical: PublicationVertical;
     readonly correlationId: string;
+    readonly liveLimit?: (input: {
+        readonly userId: string;
+        readonly vertical: PublicationVertical;
+    }) => Promise<number | null>;
 }): Promise<CoverageRecalculationResult> {
     const decision = await withPublicationLock({
         unitOfWork: args.unitOfWork,
@@ -92,10 +96,12 @@ export async function recalculateCoverage(args: {
                 return { lowered, loweredBySurplus, restored, stamped };
             }
 
-            const limit = await tx.readDeclaredPublishLimit({
-                userId: args.userId,
-                vertical: args.vertical
-            });
+            const limit = args.liveLimit
+                ? await args.liveLimit({ userId: args.userId, vertical: args.vertical })
+                : await tx.readDeclaredPublishLimit({
+                      userId: args.userId,
+                      vertical: args.vertical
+                  });
             const candidatesAtStart = applicable.filter(
                 (row) => row.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
             );
