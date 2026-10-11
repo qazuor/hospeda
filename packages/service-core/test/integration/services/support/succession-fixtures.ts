@@ -114,17 +114,19 @@ export async function seedPredecessor(input: {
     readonly providerState?: 'active' | 'paused' | 'cancelled';
     readonly honestAboutM1?: boolean;
 }) {
-    const fake = new FakePaymentProvider({
-        clock: successionClock,
-        idNamespace: crypto.randomUUID(),
-        ...(input.honestAboutM1
-            ? {
-                  honestAbout: [
-                      { lie: 'M1' as const, why: 'create a healthy predecessor for succession' }
-                  ]
-              }
-            : {})
-    });
+    let fake: FakePaymentProvider;
+    if (input.honestAboutM1) {
+        fake = new FakePaymentProvider({
+            clock: successionClock,
+            idNamespace: crypto.randomUUID(),
+            honestAbout: [{ lie: 'M1', why: 'create a healthy predecessor for succession' }]
+        });
+    } else {
+        fake = new FakePaymentProvider({
+            clock: successionClock,
+            idNamespace: crypto.randomUUID()
+        });
+    }
     const provider = namespaceFake(fake);
     const { startSubscription } = await import(
         '../../../../src/services/billing/subscription/start-subscription.service'
