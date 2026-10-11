@@ -91,7 +91,7 @@ describe('TEST:V6:26 (ledgers)', () => {
                     'SELECT * FROM public.seed_migrations ORDER BY name'
                 );
                 const seedInsert = await a.query(
-                    "INSERT INTO public.seed_migrations (name, group_name, checksum, duration_ms, result) VALUES ('test-ledger-a', 'required', 'a', 1, 'ok'), ('test-ledger-b', 'example', 'b', 2, 'ok') RETURNING *"
+                    "INSERT INTO public.seed_migrations (name, \"group\", checksum, duration_ms, result) VALUES ('test-ledger-a', 'required', 'a', 1, 'ok'), ('test-ledger-b', 'example', 'b', 2, 'ok') RETURNING *"
                 );
                 const oldMigrations = await a.query(
                     'SELECT * FROM drizzle.__drizzle_migrations ORDER BY id'
