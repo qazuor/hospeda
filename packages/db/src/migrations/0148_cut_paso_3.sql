@@ -37,10 +37,11 @@ BEGIN
     INSERT INTO vertical_deadline_version (version, "values") VALUES (1, initial_values);
 END $$;
 --> statement-breakpoint
--- Cutover passage table (DEC-MIG-003 📌9 and 📌10): this SQL owns it; V6.12 step 5b drops it. It is deliberately absent from packages/db/src/schemas/.
+-- Cutover passage table (DEC-MIG-003 📌9 and 📌10): this SQL owns it; V6.12 step 5b reads and drops it. It preserves listing slugs and calendar providers for the cutover tool and is deliberately absent from packages/db/src/schemas/.
 CREATE TABLE "cutover_v6_deleted_listing" (
     "entity_type" varchar(32) NOT NULL,
     "entity_id" uuid NOT NULL,
+    "slug" text,
     "photos" jsonb NOT NULL DEFAULT '[]'::jsonb,
     "calendar_tokens" jsonb NOT NULL DEFAULT '[]'::jsonb,
     PRIMARY KEY ("entity_type", "entity_id")
@@ -112,8 +113,8 @@ BEGIN
             seen_owners := array_append(seen_owners, cut_owner);
         END LOOP;
 
-        INSERT INTO cutover_v6_deleted_listing (entity_type, entity_id, photos, calendar_tokens)
-        SELECT 'accommodation', a.id,
+        INSERT INTO cutover_v6_deleted_listing (entity_type, entity_id, slug, photos, calendar_tokens)
+        SELECT 'accommodation', a.id, a.slug,
             COALESCE((SELECT jsonb_agg(jsonb_build_object('publicId', m.public_id, 'url', m.url))
                 FROM accommodation_media m WHERE m.accommodation_id = a.id), '[]'::jsonb),
             COALESCE((SELECT jsonb_agg(jsonb_build_object(
@@ -123,20 +124,21 @@ BEGIN
                 'refresh_token_ciphertext', c.refresh_token_ciphertext,
                 'refresh_token_iv', c.refresh_token_iv,
                 'refresh_token_auth_tag', c.refresh_token_auth_tag,
+                'provider', c.provider::text,
                 'external_calendar_id', c.external_calendar_id))
                 FROM accommodation_calendar_sync c WHERE c.accommodation_id = a.id), '[]'::jsonb)
         FROM accommodations a
         WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements(cut_list) item
             WHERE item ->> 'entityType' = 'accommodation' AND (item ->> 'entityId')::uuid = a.id);
-        INSERT INTO cutover_v6_deleted_listing (entity_type, entity_id, photos, calendar_tokens)
-        SELECT 'gastronomy', g.id,
+        INSERT INTO cutover_v6_deleted_listing (entity_type, entity_id, slug, photos, calendar_tokens)
+        SELECT 'gastronomy', g.id, g.slug,
             COALESCE((SELECT jsonb_agg(jsonb_build_object('publicId', m.public_id, 'url', m.url))
                 FROM gastronomy_media m WHERE m.gastronomy_id = g.id), '[]'::jsonb), '[]'::jsonb
         FROM gastronomies g
         WHERE NOT EXISTS (SELECT 1 FROM jsonb_array_elements(cut_list) item
             WHERE item ->> 'entityType' = 'gastronomy' AND (item ->> 'entityId')::uuid = g.id);
-        INSERT INTO cutover_v6_deleted_listing (entity_type, entity_id, photos, calendar_tokens)
-        SELECT 'experience', e.id,
+        INSERT INTO cutover_v6_deleted_listing (entity_type, entity_id, slug, photos, calendar_tokens)
+        SELECT 'experience', e.id, e.slug,
             COALESCE((SELECT jsonb_agg(jsonb_build_object('publicId', m.public_id, 'url', m.url))
                 FROM experience_media m WHERE m.experience_id = e.id), '[]'::jsonb), '[]'::jsonb
         FROM experiences e
