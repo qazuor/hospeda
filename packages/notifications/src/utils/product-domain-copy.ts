@@ -133,7 +133,9 @@ export function resolveRenewalReminderFooter(productDomain: string | null | unde
 }
 
 /** Etiquetas en español para verticales en un correo consolidado. */
-export const TRIAL_VERTICAL_LABELS: Readonly<Record<string, string>> = {
+type TrialCampaignVertical = 'accommodation' | 'gastronomy' | 'experience' | 'tourist';
+
+export const TRIAL_VERTICAL_LABELS: Readonly<Record<TrialCampaignVertical, string>> = {
     accommodation: 'Alojamiento',
     gastronomy: 'Gastronomía',
     experience: 'Experiencias',
@@ -145,7 +147,12 @@ export const TRIAL_VERTICAL_LABELS: Readonly<Record<string, string>> = {
  * @returns Etiquetas separadas por coma y conjunción.
  */
 export function formatTrialVerticals(input: { readonly verticals: readonly string[] }): string {
-    const labels = input.verticals.map((vertical) => TRIAL_VERTICAL_LABELS[vertical] ?? vertical);
+    const labels = input.verticals.map((vertical) => {
+        const label = Object.hasOwn(TRIAL_VERTICAL_LABELS, vertical)
+            ? TRIAL_VERTICAL_LABELS[vertical as TrialCampaignVertical]
+            : undefined;
+        return label ?? vertical;
+    });
     if (labels.length < 2) return labels[0] ?? '';
     return `${labels.slice(0, -1).join(', ')} y ${labels.at(-1)}`;
 }

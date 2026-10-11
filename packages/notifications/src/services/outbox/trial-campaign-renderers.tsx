@@ -35,6 +35,8 @@ export function createTrialCampaignRenderers(input: {
             (data.campaign !== 'PRE_EXPIRY' && data.campaign !== 'RECOVERY') ||
             typeof data.milestone !== 'string' ||
             typeof data.offsetDays !== 'number' ||
+            !Number.isSafeInteger(data.offsetDays) ||
+            data.offsetDays < 0 ||
             typeof data.targetDate !== 'string' ||
             !/^\d{4}-\d{2}-\d{2}$/.test(data.targetDate) ||
             (data.recipientName !== null && typeof data.recipientName !== 'string') ||
@@ -46,7 +48,12 @@ export function createTrialCampaignRenderers(input: {
         )
             throw new TypeError('Faltan datos requeridos del payload de campaña');
         const target = new Date(`${data.targetDate}T00:00:00.000Z`);
-        if (Number.isNaN(target.getTime())) throw new TypeError('La fecha objetivo no es válida');
+        if (
+            Number.isNaN(target.getTime()) ||
+            target.toISOString().slice(0, 10) !== data.targetDate
+        ) {
+            throw new TypeError('La fecha objetivo no es válida');
+        }
         const dayDirection = data.campaign === 'PRE_EXPIRY' ? data.offsetDays : -data.offsetDays;
         target.setUTCDate(target.getUTCDate() + dayDirection);
         const trialEndDate = target.toISOString().slice(0, 10);
@@ -57,6 +64,7 @@ export function createTrialCampaignRenderers(input: {
             recipientName: typeof data.recipientName === 'string' ? data.recipientName : 'Hola',
             planName: 'tu plan de prueba',
             trialEndDate,
+            productDomain: verticals[0],
             upgradeUrl: `${input.siteUrl.replace(/\/$/, '')}/es/planes/${slug}/precios/`,
             verticals
         };
