@@ -171,6 +171,19 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
         const { fake } = createReconciliationFake(time);
         const row = await seedPendingCreation();
+        const linked = await fake.authorize({
+            reference: row.subscription.id,
+            amount: { amountMinor: 250000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'test linked creation',
+            returnUrl: 'https://example.test',
+            payerEmail: row.userEmail!
+        });
+        await getServiceTestDb().insert(providerLinks).values({
+            subscriptionId: row.subscription.id,
+            provider: 'MERCADO_PAGO',
+            providerId: linked.authorizationId
+        });
         time.advance({ ms: CREATION_GRACE_MS + 1 });
         const unrelated = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
         const authId = unrelated.providerId!;
@@ -192,7 +205,7 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
             )
         );
         expect(cancel).not.toHaveBeenCalled();
-        expect(summary.linked).toBe(0);
+        expect(summary).toMatchObject({ linked: 0, skippedRaced: 1 });
     });
 
     it('does not recreate while a different live provider state names the row', async () => {

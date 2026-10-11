@@ -89,6 +89,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
     });
 
     it('leaves a run open when inventory paging throws', async () => {
+        await seedSubscription({ status: 'ACTIVE' });
         const correlationId = crypto.randomUUID();
         const ping = { ping: vi.fn() };
         const pageRead = vi
