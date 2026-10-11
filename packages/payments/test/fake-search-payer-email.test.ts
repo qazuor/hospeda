@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe('creation search payer email support', () => {
-    it('filters exactly by payer while including unrelated references and ignoring case', async () => {
+    it('filters only by payer and includes rows with unrelated references', async () => {
         const fake = new FakePaymentProvider({ clock });
         await fake.authorize({
             ...request,
@@ -35,11 +35,32 @@ describe('creation search payer email support', () => {
             payerEmail: 'other@example.test'
         });
 
-        const found = await fake.searchAuthorizations({ payerEmail: 'PAYER@EXAMPLE.TEST' });
+        const found = await fake.searchAuthorizations({ payerEmail: 'payer@example.test' });
         expect(found.authorizations.map(({ reference }) => reference)).toEqual([
             'other-reference',
             'target-reference'
         ]);
+    });
+
+    it('ignores letter case when matching payer email', async () => {
+        const fake = new FakePaymentProvider({ clock });
+        await fake.authorize({
+            ...request,
+            reference: 'case-row',
+            payerEmail: 'Payer@Example.Test'
+        });
+        expect(
+            (await fake.searchAuthorizations({ payerEmail: 'pAyEr@eXaMpLe.tEsT' })).authorizations
+        ).toHaveLength(1);
+    });
+
+    it('returns an empty result for an unknown payer email', async () => {
+        const fake = new FakePaymentProvider({ clock });
+        await fake.authorize({
+            ...request,
+            reference: 'known-row',
+            payerEmail: 'known@example.test'
+        });
         expect(
             (await fake.searchAuthorizations({ payerEmail: 'missing@example.test' })).authorizations
         ).toEqual([]);
@@ -90,7 +111,7 @@ describe('creation search payer email support', () => {
         ).toHaveLength(2);
     });
 
-    it('rejects invalid email and refuses to treat a summary as a read', async () => {
+    it('rejects an invalid payer email with INVALID_INPUT', async () => {
         const fake = new FakePaymentProvider({ clock });
         await expect(fake.searchAuthorizations({ payerEmail: 'invalid' })).rejects.toBeInstanceOf(
             PaymentProviderError
@@ -98,6 +119,10 @@ describe('creation search payer email support', () => {
         await expect(fake.searchAuthorizations({ payerEmail: 'invalid' })).rejects.toMatchObject({
             code: 'INVALID_INPUT'
         });
+    });
+
+    it('does not treat a search summary as a provider read', async () => {
+        const fake = new FakePaymentProvider({ clock });
         const summary = await fake.searchAuthorizations({ payerEmail: 'nobody@example.test' });
         expect(() => {
             assertFreshForAct({
