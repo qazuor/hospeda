@@ -39,12 +39,10 @@
  *   `ProviderRead<…>` or an import/export clause, a `.snapshot` read off anything but `assertFreshForAct(…)`
  *   or an identifier bound to it, or a `snapshot` destructured from anything
  *   else. A decision takes a `ProviderRead`, never a bare state.
- * - **(c)** something reads `provider_notification`, the table where the
- *   receiver stores both channels' deliveries: the identifiers or table names
- *   `provider_notification` and `providerNotification` (also plural), in code or
- *   in a string. This predicate also reads `scripts/`. The ONE exemption is
- *   `scripts/cutover/` (U3.3 / HOS-1428 reads the table, read only, in step 4b
- *   of the cutover).
+ * - **(c)** code reads the provider-delivery table: every mention is red, except
+ *   in the schema and write-only model, where only the table declaration,
+ *   imports/exports, insert/delete targets, and inferred row types are allowed.
+ *   `scripts/cutover/` remains exempt (U3.3 / HOS-1428).
  *
  * ## What it does NOT see, so a green run is not read as more
  *
@@ -58,12 +56,10 @@
  *   passed on, an untyped parameter named `snapshot`, and the data flow across
  *   files are not seen. The freshness of a read is not a predicate: it lives in
  *   the type and `assertFreshForAct` (AC:B1:4).
- * - (c) It does not tell a read from a write. Until B3 creates the table, any
- *   mention is red, including the schema definition, the receiver's insert and
- *   its 180-day deletion, which the spec allows: B3 must refine (c) when it
- *   names the table's schema export (HOS-1525). A table name assembled at run
- *   time is not seen, and neither are `.sql` files (migrations) nor `.sh`
- *   scripts: (c) reads code files only.
+ * - (c) The only permitted mentions are the schema declaration, imports/exports,
+ *   Drizzle insert/delete targets, and inferred row types in the two writer files.
+ *   This lexical rule does not track aliases or dynamically built names;
+ *   migrations are not scanned.
  *
  * ## Scope and positive control
  *
@@ -78,6 +74,10 @@
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+    findForbiddenNotificationMentions,
+    NOTIFICATION_WRITER_FILES
+} from './check-decision-rereads-notification-writes.js';
 import { importedSpecifiers } from './check-sdk-outside-adapter.js';
 import {
     declaredDestructurings,
@@ -129,9 +129,9 @@ export const RULE_MESSAGES: Readonly<Record<Rule, string>> = {
         'read by id. Take a ProviderRead and hand it to assertFreshForAct; never a bare snapshot or ' +
         'status, never a read built by hand (INV:D17, AC:B1:4).',
     'G17(c)':
-        `GUARD:G17 predicate (c): code names ${NOTIFICATION_TABLE_NAME}. Only the receiver writes it and only ` +
-        'its 180-day deletion removes from it; no transition, action, sweep or other code reads it, nor ' +
-        `the receiver itself (B/02 §2.7). The only exemption is ${CUTOVER_DIR}.`
+        `GUARD:G17 predicate (c): every mention of ${NOTIFICATION_TABLE_NAME} is forbidden except the table declaration, ` +
+        'imports/exports, insert/delete targets and inferred row types in these files: ' +
+        `${NOTIFICATION_WRITER_FILES.join(', ')}. No reads are allowed; only ${CUTOVER_DIR} is exempt.`
 };
 
 /** The interface's notice surface: a file naming it receives notices. */
@@ -360,19 +360,30 @@ export function findStateOutsideRead(args: {
  *
  * @param args.file - Repo-relative path, for the report
  * @param args.source - The file text
- * @returns One violation per mention of the notification table; none under {@link CUTOVER_DIR}
+ * @returns One violation per forbidden mention; none under {@link CUTOVER_DIR}
  */
 export function findNotificationTableReads(args: {
     readonly file: string;
     readonly source: string;
 }): readonly Violation[] {
     if (args.file.startsWith(CUTOVER_DIR)) return [];
-    const { comments } = maskSource({ source: args.source });
-    const found = [...args.source.matchAll(NOTIFICATION_TABLE)]
-        .filter(
-            (match) => !comments.some(({ start, end }) => match.index >= start && match.index < end)
-        )
-        .map((match) => ({ offset: match.index, detail: `names ${match[0]}` }));
+    const masked = maskSource({ source: args.source });
+    const allowedWriter = (NOTIFICATION_WRITER_FILES as readonly string[]).includes(args.file);
+    const found = allowedWriter
+        ? findForbiddenNotificationMentions({ file: args.file, masked }).map(
+              ({ offset, mention }) => ({
+                  offset,
+                  detail: `names ${mention}`
+              })
+          )
+        : [...args.source.matchAll(NOTIFICATION_TABLE)]
+              .filter(
+                  (match) =>
+                      !masked.comments.some(
+                          ({ start, end }) => match.index >= start && match.index < end
+                      )
+              )
+              .map((match) => ({ offset: match.index, detail: `names ${match[0]}` }));
     return toViolations({ rule: 'G17(c)', file: args.file, source: args.source, found });
 }
 
