@@ -3,6 +3,7 @@ import {
     eq,
     providerLinks,
     reconciliationMarks,
+    subscriptionModel,
     subscriptions,
     users
 } from '@repo/db';
@@ -206,6 +207,10 @@ describe('provider notices, order and acknowledgements', () => {
     it('TEST:B3:18 acknowledges charge and refund notices without processing them', async () => {
         const { provider, started } = await setup();
         await provider.approve({ authorizationId: started.authorizationId });
+        await subscriptionModel.activatePendingAuthorization({
+            subscriptionId: started.subscriptionId,
+            now: clock.now()
+        });
         const { chargeId } = await provider.declineCharge({
             authorizationId: started.authorizationId,
             declineReason: 'risk'

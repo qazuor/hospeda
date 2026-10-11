@@ -165,24 +165,25 @@ describe('TEST:B3:17 declineFirstCharge', () => {
         current = openedAt;
         const own = await seedActive();
         const errors: LogEntry[] = [];
+        const cancelFailureMessage = `transient cancel failure ${crypto.randomUUID()}`;
         const hookId = `b3-charge-declined-${own.started.subscriptionId}`;
         registerHook(hookId, (entry) => {
             if (
                 entry.level === 'ERROR' &&
                 entry.category === 'decline-first-charge' &&
-                JSON.stringify(entry.data).includes(own.started.subscriptionId)
+                JSON.stringify(entry.data).includes(cancelFailureMessage)
             )
                 errors.push(entry);
         });
         const provider = providerWithCancel(own.fake, async () => {
-            throw new Error('transient cancel failure');
+            throw new Error(cancelFailureMessage);
         });
         expect(await resultFor(own, ports(provider, own.beforeCancelNotice))).toMatchObject({
             outcome: 'DECLINED',
             cancelCall: 'FAILED'
         });
         expect(
-            errors.some((entry) => JSON.stringify(entry.data).includes(own.started.subscriptionId))
+            errors.some((entry) => JSON.stringify(entry.data).includes(cancelFailureMessage))
         ).toBe(true);
         const [row] = await getServiceTestDb()
             .select({ status: subscriptions.status })
