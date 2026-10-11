@@ -28,20 +28,6 @@ export const partnersConfig: EntityConfig<Partner> = {
                 ]
             },
             {
-                paramKey: 'tier',
-                labelKey: 'admin-filters.partnerTier.label',
-                type: 'select',
-                order: 2,
-                // Two tiers only — `bronze` was retired by HOS-294. These are
-                // plain string literals, so nothing in the type system would
-                // have flagged the stale option: it would have kept offering a
-                // filter that matches no row, forever.
-                options: [
-                    { value: 'gold', labelKey: 'admin-filters.partnerTier.gold' },
-                    { value: 'silver', labelKey: 'admin-filters.partnerTier.silver' }
-                ]
-            },
-            {
                 paramKey: 'includeDeleted',
                 labelKey: 'admin-filters.includeDeleted.label',
                 type: 'boolean',
