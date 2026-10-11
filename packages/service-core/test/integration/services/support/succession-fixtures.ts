@@ -1,7 +1,6 @@
 import {
     billingDeadlineVersions,
     eq,
-    getDb,
     providerLinks,
     subscriptionModel,
     subscriptions,
@@ -11,6 +10,7 @@ import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import type { MirrorDelegates } from '../../../../src/services/billing/notice/provider-notice-ports';
+import { getServiceTestDb, getServiceTestPool } from '../helpers';
 import { namespaceFake } from './payment-provider';
 import { noTouristVip } from './tourist-vip';
 
@@ -31,7 +31,7 @@ const deadlineValues = {
 } satisfies BillingDeadlineValues;
 
 export async function ensureBillingDeadlineVersion1(): Promise<void> {
-    await getDb()
+    await getServiceTestDb()
         .insert(billingDeadlineVersions)
         .values({ version: 1, values: deadlineValues })
         .onConflictDoNothing();
@@ -39,7 +39,7 @@ export async function ensureBillingDeadlineVersion1(): Promise<void> {
 
 export async function seedSuccessionChoice(options: { readonly sellable?: boolean } = {}) {
     await ensureBillingDeadlineVersion1();
-    const [user] = await getDb()
+    const [user] = await getServiceTestDb()
         .insert(users)
         .values({
             email: `succession-${crypto.randomUUID()}@example.test`,
@@ -50,14 +50,14 @@ export async function seedSuccessionChoice(options: { readonly sellable?: boolea
         .returning();
     if (!user) throw new Error('Could not seed succession user');
     const planId = (
-        await getPool().query<{ id: string }>(
+        await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan (vertical, slug, name) VALUES ($1, $2, $3) RETURNING id',
             ['accommodation', `succession-${crypto.randomUUID()}`, 'Succession plan']
         )
     ).rows[0]?.id;
     if (!planId) throw new Error('Could not seed succession plan');
     const planVersionId = (
-        await getPool().query<{ id: string }>(
+        await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, $4, true, 0, false) RETURNING id',
             [
                 planId,
@@ -71,7 +71,7 @@ export async function seedSuccessionChoice(options: { readonly sellable?: boolea
     const billingOptionIds = await Promise.all(
         ['monthly', 'quarterly'].map(async (cycle) => {
             const id = (
-                await getPool().query<{ id: string }>(
+                await getServiceTestPool().query<{ id: string }>(
                     'INSERT INTO billing_option (plan_version_id, cycle, amount, currency) VALUES ($1, $2, 250000, $3) RETURNING id',
                     [planVersionId, cycle, 'ARS']
                 )
@@ -147,15 +147,15 @@ export async function seedPredecessor(input: {
         now: successionClock.now()
     });
     if (!activated) throw new Error('Could not activate seeded predecessor');
-    await getDb()
+    await getServiceTestDb()
         .update(subscriptions)
         .set({ status: input.status, paymentMethod: input.paymentMethod ?? 'CARD' })
         .where(eq(subscriptions.id, started.subscriptionId));
-    const [predecessor] = await getDb()
+    const [predecessor] = await getServiceTestDb()
         .select()
         .from(subscriptions)
         .where(eq(subscriptions.id, started.subscriptionId));
-    const [providerLink] = await getDb()
+    const [providerLink] = await getServiceTestDb()
         .select()
         .from(providerLinks)
         .where(eq(providerLinks.subscriptionId, started.subscriptionId));
@@ -163,7 +163,3 @@ export async function seedPredecessor(input: {
         throw new Error('Seeded predecessor is missing its provider link');
     return { fake, provider, started, predecessor };
 }
-
-import { getServiceTestPool } from '../helpers';
-
-const getPool = getServiceTestPool;
