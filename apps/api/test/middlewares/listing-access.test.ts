@@ -12,6 +12,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { enforceListingAccess } from '../../src/middlewares/listing-access';
 import type { AppBindings } from '../../src/types';
 import { createGuestActor } from '../../src/utils/actor';
+import { apiLogger } from '../../src/utils/logger';
 import { handleRouteError } from '../../src/utils/response-helpers';
 
 vi.mock(
@@ -174,6 +175,29 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
             code: ServiceErrorCode.FORBIDDEN,
             message: 'subscription_required'
         });
+    });
+
+    it('keeps PUBLISH denied when resolving the subscribe destination fails', async () => {
+        mocks.loadFacts.mockResolvedValue({
+            facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: OWNER
+        });
+        mocks.subscribeDestination.mockRejectedValue(new Error('reader unavailable'));
+        const logSpy = vi.spyOn(apiLogger, 'error').mockImplementation(() => undefined);
+        try {
+            const result = await probe(appFor({ operation: 'PUBLISH' }));
+            expect(result.status).toBe(403);
+            expect(result.body.error).toMatchObject({
+                code: ServiceErrorCode.FORBIDDEN,
+                message: 'subscription_required'
+            });
+            expect(logSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: OWNER, vertical, error: 'reader unavailable' }),
+                'Failed to resolve listing publication subscribe destination'
+            );
+        } finally {
+            logSpy.mockRestore();
+        }
     });
 
     it('maps a PUBLISH denial to no_plans_available only when the canonical destination has no plans', async () => {

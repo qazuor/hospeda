@@ -73,6 +73,7 @@ const mocks = vi.hoisted(() => ({
     loadFacts: vi.fn(),
     coverage: vi.fn(),
     effectiveSet: vi.fn(),
+    subscribeDestination: vi.fn(),
     createAccommodation: vi.fn(),
     deleteAccommodation: vi.fn(),
     createGastronomy: vi.fn(),
@@ -104,6 +105,9 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
         billing: { coverage: mocks.coverage },
         effectiveSet: mocks.effectiveSet
     })
+}));
+vi.mock('../../src/services/listing-publication/subscribe-destination.service', () => ({
+    resolveSubscribeDestinationForUser: (...args: unknown[]) => mocks.subscribeDestination(...args)
 }));
 
 const OWNER = '11111111-1111-4111-8111-111111111111';
@@ -706,6 +710,7 @@ beforeEach(() => {
         ownerId: OWNER
     });
     mocks.coverage.mockResolvedValue({ covered: false, sources: [baseSource] });
+    mocks.subscribeDestination.mockResolvedValue({ destination: 'SUBSCRIBE' });
     mocks.effectiveSet.mockImplementation(
         async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
             rehydrateEffectiveSet({
