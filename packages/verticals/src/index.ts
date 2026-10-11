@@ -140,6 +140,11 @@ export { selectQuotaGrant } from './quota/quota-grant';
 export type { ConsumeQuotaResult, QuotaWindow, QuotaWindowStore } from './quota/types';
 export { computeWindowClose } from './quota/window-close';
 export {
+    consumeTrialInTransaction,
+    evaluateTrialConsume,
+    type TrialConsumeDeniedReason
+} from './trial/trial-consume';
+export {
     convertTrialOnTitle,
     findConvertingTitle,
     type TrialConversionResult
@@ -183,3 +188,4 @@ export {
     type TrialStartTransaction,
     type TrialStartUnitOfWork
 } from './trial/trial-start';
+export type { NewConsumedTrialRow, TrialConsumeTransaction } from './trial/trial-start-types';

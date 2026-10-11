@@ -109,7 +109,8 @@ export class InvalidTrialMachineInputError extends Error {
         | 'reason'
         | 'actorId'
         | 'redemptionKey'
-        | 'batchSize';
+        | 'batchSize'
+        | 'emailPseudonym';
 
     constructor(args: { readonly field: InvalidTrialMachineInputError['field'] }) {
         super(`${args.field} is invalid`);
