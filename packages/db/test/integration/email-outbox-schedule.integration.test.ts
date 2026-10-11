@@ -186,6 +186,15 @@ describe('TEST:AC:U2 scheduled outbox queue', () => {
                     reason: 'trial-converted'
                 })
             ).rejects.toThrow();
+            await expect(
+                withdrawScheduledEmails({
+                    tx: common.tx,
+                    recipientUserId: firstUser.id,
+                    templates: ['scheduled'],
+                    vertical: 'accommodation',
+                    reason: 'invalid reason'
+                })
+            ).rejects.toThrow();
         });
     });
 });
