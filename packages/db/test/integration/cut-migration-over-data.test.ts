@@ -185,12 +185,17 @@ describe('TEST:V6:19 paso-3 cut migration over data', () => {
             const passage = await client.query<{
                 entity_type: string;
                 entity_id: string;
+                slug: string | null;
                 photos: { publicId: string | null; url: string }[];
                 calendar_tokens: Record<string, string | null>[];
             }>(`SELECT * FROM cutover_v6_deleted_listing ORDER BY entity_id`);
             expect(passage.rows).toHaveLength(4);
             expect(passage.rows.map((row) => row.entity_id).sort()).toEqual([...removed].sort());
+            expect(passage.rows.map((row) => row.slug).sort()).toEqual(
+                removed.map((listingId) => `cut-${listingId}`).sort()
+            );
             const accommodation = passage.rows.find((row) => row.entity_id === removed[0]);
+            expect(accommodation?.slug).toBe(`cut-${removed[0]}`);
             expect(accommodation?.photos).toEqual(
                 expect.arrayContaining([
                     { publicId: 'cloud/one', url: 'https://example.test/photo-one' },
@@ -205,6 +210,7 @@ describe('TEST:V6:19 paso-3 cut migration over data', () => {
                     refresh_token_ciphertext: 'refresh-test',
                     refresh_token_iv: 'refresh-iv-test',
                     refresh_token_auth_tag: 'refresh-tag-test',
+                    provider: 'GOOGLE_CALENDAR',
                     external_calendar_id: 'external-test'
                 }
             ]);
