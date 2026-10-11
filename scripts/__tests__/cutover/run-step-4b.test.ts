@@ -285,6 +285,27 @@ describe('AC:U3:8 the small IPN payment, against a simulated delivery reader', (
         );
     });
 
+    it('still refunds a created payment if its checkpoint cannot be written', async () => {
+        // Arrange
+        const { fake, reader } = setup();
+        // Act
+        const result = await runStep4b({
+            api: fake.api,
+            readDelivery: reader,
+            payment,
+            sleep: async () => {},
+            now,
+            onCheckpoint: (manifest) => !('paymentId' in manifest)
+        });
+        // Assert
+        expect(result.ok).toBe(false);
+        expect(result.manifest.failures).toContainEqual(
+            expect.objectContaining({ code: 'MANIFEST_WRITE_FAILED', id: 'pay-1' })
+        );
+        expect(result.manifest.refundId).toBe('refund-1');
+        expect(fake.calls).toContain('REFUND payment pay-1');
+    });
+
     it('keeps person data out of every checkpoint and manifest while sending it only to the provider', async () => {
         // Arrange
         const { fake, reader } = setup();

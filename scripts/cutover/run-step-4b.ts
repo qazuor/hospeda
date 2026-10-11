@@ -170,7 +170,6 @@ export async function runStep4b({
                 id: paymentId,
                 detail: 'payment id checkpoint could not be written'
             });
-        if (failures.length > 0) return result();
         let status = (await api.getPayment({ paymentId })).status;
         for (const wait of backoffMs) {
             if (status === 'approved') break;
