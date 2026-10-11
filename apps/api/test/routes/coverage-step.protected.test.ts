@@ -713,6 +713,7 @@ beforeEach(() => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'recover_own_listing', value: 1, strategy: 'MAX' }]
             })
     );

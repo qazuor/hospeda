@@ -6,15 +6,18 @@ import {
     getDb,
     plans,
     planVersions,
+    providerLinks,
     subscriptionModel,
     subscriptions,
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
+import { cancelInheritedTouristVips } from '@repo/service-core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { beforeCancelNotice } from '../../../src/routes/billing-subscription/before-cancel-notice';
+import { touristVipInheritance } from '../../../src/routes/billing-subscription/tourist-vip-inheritance';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 
@@ -168,6 +171,234 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
         expect(response.status).toBe(409);
         expect((await response.json()).error.reason).toBe('COMMITMENT_TAKEN');
         expect(authorize).not.toHaveBeenCalled();
+    });
+
+    it('TEST:B3:29 rejects Tourist VIP while an inherited title is active, then admits it after cancellation', async () => {
+        const { user } = await fixture(true);
+        const vipPlan = await getDb()
+            .insert(plans)
+            .values({
+                vertical: 'tourist',
+                slug: `b3-vip-${crypto.randomUUID()}`,
+                name: 'Tourist VIP'
+            })
+            .returning();
+        const vipVersion = await getDb()
+            .insert(planVersions)
+            .values({
+                planId: vipPlan[0]!.id,
+                vertical: 'tourist',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning();
+        const vipOption = await getDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: vipVersion[0]!.id,
+                cycle: 'monthly',
+                amount: 250000,
+                currency: 'ARS'
+            })
+            .returning();
+        const lodgingPlan = await getDb()
+            .insert(plans)
+            .values({
+                vertical: 'accommodation',
+                slug: `b3-inheritor-${crypto.randomUUID()}`,
+                name: 'Inherited Basic'
+            })
+            .returning();
+        const lodgingVersion = await getDb()
+            .insert(planVersions)
+            .values({
+                planId: lodgingPlan[0]!.id,
+                vertical: 'accommodation',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false,
+                inheritsTouristVip: true
+            })
+            .returning();
+        const lodgingOption = await getDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: lodgingVersion[0]!.id,
+                cycle: 'monthly',
+                amount: 1000,
+                currency: 'ARS'
+            })
+            .returning();
+        const inherited = await getDb()
+            .insert(subscriptions)
+            .values({
+                userId: user.id,
+                vertical: 'accommodation',
+                planVersionId: lodgingVersion[0]!.id,
+                billingOptionId: lodgingOption[0]!.id,
+                paymentMethod: 'CARD',
+                status: 'ACTIVE',
+                class: 'PRINCIPAL'
+            })
+            .returning();
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize');
+        const app = initApp({ clock, paymentProvider: fake });
+        const request = (authenticated = true) =>
+            app.request(path, {
+                method: 'POST',
+                headers: authenticated
+                    ? headers(user.id)
+                    : { 'content-type': 'application/json', 'user-agent': 'vitest' },
+                body: JSON.stringify({ billingOptionId: vipOption[0]!.id })
+            });
+        expect((await request(false)).status).toBe(401);
+        const rejected = await request();
+        expect(rejected.status).toBe(409);
+        expect((await rejected.json()).error.reason).toBe('TOURIST_VIP_INHERITED');
+        expect(authorize).not.toHaveBeenCalled();
+        expect(
+            await getDb().select().from(subscriptions).where(eq(subscriptions.userId, user.id))
+        ).toHaveLength(1);
+        await getDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, inherited[0]!.id));
+        const admitted = await request();
+        expect(admitted.status).toBe(201);
+        expect((await admitted.json()).data.checkoutUrl).toBeDefined();
+        expect(authorize).toHaveBeenCalledTimes(1);
+    });
+
+    it('TEST:B3:28 keeps one pending outbox event and cancels only after that event is sent', async () => {
+        const { user } = await fixture(true);
+        const lodging = await getDb()
+            .insert(plans)
+            .values({
+                vertical: 'accommodation',
+                slug: `b3-outbox-title-${crypto.randomUUID()}`,
+                name: 'Inherited Basic'
+            })
+            .returning();
+        const lodgingVersion = await getDb()
+            .insert(planVersions)
+            .values({
+                planId: lodging[0]!.id,
+                vertical: 'accommodation',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false,
+                inheritsTouristVip: true
+            })
+            .returning();
+        const lodgingOption = await getDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: lodgingVersion[0]!.id,
+                cycle: 'monthly',
+                amount: 1000,
+                currency: 'ARS'
+            })
+            .returning();
+        await getDb().insert(subscriptions).values({
+            userId: user.id,
+            vertical: 'accommodation',
+            planVersionId: lodgingVersion[0]!.id,
+            billingOptionId: lodgingOption[0]!.id,
+            paymentMethod: 'CARD',
+            status: 'ACTIVE',
+            class: 'PRINCIPAL'
+        });
+        const tourist = await getDb()
+            .insert(plans)
+            .values({
+                vertical: 'tourist',
+                slug: `b3-outbox-vip-${crypto.randomUUID()}`,
+                name: 'Tourist VIP'
+            })
+            .returning();
+        const vipVersion = await getDb()
+            .insert(planVersions)
+            .values({
+                planId: tourist[0]!.id,
+                vertical: 'tourist',
+                rank: Math.floor(Math.random() * 100000000) + 1000,
+                sellable: true,
+                current: true,
+                trialDays: 0,
+                allowsPause: false
+            })
+            .returning();
+        const vipOption = await getDb()
+            .insert(billingOptions)
+            .values({
+                planVersionId: vipVersion[0]!.id,
+                cycle: 'monthly',
+                amount: 1000,
+                currency: 'ARS'
+            })
+            .returning();
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const vipAuth = await fake.authorize({
+            reference: `vip-${crypto.randomUUID()}`,
+            amount: { amountMinor: 250000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'Tourist VIP',
+            returnUrl: 'https://hospeda.example/account'
+        });
+        const vip = await getDb()
+            .insert(subscriptions)
+            .values({
+                userId: user.id,
+                vertical: 'tourist',
+                planVersionId: vipVersion[0]!.id,
+                billingOptionId: vipOption[0]!.id,
+                paymentMethod: 'CARD',
+                status: 'ACTIVE',
+                class: 'PRINCIPAL'
+            })
+            .returning();
+        await getDb().insert(providerLinks).values({
+            subscriptionId: vip[0]!.id,
+            provider: 'MERCADO_PAGO',
+            providerId: vipAuth.authorizationId
+        });
+        const cancel = vi.spyOn(fake, 'cancel');
+        const ports = { provider: fake, clock, beforeCancelNotice, touristVipInheritance };
+        expect(await cancelInheritedTouristVips({ userId: user.id }, ports)).toMatchObject({
+            deferred: 1
+        });
+        expect(cancel).not.toHaveBeenCalled();
+        const pending = await getDb()
+            .select()
+            .from(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, user.id));
+        expect(pending).toHaveLength(1);
+        expect(pending[0]?.template).toBe('billing.tourist-vip-inherited-cancel');
+        await getDb()
+            .update(emailOutbox)
+            .set({ status: 'sent' })
+            .where(eq(emailOutbox.id, pending[0]!.id));
+        expect(await cancelInheritedTouristVips({ userId: user.id }, ports)).toMatchObject({
+            cancelled: 1
+        });
+        expect(cancel).toHaveBeenCalledTimes(1);
+        const vipNotices = await getDb()
+            .select()
+            .from(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, user.id));
+        expect(
+            vipNotices.filter(
+                (notice) => notice.template === 'billing.tourist-vip-inherited-cancel'
+            )
+        ).toHaveLength(1);
     });
 
     it('rejects a version that is no longer current before reaching the provider', async () => {

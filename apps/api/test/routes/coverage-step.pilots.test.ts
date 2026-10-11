@@ -102,6 +102,7 @@ beforeEach(() => {
             userId,
             vertical,
             hasLiveNonTrialTitle: false,
+            inheritsTouristVip: false,
             entries: []
         })
     );
@@ -157,6 +158,7 @@ describe('TEST:V5:10 coverage step on three accommodation pilots', () => {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
             })
         );

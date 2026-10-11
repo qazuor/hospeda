@@ -17,6 +17,7 @@ import {
     decodeFiniteOrInfinite,
     encodeFiniteOrInfinite,
     type PlanCatalogReader,
+    resolveEffectiveSet,
     resolveGrantSet,
     subscribeCoverageInvalidation
 } from '../../src';
@@ -52,6 +53,7 @@ interface Snapshot {
     readonly userId: string;
     readonly vertical: Vertical;
     readonly globalGrant: number | null;
+    readonly inheritsTouristVip?: boolean;
 }
 
 const codec = {
@@ -76,13 +78,18 @@ const codec = {
         return {
             userId: value.userId,
             vertical: value.vertical as Vertical,
+            ...('inheritsTouristVip' in value && typeof value.inheritsTouristVip === 'boolean'
+                ? { inheritsTouristVip: value.inheritsTouristVip }
+                : {}),
             globalGrant:
                 value.globalGrant === null ? null : decodeFiniteOrInfinite(value.globalGrant)
         };
     }
 };
 
-async function seedVersions(): Promise<Record<Vertical, string>> {
+async function seedVersions(
+    args: { readonly inheritsTouristVip?: boolean } = {}
+): Promise<Record<Vertical, string>> {
     const rank = nextRank++;
     return db.transaction(async (tx) => {
         const ids = {} as Record<Vertical, string>;
@@ -105,7 +112,9 @@ async function seedVersions(): Promise<Record<Vertical, string>> {
                     current: true,
                     graceDays: 10,
                     trialDays: 14,
-                    allowsPause: true
+                    allowsPause: true,
+                    inheritsTouristVip:
+                        args.inheritsTouristVip === true && vertical === VerticalEnum.ACCOMMODATION
                 })
                 .returning({ id: planVersions.id });
             ids[vertical] = (version as { id: string }).id;
@@ -166,43 +175,92 @@ function fixture(versions: Record<Vertical, string>) {
 }
 
 describe('DB-backed effective-set cache', () => {
-    it('TEST:V3:8 (proxy: clave global de un GRANT; la VIP real la re-prueba V3.4/B3.8)', async () => {
-        const f = fixture(await seedVersions());
+    it('TEST:V3:8 invalidates inherited Tourist VIP across verticals and after suspension', async () => {
+        const versions = await seedVersions({ inheritsTouristVip: true });
+        const f = fixture(versions);
         const cache = f.create();
         const unsubscribe = subscribeCoverageInvalidation({ billing: f.billing, cache });
         const user = randomUUID();
         const other = randomUUID();
+        const coverAccommodation = (userId: string, covered: boolean) => {
+            const source = CoverageSourceSchema.parse({
+                type: 'SUBSCRIPTION',
+                reference: {
+                    kind: 'PLAN_VERSION',
+                    planVersionId: versions[VerticalEnum.ACCOMMODATION]
+                },
+                scope: 'VERTICAL',
+                target: null,
+                since: new Date('2026-01-01T00:00:00.000Z'),
+                until: 'NO_KNOWN_DATE',
+                charged: true,
+                floor: null
+            });
+            f.billing.setCoverage({
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                response: { covered, sources: covered ? [source] : [] }
+            });
+        };
+        const load = (userId: string, vertical: Vertical) => async (): Promise<Snapshot> => {
+            const effective = await resolveEffectiveSet({
+                reader,
+                billing: f.billing,
+                trials: { findTrial: async () => null },
+                userId,
+                vertical
+            });
+            return {
+                userId,
+                vertical,
+                globalGrant: effective.entries.find((entry) => entry.key === KEY)?.value ?? null,
+                inheritsTouristVip: effective.inheritsTouristVip
+            };
+        };
+        const read = (userId: string, vertical: Vertical) =>
+            cache.readThrough({ userId, vertical, load: load(userId, vertical) });
         for (const vertical of VERTICALS) {
-            f.cover(user, vertical, true);
-            f.cover(other, vertical, true);
-            expect((await f.read(cache, user, vertical)).globalGrant).toBe(
-                Number.POSITIVE_INFINITY
-            );
-            await f.read(cache, other, vertical);
+            if (vertical === VerticalEnum.ACCOMMODATION) {
+                coverAccommodation(user, true);
+                coverAccommodation(other, true);
+            }
+            await read(user, vertical);
+            await read(other, vertical);
         }
+        expect(await read(user, VerticalEnum.TOURIST)).toMatchObject({
+            inheritsTouristVip: true,
+            globalGrant: Number.POSITIVE_INFINITY
+        });
         // Program the post-commit answer first; the contract delivers the notice afterwards.
-        f.cover(user, VerticalEnum.ACCOMMODATION, false);
+        coverAccommodation(user, false);
         await f.notice(user, VerticalEnum.ACCOMMODATION);
-        expect((await f.read(cache, user, VerticalEnum.ACCOMMODATION)).globalGrant).toBeNull();
-        const live = vi.fn(f.load(user, VerticalEnum.TOURIST));
+        expect((await read(user, VerticalEnum.ACCOMMODATION)).globalGrant).toBeNull();
+        const live = vi.fn(load(user, VerticalEnum.TOURIST));
         await cache.readThrough({ userId: user, vertical: VerticalEnum.TOURIST, load: live });
         expect(live).toHaveBeenCalledOnce();
-        const gastronomy = vi.fn(f.load(user, VerticalEnum.GASTRONOMY));
+        expect(await read(user, VerticalEnum.TOURIST)).toMatchObject({
+            inheritsTouristVip: false,
+            globalGrant: null
+        });
+        const gastronomy = vi.fn(load(user, VerticalEnum.GASTRONOMY));
         await cache.readThrough({
             userId: user,
             vertical: VerticalEnum.GASTRONOMY,
             load: gastronomy
         });
         expect(gastronomy).toHaveBeenCalledOnce();
-        const untouched = vi.fn(f.load(other, VerticalEnum.TOURIST));
+        const untouched = vi.fn(load(other, VerticalEnum.TOURIST));
         await cache.readThrough({ userId: other, vertical: VerticalEnum.TOURIST, load: untouched });
         expect(untouched).not.toHaveBeenCalled();
 
         f.redis.failIncr = true;
-        f.cover(user, VerticalEnum.TOURIST, false);
-        await f.notice(user, VerticalEnum.TOURIST);
+        coverAccommodation(user, true);
+        await f.notice(user, VerticalEnum.ACCOMMODATION);
         f.redis.failIncr = false;
-        expect((await f.read(cache, user, VerticalEnum.TOURIST)).globalGrant).toBeNull();
+        expect(await read(user, VerticalEnum.TOURIST)).toMatchObject({
+            inheritsTouristVip: true,
+            globalGrant: Number.POSITIVE_INFINITY
+        });
         expect(f.warn).toHaveBeenCalledWith(expect.any(String), {
             suspectEntries: 1,
             userId: user
@@ -210,10 +268,16 @@ describe('DB-backed effective-set cache', () => {
 
         await cache.invalidateAll(); // The plan-publication caller is wired in part 2.
         for (const vertical of VERTICALS) {
-            const afterPublication = vi.fn(f.load(other, vertical));
+            const afterPublication = vi.fn(load(other, vertical));
             await cache.readThrough({ userId: other, vertical, load: afterPublication });
             expect(afterPublication).toHaveBeenCalledOnce();
         }
+        coverAccommodation(user, false);
+        await f.notice(user, VerticalEnum.ACCOMMODATION);
+        expect(await read(user, VerticalEnum.TOURIST)).toMatchObject({
+            inheritsTouristVip: false,
+            globalGrant: null
+        });
         unsubscribe();
     });
 

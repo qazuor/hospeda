@@ -88,6 +88,10 @@ export {
     scopeKeyValues
 } from './effective-set/scope';
 export {
+    resolveTouristVipInheritance,
+    type TouristVipInheritance
+} from './effective-set/tourist-vip-inheritance';
+export {
     resolveTrialSet,
     resolveTrialValues,
     type TrialFloorReferences,

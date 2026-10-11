@@ -428,6 +428,7 @@ function configureSet(owner: string, keys: readonly string[]): void {
                 userId,
                 vertical,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: keys.map((key) => ({ key, value: 1, strategy: 'MAX' as const }))
             })
     );

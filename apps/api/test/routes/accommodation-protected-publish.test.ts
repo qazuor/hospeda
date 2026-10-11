@@ -76,6 +76,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
                 userId,
                 vertical: VerticalEnum.ACCOMMODATION,
                 hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
                 entries: [{ key: 'activate_trial', value: 1, strategy: 'MAX' }]
             })
     })

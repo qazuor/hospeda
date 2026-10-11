@@ -356,3 +356,7 @@ directly by
 `test/middlewares/billing-admin-auth.middleware.test.ts`,
 and its error bodies still land in `createErrorHandler`, so R1 and R4 hold. What
 is NOT enforced there is R3-style param validation.
+
+## S1 rejections (B3)
+
+`PLAN_NOT_FOR_SALE` is 422; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. The new rejection is 409 because the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
