@@ -217,6 +217,27 @@ describe('TEST:V6:28 action 22 on vertical deadlines', () => {
         expect((await getCurrentVerticalDeadlines()).version).toBe(1);
     });
 
+    it('TEST:V6:9 G-R5-B enforces the strict worst-case PB5 bound over HTTP', async () => {
+        const app = initApp();
+        const url = '/api/v1/admin/vertical-deadlines';
+        const admin = headers(RoleEnum.SUPER_ADMIN, actor.permissions);
+        const change = (expectedVersion: number, key: number, value: unknown) =>
+            app.request(url, {
+                method: 'POST',
+                headers: admin,
+                body: JSON.stringify({ key, value, expectedVersion, confirmed: true })
+            });
+        const sixMonths = await change(1, 3, { months: 6 });
+        expect(sixMonths.status).toBe(400);
+        expect((await sixMonths.json()).error.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        const fiveMonths = await change(1, 3, { months: 5 });
+        expect(fiveMonths.status).toBe(201);
+        const tooShortDeletion = await change(2, 2, { days: 93 });
+        expect(tooShortDeletion.status).toBe(400);
+        expect((await tooShortDeletion.json()).error.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect((await getCurrentVerticalDeadlines()).version).toBe(2);
+    });
+
     it('requires the permission and rejects stale versions and unchanged values', async () => {
         const app = initApp();
         const url = '/api/v1/admin/vertical-deadlines';
