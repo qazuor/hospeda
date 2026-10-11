@@ -22,7 +22,10 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { createGuestActor } from '../../../utils/actor';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -95,13 +98,10 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
             };
         }
 
-        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n
-        // sibling are PREMIUM fields gated per-owner by the entitlement system.
-        // This card-listing endpoint never renders them, so BOTH are stripped
-        // before reaching the response payload — fail-closed and independent of
-        // any schema change.
+        // Apply the owner-effective paid-field grants to the returned page.
         const rawItems = result.data?.items ?? [];
-        const items = rawItems.map(maskLegacyPremiumFields);
+        const grants = await resolvePublicFieldGrants(rawItems.map((item) => item.ownerId));
+        const items = rawItems.map((item) => filterPublicPaidFieldsForOwner(item, grants));
 
         return {
             items,

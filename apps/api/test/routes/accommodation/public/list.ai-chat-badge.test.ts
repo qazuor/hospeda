@@ -14,7 +14,8 @@
  * owner (its documented failure mode).
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types';
@@ -22,7 +23,7 @@ import type { AppBindings } from '../../../../src/types';
 // ── Mock handles ──────────────────────────────────────────────────────────────
 
 const mockSearch = vi.fn();
-const mockResolveOwnerEntitlementsBatch = vi.fn();
+const mockEffectiveSet = vi.fn();
 
 // ── Owner ids ────────────────────────────────────────────────────────────────
 
@@ -78,11 +79,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    // HOS-1084: ONE resolver now feeds both badges. The single-owner resolver
-    // is no longer imported by this route at all, so stubbing it here would
-    // assert nothing.
-    resolveOwnerEntitlementsForOwnerIds: mockResolveOwnerEntitlementsBatch
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
 }));
 
 vi.mock('../../../../src/utils/actor', async (importOriginal) => {
@@ -150,18 +148,26 @@ async function buildApp() {
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
+describe('TEST:V5:32 publicListAccommodationsRoute — hasAiChat badge', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockEffectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: true,
+                    inheritsTouristVip: false,
+                    entries:
+                        userId === OWNER_WITH_AI
+                            ? [{ key: 'ai_chat', value: 1, strategy: 'MAX' }]
+                            : []
+                })
+        );
     });
 
     it('marks hasAiChat true while AI chat remains available without the old plan', async () => {
-        mockResolveOwnerEntitlementsBatch.mockResolvedValue(
-            new Map([
-                [OWNER_WITH_AI, [EntitlementKey.AI_CHAT]],
-                [OWNER_WITHOUT_AI, []]
-            ])
-        );
         mockSearch.mockResolvedValue({
             data: {
                 items: [
@@ -180,13 +186,10 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
         expect(items.find((i) => i.id === 'acc-1')?.hasAiChat).toBe(true);
-        expect(items.find((i) => i.id === 'acc-2')?.hasAiChat).toBe(true);
+        expect(items.find((i) => i.id === 'acc-2')?.hasAiChat).toBe(false);
     });
 
     it('resolves the whole page in ONE call, with owners deduped', async () => {
-        mockResolveOwnerEntitlementsBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_AI, [EntitlementKey.AI_CHAT]]])
-        );
         mockSearch.mockResolvedValue({
             data: {
                 items: [
@@ -203,15 +206,16 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
 
-        expect(mockResolveOwnerEntitlementsBatch).not.toHaveBeenCalled();
+        expect(mockEffectiveSet).toHaveBeenCalledTimes(1);
+        expect(mockEffectiveSet).toHaveBeenCalledWith({
+            userId: OWNER_WITH_AI,
+            vertical: VerticalEnum.ACCOMMODATION
+        });
         expect(items.every((i) => i.hasAiChat === true)).toBe(true);
     });
 
     it('keeps AI chat available when old plan entitlements are absent', async () => {
-        // The batch resolver never throws: a billing failure surfaces as an
-        // EMPTY entitlement array for that owner. So fail-closed here means the
-        // badge is absent, not that the request errors.
-        mockResolveOwnerEntitlementsBatch.mockResolvedValue(new Map([[OWNER_WITH_AI, []]]));
+        mockEffectiveSet.mockRejectedValue(new Error('effective set unavailable'));
         mockSearch.mockResolvedValue({
             data: { items: [accommodation({ id: 'acc-1', ownerId: OWNER_WITH_AI })], total: 1 },
             error: null
@@ -223,13 +227,12 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
 
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
-        expect(items[0]?.hasAiChat).toBe(true);
+        expect(items[0]?.hasAiChat).toBe(false);
     });
 
-    it('keeps AI chat available when the owner is absent from the old resolver', async () => {
-        mockResolveOwnerEntitlementsBatch.mockResolvedValue(new Map());
+    it('hides AI chat when the owner has no effective key', async () => {
         mockSearch.mockResolvedValue({
-            data: { items: [accommodation({ id: 'acc-1', ownerId: OWNER_WITH_AI })], total: 1 },
+            data: { items: [accommodation({ id: 'acc-1', ownerId: OWNER_WITHOUT_AI })], total: 1 },
             error: null
         });
 
@@ -237,6 +240,6 @@ describe('publicListAccommodationsRoute — F1 hasAiChat badge', () => {
         const res = await app.request('/');
         const body = await res.json();
         const items = body.items as Array<Record<string, unknown>>;
-        expect(items[0]?.hasAiChat).toBe(true);
+        expect(items[0]?.hasAiChat).toBe(false);
     });
 });

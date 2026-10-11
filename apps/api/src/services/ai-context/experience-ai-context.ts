@@ -40,7 +40,6 @@ import type { AssembleChatContextInput, AssembleChatContextOutput } from './type
 // ---------------------------------------------------------------------------
 
 /** Hard cap on the description length in the context block. */
-// HOS-1352: transitional until V3 (HOS-1357), see PR — removed MANAGE_EXPERIENCE_DIRECTIONS entitlement gate.
 export const EXPERIENCE_DESCRIPTION_MAX_CHARS = 800;
 
 /** Maximum FAQs included in the context block. */
@@ -274,7 +273,7 @@ function formatDuration(minutes: number): string {
  * soft-deleted, mapped by the streaming factory to a pre-stream 404. The FAQ read
  * degrades to an empty list with a logged warning.
  *
- * @param input - Actor, entity id, resolved prompt, locale, owner entitlements.
+ * @param input - Actor, entity id, resolved prompt, locale and owner capabilities.
  * @returns The context block, system message and experience name.
  */
 export async function assembleExperienceContext(
@@ -314,7 +313,11 @@ export async function assembleExperienceContext(
 
     const faqs = await safeLoadFaqs(entityId);
 
-    const contextBlock = buildExperienceMarkdownContext(experience, faqs, true);
+    const contextBlock = buildExperienceMarkdownContext(
+        experience,
+        faqs,
+        input.ownerCapabilities.manageExperienceDirections === true
+    );
 
     return {
         contextBlock,

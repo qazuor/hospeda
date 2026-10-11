@@ -8,11 +8,12 @@
  * @route GET /api/v1/protected/accommodations/my/favorites-breakdown
  */
 
-import { EntityTypeEnum, HostFavoritesBreakdownSchema } from '@repo/schemas';
+import { EntityTypeEnum, HostFavoritesBreakdownSchema, VerticalEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -31,6 +32,7 @@ const bookmarkService = new UserBookmarkService({ logger: apiLogger });
  *
  * No pagination: the number of accommodations per host is bounded and small
  * enough to return in full for dashboard use cases.
+ * Reads the owner's effective view_advanced_stats capability before returning statistics.
  */
 export const hostFavoritesBreakdownRoute = createProtectedRoute({
     method: 'get',
@@ -42,9 +44,13 @@ export const hostFavoritesBreakdownRoute = createProtectedRoute({
         'dashboard (SPEC-155 T-005).',
     tags: ['Accommodations'],
     responseSchema: HostFavoritesBreakdownSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_ADVANCED_STATS entitlement gate.
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_advanced_stats']
+        });
 
         // List all accommodations owned by this host (all lifecycle states so the
         // host sees bookmarks on drafts / archived listings too).
@@ -85,7 +91,6 @@ export const hostFavoritesBreakdownRoute = createProtectedRoute({
         return breakdown;
     },
     options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

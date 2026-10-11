@@ -1,4 +1,6 @@
-/** Menu QR scan totals, empty history, and ownership after legacy plan removal. */
+/** Menu QR scan totals, empty history, and ownership with an effective capability fixture. */
+import { PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types.js';
@@ -27,6 +29,30 @@ vi.mock('@repo/service-core', async (importActual) => {
         })
     };
 });
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => {
+            const result = await mockGetById();
+            const ownerId = result.data?.ownerId ?? null;
+            return {
+                facts: ownerId
+                    ? { ownerId, publicationStatus: PublicationStatusEnum.PUBLISHED }
+                    : null,
+                ownerId
+            };
+        },
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'menu_qr_scan_metrics', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 vi.mock('../../../../src/utils/logger.js', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -80,8 +106,8 @@ beforeEach(() => {
     });
 });
 
-describe('GET /{id}/menu-qr/scans — available without the old plan', () => {
-    it('serves scan totals without the old subscription', async () => {
+describe('GET /{id}/menu-qr/scans — effective capability granted', () => {
+    it('serves scan totals for the granted owner', async () => {
         const app = buildApp();
 
         const res = await app.request(`/${GASTRONOMY_ID}/menu-qr/scans`);

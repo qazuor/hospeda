@@ -12,12 +12,13 @@
  * @see SPEC-155 HOST card I
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, VerticalEnum } from '@repo/schemas';
 import { ConversationService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -48,6 +49,7 @@ const queryParamsSchema = z.object({
  * Aggregated monthly inquiry counts for the authenticated host. Requires
  * `CONVERSATION_VIEW_OWN`. Returns 200 with a zero-filled series even when
  * the host has zero conversations.
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
     method: 'get',
@@ -61,9 +63,13 @@ export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
     requiredPermissions: [PermissionEnum.CONVERSATION_VIEW_OWN],
     requestQuery: queryParamsSchema.shape,
     responseSchema: HostMonthlyInquiriesSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_basic_stats']
+        });
         const months = (query as { months?: number } | undefined)?.months ?? 6;
 
         const result = await conversationService.getHostMonthlyInquiries(actor, { months });
@@ -75,7 +81,6 @@ export const hostConversationMonthlyInquiriesRoute = createProtectedRoute({
         return { months: result.data ?? [] };
     },
     options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

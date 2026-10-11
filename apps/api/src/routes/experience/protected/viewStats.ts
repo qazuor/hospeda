@@ -13,17 +13,22 @@
  * **Scope isolation:** `actor.id` resolves owned listing IDs internally — no
  * `ownerId` param is accepted (anti-peeking), same as the accommodation route.
  *
- * HOS-1352: transitional until V3 (HOS-1357), see PR — former plan entitlement gate removed.
  *
  * @module routes/experience/protected/viewStats
  * @see HOS-734
  */
 
 import type { ServiceErrorCode } from '@repo/schemas';
-import { EntityTypeEnum, EntityViewStatsListSchema, EntityViewWindowSchema } from '@repo/schemas';
+import {
+    EntityTypeEnum,
+    EntityViewStatsListSchema,
+    EntityViewWindowSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { entityViewService, ServiceError } from '@repo/service-core';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 /**
@@ -31,7 +36,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  *
  * Authenticated owner endpoint that returns view stats for all of the
  * caller's own experience listings over the specified rolling window.
- * HOS-1352: transitional until V3 (HOS-1357), see PR — the stats plan gate is removed.
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const protectedExperienceViewStatsRoute = createProtectedRoute({
     method: 'get',
@@ -46,9 +51,13 @@ export const protectedExperienceViewStatsRoute = createProtectedRoute({
         window: EntityViewWindowSchema.default('30d')
     },
     responseSchema: EntityViewStatsListSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_BASIC_STATS entitlement gate.
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.EXPERIENCE,
+            keys: ['view_basic_stats']
+        });
         const typedQuery = query as { window: '7d' | '30d' };
 
         const result = await entityViewService.getStatsForOwnListings({

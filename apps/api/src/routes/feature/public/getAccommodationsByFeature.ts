@@ -7,7 +7,10 @@ import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
-import { maskLegacyPremiumFields } from '../../../utils/entitlement-filter';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -34,31 +37,16 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
         });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
 
-        // SPEC-187 / SPEC-212 data-level omission. The service returns FULL accommodation
-        // entities (`findAllWithRelations({ accommodation: true })` has no column
-        // allowlist), and `AccommodationPublicSchema` deliberately re-exposes both
-        // rich-description fields, so `stripWithSchema` does NOT hide them. Without this
-        // the premium markdown rode a card listing.
-        const strippedAccommodations = (result.data.accommodations ?? []).map(
-            maskLegacyPremiumFields
+        // The service returns full accommodation entities; filter paid fields using
+        // each row owner's effective capabilities before response serialization.
+        const rawAccommodations = result.data.accommodations ?? [];
+        const grants = await resolvePublicFieldGrants(
+            rawAccommodations.map((item) => item.ownerId)
+        );
+        const strippedAccommodations = rawAccommodations.map((item) =>
+            filterPublicPaidFieldsForOwner(item, grants)
         );
 
-        // SPEC-291 Phase 3b / HOS-341: gate `isVerified` by the OWNER's billing
-        // entitlement. At most ONE batched role query — for the cache-cold ownerIds
-        // only, none at all when every owner is warm in the resolver's cache — then
-        // parallel billing lookups for those same cold owners, then a synchronous
-        // gate pass. Fail-closed: an owner absent from the map keeps no badge.
-        //
-        // "of this response", not "of this page": the service has no server-side
-        // pagination here, it returns its whole result set and the envelope below is
-        // synthesized from its length.
-        //
-        // The gate depends on the owner of the row, never on the reader — which is
-        // what makes it safe here. `/api/v1/public/features` is a shared-cached
-        // prefix whose cache key carries no `Authorization`, so any per-viewer check
-        // computed in this handler would be served to every later visitor (HOS-288).
-        // The isVerified owner-entitlement gate was removed with the legacy
-        // billing system (HOS-1416); `isVerified` is emitted as stored.
         const accommodations = strippedAccommodations;
 
         const { page, pageSize } = extractPaginationParams(query || {});

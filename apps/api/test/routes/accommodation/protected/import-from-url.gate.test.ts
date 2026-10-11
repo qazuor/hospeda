@@ -30,7 +30,10 @@ vi.mock('../../../../src/services/ai-service.factory', () => ({
     createConfiguredAiService: vi.fn(async () => ({ generateObject: mockGenerateObject }))
 }));
 
-import { buildImportAiExtract } from '../../../../src/routes/accommodation/protected/import-from-url';
+import {
+    buildImportAiExtract,
+    getImportAiBlockedReason
+} from '../../../../src/routes/accommodation/protected/import-from-url';
 import type { AiGateState } from '../../../../src/routes/accommodation/protected/import-from-url.ai';
 
 /** Fake Hono context exposing only the `billingLoadFailed` var the gate reads. */
@@ -63,6 +66,49 @@ const GOOD_AI_RESULT = {
 describe('buildImportAiExtract gate', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it.each([
+        [{ allowed: true }, null],
+        [
+            {
+                allowed: false,
+                reason: 'entitlement',
+                key: 'ai_accommodation_import',
+                max: 0,
+                count: 0
+            },
+            'entitlement'
+        ],
+        [
+            {
+                allowed: false,
+                reason: 'quota',
+                key: 'max_ai_accommodation_import_per_month',
+                max: 0,
+                count: 0
+            },
+            'entitlement'
+        ],
+        [
+            {
+                allowed: false,
+                reason: 'quota',
+                key: 'max_ai_accommodation_import_per_month',
+                max: 10,
+                count: 10
+            },
+            'quota'
+        ]
+    ] as const)('maps quota decision to the import notice', (decision, expected) => {
+        expect(getImportAiBlockedReason(decision)).toBe(expected);
+    });
+
+    it('does not call AI when the route marked the gate blocked', async () => {
+        const { gate, port } = runPort({});
+        gate.blockedReason = 'entitlement';
+        await expect(port({ text: 'page', locale: 'es' })).resolves.toBeNull();
+        expect(mockGenerateObject).not.toHaveBeenCalled();
     });
 
     it('ignores an obsolete billing-load failure', async () => {

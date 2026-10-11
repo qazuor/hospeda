@@ -9,11 +9,13 @@
  * @route GET /api/v1/protected/accommodations/my/market-comparison
  */
 
+import { VerticalEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -49,7 +51,7 @@ const HostMarketComparisonSchema = z.object({
  *
  * For each accommodation owned by the authenticated host, returns the
  * comparison row used by HOST card J. Scoped to `ownerId = actor.id`.
- * Requires `ACCOMMODATION_VIEW_OWN`.
+ * Reads the owner's effective view_advanced_stats capability before returning statistics.
  */
 export const hostMarketComparisonRoute = createProtectedRoute({
     method: 'get',
@@ -61,9 +63,13 @@ export const hostMarketComparisonRoute = createProtectedRoute({
         'accommodation in the same destination. Used by HOST card J.',
     tags: ['Accommodations'],
     responseSchema: HostMarketComparisonSchema,
-    // HOS-1352: transitional until V3 (HOS-1357), see PR — removed VIEW_ADVANCED_STATS entitlement gate.
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_advanced_stats']
+        });
 
         const result = await accommodationService.getHostMarketComparison(actor);
 
@@ -74,7 +80,6 @@ export const hostMarketComparisonRoute = createProtectedRoute({
         return { comparisons: result.data ?? [] };
     },
     options: {
-        // HOS-1352: transitional until V3 (HOS-1357), see PR — former plan gate removed; route permissions remain.
         cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }

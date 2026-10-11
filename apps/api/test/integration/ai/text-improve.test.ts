@@ -209,6 +209,20 @@ const { currentEntitlementsForTest, currentLimitsForTest, currentBillingLoadFail
         currentBillingLoadFailedForTest: { current: false }
     }));
 
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async () => ({
+            entitlements: {
+                get: ({ key }: { key: string }) =>
+                    currentEntitlementsForTest.current.has(key as EntitlementKey) ? 1 : undefined
+            },
+            limits: {
+                get: ({ key }: { key: string }) => currentLimitsForTest.current.get(key as LimitKey)
+            }
+        })
+    })
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (post-mock).
 // ---------------------------------------------------------------------------
@@ -323,7 +337,7 @@ async function readSseFrames(response: Response): Promise<SseFrame[]> {
 // Test suite
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006)', () => {
+describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006)', () => {
     let app: OpenAPIHono<AppBindings>;
 
     beforeAll(async () => {
@@ -385,8 +399,8 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
     // the user does not have `ai_text_improve` in their entitlement set.
     // =========================================================================
 
-    describe('temporary access without the retired plan entitlement', () => {
-        it('streams for an authenticated user without ai_text_improve', async () => {
+    describe('effective entitlement gate', () => {
+        it('rejects an authenticated user without ai_text_improve', async () => {
             // Tourist plan: no AI entitlements at all
             currentEntitlementsForTest.current = new Set<EntitlementKey>();
             currentLimitsForTest.current = new Map<LimitKey, number>();
@@ -400,10 +414,14 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
                 })
             });
 
-            // HOS-1352: transitional until V3 (HOS-1357), see PR.
-            expect(res.status).toBe(200);
-            await readSseFrames(res);
-            expect(streamTextCalls).toHaveLength(1);
+            expect(res.status).toBe(403);
+            expect(await res.json()).toMatchObject({
+                error: {
+                    code: 'ENTITLEMENT_REQUIRED',
+                    details: { entitlementKey: 'ai_text_improve' }
+                }
+            });
+            expect(streamTextCalls).toHaveLength(0);
         });
     });
 
@@ -513,9 +531,9 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
 
     describe('temporary access without the retired monthly quota', () => {
         it('streams when the old monthly count reaches its former limit', async () => {
-            // Entitled, with a limit of 20
+            // Entitled with headroom beyond the formerly asserted count.
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]]);
             // Mocked getMonthlyCallCount returns 20 (= limit) → at quota
             getMonthlyCallCountReturn.current = 20;
 
@@ -544,7 +562,7 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
         it('streams when the old billing loader is unavailable', async () => {
             // Even entitled + under quota — the billing-load guard fires first.
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]]);
             currentBillingLoadFailedForTest.current = true;
 
             const res = await app.request(STREAM_PATH, {
@@ -805,7 +823,7 @@ describe('POST /api/v1/protected/ai/text-improve — integration (SPEC-198 T-006
             // At quota → the middleware rejects. The only row it may write is
             // its own `quota_exceeded` bookkeeping row, never a success row.
             currentEntitlementsForTest.current = new Set([EntitlementKey.AI_TEXT_IMPROVE]);
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]]);
+            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 50]]);
             getMonthlyCallCountReturn.current = 20;
 
             const res = await app.request(STREAM_PATH, {

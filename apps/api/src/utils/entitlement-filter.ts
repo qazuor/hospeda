@@ -9,8 +9,59 @@
  * @module utils/entitlement-filter
  */
 
-import type { Accommodation, I18nText } from '@repo/schemas';
+import { type Accommodation, type I18nText, VerticalEnum } from '@repo/schemas';
 import { stripVideoEmbeds } from '../lib/content-detection.js';
+import { readEffectiveKeys } from './listing-access/user-gate';
+
+const PUBLIC_FIELD_KEYS = {
+    richDescription: 'can_use_rich_description',
+    video: 'can_embed_video',
+    verification: 'has_verification_badge',
+    aiChat: 'ai_chat'
+} as const;
+
+/** Effective public-field capabilities resolved for one accommodation owner. */
+export interface PublicFieldGrants {
+    readonly richDescription: boolean;
+    readonly video: boolean;
+    readonly verification: boolean;
+    readonly aiChat: boolean;
+}
+
+const NO_PUBLIC_FIELD_GRANTS: PublicFieldGrants = {
+    richDescription: false,
+    video: false,
+    verification: false,
+    aiChat: false
+};
+
+/** Resolve public-field capabilities once per distinct owner on a response page. */
+export async function resolvePublicFieldGrants(
+    ownerIds: readonly (string | null | undefined)[]
+): Promise<ReadonlyMap<string, PublicFieldGrants>> {
+    const uniqueOwnerIds = [
+        ...new Set(ownerIds.filter((ownerId): ownerId is string => Boolean(ownerId)))
+    ];
+    const entries = await Promise.all(
+        uniqueOwnerIds.map(async (ownerId) => {
+            const keys = await readEffectiveKeys({
+                userId: ownerId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                keys: Object.values(PUBLIC_FIELD_KEYS)
+            });
+            return [
+                ownerId,
+                {
+                    richDescription: keys[PUBLIC_FIELD_KEYS.richDescription] ?? false,
+                    video: keys[PUBLIC_FIELD_KEYS.video] ?? false,
+                    verification: keys[PUBLIC_FIELD_KEYS.verification] ?? false,
+                    aiChat: keys[PUBLIC_FIELD_KEYS.aiChat] ?? false
+                }
+            ] as const;
+        })
+    );
+    return new Map(entries);
+}
 
 /**
  * Accommodation data that may contain premium features
@@ -117,25 +168,29 @@ export function stripRichDescriptionFields<T extends object>(
 }
 
 /**
- * Hides public fields that previously required an owner's paid plan until the
- * replacement coverage contract is available. The result is independent of
- * the viewer, so it is safe to put in the shared public response cache.
+ * Filters paid public fields using effective capabilities resolved for the owner.
  */
-export function maskLegacyPremiumFields<T extends object>(item: T): T {
-    // HOS-1352: transitional until V3 (HOS-1357), see PR: hide formerly paid public fields until effective capabilities resolve.
-    const filtered = {
-        ...stripRichDescriptionFields(item),
-        isVerified: false,
-        hasWhatsapp: false
-    } as Record<string, unknown>;
+export function filterPublicPaidFields<T extends object>(item: T, grants: PublicFieldGrants): T {
+    const source = item as T & Record<string, unknown>;
+    const filtered = (
+        grants.richDescription ? { ...source } : stripRichDescriptionFields(source)
+    ) as Record<string, unknown>;
+    filtered.hasWhatsapp = _hasWhatsapp(source.contactInfo);
+    if (!grants.verification) filtered.isVerified = false;
 
-    if (typeof filtered.description === 'string') {
+    if (!grants.video && typeof filtered.description === 'string') {
         filtered.description = stripVideoEmbeds(filtered.description);
     }
-    delete filtered.videos;
+    if (!grants.video) delete filtered.videos;
 
     const media = filtered.media;
-    if (media && typeof media === 'object' && !Array.isArray(media) && 'videos' in media) {
+    if (
+        !grants.video &&
+        media &&
+        typeof media === 'object' &&
+        !Array.isArray(media) &&
+        'videos' in media
+    ) {
         filtered.media = { ...media, videos: [] };
     }
 
@@ -146,6 +201,22 @@ export function maskLegacyPremiumFields<T extends object>(item: T): T {
     }
 
     return filtered as T;
+}
+
+/** Apply an owner's grants, defaulting to no capabilities when owner data is missing. */
+export function filterPublicPaidFieldsForOwner<T extends object>(
+    item: T,
+    grantsByOwner: ReadonlyMap<string, PublicFieldGrants>
+): T {
+    const ownerId = (item as T & { ownerId?: unknown }).ownerId;
+    const grants = typeof ownerId === 'string' ? grantsByOwner.get(ownerId) : undefined;
+    return filterPublicPaidFields(item, grants ?? NO_PUBLIC_FIELD_GRANTS);
+}
+
+function _hasWhatsapp(contactInfo: unknown): boolean {
+    if (!contactInfo || typeof contactInfo !== 'object' || Array.isArray(contactInfo)) return false;
+    const whatsapp = (contactInfo as Record<string, unknown>).whatsapp;
+    return typeof whatsapp === 'string' && whatsapp.trim().length > 0;
 }
 
 /**

@@ -35,6 +35,11 @@ export interface AssembleChatContextInput {
     readonly resolvedPrompt: string;
     /** The visitor's locale. */
     readonly locale: 'es' | 'en' | 'pt';
+    /** Owner capabilities resolved by the route for this listing's vertical. */
+    readonly ownerCapabilities: {
+        readonly manageGastronomyMenu?: boolean;
+        readonly manageExperienceDirections?: boolean;
+    };
 }
 
 /** Output contract shared by every context assembler. */

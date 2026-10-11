@@ -1,23 +1,51 @@
-import { RoleEnum } from '@repo/schemas';
+import { RoleEnum, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const findExclusiveDeals = vi.fn();
+const mocks = vi.hoisted(() => ({
+    effectiveSet: vi.fn(),
+    findExclusiveDeals: vi.fn()
+}));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
         OwnerPromotionService: class MockOwnerPromotionService extends orig.OwnerPromotionService {
-            override findExclusiveDeals = findExclusiveDeals;
+            override findExclusiveDeals = mocks.findExclusiveDeals;
         }
     };
 });
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mocks.effectiveSet })
+}));
 
 const { initApp } = await import('../../../../src/app.js');
 type AppOpenAPI = Awaited<ReturnType<typeof initApp>>;
 
 const BASE = '/api/v1/protected/owner-promotions/exclusive-deals';
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+let hasVipPromotionsAccess = false;
+
+function grantEffectiveSet(): void {
+    mocks.effectiveSet.mockImplementation(
+        async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
+                entries: [
+                    { key: 'exclusive_deals', value: 1, strategy: 'MAX' as const },
+                    ...(hasVipPromotionsAccess
+                        ? [{ key: 'vip_promotions_access', value: 1, strategy: 'MAX' as const }]
+                        : [])
+                ]
+            })
+    );
+}
 
 function makeHeaders(): Record<string, string> {
     return {
@@ -29,17 +57,18 @@ function makeHeaders(): Record<string, string> {
     };
 }
 
-describe('GET /api/v1/protected/owner-promotions/exclusive-deals (HOS-21 T-008)', () => {
+describe('TEST:V5:32 GET /api/v1/protected/owner-promotions/exclusive-deals', () => {
     let app: AppOpenAPI;
 
     beforeEach(() => {
         app = initApp() as unknown as AppOpenAPI;
-        findExclusiveDeals.mockClear();
-    });
-
-    it('is registered and reachable (not 404)', async () => {
-        const res = await app.request(BASE, { headers: makeHeaders() });
-        expect(res.status).not.toBe(404);
+        mocks.effectiveSet.mockClear();
+        hasVipPromotionsAccess = false;
+        grantEffectiveSet();
+        mocks.findExclusiveDeals.mockReset().mockResolvedValue({
+            data: { items: [], total: 4 },
+            error: undefined
+        });
     });
 
     it('returns 401 for an unauthenticated request', async () => {
@@ -49,32 +78,63 @@ describe('GET /api/v1/protected/owner-promotions/exclusive-deals (HOS-21 T-008)'
         expect(res.status).toBe(401);
     });
 
-    // HOS-1352: transitional until V3 (HOS-1357), see PR
-    it('returns 200 with an empty collection', async () => {
+    it('rejects a missing exclusive_deals key before querying promotions', async () => {
+        mocks.effectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: true,
+                    inheritsTouristVip: false,
+                    entries: []
+                })
+        );
+
         const res = await app.request(BASE, { headers: makeHeaders() });
+        expect(res.status).toBe(403);
+        expect(await res.json()).toMatchObject({
+            error: {
+                code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                details: { entitlementKey: 'exclusive_deals' }
+            }
+        });
+        expect(mocks.findExclusiveDeals).not.toHaveBeenCalled();
+    });
+
+    it('lists PLUS deals when the effective set lacks vip_promotions_access', async () => {
+        const res = await app.request(`${BASE}?page=2&pageSize=5`, { headers: makeHeaders() });
+
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.data.items).toEqual([]);
-        expect(body.data.pagination.total).toBe(0);
+        expect(body.data.pagination).toMatchObject({ page: 2, pageSize: 5, total: 4 });
+        expect(mocks.findExclusiveDeals).toHaveBeenCalledWith(
+            expect.objectContaining({ id: ACTOR_ID }),
+            { page: 2, pageSize: 5, accommodationId: undefined },
+            ['plus']
+        );
     });
 
-    it('preserves requested pagination', async () => {
-        const res = await app.request(`${BASE}?page=2&pageSize=5`, { headers: makeHeaders() });
+    it('lists PLUS and VIP deals when the effective set grants vip_promotions_access', async () => {
+        hasVipPromotionsAccess = true;
+        grantEffectiveSet();
+
+        const res = await app.request(BASE, { headers: makeHeaders() });
+
         expect(res.status).toBe(200);
-        const body = await res.json();
-        expect(body.data.pagination.page).toBe(2);
-        expect(body.data.pagination.pageSize).toBe(5);
+        expect(mocks.findExclusiveDeals).toHaveBeenCalledWith(
+            expect.objectContaining({ id: ACTOR_ID }),
+            { page: 1, pageSize: 20, accommodationId: undefined },
+            ['plus', 'vip']
+        );
     });
 
-    it('does not query exclusive deals', async () => {
-        await app.request(BASE, { headers: makeHeaders() });
-        expect(findExclusiveDeals).not.toHaveBeenCalled();
-    });
-
-    it('rejects an invalid accommodationId', async () => {
+    it('rejects an invalid accommodationId before reading effective keys', async () => {
         const res = await app.request(`${BASE}?accommodationId=invalid`, {
             headers: makeHeaders()
         });
         expect(res.status).toBe(400);
+        expect(mocks.effectiveSet).not.toHaveBeenCalled();
     });
 });

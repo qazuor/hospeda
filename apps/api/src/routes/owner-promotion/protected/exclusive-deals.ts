@@ -1,43 +1,79 @@
 /**
  * Protected exclusive-deals list endpoint (HOS-21 T-008/T-009)
  *
- * The formerly paid inventory stays hidden while the replacement coverage
- * contract is being built. Keep the endpoint and its response shape so clients
- * can continue to request it safely.
+ * Tourist-facing listing of owner promotions scoped by touristAudience tier.
+ * Reuses `OwnerPromotionService.findExclusiveDeals` — not the public search path.
  *
- * Mounted at `/exclusive-deals`, a distinct path from `/` (list) and `/{id}`
- * (get/update/patch/delete) — per the Destination Hierarchy Routes precedent
- * (`docs/...`: "the by-path route is registered before :id routes to avoid
- * conflicts"), this file's route is registered before `get.ts` in
- * `protected/index.ts` so the literal path isn't swallowed by `/{id}`.
+ * Mounted at `/exclusive-deals` before `/{id}` in `protected/index.ts` so the
+ * literal path is not swallowed by the parameter route.
  */
 
-import { OwnerPromotionListItemSchema } from '@repo/schemas';
+import { OwnerPromotionListItemSchema, TouristAudienceEnum, VerticalEnum } from '@repo/schemas';
+import { OwnerPromotionService, ServiceError } from '@repo/service-core';
+import type { Context } from 'hono';
 import { z } from 'zod';
 
+import { getActorFromContext } from '../../../utils/actor';
+import { enforceUserGate, readEffectiveKeys } from '../../../utils/listing-access/user-gate';
+import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createProtectedListRoute } from '../../../utils/route-factory';
 
-/**
- * GET /api/v1/protected/owner-promotions/exclusive-deals
- * Return the transitional empty exclusive-deals collection.
- */
+const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
+
+/** GET /api/v1/protected/owner-promotions/exclusive-deals */
 export const protectedListExclusiveDealsRoute = createProtectedListRoute({
     method: 'get',
     path: '/exclusive-deals',
     summary: 'List exclusive deals',
-    description: 'Returns no exclusive deals while replacement coverage is pending.',
+    description:
+        "Returns active owner promotions scoped to the authenticated tourist's effective plan tier.",
     tags: ['Owner Promotions'],
     requestQuery: {
         accommodationId: z.string().uuid().optional()
     },
     responseSchema: OwnerPromotionListItemSchema,
-    handler: async (_ctx, _params, _body, query) => {
+    handler: async (
+        ctx: Context,
+        _params: Record<string, unknown>,
+        _body: Record<string, unknown>,
+        query?: Record<string, unknown>
+    ) => {
+        const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query ?? {});
-        // HOS-1352: transitional until V3 (HOS-1357), see PR: the effective capability resolver restores exclusive-deal visibility.
+
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['exclusive_deals']
+        });
+
+        const effectiveKeys = await readEffectiveKeys({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['vip_promotions_access']
+        });
+        const audienceScope = effectiveKeys.vip_promotions_access
+            ? [TouristAudienceEnum.PLUS, TouristAudienceEnum.VIP]
+            : [TouristAudienceEnum.PLUS];
+
+        const result = await ownerPromotionService.findExclusiveDeals(
+            actor,
+            {
+                page,
+                pageSize,
+                accommodationId: query?.accommodationId as string | undefined
+            },
+            audienceScope
+        );
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
         return {
-            items: [],
-            pagination: getPaginationResponse(0, { page, pageSize })
+            items: result.data?.items ?? [],
+            pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
         };
     },
     options: {}

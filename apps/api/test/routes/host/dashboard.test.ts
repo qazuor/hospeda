@@ -1,6 +1,7 @@
 /** Host dashboard property counts and unread conversations after plan removal. */
-import { LifecycleStatusEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, RoleEnum, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -28,6 +29,20 @@ vi.mock('@repo/service-core', async (importActual) => {
         }
     };
 });
+
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'view_basic_stats', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // Import AFTER the mocks are registered so the route picks up the mocked deps.
 const { hostDashboardRoute } = await import('../../../src/routes/host/protected/dashboard');

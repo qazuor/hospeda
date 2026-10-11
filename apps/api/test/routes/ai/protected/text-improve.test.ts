@@ -44,6 +44,7 @@ const { streamTextCalls } = vi.hoisted(() => ({
 
 /** Actor id seeded by the stubbed auth middleware; `ai_usage` rows key on it. */
 const TEST_ACTOR_ID = 'test-actor-text-improve-unit';
+const { mockEffectiveSet } = vi.hoisted(() => ({ mockEffectiveSet: vi.fn() }));
 
 /** Configurable stream contents for the next stubbed streamText call. */
 const { nextStreamDeltas, nextMeta, nextPreStreamThrow, nextPostDrainThrow, mockRecordAiUsage } =
@@ -111,6 +112,9 @@ vi.mock('../../../../src/middlewares/authorization', () => ({
  */
 vi.mock('../../../../src/middlewares/ai-rate-limit', () => ({
     createAiRateLimitMiddlewares: () => []
+}));
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
 }));
 
 /**
@@ -226,6 +230,7 @@ vi.mock('@repo/ai-core', () => ({
     AiEngineError,
     AiModerationBlockedError,
     AiFeatureNotConfiguredError,
+    getMonthlyCallCount: vi.fn(async () => 0),
     recordAiUsage: mockRecordAiUsage
 }));
 
@@ -345,9 +350,13 @@ const POST = (
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('protected AI text-improve route (SPEC-198 T-005)', () => {
+describe('TEST:V5:32 protected AI text-improve route (SPEC-198 T-005)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockEffectiveSet.mockImplementation(async () => ({
+            entitlements: { get: () => 1 },
+            limits: { get: () => 50 }
+        }));
         streamTextCalls.length = 0;
         nextStreamDeltas.current = ['Hola', ' mundo'];
         nextMeta.current = Promise.resolve({

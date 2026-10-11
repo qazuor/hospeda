@@ -15,8 +15,8 @@
  *
  *   auth → rateLimit-perUser → rateLimit-perIP
  *
- * The old entitlement and monthly quota middleware are suspended during the
- * billing transition. Burst rate limits and usage metering remain active.
+ * Burst rate limits and usage metering remain active alongside the in-handler
+ * effective entitlement and monthly quota checks.
  *
  * ## Per-request service
  *
@@ -35,13 +35,14 @@
  */
 
 import type { AiFeature, AiTextImprove, LanguageEnum } from '@repo/schemas';
-import { AiTextImproveRequestSchema } from '@repo/schemas';
+import { AiTextImproveRequestSchema, VerticalEnum } from '@repo/schemas';
 
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
 
 import { createConfiguredAiService } from '../../../services/ai-service.factory';
 import { getActorFromContext } from '../../../utils/actor';
 import { meterAiUsage } from '../../../utils/ai-usage-metering';
+import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate';
 import { apiLogger } from '../../../utils/logger';
 import {
     createProtectedStreamingRoute,
@@ -119,7 +120,7 @@ export function buildTextImprovePrompt(input: AiTextImprove): string {
  * stack, so we only need to specify the AI-specific middleware here.
  * The `requiredPermissions` is omitted — the AI feature is gated by
  * the `ai_text_improve` billing entitlement (not a `PermissionEnum`),
- * which is enforced downstream by `createAiQuotaMiddleware`.
+ * enforced after request validation.
  */
 export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
     path: '/',
@@ -132,8 +133,6 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
     options: {
         middlewares: [
             // Per-user burst rate limit + per-IP rate limit (defaults from SPEC-173).
-            // The per-vertical entitlement router was removed with the legacy
-            // billing system (HOS-1416).
             ...createAiRateLimitMiddlewares(FEATURE)
         ]
     },
@@ -146,10 +145,21 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
         // into the handler — Hono caches c.req.json() so this is a free lookup.
         const body = (await c.req.json()) as AiTextImprove;
         const { locale } = body;
-        // HOS-1075: absent means 'accommodation' — see AiTextImproveEntityTypeSchema
-        // and aiTextImproveEntitlementRouter, which apply the same default when
-        // deciding which entitlement set to load.
+        // HOS-1075: absent means 'accommodation'.
         const entityType = body.entityType ?? 'accommodation';
+        const VERTICAL_BY_ENTITY_TYPE = {
+            accommodation: VerticalEnum.ACCOMMODATION,
+            gastronomy: VerticalEnum.GASTRONOMY,
+            experience: VerticalEnum.EXPERIENCE
+        } as const;
+        const vertical = VERTICAL_BY_ENTITY_TYPE[entityType];
+        await enforceAiQuota({
+            userId: actor.id,
+            vertical,
+            feature: FEATURE,
+            entitlementKey: 'ai_text_improve',
+            limitKey: 'max_ai_text_improve_per_month'
+        });
 
         const prompt = buildTextImprovePrompt(body);
         const aiService = await createConfiguredAiService();
