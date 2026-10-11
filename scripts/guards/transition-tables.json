@@ -430,7 +430,6 @@
             "writes": [
                 "subscription.status",
                 "domain_event.changes",
-                "subscription.next_charge_at",
                 "subscription.authorization_window_ends_at",
                 "subscription.payment_method",
                 "subscription.succeeds_id"
@@ -445,7 +444,7 @@
             "guard": {},
             "reads": [],
             "inputs": [],
-            "writes": ["subscription.status", "domain_event.changes", "subscription.next_charge_at"]
+            "writes": ["subscription.status", "domain_event.changes"]
         },
         {
             "id": "TRANS:B:S3",
@@ -480,7 +479,7 @@
             },
             "reads": [],
             "inputs": ["provider:payment_by_id"],
-            "writes": ["subscription.status", "domain_event.changes", "subscription.next_charge_at"]
+            "writes": ["subscription.status", "domain_event.changes"]
         },
         {
             "id": "TRANS:B:S6",
@@ -514,7 +513,7 @@
             },
             "reads": [],
             "inputs": ["provider:payment_by_id"],
-            "writes": ["subscription.status", "domain_event.changes", "subscription.next_charge_at"]
+            "writes": ["subscription.status", "domain_event.changes"]
         },
         {
             "id": "TRANS:B:S8",
@@ -547,7 +546,7 @@
             "guard": {},
             "reads": [],
             "inputs": ["provider:read_by_id"],
-            "writes": ["subscription.status", "domain_event.changes"]
+            "writes": ["subscription.status", "domain_event.changes", "subscription.next_charge_at"]
         },
         {
             "id": "TRANS:B:S11",
@@ -1008,11 +1007,7 @@
             "guard": {},
             "reads": ["subscription.next_charge_at"],
             "inputs": ["clock:now"],
-            "writes": [
-                "manual_payment.status",
-                "domain_event.changes",
-                "subscription.next_charge_at"
-            ]
+            "writes": ["manual_payment.status", "domain_event.changes"]
         },
         {
             "id": "TRANS:B:MP6",
