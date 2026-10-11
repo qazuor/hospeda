@@ -26,6 +26,8 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import type { CapabilitySupportMap, PaymentCapability } from '../provider/capabilities';
 import type {
     AuthorizationRef,
+    AuthorizationSearchInput,
+    AuthorizationSearchResult,
     AuthorizationSnapshot,
     AuthorizeInput,
     AuthorizeResult,
@@ -44,6 +46,7 @@ import type {
 import { type ProviderRead, stampProviderRead } from '../provider/provider-read';
 import {
     AuthorizationRefSchema,
+    AuthorizationSearchInputSchema,
     AuthorizeInputSchema,
     ChangeAmountInputSchema,
     ChargeInputSchema,
@@ -58,6 +61,7 @@ import { decodeFakeNotice } from './fake-notice';
 import { type FakePaymentProviderOptions, parseFakeOptions } from './fake-options';
 import { FakeOutbox } from './fake-outbox';
 import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
+import { searchStoredAuthorizations } from './fake-search';
 import {
     APPROVAL_BASE_URL,
     assertSameCurrency,
@@ -432,6 +436,23 @@ export class FakePaymentProvider implements PaymentProvider {
                 .snapshot
         );
         return stampProviderRead({ snapshot, clock: this.clock });
+    }
+
+    /** Capability 7 · search authorizations. */
+    async searchAuthorizations(
+        input: AuthorizationSearchInput
+    ): Promise<AuthorizationSearchResult> {
+        const { value } = parseProviderInput({
+            schema: AuthorizationSearchInputSchema,
+            input,
+            capability: 'read'
+        });
+        this.catchUp();
+        return searchStoredAuthorizations({
+            stored: this.ledger.authorizations.values(),
+            input: value,
+            partial: this.lying({ lie: 'M4' })
+        });
     }
 
     /** Capability 7 · read a charge by id. */

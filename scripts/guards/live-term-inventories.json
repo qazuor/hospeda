@@ -8,6 +8,13 @@
             "subject": "subscription"
         },
         {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
+            "symbol": "listSweepInventoryPage",
+            "row": null,
+            "why": "B11 lista desde nuestro inventario las suscripciones vivas con vínculo para leerlas por id; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/service-core/src/services/plan-catalog/plan-publication.anchored-customers.ts",
             "symbol": "countAnchoredCustomersFromSubscriptions",
             "row": null,

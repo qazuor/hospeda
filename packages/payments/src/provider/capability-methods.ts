@@ -17,7 +17,7 @@ export const CAPABILITY_METHODS = {
     pauseAndResume: ['pause', 'resume'],
     cancel: ['cancel'],
     refund: ['refund'],
-    read: ['readAuthorization', 'readCharge'],
+    read: ['readAuthorization', 'readCharge', 'searchAuthorizations'],
     notify: ['decodeNotice']
 } as const satisfies {
     readonly [C in PaymentCapability]: readonly [PaymentProviderMethod, ...PaymentProviderMethod[]];
