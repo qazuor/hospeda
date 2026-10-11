@@ -1,5 +1,5 @@
 {
-  "id": "5c7f46cd-a4f5-4c74-9989-bad3459ea22b",
+  "id": "343e67f3-4a21-49c2-bb3a-9e7b80c6598a",
   "prevId": "422f23ed-62e9-45ca-942c-133ebdcc506c",
   "version": "7",
   "dialect": "postgresql",
@@ -16861,6 +16861,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "tier": {
+          "name": "tier",
+          "type": "partner_tier_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
         "logo_url": {
           "name": "logo_url",
           "type": "text",
@@ -16912,16 +16919,15 @@
           "primaryKey": false,
           "notNull": false
         },
-        "presence_moderated": {
-          "name": "presence_moderated",
-          "type": "boolean",
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
-          "notNull": true,
-          "default": false
+          "notNull": false
         },
-        "claim_secret_hash": {
-          "name": "claim_secret_hash",
-          "type": "text",
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -17056,11 +17062,41 @@
           "method": "btree",
           "with": {}
         },
+        "partners_tier_idx": {
+          "name": "partners_tier_idx",
+          "columns": [
+            {
+              "expression": "tier",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "partners_lifecycleState_idx": {
           "name": "partners_lifecycleState_idx",
           "columns": [
             {
               "expression": "lifecycle_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "partners_startsAt_idx": {
+          "name": "partners_startsAt_idx",
+          "columns": [
+            {
+              "expression": "starts_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -17086,22 +17122,6 @@
           "method": "btree",
           "with": {}
         },
-        "uq_partners_owner_user_id": {
-          "name": "uq_partners_owner_user_id",
-          "columns": [
-            {
-              "expression": "owner_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"partners\".\"owner_user_id\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "partners_contentReviewState_idx": {
           "name": "partners_contentReviewState_idx",
           "columns": [
@@ -17122,6 +17142,27 @@
           "columns": [
             {
               "expression": "deleted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "partners_lifecycleState_endsAt_idx": {
+          "name": "partners_lifecycleState_endsAt_idx",
+          "columns": [
+            {
+              "expression": "lifecycle_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "ends_at",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -17608,137 +17649,6 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.partner_application": {
-      "name": "partner_application",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "partner_application_status_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'PENDING'"
-        },
-        "resolved_at": {
-          "name": "resolved_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "partner_id": {
-          "name": "partner_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "wait_cancelled_at": {
-          "name": "wait_cancelled_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "wait_cancelled_by": {
-          "name": "wait_cancelled_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deadlines_version": {
-          "name": "deadlines_version",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "uq_partner_application_pending_email": {
-          "name": "uq_partner_application_pending_email",
-          "columns": [
-            {
-              "expression": "lower(\"email\")",
-              "asc": true,
-              "isExpression": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"partner_application\".\"status\" = 'PENDING'",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "partner_application_partner_id_partners_id_fk": {
-          "name": "partner_application_partner_id_partners_id_fk",
-          "tableFrom": "partner_application",
-          "tableTo": "partners",
-          "columnsFrom": [
-            "partner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
-        "partner_application_wait_cancelled_by_users_id_fk": {
-          "name": "partner_application_wait_cancelled_by_users_id_fk",
-          "tableFrom": "partner_application",
-          "tableTo": "users",
-          "columnsFrom": [
-            "wait_cancelled_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ck_partner_application_partner_iff_approved": {
-          "name": "ck_partner_application_partner_iff_approved",
-          "value": "(\"partner_application\".\"status\" = 'APPROVED') = (\"partner_application\".\"partner_id\" IS NOT NULL)"
-        },
-        "ck_partner_application_wait_cancel_pair": {
-          "name": "ck_partner_application_wait_cancel_pair",
-          "value": "\"partner_application\".\"wait_cancelled_by\" IS NULL OR \"partner_application\".\"wait_cancelled_at\" IS NOT NULL"
-        }
-      },
       "isRLSEnabled": false
     },
     "public.platform_settings": {
@@ -28072,6 +27982,137 @@
       },
       "isRLSEnabled": false
     },
+    "public.covered_period": {
+      "name": "covered_period",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "period_start": {
+          "name": "period_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_id": {
+          "name": "payment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manual_payment_id": {
+          "name": "manual_payment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "credited_at": {
+          "name": "credited_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "released_at": {
+          "name": "released_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_covered_period_open_subscription_period": {
+          "name": "uq_covered_period_open_subscription_period",
+          "columns": [
+            {
+              "expression": "subscription_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "period_start",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"covered_period\".\"released_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "covered_period_subscription_id_subscription_id_fk": {
+          "name": "covered_period_subscription_id_subscription_id_fk",
+          "tableFrom": "covered_period",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "covered_period_payment_id_payment_id_fk": {
+          "name": "covered_period_payment_id_payment_id_fk",
+          "tableFrom": "covered_period",
+          "tableTo": "payment",
+          "columnsFrom": [
+            "payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "covered_period_manual_payment_id_manual_payment_id_fk": {
+          "name": "covered_period_manual_payment_id_manual_payment_id_fk",
+          "tableFrom": "covered_period",
+          "tableTo": "manual_payment",
+          "columnsFrom": [
+            "manual_payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_covered_period_one_payment": {
+          "name": "ck_covered_period_one_payment",
+          "value": "(\"covered_period\".\"payment_id\" IS NOT NULL) <> (\"covered_period\".\"manual_payment_id\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.idempotency_key": {
       "name": "idempotency_key",
       "schema": "",
@@ -28237,6 +28278,165 @@
         "ck_manual_payment_proof": {
           "name": "ck_manual_payment_proof",
           "value": "\"manual_payment\".\"proof_ref\" IS NULL OR \"manual_payment\".\"status\" = 'REGISTERED'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.payment": {
+      "name": "payment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "addon_instance_id": {
+          "name": "addon_instance_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider": {
+          "name": "provider",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_fact_id": {
+          "name": "provider_fact_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_payment_id": {
+          "name": "provider_payment_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fact_at": {
+          "name": "fact_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "refunded_amount": {
+          "name": "refunded_amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "payment_subscription_id_subscription_id_fk": {
+          "name": "payment_subscription_id_subscription_id_fk",
+          "tableFrom": "payment",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "payment_addon_instance_id_addon_instance_id_fk": {
+          "name": "payment_addon_instance_id_addon_instance_id_fk",
+          "tableFrom": "payment",
+          "tableTo": "addon_instance",
+          "columnsFrom": [
+            "addon_instance_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_payment_provider_fact": {
+          "name": "uq_payment_provider_fact",
+          "nullsNotDistinct": false,
+          "columns": [
+            "provider",
+            "provider_fact_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_payment_one_subject": {
+          "name": "ck_payment_one_subject",
+          "value": "(\"payment\".\"subscription_id\" IS NOT NULL) <> (\"payment\".\"addon_instance_id\" IS NOT NULL)"
+        },
+        "ck_payment_amount_nonnegative": {
+          "name": "ck_payment_amount_nonnegative",
+          "value": "\"payment\".\"amount\" >= 0"
+        },
+        "ck_payment_status": {
+          "name": "ck_payment_status",
+          "value": "\"payment\".\"status\" IN ('PENDING', 'SUCCEEDED', 'FAILED', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CHARGED_BACK')"
+        },
+        "ck_payment_refunded_amount": {
+          "name": "ck_payment_refunded_amount",
+          "value": "\"payment\".\"refunded_amount\" >= 0 AND \"payment\".\"refunded_amount\" <= \"payment\".\"amount\""
+        },
+        "ck_payment_version": {
+          "name": "ck_payment_version",
+          "value": "\"payment\".\"version\" >= 1"
         }
       },
       "isRLSEnabled": false
@@ -29525,6 +29725,120 @@
       },
       "isRLSEnabled": false
     },
+    "public.receipt": {
+      "name": "receipt",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "payment_id": {
+          "name": "payment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manual_payment_id": {
+          "name": "manual_payment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "receipt_number": {
+          "name": "receipt_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pdf_ref": {
+          "name": "pdf_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payer_name": {
+          "name": "payer_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payer_email": {
+          "name": "payer_email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "issued_at": {
+          "name": "issued_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "receipt_payment_id_payment_id_fk": {
+          "name": "receipt_payment_id_payment_id_fk",
+          "tableFrom": "receipt",
+          "tableTo": "payment",
+          "columnsFrom": [
+            "payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "receipt_manual_payment_id_manual_payment_id_fk": {
+          "name": "receipt_manual_payment_id_manual_payment_id_fk",
+          "tableFrom": "receipt",
+          "tableTo": "manual_payment",
+          "columnsFrom": [
+            "manual_payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_receipt_receipt_number": {
+          "name": "uq_receipt_receipt_number",
+          "nullsNotDistinct": false,
+          "columns": [
+            "receipt_number"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_receipt_one_payment": {
+          "name": "ck_receipt_one_payment",
+          "value": "(\"receipt\".\"payment_id\" IS NOT NULL) <> (\"receipt\".\"manual_payment_id\" IS NOT NULL)"
+        },
+        "ck_receipt_payer_pair": {
+          "name": "ck_receipt_payer_pair",
+          "value": "(\"receipt\".\"payer_name\" IS NULL) = (\"receipt\".\"payer_email\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.reconciliation_mark": {
       "name": "reconciliation_mark",
       "schema": "",
@@ -29691,6 +30005,456 @@
         "ck_reconciliation_mark_version_positive": {
           "name": "ck_reconciliation_mark_version_positive",
           "value": "\"reconciliation_mark\".\"version\" >= 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.reconciliation_mark_payment": {
+      "name": "reconciliation_mark_payment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "mark_id": {
+          "name": "mark_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payment_id": {
+          "name": "payment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manual_payment_id": {
+          "name": "manual_payment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hung_at": {
+          "name": "hung_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "resolved_at": {
+          "name": "resolved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refund_id": {
+          "name": "refund_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fk_reconciliation_mark_payment_mark": {
+          "name": "fk_reconciliation_mark_payment_mark",
+          "tableFrom": "reconciliation_mark_payment",
+          "tableTo": "reconciliation_mark",
+          "columnsFrom": [
+            "mark_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_reconciliation_mark_payment_payment": {
+          "name": "fk_reconciliation_mark_payment_payment",
+          "tableFrom": "reconciliation_mark_payment",
+          "tableTo": "payment",
+          "columnsFrom": [
+            "payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_reconciliation_mark_payment_manual_payment": {
+          "name": "fk_reconciliation_mark_payment_manual_payment",
+          "tableFrom": "reconciliation_mark_payment",
+          "tableTo": "manual_payment",
+          "columnsFrom": [
+            "manual_payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_reconciliation_mark_payment_refund": {
+          "name": "fk_reconciliation_mark_payment_refund",
+          "tableFrom": "reconciliation_mark_payment",
+          "tableTo": "refund",
+          "columnsFrom": [
+            "refund_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_reconciliation_mark_payment_payment": {
+          "name": "uq_reconciliation_mark_payment_payment",
+          "nullsNotDistinct": false,
+          "columns": [
+            "mark_id",
+            "payment_id"
+          ]
+        },
+        "uq_reconciliation_mark_payment_manual_payment": {
+          "name": "uq_reconciliation_mark_payment_manual_payment",
+          "nullsNotDistinct": false,
+          "columns": [
+            "mark_id",
+            "manual_payment_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_reconciliation_mark_payment_one_payment": {
+          "name": "ck_reconciliation_mark_payment_one_payment",
+          "value": "(\"reconciliation_mark_payment\".\"payment_id\" IS NOT NULL) <> (\"reconciliation_mark_payment\".\"manual_payment_id\" IS NOT NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.refund_call": {
+      "name": "refund_call",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "refund_id": {
+          "name": "refund_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_refund_id": {
+          "name": "provider_refund_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "addon_instance_id": {
+          "name": "addon_instance_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_refund_call_order_awaiting_id": {
+          "name": "uq_refund_call_order_awaiting_id",
+          "columns": [
+            {
+              "expression": "addon_instance_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"refund_call\".\"addon_instance_id\" IS NOT NULL AND \"refund_call\".\"provider_refund_id\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "refund_call_refund_id_refund_id_fk": {
+          "name": "refund_call_refund_id_refund_id_fk",
+          "tableFrom": "refund_call",
+          "tableTo": "refund",
+          "columnsFrom": [
+            "refund_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "refund_call_idempotency_key_idempotency_key_key_fk": {
+          "name": "refund_call_idempotency_key_idempotency_key_key_fk",
+          "tableFrom": "refund_call",
+          "tableTo": "idempotency_key",
+          "columnsFrom": [
+            "idempotency_key"
+          ],
+          "columnsTo": [
+            "key"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "refund_call_addon_instance_id_addon_instance_id_fk": {
+          "name": "refund_call_addon_instance_id_addon_instance_id_fk",
+          "tableFrom": "refund_call",
+          "tableTo": "addon_instance",
+          "columnsFrom": [
+            "addon_instance_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "uq_refund_call_idempotency_key": {
+          "name": "uq_refund_call_idempotency_key",
+          "nullsNotDistinct": false,
+          "columns": [
+            "idempotency_key"
+          ]
+        },
+        "uq_refund_call_provider_refund_id": {
+          "name": "uq_refund_call_provider_refund_id",
+          "nullsNotDistinct": false,
+          "columns": [
+            "provider_refund_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "ck_refund_call_amount_positive": {
+          "name": "ck_refund_call_amount_positive",
+          "value": "\"refund_call\".\"amount\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.refund": {
+      "name": "refund",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "payment_id": {
+          "name": "payment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "manual_payment_id": {
+          "name": "manual_payment_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confirmed_by": {
+          "name": "confirmed_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "executed_via": {
+          "name": "executed_via",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "settled_by": {
+          "name": "settled_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "external_ref": {
+          "name": "external_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "refund_payment_id_payment_id_fk": {
+          "name": "refund_payment_id_payment_id_fk",
+          "tableFrom": "refund",
+          "tableTo": "payment",
+          "columnsFrom": [
+            "payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "refund_manual_payment_id_manual_payment_id_fk": {
+          "name": "refund_manual_payment_id_manual_payment_id_fk",
+          "tableFrom": "refund",
+          "tableTo": "manual_payment",
+          "columnsFrom": [
+            "manual_payment_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "refund_confirmed_by_users_id_fk": {
+          "name": "refund_confirmed_by_users_id_fk",
+          "tableFrom": "refund",
+          "tableTo": "users",
+          "columnsFrom": [
+            "confirmed_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "refund_settled_by_users_id_fk": {
+          "name": "refund_settled_by_users_id_fk",
+          "tableFrom": "refund",
+          "tableTo": "users",
+          "columnsFrom": [
+            "settled_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_refund_one_payment": {
+          "name": "ck_refund_one_payment",
+          "value": "(\"refund\".\"payment_id\" IS NOT NULL) <> (\"refund\".\"manual_payment_id\" IS NOT NULL)"
+        },
+        "ck_refund_amount_positive": {
+          "name": "ck_refund_amount_positive",
+          "value": "\"refund\".\"amount\" > 0"
+        },
+        "ck_refund_status": {
+          "name": "ck_refund_status",
+          "value": "\"refund\".\"status\" IN ('REQUESTED', 'CONFIRMED', 'EXECUTED', 'FAILED')"
+        },
+        "ck_refund_execution_channel": {
+          "name": "ck_refund_execution_channel",
+          "value": "\"refund\".\"executed_via\" IS NULL OR \"refund\".\"executed_via\" IN ('PROVIDER', 'EXTERNAL')"
+        },
+        "ck_refund_execution_pair": {
+          "name": "ck_refund_execution_pair",
+          "value": "(\"refund\".\"status\" = 'EXECUTED') = (\"refund\".\"executed_via\" IS NOT NULL)"
+        },
+        "ck_refund_settled_by_execution": {
+          "name": "ck_refund_settled_by_execution",
+          "value": "\"refund\".\"settled_by\" IS NULL OR \"refund\".\"status\" = 'EXECUTED'"
+        },
+        "ck_refund_version": {
+          "name": "ck_refund_version",
+          "value": "\"refund\".\"version\" >= 1"
         }
       },
       "isRLSEnabled": false
@@ -30690,6 +31454,14 @@
         "OTHER"
       ]
     },
+    "public.partner_tier_enum": {
+      "name": "partner_tier_enum",
+      "schema": "public",
+      "values": [
+        "silver",
+        "gold"
+      ]
+    },
     "public.partner_type_enum": {
       "name": "partner_type_enum",
       "schema": "public",
@@ -31608,7 +32380,6 @@
         "HOST",
         "GASTRONOMY_OWNER",
         "EXPERIENCE_OWNER",
-        "PARTNER_OWNER",
         "SPONSOR",
         "USER",
         "GUEST",
@@ -31848,15 +32619,6 @@
         "ARCHIVED",
         "MODERATED",
         "PURGED"
-      ]
-    },
-    "public.partner_application_status_enum": {
-      "name": "partner_application_status_enum",
-      "schema": "public",
-      "values": [
-        "PENDING",
-        "APPROVED",
-        "REJECTED"
       ]
     },
     "public.post_media_state_enum": {
