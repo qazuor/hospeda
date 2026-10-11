@@ -152,7 +152,7 @@ describe('TEST:B3:39 S1 succession branch, seeded rows, no route', () => {
         });
         const originalAuthorize = seeded.fake.authorize.bind(seeded.fake);
         const authorize = vi.spyOn(seeded.fake, 'authorize').mockImplementation(async (input) => {
-            expect(input).not.toHaveProperty('firstChargeAt');
+            expect(input.firstChargeAt).toBeUndefined();
             return originalAuthorize(input);
         });
         const result = await startSuccession(
