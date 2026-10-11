@@ -15,7 +15,13 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import { type InventoryEntry, type InventoryKey, loadInventories } from './live-term-inventory.js';
+import {
+    INVENTORY_KEYS,
+    type InventoryEntry,
+    type InventoryKey,
+    loadInventories,
+    validateEntries
+} from './live-term-inventory.js';
 import { CODE_FILE, listProductionFiles, TEST_FILE } from './succession-writers-scan.js';
 
 export const MIN_SCANNED_FILES = 1000;
@@ -257,8 +263,16 @@ export function run(
             exitCode: 1,
             output: `G-R1-E: scanned ${files.length} files; expected at least ${minimum}`
         };
-    const loaded = args.inventories
-        ? { inventories: args.inventories, findings: [] }
+    const injectedInventories = args.inventories;
+    const loaded = injectedInventories
+        ? {
+              inventories: injectedInventories,
+              findings: INVENTORY_KEYS.flatMap((key) =>
+                  key in injectedInventories
+                      ? validateEntries({ key, entries: injectedInventories[key] })
+                      : [{ key, detail: 'missing top-level key' }]
+              )
+          }
         : loadInventories({ root });
     const errors: string[] = loaded.findings.map(
         (f) => `G-R1-E (UNLISTED_CONSUMER): ${INVENTORY_PATH_PLACEHOLDER}:${f.key} ${f.detail}`
