@@ -69,10 +69,11 @@ async function mark(
     },
     markPayments?: ReconciliationMarkPayments
 ) {
+    const reason: ReconciliationMarkReason = input.reason;
     const result = await openReconciliationMark(
         {
             subject: { kind: 'SUBSCRIPTION', subscriptionId: input.subscriptionId },
-            reason: input.reason,
+            reason,
             payment: input.arrival.kind === 'CHARGE' ? input.arrival.payment : undefined,
             actor: { type: input.actor },
             correlationId: input.correlationId,

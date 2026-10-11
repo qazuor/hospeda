@@ -35,10 +35,11 @@ export async function recordDivergence(
     input: RecordDivergenceInput,
     ports: { readonly markPayments?: ReconciliationMarkPayments } = {}
 ) {
+    const reason: ReconciliationMarkReason = input.divergence.reason;
     const result = await openReconciliationMark(
         {
             subject: { kind: 'SUBSCRIPTION', subscriptionId: input.subscriptionId },
-            reason: input.divergence.reason,
+            reason,
             payment: input.divergence.payment,
             actor: { type: 'job' },
             correlationId: input.correlationId
