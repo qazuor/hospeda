@@ -24,7 +24,7 @@
  *    fails loudly.
  */
 
-import { PartnerTierEnum, PartnerTypeEnum } from '@repo/schemas';
+import { PartnerTypeEnum } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors';
@@ -41,13 +41,10 @@ function prodPartner() {
         name: 'Fundación Entre Ríos Sustentable',
         slug: 'fundacion-entre-rios-sustentable',
         type: PartnerTypeEnum.NGO,
-        tier: PartnerTierEnum.GOLD,
         logoUrl: 'https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg',
         websiteUrl: 'https://www.entreriossustentable.org.ar',
         description: 'Una fundación de prueba.',
-        lifecycleState: 'ACTIVE',
-        startsAt: new Date('2025-01-15T00:00:00.000Z'),
-        endsAt: null
+        lifecycleState: 'ACTIVE'
     } as unknown as PartnerFormProps['initialData'];
 }
 
@@ -79,24 +76,8 @@ describe('PartnerForm — the save actually leaves (H-161)', () => {
         // bug rendered no error message either.
         await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
         expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({
-            slug: 'fundacion-entre-rios-sustentable',
-            tier: PartnerTierEnum.GOLD
+            slug: 'fundacion-entre-rios-sustentable'
         });
-    });
-
-    it('carries an edited tier through to the submitted values', async () => {
-        const { onSubmit } = renderForm();
-
-        // Changing the tier is the operation H-161 blocked outright, and per
-        // HOS-294 it is the one that decides whether the partner has a public
-        // page at all.
-        fireEvent.change(screen.getByLabelText(/^Tier/), {
-            target: { value: PartnerTierEnum.SILVER }
-        });
-        fireEvent.click(submitButton());
-
-        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
-        expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ tier: PartnerTierEnum.SILVER });
     });
 });
 

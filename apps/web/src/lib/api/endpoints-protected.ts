@@ -1237,7 +1237,7 @@ export type ReplyModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
 /**
  * A reply as the provider's own panel reads it (`GET /mine/reviews`).
  *
- * Carries `moderationReason`, which the directory tier does not: the rejected
+ * Carries `moderationReason`, which the directory listing does not: the rejected
  * author is the one person who needs to know why.
  */
 export interface OwnerReviewReply {
@@ -1933,15 +1933,12 @@ export interface MyPartner {
     readonly slug: string;
     readonly name: string;
     readonly type: string;
-    readonly tier: string;
     readonly logoUrl: string | null;
     readonly description: string | null;
     readonly websiteUrl: string | null;
     readonly contactInfo: MyPartnerContactInfo | null;
     readonly socialNetworks: MyPartnerSocialNetworks | null;
     readonly lifecycleState: string;
-    readonly startsAt: string | null;
-    readonly endsAt: string | null;
     readonly pendingLogoUrl: string | null;
     readonly pendingDescription: string | null;
     readonly pendingWebsiteUrl: string | null;
@@ -2038,7 +2035,6 @@ export interface MyPartnerStats {
         readonly id: string;
         readonly name: string;
         readonly slug?: string;
-        readonly tier?: string;
         readonly websiteUrl?: string;
     };
     readonly windowDays?: number;
@@ -2126,7 +2122,7 @@ export const partnersApi = {
      * no partner — the same fail-closed shape as {@link partnersApi.mineMentions},
      * and for the same reason: a 403 would confirm a partner exists.
      *
-     * The payload carries the NUMBERS plus `tier`/`slug`/`websiteUrl`, and says
+     * The payload carries the NUMBERS plus `slug`/`websiteUrl`, and says
      * nothing about which cards to render. That is `resolvePartnerLogoLink`'s
      * job — see `PartnerStatsSection.astro`.
      *
@@ -2563,7 +2559,7 @@ export const protectedAccommodationsApi = {
      * - `entitled`: whether the caller has the DISPLAY entitlement — lets the
      *   web decide between rendering the number vs an upsell.
      *
-     * Lives on the protected (per-user, no-store) tier on purpose: the public
+     * Lives on the protected (per-user, no-store) route on purpose: the public
      * detail payload is shared-cached, so the number cannot ride it safely.
      *
      * @param params - Accommodation ID + optional SSR cookie header.

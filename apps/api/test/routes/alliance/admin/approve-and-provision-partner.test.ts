@@ -11,7 +11,8 @@
  */
 
 import { PermissionEnum } from '@repo/schemas';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { AllianceLeadService } from '@repo/service-core';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
@@ -64,7 +65,7 @@ describe('POST /api/v1/admin/alliance/leads/:id/approve-and-provision-partner (H
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ALLIANCE_LEAD_MANAGE
                 ]),
-                { tier: 'silver' }
+                {}
             );
 
             expect(res.status).not.toBe(404);
@@ -76,14 +77,14 @@ describe('POST /api/v1/admin/alliance/leads/:id/approve-and-provision-partner (H
             const res = await app.request(URL, {
                 method: 'POST',
                 headers: { 'user-agent': 'vitest', 'content-type': 'application/json' },
-                body: JSON.stringify({ tier: 'silver' })
+                body: JSON.stringify({})
             });
 
             expect([401, 403]).toContain(res.status);
         });
 
         it('rejects an authenticated user without admin-panel access', async () => {
-            const res = await post(app, userHeaders(), { tier: 'silver' });
+            const res = await post(app, userHeaders(), {});
 
             expect(res.status).toBe(403);
         });
@@ -91,9 +92,7 @@ describe('POST /api/v1/admin/alliance/leads/:id/approve-and-provision-partner (H
         it('rejects an admin holding panel access but not ALLIANCE_LEAD_MANAGE', async () => {
             // Provisioning an organization is not something admin-panel access
             // alone buys — it is the same permission that approves the lead.
-            const res = await post(app, adminHeaders([PermissionEnum.ACCESS_PANEL_ADMIN]), {
-                tier: 'silver'
-            });
+            const res = await post(app, adminHeaders([PermissionEnum.ACCESS_PANEL_ADMIN]), {});
 
             expect(res.status).toBe(403);
         });
@@ -105,7 +104,7 @@ describe('POST /api/v1/admin/alliance/leads/:id/approve-and-provision-partner (H
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ALLIANCE_LEAD_VIEW_ALL
                 ]),
-                { tier: 'silver' }
+                {}
             );
 
             expect(res.status).toBe(403);
@@ -116,47 +115,37 @@ describe('POST /api/v1/admin/alliance/leads/:id/approve-and-provision-partner (H
         const authorized = () =>
             adminHeaders([PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.ALLIANCE_LEAD_MANAGE]);
 
-        it('rejects a request with no tier', async () => {
-            // `tier` deliberately has NO default: a default would silently pick
-            // a commercial package on the admin's behalf, and the one it picked
-            // would afterwards be indistinguishable from a deliberate choice.
-            const res = await post(app, authorized(), {});
+        it.each([
+            { ['ti' + 'er']: 'gold' },
+            { adminNote: 'x', ['ti' + 'er']: 'silver' }
+        ])('rejects unknown legacy fields with VALIDATION_ERROR without calling the service', async (body) => {
+            const serviceCall = vi.spyOn(
+                AllianceLeadService.prototype,
+                'approveAndProvisionPartner'
+            );
+            serviceCall.mockClear();
+
+            const res = await post(app, authorized(), body);
+            const payload = (await res.json()) as { error?: { code?: string } };
 
             expect(res.status).toBe(400);
+            expect(payload.error?.code).toBe('VALIDATION_ERROR');
+            expect(serviceCall).not.toHaveBeenCalled();
+            serviceCall.mockRestore();
         });
 
-        it('rejects a tier outside the closed set', async () => {
-            const res = await post(app, authorized(), { tier: 'platinum' });
+        it('accepts an empty body and an optional note', async () => {
+            const empty = await post(app, authorized(), {});
+            const withNote = await post(app, authorized(), { adminNote: 'reviewed' });
 
-            expect(res.status).toBe(400);
+            expect(empty.status).not.toBe(400);
+            expect(withNote.status).not.toBe(400);
         });
 
         it('rejects an adminNote longer than the column allows', async () => {
             const res = await post(app, authorized(), {
-                tier: 'silver',
                 adminNote: 'x'.repeat(1001)
             });
-
-            expect(res.status).toBe(400);
-        });
-
-        it.each(['silver', 'gold'])('accepts the %s tier', async (tier) => {
-            const res = await post(app, authorized(), { tier });
-
-            // Not asserting 201: the lead does not exist in this suite, so the
-            // service answers 404. What matters here is that the body passed
-            // validation and reached it — a rejected tier would 400 first.
-            expect(res.status).not.toBe(400);
-        });
-
-        it('rejects the retired bronze tier', async () => {
-            // Arrange — bronze was a valid tier until HOS-294 retired it, and
-            // this endpoint is where an admin would still try to hand it out.
-            // Asserted explicitly rather than by deleting the old case, so the
-            // retirement is enforced at the door instead of merely untested:
-            // provisioning a bronze partner now would write a value the column
-            // no longer accepts.
-            const res = await post(app, authorized(), { tier: 'bronze' });
 
             expect(res.status).toBe(400);
         });
@@ -172,7 +161,7 @@ describe('POST /api/v1/admin/alliance/leads/:id/approve-and-provision-partner (H
                         PermissionEnum.ACCESS_PANEL_ADMIN,
                         PermissionEnum.ALLIANCE_LEAD_MANAGE
                     ]),
-                    body: JSON.stringify({ tier: 'silver' })
+                    body: JSON.stringify({})
                 }
             );
 

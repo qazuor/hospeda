@@ -23,7 +23,7 @@
  * a second, hand-maintained mask is how the two drift apart.
  *
  * Actor-dependent, therefore NOT cacheable. No `cacheTTL`, and it may never move
- * to the public tier.
+ * to a public route.
  *
  * @module routes/partners/protected/mine-mentions
  */

@@ -3047,7 +3047,7 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
 /**
  * Normalize the contact info an experience listing publishes.
  *
- * NO LONGER DORMANT (HOS-815). The public tier now exposes a NARROWED
+ * NO LONGER DORMANT (HOS-815). The public route now exposes a NARROWED
  * `contactInfo` — `workEmail`, `workPhone`, `mobilePhone`, `website` — because
  * the listing form blocks publication without a phone or an email and then the
  * page showed neither, leaving the traveller with no way to reach the provider.
@@ -3283,15 +3283,8 @@ export function toExperienceDetailPageProps({
 }
 
 /**
- * Transforms a raw API partner item into the gold partner's detail props.
- *
- * Written fresh rather than adapted from the directory's card transform
- * (HOS-294 D-7): that one carried the tier, `isFeatured` and a clamped
- * description, all of which belonged to the retired listing.
- *
- * `tier` is deliberately not mapped. It decides whether this page exists at
- * all — a decision already made by the API before the payload gets here — and
- * is never shown to a reader.
+ * Transforms a raw API partner item into detail props. V7 restores this page
+ * on the public key; V6 keeps its public route dark.
  *
  * @param item - Raw partner object from the public API
  * @param locale - Active locale for i18n field resolution
@@ -3362,11 +3355,8 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
-        // Both carried for the tier branch in `PartnersSection` (HOS-294 D-1):
-        // a gold logo links to `/partners/<slug>/`, a silver one to its own
-        // site. Neither is ever rendered as text.
+        // Retained for the internal page link V7 restores on the public key.
         slug: item.slug == null ? undefined : String(item.slug),
-        tier: item.tier == null ? undefined : String(item.tier),
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
 }

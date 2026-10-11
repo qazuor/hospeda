@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { PartnerContentReviewStateEnum } from '../../../enums/partner-content-review-state.enum.js';
-import { PartnerTierEnum } from '../../../enums/partner-tier.enum.js';
 import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import { createPartnerSchema } from '../partner.create.schema.js';
 import {
@@ -34,7 +33,6 @@ const baseCreate = {
     slug: 'acme-turismo',
     name: 'Acme Turismo',
     type: PartnerTypeEnum.BUSINESS,
-    tier: PartnerTierEnum.SILVER,
     lifecycleState: 'DRAFT'
 };
 

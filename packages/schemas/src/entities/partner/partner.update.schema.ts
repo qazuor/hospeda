@@ -42,7 +42,9 @@ export const updatePartnerSchema = z
                     id: true,
                     createdAt: true,
                     createdById: true,
-                    ownerUserId: true
+                    ownerUserId: true,
+                    presenceModerated: true,
+                    claimSecretHash: true
                 })
                 .extend(PARTNER_SAFE_WRITE_URL_FIELDS).shape
         )

@@ -209,7 +209,6 @@ export class PartnerStatsService {
                         id: partnerId,
                         name: String(partner.name ?? ''),
                         slug: partner.slug == null ? undefined : String(partner.slug),
-                        tier: partner.tier == null ? undefined : String(partner.tier),
                         websiteUrl:
                             partner.websiteUrl == null ? undefined : String(partner.websiteUrl)
                     },

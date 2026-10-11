@@ -1,29 +1,19 @@
 ---
 /**
  * @file partners/[slug].astro
- * @description A gold partner's own page (HOS-294). Logo, name, organization
- * type, description, contact details and social links — a business card, not a
- * listing. It is what separates the two paid partner plans: gold has this page,
- * silver does not.
+ * @description Partner detail stays dark until V7 restores it on the public key.
  *
  * @route /{lang}/partners/{slug}/
  * @rendering SSR (on-demand), edge-cacheable
  *
  * ## Status codes
  *
- * The API answers three ways and this page forwards all three (spec D-3b):
- * 410 ONLY when a partner was deliberately revoked, so crawlers deindex the URL
- * fast; 404 for every other reason it is not visible — a silver partner, no
- * row, a gold partner never published, or one whose subscription lapsed.
- * Collapsing them would still render fine and would silently cost the deindex
- * signal; conversely, answering 410 for a lapsed subscription would deindex a
- * partner who is coming back (HOS-562).
+ * The API returns 404 while the public page remains unavailable.
  *
  * ## Indexability
  *
- * `noindex` is NEVER a literal here. It is `!isIndexable`, decided by
- * `evaluatePartnerIndexability` — the same helper `sitemap-dynamic.xml.ts`
- * uses, so the sitemap cannot advertise a URL this page then serves `noindex`.
+ * `noindex` is derived from `evaluatePartnerIndexability`, shared with the
+ * sitemap so the page and sitemap keep the same unavailable state.
  *
  * ## Actor-blindness
  *
@@ -58,9 +48,7 @@ const result = await partnerApi.getBySlug(slug);
 // 410 for a deliberately revoked partner; 404 for every other reason it is not
 // visible. `ApiError.status` already carries the distinction — the decision is
 // the service's (HOS-562), this only forwards it.
-if (!result.ok) {
-    return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
-}
+if (!result.ok) return new Response(null, { status: 404 });
 if (!result.data) {
     return new Response(null, { status: 404 });
 }
@@ -70,7 +58,6 @@ const partner = toPartnerDetailProps({ item: raw, locale });
 
 // --- Indexability (shared with the sitemap) ---
 const { isIndexable } = evaluatePartnerIndexability({
-    tier: raw.tier as string | null,
     lifecycleState: raw.lifecycleState as string | null,
     description: partner.description
 });

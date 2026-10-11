@@ -12,19 +12,9 @@
  *
  * ## The rule, and why it is derived rather than decided
  *
- * Both cards are gated by the RESULT of `resolvePartnerLogoLink` — the very
- * function the home carousel calls, on the same inputs — and never by the
- * partner's tier:
- *
- *  - **views**: the resolver returned an `OWN_PAGE` link, i.e. the partner has a
- *    page at `/partners/<slug>/` for anyone to visit;
- *  - **clicks**: the resolver returned ANY link, because a logo that links
- *    nowhere cannot be clicked.
- *
- * A `tier === 'gold'` test would be a SECOND source of truth about what the home
- * page renders. The two would agree today and part ways the moment HOS-1159
- * makes a silver logo stop being clickable — at which point this file needs no
- * change at all, because the resolver's answer changes and these follow.
+ * The partner detail page stays dark until V7 restores the internal destination.
+ * The resolver may still return a safe external site, so clicks can remain
+ * measurable without exposing views for a page that is unavailable.
  *
  * ## The absent-vs-zero rule
  *
@@ -56,7 +46,7 @@ export interface PartnerStatsCardVisibility {
  *   when the fetch failed (the panel then renders nothing, like every other
  *   fail-soft section on that page).
  * @param locale - Active locale, needed only because `resolvePartnerLogoLink`
- *   builds a localised internal href. It never affects the outcome.
+ *   is retained for the internal link V7 restores. It never affects the outcome.
  * @returns Which cards to render.
  */
 export function resolvePartnerStatsCards({
@@ -82,7 +72,6 @@ export function resolvePartnerStatsCards({
             logoPath: '',
             url: stats.partner.websiteUrl,
             slug: stats.partner.slug,
-            tier: stats.partner.tier,
             aspectRatio: 1
         },
         locale

@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { PartnerTierEnum } from '../../../enums/partner-tier.enum.js';
 import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import { PartnerPublicSchema } from '../partner.access.schema.js';
 
@@ -15,12 +14,9 @@ const basePayload = {
     name: 'Acme Litoral',
     description: 'Excursiones por el Litoral.',
     type: PartnerTypeEnum.BUSINESS,
-    tier: PartnerTierEnum.GOLD,
     logoUrl: 'https://cdn.example.com/acme.png',
     websiteUrl: 'https://acme.example.com',
-    lifecycleState: 'ACTIVE',
-    startsAt: '2026-01-01T00:00:00.000Z',
-    endsAt: null
+    lifecycleState: 'ACTIVE'
 };
 
 /**
@@ -36,12 +32,9 @@ const PRE_EXISTING_PUBLIC_FIELDS = [
     'name',
     'description',
     'type',
-    'tier',
     'logoUrl',
     'websiteUrl',
-    'lifecycleState',
-    'startsAt',
-    'endsAt'
+    'lifecycleState'
 ] as const;
 
 describe('PartnerPublicSchema — the detail page payload (HOS-294 D-5)', () => {

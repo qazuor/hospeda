@@ -764,6 +764,13 @@
                         "cap5": "View their experience analytics"
                     }
                 },
+                "PARTNER_OWNER": {
+                    "name": "Partner",
+                    "description": "Owner of a Partner's public presence (page and carousel). Granted when they claim their presence",
+                    "capabilities": {
+                        "cap1": "Manage their Partner presence"
+                    }
+                },
                 "SPONSOR": {
                     "name": "Sponsor",
                     "description": "External business sponsor with access to sponsorship management and analytics",

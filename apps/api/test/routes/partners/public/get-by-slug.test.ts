@@ -1,16 +1,7 @@
 /**
  * Unit tests for `getPublicPartnerBySlugHandler` (HOS-294 T-007).
  *
- * What this suite pins is the ONE decision the route layer adds on top of the
- * service: turning the three-outcome lookup into three different HTTP answers.
- *
- *   found    -> 200 with the partner
- *   gone     -> 410, so a crawler deindexes a page that was published
- *   notFound -> 404, for a URL that was never served
- *
- * Collapsing `gone` into `notFound` would still "work" for a browser and would
- * silently cost the deindex signal, which is the whole reason the service
- * distinguishes them — so each mapping is asserted separately.
+ * Public detail stays dark until V7, even when the service finds a partner.
  *
  * The handler is tested directly rather than through a mounted app, following
  * `send-link.content-gate.test.ts`: the real route factory wires auth and
@@ -62,29 +53,28 @@ describe('getPublicPartnerBySlugHandler — outcome to HTTP mapping', () => {
         getPublicBySlugMock.mockReset();
     });
 
-    it('returns the partner when the lookup is found', async () => {
+    it('returns NOT_FOUND even when the service finds a published partner', async () => {
         // Arrange
         getPublicBySlugMock.mockResolvedValue({ data: { outcome: 'found', partner } });
 
         // Act
-        const result = await getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' });
-
-        // Assert
-        expect(result).toEqual(partner);
+        await expect(
+            getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' })
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
     });
 
-    it('raises GONE (410) for a partner whose page was retired', async () => {
-        // Arrange — a gold partner that stopped being visible.
+    it('returns NOT_FOUND for a partner whose page was retired', async () => {
+        // Arrange — the service reports a retired page.
         getPublicBySlugMock.mockResolvedValue({ data: { outcome: 'gone' } });
 
         // Act / Assert
         await expect(
             getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' })
-        ).rejects.toMatchObject({ code: ServiceErrorCode.GONE });
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
     });
 
     it('raises NOT_FOUND (404) for a URL that was never served', async () => {
-        // Arrange — a silver partner, or no row at all.
+        // Arrange — no public page is available.
         getPublicBySlugMock.mockResolvedValue({ data: { outcome: 'notFound' } });
 
         // Act / Assert
@@ -111,7 +101,9 @@ describe('getPublicPartnerBySlugHandler — outcome to HTTP mapping', () => {
         getPublicBySlugMock.mockResolvedValue({ data: { outcome: 'found', partner } });
 
         // Act
-        await getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' });
+        await expect(
+            getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' })
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
 
         // Assert
         expect(getPublicBySlugMock).toHaveBeenCalledWith(expect.anything(), {
@@ -147,11 +139,11 @@ describe('the partner detail response is actor-blind (HOS-294 T-008, AC-13)', ()
         getPublicBySlugMock.mockResolvedValue({ data: { outcome: 'found', partner } });
 
         // Act — same service state, two invocations.
-        const first = await getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' });
-        const second = await getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' });
+        const first = getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' });
+        const second = getPublicPartnerBySlugHandler(ctx, { slug: 'acme-litoral' });
 
         // Assert
-        expect(first).toEqual(second);
-        expect(first).toEqual(partner);
+        await expect(first).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        await expect(second).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
     });
 });

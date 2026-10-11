@@ -116,8 +116,6 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         "SOCIAL_PROFILES in `lib/constants` — Hospeda's own accounts, hardcoded",
     'components/shared/SocialLinks.astro#{href}':
         'the same SOCIAL_PROFILES list, destructured one line later',
-    'lib/partner-logo-link.ts#buildUrl({ locale':
-        "the GOLD branch, an internal `/partners/<slug>/` link; it reads as outbound only because the sibling website branch's `target: '_blank'` is inside the object window",
     'pages/[lang]/autores/[slug]/index.astro#{url}':
         '`resolveAuthorSocialLinks` (lib/authors/author-social-links.ts) runs the sanitizer per network',
     'pages/[lang]/partners/[slug].astro#{link.href}':

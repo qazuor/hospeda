@@ -58,7 +58,6 @@ describe('TEST:V5:8 manual payment account subject', () => {
                 slug: `v5-${crypto.randomUUID()}`,
                 name: 'Manual payment partner',
                 type: 'business',
-                tier: 'silver',
                 lifecycleState: 'DRAFT',
                 ownerUserId: owner.id,
                 contentApprovedAt: new Date()
@@ -86,7 +85,6 @@ describe('TEST:V5:8 manual payment account subject', () => {
         expect(accepted.status).toBe(200);
         const [updated] = await db.select().from(partners).where(eq(partners.id, partner.id));
         expect(updated?.lifecycleState).toBe('ACTIVE');
-        expect(updated?.startsAt).toBeInstanceOf(Date);
         expect(audit).toHaveBeenCalledWith(
             expect.objectContaining({
                 actorId: staff.id,
