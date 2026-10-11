@@ -36,7 +36,7 @@ export async function ensureBillingDeadlineVersion1(): Promise<void> {
         .onConflictDoNothing();
 }
 
-export async function seedSuccessionChoice(options: { readonly sellable?: boolean } = {}) {
+export async function seedSuccessionChoice(options: { readonly targetSellable?: boolean } = {}) {
     await ensureBillingDeadlineVersion1();
     const [user] = await getServiceTestDb()
         .insert(users)
@@ -48,43 +48,60 @@ export async function seedSuccessionChoice(options: { readonly sellable?: boolea
         })
         .returning();
     if (!user) throw new Error('Could not seed succession user');
-    const planId = (
+    const predecessorPlanId = (
         await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan (vertical, slug, name) VALUES ($1, $2, $3) RETURNING id',
             ['accommodation', `succession-${crypto.randomUUID()}`, 'Succession plan']
         )
     ).rows[0]?.id;
-    if (!planId) throw new Error('Could not seed succession plan');
+    if (!predecessorPlanId) throw new Error('Could not seed succession plan');
+    const targetPlanId = (
+        await getServiceTestPool().query<{ id: string }>(
+            'INSERT INTO plan (vertical, slug, name) VALUES ($1, $2, $3) RETURNING id',
+            ['accommodation', `succession-target-${crypto.randomUUID()}`, 'Succession target plan']
+        )
+    ).rows[0]?.id;
+    if (!targetPlanId) throw new Error('Could not seed succession target plan');
     const planVersionId = (
         await getServiceTestPool().query<{ id: string }>(
-            'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, $4, true, 0, false) RETURNING id',
-            [
-                planId,
-                'accommodation',
-                Math.floor(Math.random() * 100000000) + 1,
-                options.sellable ?? true
-            ]
+            'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, true, true, 0, false) RETURNING id',
+            [predecessorPlanId, 'accommodation', Math.floor(Math.random() * 100000000) + 1]
         )
     ).rows[0]?.id;
     if (!planVersionId) throw new Error('Could not seed succession plan version');
-    const billingOptionIds = await Promise.all(
-        ['monthly', 'quarterly'].map(async (cycle) => {
-            const id = (
-                await getServiceTestPool().query<{ id: string }>(
-                    'INSERT INTO billing_option (plan_version_id, cycle, amount, currency) VALUES ($1, $2, 250000, $3) RETURNING id',
-                    [planVersionId, cycle, 'ARS']
-                )
-            ).rows[0]?.id;
-            if (!id) throw new Error('Could not seed succession billing option');
-            return id;
-        })
-    );
+    const targetPlanVersionId = (
+        await getServiceTestPool().query<{ id: string }>(
+            'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $2, $3, $4, true, 0, false) RETURNING id',
+            [
+                targetPlanId,
+                'accommodation',
+                Math.floor(Math.random() * 100000000) + 1,
+                options.targetSellable ?? true
+            ]
+        )
+    ).rows[0]?.id;
+    if (!targetPlanVersionId) throw new Error('Could not seed succession target plan version');
+    const predecessorOptionId = (
+        await getServiceTestPool().query<{ id: string }>(
+            "INSERT INTO billing_option (plan_version_id, cycle, amount, currency) VALUES ($1, 'monthly', 250000, 'ARS') RETURNING id",
+            [planVersionId]
+        )
+    ).rows[0]?.id;
+    const targetOptionId = (
+        await getServiceTestPool().query<{ id: string }>(
+            "INSERT INTO billing_option (plan_version_id, cycle, amount, currency) VALUES ($1, 'quarterly', 250000, 'ARS') RETURNING id",
+            [targetPlanVersionId]
+        )
+    ).rows[0]?.id;
+    if (!predecessorOptionId || !targetOptionId)
+        throw new Error('Could not seed succession billing options');
     return {
         user,
-        planId,
+        planId: predecessorPlanId,
         planVersionId,
-        predecessorBillingOptionId: billingOptionIds[0]!,
-        targetBillingOptionId: billingOptionIds[1]!
+        targetPlanVersionId,
+        predecessorBillingOptionId: predecessorOptionId,
+        targetBillingOptionId: targetOptionId
     };
 }
 
@@ -92,12 +109,22 @@ export function successionPorts(provider: PaymentProvider, mirror?: MirrorDelega
     return {
         provider,
         clock: successionClock,
-        planPolicy: async () => ({
-            graceDays: 10,
-            allowsPause: false,
-            current: true,
-            sellable: true
-        }),
+        planPolicy: async ({ planVersionId }: { readonly planVersionId: string }) => {
+            const result = await getServiceTestPool().query<{
+                current: boolean;
+                sellable: boolean;
+                allows_pause: boolean;
+            }>('SELECT current, sellable, allows_pause FROM plan_version WHERE id = $1', [
+                planVersionId
+            ]);
+            const version = result.rows[0];
+            return {
+                graceDays: 10,
+                allowsPause: version?.allows_pause ?? false,
+                current: version?.current ?? false,
+                sellable: version?.sellable ?? false
+            };
+        },
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         touristVipInheritance: noTouristVip,
         mirror
