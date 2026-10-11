@@ -51,6 +51,7 @@ const VALID_CALLS: readonly {
         input: { chargeId: 'c', amount: ARS, reference: 'r' }
     },
     { method: 'readAuthorization', capability: 'read', input: { authorizationId: 'a' } },
+    { method: 'searchAuthorizations', capability: 'read', input: {} },
     { method: 'readCharge', capability: 'read', input: { chargeId: 'c' } },
     { method: 'decodeNotice', capability: 'notify', input: { headers: {}, body: '{}' } }
 ];
@@ -66,8 +67,8 @@ function call(args: {
 }
 
 describe('MercadoPagoPaymentProvider (skeleton)', () => {
-    it('covers all ten interface methods in this table', () => {
-        expect(VALID_CALLS).toHaveLength(10);
+    it('covers all eleven interface methods in this table', () => {
+        expect(VALID_CALLS).toHaveLength(11);
     });
 
     it.each(VALID_CALLS)('$method refuses with NOT_IMPLEMENTED for $capability', async ({

@@ -63,8 +63,11 @@ export {
 } from './provider/errors';
 export type {
     AuthorizationRef,
+    AuthorizationSearchInput,
+    AuthorizationSearchResult,
     AuthorizationSnapshot,
     AuthorizationStatus,
+    AuthorizationSummary,
     AuthorizeInput,
     AuthorizeResult,
     BillingCadence,
@@ -103,6 +106,7 @@ export {
 } from './provider/provider-read';
 export {
     AuthorizationRefSchema,
+    AuthorizationSearchInputSchema,
     AuthorizeInputSchema,
     ChangeAmountInputSchema,
     ChargeInputSchema,
