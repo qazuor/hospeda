@@ -31,6 +31,20 @@ export interface PublicationListing {
     readonly inactiveSince: Date;
 }
 
+/** Deadline snapshot and clock fields persisted on a listing. */
+export interface RetentionListing extends PublicationListing {
+    readonly deletionAnnouncedAt: Date | null;
+    readonly deadlinesVersion: number;
+    readonly deadlines: {
+        readonly archiveAfterDays: number;
+        readonly deletionAfterDays: number;
+        readonly draftArchiveMonths: number;
+    };
+}
+
+/** Billing reads needed to decide whether an inactivity clock may advance. */
+export type RetentionBilling = Pick<BillingForVerticals, 'coverage' | 'retentionStopped'>;
+
 /** All publication reads and writes happen in a locked transaction. */
 export interface PublicationTransaction extends TrialStartTransaction {
     /** Enqueues the restitution notice in the same transaction as PB3/PB7. */
@@ -44,6 +58,14 @@ export interface PublicationTransaction extends TrialStartTransaction {
         readonly vertical: PublicationVertical;
         readonly listingId: string;
     }): Promise<PublicationListing | null>;
+    readRetentionListing(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+    }): Promise<RetentionListing | null>;
+    readArchiveOrigins(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingIds: readonly string[];
+    }): Promise<ReadonlyMap<string, PublicationStatusEnum>>;
     countPublished(args: {
         readonly vertical: PublicationVertical;
         readonly ownerId: string;
@@ -70,6 +92,7 @@ export interface PublicationTransaction extends TrialStartTransaction {
         readonly from: PublicationStatusEnum;
         readonly to: PublicationStatusEnum;
         readonly inactiveSince?: Date;
+        readonly deletionAnnouncedAt?: Date;
         readonly actorId?: string;
     }): Promise<boolean>;
     stampInactiveSince(args: {
@@ -88,6 +111,8 @@ export interface PublicationTransaction extends TrialStartTransaction {
         readonly actorId?: string;
         readonly correlationId: string;
         readonly occurredAt?: Date;
+        readonly deletionAnnouncedAt?: Date;
+        readonly oldDeletionAnnouncedAt?: Date | null;
     }): Promise<void>;
 }
 
