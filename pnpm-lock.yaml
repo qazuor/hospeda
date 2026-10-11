@@ -694,6 +694,12 @@ importers:
       '@playwright/test':
         specifier: ^1.63.0
         version: 1.63.0
+      '@repo/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
+      '@repo/test-clock':
+        specifier: workspace:*
+        version: link:../../packages/test-clock
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
