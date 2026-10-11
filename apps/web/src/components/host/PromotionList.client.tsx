@@ -17,8 +17,10 @@ import { type JSX, useCallback, useEffect, useState } from 'react';
 import { ownerPromotionApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotionList } from '@/lib/api/transforms';
 import type { OwnerPromotionData, OwnerPromotionDiscountType } from '@/lib/api/types';
+import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
 import styles from './PromotionList.module.css';
 
@@ -135,6 +137,7 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
     const [state, setState] = useState<ListState>({ status: 'loading' });
     const [deleteState, setDeleteState] = useState<DeleteState>({ status: 'idle' });
     const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [canCreatePromotions, setCanCreatePromotions] = useState(false);
 
     // ── Fetch promotions ──────────────────────────────────────────────────
     // biome-ignore lint/correctness/useExhaustiveDependencies: t is stable per locale; including it causes an infinite loop
@@ -174,6 +177,11 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
 
     useEffect(() => {
         void fetchPromotions();
+        void getEntitlementsCached({ vertical: 'accommodation' }).then((effectiveSet) => {
+            setCanCreatePromotions(
+                !effectiveSet.failed && (effectiveSet.entitlements.create_promotions ?? 0) > 0
+            );
+        });
     }, [fetchPromotions]);
 
     // ── Delete handlers ───────────────────────────────────────────────────
@@ -262,13 +270,40 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
                 The page title lives at the page level (AccountLayout / index.astro),
                 so this island only renders the create-promotion action, right-aligned. */}
             <div className={styles.header}>
-                <a
-                    href={buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' })}
-                    className={styles.createButton}
-                >
-                    {t('host.promotions.createButton', 'Nueva promoción')}
-                </a>
+                {canCreatePromotions ? (
+                    <a
+                        href={buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' })}
+                        className={styles.createButton}
+                    >
+                        {t('host.promotions.createButton', 'Nueva promoción')}
+                    </a>
+                ) : null}
             </div>
+
+            {!canCreatePromotions && (
+                <aside className={styles.upgradeBanner}>
+                    <div className={styles.upgradeTextGroup}>
+                        <strong className={styles.upgradeTitle}>
+                            {t(
+                                'host.promotions.errors.entitlementRequired',
+                                'Tu plan no incluye promociones'
+                            )}
+                        </strong>
+                        <span className={styles.upgradeHint}>
+                            {t(
+                                'host.promotions.errors.entitlementRequiredHint',
+                                'Mejorá tu plan para crear promociones.'
+                            )}
+                        </span>
+                    </div>
+                    <a
+                        className={styles.upgradeLink}
+                        href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
+                    >
+                        {t('host.promotions.actions.upgradePlan', 'Ver planes')}
+                    </a>
+                </aside>
+            )}
 
             {/* ── Delete error banner ── */}
             {deleteError !== null && (
@@ -282,12 +317,14 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
 
             {/* ── Empty state ── */}
             {items.length === 0 ? (
-                <p className={styles.emptyText}>
-                    {t(
-                        'host.promotions.empty',
-                        'Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!'
-                    )}
-                </p>
+                canCreatePromotions ? (
+                    <p className={styles.emptyText}>
+                        {t(
+                            'host.promotions.empty',
+                            'Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!'
+                        )}
+                    </p>
+                ) : null
             ) : (
                 <ul className={styles.list}>
                     {items.map((promo) => {

@@ -10,7 +10,6 @@ import type {
     UserMenuUser
 } from '../../../../src/components/shared/navigation/UserMenu.client';
 import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
-import { syncPlanPersonProperties } from '../../../../src/lib/analytics/plan-properties';
 import {
     identifyUser,
     resetUser,
@@ -31,9 +30,6 @@ vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
 
 // The plan/tier sync fires its own protected fetch on mount; mock it so it
 // doesn't interfere with the /auth/me fetch assertions in this suite.
-vi.mock('../../../../src/lib/analytics/plan-properties', () => ({
-    syncPlanPersonProperties: vi.fn().mockResolvedValue(undefined)
-}));
 
 vi.mock('../../../../src/lib/env', () => ({
     getApiUrl: () => 'https://api.test'
@@ -730,11 +726,12 @@ describe('UserMenu — PostHog identify/reset', () => {
         });
     });
 
-    it('syncs the plan person property from the entitlements endpoint for an authenticated visitor', async () => {
+    it('does not sync removed plan person properties', async () => {
         renderMenu();
-        await waitFor(() => {
-            expect(syncPlanPersonProperties).toHaveBeenCalledWith({ apiUrl: 'https://api.test' });
-        });
+        await waitFor(() => expect(setPersonProperties).toHaveBeenCalled());
+        expect(setPersonProperties).not.toHaveBeenCalledWith(
+            expect.objectContaining({ plan: expect.anything() })
+        );
     });
 
     it('does NOT set person properties for a guest', () => {

@@ -16,6 +16,8 @@
 
 import { useEffect, useState } from 'react';
 import { priceAlertsApi } from '@/lib/api/endpoints-protected';
+import { getEntitlementsCached } from '@/lib/entitlements-cache';
+import { resolvePriceAlertGate } from '@/lib/price-alert-gate';
 
 /** Everything `PriceAlertButton` needs to pick its rendering branch. */
 export interface PriceAlertGateSnapshot {
@@ -29,13 +31,19 @@ export interface PriceAlertGateSnapshot {
      * to resolve.
      */
     readonly isResolving: boolean;
+    readonly canCreateAlerts: boolean;
+    readonly maxReached: boolean;
+    readonly readFailed: boolean;
 }
 
 /** Settled state with no alert: the guest answer and the failed-lookup answer. */
 const NO_ALERT: PriceAlertGateSnapshot = {
     hasAlert: false,
     alertId: null,
-    isResolving: false
+    isResolving: false,
+    canCreateAlerts: false,
+    maxReached: false,
+    readFailed: false
 };
 
 /**
@@ -53,7 +61,10 @@ export function usePriceAlertGateState({
     readonly accommodationId: string;
     readonly skip?: boolean;
 }): PriceAlertGateSnapshot {
-    const [snapshot, setSnapshot] = useState<PriceAlertGateSnapshot>(NO_ALERT);
+    const [snapshot, setSnapshot] = useState<PriceAlertGateSnapshot>({
+        ...NO_ALERT,
+        isResolving: true
+    });
 
     useEffect(() => {
         if (skip) {
@@ -66,8 +77,14 @@ export function usePriceAlertGateState({
         void (async () => {
             let hasAlert = false;
             let alertId: string | null = null;
+            let canCreateAlerts = false;
+            let maxReached = false;
+            let readFailed = false;
             try {
-                const alertsResult = await priceAlertsApi.list({});
+                const [alertsResult, effectiveSet] = await Promise.all([
+                    priceAlertsApi.list({}),
+                    getEntitlementsCached({ vertical: 'tourist' })
+                ]);
                 // The list endpoint returns the actor's full set — there is no
                 // `accommodationId` query filter, so match locally.
                 if (alertsResult.ok) {
@@ -78,13 +95,26 @@ export function usePriceAlertGateState({
                         hasAlert = true;
                         alertId = match.id;
                     }
-                }
+                    const gate = resolvePriceAlertGate({
+                        effectiveSet,
+                        currentAlertCount: alertsResult.data.items?.length ?? 0
+                    });
+                    canCreateAlerts = gate.canCreateAlerts;
+                    maxReached = gate.maxReached;
+                } else readFailed = true;
+                readFailed ||= effectiveSet.failed;
             } catch {
-                // A failed lookup reads as "no alert": the create action stays
-                // available and the API answers for it.
+                readFailed = true;
             }
             if (cancelled) return;
-            setSnapshot({ hasAlert, alertId, isResolving: false });
+            setSnapshot({
+                hasAlert,
+                alertId,
+                isResolving: false,
+                canCreateAlerts,
+                maxReached,
+                readFailed
+            });
         })();
 
         return () => {

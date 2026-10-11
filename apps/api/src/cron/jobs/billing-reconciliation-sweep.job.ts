@@ -1,5 +1,6 @@
 import { runReconciliationSweep } from '@repo/service-core';
 import { getClock } from '../../utils/clock.js';
+import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -27,11 +28,12 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
         }
         try {
             const summary = await runReconciliationSweep(
-                {},
+                { correlationId: ctx.correlationId },
                 {
                     provider: getPaymentProvider(),
                     clock: getClock().clock,
-                    zeroCallChecks: {}
+                    zeroCallChecks: {},
+                    livenessPing: createSentryCronMonitorPing()
                 }
             );
             const { failures, ...details } = summary;
@@ -41,7 +43,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 failures: []
             };
             return {
-                success: summary.rowsFailed === 0 && zeroCallFailures.length === 0,
+                success: summary.rowsFailed === 0,
                 message: `Processed ${summary.rowsRead} billing subscriptions`,
                 processed: summary.rowsRead,
                 errors: summary.rowsFailed + zeroCallFailures.length,

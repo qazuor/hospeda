@@ -42,6 +42,9 @@ describe('billing reconciliation sweep cron', () => {
     it('injects provider and clock and maps summary counters', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 8,
+            runId: 'run-id',
+            complete: false,
+            pinged: false,
             rowsFailed: 2,
             divergences: 1,
             marksOpened: 1,
@@ -52,17 +55,26 @@ describe('billing reconciliation sweep cron', () => {
         });
         const result = await billingReconciliationSweepJob.handler(context());
         expect(mockSweep).toHaveBeenCalledWith(
-            {},
-            { provider: mockProvider, clock: mockClock, zeroCallChecks: {} }
+            { correlationId: expect.any(String) },
+            expect.objectContaining({
+                provider: mockProvider,
+                clock: mockClock,
+                zeroCallChecks: {},
+                livenessPing: expect.any(Object)
+            })
         );
         expect(result).toMatchObject({ processed: 8, errors: 2, success: false });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['failed-id']);
+        expect(result.details).toMatchObject({ runId: 'run-id', complete: false, pinged: false });
         expect(result.details).not.toHaveProperty('failures');
     });
 
     it('counts zero-call check failures in the job result', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 4,
+            runId: 'run-id',
+            complete: false,
+            pinged: false,
             rowsFailed: 1,
             divergences: 0,
             marksOpened: 0,
@@ -92,6 +104,9 @@ describe('billing reconciliation sweep cron', () => {
     it('preserves existing counters when the summary omits zero-call checks', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 3,
+            runId: 'run-id',
+            complete: true,
+            pinged: true,
             rowsFailed: 0,
             divergences: 0,
             marksOpened: 0,

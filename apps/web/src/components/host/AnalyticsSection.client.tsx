@@ -41,6 +41,7 @@ import type {
     MarketComparisonData,
     ResponseRateData
 } from '@/lib/api/types';
+import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AnalyticsSection.module.css';
@@ -145,6 +146,12 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
         });
 
         try {
+            const effectiveSet = await getEntitlementsCached({ vertical: 'accommodation' });
+            if (effectiveSet.failed || (effectiveSet.entitlements.view_basic_stats ?? 0) <= 0) {
+                setState({ status: 'locked' });
+                return;
+            }
+            const entitledAdvanced = (effectiveSet.entitlements.view_advanced_stats ?? 0) > 0;
             // Fetch all wired analytics endpoints in parallel. The API decides
             // which of them this host may read (views + daily-series need basic
             // stats; market comparison and favorites need advanced stats).
@@ -159,10 +166,14 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             ] = await Promise.allSettled([
                 hostAnalyticsApi.getResponseRate(),
                 hostAnalyticsApi.getInquiryTrend({ months: 6 }),
-                hostAnalyticsApi.getMarketComparison(),
+                entitledAdvanced
+                    ? hostAnalyticsApi.getMarketComparison()
+                    : Promise.reject(new Error('locked')),
                 hostAnalyticsApi.getViews({ window: viewsWindow }),
                 hostAnalyticsApi.listOwnAccommodations(),
-                hostAnalyticsApi.getFavoritesBreakdown(),
+                entitledAdvanced
+                    ? hostAnalyticsApi.getFavoritesBreakdown()
+                    : Promise.reject(new Error('locked')),
                 hostAnalyticsApi.getViewsDailySeries({ window: viewsWindow })
             ]);
 
@@ -171,7 +182,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                 return;
             }
 
-            const hasAdvanced = !isForbidden(marketResult);
+            const hasAdvanced = entitledAdvanced && !isForbidden(marketResult);
 
             const responseRateData =
                 responseRateResult.status === 'fulfilled' && responseRateResult.value.ok

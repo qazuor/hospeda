@@ -27,7 +27,7 @@ import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
-import { fetchHostUsageBadge } from '@/lib/host/usage-badge';
+import { buildUsageBadge, fetchHostUsageBadge } from '@/lib/host/usage-badge';
 import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import { publishApi } from '@/lib/api/endpoints-protected';
@@ -90,7 +90,8 @@ let usageData: { currentUsage: number; maxAllowed: number; threshold: string } |
 // wired it into the button. One value answering two questions is what let a
 // plan-shaped boolean decide publishability; the publish affordance now reads
 // the server's own verdict below.
-let hasOwnerPlan = true;
+let hasOwnerPlan = false;
+let effectiveSetReadOk = false;
 
 // ── HOS-1183: what would the server do if this owner published? ──
 // Resolved ONCE for the whole grid: billing eligibility is a property of the
@@ -117,7 +118,7 @@ try {
             Accept: 'application/json'
         };
 
-        // Parallel fetch: accommodations + plan-aware usage badge context +
+        // Parallel fetch: accommodations + effective set +
         // the publish verdict. The third joins the existing Promise.all rather
         // than awaiting after it — this is one extra billing read per page
         // load, and serialising it would add its latency to every render.
@@ -126,7 +127,7 @@ try {
                 `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
                 { headers }
             ),
-            fetchHostUsageBadge({ apiUrl, headers }),
+            fetchHostUsageBadge({ cookieHeader }),
             publishApi.accommodationEligibility({ cookieHeader })
         ]);
 
@@ -140,15 +141,14 @@ try {
             logger.error('[propiedades] API responded with status', accomResponse.status);
         }
 
-        usageData = usageBadgeResult.usageData;
+        const publishedCount = properties.filter(
+            (property) => property.lifecycleState === LifecycleStatusEnum.ACTIVE && property.visibility === 'PUBLIC'
+        ).length;
+        usageData = buildUsageBadge({ effectiveSet: usageBadgeResult.effectiveSet, currentUsage: publishedCount });
         hasOwnerPlan = usageBadgeResult.hasOwnerPlan;
+        effectiveSetReadOk = usageBadgeResult.entitlementsReadOk;
 
-        if (!usageBadgeResult.entitlementsReadOk) {
-            logger.warn('[propiedades] entitlements fetch returned non-ok', {
-                status: usageBadgeResult.entitlementsStatus
-            });
-        }
-        // Entitlements fetch failure is non-fatal — hasOwnerPlan stays true (fail-open)
+        if (!usageBadgeResult.entitlementsReadOk) logger.warn('[propiedades] effective-set read failed');
 
         if (eligibilityResult.ok) {
             canPublish = eligibilityResult.data.canPublish;
@@ -216,6 +216,7 @@ const hasDraftProperty = properties.some(
 const showNeedsPlanBanner = shouldShowNeedsPlanBanner({
     isEmpty,
     fetchError,
+    effectiveSetReadOk,
     hasDraftProperty,
     hasOwnerPlan
 });

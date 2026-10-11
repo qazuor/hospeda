@@ -1,3 +1,4 @@
+import type { ProtectedEffectiveSetResponse } from '@repo/schemas';
 /**
  * Centralized API response to card component prop transformations.
  *
@@ -3359,4 +3360,22 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         slug: item.slug == null ? undefined : String(item.slug),
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
+}
+
+/** Converts the JSON-safe effective-set response to numeric client values. */
+export function transformProtectedEffectiveSet(raw: ProtectedEffectiveSetResponse): Omit<
+    ProtectedEffectiveSetResponse,
+    'entitlements' | 'limits'
+> & {
+    readonly entitlements: Readonly<Record<string, number>>;
+    readonly limits: Readonly<Record<string, number>>;
+} {
+    const decode = (values: Readonly<Record<string, number | 'Infinity'>>) =>
+        Object.fromEntries(
+            Object.entries(values).map(([key, value]) => [
+                key,
+                value === 'Infinity' ? Number.POSITIVE_INFINITY : value
+            ])
+        );
+    return { ...raw, entitlements: decode(raw.entitlements), limits: decode(raw.limits) };
 }
