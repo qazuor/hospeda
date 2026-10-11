@@ -1,0 +1,21 @@
+{
+    "fila_viva": [
+        {
+            "file": "packages/db/src/models/subscription/subscription.model.ts",
+            "symbol": "findLiveCommitment",
+            "row": null,
+            "why": "Consumidor real del candado del §11; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/plan-catalog/plan-publication.anchored-customers.ts",
+            "symbol": "countAnchoredCustomersFromSubscriptions",
+            "row": null,
+            "why": "Consumidor real declarado por docblock; no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
+        }
+    ],
+    "grant_vivo_ancla_viva": [],
+    "marca_abierta": [],
+    "cortesia_diferida": []
+}
