@@ -350,6 +350,10 @@ jobs:
       # A system actor must be built by createSystemActor in @repo/service-core.
       - name: Check system actors are built only by the factory (GUARD:G19)
         run: pnpm check:system-actor-factory
+      # GUARD:G-R1-F (HOS-1527, AC:B3:26). Its own step, like every guard here.
+      # Opening, lifting, payment attachment and courtesy close keep their catalog rules.
+      - name: Check reconciliation mark discipline (GUARD:G-R1-F)
+        run: pnpm check:reconciliation-mark-discipline
       # GUARD:G-R1-A (HOS-1527, AC:B3:23). Its own step, like every guard here. The
       # successor writer must pass through the predecessor admission gate.
       - name: Check succession predecessor admission (GUARD:G-R1-A)
