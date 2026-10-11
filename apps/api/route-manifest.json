@@ -2303,6 +2303,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/protected/accommodations/:id/reactivate"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/protected/accommodations/:id/unpublish"
         },
         {
@@ -2667,6 +2671,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/protected/experiences/:id/reactivate"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/protected/experiences/:id/unpublish"
         },
         {
@@ -2824,6 +2832,10 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/gastronomies/:id/qr-sheet"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/gastronomies/:id/reactivate"
         },
         {
             "method": "POST",

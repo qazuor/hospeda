@@ -178,6 +178,43 @@ export class ListingPublicationService {
         return this.readProtectedProjection(args.actor, args.id, vertical);
     }
 
+    /** Reactivates an archived listing through PB8 and returns its protected projection. */
+    async reactivate(args: {
+        readonly actor: Actor;
+        readonly id: string;
+        readonly vertical?: PublicationVertical;
+    }) {
+        const vertical = args.vertical ?? VerticalEnum.ACCOMMODATION;
+        const listing = await this.readListing(args.actor, args.id, vertical);
+        if (!listing) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
+        const { reactivateListing } = await import(
+            '../../../../../packages/verticals/src/publication/reactivate-listing'
+        );
+        const result = await reactivateListing({
+            ...getListingPublicationPorts(),
+            userId: listing.ownerId,
+            vertical,
+            listingId: args.id,
+            correlationId: randomUUID()
+        });
+        if (!result.reactivated) {
+            if (result.reason === 'LISTING_NOT_FOUND' || result.reason === 'NOT_OWNER')
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
+            throw new ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'Listing state changed');
+        }
+        if (vertical === VerticalEnum.ACCOMMODATION) {
+            const [updated] = await getDb()
+                .select()
+                .from(accommodations)
+                .where(eq(accommodations.id, args.id))
+                .limit(1);
+            if (!updated)
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+            return updated;
+        }
+        return this.readProtectedProjection(args.actor, args.id, vertical);
+    }
+
     private async readListing(
         actor: Actor,
         id: string,

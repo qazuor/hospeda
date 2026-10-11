@@ -42,6 +42,7 @@ import { protectedPutGastronomyEventsRoute } from './putEvents';
 import { protectedPutGastronomyMenuRoute } from './putMenu';
 import { protectedGetGastronomyQrCodeRoute } from './qrCode';
 import { protectedGetGastronomyQrSheetRoute } from './qrSheet';
+import { protectedReactivateGastronomyRoute } from './reactivate';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
 import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
@@ -158,6 +159,7 @@ app.route('/', protectedPutGastronomyEventsRoute);
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedPublishGastronomyRoute);
 app.route('/', protectedUnpublishGastronomyRoute);
+app.route('/', protectedReactivateGastronomyRoute);
 app.route('/', protectedGetGastronomyByIdRoute);
 
 // PATCH /{id} — Owner operational update.
