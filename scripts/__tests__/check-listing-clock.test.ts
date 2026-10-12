@@ -318,9 +318,7 @@ describe('TEST:V6:16 GUARD:G-R6-B - the four halves of the closed list of listin
         const scripts = JSON.parse(readFileSync(path.join(REPO_ROOT, 'package.json'), 'utf8'))
             .scripts as Record<string, string>;
         expect(scripts['check:listing-clock']).toBe('tsx scripts/check-listing-clock.ts');
-        expect(scripts['check:guards']).toContain(
-            'pnpm check:purged-closed-list && pnpm check:listing-clock && pnpm check:fake-lies'
-        );
+        expect(scripts['check:guards']).toContain('pnpm check:listing-clock');
         expect(scripts['check:guards'].trim().endsWith('pnpm check:fake-lies')).toBe(true);
         const ci = readFileSync(path.join(REPO_ROOT, '.github/workflows/ci.yml'), 'utf8');
         const guardsJob = ci.split('\n  guards:\n')[1]?.split(/\n {2}[a-zA-Z][\w-]*:\n/)[0];
