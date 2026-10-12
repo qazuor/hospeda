@@ -238,6 +238,7 @@
             "deleteError": "Não foi possível excluir. Tente novamente.",
             "publishError": "Não foi possível publicar. Tente novamente.",
             "publishSubscriptionRequiredMessage": "Você precisa de um plano ativo para publicar.",
+            "publishCheckFailed": "Não conseguimos verificar se você pode publicar. Recarregue a página para tentar novamente.",
             "publishSubscriptionRequiredCta": "Ver planos",
             "priceOnRequest": "Preço a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
