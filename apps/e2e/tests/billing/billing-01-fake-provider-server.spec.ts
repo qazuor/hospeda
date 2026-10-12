@@ -21,7 +21,7 @@ let fakeServer: Awaited<ReturnType<typeof startE2eFakeProvider>> | null = null;
 let monthlyOptionId = '';
 let annualOptionId = '';
 
-test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing', () => {
+test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @clock', () => {
     test.describe.configure({ mode: 'serial' });
 
     test.beforeAll(async () => {
