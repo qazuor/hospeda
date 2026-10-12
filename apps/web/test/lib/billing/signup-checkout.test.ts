@@ -78,9 +78,16 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
     });
 
     it('formats the authorization window using Buenos Aires local date', () => {
-        const result = formatSignupWindowEnd({ iso: '2026-10-13T02:30:00.000Z', locale: 'es' });
-        expect(result).toContain('12 de octubre de 2026');
-        expect(result).not.toContain('13 de octubre de 2026');
+        const originalTimezone = process.env.TZ;
+        process.env.TZ = 'UTC';
+        try {
+            const result = formatSignupWindowEnd({ iso: '2026-10-13T02:30:00.000Z', locale: 'es' });
+            expect(result).toContain('12 de octubre de 2026');
+            expect(result).not.toContain('13 de octubre de 2026');
+        } finally {
+            if (originalTimezone === undefined) delete process.env.TZ;
+            else process.env.TZ = originalTimezone;
+        }
     });
 
     it('maps all five schema verticals to complete translation keys', () => {
