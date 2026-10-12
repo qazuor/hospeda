@@ -50,7 +50,7 @@ import {
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
-import { checkExperienceCanEditFaqs, checkExperienceCanView } from './experience.permissions';
+import { checkExperienceCanEditFaqEntries, checkExperienceCanView } from './experience.permissions';
 
 // ---------------------------------------------------------------------------
 // Internal helper — load listing or throw NOT_FOUND
@@ -120,7 +120,7 @@ export async function addExperienceFaq(
             tx: DrizzleClient
         ): Promise<ServiceOutput<ExperienceFaqSingleOutput>> => {
             const experience = await requireExperience(model, validated.experienceId, tx);
-            checkExperienceCanEditFaqs(actor, experience);
+            checkExperienceCanEditFaqEntries(actor, experience);
 
             const faqModel = new ExperienceFaqModel();
 
@@ -145,7 +145,7 @@ export async function addExperienceFaq(
             // question/answer text (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -207,7 +207,7 @@ export async function updateExperienceFaq(
             tx: DrizzleClient
         ): Promise<ServiceOutput<ExperienceFaqSingleOutput>> => {
             const experience = await requireExperience(model, validated.experienceId, tx);
-            checkExperienceCanEditFaqs(actor, experience);
+            checkExperienceCanEditFaqEntries(actor, experience);
 
             const faqModel = new ExperienceFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
@@ -230,7 +230,7 @@ export async function updateExperienceFaq(
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -290,7 +290,7 @@ export async function removeExperienceFaq(
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
             const experience = await requireExperience(model, validated.experienceId, tx);
-            checkExperienceCanEditFaqs(actor, experience);
+            checkExperienceCanEditFaqEntries(actor, experience);
 
             const faqModel = new ExperienceFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
@@ -305,7 +305,7 @@ export async function removeExperienceFaq(
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -438,7 +438,7 @@ export async function reorderExperienceFaqs(
         // longer possible and the event cannot outlive (or miss) the writes.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
             const experience = await requireExperience(model, validated.experienceId, tx);
-            checkExperienceCanEditFaqs(actor, experience);
+            checkExperienceCanEditFaqEntries(actor, experience);
 
             const faqModel = new ExperienceFaqModel();
 
@@ -473,7 +473,7 @@ export async function reorderExperienceFaqs(
             // field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }

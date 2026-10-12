@@ -58,6 +58,7 @@ import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { scheduleListingMediaRevalidation } from '../listing/listing-revalidation.js';
+import { assertSupportEditContentOnly } from '../listing/listing-support-edit';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildMediaTextPatch } from '../media/media-text-patch';
@@ -143,6 +144,9 @@ export async function addGastronomyMedia(
         ): Promise<ServiceOutput<GastronomyMediaSingleOutput>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
             checkGastronomyCanEditMedia(actor, gastronomy);
+            // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+            // moderation verdict; a no-op outside its authorized scope.
+            assertSupportEditContentOnly({ data: { media: validated.media } });
 
             const mediaModel = new GastronomyMediaModel();
 
@@ -202,7 +206,7 @@ export async function addGastronomyMedia(
             // photo's URL or alt text (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -320,7 +324,7 @@ export async function removeGastronomyMedia(
             // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -453,7 +457,7 @@ export async function reorderGastronomyMedia(
             // field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -630,7 +634,7 @@ export async function setFeaturedGastronomyMedia(
             // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -765,7 +769,7 @@ export async function updateGastronomyMedia(
             // is content, so no value is ever stored (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -854,6 +858,9 @@ export async function addGastronomyFeaturedMedia(
 
         const gastronomy = await requireGastronomy(model, validated.gastronomyId, ctx?.tx);
         checkGastronomyCanEditMedia(actor, gastronomy);
+        // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+        // moderation verdict; a no-op outside its authorized scope.
+        assertSupportEditContentOnly({ data: { media: validated.media } });
 
         const mediaModel = new GastronomyMediaModel();
 
@@ -877,7 +884,7 @@ export async function addGastronomyFeaturedMedia(
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }

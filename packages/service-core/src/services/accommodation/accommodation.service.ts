@@ -4111,6 +4111,9 @@ export class AccommodationService extends BaseCrudService<
                         );
                     }
                     await this._canUpdate(actor, accommodation);
+                    // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+                    // moderation verdict; a no-op outside its authorized scope.
+                    assertSupportEditContentOnly({ data: { media: validated.media } });
 
                     const mediaModel = new AccommodationMediaModel();
 
@@ -4275,6 +4278,9 @@ export class AccommodationService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 await this._canUpdate(actor, accommodation);
+                // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+                // moderation verdict; a no-op outside its authorized scope.
+                assertSupportEditContentOnly({ data: { media: validated.media } });
 
                 const mediaModel = new AccommodationMediaModel();
 

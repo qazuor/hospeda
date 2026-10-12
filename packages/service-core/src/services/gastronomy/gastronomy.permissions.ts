@@ -21,6 +21,7 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
+import { isAction15AuthorizedFor } from '../../utils/administrative-authorization';
 import type { GastronomyOrExperience } from '../listing/listing.permissions';
 import {
     checkCanAdminListListings,
@@ -178,7 +179,8 @@ export function checkGastronomyCanEditFaqs(
  * Accepts either `GASTRONOMY_EDIT_ALL` (staff) or `GASTRONOMY_EDIT_OWN` when the
  * actor is the listing owner — identical gate to
  * {@link checkGastronomyCanEditFaqs}, kept as a separate named wrapper for
- * call-site clarity (media vs FAQ operations).
+ * call-site clarity (media vs FAQ operations). Action 15 (ACC:15, HOS-1493)
+ * also passes, only inside its authorized scope bound to the listing's owner.
  *
  * @param actor - The actor performing the action.
  * @param entity - The gastronomy entity whose media is being edited.
@@ -188,7 +190,31 @@ export function checkGastronomyCanEditMedia(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
+    // ACC:15 (HOS-1493): only inside a scope where a route's listing-access
+    // chain authorized action 15 for this listing's owner — never from the
+    // actor's permission alone.
+    if (isAction15AuthorizedFor({ actor, ownerId: entity.ownerId })) return;
     checkCanEditOwn(actor, entity, VERTICAL);
+}
+
+/**
+ * Checks if the actor may add, edit, remove or reorder the FAQ ENTRIES of a
+ * gastronomy listing: the owner/staff gate of {@link checkGastronomyCanEditFaqs} plus
+ * action 15 (ACC:15, HOS-1493) inside its authorized scope. FAQ entries are
+ * listing content; the sibling sub-entities that share
+ * {@link checkGastronomyCanEditFaqs} (menu, events, certificates, …) are not part of
+ * action 15 and keep that gate unchanged.
+ *
+ * @param actor - The actor performing the action.
+ * @param entity - The gastronomy entity whose FAQs are being edited.
+ * @throws {ServiceError} FORBIDDEN when no condition is met.
+ */
+export function checkGastronomyCanEditFaqEntries(
+    actor: Actor,
+    entity: { ownerId?: string | null }
+): void {
+    if (isAction15AuthorizedFor({ actor, ownerId: entity.ownerId })) return;
+    checkGastronomyCanEditFaqs(actor, entity);
 }
 
 /**
