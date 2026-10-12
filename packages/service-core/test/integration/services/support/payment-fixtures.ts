@@ -39,9 +39,11 @@ function adjustableClock() {
 
 export async function paymentFixture({
     honestM8 = true,
+    withoutRP12 = true,
     simulate
 }: {
     readonly honestM8?: boolean;
+    readonly withoutRP12?: boolean;
     readonly simulate?: readonly {
         readonly simulation: 'noticesOutOfOrder';
         readonly why: string;
@@ -86,23 +88,48 @@ export async function paymentFixture({
 
     const idNamespace = crypto.randomUUID();
     const provider = honestM8
-        ? new FakePaymentProvider({
-              clock,
-              idNamespace,
-              honestAbout: [
-                  { lie: 'M1', why: 'signup fixture needs the authorization creation to land' },
-                  { lie: 'M8', why: 'the immediate charge case needs an approved charge' }
-              ],
-              simulate
-          })
-        : new FakePaymentProvider({
-              clock,
-              idNamespace,
-              honestAbout: [
-                  { lie: 'M1', why: 'signup fixture needs the authorization creation to land' }
-              ],
-              simulate
-          });
+        ? withoutRP12
+            ? new FakePaymentProvider({
+                  clock,
+                  idNamespace,
+                  honestAbout: [
+                      { lie: 'M1', why: 'signup fixture needs the authorization creation to land' },
+                      { lie: 'M8', why: 'the immediate charge case needs an approved charge' }
+                  ],
+                  withoutBehaviour: [
+                      { behaviour: 'RP12', why: 'fixture covers subscription billing' }
+                  ],
+                  simulate
+              })
+            : new FakePaymentProvider({
+                  clock,
+                  idNamespace,
+                  honestAbout: [
+                      { lie: 'M1', why: 'signup fixture needs the authorization creation to land' },
+                      { lie: 'M8', why: 'the immediate charge case needs an approved charge' }
+                  ],
+                  simulate
+              })
+        : withoutRP12
+          ? new FakePaymentProvider({
+                clock,
+                idNamespace,
+                honestAbout: [
+                    { lie: 'M1', why: 'signup fixture needs the authorization creation to land' }
+                ],
+                withoutBehaviour: [
+                    { behaviour: 'RP12', why: 'fixture covers subscription billing' }
+                ],
+                simulate
+            })
+          : new FakePaymentProvider({
+                clock,
+                idNamespace,
+                honestAbout: [
+                    { lie: 'M1', why: 'signup fixture needs the authorization creation to land' }
+                ],
+                simulate
+            });
     const started = await startSubscription(
         { userId: user.id, billingOptionId: optionId, returnUrl: 'https://example.test/return' },
         {

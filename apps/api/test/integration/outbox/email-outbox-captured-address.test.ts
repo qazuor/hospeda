@@ -66,6 +66,7 @@ async function runSender(send: EmailTransport['send']) {
             transport: { send },
             escalate: vi.fn(),
             onRowError: vi.fn(),
+            onRetry: vi.fn(),
             onLeaseLost: vi.fn()
         },
         owner: 'u2-2-it',

@@ -302,7 +302,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * QZPAY_TEST_CONTROL_ENABLED), MERCADO_PAGO_STATEMENT_DESCRIPTOR and the four
  * API_RATE_LIMIT_BILLING_*. 285 - 14 = 271.
  */
-const EXPECTED_VAR_COUNT = 273;
+const EXPECTED_VAR_COUNT = 274;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

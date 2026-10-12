@@ -41,6 +41,8 @@ import {
     PreferenceService,
     processEmailOutboxBatch
 } from '@repo/notifications';
+import { getClock } from '../../utils/clock.js';
+import { resolveOutboxEmailClientConfig } from '../../utils/e2e-mail-capture.js';
 import { getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
@@ -73,7 +75,7 @@ export function buildOutboxSenderRender(input: { readonly siteUrl: string }) {
 /** Everything the run needs except the reporting hooks, which are built from the run's logger. */
 export type EmailOutboxSenderDeps = Omit<
     EmailOutboxDeliveryDeps,
-    'escalate' | 'onRowError' | 'onLeaseLost'
+    'escalate' | 'onRowError' | 'onRetry' | 'onLeaseLost'
 >;
 
 /** Input of {@link createEmailOutboxSenderJob}. */
@@ -84,6 +86,8 @@ export interface CreateEmailOutboxSenderJobInput {
      * leases and leaves the queue untouched.
      */
     readonly buildDeps: () => EmailOutboxSenderDeps | null;
+    /** Reads the instant used for all lease and event timestamps in a run. */
+    readonly readNow?: (input: { readonly ctx: CronJobContext }) => Date;
     /** Releases expired leases when there are no deps. Defaults to the outbox model. */
     readonly recoverExpired?: (input: { readonly now: Date }) => Promise<readonly string[]>;
     /** Writes one domain event. Defaults to the `domain_event` model. */
@@ -132,7 +136,11 @@ export function buildUndeliverableEvent(input: {
  * {@link PreferenceService}; the sender never writes them.
  */
 function buildDefaultDeps(): EmailOutboxSenderDeps | null {
-    if (!env.HOSPEDA_EMAIL_API_KEY) {
+    const clientConfig = resolveOutboxEmailClientConfig({
+        apiKey: env.HOSPEDA_EMAIL_API_KEY,
+        captureUrl: env.HOSPEDA_E2E_MAIL_CAPTURE_URL
+    });
+    if (!clientConfig) {
         return null;
     }
     const preferenceService = new PreferenceService({
@@ -149,10 +157,7 @@ function buildDefaultDeps(): EmailOutboxSenderDeps | null {
         log: notificationLogModel,
         isOptedOut: createOutboxOptOutReader({ preferenceService }),
         render: buildOutboxSenderRender({ siteUrl: env.HOSPEDA_SITE_URL }),
-        transport: new BrevoEmailTransport(
-            createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY }),
-            getEmailSender()
-        )
+        transport: new BrevoEmailTransport(createEmailClient(clientConfig), getEmailSender())
     };
 }
 
@@ -199,7 +204,7 @@ export function createEmailOutboxSenderJob(
         enabled: true,
         timeoutMs: 55_000,
         handler: async (ctx) => {
-            const now = ctx.startedAt;
+            const now = input.readNow?.({ ctx }) ?? ctx.startedAt;
 
             if (ctx.dryRun) {
                 return result({
@@ -266,6 +271,13 @@ export function createEmailOutboxSenderJob(
                                 }
                             );
                         },
+                        onRetry: (event) => {
+                            ctx.logger.warn('Email outbox: delivery failed and will be retried', {
+                                outboxId: event.outboxId,
+                                template: event.template,
+                                last_error: event.lastError
+                            });
+                        },
                         onLeaseLost: (event) => {
                             ctx.logger.warn(
                                 'Email outbox: mail sent but the lease was lost before marking it sent',
@@ -299,5 +311,11 @@ export function createEmailOutboxSenderJob(
 
 /** The registered sender job. */
 export const emailOutboxSenderJob: CronJobDefinition = createEmailOutboxSenderJob({
-    buildDeps: buildDefaultDeps
+    buildDeps: buildDefaultDeps,
+    readNow: readEmailOutboxSenderNow
 });
+
+/** Reads the injected clock for the registered outbox sender. */
+export function readEmailOutboxSenderNow(): Date {
+    return getClock().clock.now();
+}

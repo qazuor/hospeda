@@ -150,7 +150,23 @@ The helper's adjustable clock writes to
 persisted authorization windows. The API jobs still run on their real schedule,
 and web/admin have no independent clock: their displayed dates come from API
 responses. Tests that exercise this fixed port must run serially and close the
-server in `afterAll`.
+server in `afterAll`. Closing the E2E fake provider also removes the clock file,
+so a later API read falls back to system time.
+
+### Clock-moving specs (`@clock`) and the mail capture server (HOS-1449)
+
+Specs tagged `@clock` move the one file-backed clock used by the built API. The
+`e2e:test` and `e2e:test:p0` scripts run other specs first, then run clock-moving
+specs alone with one worker. This prevents one test's clock from expiring data
+owned by another concurrently running test.
+
+The local Brevo-shaped capture server listens on port `18091` and accepts only
+`POST /smtp/email`. `fixtures/mail-capture-server.ts` exports `mailsTo({ to })`
+and `waitForMail({ to, subject, timeoutMs })` for querying captured messages.
+The outbox sender has no E2E cron of its own because `HOSPEDA_CRON_ADAPTER` is
+`manual`; trigger it as `SUPER_ADMIN` with
+`POST /api/v1/admin/cron/email-outbox-sender`, just like
+`trial-machine-expiry`. Closing the fake provider removes its file-backed clock.
 
 ## Concrete fixture usage
 

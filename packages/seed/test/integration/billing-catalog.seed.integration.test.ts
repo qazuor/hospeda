@@ -10,6 +10,10 @@ import {
     PRODUCTION_PLAN_CATALOG
 } from '../../../../scripts/production-catalog/catalog.js';
 import {
+    protectScratchPool,
+    waitForNoConnections
+} from '../../../db/test/integration/support/scratch-database.ts';
+import {
     buildPublicationContext,
     loadEffects
 } from '../../../service-core/src/services/plan-catalog/plan-publication.reader.js';
@@ -55,9 +59,11 @@ async function counts(pool: Pool): Promise<Record<string, string>> {
 }
 
 beforeAll(async () => {
+    await waitForNoConnections({ admin: adminPool, database: emptyName });
     await adminPool.query(`DROP DATABASE IF EXISTS ${emptyName} WITH (FORCE)`);
     await adminPool.query(`CREATE DATABASE ${emptyName}`);
     emptyPool = new Pool({ connectionString: emptyUrl.toString() });
+    protectScratchPool({ pool: emptyPool });
     for (const extension of ['uuid-ossp', 'pgcrypto', 'unaccent']) {
         await emptyPool.query(`CREATE EXTENSION IF NOT EXISTS "${extension}"`);
     }
@@ -78,6 +84,7 @@ afterAll(async () => {
     await migratedPool.end();
     if (emptyPool) await emptyPool.end();
     try {
+        await waitForNoConnections({ admin: adminPool, database: emptyName });
         await adminPool.query(`DROP DATABASE IF EXISTS ${emptyName} WITH (FORCE)`);
     } finally {
         await adminPool.end();

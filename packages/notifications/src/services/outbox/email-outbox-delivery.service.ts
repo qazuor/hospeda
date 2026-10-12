@@ -137,6 +137,8 @@ export interface EmailOutboxDeliveryDeps {
      * visible. The cron wires it to an `error` log. Must not throw.
      */
     readonly onRowError: (event: OutboxRowError) => void;
+    /** Reports a delivery failure persisted as `retry`; the cron logs `lastError`. */
+    readonly onRetry: (event: OutboxRetry) => void;
     /**
      * Reports a mail the provider accepted whose row this sender no longer
      * held when marking it `sent` (the lease expired mid-send and another
@@ -150,6 +152,13 @@ export interface OutboxRowError {
     readonly outboxId: string;
     readonly template: string;
     readonly error: string;
+}
+
+/** A delivery failure that will be attempted again. */
+export interface OutboxRetry {
+    readonly outboxId: string;
+    readonly template: string;
+    readonly lastError: string;
 }
 
 /** A sent row whose lease was lost before it could be marked `sent`. */
@@ -454,6 +463,9 @@ async function handleSendFailure(input: {
     });
 
     if (status !== 'failed') {
+        if (status === 'retry') {
+            deps.onRetry({ outboxId: row.id, template: row.template, lastError });
+        }
         return { outcome: 'retried', escalated: false };
     }
     const escalated = emailClass === 'transactional';

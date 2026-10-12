@@ -62,20 +62,22 @@ closed lists and one apart, validated at load (`FAKE_LISTS`):
 - **`lies`, M1..M13**: each row has its name, the matrix rows it comes from
   (date and account) and the test that proves our code resists it
   (`defenseTest`).
-- **`rules`, RP1..RP12**: the provider's own rules and measured behaviour. Not
-  lies; the fake keeps them always.
+- **`rules`, RP1..RP12**: provider rules and measured behaviour. Rules stay on;
+  measured behaviour can be turned off by name with a reason.
 - **`simulations`**: network cases nobody measured (`lostResponse`,
   `networkCut`, `noticesOutOfOrder`). Not lies, never counted as such.
 
-Three rules, held at runtime by the constructor and statically by GUARD:G15
+Four rules, held at runtime by the constructor and statically by GUARD:G15
 (`scripts/check-fake-lies.ts`, `pnpm check:fake-lies`):
 
 1. A lie not in the list cannot be told: each lie lives in ONE place of
    `src/fake/`, as `this.lying({ lie: 'M<n>' })`.
 2. By default the fake tells every lie: `new FakePaymentProvider({ clock })`.
 3. A test turns one off only by naming it and saying why, written in place:
-   `new FakePaymentProvider({ clock, honestAbout: [{ lie: 'M8', why: '…' }] })`.
-   Simulations are the other way round: off unless `simulate: [{ simulation, why }]`.
+    `new FakePaymentProvider({ clock, honestAbout: [{ lie: 'M8', why: '…' }] })`.
+4. A measured behaviour turns off only by name and reason with
+   `withoutBehaviour: [{ behaviour: 'RP7', why: '…' }]`; provider rules cannot
+   be turned off. Simulations are off unless `simulate: [{ simulation, why }]`.
 
 **What the fake tells today** (B1.4a and B3.1): the lies whose surface the
 payment interface carries, M3 (a duplicate per equal request), M5 (no notice of
@@ -83,9 +85,8 @@ an amount change), M6 (notices late, repeated or never; a refund in three
 deliveries and two formats; a charge once per channel), M8 (a charge lands at
 minute :02 of the next hour), M10 (the broken link), M11 (an open link never
 expires), M13 (the first partial refund refused as not refundable), M1 on
-creation and M9 on a future first charge; and the rules RP1 to RP6 and RP9.
-The other rows (M2, M7, M12; RP7, RP8, RP10, RP11, RP12) stay in the list and arrive with the units that
-add their surface to the interface.
+creation and M9 on a future first charge; and RP1 to RP9 and RP11 (RP7, RP8 and RP11 are switchable by name).
+The other rows (M2, M12; RP10, RP12) stay in the list and arrive with the units that add their surface to the interface. The fake implements M7 and RP7, RP8 and RP11.
 
 Every delay of the fake runs on the injected clock: advance it to see a late
 charge land, a late notice arrive (`FAKE_NOTICE_DELAY_MS`) or, with M11 off, an

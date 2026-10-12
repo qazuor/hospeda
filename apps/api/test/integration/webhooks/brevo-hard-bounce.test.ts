@@ -265,6 +265,7 @@ describe('TEST:U2:14 a Brevo hard bounce suppresses every later mail to the addr
                 transport: { send },
                 escalate,
                 onRowError: vi.fn(),
+                onRetry: vi.fn(),
                 onLeaseLost: vi.fn()
             },
             owner: 'u2-12-it',

@@ -53,6 +53,7 @@ const VALID_CALLS: readonly {
     { method: 'readAuthorization', capability: 'read', input: { authorizationId: 'a' } },
     { method: 'searchAuthorizations', capability: 'read', input: {} },
     { method: 'readCharge', capability: 'read', input: { chargeId: 'c' } },
+    { method: 'listCharges', capability: 'read', input: { authorizationId: 'a' } },
     { method: 'decodeNotice', capability: 'notify', input: { headers: {}, body: '{}' } }
 ];
 
@@ -67,8 +68,8 @@ function call(args: {
 }
 
 describe('MercadoPagoPaymentProvider', () => {
-    it('covers all eleven interface methods in this table', () => {
-        expect(VALID_CALLS).toHaveLength(11);
+    it('covers all twelve interface methods in this table', () => {
+        expect(VALID_CALLS).toHaveLength(12);
     });
 
     it.each(
@@ -108,7 +109,7 @@ describe('MercadoPagoPaymentProvider', () => {
                 ({ method }) =>
                     !['authorize', 'readAuthorization', 'cancel', 'decodeNotice'].includes(method)
             )
-        ).toHaveLength(7);
+        ).toHaveLength(8);
     });
 
     it('receives its clock injected and refuses to be built without one', () => {

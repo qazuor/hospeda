@@ -1,10 +1,14 @@
 /** Test-only entry point for the in-memory payment provider and its controls. */
+
+export { createFakeCardValidation } from './fake-card-validation';
+export { FAKE_CYCLE_ATTEMPTS, FAKE_PAUSE_BEFORE_EXPIRY_MS } from './fake-charge-cycle';
 export {
     FAKE_LIES,
     FAKE_LISTS,
     FAKE_LISTS_PATH,
     FAKE_RULES,
     FAKE_SIMULATIONS,
+    type FakeBehaviourId,
     type FakeLie,
     type FakeLieId,
     type FakeLists,
@@ -26,10 +30,12 @@ export {
     type FakeNoticeFormat
 } from './fake-notice';
 export {
+    FAKE_SWITCHABLE_BEHAVIOURS,
     type FakePaymentProviderOptions,
     FakePaymentProviderOptionsSchema,
     type HonestAbout,
-    type Simulate
+    type Simulate,
+    type WithoutBehaviour
 } from './fake-options';
 export {
     FAKE_NOTICE_CHANNEL_HEADER,
