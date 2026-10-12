@@ -40,6 +40,7 @@ import {
     PreferenceService,
     processEmailOutboxBatch
 } from '@repo/notifications';
+import { getClock } from '../../utils/clock.js';
 import { getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
@@ -82,6 +83,8 @@ export interface CreateEmailOutboxSenderJobInput {
      * leases and leaves the queue untouched.
      */
     readonly buildDeps: () => EmailOutboxSenderDeps | null;
+    /** Reads the instant used for all lease and event timestamps in a run. */
+    readonly readNow?: (input: { readonly ctx: CronJobContext }) => Date;
     /** Releases expired leases when there are no deps. Defaults to the outbox model. */
     readonly recoverExpired?: (input: { readonly now: Date }) => Promise<readonly string[]>;
     /** Writes one domain event. Defaults to the `domain_event` model. */
@@ -197,7 +200,7 @@ export function createEmailOutboxSenderJob(
         enabled: true,
         timeoutMs: 55_000,
         handler: async (ctx) => {
-            const now = ctx.startedAt;
+            const now = input.readNow?.({ ctx }) ?? ctx.startedAt;
 
             if (ctx.dryRun) {
                 return result({
@@ -297,5 +300,11 @@ export function createEmailOutboxSenderJob(
 
 /** The registered sender job. */
 export const emailOutboxSenderJob: CronJobDefinition = createEmailOutboxSenderJob({
-    buildDeps: buildDefaultDeps
+    buildDeps: buildDefaultDeps,
+    readNow: readEmailOutboxSenderNow
 });
+
+/** Reads the injected clock for the registered outbox sender. */
+export function readEmailOutboxSenderNow(): Date {
+    return getClock().clock.now();
+}
