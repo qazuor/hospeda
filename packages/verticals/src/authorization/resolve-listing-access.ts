@@ -51,6 +51,11 @@ export type ListingAccessResult =
  * (`ADMINISTRATIVE_ACTION_LISTING_OPERATIONS`); once permitted, the subject is
  * the listing owner and steps 4 to 7 run on them.
  *
+ * `createSubjectId` — step 3 on `CREATE` (ACC:15, H12): there is no listing yet,
+ * so the owner on whose behalf the listing is created comes from the request.
+ * Without it an administrative `CREATE` is FORBIDDEN; when it names the actor,
+ * step 3 refuses `actor = subject`; otherwise steps 5 to 7 run on that owner.
+ *
  * `requiredKeys` — additional catalog capability keys that the route demands
  * beyond the operation key. Evaluated in step 6 on the subject after the
  * operation key and before the limit step (step 7). All keys are mandatory
@@ -67,6 +72,7 @@ export async function resolveListingAccess(args: {
         readonly permitted: boolean;
         readonly isSystemActor: boolean;
     };
+    readonly createSubjectId?: string | null;
     readonly step6Key?: string;
     readonly requiredKeys?: readonly string[];
     readonly limit?: { readonly key: string; readonly requested: number };
@@ -86,10 +92,16 @@ export async function resolveListingAccess(args: {
     if (args.adminAction) {
         evaluatedSteps.push(3);
         if (args.actorId === null) return { allowed: false, reason: 'FORBIDDEN' };
+        const actionSubjectId =
+            args.operation === 'CREATE'
+                ? (args.createSubjectId ?? null)
+                : (args.facts?.ownerId ?? null);
+        if (args.operation === 'CREATE' && !actionSubjectId)
+            return { allowed: false, reason: 'FORBIDDEN' };
         const action = resolveAdministrativeActionStep({
             action: args.adminAction.action,
             actorId: args.actorId,
-            subjectId: args.facts?.ownerId ?? null,
+            subjectId: actionSubjectId,
             permitted: args.adminAction.permitted,
             isSystemActor: args.adminAction.isSystemActor
         });
@@ -100,7 +112,7 @@ export async function resolveListingAccess(args: {
             )
         )
             return { allowed: false, reason: 'FORBIDDEN' };
-        subjectId = args.facts?.ownerId ?? null;
+        subjectId = actionSubjectId;
     }
     if (args.operation === 'CREATE') {
         if (args.facts !== null) throw new Error('CREATE must not have listing facts');

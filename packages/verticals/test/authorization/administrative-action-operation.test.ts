@@ -69,9 +69,9 @@ function resolve(args: {
 }
 
 describe('TEST:V8a:9 the administrative action decides the operation it admits', () => {
-    it('declares EDIT for action 15 and DELETE for action 23', () => {
+    it('declares EDIT and CREATE for action 15 and DELETE for action 23', () => {
         expect(ADMINISTRATIVE_ACTION_LISTING_OPERATIONS).toEqual({
-            ACC_15: ['EDIT'],
+            ACC_15: ['EDIT', 'CREATE'],
             ACC_23: ['DELETE']
         });
     });
@@ -226,5 +226,89 @@ describe('TEST:V8a:9 step 3 permission is derived from the action own permission
         expect(
             isAdministrativeActionPermitted({ action: 'ACC_23', actorPermissions: undefined })
         ).toBe(false);
+    });
+});
+
+/** Resolves an administrative CREATE: there is no listing, the subject comes from the request. */
+function resolveCreate(args: {
+    readonly action: 'ACC_15' | 'ACC_23';
+    readonly createSubjectId?: string | null;
+    readonly actorId?: string;
+    readonly doubles: ReturnType<typeof ports>;
+}) {
+    return resolveListingAccess({
+        actorId: args.actorId ?? 'admin',
+        vertical: VerticalEnum.ACCOMMODATION,
+        facts: null,
+        operation: 'CREATE',
+        adminAction: { action: args.action, permitted: true, isSystemActor: false },
+        createSubjectId: args.createSubjectId,
+        billing: args.doubles.billing,
+        effectiveSet: args.doubles.effectiveSet
+    });
+}
+
+describe('TEST:V8a:8 action 15 creates a draft on behalf of its owner', () => {
+    it('action 15 + CREATE with a subject is allowed and evaluated on the owner', async () => {
+        // Arrange
+        const doubles = ports();
+
+        // Act
+        const result = await resolveCreate({
+            action: 'ACC_15',
+            createSubjectId: 'owner',
+            doubles
+        });
+
+        // Assert
+        expect(result).toMatchObject({ allowed: true, subjectId: 'owner' });
+        expect(doubles.coverage).toHaveBeenCalledWith(expect.objectContaining({ userId: 'owner' }));
+    });
+
+    it.each([
+        undefined,
+        null,
+        ''
+    ])('action 15 + CREATE without a subject (%s) is forbidden', async (createSubjectId) => {
+        // Arrange
+        const doubles = ports();
+
+        // Act
+        const result = await resolveCreate({ action: 'ACC_15', createSubjectId, doubles });
+
+        // Assert
+        expect(result).toEqual({ allowed: false, reason: 'FORBIDDEN' });
+        expect(doubles.coverage).not.toHaveBeenCalled();
+    });
+
+    it('action 15 + CREATE on behalf of the actor is forbidden', async () => {
+        // Arrange
+        const doubles = ports();
+
+        // Act
+        const result = await resolveCreate({
+            action: 'ACC_15',
+            createSubjectId: 'admin',
+            doubles
+        });
+
+        // Assert
+        expect(result).toEqual({ allowed: false, reason: 'FORBIDDEN' });
+    });
+
+    it('action 23 + CREATE is forbidden', async () => {
+        // Arrange
+        const doubles = ports();
+
+        // Act
+        const result = await resolveCreate({
+            action: 'ACC_23',
+            createSubjectId: 'owner',
+            doubles
+        });
+
+        // Assert
+        expect(result).toEqual({ allowed: false, reason: 'FORBIDDEN' });
+        expect(doubles.coverage).not.toHaveBeenCalled();
     });
 });

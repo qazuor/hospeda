@@ -127,13 +127,14 @@ export type ListingAdministrativeAction = Extract<AdministrativeAction, 'ACC_15'
 
 /**
  * The listing operations each listing administrative action admits in step 3:
- * action 15 edits content and nothing else; action 23 purges at the owner's
- * request and edits nothing (AC:V8a:8, AC:V8a:9). Any other operation is FORBIDDEN.
+ * action 15 edits content and nothing else — including creating a draft on
+ * behalf of its owner (H12); action 23 purges at the owner's request and edits
+ * nothing (AC:V8a:8, AC:V8a:9). Any other operation is FORBIDDEN.
  */
 export const ADMINISTRATIVE_ACTION_LISTING_OPERATIONS: Readonly<
     Record<ListingAdministrativeAction, readonly ListingOperation[]>
 > = {
-    ACC_15: ['EDIT'],
+    ACC_15: ['EDIT', 'CREATE'],
     ACC_23: ['DELETE']
 };
 
