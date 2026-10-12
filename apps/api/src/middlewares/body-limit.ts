@@ -1,6 +1,6 @@
 /**
  * @file body-limit.ts
- * @description Request body size guard, with a wider ceiling on upload routes.
+ * @description Request body size guard, with route-specific ceilings.
  *
  * The entity cap and the global cap are currently the SAME number (10 MB), so
  * be precise about what resolving the ceiling per path actually buys — the
@@ -58,6 +58,9 @@ import { env } from '../utils/env.js';
  */
 const GLOBAL_BODY_LIMIT_MB = 10;
 
+/** Mercado Pago deliveries are capped at exactly 64 KiB. */
+const MERCADO_PAGO_WEBHOOK_BODY_LIMIT_MB = 64 / 1024;
+
 /** Upload route that carries an entity photo, capped by the media limit. */
 const ENTITY_UPLOAD_PATHS = new Set([
     '/api/v1/protected/media/upload-entity',
@@ -67,8 +70,11 @@ const ENTITY_UPLOAD_PATHS = new Set([
 /** Upload route that carries an avatar, capped by the (lower) avatar limit. */
 const AVATAR_UPLOAD_PATHS = new Set(['/api/v1/protected/media/upload']);
 
+/** Mercado Pago delivery endpoint, capped independently of the global limit. */
+const WEBHOOK_PATHS = new Set(['/api/v1/webhooks/mercadopago']);
+
 /** Which ceiling a request path falls under. */
-type LimitKind = 'entity' | 'avatar' | 'global';
+type LimitKind = 'entity' | 'avatar' | 'webhook' | 'global';
 
 /**
  * Classify a request path.
@@ -82,6 +88,9 @@ const resolveKind = (path: string): LimitKind => {
     }
     if (AVATAR_UPLOAD_PATHS.has(path)) {
         return 'avatar';
+    }
+    if (WEBHOOK_PATHS.has(path)) {
+        return 'webhook';
     }
     return 'global';
 };
@@ -104,6 +113,9 @@ const resolveLimitMb = (kind: LimitKind): number => {
     if (kind === 'avatar') {
         return env?.HOSPEDA_AVATAR_MAX_FILE_SIZE_MB ?? DEFAULT_AVATAR_MAX_FILE_SIZE_MB;
     }
+    if (kind === 'webhook') {
+        return MERCADO_PAGO_WEBHOOK_BODY_LIMIT_MB;
+    }
     return GLOBAL_BODY_LIMIT_MB;
 };
 
@@ -125,7 +137,7 @@ const getLimiter = (limitMb: number, kind: LimitKind): MiddlewareHandler => {
         return cached;
     }
 
-    const isUpload = kind !== 'global';
+    const isUpload = kind === 'entity' || kind === 'avatar';
     const maxSize = mbToBytes(limitMb) + (isUpload ? MULTIPART_ENVELOPE_SLACK_BYTES : 0);
     const limiter = bodyLimit({
         maxSize,
