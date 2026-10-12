@@ -500,9 +500,19 @@
             "guard": {
                 "is_succession_predecessor": false
             },
-            "reads": ["subscription.status", "subscription.succeeds_id", "payment.status"],
+            "reads": [
+                "subscription.status",
+                "subscription.succeeds_id",
+                "payment.status",
+                "subscription.succeeded_by_id"
+            ],
             "inputs": ["provider:payment_by_id", "catalog:billing_conditions"],
-            "writes": ["subscription.status", "domain_event.changes"]
+            "writes": [
+                "subscription.status",
+                "domain_event.changes",
+                "subscription.grace_started_at",
+                "subscription.grace_ends_at"
+            ]
         },
         {
             "id": "TRANS:B:S6",

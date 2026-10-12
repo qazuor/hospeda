@@ -76,6 +76,14 @@
         "reason": "S4 keeps the same SUSCRIPCIÓN coverage source in GRACE_PERIOD as ACTIVE (03-contrato-de-cobertura.md:567-571; D-9)."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/exit-grace.service.ts",
+        "symbol": "reactivateFromGrace",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S5 moves GRACE_PERIOD to ACTIVE; both emit the same SUSCRIPCIÓN source (03-contrato-de-cobertura.md:468-469)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
         "symbol": "processProviderNotice",
         "table": "subscriptions",

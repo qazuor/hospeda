@@ -48,6 +48,20 @@
             "row": null,
             "why": "AC:B3:17 (HOS-1524, S16): busca una sucesora viva para cerrar la sucesión (S18) dentro de la transacción; no tiene fila en el inventario del glosario.",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/late-payment-conditions.ts",
+            "symbol": "isLiveSuccessionPredecessor",
+            "row": 8,
+            "why": "AC:B7:6 (HOS-1558, S5, D-4): una sucesora viva apuntándola hace de la fila la predecesora de una sucesión en curso y el pago lo retiene S19; cubre también la fila 12 (la sucesora viva que ya autorizó), que cae en esta misma excepción.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/late-payment-conditions.ts",
+            "symbol": "hasOtherLivePrincipal",
+            "row": 6,
+            "why": "AC:B7:6 (HOS-1558, S5): condición 3 del pago tardío, otra principal viva del mismo user + vertical (las seis, PENDING_AUTHORIZATION incluido).",
+            "subject": "subscription"
         }
     ],
     "grant_vivo_ancla_viva": [],
