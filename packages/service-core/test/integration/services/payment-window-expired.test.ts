@@ -1,9 +1,23 @@
-import { coveredPeriods, emailOutbox, eq, payments, receipts, subscriptions } from '@repo/db';
+import {
+    coveredPeriods,
+    type DrizzleClient,
+    emailOutbox,
+    eq,
+    payments,
+    receipts,
+    setDb,
+    subscriptions
+} from '@repo/db';
 import { afterAll, describe, expect, it } from 'vitest';
 import { creditPayment } from '../../../src/services/billing/payment/credit-payment.service.js';
 import { failPayment } from '../../../src/services/billing/payment/fail-payment.service.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers.js';
 import { paymentFixture } from './support/payment-fixtures.js';
 
 afterAll(closeServiceTestPool);
@@ -112,6 +126,105 @@ describe('TEST:B5:4 payment window expiration', () => {
                 .from(payments)
                 .where(eq(payments.id, payment.id));
             expect(after).toMatchObject({ status: 'FAILED', version: payment.version + 1 });
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'P2 rereads after a concurrent version bump that leaves the payment pending',
+        async () => {
+            const fixture = await paymentFixture();
+            const payment = await pendingPayment(fixture);
+            const realDb = getServiceTestDb();
+            let injectedVersionBump = false;
+            const updateReturnedRowCounts: number[] = [];
+
+            const wrapQueryBuilder = (builder: object, isUpdate = false): object =>
+                new Proxy(builder, {
+                    get(target, property, receiver) {
+                        const method = Reflect.get(target, property, receiver) as unknown;
+                        if (typeof method !== 'function') return method;
+                        if (property === 'then') return method.bind(target);
+                        return (...args: unknown[]) => {
+                            const result = Reflect.apply(method, target, args) as unknown;
+                            if (property === 'limit' && !injectedVersionBump) {
+                                return Promise.resolve(result).then(async (rows: unknown) => {
+                                    injectedVersionBump = true;
+                                    await getServiceTestPool().query(
+                                        "UPDATE payment SET version = version + 1 WHERE id = $1 AND status = 'PENDING'",
+                                        [payment.id]
+                                    );
+                                    return rows;
+                                });
+                            }
+                            if (property === 'returning' && isUpdate) {
+                                return Promise.resolve(result).then((rows) => {
+                                    updateReturnedRowCounts.push((rows as unknown[]).length);
+                                    return rows;
+                                });
+                            }
+                            return result && typeof result === 'object'
+                                ? wrapQueryBuilder(result, isUpdate)
+                                : result;
+                        };
+                    }
+                });
+
+            const wrappedDb = new Proxy(realDb, {
+                get(target, property, receiver) {
+                    const method = Reflect.get(target, property, receiver) as unknown;
+                    if (property === 'transaction' && typeof method === 'function') {
+                        return (callback: (tx: DrizzleClient) => Promise<unknown>) =>
+                            Reflect.apply(method, target, [
+                                (tx: object) =>
+                                    callback(
+                                        new Proxy(tx, {
+                                            get(txTarget, txProperty, txReceiver) {
+                                                const txMethod = Reflect.get(
+                                                    txTarget,
+                                                    txProperty,
+                                                    txReceiver
+                                                ) as unknown;
+                                                if (typeof txMethod !== 'function') return txMethod;
+                                                return (...args: unknown[]) => {
+                                                    const builder = Reflect.apply(
+                                                        txMethod,
+                                                        txTarget,
+                                                        args
+                                                    ) as unknown;
+                                                    return builder && typeof builder === 'object'
+                                                        ? wrapQueryBuilder(
+                                                              builder,
+                                                              txProperty === 'update'
+                                                          )
+                                                        : builder;
+                                                };
+                                            }
+                                        }) as DrizzleClient
+                                    )
+                            ]);
+                    }
+                    return typeof method === 'function' ? method.bind(target) : method;
+                }
+            });
+
+            try {
+                setDb(wrappedDb as DrizzleClient);
+                const result = await failPayment(
+                    { paymentId: payment.id },
+                    { clock: fixture.clock }
+                );
+                const [after] = await realDb
+                    .select()
+                    .from(payments)
+                    .where(eq(payments.id, payment.id));
+
+                expect(injectedVersionBump).toBe(true);
+                expect(updateReturnedRowCounts).toEqual([0, 1]);
+                expect(result).toEqual({ outcome: 'FAILED' });
+                expect(after).toMatchObject({ status: 'FAILED', version: payment.version + 2 });
+            } finally {
+                setDb(realDb);
+            }
         }
     );
 
