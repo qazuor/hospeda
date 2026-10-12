@@ -98,11 +98,13 @@ describe('TEST:B1:9 turning a lie off', () => {
 describe('TEST:B1:9 turning a measured behaviour off by name', () => {
     it('rejects rules, missing list rows, blank reasons, duplicates, and unimplemented measured behaviour', () => {
         for (const entry of [
-            { behaviour: 'RP1', why: 'never switch a rule' },
             { behaviour: 'RP99', why: 'missing' },
             { behaviour: 'RP7', why: '  ' }
         ])
             expect(() => build({ clock, withoutBehaviour: [entry] })).toThrow();
+        expect(() =>
+            build({ clock, withoutBehaviour: [{ behaviour: 'RP1', why: 'never switch a rule' }] })
+        ).toThrow(/not a measured behaviour of the list/);
         expect(() =>
             build({ clock, withoutBehaviour: [{ behaviour: 'RP12', why: 'not implemented yet' }] })
         ).toThrow(/not switchable yet/);
