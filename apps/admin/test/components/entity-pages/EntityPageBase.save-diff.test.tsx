@@ -62,7 +62,13 @@ function Editor() {
             <button
                 type="button"
                 data-testid="retype-location-same"
-                onClick={() => ctx.setFieldValue('location.city', 'Colón')}
+                onClick={() => {
+                    ctx.setFieldValue('location.city', 'Colón');
+                    ctx.setFieldValue('contactInfo', {
+                        phones: ['+54 3447 000000'],
+                        website: 'https://casa.test'
+                    });
+                }}
             >
                 location same
             </button>
@@ -89,7 +95,8 @@ const mixedSection: SectionConfig = {
         field('visibility'),
         field('lifecycleState'),
         field('location.city'),
-        field('location.state')
+        field('location.state'),
+        field('contactInfo')
     ],
     customRender: () => <Editor />
 };
@@ -100,7 +107,8 @@ const entity = {
     description: 'Old description',
     visibility: 'PUBLIC',
     lifecycleState: 'ACTIVE',
-    location: { city: 'Colón', state: 'Entre Ríos' }
+    location: { city: 'Colón', state: 'Entre Ríos' },
+    contactInfo: { phones: ['+54 3447 000000'], website: 'https://casa.test' }
 };
 
 function renderPage(mutateAsync: (values: Record<string, unknown>) => Promise<unknown>) {
@@ -191,7 +199,8 @@ describe('EntityPageBase save sends only the changed fields (HOS-1493)', () => {
         const mutateAsync = vi.fn().mockResolvedValue({});
         renderPage(mutateAsync);
 
-        // Act — the location is re-written with the same value (new reference).
+        // Act — the location and the contact object are re-written with the same
+        // values (the object as a NEW reference).
         act(() => {
             fireEvent.click(screen.getByTestId('retype-location-same'));
             fireEvent.click(screen.getByTestId('edit-description'));
