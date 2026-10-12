@@ -41,6 +41,11 @@ describe('TEST:B5:24 RP12 card validation receiver', () => {
                 .select()
                 .from(subscriptions)
                 .where(eq(subscriptions.id, fixture.started.subscriptionId));
+            // The signup itself enqueues its own mail (S2); only mail added by the card validation counts.
+            const emailsBefore = await getServiceTestDb()
+                .select()
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, fixture.user.id));
             const providerDeliveries = fixture.provider.takeDeliveries().deliveries;
             const decoded = await Promise.all(
                 providerDeliveries.map((item) => fixture.provider.decodeNotice(item))
@@ -127,7 +132,7 @@ describe('TEST:B5:24 RP12 card validation receiver', () => {
             expect(subjectPayments).toEqual([]);
             expect(subjectCoverage).toEqual([]);
             expect(subjectReceipts).toEqual([]);
-            expect(userEmails).toEqual([]);
+            expect(userEmails).toEqual(emailsBefore);
             expect(after).toEqual(before);
             expect(fixture.coverageNotices.emitCoverageChanged).not.toHaveBeenCalled();
         }
