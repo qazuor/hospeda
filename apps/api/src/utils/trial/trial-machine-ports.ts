@@ -19,8 +19,10 @@ import {
     type ListingVertical,
     listingPublicationModel
 } from '../../../../../packages/db/src/models/listing/listing-publication.model';
+import { getClock } from '../clock';
 import { invalidateEffectiveSetsForUser } from '../effective-set-cache';
 import { getListingAccessPorts } from '../listing-access/ports';
+import { buildTrialCampaignOutbox } from './trial-campaign-outbox';
 
 function portOf(tx: DrizzleClient): TrialMachineTransaction {
     const listingVerticalByVertical: Readonly<Record<Vertical, ListingVertical | null>> = {
@@ -129,12 +131,7 @@ function portOf(tx: DrizzleClient): TrialMachineTransaction {
                 .set({ endsAt, updatedAt: sql`now()` })
                 .where(eq(trials.id, trialId));
         },
-        /** The outbox write is AC:V4:16 (V4.6, HOS-1448); this port is replaced there. */
-        async scheduleExpiryCampaign() {},
-        /** The outbox write is AC:V4:16 (V4.6, HOS-1448); this port is replaced there. */
-        async scheduleRecoveryCampaign() {},
-        /** The outbox write is AC:V4:16 (V4.6, HOS-1448); this port is replaced there. */
-        async cancelCampaign() {},
+        ...buildTrialCampaignOutbox({ tx, clock: getClock().clock }),
         async findRedemption({ redemptionKey }) {
             const [row] = await tx
                 .select({ userId: trialRedemptions.userId, vertical: trialRedemptions.vertical })

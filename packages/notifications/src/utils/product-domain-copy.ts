@@ -131,3 +131,28 @@ export function resolveRenewalReminderFooter(productDomain: string | null | unde
             return 'Gracias por confiar en Hospeda para tus necesidades de alojamiento turístico.';
     }
 }
+
+/** Etiquetas en español para verticales en un correo consolidado. */
+type TrialCampaignVertical = 'accommodation' | 'gastronomy' | 'experience' | 'tourist';
+
+export const TRIAL_VERTICAL_LABELS: Readonly<Record<TrialCampaignVertical, string>> = {
+    accommodation: 'Alojamiento',
+    gastronomy: 'Gastronomía',
+    experience: 'Experiencias',
+    tourist: 'Turismo'
+};
+
+/** Nombra las verticales de una pieza consolidada.
+ * @param input - Verticales del usuario.
+ * @returns Etiquetas separadas por coma y conjunción.
+ */
+export function formatTrialVerticals(input: { readonly verticals: readonly string[] }): string {
+    const labels = input.verticals.map((vertical) => {
+        const label = Object.hasOwn(TRIAL_VERTICAL_LABELS, vertical)
+            ? TRIAL_VERTICAL_LABELS[vertical as TrialCampaignVertical]
+            : undefined;
+        return label ?? vertical;
+    });
+    if (labels.length < 2) return labels[0] ?? '';
+    return `${labels.slice(0, -1).join(', ')} y ${labels.at(-1)}`;
+}

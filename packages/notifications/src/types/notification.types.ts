@@ -36,6 +36,10 @@ export enum NotificationType {
     TRIAL_ENDING_10D = 'trial_ending_10d',
     /** T−5: friendly, but names the risk — the listing may be unpublished. */
     TRIAL_ENDING_5D = 'trial_ending_5d',
+    /** T−2: avisa que la prueba termina en dos días. */
+    TRIAL_ENDING_2D = 'trial_ending_2d',
+    /** El día del vencimiento, antes de que termine la prueba. */
+    TRIAL_ENDING_TODAY = 'trial_ending_today',
     /** T−1: direct. "If you do not pay, tomorrow it comes down." */
     TRIAL_ENDING_1D = 'trial_ending_1d',
     /**
@@ -51,6 +55,8 @@ export enum NotificationType {
     TRIAL_WIN_BACK_5D = 'trial_win_back_5d',
     /** +10 days after expiry. */
     TRIAL_WIN_BACK_10D = 'trial_win_back_10d',
+    /** Quince días después del vencimiento. */
+    TRIAL_WIN_BACK_15D = 'trial_win_back_15d',
     /** +30 days after expiry. */
     TRIAL_WIN_BACK_30D = 'trial_win_back_30d',
     /** +60 days after expiry. Nothing is sent after this one. */
@@ -423,11 +429,14 @@ export interface TrialSeriesPayload extends BaseNotificationPayload {
     type:
         | NotificationType.TRIAL_ENDING_10D
         | NotificationType.TRIAL_ENDING_5D
+        | NotificationType.TRIAL_ENDING_2D
+        | NotificationType.TRIAL_ENDING_TODAY
         | NotificationType.TRIAL_ENDING_1D
         | NotificationType.TRIAL_EXPIRED
         | NotificationType.TRIAL_WIN_BACK_1D
         | NotificationType.TRIAL_WIN_BACK_5D
         | NotificationType.TRIAL_WIN_BACK_10D
+        | NotificationType.TRIAL_WIN_BACK_15D
         | NotificationType.TRIAL_WIN_BACK_30D
         | NotificationType.TRIAL_WIN_BACK_60D;
     /** Display name of the plan the trial was running on. */

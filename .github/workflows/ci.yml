@@ -301,6 +301,15 @@ jobs:
         env:
           HOSPEDA_PRODUCTION_BUILD: ${{ ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')) && '1' || '0' }}
         run: pnpm check:bootstrap-answers-never-in-production
+      # GUARD:G-R4 (HOS-1448, AC:V4:13). Its own step, like every guard here.
+      - name: Check transition guards are disjoint (GUARD:G-R4)
+        run: pnpm check:transition-guards-disjoint
+      # GUARD:G-R4-B (HOS-1448, AC:V4:13). Its own step, like every guard here.
+      - name: Check vertical machine vocabulary (GUARD:G-R4-B)
+        run: pnpm check:verticals-machines-vocabulary
+      # GUARD:G-R6 (HOS-1448, AC:V4:13). Its own step, like every guard here.
+      - name: Check read columns have writers (GUARD:G-R6)
+        run: pnpm check:read-columns-written
       # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
       # code of the verticals half (G14's HALVES.verticals) writes
       # addon_product.version_id: re-pointing it is an act of billing.

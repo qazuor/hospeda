@@ -33,7 +33,9 @@ import {
     createEmailClient,
     createOutboxMailRenderer,
     createOutboxOptOutReader,
+    createTrialCampaignRenderers,
     type EmailOutboxDeliveryDeps,
+    OUTBOX_MAIL_RENDERERS,
     type OutboxEscalation,
     PreferenceService,
     processEmailOutboxBatch
@@ -50,6 +52,21 @@ export const EMAIL_OUTBOX_LEASE_MS = 5 * 60 * 1000;
 
 /** Rows claimed per run. */
 export const EMAIL_OUTBOX_BATCH_SIZE = 50;
+
+/**
+ * Builds the production outbox renderer with the shared and trial templates.
+ *
+ * @param input - Renderer configuration.
+ * @returns The renderer used by the outbox sender.
+ */
+export function buildOutboxSenderRender(input: { readonly siteUrl: string }) {
+    return createOutboxMailRenderer({
+        renderers: {
+            ...OUTBOX_MAIL_RENDERERS,
+            ...createTrialCampaignRenderers({ siteUrl: input.siteUrl })
+        }
+    });
+}
 
 /** Everything the run needs except the reporting hooks, which are built from the run's logger. */
 export type EmailOutboxSenderDeps = Omit<
@@ -129,7 +146,7 @@ function buildDefaultDeps(): EmailOutboxSenderDeps | null {
         outbox: emailOutboxModel,
         log: notificationLogModel,
         isOptedOut: createOutboxOptOutReader({ preferenceService }),
-        render: createOutboxMailRenderer(),
+        render: buildOutboxSenderRender({ siteUrl: env.HOSPEDA_SITE_URL }),
         transport: new BrevoEmailTransport(
             createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY }),
             getEmailSender()

@@ -32,6 +32,7 @@ export const OUTBOX_TEMPLATE_CLASS: Readonly<Record<string, OutboxEmailClass>> =
     [NotificationType.TRIAL_WIN_BACK_1D]: 'commercial',
     [NotificationType.TRIAL_WIN_BACK_5D]: 'commercial',
     [NotificationType.TRIAL_WIN_BACK_10D]: 'commercial',
+    [NotificationType.TRIAL_WIN_BACK_15D]: 'commercial',
     [NotificationType.TRIAL_WIN_BACK_30D]: 'commercial',
     [NotificationType.TRIAL_WIN_BACK_60D]: 'commercial'
 };

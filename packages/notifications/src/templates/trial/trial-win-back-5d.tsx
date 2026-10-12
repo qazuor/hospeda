@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
+import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -20,7 +20,8 @@ import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial
 export function TrialWinBack5Days({
     recipientName,
     upgradeUrl,
-    productDomain
+    productDomain,
+    verticals
 }: TrialSeriesEmailProps) {
     const copy = resolveTrialSeriesCopy(productDomain);
 
@@ -32,6 +33,11 @@ export function TrialWinBack5Days({
             <Heading>Volvé a aparecer en Hospeda</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
+            {verticals && verticals.length > 1 ? (
+                <Text style={styles.paragraph}>
+                    Tu prueba incluye {formatTrialVerticals({ verticals })}.
+                </Text>
+            ) : null}
 
             <Text style={styles.paragraph}>
                 Todos los días entra gente a Hospeda buscando {copy.searchIntent} en el Litoral:

@@ -1,5 +1,5 @@
 import { Section, Text } from '@react-email/components';
-import { resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
+import { formatTrialVerticals, resolveTrialSeriesCopy } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -24,7 +24,8 @@ export function TrialWinBack1Day({
     recipientName,
     planName,
     upgradeUrl,
-    productDomain
+    productDomain,
+    verticals
 }: TrialSeriesEmailProps) {
     const copy = resolveTrialSeriesCopy(productDomain);
 
@@ -36,6 +37,11 @@ export function TrialWinBack1Day({
             <Heading>Tu publicación te está esperando</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
+            {verticals && verticals.length > 1 ? (
+                <Text style={styles.paragraph}>
+                    Tu prueba incluye {formatTrialVerticals({ verticals })}.
+                </Text>
+            ) : null}
 
             <Text style={styles.paragraph}>
                 Ayer {copy.possessive} dejó de verse en Hospeda. Nada más que eso cambió: la

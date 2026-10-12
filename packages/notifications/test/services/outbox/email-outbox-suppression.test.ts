@@ -29,12 +29,13 @@ function facts(overrides: Partial<OutboxSuppressionFacts> = {}): OutboxSuppressi
 }
 
 describe('classifyOutboxTemplate', () => {
-    it('classifies the five post-trial win-back templates as commercial', () => {
+    it('classifies the six post-trial win-back templates as commercial', () => {
         // Arrange
         const winBacks = [
             NotificationType.TRIAL_WIN_BACK_1D,
             NotificationType.TRIAL_WIN_BACK_5D,
             NotificationType.TRIAL_WIN_BACK_10D,
+            NotificationType.TRIAL_WIN_BACK_15D,
             NotificationType.TRIAL_WIN_BACK_30D,
             NotificationType.TRIAL_WIN_BACK_60D
         ];
@@ -44,7 +45,18 @@ describe('classifyOutboxTemplate', () => {
 
         // Assert
         expect(classes).toEqual(winBacks.map(() => 'commercial'));
-        expect(Object.keys(OUTBOX_TEMPLATE_CLASS)).toHaveLength(5);
+        expect(Object.keys(OUTBOX_TEMPLATE_CLASS)).toHaveLength(6);
+    });
+
+    it('classifies every pre-expiry campaign template as transactional', () => {
+        for (const template of [
+            NotificationType.TRIAL_ENDING_10D,
+            NotificationType.TRIAL_ENDING_5D,
+            NotificationType.TRIAL_ENDING_2D,
+            NotificationType.TRIAL_ENDING_TODAY
+        ]) {
+            expect(classifyOutboxTemplate({ template }).emailClass).toBe('transactional');
+        }
     });
 
     it('defaults an unknown template to transactional', () => {
