@@ -29,6 +29,7 @@ import { adminListGastronomiesRoute } from './list';
 import { adminModerateGastronomyRoute } from './moderate';
 import { adminGastronomyOptionsRoute } from './options';
 import { adminPatchGastronomyRoute } from './patch';
+import { adminPurgeOnRequestGastronomyRoute } from './purge';
 import { adminRemoveGastronomyFaqRoute } from './removeFaq';
 import { adminRemoveGastronomyMediaRoute } from './removeMedia';
 import { adminReorderGastronomyFaqsRoute } from './reorderFaqs';
@@ -82,6 +83,9 @@ app.route('/', adminAssignGastronomyOwnerRoute);
 
 // POST /:id/moderate - ACC:12 two-level publication moderation; V6.9b retires legacy moderation_state.
 app.route('/', adminModerateGastronomyRoute);
+
+// POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
+app.route('/', adminPurgeOnRequestGastronomyRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for a listing
 // Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param

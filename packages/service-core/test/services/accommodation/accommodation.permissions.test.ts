@@ -9,6 +9,7 @@ import {
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    checkAction15CanUpdate,
     checkCanAdminList,
     checkCanAdminView,
     checkCanCreate,
@@ -20,6 +21,7 @@ import {
     checkCanView
 } from '../../../src/services/accommodation/accommodation.permissions';
 import { ServiceError } from '../../../src/types';
+import { runWithAdministrativeAuthorization } from '../../../src/utils/administrative-authorization';
 import * as permissionUtils from '../../../src/utils/permission';
 import {
     createMockAccommodation,
@@ -157,6 +159,80 @@ describe('Accommodation Permissions', () => {
         expect(() =>
             checkCanUpdate(createActor([PermissionEnum.ACCOMMODATION_UPDATE_ANY]), suspended)
         ).not.toThrow();
+    });
+
+    describe('action 15 only through the explicit authorization (ACC:15, HOS-1493)', () => {
+        const FOREIGN = PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT;
+        // No role at all: the decision reads permissions and the scope only.
+        const admin15 = () => createActor([FOREIGN], otherUserId, []);
+        const createInput = (ownerId: UserIdType) => ({
+            ...createMockAccommodation({ ownerId }),
+            reviewsCount: 1,
+            averageRating: 4.5
+        });
+        const inScope = (subjectId: string, run: () => void) =>
+            runWithAdministrativeAuthorization({
+                authorization: { action: 'ACC_15', subjectId },
+                run: async () => run()
+            });
+
+        it('checkAction15CanUpdate does not authorize the action 15 permission alone, outside a scope', () => {
+            expect(checkAction15CanUpdate(admin15(), withOwner(mockUserId))).toBe(false);
+            expectForbidden(
+                () => checkCanUpdate(admin15(), withOwner(mockUserId)),
+                'Permission denied to update accommodation'
+            );
+        });
+        it('checkAction15CanUpdate authorizes a content write inside a scope bound to the owner', async () => {
+            await inScope(mockUserId, () => {
+                expect(checkAction15CanUpdate(admin15(), withOwner(mockUserId))).toBe(true);
+            });
+        });
+        it('checkCanUpdate (unpublish, visibility) never accepts action 15, even inside its scope', async () => {
+            await inScope(mockUserId, () => {
+                expectForbidden(
+                    () => checkCanUpdate(admin15(), withOwner(mockUserId)),
+                    'Permission denied to update accommodation'
+                );
+            });
+        });
+        it('checkAction15CanUpdate does not cover a scope bound to a different owner', async () => {
+            await inScope(otherUserId, () => {
+                expect(checkAction15CanUpdate(admin15(), withOwner(mockUserId))).toBe(false);
+            });
+        });
+        it('checkAction15CanUpdate keeps the owner pause (only UPDATE_ANY is exempt)', async () => {
+            const suspended = { ...withOwner(mockUserId), ownerSuspended: true };
+            await inScope(mockUserId, () => {
+                expectForbidden(
+                    () => checkAction15CanUpdate(admin15(), suspended),
+                    'while the owner subscription is paused'
+                );
+            });
+        });
+        it('checkCanCreate refuses the action 15 permission alone, outside an authorized scope', () => {
+            expectForbidden(
+                () => checkCanCreate(admin15(), createInput(mockUserId)),
+                'Permission denied to create accommodation'
+            );
+        });
+        it('checkCanCreate lets action 15 create in the owner name inside a scope bound to her', async () => {
+            await inScope(mockUserId, () => {
+                expect(() => checkCanCreate(admin15(), createInput(mockUserId))).not.toThrow();
+            });
+        });
+        it('checkCanCreate does not accept action 15 for an own create', async () => {
+            await inScope(mockUserId, () => {
+                expectForbidden(
+                    () =>
+                        checkCanCreate(
+                            createActor([FOREIGN], mockUserId, []),
+                            createInput(mockUserId)
+                        ),
+                    'Permission denied to create accommodation'
+                );
+            });
+        });
     });
 
     it('checkCanSoftDelete allows with ANY permission', () => {

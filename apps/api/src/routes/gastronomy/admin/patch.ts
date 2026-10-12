@@ -11,6 +11,7 @@ import {
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -46,7 +47,10 @@ export const adminPatchGastronomyRoute = createAdminRoute({
         const id = params.id as string;
         const data = body as GastronomyUpdateInput;
 
-        const result = await gastronomyService.update(actor, id, data);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => gastronomyService.update(actor, id, data)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

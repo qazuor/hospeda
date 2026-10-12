@@ -1,5 +1,5 @@
 import { VerticalEnum } from '@repo/schemas';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
@@ -10,6 +10,7 @@ import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/use
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { EffectiveSetSubjectProvider } from '@/features/billing/effective-set-subject';
+import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /**
@@ -35,14 +36,18 @@ function AccommodationViewPage() {
         <EffectiveSetSubjectProvider
             value={{ userId: accommodation.ownerId, vertical: VerticalEnum.ACCOMMODATION }}
         >
-            <AccommodationViewContent id={id} />
+            <AccommodationViewContent
+                id={id}
+                name={accommodation.name ?? id}
+            />
         </EffectiveSetSubjectProvider>
     );
 }
 
 const AccommodationPending = createPendingComponent();
 
-function AccommodationViewContent({ id }: { readonly id: string }) {
+function AccommodationViewContent({ id, name }: { readonly id: string; readonly name: string }) {
+    const navigate = useNavigate();
     const entityData = useAccommodationPage(id);
 
     // Determine section anchor order based on user permissions (spec §4.4):
@@ -61,6 +66,19 @@ function AccommodationViewContent({ id }: { readonly id: string }) {
                 tabs={accommodationTabs}
                 basePath={`/accommodations/${id}`}
             />
+
+            {/* HOS-1493 action 23: the same action row as gastronomy and
+                experience, with the px-6 inset of the entity card below. */}
+            <div className="space-y-4 px-6 pt-6">
+                <div className="flex justify-end">
+                    <ListingPurgeOnRequestCard
+                        vertical="accommodation"
+                        entityId={id}
+                        entityName={name}
+                        onPurged={() => navigate({ to: '/accommodations' })}
+                    />
+                </div>
+            </div>
 
             <EntityPageBase
                 entityType="accommodation"

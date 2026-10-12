@@ -1,0 +1,1 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'listing.purgeOnRequest' BEFORE 'billing.subscription.inspect';

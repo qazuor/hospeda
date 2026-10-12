@@ -23,6 +23,7 @@ import type {
     HostTradeOwnerUpdate,
     HostTradeReviewCreateBody,
     HostTradeReviewUpdateBody,
+    ListingSupportEditsResponse,
     OccupancySourceEnum,
     PriceAlertResponse,
     ProtectedEffectiveSetResponse,
@@ -2951,6 +2952,48 @@ export const publishApi = {
         }
         const segment = vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
         return apiClient.delete({ path: `${PROTECTED}/${segment}/${id}` });
+    }
+};
+
+/** Protected API plural per listing vertical (HOS-1493, row 26 read). */
+const LISTING_VERTICAL_PLURAL: Readonly<Record<PublishVerticalSlug, string>> = {
+    accommodation: 'accommodations',
+    gastronomy: 'gastronomies',
+    experience: 'experiences'
+};
+
+/**
+ * Support edits of an owned listing (HOS-1493, row 26): the most recent
+ * content edits made by support through administrative action 15.
+ */
+export const listingSupportEditsApi = {
+    /**
+     * Lists the latest support edits of one listing the caller owns.
+     *
+     * @param params.vertical - The listing's vertical.
+     * @param params.listingId - The listing id.
+     * @param params.cookieHeader - Optional SSR cookie header.
+     * @returns `{ items: { occurredAt, parts }[] }`, most recent first.
+     *
+     * @example
+     * ```ts
+     * const result = await listingSupportEditsApi.list({ vertical: 'accommodation', listingId, cookieHeader });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    list({
+        vertical,
+        listingId,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly listingId: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<ListingSupportEditsResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${listingId}/support-edits`,
+            cookieHeader
+        });
     }
 };
 

@@ -8,12 +8,13 @@ import {
 } from '@/components/entity-form/accordion/SectionAccordion';
 import type { FieldMediaHandlers } from '@/components/entity-form/EntityFormSection';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { isNoChangesToSaveError } from '@/components/entity-form/utils/changed-fields.utils';
 import { ENTITY_EDIT_FORM_ID } from '@/components/entity-header/EntityPageHeader';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/ToastProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import { env } from '@/env';
-import { parseApiValidationErrors } from '@/lib/errors';
+import { isApiError, parseApiValidationErrors } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 import { FormErrorSummary } from './FormErrorSummary';
@@ -219,7 +220,24 @@ export const EntityEditContent = ({
                 variant: 'success'
             });
         } catch (error) {
+            if (isNoChangesToSaveError(error)) {
+                addToast({ message: t('error.form.no-changes'), variant: 'info' });
+                return;
+            }
+
             adminLogger.error('Failed to save entity', error);
+
+            // A 403 on save is a field this actor may not write — on somebody
+            // else's listing, support writes content only (HOS-1493). Say that,
+            // instead of echoing the API's internal message.
+            if (isApiError(error) && error.isForbiddenError()) {
+                addToast({
+                    title: t('error.form.save-failed'),
+                    message: t('error.form.save-forbidden'),
+                    variant: 'error'
+                });
+                return;
+            }
 
             const tAny = t as (key: string, params?: Record<string, unknown>) => string;
             const apiBody = (error as { body?: unknown }).body;

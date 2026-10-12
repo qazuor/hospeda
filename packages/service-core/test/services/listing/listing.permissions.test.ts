@@ -15,12 +15,14 @@ import {
     checkCanDeleteListing,
     checkCanEditAll,
     checkCanEditOwn,
+    checkCanEditOwnOrAll,
     checkCanModerateListing,
     checkCanModerateReview,
     checkCanViewAll
 } from '../../../src/services/listing/listing.permissions';
 import type { Actor } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
+import { runWithAdministrativeAuthorization } from '../../../src/utils/administrative-authorization';
 import * as permissionUtils from '../../../src/utils/permission';
 
 // ---------------------------------------------------------------------------
@@ -366,6 +368,73 @@ describe('HOS-1077 per-vertical permission split', () => {
                 checkCanDeleteListing(
                     makeActor([PermissionEnum.EXPERIENCE_DELETE]),
                     {},
+                    'gastronomy'
+                )
+            );
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// checkCanEditOwnOrAll — action 15 own permission (ACC:15, HOS-1493)
+// ---------------------------------------------------------------------------
+
+describe('checkCanEditOwnOrAll and action 15 (explicit authorization only)', () => {
+    const FOREIGN = PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT;
+    // No role at all: the decision reads permissions and the scope only.
+    const roleless = (permissions: PermissionEnum[], id: string): Actor => ({
+        id,
+        roles: [],
+        permissions
+    });
+    const inScope = (subjectId: string, run: () => void) =>
+        runWithAdministrativeAuthorization({
+            authorization: { action: 'ACC_15', subjectId },
+            run: async () => run()
+        });
+
+    it.each([
+        'gastronomy',
+        'experience'
+    ] as const)('refuses the action 15 permission alone on a foreign %s listing', (vertical) => {
+        expectForbidden(() =>
+            checkCanEditOwnOrAll(roleless([FOREIGN], 'admin-1'), { ownerId: 'owner-1' }, vertical)
+        );
+    });
+
+    it.each([
+        'gastronomy',
+        'experience'
+    ] as const)('lets action 15 edit a foreign %s listing inside a scope bound to its owner', async (vertical) => {
+        await inScope('owner-1', () => {
+            expect(() =>
+                checkCanEditOwnOrAll(
+                    roleless([FOREIGN], 'admin-1'),
+                    { ownerId: 'owner-1' },
+                    vertical
+                )
+            ).not.toThrow();
+        });
+    });
+
+    it('refuses a scope bound to a different owner', async () => {
+        await inScope('owner-2', () => {
+            expectForbidden(() =>
+                checkCanEditOwnOrAll(
+                    roleless([FOREIGN], 'admin-1'),
+                    { ownerId: 'owner-1' },
+                    'gastronomy'
+                )
+            );
+        });
+    });
+
+    it('does not let the owner use action 15 without EDIT_OWN', async () => {
+        await inScope('owner-1', () => {
+            expectForbidden(() =>
+                checkCanEditOwnOrAll(
+                    roleless([FOREIGN], 'owner-1'),
+                    { ownerId: 'owner-1' },
                     'gastronomy'
                 )
             );

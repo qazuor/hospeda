@@ -12,6 +12,7 @@ import {
 import { addExperienceFaq, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -54,7 +55,10 @@ export const adminAddExperienceFaqRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof addExperienceFaq>[0] }
         ).model;
-        const result = await addExperienceFaq(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => addExperienceFaq(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

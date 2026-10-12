@@ -13,6 +13,7 @@ import { SuccessSchema, VerticalEnum } from '@repo/schemas';
 import { ExperienceService, removeExperienceMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -47,15 +48,19 @@ export const adminRemoveExperienceMediaRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof removeExperienceMedia>[0] }
         ).model;
-        const result = await removeExperienceMedia(
-            model,
-            actor,
-            {
-                experienceId: params.id as string,
-                mediaId: params.mediaId as string
-            },
-            getMediaProvider()
-        );
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                removeExperienceMedia(
+                    model,
+                    actor,
+                    {
+                        experienceId: params.id as string,
+                        mediaId: params.mediaId as string
+                    },
+                    getMediaProvider()
+                )
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

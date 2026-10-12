@@ -303,6 +303,19 @@
                 "gastronomy": "Não conseguimos criar o comércio. Tente novamente.",
                 "experience": "Não conseguimos criar a experiência. Tente novamente."
             }
+        },
+        "supportEdit": {
+            "title": "O suporte editou este anúncio",
+            "edited": "O suporte editou o conteúdo deste anúncio em {{date}}: {{parts}}.",
+            "unchanged": "Por isso, ele não foi publicado, destacado nem excluído.",
+            "contact": "Se você não pediu, fale com a gente.",
+            "parts": {
+                "texts": "os textos",
+                "photos": "as fotos",
+                "faq": "as perguntas frequentes",
+                "hours": "os horários",
+                "other": "outros dados"
+            }
         }
     },
     "notices": {

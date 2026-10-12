@@ -1,5 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { PaymentProvider } from '@repo/payments';
+import { setActionReasonResolver } from '@repo/service-core';
+import { getRequestActionReason } from './lib/request-context';
 import { setupRoutes } from './routes';
 import { createFileClock, injectClock, systemClock } from './utils/clock';
 import { configureOpenAPI } from './utils/configure-open-api';
@@ -50,6 +52,12 @@ const initApp = (
     // empty and every ownership-guarded route fails with HTTP 500
     // "Entity type not configured".
     registerEntityFetchers();
+
+    // HOS-1493 (ACC:15, H6): the reason of a permitted administrative action
+    // travels in `x-action-reason`; the listing-access middleware records it in
+    // the request context and service-core reads it through this resolver.
+    // Wired here (not only in `src/index.ts`) so integration tests have it too.
+    setActionReasonResolver(getRequestActionReason);
 
     const app = createApp();
 

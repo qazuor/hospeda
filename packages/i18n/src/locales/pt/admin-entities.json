@@ -993,5 +993,22 @@
             "errorTitle": "Erro ao criar ofício",
             "errorMessage": "Não foi possível criar o ofício. Tente novamente."
         }
+    },
+    "listingPurgeOnRequest": {
+        "action": "Excluir a pedido do dono",
+        "title": "Excluir o anúncio a pedido do dono",
+        "whatHappens": {
+            "listing": "Você vai excluir o anúncio {name} a pedido do dono.",
+            "content": "O conteúdo dele (textos, fotos, perguntas, horários) é apagado e não volta.",
+            "featured": "Se houver um destaque apontando para este anúncio, ele é cancelado."
+        },
+        "reasonLabel": "Por quê",
+        "reasonHelp": "Fica no registro, junto com quem o excluiu e de quem era.",
+        "cancel": "Cancelar",
+        "confirm": "Excluir o anúncio",
+        "successTitle": "Anúncio excluído",
+        "successMessage": "O anúncio {name} foi excluído a pedido do dono.",
+        "errorTitle": "Não foi possível excluir o anúncio",
+        "stateChanged": "O anúncio mudou nesse meio-tempo (por exemplo, mudou de dono) e não foi excluído. Recarregue a página e confira antes de tentar de novo."
     }
 }

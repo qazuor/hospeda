@@ -60,6 +60,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
         PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
         PermissionEnum.LISTING_MODERATE,
+        PermissionEnum.LISTING_PURGE_ON_REQUEST,
         // Catalog management (amenities/features)
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,
@@ -487,6 +488,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
         PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
         PermissionEnum.LISTING_MODERATE,
+        PermissionEnum.LISTING_PURGE_ON_REQUEST,
         // Catalog management (amenities/features)
         PermissionEnum.AMENITY_CREATE,
         PermissionEnum.AMENITY_UPDATE,

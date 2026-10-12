@@ -59,6 +59,7 @@ import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { scheduleListingMediaRevalidation } from '../listing/listing-revalidation.js';
+import { assertSupportEditContentOnly } from '../listing/listing-support-edit';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildMediaTextPatch } from '../media/media-text-patch';
@@ -144,6 +145,9 @@ export async function addExperienceMedia(
         ): Promise<ServiceOutput<ExperienceMediaSingleOutput>> => {
             const experience = await requireExperience(model, validated.experienceId, tx);
             checkExperienceCanEditMedia(actor, experience);
+            // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+            // moderation verdict; a no-op outside its authorized scope.
+            assertSupportEditContentOnly({ data: { media: validated.media } });
 
             const mediaModel = new ExperienceMediaModel();
 
@@ -203,7 +207,7 @@ export async function addExperienceMedia(
             // photo's URL or alt text (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -321,7 +325,7 @@ export async function removeExperienceMedia(
             // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -450,7 +454,7 @@ export async function reorderExperienceMedia(
             // field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -627,7 +631,7 @@ export async function setFeaturedExperienceMedia(
             // Post-write, inside the tx; field name only (HOS-1642, AC:V9a:6).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -762,7 +766,7 @@ export async function updateExperienceMedia(
             // is content, so no value is ever stored (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }
@@ -851,6 +855,9 @@ export async function addExperienceFeaturedMedia(
 
         const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
         checkExperienceCanEditMedia(actor, experience);
+        // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+        // moderation verdict; a no-op outside its authorized scope.
+        assertSupportEditContentOnly({ data: { media: validated.media } });
 
         const mediaModel = new ExperienceMediaModel();
 
@@ -874,7 +881,7 @@ export async function addExperienceFeaturedMedia(
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'experience',
-                listing: { id: experience.id, ownerId: experience.ownerId },
+                listing: { id: experience.id, ownerId: experience.ownerId, name: experience.name },
                 actor,
                 field: 'media',
                 ctx: { ...ctx, tx }

@@ -49,6 +49,7 @@ import { protectedRemoveGastronomyMediaRoute } from './removeMedia';
 import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { protectedReorderGastronomyMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
+import { protectedGastronomySupportEditsRoute } from './supportEdits';
 import { protectedUnpublishGastronomyRoute } from './unpublish';
 import { protectedUpdateGastronomyFaqRoute } from './updateFaq';
 import { protectedUpdateGastronomyMediaRoute } from './updateMedia';
@@ -162,6 +163,7 @@ app.route('/', protectedPublishGastronomyRoute);
 app.route('/', protectedUnpublishGastronomyRoute);
 app.route('/', protectedReactivateGastronomyRoute);
 app.route('/', protectedPurgeGastronomyRoute);
+app.route('/', protectedGastronomySupportEditsRoute);
 app.route('/', protectedGetGastronomyByIdRoute);
 
 // PATCH /{id} — Owner operational update.

@@ -9,6 +9,7 @@ import {
     getOwnershipDescriptor,
     hasPermission
 } from '../../utils';
+import { isAction15AuthorizedFor } from '../../utils/administrative-authorization';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
 
 /**
@@ -24,13 +25,19 @@ const isOwner = (actor: Actor, entity: { ownerId?: string | null }) => {
 
 /**
  * Checks if an actor has permission to create an accommodation.
- * Requires the `ACCOMMODATION_CREATE` permission.
+ * Requires the `ACCOMMODATION_CREATE` permission, or — inside a scope where a
+ * route's listing-access chain authorized action 15 for the owner named in
+ * `data.ownerId` — action 15's own permission (ACC:15, HOS-1493, H12). The
+ * permission alone never opens the create: the explicit authorization does.
  * Ownership checks (`ownerId` matching `actor.id`) are assumed to be handled separately.
  * @param actor The actor performing the action.
- * @param _data The data for the accommodation to be created (unused in this check).
+ * @param data The data for the accommodation to be created (its `ownerId` decides action 15).
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanCreate(actor: Actor, _data: AccommodationCreateInput): void {
+export function checkCanCreate(actor: Actor, data: AccommodationCreateInput): void {
+    if (isAction15AuthorizedFor({ actor, ownerId: data.ownerId })) {
+        return;
+    }
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -43,6 +50,9 @@ export function checkCanCreate(actor: Actor, _data: AccommodationCreateInput): v
  * Checks if an actor has permission to update an accommodation.
  * Requires `ACCOMMODATION_UPDATE_ANY` or `ACCOMMODATION_UPDATE_OWN`.
  * If `_OWN` is used, it verifies that the actor is the owner of the accommodation.
+ * Action 15 never passes here: see {@link checkAction15CanUpdate}, which only
+ * the content-write hook `_canUpdate` consults (never `unpublish` nor the
+ * visibility hook).
  * @param actor The actor performing the action.
  * @param entity The accommodation entity to be updated.
  * @throws {ServiceError} If the permission check fails.
@@ -65,6 +75,29 @@ export function checkCanUpdate(actor: Actor, entity: Accommodation): void {
             'Cannot edit this accommodation while the owner subscription is paused'
         );
     }
+}
+
+/**
+ * Whether a CONTENT write on an accommodation is authorized as action 15
+ * (ACC:15, HOS-1493): only inside a scope where a route's listing-access chain
+ * authorized action 15 for this accommodation's owner — the actor's permission
+ * alone never opens it. The owner pause still applies (it exempts only
+ * `ACCOMMODATION_UPDATE_ANY`).
+ *
+ * @param actor The actor performing the action.
+ * @param entity The accommodation entity to be written.
+ * @returns `true` when action 15 authorizes the write; `false` to fall back to {@link checkCanUpdate}.
+ * @throws {ServiceError} FORBIDDEN when action 15 applies but the owner is paused.
+ */
+export function checkAction15CanUpdate(actor: Actor, entity: Accommodation): boolean {
+    if (!isAction15AuthorizedFor({ actor, ownerId: entity.ownerId })) return false;
+    if (entity.ownerSuspended && !hasPermission(actor, PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Cannot edit this accommodation while the owner subscription is paused'
+        );
+    }
+    return true;
 }
 
 /**

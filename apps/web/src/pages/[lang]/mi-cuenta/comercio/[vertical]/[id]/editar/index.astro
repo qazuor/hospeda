@@ -18,11 +18,13 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
+import SupportEditNotice from '@/components/listing/SupportEditNotice.astro';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorSectionStatuses } from '@/lib/editor/listing-editor-hub-status-model';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { readListingEditorHubFacts } from '@/lib/listing/listing-editor-detail';
+import { loadSupportEdits } from '@/lib/listing/support-edits';
 
 export const prerender = false;
 
@@ -34,6 +36,15 @@ const { detail, locale, vertical, listingId, registry } = resolution;
 const { t } = createTranslations(locale);
 
 const facts = readListingEditorHubFacts({ detail });
+
+// Row 26 (HOS-1493): support's content edits on this listing. The vertical comes
+// from the page resolution. Never blocks the hub: any failure degrades to no
+// notice.
+const supportEdits = await loadSupportEdits({
+	vertical,
+	listingId,
+	cookieHeader: Astro.request.headers.get('cookie') ?? undefined,
+});
 const statuses = resolveListingEditorSectionStatuses({
 	input: {
 		vertical,
@@ -62,6 +73,8 @@ const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 		<span class="listing-hub__badge">{verticalLabel}</span>
 		<code class="listing-hub__slug">{detail.slug}</code>
 	</div>
+
+	<SupportEditNotice locale={locale} items={supportEdits.items} />
 
 	<EditorHub
 		locale={locale}

@@ -1,0 +1,42 @@
+---
+/**
+ * @file SupportEditNotice.astro
+ * @description Row 26 of the owner's account (HOS-1493): tells the owner that
+ * support edited the content of their listing (administrative action 15),
+ * when and which parts; that the listing was not published, featured or
+ * deleted because of it; and where to answer if they did not ask for it.
+ *
+ * Server-rendered, no island and no fetch: the hub page loads the items with
+ * `loadSupportEdits` and hands them in. Without items it renders nothing.
+ */
+import type { ListingSupportEdit } from '@repo/schemas';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildSupportEditNotice } from '@/lib/listing/support-edits';
+import styles from './SupportEditNotice.module.css';
+
+interface Props {
+	/** Page locale. */
+	readonly locale: SupportedLocale;
+	/** Support edits of the listing (any order; the most recent is shown). */
+	readonly items: readonly ListingSupportEdit[];
+}
+
+const { locale, items } = Astro.props;
+const { t } = createTranslations(locale);
+const notice = buildSupportEditNotice({ locale, items, t });
+---
+
+{
+	notice && (
+		<aside class={styles.notice} aria-label={notice.title} data-testid="support-edit-notice">
+			<p class={styles.title}>{notice.title}</p>
+			<p class={styles.body}>{notice.edited}</p>
+			<p class={styles.body}>{notice.unchanged}</p>
+			<p class={styles.body}>
+				<a class={styles.link} href={notice.contactHref}>
+					{notice.contact}
+				</a>
+			</p>
+		</aside>
+	)
+}

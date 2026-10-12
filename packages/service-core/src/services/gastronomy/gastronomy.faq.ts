@@ -51,7 +51,7 @@ import {
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
-import { checkGastronomyCanEditFaqs, checkGastronomyCanView } from './gastronomy.permissions';
+import { checkGastronomyCanEditFaqEntries, checkGastronomyCanView } from './gastronomy.permissions';
 
 // ---------------------------------------------------------------------------
 // Internal helper — load listing or throw NOT_FOUND
@@ -121,7 +121,7 @@ export async function addGastronomyFaq(
             tx: DrizzleClient
         ): Promise<ServiceOutput<GastronomyFaqSingleOutput>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
-            checkGastronomyCanEditFaqs(actor, gastronomy);
+            checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
             const faqModel = new GastronomyFaqModel();
 
@@ -146,7 +146,7 @@ export async function addGastronomyFaq(
             // question/answer text (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -208,7 +208,7 @@ export async function updateGastronomyFaq(
             tx: DrizzleClient
         ): Promise<ServiceOutput<GastronomyFaqSingleOutput>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
-            checkGastronomyCanEditFaqs(actor, gastronomy);
+            checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
             const faqModel = new GastronomyFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
@@ -231,7 +231,7 @@ export async function updateGastronomyFaq(
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -291,7 +291,7 @@ export async function removeGastronomyFaq(
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
-            checkGastronomyCanEditFaqs(actor, gastronomy);
+            checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
             const faqModel = new GastronomyFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
@@ -306,7 +306,7 @@ export async function removeGastronomyFaq(
             // Post-write, inside the tx; field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }
@@ -439,7 +439,7 @@ export async function reorderGastronomyFaqs(
         // longer possible and the event cannot outlive (or miss) the writes.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
             const gastronomy = await requireGastronomy(model, validated.gastronomyId, tx);
-            checkGastronomyCanEditFaqs(actor, gastronomy);
+            checkGastronomyCanEditFaqEntries(actor, gastronomy);
 
             const faqModel = new GastronomyFaqModel();
 
@@ -474,7 +474,7 @@ export async function reorderGastronomyFaqs(
             // field name only (DEC-DATA-005).
             await recordListingSubEntityEdit({
                 entityType: 'gastronomy',
-                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId },
+                listing: { id: gastronomy.id, ownerId: gastronomy.ownerId, name: gastronomy.name },
                 actor,
                 field: 'faqs',
                 ctx: { ...ctx, tx }

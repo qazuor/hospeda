@@ -142,6 +142,11 @@ import {
     recordListingOwnerAct,
     recordListingSubEntityEdit
 } from '../listing/listing-owner-act';
+import {
+    assertOutsideAction15Scope,
+    assertSupportCreateIsDraft,
+    assertSupportEditContentOnly
+} from '../listing/listing-support-edit';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
@@ -166,6 +171,7 @@ import {
     normalizeViewInput
 } from './accommodation.normalizers';
 import {
+    checkAction15CanUpdate,
     checkCanAdminList,
     checkCanAdminView,
     checkCanCreate,
@@ -545,9 +551,28 @@ export class AccommodationService extends BaseCrudService<
         checkCanCreate(actor, data);
     }
     /**
+     * Admin metadata is never listing content: inside an action-15 scope it is
+     * refused before the base check, whose `_canUpdate` would otherwise accept
+     * the scope (ACC:15, HOS-1493).
+     *
+     * @param actor - The actor setting the admin info.
+     * @param entity - The accommodation whose admin info is set.
+     * @throws {ServiceError} FORBIDDEN inside an ACC_15 scope, or per the base check.
+     */
+    protected override _canAdminSetInfo(actor: Actor, entity: Accommodation): Promise<void> | void {
+        assertOutsideAction15Scope({ operation: 'adminInfo' });
+        return super._canAdminSetInfo(actor, entity);
+    }
+
+    /**
      * @inheritdoc
      */
     protected _canUpdate(actor: Actor, entity: Accommodation): void {
+        // Every `_canUpdate` caller writes content (the row, its FAQ, media and
+        // IA data), so an explicitly authorized action 15 may pass (ACC:15,
+        // HOS-1493). `unpublish` and `_canUpdateVisibility` call
+        // `checkCanUpdate` directly, which action 15 never satisfies.
+        if (checkAction15CanUpdate(actor, entity)) return;
         checkCanUpdate(actor, entity);
     }
     /**
@@ -805,6 +830,8 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
+        assertSupportCreateIsDraft({ data: data as Record<string, unknown> });
         // HOS-153: an accommodation may only be created directly in ACTIVE state with
         // complete capacity. `publish()` enforces this for DRAFT/INACTIVE -> ACTIVE
         // transitions, but a direct `create({ lifecycleState: ACTIVE })` — reachable via
@@ -1105,6 +1132,8 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
+        assertSupportEditContentOnly({ data: data as Record<string, unknown> });
         const slugWasProvided = Object.hasOwn(data as Record<string, unknown>, 'slug');
 
         // SPEC-095: when destinationId is being changed, validate it is a CITY.
@@ -1284,7 +1313,9 @@ export class AccommodationService extends BaseCrudService<
             entityType: 'accommodation',
             listing: {
                 id: entity.id,
-                ownerId: (ownerActBefore?.ownerId as string | null | undefined) ?? entity.ownerId
+                ownerId: (ownerActBefore?.ownerId as string | null | undefined) ?? entity.ownerId,
+                // The support-edit email names the listing (ACC:15, HOS-1493).
+                name: entity.name
             },
             actor,
             ctx,
@@ -3442,7 +3473,11 @@ export class AccommodationService extends BaseCrudService<
                     // WITH the FAQ row it describes (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'faqs',
                         ctx: { ...ctx, tx }
@@ -3496,7 +3531,11 @@ export class AccommodationService extends BaseCrudService<
                     // Post-write, inside the tx (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'faqs',
                         ctx: { ...ctx, tx }
@@ -3563,7 +3602,11 @@ export class AccommodationService extends BaseCrudService<
                     // Post-write, inside the tx (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'faqs',
                         ctx: { ...ctx, tx }
@@ -3719,7 +3762,11 @@ export class AccommodationService extends BaseCrudService<
                     // reorder, field name only (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'faqs',
                         ctx: { ...ctx, tx }
@@ -4064,6 +4111,9 @@ export class AccommodationService extends BaseCrudService<
                         );
                     }
                     await this._canUpdate(actor, accommodation);
+                    // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+                    // moderation verdict; a no-op outside its authorized scope.
+                    assertSupportEditContentOnly({ data: { media: validated.media } });
 
                     const mediaModel = new AccommodationMediaModel();
 
@@ -4137,7 +4187,11 @@ export class AccommodationService extends BaseCrudService<
                     // commits or rolls back WITH the media row it describes.
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'media',
                         ctx: { ...ctx, tx }
@@ -4224,6 +4278,9 @@ export class AccommodationService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 await this._canUpdate(actor, accommodation);
+                // ACC:15 (HOS-1493): a photo written by action 15 never carries a
+                // moderation verdict; a no-op outside its authorized scope.
+                assertSupportEditContentOnly({ data: { media: validated.media } });
 
                 const mediaModel = new AccommodationMediaModel();
 
@@ -4252,7 +4309,11 @@ export class AccommodationService extends BaseCrudService<
                     // Post-write, inside the tx (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'media',
                         ctx: { ...ctx, tx }
@@ -4359,7 +4420,11 @@ export class AccommodationService extends BaseCrudService<
                     // Post-write, inside the tx (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'media',
                         ctx: { ...ctx, tx }
@@ -4478,7 +4543,11 @@ export class AccommodationService extends BaseCrudService<
                     // reorder, field name only (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'media',
                         ctx: { ...ctx, tx }
@@ -4632,7 +4701,11 @@ export class AccommodationService extends BaseCrudService<
                     // Post-write, inside the tx (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'media',
                         ctx: { ...ctx, tx }
@@ -4752,7 +4825,11 @@ export class AccommodationService extends BaseCrudService<
                     // Post-write, inside the tx (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'media',
                         ctx: { ...ctx, tx }
@@ -4866,7 +4943,11 @@ export class AccommodationService extends BaseCrudService<
                     // Post-write, inside the tx (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'media',
                         ctx: { ...ctx, tx }
@@ -4984,7 +5065,11 @@ export class AccommodationService extends BaseCrudService<
                     // Post-write, inside the tx (HOS-1642, AC:V9a:6).
                     await recordListingSubEntityEdit({
                         entityType: 'accommodation',
-                        listing: { id: accommodation.id, ownerId: accommodation.ownerId },
+                        listing: {
+                            id: accommodation.id,
+                            ownerId: accommodation.ownerId,
+                            name: accommodation.name
+                        },
                         actor,
                         field: 'media',
                         ctx: { ...ctx, tx }

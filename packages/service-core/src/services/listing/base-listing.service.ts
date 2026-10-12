@@ -61,6 +61,11 @@ import {
 import type { ListingHookState } from './listing.types';
 import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
 import { scheduleListingRevalidation } from './listing-revalidation.js';
+import {
+    assertOutsideAction15Scope,
+    assertSupportCreateIsDraft,
+    assertSupportEditContentOnly
+} from './listing-support-edit';
 
 // ---------------------------------------------------------------------------
 // Minimal catalog/junction interfaces (injected by concrete services)
@@ -646,6 +651,20 @@ export abstract class BaseListingService<
     // -----------------------------------------------------------------------
 
     /**
+     * Admin metadata is never listing content: inside an action-15 scope it is
+     * refused before the base check, whose `_canUpdate` would otherwise accept
+     * the scope (ACC:15, HOS-1493).
+     *
+     * @param actor - The actor setting the admin info.
+     * @param entity - The listing whose admin info is set.
+     * @throws {ServiceError} FORBIDDEN inside an ACC_15 scope, or per the base check.
+     */
+    protected override _canAdminSetInfo(actor: Actor, entity: TEntity): Promise<void> | void {
+        assertOutsideAction15Scope({ operation: 'adminInfo' });
+        return super._canAdminSetInfo(actor, entity);
+    }
+
+    /**
      * Pre-insert lifecycle hook shared by all listing types.
      *
      * Performs three tasks (in order):
@@ -667,6 +686,8 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
+        // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
+        assertSupportCreateIsDraft({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
 
         // (a) Destination CITY-type validation
@@ -801,6 +822,8 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
+        // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
+        assertSupportEditContentOnly({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
         const slugWasProvided = Object.hasOwn(payload, 'slug');
 
@@ -926,7 +949,9 @@ export abstract class BaseListingService<
             entityType: this._revalidationEntityType,
             listing: {
                 id: entity.id,
-                ownerId: (before?.ownerId as string | null | undefined) ?? entity.ownerId
+                ownerId: (before?.ownerId as string | null | undefined) ?? entity.ownerId,
+                // The support-edit email names the listing (ACC:15, HOS-1493).
+                name: entity.name
             },
             actor,
             ctx,

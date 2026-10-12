@@ -12,6 +12,7 @@ import {
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -69,7 +70,10 @@ export const adminUpdateAccommodationRoute = createAdminRoute({
         const { id } = params;
         const data = body as AccommodationUpdateInput;
 
-        const result = await accommodationService.update(actor, id as string, data);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => accommodationService.update(actor, id as string, data)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

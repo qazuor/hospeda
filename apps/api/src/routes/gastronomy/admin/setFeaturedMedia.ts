@@ -17,6 +17,7 @@ import { GastronomyMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, ServiceError, setFeaturedGastronomyMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -55,9 +56,13 @@ export const adminSetFeaturedGastronomyMediaRoute = createAdminRoute({
                 model: Parameters<typeof setFeaturedGastronomyMedia>[0];
             }
         ).model;
-        const result = await setFeaturedGastronomyMedia(model, actor, {
-            gastronomyId: params.id as string,
-            mediaId: params.mediaId as string
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                setFeaturedGastronomyMedia(model, actor, {
+                    gastronomyId: params.id as string,
+                    mediaId: params.mediaId as string
+                })
         });
 
         if (result.error) {

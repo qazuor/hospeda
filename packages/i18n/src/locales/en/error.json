@@ -35,7 +35,9 @@
         "validation-failed-fields_one": "Validation failed for {{count}} field. Please check the highlighted fields.",
         "validation-failed-fields_other": "Validation failed for {{count}} fields. Please check the highlighted fields.",
         "save-changes": "Save changes",
-        "saving": "Saving..."
+        "saving": "Saving...",
+        "no-changes": "There are no changes to save.",
+        "save-forbidden": "Not saved: you don't have permission to change one of these fields. On a listing that belongs to someone else, support can only edit its content (texts, photos, FAQs, opening hours, prices and contact details). Undo the other changes and save again."
     },
     "field": {
         "required": "{{field}} is required",

@@ -20,6 +20,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -62,9 +63,13 @@ export const adminReorderMediaRoute = createAdminRoute({
     ) => {
         const actor = getActorFromContext(ctx);
 
-        const result = await accommodationService.reorderMedia(actor, {
-            accommodationId: params.id as string,
-            orderedIds: (body as AccommodationMediaReorderPayload).orderedIds
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.reorderMedia(actor, {
+                    accommodationId: params.id as string,
+                    orderedIds: (body as AccommodationMediaReorderPayload).orderedIds
+                })
         });
 
         if (result.error) {

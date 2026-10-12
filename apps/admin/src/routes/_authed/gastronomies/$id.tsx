@@ -28,6 +28,7 @@ import {
     useModerateGastronomyReviewMutation
 } from '@/features/gastronomy';
 import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
+import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -235,7 +236,14 @@ function GastronomyViewPage() {
                 and assign-owner card align with the entity card below instead of
                 sitting full-bleed against the page edges. */}
             <div className="space-y-4 px-6 pt-6">
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
+                    {/* HOS-1493 action 23: purge at the owner's request, with reason. */}
+                    <ListingPurgeOnRequestCard
+                        vertical="gastronomy"
+                        entityId={id}
+                        entityName={gastronomy?.name ?? id}
+                        onPurged={() => navigate({ to: '/gastronomies' })}
+                    />
                     <DeleteRowButton
                         entityId={id}
                         entityName={gastronomy?.name ?? id}

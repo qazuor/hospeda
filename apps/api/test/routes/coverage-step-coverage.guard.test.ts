@@ -12,9 +12,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/admin/batch.ts': {
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
-    'accommodation/admin/create.ts': {
-        exempt: 'Crear una ficha a nombre de su dueño es AC:V8a:7 (V8a.2): el sujeto sale del pedido y la precisión 8 no lo resuelve para un alta (hueco H-10 de notas).'
-    },
+    'accommodation/admin/create.ts': { operation: 'CREATE' },
     'accommodation/admin/delete.ts': {
         exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
     },
@@ -25,6 +23,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
     'accommodation/admin/patch.ts': { operation: 'EDIT' },
+    'accommodation/admin/purge.ts': { operation: 'DELETE' },
     'accommodation/admin/removeFaq.ts': { operation: 'EDIT' },
     'accommodation/admin/removeMedia.ts': { operation: 'EDIT' },
     'accommodation/admin/reorderFaqs.ts': { operation: 'EDIT' },
@@ -100,9 +99,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'experience/admin/batch.ts': {
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
-    'experience/admin/create.ts': {
-        exempt: 'Crear una ficha a nombre de su dueño es AC:V8a:7 (V8a.2): el sujeto sale del pedido y la precisión 8 no lo resuelve para un alta (hueco H-10 de notas).'
-    },
+    'experience/admin/create.ts': { operation: 'CREATE' },
     'experience/admin/delete.ts': {
         exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
     },
@@ -113,6 +110,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
     'experience/admin/patch.ts': { operation: 'EDIT' },
+    'experience/admin/purge.ts': { operation: 'DELETE' },
     'experience/admin/removeFaq.ts': { operation: 'EDIT' },
     'experience/admin/removeMedia.ts': { operation: 'EDIT' },
     'experience/admin/reorderFaqs.ts': { operation: 'EDIT' },
@@ -163,9 +161,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'gastronomy/admin/batch.ts': {
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
-    'gastronomy/admin/create.ts': {
-        exempt: 'Crear una ficha a nombre de su dueño es AC:V8a:7 (V8a.2): el sujeto sale del pedido y la precisión 8 no lo resuelve para un alta (hueco H-10 de notas).'
-    },
+    'gastronomy/admin/create.ts': { operation: 'CREATE' },
     'gastronomy/admin/delete.ts': {
         exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
     },
@@ -176,6 +172,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
     'gastronomy/admin/patch.ts': { operation: 'EDIT' },
+    'gastronomy/admin/purge.ts': { operation: 'DELETE' },
     'gastronomy/admin/removeFaq.ts': { operation: 'EDIT' },
     'gastronomy/admin/removeMedia.ts': { operation: 'EDIT' },
     'gastronomy/admin/reorderFaqs.ts': { operation: 'EDIT' },
@@ -244,7 +241,7 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
 
     it('discovers exactly the frozen 140 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(143);
+        expect(Object.keys(EXPECTED)).toHaveLength(146);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {

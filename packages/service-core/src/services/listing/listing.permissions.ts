@@ -29,6 +29,7 @@ import {
 } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
+import { isAction15AuthorizedFor } from '../../utils/administrative-authorization';
 import { hasPermission } from '../../utils/permission';
 
 // ---------------------------------------------------------------------------
@@ -252,7 +253,8 @@ export function checkCanEditOwn(
 
 /**
  * Verifies the actor may update a listing through the base update pipeline
- * (`_canUpdate`). Accepts staff (the applicable vertical EDIT_ALL permission) OR the listing's owner holding
+ * (`_canUpdate`). Accepts staff (the applicable vertical EDIT_ALL permission), an action-15 write explicitly
+ * authorized for this listing's owner by a route's listing-access chain (ACC:15, HOS-1493), OR the listing's owner holding
  * the applicable vertical EDIT_OWN permission (SPEC-253 D2=b: replaces the former 10 per-section perms).
  *
  * This is the owner-aware analogue of {@link checkCanEditAll}, mirroring how
@@ -272,6 +274,12 @@ export function checkCanEditOwnOrAll(
     vertical: GastronomyOrExperience
 ): void {
     if (hasListingPermission(actor, 'editAll', vertical)) {
+        return;
+    }
+    // ACC:15 (HOS-1493): only inside a scope where a route's listing-access
+    // chain authorized action 15 for this listing's owner — never from the
+    // actor's permission alone.
+    if (isAction15AuthorizedFor({ actor, ownerId: entity.ownerId })) {
         return;
     }
     if (isOwner(actor, entity) && hasListingPermission(actor, 'editOwn', vertical)) {

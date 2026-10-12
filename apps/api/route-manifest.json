@@ -127,6 +127,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/accommodations/:id/purge"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/accommodations/:id/restore"
         },
         {
@@ -883,6 +887,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/experiences/:id/purge"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/experiences/:id/restore"
         },
         {
@@ -1060,6 +1068,10 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/gastronomies/:id/moderate"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/gastronomies/:id/purge"
         },
         {
             "method": "POST",
@@ -2310,6 +2322,10 @@
             "path": "/api/v1/protected/accommodations/:id/reactivate"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/accommodations/:id/support-edits"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/accommodations/:id/unpublish"
         },
@@ -2678,6 +2694,10 @@
             "path": "/api/v1/protected/experiences/:id/reactivate"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/experiences/:id/support-edits"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/experiences/:id/unpublish"
         },
@@ -2844,6 +2864,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/gastronomies/:id/reactivate"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/gastronomies/:id/support-edits"
         },
         {
             "method": "POST",

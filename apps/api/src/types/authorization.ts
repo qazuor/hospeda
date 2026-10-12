@@ -28,6 +28,28 @@ export type ListingAccessConfig = {
     operation: ListingOperation;
     /** Validated route parameter naming the listing; defaults to `id`, absent for CREATE. */
     idParam?: string;
+    /**
+     * The NUCLEO/08 §3 action a foreign actor executes on this route; defaults
+     * to ACC_15 (edit foreign content). ACC_23 purges at the owner's request and
+     * is evaluated on the owner (V5.md §3.2 rule 3). Step 3 reads this single
+     * value both for the permission check and for the resolver's action.
+     */
+    administrativeAction?: 'ACC_15' | 'ACC_23';
+    /**
+     * CREATE only (ACC:15, H12): the name of the validated body field that names
+     * the owner the listing is created for (e.g. `'ownerId'`). When the body
+     * names somebody other than the actor, the create is action 15: step 3
+     * demands its permission and steps 5 to 7 run on that owner, who must exist
+     * (404 otherwise). Absent, or naming the actor, the create runs as today.
+     */
+    createSubjectFromBody?: string;
+    /**
+     * CREATE with `createSubjectFromBody` only: the permission an OWN create
+     * (no owner in the body, or the actor) still demands. The route gate is an
+     * OR of this permission and action 15's, so the middleware re-checks it for
+     * the own path; the foreign path is decided by step 3 alone.
+     */
+    ownCreatePermission?: PermissionEnum;
     /** Explicit capability for operations whose key is supplied by the caller. */
     step6Key?: string;
     /**

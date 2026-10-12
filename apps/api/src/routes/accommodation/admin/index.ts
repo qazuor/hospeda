@@ -20,6 +20,7 @@ import { adminListAccommodationsRoute } from './list';
 import { adminModerateAccommodationRoute } from './moderate';
 import { adminAccommodationOptionsRoute } from './options';
 import { adminPatchAccommodationRoute } from './patch';
+import { adminPurgeOnRequestAccommodationRoute } from './purge';
 import { adminRemoveFaqRoute } from './removeFaq';
 import { adminRemoveMediaRoute } from './removeMedia';
 import { adminReorderAccommodationFaqsRoute } from './reorderFaqs';
@@ -75,6 +76,9 @@ app.route('/', adminVerifyAccommodationRoute);
 
 // POST /:id/moderate - ACC:12 two-level publication moderation; V6.9b removes legacy moderation_state.
 app.route('/', adminModerateAccommodationRoute);
+
+// POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
+app.route('/', adminPurgeOnRequestAccommodationRoute);
 
 // GET /:id/occupancy - Occupancy calendar (staff, ACCOMMODATION_OCCUPANCY_VIEW) - HOS-43
 app.route('/', adminGetOccupancyRoute);

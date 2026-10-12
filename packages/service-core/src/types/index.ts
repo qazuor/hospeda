@@ -47,6 +47,13 @@ export interface ServiceContext<THookState = Record<string, unknown>> extends Qu
      */
     correlationId?: string;
     /**
+     * The reason an administrative action on somebody else's resource carries
+     * (NUCLEO/08 §1.2 "por qué"; ACC:15, HOS-1493). Optional: when absent, the
+     * writer falls back to the resolver the API wires at startup
+     * (`setActionReasonResolver`) and, failing that, records `null`.
+     */
+    actionReason?: string;
+    /**
      * Pagination parameters extracted from the search/count input before the
      * pagination keys are stripped from `params`.
      *

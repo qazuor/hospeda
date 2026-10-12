@@ -1,4 +1,5 @@
 import { LifecycleStatusEnum } from '@repo/schemas';
+import { resolveAdministrativeAuthorization } from './administrative-authorization';
 
 /**
  * Decides whether a listing slug should be regenerated because its name
@@ -49,6 +50,10 @@ export function shouldRegenerateSlugOnListingChange(input: {
     readonly refreshSlugFromName?: boolean;
 }): boolean {
     if (input.slugWasProvided) return false;
+    // ACC:15 (HOS-1493): support editing somebody else's listing never moves
+    // its public URL, not even on a never-published draft — the address is
+    // not content, and only the owner may choose to move it.
+    if (resolveAdministrativeAuthorization().authorization?.action === 'ACC_15') return false;
 
     const currentName = input.currentName?.trim() ?? '';
 

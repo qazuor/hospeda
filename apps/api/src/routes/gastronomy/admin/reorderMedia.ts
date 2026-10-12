@@ -21,6 +21,7 @@ import {
 import { GastronomyService, reorderGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -60,9 +61,13 @@ export const adminReorderGastronomyMediaRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof reorderGastronomyMedia>[0] }
         ).model;
-        const result = await reorderGastronomyMedia(model, actor, {
-            gastronomyId: params.id as string,
-            orderedIds: (body as GastronomyMediaReorderPayload).orderedIds
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                reorderGastronomyMedia(model, actor, {
+                    gastronomyId: params.id as string,
+                    orderedIds: (body as GastronomyMediaReorderPayload).orderedIds
+                })
         });
 
         if (result.error) {

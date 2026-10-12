@@ -46,7 +46,8 @@ function appFor(args: {
     actorId?: string;
     permissions?: PermissionEnum[];
     tier?: 'protected' | 'admin';
-    operation?: 'EDIT' | 'PUBLISH';
+    operation?: 'EDIT' | 'PUBLISH' | 'DELETE';
+    administrativeAction?: 'ACC_15' | 'ACC_23';
     limit?: number;
     guest?: boolean;
 }) {
@@ -71,6 +72,7 @@ function appFor(args: {
                 config: {
                     vertical,
                     operation: args.operation ?? 'EDIT',
+                    administrativeAction: args.administrativeAction,
                     limit:
                         requested === undefined
                             ? undefined
@@ -436,5 +438,54 @@ describe('AC:V5:26 route capabilities on the subject', () => {
             code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
             details: { entitlementKey: 'edit_accommodation_info' }
         });
+    });
+});
+
+describe('TEST:V8a:9 each listing administrative action asks for its own permission', () => {
+    const P15 = 'LISTING_FOREIGN_CONTENT_EDIT';
+    const P23 = 'LISTING_PURGE_ON_REQUEST';
+    it.each([
+        ['an ACC_23 route to the 15 holder', ADMIN, 'DELETE', 'ACC_23', P15],
+        ['an ACC_15 route asked to DELETE', ADMIN, 'DELETE', 'ACC_15', P15],
+        ['an EDIT route to the 23 holder', ADMIN, 'EDIT', undefined, P23],
+        ['ACC_23 on the actor own listing', OWNER, 'DELETE', 'ACC_23', P23]
+    ] as const)('refuses %s with 403 before coverage', async (_label, actorId, operation, action, permission) => {
+        const app = appFor({
+            actorId,
+            tier: 'admin',
+            operation,
+            administrativeAction: action,
+            permissions: [PermissionEnum[permission]]
+        });
+        const result = await probe(app);
+        expect(result.status).toBe(403);
+        expect(result.body.error).toMatchObject({ code: ServiceErrorCode.FORBIDDEN });
+        expect(mocks.coverage).not.toHaveBeenCalled();
+        expect(mocks.effectiveSet).not.toHaveBeenCalled();
+    });
+
+    it('lets an admin holding the action 23 permission purge with the owner as subject', async () => {
+        mocks.effectiveSet.mockImplementation(async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'recover_own_listing', value: 1, strategy: 'MAX' }]
+            })
+        );
+        const app = appFor({
+            actorId: ADMIN,
+            tier: 'admin',
+            operation: 'DELETE',
+            administrativeAction: 'ACC_23',
+            permissions: [PermissionEnum.LISTING_PURGE_ON_REQUEST]
+        });
+        const result = await probe(app);
+        expect(result.status).toBe(200);
+        expect(result.body).toMatchObject({ subjectId: OWNER });
+        expect(result.body.evaluatedSteps).toContain(3);
+        expect(mocks.effectiveSet).toHaveBeenCalledWith({ userId: OWNER, vertical });
     });
 });

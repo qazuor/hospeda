@@ -16,6 +16,7 @@ import {
 import { addGastronomyMedia, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -58,7 +59,10 @@ export const adminAddGastronomyMediaRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof addGastronomyMedia>[0] }
         ).model;
-        const result = await addGastronomyMedia(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => addGastronomyMedia(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
