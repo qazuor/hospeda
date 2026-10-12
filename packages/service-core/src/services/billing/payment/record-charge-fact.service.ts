@@ -29,6 +29,7 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
 }
 
 export type RecordChargeFactResult =
+    | { readonly outcome: 'CARD_VALIDATION_IGNORED' }
     | { readonly outcome: 'NO_SUBSCRIPTION' }
     | { readonly outcome: 'RECORDED_PENDING'; readonly paymentId: string }
     | {
@@ -52,6 +53,8 @@ export async function recordChargeFact(
     actStartInstant({ act });
     const read = await ports.provider.readCharge({ chargeId: input.chargeId });
     const { snapshot: charge } = assertFreshForAct({ read, act });
+    if (charge.purpose === 'cardValidation') return { outcome: 'CARD_VALIDATION_IGNORED' };
+    if (charge.authorizationId === null) return { outcome: 'NO_SUBSCRIPTION' };
 
     const [linked] = await getDb()
         .select({ subscription: subscriptions, providerLink: providerLinks })
