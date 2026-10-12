@@ -3,6 +3,10 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { FakePaymentProvider } from '../fake/fake-payment-provider';
 import { PaymentProviderError } from '../provider/errors';
 import { AuthorizeInputSchema } from '../provider/schemas';
+import {
+    type MercadoPagoDeliveriesResult,
+    translateMercadoPagoDeliveries
+} from './mercadopago-deliveries';
 import { serializeAuthorization } from './serialize-authorization';
 
 export interface AdjustableFakeServerClock {
@@ -36,6 +40,11 @@ export interface FakeProviderServer {
     setClock(args: { readonly at: Date }): Promise<void>;
     requests(): readonly FakeProviderRequest[];
     deliverDue(args: { readonly to: string }): Promise<{ readonly delivered: number }>;
+    mercadoPagoDeliveries(args?: { readonly webhookSecret?: string }): MercadoPagoDeliveriesResult;
+    deliverDueAsMercadoPago(args: {
+        readonly to: string;
+        readonly webhookSecret?: string;
+    }): Promise<{ readonly delivered: number; readonly skipped: number }>;
     close(): Promise<void>;
 }
 
@@ -267,6 +276,37 @@ export async function startFakeProviderServer(
                 if (!response.ok) throw new Error(`Delivery failed with HTTP ${response.status}`);
             }
             return { delivered: deliveries.length };
+        },
+        mercadoPagoDeliveries(args = {}) {
+            const taken = provider.takeDeliveries();
+            return translateMercadoPagoDeliveries({
+                deliveries: taken.deliveries,
+                now: options.clock.now(),
+                ...(args.webhookSecret === undefined ? {} : { webhookSecret: args.webhookSecret })
+            });
+        },
+        async deliverDueAsMercadoPago(args) {
+            const destination = new URL(args.to);
+            if (!['http:', 'https:'].includes(destination.protocol) || !destination.hostname)
+                throw new Error('A valid HTTP destination is required');
+            const due = provider.takeDeliveries();
+            const translated = translateMercadoPagoDeliveries({
+                deliveries: due.deliveries,
+                now: options.clock.now(),
+                ...(args.webhookSecret === undefined ? {} : { webhookSecret: args.webhookSecret })
+            });
+            for (const delivery of translated.deliveries) {
+                const response = await fetch(`${args.to}?${delivery.query}`, {
+                    method: 'POST',
+                    headers: delivery.headers,
+                    body: delivery.body
+                });
+                if (!response.ok)
+                    throw new Error(
+                        `Mercado Pago ${delivery.channel} delivery failed with HTTP ${response.status}`
+                    );
+            }
+            return { delivered: translated.deliveries.length, skipped: translated.skipped };
         },
         async close() {
             server.closeAllConnections();
