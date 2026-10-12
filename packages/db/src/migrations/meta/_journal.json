@@ -1114,6 +1114,13 @@
       "when": 1791801924712,
       "tag": "0158_v65_moderation_purge",
       "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1791823585017,
+      "tag": "0159_v8a2_purge_on_request_permission",
+      "breakpoints": true
     }
   ]
 }
