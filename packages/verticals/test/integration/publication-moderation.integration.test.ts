@@ -427,10 +427,13 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
             .select({ id: domainEvent.id })
             .from(domainEvent)
             .where(eq(domainEvent.entityId, listing.id));
+        const inactiveBefore = await db.execute(
+            sql`SELECT inactive_since FROM accommodations WHERE id = ${listing.id}`
+        );
         await recalculateCoverage({
             ...adapter,
             billing: { coverage: async () => ({ covered: true, sources: [] }) },
-            clock,
+            clock: { now: () => new Date(now.getTime() + 60_000) },
             afterCommit,
             userId,
             vertical,
@@ -466,6 +469,10 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
             listingId: listing.id
         });
         expect(current?.publicationStatus).toBe(Status.MODERATED);
+        const inactiveAfter = await db.execute(
+            sql`SELECT inactive_since FROM accommodations WHERE id = ${listing.id}`
+        );
+        expect(inactiveAfter.rows).toEqual(inactiveBefore.rows);
         expect(
             await listingPublicationModel.countPublished({ tx: db, vertical, ownerId: userId })
         ).toBe(0);
