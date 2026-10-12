@@ -24,7 +24,9 @@ import {
     createVerticalListing,
     ensurePublicationCatalog,
     MATRIX_NOW,
-    readResponse
+    publicationControls,
+    readResponse,
+    resetPublicationControls
 } from './publication-routes.helpers';
 
 vi.mock('../../../src/utils/listing-publication/ports', async (importOriginal) => {
@@ -54,6 +56,13 @@ const auth = (id: string) =>
         permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
     });
 let savedCatalog: { id: string; current: boolean; sellable: boolean }[] = [];
+/** Listings a test left PUBLISHED; returned to DRAFT in `afterEach` (HOS-1668). */
+let publishedByTest: { vertical: (typeof verticals)[number]; id: string }[] = [];
+const tableByVertical = {
+    accommodation: accommodations,
+    gastronomy: gastronomies,
+    experience: experiences
+} as const;
 
 async function makeDraft(vertical: (typeof verticals)[number]) {
     const owner = await createOwner();
@@ -95,6 +104,17 @@ afterEach(async () => {
             .where(eq(planVersions.id, version.id));
     }
     savedCatalog = [];
+    // HOS-1668: never leave a PUBLISHED listing behind — other suites in the same
+    // invocation count published listings across the whole database.
+    for (const listing of publishedByTest) {
+        const table = tableByVertical[listing.vertical];
+        await getDb()
+            .update(table)
+            .set({ publicationStatus: PublicationStatusEnum.DRAFT })
+            .where(eq(table.id, listing.id));
+    }
+    publishedByTest = [];
+    resetPublicationControls();
 });
 afterAll(async () => testDb.teardown());
 
@@ -145,6 +165,41 @@ describe.each(verticals)('TEST:V8a:1 subscribe destination parity — %s', (vert
         expect(await getDb().select().from(trials).where(eq(trials.userId, owner.id))).toHaveLength(
             1
         );
+    });
+
+    // HOS-1668 C-1: the production shape of COVERED — the destination and PB1
+    // read the same coverage. The row above is a harness artifact: PB1's coverage
+    // port is mocked to `publicationControls.covered` (false by default) while
+    // the destination reads the real trial, so only there do the two disagree.
+    it('HOS-1668 C-1: COVERED in both readers agrees with PB1 and publishes without a second trial', async () => {
+        const { owner, listingId } = await makeDraft(vertical);
+        await createTrial({ userId: owner.id, vertical, status: 'TRIAL_ACTIVE' });
+        publicationControls.covered = true;
+        const get = await app.request(subscribePath(vertical), { headers: auth(owner.id) });
+        expect(get.status).toBe(200);
+        expect((await get.json()).data.destination).toBe('COVERED');
+        const publish = await readResponse(
+            await app.request(publishPath(vertical, listingId), {
+                method: 'POST',
+                headers: auth(owner.id)
+            })
+        );
+        publishedByTest.push({ vertical, id: listingId });
+        expect(publish.status, JSON.stringify(publish.body)).toBe(201);
+        const table = tableByVertical[vertical];
+        const [listing] = await getDb()
+            .select({ id: table.id, status: table.publicationStatus })
+            .from(table)
+            .where(eq(table.id, listingId));
+        expect(listing?.id).toBe(listingId);
+        expect(listing?.status).toBe(PublicationStatusEnum.PUBLISHED);
+        const ownerTrials = await getDb()
+            .select({ userId: trials.userId, status: trials.status })
+            .from(trials)
+            .where(eq(trials.userId, owner.id));
+        expect(ownerTrials).toHaveLength(1);
+        expect(ownerTrials[0]?.userId).toBe(owner.id);
+        expect(ownerTrials[0]?.status).toBe('TRIAL_ACTIVE');
     });
 
     it('CHECKOUT after a consumed trial agrees with PB1 and leaves the draft unchanged', async () => {
