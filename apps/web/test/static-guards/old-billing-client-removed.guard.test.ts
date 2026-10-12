@@ -80,6 +80,10 @@ const COMMENT_LINE = /^\s*(\*|\/\/|\/\*)/;
 const PROTECTED_TOKEN = ['$', '{PROTECTED}'].join('');
 const BASE_TOKEN = ['$', '{BASE}'].join('');
 const SLUG_TOKEN = ['$', '{slug}'].join('');
+const REGISTERED_MOUNTS = Array.from(
+    readFileSync(join(API_ROUTES, 'index.ts'), 'utf8').matchAll(/app\.route\(\s*['"]([^'"]+)['"]/g),
+    (match) => match[1]
+);
 
 /** One offending line: where it is and what it names. */
 interface Offence {
@@ -95,11 +99,15 @@ interface Offence {
  * @param input - `{ file, source }`: the file's repo-relative path and content.
  * @returns One offence per matching line, with the resolved route.
  */
-function findOldBillingPaths(input: {
-    readonly file: string;
-    readonly source: string;
-}): readonly Offence[] {
+function findOldBillingPaths(
+    input: {
+        readonly file: string;
+        readonly source: string;
+    },
+    registeredMounts: Iterable<string> = REGISTERED_MOUNTS
+): readonly Offence[] {
     const { file, source } = input;
+    const mounts = [...registeredMounts];
     const offences: Offence[] = [];
     source.split('\n').forEach((text, index) => {
         if (COMMENT_LINE.test(text)) return;
@@ -108,7 +116,14 @@ function findOldBillingPaths(input: {
         const route = match[1]
             .replaceAll(PROTECTED_TOKEN, '/api/v1/protected')
             .replaceAll(BASE_TOKEN, '/api/v1/public');
-        if (OLD_BILLING_ROUTE.test(route)) {
+        const routePath = route.split('?')[0];
+        const coveredByRegisteredMount = mounts.some((mount) => {
+            const isOldBillingMount = OLD_BILLING_MOUNTS.some(
+                (oldMount) => mount === oldMount || mount.startsWith(`${oldMount}/`)
+            );
+            return isOldBillingMount && (routePath === mount || routePath.startsWith(`${mount}/`));
+        });
+        if (OLD_BILLING_ROUTE.test(route) && !coveredByRegisteredMount) {
             offences.push({ file, line: index + 1, route });
         }
     });
@@ -191,7 +206,7 @@ describe('TEST:B13a:23 — no lib/api method targets an old billing route (AC:B1
     });
 
     it('finds no path template pointing at the old billing', () => {
-        const offences = libApiFiles.flatMap(findOldBillingPaths);
+        const offences = libApiFiles.flatMap((input) => findOldBillingPaths(input));
         expect(offences, format(offences)).toEqual([]);
     });
 
@@ -263,6 +278,30 @@ describe('TEST:B13a:23 — the scanner catches a reintroduced old-billing call (
                 source: `const a = { path: \`${PROTECTED_TOKEN}/price-alerts\` };`
             })
         ).toEqual([]);
+    });
+
+    it('allows an old-billing path covered by a registered API mount', () => {
+        expect(
+            findOldBillingPaths(
+                {
+                    file: 'x.ts',
+                    source: `const a = { path: \`${PROTECTED_TOKEN}/billing/subscriptions\` };`
+                },
+                ['/api/v1/protected/billing/subscriptions']
+            )
+        ).toEqual([]);
+    });
+
+    it('does not treat a string-prefix match as a registered mount for another segment', () => {
+        expect(
+            findOldBillingPaths(
+                {
+                    file: 'x.ts',
+                    source: `const a = { path: \`${PROTECTED_TOKEN}/billing/addons\` };`
+                },
+                ['/api/v1/protected/billing/addon']
+            )
+        ).toHaveLength(1);
     });
 
     it('confirms the API routes directory exists, so the API half is not vacuous', () => {

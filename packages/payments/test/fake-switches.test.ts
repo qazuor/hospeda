@@ -10,6 +10,7 @@ import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
 import {
     FAKE_LIES,
+    FAKE_RULES,
     FAKE_SIMULATIONS,
     FakePaymentProvider,
     type FakePaymentProviderOptions
@@ -94,6 +95,36 @@ describe('TEST:B1:9 turning a lie off', () => {
     });
 });
 
+describe('TEST:B1:9 turning a measured behaviour off by name', () => {
+    it('rejects rules, missing list rows, blank reasons, duplicates, and unimplemented measured behaviour', () => {
+        for (const entry of [
+            { behaviour: 'RP99', why: 'missing' },
+            { behaviour: 'RP7', why: '  ' }
+        ])
+            expect(() => build({ clock, withoutBehaviour: [entry] })).toThrow();
+        expect(() =>
+            build({ clock, withoutBehaviour: [{ behaviour: 'RP1', why: 'never switch a rule' }] })
+        ).toThrow(/not a measured behaviour of the list/);
+        expect(() =>
+            build({
+                clock,
+                withoutBehaviour: [
+                    { behaviour: 'RP7', why: 'one' },
+                    { behaviour: 'RP7', why: 'two' }
+                ]
+            })
+        ).toThrow(/each behaviour is turned off once/);
+        expect(FAKE_RULES.find((r) => r.id === 'RP1')?.kind).toBe('rule');
+    });
+
+    it('accepts each implemented measured behaviour with its reason', () => {
+        for (const behaviour of ['RP7', 'RP8', 'RP11', 'RP12'] as const)
+            expect(() =>
+                build({ clock, withoutBehaviour: [{ behaviour, why: 'exercise the honest path' }] })
+            ).not.toThrow();
+    });
+});
+
 describe('TEST:B1:9 the simulations, apart from the lies', () => {
     it('are three, none of them a lie of the list', () => {
         expect(FAKE_SIMULATIONS.map((s) => s.id)).toEqual([
@@ -154,6 +185,9 @@ describe('TEST:B1:9 the simulations, apart from the lies', () => {
         const fake = new FakePaymentProvider({
             clock,
             honestAbout: [{ lie: 'M6', why: 'one delivery per change, so the order is readable' }],
+            withoutBehaviour: [
+                { behaviour: 'RP12', why: 'assert ordering of authorization notices only' }
+            ],
             simulate: [{ simulation: 'noticesOutOfOrder', why: 'the receiver must resist it' }]
         });
         const { authorizationId } = await fake.authorize(AUTHORIZE);

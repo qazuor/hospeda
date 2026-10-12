@@ -1,4 +1,4 @@
-import type { Clock } from '@repo/billing-verticals-contract';
+import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import {
     and,
     eq,
@@ -56,8 +56,10 @@ type Outcome =
     | 'DIVERGENCE_MARKED'
     | 'DELEGATED'
     | 'S16'
+    | 'S4'
     | 'PAYMENT_CREDITED'
     | 'PAYMENT_ALREADY_CREDITED'
+    | 'CARD_VALIDATION_IGNORED'
     | 'PAYMENT_RECORDED'
     | 'WAITING_FIRST_CHARGE_READING'
     | 'UNKNOWN_RESOURCE'
@@ -66,6 +68,7 @@ type Outcome =
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
+    readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly payments?: SubscriptionPayments;
     readonly firstCharge?: FirstChargeReader;
@@ -88,6 +91,8 @@ export async function processProviderNotice(
         const notice = await ports.provider.decodeNotice(value.delivery);
         if (notice.resourceKind === 'charge') {
             const result = await recordChargeFact({ chargeId: notice.resourceId }, ports);
+            if (result.outcome === 'CARD_VALIDATION_IGNORED')
+                return { ack: 'OK', outcome: 'CARD_VALIDATION_IGNORED' };
             if (result.outcome === 'NO_SUBSCRIPTION')
                 return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
             if (result.outcome === 'RECORDED_PENDING')
@@ -99,6 +104,14 @@ export async function processProviderNotice(
                         result.credit.outcome === 'CREDITED'
                             ? 'PAYMENT_CREDITED'
                             : 'PAYMENT_ALREADY_CREDITED'
+                };
+            if (result.outcome === 'GRACE')
+                return {
+                    ack: 'OK',
+                    outcome:
+                        result.grace.outcome === 'GRACE_STARTED'
+                            ? 'S4'
+                            : 'RESOURCE_KIND_NOT_HANDLED'
                 };
             return {
                 ack: 'OK',

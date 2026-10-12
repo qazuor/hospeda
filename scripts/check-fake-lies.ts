@@ -3,6 +3,8 @@
  * @description GUARD:G15 (HOS-1352 program, built by B1 / HOS-1510, AC:B1:9,
  * TEST:B1:9, DEC-TEST-003): the fake payment provider's lies are a CLOSED list,
  * and a test that turns one off says which and why.
+ * Provider rules (`kind: rule`) never turn off; a measured behaviour turns off
+ * only by name and with a reason.
  *
  * ## Predicate (a): the fake lies only from the closed list, each row whole
  *
@@ -20,11 +22,11 @@
  * ## Predicate (b): a lie is turned off only by naming it and saying why
  *
  * In every code file under `apps/` and `packages/`, TESTS INCLUDED (they are
- * the subject), except the fake's own folder, every `honestAbout` must be
- * written in place as `honestAbout: [{ lie: '<id of the list>', why: '<text>' }, …]`:
- * an array literal of object literals, each with exactly those two keys, both
- * string literals, the id a row of the list and the reason not blank. A
- * variable, a spread, a missing key or a blank reason fails.
+ * the subject), except the fake's own folder, every `honestAbout` and
+ * `withoutBehaviour` must be written in place as literal arrays of literal
+ * objects with exactly their id and non-empty `why`. Provider rules
+ * (`kind: rule`) are never switched off; measured behaviours switch off only
+ * by name and with a reason.
  *
  * One file is not read by (b): `packages/payments/test/fake-switches.test.ts`,
  * the test of the RUNTIME twin of this predicate (the fake refuses the same
@@ -39,7 +41,8 @@
  *   lie off by name and see the honest path come back.
  * - Simulations (`simulate: [...]`): they are not lies and G15 does not count
  *   them (`B/20` §3.2); the fake refuses an unnamed one at runtime.
- * - The provider's own rules (RP): not lies, never turned off.
+ * - Provider rules (RP1-RP6) are never turned off; measured behaviours (RP7-RP12)
+ *   may be turned off only by name and with a reason.
  *
  * Exit codes: 0 = clean; 1 = a violation, or a scan too small to trust.
  */
@@ -82,8 +85,9 @@ export const PREDICATE_MESSAGES: Readonly<Record<'a' | 'b', string>> = {
         'with its three data (name; matrix rows with date and account; the test proving our code ' +
         'resists it).',
     b:
-        'GUARD:G15 (b): a test turns a lie off only by naming it and saying why, written in place: ' +
-        "honestAbout: [{ lie: '<id of the list>', why: '<reason>' }]."
+        'GUARD:G15 (b): a lie or measured behaviour turns off only by naming it and saying why, written in place: ' +
+        "honestAbout: [{ lie: '<id of the list>', why: '<reason>' }] and withoutBehaviour: " +
+        "[{ behaviour: '<measured behaviour id>', why: '<reason>' }]."
 };
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -143,6 +147,52 @@ export function checkLieRows(args: { readonly raw: unknown }): {
         }
     }
     return { ids, violations };
+}
+
+export function findUnnamedBehaviour(args: {
+    readonly file: string;
+    readonly source: string;
+    readonly ids: readonly string[];
+}): readonly Violation[] {
+    if (!args.source.includes('withoutBehaviour')) return [];
+    const masked = maskSource({ source: args.source });
+    const { code } = masked;
+    const violations: Violation[] = [];
+    for (const match of code.matchAll(/\bwithoutBehaviour\b/g)) {
+        const report = (detail: string) =>
+            violations.push({
+                predicate: 'b',
+                file: args.file,
+                line: lineOf({ source: args.source, offset: match.index }),
+                detail
+            });
+        const colon = skipSpace({ code, at: match.index + match[0].length });
+        const open = code[colon] === ':' ? skipSpace({ code, at: colon + 1 }) : -1;
+        const close = open === -1 || code[open] !== '[' ? -1 : matchingClose({ code, open });
+        if (close === -1) {
+            report('withoutBehaviour is not an array literal written in place');
+            continue;
+        }
+        for (const entry of topLevelParts({ code, from: open + 1, to: close })) {
+            const start = skipSpace({ code, at: entry.start });
+            const end = code[start] === '{' ? matchingClose({ code, open: start }) : -1;
+            if (end === -1 || code.slice(end + 1, entry.end).trim() !== '') {
+                report('an entry is not an object literal { behaviour, why }');
+                continue;
+            }
+            const props = literalProperties({ masked, start, end });
+            const keys = props.map((p) => p.key).sort();
+            const id = props.find((p) => p.key === 'behaviour')?.value;
+            const why = props.find((p) => p.key === 'why')?.value;
+            if (keys.join(',') !== 'behaviour,why' || id === undefined)
+                report('an entry does not name its behaviour and reason as literals');
+            else if (!args.ids.includes(id))
+                report(`turns off '${id}', which is not a measured behaviour of the list`);
+            else if (why === undefined || why.trim() === '')
+                report(`turns off '${id}' without saying why`);
+        }
+    }
+    return violations;
 }
 
 /** The `{ … }` argument of a call opening at `open`, as offsets, if it is one. */
@@ -363,11 +413,27 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
         }
     }
     for (const file of files) {
+        let behaviourIds: readonly string[] = [];
+        try {
+            const list = JSON.parse(readFileSync(listPath, 'utf8')) as {
+                rules?: readonly { id: string; kind: string }[];
+            };
+            behaviourIds = (list.rules ?? [])
+                .filter((rule) => rule.kind === 'measuredBehaviour')
+                .map((rule) => rule.id);
+        } catch {
+            /* row validation already reports malformed data */
+        }
         violations.push(
             ...findUnnamedHonesty({
                 file,
                 source: readFileSync(join(root, file), 'utf8'),
                 ids: rows.ids
+            }),
+            ...findUnnamedBehaviour({
+                file,
+                source: readFileSync(join(root, file), 'utf8'),
+                ids: behaviourIds
             })
         );
     }

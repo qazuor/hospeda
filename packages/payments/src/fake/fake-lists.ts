@@ -7,8 +7,8 @@
  *   the matrix rows it comes from (with date and account), and the test that
  *   proves our code resists it. By default the fake tells every lie it
  *   implements; a test may turn one off only by naming it and saying why.
- * - **The provider's own rules and measured behaviour**, RP1..RP12: not lies;
- *   the provider demands them and says so. The fake keeps them always.
+ * - **The provider's own rules and measured behaviour**, RP1..RP12: rules stay
+ *   on; a measured behaviour can be turned off by name with a reason.
  * - **The simulations**: network cases nobody measured (a lost answer, a cut
  *   network, notices out of order). Not lies, never counted as such, and off
  *   unless a test turns one on, naming it and saying why.
@@ -18,8 +18,8 @@
  * the JSON by that path. Do not move or rename it.
  *
  * Not every row is implemented by the fake yet: the rows whose surface the
- * payment interface does not carry today (M2, M7, M12; RP7, RP8, RP10, RP11,
- * RP12) arrive with the units that add that surface. The list
+ * payment interface does not carry today (M2, M12; RP10, RP12) arrive with the
+ * units that add that surface. The list
  * is closed regardless: a lie the fake tells must have its row here.
  */
 import { z } from 'zod';
@@ -56,6 +56,9 @@ export interface FakeRule {
     readonly name: string;
     readonly measured: readonly FakeMeasurement[];
 }
+
+/** A provider behaviour measured by name in the RP list. */
+export type FakeBehaviourId = `RP${number}`;
 
 /** One simulated, unmeasured network case. */
 export interface FakeSimulation {

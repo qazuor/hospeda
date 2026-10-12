@@ -69,6 +69,8 @@ export async function declineFirstCharge(
     const { snapshot: charge } = assertFreshForAct({ read: chargeRead, act: chargeAct });
     if (charge.status !== 'rejected')
         return { outcome: 'NOT_APPLICABLE', reason: 'CHARGE_NOT_REJECTED' };
+    if (charge.authorizationId === null)
+        return { outcome: 'NOT_APPLICABLE', reason: 'NO_SUBSCRIPTION' };
 
     const [row] = await getDb()
         .select({ subscription: subscriptions, providerLink: providerLinks })

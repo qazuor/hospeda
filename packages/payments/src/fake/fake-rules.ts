@@ -13,6 +13,9 @@
  * - RP6: a paused authorization refuses every change, and can still be
  *   cancelled (EX-11).
  * - RP9: a paused authorization is not charged (PS-2).
+ * - RP7: each non-first charge record expires one cadence after creation (RC-7).
+ * - RP8: a failed cycle retries on one record and pauses at the window end (GR-3).
+ * - RP11: the last attempt instant is recorded, whether approved or rejected (RC-5).
  * - RP1: a card token can authorize only once (EX-12).
  */
 import type { PaymentCapability } from '../provider/capabilities';

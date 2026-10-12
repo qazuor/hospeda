@@ -213,6 +213,34 @@
         "firstPublishPaused": {
             "title": "Publishing new listings is paused",
             "body": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume."
+        },
+        "signup": {
+            "title": "Confirm your subscription",
+            "intro": "You will authorize the payment with Mercado Pago. You can review the amount and billing cycle there before confirming.",
+            "confirm": "Continue to Mercado Pago",
+            "submitting": "Preparing your payment…",
+            "pending": {
+                "title": "Your {{vertical}} subscription is waiting for you to complete payment",
+                "resume": "Complete payment with Mercado Pago",
+                "windowEnds": "You have until {{date}}."
+            },
+            "rejection": {
+                "planNotForSale": "This plan is no longer available for purchase.",
+                "seePlans": "See current plans",
+                "previousAttemptClosing": "We are closing your previous attempt. Please try again in a few minutes.",
+                "touristVipInherited": "Your current plan already includes Turista VIP benefits",
+                "commitmentTaken": "You already have an active subscription in this vertical.",
+                "generic": "We could not start your subscription. Please try again in a few minutes."
+            },
+            "retry": "Try again",
+            "vertical": {
+                "accommodation": "accommodation",
+                "gastronomy": "gastronomy",
+                "experience": "experiences",
+                "tourist": "Turista VIP",
+                "partner": "partners",
+                "unknown": "Hospeda"
+            }
         }
     },
     "limit": {

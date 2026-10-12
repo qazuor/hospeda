@@ -2,7 +2,8 @@ import { eq, getDb, planCatalogModel, users } from '@repo/db';
 import {
     ServiceErrorCode,
     StartSubscriptionRequestSchema,
-    StartSubscriptionResponseSchema
+    StartSubscriptionResponseSchema,
+    VerticalEnumSchema
 } from '@repo/schemas';
 import { ServiceError, startSubscription } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
@@ -16,6 +17,7 @@ import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { beforeCancelNotice } from './before-cancel-notice';
 import { protectedReadSubscriptionRoute } from './read';
+import { readSignupWindow } from './read-signup-window';
 import { touristVipInheritance } from './tourist-vip-inheritance';
 
 export const protectedStartSubscriptionRoute = createProtectedRoute({
@@ -35,7 +37,7 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
             .where(eq(users.id, actor.id))
             .limit(1);
         try {
-            return await startSubscription(
+            const result = await startSubscription(
                 {
                     userId: actor.id,
                     billingOptionId: parsed.billingOptionId,
@@ -50,6 +52,23 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                     touristVipInheritance
                 }
             );
+            const signupWindow = await readSignupWindow({
+                subscriptionId: result.subscriptionId,
+                userId: actor.id
+            });
+            const vertical = VerticalEnumSchema.safeParse(signupWindow?.vertical);
+            const authorizationWindowEndsAt = signupWindow?.authorizationWindowEndsAt;
+            if (!signupWindow || !vertical.success || !authorizationWindowEndsAt) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Signup window missing after S1'
+                );
+            }
+            return {
+                ...result,
+                vertical: vertical.data,
+                authorizationWindowEndsAt: authorizationWindowEndsAt.toISOString()
+            };
         } catch (error) {
             if (error instanceof ServiceError && error.reason === 'PLAN_NOT_FOR_SALE') {
                 return createErrorResponse(

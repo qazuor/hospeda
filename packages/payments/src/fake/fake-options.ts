@@ -1,11 +1,12 @@
 /**
- * What a test passes to build the fake, and the three rules it enforces
+ * What a test passes to build the fake, and the four rules it enforces
  * (DEC-TEST-003, AC:B1:9):
  *
  * 1. a lie that is not in the closed list cannot be named;
  * 2. by default the fake tells every lie: `honestAbout` is empty unless a test
  *    fills it;
- * 3. a test turns one lie off only by NAMING it and saying WHY, one entry per
+ * 3. a measured behaviour turns off only by NAMING it and saying WHY; rules never turn off;
+ * 4. a test turns one lie off only by NAMING it and saying WHY, one entry per
  *    lie. GUARD:G15 predicate (b) checks the same thing statically, over the
  *    source of every test.
  *
@@ -14,7 +15,17 @@
  */
 import type { Clock } from '@repo/billing-verticals-contract';
 import { z } from 'zod';
-import { FAKE_LIES, FAKE_SIMULATIONS, type FakeLieId, type FakeSimulationId } from './fake-lists';
+import {
+    FAKE_LIES,
+    FAKE_RULES,
+    FAKE_SIMULATIONS,
+    type FakeBehaviourId,
+    type FakeLieId,
+    type FakeSimulationId
+} from './fake-lists';
+
+export type { FakeBehaviourId } from './fake-lists';
+export const FAKE_SWITCHABLE_BEHAVIOURS = ['RP7', 'RP8', 'RP11', 'RP12'] as const;
 
 /** One lie a test turns off, by name and with its reason. */
 export interface HonestAbout {
@@ -28,6 +39,11 @@ export interface Simulate {
     readonly why: string;
 }
 
+export interface WithoutBehaviour {
+    readonly behaviour: FakeBehaviourId;
+    readonly why: string;
+}
+
 /** Constructor options of the fake. */
 export interface FakePaymentProviderOptions {
     /** The clock every read and every delay of the fake is measured on. */
@@ -36,12 +52,16 @@ export interface FakePaymentProviderOptions {
     readonly idNamespace?: string;
     /** The lies this test turns off. Empty: the fake lies like the real one. */
     readonly honestAbout?: readonly HonestAbout[];
+    readonly withoutBehaviour?: readonly WithoutBehaviour[];
     /** The simulations this test turns on. Empty: none. */
     readonly simulate?: readonly Simulate[];
 }
 
 const LIE_IDS = FAKE_LIES.map((lie) => lie.id);
 const SIMULATION_IDS = FAKE_SIMULATIONS.map((simulation) => simulation.id);
+const BEHAVIOUR_IDS = FAKE_RULES.filter((rule) => rule.kind === 'measuredBehaviour').map(
+    (rule) => rule.id
+);
 const Why = z.string().trim().min(1, { message: 'say why' });
 
 /** Validation of the fake's options. An unnamed lie or a missing reason is refused. */
@@ -76,6 +96,19 @@ export const FakePaymentProviderOptionsSchema = z.strictObject({
                 why: Why
             })
         )
+        .default([]),
+    withoutBehaviour: z
+        .array(
+            z.strictObject({
+                behaviour: z.string().refine((id) => BEHAVIOUR_IDS.includes(id), {
+                    message: 'not a measured behaviour of the list'
+                }),
+                why: Why
+            })
+        )
+        .refine((entries) => new Set(entries.map((e) => e.behaviour)).size === entries.length, {
+            message: 'each behaviour is turned off once'
+        })
         .default([])
 });
 
@@ -91,12 +124,14 @@ export function parseFakeOptions(args: { readonly options: FakePaymentProviderOp
     readonly idNamespace: string | undefined;
     readonly honest: ReadonlySet<string>;
     readonly simulating: ReadonlySet<string>;
+    readonly without: ReadonlySet<string>;
 } {
     const parsed = FakePaymentProviderOptionsSchema.parse(args.options);
     return {
         clock: parsed.clock,
         idNamespace: parsed.idNamespace,
         honest: new Set(parsed.honestAbout.map((entry) => entry.lie)),
-        simulating: new Set(parsed.simulate.map((entry) => entry.simulation))
+        simulating: new Set(parsed.simulate.map((entry) => entry.simulation)),
+        without: new Set(parsed.withoutBehaviour.map((entry) => entry.behaviour))
     };
 }

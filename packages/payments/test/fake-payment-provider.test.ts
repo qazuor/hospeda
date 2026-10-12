@@ -46,6 +46,9 @@ beforeEach(() => {
             { lie: 'M6', why: 'these cases count one notice per change, delivered at once' },
             { lie: 'M8', why: 'these cases read a charge approved the moment it is asked' },
             { lie: 'M13', why: 'these cases accumulate partial refunds from the first one' }
+        ],
+        withoutBehaviour: [
+            { behaviour: 'RP12', why: 'these cases exercise regular charge behaviour' }
         ]
     });
 });
@@ -75,6 +78,8 @@ describe('authorize and approve', () => {
             cadence: { everyMonths: 1 },
             firstChargeAt: null,
             freePeriodDays: null,
+            chargeRecordCount: 0,
+            lastChargedAt: null,
             lastModifiedAt: '2026-10-01T03:00:00.000Z'
         });
         expect(after.status).toBe('active');
@@ -103,6 +108,8 @@ describe('charge', () => {
         expect((await fake.readCharge({ chargeId })).snapshot).toEqual({
             chargeId,
             createdAt: expect.any(String),
+            expiresAt: null,
+            purpose: 'charge',
             authorizationId,
             reference: 'cycle-1',
             status: 'approved',

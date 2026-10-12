@@ -213,6 +213,34 @@
         "firstPublishPaused": {
             "title": "Publicación de fichas nuevas en pausa",
             "body": "Por el momento pausamos la publicación de fichas nuevas. Tu ficha queda guardada como borrador y vas a poder publicarla cuando se reanuden."
+        },
+        "signup": {
+            "title": "Confirmá tu suscripción",
+            "intro": "Vas a autorizar el pago en Mercado Pago. Ahí ves el monto y el ciclo antes de confirmar.",
+            "confirm": "Ir a pagar con Mercado Pago",
+            "submitting": "Preparando el pago…",
+            "pending": {
+                "title": "Tu suscripción de {{vertical}} está esperando que completes el pago",
+                "resume": "Completar el pago en Mercado Pago",
+                "windowEnds": "Tenés tiempo hasta el {{date}}."
+            },
+            "rejection": {
+                "planNotForSale": "Este plan ya no está a la venta.",
+                "seePlans": "Ver los planes vigentes",
+                "previousAttemptClosing": "Estamos cerrando tu intento anterior; probá de nuevo en unos minutos.",
+                "touristVipInherited": "Tu plan actual ya incluye los beneficios de Turista VIP",
+                "commitmentTaken": "Ya tenés una suscripción en curso en esta vertical.",
+                "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos."
+            },
+            "retry": "Intentar de nuevo",
+            "vertical": {
+                "accommodation": "alojamiento",
+                "gastronomy": "gastronomía",
+                "experience": "experiencias",
+                "tourist": "Turista VIP",
+                "partner": "aliados",
+                "unknown": "Hospeda"
+            }
         }
     },
     "limit": {

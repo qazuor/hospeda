@@ -27,6 +27,7 @@ import type {
     PriceAlertResponse,
     ProtectedEffectiveSetResponse,
     PublishEligibilityResponse,
+    StartSubscriptionResponseSchema,
     SubscribeDestinationResponseSchema,
     UserBookmark,
     UserProtected,
@@ -5392,5 +5393,22 @@ export const effectiveSetApi = {
         return result.ok
             ? { ok: true as const, data: transformProtectedEffectiveSet(result.data) }
             : result;
+    }
+};
+
+export type StartSubscriptionResponse = z.infer<typeof StartSubscriptionResponseSchema>;
+
+/** Protected S1 endpoint for starting a signup checkout. */
+export const billingSubscriptionApi = {
+    /** Start signup for the selected billing option. */
+    start({
+        billingOptionId
+    }: {
+        readonly billingOptionId: string;
+    }): Promise<ApiResult<StartSubscriptionResponse>> {
+        return apiClient.postProtected<StartSubscriptionResponse>({
+            path: `${PROTECTED}/billing/subscriptions`,
+            body: { billingOptionId }
+        });
     }
 };

@@ -1,5 +1,5 @@
 {
-  "id": "d9dc4c25-caac-4a7c-b156-659ab1fa72d7",
+  "id": "bd0bf0e6-6bd7-4f45-be5e-8f17bfd6bb52",
   "prevId": "af6caa4c-a90e-4e52-88f4-306868938f55",
   "version": "7",
   "dialect": "postgresql",
@@ -1160,12 +1160,6 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
-        },
-        "remote_deletion_pending_at": {
-          "name": "remote_deletion_pending_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -1702,12 +1696,6 @@
         },
         "token_expires_at": {
           "name": "token_expires_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "remote_deletion_pending_at": {
-          "name": "remote_deletion_pending_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
@@ -8196,7 +8184,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'trial.extended', 'reconciliation.mark_opened')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -10596,12 +10584,6 @@
         },
         "deleted_at": {
           "name": "deleted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "remote_deletion_pending_at": {
-          "name": "remote_deletion_pending_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
@@ -13123,12 +13105,6 @@
         },
         "deleted_at": {
           "name": "deleted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "remote_deletion_pending_at": {
-          "name": "remote_deletion_pending_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
@@ -30934,6 +30910,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "grace_started_at": {
+          "name": "grace_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grace_ends_at": {
+          "name": "grace_ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "succeeds_id": {
           "name": "succeeds_id",
           "type": "uuid",
@@ -31139,6 +31127,10 @@
         "ck_subscription_authorization_window_pair": {
           "name": "ck_subscription_authorization_window_pair",
           "value": "(\"subscription\".\"authorization_window_deadline_version\" IS NULL AND \"subscription\".\"authorization_window_ends_at\" IS NULL) OR (\"subscription\".\"authorization_window_deadline_version\" IS NOT NULL AND \"subscription\".\"authorization_window_ends_at\" IS NOT NULL)"
+        },
+        "ck_subscription_grace_clock_pair": {
+          "name": "ck_subscription_grace_clock_pair",
+          "value": "(\"subscription\".\"grace_started_at\" IS NULL AND \"subscription\".\"grace_ends_at\" IS NULL) OR (\"subscription\".\"grace_started_at\" IS NOT NULL AND \"subscription\".\"grace_ends_at\" IS NOT NULL AND \"subscription\".\"grace_ends_at\" >= \"subscription\".\"grace_started_at\")"
         }
       },
       "isRLSEnabled": false
@@ -32401,7 +32393,6 @@
         "billing.settings.view",
         "billing.settings.write",
         "listing.foreignContent.edit",
-        "listing.moderate",
         "billing.subscription.inspect",
         "billing.viewOwn",
         "trial.extend",

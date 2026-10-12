@@ -28,15 +28,10 @@ import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
-// HOS-296: the owner's billing-exempt hats come from `user_role`, read through
-// this primitive, NOT from the `users` row the model mock returns. Each test
-// below stubs the hats it needs via `getUserRolesMock`.
 const grantRoleMock = vi.hoisted(() => vi.fn(async () => ({ data: undefined })));
-const getUserRolesMock = vi.hoisted(() => vi.fn(async () => [] as unknown[]));
 
 vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
-    grantRole: grantRoleMock,
-    getUserRoles: getUserRolesMock
+    grantRole: grantRoleMock
 }));
 
 vi.mock('../../../src/utils/transaction.js', () => ({
@@ -143,7 +138,6 @@ describe('AccommodationService.publish', () => {
         vi.clearAllMocks();
         accommodationModel = createMockBaseModel();
         userModel = createUserModelMock();
-        getUserRolesMock.mockResolvedValue([RoleEnum.USER]);
     });
 
     describe('authorization', () => {
@@ -182,7 +176,6 @@ describe('AccommodationService.publish', () => {
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({ id: 'user-owner' });
-            getUserRolesMock.mockResolvedValue([RoleEnum.USER]);
             (accommodationModel.update as Mock).mockResolvedValue({
                 ...accommodation,
                 lifecycleState: LifecycleStatusEnum.ACTIVE
@@ -218,16 +211,15 @@ describe('AccommodationService.publish', () => {
         });
     });
 
-    describe('billing-exempt owner branch', () => {
-        // ADMIN / SUPER_ADMIN / CLIENT_MANAGER are exempt from the billing
-        // eligibility check (they publish on behalf of the platform without a
-        // subscription). Regular HOST users go through the eligibility flow.
+    describe('AC:V5:17 - a staff role does not exempt an owner from billing', () => {
         it.each([
             RoleEnum.ADMIN,
             RoleEnum.SUPER_ADMIN,
             RoleEnum.CLIENT_MANAGER
-        ])('skips eligibility entirely when the owner is %s', async (role) => {
-            const deps = createPublishDeps();
+        ])('rejects %s when subscription is required', async (role) => {
+            const deps = createPublishDeps({
+                checkEligibility: vi.fn().mockResolvedValue('subscription_required')
+            });
             const service = buildService(accommodationModel, userModel, deps);
             const accommodation = createMockAccommodation({
                 id: 'acc-exempt',
@@ -235,18 +227,12 @@ describe('AccommodationService.publish', () => {
                 lifecycleState: LifecycleStatusEnum.DRAFT
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
-            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'admin-owner' });
-            getUserRolesMock.mockResolvedValue([RoleEnum.USER, role]);
-            (accommodationModel.update as Mock).mockResolvedValue({
-                ...accommodation,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
-            });
-
-            const actor = createAdminActor({ id: 'admin-actor' });
+            const actor = createActor({ id: 'admin-owner', roles: [RoleEnum.USER, role] });
             const result = await service.publish(actor, 'acc-exempt');
 
-            expect(result.error).toBeUndefined();
-            expect(deps.checkEligibility).not.toHaveBeenCalled();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(result.error?.message).toBe('subscription_required');
+            expect(deps.checkEligibility).toHaveBeenCalled();
             // Role promotion never happens in publish — promotion is done at
             // draft creation. The user model should not be touched here.
             expect(userModel.update).not.toHaveBeenCalled();
@@ -267,7 +253,6 @@ describe('AccommodationService.publish', () => {
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             // Owner is USER role at the model level (edge: no privileged role yet but has sub)
             asMock(userModel.findById as Mock).mockResolvedValue({ id: 'host-006' });
-            getUserRolesMock.mockResolvedValue([RoleEnum.USER]);
             (accommodationModel.update as Mock).mockResolvedValue({
                 ...accommodation,
                 lifecycleState: LifecycleStatusEnum.ACTIVE

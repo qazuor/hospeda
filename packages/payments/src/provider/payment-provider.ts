@@ -129,6 +129,10 @@ export interface AuthorizationSnapshot {
     readonly firstChargeAt: string | null;
     /** Provider-added free period; never our own trial state. */
     readonly freePeriodDays: number | null;
+    /** Count of charge records, successful or not; completeness only, never evidence of payment. */
+    readonly chargeRecordCount: number | null;
+    /** The instant of the last attempt, approved or rejected; do not use it to decide. */
+    readonly lastChargedAt: string | null;
     /** Instant (ISO 8601) when the provider last modified this resource; null when unavailable. */
     readonly lastModifiedAt: string | null;
 }
@@ -155,13 +159,24 @@ export interface AuthorizationSearchResult {
     readonly authorizations: readonly AuthorizationSummary[];
 }
 
+/** Ids of an authorization's charge records; re-read every id with readCharge. */
+export interface ChargeListResult {
+    readonly chargeIds: readonly string[];
+}
+
 /** Capability 7 output: a charge as read by id. */
 export interface ChargeSnapshot {
     readonly chargeId: string;
     /** The ISO 8601 instant this charge record was created, read by id; it identifies its covered period and does not move across retries within the same record (`date_created`, 02 §2.3, RC-5). */
     readonly createdAt: string;
-    readonly authorizationId: string;
-    readonly reference: string;
+    /** End of the provider's collection window, one cadence after creation; null on the first record. */
+    readonly expiresAt: string | null;
+    /** A card validation is zero-amount, does not charge anything and is not a charge from any authorization (RP12). */
+    readonly purpose: ChargePurpose;
+    /** Null only for card validation, which names neither an authorization nor our reference (RP12). */
+    readonly authorizationId: string | null;
+    /** Null only for card validation, which names neither an authorization nor our reference (RP12). */
+    readonly reference: string | null;
     readonly status: ChargeStatus;
     /** Why the provider rejected this attempt, in a domain string; null when not rejected or unavailable. */
     readonly declineReason: string | null;
@@ -169,6 +184,8 @@ export interface ChargeSnapshot {
     /** Cumulative amount refunded so far. */
     readonly refundedAmount: Money;
 }
+
+export type ChargePurpose = 'charge' | 'cardValidation';
 
 /** Capability 8 input: one delivery as it reached our receiver. */
 export interface NoticeDelivery {
@@ -228,6 +245,8 @@ export interface PaymentProvider {
      * (AC:B1:4): a decision takes it through `assertFreshForAct`.
      */
     readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>>;
+    /** List ids only; not a ProviderRead or state source. Compare completeness to chargeRecordCount. */
+    listCharges(input: AuthorizationRef): Promise<ChargeListResult>;
     /** Capability 8 · turn a delivery into a notice (kind, id, version only). */
     decodeNotice(input: NoticeDelivery): Promise<ProviderNotice>;
 }

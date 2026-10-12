@@ -58,7 +58,16 @@ const row = (id: string, overrides: Record<string, unknown> = {}) => ({
 });
 
 const listOf = (rows: readonly unknown[]) =>
-    JSON.stringify({ lies: rows, rules: [], simulations: [] });
+    JSON.stringify({
+        lies: rows,
+        rules: ['RP1', 'RP7'].map((id) => ({
+            id,
+            kind: id === 'RP1' ? 'rule' : 'measuredBehaviour',
+            name: id,
+            measured: [{ row: 'EX-1', date: '2026-09-15', accounts: ['sandbox'] }]
+        })),
+        simulations: []
+    });
 
 /** The fake, telling the lies it is given, one call each. */
 const fake = ({ lies = ['M1', 'M3'] }: { readonly lies?: readonly string[] } = {}) =>
@@ -272,6 +281,37 @@ describe('G15 predicate (b): every other way to break it', () => {
             }
         });
         expect(exitCode).toBe(0);
+    });
+});
+
+describe('TEST:B1:9 predicate (b): withoutBehaviour', () => {
+    it.each([
+        ['variable', 'withoutBehaviour: switches', 'not an array literal'],
+        ['spread', 'withoutBehaviour: [...switches]', 'not an object literal'],
+        ['missing key', "withoutBehaviour: [{ behaviour: 'RP7' }]", 'does not name its behaviour'],
+        ['blank why', "withoutBehaviour: [{ behaviour: 'RP7', why: ' ' }]", 'without saying why'],
+        ['empty why', "withoutBehaviour: [{ behaviour: 'RP7', why: '' }]", 'without saying why'],
+        ['rule', "withoutBehaviour: [{ behaviour: 'RP1', why: 'x' }]", 'not a measured behaviour'],
+        [
+            'unknown id',
+            "withoutBehaviour: [{ behaviour: 'RP99', why: 'x' }]",
+            'not a measured behaviour'
+        ]
+    ])('rejects %s and names predicate (b)', (_name, option, detail) => {
+        const result = guardOver({ overrides: { [A_TEST]: aTest({ options: option }) } });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(PREDICATE_MESSAGES.b);
+        expect(result.output).toContain(detail);
+    });
+    it('accepts a literal measured behaviour with why', () => {
+        const result = guardOver({
+            overrides: {
+                [A_TEST]: aTest({
+                    options: "withoutBehaviour: [{ behaviour: 'RP7', why: 'honest path' }]"
+                })
+            }
+        });
+        expect(result.exitCode).toBe(0);
     });
 });
 
