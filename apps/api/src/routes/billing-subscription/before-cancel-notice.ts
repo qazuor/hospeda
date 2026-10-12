@@ -9,23 +9,33 @@ import {
 } from '@repo/db';
 import type { BeforeCancelNotice } from '@repo/service-core';
 
-/** Outbox contract for S1's closure of a declined earlier attempt. */
+type BeforeCancelKind = NonNullable<Parameters<BeforeCancelNotice['beforeCancel']>[0]['kind']>;
+
+/** The outbox template of each before-cancel kind (X-1: S6 has its own arrears template). */
+const TEMPLATE_BY_KIND: Readonly<Record<BeforeCancelKind | 'DEFAULT', string>> = {
+    DEFAULT: 'billing.before-cancel',
+    TOURIST_VIP_INHERITED: 'billing.tourist-vip-inherited-cancel',
+    ARREARS_SUSPENSION: 'billing.arrears-suspension'
+};
+
+/**
+ * Outbox contract for the notice that precedes every cancellation we execute.
+ * The occurrence is the fact that decided the cancellation (`occurrenceId`,
+ * defaulting to the subscription id), so a retry reads the row already enqueued.
+ */
 export const beforeCancelNotice: BeforeCancelNotice = {
-    async beforeCancel({ subscriptionId, userId, kind }) {
+    async beforeCancel({ subscriptionId, userId, kind, occurrenceId }) {
         const [recipient] = await getDb()
             .select({ email: users.email, deletedAt: users.deletedAt })
             .from(users)
             .where(eq(users.id, userId))
             .limit(1);
         if (!recipient) return 'NO_RECIPIENT';
-        const template =
-            kind === 'TOURIST_VIP_INHERITED'
-                ? 'billing.tourist-vip-inherited-cancel'
-                : 'billing.before-cancel';
+        const template = TEMPLATE_BY_KIND[kind ?? 'DEFAULT'];
         const dedupKey = buildEmailDedupKey({
             recipient: userId,
             template,
-            occurrence: buildEventOccurrence({ eventId: subscriptionId })
+            occurrence: buildEventOccurrence({ eventId: occurrenceId ?? subscriptionId })
         });
         await emailOutboxModel.enqueue({
             recipientUserId: userId,
