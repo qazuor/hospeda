@@ -25,6 +25,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -65,9 +66,13 @@ export const adminArchiveMediaRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
-        const result = await accommodationService.archiveMedia(actor, {
-            accommodationId: params.id as string,
-            mediaId: params.mediaId as string
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.archiveMedia(actor, {
+                    accommodationId: params.id as string,
+                    mediaId: params.mediaId as string
+                })
         });
 
         if (result.error) {

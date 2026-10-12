@@ -35,6 +35,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -93,9 +94,13 @@ export const adminAddFeaturedMediaRoute = createAdminRoute({
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
 
-        const result = await accommodationService.addFeaturedMedia(actor, {
-            accommodationId,
-            media: body as AccommodationMediaAddPayload
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.addFeaturedMedia(actor, {
+                    accommodationId,
+                    media: body as AccommodationMediaAddPayload
+                })
         });
 
         if (result.error) {

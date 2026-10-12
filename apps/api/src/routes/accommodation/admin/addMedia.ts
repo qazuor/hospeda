@@ -22,6 +22,7 @@ import {
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { accommodationGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
@@ -83,7 +84,10 @@ export const adminAddMediaRoute = createAdminRoute({
             media: body as AccommodationMediaAddPayload
         };
 
-        const result = await accommodationService.addMedia(actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => accommodationService.addMedia(actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
