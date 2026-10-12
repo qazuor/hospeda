@@ -41,6 +41,7 @@ import {
     processEmailOutboxBatch
 } from '@repo/notifications';
 import { getClock } from '../../utils/clock.js';
+import { resolveOutboxEmailClientConfig } from '../../utils/e2e-mail-capture.js';
 import { getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
@@ -133,7 +134,11 @@ export function buildUndeliverableEvent(input: {
  * {@link PreferenceService}; the sender never writes them.
  */
 function buildDefaultDeps(): EmailOutboxSenderDeps | null {
-    if (!env.HOSPEDA_EMAIL_API_KEY) {
+    const clientConfig = resolveOutboxEmailClientConfig({
+        apiKey: env.HOSPEDA_EMAIL_API_KEY,
+        captureUrl: env.HOSPEDA_E2E_MAIL_CAPTURE_URL
+    });
+    if (!clientConfig) {
         return null;
     }
     const preferenceService = new PreferenceService({
@@ -150,10 +155,7 @@ function buildDefaultDeps(): EmailOutboxSenderDeps | null {
         log: notificationLogModel,
         isOptedOut: createOutboxOptOutReader({ preferenceService }),
         render: buildOutboxSenderRender({ siteUrl: env.HOSPEDA_SITE_URL }),
-        transport: new BrevoEmailTransport(
-            createEmailClient({ apiKey: env.HOSPEDA_EMAIL_API_KEY }),
-            getEmailSender()
-        )
+        transport: new BrevoEmailTransport(createEmailClient(clientConfig), getEmailSender())
     };
 }
 

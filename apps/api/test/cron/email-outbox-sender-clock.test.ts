@@ -1,4 +1,5 @@
 import { createAdjustableClock } from '@repo/test-clock';
+import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     createEmailOutboxSenderJob,
@@ -39,7 +40,7 @@ function deps() {
             recordEmailAttempt: vi.fn(async () => ({}) as never)
         },
         isOptedOut: vi.fn(async () => false),
-        render: () => ({ subject: 'subject', react: null }),
+        render: () => ({ subject: 'subject', react: createElement('p', null, 'body') }),
         transport: { send: vi.fn(async () => ({ messageId: 'id' })) }
     };
     return { value, outbox };
@@ -61,13 +62,17 @@ describe('TEST:V4:23 support - the outbox sender reads the injected clock', () =
         expect(outbox.claim).toHaveBeenCalledWith(expect.objectContaining({ now: INJECTED_NOW }));
     });
 
-    it('the registered job reads and follows the adjustable injected clock', () => {
+    it('the registered job reads and follows the adjustable injected clock', async () => {
         const clock = createAdjustableClock({ start: INJECTED_NOW });
-        injectClock({ clock });
+        const readClock = vi.fn(clock.now);
+        injectClock({ clock: { now: readClock } });
         expect(emailOutboxSenderJob.name).toBe('email-outbox-sender');
         expect(readEmailOutboxSenderNow()).toEqual(INJECTED_NOW);
         const advanced = new Date('2026-02-11T00:00:00.000Z');
         clock.set({ at: advanced });
         expect(readEmailOutboxSenderNow()).toEqual(advanced);
+        readClock.mockClear();
+        await emailOutboxSenderJob.handler(context(true));
+        expect(readClock).toHaveBeenCalledOnce();
     });
 });
