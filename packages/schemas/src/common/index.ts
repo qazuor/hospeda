@@ -55,6 +55,7 @@ export * from './listing-media.schema.js';
 export * from './listing-moderation.schema.js';
 export * from './listing-owner-listing.schema.js';
 export * from './listing-purge-on-request.schema.js';
+export * from './listing-support-edit.schema.js';
 export * from './location.schema.js';
 export * from './media.schema.js';
 export * from './media-upload.schema.js';
