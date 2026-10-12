@@ -114,6 +114,7 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
                 async emitListingPurged() {
                     pushedState = await db.transaction(async (tx) => {
                         await tx.execute(sql`SET LOCAL lock_timeout = '2s'`);
+                        await tx.execute(sql`SET LOCAL statement_timeout = '2s'`);
                         return (
                             await listingPublicationModel.readListing({
                                 tx,
