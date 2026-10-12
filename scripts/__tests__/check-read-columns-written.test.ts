@@ -97,8 +97,8 @@ describe('HOS-1448 corrida 2b - exhaustive billing transition annotations', () =
             ])
         );
         expect(Object.values(counts).every((count) => count > 0)).toBe(true);
-        // 2026-10-11, HOS-1448 corrida 5: catalog-supported complete corpus baseline is 142 reads.
-        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(142);
+        // 2026-10-12, HOS-1558: 143 reads (S5 reads subscription.succeeded_by_id, I-12).
+        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(143);
     });
 });
 
