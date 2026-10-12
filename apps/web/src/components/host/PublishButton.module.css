@@ -82,3 +82,10 @@
 .noPlans > span {
     color: var(--core-muted-foreground);
 }
+
+/* HOS-1668 C-2: the destination read failed; a status line, never a button. */
+.checkFailed {
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    width: 100%;
+}

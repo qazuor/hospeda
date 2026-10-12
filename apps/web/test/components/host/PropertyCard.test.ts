@@ -139,3 +139,22 @@ describe('PropertyCard.astro — HOS-982 printable QR sheet', () => {
         expect(qrElement).toContain('isPublished={canPrintQrSheet}');
     });
 });
+
+describe('PropertyCard.astro — the publish affordance fails closed (HOS-1668)', () => {
+    // HOS-1668 C-2: a caller that did not resolve the decision gets the
+    // fail-closed affordance, never a default that publishes.
+    it('defaults the publish affordance to UNKNOWN_PUBLISH_AFFORDANCE', () => {
+        expect(propertyCardSource).toContain('publishAffordance = UNKNOWN_PUBLISH_AFFORDANCE');
+        expect(propertyCardSource).not.toMatch(/canPublish\s*=\s*true/);
+        expect(propertyCardSource).not.toContain('firstPublishPaused');
+    });
+
+    // HOS-1668 C-1: the island receives the affordance itself and the
+    // translated check-failed text.
+    it('forwards the affordance and the check-failed text to PublishButton', () => {
+        expect(propertyCardSource).toContain('affordance={publishAffordance}');
+        expect(propertyCardSource).toContain(
+            "checkFailedText={t('host.properties.card.publishCheckFailed')}"
+        );
+    });
+});
