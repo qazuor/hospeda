@@ -29,6 +29,7 @@ import { adminListExperiencesRoute } from './list';
 import { adminModerateExperienceRoute } from './moderate';
 import { adminExperienceOptionsRoute } from './options';
 import { adminPatchExperienceRoute } from './patch';
+import { adminPurgeOnRequestExperienceRoute } from './purge';
 import { adminRemoveExperienceFaqRoute } from './removeFaq';
 import { adminRemoveExperienceMediaRoute } from './removeMedia';
 import { adminReorderExperienceFaqsRoute } from './reorderFaqs';
@@ -82,6 +83,9 @@ app.route('/', adminAssignExperienceOwnerRoute);
 
 // POST /:id/moderate - ACC:12 two-level publication moderation; V6.9b retires legacy moderation_state.
 app.route('/', adminModerateExperienceRoute);
+
+// POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
+app.route('/', adminPurgeOnRequestExperienceRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for a listing
 // Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param

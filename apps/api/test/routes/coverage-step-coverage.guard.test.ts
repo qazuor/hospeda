@@ -25,6 +25,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
     'accommodation/admin/patch.ts': { operation: 'EDIT' },
+    'accommodation/admin/purge.ts': { operation: 'DELETE' },
     'accommodation/admin/removeFaq.ts': { operation: 'EDIT' },
     'accommodation/admin/removeMedia.ts': { operation: 'EDIT' },
     'accommodation/admin/reorderFaqs.ts': { operation: 'EDIT' },
@@ -113,6 +114,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
     'experience/admin/patch.ts': { operation: 'EDIT' },
+    'experience/admin/purge.ts': { operation: 'DELETE' },
     'experience/admin/removeFaq.ts': { operation: 'EDIT' },
     'experience/admin/removeMedia.ts': { operation: 'EDIT' },
     'experience/admin/reorderFaqs.ts': { operation: 'EDIT' },
@@ -176,6 +178,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
     'gastronomy/admin/patch.ts': { operation: 'EDIT' },
+    'gastronomy/admin/purge.ts': { operation: 'DELETE' },
     'gastronomy/admin/removeFaq.ts': { operation: 'EDIT' },
     'gastronomy/admin/removeMedia.ts': { operation: 'EDIT' },
     'gastronomy/admin/reorderFaqs.ts': { operation: 'EDIT' },
@@ -244,7 +247,7 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
 
     it('discovers exactly the frozen 140 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(143);
+        expect(Object.keys(EXPECTED)).toHaveLength(146);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {
