@@ -39,8 +39,46 @@ describe('TEST:B3:2 subscription start request', () => {
         const response = {
             subscriptionId: crypto.randomUUID(),
             authorizationId: 'provider-id',
-            checkoutUrl: 'https://example.test/checkout'
+            checkoutUrl: 'https://example.test/checkout',
+            vertical: 'accommodation',
+            authorizationWindowEndsAt: '2026-10-11T20:00:00.000Z'
         };
         expect(StartSubscriptionResponseSchema.parse(response)).toEqual(response);
+    });
+
+    // B3 UI (B3.md:1045-1053)
+    it('requires the persisted vertical and authorization window end', () => {
+        const response = {
+            subscriptionId: crypto.randomUUID(),
+            authorizationId: 'provider-id',
+            checkoutUrl: 'https://example.test/checkout',
+            vertical: 'accommodation',
+            authorizationWindowEndsAt: '2026-10-11T20:00:00.000Z'
+        };
+        expect(
+            StartSubscriptionResponseSchema.safeParse({
+                subscriptionId: response.subscriptionId,
+                authorizationId: response.authorizationId,
+                checkoutUrl: response.checkoutUrl,
+                authorizationWindowEndsAt: response.authorizationWindowEndsAt
+            }).success
+        ).toBe(false);
+        expect(
+            StartSubscriptionResponseSchema.safeParse({
+                subscriptionId: response.subscriptionId,
+                authorizationId: response.authorizationId,
+                checkoutUrl: response.checkoutUrl,
+                vertical: response.vertical
+            }).success
+        ).toBe(false);
+        expect(
+            StartSubscriptionResponseSchema.safeParse({
+                ...response,
+                authorizationWindowEndsAt: '2026-10-11T20:00:00.000'
+            }).success
+        ).toBe(false);
+        expect(
+            StartSubscriptionResponseSchema.safeParse({ ...response, vertical: 'unknown' }).success
+        ).toBe(false);
     });
 });
