@@ -271,7 +271,7 @@ describe.each(verticals)('TEST:V8a:9 action 15 asks for its own permission — %
                 id,
                 adminHeaders({
                     id: admin,
-                    // The commerce admin routers gate on "view all" before the
+                    // The gastronomy and experience admin routers gate on "view all" before the
                     // handler; step 3 then permits action 15 and the malformed reason
                     // is refused before any write.
                     permissions: [
