@@ -870,6 +870,7 @@ export enum PermissionEnum {
     BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
     // HOS-1457 AC:V5:8: action 15, subscription inspection, and own-billing access.
     LISTING_FOREIGN_CONTENT_EDIT = 'listing.foreignContent.edit', // Allows editing another owner's listing content across all three verticals (action 15).
+    LISTING_MODERATE = 'listing.moderate', // Allows moderating any listing in two levels (fix request or take-down) and lifting it; NUCLEO/08 §3 action 13 (AUT-113), the same permission that moderates a partner presence.
     BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.
     BILLING_VIEW_OWN = 'billing.viewOwn', // Allows reading the account's own billing.
     TRIAL_EXTEND = 'trial.extend', // Allows extending another person's running trial past the ceiling with a mandatory reason (action 11, HOS-1445). SUPER_ADMIN-only.

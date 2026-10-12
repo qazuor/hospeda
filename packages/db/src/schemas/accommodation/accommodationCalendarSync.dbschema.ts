@@ -122,6 +122,9 @@ export const accommodationCalendarSync = pgTable(
          */
         tokenExpiresAt: timestamp('token_expires_at', { withTimezone: true }),
 
+        /** Set by PB12 (and PB9) in the purge transaction: the remote copy (storage asset / provider grant) is deleted after the commit and the row is removed once the remote side confirms; a marked row is never shown (its listing is PURGED). Retried daily by the V6.6 run (AC:V6:30). */
+        remoteDeletionPendingAt: timestamp('remote_deletion_pending_at', { withTimezone: true }),
+
         /** The actor (host or system) that created this connection. */
         createdById: uuid('created_by_id')
             .notNull()

@@ -303,12 +303,14 @@ export const listingPublicationModel = {
         readonly to: PublicationStatusEnum;
         readonly oldInactiveSince?: Date;
         readonly inactiveSince?: Date;
-        readonly actorType: 'owner' | 'job';
+        readonly actorType: 'owner' | 'job' | 'admin';
         readonly actorId?: string;
         readonly correlationId: string;
         readonly occurredAt?: Date;
         readonly deletionAnnouncedAt?: Date;
         readonly oldDeletionAnnouncedAt?: Date | null;
+        readonly reason?: string | null;
+        readonly archiveOrigin?: PublicationStatusEnum;
     }): Promise<void> {
         await domainEventModel.insert({
             tx: args.tx,
@@ -319,8 +321,12 @@ export const listingPublicationModel = {
             actorId: args.actorId,
             correlationId: args.correlationId,
             occurredAt: args.occurredAt,
+            reason: args.reason,
             changes: [
                 { field: 'publicationStatus', old: args.from, new: args.to },
+                ...(args.archiveOrigin
+                    ? [{ field: 'archiveOrigin', new: args.archiveOrigin }]
+                    : []),
                 ...(args.deletionAnnouncedAt
                     ? [
                           {

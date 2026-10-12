@@ -84,4 +84,11 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
         expect([...ADMINISTRATIVE_ACTION_PERMISSION_SET].sort()).toEqual([...fromRows].sort());
     });
+
+    it('TEST:V6:12 assigns ACC_12 only the shared action 13 permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_12).toEqual({
+            permissions: [PermissionEnum.LISTING_MODERATE],
+            pendingOwnPermission: null
+        });
+    });
 });
