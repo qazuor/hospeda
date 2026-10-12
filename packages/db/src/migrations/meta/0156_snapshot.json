@@ -1,5 +1,5 @@
 {
-  "id": "d878c903-b31f-44c4-b8e9-8529377d6d83",
+  "id": "bd0bf0e6-6bd7-4f45-be5e-8f17bfd6bb52",
   "prevId": "af6caa4c-a90e-4e52-88f4-306868938f55",
   "version": "7",
   "dialect": "postgresql",
@@ -30001,47 +30001,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.receipt_counter": {
-      "name": "receipt_counter",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "smallint",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "last_number": {
-          "name": "last_number",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ck_receipt_counter_single_row": {
-          "name": "ck_receipt_counter_single_row",
-          "value": "\"receipt_counter\".\"id\" = 1"
-        },
-        "ck_receipt_counter_last_number": {
-          "name": "ck_receipt_counter_last_number",
-          "value": "\"receipt_counter\".\"last_number\" >= 1"
-        }
-      },
-      "isRLSEnabled": false
-    },
     "public.reconciliation_mark": {
       "name": "reconciliation_mark",
       "schema": "",
@@ -30951,6 +30910,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "grace_started_at": {
+          "name": "grace_started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "grace_ends_at": {
+          "name": "grace_ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "succeeds_id": {
           "name": "succeeds_id",
           "type": "uuid",
@@ -31156,6 +31127,10 @@
         "ck_subscription_authorization_window_pair": {
           "name": "ck_subscription_authorization_window_pair",
           "value": "(\"subscription\".\"authorization_window_deadline_version\" IS NULL AND \"subscription\".\"authorization_window_ends_at\" IS NULL) OR (\"subscription\".\"authorization_window_deadline_version\" IS NOT NULL AND \"subscription\".\"authorization_window_ends_at\" IS NOT NULL)"
+        },
+        "ck_subscription_grace_clock_pair": {
+          "name": "ck_subscription_grace_clock_pair",
+          "value": "(\"subscription\".\"grace_started_at\" IS NULL AND \"subscription\".\"grace_ends_at\" IS NULL) OR (\"subscription\".\"grace_started_at\" IS NOT NULL AND \"subscription\".\"grace_ends_at\" IS NOT NULL AND \"subscription\".\"grace_ends_at\" >= \"subscription\".\"grace_started_at\")"
         }
       },
       "isRLSEnabled": false
