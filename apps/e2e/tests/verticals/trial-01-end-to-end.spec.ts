@@ -120,6 +120,14 @@ test.describe('TEST:V4:23 AC:V4:17 the trial end to end @p0 @verticals @clock', 
             withTrial: false
         });
         accommodationId = accommodation.id;
+        // Publishing requires a main image; a real owner uploads it in the editor, so it is
+        // seeded directly here, as host-01-onboarding-handoff does.
+        await execSQL(
+            `INSERT INTO accommodation_media
+                 (accommodation_id, url, state, is_featured, sort_order, moderation_state)
+             VALUES ($1, 'https://cdn.example.test/e2e-trial-main.jpg', 'visible', true, 0, 'APPROVED')`,
+            [accommodationId]
+        );
         const preTrial = await execSQL<{ count: string }>(
             `SELECT count(*)::text AS count FROM trial
               WHERE user_id = $1 AND vertical = 'accommodation'`,
