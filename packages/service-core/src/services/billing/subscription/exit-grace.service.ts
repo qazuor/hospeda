@@ -82,6 +82,9 @@ export async function reactivateFromGrace(input: {
  * first). The predecessor of a succession in progress is left to S19 without a
  * mark (D-4); a duplicate of an already paid period is P1's `COBRO_DUPLICADO`
  * (D-3); conditions 2 and 3 open reason 7 `PAGO_TARDIO_RECHAZADO` (I-3).
+ * The payment must cover THE period whose charge failed (condition 4 bound to the
+ * grace's `grace_started_at`, see `paymentCoversUnpaidPeriod`): a replayed notice of
+ * an earlier, already credited payment (`ALREADY_CREDITED`) never leaves grace.
  *
  * @param input.paymentId - The credited payment
  * @param ports - Provider, clock, mark payment port and actor type
@@ -127,7 +130,8 @@ export async function exitGraceOnCreditedPayment(
         },
         authorizationRead,
         act,
-        admittedStatuses: S5_ADMITTED_STATUSES
+        admittedStatuses: S5_ADMITTED_STATUSES,
+        unpaidSince: subscription.graceStartedAt
     });
 
     if ('retainedForS19' in verdict)
@@ -138,6 +142,7 @@ export async function exitGraceOnCreditedPayment(
             { subscriptionId: subscription.id, paymentId: payment.id, failedCondition },
             'Late payment cannot reactivate the subscription'
         );
+        // Condition 4 (a duplicate or an already paid period) is P1's COBRO_DUPLICADO, not reason 7 (D-3).
         if (failedCondition === 2 || failedCondition === 3) {
             await openReconciliationMark(
                 {

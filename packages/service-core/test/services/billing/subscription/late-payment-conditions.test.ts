@@ -12,7 +12,7 @@ const healthy: LatePaymentFacts = {
     hasOtherLivePrincipal: false,
     paymentAmount: { amountMinor: 250000, currency: 'ARS' },
     authorizationAmount: { amountMinor: 250000, currency: 'ARS' },
-    paymentHasCoveredPeriod: true
+    paymentCoversUnpaidPeriod: true
 };
 
 const evaluate = (overrides: Partial<LatePaymentFacts>) =>
@@ -61,7 +61,7 @@ describe('TEST:B7:4 — the four conditions of 05 §3 (AC:B7:6)', () => {
     });
 
     it('condition 4: rejects a payment without its covered period (P1 marked a duplicate)', () => {
-        expect(evaluate({ paymentHasCoveredPeriod: false })).toEqual({
+        expect(evaluate({ paymentCoversUnpaidPeriod: false })).toEqual({
             ok: false,
             failedCondition: 4
         });
@@ -73,7 +73,7 @@ describe('TEST:B7:4 — the four conditions of 05 §3 (AC:B7:6)', () => {
                 isPredecessorInSuccession: true,
                 hasOtherLivePrincipal: true,
                 authorizationAmount: { amountMinor: 1, currency: 'ARS' },
-                paymentHasCoveredPeriod: false,
+                paymentCoversUnpaidPeriod: false,
                 status: 'ACTIVE'
             })
         ).toEqual({ retainedForS19: true });
@@ -82,7 +82,7 @@ describe('TEST:B7:4 — the four conditions of 05 §3 (AC:B7:6)', () => {
     it('D-3: a duplicate period is reported as condition 4 even when 2 and 3 also fail', () => {
         expect(
             evaluate({
-                paymentHasCoveredPeriod: false,
+                paymentCoversUnpaidPeriod: false,
                 hasOtherLivePrincipal: true,
                 authorizationAmount: { amountMinor: 1, currency: 'ARS' }
             })

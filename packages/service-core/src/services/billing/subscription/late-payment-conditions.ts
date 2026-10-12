@@ -7,6 +7,8 @@ import {
     inArray,
     isNull,
     LIVE_SUBSCRIPTION_STATUSES,
+    lt,
+    max,
     ne,
     or,
     type SelectSubscription,
@@ -56,8 +58,12 @@ export interface LatePaymentFacts {
     readonly paymentAmount: LatePaymentAmount;
     /** The authorization's amount, reread by id in this act. */
     readonly authorizationAmount: LatePaymentAmount;
-    /** A covered period is attached to this payment (P1 wrote it; DUPLICATE_MARKED did not). */
-    readonly paymentHasCoveredPeriod: boolean;
+    /**
+     * The payment's own covered period is THE unpaid period (P1 wrote it, so it is not
+     * a duplicate — DUPLICATE_MARKED writes none — and it is not a replay of an earlier,
+     * already paid period). See `paymentCoversUnpaidPeriod`.
+     */
+    readonly paymentCoversUnpaidPeriod: boolean;
 }
 
 /**
@@ -76,7 +82,7 @@ export function evaluateLatePaymentConditions(input: {
     const { facts } = input;
     if (facts.isPredecessorInSuccession) return { retainedForS19: true };
     if (!facts.admittedStatuses.includes(facts.status)) return { ok: false, failedCondition: 1 };
-    if (!facts.paymentHasCoveredPeriod) return { ok: false, failedCondition: 4 };
+    if (!facts.paymentCoversUnpaidPeriod) return { ok: false, failedCondition: 4 };
     if (
         facts.paymentAmount.amountMinor !== facts.authorizationAmount.amountMinor ||
         facts.paymentAmount.currency !== facts.authorizationAmount.currency
@@ -148,6 +154,58 @@ export async function hasOtherLivePrincipal(input: {
 }
 
 /**
+ * Condition 4, bound to the cycle that failed: whether the payment's covered period
+ * is the unpaid period (`05` §3, condition 4: «no hay otro pago acreditado para el
+ * mismo período»; condition 2: «el esperado para el período que cubre»; AC:B7:6:
+ * «entra el pago del período»). Strictest reading, since the spec does not name the
+ * period by column:
+ *
+ * - the payment has an open covered period (P1 wrote it; a `COBRO_DUPLICADO` has none, D-3);
+ * - it was credited at or after `unpaidSince` (S5: `grace_started_at`, the instant S4 read
+ *   the rejection) — so a replayed notice or a sweep of a payment credited BEFORE the
+ *   grace opened can never reactivate the row;
+ * - and its period starts after every open covered period already credited before
+ *   `unpaidSince` — so a late credit of an earlier period does not count either.
+ *
+ * A missing `unpaidSince` fails closed.
+ *
+ * @param input.subscriptionId - The subscription the payment belongs to
+ * @param input.paymentId - The credited payment
+ * @param input.unpaidSince - When the unpaid period was observed (S5: `grace_started_at`)
+ * @param input.tx - Optional transaction
+ * @returns True only when the payment covers the unpaid period
+ */
+export async function paymentCoversUnpaidPeriod(input: {
+    readonly subscriptionId: string;
+    readonly paymentId: string;
+    readonly unpaidSince: Date | null;
+    readonly tx?: DrizzleClient;
+}): Promise<boolean> {
+    if (!input.unpaidSince) return false;
+    const db = input.tx ?? getDb();
+    const [covered] = await db
+        .select({ periodStart: coveredPeriods.periodStart, creditedAt: coveredPeriods.creditedAt })
+        .from(coveredPeriods)
+        .where(
+            and(eq(coveredPeriods.paymentId, input.paymentId), isNull(coveredPeriods.releasedAt))
+        )
+        .limit(1);
+    if (!covered || covered.creditedAt.getTime() < input.unpaidSince.getTime()) return false;
+    const [paidBefore] = await db
+        .select({ latest: max(coveredPeriods.periodStart) })
+        .from(coveredPeriods)
+        .where(
+            and(
+                eq(coveredPeriods.subscriptionId, input.subscriptionId),
+                isNull(coveredPeriods.releasedAt),
+                lt(coveredPeriods.creditedAt, input.unpaidSince)
+            )
+        );
+    const latest = paidBefore?.latest ?? null;
+    return latest === null || covered.periodStart.getTime() > new Date(latest).getTime();
+}
+
+/**
  * Reads the facts of `05` §3 for one credited payment in the same act and
  * evaluates the four conditions. The authorization's amount is taken only from
  * a fresh read by id (I-2, G17).
@@ -157,6 +215,7 @@ export async function hasOtherLivePrincipal(input: {
  * @param input.authorizationRead - The authorization reread by id for this act
  * @param input.act - The act deciding on the read
  * @param input.admittedStatuses - The statuses condition 1 admits for the caller
+ * @param input.unpaidSince - When the unpaid period was observed (S5: `grace_started_at`)
  * @param input.tx - Optional transaction
  * @returns The verdict of the four conditions
  */
@@ -169,18 +228,13 @@ export async function checkLatePaymentConditions(input: {
     readonly authorizationRead: ProviderRead<AuthorizationSnapshot>;
     readonly act: ActStart;
     readonly admittedStatuses: readonly string[];
+    readonly unpaidSince: Date | null;
     readonly tx?: DrizzleClient;
 }): Promise<LatePaymentConditionsVerdict> {
     const { snapshot: authorization } = assertFreshForAct({
         read: input.authorizationRead,
         act: input.act
     });
-    const db = input.tx ?? getDb();
-    const [covered] = await db
-        .select({ id: coveredPeriods.id })
-        .from(coveredPeriods)
-        .where(eq(coveredPeriods.paymentId, input.payment.id))
-        .limit(1);
     return evaluateLatePaymentConditions({
         facts: {
             status: input.subscription.status,
@@ -199,7 +253,12 @@ export async function checkLatePaymentConditions(input: {
                 amountMinor: authorization.amount.amountMinor,
                 currency: authorization.amount.currency
             },
-            paymentHasCoveredPeriod: Boolean(covered)
+            paymentCoversUnpaidPeriod: await paymentCoversUnpaidPeriod({
+                subscriptionId: input.subscription.id,
+                paymentId: input.payment.id,
+                unpaidSince: input.unpaidSince,
+                tx: input.tx
+            })
         }
     });
 }

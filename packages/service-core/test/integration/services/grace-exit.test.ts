@@ -342,4 +342,37 @@ describe('TEST:B7:4 — S5 by the credited charge notice (AC:B7:6)', () => {
             expect(await openMarks(fixture.started.subscriptionId)).toHaveLength(0);
         }
     );
+    it.skipIf(!isServiceTestDbAvailable())(
+        'h — a replayed notice of the previous, already credited period never leaves grace',
+        async () => {
+            const fixture = await graceWithFailedCycle();
+            track(fixture);
+            const before = await subscriptionRow(fixture.started.subscriptionId);
+            const previous = await paymentFor(fixture.initialChargeId);
+            expect(previous.status).toBe('SUCCEEDED');
+            fixture.clock.advance({ ms: 60_000 });
+
+            const replayed = await recordChargeFact(
+                { chargeId: fixture.initialChargeId },
+                fixture.ports
+            );
+            expect(replayed).toMatchObject({
+                outcome: 'CREDITED',
+                credit: { outcome: 'ALREADY_CREDITED' },
+                exit: { outcome: 'CONDITION_FAILED', failedCondition: 4 }
+            });
+            const direct = await exitGraceOnCreditedPayment(
+                { paymentId: previous.id },
+                { provider: fixture.provider, clock: fixture.clock }
+            );
+            expect(direct).toMatchObject({ outcome: 'CONDITION_FAILED', failedCondition: 4 });
+
+            const row = await subscriptionRow(fixture.started.subscriptionId);
+            expect(row.status).toBe('GRACE_PERIOD');
+            expect(row.graceStartedAt).toEqual(before.graceStartedAt);
+            expect(row.graceEndsAt).toEqual(before.graceEndsAt);
+            expect(row.graceEndsAt).not.toBeNull();
+            expect(await openMarks(fixture.started.subscriptionId)).toHaveLength(0);
+        }
+    );
 });
