@@ -10,6 +10,7 @@ import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
 import {
     FAKE_LIES,
+    FAKE_RULES,
     FAKE_SIMULATIONS,
     FakePaymentProvider,
     type FakePaymentProviderOptions
@@ -91,6 +92,37 @@ describe('TEST:B1:9 turning a lie off', () => {
         expect(new URL(first.approvalUrl).search).toBe('');
         // M3 is still told: a second authorization for the same reference.
         expect(second.authorizationId).not.toBe(first.authorizationId);
+    });
+});
+
+describe('TEST:B1:9 turning a measured behaviour off by name', () => {
+    it('rejects rules, missing list rows, blank reasons, duplicates, and unimplemented measured behaviour', () => {
+        for (const entry of [
+            { behaviour: 'RP1', why: 'never switch a rule' },
+            { behaviour: 'RP99', why: 'missing' },
+            { behaviour: 'RP7', why: '  ' }
+        ])
+            expect(() => build({ clock, withoutBehaviour: [entry] })).toThrow();
+        expect(() =>
+            build({ clock, withoutBehaviour: [{ behaviour: 'RP12', why: 'not implemented yet' }] })
+        ).toThrow(/not switchable yet/);
+        expect(() =>
+            build({
+                clock,
+                withoutBehaviour: [
+                    { behaviour: 'RP7', why: 'one' },
+                    { behaviour: 'RP7', why: 'two' }
+                ]
+            })
+        ).toThrow(/each behaviour is turned off once/);
+        expect(FAKE_RULES.find((r) => r.id === 'RP1')?.kind).toBe('rule');
+    });
+
+    it('accepts each implemented measured behaviour with its reason', () => {
+        for (const behaviour of ['RP7', 'RP8', 'RP11'] as const)
+            expect(() =>
+                build({ clock, withoutBehaviour: [{ behaviour, why: 'exercise the honest path' }] })
+            ).not.toThrow();
     });
 });
 

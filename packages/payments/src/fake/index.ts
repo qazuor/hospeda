@@ -1,4 +1,6 @@
 /** Test-only entry point for the in-memory payment provider and its controls. */
+
+export { FAKE_CYCLE_ATTEMPTS, FAKE_PAUSE_BEFORE_EXPIRY_MS } from './fake-charge-cycle';
 export {
     FAKE_LIES,
     FAKE_LISTS,
@@ -26,10 +28,13 @@ export {
     type FakeNoticeFormat
 } from './fake-notice';
 export {
+    FAKE_SWITCHABLE_BEHAVIOURS,
+    type FakeBehaviourId,
     type FakePaymentProviderOptions,
     FakePaymentProviderOptionsSchema,
     type HonestAbout,
-    type Simulate
+    type Simulate,
+    type WithoutBehaviour
 } from './fake-options';
 export {
     FAKE_NOTICE_CHANNEL_HEADER,
