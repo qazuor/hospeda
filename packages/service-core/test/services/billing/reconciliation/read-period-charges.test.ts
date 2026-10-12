@@ -62,4 +62,104 @@ describe('readPeriodCharges', () => {
             chargeId
         });
     });
+
+    it('returns UNKNOWN with the latest record when the counter is ahead of the list (M7 honest)', async () => {
+        let now = Date.parse('2026-10-12T03:00:00.000Z');
+        const clock: Clock = { now: () => new Date(now) };
+        const provider = new FakePaymentProvider({
+            clock,
+            idNamespace: crypto.randomUUID(),
+            honestAbout: [
+                { lie: 'M7', why: 'the counter must disagree with the listed rejected record' }
+            ]
+        });
+        const authorizationId = await authorization(provider);
+        await provider.declineCharge({ authorizationId, declineReason: 'issuer_declined' });
+        now += 60_000;
+        const newest = await provider.declineCharge({
+            authorizationId,
+            declineReason: 'issuer_declined'
+        });
+        const newestRead = await provider.readCharge({ chargeId: newest.chargeId });
+        const act = { kind: 'decision' as const, startedAt: clock.now() };
+        const authorizationRead = await provider.readAuthorization({ authorizationId });
+
+        await expect(readPeriodCharges({ authorizationRead, act }, { provider })).resolves.toEqual({
+            verdict: 'UNKNOWN',
+            reason: 'INCOMPLETE_INVENTORY',
+            latestCharge: { chargeId: newest.chargeId, createdAt: newestRead.snapshot.createdAt }
+        });
+    });
+
+    it('returns UNKNOWN without a record when the counter is ahead of an empty list', async () => {
+        const { clock, provider } = fixture();
+        const authorizationId = await authorization(provider);
+        const act = { kind: 'decision' as const, startedAt: clock.now() };
+        const read = await provider.readAuthorization({ authorizationId });
+        const authorizationRead = { ...read, snapshot: { ...read.snapshot, chargeRecordCount: 1 } };
+
+        await expect(readPeriodCharges({ authorizationRead, act }, { provider })).resolves.toEqual({
+            verdict: 'UNKNOWN',
+            reason: 'INCOMPLETE_INVENTORY'
+        });
+    });
+
+    it('returns UNKNOWN with the pending current record (M8: lands on the next batch)', async () => {
+        const { clock, provider } = fixture();
+        const authorizationId = await authorization(provider);
+        const { chargeId } = await provider.charge({
+            authorizationId,
+            amount: { amountMinor: 25_000, currency: 'ARS' },
+            reference: crypto.randomUUID()
+        });
+        const pending = await provider.readCharge({ chargeId });
+        expect(pending.snapshot.status).toBe('pending');
+        const act = { kind: 'decision' as const, startedAt: clock.now() };
+        const authorizationRead = await provider.readAuthorization({ authorizationId });
+
+        await expect(readPeriodCharges({ authorizationRead, act }, { provider })).resolves.toEqual({
+            verdict: 'UNKNOWN',
+            reason: 'PENDING_CHARGE',
+            latestCharge: { chargeId, createdAt: pending.snapshot.createdAt }
+        });
+    });
+
+    it('returns UNKNOWN without a record when the list cannot be read', async () => {
+        const { clock, provider } = fixture();
+        const authorizationId = await authorization(provider);
+        await provider.declineCharge({ authorizationId, declineReason: 'issuer_declined' });
+        const failing = new Proxy(provider, {
+            get(target, property, receiver) {
+                if (property === 'listCharges')
+                    return async () => {
+                        throw new Error('listing failed');
+                    };
+                const value = Reflect.get(target, property, receiver);
+                return typeof value === 'function' ? value.bind(target) : value;
+            }
+        });
+        const act = { kind: 'decision' as const, startedAt: clock.now() };
+        const authorizationRead = await provider.readAuthorization({ authorizationId });
+
+        await expect(
+            readPeriodCharges({ authorizationRead, act }, { provider: failing })
+        ).resolves.toEqual({ verdict: 'UNKNOWN', reason: 'READ_FAILED' });
+    });
+
+    it('never reads lastChargedAt: a rejected record that moved it is still NOT_CHARGED', async () => {
+        const { clock, provider } = fixture();
+        const authorizationId = await authorization(provider);
+        const { chargeId } = await provider.declineCharge({
+            authorizationId,
+            declineReason: 'issuer_declined'
+        });
+        const act = { kind: 'decision' as const, startedAt: clock.now() };
+        const authorizationRead = await provider.readAuthorization({ authorizationId });
+        expect(authorizationRead.snapshot.lastChargedAt).not.toBeNull();
+
+        await expect(readPeriodCharges({ authorizationRead, act }, { provider })).resolves.toEqual({
+            verdict: 'NOT_CHARGED',
+            chargeId
+        });
+    });
 });

@@ -200,7 +200,18 @@ describe('TEST:B7:1 sweep branch enters grace after a lost first rejection notic
                 { authorizationRead: read, act },
                 { provider: proxy }
             );
-            expect(result).toEqual({ verdict: 'UNKNOWN', reason: 'INCOMPLETE_INVENTORY' });
+            // The proxy drops the newest record, so the latest one it could read is the paid one.
+            const initialRead = await realProvider.readCharge({
+                chargeId: fixture.initialChargeId
+            });
+            expect(result).toEqual({
+                verdict: 'UNKNOWN',
+                reason: 'INCOMPLETE_INVENTORY',
+                latestCharge: {
+                    chargeId: fixture.initialChargeId,
+                    createdAt: initialRead.snapshot.createdAt
+                }
+            });
             await createLostFirstRejectionCheck({
                 provider: proxy,
                 clock: fixture.clock,
