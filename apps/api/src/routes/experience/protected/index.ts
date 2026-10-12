@@ -36,6 +36,7 @@ import { protectedGetExperienceMediaRoute } from './getMedia';
 import { protectedListMyExperienceRoute } from './listMine';
 import { protectedPatchExperienceRoute } from './patch';
 import { protectedPublishExperienceRoute } from './publish';
+import { protectedPurgeExperienceRoute } from './purge';
 import { protectedGetExperienceQrCodeRoute } from './qrCode';
 import { protectedGetExperienceQrSheetRoute } from './qrSheet';
 import { protectedReactivateExperienceRoute } from './reactivate';
@@ -97,6 +98,7 @@ app.route('/', protectedListExperienceCertificatesRoute);
 app.route('/', protectedPublishExperienceRoute);
 app.route('/', protectedUnpublishExperienceRoute);
 app.route('/', protectedReactivateExperienceRoute);
+app.route('/', protectedPurgeExperienceRoute);
 app.route('/', protectedGetExperienceByIdRoute);
 
 // PATCH /{id} — Owner operational update.

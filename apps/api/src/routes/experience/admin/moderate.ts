@@ -1,77 +1,35 @@
-/**
- * Admin moderate experience listing endpoint — HOS-686.
- *
- * The experience twin of `routes/gastronomy/admin/moderate.ts`. Both delegate
- * to the SAME implementation: `moderate()` lives on
- * `BaseListingService`, which `ExperienceService` and
- * `GastronomyService` both extend, so the two verticals cannot drift apart
- * (HOS-589 G-2). Only the service instance, the response schema and the OpenAPI
- * copy differ here.
- *
- * ## Not to be confused with the review route
- *
- * `POST /reviews/{id}/moderate` (already registered on this router) moderates
- * reviews written ABOUT a listing and is gated by `EXPERIENCE_MODERATE_REVIEW`.
- * This one moderates the listing itself and is gated by
- * `EXPERIENCE_MODERATION_CHANGE`. Two authorities, two permissions.
- *
- * @module routes/experience/admin/moderate
- */
 import {
-    ContentModerationChangeInputSchema,
-    ExperienceAdminSchema,
-    PermissionEnum
+    ExperienceIdSchema,
+    ListingModerationActionSchema,
+    ListingModerationResponseSchema,
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
-import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
+import { ListingModerationService } from '../../../services/listing-publication/listing-moderation.service';
 import { getActorFromContext } from '../../../utils/actor';
-import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const experienceService = new ExperienceService({ logger: apiLogger });
+const service = new ListingModerationService();
 
-/**
- * POST /api/v1/admin/experiences/:id/moderate
- *
- * @throws 400 if `moderationState` is not a valid moderation status.
- * @throws 403 if the actor lacks EXPERIENCE_MODERATION_CHANGE.
- * @throws 404 if the listing does not exist or is soft-deleted.
- */
+/** POST /api/v1/admin/experiences/{id}/moderate — ACC:12 two-level moderation; legacy moderation_state verdict has no route and V6.9b retires it. */
 export const adminModerateExperienceRoute = createAdminRoute({
     method: 'post',
+    successStatusCode: 200,
     path: '/{id}/moderate',
-    summary: 'Moderate an experience listing (admin)',
+    summary: 'Moderate experience listing',
     description:
-        'Sets the experience listing moderation state (PENDING | APPROVED | REJECTED). ' +
-        'Does not touch visibility directly — the listing visibility reconciler reacts to ' +
-        'REJECTED by flipping the listing to PRIVATE/INACTIVE. Rejecting schedules an edge ' +
-        'cache purge so the destination page stops serving it. Requires EXPERIENCE_MODERATION_CHANGE.',
+        'Applies PB10/PB11/PB13 moderation and manages fix requests. Requires LISTING_MODERATE.',
     tags: ['Experiences', 'Admin'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_MODERATION_CHANGE]],
-    requestParams: {
-        id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
-    },
-    requestBody: ContentModerationChangeInputSchema,
-    responseSchema: ExperienceAdminSchema,
-    handler: async (
-        ctx: Context,
-        params: Record<string, unknown>,
-        body: Record<string, unknown>
-    ) => {
-        const actor = getActorFromContext(ctx);
-        const { moderationState } = ContentModerationChangeInputSchema.parse(body);
-
-        const result = await experienceService.moderate({
-            actor,
+    requiredPermissions: [PermissionEnum.LISTING_MODERATE],
+    requestParams: { id: ExperienceIdSchema },
+    requestBody: ListingModerationActionSchema,
+    responseSchema: ListingModerationResponseSchema,
+    handler: async (ctx: Context, params: Record<string, unknown>, body: Record<string, unknown>) =>
+        service.moderate({
+            actor: getActorFromContext(ctx),
+            vertical: VerticalEnum.EXPERIENCE,
             id: params.id as string,
-            moderationState
-        });
-
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
-        }
-
-        return result.data;
-    }
+            body: ListingModerationActionSchema.parse(body)
+        })
 });

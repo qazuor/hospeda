@@ -35,8 +35,16 @@ export function makeHarness(
         readonly insertConflict?: 'USER_VERTICAL' | 'EMAIL_PSEUDONYM';
         readonly retention?: { readonly stopped: boolean; readonly pauseEndedAt: Date | null };
         readonly archiveOrigins?: ReadonlyMap<string, PublicationStatusEnum>;
+        readonly moderationOrigin?:
+            | import('../../src/publication/publication-types').PublicationModerationOrigin
+            | null;
         readonly inactiveSince?: Date;
         readonly recordBillingCalls?: boolean;
+        readonly purgeContent?: Awaited<
+            ReturnType<
+                import('../../src/publication/publication-types').PublicationTransaction['purgeListingContent']
+            >
+        >;
     } = {}
 ) {
     let locked = false;
@@ -62,6 +70,12 @@ export function makeHarness(
         inactiveSince: args.inactiveSince ?? at
     };
     const calls: string[] = [];
+    const statusWrites: Parameters<PublicationTransaction['setPublicationStatus']>[0][] = [];
+    const statusEvents: Parameters<PublicationTransaction['insertStatusChangedEvent']>[0][] = [];
+    let openFixRequest:
+        | import('../../src/publication/publication-types').PublicationFixRequest
+        | null = null;
+    const listingNotices: Parameters<PublicationTransaction['enqueueListingNotice']>[0][] = [];
     const restitutionNotices: Parameters<PublicationTransaction['enqueueRestitutionNotice']>[0][] =
         [];
     const insertedRows: unknown[] = [];
@@ -148,6 +162,47 @@ export function makeHarness(
                 )
             );
         },
+        async readModerationOrigin() {
+            calls.push('moderationOrigin');
+            return args.moderationOrigin ?? null;
+        },
+        async purgeListingContent() {
+            calls.push('purgeListingContent');
+            return (
+                args.purgeContent ?? {
+                    markedMedia: [],
+                    markedCalendar: [],
+                    closedAlerts: [],
+                    closedFixRequestId: null
+                }
+            );
+        },
+        async readOpenFixRequest() {
+            calls.push('readOpenFixRequest');
+            return openFixRequest;
+        },
+        async openFixRequest(input) {
+            calls.push('openFixRequest');
+            if (openFixRequest) return { opened: false, reason: 'ALREADY_OPEN' };
+            openFixRequest = {
+                id: listingId,
+                reason: input.reason,
+                suggestedDate: input.suggestedDate,
+                openedAt: input.openedAt,
+                openedById: input.openedById,
+                ownerReportedFixedAt: null
+            };
+            return { opened: true, id: listingId };
+        },
+        async closeOpenFixRequest() {
+            calls.push('closeOpenFixRequest');
+            if (!openFixRequest) return null;
+            openFixRequest = null;
+            return { id: listingId };
+        },
+        async insertFixRequestEvent() {
+            calls.push('fixRequestEvent');
+        },
         async countPublished() {
             return publishedCount;
         },
@@ -170,7 +225,9 @@ export function makeHarness(
             calls.push('instants');
             return new Map(listingIds.map((id, index) => [id, new Date(at.getTime() + index)]));
         },
-        async setPublicationStatus({ listingId: targetId, from, to }) {
+        async setPublicationStatus(input) {
+            const { listingId: targetId, from, to } = input;
+            statusWrites.push(input);
             if (args.setReturnsFalse) return false;
             if ((statuses.get(targetId) ?? status) !== from) return false;
             statuses.set(targetId, to);
@@ -183,12 +240,17 @@ export function makeHarness(
         async stampInactiveSince() {
             calls.push('stamp');
         },
-        async insertStatusChangedEvent() {
+        async insertStatusChangedEvent(input) {
+            statusEvents.push(input);
             calls.push('event');
         },
         async enqueueRestitutionNotice(args) {
             calls.push('enqueueRestitutionNotice');
             restitutionNotices.push(args);
+        },
+        async enqueueListingNotice(input) {
+            calls.push('enqueueListingNotice');
+            listingNotices.push(input);
         }
     };
     const unitOfWork: PublicationUnitOfWork = {
@@ -239,8 +301,11 @@ export function makeHarness(
         billing,
         afterCommit,
         calls,
+        statusWrites,
+        statusEvents,
         insertedRows,
         restitutionNotices,
+        listingNotices,
         getStatus: () => status
     };
 }

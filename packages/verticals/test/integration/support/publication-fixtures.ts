@@ -9,6 +9,7 @@ import {
 } from '@repo/db';
 import type { Accommodation, Experience, Gastronomy } from '@repo/schemas';
 import { PublicationStatusEnum } from '@repo/schemas';
+import { sql } from 'drizzle-orm';
 import type { PublicationVertical } from '../../../src/publication/publication-types';
 
 /** Seeds an owner and a destination for publication integration tests. */
@@ -77,4 +78,51 @@ export async function seedPublicationListing(args: {
 /** Trial's pseudonym fixture without a mailbox. */
 export function publicationPseudonym() {
     return randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, '');
+}
+
+/** Tracks fixtures owned by one integration file and removes them from global populations. */
+export function createPublicationFixtureTracker(db: DrizzleClient) {
+    const ownerIds = new Set<string>();
+    const listingIds = new Set<string>();
+    return {
+        owner: async () => {
+            const owner = await seedPublicationOwner({ db });
+            ownerIds.add(owner.userId);
+            return owner;
+        },
+        listing: async (args: Omit<Parameters<typeof seedPublicationListing>[0], 'db'>) => {
+            const listing = await seedPublicationListing({ ...args, db });
+            listingIds.add(listing.id);
+            return listing;
+        },
+        cleanup: async () => {
+            const ids = [...listingIds];
+            if (ids.length) {
+                const listingIdList = sql.join(
+                    ids.map((id) => sql`${id}`),
+                    sql`, `
+                );
+                await db.execute(
+                    sql`UPDATE accommodations SET deleted_at = now() WHERE id IN (${listingIdList})`
+                );
+                await db.execute(
+                    sql`UPDATE gastronomies SET deleted_at = now() WHERE id IN (${listingIdList})`
+                );
+                await db.execute(
+                    sql`UPDATE experiences SET deleted_at = now() WHERE id IN (${listingIdList})`
+                );
+            }
+            if (ownerIds.size) {
+                const ownerIdList = sql.join(
+                    [...ownerIds].map((id) => sql`${id}`),
+                    sql`, `
+                );
+                await db.execute(
+                    sql`UPDATE users SET deleted_at = now() WHERE id IN (${ownerIdList})`
+                );
+            }
+            listingIds.clear();
+            ownerIds.clear();
+        }
+    };
 }

@@ -42,17 +42,102 @@ export interface RetentionListing extends PublicationListing {
     };
 }
 
+/** The origin recorded when an admin takes a listing down. */
+export interface PublicationModerationOrigin {
+    readonly from: PublicationStatusEnum;
+    readonly archiveOrigin: PublicationStatusEnum | null;
+}
+
+/** The open owner fix request, if one exists. */
+export interface PublicationFixRequest {
+    readonly id: string;
+    readonly reason: string;
+    readonly suggestedDate: string | null;
+    readonly openedAt: Date;
+    readonly openedById: string;
+    readonly ownerReportedFixedAt: Date | null;
+}
+
 /** Billing reads needed to decide whether an inactivity clock may advance. */
 export type RetentionBilling = Pick<BillingForVerticals, 'coverage' | 'retentionStopped'>;
 
 /** All publication reads and writes happen in a locked transaction. */
 export interface PublicationTransaction extends TrialStartTransaction {
+    /** Deletes listing-owned content and records remote rows for post-commit deletion. */
+    purgeListingContent(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+        readonly at: Date;
+    }): Promise<{
+        readonly markedMedia: readonly {
+            readonly mediaId: string;
+            readonly publicId: string | null;
+        }[];
+        readonly markedCalendar: readonly {
+            readonly connectionId: string;
+            readonly provider: string;
+        }[];
+        readonly closedAlerts: readonly {
+            readonly alertId: string;
+            readonly touristUserId: string;
+        }[];
+        readonly closedFixRequestId: string | null;
+    }>;
     /** Enqueues the restitution notice in the same transaction as PB3/PB7. */
     enqueueRestitutionNotice(args: {
         readonly vertical: PublicationVertical;
         readonly ownerId: string;
         readonly payload: ListingRestitutionPayload;
         readonly correlationId: string;
+    }): Promise<void>;
+    /** Enqueues an arbitrary listing notice in the caller's transaction. */
+    enqueueListingNotice(args: {
+        readonly template: string;
+        readonly recipientUserId: string;
+        readonly payload: Readonly<Record<string, unknown>>;
+        readonly correlationId: string;
+        readonly occurrenceKey: string;
+    }): Promise<void>;
+    /** Reads the origin of the latest transition into MODERATED. */
+    readModerationOrigin(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+    }): Promise<PublicationModerationOrigin | null>;
+    /** Reads a listing's currently open fix request. */
+    readOpenFixRequest(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+    }): Promise<PublicationFixRequest | null>;
+    /** Opens a fix request unless one is already open. */
+    openFixRequest(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+        readonly reason: string;
+        readonly suggestedDate: string | null;
+        readonly openedById: string;
+        readonly openedAt: Date;
+    }): Promise<
+        | { readonly opened: true; readonly id: string }
+        | { readonly opened: false; readonly reason: 'ALREADY_OPEN' }
+    >;
+    /** Closes a listing's open fix request. */
+    closeOpenFixRequest(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+        readonly closedAt: Date;
+        readonly closedById: string | null;
+    }): Promise<{ readonly id: string } | null>;
+    /** Writes an audit event for opening or closing a fix request. */
+    insertFixRequestEvent(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+        readonly eventType: 'listing.fix_request_opened' | 'listing.fix_request_closed';
+        readonly fixRequestId: string;
+        readonly actorType: 'owner' | 'admin';
+        readonly actorId: string;
+        readonly reason: string;
+        readonly correlationId: string;
+        readonly occurredAt?: Date;
     }): Promise<void>;
     readListing(args: {
         readonly vertical: PublicationVertical;
@@ -107,8 +192,10 @@ export interface PublicationTransaction extends TrialStartTransaction {
         readonly to: PublicationStatusEnum;
         readonly oldInactiveSince?: Date;
         readonly inactiveSince?: Date;
-        readonly actorType: 'owner' | 'job';
+        readonly actorType: 'owner' | 'job' | 'admin';
         readonly actorId?: string;
+        readonly reason?: string | null;
+        readonly archiveOrigin?: PublicationStatusEnum;
         readonly correlationId: string;
         readonly occurredAt?: Date;
         readonly deletionAnnouncedAt?: Date;
@@ -134,11 +221,28 @@ export interface PublicationAfterCommit {
     }): Promise<void>;
 }
 
+/** PB12-only remote effects; kept separate so existing after-commit doubles remain stable. */
+export interface PurgeAfterCommit extends PublicationAfterCommit {
+    emitListingPurged(event: { readonly listingId: string }): Promise<void>;
+    deleteRemoteMedia(args: {
+        readonly vertical: PublicationVertical;
+        readonly mediaId: string;
+        readonly publicId: string | null;
+    }): Promise<void>;
+    revokeCalendarConnection(args: {
+        readonly connectionId: string;
+        readonly accommodationId: string;
+        readonly provider: string;
+    }): Promise<void>;
+}
+
 /** Each effect reports failure without changing a committed result. */
 export type PostCommitWarning =
     | 'COVERAGE_NOTICE_FAILED'
     | 'CACHE_INVALIDATION_FAILED'
-    | 'REVALIDATION_FAILED';
+    | 'REVALIDATION_FAILED'
+    | 'REMOTE_DELETION_FAILED'
+    | 'PURGE_NOTICE_FAILED';
 
 /** Live coverage port shared by PB1 and coverage recalculation. */
 export type PublicationBilling = Pick<BillingForVerticals, 'coverage'>;

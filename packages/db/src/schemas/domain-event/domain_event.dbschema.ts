@@ -18,6 +18,7 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   table. Content fields carry only their name (AC:V9a:2). `listing.exported`
  *   is deliberately absent: no export operation exists yet.
  * - `listing.status_changed`: an audited publication state transition (V6 §9).
+ * - `listing.fix_request_opened` / `listing.fix_request_closed`: an admin opened/closed a fix request on a listing (ACC:12, V6 `pedido_de_arreglo`); also closed by PB12 without mail.
  * - `reconciliation.mark_opened`: una marca de conciliación abierta o acumulada por
  *   `S14` (HOS-1523, AC:B3:13; NUCLEO/08 §4.1: el evento crítico se escribe uno por uno).
  * - `trial.extended`: a running trial extended by the administrative action 11
@@ -29,6 +30,8 @@ export const DOMAIN_EVENT_TYPES = [
     'listing.created',
     'listing.edited',
     'listing.status_changed',
+    'listing.fix_request_opened',
+    'listing.fix_request_closed',
     'trial.extended',
     'reconciliation.mark_opened'
 ] as const;

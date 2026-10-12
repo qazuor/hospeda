@@ -80,9 +80,7 @@ app.route('/', adminRestoreGastronomyRoute);
 // POST /:id/assign-owner - Set/replace listing owner
 app.route('/', adminAssignGastronomyOwnerRoute);
 
-// POST /:id/moderate - Apply the moderation verdict to the LISTING (HOS-686).
-// Distinct from /reviews/:id/moderate above, which moderates reviews ABOUT a
-// listing: different permission, different subject.
+// POST /:id/moderate - ACC:12 two-level publication moderation; V6.9b retires legacy moderation_state.
 app.route('/', adminModerateGastronomyRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for a listing

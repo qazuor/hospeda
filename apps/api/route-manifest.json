@@ -2294,6 +2294,10 @@
             "path": "/api/v1/protected/accommodations/:id/publish"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/accommodations/:id/purge"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/accommodations/:id/qr"
         },
@@ -2662,6 +2666,10 @@
             "path": "/api/v1/protected/experiences/:id/publish"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/experiences/:id/purge"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/experiences/:id/qr"
         },
@@ -2824,6 +2832,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/gastronomies/:id/publish"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/gastronomies/:id/purge"
         },
         {
             "method": "GET",
