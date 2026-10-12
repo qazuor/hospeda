@@ -6,6 +6,7 @@ import {
     domainEvent,
     emailOutbox,
     eq,
+    fixRequests,
     listingPublicationModel,
     listingPurgeModel,
     touristPriceAlerts
@@ -111,13 +112,16 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
                     revalidated.push(listing.id);
                 },
                 async emitListingPurged() {
-                    pushedState = (
-                        await listingPublicationModel.readListing({
-                            tx: db,
-                            vertical: VerticalEnum.ACCOMMODATION,
-                            listingId: listing.id
-                        })
-                    )?.publicationStatus;
+                    pushedState = await db.transaction(async (tx) => {
+                        await tx.execute(sql`SET LOCAL lock_timeout = '2s'`);
+                        return (
+                            await listingPublicationModel.readListing({
+                                tx,
+                                vertical: VerticalEnum.ACCOMMODATION,
+                                listingId: listing.id
+                            })
+                        )?.publicationStatus;
+                    });
                 },
                 async deleteRemoteMedia() {},
                 async revokeCalendarConnection() {}
@@ -360,5 +364,70 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
             payload: { bySupport: true }
         });
         expect(notice?.template).not.toBe('verticals.listing-moderation-lifted');
+    });
+
+    it('TEST:V6:13 closes an open fix request and records its event', async () => {
+        const { userId, destinationId } = await seedPublicationOwner({ db });
+        const listing = await seedPublicationListing({
+            db,
+            vertical: VerticalEnum.ACCOMMODATION,
+            userId,
+            destinationId,
+            status: Status.DRAFT
+        });
+        const [request] = await db
+            .insert(fixRequests)
+            .values({
+                entityType: VerticalEnum.ACCOMMODATION,
+                entityId: listing.id,
+                reason: 'Correct the listing details',
+                openedById: userId
+            })
+            .returning({ id: fixRequests.id });
+        const correlationId = randomUUID();
+        const adapter = createPublicationTestAdapter({
+            db,
+            covered: { value: false },
+            limit: { value: 1 }
+        });
+        const afterCommit: PurgeAfterCommit = {
+            emitCoverageChanged: vi.fn(async () => {}),
+            invalidateUser: vi.fn(async () => {}),
+            revalidate: vi.fn(async () => {}),
+            emitListingPurged: vi.fn(async () => {}),
+            deleteRemoteMedia: vi.fn(async () => {}),
+            revokeCalendarConnection: vi.fn(async () => {})
+        };
+
+        await purgeListing({
+            ...adapter,
+            clock,
+            afterCommit,
+            actor: { kind: 'owner', userId },
+            vertical: VerticalEnum.ACCOMMODATION,
+            listingId: listing.id,
+            correlationId
+        });
+
+        const [closed] = await db
+            .select({ closedAt: fixRequests.closedAt, closedById: fixRequests.closedById })
+            .from(fixRequests)
+            .where(eq(fixRequests.id, request!.id));
+        expect(closed).toMatchObject({ closedAt: at, closedById: null });
+        const events = await db
+            .select({ eventType: domainEvent.eventType, actorType: domainEvent.actorType })
+            .from(domainEvent)
+            .where(eq(domainEvent.correlationId, correlationId));
+        expect(events).toContainEqual({
+            eventType: 'listing.fix_request_closed',
+            actorType: 'owner'
+        });
+        const notices = await db
+            .select({ template: emailOutbox.template })
+            .from(emailOutbox)
+            .where(eq(emailOutbox.correlationId, correlationId));
+        expect(notices.map(({ template }) => template)).not.toContain(
+            'verticals.listing-moderation-lifted'
+        );
     });
 });

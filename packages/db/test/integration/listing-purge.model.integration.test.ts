@@ -11,7 +11,9 @@ import { accommodationCalendarSync } from '../../src/schemas/accommodation/accom
 import { touristPriceAlerts } from '../../src/schemas/alert/tourist_price_alerts.dbschema.ts';
 import { conversations } from '../../src/schemas/conversation/conversations.dbschema.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
+import { entityViews } from '../../src/schemas/entity-view/entity_view.dbschema.ts';
 import { fixRequests } from '../../src/schemas/listing/fix_request.dbschema.ts';
+import { revalidationConfig } from '../../src/schemas/revalidation/revalidation-config.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import { userBookmarks } from '../../src/schemas/user/user_bookmark.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
@@ -242,6 +244,22 @@ describe.each([
                     }
                 })
                 .returning({ id: accommodationReviews.id, content: accommodationReviews.content });
+            const [view] = await tx
+                .insert(entityViews)
+                .values({
+                    entityType: 'ACCOMMODATION',
+                    entityId: listing.id,
+                    visitorHash: `purge-${crypto.randomUUID()}`
+                })
+                .returning();
+            const [revalidation] = await tx
+                .insert(revalidationConfig)
+                .values({ entityType: `purge-${crypto.randomUUID()}` })
+                .returning();
+            const rollup = await tx.execute(sql<{ id: string }>`
+                INSERT INTO entity_view_monthly_rollups (entity_type, entity_id, month, total, unique_visitors)
+                VALUES ('ACCOMMODATION', ${listing.id}, '2026-10-01', 7, 3)
+                RETURNING id`);
 
             const result = await listingPurgeModel.purgeListingContent({
                 tx,
@@ -286,6 +304,20 @@ describe.each([
                     .from(accommodationReviews)
                     .where(eq(accommodationReviews.id, review!.id))
             ).toMatchObject([{ content: review!.content }]);
+            expect(
+                await tx.select().from(entityViews).where(eq(entityViews.id, view!.id))
+            ).toMatchObject([{ entityId: listing.id, visitorHash: view!.visitorHash }]);
+            expect(
+                await tx
+                    .select()
+                    .from(revalidationConfig)
+                    .where(eq(revalidationConfig.id, revalidation!.id))
+            ).toEqual([revalidation]);
+            expect(
+                await tx.execute(
+                    sql`SELECT id FROM entity_view_monthly_rollups WHERE id = ${rollup.rows[0]?.id}`
+                )
+            ).toMatchObject({ rows: [] });
         });
     });
 });
