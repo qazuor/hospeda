@@ -28,6 +28,7 @@ vi.mock('@repo/db', async (importOriginal) => {
 });
 
 import {
+    assertSupportCreateIsDraft,
     assertSupportEditContentOnly,
     buildSupportEditParts,
     isForeignContentEdit,
@@ -163,12 +164,74 @@ describe('assertSupportEditContentOnly', () => {
         ).rejects.toMatchObject({ code: 'FORBIDDEN' });
     });
 
+    it('refuses refreshSlugFromName and slug: the public URL is not content', async () => {
+        for (const data of [{ name: 'Nuevo', refreshSlugFromName: true }, { slug: 'otro' }]) {
+            await expect(
+                inScope(OWNER_ID, async () => assertSupportEditContentOnly({ data }))
+            ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+        }
+    });
+
+    it('refuses a nested moderation verdict inside content (a photo approved by support)', async () => {
+        await expect(
+            inScope(OWNER_ID, async () =>
+                assertSupportEditContentOnly({
+                    data: { media: { featuredImage: { url: 'u', moderationState: 'APPROVED' } } }
+                })
+            )
+        ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+        expect(
+            await inScope(OWNER_ID, async () =>
+                assertSupportEditContentOnly({
+                    data: { media: { gallery: [{ url: 'u', moderationState: 'PENDING' }] } }
+                })
+            )
+        ).toEqual({ rejectedFields: [] });
+    });
+
     it('is a no-op outside an action-15 scope', () => {
         expect(
             assertSupportEditContentOnly({
                 data: { visibility: 'PUBLIC', lifecycleState: 'ACTIVE' }
             })
         ).toEqual({ rejectedFields: [] });
+    });
+});
+
+describe('assertSupportCreateIsDraft', () => {
+    it('accepts a draft, private, unfeatured, pending create inside an action-15 scope', async () => {
+        const result = await inScope(OWNER_ID, async () =>
+            assertSupportCreateIsDraft({
+                data: {
+                    name: 'x',
+                    lifecycleState: 'DRAFT',
+                    visibility: 'PRIVATE',
+                    isFeatured: false,
+                    moderationState: 'PENDING'
+                }
+            })
+        );
+        expect(result).toEqual({ rejectedFields: [] });
+    });
+
+    it('refuses a create born published, public, featured or approved inside an action-15 scope', async () => {
+        for (const data of [
+            { lifecycleState: 'ACTIVE' },
+            { visibility: 'PUBLIC' },
+            { isFeatured: true },
+            { moderationState: 'APPROVED' },
+            { media: { featuredImage: { moderationState: 'APPROVED' } } }
+        ]) {
+            await expect(
+                inScope(OWNER_ID, async () => assertSupportCreateIsDraft({ data }))
+            ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+        }
+    });
+
+    it('is a no-op outside an action-15 scope', () => {
+        expect(assertSupportCreateIsDraft({ data: { lifecycleState: 'ACTIVE' } })).toEqual({
+            rejectedFields: []
+        });
     });
 });
 

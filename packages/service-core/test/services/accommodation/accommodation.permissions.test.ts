@@ -9,6 +9,7 @@ import {
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    checkAction15CanUpdate,
     checkCanAdminList,
     checkCanAdminView,
     checkCanCreate,
@@ -175,20 +176,19 @@ describe('Accommodation Permissions', () => {
                 run: async () => run()
             });
 
-        it('checkCanUpdate refuses the action 15 permission alone, outside an authorized scope', () => {
+        it('checkAction15CanUpdate does not authorize the action 15 permission alone, outside a scope', () => {
+            expect(checkAction15CanUpdate(admin15(), withOwner(mockUserId))).toBe(false);
             expectForbidden(
-                () => checkCanUpdate(admin15(), withOwner(mockUserId), { allowAction15: true }),
+                () => checkCanUpdate(admin15(), withOwner(mockUserId)),
                 'Permission denied to update accommodation'
             );
         });
-        it('checkCanUpdate lets action 15 edit content inside a scope bound to the owner', async () => {
+        it('checkAction15CanUpdate authorizes a content write inside a scope bound to the owner', async () => {
             await inScope(mockUserId, () => {
-                expect(() =>
-                    checkCanUpdate(admin15(), withOwner(mockUserId), { allowAction15: true })
-                ).not.toThrow();
+                expect(checkAction15CanUpdate(admin15(), withOwner(mockUserId))).toBe(true);
             });
         });
-        it('checkCanUpdate refuses action 15 for an operation that did not opt in (unpublish, visibility)', async () => {
+        it('checkCanUpdate (unpublish, visibility) never accepts action 15, even inside its scope', async () => {
             await inScope(mockUserId, () => {
                 expectForbidden(
                     () => checkCanUpdate(admin15(), withOwner(mockUserId)),
@@ -196,19 +196,16 @@ describe('Accommodation Permissions', () => {
                 );
             });
         });
-        it('checkCanUpdate refuses a scope bound to a different owner', async () => {
+        it('checkAction15CanUpdate does not cover a scope bound to a different owner', async () => {
             await inScope(otherUserId, () => {
-                expectForbidden(
-                    () => checkCanUpdate(admin15(), withOwner(mockUserId), { allowAction15: true }),
-                    'Permission denied to update accommodation'
-                );
+                expect(checkAction15CanUpdate(admin15(), withOwner(mockUserId))).toBe(false);
             });
         });
-        it('checkCanUpdate keeps the owner pause for action 15 (only UPDATE_ANY is exempt)', async () => {
+        it('checkAction15CanUpdate keeps the owner pause (only UPDATE_ANY is exempt)', async () => {
             const suspended = { ...withOwner(mockUserId), ownerSuspended: true };
             await inScope(mockUserId, () => {
                 expectForbidden(
-                    () => checkCanUpdate(admin15(), suspended, { allowAction15: true }),
+                    () => checkAction15CanUpdate(admin15(), suspended),
                     'while the owner subscription is paused'
                 );
             });

@@ -61,7 +61,7 @@ import {
 import type { ListingHookState } from './listing.types';
 import { buildListingOwnerActChanges, recordListingOwnerAct } from './listing-owner-act';
 import { scheduleListingRevalidation } from './listing-revalidation.js';
-import { assertSupportEditContentOnly } from './listing-support-edit';
+import { assertSupportCreateIsDraft, assertSupportEditContentOnly } from './listing-support-edit';
 
 // ---------------------------------------------------------------------------
 // Minimal catalog/junction interfaces (injected by concrete services)
@@ -668,6 +668,8 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
+        // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
+        assertSupportCreateIsDraft({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
 
         // (a) Destination CITY-type validation

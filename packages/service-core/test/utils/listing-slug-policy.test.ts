@@ -1,5 +1,6 @@
 import { LifecycleStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { runWithAdministrativeAuthorization } from '../../src/utils/administrative-authorization';
 import { shouldRegenerateSlugOnListingChange } from '../../src/utils/listing-slug-policy';
 
 /**
@@ -251,5 +252,34 @@ describe('shouldRegenerateSlugOnListingChange', () => {
                 })
             ).toBe(true);
         });
+    });
+});
+
+describe('shouldRegenerateSlugOnListingChange under action 15 (ACC:15, HOS-1493)', () => {
+    const renameDraft = {
+        currentLifecycleState: LifecycleStatusEnum.DRAFT,
+        currentName: 'Casa del Río',
+        nextName: 'Casa del Arroyo',
+        slugWasProvided: false
+    } as const;
+
+    it('never moves the slug inside an action-15 scope, not even on a draft or with the opt-in', async () => {
+        const results = await runWithAdministrativeAuthorization({
+            authorization: { action: 'ACC_15', subjectId: 'owner-1' },
+            run: async () => [
+                shouldRegenerateSlugOnListingChange(renameDraft),
+                shouldRegenerateSlugOnListingChange({
+                    ...renameDraft,
+                    currentLifecycleState: LifecycleStatusEnum.ACTIVE,
+                    refreshSlugFromName: true
+                })
+            ]
+        });
+
+        expect(results).toEqual([false, false]);
+    });
+
+    it('still regenerates a renamed draft outside the scope', () => {
+        expect(shouldRegenerateSlugOnListingChange(renameDraft)).toBe(true);
     });
 });

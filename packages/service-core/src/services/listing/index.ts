@@ -50,6 +50,7 @@ export {
     composeListingMedia
 } from './listing-media-compose';
 export {
+    assertSupportCreateIsDraft,
     assertSupportEditContentOnly,
     buildSupportEditParts,
     isForeignContentEdit,

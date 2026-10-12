@@ -126,6 +126,7 @@ async function readListing(tx: DrizzleClient, id: string) {
     const [row] = await tx
         .select({
             ownerId: accommodations.ownerId,
+            slug: accommodations.slug,
             description: accommodations.description,
             publicationStatus: accommodations.publicationStatus,
             deletedAt: accommodations.deletedAt
@@ -287,7 +288,6 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
         '(c) restores an archived photo: stays DRAFT, admin event on media, email with the photos part',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                // Arrange
                 const { userId: ownerId, accommodationId } = await seedDraftOwner(tx);
                 const adminId = await seedUser(tx);
                 const [media] = await tx
@@ -300,8 +300,6 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                         sortOrder: 0
                     } as typeof accommodationMedia.$inferInsert)
                     .returning({ id: accommodationMedia.id });
-
-                // Act
                 const restored = await asAction15(ownerId, () =>
                     service.restoreMedia(
                         admin15(adminId),
@@ -309,8 +307,6 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                         { tx }
                     )
                 );
-
-                // Assert
                 expect(restored.error).toBeUndefined();
                 const row = await readListing(tx, accommodationId);
                 expect(row?.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
@@ -334,7 +330,6 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
         '(d) the owner editing her own listing still records an owner act and queues no support email',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                // Arrange
                 const { userId: ownerId, accommodationId } = await seedDraftOwner(tx);
                 const owner: Actor = {
                     id: ownerId,
@@ -344,16 +339,12 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                         PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT
                     ]
                 };
-
-                // Act
                 const edited = await service.update(
                     owner,
                     accommodationId,
                     { description: 'La dueña edita su propia descripción.' },
                     { tx, actionReason: REASON }
                 );
-
-                // Assert
                 expect(edited.error).toBeUndefined();
                 const events = await readEvents(tx, accommodationId);
                 expect(events).toHaveLength(1);
@@ -367,7 +358,6 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
         '(e) a foreign admin WITHOUT the action 15 permission writes no admin event and no email',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                // Arrange
                 const { userId: ownerId, accommodationId } = await seedDraftOwner(tx);
                 const adminId = await seedUser(tx);
                 const adminAny: Actor = {
@@ -375,16 +365,12 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                     roles: [RoleEnum.ADMIN],
                     permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
                 };
-
-                // Act
                 const edited = await service.update(
                     adminAny,
                     accommodationId,
                     { description: 'Un admin sin la acción 15 edita la descripción.' },
                     { tx, actionReason: REASON }
                 );
-
-                // Assert
                 expect(edited.error).toBeUndefined();
                 const events = await readEvents(tx, accommodationId);
                 expect(events.filter((e) => e.actorType === 'admin')).toEqual([]);
@@ -420,34 +406,46 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
     );
 
     it.skipIf(!dbAvailable)(
-        '(g) through action 15, a non-content field is refused and nothing is written',
+        '(g) through action 15, non-content fields and refreshSlugFromName are refused, and a rename keeps the slug',
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { userId: ownerId, accommodationId } = await seedDraftOwner(tx);
                 const adminId = await seedUser(tx);
 
-                const code = await errorCodeOf(
-                    asAction15(ownerId, () =>
-                        service.update(
-                            admin15(adminId),
-                            accommodationId,
-                            {
-                                description: 'Texto nuevo de soporte que no debería escribirse.',
-                                visibility: 'PUBLIC'
-                            } as never,
-                            { tx }
+                // A never-published draft: the one whose rename would move the slug.
+                await tx
+                    .update(accommodations)
+                    .set({ lifecycleState: 'DRAFT' } as never)
+                    .where(eq(accommodations.id, accommodationId));
+                const before = await readListing(tx, accommodationId);
+                const update = (data: Record<string, unknown>) =>
+                    errorCodeOf(
+                        asAction15(ownerId, () =>
+                            service.update(admin15(adminId), accommodationId, data as never, {
+                                tx
+                            })
                         )
-                    )
-                );
+                    );
 
-                expect(code).toBe('FORBIDDEN');
-                const row = await readListing(tx, accommodationId);
-                expect(row?.description).not.toBe(
-                    'Texto nuevo de soporte que no debería escribirse.'
+                expect(
+                    await update({
+                        description: 'Texto nuevo de soporte que no debería escribirse nunca.',
+                        visibility: 'PUBLIC'
+                    })
+                ).toBe('FORBIDDEN');
+                expect(await update({ name: 'Cabaña renombrada', refreshSlugFromName: true })).toBe(
+                    'FORBIDDEN'
                 );
-                expect(row?.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
+                expect((await readListing(tx, accommodationId))?.description).toBe(
+                    before?.description
+                );
                 expect(await readEvents(tx, accommodationId)).toEqual([]);
                 expect(await readSupportEmails(tx, ownerId)).toEqual([]);
+
+                expect(await update({ name: 'Cabaña renombrada por soporte' })).toBeUndefined();
+                const after = await readListing(tx, accommodationId);
+                expect(after?.slug).toBe(before?.slug);
+                expect(after?.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
             });
         }
     );

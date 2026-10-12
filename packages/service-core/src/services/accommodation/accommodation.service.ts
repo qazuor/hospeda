@@ -142,7 +142,10 @@ import {
     recordListingOwnerAct,
     recordListingSubEntityEdit
 } from '../listing/listing-owner-act';
-import { assertSupportEditContentOnly } from '../listing/listing-support-edit';
+import {
+    assertSupportCreateIsDraft,
+    assertSupportEditContentOnly
+} from '../listing/listing-support-edit';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
@@ -167,6 +170,7 @@ import {
     normalizeViewInput
 } from './accommodation.normalizers';
 import {
+    checkAction15CanUpdate,
     checkCanAdminList,
     checkCanAdminView,
     checkCanCreate,
@@ -552,8 +556,9 @@ export class AccommodationService extends BaseCrudService<
         // Every `_canUpdate` caller writes content (the row, its FAQ, media and
         // IA data), so an explicitly authorized action 15 may pass (ACC:15,
         // HOS-1493). `unpublish` and `_canUpdateVisibility` call
-        // `checkCanUpdate` directly, without the opt-in.
-        checkCanUpdate(actor, entity, { allowAction15: true });
+        // `checkCanUpdate` directly, which action 15 never satisfies.
+        if (checkAction15CanUpdate(actor, entity)) return;
+        checkCanUpdate(actor, entity);
     }
     /**
      * @inheritdoc
@@ -810,6 +815,8 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
+        assertSupportCreateIsDraft({ data: data as Record<string, unknown> });
         // HOS-153: an accommodation may only be created directly in ACTIVE state with
         // complete capacity. `publish()` enforces this for DRAFT/INACTIVE -> ACTIVE
         // transitions, but a direct `create({ lifecycleState: ACTIVE })` — reachable via
