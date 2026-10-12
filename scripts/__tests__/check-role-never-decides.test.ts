@@ -218,4 +218,12 @@ describe('G6 scanner unit predicates', () => {
             findRoleDecisions({ file: 'x.ts', source, roleValues: new Set(['ADMIN']) })[0]?.symbol
         ).toBe('actorMiddleware');
     });
+
+    it('skips object-literal callback keys when finding the enclosing named method', () => {
+        const source =
+            'class Service { assignPermissionToUser() { this.run({ execute: async () => targetUserRoles.includes(RoleEnum.ADMIN) }); } }';
+        expect(
+            findRoleDecisions({ file: 'x.ts', source, roleValues: new Set(['ADMIN']) })[0]?.symbol
+        ).toBe('assignPermissionToUser');
+    });
 });

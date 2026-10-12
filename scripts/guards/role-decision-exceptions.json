@@ -117,7 +117,7 @@
         },
         {
             "file": "packages/service-core/src/services/permission/permission.service.ts",
-            "symbol": "execute",
+            "symbol": "assignPermissionToUser",
             "form": "membership-arg",
             "count": 1,
             "why": "the super-admin permission is carried by the role and cannot be overridden",

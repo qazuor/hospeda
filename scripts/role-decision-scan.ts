@@ -131,8 +131,7 @@ function symbolFor(node: ts.Node): string {
             ts.isMethodSignature(parent)
         )
             return parent.name?.getText() ?? '<module>';
-        if (ts.isPropertyDeclaration(parent) || ts.isPropertyAssignment(parent))
-            return parent.name.getText();
+        if (ts.isPropertyDeclaration(parent)) return parent.name.getText();
         if (
             (ts.isArrowFunction(child) || ts.isFunctionExpression(child)) &&
             ts.isVariableDeclaration(parent)
