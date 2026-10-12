@@ -19,12 +19,13 @@ import {
     FAKE_LIES,
     FAKE_RULES,
     FAKE_SIMULATIONS,
+    type FakeBehaviourId,
     type FakeLieId,
     type FakeSimulationId
 } from './fake-lists';
 
-export type FakeBehaviourId = `RP${number}`;
-export const FAKE_SWITCHABLE_BEHAVIOURS = ['RP7', 'RP8', 'RP11'] as const;
+export type { FakeBehaviourId } from './fake-lists';
+export const FAKE_SWITCHABLE_BEHAVIOURS = ['RP7', 'RP8', 'RP11', 'RP12'] as const;
 
 /** One lie a test turns off, by name and with its reason. */
 export interface HonestAbout {

@@ -62,7 +62,12 @@ beforeEach(() => {
 describe('TEST:B1:13 M7 (defenseOf TEST:B11:9): rejected attempts count as records', () => {
     it('counts the rejected cycle by default and only approved records when honestAbout names M7', async () => {
         expect(defenseOf({ lie: 'M7' })).toBe('TEST:B11:9');
-        const fake = new FakePaymentProvider({ clock });
+        const fake = new FakePaymentProvider({
+            clock,
+            withoutBehaviour: [
+                { behaviour: 'RP12', why: 'assert authorization notice timing only' }
+            ]
+        });
         const authorizationId = await activeOn({ fake });
         await fake.charge({ authorizationId, amount: ARS(1_800_000), reference: 'paid' });
         await fake.failChargeCycle({ authorizationId, declineReason: 'declined' });
@@ -261,7 +266,12 @@ describe('TEST:B1:13 M5: an amount change sends no notice', () => {
 describe('TEST:B1:13 M6: notices late, repeated or never', () => {
     it('an authorization notice comes late, then repeated, then never; defended by TEST:B5:2', async () => {
         // Arrange
-        const fake = new FakePaymentProvider({ clock });
+        const fake = new FakePaymentProvider({
+            clock,
+            withoutBehaviour: [
+                { behaviour: 'RP12', why: 'assert authorization notice timing only' }
+            ]
+        });
 
         // Act: three changes, three notices (born, approved, paused)
         const authorizationId = await activeOn({ fake });
@@ -355,7 +365,8 @@ describe('TEST:B1:13 M6: notices late, repeated or never', () => {
     it('with M6 turned off by name, one delivery per change, at once, on one channel', async () => {
         const fake = new FakePaymentProvider({
             clock,
-            honestAbout: [{ lie: 'M6', why: 'the honest path: every notice once and at once' }]
+            honestAbout: [{ lie: 'M6', why: 'the honest path: every notice once and at once' }],
+            withoutBehaviour: [{ behaviour: 'RP12', why: 'assert authorization notice count only' }]
         });
         const authorizationId = await activeOn({ fake });
         await fake.pause({ authorizationId });

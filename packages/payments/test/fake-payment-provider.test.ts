@@ -46,6 +46,9 @@ beforeEach(() => {
             { lie: 'M6', why: 'these cases count one notice per change, delivered at once' },
             { lie: 'M8', why: 'these cases read a charge approved the moment it is asked' },
             { lie: 'M13', why: 'these cases accumulate partial refunds from the first one' }
+        ],
+        withoutBehaviour: [
+            { behaviour: 'RP12', why: 'these cases exercise regular charge behaviour' }
         ]
     });
 });
@@ -106,6 +109,7 @@ describe('charge', () => {
             chargeId,
             createdAt: expect.any(String),
             expiresAt: null,
+            purpose: 'charge',
             authorizationId,
             reference: 'cycle-1',
             status: 'approved',

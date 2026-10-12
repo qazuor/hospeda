@@ -1,5 +1,6 @@
 /** Test-only entry point for the in-memory payment provider and its controls. */
 
+export { createFakeCardValidation } from './fake-card-validation';
 export { FAKE_CYCLE_ATTEMPTS, FAKE_PAUSE_BEFORE_EXPIRY_MS } from './fake-charge-cycle';
 export {
     FAKE_LIES,
@@ -7,6 +8,7 @@ export {
     FAKE_LISTS_PATH,
     FAKE_RULES,
     FAKE_SIMULATIONS,
+    type FakeBehaviourId,
     type FakeLie,
     type FakeLieId,
     type FakeLists,
@@ -29,7 +31,6 @@ export {
 } from './fake-notice';
 export {
     FAKE_SWITCHABLE_BEHAVIOURS,
-    type FakeBehaviourId,
     type FakePaymentProviderOptions,
     FakePaymentProviderOptionsSchema,
     type HonestAbout,

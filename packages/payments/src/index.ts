@@ -73,6 +73,7 @@ export type {
     BillingCadence,
     ChangeAmountInput,
     ChargeInput,
+    ChargePurpose,
     ChargeRef,
     ChargeResult,
     ChargeSnapshot,

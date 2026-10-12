@@ -171,8 +171,12 @@ export interface ChargeSnapshot {
     readonly createdAt: string;
     /** End of the provider's collection window, one cadence after creation; null on the first record. */
     readonly expiresAt: string | null;
-    readonly authorizationId: string;
-    readonly reference: string;
+    /** A card validation is zero-amount, does not charge anything and is not a charge from any authorization (RP12). */
+    readonly purpose: ChargePurpose;
+    /** Null only for card validation, which names neither an authorization nor our reference (RP12). */
+    readonly authorizationId: string | null;
+    /** Null only for card validation, which names neither an authorization nor our reference (RP12). */
+    readonly reference: string | null;
     readonly status: ChargeStatus;
     /** Why the provider rejected this attempt, in a domain string; null when not rejected or unavailable. */
     readonly declineReason: string | null;
@@ -180,6 +184,8 @@ export interface ChargeSnapshot {
     /** Cumulative amount refunded so far. */
     readonly refundedAmount: Money;
 }
+
+export type ChargePurpose = 'charge' | 'cardValidation';
 
 /** Capability 8 input: one delivery as it reached our receiver. */
 export interface NoticeDelivery {

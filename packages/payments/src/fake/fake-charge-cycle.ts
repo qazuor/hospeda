@@ -25,7 +25,9 @@ export function applyFakeChargeCycles(args: {
     readonly updateLastAttempt: boolean;
 }): void {
     for (const [chargeId, stored] of args.charges) {
-        const authorization = args.authorizations.get(stored.snapshot.authorizationId);
+        const authorizationId = stored.snapshot.authorizationId;
+        if (authorizationId === null) continue;
+        const authorization = args.authorizations.get(authorizationId);
         if (
             stored.cycleAttempts &&
             stored.cycleAttempt !== undefined &&
@@ -54,7 +56,7 @@ export function applyFakeChargeCycles(args: {
                     args.ledger.bump({
                         stored: authorization,
                         resourceKind: 'authorization',
-                        resourceId: stored.snapshot.authorizationId,
+                        resourceId: authorizationId,
                         at
                     });
                 }
@@ -75,7 +77,7 @@ export function applyFakeChargeCycles(args: {
                 args.ledger.bump({
                     stored: authorization,
                     resourceKind: 'authorization',
-                    resourceId: stored.snapshot.authorizationId
+                    resourceId: authorizationId
                 });
             }
         }
