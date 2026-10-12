@@ -398,6 +398,11 @@ jobs:
       # names which half is missing.
       - name: Check the grant floor is read by vertical from the source (GUARD:G-R2-B)
         run: pnpm check:grant-floor-by-vertical
+      # GUARD:G-R2-C (HOS-1532, AC:B4:8). Its own step, like every guard here. The
+      # real ADDON coverage source must emit a USER/GLOBAL addon only in the verticals
+      # its product declares compatible; its message names the watched source.
+      - name: Check USER/GLOBAL addon sources stay in their compatible verticals (GUARD:G-R2-C)
+        run: pnpm check:addon-compatible-verticals
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh
       - name: Check CSP-incompatible patterns
