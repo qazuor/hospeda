@@ -8,3 +8,6 @@ export * from './plan-change-confirmation.js';
 export * from './plan-price-change-notice.js';
 export * from './purchase-confirmation.js';
 export * from './renewal-reminder.js';
+export * from './signup-before-cancel.js';
+export * from './signup-confirmed.js';
+export * from './signup-incomplete.js';
