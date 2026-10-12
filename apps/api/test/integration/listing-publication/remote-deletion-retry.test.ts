@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { accommodationCalendarSync, accommodationMedia, getDb, sql } from '@repo/db';
-import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { accommodationCalendarSync, accommodationMedia, getDb, sql, userBookmarks } from '@repo/db';
+import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
 import {
     type CalendarConnectionRevocationPort,
     getCalendarConnectionRevocationPort,
@@ -49,6 +49,8 @@ const app = initApp();
 let previousRevocation: CalendarConnectionRevocationPort | undefined;
 const fixture = {
     ownerId: '',
+    fanId: '',
+    bookmarkId: '',
     listingId: '',
     slug: '',
     mediaId: '',
@@ -78,14 +80,17 @@ afterAll(async () => {
             sql`DELETE FROM accommodation_calendar_sync WHERE id = ${fixture.connectionId}::uuid AND remote_deletion_pending_at IS NOT NULL`
         );
     }
+    if (fixture.bookmarkId) {
+        await db.execute(sql`DELETE FROM user_bookmarks WHERE id = ${fixture.bookmarkId}::uuid`);
+    }
     if (fixture.listingId) {
         await db.execute(
             sql`UPDATE accommodations SET deleted_at = now() WHERE id = ${fixture.listingId}::uuid AND deleted_at IS NULL`
         );
     }
-    if (fixture.ownerId) {
+    for (const userId of [fixture.ownerId, fixture.fanId].filter(Boolean)) {
         await db.execute(
-            sql`UPDATE users SET deleted_at = now() WHERE id = ${fixture.ownerId}::uuid AND deleted_at IS NULL`
+            sql`UPDATE users SET deleted_at = now() WHERE id = ${userId}::uuid AND deleted_at IS NULL`
         );
     }
     await testDb.teardown();
@@ -191,6 +196,7 @@ describe('TEST:V6:38 the daily retry of the PB12 remote deletions', () => {
                 publicId: fixture.publicId,
                 moderationState: 'APPROVED',
                 state: 'visible',
+                isFeatured: true,
                 sortOrder: 0
             })
             .returning({ id: accommodationMedia.id });
@@ -209,6 +215,14 @@ describe('TEST:V6:38 the daily retry of the PB12 remote deletions', () => {
             .returning({ id: accommodationCalendarSync.id });
         if (!connection) throw new Error('Calendar fixture was not created');
         fixture.connectionId = connection.id;
+        const fan = await createOwner();
+        fixture.fanId = fan.id;
+        const [bookmark] = await getDb()
+            .insert(userBookmarks)
+            .values({ userId: fan.id, entityId: fixture.listingId, entityType: 'ACCOMMODATION' })
+            .returning({ id: userBookmarks.id });
+        if (!bookmark) throw new Error('Bookmark fixture was not created');
+        fixture.bookmarkId = bookmark.id;
 
         const response = await readResponse(
             await app.request(`/api/v1/protected/accommodations/${fixture.listingId}/purge`, {
@@ -240,18 +254,50 @@ describe('TEST:V6:38 the daily retry of the PB12 remote deletions', () => {
 
     it('TEST:V6:38 no surface shows the purged listing or its marked photo', async () => {
         const anonymous = { accept: 'application/json', 'user-agent': 'vitest' };
-        const surfaces: Readonly<Record<string, { path: string; headers: HeadersInit }>> = {
+        const surfaces: Readonly<
+            Record<string, { path: string; headers: HeadersInit; status: number }>
+        > = {
             'public by id': {
                 path: `/api/v1/public/accommodations/${fixture.listingId}`,
-                headers: anonymous
+                headers: anonymous,
+                status: 404
             },
             'public by slug': {
                 path: `/api/v1/public/accommodations/slug/${fixture.slug}`,
-                headers: anonymous
+                headers: anonymous,
+                status: 404
             },
             'owner by id': {
                 path: `/api/v1/protected/accommodations/${fixture.listingId}`,
-                headers: actorHeaders({ id: fixture.ownerId })
+                headers: actorHeaders({ id: fixture.ownerId }),
+                status: 404
+            },
+            'owner gallery': {
+                path: `/api/v1/protected/accommodations/${fixture.listingId}/media`,
+                headers: actorHeaders({ id: fixture.ownerId }),
+                status: 200
+            },
+            'admin gallery': {
+                path: `/api/v1/admin/accommodations/${fixture.listingId}/media`,
+                headers: actorHeaders({
+                    id: fixture.ownerId,
+                    role: RoleEnum.ADMIN,
+                    permissions: [
+                        PermissionEnum.ACCESS_PANEL_ADMIN,
+                        PermissionEnum.ACCESS_API_ADMIN,
+                        PermissionEnum.ACCOMMODATION_UPDATE_ANY
+                    ]
+                }),
+                status: 200
+            },
+            'bookmarks of a fan': {
+                path: '/api/v1/protected/user-bookmarks',
+                headers: actorHeaders({
+                    id: fixture.fanId,
+                    role: RoleEnum.USER,
+                    permissions: [PermissionEnum.USER_BOOKMARK_VIEW]
+                }),
+                status: 200
             }
         };
         const seen: { name: string; status: number; showsMarkedPhoto: boolean }[] = [];
@@ -267,7 +313,11 @@ describe('TEST:V6:38 the daily retry of the PB12 remote deletions', () => {
             });
         }
         expect(seen).toEqual(
-            Object.keys(surfaces).map((name) => ({ name, status: 404, showsMarkedPhoto: false }))
+            Object.entries(surfaces).map(([name, surface]) => ({
+                name,
+                status: surface.status,
+                showsMarkedPhoto: false
+            }))
         );
     });
 
