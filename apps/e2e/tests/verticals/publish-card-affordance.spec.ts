@@ -47,6 +47,20 @@ function recordRequests(page: Page): string[] {
     return urls;
 }
 
+/**
+ * Publishing requires a main image; a real owner uploads it in the editor, so it is
+ * seeded directly, as `trial-01-end-to-end.spec.ts` does. Without it the server
+ * answers a per-listing completeness 400 that no owner-level read predicts.
+ */
+async function seedMainImage(listingId: string): Promise<void> {
+    await execSQL(
+        `INSERT INTO accommodation_media
+             (accommodation_id, url, state, is_featured, sort_order, moderation_state)
+         VALUES ($1, 'https://cdn.example.test/e2e-card-main.jpg', 'visible', true, 0, 'APPROVED')`,
+        [listingId]
+    );
+}
+
 async function readPublicationStatus(listingId: string): Promise<string | undefined> {
     const rows = await execSQL<ListingRow>(
         'SELECT publication_status FROM accommodations WHERE id = $1',
@@ -73,8 +87,10 @@ test.describe('Publish card affordance @p0 @verticals @billing', () => {
                 ownerId: owner.id,
                 slugPrefix: 'card-checkout'
             });
+            await seedMainImage(listing.id);
+            // `ck_trial_clock_order` requires ends_at >= started_at, so the clock is moved whole.
             await execSQL(
-                "UPDATE trial SET status = 'TRIAL_EXPIRED', ends_at = NOW() - INTERVAL '1 day' WHERE user_id = $1 AND vertical = 'accommodation'",
+                "UPDATE trial SET status = 'TRIAL_EXPIRED', started_at = NOW() - INTERVAL '31 days', ends_at = NOW() - INTERVAL '1 day' WHERE user_id = $1 AND vertical = 'accommodation'",
                 [owner.id]
             );
             const requests = recordRequests(page);
@@ -123,6 +139,7 @@ test.describe('Publish card affordance @p0 @verticals @billing', () => {
                 ownerId: owner.id,
                 slugPrefix: 'card-covered'
             });
+            await seedMainImage(listing.id);
             const trialsBefore = await readOwnerTrials(owner.id);
             expect(trialsBefore).toHaveLength(1);
             expect(trialsBefore[0]?.status).toBe('TRIAL_ACTIVE');
