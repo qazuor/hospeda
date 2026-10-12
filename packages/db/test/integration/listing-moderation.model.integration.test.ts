@@ -55,6 +55,7 @@ describe('TEST:V6:11 listing moderation model', () => {
             await tx.insert(users).values([owner, admin]);
             await tx.insert(destinations).values(destination);
             const listing = await createListing(tx, 'accommodation', owner.id, destination.id);
+            const otherListing = await createListing(tx, 'accommodation', owner.id, destination.id);
             const firstAt = new Date('2026-01-01T00:00:00Z');
             const secondAt = new Date('2026-01-02T00:00:00Z');
             for (const event of [
@@ -78,12 +79,23 @@ describe('TEST:V6:11 listing moderation model', () => {
             await domainEventModel.insert({
                 tx,
                 eventType: 'listing.status_changed',
+                entityType: 'accommodation',
+                entityId: otherListing.id,
+                actorType: 'admin',
+                actorId: admin.id,
+                correlationId: crypto.randomUUID(),
+                occurredAt: new Date('2026-01-03T00:00:00Z'),
+                changes: [{ field: 'publicationStatus', old: 'DRAFT', new: 'MODERATED' }]
+            });
+            await domainEventModel.insert({
+                tx,
+                eventType: 'listing.status_changed',
                 entityType: 'gastronomy',
                 entityId: listing.id,
                 actorType: 'admin',
                 actorId: admin.id,
                 correlationId: crypto.randomUUID(),
-                occurredAt: new Date('2026-01-03T00:00:00Z'),
+                occurredAt: new Date('2026-01-04T00:00:00Z'),
                 changes: [{ field: 'publicationStatus', old: 'DRAFT', new: 'MODERATED' }]
             });
             expect(
