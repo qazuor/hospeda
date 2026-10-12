@@ -1,0 +1,46 @@
+/**
+ * SupportEditNotice.module.css
+ *
+ * Row 26 notice (HOS-1493): support edited the content of the owner's listing.
+ * Informative, not destructive: nothing was published, featured or deleted.
+ */
+
+.notice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    margin: 0 0 var(--space-5, 1.5rem);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--surface-warm);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--brand-accent);
+    border-radius: var(--radius-md, 12px);
+    font-family: var(--font-sans);
+}
+
+.title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    line-height: 1.35;
+}
+
+.body {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    line-height: 1.45;
+}
+
+.link {
+    color: var(--brand-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
