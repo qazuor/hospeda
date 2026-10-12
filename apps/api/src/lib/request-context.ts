@@ -72,6 +72,13 @@ export interface RequestContextStore {
      * without an authenticated user.
      */
     visitorId?: string;
+    /**
+     * The "why" of an administrative action (ACC:15, HOS-1493, H6): the
+     * decoded `x-action-reason` header, recorded by the listing-access
+     * middleware ONLY once step 3 permitted the administrative action. Read by
+     * service-core through its ambient action-reason resolver.
+     */
+    actionReason?: string;
 }
 
 /**
@@ -184,6 +191,29 @@ export function getRequestContext(): RequestContextStore | undefined {
  */
 export function getRequestCorrelationId(): string | undefined {
     return requestContextStorage.getStore()?.correlationId;
+}
+
+/**
+ * Mutates the active request's store to record the reason of a permitted
+ * administrative action (ACC:15, H6). No-op outside a request scope.
+ *
+ * @param input.actionReason - The decoded, trimmed, validated header value.
+ */
+export function setRequestContextActionReason(input: { readonly actionReason: string }): void {
+    const store = requestContextStorage.getStore();
+    if (!store) return;
+    store.actionReason = input.actionReason;
+}
+
+/**
+ * Returns the reason of the administrative action the current request runs
+ * (ACC:15, H6), or `undefined` when none was recorded or outside a request
+ * scope. Wired into service-core with `setActionReasonResolver` (`initApp`).
+ *
+ * @returns The action reason of the current request, if any.
+ */
+export function getRequestActionReason(): string | undefined {
+    return requestContextStorage.getStore()?.actionReason;
 }
 
 /**

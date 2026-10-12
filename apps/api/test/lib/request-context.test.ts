@@ -9,8 +9,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+    getRequestActionReason,
     getRequestContext,
     runWithRequestContext,
+    setRequestContextActionReason,
     setRequestContextActor,
     setRequestContextVisitor
 } from '../../src/lib/request-context';
@@ -318,5 +320,64 @@ describe('isolation — nested and concurrent scopes', () => {
         // Assert
         expect(actorInA).toBe('user-A');
         expect(actorInB).toBeUndefined(); // B must not see A's actor
+    });
+});
+
+describe('action reason (ACC:15, HOS-1493 H6)', () => {
+    it('returns the reason recorded inside the active scope', async () => {
+        // Arrange
+        let observed: string | undefined;
+
+        // Act
+        await runWithRequestContext({
+            store: makeStore(),
+            fn: async () => {
+                setRequestContextActionReason({ actionReason: 'owner asked by phone' });
+                observed = getRequestActionReason();
+            }
+        });
+
+        // Assert
+        expect(observed).toBe('owner asked by phone');
+    });
+
+    it('is undefined in a scope where no reason was recorded', async () => {
+        // Arrange
+        let observed: string | undefined = 'sentinel';
+
+        // Act
+        await runWithRequestContext({
+            store: makeStore(),
+            fn: async () => {
+                observed = getRequestActionReason();
+            }
+        });
+
+        // Assert
+        expect(observed).toBeUndefined();
+    });
+
+    it('is a no-op outside any scope and never leaks between requests', async () => {
+        // Arrange
+        setRequestContextActionReason({ actionReason: 'outside' });
+        let second: string | undefined = 'sentinel';
+
+        // Act
+        await runWithRequestContext({
+            store: makeStore({ requestId: 'req-1' }),
+            fn: async () => {
+                setRequestContextActionReason({ actionReason: 'first request' });
+            }
+        });
+        await runWithRequestContext({
+            store: makeStore({ requestId: 'req-2' }),
+            fn: async () => {
+                second = getRequestActionReason();
+            }
+        });
+
+        // Assert
+        expect(getRequestActionReason()).toBeUndefined();
+        expect(second).toBeUndefined();
     });
 });

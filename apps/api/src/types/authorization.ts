@@ -35,6 +35,21 @@ export type ListingAccessConfig = {
      * value both for the permission check and for the resolver's action.
      */
     administrativeAction?: 'ACC_15' | 'ACC_23';
+    /**
+     * CREATE only (ACC:15, H12): the name of the validated body field that names
+     * the owner the listing is created for (e.g. `'ownerId'`). When the body
+     * names somebody other than the actor, the create is action 15: step 3
+     * demands its permission and steps 5 to 7 run on that owner, who must exist
+     * (404 otherwise). Absent, or naming the actor, the create runs as today.
+     */
+    createSubjectFromBody?: string;
+    /**
+     * CREATE with `createSubjectFromBody` only: the permission an OWN create
+     * (no owner in the body, or the actor) still demands. The route gate is an
+     * OR of this permission and action 15's, so the middleware re-checks it for
+     * the own path; the foreign path is decided by step 3 alone.
+     */
+    ownCreatePermission?: PermissionEnum;
     /** Explicit capability for operations whose key is supplied by the caller. */
     step6Key?: string;
     /**
