@@ -15,16 +15,18 @@ import { PublicationStatusEnum as Status, VerticalEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { archiveInactiveListing } from '../../src/publication/archive-inactive-listing';
 import { takeDownListing } from '../../src/publication/moderate-listing';
 import type { PurgeAfterCommit } from '../../src/publication/publication-types';
 import { purgeListing } from '../../src/publication/purge-listing';
-import { seedPublicationListing, seedPublicationOwner } from './support/publication-fixtures';
+import { createPublicationFixtureTracker } from './support/publication-fixtures';
 import { createPublicationTestAdapter } from './support/publication-unit-of-work';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 8 });
 const db = drizzle({ client: pool }) as unknown as DrizzleClient;
+const fixtures = createPublicationFixtureTracker(db);
+afterEach(async () => fixtures.cleanup());
 const at = new Date('2026-10-12T12:00:00.000Z');
 const clock = { now: () => new Date(at) };
 afterAll(async () => pool.end());
@@ -40,15 +42,14 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
         ] as const;
         const revalidated: string[] = [];
         for (const status of statuses) {
-            const { userId, destinationId } = await seedPublicationOwner({ db });
+            const { userId, destinationId } = await fixtures.owner();
             const initial =
                 status === Status.ARCHIVED
                     ? Status.PUBLISHED
                     : status === Status.MODERATED
                       ? Status.DRAFT
                       : status;
-            const listing = await seedPublicationListing({
-                db,
+            const listing = await fixtures.listing({
                 vertical: VerticalEnum.ACCOMMODATION,
                 userId,
                 destinationId,
@@ -80,7 +81,7 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
                 expect(archived).toMatchObject({ archived: true, transition: 'PB4' });
             }
             if (status === Status.MODERATED) {
-                const admin = await seedPublicationOwner({ db });
+                const admin = await fixtures.owner();
                 const moderated = await takeDownListing({
                     ...prep,
                     clock,
@@ -177,10 +178,9 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
     });
 
     it('TEST:V6:13 keeps failed media marked while calendar revocation and tourist notice finish', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const tourist = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const tourist = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical: VerticalEnum.ACCOMMODATION,
             userId,
             destinationId,
@@ -303,10 +303,9 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
     });
 
     it('TEST:V6:13 records support reason and uses the same owner confirmation payload', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical: VerticalEnum.GASTRONOMY,
             userId,
             destinationId,
@@ -368,9 +367,8 @@ describe('TEST:V6:13 PB12 PostgreSQL integration', () => {
     });
 
     it('TEST:V6:13 closes an open fix request and records its event', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical: VerticalEnum.ACCOMMODATION,
             userId,
             destinationId,

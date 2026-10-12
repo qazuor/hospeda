@@ -5,15 +5,17 @@ import { PublicationStatusEnum as Status, VerticalEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { archiveInactiveListing } from '../../../src/publication/archive-inactive-listing';
 import { liftModeration } from '../../../src/publication/lift-moderation';
 import { takeDownListing } from '../../../src/publication/moderate-listing';
-import { seedPublicationListing, seedPublicationOwner } from './publication-fixtures';
+import { createPublicationFixtureTracker } from './publication-fixtures';
 import { createPublicationTestAdapter } from './publication-unit-of-work';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 8 });
 const db = drizzle({ client: pool }) as unknown as DrizzleClient;
+const fixtures = createPublicationFixtureTracker(db);
+afterEach(async () => fixtures.cleanup());
 const now = new Date('2026-10-12T12:00:00.000Z');
 const clock = { now: () => new Date(now) };
 const vertical = VerticalEnum.ACCOMMODATION;
@@ -26,17 +28,15 @@ afterAll(async () => pool.end());
 
 describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => {
     it('TEST:V6:11 PB13 applies the return queue and lowers only the newest published surplus', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const returning = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const returning = await fixtures.listing({
             vertical,
             userId,
             destinationId,
             status: Status.PUBLISHED
         });
-        const newest = await seedPublicationListing({
-            db,
+        const newest = await fixtures.listing({
             vertical,
             userId,
             destinationId,
@@ -109,17 +109,15 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
         );
         expect(new Date(String(unchanged.rows[0]?.inactive_since))).toEqual(competitorClock);
 
-        const inverseOwner = await seedPublicationOwner({ db });
-        const inverseAdmin = await seedPublicationOwner({ db });
-        const olderPublished = await seedPublicationListing({
-            db,
+        const inverseOwner = await fixtures.owner();
+        const inverseAdmin = await fixtures.owner();
+        const olderPublished = await fixtures.listing({
             vertical,
             userId: inverseOwner.userId,
             destinationId: inverseOwner.destinationId,
             status: Status.PUBLISHED
         });
-        const newerReturning = await seedPublicationListing({
-            db,
+        const newerReturning = await fixtures.listing({
             vertical,
             userId: inverseOwner.userId,
             destinationId: inverseOwner.destinationId,
@@ -185,17 +183,15 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
     });
 
     it('TEST:V6:11 lifts ARCHIVED listings by the PB5 and PB4 origins', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const draftArchive = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const draftArchive = await fixtures.listing({
             vertical,
             userId,
             destinationId,
             status: Status.DRAFT
         });
-        const publishedArchive = await seedPublicationListing({
-            db,
+        const publishedArchive = await fixtures.listing({
             vertical,
             userId,
             destinationId,
@@ -286,10 +282,9 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
     });
 
     it('TEST:V6:11 lifts a covered UNPUBLISHED_BY_BILLING origin through PB13', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical,
             userId,
             destinationId,

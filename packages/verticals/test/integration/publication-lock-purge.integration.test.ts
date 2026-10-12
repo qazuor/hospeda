@@ -4,17 +4,19 @@ import { domainEvent, eq, listingPublicationModel } from '@repo/db';
 import { PublicationStatusEnum as Status, VerticalEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { recalculateCoverage } from '../../src/publication/coverage-recalculation';
 import { liftModeration } from '../../src/publication/lift-moderation';
 import { takeDownListing } from '../../src/publication/moderate-listing';
 import type { PurgeAfterCommit } from '../../src/publication/publication-types';
 import { purgeListing } from '../../src/publication/purge-listing';
-import { seedPublicationListing, seedPublicationOwner } from './support/publication-fixtures';
+import { createPublicationFixtureTracker } from './support/publication-fixtures';
 import { createPublicationTestAdapter } from './support/publication-unit-of-work';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 8 });
 const db = drizzle({ client: pool }) as unknown as DrizzleClient;
+const fixtures = createPublicationFixtureTracker(db);
+afterEach(async () => fixtures.cleanup());
 const vertical = VerticalEnum.ACCOMMODATION;
 const clock = { now: () => new Date('2026-10-12T12:00:00.000Z') };
 const afterCommit = {
@@ -47,9 +49,8 @@ function gate() {
 
 describe('TEST:V6:3 PB12 lock pairs', () => {
     it('TEST:V6:3 serializes PB12 with PB3 and rereads after the shared owner lock', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical,
             userId,
             destinationId,
@@ -117,9 +118,8 @@ describe('TEST:V6:3 PB12 lock pairs', () => {
     });
 
     it('TEST:V6:3 lets PB3 win first and PB12 reread PUBLISHED under the same lock', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical,
             userId,
             destinationId,
@@ -175,10 +175,9 @@ describe('TEST:V6:3 PB12 lock pairs', () => {
     });
 
     it('TEST:V6:3 serializes PB11 with PB12 on MODERATED and never lifts after PURGED', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical,
             userId,
             destinationId,

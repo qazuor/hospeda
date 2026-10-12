@@ -4,14 +4,16 @@ import { domainEvent, eq, listingPublicationModel } from '@repo/db';
 import { PublicationStatusEnum as Status, VerticalEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { recalculateCoverage } from '../../src/publication/coverage-recalculation';
 import { takeDownListing } from '../../src/publication/moderate-listing';
-import { seedPublicationListing, seedPublicationOwner } from './support/publication-fixtures';
+import { createPublicationFixtureTracker } from './support/publication-fixtures';
 import { createPublicationTestAdapter } from './support/publication-unit-of-work';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 8 });
 const db = drizzle({ client: pool }) as unknown as DrizzleClient;
+const fixtures = createPublicationFixtureTracker(db);
+afterEach(async () => fixtures.cleanup());
 const vertical = VerticalEnum.ACCOMMODATION;
 const clock = { now: () => new Date('2026-10-12T12:00:00.000Z') };
 const afterCommit = {
@@ -23,10 +25,9 @@ afterAll(async () => pool.end());
 
 describe('TEST:V6:3 PB10 and PB3 under the shared owner lock', () => {
     it('TEST:V6:3 serializes PB10 with PB3 and rereads the current source state', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical,
             userId,
             destinationId,

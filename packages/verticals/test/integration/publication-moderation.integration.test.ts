@@ -5,19 +5,21 @@ import { PublicationStatusEnum as Status, VerticalEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import { afterAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { archiveInactiveListing } from '../../src/publication/archive-inactive-listing';
 import { recalculateCoverage } from '../../src/publication/coverage-recalculation';
 import { runDailyCoverageReconciler } from '../../src/publication/coverage-reconciler';
 import { liftModeration } from '../../src/publication/lift-moderation';
 import { takeDownListing } from '../../src/publication/moderate-listing';
-import { seedPublicationListing, seedPublicationOwner } from './support/publication-fixtures';
+import { createPublicationFixtureTracker } from './support/publication-fixtures';
 import { createPublicationTestAdapter } from './support/publication-unit-of-work';
 import { createReconcilerTestPorts } from './support/reconciler-test-ports';
 import './support/moderation-transaction';
 
 const pool = new Pool({ connectionString: process.env.HOSPEDA_TEST_DATABASE_URL, max: 8 });
 const db = drizzle({ client: pool }) as unknown as DrizzleClient;
+const fixtures = createPublicationFixtureTracker(db);
+afterEach(async () => fixtures.cleanup());
 const now = new Date('2026-10-12T12:00:00.000Z');
 const clock = { now: () => new Date(now) };
 const vertical = VerticalEnum.ACCOMMODATION;
@@ -30,16 +32,15 @@ afterAll(async () => pool.end());
 
 describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
     it('TEST:V6:11 delegates PB10 over each listing vertical', async () => {
-        const admin = await seedPublicationOwner({ db });
+        const admin = await fixtures.owner();
         const verticals = [
             VerticalEnum.ACCOMMODATION,
             VerticalEnum.GASTRONOMY,
             VerticalEnum.EXPERIENCE
         ] as const;
         for (const vertical of verticals) {
-            const { userId, destinationId } = await seedPublicationOwner({ db });
-            const listing = await seedPublicationListing({
-                db,
+            const { userId, destinationId } = await fixtures.owner();
+            const listing = await fixtures.listing({
                 vertical,
                 userId,
                 destinationId,
@@ -84,14 +85,13 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
     });
 
     it('TEST:V6:11 takes down listings from the four allowed statuses and preserves inactivity', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
         const statuses = [Status.DRAFT, Status.PUBLISHED, Status.UNPUBLISHED_BY_BILLING] as const;
         const listings = [];
         const origins = new Map<string, Status>();
         for (const status of statuses) {
-            const listing = await seedPublicationListing({
-                db,
+            const listing = await fixtures.listing({
                 vertical,
                 userId,
                 destinationId,
@@ -100,8 +100,7 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
             listings.push(listing);
             origins.set(listing.id, status);
         }
-        const archived = await seedPublicationListing({
-            db,
+        const archived = await fixtures.listing({
             vertical,
             userId,
             destinationId,
@@ -223,17 +222,15 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
     });
 
     it('TEST:V6:11 restores PB13 to publication when covered and leaves PB11 as DRAFT', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const draft = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const draft = await fixtures.listing({
             vertical,
             userId,
             destinationId,
             status: Status.DRAFT
         });
-        const published = await seedPublicationListing({
-            db,
+        const published = await fixtures.listing({
             vertical,
             userId,
             destinationId,
@@ -314,8 +311,7 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
             transition: 'PB13',
             publicationStatus: Status.PUBLISHED
         });
-        const uncovered = await seedPublicationListing({
-            db,
+        const uncovered = await fixtures.listing({
             vertical,
             userId,
             destinationId,
@@ -353,10 +349,9 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
     });
 
     it('TEST:V6:11 rolls an enqueued notice back when PB10 transaction fails', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical,
             userId,
             destinationId,
@@ -398,10 +393,9 @@ describe('TEST:V6:11 listing moderation against PostgreSQL', () => {
     });
 
     it('TEST:V6:11 keeps MODERATED out of PB3, PB7, the reconciler and published counts', async () => {
-        const { userId, destinationId } = await seedPublicationOwner({ db });
-        const admin = await seedPublicationOwner({ db });
-        const listing = await seedPublicationListing({
-            db,
+        const { userId, destinationId } = await fixtures.owner();
+        const admin = await fixtures.owner();
+        const listing = await fixtures.listing({
             vertical,
             userId,
             destinationId,
