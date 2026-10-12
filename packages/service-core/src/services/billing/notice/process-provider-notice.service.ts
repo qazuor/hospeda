@@ -7,7 +7,6 @@ import {
     isNull,
     LIVE_SUBSCRIPTION_STATUSES,
     providerLinks,
-    subscriptionModel,
     subscriptions
 } from '@repo/db';
 import {
@@ -25,6 +24,7 @@ import type {
 } from '../payment/payment-ports.js';
 import { recordChargeFact } from '../payment/record-charge-fact.service.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
+import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
@@ -160,7 +160,7 @@ export async function processProviderNotice(
                 ];
             if (action.kind === 'NOOP') finalOutcome = 'NOOP';
             if (action.kind === 'S2') {
-                const changed = await subscriptionModel.activatePendingAuthorization({
+                const changed = await activatePendingWithSignupNotice({
                     subscriptionId: row.id,
                     now: ports.clock.now()
                 });

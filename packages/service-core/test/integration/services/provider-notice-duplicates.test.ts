@@ -177,12 +177,23 @@ describe('TEST:B3:20 provider notice duplicates', () => {
             ).rows[0]?.xmin;
             expect(firstWebhookXmins?.subscription).toBe(finalSubscriptionXmin);
             expect(firstWebhookXmins?.link).toBe(finalLinkXmin);
+            const outboxAfter = await getServiceTestDb()
+                .select()
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, userId));
             expect(
-                await getServiceTestDb()
-                    .select()
-                    .from(emailOutbox)
-                    .where(eq(emailOutbox.recipientUserId, userId))
-            ).toHaveLength(outboxBefore.length);
+                outboxAfter.filter((row) => row.template !== 'billing.signup-confirmed')
+            ).toHaveLength(
+                outboxBefore.filter((row) => row.template !== 'billing.signup-confirmed').length
+            );
+            expect(
+                outboxAfter.filter(
+                    (row) =>
+                        row.template === 'billing.signup-confirmed' &&
+                        (row.payload as { subscriptionId?: string }).subscriptionId ===
+                            started.subscriptionId
+                )
+            ).toHaveLength(1);
             expect(
                 await getServiceTestDb()
                     .select()
@@ -281,7 +292,20 @@ describe('TEST:B3:20 provider notice duplicates', () => {
         expect(linkAfterFirst?.xmin).toBe(linkFinalXmin);
         expect(read).toHaveBeenCalledTimes(1);
         expect(decode).toHaveBeenCalledTimes(2);
-        expect(outboxAfter).toHaveLength(outboxBefore.length);
+        expect(
+            outboxAfter.filter((outboxRow) => outboxRow.template !== 'billing.signup-confirmed')
+        ).toHaveLength(
+            outboxBefore.filter((outboxRow) => outboxRow.template !== 'billing.signup-confirmed')
+                .length
+        );
+        expect(
+            outboxAfter.filter(
+                (outboxRow) =>
+                    outboxRow.template === 'billing.signup-confirmed' &&
+                    (outboxRow.payload as { subscriptionId?: string }).subscriptionId ===
+                        started.subscriptionId
+            )
+        ).toHaveLength(1);
         expect(marks).toHaveLength(0);
     });
 
