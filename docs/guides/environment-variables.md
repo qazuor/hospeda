@@ -54,6 +54,7 @@ pnpm env:check
 | `HOSPEDA_SITE_URL` | url | yes | no | - | Web app base URL. Used by api, web |
 | `HOSPEDA_MERCADO_PAGO_API_BASE_URL` | url | no | no | `https://api.mercadopago.com` | Mercado Pago API base URL; do not set in Coolify |
 | `HOSPEDA_E2E_CLOCK_FILE` | string | no | no | - | Local E2E clock file; prohibited unless site URL is localhost or 127.0.0.1; do not set in Coolify |
+| `HOSPEDA_E2E_MAIL_CAPTURE_URL` | url | no | no | - | Local E2E mail capture server base URL; prohibited unless site and capture URLs use localhost or 127.0.0.1; do not set in Coolify |
 | `HOSPEDA_ADMIN_URL` | url | no | no | - | Admin app URL for CORS config |
 
 ### Database (HOSPEDA_)

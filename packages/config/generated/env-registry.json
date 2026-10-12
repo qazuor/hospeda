@@ -478,6 +478,20 @@
       "howToObtainEs": "Sólo para pruebas E2E locales; está prohibida fuera de localhost."
     },
     {
+      "name": "HOSPEDA_E2E_MAIL_CAPTURE_URL",
+      "description": "Local E2E mail capture server base URL",
+      "descriptionEs": "URL base del servidor local de captura de correo E2E",
+      "type": "url",
+      "required": false,
+      "secret": false,
+      "exampleValue": "http://127.0.0.1:18091",
+      "apps": [
+        "api"
+      ],
+      "category": "email",
+      "howToObtainEs": "Sólo para E2E locales; prohibida fuera de localhost y nunca se configura en Coolify."
+    },
+    {
       "name": "HOSPEDA_MERCADO_PAGO_TIMEOUT",
       "description": "MercadoPago API request timeout in ms",
       "descriptionEs": "Timeout en ms para los requests a la API de MercadoPago",
