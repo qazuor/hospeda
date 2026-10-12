@@ -26,10 +26,10 @@ describe('Mercado Pago webhook body limit', () => {
                 body: JSON.stringify('x'.repeat(64 * 1024 - 1))
             }
         );
-        const atLimitBody = (await atLimit.json()) as { readonly received?: boolean };
+        const atLimitBody = (await atLimit.json()) as { readonly success?: boolean };
 
         expect(atLimit.status).not.toBe(413);
-        expect(atLimitBody).toMatchObject({ received: false });
+        expect(atLimitBody).toMatchObject({ success: false });
         expect(overLimit.status).toBe(413);
         expect(await overLimit.json()).toMatchObject({ success: false });
     });
