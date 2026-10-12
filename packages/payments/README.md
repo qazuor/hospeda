@@ -19,9 +19,11 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   - `FakePaymentProvider`, in memory, all eight capabilities, and it **lies
     like the real one** (see "The fake lies, from a closed list" below). It is
     exported only from `@repo/payments/fake`, for tests.
-  - `MercadoPagoPaymentProvider`: `authorize` and `readAuthorization` call the
-    provider over native `fetch`; the other capabilities still refuse with
-    `NOT_IMPLEMENTED`. No SDK is installed.
+  - `MercadoPagoPaymentProvider`: `authorize`, `cancel` and `readAuthorization`
+    call the provider over native `fetch`; `decodeNotice` reads Mercado Pago
+    Webhooks (`subscription_preapproval` and `payment`; other types are
+    `INVALID_NOTICE`). The API route verifies the Webhooks signature. Remaining
+    capabilities still refuse with `NOT_IMPLEMENTED`. No SDK is installed.
 - **Capability support, declared per provider** (`capabilitySupport`): for each
   capability, `full`, `partial` with every gap and whether our side emulates,
   degrades or blocks it, or `none`. Mercado Pago's three half-capabilities
@@ -101,6 +103,18 @@ there as a literal with its reason. The returned server exposes its URL and
 port, current provider, `useProvider`, `now`, `advanceClock`, `setClock`,
 `requests`, `deliverDue` and `close`. When supplied, `clockFile` is written as
 `{ "now": "<ISO>" }` at startup and after each clock change.
+
+It also exposes `mercadoPagoDeliveries({ webhookSecret? })` to take due notices
+as Mercado Pago-shaped deliveries without sending them, and
+`deliverDueAsMercadoPago({ to, webhookSecret? })` to POST those deliveries to a
+receiver. `deliverDue` continues to send the fake's original notice format.
+
+| Fake delivery | Mercado Pago channel | Query | Body |
+| --- | --- | --- | --- |
+| `primary` authorization | Webhooks | `source_news=webhooks&data.id=<id>&type=subscription_preapproval` | Webhooks JSON with `data.id`, `version`, and measured metadata; signed with `x-signature` when a secret is supplied |
+| `primary` charge | Webhooks | `source_news=webhooks&data.id=<id>&type=payment` | Webhooks JSON with `data.id`, `version`, and measured metadata; signed with `x-signature` when a secret is supplied |
+| `secondary` charge | IPN | `topic=payment&id=<id>` | `{"resource":"<id>","topic":"payment"}`; unsigned |
+| refund | skipped | — | — |
 
 | Request | Fake operation | Response |
 | --- | --- | --- |

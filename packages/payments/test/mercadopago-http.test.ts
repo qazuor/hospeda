@@ -96,6 +96,22 @@ describe('MercadoPagoPaymentProvider HTTP (TEST:B3:43 soporte)', () => {
         expect(actual.snapshot.status).toBe('active');
     });
 
+    it('reads approved charges and RP12 card validation by id', async () => {
+        const { server, adapter } = await setup();
+        const created = await adapter.authorize(input);
+        await server.provider.approve({ authorizationId: created.authorizationId });
+        const validation = await server.provider.changeCard({
+            authorizationId: created.authorizationId,
+            passes: true
+        });
+        if (!validation) throw new Error('Expected RP12 card validation');
+        const expected = await server.provider.readCharge({ chargeId: validation.chargeId });
+        const actual = await adapter.readCharge({ chargeId: validation.chargeId });
+        expect(actual.snapshot).toEqual(expected.snapshot);
+        expect(actual.snapshot.purpose).toBe('cardValidation');
+        expect(actual.readAt).toEqual(clock.now());
+    });
+
     it('creation confirmation catches M1 and accepts the literal exemption', async () => {
         const ordinary = await setup();
         const created = await ordinary.adapter.authorize(input);

@@ -30,6 +30,7 @@ import {
 } from '@repo/db';
 import {
     BrevoEmailTransport,
+    createBillingSignupRenderers,
     createEmailClient,
     createOutboxMailRenderer,
     createOutboxOptOutReader,
@@ -65,7 +66,8 @@ export function buildOutboxSenderRender(input: { readonly siteUrl: string }) {
     return createOutboxMailRenderer({
         renderers: {
             ...OUTBOX_MAIL_RENDERERS,
-            ...createTrialCampaignRenderers({ siteUrl: input.siteUrl })
+            ...createTrialCampaignRenderers({ siteUrl: input.siteUrl }),
+            ...createBillingSignupRenderers({ siteUrl: input.siteUrl })
         }
     });
 }

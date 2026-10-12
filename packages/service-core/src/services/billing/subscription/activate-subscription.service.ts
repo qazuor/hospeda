@@ -1,7 +1,8 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { eq, getDb, providerLinks, subscriptionModel, subscriptions } from '@repo/db';
+import { eq, getDb, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { activatePendingWithSignupNotice } from './activate-pending-with-signup-notice.js';
 import {
     cancelInheritedTouristVips,
     type TouristVipInheritancePort
@@ -46,7 +47,7 @@ export async function activateSubscription(
     const { snapshot } = assertFreshForAct({ read, act });
     if (snapshot.status !== 'active') return { activated: false, subscriptionId };
 
-    const activated = await subscriptionModel.activatePendingAuthorization({
+    const activated = await activatePendingWithSignupNotice({
         subscriptionId,
         now: ports.clock.now()
     });

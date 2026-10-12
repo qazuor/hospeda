@@ -275,7 +275,8 @@ describe('TEST:U2:14 a Brevo hard bounce suppresses every later mail to the addr
         });
 
         // Assert
-        expect(send).not.toHaveBeenCalled();
+        // The batch drains every due row of the shared database, so only this recipient is asserted.
+        expect(send.mock.calls.filter(([input]) => input.to === recipient)).toEqual([]);
         expect(result.suppressed).toBeGreaterThanOrEqual(2);
         const rows = await testDb
             .getDb()

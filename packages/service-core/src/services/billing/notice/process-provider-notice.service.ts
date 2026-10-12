@@ -7,14 +7,14 @@ import {
     isNull,
     LIVE_SUBSCRIPTION_STATUSES,
     providerLinks,
-    subscriptionModel,
     subscriptions
 } from '@repo/db';
 import {
     actStartInstant,
     assertFreshForAct,
     type NoticeDelivery,
-    type PaymentProvider
+    type PaymentProvider,
+    PaymentProviderError
 } from '@repo/payments';
 import { z } from 'zod';
 import type {
@@ -24,6 +24,7 @@ import type {
 } from '../payment/payment-ports.js';
 import { recordChargeFact } from '../payment/record-charge-fact.service.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
+import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
@@ -64,6 +65,7 @@ type Outcome =
     | 'WAITING_FIRST_CHARGE_READING'
     | 'UNKNOWN_RESOURCE'
     | 'RESOURCE_KIND_NOT_HANDLED'
+    | 'UNSUPPORTED_NOTICE'
     | 'FAILED';
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
@@ -88,7 +90,15 @@ export async function processProviderNotice(
     try {
         const value = inputSchema.parse(input);
         if (value.channel === 'IPN') return { ack: 'OK', outcome: 'IPN_NOT_PROCESSED' };
-        const notice = await ports.provider.decodeNotice(value.delivery);
+        let notice: Awaited<ReturnType<PaymentProvider['decodeNotice']>>;
+        try {
+            notice = await ports.provider.decodeNotice(value.delivery);
+        } catch (error) {
+            if (error instanceof PaymentProviderError && error.code === 'INVALID_NOTICE') {
+                return { ack: 'OK', outcome: 'UNSUPPORTED_NOTICE' };
+            }
+            throw error;
+        }
         if (notice.resourceKind === 'charge') {
             const result = await recordChargeFact({ chargeId: notice.resourceId }, ports);
             if (result.outcome === 'CARD_VALIDATION_IGNORED')
@@ -163,7 +173,7 @@ export async function processProviderNotice(
                 ];
             if (action.kind === 'NOOP') finalOutcome = 'NOOP';
             if (action.kind === 'S2') {
-                const changed = await subscriptionModel.activatePendingAuthorization({
+                const changed = await activatePendingWithSignupNotice({
                     subscriptionId: row.id,
                     now: ports.clock.now()
                 });

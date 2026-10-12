@@ -206,7 +206,7 @@ import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bo
 import { protectedUserBookmarkCollectionRoutes } from './user-bookmark-collection';
 import { adminVerticalDeadlineRoutes } from './vertical-deadlines/admin/index.js';
 import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
-import { brevoWebhookRoutes, webhookHealthRoutes } from './webhooks';
+import { brevoWebhookRoutes, mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
 import { protectedWhatsNewRoutes } from './whats-new';
 
@@ -746,6 +746,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // WEBHOOKS
         // ═══════════════════════════════════════════════════════════════════════
 
+        app.route('/api/v1/webhooks/mercadopago', mercadoPagoWebhookRoutes);
         app.route('/api/v1/webhooks', webhookHealthRoutes);
 
         // SPEC-101 T-101-32: Brevo email-event webhook. Public + token-gated

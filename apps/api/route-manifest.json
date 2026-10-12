@@ -3806,6 +3806,10 @@
             "path": "/api/v1/webhooks/health"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/webhooks/mercadopago"
+        },
+        {
             "method": "GET",
             "path": "/docs"
         },

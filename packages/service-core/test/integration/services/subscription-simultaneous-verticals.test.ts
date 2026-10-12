@@ -210,7 +210,12 @@ async function runScenario(expireFirst: boolean) {
             (notice.payload as { subscriptionId?: string }).subscriptionId ===
             gastronomy.subscriptionId
     );
-    expect(gastronomyNotices).toHaveLength(0);
+    expect(
+        gastronomyNotices.filter((notice) => notice.template === 'billing.signup-confirmed')
+    ).toHaveLength(1);
+    expect(
+        gastronomyNotices.filter((notice) => notice.template !== 'billing.signup-confirmed')
+    ).toHaveLength(0);
     return { provider, gastronomy, userId: user.id };
 }
 
