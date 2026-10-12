@@ -63,6 +63,26 @@ export type RetentionBilling = Pick<BillingForVerticals, 'coverage' | 'retention
 
 /** All publication reads and writes happen in a locked transaction. */
 export interface PublicationTransaction extends TrialStartTransaction {
+    /** Deletes listing-owned content and records remote rows for post-commit deletion. */
+    purgeListingContent(args: {
+        readonly vertical: PublicationVertical;
+        readonly listingId: string;
+        readonly at: Date;
+    }): Promise<{
+        readonly markedMedia: readonly {
+            readonly mediaId: string;
+            readonly publicId: string | null;
+        }[];
+        readonly markedCalendar: readonly {
+            readonly connectionId: string;
+            readonly provider: string;
+        }[];
+        readonly closedAlerts: readonly {
+            readonly alertId: string;
+            readonly touristUserId: string;
+        }[];
+        readonly closedFixRequestId: string | null;
+    }>;
     /** Enqueues the restitution notice in the same transaction as PB3/PB7. */
     enqueueRestitutionNotice(args: {
         readonly vertical: PublicationVertical;
@@ -201,11 +221,28 @@ export interface PublicationAfterCommit {
     }): Promise<void>;
 }
 
+/** PB12-only remote effects; kept separate so existing after-commit doubles remain stable. */
+export interface PurgeAfterCommit extends PublicationAfterCommit {
+    emitListingPurged(event: { readonly listingId: string }): Promise<void>;
+    deleteRemoteMedia(args: {
+        readonly vertical: PublicationVertical;
+        readonly mediaId: string;
+        readonly publicId: string | null;
+    }): Promise<void>;
+    revokeCalendarConnection(args: {
+        readonly connectionId: string;
+        readonly accommodationId: string;
+        readonly provider: string;
+    }): Promise<void>;
+}
+
 /** Each effect reports failure without changing a committed result. */
 export type PostCommitWarning =
     | 'COVERAGE_NOTICE_FAILED'
     | 'CACHE_INVALIDATION_FAILED'
-    | 'REVALIDATION_FAILED';
+    | 'REVALIDATION_FAILED'
+    | 'REMOTE_DELETION_FAILED'
+    | 'PURGE_NOTICE_FAILED';
 
 /** Live coverage port shared by PB1 and coverage recalculation. */
 export type PublicationBilling = Pick<BillingForVerticals, 'coverage'>;

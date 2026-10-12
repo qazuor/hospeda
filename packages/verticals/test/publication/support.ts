@@ -40,6 +40,11 @@ export function makeHarness(
             | null;
         readonly inactiveSince?: Date;
         readonly recordBillingCalls?: boolean;
+        readonly purgeContent?: Awaited<
+            ReturnType<
+                import('../../src/publication/publication-types').PublicationTransaction['purgeListingContent']
+            >
+        >;
     } = {}
 ) {
     let locked = false;
@@ -66,6 +71,7 @@ export function makeHarness(
     };
     const calls: string[] = [];
     const statusWrites: Parameters<PublicationTransaction['setPublicationStatus']>[0][] = [];
+    const statusEvents: Parameters<PublicationTransaction['insertStatusChangedEvent']>[0][] = [];
     let openFixRequest:
         | import('../../src/publication/publication-types').PublicationFixRequest
         | null = null;
@@ -160,6 +166,17 @@ export function makeHarness(
             calls.push('moderationOrigin');
             return args.moderationOrigin ?? null;
         },
+        async purgeListingContent() {
+            calls.push('purgeListingContent');
+            return (
+                args.purgeContent ?? {
+                    markedMedia: [],
+                    markedCalendar: [],
+                    closedAlerts: [],
+                    closedFixRequestId: null
+                }
+            );
+        },
         async readOpenFixRequest() {
             calls.push('readOpenFixRequest');
             return openFixRequest;
@@ -223,7 +240,8 @@ export function makeHarness(
         async stampInactiveSince() {
             calls.push('stamp');
         },
-        async insertStatusChangedEvent() {
+        async insertStatusChangedEvent(input) {
+            statusEvents.push(input);
             calls.push('event');
         },
         async enqueueRestitutionNotice(args) {
@@ -284,6 +302,7 @@ export function makeHarness(
         afterCommit,
         calls,
         statusWrites,
+        statusEvents,
         insertedRows,
         restitutionNotices,
         listingNotices,

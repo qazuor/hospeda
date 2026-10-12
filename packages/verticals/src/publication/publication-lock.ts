@@ -20,16 +20,26 @@ export async function publicationAfterCommit(args: {
         readonly warning:
             | 'COVERAGE_NOTICE_FAILED'
             | 'CACHE_INVALIDATION_FAILED'
-            | 'REVALIDATION_FAILED';
+            | 'REVALIDATION_FAILED'
+            | 'REMOTE_DELETION_FAILED'
+            | 'PURGE_NOTICE_FAILED';
         readonly run: () => Promise<void>;
     }[];
 }): Promise<
-    readonly ('COVERAGE_NOTICE_FAILED' | 'CACHE_INVALIDATION_FAILED' | 'REVALIDATION_FAILED')[]
+    readonly (
+        | 'COVERAGE_NOTICE_FAILED'
+        | 'CACHE_INVALIDATION_FAILED'
+        | 'REVALIDATION_FAILED'
+        | 'REMOTE_DELETION_FAILED'
+        | 'PURGE_NOTICE_FAILED'
+    )[]
 > {
     const warnings: (
         | 'COVERAGE_NOTICE_FAILED'
         | 'CACHE_INVALIDATION_FAILED'
         | 'REVALIDATION_FAILED'
+        | 'REMOTE_DELETION_FAILED'
+        | 'PURGE_NOTICE_FAILED'
     )[] = [];
     for (const task of args.tasks) {
         try {
