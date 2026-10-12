@@ -12,9 +12,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/admin/batch.ts': {
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
-    'accommodation/admin/create.ts': {
-        exempt: 'Crear una ficha a nombre de su dueño es AC:V8a:7 (V8a.2): el sujeto sale del pedido y la precisión 8 no lo resuelve para un alta (hueco H-10 de notas).'
-    },
+    'accommodation/admin/create.ts': { operation: 'CREATE' },
     'accommodation/admin/delete.ts': {
         exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
     },
@@ -101,9 +99,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'experience/admin/batch.ts': {
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
-    'experience/admin/create.ts': {
-        exempt: 'Crear una ficha a nombre de su dueño es AC:V8a:7 (V8a.2): el sujeto sale del pedido y la precisión 8 no lo resuelve para un alta (hueco H-10 de notas).'
-    },
+    'experience/admin/create.ts': { operation: 'CREATE' },
     'experience/admin/delete.ts': {
         exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
     },
@@ -165,9 +161,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'gastronomy/admin/batch.ts': {
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
-    'gastronomy/admin/create.ts': {
-        exempt: 'Crear una ficha a nombre de su dueño es AC:V8a:7 (V8a.2): el sujeto sale del pedido y la precisión 8 no lo resuelve para un alta (hueco H-10 de notas).'
-    },
+    'gastronomy/admin/create.ts': { operation: 'CREATE' },
     'gastronomy/admin/delete.ts': {
         exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
     },
