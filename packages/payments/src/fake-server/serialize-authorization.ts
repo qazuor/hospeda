@@ -26,6 +26,14 @@ export function serializeAuthorization(args: {
                   })
         },
         last_modified: snapshot.lastModifiedAt,
+        summarized: {
+            ...(snapshot.chargeRecordCount === null
+                ? {}
+                : { charged_quantity: snapshot.chargeRecordCount }),
+            ...(snapshot.lastChargedAt === null
+                ? {}
+                : { last_charged_date: snapshot.lastChargedAt })
+        },
         init_point: args.initPoint
     };
 }

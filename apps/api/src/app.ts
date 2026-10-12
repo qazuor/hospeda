@@ -4,6 +4,7 @@ import { setupRoutes } from './routes';
 import { createFileClock, injectClock, systemClock } from './utils/clock';
 import { configureOpenAPI } from './utils/configure-open-api';
 import { createApp } from './utils/create-app';
+import { assertMailCaptureIsLocal } from './utils/e2e-mail-capture';
 import { registerEntityFetchers } from './utils/entity-fetchers';
 import { env } from './utils/env';
 import { defaultPaymentProvider, injectPaymentProvider } from './utils/payment-provider';
@@ -24,6 +25,10 @@ const initApp = (
     // The one line that decides which clock both halves read: the system time
     // unless the caller (a test) injects another (contract §5 item 5, B1).
     const fileClockPath = env.HOSPEDA_E2E_CLOCK_FILE;
+    assertMailCaptureIsLocal({
+        captureUrl: env.HOSPEDA_E2E_MAIL_CAPTURE_URL,
+        siteUrl: env.HOSPEDA_SITE_URL
+    });
     if (options.clock === undefined && fileClockPath) {
         const siteHost = new URL(env.HOSPEDA_SITE_URL).hostname;
         if (siteHost !== 'localhost' && siteHost !== '127.0.0.1') {

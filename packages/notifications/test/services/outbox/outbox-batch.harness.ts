@@ -11,6 +11,7 @@ import {
     type EmailOutboxDeliveryDeps,
     type OutboxEscalation,
     type OutboxLeaseLost,
+    type OutboxRetry,
     type OutboxRowError,
     processEmailOutboxBatch
 } from '../../../src/services/outbox/email-outbox-delivery.service';
@@ -48,6 +49,7 @@ export interface Harness {
     readonly records: RecordEmailAttemptInput[];
     readonly escalations: OutboxEscalation[];
     readonly rowErrors: OutboxRowError[];
+    readonly retries: OutboxRetry[];
     readonly leaseLost: OutboxLeaseLost[];
     readonly send: ReturnType<typeof vi.fn>;
     readonly outbox: {
@@ -69,6 +71,7 @@ export function harness(claimed: EmailOutboxRow[]): Harness {
     const records: RecordEmailAttemptInput[] = [];
     const escalations: OutboxEscalation[] = [];
     const rowErrors: OutboxRowError[] = [];
+    const retries: OutboxRetry[] = [];
     const leaseLost: OutboxLeaseLost[] = [];
     const outbox = {
         recoverExpired: vi.fn(async () => []),
@@ -110,11 +113,25 @@ export function harness(claimed: EmailOutboxRow[]): Harness {
         onRowError: (event) => {
             rowErrors.push(event);
         },
+        onRetry: (event) => {
+            retries.push(event);
+        },
         onLeaseLost: (event) => {
             leaseLost.push(event);
         }
     };
-    return { deps, records, escalations, rowErrors, leaseLost, send, outbox, log, isOptedOut };
+    return {
+        deps,
+        records,
+        escalations,
+        rowErrors,
+        retries,
+        leaseLost,
+        send,
+        outbox,
+        log,
+        isOptedOut
+    };
 }
 
 export async function run(h: Harness) {

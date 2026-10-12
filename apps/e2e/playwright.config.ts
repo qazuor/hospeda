@@ -160,7 +160,9 @@ export default defineConfig({
                 HOSPEDA_E2E_CLOCK_FILE: path.join(
                     REPO_ROOT,
                     'apps/e2e/test-results/fake-provider-clock.json'
-                )
+                ),
+                // TEST:V4:23 (HOS-1449): only the outbox sender uses this local capture URL.
+                HOSPEDA_E2E_MAIL_CAPTURE_URL: 'http://127.0.0.1:18091'
             }
         },
         {

@@ -12,6 +12,14 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 vi.mock('../../src/utils/payment-provider.js', () => ({ getPaymentProvider: () => mockProvider }));
+vi.mock('@repo/db', async () => {
+    const { createDbMock } = await import('../helpers/mocks/db-mock');
+    return { ...createDbMock(), planCatalogModel: {} };
+});
+vi.mock('@repo/verticals', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/verticals')>()),
+    createPlanCatalogInverse: () => ({ planPolicy: vi.fn() })
+}));
 
 import { billingReconciliationSweepJob } from '../../src/cron/jobs/billing-reconciliation-sweep.job';
 
@@ -59,6 +67,7 @@ describe('billing reconciliation sweep cron', () => {
             expect.objectContaining({
                 provider: mockProvider,
                 clock: mockClock,
+                rowChecks: [expect.any(Function)],
                 zeroCallChecks: {},
                 livenessPing: expect.any(Object)
             })

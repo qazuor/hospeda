@@ -8,6 +8,7 @@ import {
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
+import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
 import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
 import {
@@ -27,10 +28,13 @@ export interface ReconciliationSweepPorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly comparisons?: readonly ReconciliationComparison[];
+    readonly rowChecks?: readonly ReconciliationRowCheck[];
     readonly markPayments?: ReconciliationMarkPayments;
     readonly zeroCallChecks?: ZeroCallChecksPorts;
     readonly livenessPing?: SweepLivenessPing;
 }
+
+export type ReconciliationRowCheck = (input: ReconciliationComparisonInput) => Promise<void>;
 
 export interface ReconciliationSweepFailure {
     readonly subscriptionId: string;
@@ -97,6 +101,9 @@ export async function runReconciliationSweep(
                         if (recorded.markOutcome === 'OPENED') marksOpened++;
                         else marksAccumulated++;
                     }
+                }
+                for (const check of ports.rowChecks ?? []) {
+                    await check({ subscription, providerLink, read, act });
                 }
             } catch (error) {
                 rowsFailed++;

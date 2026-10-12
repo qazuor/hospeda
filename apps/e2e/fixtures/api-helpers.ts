@@ -659,6 +659,8 @@ export async function createAccommodation(options: {
     readonly slugPrefix?: string;
     readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
     readonly extraInfo?: Record<string, unknown>;
+    /** Skip the normal active-trial fixture to exercise the PRE_TRIAL publish flow. */
+    readonly withTrial?: boolean;
 }): Promise<CreatedAccommodation> {
     const destinationId = options.destinationId ?? (await getAnyCityDestinationId());
     const slug = `${options.slugPrefix ?? 'e2e-acc'}-${Date.now().toString(36)}-${randomToken(2)}`;
@@ -697,7 +699,9 @@ export async function createAccommodation(options: {
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createAccommodation: insert returned no id');
-    await ensureListingOwnerTrial(getDbPool(), options.ownerId, VerticalEnum.ACCOMMODATION);
+    if (options.withTrial ?? true) {
+        await ensureListingOwnerTrial(getDbPool(), options.ownerId, VerticalEnum.ACCOMMODATION);
+    }
     return {
         id,
         slug,

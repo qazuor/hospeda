@@ -1,4 +1,4 @@
-import type { Clock } from '@repo/billing-verticals-contract';
+import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import { and, eq, getDb, payments, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
@@ -10,6 +10,8 @@ import type {
     DeclineFirstChargeResult
 } from '../subscription/decline-first-charge.service';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service';
+import type { EnterGraceResult } from '../subscription/enter-grace.service';
+import { enterGraceOnRejectedCharge } from '../subscription/enter-grace.service';
 import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
 import type { CoverageNotices, PromoChargePolicy, PromoExhaustion } from './payment-ports';
@@ -20,6 +22,7 @@ const PAYMENT_FACT_CONSTRAINT = 'uq_payment_provider_fact';
 export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
+    readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly promoCharges?: PromoChargePolicy;
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
@@ -37,7 +40,8 @@ export type RecordChargeFactResult =
           readonly outcome: 'DECLINED';
           readonly paymentId: string;
           readonly decline: DeclineFirstChargeResult;
-      };
+      }
+    | { readonly outcome: 'GRACE'; readonly paymentId: string; readonly grace: EnterGraceResult };
 
 /** Reads one provider charge by id and records/advances its payment fact. */
 export async function recordChargeFact(
@@ -121,6 +125,17 @@ export async function recordChargeFact(
     }
     if (charge.status === 'pending') return { outcome: 'RECORDED_PENDING', paymentId };
     logger.info({ paymentId }, 'Provider charge was rejected; payment fact remains pending');
+    const grace = await enterGraceOnRejectedCharge(
+        { chargeId: input.chargeId },
+        {
+            provider: ports.provider,
+            clock: ports.clock,
+            payments: ports.payments,
+            planPolicy: ports.planPolicy
+        }
+    );
+    if (grace.outcome !== 'NOT_APPLICABLE' || grace.reason !== 'NO_CREDITED_PAYMENT')
+        return { outcome: 'GRACE', paymentId, grace };
     const decline = await declineFirstCharge({ chargeId: input.chargeId }, ports);
     return { outcome: 'DECLINED', paymentId, decline };
 }

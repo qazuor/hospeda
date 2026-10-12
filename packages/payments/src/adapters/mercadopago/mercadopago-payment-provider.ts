@@ -20,6 +20,7 @@ import type {
     AuthorizeResult,
     ChangeAmountInput,
     ChargeInput,
+    ChargeListResult,
     ChargeRef,
     ChargeResult,
     ChargeSnapshot,
@@ -72,6 +73,12 @@ const ReadResponseSchema = z.object({
         start_date: z.string().nullable().optional(),
         free_trial: z.object({ frequency: z.number() }).nullable().optional()
     }),
+    summarized: z
+        .object({
+            charged_quantity: z.number().int().nonnegative().optional(),
+            last_charged_date: z.string().nullable().optional()
+        })
+        .optional(),
     last_modified: z.string().nullable().optional()
 });
 
@@ -243,6 +250,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                 cadence: { everyMonths: parsed.auto_recurring.frequency },
                 firstChargeAt: parsed.auto_recurring.start_date ?? null,
                 freePeriodDays: parsed.auto_recurring.free_trial?.frequency ?? null,
+                chargeRecordCount: parsed.summarized?.charged_quantity ?? null,
+                lastChargedAt: parsed.summarized?.last_charged_date ?? null,
                 lastModifiedAt: parsed.last_modified ?? null
             }
         });
@@ -259,6 +268,11 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     /** Capability 7 · read a charge by id. */
     async readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>> {
         parseProviderInput({ schema: ChargeRefSchema, input, capability: 'read' });
+        throw notImplemented({ capability: 'read' });
+    }
+
+    async listCharges(input: AuthorizationRef): Promise<ChargeListResult> {
+        parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'read' });
         throw notImplemented({ capability: 'read' });
     }
 
