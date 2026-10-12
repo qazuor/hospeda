@@ -167,7 +167,10 @@ test.describe('TEST:V4:23 AC:V4:17 the trial end to end @p0 @verticals @clock', 
             await seedCookieConsent(page);
             await attachSession(page, ownerUser.sessionCookie);
             await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-            await page.getByRole('button', { name: 'Publicar', exact: true }).click();
+            await page
+                .getByRole('list', { name: 'Mis propiedades' })
+                .getByRole('button', { name: 'Publicar', exact: true })
+                .click();
             await page.getByRole('button', { name: 'Sí, publicar', exact: true }).click();
 
             let activeTrial: TrialRow | undefined;
