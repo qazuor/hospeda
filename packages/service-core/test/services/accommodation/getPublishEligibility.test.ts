@@ -107,55 +107,42 @@ describe('AccommodationService.getPublishEligibility', () => {
         });
     });
 
-    describe('platform staff bypass billing, exactly as publish() does', () => {
-        // publish() resolves the owner's hats and skips the eligibility check
-        // entirely for them. If this endpoint did not, a staff owner would be
-        // shown a plans link while the server published them on request — the
-        // same two-sided disagreement this whole issue is about, in a narrower
-        // audience.
+    describe('AC:V5:17 - a staff role gets the same verdict as any owner', () => {
         it.each([
             ['ADMIN', createAdminActor],
             ['SUPER_ADMIN', createSuperAdminActor]
-        ])('%s publishes on a subscription_required verdict', async (_label, makeActor) => {
+        ])('%s cannot publish on a subscription_required verdict', async (_label, makeActor) => {
             deps = createPublishDeps('subscription_required');
             const result = await buildService(deps).getPublishEligibility(makeActor());
 
-            expect(result.data?.canPublish).toBe(true);
+            expect(result.data?.canPublish).toBe(false);
         });
 
-        it('CLIENT_MANAGER publishes on a subscription_required verdict', async () => {
+        it('CLIENT_MANAGER cannot publish on a subscription_required verdict', async () => {
             deps = createPublishDeps('subscription_required');
             const actor = createActor({ roles: [RoleEnum.CLIENT_MANAGER] });
             const result = await buildService(deps).getPublishEligibility(actor);
 
-            expect(result.data?.canPublish).toBe(true);
+            expect(result.data?.canPublish).toBe(false);
         });
 
         it('still reports the honest billing verdict rather than a flattering one', async () => {
-            // The bypass changes what the server will DO, not what billing
-            // says. Rewriting the verdict here would make a staff account
-            // indistinguishable from a paying one in any later diagnosis.
+            // Role does not change the published billing verdict.
             deps = createPublishDeps('subscription_required');
             const result = await buildService(deps).getPublishEligibility(createAdminActor());
 
             expect(result.data?.eligibility).toBe('subscription_required');
         });
 
-        it('never starts a trial for staff, even on first_publish', async () => {
-            // publish() sets startsLocalTrial only inside the non-exempt
-            // branch, so no trial row is ever inserted for staff. Announcing
-            // one would promise a clock that never starts.
+        it('an ADMIN starts a trial on first_publish', async () => {
             deps = createPublishDeps('first_publish');
             const result = await buildService(deps).getPublishEligibility(createAdminActor());
 
             expect(result.data?.canPublish).toBe(true);
-            expect(result.data?.startsTrial).toBe(false);
+            expect(result.data?.startsTrial).toBe(true);
         });
 
-        it('a HOST is not staff — holding the host hat grants no bypass', async () => {
-            // Guards the guard: if the exempt set ever widened to HOST, every
-            // staff test above would still pass while the billing gate was
-            // gone for everyone.
+        it('a HOST also receives the billing verdict', async () => {
             deps = createPublishDeps('subscription_required');
             const result = await buildService(deps).getPublishEligibility(createHostActor());
 

@@ -310,6 +310,12 @@ jobs:
       # GUARD:G-R6 (HOS-1448, AC:V4:13). Its own step, like every guard here.
       - name: Check read columns have writers (GUARD:G-R6)
         run: pnpm check:read-columns-written
+      # GUARD:G4 (HOS-1462, AC:V5:19). Its own step, like every guard here.
+      - name: Check no subscription or trial transition writes roles (GUARD:G4)
+        run: pnpm check:transitions-never-write-roles
+      # GUARD:G6 (HOS-1462, AC:V5:17, AC:V5:18). Its own step, like every guard here. Half (a): no authorization decides only by role; half (b): no role enters the effective set.
+      - name: Check no authorization decides only by role and no role enters the effective set (GUARD:G6)
+        run: pnpm check:role-never-decides
       # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
       # code of the verticals half (G14's HALVES.verticals) writes
       # addon_product.version_id: re-pointing it is an act of billing.
