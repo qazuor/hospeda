@@ -16,10 +16,9 @@
             "symbol": "actorMiddleware",
             "form": "compare",
             "count": 1,
-            "why": "SUPER_ADMIN receives its role-owned permissions at authorization step three",
+            "why": "guest identity is resolved at step one before access is checked",
             "spec": [
-                ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/20-pase-fase-6.md:127",
-                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:873-877"
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
             ]
         },
         {
@@ -27,9 +26,10 @@
             "symbol": "actorMiddleware",
             "form": "membership-arg",
             "count": 1,
-            "why": "guest identity is resolved at step one before access is checked",
+            "why": "SUPER_ADMIN receives its role-owned permissions at authorization step three",
             "spec": [
-                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
+                ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/20-pase-fase-6.md:127",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:873-877"
             ]
         },
         {
