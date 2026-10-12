@@ -345,6 +345,9 @@ jobs:
       # GUARD:G-R9 (HOS-1476, AC:V6:14). Its own step, like every guard here.
       - name: Check every table hanging from a listing has a PURGED row (GUARD:G-R9)
         run: pnpm check:purged-closed-list
+      # GUARD:G-R6-B (HOS-1476, AC:V6:15). Its own step, like every guard here.
+      - name: Check the closed lists of listing.inactive_since (GUARD:G-R6-B)
+        run: pnpm check:listing-clock
       # GUARD:G15 (HOS-1510, AC:B1:9). Its own step, like every guard here. The fake
       # payment provider lies only from its closed list, each lie in one place and
       # each row whole (a); a test turns a lie off only by naming it and saying
