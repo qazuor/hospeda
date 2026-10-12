@@ -8,6 +8,7 @@ import {
     translateMercadoPagoDeliveries
 } from './mercadopago-deliveries';
 import { serializeAuthorization } from './serialize-authorization';
+import { serializeCharge } from './serialize-charge';
 
 export interface AdjustableFakeServerClock {
     now(): Date;
@@ -203,6 +204,13 @@ export async function startFakeProviderServer(
                         initPoint: initPoints.get(authorizationId) ?? ''
                     })
                 );
+                return;
+            }
+            const paymentMatch = /^\/v1\/payments\/([^/?]+)$/.exec(path);
+            const paymentId = paymentMatch?.[1];
+            if (paymentId && method === 'GET') {
+                const read = await provider.readCharge({ chargeId: decodeURIComponent(paymentId) });
+                sendJson(response, 200, serializeCharge(read.snapshot));
                 return;
             }
             sendJson(response, 404, {

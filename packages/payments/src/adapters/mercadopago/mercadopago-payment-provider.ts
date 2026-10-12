@@ -3,9 +3,9 @@
  * interface as the fake.
  *
  * It declares, gap by gap, what the provider offers of each capability
- * (`MERCADOPAGO_CAPABILITY_SUPPORT`). Authorization creation and authorization
- * reads use native fetch; the remaining capabilities still refuse with
- * `NOT_IMPLEMENTED`. No SDK is imported here or elsewhere (GUARD:G12).
+ * (`MERCADOPAGO_CAPABILITY_SUPPORT`). Authorization creation, authorization
+ * reads, and charge reads use native fetch; unsupported capabilities refuse
+ * with `NOT_IMPLEMENTED`. No SDK is imported here or elsewhere (GUARD:G12).
  */
 import type { Clock } from '@repo/billing-verticals-contract';
 import { z } from 'zod';
@@ -81,6 +81,22 @@ const ReadResponseSchema = z.object({
         })
         .optional(),
     last_modified: z.string().nullable().optional()
+});
+const ReadChargeResponseSchema = z.object({
+    id: z.union([z.string(), z.number()]).transform(String),
+    date_created: z.string().datetime({ offset: true }),
+    expiration_date: z.string().datetime({ offset: true }).nullable().optional(),
+    external_reference: z.string().nullable().optional(),
+    preapproval_id: z
+        .union([z.string(), z.number()])
+        .nullable()
+        .optional()
+        .transform((value) => (value == null ? null : String(value))),
+    status: z.enum(['pending', 'in_process', 'approved', 'rejected']),
+    status_detail: z.string().nullable().optional(),
+    transaction_amount: z.number().nonnegative(),
+    currency_id: z.string().min(1),
+    amount_refunded: z.number().nonnegative().optional().default(0)
 });
 
 /** The Mercado Pago payment provider adapter. */
@@ -276,7 +292,39 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     /** Capability 7 · read a charge by id. */
     async readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>> {
         parseProviderInput({ schema: ChargeRefSchema, input, capability: 'read' });
-        throw notImplemented({ capability: 'read' });
+        const response = await this.send({
+            capability: 'read',
+            path: `/v1/payments/${encodeURIComponent(input.chargeId)}`,
+            method: 'GET'
+        });
+        const parsed = await parseResponse(ReadChargeResponseSchema, response, 'read');
+        const status = parsed.status === 'in_process' ? 'pending' : parsed.status;
+        return stampProviderRead({
+            clock: this.clock,
+            snapshot: {
+                chargeId: parsed.id,
+                createdAt: parsed.date_created,
+                expiresAt: parsed.expiration_date ?? null,
+                purpose:
+                    parsed.preapproval_id === null &&
+                    parsed.external_reference == null &&
+                    parsed.transaction_amount === 0
+                        ? 'cardValidation'
+                        : 'charge',
+                authorizationId: parsed.preapproval_id ?? null,
+                reference: parsed.external_reference ?? null,
+                status,
+                declineReason: status === 'rejected' ? (parsed.status_detail ?? null) : null,
+                amount: {
+                    amountMinor: Math.round(parsed.transaction_amount * 100),
+                    currency: parsed.currency_id
+                },
+                refundedAmount: {
+                    amountMinor: Math.round(parsed.amount_refunded * 100),
+                    currency: parsed.currency_id
+                }
+            }
+        });
     }
 
     async listCharges(input: AuthorizationRef): Promise<ChargeListResult> {

@@ -117,14 +117,12 @@ beforeAll(async () => {
     await testDb.setup();
     validateApiEnv();
     server = await startFakeProviderServer({ provider: fake, clock });
-    app = initApp({
+    const mercadoPagoProvider = new MercadoPagoPaymentProvider({
         clock,
-        paymentProvider: new MercadoPagoPaymentProvider({
-            clock,
-            baseUrl: server.url,
-            accessToken: 'test-token'
-        })
+        baseUrl: server.url,
+        accessToken: 'test-token'
     });
+    app = initApp({ clock, paymentProvider: mercadoPagoProvider });
     await getDb()
         .insert(billingDeadlineVersions)
         .values({
@@ -190,10 +188,63 @@ describe('Mercado Pago receiver integration', () => {
         expect(subscription?.status).toBe('ACTIVE');
         expect(ownedRows.length).toBe(deliveries.length);
         expect(
-            ownedRows.every(
-                (row) => row.channel === 'WEBHOOKS' && row.url.includes('source_news=webhooks')
-            )
+            ownedRows.every((row) => {
+                const delivery = deliveries.find(({ query }) => row.url.endsWith(`?${query}`));
+                return delivery?.channel === row.channel;
+            })
         ).toBe(true);
+    });
+
+    it('moves an active card subscription into grace after a rejected charge notice', async () => {
+        const signup = await createPendingSignup();
+        server.mercadoPagoDeliveries({ webhookSecret });
+        await server.provider.approve({ authorizationId: signup.authorizationId });
+        clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        const approval = server
+            .mercadoPagoDeliveries({ webhookSecret })
+            .deliveries.find((delivery) =>
+                delivery.query.includes('type=subscription_preapproval')
+            );
+        if (!approval) throw new Error('Expected signed approval notice');
+        expect((await postDelivery(approval)).status).toBe(200);
+        const [active] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, signup.subscriptionId));
+        expect(active?.status).toBe('ACTIVE');
+
+        const paidCharge = await server.provider.charge({
+            authorizationId: signup.authorizationId,
+            amount: { amountMinor: 100000, currency: 'ARS' },
+            reference: 'paid-cycle'
+        });
+        clock.advance({ ms: 60 * 60 * 1000 });
+        await server.provider.readCharge({ chargeId: paidCharge.chargeId });
+        const paidDelivery = server
+            .mercadoPagoDeliveries({ webhookSecret })
+            .deliveries.find((delivery) =>
+                delivery.query.includes(`data.id=${paidCharge.chargeId}`)
+            );
+        if (!paidDelivery) throw new Error('Expected signed approved-charge notice');
+        expect((await postDelivery(paidDelivery)).status).toBe(200);
+
+        server.mercadoPagoDeliveries({ webhookSecret });
+        const { chargeId } = await server.provider.failChargeCycle({
+            authorizationId: signup.authorizationId,
+            declineReason: 'issuer_declined'
+        });
+        clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        const rejected = server
+            .mercadoPagoDeliveries({ webhookSecret })
+            .deliveries.find((delivery) => delivery.query.includes(`data.id=${chargeId}`));
+        if (!rejected) throw new Error('Expected signed rejected-charge notice');
+        const response = await postDelivery(rejected);
+        const [inGrace] = await getDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, signup.subscriptionId));
+        expect(inGrace?.status).toBe('GRACE_PERIOD');
+        expect(response.status, await response.clone().text()).toBe(200);
     });
 
     // TEST:B3:23 (soporte)

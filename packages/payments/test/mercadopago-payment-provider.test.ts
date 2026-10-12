@@ -1,7 +1,6 @@
 /**
- * The Mercado Pago adapter skeleton (AC:B1:1): it implements the same
- * interface, validates every input like any adapter, and refuses every
- * capability it does not implement with NOT_IMPLEMENTED.
+ * The Mercado Pago adapter (AC:B1:1): it implements the same interface,
+ * validates every input like any adapter, and refuses unsupported capabilities.
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
@@ -75,7 +74,13 @@ describe('MercadoPagoPaymentProvider', () => {
     it.each(
         VALID_CALLS.filter(
             ({ method }) =>
-                !['authorize', 'readAuthorization', 'cancel', 'decodeNotice'].includes(method)
+                ![
+                    'authorize',
+                    'readAuthorization',
+                    'readCharge',
+                    'cancel',
+                    'decodeNotice'
+                ].includes(method)
         )
     )('$method refuses with NOT_IMPLEMENTED for $capability', async ({
         method,
@@ -107,9 +112,15 @@ describe('MercadoPagoPaymentProvider', () => {
         expect(
             VALID_CALLS.filter(
                 ({ method }) =>
-                    !['authorize', 'readAuthorization', 'cancel', 'decodeNotice'].includes(method)
+                    ![
+                        'authorize',
+                        'readAuthorization',
+                        'readCharge',
+                        'cancel',
+                        'decodeNotice'
+                    ].includes(method)
             )
-        ).toHaveLength(8);
+        ).toHaveLength(7);
     });
 
     it('receives its clock injected and refuses to be built without one', () => {
