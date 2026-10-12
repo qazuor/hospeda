@@ -252,7 +252,8 @@ export function checkCanEditOwn(
 
 /**
  * Verifies the actor may update a listing through the base update pipeline
- * (`_canUpdate`). Accepts staff (the applicable vertical EDIT_ALL permission) OR the listing's owner holding
+ * (`_canUpdate`). Accepts staff (the applicable vertical EDIT_ALL permission), a holder of action 15's own
+ * permission (`LISTING_FOREIGN_CONTENT_EDIT`) on somebody else's listing (ACC:15, HOS-1493), OR the listing's owner holding
  * the applicable vertical EDIT_OWN permission (SPEC-253 D2=b: replaces the former 10 per-section perms).
  *
  * This is the owner-aware analogue of {@link checkCanEditAll}, mirroring how
@@ -272,6 +273,14 @@ export function checkCanEditOwnOrAll(
     vertical: GastronomyOrExperience
 ): void {
     if (hasListingPermission(actor, 'editAll', vertical)) {
+        return;
+    }
+    // ACC:15 (HOS-1493): action 15's own permission edits somebody else's listing.
+    if (
+        entity.ownerId &&
+        !isOwner(actor, entity) &&
+        hasPermission(actor, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT)
+    ) {
         return;
     }
     if (isOwner(actor, entity) && hasListingPermission(actor, 'editOwn', vertical)) {

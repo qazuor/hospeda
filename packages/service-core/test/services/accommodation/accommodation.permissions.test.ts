@@ -159,6 +159,44 @@ describe('Accommodation Permissions', () => {
         ).not.toThrow();
     });
 
+    describe('action 15 own permission (ACC:15, HOS-1493)', () => {
+        const FOREIGN = PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT;
+        // No role at all: the decision reads permissions only.
+        const admin15 = () => createActor([FOREIGN], otherUserId, []);
+        const createInput = (ownerId: UserIdType) => ({
+            ...createMockAccommodation({ ownerId }),
+            reviewsCount: 1,
+            averageRating: 4.5
+        });
+
+        it('checkCanUpdate lets a holder of ONLY the action 15 permission edit a foreign listing', () => {
+            expect(() => checkCanUpdate(admin15(), withOwner(mockUserId))).not.toThrow();
+        });
+        it('checkCanUpdate does not let the owner use the action 15 permission without UPDATE_OWN', () => {
+            expectForbidden(
+                () => checkCanUpdate(createActor([FOREIGN], mockUserId, []), withOwner(mockUserId)),
+                'Permission denied to update accommodation'
+            );
+        });
+        it('checkCanUpdate keeps the owner pause for action 15 (only UPDATE_ANY is exempt)', () => {
+            const suspended = { ...withOwner(mockUserId), ownerSuspended: true };
+            expectForbidden(
+                () => checkCanUpdate(admin15(), suspended),
+                'while the owner subscription is paused'
+            );
+        });
+        it('checkCanCreate lets a holder of ONLY the action 15 permission create in another owner name', () => {
+            expect(() => checkCanCreate(admin15(), createInput(mockUserId))).not.toThrow();
+        });
+        it('checkCanCreate does not accept the action 15 permission for an own create', () => {
+            expectForbidden(
+                () =>
+                    checkCanCreate(createActor([FOREIGN], mockUserId, []), createInput(mockUserId)),
+                'Permission denied to create accommodation'
+            );
+        });
+    });
+
     it('checkCanSoftDelete allows with ANY permission', () => {
         expect(() =>
             checkCanSoftDelete(

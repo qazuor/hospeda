@@ -15,6 +15,7 @@ import {
     checkCanDeleteListing,
     checkCanEditAll,
     checkCanEditOwn,
+    checkCanEditOwnOrAll,
     checkCanModerateListing,
     checkCanModerateReview,
     checkCanViewAll
@@ -370,5 +371,44 @@ describe('HOS-1077 per-vertical permission split', () => {
                 )
             );
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// checkCanEditOwnOrAll — action 15 own permission (ACC:15, HOS-1493)
+// ---------------------------------------------------------------------------
+
+describe('checkCanEditOwnOrAll with the action 15 permission', () => {
+    const FOREIGN = PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT;
+    // No role at all: the decision reads permissions only.
+    const roleless = (permissions: PermissionEnum[], id: string): Actor => ({
+        id,
+        roles: [],
+        permissions
+    });
+
+    it.each([
+        'gastronomy',
+        'experience'
+    ] as const)('lets a holder of ONLY the action 15 permission edit a foreign %s listing', (vertical) => {
+        expect(() =>
+            checkCanEditOwnOrAll(roleless([FOREIGN], 'admin-1'), { ownerId: 'owner-1' }, vertical)
+        ).not.toThrow();
+    });
+
+    it('does not let the owner use the action 15 permission without EDIT_OWN', () => {
+        expectForbidden(() =>
+            checkCanEditOwnOrAll(
+                roleless([FOREIGN], 'owner-1'),
+                { ownerId: 'owner-1' },
+                'gastronomy'
+            )
+        );
+    });
+
+    it('does not apply to a listing without an owner', () => {
+        expectForbidden(() =>
+            checkCanEditOwnOrAll(roleless([FOREIGN], 'admin-1'), { ownerId: null }, 'experience')
+        );
     });
 });

@@ -23,14 +23,29 @@ const isOwner = (actor: Actor, entity: { ownerId?: string | null }) => {
 };
 
 /**
+ * Whether the actor writes somebody else's accommodation with action 15's own
+ * permission (ACC:15, HOS-1493): a draft in the owner's name, a correction, a
+ * restore. Decided by PERMISSION, never by role.
+ */
+const isForeignContentEditor = (actor: Actor, ownerId: string | null | undefined): boolean =>
+    Boolean(ownerId) &&
+    ownerId !== actor.id &&
+    hasPermission(actor, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT);
+
+/**
  * Checks if an actor has permission to create an accommodation.
- * Requires the `ACCOMMODATION_CREATE` permission.
+ * Requires the `ACCOMMODATION_CREATE` permission, or action 15's own permission
+ * (`LISTING_FOREIGN_CONTENT_EDIT`) when the accommodation is created in ANOTHER
+ * owner's name (ACC:15, HOS-1493, H12).
  * Ownership checks (`ownerId` matching `actor.id`) are assumed to be handled separately.
  * @param actor The actor performing the action.
- * @param _data The data for the accommodation to be created (unused in this check).
+ * @param data The data for the accommodation to be created (its `ownerId` decides action 15).
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanCreate(actor: Actor, _data: AccommodationCreateInput): void {
+export function checkCanCreate(actor: Actor, data: AccommodationCreateInput): void {
+    if (isForeignContentEditor(actor, data.ownerId)) {
+        return;
+    }
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
@@ -41,20 +56,24 @@ export function checkCanCreate(actor: Actor, _data: AccommodationCreateInput): v
 
 /**
  * Checks if an actor has permission to update an accommodation.
- * Requires `ACCOMMODATION_UPDATE_ANY` or `ACCOMMODATION_UPDATE_OWN`.
+ * Requires `ACCOMMODATION_UPDATE_ANY`, action 15's own permission
+ * (`LISTING_FOREIGN_CONTENT_EDIT`) on somebody else's accommodation (ACC:15,
+ * HOS-1493), or `ACCOMMODATION_UPDATE_OWN`.
  * If `_OWN` is used, it verifies that the actor is the owner of the accommodation.
  * @param actor The actor performing the action.
  * @param entity The accommodation entity to be updated.
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanUpdate(actor: Actor, entity: Accommodation): void {
-    checkGenericPermission(
-        actor,
-        PermissionEnum.ACCOMMODATION_UPDATE_ANY,
-        PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-        isOwner(actor, entity),
-        'Permission denied to update accommodation'
-    );
+    if (!isForeignContentEditor(actor, entity.ownerId)) {
+        checkGenericPermission(
+            actor,
+            PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+            PermissionEnum.ACCOMMODATION_UPDATE_OWN,
+            isOwner(actor, entity),
+            'Permission denied to update accommodation'
+        );
+    }
 
     // SPEC-143 #29: while the owner is service-suspended (full pause) their
     // accommodations are edit-locked. Staff holding ACCOMMODATION_UPDATE_ANY are
