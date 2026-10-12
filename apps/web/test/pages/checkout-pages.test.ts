@@ -26,6 +26,7 @@ describe('signup checkout page — B3 UI (B3.md:1045-1053)', () => {
     it('requires a session for a valid option and preserves the full return URL', () => {
         expect(indexSrc).toContain('requestHasSessionCookie(cookieHeader)');
         expect(indexSrc).toContain('parseSessionUser({ cookieHeader })');
+        expect(indexSrc).toContain('if (!user)');
         expect(indexSrc).toContain(
             'buildLoginRedirect({ locale, currentUrl: Astro.url.pathname + Astro.url.search })'
         );
