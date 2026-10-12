@@ -63,6 +63,7 @@ import {
 import { publishApi } from '@/lib/api/endpoints-protected';
 import { shouldShowPublishTrialCallout } from '@/lib/host/publish-trial-callout';
 import { resolvePublishPageSlot } from '@/lib/publish/publish-page-slot';
+import { resolvePublishAffordance, resolveTrialEligibility } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
@@ -93,17 +94,19 @@ const slot = await resolvePublishPageSlot({
 
 // HOS-1183 F-6: whether publishing would actually grant this owner a trial.
 // `null` = unresolved (signed out, or the read failed) — see
-// `shouldShowPublishTrialCallout` for what that means.
+// `shouldShowPublishTrialCallout` for what that means. HOS-1668: read from
+// `subscribe-destination` (the decision PB1 consults when it rejects), not from
+// the retired `publish-eligibility`; only `PUBLISH` starts a trial.
 let trialEligibility: boolean | null = null;
 
 if (isAuthenticated && cookieHeader) {
     try {
-        const eligibility = await publishApi.accommodationEligibility({ cookieHeader });
-        if (eligibility.ok) {
-            trialEligibility = eligibility.data.startsTrial;
-        }
+        const result = await publishApi.subscribeDestination({ vertical: VERTICAL, cookieHeader });
+        trialEligibility = resolveTrialEligibility({
+            affordance: resolvePublishAffordance({ result })
+        });
     } catch (error) {
-        logger.warn('publicar/index: failed to fetch publish eligibility', { error });
+        logger.warn('publicar/index: failed to fetch the publish destination', { error });
         // Non-fatal: the default trial callout renders.
     }
 }

@@ -238,6 +238,7 @@
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
             "publishSubscriptionRequiredMessage": "You need an active plan to publish.",
+            "publishCheckFailed": "We couldn't check whether you can publish. Reload the page to try again.",
             "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request",
             "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",

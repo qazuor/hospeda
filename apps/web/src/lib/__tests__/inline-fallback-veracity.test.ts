@@ -120,8 +120,8 @@ const BANNED_PHRASES: readonly string[] = [
     // charges (HOS-1184). Copy that IS shown only to an eligible accommodation
     // owner belongs in a locale file gated on the server's verdict — see
     // `host.properties.card.actions.publishConfirmTrialNote`, rendered only when
-    // `GET /protected/accommodations/publish-eligibility` says `startsTrial`
-    // (HOS-1183).
+    // `GET /protected/publish/subscribe-destination/accommodation` answers
+    // `PUBLISH` (HOS-1183, repointed by HOS-1668).
     'trial empieza cuando publicás',
     'arranca tu trial gratis',
     'trial starts when you publish'

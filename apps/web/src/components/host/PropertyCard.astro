@@ -16,10 +16,10 @@
 
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { type PublishAffordance, UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { Accommodation } from '@repo/schemas';
 import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { getMediaUrl } from '@repo/media';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import btn from '@/components/account/AccountButton.module.css';
@@ -37,63 +37,26 @@ export interface Props {
     /** Current locale for i18n and URL building. */
     readonly locale: SupportedLocale;
     /**
-     * Whether the server would accept a publish for this owner right now.
-     * Forwarded to `PublishButton`, which offers the plan instead of publishing
-     * when it is false (H-99).
+     * What the server would do if this owner published right now, forwarded to
+     * `PublishButton` (HOS-1668). Resolved by the caller with
+     * `resolvePublishAffordance` from `GET /protected/publish/subscribe-destination/{vertical}`
+     * — the same decision PB1 and `listing-access` use when they reject a
+     * publish — once per page rather than once per card: coverage and trial
+     * eligibility are properties of the owner, so they cannot differ between
+     * two cards in this grid. The trial length on the confirm step is the
+     * affordance's own `trialDays` (the plan version PB1 would start).
      *
-     * Read from `GET /protected/accommodations/publish-eligibility`, once per
-     * page rather than once per card — billing eligibility is a property of the
-     * owner, so it cannot differ between two cards in this grid.
-     *
-     * It replaced `hasActivePlan` (HOS-1183), which asked the narrower question
-     * "is a plan loaded" and therefore hid Publish from every owner still
-     * holding an intact free trial — owners the server publishes.
-     *
-     * Defaults to `true` so a caller that has not resolved the verdict keeps
-     * failing OPEN: a transient API blip must never hide Publish from a paying
-     * host, and the `/publish` endpoint stays the real enforcement point.
+     * Defaults to `UNKNOWN_PUBLISH_AFFORDANCE`, which never publishes: a caller
+     * that has not resolved the decision must not leave Publish enabled
+     * (HOS-1668 C-2). It used to default to a publishable verdict (fail-open).
      */
-    readonly canPublish?: boolean;
-    /**
-     * Whether publishing would start the owner's free trial, from the same
-     * read. Forwarded to `PublishButton`, which announces it on the confirm
-     * step.
-     *
-     * Defaults to `false`: silence is the safe default here, in the opposite
-     * direction from `canPublish`. An unannounced trial costs the owner a
-     * surprise; an announced one that never starts is a promise broken.
-     */
-    readonly startsTrial?: boolean;
-    /**
-     * Whether the owner's FIRST publish is paused (admin-frozen new signups),
-     * from the same read. Forwarded to `PublishButton`, which shows the
-     * "publishing new listings is paused" notice. Defaults to `false`.
-     */
-    readonly firstPublishPaused?: boolean;
-    /**
-     * Generic owner trial length in days (H-98), shown on the publish confirm
-     * step when publishing would start the owner's trial.
-     * Resolved by the caller from the live billing plans — the minimum
-     * `trialDays` among active owner plans with `hasTrial`, via
-     * `resolveGenericOwnerTrialDays` — and passed down, so this card never
-     * fetches on its own: it is rendered once PER PROPERTY inside a grid, and
-     * fetching here would multiply one plan-catalog request by the property
-     * count.
-     *
-     * Defaults to `OWNER_TRIAL_DAYS` (the last-resort constant, per the
-     * `resolveGenericOwnerTrialDays` fallback contract) so a caller that has
-     * not resolved the real value yet still renders a sane number.
-     */
-    readonly trialDays?: number;
+    readonly publishAffordance?: PublishAffordance;
 }
 
 const {
     property,
     locale,
-    canPublish = true,
-    startsTrial = false,
-    firstPublishPaused = false,
-    trialDays = OWNER_TRIAL_DAYS
+    publishAffordance = UNKNOWN_PUBLISH_AFFORDANCE
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
@@ -304,7 +267,7 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
                     label={t('host.properties.card.actions.publish', 'Publicar')}
                     confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '¿Publicar este alojamiento?')}
                     confirmNote={t('host.properties.card.actions.publishConfirmNote', 'Va a aparecer en el sitio, visible para los turistas.')}
-                    confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', trialDays, { trialDays })}
+                    confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', publishAffordance.trialDays ?? 0, { trialDays: publishAffordance.trialDays ?? 0 })}
                     confirmYes={t('host.properties.card.actions.publishYes', 'Sí, publicar')}
                     confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
                     errorText={t('host.properties.card.publishError', 'No se pudo publicar. Intentá de nuevo.')}
@@ -312,9 +275,8 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
                     subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
                     missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', 'Para publicar falta completar: {{fields}}.')}
                     missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
-                    canPublish={canPublish}
-                    startsTrial={startsTrial}
-                    firstPublishPaused={firstPublishPaused}
+                    affordance={publishAffordance}
+                    checkFailedText={t('host.properties.card.publishCheckFailed')}
                     choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
                 />
             )}

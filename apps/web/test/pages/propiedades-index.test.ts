@@ -74,3 +74,29 @@ describe('propiedades/index.astro — SPEC-205 Phase 4 funnel polish', () => {
         });
     });
 });
+
+describe("propiedades/index.astro — the card reads the server's publish decision (HOS-1668)", () => {
+    // HOS-1668 C-1: the grid reads the same destination PB1 consults.
+    it('reads subscribe-destination and maps it through the canonical resolver', () => {
+        expect(propiedadesIndexSource).toContain('publishApi.subscribeDestination(');
+        expect(propiedadesIndexSource).toContain('resolvePublishAffordance(');
+        expect(propiedadesIndexSource).toContain('publishAffordance={publishAffordance}');
+    });
+
+    // HOS-1668 C-3 (web half): the page no longer consumes publish-eligibility.
+    it('no longer reads publish-eligibility', () => {
+        expect(propiedadesIndexSource).not.toContain('accommodationEligibility');
+        expect(propiedadesIndexSource).not.toContain('resolveGenericOwnerTrialDays');
+    });
+
+    // HOS-1668 C-2: a failed read never leaves Publish enabled in silence.
+    it('starts the affordance at UNKNOWN_PUBLISH_AFFORDANCE instead of failing open', () => {
+        expect(propiedadesIndexSource).not.toContain('let canPublish = true');
+        expect(propiedadesIndexSource).toContain(
+            'let publishAffordance: PublishAffordance = UNKNOWN_PUBLISH_AFFORDANCE;'
+        );
+        expect(propiedadesIndexSource).toContain(
+            "logger.warn('[propiedades] subscribe-destination read failed'"
+        );
+    });
+});
