@@ -319,6 +319,9 @@ jobs:
       # GUARD:G-R3-B (HOS-1463, AC:V5:20). Its own step, like every guard here.
       - name: Check no clock-triggered transition grants (GUARD:G-R3-B)
         run: pnpm check:clock-transitions-never-grant
+      # GUARD:G-R3-C (HOS-1463, AC:V5:21). Its own step, like every guard here.
+      - name: Check every domain operation declares whether it passes step 5 (GUARD:G-R3-C)
+        run: pnpm check:step5-declared
       # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
       # code of the verticals half (G14's HALVES.verticals) writes
       # addon_product.version_id: re-pointing it is an act of billing.
