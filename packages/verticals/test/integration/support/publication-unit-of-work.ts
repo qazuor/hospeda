@@ -1,9 +1,20 @@
 import type { BillingForVerticals } from '@repo/billing-verticals-contract';
-import { type DrizzleClient, plans, planVersions, trials, verticals } from '@repo/db';
+import {
+    buildEmailDedupKey,
+    buildEventOccurrence,
+    type DrizzleClient,
+    emailOutboxModel,
+    plans,
+    planVersions,
+    trials,
+    verticals
+} from '@repo/db';
 import type { VerticalActivationEvent } from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
+import { listingModerationModel } from '../../../../db/src/models/listing/listing-moderation.model';
 import { listingPublicationModel } from '../../../../db/src/models/listing/listing-publication.model';
 import { listingRetentionModel } from '../../../../db/src/models/listing/listing-retention.model';
+import { users } from '../../../../db/src/schemas/user/user.dbschema';
 import type {
     PublicationUnitOfWork,
     PublicationVertical
@@ -21,6 +32,7 @@ export function createPublicationTestAdapter(args: {
     readonly retention?: { readonly stopped: boolean; readonly pauseEndedAt: Date | null };
     readonly onLocked?: () => Promise<void>;
     readonly beforeSetPublicationStatus?: () => Promise<void>;
+    readonly afterEnqueueListingNotice?: () => Promise<void>;
 }): {
     readonly unitOfWork: PublicationUnitOfWork;
     readonly billing: Pick<BillingForVerticals, 'coverage' | 'retentionStopped'>;
@@ -135,6 +147,16 @@ export function createPublicationTestAdapter(args: {
                             listingRetentionModel.readRetentionListing({ tx, vertical, listingId }),
                         readArchiveOrigins: (input) =>
                             listingRetentionModel.readArchiveOrigins({ ...input, tx }),
+                        readModerationOrigin: (input) =>
+                            listingModerationModel.readModerationOrigin({ ...input, tx }),
+                        readOpenFixRequest: (input) =>
+                            listingModerationModel.readOpenFixRequest({ ...input, tx }),
+                        openFixRequest: (input) =>
+                            listingModerationModel.openFixRequest({ ...input, tx }),
+                        closeOpenFixRequest: (input) =>
+                            listingModerationModel.closeOpenFixRequest({ ...input, tx }),
+                        insertFixRequestEvent: (input) =>
+                            listingModerationModel.insertFixRequestEvent({ ...input, tx }),
                         countPublished: ({ vertical, ownerId }) =>
                             listingPublicationModel.countPublished({ tx, vertical, ownerId }),
                         listByOwner: ({ vertical, ownerId }) =>
@@ -157,7 +179,34 @@ export function createPublicationTestAdapter(args: {
                             listingPublicationModel.stampInactiveSince({ tx, ...input }),
                         insertStatusChangedEvent: (input) =>
                             listingPublicationModel.insertStatusChangedEvent({ tx, ...input }),
-                        async enqueueRestitutionNotice() {}
+                        async enqueueRestitutionNotice() {},
+                        async enqueueListingNotice(input) {
+                            const [recipient] = await tx
+                                .select({ email: users.email })
+                                .from(users)
+                                .where(eq(users.id, input.recipientUserId))
+                                .limit(1);
+                            if (!recipient?.email) return;
+                            const dedupKey = buildEmailDedupKey({
+                                recipient: input.recipientUserId,
+                                template: input.template,
+                                occurrence: buildEventOccurrence({
+                                    eventId: `${input.correlationId}:${input.occurrenceKey}`
+                                })
+                            });
+                            await emailOutboxModel.enqueue(
+                                {
+                                    recipientUserId: input.recipientUserId,
+                                    recipientEmail: recipient.email,
+                                    template: input.template,
+                                    payload: { ...input.payload },
+                                    dedupKey,
+                                    correlationId: input.correlationId
+                                },
+                                tx
+                            );
+                            await args.afterEnqueueListingNotice?.();
+                        }
                     };
                 return work(port);
             });
