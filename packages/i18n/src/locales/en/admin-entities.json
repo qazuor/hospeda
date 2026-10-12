@@ -993,5 +993,22 @@
             "errorTitle": "Error creating trade",
             "errorMessage": "We could not create the trade. Please try again."
         }
+    },
+    "listingPurgeOnRequest": {
+        "action": "Delete at the owner's request",
+        "title": "Delete the listing at its owner's request",
+        "whatHappens": {
+            "listing": "You are about to delete the listing {name} at its owner's request.",
+            "content": "Its content (texts, photos, questions, opening hours) is deleted and does not come back.",
+            "featured": "If it has a featured placement pointing to this listing, it is cancelled."
+        },
+        "reasonLabel": "Why",
+        "reasonHelp": "It is kept in the log, together with who deleted it and whose it was.",
+        "cancel": "Cancel",
+        "confirm": "Delete the listing",
+        "successTitle": "Listing deleted",
+        "successMessage": "The listing {name} was deleted at its owner's request.",
+        "errorTitle": "The listing could not be deleted",
+        "stateChanged": "The listing changed in the meantime (for example, its owner changed) and was not deleted. Reload the page and check it before trying again."
     }
 }

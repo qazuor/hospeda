@@ -303,6 +303,19 @@
                 "gastronomy": "We couldn't create the business. Please try again.",
                 "experience": "We couldn't create the experience. Please try again."
             }
+        },
+        "supportEdit": {
+            "title": "Support edited this listing",
+            "edited": "Support edited the content of this listing on {{date}}: {{parts}}.",
+            "unchanged": "It was not published, featured or deleted because of this.",
+            "contact": "If you did not ask for it, write to us.",
+            "parts": {
+                "texts": "the texts",
+                "photos": "the photos",
+                "faq": "the frequently asked questions",
+                "hours": "the opening hours",
+                "other": "other details"
+            }
         }
     },
     "notices": {

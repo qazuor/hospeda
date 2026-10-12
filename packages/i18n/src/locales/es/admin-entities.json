@@ -993,5 +993,22 @@
             "errorTitle": "Error al crear el oficio",
             "errorMessage": "No pudimos crear el oficio. Probá de nuevo."
         }
+    },
+    "listingPurgeOnRequest": {
+        "action": "Borrar a pedido del dueño",
+        "title": "Borrar la ficha a pedido de su dueño",
+        "whatHappens": {
+            "listing": "Vas a borrar la ficha {name} a pedido de su dueño.",
+            "content": "Su contenido (textos, fotos, preguntas, horarios) se borra y no vuelve.",
+            "featured": "Si tiene un destaque que apunta a esta ficha, se cancela."
+        },
+        "reasonLabel": "Por qué",
+        "reasonHelp": "Queda en el registro, junto con quién la borró y de quién era.",
+        "cancel": "Cancelar",
+        "confirm": "Borrar la ficha",
+        "successTitle": "Ficha borrada",
+        "successMessage": "La ficha {name} se borró a pedido de su dueño.",
+        "errorTitle": "No se pudo borrar la ficha",
+        "stateChanged": "La ficha cambió mientras tanto (por ejemplo, cambió de dueño) y no se borró. Recargá la página y revisala antes de volver a intentar."
     }
 }
