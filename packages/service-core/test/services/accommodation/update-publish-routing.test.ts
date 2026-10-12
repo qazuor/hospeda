@@ -31,12 +31,7 @@ import { asMock } from '../../utils/test-utils';
 // These suites mock every other DB touchpoint, so the primitive is stubbed here
 // too; the grant's own behaviour is covered by `roleAssignment.test.ts`.
 vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
-    grantRole: vi.fn().mockResolvedValue({ data: undefined }),
-    // HOS-296: the module also exports the read primitive, and the
-    // billing-exempt-owner branch calls it. A module mock that omits it turns
-    // that branch into "getUserRoles is not a function" — an INTERNAL_ERROR
-    // that looks nothing like a role problem.
-    getUserRoles: vi.fn().mockResolvedValue([])
+    grantRole: vi.fn().mockResolvedValue({ data: undefined })
 }));
 
 // HOS-1499: listing writes record the owner act in `domain_event`; no DB here.
@@ -547,8 +542,8 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         expect(accommodationModel.update).toHaveBeenCalled();
     });
 
-    it('e. billing-exempt owner role bypasses checkEligibility (DB lookup path), on an ACTIVE accommodation', async () => {
-        // Arrange — actor is NOT the owner so the fallback DB lookup runs
+    it('e. a staff role does not bypass checkEligibility for an ACTIVE accommodation', async () => {
+        // Arrange — the actor is not the owner and has no update-any permission.
         const checkEligibility = vi.fn().mockResolvedValue('subscription_required');
         const deps = createPublishDeps({ checkEligibility });
         const service = buildService(accommodationModel, userModel, deps);
@@ -558,24 +553,18 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
             lifecycleState: LifecycleStatusEnum.ACTIVE
         });
         (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
-        (accommodationModel.update as Mock).mockResolvedValue({
-            ...accommodation,
-            name: 'exempt-edit'
+        const actor = createActor({
+            id: 'another-user',
+            roles: [RoleEnum.USER],
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
         });
-        // userModel returns an owner with a billing-exempt role
-        asMock(userModel.findById as Mock).mockResolvedValue({
-            id: 'user-client-manager',
-            role: RoleEnum.CLIENT_MANAGER
-        });
-        // Actor is a different admin-level user (not the owner)
-        const actor = createAdminActor({ id: 'another-admin' });
 
         // Act
-        const result = await service.update(actor, 'acc-gate-e', { name: 'exempt-edit' });
+        const result = await service.update(actor, 'acc-gate-e', { name: 'blocked-edit' });
 
-        // Assert — gate was bypassed, no FORBIDDEN, and checkEligibility was NOT called
-        expect(result.error).toBeUndefined();
-        expect(checkEligibility).not.toHaveBeenCalled();
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(result.error?.message).toBe('subscription_required');
+        expect(checkEligibility).toHaveBeenCalledWith('user-client-manager', expect.anything());
     });
 
     it('f. gate does not fire when publishDeps are not wired, regardless of lifecycle state', async () => {
@@ -610,7 +599,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
     });
 
     it('g. perf: userModel.findById is NOT called when actor is the owner, on an ACTIVE accommodation', async () => {
-        // Arrange — actor IS the owner; the optimised path reuses actor.role
+        // Arrange — actor IS the owner; eligibility is checked without a role lookup.
         const checkEligibility = vi.fn().mockResolvedValue('has_active_sub');
         const deps = createPublishDeps({ checkEligibility });
         const service = buildService(accommodationModel, userModel, deps);
@@ -638,14 +627,7 @@ describe('AccommodationService.update — billing write-gate (SPEC-217, scoped t
         // ctx is undefined when called without explicit context — verify only the ownerId arg
         expect(checkEligibility).toHaveBeenCalledOnce();
         expect((checkEligibility as Mock).mock.calls[0]?.[0]).toBe('user-host-g');
-        // The perf optimisation: userModel.findById must NOT be called for the
-        // write-gate's billing-exempt role check when actor.id === ownerId.
-        //
-        // This used to assert exactly-ONE call, because `_assignHostRoleIfNeeded`
-        // pre-read the owner on every ACTIVE-state update and that read was
-        // indistinguishable from a regressed gate. HOS-296 removed that pre-read
-        // (the grant is idempotent on its primary key), so the invariant can now
-        // be stated directly: zero lookups.
+        // The owner update path never loads user rows to decide authorization.
         expect(userModel.findById).not.toHaveBeenCalled();
     });
 });
