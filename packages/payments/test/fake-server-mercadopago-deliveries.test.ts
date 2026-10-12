@@ -16,17 +16,40 @@ const input = {
     returnUrl: 'https://example.test/return'
 } as const;
 const servers: Array<{ close(): Promise<void> }> = [];
-async function setup(honest = false) {
+async function setup(honest = false, withoutRp12 = false) {
     const clock = createAdjustableClock({ start });
-    const provider = honest
-        ? new FakePaymentProvider({
-              clock,
-              idNamespace: crypto.randomUUID(),
-              honestAbout: [
-                  { lie: 'M6', why: 'The test needs due notices in both measured channels.' }
-              ]
-          })
-        : new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+    const provider =
+        honest && withoutRp12
+            ? new FakePaymentProvider({
+                  clock,
+                  idNamespace: crypto.randomUUID(),
+                  withoutBehaviour: [
+                      { behaviour: 'RP12', why: 'assert delivery count without approval notice' }
+                  ],
+                  honestAbout: [
+                      { lie: 'M6', why: 'The test needs due notices in both measured channels.' }
+                  ]
+              })
+            : honest
+              ? new FakePaymentProvider({
+                    clock,
+                    idNamespace: crypto.randomUUID(),
+                    honestAbout: [
+                        { lie: 'M6', why: 'The test needs due notices in both measured channels.' }
+                    ]
+                })
+              : withoutRp12
+                ? new FakePaymentProvider({
+                      clock,
+                      idNamespace: crypto.randomUUID(),
+                      withoutBehaviour: [
+                          {
+                              behaviour: 'RP12',
+                              why: 'assert delivery count without approval notice'
+                          }
+                      ]
+                  })
+                : new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
     const server = await startFakeProviderServer({ provider, clock });
     servers.push(server);
     return { provider, server, clock };
@@ -37,7 +60,7 @@ afterEach(async () => {
 
 describe('Mercado Pago-shaped fake deliveries', () => {
     it('translates approved authorizations to signed Webhooks and decodes the same notice', async () => {
-        const { provider, server, clock } = await setup(true);
+        const { provider, server, clock } = await setup(true, true);
         const created = await provider.authorize(input);
         server.mercadoPagoDeliveries();
         await provider.approve({ authorizationId: created.authorizationId });
@@ -124,7 +147,7 @@ describe('Mercado Pago-shaped fake deliveries', () => {
     });
 
     it('POSTs translated requests and reports non-2xx responses with the channel', async () => {
-        const { provider, server } = await setup(true);
+        const { provider, server } = await setup(true, true);
         const created = await provider.authorize(input);
         server.mercadoPagoDeliveries();
         await provider.approve({ authorizationId: created.authorizationId });
@@ -193,7 +216,7 @@ describe('Mercado Pago-shaped fake deliveries', () => {
     });
 
     it('leaves the original fake delivery format available', async () => {
-        const { provider, server } = await setup(true);
+        const { provider, server } = await setup(true, true);
         const created = await provider.authorize(input);
         server.mercadoPagoDeliveries();
         await provider.approve({ authorizationId: created.authorizationId });
