@@ -7,6 +7,7 @@ import {
     getDb,
     listingModerationModel,
     listingPublicationModel,
+    listingPurgeModel,
     listingRetentionModel,
     trials,
     users
@@ -59,6 +60,9 @@ export function getListingPublicationPorts(options?: {
                     sql`SELECT pg_advisory_xact_lock(hashtextextended(${trialMachineLockKey(args).key}, 0))`
                 );
                 const publication: PublicationTransaction = {
+                    async purgeListingContent(input) {
+                        return listingPurgeModel.purgeListingContent({ ...input, tx });
+                    },
                     async readModerationOrigin(input) {
                         return listingModerationModel.readModerationOrigin({ ...input, tx });
                     },
