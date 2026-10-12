@@ -48,7 +48,7 @@ const base = {
     vertical: VerticalEnum.ACCOMMODATION,
     facts: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED },
     operation: 'EDIT' as const,
-    adminAction: { permitted: true, isSystemActor: false }
+    adminAction: { action: 'ACC_15' as const, permitted: true, isSystemActor: false }
 };
 const photoLimit = { key: 'max_photos_per_accommodation', requested: 11 };
 
@@ -129,7 +129,7 @@ describe('AC:V5:8 / TEST:V5:9 subject and owner limit', () => {
         expect(
             await resolveListingAccess({
                 ...base,
-                adminAction: { permitted: false, isSystemActor: false },
+                adminAction: { action: 'ACC_15', permitted: false, isSystemActor: false },
                 ...port
             })
         ).toEqual({ allowed: false, reason: 'FORBIDDEN' });

@@ -1,4 +1,5 @@
 import { PermissionEnum } from '@repo/schemas';
+import type { ListingOperation } from './listing-operation';
 
 /** The closed 25 administrative actions from NUCLEO/08 §3 and V5.md §3.3. */
 export const ADMINISTRATIVE_ACTIONS = [
@@ -70,13 +71,8 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     ACC_21: { permissions: [], pendingOwnPermission: 'B9b (HOS-1591)' },
     ACC_22: { permissions: [], pendingOwnPermission: 'V6.9 (HOS-1479)' },
     ACC_23: {
-        permissions: [
-            PermissionEnum.ACCOMMODATION_DELETE_ANY,
-            PermissionEnum.ACCOMMODATION_HARD_DELETE,
-            PermissionEnum.GASTRONOMY_DELETE,
-            PermissionEnum.EXPERIENCE_DELETE
-        ],
-        pendingOwnPermission: 'V8a (HOS-1493)'
+        permissions: [PermissionEnum.LISTING_PURGE_ON_REQUEST],
+        pendingOwnPermission: null
     },
     ACC_24: {
         permissions: [PermissionEnum.USER_DELETE, PermissionEnum.USER_HARD_DELETE],
@@ -98,3 +94,18 @@ export const ADMINISTRATIVE_ACTION_PERMISSION_SET: ReadonlySet<PermissionEnum> =
         (action) => ADMINISTRATIVE_ACTION_PERMISSIONS[action].permissions
     )
 );
+
+/** The administrative actions that act on another owner's listing through the V5 chain (step 3). */
+export type ListingAdministrativeAction = Extract<AdministrativeAction, 'ACC_15' | 'ACC_23'>;
+
+/**
+ * The listing operations each listing administrative action admits in step 3:
+ * action 15 edits content and nothing else; action 23 purges at the owner's
+ * request and edits nothing (AC:V8a:8, AC:V8a:9). Any other operation is FORBIDDEN.
+ */
+export const ADMINISTRATIVE_ACTION_LISTING_OPERATIONS: Readonly<
+    Record<ListingAdministrativeAction, readonly ListingOperation[]>
+> = {
+    ACC_15: ['EDIT'],
+    ACC_23: ['DELETE']
+};

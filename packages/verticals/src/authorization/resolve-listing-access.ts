@@ -1,6 +1,10 @@
 import type { BillingForVerticals } from '@repo/billing-verticals-contract';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { resolveAdministrativeActionStep } from './administrative-action-step';
+import {
+    ADMINISTRATIVE_ACTION_LISTING_OPERATIONS,
+    type ListingAdministrativeAction
+} from './administrative-actions';
 import { type EffectiveSetPort, resolveEntitlementStep } from './entitlement-step';
 import { resolveLimitStep } from './limit-step';
 import {
@@ -41,6 +45,12 @@ export type ListingAccessResult =
  * The vertical precondition runs first, so a mismatched declared vertical
  * returns NOT_FOUND even for a guest.
  *
+ * `adminAction` — step 3: the administrative action the route runs (15 or 23),
+ * whether the actor holds its permission, and whether the actor is a system
+ * actor. Each action admits only its own operations
+ * (`ADMINISTRATIVE_ACTION_LISTING_OPERATIONS`); once permitted, the subject is
+ * the listing owner and steps 4 to 7 run on them.
+ *
  * `requiredKeys` — additional catalog capability keys that the route demands
  * beyond the operation key. Evaluated in step 6 on the subject after the
  * operation key and before the limit step (step 7). All keys are mandatory
@@ -52,7 +62,11 @@ export async function resolveListingAccess(args: {
     readonly declaredVertical?: string | null;
     readonly facts: ListingAccessFacts | null;
     readonly operation: ListingOperation;
-    readonly adminAction?: { readonly permitted: boolean; readonly isSystemActor: boolean };
+    readonly adminAction?: {
+        readonly action: ListingAdministrativeAction;
+        readonly permitted: boolean;
+        readonly isSystemActor: boolean;
+    };
     readonly step6Key?: string;
     readonly requiredKeys?: readonly string[];
     readonly limit?: { readonly key: string; readonly requested: number };
@@ -73,14 +87,19 @@ export async function resolveListingAccess(args: {
         evaluatedSteps.push(3);
         if (args.actorId === null) return { allowed: false, reason: 'FORBIDDEN' };
         const action = resolveAdministrativeActionStep({
-            action: 'ACC_15',
+            action: args.adminAction.action,
             actorId: args.actorId,
             subjectId: args.facts?.ownerId ?? null,
             permitted: args.adminAction.permitted,
             isSystemActor: args.adminAction.isSystemActor
         });
         if (!action.allowed) return action;
-        if (args.operation !== 'EDIT') return { allowed: false, reason: 'FORBIDDEN' };
+        if (
+            !ADMINISTRATIVE_ACTION_LISTING_OPERATIONS[args.adminAction.action].includes(
+                args.operation
+            )
+        )
+            return { allowed: false, reason: 'FORBIDDEN' };
         subjectId = args.facts?.ownerId ?? null;
     }
     if (args.operation === 'CREATE') {

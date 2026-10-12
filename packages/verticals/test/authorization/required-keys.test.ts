@@ -230,7 +230,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
             vertical,
             facts: { ownerId: owner, publicationStatus: PublicationStatusEnum.PUBLISHED },
             operation: 'EDIT',
-            adminAction: { permitted: true, isSystemActor: false },
+            adminAction: { action: 'ACC_15', permitted: true, isSystemActor: false },
             requiredKeys: [],
             ...port
         });
@@ -253,7 +253,7 @@ describe('AC:V5:26 route capabilities on the subject', () => {
             vertical,
             facts: { ownerId: owner, publicationStatus: PublicationStatusEnum.DRAFT },
             operation: 'EDIT',
-            adminAction: { permitted: true, isSystemActor: false },
+            adminAction: { action: 'ACC_15', permitted: true, isSystemActor: false },
             requiredKeys: ['can_use_calendar'],
             ...port
         });
