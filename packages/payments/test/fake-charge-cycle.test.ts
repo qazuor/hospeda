@@ -89,6 +89,10 @@ describe('TEST:B1:14 RP7, RP8, RP11', () => {
             clock.set({ at: new Date(start + ((expiry - start) * quarter) / 4) });
             expect((await fake.readCharge(cycle)).snapshot.status).toBe('rejected');
         }
+        expect((await fake.listCharges({ authorizationId })).chargeIds).toEqual([
+            opening.chargeId,
+            cycle.chargeId
+        ]);
         clock.set({ at: new Date(expiry - 90_000) });
         expect((await fake.readAuthorization({ authorizationId })).snapshot.status).toBe('paused');
         expect((await fake.readCharge(cycle)).snapshot.status).toBe('rejected');
