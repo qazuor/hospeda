@@ -73,7 +73,7 @@ function exception(
 describe('TEST:V5:20 - G6 half (a): an authorization that decides only by role', () => {
     it('accepts the real tree and the cited exceptions', () => {
         expect(run().exitCode).toBe(0);
-    });
+    }, 30_000);
 
     it('rejects the specification mutation in a protected route', () => {
         const result = check({

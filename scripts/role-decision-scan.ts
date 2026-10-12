@@ -148,13 +148,13 @@ function symbolFor(node: ts.Node): string {
     return '<module>';
 }
 
-/** Find the four supported role-constant decision forms without reading files. */
-export function findRoleDecisions(args: {
-    readonly file: string;
-    readonly source: string;
-    readonly roleValues: ReadonlySet<string>;
-}): readonly RoleFinding[] {
-    const sf = parse(args.file, args.source);
+function findRoleDecisionsInSourceFile(
+    args: {
+        readonly file: string;
+        readonly roleValues: ReadonlySet<string>;
+    },
+    sf: ts.SourceFile
+): readonly RoleFinding[] {
     const findings: RoleFinding[] = [];
     const seen = new Set<string>();
     const report = (node: ts.Node, form: RoleForm): void => {
@@ -237,13 +237,14 @@ export function findRoleDecisions(args: {
     return findings;
 }
 
-/** Find any configured role read in one effective-set construction file. */
-export function findRoleReads(args: {
-    readonly file: string;
-    readonly source: string;
-    readonly roleValues: ReadonlySet<string>;
-}): readonly RoleRead[] {
-    const sf = parse(args.file, args.source);
+function findRoleReadsInSourceFile(
+    args: {
+        readonly file: string;
+        readonly roleValues: ReadonlySet<string>;
+    },
+    sf: ts.SourceFile,
+    decisions: readonly RoleFinding[]
+): readonly RoleRead[] {
     const reads: RoleRead[] = [];
     const visit = (node: ts.Node): void => {
         let what: string | undefined;
@@ -266,19 +267,30 @@ export function findRoleReads(args: {
         ts.forEachChild(node, visit);
     };
     visit(sf);
-    for (const finding of findRoleDecisions(args))
+    for (const finding of decisions)
         if (finding.form === 'compare' || finding.form === 'membership-arg')
             reads.push({ file: args.file, line: finding.line, reads: finding.expression });
     return reads;
 }
 
-/** Check whether source declares the exported asynchronous effective-set anchor. */
-export function declaresResolveEffectiveSet(args: {
+/** Combined pure result for one source file. */
+export type RoleFileAnalysis = {
+    readonly decisions: readonly RoleFinding[];
+    readonly reads: readonly RoleRead[];
+    readonly declaresResolveEffectiveSet: boolean;
+    readonly callsEffectiveSet: boolean;
+};
+
+/** Analyze role decisions, role reads, and effective-set scope anchors in one AST parse. */
+export function analyzeRoleFile(args: {
     readonly file: string;
     readonly source: string;
-}): boolean {
+    readonly roleValues: ReadonlySet<string>;
+}): RoleFileAnalysis {
     const sf = parse(args.file, args.source);
-    return sf.statements.some(
+    const decisions = findRoleDecisionsInSourceFile(args, sf);
+    const reads = findRoleReadsInSourceFile(args, sf, decisions);
+    const declaresResolveEffectiveSet = sf.statements.some(
         (statement) =>
             ts.isFunctionDeclaration(statement) &&
             statement.name?.text === 'resolveEffectiveSet' &&
@@ -287,15 +299,7 @@ export function declaresResolveEffectiveSet(args: {
             ) === true &&
             statement.modifiers.some((modifier) => modifier.kind === ts.SyntaxKind.AsyncKeyword)
     );
-}
-
-/** Find calls that make a file a consumer of the effective-set construction. */
-export function callsEffectiveSet(args: {
-    readonly file: string;
-    readonly source: string;
-}): boolean {
-    const sf = parse(args.file, args.source);
-    let found = false;
+    let callsEffectiveSet = false;
     const visit = (node: ts.Node): void => {
         if (
             ts.isCallExpression(node) &&
@@ -303,9 +307,45 @@ export function callsEffectiveSet(args: {
                 (ts.isPropertyAccessExpression(node.expression) &&
                     node.expression.name.text === 'effectiveSet'))
         )
-            found = true;
-        if (!found) ts.forEachChild(node, visit);
+            callsEffectiveSet = true;
+        if (!callsEffectiveSet) ts.forEachChild(node, visit);
     };
     visit(sf);
-    return found;
+    return { decisions, reads, declaresResolveEffectiveSet, callsEffectiveSet };
+}
+
+/** Find the four supported role-constant decision forms without reading files. */
+export function findRoleDecisions(args: {
+    readonly file: string;
+    readonly source: string;
+    readonly roleValues: ReadonlySet<string>;
+}): readonly RoleFinding[] {
+    return analyzeRoleFile(args).decisions;
+}
+
+/** Find any configured role read in one effective-set construction file. */
+export function findRoleReads(args: {
+    readonly file: string;
+    readonly source: string;
+    readonly roleValues: ReadonlySet<string>;
+}): readonly RoleRead[] {
+    return analyzeRoleFile(args).reads;
+}
+
+/** Check whether source declares the exported asynchronous effective-set anchor. */
+export function declaresResolveEffectiveSet(args: {
+    readonly file: string;
+    readonly source: string;
+    readonly roleValues: ReadonlySet<string>;
+}): boolean {
+    return analyzeRoleFile(args).declaresResolveEffectiveSet;
+}
+
+/** Find calls that make a file a consumer of the effective-set construction. */
+export function callsEffectiveSet(args: {
+    readonly file: string;
+    readonly source: string;
+    readonly roleValues: ReadonlySet<string>;
+}): boolean {
+    return analyzeRoleFile(args).callsEffectiveSet;
 }

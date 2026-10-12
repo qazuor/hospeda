@@ -10,10 +10,8 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-    callsEffectiveSet,
-    declaresResolveEffectiveSet,
-    findRoleDecisions,
-    findRoleReads,
+    analyzeRoleFile,
+    type RoleFileAnalysis,
     type RoleForm,
     readRoleValues
 } from './role-decision-scan';
@@ -67,8 +65,8 @@ function sourceFiles(root: string): readonly string[] {
 }
 
 function effectiveScope(
-    root: string,
-    files: readonly string[]
+    files: readonly string[],
+    analysisFor: (file: string) => RoleFileAnalysis
 ): { readonly files: readonly string[]; readonly error?: string } {
     for (const prefix of PREFICES)
         if (!files.some((file) => file.startsWith(prefix)))
@@ -76,8 +74,7 @@ function effectiveScope(
     for (const file of FIXED)
         if (!files.includes(file))
             return { files: [], error: `G6: fixed effective-set file is not scanned: ${file}` };
-    const sources = new Map(files.map((file) => [file, readFileSync(join(root, file), 'utf8')]));
-    if (![...sources].some(([file, source]) => declaresResolveEffectiveSet({ file, source })))
+    if (!files.some((file) => analysisFor(file).declaresResolveEffectiveSet))
         return {
             files: [],
             error: 'G6: no scanned file declares export async function resolveEffectiveSet'
@@ -87,9 +84,7 @@ function effectiveScope(
             (file) => PREFICES.some((prefix) => file.startsWith(prefix)) || FIXED.includes(file)
         )
     );
-    for (const [file, source] of sources) {
-        if (callsEffectiveSet({ file, source })) selected.add(file);
-    }
+    for (const file of files) if (analysisFor(file).callsEffectiveSet) selected.add(file);
     return { files: [...selected] };
 }
 
@@ -180,9 +175,23 @@ export function run(
     }
     const parsed = parseExceptions(root, new Set(files), args.exceptionsPath ?? EXCEPTIONS_PATH);
     if (parsed.error) return { exitCode: 1, output: `FAIL GUARD:G6: ${parsed.error}` };
-    const decisions = files.flatMap((file) =>
-        findRoleDecisions({ file, source: readFileSync(join(root, file), 'utf8'), roleValues })
-    );
+    const sourceCache = new Map<string, string>();
+    const sourceFor = (file: string): string => {
+        const cached = sourceCache.get(file);
+        if (cached !== undefined) return cached;
+        const source = readFileSync(join(root, file), 'utf8');
+        sourceCache.set(file, source);
+        return source;
+    };
+    const analyses = new Map<string, RoleFileAnalysis>();
+    const analysisFor = (file: string): RoleFileAnalysis => {
+        const cached = analyses.get(file);
+        if (cached) return cached;
+        const analysis = analyzeRoleFile({ file, source: sourceFor(file), roleValues });
+        analyses.set(file, analysis);
+        return analysis;
+    };
+    const decisions = files.flatMap((file) => analysisFor(file).decisions);
     const counts = new Map<string, number>();
     const errors: string[] = [];
     for (const finding of decisions) {
@@ -204,13 +213,12 @@ export function run(
                 `FAIL GUARD:G6 (a) exception stale: ${exception.file} [${exception.symbol}] ${exception.form}: declared ${exception.count}, found ${found}`
             );
     }
-    const scope = effectiveScope(root, files);
+    const scope = effectiveScope(files, analysisFor);
     const roleReadErrors: string[] = [];
     if (scope.error) roleReadErrors.push(`FAIL GUARD:G6 (b): ${scope.error}`);
     else
         for (const file of scope.files) {
-            const source = readFileSync(join(root, file), 'utf8');
-            for (const finding of findRoleReads({ file, source, roleValues }))
+            for (const finding of analysisFor(file).reads)
                 roleReadErrors.push(
                     `FAIL GUARD:G6 (b) a role entered the effective set: ${finding.file}:${finding.line} reads ${finding.reads}`
                 );
