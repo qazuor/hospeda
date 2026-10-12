@@ -1,7 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { PaymentProvider } from '@repo/payments';
 import { setupRoutes } from './routes';
-import { injectClock, systemClock } from './utils/clock';
+import { createFileClock, injectClock, systemClock } from './utils/clock';
 import { configureOpenAPI } from './utils/configure-open-api';
 import { createApp } from './utils/create-app';
 import { registerEntityFetchers } from './utils/entity-fetchers';
@@ -23,11 +23,20 @@ const initApp = (
 ) => {
     // The one line that decides which clock both halves read: the system time
     // unless the caller (a test) injects another (contract §5 item 5, B1).
-    injectClock({ clock: options.clock ?? systemClock });
+    const fileClockPath = env.HOSPEDA_E2E_CLOCK_FILE;
+    if (options.clock === undefined && fileClockPath) {
+        const siteHost = new URL(env.HOSPEDA_SITE_URL).hostname;
+        if (siteHost !== 'localhost' && siteHost !== '127.0.0.1') {
+            throw new Error(
+                'HOSPEDA_E2E_CLOCK_FILE is only allowed when HOSPEDA_SITE_URL uses localhost or 127.0.0.1'
+            );
+        }
+    }
+    const clock =
+        options.clock ?? (fileClockPath ? createFileClock({ path: fileClockPath }) : systemClock);
+    injectClock({ clock });
     injectPaymentProvider({
-        provider:
-            options.paymentProvider ??
-            defaultPaymentProvider({ clock: options.clock ?? systemClock })
+        provider: options.paymentProvider ?? defaultPaymentProvider({ clock })
     });
 
     // Wire entity fetchers BEFORE any route handlers can run so the

@@ -10,6 +10,7 @@ export interface ReconcilerOwnerSummary {
     readonly published: number;
     readonly unpublishedByBilling: number;
     readonly archived: number;
+    readonly archivedReturnable: number;
 }
 
 /** Presence keys whose cached effective set must match the live set. */

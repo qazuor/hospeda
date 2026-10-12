@@ -43,7 +43,11 @@ export async function runDailyCoverageReconciler(args: {
                     (coverage.covered &&
                         limit !== null &&
                         summary.published < limit &&
-                        summary.unpublishedByBilling > 0);
+                        summary.unpublishedByBilling > 0) ||
+                    (coverage.covered &&
+                        limit !== null &&
+                        summary.published < limit &&
+                        summary.archivedReturnable > 0);
                 if (!shouldRun) continue;
                 const result = await recalculateCoverage({
                     ...args.ports,

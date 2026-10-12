@@ -17,6 +17,7 @@ export interface CoverageRecalculationResult {
     readonly lowered: readonly string[];
     readonly loweredBySurplus: readonly string[];
     readonly restored: readonly string[];
+    readonly restoredFromArchived: readonly string[];
     readonly stamped: readonly string[];
     readonly warnings: readonly PostCommitWarning[];
 }
@@ -58,6 +59,7 @@ export async function recalculateCoverage(args: {
             const lowered: string[] = [];
             const loweredBySurplus: string[] = [];
             const restored: string[] = [];
+            const restoredFromArchived: string[] = [];
             const stamped: string[] = [];
             if (!coverage.covered) {
                 for (const listing of applicable) {
@@ -93,7 +95,7 @@ export async function recalculateCoverage(args: {
                         at
                     });
                 stamped.push(...others);
-                return { lowered, loweredBySurplus, restored, stamped };
+                return { lowered, loweredBySurplus, restored, restoredFromArchived, stamped };
             }
 
             const limit = args.liveLimit
@@ -102,6 +104,20 @@ export async function recalculateCoverage(args: {
                       userId: args.userId,
                       vertical: args.vertical
                   });
+            const archived = listings.filter(
+                (row) => row.publicationStatus === PublicationStatusEnum.ARCHIVED
+            );
+            const origins = await tx.readArchiveOrigins({
+                vertical: args.vertical,
+                listingIds: archived.map((row) => row.id)
+            });
+            const archivedCandidates = archived.filter((row) => {
+                const origin = origins.get(row.id);
+                return (
+                    origin === PublicationStatusEnum.PUBLISHED ||
+                    origin === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+                );
+            });
             const candidatesAtStart = applicable.filter(
                 (row) => row.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
             );
@@ -114,10 +130,15 @@ export async function recalculateCoverage(args: {
                 vertical: args.vertical,
                 listingIds: publicationRows.map((row) => row.id)
             });
+            const archivedInstants = await tx.readPublicationInstants({
+                vertical: args.vertical,
+                listingIds: archivedCandidates.map((row) => row.id)
+            });
+            const allInstants = new Map([...instants, ...archivedInstants]);
             const entry = (row: PublicationListing) => ({
                 id: row.id,
                 createdAt: row.createdAt,
-                publishedAt: instants.get(row.id) ?? null
+                publishedAt: allInstants.get(row.id) ?? null
             });
             if (limit !== null) {
                 const toLower = selectSurplusToLower({
@@ -161,13 +182,16 @@ export async function recalculateCoverage(args: {
                     ownerId: args.userId
                 });
                 let available = Math.max(0, limit - publishedNow);
-                const ordered = orderReturningCandidates({ entries: candidatesAtStart.map(entry) });
+                const returning = [...candidatesAtStart, ...archivedCandidates];
+                const ordered = orderReturningCandidates({ entries: returning.map(entry) });
                 for (const candidate of ordered) {
                     if (available === 0) break;
+                    const listing = returning.find((row) => row.id === candidate.id);
+                    if (!listing) continue;
                     const changed = await tx.setPublicationStatus({
                         vertical: args.vertical,
                         listingId: candidate.id,
-                        from: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+                        from: listing.publicationStatus,
                         to: PublicationStatusEnum.PUBLISHED,
                         inactiveSince: at
                     });
@@ -175,14 +199,16 @@ export async function recalculateCoverage(args: {
                     await tx.insertStatusChangedEvent({
                         vertical: args.vertical,
                         listingId: candidate.id,
-                        from: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+                        from: listing.publicationStatus,
                         to: PublicationStatusEnum.PUBLISHED,
-                        oldInactiveSince: at,
+                        oldInactiveSince: listing.inactiveSince,
                         inactiveSince: at,
                         actorType: 'job',
                         correlationId: args.correlationId
                     });
                     restored.push(candidate.id);
+                    if (listing.publicationStatus === PublicationStatusEnum.ARCHIVED)
+                        restoredFromArchived.push(candidate.id);
                     available -= 1;
                 }
                 if (restored.length > 0) {
@@ -201,7 +227,7 @@ export async function recalculateCoverage(args: {
                     });
                 }
             }
-            return { lowered, loweredBySurplus, restored, stamped };
+            return { lowered, loweredBySurplus, restored, restoredFromArchived, stamped };
         }
     });
     const warnings = await publicationAfterCommit({

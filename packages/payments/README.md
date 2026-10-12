@@ -19,9 +19,9 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   - `FakePaymentProvider`, in memory, all eight capabilities, and it **lies
     like the real one** (see "The fake lies, from a closed list" below). It is
     exported only from `@repo/payments/fake`, for tests.
-  - `MercadoPagoPaymentProvider`, the adapter skeleton: same interface, validates
-    each input, refuses with `NOT_IMPLEMENTED`. It does not call the provider and
-    no SDK is installed.
+  - `MercadoPagoPaymentProvider`: `authorize` and `readAuthorization` call the
+    provider over native `fetch`; the other capabilities still refuse with
+    `NOT_IMPLEMENTED`. No SDK is installed.
 - **Capability support, declared per provider** (`capabilitySupport`): for each
   capability, `full`, `partial` with every gap and whether our side emulates,
   degrades or blocks it, or `none`. Mercado Pago's three half-capabilities
@@ -88,6 +88,27 @@ add their surface to the interface.
 Every delay of the fake runs on the injected clock: advance it to see a late
 charge land, a late notice arrive (`FAKE_NOTICE_DELAY_MS`) or, with M11 off, an
 open link expire. `takeDeliveries()` hands over the notices that are due.
+
+## The fake as an HTTP server
+
+Tests that need a provider-shaped HTTP boundary can import
+`@repo/payments/fake-server`. `startFakeProviderServer({ provider, clock,
+port?, host?, clockFile? })` accepts an already constructed
+`FakePaymentProvider` and a structural clock (`now`, `advance`, `set`). The
+fake's constructor remains in the test, with any `honestAbout` choice written
+there as a literal with its reason. The returned server exposes its URL and
+port, current provider, `useProvider`, `now`, `advanceClock`, `setClock`,
+`requests`, `deliverDue` and `close`. When supplied, `clockFile` is written as
+`{ "now": "<ISO>" }` at startup and after each clock change.
+
+| Request | Fake operation | Response |
+| --- | --- | --- |
+| `POST /preapproval` | `authorize` then read by id | `201` resource with raw `init_point` |
+| `GET /preapproval/{id}` | `readAuthorization` | serialized resource, including `free_trial` when present |
+| `PUT /preapproval/{id}` with `{"status":"cancelled"}` | `cancel` then read by id | serialized resource |
+
+Every route requires a non-empty `Authorization: Bearer …` header. This
+subpath is test-only; it is not exported from the package root.
 
 ## The approval link is shown only sanitized
 

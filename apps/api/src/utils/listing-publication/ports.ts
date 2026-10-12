@@ -6,6 +6,7 @@ import {
     emailOutboxModel,
     getDb,
     listingPublicationModel,
+    listingRetentionModel,
     trials,
     users
 } from '@repo/db';
@@ -57,6 +58,12 @@ export function getListingPublicationPorts(options?: {
                     sql`SELECT pg_advisory_xact_lock(hashtextextended(${trialMachineLockKey(args).key}, 0))`
                 );
                 const publication: PublicationTransaction = {
+                    async readRetentionListing(input) {
+                        return listingRetentionModel.readRetentionListing({ ...input, tx });
+                    },
+                    async readArchiveOrigins(input) {
+                        return listingRetentionModel.readArchiveOrigins({ ...input, tx });
+                    },
                     async readListing(input) {
                         return listingPublicationModel.readListing({ ...input, tx });
                     },

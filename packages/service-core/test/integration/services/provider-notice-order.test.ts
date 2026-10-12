@@ -243,7 +243,8 @@ describe('provider notices, order and acknowledgements', () => {
             ack: 'OK',
             outcome: 'RESOURCE_KIND_NOT_HANDLED'
         });
-        expect(charge).toHaveBeenCalledTimes(1);
+        // B5.1: the charge fact is recorded before S16 re-reads it
+        expect(charge).toHaveBeenCalledTimes(2);
     });
 
     it('TEST:B3:18 returns ERROR and preserves the link version when the provider read fails', async () => {

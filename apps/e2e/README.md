@@ -133,6 +133,25 @@ Cleanup uses `SET LOCAL session_replication_role='replica'` to bypass the pre-ex
 | `pr` | 4 | 1 | PR CI — `e2e-pr.yml` |
 | `nightly` | 2 | 2 | Nightly CI — `e2e-nightly.yml` (rate-limited externals) |
 
+### Fake payment provider server (HOS-1511)
+
+`@repo/payments/fake-server` is a test-only HTTP shell around a `FakePaymentProvider`.
+The Playwright helper in `fixtures/fake-provider-server.ts` owns its lifecycle on
+`127.0.0.1:18090`; the API build points at it through
+`HOSPEDA_MERCADO_PAGO_API_BASE_URL` in `playwright.config.ts`. The server exposes
+the Mercado Pago-shaped authorization routes and records each received request
+with the fake clock's timestamp. Tests construct the provider themselves and can
+switch it with `useProvider`, so the same default lies and named `honestAbout`
+exceptions apply over HTTP.
+
+The helper's adjustable clock writes to
+`apps/e2e/test-results/fake-provider-clock.json`; the API reads that path through
+`HOSPEDA_E2E_CLOCK_FILE`. Moving the clock changes API time reads, including
+persisted authorization windows. The API jobs still run on their real schedule,
+and web/admin have no independent clock: their displayed dates come from API
+responses. Tests that exercise this fixed port must run serially and close the
+server in `afterAll`.
+
 ## Concrete fixture usage
 
 The patterns below were extracted from the 34 specs authored under SPEC-092. Copy these into new tests rather than reinventing.

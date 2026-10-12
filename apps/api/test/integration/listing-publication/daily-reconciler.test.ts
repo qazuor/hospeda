@@ -12,12 +12,19 @@ import {
 import { type Accommodation, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { archiveInactiveListing } from '../../../../../packages/verticals/src/publication/archive-inactive-listing';
 import { runDailyCoverageReconciler } from '../../../../../packages/verticals/src/publication/coverage-reconciler';
 import { injectClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
+import { getListingPublicationPorts } from '../../../src/utils/listing-publication/ports';
 import { getListingReconcilerPorts } from '../../../src/utils/listing-publication/reconciler-ports';
 import { testDb } from '../../e2e/setup/test-database';
-import { createTrial } from './publication-routes.helpers';
+import {
+    createOwner,
+    createTrial,
+    createVerticalDestination,
+    ensurePublicationCatalog
+} from './publication-routes.helpers';
 
 const state = vi.hoisted(() => ({
     uncoveredUserId: '',
@@ -49,6 +56,11 @@ vi.mock('../../../src/utils/listing-access/ports', () => ({
                               }
                           ]
                         : []
+            }),
+            retentionStopped: async () => ({
+                stopped: false,
+                pauseEndedAt: null,
+                coverageLostAt: null
             }),
             onCoverageChanged: () => () => {}
         },
@@ -113,6 +125,89 @@ afterAll(async () => testDb.teardown());
 
 /** TEST:V6:7 exercises the production DB composition for a lost coverage notice. */
 describe('TEST:V6:7 API daily coverage reconciler', () => {
+    it('TEST:V6:10 restores only a PB4 archive when a coverage notice was lost', async () => {
+        const db = getDb();
+        const owner = await createOwner();
+        const destinationId = await createVerticalDestination();
+        await ensurePublicationCatalog(VerticalEnum.ACCOMMODATION);
+        await createTrial({ userId: owner.id, status: 'TRIAL_ACTIVE' });
+        state.uncoveredUserId = owner.id;
+        const make = async (
+            status: typeof PublicationStatusEnum.PUBLISHED | typeof PublicationStatusEnum.DRAFT
+        ) => {
+            const listing = await new AccommodationModel().create(
+                {
+                    name: 'Archived reconciler',
+                    slug: `archived-reconciler-${randomUUID()}`,
+                    summary: 'Fixture',
+                    description: 'Fixture',
+                    ownerId: owner.id,
+                    destinationId: destinationId,
+                    type: 'CABIN',
+                    publicationStatus: status,
+                    lifecycleState:
+                        status === PublicationStatusEnum.PUBLISHED ? 'ACTIVE' : 'INACTIVE',
+                    visibility: status === PublicationStatusEnum.PUBLISHED ? 'PUBLIC' : 'PRIVATE'
+                } as Partial<Accommodation>,
+                db
+            );
+            await db
+                .update(accommodations)
+                .set({ inactiveSince: new Date(now.getTime() - 120 * 86_400_000) })
+                .where(eq(accommodations.id, listing.id));
+            const ports = getListingPublicationPorts();
+            const result = await archiveInactiveListing({
+                ...ports,
+                billing: {
+                    ...ports.billing,
+                    retentionStopped: async () => ({
+                        stopped: false,
+                        pauseEndedAt: null,
+                        coverageLostAt: null
+                    })
+                },
+                clock: { now: () => now },
+                vertical: VerticalEnum.ACCOMMODATION,
+                listingId: listing.id,
+                ownerId: owner.id,
+                correlationId: randomUUID()
+            });
+            expect(result.archived).toBe(true);
+            return listing.id;
+        };
+        const pb4 = await make(PublicationStatusEnum.PUBLISHED);
+        const pb5 = await make(PublicationStatusEnum.DRAFT);
+        state.uncoveredUserId = '';
+        state.staleCacheUserId = owner.id;
+        const [trial] = await db
+            .select({ floorTrialPlanVersionId: trials.floorTrialPlanVersionId })
+            .from(trials)
+            .where(eq(trials.userId, owner.id))
+            .limit(1);
+        if (!trial?.floorTrialPlanVersionId) throw new Error('active trial fixture missing');
+        state.liveTrialVersionId = trial.floorTrialPlanVersionId;
+        const ports = getListingReconcilerPorts();
+        await expect(
+            ports.reader.summarize({ userId: owner.id, vertical: VerticalEnum.ACCOMMODATION })
+        ).resolves.toMatchObject({ archived: 2, archivedReturnable: 1 });
+        expect(
+            await ports.liveLimit({ userId: owner.id, vertical: VerticalEnum.ACCOMMODATION })
+        ).toBeGreaterThan(0);
+        const result = await runDailyCoverageReconciler({ ports });
+        expect(result.complete).toBe(true);
+        expect(result.restored).toBe(1);
+        const [pb4Row] = await db
+            .select({ status: accommodations.publicationStatus })
+            .from(accommodations)
+            .where(eq(accommodations.id, pb4));
+        const [pb5Row] = await db
+            .select({ status: accommodations.publicationStatus })
+            .from(accommodations)
+            .where(eq(accommodations.id, pb5));
+        expect(pb4Row?.status).toBe(PublicationStatusEnum.PUBLISHED);
+        expect(pb5Row?.status).toBe(PublicationStatusEnum.ARCHIVED);
+    });
+
     it('lowers an uncovered published listing through the production ports', async () => {
         const db = getDb();
         const [owner] = await db

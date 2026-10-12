@@ -2,11 +2,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { runAbortInverse } from './abort-inverse.ts';
+import { runStep4bCli } from './cli-step-4b.ts';
 import { readProbeManifest } from './probe-manifest.ts';
 import type { InverseManifest } from './read-manifest.ts';
 import { readInverseManifest } from './read-manifest.ts';
 import { runCutover } from './run-cutover.ts';
-import type { KnownIdsReader, ProviderApi } from './types.ts';
+import type { DeliveryReader, KnownIdsReader, ProviderApi } from './types.ts';
 import { createManifestWriter, writeJsonRecord } from './write-manifest.ts';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -27,6 +28,7 @@ export interface CliDeps {
     readonly session: Readonly<Record<string, string | undefined>>;
     readonly createApi: (input: { readonly accessToken: string }) => ProviderApi;
     readonly createKnownIdsReader: (input: { readonly connectionString: string }) => KnownIdsReader;
+    readonly createDeliveryReader: (input: { readonly connectionString: string }) => DeliveryReader;
     readonly sleep: (ms: number) => Promise<void>;
     readonly out: (line: string) => void;
     readonly err: (line: string) => void;
@@ -106,11 +108,32 @@ export async function runCli(deps: CliDeps): Promise<number> {
             'dry-run': { type: 'boolean', default: false },
             'confirm-cancel-all': { type: 'boolean', default: false },
             'abort-inverse': { type: 'string' },
-            'confirm-abort-inverse': { type: 'boolean', default: false }
+            'confirm-abort-inverse': { type: 'boolean', default: false },
+            'step-4b': { type: 'boolean', default: false },
+            'confirm-step-4b': { type: 'boolean', default: false },
+            'payment-amount': { type: 'string' }
         }
     });
     const { session } = deps;
     const inversePath = values['abort-inverse'];
+    if (values['step-4b'] === true) {
+        if (
+            values['dry-run'] === true ||
+            values['confirm-cancel-all'] === true ||
+            inversePath !== undefined
+        ) {
+            err(
+                '--step-4b cannot be combined with --dry-run, --confirm-cancel-all or --abort-inverse'
+            );
+            return 2;
+        }
+        return runStep4bCli({
+            deps,
+            confirmed: values['confirm-step-4b'] === true,
+            amountText: values['payment-amount'],
+            manifestOut: values['manifest-out']
+        });
+    }
     if (inversePath !== undefined) {
         if (values['dry-run'] === true || values['confirm-cancel-all'] === true) {
             err('--abort-inverse cannot be combined with a cutover run flag');

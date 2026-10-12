@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import type { DrizzleClient } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
 import { listingPublicationModel } from '../../../db/src/models/listing/listing-publication.model';
+import { archiveInactiveListing } from '../../src/publication/archive-inactive-listing';
 import { recalculateCoverage } from '../../src/publication/coverage-recalculation';
 import { publishListing } from '../../src/publication/publish-listing';
+import { reactivateListing } from '../../src/publication/reactivate-listing';
 import { unpublishListing } from '../../src/publication/unpublish-listing';
 import {
     publicationPseudonym,
@@ -227,5 +230,142 @@ describe('TEST:V6:3 - publication lock with two real connections', () => {
             (await listingPublicationModel.readListing({ tx: db, vertical, listingId: listing.id }))
                 ?.publicationStatus
         ).toBe(PublicationStatusEnum.DRAFT);
+    });
+
+    it('TEST:V6:3 PB5 and PB1 serialize on the same due DRAFT and the second transition rereads ARCHIVED', async () => {
+        const { userId, destinationId } = await seedPublicationOwner({ db });
+        const listing = await seedPublicationListing({ db, vertical, userId, destinationId });
+        await db.execute(
+            sql`UPDATE accommodations SET inactive_since = '2026-01-01T00:00:00Z', deadlines_version = 1 WHERE id = ${listing.id}`
+        );
+        let release: () => void = () => {};
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let entered: () => void = () => {};
+        const locked = new Promise<void>((resolve) => {
+            entered = resolve;
+        });
+        const pb5 = createPublicationTestAdapter({
+            db,
+            covered: { value: false },
+            limit: { value: 1 },
+            onLocked: async () => {
+                entered();
+                await gate;
+            }
+        });
+        const pb1 = createPublicationTestAdapter({
+            db,
+            covered: { value: true },
+            limit: { value: 1 }
+        });
+        const archiving = archiveInactiveListing({
+            ...pb5,
+            afterCommit,
+            clock,
+            vertical,
+            listingId: listing.id,
+            ownerId: userId,
+            correlationId: randomUUID()
+        });
+        await locked;
+        const publishing = publish({ userId, listingId: listing.id, adapter: pb1 });
+        release();
+        const [archived, published] = await Promise.all([archiving, publishing]);
+        expect(archived).toMatchObject({ archived: true, transition: 'PB5' });
+        expect(published.published).toBe(false);
+        expect(
+            (await listingPublicationModel.readListing({ tx: db, vertical, listingId: listing.id }))
+                ?.publicationStatus
+        ).toBe(PublicationStatusEnum.ARCHIVED);
+        const events = await db.execute(
+            sql`SELECT count(*)::int AS count FROM domain_event WHERE entity_type = 'accommodation' AND entity_id = ${listing.id} AND changes @> '[{"field":"publicationStatus","new":"ARCHIVED"}]'::jsonb`
+        );
+        expect(events.rows[0]?.count).toBe(1);
+    });
+
+    it('TEST:V6:3 PB8 and PB7 serialize on one PB4 archive and emit one ARCHIVED exit', async () => {
+        const { userId, destinationId } = await seedPublicationOwner({ db });
+        const listing = await seedPublicationListing({
+            db,
+            vertical,
+            userId,
+            destinationId,
+            status: PublicationStatusEnum.PUBLISHED
+        });
+        await db.execute(
+            sql`UPDATE accommodations SET inactive_since = '2026-01-01T00:00:00Z', deadlines_version = 1 WHERE id = ${listing.id}`
+        );
+        const archivePorts = createPublicationTestAdapter({
+            db,
+            covered: { value: false },
+            limit: { value: 1 }
+        });
+        expect(
+            (
+                await archiveInactiveListing({
+                    ...archivePorts,
+                    afterCommit,
+                    clock,
+                    vertical,
+                    listingId: listing.id,
+                    ownerId: userId,
+                    correlationId: randomUUID()
+                })
+            ).archived
+        ).toBe(true);
+        let release: () => void = () => {};
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        let entered: () => void = () => {};
+        const locked = new Promise<void>((resolve) => {
+            entered = resolve;
+        });
+        const pb7 = createPublicationTestAdapter({
+            db,
+            covered: { value: true },
+            limit: { value: 1 },
+            onLocked: async () => {
+                entered();
+                await gate;
+            }
+        });
+        const pb8 = createPublicationTestAdapter({
+            db,
+            covered: { value: false },
+            limit: { value: 1 }
+        });
+        const returning = recalculateCoverage({
+            ...pb7,
+            afterCommit,
+            clock,
+            userId,
+            vertical,
+            correlationId: randomUUID()
+        });
+        await locked;
+        const reactivating = reactivateListing({
+            ...pb8,
+            afterCommit,
+            clock,
+            userId,
+            vertical,
+            listingId: listing.id,
+            correlationId: randomUUID()
+        });
+        release();
+        const [restored, owner] = await Promise.all([returning, reactivating]);
+        expect(restored.restoredFromArchived).toEqual([listing.id]);
+        expect(owner).toEqual({ reactivated: false, reason: 'INVALID_FROM' });
+        expect(
+            (await listingPublicationModel.readListing({ tx: db, vertical, listingId: listing.id }))
+                ?.publicationStatus
+        ).toBe(PublicationStatusEnum.PUBLISHED);
+        const exits = await db.execute(
+            sql`SELECT count(*)::int AS count FROM domain_event WHERE entity_type = 'accommodation' AND entity_id = ${listing.id} AND changes @> '[{"field":"publicationStatus","old":"ARCHIVED"}]'::jsonb`
+        );
+        expect(exits.rows[0]?.count).toBe(1);
     });
 });

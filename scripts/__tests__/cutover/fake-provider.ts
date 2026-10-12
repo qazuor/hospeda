@@ -1,5 +1,6 @@
 import type {
     CancelCallResult,
+    CreateCallResult,
     ListPage,
     ObjectKind,
     PaymentRead,
@@ -35,6 +36,10 @@ export interface FakeProviderOptions {
     readonly payments?: readonly FakePayment[];
     /** Status each refund reads back, by refund id (default `approved`). */
     readonly refundStatus?: Readonly<Record<string, string>>;
+    readonly probeIds?: readonly string[];
+    readonly paymentIds?: readonly string[];
+    readonly createdPaymentStatus?: string;
+    readonly refuseCreate?: { readonly probe?: boolean; readonly payment?: boolean };
 }
 
 /** A simulated provider and its call log. Never touches the network. */
@@ -43,6 +48,7 @@ export interface FakeProvider {
     readonly calls: string[];
     readonly state: Map<string, FakeObject>;
     readonly payments: Map<string, FakePayment>;
+    readonly lastCreateInputs: { probe?: unknown; payment?: unknown };
 }
 
 /**
@@ -55,16 +61,41 @@ export function createFakeProvider({
     hiddenFromWalk = [],
     totalOverride = {},
     payments: seededPayments = [],
-    refundStatus = {}
+    refundStatus = {},
+    probeIds = [],
+    paymentIds = [],
+    createdPaymentStatus = 'approved',
+    refuseCreate = {}
 }: FakeProviderOptions): FakeProvider {
     const payments = new Map<string, FakePayment>(seededPayments.map((p) => [p.id, p]));
     let refundSeq = 0;
     const state = new Map<string, FakeObject>(objects.map((o) => [o.id, o]));
     const calls: string[] = [];
+    const lastCreateInputs: { probe?: unknown; payment?: unknown } = {};
+    let probeSeq = 0;
+    let paymentSeq = 0;
     const stuck = new Set(stuckIds);
     const hidden = new Set(hiddenFromWalk);
 
     const api: ProviderApi = {
+        createProbe: async (input): Promise<CreateCallResult> => {
+            probeSeq += 1;
+            const id = probeIds[probeSeq - 1] ?? `probe-${probeSeq}`;
+            lastCreateInputs.probe = input;
+            calls.push(`CREATE probe ${id}`);
+            if (refuseCreate.probe) return { accepted: false, httpStatus: 400, id: null };
+            state.set(id, { kind: 'preapproval', id, status: 'pending' });
+            return { accepted: true, httpStatus: 201, id };
+        },
+        createPayment: async (input): Promise<CreateCallResult> => {
+            paymentSeq += 1;
+            const id = paymentIds[paymentSeq - 1] ?? `pay-${paymentSeq}`;
+            lastCreateInputs.payment = input;
+            calls.push(`CREATE payment ${id}`);
+            if (refuseCreate.payment) return { accepted: false, httpStatus: 400, id: null };
+            payments.set(id, { id, status: createdPaymentStatus });
+            return { accepted: true, httpStatus: 201, id };
+        },
         listPage: async ({ kind, offset, limit }): Promise<ListPage> => {
             calls.push(`LIST ${kind} ${offset}`);
             const visible = [...state.values()].filter((o) => o.kind === kind && !hidden.has(o.id));
@@ -117,7 +148,7 @@ export function createFakeProvider({
             return { id: refundId, status: refundStatus[refundId] ?? 'approved' };
         }
     };
-    return { api, calls, state, payments };
+    return { api, calls, state, payments, lastCreateInputs };
 }
 
 /** Standard account: every status, one unknown to the DB, one probe. */

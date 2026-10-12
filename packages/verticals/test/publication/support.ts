@@ -33,6 +33,10 @@ export function makeHarness(
         readonly userHasTrialRow?: boolean;
         readonly pseudonymOwnedByOther?: boolean;
         readonly insertConflict?: 'USER_VERTICAL' | 'EMAIL_PSEUDONYM';
+        readonly retention?: { readonly stopped: boolean; readonly pauseEndedAt: Date | null };
+        readonly archiveOrigins?: ReadonlyMap<string, PublicationStatusEnum>;
+        readonly inactiveSince?: Date;
+        readonly recordBillingCalls?: boolean;
     } = {}
 ) {
     let locked = false;
@@ -43,7 +47,7 @@ export function makeHarness(
             ownerId: userId,
             publicationStatus: status,
             createdAt: at,
-            inactiveSince: at
+            inactiveSince: args.inactiveSince ?? at
         }
     ];
     const statuses = new Map(records.map((row) => [row.id, row.publicationStatus]));
@@ -55,7 +59,7 @@ export function makeHarness(
         ownerId: userId,
         publicationStatus: status,
         createdAt: at,
-        inactiveSince: at
+        inactiveSince: args.inactiveSince ?? at
     };
     const calls: string[] = [];
     const restitutionNotices: Parameters<PublicationTransaction['enqueueRestitutionNotice']>[0][] =
@@ -123,6 +127,27 @@ export function makeHarness(
             calls.push('read');
             return { ...listing, publicationStatus: statuses.get(listingId) ?? status };
         },
+        async readRetentionListing() {
+            expect(locked).toBe(true);
+            calls.push('readRetention');
+            return {
+                ...listing,
+                publicationStatus: statuses.get(listingId) ?? status,
+                deletionAnnouncedAt: null,
+                deadlinesVersion: 1,
+                deadlines: { archiveAfterDays: 90, deletionAfterDays: 180, draftArchiveMonths: 3 }
+            };
+        },
+        async readArchiveOrigins({ listingIds }) {
+            calls.push('archiveOrigins');
+            return new Map(
+                listingIds.flatMap((id) =>
+                    args.archiveOrigins?.has(id)
+                        ? [[id, args.archiveOrigins.get(id)!] as const]
+                        : []
+                )
+            );
+        },
         async countPublished() {
             return publishedCount;
         },
@@ -150,7 +175,8 @@ export function makeHarness(
             if ((statuses.get(targetId) ?? status) !== from) return false;
             statuses.set(targetId, to);
             if (targetId === listingId) status = to;
-            publishedCount += to === PublicationStatusEnum.PUBLISHED ? 1 : -1;
+            if (from === PublicationStatusEnum.PUBLISHED) publishedCount -= 1;
+            if (to === PublicationStatusEnum.PUBLISHED) publishedCount += 1;
             calls.push('set');
             return true;
         },
@@ -180,14 +206,22 @@ export function makeHarness(
         }
     };
     const billing = {
-        coverage: vi.fn(async () =>
-            CoverageResponseSchema.parse({
+        coverage: vi.fn(async () => {
+            if (args.recordBillingCalls) calls.push('coverage');
+            return CoverageResponseSchema.parse({
                 covered: sources.some(
                     (source) => coverageSourceClassOf({ source }).sourceClass === 'TITLE'
                 ),
                 sources
-            })
-        )
+            });
+        }),
+        retentionStopped: vi.fn(async () => {
+            calls.push('retentionStopped');
+            return {
+                ...(args.retention ?? { stopped: false, pauseEndedAt: null }),
+                coverageLostAt: null
+            };
+        })
     };
     const afterCommit: PublicationAfterCommit = {
         emitCoverageChanged: vi.fn(async () => {

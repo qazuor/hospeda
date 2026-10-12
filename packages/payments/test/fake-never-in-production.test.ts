@@ -8,6 +8,7 @@ const SKIPPED_DIRS = new Set(['node_modules', 'dist', '.astro', '.turbo', '.outp
 const TEST_DIRS = new Set(['test', 'tests', '__tests__', '__mocks__', 'test-utils', 'testing']);
 const CODE_FILE = /\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs|astro)$/;
 const TEST_FILE = /\.(?:test|spec)\.[a-z]+$/;
+const FAKE_IMPORT_PATTERN = /['"]@repo\/payments\/(?:fake|fake-server)['"]/;
 
 function productionFiles(args: { readonly dir: string }): readonly string[] {
     return readdirSync(args.dir, { withFileTypes: true }).flatMap((entry) => {
@@ -23,6 +24,7 @@ function productionFiles(args: { readonly dir: string }): readonly string[] {
 
 describe('TEST:B3:44 fake subpath boundary', () => {
     it('is absent from production imports across apps and packages', () => {
+        expect(FAKE_IMPORT_PATTERN.test("'@repo/payments/fake-server'")).toBe(true);
         const files = ['apps', 'packages'].flatMap((group) =>
             readdirSync(join(REPO_ROOT, group)).flatMap((name) => {
                 const src = join(REPO_ROOT, group, name, 'src');
@@ -34,7 +36,7 @@ describe('TEST:B3:44 fake subpath boundary', () => {
             })
         );
         const offenders = files.filter((file) =>
-            /['"]@repo\/payments\/fake['"]/.test(readFileSync(file, 'utf8'))
+            FAKE_IMPORT_PATTERN.test(readFileSync(file, 'utf8'))
         );
         expect(files.length).toBeGreaterThan(1000);
         expect(offenders).toEqual([]);
@@ -43,11 +45,15 @@ describe('TEST:B3:44 fake subpath boundary', () => {
     it('exports the fake only from its own package subpath', async () => {
         const main = await import('../src/index');
         const fake = await import('../src/fake/index');
+        const fakeServer = await import('../src/fake-server/index');
         expect('FakePaymentProvider' in main).toBe(false);
+        expect('startFakeProviderServer' in main).toBe(false);
         expect(typeof fake.FakePaymentProvider).toBe('function');
+        expect(typeof fakeServer.startFakeProviderServer).toBe('function');
         const manifest = JSON.parse(
             readFileSync(resolve(import.meta.dirname, '../package.json'), 'utf8')
         ) as { readonly exports: Readonly<Record<string, unknown>> };
         expect(manifest.exports['./fake']).toBeDefined();
+        expect(manifest.exports['./fake-server']).toBeDefined();
     });
 });
