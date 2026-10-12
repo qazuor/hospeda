@@ -290,6 +290,7 @@ describe('TEST:B1:9 predicate (b): withoutBehaviour', () => {
         ['spread', 'withoutBehaviour: [...switches]', 'not an object literal'],
         ['missing key', "withoutBehaviour: [{ behaviour: 'RP7' }]", 'does not name its behaviour'],
         ['blank why', "withoutBehaviour: [{ behaviour: 'RP7', why: ' ' }]", 'without saying why'],
+        ['empty why', "withoutBehaviour: [{ behaviour: 'RP7', why: '' }]", 'without saying why'],
         ['rule', "withoutBehaviour: [{ behaviour: 'RP1', why: 'x' }]", 'not a measured behaviour'],
         [
             'unknown id',

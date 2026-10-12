@@ -106,9 +106,6 @@ describe('TEST:B1:9 turning a measured behaviour off by name', () => {
             build({ clock, withoutBehaviour: [{ behaviour: 'RP1', why: 'never switch a rule' }] })
         ).toThrow(/not a measured behaviour of the list/);
         expect(() =>
-            build({ clock, withoutBehaviour: [{ behaviour: 'RP12', why: 'not implemented yet' }] })
-        ).toThrow(/not switchable yet/);
-        expect(() =>
             build({
                 clock,
                 withoutBehaviour: [
@@ -121,7 +118,7 @@ describe('TEST:B1:9 turning a measured behaviour off by name', () => {
     });
 
     it('accepts each implemented measured behaviour with its reason', () => {
-        for (const behaviour of ['RP7', 'RP8', 'RP11'] as const)
+        for (const behaviour of ['RP7', 'RP8', 'RP11', 'RP12'] as const)
             expect(() =>
                 build({ clock, withoutBehaviour: [{ behaviour, why: 'exercise the honest path' }] })
             ).not.toThrow();
@@ -188,6 +185,9 @@ describe('TEST:B1:9 the simulations, apart from the lies', () => {
         const fake = new FakePaymentProvider({
             clock,
             honestAbout: [{ lie: 'M6', why: 'one delivery per change, so the order is readable' }],
+            withoutBehaviour: [
+                { behaviour: 'RP12', why: 'assert ordering of authorization notices only' }
+            ],
             simulate: [{ simulation: 'noticesOutOfOrder', why: 'the receiver must resist it' }]
         });
         const { authorizationId } = await fake.authorize(AUTHORIZE);
