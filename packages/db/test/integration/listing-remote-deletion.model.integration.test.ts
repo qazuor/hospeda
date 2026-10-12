@@ -158,21 +158,21 @@ describe('AC:V6:30 the marked remote deletions are read page by page', () => {
             const calendarRows = await tx
                 .insert(accommodationCalendarSync)
                 .values(
-                    (['GOOGLE_CALENDAR', 'AIRBNB'] as const).map((provider) => ({
+                    (['GOOGLE_CALENDAR', 'BOOKING', 'AIRBNB'] as const).map((provider) => ({
                         accommodationId,
                         provider,
                         accessTokenCiphertext: 'fixture-ciphertext',
                         accessTokenIv: 'fixture-iv',
                         accessTokenAuthTag: 'fixture-tag',
                         createdById: owner.id,
-                        remoteDeletionPendingAt: provider === 'GOOGLE_CALENDAR' ? markedAt : null
+                        remoteDeletionPendingAt: provider === 'AIRBNB' ? null : markedAt
                     }))
                 )
                 .returning({
                     id: accommodationCalendarSync.id,
                     provider: accommodationCalendarSync.provider
                 });
-            const markedCalendar = calendarRows.find((row) => row.provider === 'GOOGLE_CALENDAR');
+            const markedCalendar = calendarRows.filter((row) => row.provider !== 'AIRBNB');
             const unmarkedCalendar = calendarRows.find((row) => row.provider === 'AIRBNB');
 
             const mediaPages = await walkMarkedMedia(tx);
@@ -205,14 +205,11 @@ describe('AC:V6:30 the marked remote deletions are read page by page', () => {
                 }
             }
             const allCalendar = calendarPages.flat();
-            expect(allCalendar.filter((item) => item.connectionId === markedCalendar?.id)).toEqual([
-                {
-                    connectionId: markedCalendar?.id,
-                    accommodationId,
-                    provider: 'GOOGLE_CALENDAR',
-                    markedAt
-                }
-            ]);
+            for (const row of markedCalendar) {
+                expect(allCalendar.filter((item) => item.connectionId === row.id)).toEqual([
+                    { connectionId: row.id, accommodationId, provider: row.provider, markedAt }
+                ]);
+            }
             expect(allCalendar.some((item) => item.connectionId === unmarkedCalendar?.id)).toBe(
                 false
             );
