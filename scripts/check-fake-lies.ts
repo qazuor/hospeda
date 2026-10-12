@@ -3,6 +3,8 @@
  * @description GUARD:G15 (HOS-1352 program, built by B1 / HOS-1510, AC:B1:9,
  * TEST:B1:9, DEC-TEST-003): the fake payment provider's lies are a CLOSED list,
  * and a test that turns one off says which and why.
+ * Provider rules (`kind: rule`) never turn off; a measured behaviour turns off
+ * only by name and with a reason.
  *
  * ## Predicate (a): the fake lies only from the closed list, each row whole
  *
@@ -20,11 +22,11 @@
  * ## Predicate (b): a lie is turned off only by naming it and saying why
  *
  * In every code file under `apps/` and `packages/`, TESTS INCLUDED (they are
- * the subject), except the fake's own folder, every `honestAbout` must be
- * written in place as `honestAbout: [{ lie: '<id of the list>', why: '<text>' }, …]`:
- * an array literal of object literals, each with exactly those two keys, both
- * string literals, the id a row of the list and the reason not blank. A
- * variable, a spread, a missing key or a blank reason fails.
+ * the subject), except the fake's own folder, every `honestAbout` and
+ * `withoutBehaviour` must be written in place as literal arrays of literal
+ * objects with exactly their id and non-empty `why`. Provider rules
+ * (`kind: rule`) are never switched off; measured behaviours switch off only
+ * by name and with a reason.
  *
  * One file is not read by (b): `packages/payments/test/fake-switches.test.ts`,
  * the test of the RUNTIME twin of this predicate (the fake refuses the same
@@ -83,7 +85,7 @@ export const PREDICATE_MESSAGES: Readonly<Record<'a' | 'b', string>> = {
         'with its three data (name; matrix rows with date and account; the test proving our code ' +
         'resists it).',
     b:
-        'GUARD:G15 (b): a test turns a lie off only by naming it and saying why, written in place: ' +
+        'GUARD:G15 (b): a lie or measured behaviour turns off only by naming it and saying why, written in place: ' +
         "honestAbout: [{ lie: '<id of the list>', why: '<reason>' }] and withoutBehaviour: " +
         "[{ behaviour: '<measured behaviour id>', why: '<reason>' }]."
 };

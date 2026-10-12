@@ -15,6 +15,7 @@ export * from './provider-link.dbschema.ts';
 export * from './provider-notification.dbschema.ts';
 export * from './quota-window.dbschema.ts';
 export * from './receipt.dbschema.ts';
+export * from './receipt-counter.dbschema.ts';
 export * from './reconciliation-mark.dbschema.ts';
 export * from './reconciliation-mark-payment.dbschema.ts';
 export * from './reconciliation-mark-reasons.ts';

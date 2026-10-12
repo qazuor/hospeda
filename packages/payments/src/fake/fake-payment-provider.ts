@@ -56,9 +56,10 @@ import {
     parseProviderInput,
     RefundInputSchema
 } from '../provider/schemas';
+import { createFakeCardValidation } from './fake-card-validation';
 import { applyFakeChargeCycles, fakeCycleRetryInstants } from './fake-charge-cycle';
 import { FakeLedger } from './fake-ledger';
-import type { FakeLieId } from './fake-lists';
+import type { FakeBehaviourId, FakeLieId } from './fake-lists';
 import { decodeFakeNotice } from './fake-notice';
 import {
     FAKE_SWITCHABLE_BEHAVIOURS,
@@ -189,13 +190,46 @@ export class FakePaymentProvider implements PaymentProvider {
      * @returns The acknowledgement of the transition
      */
     async approve(input: AuthorizationRef): Promise<MutationAcknowledgement> {
-        return this.transition({
+        const result = await this.transition({
             input,
             capability: 'authorize',
             from: ['pending'],
             to: 'active',
             viaNetwork: false
         });
+        if (this.behaving({ behaviour: 'RP12' })) {
+            createFakeCardValidation({ clock: this.clock, ledger: this.ledger, passes: true });
+        }
+        return result;
+    }
+
+    /**
+     * Test handle for the customer changing their card on the provider page.
+     * Measured by EX-36 (sandbox) and PA-3 (production); the retry after a
+     * recycled charge (GR-1) is not simulated here.
+     */
+    async changeCard(input: {
+        readonly authorizationId: string;
+        readonly passes: boolean;
+    }): Promise<{ readonly chargeId: string } | null> {
+        this.catchUp();
+        const authorization = this.ledger.authorizationOrThrow({
+            id: input.authorizationId,
+            capability: 'authorize'
+        });
+        if (authorization.snapshot.status === 'cancelled') {
+            throw rejected({
+                capability: 'authorize',
+                reason: 'a cancelled authorization accepts no card change'
+            });
+        }
+        if (!this.behaving({ behaviour: 'RP12' })) return null;
+        const validation = createFakeCardValidation({
+            clock: this.clock,
+            ledger: this.ledger,
+            passes: input.passes
+        });
+        return { chargeId: validation.chargeId };
     }
 
     /** Test handle: records a rejected charge without requiring a live authorization. */
@@ -219,6 +253,7 @@ export class FakePaymentProvider implements PaymentProvider {
                         (c) => c.snapshot.authorizationId === input.authorizationId
                     )
                 }),
+                purpose: 'charge',
                 authorizationId: input.authorizationId,
                 reference: authorization.snapshot.reference,
                 status: 'rejected',
@@ -308,6 +343,7 @@ export class FakePaymentProvider implements PaymentProvider {
                                 (c) => c.snapshot.authorizationId === value.authorizationId
                             )
                         }),
+                        purpose: 'charge',
                         authorizationId: value.authorizationId,
                         reference: value.reference,
                         status: late ? 'pending' : 'approved',
@@ -569,7 +605,7 @@ export class FakePaymentProvider implements PaymentProvider {
         return !this.honest.has(args.lie);
     }
 
-    private behaving(args: { readonly behaviour: 'RP7' | 'RP8' | 'RP11' }): boolean {
+    private behaving(args: { readonly behaviour: FakeBehaviourId }): boolean {
         return !this.without.has(args.behaviour);
     }
 

@@ -59,6 +59,7 @@ type Outcome =
     | 'S4'
     | 'PAYMENT_CREDITED'
     | 'PAYMENT_ALREADY_CREDITED'
+    | 'CARD_VALIDATION_IGNORED'
     | 'PAYMENT_RECORDED'
     | 'WAITING_FIRST_CHARGE_READING'
     | 'UNKNOWN_RESOURCE'
@@ -90,6 +91,8 @@ export async function processProviderNotice(
         const notice = await ports.provider.decodeNotice(value.delivery);
         if (notice.resourceKind === 'charge') {
             const result = await recordChargeFact({ chargeId: notice.resourceId }, ports);
+            if (result.outcome === 'CARD_VALIDATION_IGNORED')
+                return { ack: 'OK', outcome: 'CARD_VALIDATION_IGNORED' };
             if (result.outcome === 'NO_SUBSCRIPTION')
                 return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
             if (result.outcome === 'RECORDED_PENDING')
