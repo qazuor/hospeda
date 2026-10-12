@@ -33,7 +33,7 @@ import {
     users
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, type SupportEditPart } from '@repo/schemas';
 import { type Actor, type ServiceContext, ServiceError } from '../../types';
 import { resolveServiceActionReason } from '../../utils/action-reason';
 import {
@@ -53,8 +53,12 @@ const logger = createLogger('listing-support-edit');
 export const LISTING_CONTENT_EDITED_BY_SUPPORT_TEMPLATE =
     'verticals.listing-content-edited-by-support';
 
-/** The closed list of listing parts the support-edit email and notice name. */
-export type SupportEditPart = 'texts' | 'photos' | 'faq' | 'hours' | 'other';
+/**
+ * The closed list of listing parts the support-edit email and notice name.
+ * Derived from `SupportEditPartSchema` (`@repo/schemas`): one source for the
+ * register, the email and the row-26 read.
+ */
+export type { SupportEditPart };
 
 /** Stable display order of the parts. */
 const PART_ORDER: readonly SupportEditPart[] = ['texts', 'photos', 'faq', 'hours', 'other'];
@@ -211,6 +215,20 @@ const refuse = (rejectedFields: readonly string[], what: string): never => {
         `Action 15 ${what}; not allowed: ${rejectedFields.join(', ')}`
     );
 };
+
+/**
+ * Rejects a NON-content operation attempted inside an authorized action-15
+ * scope (ACC:15: "edita contenido y nada más"). Admin metadata (`adminInfo`)
+ * is not listing content, so a route that opened the scope around its content
+ * call can never reach it — not even if the scope were opened too wide. A
+ * no-op outside an action-15 scope.
+ *
+ * @param input.operation - The refused operation, named in the error.
+ * @throws ServiceError `FORBIDDEN` inside an ACC_15 scope.
+ */
+export function assertOutsideAction15Scope(input: { readonly operation: string }): void {
+    if (isAction15Scope()) refuse([input.operation], 'edits content only');
+}
 
 /**
  * Rejects an action-15 update that writes anything but content, or content

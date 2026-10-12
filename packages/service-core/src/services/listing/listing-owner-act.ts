@@ -210,7 +210,12 @@ export async function recordListingOwnerAct(
 export interface RecordListingSubEntityEditInput {
     readonly entityType: ListingOwnerActEntityType;
     /** The listing the act is about. */
-    readonly listing: { readonly id: string; readonly ownerId?: string | null };
+    readonly listing: {
+        readonly id: string;
+        readonly ownerId?: string | null;
+        /** Display name, carried to the support-edit email (ACC:15). */
+        readonly name?: string | null;
+    };
     readonly actor: Actor;
     /** The sub-entity field the act touched: the NAME only, never content. */
     readonly field: ListingSubEntityField;

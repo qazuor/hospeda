@@ -27,7 +27,10 @@ vi.mock('@repo/db', async (importOriginal) => {
     };
 });
 
+import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
+import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import {
+    assertOutsideAction15Scope,
     assertSupportCreateIsDraft,
     assertSupportEditContentOnly,
     buildSupportEditParts,
@@ -362,5 +365,60 @@ describe('recordListingSupportEdit', () => {
         expect(result).toEqual({ recorded: true });
         expect(domainEventModelDouble.writes).toHaveLength(1);
         expect(outbox.calls).toEqual([]);
+    });
+});
+
+/** A model double answering `findById` with a listing of OWNER_ID and accepting any update. */
+const ownedListingModel = () => ({
+    entityName: 'listing',
+    findById: vi.fn(async () => ({ id: LISTING_ID, ownerId: OWNER_ID, ownerSuspended: false })),
+    update: vi.fn(async () => ({ id: LISTING_ID }))
+});
+
+const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn(), log: vi.fn() };
+
+/** An admin with panel access and action 15's permission, nothing else. */
+const panelAdmin15 = actor(ADMIN_ID, [
+    PermissionEnum.ACCESS_PANEL_ADMIN,
+    PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT
+]);
+
+describe('ACC:15 scope never opens a non-content operation (coordinator, corrida 4)', () => {
+    it('assertOutsideAction15Scope refuses inside an ACC_15 scope and is a no-op outside', async () => {
+        // Arrange + Act + Assert
+        expect(() => assertOutsideAction15Scope({ operation: 'adminInfo' })).not.toThrow();
+        await expect(
+            inScope(OWNER_ID, async () => assertOutsideAction15Scope({ operation: 'adminInfo' }))
+        ).rejects.toMatchObject({ code: 'FORBIDDEN' });
+    });
+
+    it.each([
+        [
+            'accommodation',
+            (model: ReturnType<typeof ownedListingModel>) =>
+                new AccommodationService({ logger } as never, model as never)
+        ],
+        [
+            'gastronomy',
+            (model: ReturnType<typeof ownedListingModel>) =>
+                Object.assign(new GastronomyService({ logger } as never), { model })
+        ]
+    ])('%s: setAdminInfo (admin metadata) is refused inside the owner ACC_15 scope', async (_v, build) => {
+        // Arrange
+        const model = ownedListingModel();
+        const service = build(model);
+
+        // Act
+        const result = await inScope(OWNER_ID, () =>
+            service.setAdminInfo({
+                actor: panelAdmin15,
+                id: LISTING_ID,
+                adminInfo: { favorite: true }
+            })
+        );
+
+        // Assert
+        expect(result.error?.code).toBe('FORBIDDEN');
+        expect(model.update).not.toHaveBeenCalled();
     });
 });
