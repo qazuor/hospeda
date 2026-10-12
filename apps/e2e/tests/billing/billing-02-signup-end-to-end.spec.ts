@@ -171,12 +171,13 @@ test.describe('TEST:B3:35 AC:B3:33 AC:B3:9 the signup end to end with two abando
         const subscriptionId = await pending.getAttribute('data-subscription-id');
         expect(subscriptionId).toBeTruthy();
         const resumeLink = page.getByTestId('signup-checkout-resume-link');
+        await expect(resumeLink).toBeVisible();
         const checkoutUrl = await resumeLink.getAttribute('href');
         expect(checkoutUrl).toBeTruthy();
         expect(checkoutUrl).not.toContain('activation');
-        const windowDateTime = await page
-            .getByTestId('signup-checkout-window-ends')
-            .getAttribute('dateTime');
+        const windowEnds = page.getByTestId('signup-checkout-window-ends');
+        await expect(windowEnds).toBeVisible();
+        const windowDateTime = await windowEnds.getAttribute('dateTime');
         expect(windowDateTime).toBeTruthy();
         expect(
             fakeServer.requests().length,
