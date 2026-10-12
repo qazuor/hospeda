@@ -1,14 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockSweep, mockClock, mockProvider } = vi.hoisted(() => ({
-    mockSweep: vi.fn(),
-    mockClock: { now: vi.fn(() => new Date('2026-10-11T12:00:00.000Z')) },
-    mockProvider: { readAuthorization: vi.fn() }
-}));
+const { mockSweep, mockClock, mockProvider, mockPlanPolicy, mockGraceExpiryCheck } = vi.hoisted(
+    () => ({
+        mockSweep: vi.fn(),
+        mockClock: { now: vi.fn(() => new Date('2026-10-11T12:00:00.000Z')) },
+        mockProvider: { readAuthorization: vi.fn() },
+        mockPlanPolicy: vi.fn(),
+        mockGraceExpiryCheck: vi.fn((_ports: unknown) => async () => undefined)
+    })
+);
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
-    runReconciliationSweep: mockSweep
+    runReconciliationSweep: mockSweep,
+    createGraceExpiryCheck: mockGraceExpiryCheck
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 vi.mock('../../src/utils/payment-provider.js', () => ({ getPaymentProvider: () => mockProvider }));
@@ -18,9 +23,10 @@ vi.mock('@repo/db', async () => {
 });
 vi.mock('@repo/verticals', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/verticals')>()),
-    createPlanCatalogInverse: () => ({ planPolicy: vi.fn() })
+    createPlanCatalogInverse: () => ({ planPolicy: mockPlanPolicy })
 }));
 
+import { creditedPaymentsFromLedger } from '@repo/service-core';
 import { billingReconciliationSweepJob } from '../../src/cron/jobs/billing-reconciliation-sweep.job';
 
 function context(dryRun = false): CronJobContext {
@@ -71,6 +77,19 @@ describe('billing reconciliation sweep cron', () => {
                 zeroCallChecks: {},
                 livenessPing: expect.any(Object)
             })
+        );
+        // AC:B7:8: the grace expiry check settles a charged period with the real ledger and plan policy.
+        expect(mockGraceExpiryCheck).toHaveBeenCalledWith(
+            expect.objectContaining({
+                provider: mockProvider,
+                clock: mockClock,
+                beforeCancelNotice: expect.objectContaining({ beforeCancel: expect.any(Function) }),
+                payments: creditedPaymentsFromLedger,
+                planPolicy: mockPlanPolicy
+            })
+        );
+        expect(mockGraceExpiryCheck.mock.calls[0]?.[0]).not.toHaveProperty(
+            'unresolvedPeriodCharges'
         );
         expect(result).toMatchObject({ processed: 8, errors: 2, success: false });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['failed-id']);

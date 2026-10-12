@@ -37,6 +37,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
         try {
             const provider = getPaymentProvider();
             const clock = getClock().clock;
+            const { planPolicy } = createPlanCatalogInverse({ reader: planCatalogModel });
             const summary = await runReconciliationSweep(
                 { correlationId: ctx.correlationId },
                 {
@@ -47,12 +48,18 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             provider,
                             clock,
                             payments: creditedPaymentsFromLedger,
-                            planPolicy: createPlanCatalogInverse({ reader: planCatalogModel })
-                                .planPolicy
+                            planPolicy
                         }),
-                        // AC:B7:7: S6 when the grace clock ran out; coverage, cancellation-seen
-                        // and S19 ports stay on their defaults until B4.2 and B7.4b wire them.
-                        createGraceExpiryCheck({ provider, clock, beforeCancelNotice })
+                        // AC:B7:7/AC:B7:8: S6 when the grace clock ran out, or P1 + S5 when the
+                        // period charged; coverage, cancellation-seen, S19 and the DEC-OBS-001
+                        // channel stay on their defaults until B4.2, B7.4b and B11/B13a wire them.
+                        createGraceExpiryCheck({
+                            provider,
+                            clock,
+                            beforeCancelNotice,
+                            payments: creditedPaymentsFromLedger,
+                            planPolicy
+                        })
                     ],
                     zeroCallChecks: {},
                     livenessPing: createSentryCronMonitorPing()
