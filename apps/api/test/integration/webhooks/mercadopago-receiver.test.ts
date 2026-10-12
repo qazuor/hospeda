@@ -66,17 +66,21 @@ async function createPendingSignup() {
         method: 'POST',
         headers: {
             'content-type': 'application/json',
+            'user-agent': 'vitest',
             'x-mock-actor-id': user.id,
             'x-mock-actor-role': 'USER',
             'x-mock-actor-permissions': '[]'
         },
         body: JSON.stringify({ billingOptionId: option.id })
     });
-    const body = (await response.json()) as { authorizationId?: string; subscriptionId?: string };
+    const responseText = await response.text();
     if (response.status !== 201 && response.status !== 200)
-        throw new Error(`Signup failed: ${response.status}`);
-    const authorizationId = body.authorizationId;
-    const subscriptionId = body.subscriptionId;
+        throw new Error(`Signup failed: ${response.status} ${responseText}`);
+    const responseBody = JSON.parse(responseText) as {
+        data?: { authorizationId?: string; subscriptionId?: string };
+    };
+    const authorizationId = responseBody.data?.authorizationId;
+    const subscriptionId = responseBody.data?.subscriptionId;
     if (!authorizationId || !subscriptionId) throw new Error('Signup response lacked identifiers');
     return { user, authorizationId, subscriptionId };
 }
@@ -93,6 +97,7 @@ function signedHeaders(input: {
     const signature = createHmac('sha256', webhookSecret).update(manifest).digest('hex');
     return {
         'content-type': 'application/json',
+        'user-agent': 'vitest',
         'x-request-id': requestId,
         'x-signature': `ts=${timestamp},v1=${signature}`
     };
@@ -101,7 +106,7 @@ function signedHeaders(input: {
 function postDelivery(delivery: { query: string; headers: Record<string, string>; body: string }) {
     return app.request(`/api/v1/webhooks/mercadopago?${delivery.query}`, {
         method: 'POST',
-        headers: delivery.headers,
+        headers: { ...delivery.headers, 'user-agent': delivery.headers['user-agent'] ?? 'vitest' },
         body: delivery.body
     });
 }
@@ -157,7 +162,10 @@ describe('Mercado Pago receiver integration', () => {
         for (const delivery of deliveries) {
             const response = await postDelivery(delivery);
             expect(response.status).toBe(200);
-            expect(await response.json()).toEqual({ received: true });
+            expect(await response.json()).toMatchObject({
+                success: true,
+                data: { received: true }
+            });
         }
         const [subscription] = await getDb()
             .select()
@@ -195,7 +203,7 @@ describe('Mercado Pago receiver integration', () => {
         const url = `/api/v1/webhooks/mercadopago?topic=payment&id=${paymentId}`;
         const response = await app.request(url, {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
             body: JSON.stringify({ resource: paymentId, topic: 'payment' })
         });
         const [subscription] = await getDb()
@@ -210,8 +218,8 @@ describe('Mercado Pago receiver integration', () => {
             .select()
             .from(payments)
             .where(eq(payments.providerFactId, paymentId));
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ received: true });
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(await response.json()).toMatchObject({ success: true, data: { received: true } });
         expect(row?.channel).toBe('IPN');
         expect(subscription?.status).toBe('PENDING_AUTHORIZATION');
         expect(processedPayment).toHaveLength(0);
@@ -261,8 +269,8 @@ describe('Mercado Pago receiver integration', () => {
             .select()
             .from(providerNotifications)
             .where(eq(providerNotifications.url, url));
-        expect(response.status).toBe(200);
-        expect(await response.json()).toEqual({ received: true });
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect(await response.json()).toMatchObject({ success: true, data: { received: true } });
         expect(row?.channel).toBe('WEBHOOKS');
     });
 
@@ -290,6 +298,7 @@ describe('Mercado Pago receiver integration', () => {
         validateApiEnv();
         const response = await app.request(`/api/v1/webhooks/mercadopago?${query}`, {
             method: 'POST',
+            headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
             body: '{}'
         });
         const [row] = await getDb()
@@ -298,7 +307,7 @@ describe('Mercado Pago receiver integration', () => {
             .where(eq(providerNotifications.url, url));
         process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET = webhookSecret;
         validateApiEnv();
-        expect(response.status).toBe(500);
+        expect(response.status, await response.clone().text()).toBe(500);
         expect(await response.json()).toMatchObject({ received: false });
         expect(row).toBeUndefined();
     });
@@ -318,7 +327,7 @@ describe('Mercado Pago receiver integration', () => {
             .select()
             .from(providerNotifications)
             .where(eq(providerNotifications.url, url));
-        expect(response.status).toBe(500);
+        expect(response.status, await response.clone().text()).toBe(500);
         expect(await response.json()).toEqual({ received: false });
         expect(row?.channel).toBe('WEBHOOKS');
     });
