@@ -36,6 +36,7 @@ import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { protectedPublishAccommodationRoute } from './publish';
 import { protectedGetPublishEligibilityRoute } from './publishEligibility';
+import { protectedPurgeAccommodationRoute } from './purge';
 import { protectedGetAccommodationQrCodeRoute } from './qrCode';
 import { protectedGetAccommodationQrSheetRoute } from './qrSheet';
 import { protectedReactivateAccommodationRoute } from './reactivate';
@@ -63,6 +64,7 @@ ownershipRoutes.route('/', protectedSoftDeleteAccommodationRoute);
 // POST /:id/unpublish - Transition ACTIVE → INACTIVE
 ownershipRoutes.route('/', protectedUnpublishAccommodationRoute);
 ownershipRoutes.route('/', protectedReactivateAccommodationRoute);
+ownershipRoutes.route('/', protectedPurgeAccommodationRoute);
 // POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)
 ownershipRoutes.route('/', protectedPublishAccommodationRoute);
 

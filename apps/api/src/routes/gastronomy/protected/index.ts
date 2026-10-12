@@ -37,6 +37,7 @@ import { protectedGetGastronomyMenuQrRoute } from './menuQr';
 import { protectedGetGastronomyMenuQrScansRoute } from './menuQrScans';
 import { protectedPatchGastronomyRoute } from './patch';
 import { protectedPublishGastronomyRoute } from './publish';
+import { protectedPurgeGastronomyRoute } from './purge';
 import { protectedPutGastronomyDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutGastronomyEventsRoute } from './putEvents';
 import { protectedPutGastronomyMenuRoute } from './putMenu';
@@ -160,6 +161,7 @@ app.route('/', protectedPutGastronomyEventsRoute);
 app.route('/', protectedPublishGastronomyRoute);
 app.route('/', protectedUnpublishGastronomyRoute);
 app.route('/', protectedReactivateGastronomyRoute);
+app.route('/', protectedPurgeGastronomyRoute);
 app.route('/', protectedGetGastronomyByIdRoute);
 
 // PATCH /{id} — Owner operational update.
