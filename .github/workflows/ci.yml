@@ -373,6 +373,9 @@ jobs:
         run: pnpm check:vertical-axis-items
       - name: Check listing vertical is immutable (GUARD:G2 c)
         run: pnpm check:vertical-immutable
+      # GUARD:G2 halves (a) and (b) (HOS-1463, AC:V5:22). Its own step, like every guard here.
+      - name: Check every domain operation declares its vertical and reads it from the resource (GUARD:G2 a, b)
+        run: pnpm check:vertical-context
       # GUARD:G19 (HOS-1459, AC:V5:13). Its own step, like every guard here.
       # A system actor must be built by createSystemActor in @repo/service-core.
       - name: Check system actors are built only by the factory (GUARD:G19)
