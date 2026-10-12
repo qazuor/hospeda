@@ -77,10 +77,15 @@ async function walkMarkedMedia(tx: DrizzleClient) {
         readonly markedAt: Date;
     }[][] = [];
     let after: { readonly vertical: ListingVertical; readonly mediaId: string } | null = null;
+    const cursors = new Set<string>();
     do {
         if (pages.length >= MAX_PAGES) throw new Error('listMarkedMedia cursor never ended');
         const page = await listingPurgeModel.listMarkedMedia({ tx, after, limit: 2 });
         pages.push([...page.items]);
+        const nextKey = page.next === null ? null : `${page.next.vertical}|${page.next.mediaId}`;
+        if (nextKey !== null && cursors.has(nextKey))
+            throw new Error(`listMarkedMedia cursor did not advance past ${nextKey}`);
+        if (nextKey !== null) cursors.add(nextKey);
         after = page.next;
     } while (after !== null);
     return pages;
@@ -94,6 +99,7 @@ async function walkMarkedCalendar(tx: DrizzleClient) {
         readonly markedAt: Date;
     }[][] = [];
     let after: string | null = null;
+    const cursors = new Set<string>();
     do {
         if (pages.length >= MAX_PAGES)
             throw new Error('listMarkedCalendarConnections cursor never ended');
@@ -103,6 +109,11 @@ async function walkMarkedCalendar(tx: DrizzleClient) {
             limit: 1
         });
         pages.push([...page.items]);
+        if (page.next !== null && cursors.has(page.next))
+            throw new Error(
+                `listMarkedCalendarConnections cursor did not advance past ${page.next}`
+            );
+        if (page.next !== null) cursors.add(page.next);
         after = page.next;
     } while (after !== null);
     return pages;
