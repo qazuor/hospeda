@@ -138,8 +138,24 @@ const SENSITIVE_PATTERNS = [
     /\b(?:sk_|pk_|api_|key_)[a-zA-Z0-9]{20,}\b/g
 ];
 
+/** Canonical UUID spans stay intact; fixed-width groups keep this linear. */
+const UUID_SPAN =
+    /(?<![0-9A-Fa-f-])[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}(?![0-9A-Fa-f-])/g;
+
+function redactPatterns(text: string): string {
+    let redacted = text;
+    for (const pattern of SENSITIVE_PATTERNS) {
+        // Reset lastIndex for global patterns
+        pattern.lastIndex = 0;
+        redacted = redacted.replace(pattern, '[REDACTED]');
+    }
+    return redacted;
+}
+
 /**
- * Redacts sensitive data from a value
+ * Redacts sensitive data from a value. HOS-1670 measured that 1.5% of random
+ * UUIDs matched phone or card patterns; preserve canonical UUID spans while
+ * applying the unchanged sensitive patterns to surrounding text.
  * @param value - The value to redact
  * @param key - Optional key name for context
  * @returns The redacted value
@@ -152,13 +168,15 @@ export function redactSensitiveData(value: unknown, key?: string): unknown {
 
     // Handle strings - check for sensitive patterns
     if (typeof value === 'string') {
-        let redacted = value;
-        for (const pattern of SENSITIVE_PATTERNS) {
-            // Reset lastIndex for global patterns
-            pattern.lastIndex = 0;
-            redacted = redacted.replace(pattern, '[REDACTED]');
+        UUID_SPAN.lastIndex = 0;
+        let output = '';
+        let last = 0;
+        for (const match of value.matchAll(UUID_SPAN)) {
+            const index = match.index;
+            output += redactPatterns(value.slice(last, index)) + match[0];
+            last = index + match[0].length;
         }
-        return redacted;
+        return output + redactPatterns(value.slice(last));
     }
 
     // Handle Error instances explicitly — their fields (name, message, stack,

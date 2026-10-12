@@ -5,6 +5,7 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import type {
     DeclineFirstChargePorts,
     DeclineFirstChargeResult
@@ -12,6 +13,8 @@ import type {
 import { declineFirstCharge } from '../subscription/decline-first-charge.service';
 import type { EnterGraceResult } from '../subscription/enter-grace.service';
 import { enterGraceOnRejectedCharge } from '../subscription/enter-grace.service';
+import type { ExitGracePorts, ExitGraceResult } from '../subscription/exit-grace.service';
+import { exitGraceOnCreditedPayment } from '../subscription/exit-grace.service';
 import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
 import type { CoverageNotices, PromoChargePolicy, PromoExhaustion } from './payment-ports';
@@ -26,6 +29,10 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly promoCharges?: PromoChargePolicy;
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
+    /** Hangs the payment on reason 7 when S5's conditions 2 or 3 fail (AC:B7:6). */
+    readonly markPayments?: ReconciliationMarkPayments;
+    /** Who brought the charge, for S5's reason 7 (I-14): the notice (`provider`, default) or the sweep (`job`). */
+    readonly actorType?: ExitGracePorts['actorType'];
 }
 
 export type RecordChargeFactResult =
@@ -36,6 +43,8 @@ export type RecordChargeFactResult =
           readonly outcome: 'CREDITED';
           readonly paymentId: string;
           readonly credit: CreditPaymentResult;
+          /** S5's outcome, present only when the linked row was in GRACE_PERIOD (I-6). */
+          readonly exit?: ExitGraceResult;
       }
     | {
           readonly outcome: 'DECLINED';
@@ -124,6 +133,21 @@ export async function recordChargeFact(
                 coverageNotices: ports.coverageNotices
             }
         );
+        if (
+            (credit.outcome === 'CREDITED' || credit.outcome === 'ALREADY_CREDITED') &&
+            linked.subscription.status === 'GRACE_PERIOD'
+        ) {
+            const exit = await exitGraceOnCreditedPayment(
+                { paymentId },
+                {
+                    provider: ports.provider,
+                    clock: ports.clock,
+                    markPayments: ports.markPayments,
+                    actorType: ports.actorType
+                }
+            );
+            return { outcome: 'CREDITED', paymentId, credit, exit };
+        }
         return { outcome: 'CREDITED', paymentId, credit };
     }
     if (charge.status === 'pending') return { outcome: 'RECORDED_PENDING', paymentId };

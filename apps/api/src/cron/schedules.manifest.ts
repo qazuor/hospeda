@@ -59,6 +59,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Reconcile listing publication coverage and Partner presence cache once per day.'
     },
     {
+        name: 'listing-remote-deletion-retry',
+        displayName: 'Reintento de borrados remotos de fichas',
+        category: 'system',
+        schedule: '45 5 * * *',
+        description:
+            'Retry the pending remote deletions of purged listings (photos and calendar tokens) once per day.'
+    },
+    {
         name: 'billing-reconciliation-sweep',
         displayName: 'Barrido de conciliación de cobros',
         category: 'billing',
