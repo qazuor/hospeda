@@ -68,6 +68,14 @@
         "reason": "Declined first charge terminates the active subscription source."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/enter-grace.service.ts",
+        "symbol": "enterGraceOnRejectedCharge",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S4 keeps the same SUSCRIPCIÓN coverage source in GRACE_PERIOD as ACTIVE (03-contrato-de-cobertura.md:567-571; D-9)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
         "symbol": "processProviderNotice",
         "table": "subscriptions",

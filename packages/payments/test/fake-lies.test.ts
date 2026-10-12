@@ -5,7 +5,7 @@
  * brings the honest path back.
  *
  * SCOPE (B1.4a, HOS-1510): the lies whose surface the payment interface carries
- * today: M1, M3, M5, M6, M8, M9, M10, M11 and M13. M2, M4, M7 and M12 keep their
+ * today: M1, M3, M5, M6, M7, M8, M9, M10, M11 and M13. M2, M4 and M12 keep their
  * row in the closed list and arrive with the units that add their surface.
  *
  * Every assertion reads the state back by id or takes the deliveries, never a
@@ -57,6 +57,34 @@ let clock: AdjustableClock;
 
 beforeEach(() => {
     clock = createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') });
+});
+
+describe('TEST:B1:13 M7 (defenseOf TEST:B11:9): rejected attempts count as records', () => {
+    it('counts the rejected cycle by default and only approved records when honestAbout names M7', async () => {
+        expect(defenseOf({ lie: 'M7' })).toBe('TEST:B11:9');
+        const fake = new FakePaymentProvider({ clock });
+        const authorizationId = await activeOn({ fake });
+        await fake.charge({ authorizationId, amount: ARS(1_800_000), reference: 'paid' });
+        await fake.failChargeCycle({ authorizationId, declineReason: 'declined' });
+        expect((await fake.readAuthorization({ authorizationId })).snapshot.chargeRecordCount).toBe(
+            2
+        );
+        expect((await fake.listCharges({ authorizationId })).chargeIds).toHaveLength(2);
+
+        const honest = new FakePaymentProvider({
+            clock,
+            honestAbout: [
+                { lie: 'M7', why: 'count only approved records' },
+                { lie: 'M8', why: 'make the approved record immediate' }
+            ]
+        });
+        const id = await activeOn({ fake: honest });
+        await honest.charge({ authorizationId: id, amount: ARS(1_800_000), reference: 'paid' });
+        await honest.failChargeCycle({ authorizationId: id, declineReason: 'declined' });
+        expect(
+            (await honest.readAuthorization({ authorizationId: id })).snapshot.chargeRecordCount
+        ).toBe(1);
+    });
 });
 
 /** An authorization the customer already approved, on the given fake. */

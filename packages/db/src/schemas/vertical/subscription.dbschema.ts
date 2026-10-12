@@ -47,6 +47,7 @@ export const LIVE_SUBSCRIPTION_STATUSES = [
  * are exempt; non-tombstones require a user, vertical and payment method (DJ; Coord-23 D3).
  * FKs link the user, vertical, predecessor/successor, and matching option/version/vertical.
  * La ventana de autorización guarda su versión de plazos y su vencimiento juntos (PLAZO:10).
+ * El reloj del grace guarda el rechazo leído y su vencimiento juntos (S4); S5/S6 lo apagan al salir del grace (B7.2).
  */
 export const subscriptions = pgTable(
     'subscription',
@@ -80,6 +81,10 @@ export const subscriptions = pgTable(
         authorizationWindowEndsAt: timestamp('authorization_window_ends_at', {
             withTimezone: true
         }),
+        /** Instante en que S4 leyó el rechazo que abrió el grace. */
+        graceStartedAt: timestamp('grace_started_at', { withTimezone: true }),
+        /** Vencimiento calculado del grace; S5/S6 lo vacían al salir (B7.2). */
+        graceEndsAt: timestamp('grace_ends_at', { withTimezone: true }),
         /** sucede_a */
         succeedsId: uuid('succeeds_id').references((): AnyPgColumn => subscriptions.id),
         /** sucedida_por */
@@ -119,6 +124,10 @@ export const subscriptions = pgTable(
         authorizationWindowPair: check(
             'ck_subscription_authorization_window_pair',
             sql`(${t.authorizationWindowDeadlineVersion} IS NULL AND ${t.authorizationWindowEndsAt} IS NULL) OR (${t.authorizationWindowDeadlineVersion} IS NOT NULL AND ${t.authorizationWindowEndsAt} IS NOT NULL)`
+        ),
+        graceClockPair: check(
+            'ck_subscription_grace_clock_pair',
+            sql`(${t.graceStartedAt} IS NULL AND ${t.graceEndsAt} IS NULL) OR (${t.graceStartedAt} IS NOT NULL AND ${t.graceEndsAt} IS NOT NULL AND ${t.graceEndsAt} >= ${t.graceStartedAt})`
         ),
         optionVersionFk: foreignKey({
             name: 'fk_subscription_billing_option_version',

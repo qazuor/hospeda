@@ -147,7 +147,7 @@ import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
 import { NEARBY_POI_DEFAULT_LIMIT } from '../point-of-interest/point-of-interest.nearby-relevance';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
-import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
+import { grantRole } from '../user-role/user-role.service.js';
 import { cascadeCalendarConnectionsOnAccommodationDelete } from './accommodation.calendar-cascade';
 import {
     flattenAccommodationJoinRelations,
@@ -244,44 +244,6 @@ export class AccommodationService extends BaseCrudService<
     // `STAFF_BILLING_BYPASS_ROLES` (see spec §12), and `PRIVILEGED_ROLES`
     // disagreed with it by swapping `EDITOR` for `HOST`.
 
-    /**
-     * Roles whose accommodations bypass the billing eligibility check on
-     * publish. Regular `HOST` users are NOT in this set — they go through the
-     * trial / subscription flow like any other paying owner. Only true admin
-     * roles publishing on behalf of the platform are exempt from billing.
-     *
-     * **Deliberate exception to the "always `PermissionEnum`" rule** (see
-     * `CLAUDE.md`), for the same reason as `STAFF_BILLING_BYPASS_ROLES` in
-     * `apps/api`: "does billing apply to this account" is a question about who
-     * the owner IS, not about a capability they were granted. Kept behind
-     * {@link AccommodationService.holdsBillingExemptRole} so the exception is
-     * one named, greppable predicate.
-     *
-     * It is deliberately NARROWER than `STAFF_BILLING_BYPASS_ROLES` (which also
-     * contains `EDITOR`): an editor curates content, they do not own listings,
-     * so exempting them from the owner-plan requirement would be wrong. The two
-     * sets answer different questions and are allowed to differ — what is NOT
-     * allowed is a third set that means "is staff" and disagrees.
-     */
-    private static readonly BILLING_EXEMPT_ROLES: ReadonlySet<string> = new Set([
-        RoleEnum.ADMIN,
-        RoleEnum.CLIENT_MANAGER,
-        RoleEnum.SUPER_ADMIN
-    ]);
-
-    /**
-     * Whether an account holding these hats bypasses the publish-time billing
-     * eligibility check (HOS-296: set intersection, not scalar equality).
-     *
-     * Holding ONE exempt hat is enough — an ADMIN who also wears HOST is still
-     * platform staff publishing on the platform's behalf.
-     *
-     * @param roles - Every role the account holds.
-     * @returns `true` when any held role is in {@link AccommodationService.BILLING_EXEMPT_ROLES}.
-     */
-    private static holdsBillingExemptRole(roles: readonly RoleEnum[]): boolean {
-        return roles.some((role) => AccommodationService.BILLING_EXEMPT_ROLES.has(role));
-    }
     protected readonly entityName = AccommodationService.ENTITY_NAME;
     /**
      * @inheritdoc
@@ -1644,7 +1606,7 @@ export class AccommodationService extends BaseCrudService<
      * through the correct publish flow.
      *
      * SPEC-217: gates writes for regular HOST owners whose subscription is lapsed
-     * (`subscription_required`). Admins and billing-exempt owners are excluded.
+     * (`subscription_required`). Actors with `ACCOMMODATION_UPDATE_ANY` are excluded.
      *
      * HOS-217-followup: `checkEligibility` became category-aware (it now requires an
      * *owner*-category plan, not just any active subscription), which made this gate
@@ -1697,9 +1659,8 @@ export class AccommodationService extends BaseCrudService<
         // publish branch below can reuse the result without a second DB round-trip.
         const current = this._publishDeps ? await this.model.findById(id, resolvedCtx?.tx) : null;
 
-        // SPEC-217: gate writes for regular HOST owners whose subscription is
-        // lapsed. Admins (actor with ACCOMMODATION_UPDATE_ANY) and owners with
-        // billing-exempt roles (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) are excluded.
+        // SPEC-217: gate writes for owners whose subscription is lapsed. An
+        // actor with ACCOMMODATION_UPDATE_ANY may edit without this owner gate.
         // The gate only fires when publishDeps are wired; services instantiated
         // without billing deps (e.g. unit tests) are unaffected.
         //
@@ -1716,34 +1677,14 @@ export class AccommodationService extends BaseCrudService<
                 PermissionEnum.ACCOMMODATION_UPDATE_ANY
             );
             if (!actorIsAdmin) {
-                // Perf optimisation (SPEC-217): when the actor IS the owner we can
-                // derive the exempt check from `actor.roles` directly, avoiding an
-                // extra DB round-trip for the common owner-edits-own-accommodation
-                // path. HOS-296: the "else" branch no longer loads the user row —
-                // `users.role` is gone, so the hats come from `user_role` via
-                // `getUserRoles`, which is a narrower query than `findById` was.
-                const ownerIsBillingExempt =
-                    actor.id === current.ownerId
-                        ? AccommodationService.holdsBillingExemptRole(actor.roles)
-                        : AccommodationService.holdsBillingExemptRole(
-                              await getUserRoles({
-                                  userId: current.ownerId,
-                                  ...(resolvedCtx === undefined ? {} : { ctx: resolvedCtx })
-                              })
-                          );
-                if (!ownerIsBillingExempt) {
-                    const eligibility = await this._publishDeps.checkEligibility(
-                        current.ownerId,
-                        resolvedCtx
-                    );
-                    if (!publishEligibilityAllowsPublish(eligibility)) {
-                        return {
-                            error: new ServiceError(
-                                ServiceErrorCode.FORBIDDEN,
-                                'subscription_required'
-                            )
-                        };
-                    }
+                const eligibility = await this._publishDeps.checkEligibility(
+                    current.ownerId,
+                    resolvedCtx
+                );
+                if (!publishEligibilityAllowsPublish(eligibility)) {
+                    return {
+                        error: new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required')
+                    };
                 }
             }
         }
@@ -1826,18 +1767,12 @@ export class AccommodationService extends BaseCrudService<
      *
      * Both steps are the same ones `publish()` runs, in the same order:
      *
-     *  1. Platform staff (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) bypass billing, so
-     *     they publish regardless of the verdict — and start no trial, because
-     *     no trial is ever inserted for them.
-     *  2. Everyone else is decided by
+     *  1. The owner is decided by
      *     {@link publishEligibilityAllowsPublish} over the verdict
      *     `checkEligibility` returned.
      *
-     * Step 1 is why `canPublish` is not simply the predicate applied to
-     * `eligibility`: staff publish on an `subscription_required` verdict. The
-     * verdict is still reported verbatim rather than rewritten to something
-     * flattering, so a caller that wants "what does billing think" gets the
-     * truth and a caller that wants "will this work" gets `canPublish`.
+     * The verdict is reported verbatim, and `canPublish` applies the same
+     * billing predicate that `publish()` uses.
      *
      * Owner-level by construction: it answers for the ACTOR's portfolio, not for
      * one listing, so a page rendering N cards resolves billing once rather than
@@ -1872,14 +1807,7 @@ export class AccommodationService extends BaseCrudService<
                     validatedActor.id,
                     execCtx
                 );
-                // Mirrors publish()'s fast path: when the actor IS the owner,
-                // the hats come straight off the actor rather than a second
-                // read of user_role.
-                const isBillingExempt = AccommodationService.holdsBillingExemptRole(
-                    validatedActor.roles
-                );
-                const wouldStartTrial =
-                    !isBillingExempt && publishEligibilityStartsLocalTrial(eligibility);
+                const wouldStartTrial = publishEligibilityStartsLocalTrial(eligibility);
                 // Mirrors publish()'s freeze gate: the owner is asking about
                 // their own publish, so a first publish (one that would start a
                 // trial) is refused while new signups are paused.
@@ -1887,9 +1815,7 @@ export class AccommodationService extends BaseCrudService<
 
                 return {
                     eligibility,
-                    canPublish:
-                        !firstPublishPaused &&
-                        (isBillingExempt || publishEligibilityAllowsPublish(eligibility)),
+                    canPublish: !firstPublishPaused && publishEligibilityAllowsPublish(eligibility),
                     startsTrial: wouldStartTrial && !firstPublishPaused,
                     firstPublishPaused
                 };
@@ -1929,20 +1855,18 @@ export class AccommodationService extends BaseCrudService<
      *  1. Fetch the accommodation. Authorize: actor must be the owner OR hold
      *     `ACCOMMODATION_UPDATE_ANY`.
      *  2. If already `ACTIVE`, return it idempotently.
-     *  3. Resolve the owner's roles. If the owner is billing-exempt (ADMIN/
-     *     SUPER_ADMIN/CLIENT_MANAGER), skip the eligibility check entirely.
-     *  4. Otherwise (regular HOST), ask the billing layer for the owner's
+     *  3. Ask the billing layer for the owner's
      *     publish eligibility (`first_publish` / `has_active_sub` /
      *     `subscription_required`). `subscription_required` rejects with
      *     FORBIDDEN here — deliberately BEFORE the completeness guard (H-99): a
-     *     missing subscription is the one rejection a host cannot resolve by
+     *     missing subscription is the one rejection an owner cannot resolve by
      *     editing, so they should meet it first rather than after filling in
      *     `bathrooms`.
-     *  5. Capacity-completeness guard (HOS-152): validate `extraInfo` against
+     *  4. Capacity-completeness guard (HOS-152): validate `extraInfo` against
      *     `AccommodationExtraInfoRequiredForPublishSchema`. If `capacity`/
      *     `minNights`/`bedrooms`/`bathrooms` are missing, reject with
      *     `VALIDATION_ERROR`.
-     *  6. Open a short transaction (HOS-1012 G-2) containing BOTH writes:
+     *  5. Open a short transaction (HOS-1012 G-2) containing BOTH writes:
      *      - when eligibility was `first_publish`, insert the Hospeda-owned,
      *        no-card trial subscription (`startLocalTrial`) — the clock starts
      *        at publish, not at signup (D-1);
@@ -1952,10 +1876,10 @@ export class AccommodationService extends BaseCrudService<
      *     row with `mp_subscription_id = NULL`, so unlike the pre-HOS-171
      *     MercadoPago trial it needs no saga, no timeout and no compensating
      *     cancel.
-     *  7. After the commit, clear the owner's entitlement cache
+     *  6. After the commit, clear the owner's entitlement cache
      *     (`onTrialStarted`, INV-1) — best effort, a failure here never fails a
      *     publish that already landed.
-     *  8. Schedule revalidation as a best-effort side effect (never rolls back
+     *  7. Schedule revalidation as a best-effort side effect (never rolls back
      *     the publish on revalidation errors).
      *
      * @param actor - The user (or admin) performing the publish.
@@ -2008,73 +1932,51 @@ export class AccommodationService extends BaseCrudService<
                     return accommodation;
                 }
 
-                // Owners with admin-grade roles (ADMIN/SUPER_ADMIN/CLIENT_MANAGER)
-                // bypass billing entirely. Regular HOST users — including the
-                // ones promoted from USER at draft creation — go through the
-                // standard eligibility check and trial flow.
-                //
-                // HOS-296: reads `user_role` rather than the dropped
-                // `users.role` scalar, so the full user row is no longer loaded
-                // just to read one column.
-                //
                 // This runs BEFORE the completeness guard below (H-99). It used to
                 // run after, which meant an owner with no plan was told to go fill
                 // in `bathrooms`, did so, retried, and only THEN hit the
                 // subscription wall — two frustrations in the most expensive order.
                 // A missing subscription is the one rejection the host cannot
                 // resolve by editing, so it is the one they should see first.
-                const ownerRoles = await getUserRoles({
-                    userId: accommodation.ownerId,
-                    ...(execCtx === undefined ? {} : { ctx: execCtx })
-                });
-                const ownerIsBillingExempt =
-                    AccommodationService.holdsBillingExemptRole(ownerRoles);
-
-                // Set only by the `first_publish` branch below. A billing-exempt
-                // owner (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) never starts a trial:
-                // they bypass billing entirely, so there is no clock to start
-                // and nothing to expire.
                 let startsLocalTrial = false;
 
-                if (!ownerIsBillingExempt) {
-                    if (!this._publishDeps) {
-                        throw new ServiceError(
-                            ServiceErrorCode.CONFIGURATION_ERROR,
-                            'Publish requires billing dependencies; AccommodationService was instantiated without publishDeps'
-                        );
-                    }
-                    const eligibility = await this._publishDeps.checkEligibility(
-                        accommodation.ownerId,
-                        execCtx
+                if (!this._publishDeps) {
+                    throw new ServiceError(
+                        ServiceErrorCode.CONFIGURATION_ERROR,
+                        'Publish requires billing dependencies; AccommodationService was instantiated without publishDeps'
                     );
-                    // An owner with no live subscription and no trial left in
-                    // this vertical goes to the plans page. `first_publish` is
-                    // the other branch: they still have their accommodation
-                    // trial, so publishing GRANTS it (HOS-1012 D-1 — the clock
-                    // starts when the listing goes live, not at signup) and the
-                    // insert happens below, inside the same transaction as the
-                    // lifecycle flip.
-                    if (!publishEligibilityAllowsPublish(eligibility)) {
-                        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
-                    }
-                    startsLocalTrial = publishEligibilityStartsLocalTrial(eligibility);
+                }
+                const eligibility = await this._publishDeps.checkEligibility(
+                    accommodation.ownerId,
+                    execCtx
+                );
+                // An owner with no live subscription and no trial left in
+                // this vertical goes to the plans page. `first_publish` is
+                // the other branch: they still have their accommodation
+                // trial, so publishing GRANTS it (HOS-1012 D-1 — the clock
+                // starts when the listing goes live, not at signup) and the
+                // insert happens below, inside the same transaction as the
+                // lifecycle flip.
+                if (!publishEligibilityAllowsPublish(eligibility)) {
+                    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
+                }
+                startsLocalTrial = publishEligibilityStartsLocalTrial(eligibility);
 
-                    // Admin-paused signups (`billing_settings.newPaidSignupsFrozen`).
-                    // A first publish starts a trial, and a trial is a new
-                    // signup, so the OWNER's own first publish is refused here —
-                    // before the completeness guard (same H-99 reasoning as the
-                    // subscription refusal above: editing cannot resolve it) and
-                    // long before the trial insert and the lifecycle flip, so the
-                    // listing stays a draft. An admin publishing on the owner's
-                    // behalf (`!isOwner`) is exempt, like every admin action.
-                    if (startsLocalTrial && isOwner && (await this.isNewSignupsFrozen())) {
-                        throw new ServiceError(
-                            ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN,
-                            'Publishing new listings is temporarily paused. The listing was kept as a draft.',
-                            undefined,
-                            FIRST_PUBLISH_PAUSED_REASON
-                        );
-                    }
+                // Admin-paused signups (`billing_settings.newPaidSignupsFrozen`).
+                // A first publish starts a trial, and a trial is a new
+                // signup, so the OWNER's own first publish is refused here —
+                // before the completeness guard (same H-99 reasoning as the
+                // subscription refusal above: editing cannot resolve it) and
+                // long before the trial insert and the lifecycle flip, so the
+                // listing stays a draft. An admin publishing on the owner's
+                // behalf (`!isOwner`) is exempt, like every admin action.
+                if (startsLocalTrial && isOwner && (await this.isNewSignupsFrozen())) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN,
+                        'Publishing new listings is temporarily paused. The listing was kept as a draft.',
+                        undefined,
+                        FIRST_PUBLISH_PAUSED_REASON
+                    );
                 }
 
                 await this.assertPublishCompleteness({ accommodation, ctx: execCtx });

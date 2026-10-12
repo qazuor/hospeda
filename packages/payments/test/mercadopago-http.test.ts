@@ -72,6 +72,20 @@ describe('MercadoPagoPaymentProvider HTTP (TEST:B3:43 soporte)', () => {
         expect(actual.readAt).toEqual(clock.now());
     });
 
+    it('maps summarized record count and the last attempt instant from a read', async () => {
+        const { server, adapter } = await setup();
+        const created = await adapter.authorize(input);
+        await server.provider.declineCharge({
+            authorizationId: created.authorizationId,
+            declineReason: 'declined'
+        });
+        const actual = await adapter.readAuthorization({
+            authorizationId: created.authorizationId
+        });
+        expect(actual.snapshot.chargeRecordCount).toBe(1);
+        expect(actual.snapshot.lastChargedAt).toBe(clock.now().toISOString());
+    });
+
     it('maps an authorized provider resource to the active domain status', async () => {
         const { server, adapter } = await setup();
         const created = await adapter.authorize(input);

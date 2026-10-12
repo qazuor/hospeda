@@ -1,0 +1,151 @@
+{
+    "$comment": "GUARD:G6 half (a) exceptions (HOS-1462, AC:V5:17). Each entry is a role comparison the spec keeps on purpose, with its citation. Half (b) admits none (AC:V5:18).",
+    "exceptions": [
+        {
+            "file": "apps/api/src/lib/auth.ts",
+            "symbol": "resolveAnalyticsUserType",
+            "form": "membership-arg",
+            "count": 7,
+            "why": "analytics labels a user type and does not authorize the request",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/01-permisos-y-roles.md:142"
+            ]
+        },
+        {
+            "file": "apps/api/src/middlewares/actor.ts",
+            "symbol": "actorMiddleware",
+            "form": "compare",
+            "count": 1,
+            "why": "guest identity is resolved at step one before access is checked",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
+            ]
+        },
+        {
+            "file": "apps/api/src/middlewares/actor.ts",
+            "symbol": "actorMiddleware",
+            "form": "membership-arg",
+            "count": 1,
+            "why": "SUPER_ADMIN receives its role-owned permissions at authorization step three",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/20-pase-fase-6.md:127",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:873-877"
+            ]
+        },
+        {
+            "file": "apps/api/src/utils/actor.ts",
+            "symbol": "isGuestActor",
+            "form": "membership-arg",
+            "count": 1,
+            "why": "this predicate identifies the guest actor at step one",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/20-pase-fase-6.md:131",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/01-permisos-y-roles.md:142-143"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/alliance-lead/alliance-lead.service.ts",
+            "symbol": "resolveApplicantUserId",
+            "form": "compare",
+            "count": 1,
+            "why": "the resolver distinguishes an anonymous guest at authorization step one",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/hostTrade/host-trade.service.ts",
+            "symbol": "resolveOwnerUserId",
+            "form": "compare",
+            "count": 1,
+            "why": "the resolver distinguishes an anonymous guest at authorization step one",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/listing/listing.permissions.ts",
+            "symbol": "isAnonymousActor",
+            "form": "compare",
+            "count": 1,
+            "why": "the resolver distinguishes an anonymous guest at authorization step one",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/partner/partner-mention.service.ts",
+            "symbol": "resolveMentionOwnerUserId",
+            "form": "compare",
+            "count": 1,
+            "why": "the resolver distinguishes an anonymous guest at authorization step one",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/partner/partner-stats.service.ts",
+            "symbol": "resolveStatsOwnerUserId",
+            "form": "compare",
+            "count": 1,
+            "why": "the resolver distinguishes an anonymous guest at authorization step one",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/partner/partner.service.ts",
+            "symbol": "resolvePartnerOwnerUserId",
+            "form": "compare",
+            "count": 1,
+            "why": "the resolver distinguishes an anonymous guest at authorization step one",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:549"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/hostTrade/host-trade-usage.service.ts",
+            "symbol": "defaultIsHostUser",
+            "form": "membership-arg",
+            "count": 1,
+            "why": "the counterpart account is classified as a host and the actor is not authorized",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:1207-1209",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/01-permisos-y-roles.md:142"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/permission/permission.service.ts",
+            "symbol": "assignPermissionToUser",
+            "form": "membership-arg",
+            "count": 1,
+            "why": "the super-admin permission is carried by the role and cannot be overridden",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:873-877",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/20-pase-fase-6.md:128"
+            ]
+        },
+        {
+            "file": "packages/service-core/src/services/permission/permission.service.trusted-editor.ts",
+            "symbol": "assertTargetIsNotSuperAdmin",
+            "form": "membership-arg",
+            "count": 1,
+            "why": "the super-admin permission is carried by the role and cannot be overridden",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:873-877",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/20-pase-fase-6.md:128"
+            ]
+        },
+        {
+            "file": "packages/schemas/src/entities/user/user-role.schema.ts",
+            "symbol": "<module>",
+            "form": "membership-set",
+            "count": 1,
+            "why": "the schema prevents assigning system and guest identities as ordinary roles",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/20-pase-fase-6.md:112-115"
+            ]
+        }
+    ]
+}

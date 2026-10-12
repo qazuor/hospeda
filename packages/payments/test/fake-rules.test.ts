@@ -2,10 +2,10 @@
  * TEST:B1:14 (AC:B1:14): the fake keeps the provider's own rules, always (no
  * test turns a rule off: they are not lies).
  *
- * SCOPE (B1.4a, HOS-1510): the rules whose surface the payment interface
- * carries today: RP1, RP2, RP3, RP4, RP5, RP6 and RP9. RP7, RP8, RP10, RP11 and
- * RP12 keep their row in the list and arrive with the units that add their
- * surface.
+ * SCOPE (B1.4a, HOS-1510): rules with a surface in the interface: RP1, RP2,
+ * RP3, RP4, RP5, RP6, RP7, RP8, RP9 and RP11. RP10 and RP12 keep their rows
+ * until their surfaces arrive. The measured behaviours are exercised below and
+ * in `fake-charge-cycle.test.ts`.
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { beforeEach, describe, expect, it } from 'vitest';

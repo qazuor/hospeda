@@ -484,7 +484,12 @@
                 "subscription.succeeded_by_id"
             ],
             "inputs": ["provider:read_by_id", "provider:payment_period_status"],
-            "writes": ["subscription.status", "domain_event.changes"]
+            "writes": [
+                "subscription.status",
+                "domain_event.changes",
+                "subscription.grace_started_at",
+                "subscription.grace_ends_at"
+            ]
         },
         {
             "id": "TRANS:B:S5",
