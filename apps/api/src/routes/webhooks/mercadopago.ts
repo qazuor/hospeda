@@ -7,6 +7,7 @@
  * (D2, D3).
  */
 import { deliveryChannelFromUrl, receiveProviderDelivery } from '@repo/service-core';
+import { createSuccessResponse } from '../../middlewares/response';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
@@ -49,6 +50,6 @@ mercadoPagoWebhookRoutes.post('/', async (c) => {
         buildMercadoPagoNoticePorts()
     );
     apiLogger.info({ channel, outcome: result.outcome }, 'Mercado Pago delivery received');
-    if (result.ack === 'OK') return c.json({ received: true }, 200);
+    if (result.ack === 'OK') return c.json(createSuccessResponse({ received: true }), 200);
     return c.json({ received: false }, 500);
 });
