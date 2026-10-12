@@ -4,6 +4,7 @@ import {
     buildEventOccurrence,
     type DrizzleClient,
     emailOutboxModel,
+    listingPurgeModel,
     plans,
     planVersions,
     trials,
@@ -61,6 +62,9 @@ export function createPublicationTestAdapter(args: {
                 await args.onLocked?.();
                 const port: import('../../../src/publication/publication-types').PublicationTransaction =
                     {
+                        async purgeListingContent(input) {
+                            return listingPurgeModel.purgeListingContent({ ...input, tx });
+                        },
                         async findActivationEvent({ vertical }) {
                             const [row] = await tx
                                 .select({ event: verticals.activationEvent })
