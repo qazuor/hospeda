@@ -155,6 +155,11 @@ describe('TEST:V5:20 - G6 half (a): an authorization that decides only by role',
         const file = 'apps/api/src/utils/x.ts';
         const src = 'actor.role === RoleEnum.ADMIN;';
         expect(
+            check({ [file]: src, '.specs/HOS-1352-example/spec.md': 'one' }, [
+                exception(file, '<module>', 'compare', 1, ['.specs/HOS-1352-example/spec.md:2'])
+            ]).output
+        ).toContain('exceeds file length');
+        expect(
             check({ [file]: src, '.specs/HOS-1352-example/spec.md': 'one\ntwo' }, [
                 exception(file, '<module>', 'compare', 1, [])
             ]).output
@@ -164,11 +169,6 @@ describe('TEST:V5:20 - G6 half (a): an authorization that decides only by role',
                 exception(file, '<module>', 'compare', 1, ['.specs/HOS-1352-example/missing.md:1'])
             ]).output
         ).toContain('does not exist');
-        expect(
-            check({ [file]: src, '.specs/HOS-1352-example/spec.md': 'one' }, [
-                exception(file, '<module>', 'compare', 1, ['.specs/HOS-1352-example/spec.md:2'])
-            ]).output
-        ).toContain('exceeds file length');
         const duplicate = exception(file, '<module>', 'compare');
         expect(
             check({ [file]: src, '.specs/HOS-1352-example/spec.md': 'one' }, [duplicate, duplicate])
