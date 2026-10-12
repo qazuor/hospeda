@@ -39,6 +39,7 @@ export const adminPurgeOnRequestExperienceRoute = createAdminRoute({
             actor: getActorFromContext(ctx),
             vertical: VerticalEnum.EXPERIENCE,
             id: params.id as string,
-            reason: ListingPurgeOnRequestSchema.parse(body).reason
+            reason: ListingPurgeOnRequestSchema.parse(body).reason,
+            expectedOwnerId: ctx.get('listingAccess')?.subjectId ?? null
         })
 });

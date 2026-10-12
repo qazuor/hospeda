@@ -35,7 +35,7 @@ beforeEach(() => {
 describe('TEST:V8a:10 action 23 service (purgeOnRequest)', () => {
     it.each([
         ['LISTING_NOT_FOUND', ServiceErrorCode.NOT_FOUND],
-        ['NOT_OWNER', ServiceErrorCode.NOT_FOUND],
+        ['NOT_OWNER', ServiceErrorCode.ALREADY_EXISTS],
         ['INVALID_FROM', ServiceErrorCode.NOT_FOUND],
         ['REASON_REQUIRED', ServiceErrorCode.VALIDATION_ERROR],
         ['STATE_CHANGED', ServiceErrorCode.ALREADY_EXISTS]
@@ -43,7 +43,7 @@ describe('TEST:V8a:10 action 23 service (purgeOnRequest)', () => {
         expect(mapPurgeOnRequestFailure(reason).code).toBe(code);
     });
 
-    it('runs PB12 as support, with the owner read from the row as subject and the reason', async () => {
+    it('runs PB12 as support, with the authorized subject as the owner PB12 compares under its lock', async () => {
         // Arrange
         mocks.purgeListing.mockResolvedValue({ purged: true, warnings: [] });
 
@@ -52,11 +52,13 @@ describe('TEST:V8a:10 action 23 service (purgeOnRequest)', () => {
             actor: admin,
             vertical: VerticalEnum.ACCOMMODATION,
             id: LISTING,
-            reason: 'Juan asked us'
+            reason: 'Juan asked us',
+            expectedOwnerId: OWNER
         });
 
         // Assert
         expect(result).toEqual({ purged: true });
+        expect(mocks.execute).not.toHaveBeenCalled();
         expect(mocks.purgeListing).toHaveBeenCalledWith(
             expect.objectContaining({
                 actor: { kind: 'support', adminId: ADMIN, ownerId: OWNER, reason: 'Juan asked us' },
@@ -67,15 +69,14 @@ describe('TEST:V8a:10 action 23 service (purgeOnRequest)', () => {
         );
     });
 
-    it('answers 404 without calling PB12 when the listing does not exist', async () => {
-        mocks.execute.mockResolvedValue({ rows: [] });
-
+    it('answers 404 without calling PB12 when no subject was authorized', async () => {
         await expect(
             new ListingPurgeService().purgeOnRequest({
                 actor: admin,
                 vertical: VerticalEnum.GASTRONOMY,
                 id: LISTING,
-                reason: 'x'
+                reason: 'x',
+                expectedOwnerId: null
             })
         ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
         expect(mocks.purgeListing).not.toHaveBeenCalled();
@@ -89,7 +90,8 @@ describe('TEST:V8a:10 action 23 service (purgeOnRequest)', () => {
                 actor: admin,
                 vertical: VerticalEnum.EXPERIENCE,
                 id: LISTING,
-                reason: 'x'
+                reason: 'x',
+                expectedOwnerId: OWNER
             })
         ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
     });

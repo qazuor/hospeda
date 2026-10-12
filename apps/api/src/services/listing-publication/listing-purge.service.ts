@@ -20,17 +20,21 @@ const LISTING_TABLES: Readonly<Record<PublicationVertical, string>> = {
 
 /**
  * Maps a PB12 rejection of administrative action 23 to its HTTP error
- * (`apps/api/docs/error-contract.md`): a missing, foreign or already purged
- * listing is 404; a missing reason is 400; a concurrent state change is 409.
+ * (`apps/api/docs/error-contract.md`): a missing or already purged listing is
+ * 404; a missing reason is 400; a concurrent state change is 409. `NOT_OWNER`
+ * is also 409 here: the owner PB12 compares under its row lock is the subject
+ * the route authorized, so a mismatch means the listing changed owner between
+ * authorization and purge, and nothing is written.
  */
 export function mapPurgeOnRequestFailure(reason: PurgeFailure): ServiceError {
     switch (reason) {
         case 'LISTING_NOT_FOUND':
-        case 'NOT_OWNER':
         case 'INVALID_FROM':
             return new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
         case 'REASON_REQUIRED':
             return new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Reason required');
+        case 'NOT_OWNER':
+            return new ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'Listing owner changed');
         case 'STATE_CHANGED':
             return new ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'Listing state changed');
         default: {
@@ -86,25 +90,28 @@ export class ListingPurgeService {
 
     /**
      * Administrative action 23 (ACC:23): support runs PB12 on another owner's
-     * listing at that owner's request, with a mandatory reason. The owner is read
-     * from the row, never from the request; the route's listing access already
-     * evaluated steps 3 to 7 on that owner.
+     * listing at that owner's request, with a mandatory reason. The owner is the
+     * subject the route's listing access authorized (steps 3 to 7 on that owner),
+     * never the request: PB12 re-reads the row under its lock (`FOR UPDATE`) and
+     * refuses with `NOT_OWNER` (409) if the owner changed in between, so support
+     * can never purge a listing for an owner who did not ask.
      */
     async purgeOnRequest(args: {
         readonly actor: Actor;
         readonly vertical: PublicationVertical;
         readonly id: string;
         readonly reason: string;
+        readonly expectedOwnerId: string | null;
     }): Promise<{ purged: true }> {
-        const facts = await this.readOwnerFacts(args.vertical, args.id);
-        if (!facts) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
+        if (!args.expectedOwnerId)
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
         const result = await purgeListing({
             ...getListingPublicationPorts(),
             afterCommit: getPurgeAfterCommit(),
             actor: {
                 kind: 'support',
                 adminId: args.actor.id,
-                ownerId: facts.ownerId,
+                ownerId: args.expectedOwnerId,
                 reason: args.reason
             },
             vertical: args.vertical,

@@ -54,7 +54,13 @@ export async function enforceListingAccess(args: {
         config.operation === 'CREATE'
             ? { facts: null, ownerId: null }
             : await ports.loadFacts({ vertical: config.vertical, listingId });
-    const isForeign = config.operation !== 'CREATE' && facts !== null && actorId !== ownerId;
+    // A route that declares its administrative action (ACC_23) is that action
+    // even on the actor's own listing, so step 3 refuses actor = subject
+    // instead of letting the owner path run it (AC:V8a:13 edge).
+    const isForeign =
+        config.operation !== 'CREATE' &&
+        facts !== null &&
+        (actorId !== ownerId || config.administrativeAction !== undefined);
     // One source for the route's administrative action: the same value gates
     // the permission check and is handed to the resolver (AC:V8a:8, AC:V8a:9).
     const action = config.administrativeAction ?? 'ACC_15';

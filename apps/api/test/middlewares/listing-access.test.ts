@@ -442,23 +442,16 @@ describe('AC:V5:26 route capabilities on the subject', () => {
 });
 
 describe('TEST:V8a:9 each listing administrative action asks for its own permission', () => {
+    const P15 = 'LISTING_FOREIGN_CONTENT_EDIT';
+    const P23 = 'LISTING_PURGE_ON_REQUEST';
     it.each([
-        [
-            'an ACC_23 route to the action 15 holder',
-            'DELETE',
-            'ACC_23',
-            'LISTING_FOREIGN_CONTENT_EDIT'
-        ],
-        ['an ACC_15 route asked to DELETE', 'DELETE', 'ACC_15', 'LISTING_FOREIGN_CONTENT_EDIT'],
-        [
-            'an EDIT route (default ACC_15) to the action 23 holder',
-            'EDIT',
-            undefined,
-            'LISTING_PURGE_ON_REQUEST'
-        ]
-    ] as const)('refuses %s with 403 before coverage', async (_label, operation, action, permission) => {
+        ['an ACC_23 route to the 15 holder', ADMIN, 'DELETE', 'ACC_23', P15],
+        ['an ACC_15 route asked to DELETE', ADMIN, 'DELETE', 'ACC_15', P15],
+        ['an EDIT route to the 23 holder', ADMIN, 'EDIT', undefined, P23],
+        ['ACC_23 on the actor own listing', OWNER, 'DELETE', 'ACC_23', P23]
+    ] as const)('refuses %s with 403 before coverage', async (_label, actorId, operation, action, permission) => {
         const app = appFor({
-            actorId: ADMIN,
+            actorId,
             tier: 'admin',
             operation,
             administrativeAction: action,
