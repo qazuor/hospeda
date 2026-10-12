@@ -45,6 +45,7 @@ import {
     RefundInputSchema
 } from '../../provider/schemas';
 import { MERCADOPAGO_CAPABILITY_SUPPORT } from './mercadopago-capability-support';
+import { decodeMercadoPagoNotice } from './mercadopago-notice';
 
 const MercadoPagoOptionsSchema = z.strictObject({
     clock: z.custom<Clock>(
@@ -89,9 +90,9 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     private readonly request: typeof globalThis.fetch;
 
     private async send(args: {
-        readonly capability: 'authorize' | 'read';
+        readonly capability: 'authorize' | 'read' | 'cancel';
         readonly path: string;
-        readonly method: 'GET' | 'POST';
+        readonly method: 'GET' | 'POST' | 'PUT';
         readonly body?: unknown;
         readonly headers?: Readonly<Record<string, string>>;
     }): Promise<Response> {
@@ -198,7 +199,14 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     /** Capability 5 · cancel. */
     async cancel(input: AuthorizationRef): Promise<MutationAcknowledgement> {
         parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'cancel' });
-        throw notImplemented({ capability: 'cancel' });
+        const response = await this.send({
+            capability: 'cancel',
+            path: `/preapproval/${encodeURIComponent(input.authorizationId)}`,
+            method: 'PUT',
+            body: { status: 'cancelled' }
+        });
+        assertResponseOk(response, 'cancel');
+        return { accepted: true, resourceId: input.authorizationId };
     }
 
     /** Capability 6 · refund. */
@@ -265,24 +273,16 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     /** Capability 8 · decode a delivery into a notice. */
     async decodeNotice(input: NoticeDelivery): Promise<ProviderNotice> {
         parseProviderInput({ schema: NoticeDeliverySchema, input, capability: 'notify' });
-        throw notImplemented({ capability: 'notify' });
+        return decodeMercadoPagoNotice({ body: input.body });
     }
 }
 
 async function parseResponse<T>(
     schema: z.ZodType<T>,
     response: Response,
-    capability: 'authorize' | 'read'
+    capability: 'authorize' | 'read' | 'cancel'
 ): Promise<T> {
-    if (!response.ok) {
-        const code =
-            response.status === 404
-                ? 'NOT_FOUND'
-                : response.status === 400 || response.status === 422
-                  ? 'REJECTED'
-                  : 'UNAVAILABLE';
-        throw providerError(code, capability, `Mercado Pago request failed (${response.status})`);
-    }
+    assertResponseOk(response, capability);
     let body: unknown;
     try {
         body = await response.json();
@@ -300,9 +300,20 @@ async function parseResponse<T>(
     return result.data;
 }
 
+function assertResponseOk(response: Response, capability: 'authorize' | 'read' | 'cancel'): void {
+    if (response.ok) return;
+    const code =
+        response.status === 404
+            ? 'NOT_FOUND'
+            : response.status === 400 || response.status === 422
+              ? 'REJECTED'
+              : 'UNAVAILABLE';
+    throw providerError(code, capability, `Mercado Pago request failed (${response.status})`);
+}
+
 function providerError(
     code: 'UNAVAILABLE' | 'NOT_FOUND' | 'REJECTED',
-    capability: 'authorize' | 'read',
+    capability: 'authorize' | 'read' | 'cancel',
     message: string,
     cause?: unknown
 ): PaymentProviderError {
