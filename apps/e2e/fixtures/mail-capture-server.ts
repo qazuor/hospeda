@@ -62,8 +62,12 @@ export async function startE2eMailCapture(
             return;
         }
         const mail = body as Record<string, unknown>;
+        const sender = mail.sender;
         const recipients = mail.to;
         if (
+            typeof sender !== 'object' ||
+            sender === null ||
+            typeof (sender as Record<string, unknown>).email !== 'string' ||
             !Array.isArray(recipients) ||
             recipients.length === 0 ||
             !recipients.every(

@@ -59,7 +59,9 @@ describe('TEST:V4:23 support clock specs isolation', () => {
     });
 
     it('points the built API at the mail capture server URL constant', () => {
-        const apiServer = playwrightConfig.webServer?.[0];
+        const apiServer = Array.isArray(playwrightConfig.webServer)
+            ? playwrightConfig.webServer[0]
+            : playwrightConfig.webServer;
         expect(
             apiServer?.env?.HOSPEDA_E2E_MAIL_CAPTURE_URL,
             `Mail capture URL rule: apps/e2e/playwright.config.ts API webServer env must match ` +

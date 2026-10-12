@@ -6,8 +6,11 @@ import type { AdjustableClock } from '@repo/test-clock';
 import { removeE2eClockFile } from './clock-file-cleanup.ts';
 
 // Keep this endpoint aligned with the API webServer env in playwright.config.ts.
+/** Default HTTP URL for the local fake payment provider. */
 export const E2E_FAKE_PROVIDER_URL = 'http://127.0.0.1:18090';
+/** Fixed local port used by specs that exercise the fake payment provider. */
 export const E2E_FAKE_PROVIDER_PORT = 18090;
+/** API clock file written by the fake provider server. */
 export const E2E_FAKE_PROVIDER_CLOCK_FILE = path.resolve(
     fileURLToPath(new URL('.', import.meta.url)),
     '../test-results/fake-provider-clock.json'
