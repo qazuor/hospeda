@@ -67,7 +67,7 @@ describe('billing reconciliation sweep cron', () => {
             expect.objectContaining({
                 provider: mockProvider,
                 clock: mockClock,
-                rowChecks: [expect.any(Function)],
+                rowChecks: [expect.any(Function), expect.any(Function)],
                 zeroCallChecks: {},
                 livenessPing: expect.any(Object)
             })

@@ -1,10 +1,12 @@
 import { planCatalogModel } from '@repo/db';
 import {
+    createGraceExpiryCheck,
     createLostFirstRejectionCheck,
     creditedPaymentsFromLedger,
     runReconciliationSweep
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
+import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
@@ -47,7 +49,10 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             payments: creditedPaymentsFromLedger,
                             planPolicy: createPlanCatalogInverse({ reader: planCatalogModel })
                                 .planPolicy
-                        })
+                        }),
+                        // AC:B7:7: S6 when the grace clock ran out; coverage, cancellation-seen
+                        // and S19 ports stay on their defaults until B4.2 and B7.4b wire them.
+                        createGraceExpiryCheck({ provider, clock, beforeCancelNotice })
                     ],
                     zeroCallChecks: {},
                     livenessPing: createSentryCronMonitorPing()
