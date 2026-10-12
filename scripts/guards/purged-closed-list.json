@@ -1,0 +1,331 @@
+[
+    {
+        "table": "accommodation_media",
+        "specTable": "accommodation_media",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "accommodation_faqs",
+        "specTable": "accommodation_faqs",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "r_accommodation_amenity",
+        "specTable": "r_accommodation_amenity",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "r_accommodation_feature",
+        "specTable": "r_accommodation_feature",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "gastronomy_media",
+        "specTable": "gastronomy_media",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "gastronomy_faqs",
+        "specTable": "gastronomy_faqs",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "r_gastronomy_amenity",
+        "specTable": "r_gastronomy_amenity",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "r_gastronomy_feature",
+        "specTable": "r_gastronomy_feature",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "gastronomy_menu_sections",
+        "specTable": "gastronomy_menu_sections",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "gastronomy_menu_items",
+        "specTable": "gastronomy_menu_items",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "gastronomy_daily_specials",
+        "specTable": "gastronomy_daily_specials",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "gastronomy_events",
+        "specTable": "gastronomy_events",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "experience_media",
+        "specTable": "experience_media",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "experience_faqs",
+        "specTable": "experience_faqs",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "r_experience_amenity",
+        "specTable": "r_experience_amenity",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "r_experience_feature",
+        "specTable": "r_experience_feature",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "experience_certificates",
+        "specTable": "experience_certificates",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "r_entity_tag",
+        "specTable": "r_entity_tag",
+        "hangsBy": "entity_type",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content (photos: marked, remote copy deleted after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:797"
+    },
+    {
+        "table": "accommodation_reviews",
+        "specTable": "accommodation_reviews",
+        "hangsBy": "fk",
+        "owner": "the third party who wrote it",
+        "inPurged": "kept, not shown",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:798"
+    },
+    {
+        "table": "gastronomy_reviews",
+        "specTable": "gastronomy_reviews",
+        "hangsBy": "fk",
+        "owner": "the third party who wrote it",
+        "inPurged": "kept, not shown",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:798"
+    },
+    {
+        "table": "experience_reviews",
+        "specTable": "experience_reviews",
+        "hangsBy": "fk",
+        "owner": "the third party who wrote it",
+        "inPurged": "kept, not shown",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:798"
+    },
+    {
+        "table": "entity_comments",
+        "specTable": "entity_comments",
+        "hangsBy": "entity_type",
+        "owner": "the third party who wrote it",
+        "inPurged": "kept, not shown",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:799"
+    },
+    {
+        "table": "conversations",
+        "specTable": "conversations",
+        "hangsBy": "fk",
+        "owner": "both the tourist and the owner",
+        "inPurged": "kept read-only",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:800"
+    },
+    {
+        "table": "user_bookmarks",
+        "specTable": "user_bookmarks",
+        "hangsBy": "entity_type",
+        "owner": "the tourist",
+        "inPurged": "kept; PURGED does not write deleted_at",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:801"
+    },
+    {
+        "table": "fix_request",
+        "specTable": "pedido_de_arreglo",
+        "hangsBy": "entity_type",
+        "owner": "moderation",
+        "inPurged": "closed in the same act, no email; the row is kept",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:802"
+    },
+    {
+        "table": "tourist_price_alerts",
+        "specTable": "tourist_price_alerts",
+        "hangsBy": "fk",
+        "owner": "the tourist",
+        "inPurged": "closed, with a notice to the tourist",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:803"
+    },
+    {
+        "table": "accommodation_calendar_sync",
+        "specTable": "accommodation_calendar_sync",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "disconnected: token revoked and deleted (remote after commit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:804"
+    },
+    {
+        "table": "owner_promotions",
+        "specTable": "owner_promotions",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805"
+    },
+    {
+        "table": "accommodation_external_listings",
+        "specTable": "accommodation_external_listings",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805"
+    },
+    {
+        "table": "accommodation_external_reputation",
+        "specTable": "accommodation_external_reputation",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805"
+    },
+    {
+        "table": "accommodation_occupancy",
+        "specTable": "accommodation_occupancy",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805"
+    },
+    {
+        "table": "accommodation_ia_data",
+        "specTable": "accommodation_ia_data",
+        "hangsBy": "fk",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805"
+    },
+    {
+        "table": "qr_codes",
+        "specTable": "qr_codes",
+        "hangsBy": "entity_type",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805"
+    },
+    {
+        "table": "entity_view_monthly_rollups",
+        "specTable": "entity_view_monthly_rollups",
+        "hangsBy": "entity_type",
+        "owner": "listing owner",
+        "inPurged": "deleted with the content",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:805"
+    },
+    {
+        "table": "entity_views",
+        "specTable": "entity_views",
+        "hangsBy": "entity_type",
+        "owner": "another record",
+        "inPurged": "untouched",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806"
+    },
+    {
+        "table": "social_audit_log",
+        "specTable": "social_audit_log",
+        "hangsBy": "entity_type",
+        "owner": "another record",
+        "inPurged": "untouched",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806"
+    },
+    {
+        "table": "revalidation_log",
+        "specTable": "revalidation_log",
+        "hangsBy": "entity_type",
+        "owner": "another record",
+        "inPurged": "untouched",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806"
+    },
+    {
+        "table": "addon_instance",
+        "specTable": "addon_instance",
+        "hangsBy": "none",
+        "owner": "another record",
+        "inPurged": "untouched",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806"
+    },
+    {
+        "table": "posts",
+        "specTable": "posts",
+        "hangsBy": "fk",
+        "owner": "another record",
+        "inPurged": "untouched",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806"
+    },
+    {
+        "table": "revalidation_config",
+        "specTable": "revalidation_config",
+        "hangsBy": "entity_type",
+        "owner": "another record",
+        "inPurged": "untouched",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806"
+    },
+    {
+        "table": "domain_event",
+        "specTable": "domain_event",
+        "hangsBy": "entity_type",
+        "owner": "another record (audit)",
+        "inPurged": "untouched (audit)",
+        "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806; .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:756",
+        "addedBy": "HOS-1476 H1"
+    }
+]

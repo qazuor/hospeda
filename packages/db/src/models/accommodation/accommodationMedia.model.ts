@@ -1,10 +1,11 @@
 import type { AccommodationMedia } from '@repo/schemas';
-import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodationMedia } from '../../schemas/accommodation/accommodation_media.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { listingMediaShownConditions } from '../listing/listing-media-shown.ts';
 
 /**
  * Input type for `findByAccommodation` — groups optional filters into a single
@@ -74,7 +75,8 @@ interface FindByAccommodationsInput {
  * `BaseModelImpl` — do not re-implement them here.
  *
  * Key points for callers:
- * - Every finder excludes soft-deleted rows (`deletedAt IS NULL`) by default.
+ * - Every finder excludes soft-deleted rows and rows marked for remote deletion
+ *   (PB12, AC:V6:30) through `listingMediaShownConditions`.
  * - Gallery ordering is by `sort_order ASC` (not insertion time).
  * - The singleton `accommodationMediaModel` should be used instead of instantiating
  *   this class directly, unless a custom Drizzle client is required.
@@ -134,7 +136,7 @@ export class AccommodationMediaModel extends BaseModelImpl<AccommodationMedia> {
         try {
             const conditions = [
                 eq(accommodationMedia.accommodationId, accommodationId),
-                isNull(accommodationMedia.deletedAt)
+                ...listingMediaShownConditions({ table: accommodationMedia })
             ];
             if (state !== undefined) {
                 conditions.push(eq(accommodationMedia.state, state));
@@ -198,7 +200,7 @@ export class AccommodationMediaModel extends BaseModelImpl<AccommodationMedia> {
                     and(
                         eq(accommodationMedia.accommodationId, accommodationId),
                         eq(accommodationMedia.isFeatured, true),
-                        isNull(accommodationMedia.deletedAt)
+                        ...listingMediaShownConditions({ table: accommodationMedia })
                     )
                 )
                 .limit(1);
@@ -251,7 +253,7 @@ export class AccommodationMediaModel extends BaseModelImpl<AccommodationMedia> {
         try {
             const conditions = [
                 inArray(accommodationMedia.accommodationId, [...accommodationIds]),
-                isNull(accommodationMedia.deletedAt)
+                ...listingMediaShownConditions({ table: accommodationMedia })
             ];
             if (state !== undefined) {
                 conditions.push(eq(accommodationMedia.state, state));

@@ -17,6 +17,7 @@ export * from './publish-listing';
 export * from './purge-listing';
 export * from './purge-notices';
 export * from './reactivate-listing';
+export * from './remote-deletion-retry';
 export * from './retention-clock';
 export * from './subscribe-destination';
 export * from './unpublish-listing';
