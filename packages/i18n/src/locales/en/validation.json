@@ -2049,6 +2049,15 @@
         },
         "uuid": {
             "invalid": "El uuid no es válido"
+        },
+        "listingModeration": {
+            "reason": {
+                "required": "Please give a reason",
+                "max": "The reason cannot exceed {{max}} characters"
+            },
+            "suggestedDate": {
+                "invalid": "The suggested date is not valid"
+            }
         }
     },
     "contact": {
