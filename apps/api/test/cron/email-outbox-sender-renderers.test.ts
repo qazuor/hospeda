@@ -104,3 +104,47 @@ describe('TEST:V4:22 the production outbox sender renders the trial campaign mai
         }
     });
 });
+
+describe('TEST:B3:34 the production outbox sender renders signup notices', () => {
+    const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
+    const subscriptionId = '8b17fa49-59f3-4a13-a0d5-fd42e6bac482';
+
+    it.each([
+        {
+            template: 'billing.signup-confirmed',
+            payload: {
+                subscriptionId,
+                vertical: 'accommodation',
+                planName: 'Plan premium',
+                firstChargeDate: '2026-10-08'
+            },
+            expected: ['Mercado Pago', 'ya pagaste', '8 de octubre de 2026', 'Plan premium']
+        },
+        {
+            template: 'billing.before-cancel',
+            payload: { subscriptionId },
+            expected: ['Mercado Pago', 'cancelación', 'No se hará ningún cobro']
+        },
+        {
+            template: 'billing.signup-incomplete',
+            payload: {
+                subscriptionId,
+                vertical: 'gastronomy',
+                paymentMethod: 'CARD',
+                windowEndsAt: null,
+                closedCourtesyMonths: 2
+            },
+            expected: ['Gastronomía', '2 meses de cortesía', 'volver a suscribirte']
+        }
+    ])('renders $template through the production sender', async ({
+        template,
+        payload,
+        expected
+    }) => {
+        const result = await render({ row: row(template, payload) });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject.trim()).not.toBe('');
+        for (const phrase of expected) expect(html).toContain(phrase);
+        expect(html).not.toContain(subscriptionId);
+    });
+});
