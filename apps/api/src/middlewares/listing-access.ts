@@ -124,11 +124,6 @@ export async function enforceListingAccess(args: {
     // guest only as `actorId: null` (V5.7).
     const actorId = isGuestActor(actor) ? null : actor.id;
     const listingId = config.operation === 'CREATE' ? '' : String(params[config.idParam ?? 'id']);
-    const ports = getListingAccessPorts();
-    const { facts, ownerId } =
-        config.operation === 'CREATE'
-            ? { facts: null, ownerId: null }
-            : await ports.loadFacts({ vertical: config.vertical, listingId });
     // A route that declares its administrative action (ACC_23) is that action
     // even on the actor's own listing, so step 3 refuses actor = subject
     // instead of letting the owner path run it (AC:V8a:13 edge).
@@ -143,6 +138,13 @@ export async function enforceListingAccess(args: {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
         return;
     }
+    // Resolved only past the own-create exit: an own create never reads the
+    // ports, so building them (and the real coverage reader) is not its cost.
+    const ports = getListingAccessPorts();
+    const { facts, ownerId } =
+        config.operation === 'CREATE'
+            ? { facts: null, ownerId: null }
+            : await ports.loadFacts({ vertical: config.vertical, listingId });
     const isForeign =
         createSubjectId !== null ||
         (config.operation !== 'CREATE' &&
