@@ -38,18 +38,7 @@ async function setup(honest = false, withoutRp12 = false) {
                         { lie: 'M6', why: 'The test needs due notices in both measured channels.' }
                     ]
                 })
-              : withoutRp12
-                ? new FakePaymentProvider({
-                      clock,
-                      idNamespace: crypto.randomUUID(),
-                      withoutBehaviour: [
-                          {
-                              behaviour: 'RP12',
-                              why: 'assert delivery count without approval notice'
-                          }
-                      ]
-                  })
-                : new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+              : new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
     const server = await startFakeProviderServer({ provider, clock });
     servers.push(server);
     return { provider, server, clock };

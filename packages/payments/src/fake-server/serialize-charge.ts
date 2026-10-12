@@ -1,7 +1,11 @@
 import type { ChargeSnapshot } from '../provider/payment-provider';
 
 /** Serializes a domain charge read into the Mercado Pago payments API shape. */
-export function serializeCharge(snapshot: ChargeSnapshot): Readonly<Record<string, unknown>> {
+export function serializeCharge({
+    snapshot
+}: {
+    readonly snapshot: ChargeSnapshot;
+}): Readonly<Record<string, unknown>> {
     return {
         id: snapshot.chargeId,
         date_created: snapshot.createdAt,

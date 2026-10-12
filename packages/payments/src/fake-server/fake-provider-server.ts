@@ -210,7 +210,7 @@ export async function startFakeProviderServer(
             const paymentId = paymentMatch?.[1];
             if (paymentId && method === 'GET') {
                 const read = await provider.readCharge({ chargeId: decodeURIComponent(paymentId) });
-                sendJson(response, 200, serializeCharge(read.snapshot));
+                sendJson(response, 200, serializeCharge({ snapshot: read.snapshot }));
                 return;
             }
             sendJson(response, 404, {
