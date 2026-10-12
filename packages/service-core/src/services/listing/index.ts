@@ -49,3 +49,11 @@ export {
     type ComposeListingMediaInput,
     composeListingMedia
 } from './listing-media-compose';
+export {
+    buildSupportEditParts,
+    isForeignContentEdit,
+    LISTING_CONTENT_EDITED_BY_SUPPORT_TEMPLATE,
+    type RecordListingSupportEditInput,
+    recordListingSupportEdit,
+    type SupportEditPart
+} from './listing-support-edit';

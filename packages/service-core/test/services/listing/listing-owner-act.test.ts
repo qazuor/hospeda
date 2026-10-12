@@ -7,13 +7,25 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const outbox = vi.hoisted(() => ({
+    calls: [] as { input: Record<string, unknown>; tx: unknown }[]
+}));
+
 vi.mock('@repo/db', async (importOriginal) => {
     const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...(await importOriginal<object>()),
-        domainEventModel: doubles.domainEventModelDouble
+        domainEventModel: doubles.domainEventModelDouble,
+        emailOutboxModel: {
+            async enqueue(input: Record<string, unknown>, tx?: unknown) {
+                outbox.calls.push({ input, tx });
+                return { enqueued: true };
+            }
+        }
     };
 });
+
+import { PermissionEnum } from '@repo/schemas';
 
 import {
     buildListingOwnerActChanges,
@@ -37,9 +49,26 @@ const LISTING_ID = '00000000-0000-4000-a000-000000000003';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 const actor = (id: string): Actor => ({ id, roles: [], permissions: [] });
+/** A foreign actor holding action 15's own permission (ACC:15, HOS-1493). */
+const admin15: Actor = {
+    id: OTHER_ID,
+    roles: [],
+    permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]
+};
+/** A fake tx answering the owner-email read of the support-edit register. */
+const fakeEmailTx = (): ServiceContext['tx'] => {
+    const chain = {
+        select: () => chain,
+        from: () => chain,
+        where: () => chain,
+        limit: async () => [{ email: 'duena@example.com' }]
+    };
+    return chain as unknown as ServiceContext['tx'];
+};
 
 beforeEach(() => {
     domainEventModelDouble.writes.length = 0;
+    outbox.calls.length = 0;
 });
 
 afterEach(() => {
@@ -139,7 +168,7 @@ describe('recordListingOwnerAct', () => {
         ]);
     });
 
-    it('writes nothing when the actor is not the owner', async () => {
+    it('writes nothing when a foreign actor lacks the action 15 permission', async () => {
         const result = await recordListingOwnerAct({
             eventType: 'listing.edited',
             entityType: 'gastronomy',
@@ -150,6 +179,29 @@ describe('recordListingOwnerAct', () => {
 
         expect(result.recorded).toBe(false);
         expect(domainEventModelDouble.writes).toEqual([]);
+        expect(outbox.calls).toEqual([]);
+    });
+
+    it('delegates a foreign actor holding the action 15 permission to the support register', async () => {
+        const tx = fakeEmailTx();
+        const result = await recordListingOwnerAct({
+            eventType: 'listing.edited',
+            entityType: 'gastronomy',
+            listing: { id: LISTING_ID, ownerId: OWNER_ID },
+            actor: admin15,
+            ctx: { tx },
+            changes: [{ field: 'description' }]
+        });
+
+        expect(result.recorded).toBe(true);
+        expect(domainEventModelDouble.writes).toHaveLength(1);
+        expect(domainEventModelDouble.writes[0]).toMatchObject({
+            actorId: OTHER_ID,
+            actorType: 'admin',
+            changes: [{ field: 'description' }]
+        });
+        expect(outbox.calls).toHaveLength(1);
+        expect(outbox.calls[0]?.tx).toBe(tx);
     });
 
     it('writes nothing for a listing without an owner', async () => {
@@ -222,7 +274,7 @@ describe('recordListingSubEntityEdit', () => {
         expect(JSON.stringify(write)).not.toContain('new');
     });
 
-    it('writes nothing when the actor is not the owner', async () => {
+    it('writes nothing when a foreign actor lacks the action 15 permission', async () => {
         const result = await recordListingSubEntityEdit({
             entityType: 'experience',
             listing: { id: LISTING_ID, ownerId: OWNER_ID },
@@ -232,6 +284,23 @@ describe('recordListingSubEntityEdit', () => {
 
         expect(result.recorded).toBe(false);
         expect(domainEventModelDouble.writes).toEqual([]);
+    });
+
+    it('delegates a foreign actor holding the action 15 permission (photos part)', async () => {
+        const result = await recordListingSubEntityEdit({
+            entityType: 'experience',
+            listing: { id: LISTING_ID, ownerId: OWNER_ID },
+            actor: admin15,
+            field: 'media',
+            ctx: { tx: fakeEmailTx() }
+        });
+
+        expect(result.recorded).toBe(true);
+        expect(domainEventModelDouble.writes[0]).toMatchObject({
+            actorType: 'admin',
+            changes: [{ field: 'media' }]
+        });
+        expect(outbox.calls[0]?.input.payload).toMatchObject({ parts: ['photos'] });
     });
 
     it('passes ctx.tx through so the event joins the write transaction', async () => {

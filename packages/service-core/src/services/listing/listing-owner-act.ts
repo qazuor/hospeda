@@ -24,8 +24,10 @@
  * ## Only the owner's own acts
  *
  * The clock counts the owner's activity. An administrator editing somebody
- * else's listing (ACC:15) is a different act audited by its own piece, so it
- * writes nothing here.
+ * else's listing (ACC:15) is a different act: when the actor is not the owner,
+ * this register delegates to the support-edit register (ACC:15, HOS-1493),
+ * which records an `admin` event and the owner's email only for a holder of
+ * action 15's permission, and writes nothing otherwise.
  *
  * Export is the third act the spec names (AC:V9a:1); no export operation
  * exists in the codebase yet, so `listing.exported` is not written anywhere.
@@ -36,6 +38,7 @@
 import { type DomainEventChange, domainEventModel } from '@repo/db';
 import type { Actor, ServiceContext } from '../../types';
 import { resolveServiceCorrelationId } from '../../utils/correlation';
+import { recordListingSupportEdit } from './listing-support-edit';
 
 /** Kind of listing an owner act is about: the vertical IS the table. */
 export type ListingOwnerActEntityType = 'accommodation' | 'gastronomy' | 'experience';
@@ -157,8 +160,12 @@ export function buildListingOwnerActChanges(input: BuildListingOwnerActChangesIn
 export interface RecordListingOwnerActInput {
     readonly eventType: ListingOwnerActEventType;
     readonly entityType: ListingOwnerActEntityType;
-    /** The listing the act is about. */
-    readonly listing: { readonly id: string; readonly ownerId?: string | null };
+    /** The listing the act is about; its name feeds the ACC:15 email. */
+    readonly listing: {
+        readonly id: string;
+        readonly ownerId?: string | null;
+        readonly name?: string | null;
+    };
     readonly actor: Actor;
     /** The service context of the write; its `tx` makes the event atomic with it. */
     readonly ctx?: ServiceContext;
@@ -168,19 +175,21 @@ export interface RecordListingOwnerActInput {
 /**
  * Writes one owner act to `domain_event`, inside `ctx.tx` when there is one.
  *
- * A no-op unless the actor IS the listing's owner. A failed write throws, so
- * inside a transaction the change it describes rolls back with it: the clock
- * never sees an edit without its event.
+ * Only the owner's own act is written here. When the actor is not the owner,
+ * the call is delegated to {@link recordListingSupportEdit}, which writes only
+ * for action 15 (ACC:15, HOS-1493). A failed write throws, so inside a
+ * transaction the change it describes rolls back with it: the clock never sees
+ * an edit without its event.
  *
  * @param input - The act, the listing, the actor, the context and the changes.
- * @returns `{ recorded }`, `false` when the actor is not the owner.
+ * @returns `{ recorded }`, `false` when neither the owner nor action 15 wrote.
  */
 export async function recordListingOwnerAct(
     input: RecordListingOwnerActInput
 ): Promise<{ readonly recorded: boolean }> {
     const { listing, actor, ctx } = input;
     if (!listing.ownerId || actor.id !== listing.ownerId) {
-        return { recorded: false };
+        return recordListingSupportEdit(input);
     }
 
     const { correlationId } = resolveServiceCorrelationId({ ctx });
@@ -221,12 +230,12 @@ export interface RecordListingSubEntityEditInput {
  * its content, and content fields never store values (DEC-DATA-005).
  *
  * A thin wrapper over {@link recordListingOwnerAct}: the same owner gate (the
- * actor must be the listing's owner — an administrator editing somebody
- * else's listing writes nothing), the same atomicity rule, the same
+ * actor must be the listing's owner; a foreign actor is delegated to the
+ * support-edit register, ACC:15), the same atomicity rule, the same
  * correlation handling.
  *
  * @param input - The vertical, the listing, the actor, the touched field and the context.
- * @returns `{ recorded }`, `false` when the actor is not the owner.
+ * @returns `{ recorded }`, `false` when neither the owner nor action 15 wrote.
  */
 export async function recordListingSubEntityEdit(
     input: RecordListingSubEntityEditInput
