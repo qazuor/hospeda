@@ -19,6 +19,7 @@ import {
     readListingAccessFacts
 } from '@repo/verticals';
 import { createApiEffectiveSetCache } from '../effective-set-cache';
+import { createApiBillingCoverage } from './billing-coverage';
 import { createBootstrapCoverageReader } from './bootstrap-coverage-reader';
 
 /** Production ports for the listing access resolver. */
@@ -37,7 +38,13 @@ let ports: ListingAccessPorts | undefined;
 export function getListingAccessPorts(): ListingAccessPorts {
     if (ports) return ports;
     const reader = createBootstrapCoverageReader();
-    const billing = createBootstrapBillingForVerticals({ reader });
+    // Only `coverage` is real (HOS-1532): `retentionStopped`, `canCharge` and the
+    // coverage-changed registry stay the bootstrap ones until B4.2/B4.3, so the
+    // trial machine and the publication keep listening to the same registry.
+    const billing: ListingAccessPorts['billing'] = {
+        ...createBootstrapBillingForVerticals({ reader }),
+        coverage: createApiBillingCoverage({ reader }).coverage
+    };
     const cache = createApiEffectiveSetCache(effectiveSetSnapshotCodec);
     const effectiveSet: EffectiveSetPort = ({ userId, vertical }) =>
         readEffectiveSet({
