@@ -1,4 +1,4 @@
-import type { Clock } from '@repo/billing-verticals-contract';
+import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import {
     and,
     eq,
@@ -56,6 +56,7 @@ type Outcome =
     | 'DIVERGENCE_MARKED'
     | 'DELEGATED'
     | 'S16'
+    | 'S4'
     | 'PAYMENT_CREDITED'
     | 'PAYMENT_ALREADY_CREDITED'
     | 'PAYMENT_RECORDED'
@@ -66,6 +67,7 @@ type Outcome =
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
+    readonly planPolicy?: VerticalsForBilling['planPolicy'];
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly payments?: SubscriptionPayments;
     readonly firstCharge?: FirstChargeReader;
@@ -99,6 +101,14 @@ export async function processProviderNotice(
                         result.credit.outcome === 'CREDITED'
                             ? 'PAYMENT_CREDITED'
                             : 'PAYMENT_ALREADY_CREDITED'
+                };
+            if (result.outcome === 'GRACE')
+                return {
+                    ack: 'OK',
+                    outcome:
+                        result.grace.outcome === 'GRACE_STARTED'
+                            ? 'S4'
+                            : 'RESOURCE_KIND_NOT_HANDLED'
                 };
             return {
                 ack: 'OK',
