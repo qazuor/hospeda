@@ -73,9 +73,7 @@ app.route('/', adminRestoreAccommodationRoute);
 // POST /:id/verify - Verify / unverify accommodation
 app.route('/', adminVerifyAccommodationRoute);
 
-// POST /:id/moderate - Apply the moderation verdict (H-102). Posts and events
-// have had this since HOS-374; without it no accommodation could ever leave
-// PENDING, and the admin's pending counter could only grow.
+// POST /:id/moderate - ACC:12 two-level publication moderation; V6.9b removes legacy moderation_state.
 app.route('/', adminModerateAccommodationRoute);
 
 // GET /:id/occupancy - Occupancy calendar (staff, ACCOMMODATION_OCCUPANCY_VIEW) - HOS-43

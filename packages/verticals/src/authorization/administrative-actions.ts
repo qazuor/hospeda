@@ -53,14 +53,7 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     ACC_9: { permissions: [], pendingOwnPermission: 'B8b' },
     ACC_10: { permissions: [], pendingOwnPermission: 'B8b' },
     ACC_11: { permissions: [], pendingOwnPermission: 'V4.3 (HOS-1445)' },
-    ACC_12: {
-        permissions: [
-            PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
-            PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
-            PermissionEnum.EXPERIENCE_MODERATION_CHANGE
-        ],
-        pendingOwnPermission: 'V6 (HOS-1475)'
-    },
+    ACC_12: { permissions: [PermissionEnum.LISTING_MODERATE], pendingOwnPermission: null },
     ACC_13: { permissions: [], pendingOwnPermission: 'B6' },
     ACC_14: { permissions: [], pendingOwnPermission: 'B5 (HOS-1540)' },
     ACC_15: {
