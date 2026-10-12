@@ -97,6 +97,7 @@ export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/reconciliation-divergence.js';
 export * from './billing/reconciliation/sweep/reconciliation-sweep.service.js';
 export * from './billing/reconciliation/sweep/sweep-liveness-ping.port.js';
+export * from './billing/reconciliation/sweep/unresolved-period-charge.port.js';
 export * from './billing/reconciliation/sweep/zero-call-checks.service.js';
 export * from './billing/reconciliation/sweep/zero-call-ports.js';
 export * from './billing/subscription/activate-pending-with-signup-notice.js';

@@ -83,6 +83,12 @@
             "symbol": "checkSuccessionTarget",
             "row": 2,
             "why": "La prohibición de ser sucedida consulta marcas abiertas."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/grace-expiry-check.ts",
+            "symbol": "hasOpenUnresolvedPeriodChargeMark",
+            "row": null,
+            "why": "La comprobación del vencimiento del grace no corre S6 mientras la fila tenga abierta la marca COBRO_DEL_PERIODO_SIN_RESOLVER (B/09 §6.2; motivo 21); no tiene fila en el inventario del glosario."
         }
     ],
     "cortesia_diferida": [

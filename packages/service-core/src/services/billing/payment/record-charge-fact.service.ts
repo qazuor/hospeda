@@ -13,7 +13,7 @@ import type {
 import { declineFirstCharge } from '../subscription/decline-first-charge.service';
 import type { EnterGraceResult } from '../subscription/enter-grace.service';
 import { enterGraceOnRejectedCharge } from '../subscription/enter-grace.service';
-import type { ExitGraceResult } from '../subscription/exit-grace.service';
+import type { ExitGracePorts, ExitGraceResult } from '../subscription/exit-grace.service';
 import { exitGraceOnCreditedPayment } from '../subscription/exit-grace.service';
 import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
@@ -31,6 +31,8 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly coverageNotices?: CoverageNotices;
     /** Hangs the payment on reason 7 when S5's conditions 2 or 3 fail (AC:B7:6). */
     readonly markPayments?: ReconciliationMarkPayments;
+    /** Who brought the charge, for S5's reason 7 (I-14): the notice (`provider`, default) or the sweep (`job`). */
+    readonly actorType?: ExitGracePorts['actorType'];
 }
 
 export type RecordChargeFactResult =
@@ -140,7 +142,8 @@ export async function recordChargeFact(
                 {
                     provider: ports.provider,
                     clock: ports.clock,
-                    markPayments: ports.markPayments
+                    markPayments: ports.markPayments,
+                    actorType: ports.actorType
                 }
             );
             return { outcome: 'CREDITED', paymentId, credit, exit };
