@@ -86,6 +86,7 @@ export * from './billing/reconciliation/lift-reconciliation-mark.service.js';
 export * from './billing/reconciliation/open-reconciliation-mark.service.js';
 export * from './billing/reconciliation/period-charges/read-period-charges.js';
 export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
+export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/reconciliation-divergence.js';
 export * from './billing/reconciliation/sweep/reconciliation-sweep.service.js';
 export * from './billing/reconciliation/sweep/sweep-liveness-ping.port.js';

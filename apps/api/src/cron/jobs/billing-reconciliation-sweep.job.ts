@@ -1,4 +1,10 @@
-import { runReconciliationSweep } from '@repo/service-core';
+import { planCatalogModel } from '@repo/db';
+import {
+    createLostFirstRejectionCheck,
+    creditedPaymentsFromLedger,
+    runReconciliationSweep
+} from '@repo/service-core';
+import { createPlanCatalogInverse } from '@repo/verticals';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
@@ -27,11 +33,22 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             };
         }
         try {
+            const provider = getPaymentProvider();
+            const clock = getClock().clock;
             const summary = await runReconciliationSweep(
                 { correlationId: ctx.correlationId },
                 {
-                    provider: getPaymentProvider(),
-                    clock: getClock().clock,
+                    provider,
+                    clock,
+                    rowChecks: [
+                        createLostFirstRejectionCheck({
+                            provider,
+                            clock,
+                            payments: creditedPaymentsFromLedger,
+                            planPolicy: createPlanCatalogInverse({ reader: planCatalogModel })
+                                .planPolicy
+                        })
+                    ],
                     zeroCallChecks: {},
                     livenessPing: createSentryCronMonitorPing()
                 }
