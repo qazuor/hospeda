@@ -72,7 +72,7 @@ describe('TEST:V4:23 support - the outbox sender reads the injected clock', () =
         clock.set({ at: advanced });
         expect(readEmailOutboxSenderNow()).toEqual(advanced);
         readClock.mockClear();
-        await emailOutboxSenderJob.handler(context(true));
+        await emailOutboxSenderJob.handler(context());
         expect(readClock).toHaveBeenCalledOnce();
     });
 });
