@@ -5,6 +5,7 @@ import {
     buildEventOccurrence,
     emailOutboxModel,
     getDb,
+    listingModerationModel,
     listingPublicationModel,
     listingRetentionModel,
     trials,
@@ -58,6 +59,21 @@ export function getListingPublicationPorts(options?: {
                     sql`SELECT pg_advisory_xact_lock(hashtextextended(${trialMachineLockKey(args).key}, 0))`
                 );
                 const publication: PublicationTransaction = {
+                    async readModerationOrigin(input) {
+                        return listingModerationModel.readModerationOrigin({ ...input, tx });
+                    },
+                    async readOpenFixRequest(input) {
+                        return listingModerationModel.readOpenFixRequest({ ...input, tx });
+                    },
+                    async openFixRequest(input) {
+                        return listingModerationModel.openFixRequest({ ...input, tx });
+                    },
+                    async closeOpenFixRequest(input) {
+                        return listingModerationModel.closeOpenFixRequest({ ...input, tx });
+                    },
+                    async insertFixRequestEvent(input) {
+                        await listingModerationModel.insertFixRequestEvent({ ...input, tx });
+                    },
                     async readRetentionListing(input) {
                         return listingRetentionModel.readRetentionListing({ ...input, tx });
                     },
@@ -142,6 +158,41 @@ export function getListingPublicationPorts(options?: {
                                 recipientUserId: input.ownerId,
                                 recipientEmail: owner.email,
                                 template,
+                                payload: { ...input.payload },
+                                dedupKey,
+                                correlationId: input.correlationId
+                            },
+                            tx
+                        );
+                    },
+                    async enqueueListingNotice(input) {
+                        const [recipient] = await tx
+                            .select({ email: users.email })
+                            .from(users)
+                            .where(eq(users.id, input.recipientUserId))
+                            .limit(1);
+                        if (!recipient?.email) {
+                            apiLogger.warn(
+                                {
+                                    recipientUserId: input.recipientUserId,
+                                    correlationId: input.correlationId
+                                },
+                                'Listing notice has no recipient email'
+                            );
+                            return;
+                        }
+                        const dedupKey = buildEmailDedupKey({
+                            recipient: input.recipientUserId,
+                            template: input.template,
+                            occurrence: buildEventOccurrence({
+                                eventId: `${input.correlationId}:${input.occurrenceKey}`
+                            })
+                        });
+                        await emailOutboxModel.enqueue(
+                            {
+                                recipientUserId: input.recipientUserId,
+                                recipientEmail: recipient.email,
+                                template: input.template,
                                 payload: { ...input.payload },
                                 dedupKey,
                                 correlationId: input.correlationId
