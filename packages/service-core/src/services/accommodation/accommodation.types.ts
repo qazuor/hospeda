@@ -61,10 +61,11 @@ const PUBLISH_DENIED_ELIGIBILITY: PublishEligibility = 'subscription_required';
 /**
  * Does this verdict allow the listing to go live?
  *
- * The single place the publish/deny rule is stated. `publish()`, `update()`'s
- * ACTIVE-transition guard and the `GET /publish-eligibility` route all call it,
- * so the button the owner sees and the answer the server gives cannot disagree
- * (HOS-1183 AC-4).
+ * The single place the publish/deny rule is stated. `publish()` and `update()`'s
+ * ACTIVE-transition guard both call it, so the two write paths cannot disagree
+ * (HOS-1183 AC-4). The read route `GET /publish-eligibility` that also called
+ * it was removed by HOS-1668: the publish card now reads the subscribe
+ * destination the server itself consults.
  *
  * ## Why the rule is stated by EXCLUSION
  *
@@ -137,54 +138,6 @@ const PUBLISH_TRIAL_GRANTING_ELIGIBILITY: PublishEligibility = 'first_publish';
  */
 export function publishEligibilityStartsLocalTrial(eligibility: PublishEligibility): boolean {
     return eligibility === PUBLISH_TRIAL_GRANTING_ELIGIBILITY;
-}
-
-/**
- * What `AccommodationService.getPublishEligibility` answers: the billing
- * verdict for an owner, plus whether publishing would actually be allowed.
- *
- * ## Why both fields, when one is a function of the other
- *
- * For nearly every owner `canPublish` IS
- * {@link publishEligibilityAllowsPublish} of `eligibility`, and carrying both
- * looks redundant. It is not, for two independent reasons:
- *
- * - **They answer different questions.** `eligibility` is what BILLING says;
- *   `canPublish` is what the SERVER will do. Platform staff diverge: they
- *   bypass the billing gate entirely, so they publish while their honest
- *   billing verdict stays `subscription_required`.
- * - **Collapsing them is the bug.** Sending only `canPublish` would leave the
- *   UI unable to tell a trial-eligible owner from a paying one, and it would
- *   lose the trial announcement. Sending only `eligibility` would push the
- *   publish rule back into the client — which is HOS-1183 verbatim.
- */
-export interface PublishEligibilityVerdict {
-    /**
-     * The verdict `checkEligibility` returned, verbatim. Never re-derived, and
-     * never overwritten for staff: it stays the honest billing answer.
-     */
-    readonly eligibility: PublishEligibility;
-    /**
-     * Whether `publish()` would let this owner put a listing live right now,
-     * INCLUDING the staff billing bypass that runs before the verdict is even
-     * consulted. This is the field a publish affordance gates on.
-     */
-    readonly canPublish: boolean;
-    /**
-     * Whether publishing would start a Hospeda-owned trial and its clock.
-     * Drives the one extra line the confirm dialog shows, and is false for
-     * staff — they bypass billing, so no trial is ever inserted for them.
-     */
-    readonly startsTrial: boolean;
-    /**
-     * Whether this owner's FIRST publish is refused right now because an admin
-     * paused new signups (`billing_settings.newPaidSignupsFrozen`): the publish
-     * would have started a trial, and starting one is a new signup. When
-     * `true`, `canPublish` and `startsTrial` are both `false` — the listing
-     * stays a draft and no clock starts. Always `false` for staff and for an
-     * owner who already holds a live owner subscription or trial.
-     */
-    readonly firstPublishPaused: boolean;
 }
 
 /**

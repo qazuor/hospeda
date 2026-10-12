@@ -25,6 +25,13 @@
  * load for an answer almost none of them use. So the local half is evaluated
  * first, for free, and the verdict is fetched only on the one save that crosses
  * the line.
+ *
+ * ## The verdict is the server's publish decision (HOS-1668)
+ *
+ * It is read from `GET /protected/publish/subscribe-destination/accommodation`
+ * and mapped by `resolvePublishAffordance` — the same decision PB1 and
+ * `listing-access` consult when they reject a publish — instead of HOS-1183's
+ * `publish-eligibility`, which went down with the legacy billing system.
  */
 
 import type { AccommodationPublishReadinessInput } from '@repo/schemas';
@@ -32,6 +39,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { publishApi } from '@/lib/api/endpoints-protected';
 import { shouldPromptPublishReady } from '@/lib/editor/publish-ready-prompt';
 import { webLogger as logger } from '@/lib/logger';
+import { resolvePublishAffordance } from '@/lib/publish/subscribe-button';
 
 /** What the hook hands back to a section component. */
 export interface PublishReadyPrompt {
@@ -81,23 +89,23 @@ export function usePublishReadyPrompt(): PublishReadyPrompt {
                 return;
             }
 
-            const eligibility = await publishApi.accommodationEligibility();
-            if (!eligibility.ok) {
-                // Fails CLOSED, unlike the publish button. Hiding a button
-                // strands an owner who could publish; opening an unrequested
-                // dialog that then fails is worse than staying quiet, and the
-                // card on the properties page still offers Publish either way.
-                logger.warn('publish-ready-prompt: eligibility read failed', {
-                    error: eligibility.error
+            const result = await publishApi.subscribeDestination({ vertical: 'accommodation' });
+            if (!result.ok) {
+                // Fails CLOSED. Opening an unrequested dialog that then fails is
+                // worse than staying quiet; the card on the properties page shows
+                // its own "could not check" status for the same failure.
+                logger.warn('publish-ready-prompt: subscribe-destination read failed', {
+                    error: result.error
                 });
                 return;
             }
 
-            if (!eligibility.data.canPublish) {
+            const affordance = resolvePublishAffordance({ result });
+            if (!affordance.canPublish) {
                 return;
             }
 
-            setStartsTrial(eligibility.data.startsTrial);
+            setStartsTrial(affordance.startsTrial);
             setIsOpen(true);
         },
         []

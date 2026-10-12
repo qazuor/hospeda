@@ -22,6 +22,11 @@ import { CreditCardIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PUBLISH_PAGE_PATH_BY_VERTICAL } from '@/lib/publish/publish-page-paths';
+import {
+    type PublishAffordance,
+    resolvePublishAffordance,
+    UNKNOWN_PUBLISH_AFFORDANCE
+} from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
@@ -29,7 +34,6 @@ import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { buildUsageBadge, fetchHostUsageBadge } from '@/lib/host/usage-badge';
 import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
-import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import { publishApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
@@ -93,20 +97,16 @@ let usageData: { currentUsage: number; maxAllowed: number; threshold: string } |
 let hasOwnerPlan = false;
 let effectiveSetReadOk = false;
 
-// ── HOS-1183: what would the server do if this owner published? ──
-// Resolved ONCE for the whole grid: billing eligibility is a property of the
-// owner, so it cannot differ between two cards. Fail-open on any error for the
-// same reason as above — `/publish` is the real enforcement point, and hiding
-// the button on a blip strands a host who could publish.
+// ── HOS-1668: what would the server do if this owner published? ──
+// Resolved ONCE for the whole grid: coverage and trial eligibility are
+// properties of the owner, so they cannot differ between two cards. Read from
+// `subscribe-destination`, the same decision PB1 and `listing-access` consult
+// when they reject a publish (HOS-1183's `publish-eligibility` answered 500 and
+// this page failed OPEN, showing Publish anyway).
 //
-// `startsTrial` fails the other way (silent). An unannounced trial costs a
-// surprise; an announced one that never starts is a broken promise.
-let canPublish = true;
-let publishStartsTrial = false;
-// Admin-paused new signups: the owner's FIRST publish (the one that starts the
-// trial) is refused while the freeze is on. Defaults to `false` — on a failed
-// read the card offers Publish and `/publish` refuses with the same copy.
-let publishFirstPaused = false;
+// Fails CLOSED: until a read succeeds the affordance is `unknown`, and the card
+// shows a "could not check" status instead of Publish or the plans link.
+let publishAffordance: PublishAffordance = UNKNOWN_PUBLISH_AFFORDANCE;
 
 try {
     const apiUrl = getApiUrl();
@@ -119,16 +119,16 @@ try {
         };
 
         // Parallel fetch: accommodations + effective set +
-        // the publish verdict. The third joins the existing Promise.all rather
+        // the publish destination. The third joins the existing Promise.all rather
         // than awaiting after it — this is one extra billing read per page
         // load, and serialising it would add its latency to every render.
-        const [accomResponse, usageBadgeResult, eligibilityResult] = await Promise.all([
+        const [accomResponse, usageBadgeResult, destinationResult] = await Promise.all([
             fetch(
                 `${apiUrl}/api/v1/protected/accommodations?pageSize=50&sortBy=createdAt&sortOrder=desc`,
                 { headers }
             ),
             fetchHostUsageBadge({ cookieHeader }),
-            publishApi.accommodationEligibility({ cookieHeader })
+            publishApi.subscribeDestination({ vertical: 'accommodation', cookieHeader })
         ]);
 
         if (accomResponse.ok) {
@@ -150,16 +150,12 @@ try {
 
         if (!usageBadgeResult.entitlementsReadOk) logger.warn('[propiedades] effective-set read failed');
 
-        if (eligibilityResult.ok) {
-            canPublish = eligibilityResult.data.canPublish;
-            publishStartsTrial = eligibilityResult.data.startsTrial;
-            publishFirstPaused = eligibilityResult.data.firstPublishPaused === true;
-        } else {
-            // Both defaults already hold; logged so a systematic failure is
-            // visible rather than silently degrading every card to "publishable
-            // and no trial announced".
-            logger.warn('[propiedades] publish-eligibility fetch failed', {
-                error: eligibilityResult.error
+        publishAffordance = resolvePublishAffordance({ result: destinationResult });
+        if (!destinationResult.ok) {
+            // The affordance is already `unknown`; logged so a systematic
+            // failure is visible rather than silently hiding every Publish.
+            logger.warn('[propiedades] subscribe-destination read failed', {
+                error: destinationResult.error
             });
         }
     }
@@ -196,12 +192,6 @@ const publishNewUrl = buildUrl({
 const ownerPlansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
 
 const isEmpty = properties.length === 0;
-
-// H-98: resolve the generic owner trial length ONCE for the whole grid (see
-// `PropertyCard`'s `trialDays` prop doc) instead of fetching per card — this
-// page renders one `PropertyCard` per property. Skipped entirely when there
-// is nothing to render (empty state has no card to pass it to).
-const genericTrialDays = isEmpty ? 0 : await resolveGenericOwnerTrialDays();
 
 // HOS-217: proactive "anfitrión en preparación" banner — an owner with at
 // least one DRAFT property but no real owner/complex subscription would
@@ -299,7 +289,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
-                    <PropertyCard property={property} locale={locale} canPublish={canPublish} startsTrial={publishStartsTrial} firstPublishPaused={publishFirstPaused} trialDays={genericTrialDays} />
+                    <PropertyCard property={property} locale={locale} publishAffordance={publishAffordance} />
                 </div>
             ))}
         </div>

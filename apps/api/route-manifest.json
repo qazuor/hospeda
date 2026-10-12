@@ -2346,10 +2346,6 @@
             "path": "/api/v1/protected/accommodations/my/market-comparison"
         },
         {
-            "method": "GET",
-            "path": "/api/v1/protected/accommodations/publish-eligibility"
-        },
-        {
             "method": "POST",
             "path": "/api/v1/protected/ai/chat"
         },

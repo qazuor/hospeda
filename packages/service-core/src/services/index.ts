@@ -38,13 +38,12 @@ export type {
     AccommodationPublishDeps,
     HostOnboardingResult,
     PublishEligibility,
-    PublishEligibilityVerdict,
     PublishTransactionContext,
     StartLocalTrialResult
 } from './accommodation/accommodation.types';
-// HOS-1183: the publish/deny rule, stated once. The API's
-// `GET /publish-eligibility` route needs the same predicate `publish()` uses,
-// so it is a value export rather than joining the type-only block above.
+// HOS-1183: the publish/deny rule, stated once. These are values, so they do
+// not join the type-only block above. The `GET /publish-eligibility` route that
+// consumed them outside this package was removed by HOS-1668.
 export {
     FIRST_PUBLISH_PAUSED_REASON,
     PUBLISH_ELIGIBILITY_VALUES,
@@ -64,6 +63,10 @@ export * from './amenity/amenity.service';
 export * from './appLog/index.js';
 export * from './attraction/attraction.service';
 export * from './auditLog/index.js';
+export * from './billing/coverage/addon-sources.js';
+export * from './billing/coverage/billing-coverage.js';
+export * from './billing/coverage/coverage-ports.js';
+export * from './billing/coverage/subscription-sources.js';
 export * from './billing/deadlines/billing-deadlines.service.js';
 export * from './billing/notice/process-provider-notice.service.js';
 export * from './billing/notice/provider-delivery-channel.js';

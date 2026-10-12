@@ -93,15 +93,18 @@ test.describe('Subscribe button destinations @verticals @billing', () => {
             await expect(publishResponse.json()).resolves.toMatchObject({
                 error: { message: 'no_plans_available' }
             });
+            // HOS-1668 (H4): the card reads the destination up front, so it shows
+            // the no-plans notice from the start and offers nothing to press.
             await page.goto(`${WEB_URL}/es/mi-cuenta/propiedades/`);
-            await page
-                .getByRole('button', { name: /publicar/i })
-                .first()
-                .click();
-            await page.getByRole('button', { name: /sí, publicar/i }).click();
-            await expect(page.getByTestId('publish-no-plans')).toContainText(
-                /esta vertical no tiene planes disponibles/i
-            );
+            const cardNoPlans = page.getByTestId('publish-no-plans');
+            await expect(cardNoPlans).toContainText(/esta vertical no tiene planes disponibles/i);
+            await expect(cardNoPlans.locator('a, button')).toHaveCount(0);
+            await expect(cardNoPlans).not.toContainText(/suscribite/i);
+            await expect(
+                page
+                    .getByRole('list', { name: 'Mis propiedades' })
+                    .getByRole('button', { name: 'Publicar', exact: true })
+            ).toHaveCount(0);
         } finally {
             if (restoreCatalog) await restoreCatalog();
             await cleanupTestUsers(getDbPool(), [owner.id]);
