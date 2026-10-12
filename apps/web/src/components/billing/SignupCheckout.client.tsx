@@ -3,11 +3,11 @@ import type { StartSubscriptionResponse } from '@/lib/api/endpoints-protected';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
     formatSignupWindowEnd,
-    isDisplayableCheckoutUrl,
     resolveSignupRejection,
     SIGNUP_VERTICAL_LABEL_KEY
 } from '@/lib/billing/signup-checkout';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './SignupCheckout.module.css';
 
 /** Props for the minimum protected signup checkout island. */
@@ -39,10 +39,6 @@ export function SignupCheckout({ locale, billingOptionId, plansHref }: SignupChe
                 });
                 return;
             }
-            if (!isDisplayableCheckoutUrl({ checkoutUrl: result.data.checkoutUrl })) {
-                setView({ state: 'rejected', rejection: resolveSignupRejection({}) });
-                return;
-            }
             setView({ state: 'pending', data: result.data });
         } catch {
             setView({ state: 'rejected', rejection: resolveSignupRejection({}) });
@@ -50,6 +46,7 @@ export function SignupCheckout({ locale, billingOptionId, plansHref }: SignupChe
     };
 
     const pending = view.state === 'pending' ? view.data : null;
+    const safeCheckoutUrl = pending ? resolveSafeExternalUrl(pending.checkoutUrl) : undefined;
     const rejected = view.state === 'rejected' ? view.rejection : null;
     const busy = view.state === 'submitting';
 
@@ -93,13 +90,15 @@ export function SignupCheckout({ locale, billingOptionId, plansHref }: SignupChe
                             )
                         })}
                     </h2>
-                    <a
-                        data-testid="signup-checkout-resume-link"
-                        href={pending.checkoutUrl}
-                        rel="noopener noreferrer"
-                    >
-                        {t('billing.checkout.signup.pending.resume')}
-                    </a>
+                    {safeCheckoutUrl && (
+                        <a
+                            data-testid="signup-checkout-resume-link"
+                            href={resolveSafeExternalUrl(pending.checkoutUrl)}
+                            rel="noopener noreferrer"
+                        >
+                            {t('billing.checkout.signup.pending.resume')}
+                        </a>
+                    )}
                     <p>
                         {t('billing.checkout.signup.pending.windowEnds', undefined, {
                             date: formatSignupWindowEnd({

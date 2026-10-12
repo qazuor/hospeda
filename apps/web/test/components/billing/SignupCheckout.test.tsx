@@ -57,6 +57,18 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
         expect(screen.queryByTestId('signup-checkout-confirm')).not.toBeInTheDocument();
     });
 
+    it('keeps the pending state but omits a resume link for a javascript checkout URL', async () => {
+        start.mockResolvedValue({
+            ...success,
+            data: { ...success.data, checkoutUrl: 'javascript:alert(1)' }
+        });
+        render(<SignupCheckout {...props} />);
+        fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
+
+        expect(await screen.findByTestId('signup-checkout-pending')).toBeInTheDocument();
+        expect(screen.queryByTestId('signup-checkout-resume-link')).not.toBeInTheDocument();
+    });
+
     it('shows the owner-approved inherited VIP rejection and no payment action', async () => {
         start.mockResolvedValue({
             ok: false,
