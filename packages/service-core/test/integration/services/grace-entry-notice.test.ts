@@ -77,8 +77,10 @@ describe('TEST:B7:1 grace entry through a rejected-charge notice', () => {
             const chargeCreatedAt = new Date(chargeRead.snapshot.createdAt);
             fixture.clock.advance({ ms: 3 * DAY_MS });
             const readAt = fixture.clock.now();
+            const readCharge = vi.spyOn(fixture.provider, 'readCharge');
 
             const result = await recordChargeFact({ chargeId }, recordPorts(fixture));
+            expect(readCharge).toHaveBeenCalledTimes(2);
             expect(result.outcome).toBe('GRACE');
             if (result.outcome !== 'GRACE') throw new Error('Expected grace transition result');
             if (result.grace.outcome !== 'GRACE_STARTED')
