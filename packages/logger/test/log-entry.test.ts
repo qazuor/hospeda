@@ -103,6 +103,18 @@ describe('log-entry', () => {
             expect(entry.message).toBe('contact me at [REDACTED]');
         });
 
+        it('should preserve a subscription UUID in structured data (HOS-1670)', () => {
+            const subscriptionId = '70434065-4663-4f93-aeb5-6ce5ed4236b5';
+            const entry = buildLogEntry(
+                LogLevel.WARN,
+                { subscriptionId, notice: 'NO_RECIPIENT' },
+                undefined,
+                { category: 'x' }
+            );
+
+            expect(entry.data).toEqual({ subscriptionId, notice: 'NO_RECIPIENT' });
+        });
+
         it('should bound an oversized data payload so the entry stays small', () => {
             // Arrange: a runaway result like the old DB full-result dump.
             const value = {
