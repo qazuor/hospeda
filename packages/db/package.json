@@ -61,19 +61,19 @@
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
         "bcryptjs": "^3.0.3",
-        "drizzle-orm": "^0.45.2"
+        "drizzle-orm": "^0.45.3"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/bcrypt": "^6.0.0",
         "@types/node": "^26.6.1",
-        "@types/pg": "^8.21.0",
+        "@types/pg": "^8.23.1",
         "@vitest/coverage-v8": "^4.1.10",
         "@vitest/ui": "^4.1.9",
         "c8": "^12.0.0",
         "dotenv": "^17.4.2",
         "drizzle-kit": "0.31.10",
-        "pg": "^8.22.0",
+        "pg": "^8.23.0",
         "tsup": "^8.5.1",
         "tsx": "^4.23.13",
         "typescript": "6.0.3",
@@ -81,6 +81,6 @@
         "vitest": "^4.1.11"
     },
     "peerDependencies": {
-        "pg": "^8.22.0"
+        "pg": "^8.23.0"
     }
 }
