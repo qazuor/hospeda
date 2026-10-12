@@ -98,7 +98,8 @@ describe('HOS-1448 corrida 2b - exhaustive billing transition annotations', () =
         );
         expect(Object.values(counts).every((count) => count > 0)).toBe(true);
         // 2026-10-12, HOS-1558: 143 reads (S5 reads subscription.succeeded_by_id, I-12).
-        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(143);
+        // 2026-10-12, HOS-1558: 144 reads (S6 reads subscription.grace_ends_at, I-12).
+        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(144);
     });
 });
 
