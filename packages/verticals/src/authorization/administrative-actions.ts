@@ -109,3 +109,21 @@ export const ADMINISTRATIVE_ACTION_LISTING_OPERATIONS: Readonly<
     ACC_15: ['EDIT'],
     ACC_23: ['DELETE']
 };
+
+/**
+ * The single derivation of step 3's `permitted` flag: whether the actor holds
+ * one of the permissions of EXACTLY this administrative action
+ * (`ADMINISTRATIVE_ACTION_PERMISSIONS[action].permissions`). Callers must use
+ * this instead of reading a permission by hand, so the permission of one
+ * action (e.g. action 15, edit) can never unlock another (e.g. action 23, purge).
+ * An action with no permission yet is never permitted.
+ */
+export function isAdministrativeActionPermitted(args: {
+    readonly action: AdministrativeAction;
+    readonly actorPermissions: readonly PermissionEnum[] | undefined;
+}): boolean {
+    const granted = args.actorPermissions ?? [];
+    return ADMINISTRATIVE_ACTION_PERMISSIONS[args.action].permissions.some((permission) =>
+        granted.includes(permission)
+    );
+}

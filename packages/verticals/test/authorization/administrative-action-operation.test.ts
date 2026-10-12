@@ -1,7 +1,10 @@
 import type { BillingForVerticals } from '@repo/billing-verticals-contract';
-import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
-import { ADMINISTRATIVE_ACTION_LISTING_OPERATIONS } from '../../src/authorization/administrative-actions';
+import {
+    ADMINISTRATIVE_ACTION_LISTING_OPERATIONS,
+    isAdministrativeActionPermitted
+} from '../../src/authorization/administrative-actions';
 import type { ListingOperation } from '../../src/authorization/listing-operation';
 import { resolveListingAccess } from '../../src/authorization/resolve-listing-access';
 import { rehydrateEffectiveSet } from '../../src/effective-set-cache/snapshot';
@@ -194,5 +197,34 @@ describe('TEST:V8a:9 the administrative action decides the operation it admits',
 
         // Assert
         expect(result).toEqual({ allowed: false, reason: 'NOT_FOUND' });
+    });
+});
+
+describe('TEST:V8a:9 step 3 permission is derived from the action own permissions only', () => {
+    it('an actor holding only the action 15 permission cannot purge through action 23', async () => {
+        // Arrange
+        const doubles = ports();
+        const actorPermissions = [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT];
+        const permitted = isAdministrativeActionPermitted({ action: 'ACC_23', actorPermissions });
+
+        // Act
+        const result = await resolve({ action: 'ACC_23', operation: 'DELETE', permitted, doubles });
+
+        // Assert
+        expect(permitted).toBe(false);
+        expect(result).toEqual({ allowed: false, reason: 'FORBIDDEN' });
+        expect(doubles.coverage).not.toHaveBeenCalled();
+    });
+
+    it('an actor holding the action 23 permission is permitted for action 23 only', () => {
+        // Arrange
+        const actorPermissions = [PermissionEnum.LISTING_PURGE_ON_REQUEST];
+
+        // Act + Assert
+        expect(isAdministrativeActionPermitted({ action: 'ACC_23', actorPermissions })).toBe(true);
+        expect(isAdministrativeActionPermitted({ action: 'ACC_15', actorPermissions })).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({ action: 'ACC_23', actorPermissions: undefined })
+        ).toBe(false);
     });
 });

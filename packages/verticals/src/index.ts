@@ -9,7 +9,8 @@ export {
     ADMINISTRATIVE_ACTION_PERMISSION_SET,
     ADMINISTRATIVE_ACTION_PERMISSIONS,
     ADMINISTRATIVE_ACTIONS,
-    type AdministrativeAction
+    type AdministrativeAction,
+    isAdministrativeActionPermitted
 } from './authorization/administrative-actions';
 export {
     type EffectiveSetPort,
