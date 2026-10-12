@@ -118,6 +118,20 @@ async function adminEvents(listingId: string) {
     return rows.rows;
 }
 
+async function adminEditedEvents(listingId: string) {
+    const rows = await getDb().execute(
+        sql`SELECT actor_id AS "actorId", reason, changes FROM domain_event WHERE entity_id = ${listingId} AND actor_type = 'admin' AND event_type = 'listing.edited' ORDER BY occurred_at`
+    );
+    return rows.rows as { actorId: string; reason: string | null; changes: unknown }[];
+}
+
+async function supportEmails(ownerId: string) {
+    const rows = await getDb().execute(
+        sql`SELECT payload FROM email_outbox WHERE recipient_user_id = ${ownerId}::uuid AND template = 'verticals.listing-content-edited-by-support'`
+    );
+    return rows.rows as { payload: Record<string, unknown> }[];
+}
+
 beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
@@ -125,6 +139,9 @@ beforeAll(async () => {
 });
 afterEach(async () => {
     for (const ownerId of owners.splice(0)) {
+        await getDb().execute(
+            sql`DELETE FROM email_outbox WHERE recipient_user_id = ${ownerId}::uuid`
+        );
         for (const vertical of verticals) {
             await getDb().execute(
                 sql`DELETE FROM ${sql.identifier(tables[vertical])} WHERE owner_id = ${ownerId}::uuid`
@@ -288,6 +305,108 @@ describe.each(verticals)('TEST:V8a:9 action 15 asks for its own permission — %
         expect(response.status).toBe(400);
         expect(response.body.error?.code).toBe('VALIDATION_ERROR');
         expect(await listingsOf(vertical, owner)).toEqual(before);
+    });
+
+    // Staff holding the vertical's "edit any" permission is audited the same way:
+    // a foreign content edit by an administrator is action 15 (NUCLEO/08 §1.1 c3).
+    it.each([
+        ['only action 15', [] as PermissionEnum[]],
+        ['action 15 and the vertical edit-any', [perms[vertical].editAny]]
+    ])('with %s and the reason header: 200, admin event with the reason and an email to her', async (_label, extra) => {
+        // Arrange
+        await ensurePublicationCatalog(vertical);
+        const owner = await seedOwner();
+        const admin = await seedOwner();
+        const id = await seedListing(vertical, owner);
+
+        // Act
+        const response = await readResponse(
+            await patch(
+                id,
+                adminHeaders({
+                    id: admin,
+                    permissions: [
+                        PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT,
+                        perms[vertical].viewAll,
+                        ...extra
+                    ],
+                    reason: encodeURIComponent(REASON)
+                })
+            )
+        );
+
+        // Assert
+        expect(response.status).toBe(200);
+        const rows = await listingsOf(vertical, owner);
+        expect(rows[0]?.status).toBe(PublicationStatusEnum.DRAFT);
+        expect(rows[0]?.description).toBe('Texto corregido por soporte a pedido de la dueña.');
+        const events = await adminEditedEvents(id);
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({ actorId: admin, reason: REASON });
+        expect(events[0]?.changes).toEqual([{ field: 'description' }]);
+        const emails = await supportEmails(owner);
+        expect(emails).toHaveLength(1);
+        expect(emails[0]?.payload).toMatchObject({ listingId: id });
+    });
+
+    it('with only action 15, a field that is not content is refused (403) and nothing is written', async () => {
+        // Arrange
+        await ensurePublicationCatalog(vertical);
+        const owner = await seedOwner();
+        const admin = await seedOwner();
+        const id = await seedListing(vertical, owner);
+        const before = await listingsOf(vertical, owner);
+
+        // Act
+        const response = await app.request(`/api/v1/admin/${tables[vertical]}/${id}`, {
+            method: 'PATCH',
+            headers: adminHeaders({
+                id: admin,
+                permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT, perms[vertical].viewAll],
+                reason: encodeURIComponent(REASON)
+            }),
+            body: JSON.stringify({ visibility: 'PUBLIC' })
+        });
+
+        // Assert
+        expect(response.status).toBe(403);
+        expect(await listingsOf(vertical, owner)).toEqual(before);
+        expect(await adminEditedEvents(id)).toEqual([]);
+        expect(await supportEmails(owner)).toEqual([]);
+    });
+});
+
+describe('TEST:V8a:9 action 15 reaches an accommodation sub-entity route', () => {
+    it('adds a FAQ to her listing: admin event with the reason and an email to her', async () => {
+        // Arrange
+        const vertical = VerticalEnum.ACCOMMODATION;
+        await ensurePublicationCatalog(vertical);
+        const owner = await seedOwner();
+        const admin = await seedOwner();
+        const id = await seedListing(vertical, owner);
+
+        // Act
+        const response = await readResponse(
+            await app.request(`/api/v1/admin/accommodations/${id}/faqs`, {
+                method: 'POST',
+                headers: adminHeaders({
+                    id: admin,
+                    permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT],
+                    reason: encodeURIComponent(REASON)
+                }),
+                body: JSON.stringify({
+                    question: '¿Se admiten mascotas en la cabaña?',
+                    answer: 'Sí, con aviso previo a la dueña de la cabaña.'
+                })
+            })
+        );
+
+        // Assert
+        expect(response.status).toBeLessThan(300);
+        const events = await adminEditedEvents(id);
+        expect(events).toHaveLength(1);
+        expect(events[0]).toMatchObject({ actorId: admin, reason: REASON });
+        expect(await supportEmails(owner)).toHaveLength(1);
     });
 });
 
