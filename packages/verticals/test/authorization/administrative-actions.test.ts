@@ -4,7 +4,9 @@ import { resolveAdministrativeActionStep } from '../../src/authorization/adminis
 import {
     ADMINISTRATIVE_ACTION_PERMISSION_SET,
     ADMINISTRATIVE_ACTION_PERMISSIONS,
-    ADMINISTRATIVE_ACTIONS
+    ADMINISTRATIVE_ACTIONS,
+    RETIRING_ADMINISTRATIVE_PERMISSIONS,
+    SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET
 } from '../../src/authorization/administrative-actions';
 import { resolveListingAccess } from '../../src/authorization/resolve-listing-access';
 
@@ -100,5 +102,24 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         expect(
             ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.LISTING_PURGE_ON_REQUEST)
         ).toBe(true);
+    });
+
+    it('TEST:V8a:10 keeps the four retiring delete permissions forbidden to a system actor', () => {
+        const retiring = [
+            PermissionEnum.ACCOMMODATION_DELETE_ANY,
+            PermissionEnum.ACCOMMODATION_HARD_DELETE,
+            PermissionEnum.GASTRONOMY_DELETE,
+            PermissionEnum.EXPERIENCE_DELETE
+        ];
+        expect(RETIRING_ADMINISTRATIVE_PERMISSIONS.map((entry) => entry.permission)).toEqual(
+            retiring
+        );
+        for (const permission of retiring) {
+            expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(permission)).toBe(false);
+            expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(permission)).toBe(true);
+        }
+        for (const permission of ADMINISTRATIVE_ACTION_PERMISSION_SET) {
+            expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(permission)).toBe(true);
+        }
     });
 });

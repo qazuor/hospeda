@@ -41,6 +41,20 @@ describe('TEST:V5:14 — la fábrica de actores de sistema', () => {
         expect(() => makeActor([permission])).toThrow(/ACC_\d+/);
     });
 
+    it.each([
+        PermissionEnum.ACCOMMODATION_DELETE_ANY,
+        PermissionEnum.ACCOMMODATION_HARD_DELETE,
+        PermissionEnum.GASTRONOMY_DELETE,
+        PermissionEnum.EXPERIENCE_DELETE
+    ])('TEST:V8a:10 still rejects the retiring delete permission %s (V6.7, HOS-1477)', (permission) => {
+        expectDefinitionError(
+            () => makeActor([permission]),
+            'ADMINISTRATIVE_PERMISSION',
+            permission
+        );
+        expect(() => makeActor([permission])).toThrow(/ACC_23/);
+    });
+
     it('rejects the complete PermissionEnum with its explicit error', () => {
         const allPermissions = Object.values(PermissionEnum);
         expectDefinitionError(() => makeActor(allPermissions), 'ALL_PERMISSIONS');

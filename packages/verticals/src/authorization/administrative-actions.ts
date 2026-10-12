@@ -95,6 +95,33 @@ export const ADMINISTRATIVE_ACTION_PERMISSION_SET: ReadonlySet<PermissionEnum> =
     )
 );
 
+/**
+ * Permissions that guarded an administrative action before it got its own
+ * permission, mapped to the action they used to guard. They are still granted
+ * to staff until V6.7 (HOS-1477) retires them, so they stay administrative:
+ * a system actor must keep being refused them even though no action row lists
+ * them any more. Retired by V6.7, HOS-1477 (action 23 moved to
+ * `LISTING_PURGE_ON_REQUEST` in V8a.2, HOS-1493).
+ */
+export const RETIRING_ADMINISTRATIVE_PERMISSIONS: readonly {
+    readonly permission: PermissionEnum;
+    readonly formerAction: AdministrativeAction;
+}[] = [
+    { permission: PermissionEnum.ACCOMMODATION_DELETE_ANY, formerAction: 'ACC_23' },
+    { permission: PermissionEnum.ACCOMMODATION_HARD_DELETE, formerAction: 'ACC_23' },
+    { permission: PermissionEnum.GASTRONOMY_DELETE, formerAction: 'ACC_23' },
+    { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' }
+];
+
+/**
+ * The permissions a system actor may never hold (V5.md §3.3, GUARD:G19): every
+ * permission of an administrative action plus the retiring ones above.
+ */
+export const SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET: ReadonlySet<PermissionEnum> = new Set([
+    ...ADMINISTRATIVE_ACTION_PERMISSION_SET,
+    ...RETIRING_ADMINISTRATIVE_PERMISSIONS.map((entry) => entry.permission)
+]);
+
 /** The administrative actions that act on another owner's listing through the V5 chain (step 3). */
 export type ListingAdministrativeAction = Extract<AdministrativeAction, 'ACC_15' | 'ACC_23'>;
 

@@ -1,8 +1,9 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import {
-    ADMINISTRATIVE_ACTION_PERMISSION_SET,
     ADMINISTRATIVE_ACTION_PERMISSIONS,
-    ADMINISTRATIVE_ACTIONS
+    ADMINISTRATIVE_ACTIONS,
+    RETIRING_ADMINISTRATIVE_PERMISSIONS,
+    SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET
 } from '@repo/verticals';
 import { z } from 'zod';
 import type { Actor } from '../types/index.js';
@@ -65,13 +66,16 @@ export function createSystemActor(input: {
     }
 
     const administrative = parsed.data.permissions.filter((permission) =>
-        ADMINISTRATIVE_ACTION_PERMISSION_SET.has(permission)
+        SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(permission)
     );
     if (administrative.length > 0) {
         const permission = administrative[0] as PermissionEnum;
-        const action = ADMINISTRATIVE_ACTIONS.find((candidate) =>
-            ADMINISTRATIVE_ACTION_PERMISSIONS[candidate].permissions.includes(permission)
-        );
+        const action =
+            ADMINISTRATIVE_ACTIONS.find((candidate) =>
+                ADMINISTRATIVE_ACTION_PERMISSIONS[candidate].permissions.includes(permission)
+            ) ??
+            RETIRING_ADMINISTRATIVE_PERMISSIONS.find((entry) => entry.permission === permission)
+                ?.formerAction;
         throw new SystemActorDefinitionError(
             'ADMINISTRATIVE_PERMISSION',
             `System actor permission ${permission} belongs to administrative action ${action}`,
