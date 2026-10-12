@@ -59,6 +59,9 @@ export async function enterGraceOnRejectedCharge(
     const { snapshot: charge, readAt } = assertFreshForAct({ read, act });
     if (charge.status !== 'rejected')
         return { outcome: 'NOT_APPLICABLE', reason: 'CHARGE_NOT_REJECTED' };
+    // A card-validation charge (RP12) belongs to no authorization, so no subscription enters grace.
+    if (charge.authorizationId === null)
+        return { outcome: 'NOT_APPLICABLE', reason: 'NO_SUBSCRIPTION' };
 
     const [row] = await getDb()
         .select({ subscription: subscriptions })
