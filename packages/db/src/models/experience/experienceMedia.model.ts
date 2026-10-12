@@ -1,10 +1,11 @@
 import type { ExperienceMedia } from '@repo/schemas';
-import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, inArray } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { experienceMedia } from '../../schemas/experience/experience_media.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { listingMediaShownConditions } from '../listing/listing-media-shown.ts';
 
 /**
  * Input type for `findByExperience` — groups optional filters into a single
@@ -69,7 +70,8 @@ interface FindByExperiencesInput {
  * `BaseModelImpl` — do not re-implement them here.
  *
  * Key points for callers:
- * - Every finder excludes soft-deleted rows (`deletedAt IS NULL`) by default.
+ * - Every finder excludes soft-deleted rows and rows marked for remote deletion
+ *   (PB12, AC:V6:30) through `listingMediaShownConditions`.
  * - Gallery ordering is by `sort_order ASC` (not insertion time).
  * - The singleton `experienceMediaModel` should be used instead of instantiating
  *   this class directly, unless a custom Drizzle client is required.
@@ -129,7 +131,7 @@ export class ExperienceMediaModel extends BaseModelImpl<ExperienceMedia> {
         try {
             const conditions = [
                 eq(experienceMedia.experienceId, experienceId),
-                isNull(experienceMedia.deletedAt)
+                ...listingMediaShownConditions({ table: experienceMedia })
             ];
             if (state !== undefined) {
                 conditions.push(eq(experienceMedia.state, state));
@@ -195,7 +197,7 @@ export class ExperienceMediaModel extends BaseModelImpl<ExperienceMedia> {
                     and(
                         eq(experienceMedia.experienceId, experienceId),
                         eq(experienceMedia.isFeatured, true),
-                        isNull(experienceMedia.deletedAt)
+                        ...listingMediaShownConditions({ table: experienceMedia })
                     )
                 )
                 .limit(1);
@@ -248,7 +250,7 @@ export class ExperienceMediaModel extends BaseModelImpl<ExperienceMedia> {
         try {
             const conditions = [
                 inArray(experienceMedia.experienceId, [...experienceIds]),
-                isNull(experienceMedia.deletedAt)
+                ...listingMediaShownConditions({ table: experienceMedia })
             ];
             if (state !== undefined) {
                 conditions.push(eq(experienceMedia.state, state));

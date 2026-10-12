@@ -7,14 +7,22 @@ interface SentryCronClient {
         config: {
             readonly schedule: { readonly type: 'crontab'; readonly value: string };
             readonly timezone: string;
+            readonly checkinMargin?: number;
         }
     ): unknown;
     isInitialized(): boolean;
 }
 
-/** Sends a successful daily job check-in to Sentry when the SDK is initialized. */
+/**
+ * Sends a successful daily job check-in to Sentry when the SDK is initialized.
+ *
+ * `schedule` defaults to the coverage reconciler's `'0 5 * * *'`; `checkinMargin`
+ * (minutes) is sent only when given, so the monitor keeps its own default otherwise.
+ */
 export async function pingCronMonitor(args: {
     readonly job: string;
+    readonly schedule?: string;
+    readonly checkinMargin?: number;
     readonly sentry?: SentryCronClient;
 }): Promise<void> {
     const sentry = args.sentry ?? (Sentry as SentryCronClient);
@@ -23,8 +31,9 @@ export async function pingCronMonitor(args: {
         sentry.captureCheckIn(
             { monitorSlug: args.job, status: 'ok' },
             {
-                schedule: { type: 'crontab', value: '0 5 * * *' },
-                timezone: 'America/Argentina/Buenos_Aires'
+                schedule: { type: 'crontab', value: args.schedule ?? '0 5 * * *' },
+                timezone: 'America/Argentina/Buenos_Aires',
+                ...(args.checkinMargin === undefined ? {} : { checkinMargin: args.checkinMargin })
             }
         );
     } catch (error) {

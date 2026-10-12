@@ -27,6 +27,7 @@ import {
     leadIntakeBackstopJob,
     listingCoverageReconcilerJob,
     listingInactivityArchiveJob,
+    listingRemoteDeletionRetryJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
@@ -85,7 +86,8 @@ export const cronJobs: CronJobDefinition[] = [
     socialPublishDispatchJob,
     pollApifyReputationRunsJob,
     listingCoverageReconcilerJob,
-    listingInactivityArchiveJob
+    listingInactivityArchiveJob,
+    listingRemoteDeletionRetryJob
 ];
 
 /**

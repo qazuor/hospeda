@@ -143,6 +143,10 @@ const CLOSE_PRICE_ALERTS: Record<
     experience: async () => []
 };
 
+function toDate(value: unknown): Date {
+    return value instanceof Date ? value : new Date(String(value));
+}
+
 /** Transaction-bound closed-list purge persistence for PB12. */
 export const listingPurgeModel = {
     /** Deletes listing-only rows, blanks listing content, and marks remote rows for post-commit work. */
@@ -213,6 +217,97 @@ export const listingPurgeModel = {
         ).execute(sql`DELETE FROM ${sql.identifier(MEDIA_TABLES[args.vertical])}
             WHERE id = ${args.mediaId} AND remote_deletion_pending_at IS NOT NULL RETURNING id`);
         return result.rows.length > 0;
+    },
+
+    /**
+     * Returns a keyset page of listing media rows still marked for remote deletion, across the
+     * three verticals, ordered by `(vertical, id)`. Rows without the mark are never returned.
+     */
+    async listMarkedMedia(args: {
+        readonly tx?: DrizzleClient;
+        readonly after: { readonly vertical: ListingVertical; readonly mediaId: string } | null;
+        readonly limit: number;
+    }): Promise<{
+        readonly items: readonly {
+            readonly vertical: ListingVertical;
+            readonly mediaId: string;
+            readonly publicId: string | null;
+            readonly markedAt: Date;
+        }[];
+        readonly next: { readonly vertical: ListingVertical; readonly mediaId: string } | null;
+    }> {
+        const branches = Object.entries(MEDIA_TABLES).map(
+            ([vertical, table]) => sql`
+            SELECT ${vertical}::text AS vertical, m.id::text AS "mediaId",
+                m.public_id AS "publicId", m.remote_deletion_pending_at AS "markedAt"
+            FROM ${sql.identifier(table)} m
+            WHERE m.remote_deletion_pending_at IS NOT NULL`
+        );
+        const union = sql.join(branches, sql` UNION ALL `);
+        const result = await (args.tx ?? getDb()).execute(sql<{
+            vertical: string;
+            mediaId: string;
+            publicId: string | null;
+            markedAt: Date | string;
+        }>`
+            SELECT * FROM (${union}) marked
+            WHERE ${args.after === null ? sql`true` : sql`(vertical, "mediaId") > (${args.after.vertical}, ${args.after.mediaId})`}
+            ORDER BY vertical, "mediaId" LIMIT ${args.limit + 1}`);
+        const items = result.rows.slice(0, args.limit).map((row) => ({
+            vertical: row.vertical as ListingVertical,
+            mediaId: String(row.mediaId),
+            publicId: row.publicId === null ? null : String(row.publicId),
+            markedAt: toDate(row.markedAt)
+        }));
+        const last = items.at(-1);
+        return {
+            items,
+            next:
+                result.rows.length > args.limit && last
+                    ? { vertical: last.vertical, mediaId: last.mediaId }
+                    : null
+        };
+    },
+
+    /** Returns a keyset page of calendar connections still marked for remote revocation, by id. */
+    async listMarkedCalendarConnections(args: {
+        readonly tx?: DrizzleClient;
+        readonly after: string | null;
+        readonly limit: number;
+    }): Promise<{
+        readonly items: readonly {
+            readonly connectionId: string;
+            readonly accommodationId: string;
+            readonly provider: string;
+            readonly markedAt: Date;
+        }[];
+        readonly next: string | null;
+    }> {
+        const result = await (args.tx ?? getDb()).execute(sql<{
+            connectionId: string;
+            accommodationId: string;
+            provider: string;
+            markedAt: Date | string;
+        }>`
+            SELECT * FROM (
+                SELECT id::text AS "connectionId", accommodation_id::text AS "accommodationId",
+                    provider::text AS provider, remote_deletion_pending_at AS "markedAt"
+                FROM accommodation_calendar_sync
+                WHERE remote_deletion_pending_at IS NOT NULL
+            ) marked
+            WHERE ${args.after === null ? sql`true` : sql`"connectionId" > ${args.after}`}
+            ORDER BY "connectionId" LIMIT ${args.limit + 1}`);
+        const items = result.rows.slice(0, args.limit).map((row) => ({
+            connectionId: String(row.connectionId),
+            accommodationId: String(row.accommodationId),
+            provider: String(row.provider),
+            markedAt: toDate(row.markedAt)
+        }));
+        const last = items.at(-1);
+        return {
+            items,
+            next: result.rows.length > args.limit && last ? last.connectionId : null
+        };
     },
 
     /** Removes one calendar row only after it was marked by PB12. */
