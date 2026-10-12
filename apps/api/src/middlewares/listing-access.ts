@@ -55,15 +55,18 @@ export async function enforceListingAccess(args: {
             ? { facts: null, ownerId: null }
             : await ports.loadFacts({ vertical: config.vertical, listingId });
     const isForeign = config.operation !== 'CREATE' && facts !== null && actorId !== ownerId;
+    // One source for the route's administrative action: the same value gates
+    // the permission check and is handed to the resolver (AC:V8a:8, AC:V8a:9).
+    const action = config.administrativeAction ?? 'ACC_15';
     const hasActionPermission = isAdministrativeActionPermitted({
-        action: 'ACC_15',
+        action,
         actorPermissions: actor.permissions
     });
     const adminAction = isForeign
         ? hasActionPermission
-            ? { action: 'ACC_15' as const, permitted: true, isSystemActor: isSystemActor(actor) }
+            ? { action, permitted: true, isSystemActor: isSystemActor(actor) }
             : tier === 'admin'
-              ? { action: 'ACC_15' as const, permitted: false, isSystemActor: isSystemActor(actor) }
+              ? { action, permitted: false, isSystemActor: isSystemActor(actor) }
               : undefined
         : undefined;
     const subjectId = adminAction?.permitted ? ownerId : actorId;

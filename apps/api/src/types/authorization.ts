@@ -28,6 +28,13 @@ export type ListingAccessConfig = {
     operation: ListingOperation;
     /** Validated route parameter naming the listing; defaults to `id`, absent for CREATE. */
     idParam?: string;
+    /**
+     * The NUCLEO/08 §3 action a foreign actor executes on this route; defaults
+     * to ACC_15 (edit foreign content). ACC_23 purges at the owner's request and
+     * is evaluated on the owner (V5.md §3.2 rule 3). Step 3 reads this single
+     * value both for the permission check and for the resolver's action.
+     */
+    administrativeAction?: 'ACC_15' | 'ACC_23';
     /** Explicit capability for operations whose key is supplied by the caller. */
     step6Key?: string;
     /**
