@@ -13,7 +13,7 @@ provider was complete. It runs steps **1a, 1b and 2** of the cutover order.
   archived by deleting this folder in a commit after the cutover.
 - It also runs the **abort inverses (b) and (c)** (AC:U3:9, HOS-1427) in a separate mode, on the
   ids of a manifest only (see "Abort inverses").
-- Out of scope here: the unit exit (U3.4). Step 4b is documented below.
+- The unit exit is in the section "Unit exit (U3.4, AC:U3:10)" below. Step 4b is documented below.
 
 ## Run
 
@@ -196,17 +196,53 @@ only covers the ids we already know.
   default `origin/main`), seed live rows, and drop only what they created. A missing
   `HOSPEDA_TEST_DATABASE_URL` is a failure, not a skip.
 
+## Unit exit (U3.4, AC:U3:10)
+
+The unit is ready when the four points of its "Lista cuando" (LISTA:U3) hold. Evidence per point:
+
+| # | LISTA:U3 point | Automated evidence | Closed by |
+|---|---|---|---|
+| 1 | Runs whole against the provider test account: unfiltered census, cancel, re-read by id, walk count equals the `total`, every known id in the walk, manifest of ids without personal data. | TEST:U3:1 to 4 and 6 (`run-cutover.test.ts`), TEST:U3:5 and 13 (`cutover-db/old-db.test.ts`) | Manual smoke TEST:U3:11 |
+| 2 | Merged into the umbrella branch before the rehearsal (step 0). | History: merged into the epic branch; the rehearsal has not run yet (gate M3). | Merge order |
+| 3 | Entered after U1, in parallel with V1, B1 and U2. | History: U1.6 (HOS-1421) merged by #3481 (`371127eec1`) before U3.1 (#3483 `43d97e0150`), U3.2 (#3486 `1632472bcd`) and U3.3 (#3573 `3d5ac3a6ce`). | Merge order |
+| 4 | Against the test account, step 4b creates the probe and leaves it re-read `cancelled`, makes the small payment and leaves it refunded with the refund re-read, writes the three ids in the manifest, and fails when the lookup does not find the delivery. | TEST:U3:8 (`run-step-4b.test.ts`), TEST:U3:9 (`cutover-db/step-4b-notification.test.ts`), TEST:U3:10 (`abort-inverse.test.ts`) | Manual smoke TEST:U3:12 |
+
+The automated half of the exit is `scripts/__tests__/cutover/exit.test.ts`. It pins three things:
+
+- the 11 automated TEST ids (TEST:U3:1 to 10 and 13) are present as `describe` titles and each names its AC;
+- no image copies `scripts/` (no `COPY` from the build context brings the repository root or the folder);
+- no `check:*` guard names this folder (the unit adds no guards).
+
+The two smokes (TEST:U3:11 and TEST:U3:12) are run by the owner, NOT by automation. Their sign-off goes
+on HOS-1352: the unit carries no `status-needs-smoke-*` label.
+
+Before the rehearsal the owner approves:
+
+- the amount of the small payment (integer ARS 15 to 1000);
+- the names of the six session variables listed under "Credentials".
+
 ## TEST:U3:11, manual smoke for the owner (NOT run by automation)
 
 Whole run of steps 1a, 1b and 2 against the provider **test account** (sandbox), with
 the staging old DB. Never against production.
 
+0. Confirm the token belongs to the test account: `GET /users/me` with it, and look ONLY at
+   `tags`, which must contain `test_user`. Copy no other field of the response. If it does not
+   contain `test_user`, stop: this is not the test account.
 1. In a shell session set `CUTOVER_MP_ACCESS_TOKEN` (sandbox token) and
    `CUTOVER_OLD_DATABASE_URL` (a copy or the staging old DB; the script only reads it).
 2. Make sure `packages/payments/src/probes/probes.json` exists (or pass `--probes`). A missing file stops the script at startup with an error naming the path (exit 2).
 3. Dry run first: `corepack pnpm exec tsx scripts/cutover/cli.ts --dry-run`. Check that the
    walked counts equal the totals, that `unknownLiveIds` makes sense, and that the
    manifest has only ids.
+3b. Pending measurement from HOS-1426, BEFORE the real run (by hand, not with this script):
+    1. Create a plan in the test account.
+    2. Subscribe a test user to it.
+    3. Cancel the plan (what step 1a does).
+    4. Re-read the preapproval by id.
+
+    If the preapproval drops or stops charging, STOP and return to the owner: it changes AC:U3:2
+    (step 1a would have to exclude the probes' plans).
 4. Real run: `corepack pnpm exec tsx scripts/cutover/cli.ts --confirm-cancel-all`.
 5. Expect exit 0 and `outcome: ok`. Then confirm in the provider dashboard (or by
    `GET /preapproval/{id}` on a few ids from the manifest) that all of
@@ -216,28 +252,78 @@ the staging old DB. Never against production.
 
 ## TEST:U3:12, manual smoke for the owner (NOT run by automation)
 
-Run this only in the owner's staging rehearsal. The owner chooses where the payment half runs: on
-2026-09-29, `/v1/payments` in sandbox answered `401 Unauthorized use of live credentials` with the
-test account; the refund through `/v1/payments` was measured only in production. This conflicts
-with the U3 “Lista cuando” requirement to run against the test account, and the location is not
-settled here.
+Runs in the cutover rehearsal on `staging`, with the epic deployed and the B3 receiver on its route.
+Not before: the receiver that stores the deliveries must exist there.
 
-1. In the owner's own shell session, set the access token, new database URL, payer email and payment
-   method id. Create a one-use card token using the provider's public key in that private session,
-   then set it as `CUTOVER_CARD_TOKEN`. The card number must not pass through chat or a file; do not
-   reuse the token (EX-12).
-2. Confirm the provider account and the owner-approved ARS amount (15–1000), and that the active
-   IPN channel delivers `payment` to the existing receiver route. The owner decides where the payment
-   half can run given the sandbox measurement above.
-3. Run `corepack pnpm exec tsx scripts/cutover/cli.ts --step-4b --confirm-step-4b --payment-amount <ARS>`.
-4. Expect exit 0, `outcome=ok`, and `probe`, `payment`, and `refund` ids in the manifest. Confirm the
-   probe reads `cancelled`, the payment reads `approved` before its refund, the refund reads
-   `approved`, and the corresponding deliveries were stored in `provider_notification`. Delete the
-   manifest and clear the session variables after the rehearsal.
+Session steps:
 
-Two measured caveats for the owner:
+1. In the owner's own shell session set `CUTOVER_MP_ACCESS_TOKEN`, `CUTOVER_NEW_DATABASE_URL` (the
+   new database of the environment), `CUTOVER_PAYER_EMAIL` and `CUTOVER_PAYMENT_METHOD_ID`.
+2. Create a one-use card token with the provider's public key in that private session and set it as
+   `CUTOVER_CARD_TOKEN`. The card number must not pass through chat or a file; never reuse the
+   token (EX-12).
+3. Confirm the provider account and the owner-approved ARS amount (15 to 1000).
 
-- The `pending` probe's Webhooks delivery is **not measured**. If the smoke does not see it, step 4b
-  fails with `DELIVERY_NOT_SEEN`; stop and return to the owner for a decision.
-- The sandbox `/v1/payments` response and refund measurement are as stated above. The owner decides
-  where that half runs; this README does not resolve the conflict.
+Run:
+
+```bash
+corepack pnpm exec tsx scripts/cutover/cli.ts --step-4b --confirm-step-4b --payment-amount <ARS>
+```
+
+Two outcomes are acceptable, each with its own sign-off:
+
+1. **`outcome=ok` with `probe`, `payment` and `refund` ids in the manifest.** Verify that the probe
+   reads `cancelled`, the payment reads `approved` before its refund, the refund reads `approved`,
+   and the probe and payment deliveries were stored in `provider_notification` by the B3 receiver.
+   Sign off the whole smoke.
+2. **The probe half finished, the payment half did not.** The probe was created, its `WEBHOOKS`
+   delivery was seen and it re-reads `cancelled`; the run ends with `PROVIDER_ERROR` (HTTP 401) at the
+   payment creation and the manifest has NO `paymentId`. Sign off the probe half only, and write down
+   that the payment half could NOT be exercised in sandbox (measured, see below). The owner decides
+   where and when that half is verified; record that decision on HOS-1352.
+
+Any other result (for example `DELIVERY_NOT_SEEN` on the probe) is a failure: stop and return to
+the owner.
+
+Measured notices:
+
+- Sandbox answers `401 Unauthorized use of live credentials` to `POST /v1/payments`, three times on
+  2026-09-29. The cause measured is that the test seller account does not write on the Payments API at
+  all (neither creating a payment nor refunding one); in production the same authorization passes
+  (a refund with an invalid amount got `400`, not `401`). Staging uses the same token as the
+  sandbox probes.
+- Creating a payment through `POST /v1/payments` is **not measured as successful in ANY
+  environment**. The provider warned that Orders replaces that path, and orders do not notify through
+  any channel.
+- The `WEBHOOKS` delivery of a `pending` probe is **not measured**. If the run does not see it, step
+  4b fails with `DELIVERY_NOT_SEEN`.
+
+Delete the manifest and clear the session variables after the rehearsal.
+
+## Cutover smoke: the Sentry cron monitors (Coord-93, owner only)
+
+Checklist for the owner. No agent runs any part of it, there are no new environment variables and
+nothing here needs a redeploy.
+
+1. **Plan.** Confirm the Sentry plan includes Crons (not verified).
+2. **Sweep monitor, `billing-reconciliation-sweep`.** From `apps/api/src/utils/cron-monitor-ping.ts`:
+   `interval 1 day`, check-in margin 120 minutes (26 h in total). The job runs daily at 06:00
+   (`0 6 * * *`, zone `America/Argentina/Buenos_Aires`). The monitor does not exist until the first
+   check-in of a COMPLETE sweep in that environment creates it (Sentry upserts the monitor from the
+   check-in config), and the sweep pings only after a complete run.
+   - **Staging, during the rehearsal**, after the first complete sweep: the monitor exists with that
+     schedule and margin, under the staging `HOSPEDA_SENTRY_ENVIRONMENT`, and has an `ok` check-in.
+     If it does not appear, the sweep did not finish or there is no DSN (the check-in fails silently).
+3. **The alert arrives.** A missed check-in must open an issue and notify the owner. Channel: the
+   monitor's own notification to the owner's email unless the owner decides otherwise (not decided).
+   To force it without waiting 26 h, lower the staging monitor by hand to `interval 1 hour` with a
+   1 minute margin and wait for the "missed"; the next check-in restores the code's configuration.
+   Not measured.
+4. **Second monitor, `listing-coverage-reconciler`.** From `apps/api/src/utils/cron-heartbeat.ts`:
+   slug equal to the job name, `crontab 0 5 * * *`, same timezone, and NO `checkinMargin` (Sentry's
+   default applies). Run the same checks as in step 2. Whether a run longer than that default margin
+   would be flagged "missed" every day is not measured; if it happens, the fix is in
+   `cron-heartbeat.ts` (not U3): tell the coordinator.
+5. **Production**, the day after step 5 of the cutover (crons on): repeat steps 2 to 4 with the
+   production environment.
+6. Sign off on HOS-1352.
