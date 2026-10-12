@@ -427,8 +427,8 @@ function expectMailContent(args: {
 }
 
 function decodeHtmlEntities(value: string): string {
+    // `&amp;` goes last so an escaped entity such as `&amp;lt;` is not decoded twice.
     return value
-        .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"')
@@ -436,7 +436,8 @@ function decodeHtmlEntities(value: string): string {
         .replace(/&#x([\da-f]+);/gi, (_, code: string) =>
             String.fromCodePoint(Number.parseInt(code, 16))
         )
-        .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 10)));
+        .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 10)))
+        .replace(/&amp;/g, '&');
 }
 
 function formatEndDate(value: Date): string {
