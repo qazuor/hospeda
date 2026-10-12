@@ -139,11 +139,16 @@ function AccommodationEditContent({ id }: { readonly id: string }) {
                     qualityScore={({ isReduced }) => (
                         <AccommodationQualityScore compact={isReduced} />
                     )}
-                    extraSavePayload={(): Record<string, unknown> => ({
-                        aiAssistedFields: Array.from(
+                    extraSavePayload={(): Record<string, unknown> => {
+                        // An empty list is a no-op server-side, and on somebody
+                        // else's listing it is a non-content key that makes the
+                        // support edit fail with 403 (HOS-1493): send it only
+                        // when the AI actually assisted a field.
+                        const aiAssistedFields = Array.from(
                             aiAssistedFieldsRef.current
-                        ) as AiTextImproveFieldType[]
-                    })}
+                        ) as AiTextImproveFieldType[];
+                        return aiAssistedFields.length > 0 ? { aiAssistedFields } : {};
+                    }}
                     onSaveSuccess={clearAiAssistedRef}
                 >
                     <EntityEditContent
