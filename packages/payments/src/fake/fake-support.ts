@@ -49,6 +49,10 @@ export interface StoredCharge {
     refundAttempts: number;
     /** Refunds by their idempotency key, with the amount each moved (RP5). */
     readonly refundsByReference: Map<string, number>;
+    /** Scheduled attempts for the same rejected record. */
+    cycleAttempts?: readonly number[];
+    cycleAttempt?: number;
+    approveOnAttempt?: number | undefined;
 }
 
 /** A refusal: the provider will not do this in this state. */

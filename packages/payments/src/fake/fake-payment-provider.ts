@@ -10,7 +10,7 @@
  * told here, by default, each in ONE place, behind `this.lying({ lie })`. A
  * test turns a lie off only by naming it and saying why
  * (`honestAbout: [{ lie, why }]`); GUARD:G15 checks both rules statically. The
- * provider's own rules (RP) are kept always (`fake-rules.ts`, AC:B1:14). What it
+ * provider rules stay on; measured behaviours switch off only by name with why. What it
  * simulates without having measured it is apart and off by default
  * (`simulate: [{ simulation, why }]`).
  *
@@ -33,6 +33,7 @@ import type {
     AuthorizeResult,
     ChangeAmountInput,
     ChargeInput,
+    ChargeListResult,
     ChargeRef,
     ChargeResult,
     ChargeSnapshot,
@@ -55,10 +56,15 @@ import {
     parseProviderInput,
     RefundInputSchema
 } from '../provider/schemas';
+import { applyFakeChargeCycles, fakeCycleRetryInstants } from './fake-charge-cycle';
 import { FakeLedger } from './fake-ledger';
 import type { FakeLieId } from './fake-lists';
 import { decodeFakeNotice } from './fake-notice';
-import { type FakePaymentProviderOptions, parseFakeOptions } from './fake-options';
+import {
+    FAKE_SWITCHABLE_BEHAVIOURS,
+    type FakePaymentProviderOptions,
+    parseFakeOptions
+} from './fake-options';
 import { FakeOutbox } from './fake-outbox';
 import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
 import { searchStoredAuthorizations } from './fake-search';
@@ -83,6 +89,7 @@ export class FakePaymentProvider implements PaymentProvider {
     private readonly clock: Clock;
     private readonly honest: ReadonlySet<string>;
     private readonly simulating: ReadonlySet<string>;
+    private readonly without: ReadonlySet<string>;
     private readonly usedPaymentTokens = new Set<string>();
 
     /**
@@ -93,9 +100,15 @@ export class FakePaymentProvider implements PaymentProvider {
      */
     constructor(options: FakePaymentProviderOptions) {
         const parsed = parseFakeOptions({ options });
+        for (const behaviour of parsed.without) {
+            if (!(FAKE_SWITCHABLE_BEHAVIOURS as readonly string[]).includes(behaviour)) {
+                throw new Error(`${behaviour} is not switchable yet`);
+            }
+        }
         this.clock = parsed.clock;
         this.honest = parsed.honest;
         this.simulating = parsed.simulating;
+        this.without = parsed.without;
         this.outbox = new FakeOutbox({
             clock: this.clock,
             isHonestAbout: ({ lie }) => this.honest.has(lie),
@@ -147,6 +160,8 @@ export class FakePaymentProvider implements PaymentProvider {
                         freePeriodDays: this.addedFreePeriodDays({
                             firstChargeAt: value.firstChargeAt
                         }),
+                        chargeRecordCount: 0,
+                        lastChargedAt: null,
                         lastModifiedAt: this.clock.now().toISOString()
                     },
                     version: 1,
@@ -198,6 +213,12 @@ export class FakePaymentProvider implements PaymentProvider {
             snapshot: {
                 chargeId,
                 createdAt: this.clock.now().toISOString(),
+                expiresAt: this.expiryFor({
+                    authorization,
+                    first: ![...this.ledger.charges.values()].some(
+                        (c) => c.snapshot.authorizationId === input.authorizationId
+                    )
+                }),
                 authorizationId: input.authorizationId,
                 reference: authorization.snapshot.reference,
                 status: 'rejected',
@@ -213,8 +234,28 @@ export class FakePaymentProvider implements PaymentProvider {
             refundAttempts: 0,
             refundsByReference: new Map()
         });
+        this.writeLastAttempt({ authorization, approved: false });
         this.ledger.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
         return { chargeId };
+    }
+
+    /** Test handle: a rejected cycle retries three times on one record, then pauses at expiry. */
+    async failChargeCycle(input: {
+        readonly authorizationId: string;
+        readonly declineReason: string | null;
+        readonly approveOnAttempt?: 2 | 3 | 4;
+    }): Promise<{ readonly chargeId: string }> {
+        const result = await this.declineCharge(input);
+        const stored = this.ledger.chargeOrThrow({ id: result.chargeId, capability: 'charge' });
+        if (this.behaving({ behaviour: 'RP8' }) && stored.snapshot.expiresAt !== null) {
+            stored.cycleAttempts = fakeCycleRetryInstants({
+                createdAt: stored.snapshot.createdAt,
+                expiresAt: stored.snapshot.expiresAt
+            });
+            stored.cycleAttempt = 1;
+            stored.approveOnAttempt = input.approveOnAttempt;
+        }
+        return result;
     }
 
     /**
@@ -261,6 +302,12 @@ export class FakePaymentProvider implements PaymentProvider {
                     snapshot: {
                         chargeId,
                         createdAt: this.clock.now().toISOString(),
+                        expiresAt: this.expiryFor({
+                            authorization: stored,
+                            first: ![...this.ledger.charges.values()].some(
+                                (c) => c.snapshot.authorizationId === value.authorizationId
+                            )
+                        }),
                         authorizationId: value.authorizationId,
                         reference: value.reference,
                         status: late ? 'pending' : 'approved',
@@ -273,6 +320,7 @@ export class FakePaymentProvider implements PaymentProvider {
                     refundAttempts: 0,
                     refundsByReference: new Map()
                 });
+                this.writeLastAttempt({ authorization: stored, approved: !late });
                 this.ledger.emit({ resourceKind: 'charge', resourceId: chargeId, version: 1 });
                 return { chargeId };
             }
@@ -434,11 +482,36 @@ export class FakePaymentProvider implements PaymentProvider {
             capability: 'read'
         });
         this.catchUp();
-        const snapshot = structuredClone(
-            this.ledger.authorizationOrThrow({ id: value.authorizationId, capability: 'read' })
-                .snapshot
+        const stored = this.ledger.authorizationOrThrow({
+            id: value.authorizationId,
+            capability: 'read'
+        });
+        const records = [...this.ledger.charges.values()].filter(
+            (charge) => charge.snapshot.authorizationId === value.authorizationId
         );
+        const snapshot = structuredClone({
+            ...stored.snapshot,
+            chargeRecordCount: this.lying({ lie: 'M7' })
+                ? records.length
+                : records.filter((c) => c.snapshot.status === 'approved').length
+        });
         return stampProviderRead({ snapshot, clock: this.clock });
+    }
+
+    async listCharges(input: AuthorizationRef): Promise<ChargeListResult> {
+        const { value } = parseProviderInput({
+            schema: AuthorizationRefSchema,
+            input,
+            capability: 'read'
+        });
+        this.catchUp();
+        this.ledger.authorizationOrThrow({ id: value.authorizationId, capability: 'read' });
+        return {
+            chargeIds: [...this.ledger.charges.values()]
+                .filter((c) => c.snapshot.authorizationId === value.authorizationId)
+                .sort((a, b) => a.snapshot.createdAt.localeCompare(b.snapshot.createdAt))
+                .map((c) => c.snapshot.chargeId)
+        };
     }
 
     /** Capability 7 · search authorizations. */
@@ -496,6 +569,31 @@ export class FakePaymentProvider implements PaymentProvider {
         return !this.honest.has(args.lie);
     }
 
+    private behaving(args: { readonly behaviour: 'RP7' | 'RP8' | 'RP11' }): boolean {
+        return !this.without.has(args.behaviour);
+    }
+
+    private expiryFor(args: {
+        readonly authorization: { snapshot: AuthorizationSnapshot };
+        readonly first: boolean;
+    }): string | null {
+        if (!this.behaving({ behaviour: 'RP7' }) || args.first) return null;
+        const date = new Date(this.clock.now());
+        date.setUTCMonth(date.getUTCMonth() + args.authorization.snapshot.cadence.everyMonths);
+        return date.toISOString();
+    }
+
+    private writeLastAttempt(args: {
+        readonly authorization: { snapshot: AuthorizationSnapshot; version: number };
+        readonly approved: boolean;
+    }): void {
+        if (!this.behaving({ behaviour: 'RP11' }) && !args.approved) return;
+        args.authorization.snapshot = {
+            ...args.authorization.snapshot,
+            lastChargedAt: this.clock.now().toISOString()
+        };
+    }
+
     /** EX-5 measured discarded `items` at creation; dropping cycle/date extends AC:B3:42.
      * M1 + M9: combinación no medida; comportamiento provisorio, Coord-33.
      * M1 descarta la fecha guardada y M9 calcula el período desde la fecha enviada.
@@ -516,6 +614,13 @@ export class FakePaymentProvider implements PaymentProvider {
     /** Brings the time-driven state up to the clock: late charges land, open links expire. */
     private catchUp(): void {
         const now = this.now();
+        applyFakeChargeCycles({
+            charges: this.ledger.charges,
+            authorizations: this.ledger.authorizations,
+            now,
+            ledger: this.ledger,
+            updateLastAttempt: this.behaving({ behaviour: 'RP11' })
+        });
         for (const [chargeId, stored] of this.ledger.charges) {
             if (stored.settleAt === null || stored.settleAt > now) continue;
             const at = stored.settleAt;

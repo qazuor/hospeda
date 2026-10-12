@@ -75,6 +75,8 @@ describe('authorize and approve', () => {
             cadence: { everyMonths: 1 },
             firstChargeAt: null,
             freePeriodDays: null,
+            chargeRecordCount: 0,
+            lastChargedAt: null,
             lastModifiedAt: '2026-10-01T03:00:00.000Z'
         });
         expect(after.status).toBe('active');
@@ -103,6 +105,7 @@ describe('charge', () => {
         expect((await fake.readCharge({ chargeId })).snapshot).toEqual({
             chargeId,
             createdAt: expect.any(String),
+            expiresAt: null,
             authorizationId,
             reference: 'cycle-1',
             status: 'approved',

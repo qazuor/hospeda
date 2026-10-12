@@ -1,0 +1,3 @@
+ALTER TABLE "subscription" ADD COLUMN "grace_started_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "subscription" ADD COLUMN "grace_ends_at" timestamp with time zone;--> statement-breakpoint
+ALTER TABLE "subscription" ADD CONSTRAINT "ck_subscription_grace_clock_pair" CHECK (("subscription"."grace_started_at" IS NULL AND "subscription"."grace_ends_at" IS NULL) OR ("subscription"."grace_started_at" IS NOT NULL AND "subscription"."grace_ends_at" IS NOT NULL AND "subscription"."grace_ends_at" >= "subscription"."grace_started_at"));
