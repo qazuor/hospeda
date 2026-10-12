@@ -50,9 +50,11 @@ export {
     composeListingMedia
 } from './listing-media-compose';
 export {
+    assertSupportEditContentOnly,
     buildSupportEditParts,
     isForeignContentEdit,
     LISTING_CONTENT_EDITED_BY_SUPPORT_TEMPLATE,
+    LISTING_SUPPORT_EDIT_CONTENT_FIELDS,
     type RecordListingSupportEditInput,
     recordListingSupportEdit,
     type SupportEditPart

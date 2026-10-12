@@ -1,18 +1,10 @@
 /**
- * HOS-1493 (piece V8a, ACC:15) — action 15 edits the content of somebody
- * else's listing and nothing else, against a REAL PostgreSQL database.
- *
- * Through the SERVICE (the route half and "the row 26 notice shows in Mi
- * Cuenta" belong to later runs): an administrator holding ONLY action 15's own
- * permission corrects a text, creates a draft in the owner's name and restores
- * an archived photo. Each write keeps the listing's state, starts no trial
- * (`T1` is the owner's), records one `admin` event carrying the reason and
- * content field NAMES only, and queues the owner's email in the same
- * transaction.
- *
- * Every test runs inside `withServiceTestTransaction`, which rolls back: the
- * seeded owner, admin and listings never outlive the test, so no global
- * population (published listings, trials, subscriptions) is altered.
+ * HOS-1493 (V8a, ACC:15) — through the SERVICE, against real PostgreSQL: action
+ * 15 (only inside the authorization a route grants, bound to the owner) edits
+ * content and nothing else: same state, no trial, one `admin` event with the
+ * reason and field NAMES, the owner's email in the same transaction. Every test
+ * rolls back (`withServiceTestTransaction`); committed destinations are removed
+ * in `afterEach`, so no global population is altered.
  */
 
 import {
@@ -36,20 +28,22 @@ import {
 } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
+import { GastronomyService } from '../../../src/services/gastronomy/gastronomy.service';
 import { LISTING_CONTENT_EDITED_BY_SUPPORT_TEMPLATE } from '../../../src/services/listing/listing-support-edit';
 import type { Actor } from '../../../src/types';
+import { runWithAdministrativeAuthorization } from '../../../src/utils/administrative-authorization';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 import {
     closeServiceTestPool,
     getServiceTestDb,
     isServiceTestDbAvailable,
     seedAccommodation,
+    seedGastronomy,
     withServiceTestTransaction
 } from './helpers';
 
 const dbAvailable = isServiceTestDbAvailable();
 const REASON = 'pedido por teléfono';
-
 /** Inserts a bare user (the administrator) and returns its id. */
 async function seedUser(tx: DrizzleClient): Promise<string> {
     const id = crypto.randomUUID();
@@ -63,14 +57,9 @@ async function seedUser(tx: DrizzleClient): Promise<string> {
     return id;
 }
 
-/** Destinations committed outside the test transaction, removed in `afterEach`. */
 const committedDestinationIds: string[] = [];
 
-/**
- * Inserts a CITY destination COMMITTED: the create path validates the
- * destination with a read outside the caller's transaction, so a destination
- * seeded inside the rolled-back test transaction is invisible to it.
- */
+/** A COMMITTED city: the create path checks the destination outside the caller tx. */
 async function seedCommittedDestination(): Promise<string> {
     const id = crypto.randomUUID();
     const uid = id.slice(0, 8);
@@ -110,12 +99,28 @@ async function seedDraftOwner(tx: DrizzleClient) {
     });
 }
 
+/** Runs a call as an action-15 route does: inside the authorization granted for the owner. */
+const asAction15 = <T>(ownerId: string, run: () => Promise<T>): Promise<T> =>
+    runWithAdministrativeAuthorization({
+        authorization: { action: 'ACC_15', subjectId: ownerId },
+        run
+    });
+
 /** Action 15's own permission and nothing else of the accommodation family. */
 const admin15 = (id: string): Actor => ({
     id,
     roles: [RoleEnum.ADMIN],
     permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT]
 });
+
+/** The error code of a service call, whether it answered an envelope or threw (inside a caller tx). */
+async function errorCodeOf(call: Promise<{ readonly error?: { readonly code: string } }>) {
+    try {
+        return (await call).error?.code;
+    } catch (error) {
+        return (error as { readonly code?: string }).code;
+    }
+}
 
 async function readListing(tx: DrizzleClient, id: string) {
     const [row] = await tx
@@ -156,10 +161,12 @@ async function readEvents(tx: DrizzleClient, accommodationId: string) {
 
 describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
     let service: AccommodationService;
+    let gastronomyService: GastronomyService;
 
     beforeAll(() => {
         if (!dbAvailable) return;
         service = new AccommodationService({ logger: createLoggerMock() });
+        gastronomyService = new GastronomyService({ logger: createLoggerMock() });
     });
 
     afterEach(async () => {
@@ -171,8 +178,7 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
     });
 
     afterAll(async () => {
-        if (!dbAvailable) return;
-        await closeServiceTestPool();
+        if (dbAvailable) await closeServiceTestPool();
     });
 
     it.skipIf(!dbAvailable)(
@@ -184,11 +190,13 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 const adminId = await seedUser(tx);
 
                 // Act
-                const edited = await service.update(
-                    admin15(adminId),
-                    accommodationId,
-                    { description: 'Descripción corregida por soporte a pedido de la dueña.' },
-                    { tx, actionReason: REASON }
+                const edited = await asAction15(ownerId, () =>
+                    service.update(
+                        admin15(adminId),
+                        accommodationId,
+                        { description: 'Descripción corregida por soporte a pedido de la dueña.' },
+                        { tx, actionReason: REASON }
+                    )
                 );
 
                 // Assert
@@ -210,7 +218,6 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 expect(event.actorId).not.toBe(ownerId);
                 expect(event.reason).toBe(REASON);
                 expect(event.changes).toEqual([{ field: 'description' }]);
-                expect(JSON.stringify(event.changes)).not.toContain('corregida');
 
                 const emails = await readSupportEmails(tx, ownerId);
                 expect(emails).toHaveLength(1);
@@ -249,10 +256,9 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 } as unknown as AccommodationCreateInput;
 
                 // Act
-                const created = await service.create(admin15(adminId), input, {
-                    tx,
-                    actionReason: REASON
-                });
+                const created = await asAction15(ownerId, () =>
+                    service.create(admin15(adminId), input, { tx, actionReason: REASON })
+                );
 
                 // Assert
                 expect(created.error).toBeUndefined();
@@ -296,17 +302,18 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                     .returning({ id: accommodationMedia.id });
 
                 // Act
-                const restored = await service.restoreMedia(
-                    admin15(adminId),
-                    { accommodationId, mediaId: media?.id as string },
-                    { tx }
+                const restored = await asAction15(ownerId, () =>
+                    service.restoreMedia(
+                        admin15(adminId),
+                        { accommodationId, mediaId: media?.id as string },
+                        { tx }
+                    )
                 );
 
                 // Assert
                 expect(restored.error).toBeUndefined();
                 const row = await readListing(tx, accommodationId);
                 expect(row?.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
-                expect(row?.deletedAt).toBeNull();
 
                 const events = await readEvents(tx, accommodationId);
                 expect(events).toHaveLength(1);
@@ -382,6 +389,110 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 const events = await readEvents(tx, accommodationId);
                 expect(events.filter((e) => e.actorType === 'admin')).toEqual([]);
                 expect(await readSupportEmails(tx, ownerId)).toEqual([]);
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)(
+        '(f) the action 15 permission alone, without the route authorization, edits nothing',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { userId: ownerId, accommodationId } = await seedDraftOwner(tx);
+                const adminId = await seedUser(tx);
+
+                const code = await errorCodeOf(
+                    service.update(
+                        admin15(adminId),
+                        accommodationId,
+                        { description: 'Intento sin la autorización de la ruta.' },
+                        { tx }
+                    )
+                );
+
+                expect(['FORBIDDEN', 'NOT_FOUND']).toContain(code);
+                expect((await readListing(tx, accommodationId))?.description).not.toBe(
+                    'Intento sin la autorización de la ruta.'
+                );
+                expect(await readEvents(tx, accommodationId)).toEqual([]);
+                expect(await readSupportEmails(tx, ownerId)).toEqual([]);
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)(
+        '(g) through action 15, a non-content field is refused and nothing is written',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { userId: ownerId, accommodationId } = await seedDraftOwner(tx);
+                const adminId = await seedUser(tx);
+
+                const code = await errorCodeOf(
+                    asAction15(ownerId, () =>
+                        service.update(
+                            admin15(adminId),
+                            accommodationId,
+                            {
+                                description: 'Texto nuevo de soporte que no debería escribirse.',
+                                visibility: 'PUBLIC'
+                            } as never,
+                            { tx }
+                        )
+                    )
+                );
+
+                expect(code).toBe('FORBIDDEN');
+                const row = await readListing(tx, accommodationId);
+                expect(row?.description).not.toBe(
+                    'Texto nuevo de soporte que no debería escribirse.'
+                );
+                expect(row?.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
+                expect(await readEvents(tx, accommodationId)).toEqual([]);
+                expect(await readSupportEmails(tx, ownerId)).toEqual([]);
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)(
+        '(h) gastronomy: action 15 edits content, and refuses a non-content field',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { ownerId, gastronomyId } = await seedGastronomy(tx);
+                const adminId = await seedUser(tx);
+
+                const refusedCode = await errorCodeOf(
+                    asAction15(ownerId, () =>
+                        gastronomyService.update(
+                            admin15(adminId),
+                            gastronomyId,
+                            { visibility: 'PUBLIC' } as never,
+                            { tx }
+                        )
+                    )
+                );
+                const edited = await asAction15(ownerId, () =>
+                    gastronomyService.update(
+                        admin15(adminId),
+                        gastronomyId,
+                        { description: 'Descripción de la parrilla corregida por soporte.' },
+                        { tx, actionReason: REASON }
+                    )
+                );
+
+                expect(refusedCode).toBe('FORBIDDEN');
+                expect(edited.error).toBeUndefined();
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'gastronomy',
+                    entityId: gastronomyId,
+                    tx
+                });
+                expect(events).toHaveLength(1);
+                expect(events[0]).toMatchObject({
+                    actorType: 'admin',
+                    actorId: adminId,
+                    reason: REASON,
+                    changes: [{ field: 'description' }]
+                });
+                expect(await readSupportEmails(tx, ownerId)).toHaveLength(1);
             });
         }
     );

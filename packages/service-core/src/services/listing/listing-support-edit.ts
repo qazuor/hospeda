@@ -33,11 +33,14 @@ import {
     users
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { type Actor, type ServiceContext, ServiceError } from '../../types';
 import { resolveServiceActionReason } from '../../utils/action-reason';
+import {
+    isAction15AuthorizedFor,
+    resolveAdministrativeAuthorization
+} from '../../utils/administrative-authorization';
 import { resolveServiceCorrelationId } from '../../utils/correlation';
-import { hasPermission } from '../../utils/permission';
 import {
     LISTING_NON_CONTENT_FIELDS,
     type ListingOwnerActEntityType,
@@ -96,20 +99,104 @@ export function buildSupportEditParts(input: { readonly changes: readonly Domain
 }
 
 /**
- * Whether a write is action 15: an actor who is NOT the listing's owner and
- * holds action 15's own permission. Decided by PERMISSION, never by role.
+ * Whether a write is action 15: an actor who is NOT the listing's owner,
+ * inside a scope where a route's listing-access chain authorized action 15 for
+ * that owner, still holding action 15's own permission. Never inferred from the
+ * permission alone, never decided by role.
  *
  * @param input.actor - The actor of the write.
  * @param input.ownerId - The listing's owner, if known.
- * @returns `true` only for a foreign content edit by a holder of the permission.
+ * @returns `true` only for an authorized foreign content edit.
  */
 export function isForeignContentEdit(input: {
     readonly actor: Actor;
     readonly ownerId?: string | null;
 }): boolean {
-    const { actor, ownerId } = input;
-    if (!ownerId || actor.id === ownerId) return false;
-    return hasPermission(actor, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT);
+    return isAction15AuthorizedFor(input);
+}
+
+/**
+ * The listing fields action 15 may write: the content the spec names (texts,
+ * photos, FAQ, hours) — the same list day 180 / PB12 blanks
+ * (`listing-purge.model.ts` BLANK_CONTENT + CONTENT_TABLES) — for the three
+ * verticals, plus two write-only bookkeeping flags. State, owner, visibility,
+ * moderation, featuring, slug and every other column are NOT here.
+ */
+export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
+    // Shared texts and their translations.
+    'name',
+    'summary',
+    'description',
+    'richDescription',
+    'nameI18n',
+    'summaryI18n',
+    'descriptionI18n',
+    'richDescriptionI18n',
+    'translationMeta',
+    'seo',
+    // Shared contact, photos, videos, catalog links (junctions), FAQ.
+    'contactInfo',
+    'socialNetworks',
+    'media',
+    'videos',
+    'amenityIds',
+    'featureIds',
+    'faqs',
+    // Accommodation.
+    'price',
+    'location',
+    'extraInfo',
+    // Gastronomy.
+    'menuUrl',
+    'menuFileUrl',
+    'menuFilePublicId',
+    'menuFileKind',
+    'openingHours',
+    'priceRange',
+    // Experience.
+    'priceFrom',
+    'priceUnit',
+    'isPriceOnRequest',
+    'meetingPoint',
+    'meetingPointLat',
+    'meetingPointLong',
+    'meetingPointDirections',
+    'durationMinutes',
+    'whatToBring',
+    'requirements',
+    'cancellationPolicy',
+    'acceptsPrivateGroups',
+    // Write-only bookkeeping flags (never a column of their own).
+    'refreshSlugFromName',
+    'aiAssistedFields'
+] as const;
+
+const CONTENT_FIELDS = new Set<string>(LISTING_SUPPORT_EDIT_CONTENT_FIELDS);
+
+/**
+ * Rejects an action-15 update that writes anything but content. A no-op outside
+ * an authorized action-15 scope (the owner and staff keep their own rules).
+ *
+ * @param input.data - The update payload as it reached the service.
+ * @returns `{ rejectedFields }`, empty when the payload is accepted.
+ * @throws ServiceError `FORBIDDEN` naming the non-content fields, inside an ACC_15 scope.
+ */
+export function assertSupportEditContentOnly(input: {
+    readonly data: Readonly<Record<string, unknown>>;
+}): { readonly rejectedFields: readonly string[] } {
+    const { authorization } = resolveAdministrativeAuthorization();
+    if (authorization?.action !== 'ACC_15') return { rejectedFields: [] };
+    const rejectedFields = Object.entries(input.data)
+        .filter(([field, value]) => value !== undefined && !CONTENT_FIELDS.has(field))
+        .map(([field]) => field)
+        .sort();
+    if (rejectedFields.length > 0) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            `Action 15 edits content only; not allowed: ${rejectedFields.join(', ')}`
+        );
+    }
+    return { rejectedFields };
 }
 
 /** Input of {@link recordListingSupportEdit}. */

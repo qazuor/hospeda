@@ -9,6 +9,7 @@ import {
     getOwnershipDescriptor,
     hasPermission
 } from '../../utils';
+import { isAction15AuthorizedFor } from '../../utils/administrative-authorization';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
 
 /**
@@ -23,27 +24,18 @@ const isOwner = (actor: Actor, entity: { ownerId?: string | null }) => {
 };
 
 /**
- * Whether the actor writes somebody else's accommodation with action 15's own
- * permission (ACC:15, HOS-1493): a draft in the owner's name, a correction, a
- * restore. Decided by PERMISSION, never by role.
- */
-const isForeignContentEditor = (actor: Actor, ownerId: string | null | undefined): boolean =>
-    Boolean(ownerId) &&
-    ownerId !== actor.id &&
-    hasPermission(actor, PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT);
-
-/**
  * Checks if an actor has permission to create an accommodation.
- * Requires the `ACCOMMODATION_CREATE` permission, or action 15's own permission
- * (`LISTING_FOREIGN_CONTENT_EDIT`) when the accommodation is created in ANOTHER
- * owner's name (ACC:15, HOS-1493, H12).
+ * Requires the `ACCOMMODATION_CREATE` permission, or — inside a scope where a
+ * route's listing-access chain authorized action 15 for the owner named in
+ * `data.ownerId` — action 15's own permission (ACC:15, HOS-1493, H12). The
+ * permission alone never opens the create: the explicit authorization does.
  * Ownership checks (`ownerId` matching `actor.id`) are assumed to be handled separately.
  * @param actor The actor performing the action.
  * @param data The data for the accommodation to be created (its `ownerId` decides action 15).
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanCreate(actor: Actor, data: AccommodationCreateInput): void {
-    if (isForeignContentEditor(actor, data.ownerId)) {
+    if (isAction15AuthorizedFor({ actor, ownerId: data.ownerId })) {
         return;
     }
     if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
@@ -56,16 +48,28 @@ export function checkCanCreate(actor: Actor, data: AccommodationCreateInput): vo
 
 /**
  * Checks if an actor has permission to update an accommodation.
- * Requires `ACCOMMODATION_UPDATE_ANY`, action 15's own permission
- * (`LISTING_FOREIGN_CONTENT_EDIT`) on somebody else's accommodation (ACC:15,
- * HOS-1493), or `ACCOMMODATION_UPDATE_OWN`.
+ * Requires `ACCOMMODATION_UPDATE_ANY` or `ACCOMMODATION_UPDATE_OWN`.
  * If `_OWN` is used, it verifies that the actor is the owner of the accommodation.
+ *
+ * Action 15 (ACC:15, HOS-1493) passes ONLY when the caller opts in with
+ * `allowAction15` (the content-write hook `_canUpdate` does; `unpublish` and the
+ * visibility hook do not) AND the call runs inside a scope where a route's
+ * listing-access chain authorized action 15 for this accommodation's owner.
+ * The actor's permission alone never opens it.
  * @param actor The actor performing the action.
  * @param entity The accommodation entity to be updated.
+ * @param options.allowAction15 Whether this operation is a content write action 15 may perform.
  * @throws {ServiceError} If the permission check fails.
  */
-export function checkCanUpdate(actor: Actor, entity: Accommodation): void {
-    if (!isForeignContentEditor(actor, entity.ownerId)) {
+export function checkCanUpdate(
+    actor: Actor,
+    entity: Accommodation,
+    options: { readonly allowAction15?: boolean } = {}
+): void {
+    const byAction15 =
+        options.allowAction15 === true &&
+        isAction15AuthorizedFor({ actor, ownerId: entity.ownerId });
+    if (!byAction15) {
         checkGenericPermission(
             actor,
             PermissionEnum.ACCOMMODATION_UPDATE_ANY,

@@ -142,6 +142,7 @@ import {
     recordListingOwnerAct,
     recordListingSubEntityEdit
 } from '../listing/listing-owner-act';
+import { assertSupportEditContentOnly } from '../listing/listing-support-edit';
 import { addFeaturedMediaRow } from '../media/add-featured-media';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { buildOwnedMediaFeaturedPort } from '../media/owned-media-featured-port';
@@ -548,7 +549,11 @@ export class AccommodationService extends BaseCrudService<
      * @inheritdoc
      */
     protected _canUpdate(actor: Actor, entity: Accommodation): void {
-        checkCanUpdate(actor, entity);
+        // Every `_canUpdate` caller writes content (the row, its FAQ, media and
+        // IA data), so an explicitly authorized action 15 may pass (ACC:15,
+        // HOS-1493). `unpublish` and `_canUpdateVisibility` call
+        // `checkCanUpdate` directly, without the opt-in.
+        checkCanUpdate(actor, entity, { allowAction15: true });
     }
     /**
      * @inheritdoc
@@ -1105,6 +1110,8 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<AccommodationHookState>
     ): Promise<Partial<Accommodation>> {
+        // ACC:15 (HOS-1493): an action-15 update writes content and nothing else.
+        assertSupportEditContentOnly({ data: data as Record<string, unknown> });
         const slugWasProvided = Object.hasOwn(data as Record<string, unknown>, 'slug');
 
         // SPEC-095: when destinationId is being changed, validate it is a CITY.

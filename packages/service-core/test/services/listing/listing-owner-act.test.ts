@@ -36,6 +36,7 @@ import {
     recordListingSubEntityEdit
 } from '../../../src/services/listing/listing-owner-act';
 import type { Actor, ServiceContext } from '../../../src/types';
+import { runWithAdministrativeAuthorization } from '../../../src/utils/administrative-authorization';
 import {
     _resetCorrelationIdResolver,
     resolveServiceCorrelationId,
@@ -65,6 +66,13 @@ const fakeEmailTx = (): ServiceContext['tx'] => {
     };
     return chain as unknown as ServiceContext['tx'];
 };
+
+/** Runs `run` inside the action-15 scope a route opens for the owner. */
+const inOwnerScope = <T>(run: () => Promise<T>): Promise<T> =>
+    runWithAdministrativeAuthorization({
+        authorization: { action: 'ACC_15', subjectId: OWNER_ID },
+        run
+    });
 
 beforeEach(() => {
     domainEventModelDouble.writes.length = 0;
@@ -168,7 +176,7 @@ describe('recordListingOwnerAct', () => {
         ]);
     });
 
-    it('writes nothing when a foreign actor lacks the action 15 permission', async () => {
+    it('writes nothing for a foreign actor outside an action 15 scope', async () => {
         const result = await recordListingOwnerAct({
             eventType: 'listing.edited',
             entityType: 'gastronomy',
@@ -182,16 +190,18 @@ describe('recordListingOwnerAct', () => {
         expect(outbox.calls).toEqual([]);
     });
 
-    it('delegates a foreign actor holding the action 15 permission to the support register', async () => {
+    it('delegates an authorized action 15 (scope bound to the owner) to the support register', async () => {
         const tx = fakeEmailTx();
-        const result = await recordListingOwnerAct({
-            eventType: 'listing.edited',
-            entityType: 'gastronomy',
-            listing: { id: LISTING_ID, ownerId: OWNER_ID },
-            actor: admin15,
-            ctx: { tx },
-            changes: [{ field: 'description' }]
-        });
+        const result = await inOwnerScope(() =>
+            recordListingOwnerAct({
+                eventType: 'listing.edited',
+                entityType: 'gastronomy',
+                listing: { id: LISTING_ID, ownerId: OWNER_ID },
+                actor: admin15,
+                ctx: { tx },
+                changes: [{ field: 'description' }]
+            })
+        );
 
         expect(result.recorded).toBe(true);
         expect(domainEventModelDouble.writes).toHaveLength(1);
@@ -274,7 +284,7 @@ describe('recordListingSubEntityEdit', () => {
         expect(JSON.stringify(write)).not.toContain('new');
     });
 
-    it('writes nothing when a foreign actor lacks the action 15 permission', async () => {
+    it('writes nothing for a foreign actor outside an action 15 scope', async () => {
         const result = await recordListingSubEntityEdit({
             entityType: 'experience',
             listing: { id: LISTING_ID, ownerId: OWNER_ID },
@@ -286,14 +296,16 @@ describe('recordListingSubEntityEdit', () => {
         expect(domainEventModelDouble.writes).toEqual([]);
     });
 
-    it('delegates a foreign actor holding the action 15 permission (photos part)', async () => {
-        const result = await recordListingSubEntityEdit({
-            entityType: 'experience',
-            listing: { id: LISTING_ID, ownerId: OWNER_ID },
-            actor: admin15,
-            field: 'media',
-            ctx: { tx: fakeEmailTx() }
-        });
+    it('delegates an authorized action 15 sub-entity edit (photos part)', async () => {
+        const result = await inOwnerScope(() =>
+            recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: { id: LISTING_ID, ownerId: OWNER_ID },
+                actor: admin15,
+                field: 'media',
+                ctx: { tx: fakeEmailTx() }
+            })
+        );
 
         expect(result.recorded).toBe(true);
         expect(domainEventModelDouble.writes[0]).toMatchObject({
