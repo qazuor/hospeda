@@ -172,6 +172,7 @@ describe('TEST:V4:22 (parte 2: clase y una sola pieza) - three verticals, one pi
                 },
                 escalate: async () => undefined,
                 onRowError: () => undefined,
+                onRetry: () => undefined,
                 onLeaseLost: () => undefined
             },
             owner: 'trial-consolidation-test',
@@ -223,6 +224,7 @@ describe('TEST:V4:22 (parte 2: clase y una sola pieza) - three verticals, one pi
                 },
                 escalate: async () => undefined,
                 onRowError: () => undefined,
+                onRetry: () => undefined,
                 onLeaseLost: () => undefined
             },
             owner: 'trial-consolidation-test-2',

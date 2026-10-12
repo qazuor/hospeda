@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+    E2E_MAIL_CAPTURE_PORT,
     type E2eMailCaptureServer,
     startE2eMailCapture
 } from '../../fixtures/mail-capture-server.ts';
@@ -10,6 +11,11 @@ describe('TEST:V4:23 support mail capture server', () => {
     afterEach(async () => {
         await capture?.close();
         capture = null;
+    });
+
+    it('uses the port configured for the built API by default', async () => {
+        capture = await startE2eMailCapture();
+        expect(capture.port).toBe(E2E_MAIL_CAPTURE_PORT);
     });
 
     it('captures Brevo mail by recipient and subject and releases its port', async () => {

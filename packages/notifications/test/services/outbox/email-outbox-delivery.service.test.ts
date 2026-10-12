@@ -169,6 +169,9 @@ describe('TEST:U2:8 one attempt record, in notification_log only', () => {
             maxAttempts: EMAIL_OUTBOX_CONSTANTS.MAX_ATTEMPTS
         });
         expect(result).toMatchObject({ retried: 1, failed: 0, escalated: 0 });
+        expect(h.retries).toEqual([
+            { outboxId: r.id, template: r.template, lastError: 'provider 503' }
+        ]);
         expect(h.escalations).toHaveLength(0);
     });
 

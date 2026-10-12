@@ -73,7 +73,7 @@ export function buildOutboxSenderRender(input: { readonly siteUrl: string }) {
 /** Everything the run needs except the reporting hooks, which are built from the run's logger. */
 export type EmailOutboxSenderDeps = Omit<
     EmailOutboxDeliveryDeps,
-    'escalate' | 'onRowError' | 'onLeaseLost'
+    'escalate' | 'onRowError' | 'onRetry' | 'onLeaseLost'
 >;
 
 /** Input of {@link createEmailOutboxSenderJob}. */
@@ -268,6 +268,13 @@ export function createEmailOutboxSenderJob(
                                     ...event
                                 }
                             );
+                        },
+                        onRetry: (event) => {
+                            ctx.logger.warn('Email outbox: delivery failed and will be retried', {
+                                outboxId: event.outboxId,
+                                template: event.template,
+                                last_error: event.lastError
+                            });
                         },
                         onLeaseLost: (event) => {
                             ctx.logger.warn(
