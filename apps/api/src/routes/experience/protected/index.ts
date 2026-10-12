@@ -45,6 +45,7 @@ import { protectedRemoveExperienceMediaRoute } from './removeMedia';
 import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
 import { protectedReorderExperienceMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
+import { protectedExperienceSupportEditsRoute } from './supportEdits';
 import { protectedUnpublishExperienceRoute } from './unpublish';
 import { protectedUpdateExperienceFaqRoute } from './updateFaq';
 import { protectedUpdateExperienceMediaRoute } from './updateMedia';
@@ -99,6 +100,7 @@ app.route('/', protectedPublishExperienceRoute);
 app.route('/', protectedUnpublishExperienceRoute);
 app.route('/', protectedReactivateExperienceRoute);
 app.route('/', protectedPurgeExperienceRoute);
+app.route('/', protectedExperienceSupportEditsRoute);
 app.route('/', protectedGetExperienceByIdRoute);
 
 // PATCH /{id} — Owner operational update.

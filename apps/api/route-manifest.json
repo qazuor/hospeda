@@ -2322,6 +2322,10 @@
             "path": "/api/v1/protected/accommodations/:id/reactivate"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/accommodations/:id/support-edits"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/accommodations/:id/unpublish"
         },
@@ -2690,6 +2694,10 @@
             "path": "/api/v1/protected/experiences/:id/reactivate"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/experiences/:id/support-edits"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/experiences/:id/unpublish"
         },
@@ -2856,6 +2864,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/gastronomies/:id/reactivate"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/gastronomies/:id/support-edits"
         },
         {
             "method": "POST",
