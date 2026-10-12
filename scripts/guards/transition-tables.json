@@ -500,9 +500,19 @@
             "guard": {
                 "is_succession_predecessor": false
             },
-            "reads": ["subscription.status", "subscription.succeeds_id", "payment.status"],
+            "reads": [
+                "subscription.status",
+                "subscription.succeeds_id",
+                "payment.status",
+                "subscription.succeeded_by_id"
+            ],
             "inputs": ["provider:payment_by_id", "catalog:billing_conditions"],
-            "writes": ["subscription.status", "domain_event.changes"]
+            "writes": [
+                "subscription.status",
+                "domain_event.changes",
+                "subscription.grace_started_at",
+                "subscription.grace_ends_at"
+            ]
         },
         {
             "id": "TRANS:B:S6",
@@ -521,7 +531,8 @@
                 "subscription.status",
                 "subscription.succeeds_id",
                 "subscription.succeeded_by_id",
-                "payment.status"
+                "payment.status",
+                "subscription.grace_ends_at"
             ],
             "inputs": [
                 "provider:read_by_id",
@@ -529,7 +540,13 @@
                 "provider:payment_by_id",
                 "catalog:unresolved_payment_age"
             ],
-            "writes": ["subscription.status", "domain_event.changes", "subscription_pause.fin_real"]
+            "writes": [
+                "subscription.status",
+                "domain_event.changes",
+                "subscription_pause.fin_real",
+                "subscription.grace_started_at",
+                "subscription.grace_ends_at"
+            ]
         },
         {
             "id": "TRANS:B:S7",

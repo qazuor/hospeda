@@ -1,10 +1,12 @@
 import { planCatalogModel } from '@repo/db';
 import {
+    createGraceExpiryCheck,
     createLostFirstRejectionCheck,
     creditedPaymentsFromLedger,
     runReconciliationSweep
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
+import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
@@ -35,6 +37,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
         try {
             const provider = getPaymentProvider();
             const clock = getClock().clock;
+            const { planPolicy } = createPlanCatalogInverse({ reader: planCatalogModel });
             const summary = await runReconciliationSweep(
                 { correlationId: ctx.correlationId },
                 {
@@ -45,8 +48,17 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             provider,
                             clock,
                             payments: creditedPaymentsFromLedger,
-                            planPolicy: createPlanCatalogInverse({ reader: planCatalogModel })
-                                .planPolicy
+                            planPolicy
+                        }),
+                        // AC:B7:7/AC:B7:8: S6 when the grace clock ran out, or P1 + S5 when the
+                        // period charged; coverage, cancellation-seen, S19 and the DEC-OBS-001
+                        // channel stay on their defaults until B4.2, B7.4b and B11/B13a wire them.
+                        createGraceExpiryCheck({
+                            provider,
+                            clock,
+                            beforeCancelNotice,
+                            payments: creditedPaymentsFromLedger,
+                            planPolicy
                         })
                     ],
                     zeroCallChecks: {},
