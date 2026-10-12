@@ -1,6 +1,10 @@
-import { NO_PLANS_AVAILABLE_MESSAGE, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { NO_PLANS_AVAILABLE_MESSAGE, ServiceErrorCode } from '@repo/schemas';
 import { isSystemActor, ServiceError } from '@repo/service-core';
-import { OPERATION_STEP6_KEY, resolveListingAccess } from '@repo/verticals';
+import {
+    isAdministrativeActionPermitted,
+    OPERATION_STEP6_KEY,
+    resolveListingAccess
+} from '@repo/verticals';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { resolveSubscribeDestinationForUser } from '../services/listing-publication/subscribe-destination.service';
@@ -51,13 +55,15 @@ export async function enforceListingAccess(args: {
             ? { facts: null, ownerId: null }
             : await ports.loadFacts({ vertical: config.vertical, listingId });
     const isForeign = config.operation !== 'CREATE' && facts !== null && actorId !== ownerId;
-    const hasActionPermission =
-        actor.permissions?.includes(PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT) ?? false;
+    const hasActionPermission = isAdministrativeActionPermitted({
+        action: 'ACC_15',
+        actorPermissions: actor.permissions
+    });
     const adminAction = isForeign
         ? hasActionPermission
-            ? { permitted: true, isSystemActor: isSystemActor(actor) }
+            ? { action: 'ACC_15' as const, permitted: true, isSystemActor: isSystemActor(actor) }
             : tier === 'admin'
-              ? { permitted: false, isSystemActor: isSystemActor(actor) }
+              ? { action: 'ACC_15' as const, permitted: false, isSystemActor: isSystemActor(actor) }
               : undefined
         : undefined;
     const subjectId = adminAction?.permitted ? ownerId : actorId;
