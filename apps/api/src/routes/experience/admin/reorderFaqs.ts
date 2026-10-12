@@ -15,6 +15,7 @@ import {
 import { ExperienceService, reorderExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -57,7 +58,10 @@ export const adminReorderExperienceFaqsRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof reorderExperienceFaqs>[0] }
         ).model;
-        const result = await reorderExperienceFaqs(model, actor, reorderInput);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => reorderExperienceFaqs(model, actor, reorderInput)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

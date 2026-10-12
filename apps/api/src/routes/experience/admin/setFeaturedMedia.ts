@@ -17,6 +17,7 @@ import { ExperienceMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { ExperienceService, ServiceError, setFeaturedExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -55,9 +56,13 @@ export const adminSetFeaturedExperienceMediaRoute = createAdminRoute({
                 model: Parameters<typeof setFeaturedExperienceMedia>[0];
             }
         ).model;
-        const result = await setFeaturedExperienceMedia(model, actor, {
-            experienceId: params.id as string,
-            mediaId: params.mediaId as string
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                setFeaturedExperienceMedia(model, actor, {
+                    experienceId: params.id as string,
+                    mediaId: params.mediaId as string
+                })
         });
 
         if (result.error) {

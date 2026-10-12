@@ -43,6 +43,7 @@ import {
 import { ExperienceService, ServiceError, updateExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -86,13 +87,17 @@ export const adminUpdateExperienceMediaRoute = createAdminRoute({
                 model: Parameters<typeof updateExperienceMedia>[0];
             }
         ).model;
-        const result = await updateExperienceMedia(model, actor, {
-            experienceId: params.id as string,
-            mediaId: params.mediaId as string,
-            caption: payload.caption,
-            description: payload.description,
-            alt: payload.alt,
-            attribution: payload.attribution
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                updateExperienceMedia(model, actor, {
+                    experienceId: params.id as string,
+                    mediaId: params.mediaId as string,
+                    caption: payload.caption,
+                    description: payload.description,
+                    alt: payload.alt,
+                    attribution: payload.attribution
+                })
         });
 
         if (result.error) {

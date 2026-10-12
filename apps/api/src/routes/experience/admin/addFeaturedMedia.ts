@@ -39,6 +39,7 @@ import {
 import { addExperienceFeaturedMedia, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -91,7 +92,10 @@ export const adminAddExperienceFeaturedMediaRoute = createAdminRoute({
                 model: Parameters<typeof addExperienceFeaturedMedia>[0];
             }
         ).model;
-        const result = await addExperienceFeaturedMedia(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => addExperienceFeaturedMedia(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

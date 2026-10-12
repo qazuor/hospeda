@@ -5,11 +5,10 @@
  * authorizes, audits and notifies the owner only inside that scope.
  *
  * This guard pins the inventory of admin EDIT routes of the three verticals:
- * - every WIRED route wraps exactly one call, and that call is its content
- *   method (never a read, never the whole handler, never a second call);
- * - every other admin EDIT route is EXEMPT with a reason (H11: the
- *   gastronomy and experience sub-entity services keep their own checks, so
- *   action 15 alone never reaches them);
+ * - every route wraps exactly one call, and that call is its content method
+ *   (never a read, never the whole handler, never a second call);
+ * - the gastronomy and experience photo and FAQ routes call module-level
+ *   service functions, named here instead of a `service.method`;
  * - a new admin EDIT route fails here until it is classified.
  */
 
@@ -39,29 +38,28 @@ const WIRED: Readonly<Record<string, string>> = {
     'gastronomy/admin/patch.ts': 'gastronomyService.update',
     'gastronomy/admin/update.ts': 'gastronomyService.update',
     'experience/admin/patch.ts': 'experienceService.update',
-    'experience/admin/update.ts': 'experienceService.update'
+    'experience/admin/update.ts': 'experienceService.update',
+    'gastronomy/admin/addFaq.ts': 'addGastronomyFaq',
+    'gastronomy/admin/addFeaturedMedia.ts': 'addGastronomyFeaturedMedia',
+    'gastronomy/admin/addMedia.ts': 'addGastronomyMedia',
+    'gastronomy/admin/removeFaq.ts': 'removeGastronomyFaq',
+    'gastronomy/admin/removeMedia.ts': 'removeGastronomyMedia',
+    'gastronomy/admin/reorderFaqs.ts': 'reorderGastronomyFaqs',
+    'gastronomy/admin/reorderMedia.ts': 'reorderGastronomyMedia',
+    'gastronomy/admin/setFeaturedMedia.ts': 'setFeaturedGastronomyMedia',
+    'gastronomy/admin/updateFaq.ts': 'updateGastronomyFaq',
+    'gastronomy/admin/updateMedia.ts': 'updateGastronomyMedia',
+    'experience/admin/addFaq.ts': 'addExperienceFaq',
+    'experience/admin/addFeaturedMedia.ts': 'addExperienceFeaturedMedia',
+    'experience/admin/addMedia.ts': 'addExperienceMedia',
+    'experience/admin/removeFaq.ts': 'removeExperienceFaq',
+    'experience/admin/removeMedia.ts': 'removeExperienceMedia',
+    'experience/admin/reorderFaqs.ts': 'reorderExperienceFaqs',
+    'experience/admin/reorderMedia.ts': 'reorderExperienceMedia',
+    'experience/admin/setFeaturedMedia.ts': 'setFeaturedExperienceMedia',
+    'experience/admin/updateFaq.ts': 'updateExperienceFaq',
+    'experience/admin/updateMedia.ts': 'updateExperienceMedia'
 };
-
-const H11 =
-    'H11: the sub-entity service keeps its own permission checks; action 15 alone never reaches it';
-
-/** Admin EDIT routes that do not open the action-15 scope, with the reason. */
-const EXEMPT: Readonly<Record<string, string>> = Object.fromEntries(
-    (['gastronomy', 'experience'] as const).flatMap((vertical) =>
-        [
-            'addFaq',
-            'addFeaturedMedia',
-            'addMedia',
-            'removeFaq',
-            'removeMedia',
-            'reorderFaqs',
-            'reorderMedia',
-            'setFeaturedMedia',
-            'updateFaq',
-            'updateMedia'
-        ].map((name) => [`${vertical}/admin/${name}.ts`, H11])
-    )
-);
 
 /** Source without block and line comments, so prose never satisfies a pattern. */
 function stripComments(source: string): string {
@@ -84,9 +82,9 @@ const read = (route: string): string =>
     stripComments(readFileSync(join(ROUTES_DIR, route), 'utf8'));
 
 describe('ACC:15 admin content routes open the scope around their content call only', () => {
-    it('classifies every admin EDIT route of the three verticals as wired or exempt', () => {
+    it('wires every admin EDIT route of the three verticals', () => {
         // Arrange
-        const classified = [...Object.keys(WIRED), ...Object.keys(EXEMPT)].sort();
+        const classified = Object.keys(WIRED).sort();
 
         // Act
         const discovered = adminEditRoutes();
@@ -115,12 +113,6 @@ describe('ACC:15 admin content routes open the scope around their content call o
             // Action 15 is the default action of a foreign EDIT; declaring it would
             // send a host editing her own listing through step 3 and refuse her.
             expect(source).not.toMatch(/administrativeAction:/);
-        });
-    }
-
-    for (const route of Object.keys(EXEMPT)) {
-        it(`${route} does not open the action-15 scope`, () => {
-            expect(read(route)).not.toMatch(/runListingContentCall\(/);
         });
     }
 });

@@ -13,6 +13,7 @@ import { SuccessSchema, VerticalEnum } from '@repo/schemas';
 import { GastronomyService, removeGastronomyMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -47,15 +48,19 @@ export const adminRemoveGastronomyMediaRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof removeGastronomyMedia>[0] }
         ).model;
-        const result = await removeGastronomyMedia(
-            model,
-            actor,
-            {
-                gastronomyId: params.id as string,
-                mediaId: params.mediaId as string
-            },
-            getMediaProvider()
-        );
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                removeGastronomyMedia(
+                    model,
+                    actor,
+                    {
+                        gastronomyId: params.id as string,
+                        mediaId: params.mediaId as string
+                    },
+                    getMediaProvider()
+                )
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

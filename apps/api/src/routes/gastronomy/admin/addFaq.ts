@@ -12,6 +12,7 @@ import {
 import { addGastronomyFaq, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -54,7 +55,10 @@ export const adminAddGastronomyFaqRoute = createAdminRoute({
         const model = (
             gastronomyService as unknown as { model: Parameters<typeof addGastronomyFaq>[0] }
         ).model;
-        const result = await addGastronomyFaq(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => addGastronomyFaq(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
