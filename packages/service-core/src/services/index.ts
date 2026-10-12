@@ -76,6 +76,7 @@ export {
     type RetentionSummary
 } from './billing/notification/notification-retention.service.js';
 export * from './billing/payment/credit-payment.service.js';
+export * from './billing/payment/issue-receipt.js';
 export * from './billing/payment/payment-ledger.js';
 export * from './billing/payment/payment-ports.js';
 export * from './billing/payment/record-charge-fact.service.js';

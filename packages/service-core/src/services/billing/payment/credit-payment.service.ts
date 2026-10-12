@@ -1,5 +1,6 @@
 import type { Clock, CoverageChangedEvent } from '@repo/billing-verticals-contract';
 import {
+    addonInstances,
     and,
     buildEmailDedupKey,
     buildEventOccurrence,
@@ -9,8 +10,7 @@ import {
     getDb,
     payments,
     promoRedemptions,
-    subscriptions,
-    users
+    subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
@@ -18,6 +18,7 @@ import { sql } from 'drizzle-orm';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
+import { issueReceipt, readReceiptPayer } from './issue-receipt.js';
 import {
     createPaymentReconciliationMarkPayments,
     creditedPaymentsFromLedger
@@ -134,6 +135,25 @@ export async function creditPayment(
                     continue;
                 }
 
+                let payerUserId: string | null = null;
+                if (payment.addonInstanceId) {
+                    const [instance] = await tx
+                        .select({ ownerId: addonInstances.ownerId })
+                        .from(addonInstances)
+                        .where(eq(addonInstances.id, payment.addonInstanceId))
+                        .limit(1);
+                    payerUserId = instance?.ownerId ?? null;
+                } else if (subscription?.class !== 'LAPIDA') {
+                    payerUserId = subscription?.userId ?? null;
+                }
+                const { payer, deliverable } = await readReceiptPayer({ tx, userId: payerUserId });
+                const receipt = await issueReceipt({
+                    tx,
+                    source: { kind: 'PAYMENT', paymentId: payment.id },
+                    payer,
+                    issuedAt: ports.clock.now()
+                });
+
                 let coverage: CreditPaymentResult['coverage'] = 'NOT_APPLICABLE';
                 const exhaustedPromos: { subscriptionId: string; redemptionId: string }[] = [];
                 if (subscription && subscription.class !== 'LAPIDA') {
@@ -213,43 +233,45 @@ export async function creditPayment(
                                 redemptionId: redemption.id
                             });
                     }
-
-                    const user = subscription.userId
-                        ? (
-                              await tx
-                                  .select({ email: users.email })
-                                  .from(users)
-                                  .where(eq(users.id, subscription.userId))
-                                  .limit(1)
-                          )[0]
-                        : undefined;
-                    if (!subscription.userId || !user?.email) {
-                        logger.warn(
-                            { subscriptionId: subscription.id },
-                            'No user email for credited payment'
-                        );
-                    } else {
-                        const dedupKey = buildEmailDedupKey({
-                            recipient: subscription.userId,
+                }
+                if (deliverable && payer && payerUserId) {
+                    const dedupKey = buildEmailDedupKey({
+                        recipient: payerUserId,
+                        template: PAYMENT_CREDITED_TEMPLATE,
+                        occurrence: buildEventOccurrence({ eventId: payment.id })
+                    });
+                    const payload = payment.addonInstanceId
+                        ? {
+                              paymentId: payment.id,
+                              addonInstanceId: payment.addonInstanceId,
+                              amountMinor: payment.amount,
+                              currency: payment.currency,
+                              receiptId: receipt.receiptId,
+                              receiptNumber: receipt.receiptNumber
+                          }
+                        : {
+                              paymentId: payment.id,
+                              subscriptionId: subscription?.id ?? null,
+                              amountMinor: payment.amount,
+                              currency: payment.currency,
+                              receiptId: receipt.receiptId,
+                              receiptNumber: receipt.receiptNumber
+                          };
+                    await emailOutboxModel.enqueue(
+                        {
+                            recipientUserId: payerUserId,
+                            recipientEmail: payer.email,
                             template: PAYMENT_CREDITED_TEMPLATE,
-                            occurrence: buildEventOccurrence({ eventId: payment.id })
-                        });
-                        await emailOutboxModel.enqueue(
-                            {
-                                recipientUserId: subscription.userId,
-                                recipientEmail: user.email,
-                                template: PAYMENT_CREDITED_TEMPLATE,
-                                payload: {
-                                    paymentId: payment.id,
-                                    subscriptionId: subscription.id,
-                                    amountMinor: payment.amount,
-                                    currency: payment.currency
-                                },
-                                dedupKey
-                            },
-                            tx
-                        );
-                    }
+                            payload,
+                            dedupKey
+                        },
+                        tx
+                    );
+                } else {
+                    logger.info(
+                        { paymentId: payment.id, receiptId: receipt.receiptId },
+                        'Receipt issued without a deliverable payer email'
+                    );
                 }
                 const vertical = subscription?.vertical
                     ? VerticalEnumSchema.safeParse(subscription.vertical)
