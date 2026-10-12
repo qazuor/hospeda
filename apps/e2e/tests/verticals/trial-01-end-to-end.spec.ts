@@ -360,7 +360,7 @@ async function triggerCron(args: {
                 `received HTTP ${response.status}`
         );
     }
-    const body = (await response.json()) as {
+    type CronExecution = {
         success?: boolean;
         processed?: number;
         errors?: number;
@@ -368,8 +368,10 @@ async function triggerCron(args: {
         dryRun?: boolean;
         executedAt?: string;
     };
-    expect(response.status, `cron ${args.jobName} should return HTTP 200`).toBe(200);
-    expect(body, `cron ${args.jobName} should return success:true`).toMatchObject({
+    const body = (await response.json()) as CronExecution & { data?: CronExecution };
+    // The trigger is a POST admin route: it answers 201 with the execution under `data`.
+    expect(response.status, `cron ${args.jobName} should return HTTP 201`).toBe(201);
+    expect(body.data ?? body, `cron ${args.jobName} should return success:true`).toMatchObject({
         success: true,
         jobName: args.jobName
     });
