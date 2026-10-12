@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { VerticalEnumSchema } from '../../enums/vertical.schema.js';
 
 /** Public S1 body: version and vertical come only from the option's composite FK. */
 export const StartSubscriptionRequestSchema = z.strictObject({
@@ -23,5 +24,9 @@ export type StartSubscriptionRejectionReason = z.infer<
 export const StartSubscriptionResponseSchema = z.strictObject({
     subscriptionId: z.uuid(),
     authorizationId: z.string().min(1),
-    checkoutUrl: z.url()
+    checkoutUrl: z.url(),
+    /** Vertical read from subscription.vertical on the persisted row. */
+    vertical: VerticalEnumSchema,
+    /** Expiration from subscription.authorization_window_ends_at. */
+    authorizationWindowEndsAt: z.iso.datetime()
 });

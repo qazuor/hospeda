@@ -6,11 +6,13 @@ import { expect, test } from '@playwright/test';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { createAdjustableClock } from '@repo/test-clock';
 import { createUser, markProfileCompleted } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import {
     E2E_FAKE_PROVIDER_URL,
     startE2eFakeProvider
 } from '../../fixtures/fake-provider-server.ts';
+import { attachSession, openSignupCheckout } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -160,7 +162,6 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         const serverBody = (await serverRead.json()) as { init_point?: string };
         expect(serverBody.init_point).toContain('activation');
         expect(fakeServer.requests().some((request) => request.path === '/preapproval')).toBe(true);
-        // B3.6 (Coord-32): assert the web checkout renders checkoutUrl.
     });
 
     test('turns off M10 by name and returns the healthy link', async () => {
@@ -248,6 +249,61 @@ test.describe('TEST:B3:43 AC:B3:43 fake provider server and clock @p0 @billing @
         const expected = at.getTime() + 72 * 60 * 60 * 1000;
         expect(Math.abs(actual - expected)).toBeLessThanOrEqual(1000);
         expect(Math.abs(actual - (Date.now() + 72 * 60 * 60 * 1000))).toBeGreaterThan(
+            29 * 24 * 60 * 60 * 1000
+        );
+    });
+
+    test('the web checkout shows the sanitized link and moved authorization window', async ({
+        page
+    }) => {
+        if (!fakeServer) throw new Error('TEST:B3:43 fake provider server was not started');
+        fakeServer.useProvider({
+            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() })
+        });
+        const user = await freshUser();
+        await seedCookieConsent(page);
+        await attachSession(page, user.sessionCookie);
+        await openSignupCheckout({
+            page,
+            webUrl: process.env.HOSPEDA_E2E_WEB_URL,
+            billingOptionId: monthlyOptionId
+        });
+        await page.getByTestId('signup-checkout-confirm').click();
+
+        const pending = page.getByTestId('signup-checkout-pending');
+        await expect(pending).toBeVisible();
+        const subscriptionId = await pending.getAttribute('data-subscription-id');
+        expect(subscriptionId).toBeTruthy();
+        const resumeLink = page.getByTestId('signup-checkout-resume-link');
+        const checkoutUrl = await resumeLink.getAttribute('href');
+        expect(checkoutUrl).toBeTruthy();
+        expect(checkoutUrl).not.toContain('activation');
+
+        const rows = await execSQL<{
+            authorization_window_ends_at: string;
+            provider_id: string;
+        }>(
+            `SELECT subscription.authorization_window_ends_at, provider_link.provider_id
+               FROM subscription
+               JOIN provider_link ON provider_link.subscription_id = subscription.id
+              WHERE subscription.id = $1 AND subscription.user_id = $2`,
+            [subscriptionId, user.id]
+        );
+        const row = rows[0];
+        expect(row).toBeTruthy();
+        const serverRead = await fetch(`${E2E_FAKE_PROVIDER_URL}/preapproval/${row?.provider_id}`, {
+            headers: { authorization: 'Bearer e2e-fake-provider' }
+        });
+        const serverBody = (await serverRead.json()) as { init_point?: string };
+        expect(serverBody.init_point).toContain('activation');
+
+        const dateTime = await page
+            .getByTestId('signup-checkout-window-ends')
+            .getAttribute('dateTime');
+        const windowEnd = new Date(dateTime ?? '').getTime();
+        const persistedWindowEnd = new Date(row?.authorization_window_ends_at ?? '').getTime();
+        expect(Math.abs(windowEnd - persistedWindowEnd)).toBeLessThanOrEqual(1000);
+        expect(Math.abs(windowEnd - (Date.now() + 72 * 60 * 60 * 1000))).toBeGreaterThan(
             29 * 24 * 60 * 60 * 1000
         );
     });

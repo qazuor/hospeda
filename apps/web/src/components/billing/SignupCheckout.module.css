@@ -1,0 +1,60 @@
+.container {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-4);
+    max-width: 42rem;
+    margin-inline: auto;
+    padding: var(--space-8) var(--space-4);
+}
+
+.container h1,
+.message h2,
+.container p {
+    margin: 0;
+    color: var(--core-foreground);
+}
+
+.primary,
+.message button {
+    min-height: 44px;
+    padding: var(--space-3) var(--space-6);
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-button);
+    background: var(--brand-primary);
+    color: var(--core-card);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.primary:focus-visible,
+.message a:focus-visible,
+.message button:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
+}
+
+.message {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+    width: 100%;
+    padding: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--core-card);
+}
+
+.message a {
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.message time {
+    color: var(--core-muted-foreground);
+}
