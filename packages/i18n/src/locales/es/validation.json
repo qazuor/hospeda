@@ -2058,6 +2058,12 @@
             "suggestedDate": {
                 "invalid": "La fecha sugerida no es válida"
             }
+        },
+        "listingPurgeOnRequest": {
+            "reason": {
+                "required": "Escribí el motivo del borrado.",
+                "max": "El motivo no puede superar los 2000 caracteres."
+            }
         }
     },
     "contact": {
