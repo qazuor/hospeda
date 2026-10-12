@@ -1,0 +1,121 @@
+{
+    "$comment": "Declared class of every transition of the trial, publication and partner_application machines, one entry per corpus row in corpus order. Read by GUARD:G-R3-B (scripts/check-clock-transitions-never-grant.ts, AC:V5:20). The class is declared transition by transition and never inferred (V5.md section 3.4). The four clock rows (T3, PB4, PB5, PB9) are the ones 04-catalogos.md:880 names as having time as their event; each carries a literal clause of its catalog evento and that citation. Every other row is event-triggered: PB2, PB3 and PB7 by V5.md section 3.4 and 04-catalogos.md:874-882 and :1244-1248, PB10 to PB13 by 04-catalogos.md:1395, the rest are acts of a person or an admin. Billing machines are out of scope.",
+    "transitions": [
+        {
+            "id": "TRANS:V:T1",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:T2",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:T3",
+            "class": "clock",
+            "clause": "llega la fecha de fin",
+            "source": {
+                "path": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md",
+                "line": 880,
+                "quote": "`T3`, `PB4`, `PB5` y `PB9`"
+            }
+        },
+        {
+            "id": "TRANS:V:T4",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:T5",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:T6",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:T8",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB1",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB2",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB3",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB4",
+            "class": "clock",
+            "clause": "el día del plazo de archivado de inactividad",
+            "source": {
+                "path": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md",
+                "line": 880,
+                "quote": "`T3`, `PB4`, `PB5` y `PB9`"
+            }
+        },
+        {
+            "id": "TRANS:V:PB5",
+            "class": "clock",
+            "clause": "meses de **inactividad**",
+            "source": {
+                "path": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md",
+                "line": 880,
+                "quote": "`T3`, `PB4`, `PB5` y `PB9`"
+            }
+        },
+        {
+            "id": "TRANS:V:PB6",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB7",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB8",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB9",
+            "class": "clock",
+            "clause": "el del plazo de borrado de inactividad",
+            "source": {
+                "path": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md",
+                "line": 880,
+                "quote": "`T3`, `PB4`, `PB5` y `PB9`"
+            }
+        },
+        {
+            "id": "TRANS:V:PB10",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB11",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB12",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PB13",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PP1",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PP2",
+            "class": "event"
+        },
+        {
+            "id": "TRANS:V:PP3",
+            "class": "event"
+        }
+    ]
+}
