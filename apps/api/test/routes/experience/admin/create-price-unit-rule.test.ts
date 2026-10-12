@@ -34,7 +34,6 @@ import type { AppOpenAPI } from '../../../../src/types.js';
 
 const ACTOR_ID = '11111111-1111-4111-8111-111111111111';
 const DESTINATION_ID = '99999999-9999-4999-8999-999999999991';
-const OWNER_ID = '99999999-9999-4999-8999-999999999992';
 
 const ADMIN_HEADERS = {
     'Content-Type': 'application/json',
@@ -61,7 +60,8 @@ const baseBody = (pricing: Record<string, unknown>) => ({
         'y desayuno al regresar, apta para principiantes y de dos horas de duracion.',
     type: 'KAYAK_RENTAL',
     destinationId: DESTINATION_ID,
-    ownerId: OWNER_ID,
+    // An own create: a foreign ownerId is action 15 and asks for its own permission (HOS-1493).
+    ownerId: ACTOR_ID,
     priceFrom: 5000,
     ...pricing
 });
