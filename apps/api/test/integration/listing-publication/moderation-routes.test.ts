@@ -137,6 +137,28 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
         );
         expect(missing.status).toBe(404);
 
+        const softDeletedId = await makeListing(vertical, owner.id, destinationId);
+        const table: Readonly<Record<(typeof verticals)[number], string>> = {
+            [VerticalEnum.ACCOMMODATION]: 'accommodations',
+            [VerticalEnum.GASTRONOMY]: 'gastronomies',
+            [VerticalEnum.EXPERIENCE]: 'experiences'
+        };
+        await getDb().execute(
+            sql`UPDATE ${sql.identifier(table[vertical])} SET deleted_at = now() WHERE id = ${softDeletedId}::uuid`
+        );
+        const softDeleted = await readResponse(
+            await app.request(listingPath(vertical, softDeletedId), {
+                method: 'POST',
+                body: JSON.stringify({ action: 'TAKE_DOWN', reason: 'Review' }),
+                headers: actorHeaders({
+                    id: owner.id,
+                    role: RoleEnum.ADMIN,
+                    permissions: adminPermissions(PermissionEnum.LISTING_MODERATE)
+                })
+            })
+        );
+        expect(softDeleted.status).toBe(404);
+
         for (const [index, gesture] of [
             { action: 'REQUEST_FIX', reason: 'Fix this', suggestedDate: '2026-10-20' },
             { action: 'TAKE_DOWN', reason: 'Policy violation' },
