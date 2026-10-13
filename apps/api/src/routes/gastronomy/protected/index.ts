@@ -25,7 +25,6 @@ import { protectedAddGastronomyMediaRoute } from './addMedia';
 import { protectedGetGastronomyBrochureRoute } from './brochure';
 import { protectedCreateGastronomyListingRoute } from './create';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
-import { protectedDeleteGastronomyDraftRoute } from './deleteDraft';
 import { protectedDeleteGastronomyMenuFileRoute } from './deleteMenuFile';
 import { protectedGetGastronomyByIdRoute } from './getById';
 import { protectedGetGastronomyDailySpecialsRoute } from './getDailySpecials';
@@ -63,10 +62,6 @@ const app = createRouter();
 // POST / — Owner self-service create (HOS-166 §7.2). Root path, so it cannot
 // collide with any /{id}/... route.
 app.route('/', protectedCreateGastronomyListingRoute);
-
-// DELETE /{id} — Owner discards one of their own DRAFTs (HOS-1156 AC-14).
-// Only DELETE registered on /{id} itself; the /{id}/... DELETEs are longer.
-app.route('/', protectedDeleteGastronomyDraftRoute);
 
 // PUT /{id}/faqs/reorder — Must be before /{id}/faqs/{faqId} (PUT).
 app.route('/', protectedReorderGastronomyFaqsRoute);

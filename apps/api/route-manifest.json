@@ -38,10 +38,6 @@
             "path": "/api/v1/admin/accommodations"
         },
         {
-            "method": "DELETE",
-            "path": "/api/v1/admin/accommodations/:id"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/admin/accommodations/:id"
         },
@@ -76,10 +72,6 @@
         {
             "method": "PATCH",
             "path": "/api/v1/admin/accommodations/:id/faqs/reorder"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/admin/accommodations/:id/hard"
         },
         {
             "method": "GET",
@@ -128,10 +120,6 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/accommodations/:id/purge"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/accommodations/:id/restore"
         },
         {
             "method": "POST",
@@ -814,10 +802,6 @@
             "path": "/api/v1/admin/experiences"
         },
         {
-            "method": "DELETE",
-            "path": "/api/v1/admin/experiences/:id"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/admin/experiences/:id"
         },
@@ -854,10 +838,6 @@
             "path": "/api/v1/admin/experiences/:id/faqs/reorder"
         },
         {
-            "method": "DELETE",
-            "path": "/api/v1/admin/experiences/:id/hard"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/admin/experiences/:id/media"
         },
@@ -892,10 +872,6 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/experiences/:id/purge"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/experiences/:id/restore"
         },
         {
             "method": "POST",
@@ -998,10 +974,6 @@
             "path": "/api/v1/admin/gastronomies"
         },
         {
-            "method": "DELETE",
-            "path": "/api/v1/admin/gastronomies/:id"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/admin/gastronomies/:id"
         },
@@ -1038,10 +1010,6 @@
             "path": "/api/v1/admin/gastronomies/:id/faqs/reorder"
         },
         {
-            "method": "DELETE",
-            "path": "/api/v1/admin/gastronomies/:id/hard"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/admin/gastronomies/:id/media"
         },
@@ -1076,10 +1044,6 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/gastronomies/:id/purge"
-        },
-        {
-            "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/restore"
         },
         {
             "method": "POST",
@@ -2066,10 +2030,6 @@
             "path": "/api/v1/admin/users/:id/effective-set"
         },
         {
-            "method": "DELETE",
-            "path": "/api/v1/admin/users/:id/hard"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/admin/users/:id/permissions"
         },
@@ -2168,10 +2128,6 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/accommodations/:accommodationId/reviews"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/protected/accommodations/:id"
         },
         {
             "method": "GET",
@@ -2606,10 +2562,6 @@
             "path": "/api/v1/protected/experiences/:experienceId/reviews"
         },
         {
-            "method": "DELETE",
-            "path": "/api/v1/protected/experiences/:id"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/protected/experiences/:id"
         },
@@ -2744,10 +2696,6 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/gastronomies/:gastronomyId/reviews"
-        },
-        {
-            "method": "DELETE",
-            "path": "/api/v1/protected/gastronomies/:id"
         },
         {
             "method": "GET",
