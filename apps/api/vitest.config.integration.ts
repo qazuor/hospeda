@@ -76,6 +76,8 @@ export default defineConfig({
             'test/integration/trial/**/*.test.ts',
             'test/integration/listing-publication/**/*.test.ts',
             'test/integration/partners/**/*.test.ts',
+            // TEST:B5:6 route half (HOS-1540): admin action 14.
+            'test/integration/billing-refund/**/*.test.ts',
             // TEST:V5:13 (HOS-1458): the ban gate is the one job the Better
             // Auth admin plugin keeps. Only this file, not auth/**.
             'test/integration/auth/banned-user-signin.test.ts'
