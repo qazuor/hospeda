@@ -1,5 +1,8 @@
 import type { EmailOutboxRow } from '@repo/db';
 import {
+    ARREARS_SUSPENSION_SUBJECT,
+    ArrearsSuspension,
+    type ArrearsSuspensionOneTimeAddon,
     SignupBeforeCancel,
     SignupConfirmed,
     SignupIncomplete
@@ -63,13 +66,65 @@ function incomplete(row: EmailOutboxRow) {
     };
 }
 
-/** Renderers for the three notices emitted by the subscription signup flow. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function oneTimeAddonsOf(value: unknown): readonly ArrearsSuspensionOneTimeAddon[] | null {
+    if (!Array.isArray(value)) return null;
+    const addons: ArrearsSuspensionOneTimeAddon[] = [];
+    for (const item of value) {
+        if (!isRecord(item)) return null;
+        const { name, remainingDays } = item;
+        if (
+            typeof name !== 'string' ||
+            typeof remainingDays !== 'number' ||
+            !Number.isInteger(remainingDays) ||
+            remainingDays < 1
+        )
+            return null;
+        addons.push({ name, remainingDays });
+    }
+    return addons;
+}
+
+function arrearsSuspension(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    const oneTimeAddons = oneTimeAddonsOf(data.oneTimeAddons);
+    if (
+        typeof data.subscriptionId !== 'string' ||
+        typeof data.vertical !== 'string' ||
+        (data.paymentMethod !== 'CARD' && data.paymentMethod !== 'MANUAL') ||
+        typeof data.touristVipLost !== 'boolean' ||
+        typeof data.promoLost !== 'boolean' ||
+        oneTimeAddons === null
+    )
+        throw new TypeError('Faltan datos requeridos del aviso de suspensión');
+    return {
+        subject: ARREARS_SUSPENSION_SUBJECT,
+        react: (
+            <ArrearsSuspension
+                vertical={data.vertical}
+                paymentMethod={data.paymentMethod}
+                touristVipLost={data.touristVipLost}
+                oneTimeAddons={oneTimeAddons}
+                promoLost={data.promoLost}
+            />
+        )
+    };
+}
+
+/**
+ * Renderers for the notices emitted by the subscription signup flow, plus the
+ * arrears suspension notice of S6 (AC:B7:30).
+ */
 export function createBillingSignupRenderers(_input: {
     readonly siteUrl: string;
 }): Readonly<Record<string, OutboxMailRenderer>> {
     return {
         'billing.signup-confirmed': ({ row }) => confirmed(row),
         'billing.before-cancel': ({ row }) => beforeCancel(row),
-        'billing.signup-incomplete': ({ row }) => incomplete(row)
+        'billing.signup-incomplete': ({ row }) => incomplete(row),
+        'billing.arrears-suspension': ({ row }) => arrearsSuspension(row)
     };
 }
