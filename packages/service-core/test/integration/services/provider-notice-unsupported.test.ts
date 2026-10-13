@@ -8,7 +8,7 @@ import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from
 afterAll(closeServiceTestPool);
 const beforeCancelNotice = { beforeCancel: async () => 'SENT' as const };
 
-describe('TEST:B3:36 unsupported provider notice acknowledgment', () => {
+describe('TEST:B3:36 (soporte) unsupported provider notice acknowledgment', () => {
     it.skipIf(!isServiceTestDbAvailable())(
         'acknowledges and stores an unsupported Webhooks notice',
         async () => {
