@@ -92,6 +92,37 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
         expect(beforeCancelNotice.beforeCancel).toHaveBeenCalledWith({ subscriptionId, userId });
     });
 
+    it('passes the notice kind to beforeCancel when given, with the default occurrence', async () => {
+        const { provider, clock, authorizationId, calls } = await setup();
+        const subscriptionId = crypto.randomUUID();
+        const userId = crypto.randomUUID();
+        const beforeCancelNotice = notice('SENT', calls);
+        await cancelOurAuthorization(
+            { subscriptionId, userId, authorizationId, kind: 'TOURIST_VIP_INHERITED' },
+            { provider, clock, beforeCancelNotice }
+        );
+        expect(beforeCancelNotice.beforeCancel).toHaveBeenCalledTimes(1);
+        expect(beforeCancelNotice.beforeCancel.mock.calls[0]?.[0]).toStrictEqual({
+            subscriptionId,
+            userId,
+            kind: 'TOURIST_VIP_INHERITED'
+        });
+    });
+
+    it('without a kind sends no kind key to beforeCancel', async () => {
+        const { provider, clock, authorizationId, calls } = await setup();
+        const subscriptionId = crypto.randomUUID();
+        const userId = crypto.randomUUID();
+        const beforeCancelNotice = notice('SENT', calls);
+        await cancelOurAuthorization(
+            { subscriptionId, userId, authorizationId },
+            { provider, clock, beforeCancelNotice }
+        );
+        const sent = beforeCancelNotice.beforeCancel.mock.calls[0]?.[0];
+        expect(sent).toStrictEqual({ subscriptionId, userId });
+        expect(Object.keys(sent ?? {})).not.toContain('kind');
+    });
+
     it('without a recipient asks for no notice and calls', async () => {
         const { provider, clock, authorizationId, calls } = await setup();
         const beforeCancelNotice = notice('NOT_YET_SENT', calls);

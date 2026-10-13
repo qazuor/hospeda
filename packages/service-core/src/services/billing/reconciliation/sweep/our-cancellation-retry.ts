@@ -15,11 +15,28 @@ import {
     type ProviderRead
 } from '@repo/payments';
 import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
-import { cancelOurAuthorization } from '../cancel-our-authorization.js';
+import {
+    type CancelOurAuthorizationInput,
+    cancelOurAuthorization
+} from '../cancel-our-authorization.js';
 import { openReconciliationMark } from '../open-reconciliation-mark.service.js';
+import type { ProviderCancellationTransition } from '../provider-cancellation-decision.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
 
 const logger = createLogger('our-cancellation-retry');
+
+/**
+ * The notice kind each transition asked for when it decided the cancellation. Only the
+ * inherited Tourist VIP's clause asks with a kind; every other transition uses the default
+ * notice. The template is part of the notice's dedupe key, so the retry must repeat the kind
+ * or it enqueues a second, generic notice and waits for it.
+ */
+const NOTICE_KIND_BY_TRANSITION: ReadonlyMap<
+    string,
+    NonNullable<CancelOurAuthorizationInput['kind']>
+> = new Map<ProviderCancellationTransition, NonNullable<CancelOurAuthorizationInput['kind']>>([
+    ['TOURIST_VIP_INHERITED', 'TOURIST_VIP_INHERITED']
+]);
 
 /**
  * Up to 3 days after the transition, by time and not by runs (DEC-CONC-002 📌1; MOT:16). It
@@ -79,7 +96,8 @@ export interface RetryOurCancellationResult {
  * 4. With the window elapsed → opens mark 16, without calling the provider. Its
  *    `reconciliation.mark_opened` event is the alert on the DEC-OBS-001 channel.
  * 5. Otherwise → `cancelOurAuthorization`. The notice uses the default occurrence (the
- *    subscription id), the same S3 and S16 used, so it goes out once per cancellation.
+ *    subscription id), the same S3 and S16 used, so it goes out once per cancellation. A
+ *    `TOURIST_VIP_INHERITED` decision asks with that kind, as its clause did.
  *
  * @param input - The row, its link, its decision, the correlation and an optional prior read
  * @param ports - Provider, clock, the before-cancel notice and the optional mark payments port
@@ -131,12 +149,14 @@ export async function retryOurCancellation(
         return { outcome: 'MARKED', read: true, markOutcome: opened.outcome };
     }
 
+    const kind = NOTICE_KIND_BY_TRANSITION.get(input.decision.transition);
     const { outcome } = await cancelOurAuthorization(
         {
             subscriptionId: input.subscription.id,
             userId: input.subscription.userId,
             authorizationId: input.providerLink.providerId,
-            prior
+            prior,
+            ...(kind ? { kind } : {})
         },
         {
             provider: ports.provider,

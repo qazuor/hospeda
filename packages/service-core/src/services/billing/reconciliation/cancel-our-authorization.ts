@@ -20,6 +20,11 @@ export type CancelOurAuthorizationOutcome =
     | 'CONFIRMED'
     | 'SENT_UNCONFIRMED';
 
+/** The notice kinds a before-cancel notice can carry (its template is part of the dedupe key). */
+export type CancelOurAuthorizationNoticeKind = NonNullable<
+    Parameters<BeforeCancelNotice['beforeCancel']>[0]['kind']
+>;
+
 /** Input of {@link cancelOurAuthorization}. */
 export interface CancelOurAuthorizationInput {
     /** The row whose transition already decided the cancellation. */
@@ -28,6 +33,13 @@ export interface CancelOurAuthorizationInput {
     readonly userId: string | null;
     /** The provider authorization to cancel. */
     readonly authorizationId: string;
+    /**
+     * The notice kind the deciding transition asked for; passed to `beforeCancel` only when
+     * present. The notice's template is part of its dedupe key, so a retry must ask with the
+     * same kind as the transition did, or it enqueues a second, generic notice. The occurrence
+     * is always the default one (the subscription id).
+     */
+    readonly kind?: Extract<CancelOurAuthorizationNoticeKind, 'TOURIST_VIP_INHERITED'>;
     /** A read by id the caller already took, with the act it was taken for. */
     readonly prior?: {
         readonly read: ProviderRead<AuthorizationSnapshot>;
@@ -71,7 +83,8 @@ async function rereadIsCancelled(
  * 1. Re-reads by id first (or checks `prior` is fresh for its act); an
  *    authorization already `cancelled` is not called again. A failed first
  *    read calls nothing and reports `CALL_FAILED` (the sweep retries).
- * 2. With a recipient and a notice port, asks for the before-cancel notice:
+ * 2. With a recipient and a notice port, asks for the before-cancel notice (with
+ *    `input.kind` when given):
  *    `NOT_YET_SENT` defers the call; `NO_RECIPIENT`/`DELIVERY_EXHAUSTED` warn and
  *    call anyway. Without a recipient there is no notice, and it never blocks.
  * 3. Calls `cancel`; a failure is logged and reported, never thrown.
@@ -112,7 +125,8 @@ export async function cancelOurAuthorization(
     if (input.userId && ports.beforeCancelNotice) {
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: input.subscriptionId,
-            userId: input.userId
+            userId: input.userId,
+            ...(input.kind ? { kind: input.kind } : {})
         });
         if (notice === 'NOT_YET_SENT') return { outcome: 'NOTICE_PENDING' };
         if (notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED')

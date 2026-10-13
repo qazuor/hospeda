@@ -234,10 +234,12 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
                 expect(calledWith(h.cancel, row.providerId), `day ${day}`).toBe(1);
             expect(h.beforeCancel).toHaveBeenCalledTimes(withUser.length);
             for (const row of withUser) {
-                // Same occurrence every day (the subscription id), never an occurrenceId of the run.
+                // Same occurrence every day (the subscription id), never an occurrenceId of the run;
+                // the VIP's row repeats its clause's kind (the template is in the dedupe key).
                 expect(h.beforeCancel).toHaveBeenCalledWith({
                     subscriptionId: row.id,
-                    userId: row.userId
+                    userId: row.userId,
+                    ...(row === vip ? { kind: 'TOURIST_VIP_INHERITED' } : {})
                 });
                 expect(h.events.indexOf(`notice:${row.id}`)).toBeLessThan(
                     h.events.indexOf(`cancel:${row.providerId}`)
@@ -378,5 +380,27 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
         }
         expect(h.cancel).not.toHaveBeenCalled();
         expect(await openMarks16([terminal.id, scheduled.id])).toEqual([]);
+    });
+
+    it('TEST:B11:6 (h) the Tourist VIP retry asks for the notice with its kind; an S3 retry asks without one', async () => {
+        const { fake } = newFake();
+        const h = harness(fake);
+        const vip = await decided({
+            fake,
+            status: 'CANCELLED',
+            vertical: 'tourist',
+            transition: 'TOURIST_VIP_INHERITED'
+        });
+        const s3 = await decided({ fake, status: 'ABANDONED', transition: 'S3' });
+        await runDay(0, fake, h.beforeCancel);
+        const sentFor = (subscriptionId: string) =>
+            h.beforeCancel.mock.calls
+                .map(([input]) => input)
+                .filter((input) => input.subscriptionId === subscriptionId);
+        // toStrictEqual: no occurrenceId and, for S3, no kind key at all.
+        expect(sentFor(vip.id)).toStrictEqual([
+            { subscriptionId: vip.id, userId: vip.userId, kind: 'TOURIST_VIP_INHERITED' }
+        ]);
+        expect(sentFor(s3.id)).toStrictEqual([{ subscriptionId: s3.id, userId: s3.userId }]);
     });
 });
