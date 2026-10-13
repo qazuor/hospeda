@@ -58,12 +58,17 @@ const isMockActorAllowed = (): boolean => {
  * Resolves the roles an authenticated user holds, with an EXPLICIT failure
  * policy (HOS-296).
  *
- * The two sibling reads in this middleware — `getPermissionsForRoles` and
- * `getUserPermissionsWithEffect` — swallow their errors and degrade to an
- * empty set. This one deliberately does NOT, and the asymmetry is the point:
+ * Of the two sibling reads in this middleware, only `getPermissionsForRoles`
+ * degrades to an empty set on error. This one deliberately does NOT, and the
+ * asymmetry is the point:
  *
- * - Degrading a PERMISSION read removes capabilities from an identity that is
- *   still correct. It fails closed and the worst outcome is a spurious 403.
+ * - Degrading the ROLE-PERMISSION read removes capabilities from an identity
+ *   that is still correct. It fails closed and the worst outcome is a spurious
+ *   403.
+ * - The per-user overrides read (`getUserPermissionsWithEffect`) THROWS instead
+ *   (HOS-1674): degrading it would drop the `deny` overrides and hand back
+ *   permissions an override takes away, which fails OPEN. Its error reaches the
+ *   middleware's catch and is answered like a failed role read.
  * - Degrading a ROLE read changes WHO the actor is. A `SUPER_ADMIN` would
  *   silently become a plain `USER`, every admin surface would answer 403 with
  *   nothing explaining it, and any code that reads "not staff" as "scope this
