@@ -145,6 +145,17 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
         expect(result).toEqual({ outcome: 'SENT_UNCONFIRMED' });
     });
 
+    it('a failed read before the call calls nothing and reports CALL_FAILED', async () => {
+        const { fake, provider, clock, authorizationId, calls } = await setup();
+        vi.spyOn(fake, 'readAuthorization').mockRejectedValueOnce(new Error('read failed'));
+        const result = await cancelOurAuthorization(
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId },
+            { provider, clock }
+        );
+        expect(result).toEqual({ outcome: 'CALL_FAILED' });
+        expect(calls).not.toContain('cancel');
+    });
+
     it('a fresh prior read replaces the first read', async () => {
         const { fake, provider, clock, authorizationId, calls } = await setup();
         const act = { kind: 'decision' as const, startedAt: clock.now() };

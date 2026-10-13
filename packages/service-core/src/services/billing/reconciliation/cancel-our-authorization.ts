@@ -69,7 +69,8 @@ async function rereadIsCancelled(
  * re-read of S17's rule, not its "if it fails, it does not happen").
  *
  * 1. Re-reads by id first (or checks `prior` is fresh for its act); an
- *    authorization already `cancelled` is not called again.
+ *    authorization already `cancelled` is not called again. A failed first
+ *    read calls nothing and reports `CALL_FAILED` (the sweep retries).
  * 2. With a recipient and a notice port, asks for the before-cancel notice:
  *    `NOT_YET_SENT` defers the call; `NO_RECIPIENT`/`DELIVERY_EXHAUSTED` warn and
  *    call anyway. Without a recipient there is no notice, and it never blocks.
@@ -92,7 +93,19 @@ export async function cancelOurAuthorization(
         const fresh = assertFreshForAct({ read: input.prior.read, act: input.prior.act });
         cancelledBefore = fresh.snapshot.status === 'cancelled';
     } else {
-        cancelledBefore = await rereadIsCancelled(input, ports);
+        try {
+            cancelledBefore = await rereadIsCancelled(input, ports);
+        } catch (error) {
+            logger.error(
+                {
+                    subscriptionId: input.subscriptionId,
+                    authorizationId: input.authorizationId,
+                    errorName: errorName(error)
+                },
+                'Could not re-read the authorization before cancelling it; nothing was called'
+            );
+            return { outcome: 'CALL_FAILED' };
+        }
     }
     if (cancelledBefore) return { outcome: 'ALREADY_CANCELLED' };
 
