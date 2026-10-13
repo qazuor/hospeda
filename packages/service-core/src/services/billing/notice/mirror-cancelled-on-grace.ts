@@ -3,6 +3,7 @@ import { and, domainEventModel, eq, getDb, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports.js';
 import type { SuccessionCloser } from '../subscription/subscription-billing-ports.js';
 import { closeSuccessionIfPredecessor } from '../subscription/succession-end.js';
@@ -47,8 +48,11 @@ export type MirrorProviderCancellationOnGraceResult =
  * `service_ends_at = readAt` and an empty grace clock, and — when a live
  * successor points at it — calls S18 through `closeSuccessionIfPredecessor` with
  * that same transaction. `CANCELLED` emits no source (`03-contrato-de-cobertura.md:474`),
- * so the `REMOVED` coverage notice is emitted after the commit; a notice error is
- * only logged. A closer error rolls the cancellation back.
+ * so, still in that transaction, it records the coverage loss when no other source is left
+ * (`recordCoverageLossIfUncovered`, the same call and order as the receiver's
+ * `PROVIDER_CANCEL` branch; HOS-1676 Coord-376), and the `REMOVED` coverage notice is
+ * emitted after the commit; a notice error is only logged. A closer error rolls the
+ * cancellation back.
  *
  * Registered as the `CANCELLED_ON_GRACE` delegate by `createProviderNoticeMirrorDelegates`
  * (`provider-notice-delegates.ts`, HOS-1676). In the same transaction as the cancellation it
@@ -76,6 +80,7 @@ export async function mirrorProviderCancellationOnGrace(
         if (!locked) return { kind: 'NOT_APPLICABLE' as const, reason: 'NOT_FOUND' as const };
         if (locked.status !== 'GRACE_PERIOD')
             return { kind: 'NOT_APPLICABLE' as const, reason: 'NOT_IN_GRACE' as const };
+        const cancelledAt = ports.clock.now();
         const [row] = await tx
             .update(subscriptions)
             .set({
@@ -83,7 +88,7 @@ export async function mirrorProviderCancellationOnGrace(
                 serviceEndsAt: value.readAt,
                 graceStartedAt: null,
                 graceEndsAt: null,
-                updatedAt: ports.clock.now()
+                updatedAt: cancelledAt
             })
             .where(
                 and(
@@ -115,6 +120,16 @@ export async function mirrorProviderCancellationOnGrace(
             { predecessorSubscriptionId: value.subscriptionId, tx },
             { successionCloser: ports.successionCloser }
         );
+        // coberturaPerdidaEn in the same transaction as the drop, after S18, in the same order as
+        // the receiver's PROVIDER_CANCEL branch (contract §4.1; I-5; HOS-1676 Coord-376).
+        if (row.userId)
+            await recordCoverageLossIfUncovered({
+                tx,
+                userId: row.userId,
+                vertical: row.vertical ?? '',
+                lostAt: cancelledAt,
+                clock: ports.clock
+            });
         return { kind: 'CANCELLED' as const, row, successionClosed: closed.called };
     });
     if (written.kind === 'NOT_APPLICABLE') {

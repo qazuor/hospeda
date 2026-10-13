@@ -4,16 +4,29 @@
 // transaction (H-2) and notifies REMOVED after the commit. With a live successor and no S18
 // the notice stays ERROR (H-6); an unregistered pair still answers ERROR (H-1).
 //
+// Coord-376: the mirror records `coverage_loss` in its transaction, like PROVIDER_CANCEL, when no
+// other source is left; with another live source it records none.
+//
 // Cleanup: `retireSuccessionCases` leaves every seeded row CANCELLED with the clock empty and
-// lifts its marks. `domain_event` is append-only, so the events stay; assertions filter by row.
+// lifts its marks; the users' coverage losses are deleted. `domain_event` is append-only, so the
+// events stay; assertions filter by row.
 import type { CoverageChangedEvent } from '@repo/billing-verticals-contract';
-import { and, domainEvent, eq, providerLinks, subscriptions } from '@repo/db';
+import {
+    and,
+    coverageLosses,
+    domainEvent,
+    eq,
+    inArray,
+    providerLinks,
+    subscriptions
+} from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
 import { createProviderNoticeMirrorDelegates } from '../../../src/services/billing/notice/provider-notice-delegates.js';
 import type { CoverageNotices } from '../../../src/services/billing/payment/payment-ports.js';
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen.js';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service.js';
+import type { SuccessionCloser } from '../../../src/services/billing/subscription/subscription-billing-ports.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { graceFixture, graceWithFailedCycle } from './support/grace-fixtures.js';
 import {
@@ -21,6 +34,8 @@ import {
     predecessorInGrace,
     retireSuccessionCases,
     type SeededSuccession,
+    seedLiveSuccessor,
+    spySuccessionCloser,
     subscriptionRow
 } from './support/succession-retention-fixtures.js';
 
@@ -29,8 +44,26 @@ afterAll(closeServiceTestPool);
 const seeded: SeededSuccession[] = [];
 
 afterEach(async () => {
-    await retireSuccessionCases(seeded.splice(0));
+    const cases = seeded.splice(0);
+    await retireSuccessionCases(cases);
+    if (cases.length > 0)
+        await getServiceTestDb()
+            .delete(coverageLosses)
+            .where(
+                inArray(
+                    coverageLosses.userId,
+                    cases.map((c) => c.userId)
+                )
+            );
 });
+
+/** The coverage losses recorded for one user. */
+async function lossesOf(userId: string) {
+    return getServiceTestDb()
+        .select({ vertical: coverageLosses.vertical, lostAt: coverageLosses.lostAt })
+        .from(coverageLosses)
+        .where(eq(coverageLosses.userId, userId));
+}
 
 const beforeCancelNotice: BeforeCancelNotice = { beforeCancel: async () => 'SENT' };
 const AFTER_REJECTION = 'subscription.provider_cancelled_after_rejection';
@@ -83,12 +116,14 @@ function receive(input: {
     readonly fixture: Awaited<ReturnType<typeof graceFixture>>;
     readonly coverageNotices?: CoverageNotices;
     readonly delivery: ReturnType<typeof authorizationDelivery>;
+    readonly successionCloser?: SuccessionCloser;
 }) {
     const ports = {
         provider: input.fixture.provider,
         clock: input.fixture.clock,
         beforeCancelNotice,
-        coverageNotices: input.coverageNotices
+        coverageNotices: input.coverageNotices,
+        ...(input.successionCloser ? { successionCloser: input.successionCloser } : {})
     };
     return processProviderNotice(
         { channel: 'WEBHOOKS', delivery: input.delivery },
@@ -151,6 +186,42 @@ describe('TEST:1676:1 CANCELLED_ON_GRACE is registered in the receiver (AC:1676:
                 event: { change: 'REMOVED', sourceType: 'SUBSCRIPTION' },
                 statusCommitted: 'CANCELLED'
             });
+            // Coord-376: no other source left ⇒ coverage_loss at the cancellation's write instant.
+            expect(await lossesOf(fixture.user.id)).toEqual([
+                { vertical: 'accommodation', lostAt: readAt }
+            ]);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'Coord-376: with another live source (an authorized ACTIVE successor, S18 injected) ⇒ CANCELLED and NO coverage_loss',
+        async () => {
+            // Arrange: the successor emits the vertical's source (molde: coverage-retention-stopped (e)).
+            const fixture = await graceWithFailedCycle();
+            const subscriptionId = fixture.started.subscriptionId;
+            const successor = await seedLiveSuccessor(fixture, subscriptionId);
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'ACTIVE' })
+                .where(eq(subscriptions.id, successor.id));
+            const other = { id: successor.id };
+            seeded.push({ subscriptionIds: [subscriptionId, other.id], userId: fixture.user.id });
+            await fixture.provider.cancel({ authorizationId: fixture.started.authorizationId });
+            const spy = spySuccessionCloser();
+
+            // Act
+            const result = await receive({
+                fixture,
+                delivery: authorizationDelivery(fixture.started.authorizationId),
+                successionCloser: spy.closer
+            });
+
+            // Assert
+            expect(result).toEqual({ ack: 'OK', outcome: 'DELEGATED' });
+            expect(spy.seen).toHaveLength(1);
+            expect((await subscriptionRow(subscriptionId)).status).toBe('CANCELLED');
+            expect((await subscriptionRow(other.id)).status).toBe('ACTIVE');
+            expect(await lossesOf(fixture.user.id)).toEqual([]);
         }
     );
 

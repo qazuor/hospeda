@@ -1,5 +1,5 @@
 import type { CoverageChangedEvent } from '@repo/billing-verticals-contract';
-import { and, domainEvent, eq, subscriptions } from '@repo/db';
+import { and, coverageLosses, domainEvent, eq, inArray, subscriptions } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { mirrorProviderCancellationOnGrace } from '../../../src/services/billing/notice/mirror-cancelled-on-grace.js';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
@@ -29,9 +29,22 @@ afterAll(closeServiceTestPool);
 
 const seeded: SeededSuccession[] = [];
 
-/** Retentions first, then marks, outbox and rows (HOS-1561): nothing open outlives a case. */
+/**
+ * Retentions first, then marks, outbox and rows (HOS-1561): nothing open outlives a case. The
+ * branch-5 mirror records `coverage_loss` since HOS-1676 (Coord-376): the users' rows go too.
+ */
 afterEach(async () => {
-    await retireSuccessionCases(seeded.splice(0));
+    const cases = seeded.splice(0);
+    await retireSuccessionCases(cases);
+    if (cases.length > 0)
+        await getServiceTestDb()
+            .delete(coverageLosses)
+            .where(
+                inArray(
+                    coverageLosses.userId,
+                    cases.map((c) => c.userId)
+                )
+            );
 });
 
 type Case = Awaited<ReturnType<typeof predecessorInGrace>>;
