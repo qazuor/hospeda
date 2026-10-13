@@ -451,3 +451,21 @@ listings, no presence).
 `APPLICATION_HAS_ACCOUNT` exists so this route is never a shortcut around
 `puedeCobrarle`: that mailbox is replaced by closing the account, with its
 preconditions. A refusal writes nothing, not even the audit event.
+
+## Row 30: "I already fixed it" (V8a.1b, HOS-1492)
+
+`POST /api/v1/protected/{accommodations|gastronomies|experiences}/{id}/fix-request/report-fixed`:
+the owner tells support that an open fix request (row 30) is corrected. No
+body. It authorizes by ownership (`listingAccess` `READ_OWN`), not by a
+permission, and under the owner's publication lock it re-reads the open fix
+request before writing `owner_reported_fixed_at`.
+
+| Situation | Status | `error.code` | `error.reason` |
+|---|---|---|---|
+| No session | **401** | `UNAUTHORIZED` | — |
+| Listing does not exist, or belongs to somebody else | **404** | `NOT_FOUND` | — |
+| The listing has no open fix request | **409** | `ALREADY_EXISTS` | `NO_OPEN_FIX_REQUEST` |
+
+A repeat answers 200 with the instant of the first report and rewrites
+nothing. The report writes no domain event, does not close the request and
+does not move `inactive_since`.
