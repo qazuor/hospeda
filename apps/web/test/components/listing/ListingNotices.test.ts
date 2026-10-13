@@ -9,7 +9,7 @@
  * verbatim. These source assertions pin the component's own decisions: it
  * renders the builder's views and nothing else, does not fetch, ships only the
  * row 30 button as an island (`client:idle`), uses no Tailwind, and is mounted
- * on the commerce list with the vertical's read (never an invented notice).
+ * on the gastronomy and experience list with the vertical's read (never an invented notice).
  */
 
 import { readFileSync } from 'node:fs';
@@ -21,7 +21,7 @@ const SOURCE = readFileSync(
     'utf8'
 );
 
-const COMMERCE_PAGE = readFileSync(
+const COMERCIO_PAGE = readFileSync(
     resolve(__dirname, '../../../src/pages/[lang]/mi-cuenta/comercio/index.astro'),
     'utf8'
 );
@@ -55,24 +55,24 @@ describe('ListingNotices.astro — renders the read, decides nothing', () => {
     });
 });
 
-describe('mi-cuenta/comercio — the notices of each commerce listing', () => {
+describe('mi-cuenta/comercio — the notices of each gastronomy or experience listing', () => {
     it('reads the notices once per listed vertical through the wrapper', () => {
-        expect(COMMERCE_PAGE).toContain(
+        expect(COMERCIO_PAGE).toContain(
             'const listedVerticals = [...new Set(listings.map((listing) => listing.vertical))];'
         );
-        expect(COMMERCE_PAGE).toContain('publishApi.listingNotices({ vertical, cookieHeader })');
-        expect(COMMERCE_PAGE).toContain('indexListingNotices({');
+        expect(COMERCIO_PAGE).toContain('publishApi.listingNotices({ vertical, cookieHeader })');
+        expect(COMERCIO_PAGE).toContain('indexListingNotices({');
     });
 
     it('a failed or thrown read leaves the vertical without notices', () => {
-        expect(COMMERCE_PAGE).toContain('return [vertical, EMPTY_LISTING_NOTICES_INDEX] as const;');
-        expect(COMMERCE_PAGE).toMatch(/catch \(error\)/);
+        expect(COMERCIO_PAGE).toContain('return [vertical, EMPTY_LISTING_NOTICES_INDEX] as const;');
+        expect(COMERCIO_PAGE).toMatch(/catch \(error\)/);
     });
 
     it('mounts the notices on each listing with its own entry', () => {
-        expect(COMMERCE_PAGE).toContain(
+        expect(COMERCIO_PAGE).toContain(
             'item={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}'
         );
-        expect(COMMERCE_PAGE).toContain('vertical={listing.vertical}');
+        expect(COMERCIO_PAGE).toContain('vertical={listing.vertical}');
     });
 });
