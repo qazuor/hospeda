@@ -19,8 +19,15 @@ import { setRequestContextActor } from '../lib/request-context';
 import { createGuestActor } from '../utils/actor';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
-import { getPermissionsForRoles } from '../utils/role-permissions-cache';
-import { getUserPermissionsWithEffect } from '../utils/user-permissions-cache';
+import {
+    getPermissionsForRoles,
+    readPermissionsForRolesUncached
+} from '../utils/role-permissions-cache';
+import {
+    getUserPermissionsWithEffect,
+    readUserPermissionsWithEffectUncached,
+    type UserPermissionsWithEffect
+} from '../utils/user-permissions-cache';
 
 /**
  * Schema for validating mock actor permissions.
@@ -110,6 +117,81 @@ const resolveHeldRoles = async (params: { userId: string }): Promise<readonly Ro
 
     return roles;
 };
+
+/**
+ * Where {@link resolveEffectivePermissions} reads the role union and the per-user
+ * overrides from: the process caches (the request path), or the database directly
+ * with every failure thrown (a decision that must never act on a stale or degraded
+ * set, such as action 24 reading its subject, Coord-240).
+ */
+export type EffectivePermissionsRead = 'cached' | 'uncached';
+
+/**
+ * The readers of each {@link EffectivePermissionsRead} mode, resolved in the call
+ * (never at module level: tests replace the cache modules with partial mocks).
+ */
+function effectivePermissionSources(read: EffectivePermissionsRead): {
+    readonly rolePermissions: (params: {
+        roles: readonly RoleEnum[];
+    }) => Promise<readonly PermissionEnum[]>;
+    readonly overrides: (params: { readonly userId: string }) => Promise<UserPermissionsWithEffect>;
+} {
+    switch (read) {
+        case 'cached':
+            return {
+                rolePermissions: getPermissionsForRoles,
+                overrides: getUserPermissionsWithEffect
+            };
+        case 'uncached':
+            return {
+                rolePermissions: readPermissionsForRolesUncached,
+                overrides: readUserPermissionsWithEffectUncached
+            };
+        default: {
+            const exhaustive: never = read;
+            throw new Error(`Unhandled permission read: ${String(exhaustive)}`);
+        }
+    }
+}
+
+/**
+ * The single resolution of an account's effective permissions (HOS-296, SPEC-170),
+ * shared by the actor middleware and by every decision that needs another
+ * account's set (action 24 reading its subject, Coord-240):
+ *
+ * 1. an account HOLDING SUPER_ADMIN gets every permission, without a database
+ *    read — the hat wins regardless of what else the account wears;
+ * 2. otherwise, the UNION of the `role_permission` rows of every held role,
+ *    plus the per-user grants;
+ * 3. minus the per-user denies, applied LAST over the whole union, so a deny
+ *    beats a grant arriving from ANY held role (R-1). A SUPER_ADMIN never
+ *    reaches this step, so a deny can never strip a super.
+ *
+ * @param input.userId - The account whose set is resolved.
+ * @param input.roles - Every role it holds.
+ * @param input.read - `cached` (default, the request path) or `uncached`.
+ * @returns `{ permissions }`, the effective set.
+ */
+export async function resolveEffectivePermissions(input: {
+    readonly userId: string;
+    readonly roles: readonly RoleEnum[];
+    readonly read?: EffectivePermissionsRead;
+}): Promise<{ readonly permissions: readonly PermissionEnum[] }> {
+    if (input.roles.includes(RoleEnum.SUPER_ADMIN)) {
+        return { permissions: Object.values(PermissionEnum) };
+    }
+    const sources = effectivePermissionSources(input.read ?? 'cached');
+    const rolePermissions = await sources.rolePermissions({ roles: input.roles });
+    const userOverrides = await sources.overrides({ userId: input.userId });
+    const effectivePermissions = new Set<PermissionEnum>([
+        ...rolePermissions,
+        ...userOverrides.grants
+    ]);
+    for (const deniedPermission of userOverrides.denies) {
+        effectivePermissions.delete(deniedPermission);
+    }
+    return { permissions: Array.from(effectivePermissions) };
+}
 
 /**
  * Routes on which a FAILED actor resolution degrades to the guest actor
@@ -346,58 +428,24 @@ export const actorMiddleware = (): MiddlewareHandler => {
                 // the gate's semantics are "block only on an explicit true".
                 const userMustChangePassword = user.mustChangePassword === true;
 
-                // SUPER_ADMIN keeps its short-circuit, now on "HOLDS
-                // SUPER_ADMIN" rather than "IS SUPER_ADMIN": the hat wins
-                // regardless of what else the account wears.
-                if (userRoles.includes(RoleEnum.SUPER_ADMIN)) {
-                    actor = {
-                        id: user.id,
-                        roles: userRoles,
-                        permissions: Object.values(PermissionEnum),
-                        name: userName,
-                        email: userEmail,
-                        emailVerified: userEmailVerified,
-                        image: userImage,
-                        mustChangePassword: userMustChangePassword
-                    };
-                } else {
-                    // Resolve the UNION of the permissions of every held role
-                    // from role_permission (cached on a sorted role-set key).
-                    const rolePermissions = await getPermissionsForRoles({ roles: userRoles });
-
-                    // Merge per-user overrides from user_permission (cached), split by
-                    // effect. Effective set = (⋃ perms(role) for role in roles ∪ grants)
-                    // \ denies (HOS-296 AC-3), with deny winning over grant (SPEC-170).
-                    //
-                    // The deny pass runs LAST and over the whole union, so a deny beats a
-                    // grant arriving from ANY held role — accumulating hats can never be
-                    // used to walk around an explicit per-user deny (R-1).
-                    //
-                    // An actor HOLDING SUPER_ADMIN never reaches this branch, so denies
-                    // can never strip a super (handled by the short-circuit above).
-                    const userOverrides = await getUserPermissionsWithEffect({ userId: user.id });
-
-                    const effectivePermissions = new Set<PermissionEnum>([
-                        ...rolePermissions,
-                        ...userOverrides.grants
-                    ]);
-                    for (const deniedPermission of userOverrides.denies) {
-                        effectivePermissions.delete(deniedPermission);
-                    }
-
-                    const allPermissions = Array.from(effectivePermissions);
-
-                    actor = {
-                        id: user.id,
-                        roles: userRoles,
-                        permissions: allPermissions,
-                        name: userName,
-                        email: userEmail,
-                        emailVerified: userEmailVerified,
-                        image: userImage,
-                        mustChangePassword: userMustChangePassword
-                    };
-                }
+                // The effective set comes from the ONE resolver every reader
+                // shares (`resolveEffectivePermissions`, Coord-240): the
+                // SUPER_ADMIN short-circuit, the role union and the
+                // grant/deny overrides, in that order.
+                const { permissions } = await resolveEffectivePermissions({
+                    userId: user.id,
+                    roles: userRoles
+                });
+                actor = {
+                    id: user.id,
+                    roles: userRoles,
+                    permissions: [...permissions],
+                    name: userName,
+                    email: userEmail,
+                    emailVerified: userEmailVerified,
+                    image: userImage,
+                    mustChangePassword: userMustChangePassword
+                };
             } catch (error) {
                 const detail = error instanceof Error ? error.message : String(error);
 

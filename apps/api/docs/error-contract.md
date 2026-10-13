@@ -385,9 +385,12 @@ there never reveals whether the account exists.
 
 `SUBJECT_OUTRANKS_ACTOR` (Coord-235) is decided inside the closure
 transaction, right after the account row is locked and before anything else is
-read or written: the subject's effective permissions (its roles'
-`role_permission` rows plus its per-user grants, minus its denies, as the actor
-middleware builds them) must all be held by the actor. No role is compared:
+read or written: the subject's effective permissions must all be held by the
+actor. They come from the SAME resolver the actor middleware uses,
+`resolveEffectivePermissions` in `src/middlewares/actor.ts` (Coord-240: a
+SUPER_ADMIN holds every permission; otherwise its roles' `role_permission` rows
+plus its per-user grants, minus its denies), read without caches and failing
+loudly. No role is compared:
 support closes a peer or a less privileged account, never a more privileged
 one. It runs after the 404, so it never reveals more than existence, which the
 holder of the permission may already read.

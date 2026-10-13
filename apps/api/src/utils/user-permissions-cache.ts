@@ -120,6 +120,24 @@ export async function getUserPermissions({
 }
 
 /**
+ * Reads a user's permission overrides straight from the database: no cache, and a
+ * failed read THROWS instead of degrading to "no overrides". For a decision that
+ * must never act on a stale or incomplete set (action 24 reading its subject,
+ * Coord-240); the request path keeps {@link getUserPermissionsWithEffect}.
+ *
+ * @param params.userId - The user whose overrides are read.
+ * @returns The grant and deny overrides.
+ * @throws When the read fails.
+ */
+export async function readUserPermissionsWithEffectUncached({
+    userId
+}: {
+    readonly userId: string;
+}): Promise<UserPermissionsWithEffect> {
+    return queryUserPermissionsWithEffect({ userId });
+}
+
+/**
  * Query a user's permission overrides from the database, split by effect.
  */
 async function queryUserPermissionsWithEffect({

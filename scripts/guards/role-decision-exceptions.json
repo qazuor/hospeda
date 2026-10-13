@@ -23,7 +23,7 @@
         },
         {
             "file": "apps/api/src/middlewares/actor.ts",
-            "symbol": "actorMiddleware",
+            "symbol": "resolveEffectivePermissions",
             "form": "membership-arg",
             "count": 1,
             "why": "SUPER_ADMIN receives its role-owned permissions at authorization step three",
