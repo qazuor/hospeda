@@ -6,9 +6,10 @@
  *
  * What is real today: `coverage()` itself — trial, BASE, `SUBSCRIPTION` (with
  * `cobrada` from the payment ledger) and `ADDON` (with `políticaDeAddon` from the
- * plan catalog). What is still bootstrap, composed beside it in `ports.ts`:
- * `retentionStopped` and `canCharge` (B4.3, HOS-1534) and the coverage-changed
- * registry `onCoverageChanged`/`emitCoverageChanged` (B4.2, HOS-1533).
+ * plan catalog). Composed beside it in `ports.ts`: the real coverage-changed
+ * registry `onCoverageChanged`/`emitCoverageChanged` (B4.2, HOS-1533, from
+ * `coverage-notices.ts`), and the still-bootstrap `retentionStopped` and
+ * `canCharge` (B4.3, HOS-1534).
  * `CORTESÍA` and `GRANT` answer "none" until B9a, and `ficha` fails visibly
  * until V6.13 registers it (decision X-1).
  */

@@ -2,6 +2,7 @@ import { expireAuthorizationWindows, sweepInheritedTouristVips } from '@repo/ser
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
 import { getClock } from '../../utils/clock.js';
+import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -32,13 +33,15 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
                 provider: getPaymentProvider(),
                 clock: getClock().clock,
                 beforeCancelNotice,
-                touristVipInheritance
+                touristVipInheritance,
+                coverageNotices: getCoverageNotices()
             });
             const vipSummary = await sweepInheritedTouristVips(100, {
                 provider: getPaymentProvider(),
                 clock: getClock().clock,
                 beforeCancelNotice,
-                touristVipInheritance
+                touristVipInheritance,
+                coverageNotices: getCoverageNotices()
             });
             const durationMs = Date.now() - startedAt.getTime();
             logger.info('Authorization window expiry completed', { ...summary, durationMs });
