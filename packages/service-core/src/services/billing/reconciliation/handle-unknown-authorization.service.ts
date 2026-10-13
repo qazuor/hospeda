@@ -1,22 +1,48 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { getDb, type ReconciliationMarkReason, reconciliationInventoryModel } from '@repo/db';
-import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { createLogger } from '@repo/logger';
+import {
+    actStartInstant,
+    assertFreshForAct,
+    isProbeSubject,
+    type PaymentProvider,
+    PROBE_MANIFEST,
+    type ProbeManifest
+} from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
+import type { CreditPaymentResult } from '../payment/credit-payment.service.js';
+import type { CoverageNotices } from '../payment/payment-ports.js';
+import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
+import {
+    type CancelOurAuthorizationOutcome,
+    cancelOurAuthorization
+} from './cancel-our-authorization.js';
 import { openReconciliationMark } from './open-reconciliation-mark.service.js';
+import { readUnknownCharge, writeChargeTombstone } from './receipt-tombstone.service.js';
 import type {
     HangablePayment,
     ReconciliationMarkPayments
 } from './reconciliation-mark-payments.port.js';
 
+const logger = createLogger('handle-unknown-authorization');
+
 /** Provider identity used by start-subscription.service.ts for Mercado Pago. */
 const RECONCILIATION_PROVIDER = 'MERCADO_PAGO' as const;
 
+/**
+ * What arrived for the unknown authorization. A charge carries its provider id
+ * (I1); `payment` is hung only on the branch of a named row that already has a
+ * link, where the payment may already exist.
+ */
 export type UnknownAuthorizationArrival =
     | { readonly kind: 'AUTHORIZATION' }
-    | { readonly kind: 'CHARGE'; readonly payment: HangablePayment };
+    | { readonly kind: 'CHARGE'; readonly chargeId: string; readonly payment?: HangablePayment };
+
+/** What happened to a receipt tombstone's authorization: a probe is never cancelled (AC:B11:4). */
+export type TombstoneCancellation = 'PROBE_SKIPPED' | CancelOurAuthorizationOutcome;
 
 export interface HandleUnknownAuthorizationInput {
     readonly authorizationId: string;
@@ -28,6 +54,12 @@ export interface HandleUnknownAuthorizationPorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly markPayments?: ReconciliationMarkPayments;
+    /** The notice before cancelling; a receipt tombstone has no recipient, so it is never asked there. */
+    readonly beforeCancelNotice?: BeforeCancelNotice;
+    /** The probes the handler never cancels; defaults to the versioned module (AC:B11:4, I3). */
+    readonly probeManifest?: ProbeManifest;
+    /** The coverage notices consumer handed to P1 when a tombstone's charge is settled. */
+    readonly coverageNotices?: CoverageNotices;
 }
 
 export type HandleUnknownAuthorizationResult =
@@ -40,6 +72,12 @@ export type HandleUnknownAuthorizationResult =
           readonly markId: string;
           readonly markOutcome: 'OPENED' | 'ACCUMULATED';
           readonly tombstone?: true;
+          /** The tombstone's payment, when the arrival was a charge. */
+          readonly paymentId?: string;
+          /** P1's outcome on the tombstone's payment, when it ran. */
+          readonly credit?: CreditPaymentResult | 'CREDIT_FAILED';
+          /** The cancellation sent in the same act as the tombstone (AC:B11:3, AC:B11:4). */
+          readonly cancellation?: TombstoneCancellation;
       };
 
 const inputSchema = z.object({
@@ -48,7 +86,10 @@ const inputSchema = z.object({
         z.object({ kind: z.literal('AUTHORIZATION') }),
         z.object({
             kind: z.literal('CHARGE'),
-            payment: z.object({ source: z.enum(['PAYMENT', 'MANUAL_PAYMENT']), id: z.uuid() })
+            chargeId: z.string().min(1),
+            payment: z
+                .object({ source: z.enum(['PAYMENT', 'MANUAL_PAYMENT']), id: z.uuid() })
+                .optional()
         })
     ]),
     correlationId: z.uuid()
@@ -179,19 +220,79 @@ export async function handleUnknownAuthorization(
     return createTombstone(input, ports);
 }
 
+/**
+ * Sends the cancellation of a receipt tombstone's authorization in the same act
+ * that wrote it (AC:B11:3), unless the id is a probe of the manifest (AC:B11:4).
+ * The tombstone stays `CANCELLED` whatever happens; a call that did not apply is
+ * retried by the sweep.
+ */
+async function cancelTombstoneAuthorization(
+    input: { readonly subscriptionId: string; readonly authorizationId: string },
+    ports: HandleUnknownAuthorizationPorts
+): Promise<TombstoneCancellation> {
+    const { isProbe } = isProbeSubject({
+        id: input.authorizationId,
+        manifest: ports.probeManifest ?? PROBE_MANIFEST
+    });
+    if (isProbe) {
+        logger.info(
+            { subscriptionId: input.subscriptionId, authorizationId: input.authorizationId },
+            'Receipt tombstone of a manifest probe: its authorization is not cancelled'
+        );
+        return 'PROBE_SKIPPED';
+    }
+    const { outcome } = await cancelOurAuthorization(
+        {
+            subscriptionId: input.subscriptionId,
+            userId: null,
+            authorizationId: input.authorizationId
+        },
+        ports
+    );
+    return outcome;
+}
+
 async function createTombstone(
     input: HandleUnknownAuthorizationInput,
     ports: HandleUnknownAuthorizationPorts
 ): Promise<HandleUnknownAuthorizationResult> {
-    if (input.arrival.kind === 'CHARGE')
-        throw fail(
-            ServiceErrorCode.INTERNAL_ERROR,
-            'An unowned charge requires the receipt tombstone flow from HOS-1603',
-            'UNOWNED_CHARGE_NEEDS_RECEIPT_TOMBSTONE'
+    if (input.arrival.kind === 'CHARGE') {
+        const charge = await readUnknownCharge(
+            { authorizationId: input.authorizationId, chargeId: input.arrival.chargeId },
+            ports
         );
+        if (charge.kind === 'CHARGE') {
+            const written = await writeChargeTombstone(
+                {
+                    authorizationId: input.authorizationId,
+                    charge,
+                    correlationId: input.correlationId
+                },
+                ports
+            );
+            if (written.outcome === 'KNOWN') return written;
+            const cancellation = await cancelTombstoneAuthorization(
+                { subscriptionId: written.subscriptionId, authorizationId: input.authorizationId },
+                ports
+            );
+            return {
+                outcome: 'MARKED',
+                subscriptionId: written.subscriptionId,
+                reason: 'PAGO_TARDIO_RECHAZADO',
+                markId: written.markId,
+                markOutcome: written.markOutcome,
+                tombstone: true,
+                paymentId: written.paymentId,
+                ...(written.credit === undefined ? {} : { credit: written.credit }),
+                cancellation
+            };
+        }
+    }
+    const arrival: UnknownAuthorizationArrival = { kind: 'AUTHORIZATION' };
 
+    let created: HandleUnknownAuthorizationResult;
     try {
-        return await getDb().transaction(async (tx) => {
+        created = await getDb().transaction(async (tx) => {
             const tombstone = await reconciliationInventoryModel.insertReceiptTombstone({ tx });
             await reconciliationInventoryModel.insertProviderLink({
                 subscriptionId: tombstone.id,
@@ -205,13 +306,12 @@ async function createTombstone(
                     reason: 'TRANSICION_NO_DECLARADA',
                     correlationId: input.correlationId,
                     actor: 'provider',
-                    arrival: input.arrival,
+                    arrival,
                     tx
                 },
                 ports.markPayments
             );
-            // HOS-1603: cancel the preapproval here (AC:B11:3)
-            return { ...result, tombstone: true };
+            return { ...result, tombstone: true as const };
         });
     } catch (error) {
         if (!isUnique(error, 'uq_provider_link_provider_id')) throw error;
@@ -226,9 +326,14 @@ async function createTombstone(
                 reason: 'TRANSICION_NO_DECLARADA',
                 correlationId: input.correlationId,
                 actor: 'provider',
-                arrival: input.arrival
+                arrival
             },
             ports.markPayments
         );
     }
+    const cancellation = await cancelTombstoneAuthorization(
+        { subscriptionId: created.subscriptionId, authorizationId: input.authorizationId },
+        ports
+    );
+    return { ...created, cancellation };
 }
