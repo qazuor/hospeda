@@ -1,5 +1,17 @@
 import type { DrizzleClient, SelectManualPayment, SelectPayment } from '@repo/db';
-import { and, eq, manualPayments, payments, refunds, sql } from '@repo/db';
+import {
+    and,
+    eq,
+    inArray,
+    isNull,
+    LIVE_SUBSCRIPTION_STATUSES,
+    manualPayments,
+    payments,
+    refunds,
+    sql,
+    subscriptions,
+    successionRetainedPayments
+} from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 
@@ -72,6 +84,55 @@ export function assertRefundable(input: { readonly locked: LockedRefundSource })
             'Payment is not in a refundable state',
             undefined,
             'PAYMENT_NOT_REFUNDABLE'
+        );
+}
+
+/**
+ * GUARD:G-R1-D, its "no refund before the close" half at run time (B7.md
+ * AC:B7:17; `04-catalogos.md` GUARD:G-R1-D: «o reembolsa el pago que quedó
+ * pendiente por `S19` antes de que la sucesión se resuelva»; HOS-1561 H12).
+ *
+ * Rejects the refund of a payment that S19 retained while the succession is still
+ * unresolved: the payment has an OPEN `succession_retained_payment` row AND the
+ * subscription that retains it is still live (`LIVE_SUBSCRIPTION_STATUSES`). Once
+ * the predecessor is dead (branches 1, 5 and 6 leave it `CANCELLED`, and S36
+ * cancels it in the same act before its RF1) the refund goes through.
+ *
+ * Both reads run in the caller's transaction, after `lockRefundSource` locked the
+ * payment. A read error propagates (fails closed): it is never taken as "no
+ * retention".
+ *
+ * @param input.tx - The caller's transaction (the source is already locked)
+ * @param input.locked - The locked refund source
+ * @throws ServiceError ALREADY_EXISTS `RETAINED_PAYMENT_SUCCESSION_OPEN`.
+ */
+export async function assertRetainedPaymentRefundable(input: {
+    readonly tx: DrizzleClient;
+    readonly locked: LockedRefundSource;
+}): Promise<void> {
+    const { tx, locked } = input;
+    const paymentMatch =
+        locked.kind === 'PAYMENT'
+            ? eq(successionRetainedPayments.paymentId, locked.payment.id)
+            : eq(successionRetainedPayments.manualPaymentId, locked.manualPayment.id);
+    const [retained] = await tx
+        .select({ subscriptionId: subscriptions.id })
+        .from(successionRetainedPayments)
+        .innerJoin(subscriptions, eq(subscriptions.id, successionRetainedPayments.subscriptionId))
+        .where(
+            and(
+                paymentMatch,
+                isNull(successionRetainedPayments.releasedAt),
+                inArray(subscriptions.status, LIVE_SUBSCRIPTION_STATUSES)
+            )
+        )
+        .limit(1);
+    if (retained)
+        throw new ServiceError(
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Payment is retained by a succession in progress',
+            undefined,
+            'RETAINED_PAYMENT_SUCCESSION_OPEN'
         );
 }
 

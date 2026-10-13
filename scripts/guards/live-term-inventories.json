@@ -62,6 +62,13 @@
             "row": 6,
             "why": "AC:B7:6 (HOS-1558, S5): condición 3 del pago tardío, otra principal viva del mismo user + vertical (las seis, PENDING_AUTHORIZATION incluido).",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/refund/refund-source.ts",
+            "symbol": "assertRetainedPaymentRefundable",
+            "row": null,
+            "why": "AC:B7:17 (HOS-1561 H12, GUARD:G-R1-D): RF1 y RF4 no devuelven el pago que S19 retuvo mientras la fila que lo retiene siga viva (la sucesión no se resolvió); no tiene fila en el inventario del glosario.",
+            "subject": "subscription"
         }
     ],
     "grant_vivo_ancla_viva": [],

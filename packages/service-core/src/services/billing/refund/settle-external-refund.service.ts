@@ -24,6 +24,7 @@ import { canRefundTransition, type RefundStatus, type Rf4Reason } from './refund
 import {
     assertRefundAmount,
     assertRefundable,
+    assertRetainedPaymentRefundable,
     assertWithinBalance,
     type LockedRefundSource,
     lockRefundSource,
@@ -356,6 +357,8 @@ async function applyEffects(
  * @param ports - The clock.
  * @returns The settled row and its effects.
  * @throws ServiceError with a `reason` from `SETTLE_EXTERNAL_REFUND_REJECTIONS`; never INTERNAL_ERROR for a rejection.
+ * @throws ServiceError ALREADY_EXISTS `RETAINED_PAYMENT_SUCCESSION_OPEN` (GUARD:G-R1-D, AC:B7:17):
+ *   the payment S19 retained is not settled as refunded while its succession is open.
  */
 export async function settleExternalRefund(
     input: SettleExternalRefundInput,
@@ -374,6 +377,7 @@ export async function settleExternalRefund(
             const subjectId = await readSubject(tx, locked);
             authorize(input.actor, subjectId);
             assertRefundable({ locked });
+            await assertRetainedPaymentRefundable({ tx, locked });
             await validateSettlement(tx, input);
             const requested = await findOpenRequest(tx, input);
             const closing = requestToClose(input, requested);

@@ -7,6 +7,7 @@ import { canRefundTransition, type Rf1Reason } from './refund-machine';
 import {
     assertRefundAmount,
     assertRefundable,
+    assertRetainedPaymentRefundable,
     assertWithinBalance,
     lockRefundSource,
     type RefundSource,
@@ -39,7 +40,9 @@ export type RequestRefundInput = {
  * @param ports - The clock and an optional outer transaction.
  * @returns The new refund id.
  * @throws ServiceError VALIDATION_ERROR `REFUND_AMOUNT_INVALID` | `REFUND_EXCEEDS_BALANCE`;
- *   NOT_FOUND `REFUND_SOURCE_NOT_FOUND`; ALREADY_EXISTS `PAYMENT_NOT_REFUNDABLE`.
+ *   NOT_FOUND `REFUND_SOURCE_NOT_FOUND`; ALREADY_EXISTS `PAYMENT_NOT_REFUNDABLE` |
+ *   `RETAINED_PAYMENT_SUCCESSION_OPEN` (GUARD:G-R1-D: the payment S19 retained is never
+ *   refunded before the succession closes, AC:B7:17).
  */
 export async function requestRefund(
     input: RequestRefundInput,
@@ -49,6 +52,7 @@ export async function requestRefund(
     const run = async (tx: DrizzleClient): Promise<{ readonly refundId: string }> => {
         const locked = await lockRefundSource({ tx, source: input.source });
         assertRefundable({ locked });
+        await assertRetainedPaymentRefundable({ tx, locked });
         await assertWithinBalance({ tx, locked, amount: input.amount });
         if (!canRefundTransition({ transition: 'RF1', from: 'NO_ROW' }).allowed)
             throw new ServiceError(
