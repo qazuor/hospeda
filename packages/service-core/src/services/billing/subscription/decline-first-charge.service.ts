@@ -13,6 +13,7 @@ import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { enqueueSignupDeclinedNotice } from './signup-declined-notice';
@@ -21,6 +22,7 @@ import {
     type CancellationSeenAnnotator,
     noCancellationSeenAnnotation,
     noCreditedPayments,
+    recordAuthorizationSeenAlive,
     recordCancellationSeen,
     type SubscriptionPayments,
     type SuccessionCloser,
@@ -122,6 +124,11 @@ export async function declineFirstCharge(
         });
         cancelCall = 'NOT_NEEDED';
     } else {
+        await recordAuthorizationSeenAlive({
+            annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+            subscriptionId: subscription.id,
+            seenAt: authorization.readAt
+        });
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: subscription.id,
             userId: subscription.userId ?? ''
@@ -161,6 +168,12 @@ export async function declineFirstCharge(
                     subscriptionId: subscription.id,
                     seenAt: confirmed.readAt
                 });
+            else
+                await recordAuthorizationSeenAlive({
+                    annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                    subscriptionId: subscription.id,
+                    seenAt: confirmed.readAt
+                });
         } catch (error) {
             logger.error(
                 {
@@ -173,8 +186,8 @@ export async function declineFirstCharge(
         }
     }
 
-    const declinedAt = ports.clock.now();
     const declined = await getDb().transaction(async (tx) => {
+        const declinedAt = ports.clock.now();
         const [updated] = await tx
             .update(subscriptions)
             .set({ status: 'CHARGE_DECLINED', updatedAt: declinedAt })
@@ -212,9 +225,21 @@ export async function declineFirstCharge(
                 )
             )
             .limit(1);
-        if (!successor) return { successionClosed: false, subject };
-        await successionCloser.closeSuccession({ predecessorSubscriptionId: subscription.id, tx });
-        return { successionClosed: true, subject };
+        if (successor)
+            await successionCloser.closeSuccession({
+                predecessorSubscriptionId: subscription.id,
+                tx
+            });
+        // coberturaPerdidaEn in the same transaction as the drop (contract §4.1; I-5).
+        if (updated.userId)
+            await recordCoverageLossIfUncovered({
+                tx,
+                userId: updated.userId,
+                vertical: updated.vertical ?? '',
+                lostAt: declinedAt,
+                clock: ports.clock
+            });
+        return { successionClosed: Boolean(successor), subject };
     });
     if (declined === null) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
 

@@ -80,10 +80,12 @@ interface LockedPreconditions extends AccountClosurePreconditions {
  * append-only.
  *
  * `canCharge` is the ONLY billing read (H7): no billing table is read here.
- * Residue (H8): billing answers `canCharge` outside its own transaction, so a
- * subscription born in the milliseconds between that answer and the commit
- * would land on an already closed account; the real `puedeCobrarle` (B4.3) and
- * the subscription start (B3) close that window.
+ * Residue (H8), still open: the real `canCharge` (B4.3, HOS-1534) reads
+ * committed state with its own connection, outside this transaction, because
+ * the contract's interface carries no `tx` (`BillingForVerticals.canCharge`).
+ * A subscription born in the milliseconds between that answer and the commit
+ * would land on an already closed account. B4.3 does not close that window;
+ * if anything does, it is the subscription start (B3).
  */
 export class AccountClosureService {
     private readonly billing: Pick<BillingForVerticals, 'canCharge'> | undefined;

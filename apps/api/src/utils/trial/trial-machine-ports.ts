@@ -7,6 +7,7 @@ import {
     VERTICAL_ACTIVATION_EVENT_BY_VERTICAL,
     VerticalEnum
 } from '@repo/schemas';
+import { recordCoverageLossIfUncovered } from '@repo/service-core';
 import type {
     TrialAfterCommit,
     TrialExpiryScanner,
@@ -119,11 +120,27 @@ function portOf(tx: DrizzleClient): TrialMachineTransaction {
                 .set({ status: 'TRIAL_CONVERTED', updatedAt: sql`now()` })
                 .where(eq(trials.id, trialId));
         },
+        /**
+         * Expires the trial and, in the SAME transaction, records the coverage
+         * loss of its `(user, vertical)` when no billing source is left (I-5,
+         * AC:B4:4): `retentionStopped` answers that instant after the commit
+         * even when the coverage notice is delayed or lost.
+         */
         async markExpired({ trialId, deadlinesVersion }) {
-            await tx
+            const [expired] = await tx
                 .update(trials)
                 .set({ status: 'TRIAL_EXPIRED', deadlinesVersion, updatedAt: sql`now()` })
-                .where(eq(trials.id, trialId));
+                .where(eq(trials.id, trialId))
+                .returning({ userId: trials.userId, vertical: trials.vertical });
+            if (!expired) return;
+            const { clock } = getClock();
+            await recordCoverageLossIfUncovered({
+                tx,
+                userId: expired.userId,
+                vertical: expired.vertical,
+                lostAt: clock.now(),
+                clock
+            });
         },
         async moveEndsAt({ trialId, endsAt }) {
             await tx

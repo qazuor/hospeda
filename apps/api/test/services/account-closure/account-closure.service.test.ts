@@ -181,6 +181,22 @@ describe('TEST:V8a:12 the account closure decides in one transaction', () => {
         expect(mocks.insert).not.toHaveBeenCalled();
     });
 
+    it('US:B4:3 fails closed: a canCharge that rejects rejects the closure and writes nothing (Coord-242)', async () => {
+        // Arrange
+        arrange({});
+        const readFailure = new Error('billing could not read the account');
+        mocks.canCharge.mockRejectedValue(readFailure);
+
+        // Act
+        const outcome = service().closeOnRequest({ actor: support, userId: JUAN, reason: REASON });
+
+        // Assert
+        await expect(outcome).rejects.toBe(readFailure);
+        expect(mocks.canCharge).toHaveBeenCalledWith({ userId: JUAN });
+        expect(mocks.closeAccount).not.toHaveBeenCalled();
+        expect(mocks.insert).not.toHaveBeenCalled();
+    });
+
     it('locks, reads, asks billing and writes in exactly this order, inside the transaction', async () => {
         // Arrange
         arrange({});

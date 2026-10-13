@@ -129,6 +129,10 @@ function annotator() {
     return {
         annotateCancellationSeen: vi.fn(
             async (_input: { readonly subscriptionId: string; readonly seenAt: Date }) => undefined
+        ),
+        clearCancellationSeen: vi.fn(
+            async (_input: { readonly subscriptionId: string; readonly seenAliveAt: Date }) =>
+                undefined
         )
     } satisfies CancellationSeenAnnotator;
 }
@@ -318,8 +322,9 @@ describe('TEST:B3:42 cancellation seen is annotated by the handler and S16', () 
         const seen = {
             annotateCancellationSeen: vi.fn(async () => {
                 throw new Error('annotator failure');
-            })
-        };
+            }),
+            clearCancellationSeen: vi.fn(async () => undefined)
+        } satisfies CancellationSeenAnnotator;
         const errors: LogEntry[] = [];
         registerHook('cancellation-seen-test', (entry) => {
             if (entry.level === 'ERROR' && entry.category === 'cancellation-seen')

@@ -1,5 +1,5 @@
 {
-  "id": "ddc8fabd-5eaa-41ed-a451-9e3110eeb783",
+  "id": "da849cc6-4b48-4f8a-b1dc-8e7ce2e4e82a",
   "prevId": "b4fc4254-701f-4d13-bdd0-b1e8f1c07c9b",
   "version": "7",
   "dialect": "postgresql",
@@ -8196,7 +8196,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'subscription.provider_cancellation_decided')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -28102,6 +28102,79 @@
       },
       "isRLSEnabled": false
     },
+    "public.coverage_loss": {
+      "name": "coverage_loss",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vertical": {
+          "name": "vertical",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lost_at": {
+          "name": "lost_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "coverage_loss_user_id_users_id_fk": {
+          "name": "coverage_loss_user_id_users_id_fk",
+          "tableFrom": "coverage_loss",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "coverage_loss_vertical_vertical_id_fk": {
+          "name": "coverage_loss_vertical_vertical_id_fk",
+          "tableFrom": "coverage_loss",
+          "tableTo": "vertical",
+          "columnsFrom": [
+            "vertical"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "pk_coverage_loss": {
+          "name": "pk_coverage_loss",
+          "columns": [
+            "user_id",
+            "vertical"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.covered_period": {
       "name": "covered_period",
       "schema": "",
@@ -29688,6 +29761,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "cancelled_seen_at": {
+          "name": "cancelled_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -31223,6 +31302,113 @@
         "ck_subscription_grace_clock_pair": {
           "name": "ck_subscription_grace_clock_pair",
           "value": "(\"subscription\".\"grace_started_at\" IS NULL AND \"subscription\".\"grace_ends_at\" IS NULL) OR (\"subscription\".\"grace_started_at\" IS NOT NULL AND \"subscription\".\"grace_ends_at\" IS NOT NULL AND \"subscription\".\"grace_ends_at\" >= \"subscription\".\"grace_started_at\")"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.subscription_pause": {
+      "name": "subscription_pause",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_months": {
+          "name": "requested_months",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expected_end_at": {
+          "name": "expected_end_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actual_end_at": {
+          "name": "actual_end_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_subscription_pause_open": {
+          "name": "uq_subscription_pause_open",
+          "columns": [
+            {
+              "expression": "subscription_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"subscription_pause\".\"actual_end_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "subscription_pause_subscription_id_subscription_id_fk": {
+          "name": "subscription_pause_subscription_id_subscription_id_fk",
+          "tableFrom": "subscription_pause",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_subscription_pause_reason": {
+          "name": "ck_subscription_pause_reason",
+          "value": "\"subscription_pause\".\"reason\" IN ('CUSTOMER_REQUEST', 'COURTESY')"
+        },
+        "ck_subscription_pause_expected_end": {
+          "name": "ck_subscription_pause_expected_end",
+          "value": "\"subscription_pause\".\"expected_end_at\" IS NULL OR \"subscription_pause\".\"expected_end_at\" >= \"subscription_pause\".\"starts_at\""
+        },
+        "ck_subscription_pause_actual_end": {
+          "name": "ck_subscription_pause_actual_end",
+          "value": "\"subscription_pause\".\"actual_end_at\" IS NULL OR \"subscription_pause\".\"actual_end_at\" >= \"subscription_pause\".\"starts_at\""
         }
       },
       "isRLSEnabled": false
