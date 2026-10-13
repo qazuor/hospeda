@@ -2,7 +2,10 @@ import { planCatalogModel } from '@repo/db';
 import {
     createGraceExpiryCheck,
     createLostFirstRejectionCheck,
+    createPaymentReconciliationMarkPayments,
     creditedPaymentsFromLedger,
+    noDeterminableRetainedPaymentBranch,
+    retainedPaymentsFromLedger,
     runReconciliationSweep
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
@@ -53,8 +56,9 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         }),
                         // AC:B7:7/AC:B7:8: S6 when the grace clock ran out, or P1 + S5 when the
                         // period charged. The coverage notice goes to the process-wide registry
-                        // (HOS-1533); cancellation-seen, S19 and the DEC-OBS-001 channel stay on
-                        // their defaults until B7.4b and B11/B13a wire them.
+                        // (HOS-1533). S6's S19 guard is its real default (an open retention of
+                        // the row, HOS-1561); cancellation-seen and the DEC-OBS-001 channel stay
+                        // on their defaults until B11/B13a wire them.
                         createGraceExpiryCheck({
                             provider,
                             clock,
@@ -64,7 +68,17 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             coverageNotices: getCoverageNotices()
                         })
                     ],
-                    zeroCallChecks: {},
+                    // B11.8's second zero-call check (Coord-74, HOS-1561 H11): the open S19
+                    // retentions and a resolver that never finds a branch, so a retention
+                    // whose succession ended without its act opens PAGO_PENDIENTE_SIN_RAMA.
+                    zeroCallChecks: {
+                        retainedPayments: retainedPaymentsFromLedger,
+                        retainedPaymentBranches: noDeterminableRetainedPaymentBranch
+                    },
+                    // The mark opened for a retained payment hangs it (AC:B5:32); without
+                    // the real ledger port each one fails as "not registered". The sweep
+                    // hands it to the comparisons (none here) and the zero-call checks.
+                    markPayments: createPaymentReconciliationMarkPayments(clock),
                     livenessPing: createSentryCronMonitorPing()
                 }
             );
