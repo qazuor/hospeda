@@ -271,5 +271,6 @@
         "invoiceA": "Sí. Cada cobro genera su comprobante y lo tenés disponible en tu cuenta.",
         "partnerPriceQ": "¿Por qué no figura el precio?",
         "partnerPriceA": "Porque no le cobramos lo mismo a una institución que a un comercio de barrio, aunque tomen el mismo nivel. Los valores vigentes te los pasamos en la charla."
-    }
+    },
+    "trialConsumesNote": "Empezar consume tu prueba gratis, y la prueba es una sola vez en la vida."
 }
