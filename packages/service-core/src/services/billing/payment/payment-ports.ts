@@ -54,7 +54,12 @@ export interface CoverageNotices {
     emitCoverageChanged(event: CoverageChangedEvent): Promise<void>;
 }
 
-/** Coverage delivery is best effort; without B4, report the unwired notice. */
+/**
+ * Coverage delivery is best effort. This is the default of the tests and of
+ * the callers the composition root has not wired yet: it only reports the
+ * unwired notice. The real listener registry is `createCoverageNoticeRegistry`
+ * (B4.2).
+ */
 export const unwiredCoverageNotices: CoverageNotices = {
     async emitCoverageChanged(event) {
         logger.error({ event }, 'Coverage changed notice has no listener');

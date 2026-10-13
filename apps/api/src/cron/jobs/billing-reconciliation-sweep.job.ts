@@ -9,6 +9,7 @@ import { createPlanCatalogInverse } from '@repo/verticals';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
+import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -51,14 +52,16 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             planPolicy
                         }),
                         // AC:B7:7/AC:B7:8: S6 when the grace clock ran out, or P1 + S5 when the
-                        // period charged; coverage, cancellation-seen, S19 and the DEC-OBS-001
-                        // channel stay on their defaults until B4.2, B7.4b and B11/B13a wire them.
+                        // period charged. The coverage notice goes to the process-wide registry
+                        // (HOS-1533); cancellation-seen, S19 and the DEC-OBS-001 channel stay on
+                        // their defaults until B7.4b and B11/B13a wire them.
                         createGraceExpiryCheck({
                             provider,
                             clock,
                             beforeCancelNotice,
                             payments: creditedPaymentsFromLedger,
-                            planPolicy
+                            planPolicy,
+                            coverageNotices: getCoverageNotices()
                         })
                     ],
                     zeroCallChecks: {},

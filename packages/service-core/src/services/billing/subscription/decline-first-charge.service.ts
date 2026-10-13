@@ -10,7 +10,9 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { enqueueSignupDeclinedNotice } from './signup-declined-notice';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
@@ -52,9 +54,16 @@ export interface DeclineFirstChargePorts {
     readonly payments?: SubscriptionPayments;
     readonly successionCloser?: SuccessionCloser;
     readonly cancellationSeen?: CancellationSeenAnnotator;
+    /** Receives the post-commit `REMOVED` notice (B4.2); defaults to the unwired logger. */
+    readonly coverageNotices?: CoverageNotices;
 }
 
-/** S16: the first rejected charge of a signup closes its authorization and signup row. */
+/**
+ * S16: the first rejected charge of a signup closes its authorization and signup row.
+ * `CHARGE_DECLINED` emits no coverage source (03-contrato-de-cobertura.md:475), so once
+ * the transaction committed a `REMOVED` coverage notice is emitted; a notice failure is
+ * logged and undoes nothing.
+ */
 export async function declineFirstCharge(
     input: { readonly chargeId: string },
     ports: DeclineFirstChargePorts
@@ -162,13 +171,14 @@ export async function declineFirstCharge(
         }
     }
 
-    const successionClosed = await getDb().transaction(async (tx) => {
+    const declined = await getDb().transaction(async (tx) => {
         const [updated] = await tx
             .update(subscriptions)
             .set({ status: 'CHARGE_DECLINED', updatedAt: ports.clock.now() })
             .where(and(eq(subscriptions.id, subscription.id), eq(subscriptions.status, 'ACTIVE')))
             .returning();
         if (!updated) return null;
+        const subject = { userId: updated.userId, vertical: updated.vertical };
 
         await enqueueSignupDeclinedNotice({
             tx,
@@ -186,15 +196,37 @@ export async function declineFirstCharge(
                 )
             )
             .limit(1);
-        if (!successor) return false;
+        if (!successor) return { successionClosed: false, subject };
         await successionCloser.closeSuccession({ predecessorSubscriptionId: subscription.id, tx });
-        return true;
+        return { successionClosed: true, subject };
     });
-    if (successionClosed === null) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
+    if (declined === null) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
+
+    const vertical = VerticalEnumSchema.safeParse(declined.subject.vertical);
+    if (declined.subject.userId && vertical.success) {
+        try {
+            await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged({
+                userId: declined.subject.userId,
+                vertical: vertical.data,
+                sourceType: 'SUBSCRIPTION',
+                change: 'REMOVED'
+            });
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, error },
+                'Coverage changed notice failed after charge-declined commit'
+            );
+        }
+    } else {
+        logger.error(
+            { subscriptionId: subscription.id, vertical: declined.subject.vertical },
+            'Charge-declined subscription has no coverage subject to notify'
+        );
+    }
     return {
         outcome: 'DECLINED',
         subscriptionId: subscription.id,
         cancelCall,
-        successionClosed
+        successionClosed: declined.successionClosed
     };
 }

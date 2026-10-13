@@ -28,6 +28,7 @@ vi.mock('@repo/verticals', async (importOriginal) => ({
 
 import { creditedPaymentsFromLedger } from '@repo/service-core';
 import { billingReconciliationSweepJob } from '../../src/cron/jobs/billing-reconciliation-sweep.job';
+import { getCoverageNotices } from '../../src/utils/listing-access/coverage-notices';
 
 function context(dryRun = false): CronJobContext {
     return {
@@ -88,6 +89,11 @@ describe('billing reconciliation sweep cron', () => {
                 planPolicy: mockPlanPolicy
             })
         );
+        // HOS-1533: S6 and P1 notify the ONE process-wide coverage registry, never the unwired default.
+        expect(
+            (mockGraceExpiryCheck.mock.calls[0]?.[0] as { coverageNotices?: unknown })
+                .coverageNotices
+        ).toBe(getCoverageNotices());
         expect(mockGraceExpiryCheck.mock.calls[0]?.[0]).not.toHaveProperty(
             'unresolvedPeriodCharges'
         );

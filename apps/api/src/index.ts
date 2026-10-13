@@ -50,6 +50,7 @@ import { subscribeListingCoverageRecalculation } from './utils/listing-publicati
 import { apiLogger } from './utils/logger';
 import { disconnectRedis } from './utils/redis';
 import { resolveLogFormat } from './utils/resolve-log-format';
+import { subscribeTrialCoverageConversion } from './utils/trial/trial-coverage-listener';
 import {
     destroyUserPermissionsCache,
     invalidateUserPermissionsCache
@@ -352,6 +353,7 @@ const startServer = async (): Promise<void> => {
 
         const app = initApp();
         const unsubscribeCoverage = subscribeListingCoverageRecalculation();
+        const unsubscribeTrialConversion = subscribeTrialCoverageConversion();
 
         // Newsletter dispatch worker handle — populated below after serve() resolves.
         // Hoisted here so gracefulShutdown can await its drain.
@@ -455,6 +457,7 @@ const startServer = async (): Promise<void> => {
         const gracefulShutdown = async (signal: string) => {
             apiLogger.info(`Received ${signal}, shutting down gracefully...`);
             unsubscribeCoverage?.();
+            unsubscribeTrialConversion?.();
 
             try {
                 // Drain in-flight BullMQ jobs first — must complete BEFORE Redis
