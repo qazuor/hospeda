@@ -329,6 +329,58 @@
             "notRestored": "These listings could not return: {{listings}}.",
             "criterion": "The listing that dropped last returns first, until the available slots are filled. Listings from the old system that were never published here go first, by oldest creation date.",
             "nothingDeleted": "Listings that could not return are still there; none are deleted."
-        }
+        },
+        "reason": "Reason: {{reason}}",
+        "purgedByInactivity": {
+            "title": "Listing deleted for inactivity",
+            "body": "This listing existed, and its content was deleted for inactivity."
+        },
+        "purgedFromModeration": {
+            "title": "Listing deleted",
+            "body": "This listing was deleted while it was moderated.",
+            "what": "Its texts, photos, frequently asked questions and opening hours were deleted."
+        },
+        "purged": {
+            "title": "Listing deleted",
+            "body": "This listing was deleted."
+        },
+        "neverReturns": "It does not come back: the deletion is final.",
+        "archived": {
+            "title": "Listing archived",
+            "nothingDeleted": "Nothing was deleted: the listing is archived and is not shown on the site.",
+            "recurring_one": "You have {{count}} recurring featured placement on this listing: it keeps being charged while archived, until you cancel it.",
+            "recurring_other": "You have {{count}} recurring featured placements on this listing: they keep being charged while archived, until you cancel them.",
+            "canSeeAndExport": "You can still see it and export it.",
+            "returnsOnItsOwn": "It comes back on its own when you regain coverage, or when your quota allows it again, if there is room for it.",
+            "backToDraft": "You can bring it back to draft whenever you want, at no cost.",
+            "deletionDate": "If it stays archived, its content is deleted from {{date}}."
+        },
+        "moderated": {
+            "title": "Listing moderated",
+            "hidden": "It is not shown on the site until an admin lifts the moderation.",
+            "canDo": "Meanwhile you can see it, export it, edit it and delete it, but not publish it.",
+            "recurring_one": "You have {{count}} recurring featured placement on this listing: it keeps being charged until you cancel it.",
+            "recurring_other": "You have {{count}} recurring featured placements on this listing: they keep being charged until you cancel them."
+        },
+        "fixRequest": {
+            "title": "You were asked to fix this listing",
+            "suggestedDate": "Suggested date to fix it: {{date}}.",
+            "stillVisible": "Your listing stays visible meanwhile.",
+            "button": "I fixed it",
+            "reported": "You reported you fixed it on {{date}}.",
+            "error": "We could not record your report. Please try again."
+        },
+        "lifted": {
+            "title": "The moderation was lifted",
+            "returnedTo": {
+                "PUBLISHED": "It is published again.",
+                "DRAFT": "It went back to draft.",
+                "UNPUBLISHED_BY_BILLING": "It stayed unpublished, because your subscription has no room for it today. Nothing was deleted.",
+                "ARCHIVED": "It is still archived, as it was."
+            },
+            "draftIsYours": "Publishing it is up to you.",
+            "fixRequestOpen": "The fix request is still open."
+        },
+        "surplusTitle": "Listing unpublished by your plan limit"
     }
 }
