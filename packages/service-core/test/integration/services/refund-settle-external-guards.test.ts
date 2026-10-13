@@ -55,25 +55,28 @@ describe('TEST:B5:6 AC:B5:12 a refund id lives in one row; balance and state gua
             };
 
             // Act
-            const samePayment = settleOnPayment(admin, credited, {
-                amount: 1000,
-                channel: 'PROVIDER_PANEL',
-                reference: panel
-            });
-            const otherPayment = settleOnPayment(admin, other, {
-                amount: 1000,
-                channel: 'PROVIDER_PANEL',
-                reference: panel
-            });
-            const againstCall = settleOnPayment(admin, credited, {
-                amount: 1000,
-                channel: 'PROVIDER_PANEL',
-                reference: called
-            });
+            const samePayment = () =>
+                settleOnPayment(admin, credited, {
+                    amount: 1000,
+                    channel: 'PROVIDER_PANEL',
+                    reference: panel
+                });
+            const otherPayment = () =>
+                settleOnPayment(admin, other, {
+                    amount: 1000,
+                    channel: 'PROVIDER_PANEL',
+                    reference: panel
+                });
+            const againstCall = () =>
+                settleOnPayment(admin, credited, {
+                    amount: 1000,
+                    channel: 'PROVIDER_PANEL',
+                    reference: called
+                });
 
             // Assert
             for (const attempt of [samePayment, otherPayment, againstCall])
-                await expect(attempt).rejects.toMatchObject({
+                await expect(attempt()).rejects.toMatchObject({
                     code: 'ALREADY_EXISTS',
                     reason: 'EXTERNAL_REFERENCE_ALREADY_SETTLED'
                 });
@@ -102,48 +105,51 @@ describe('TEST:B5:6 AC:B5:12 a refund id lives in one row; balance and state gua
             const paymentBefore = await paymentRow(credited.payment.id);
 
             // Act
-            const overBalance = settleOnPayment(admin, credited, { amount: 6001 });
-            const notRefundable = settleExternalRefund(
-                {
-                    actor: admin,
-                    source: { kind: 'PAYMENT', id: pending.payment.id },
+            const overBalance = () => settleOnPayment(admin, credited, { amount: 6001 });
+            const notRefundable = () =>
+                settleExternalRefund(
+                    {
+                        actor: admin,
+                        source: { kind: 'PAYMENT', id: pending.payment.id },
+                        amount: 100,
+                        channel: 'BANK_TRANSFER',
+                        reference: 'op-1',
+                        reason: 'OUT_OF_FLOW_REFUND'
+                    },
+                    { clock: pending.fixture.clock }
+                );
+            const noScope = () =>
+                settleExternalRefund(
+                    {
+                        actor: admin,
+                        source: { kind: 'MANUAL_PAYMENT', id: manual.manual.id },
+                        amount: 100,
+                        channel: 'BANK_TRANSFER',
+                        reference: 'op-1',
+                        reason: 'MANUAL_PAYMENT_REFUND'
+                    },
+                    { clock: manual.fixture.clock }
+                );
+            const scopeOnPayment = () =>
+                settleOnPayment(admin, credited, {
                     amount: 100,
-                    channel: 'BANK_TRANSFER',
-                    reference: 'op-1',
-                    reason: 'OUT_OF_FLOW_REFUND'
-                },
-                { clock: pending.fixture.clock }
-            );
-            const noScope = settleExternalRefund(
-                {
-                    actor: admin,
-                    source: { kind: 'MANUAL_PAYMENT', id: manual.manual.id },
-                    amount: 100,
-                    channel: 'BANK_TRANSFER',
-                    reference: 'op-1',
-                    reason: 'MANUAL_PAYMENT_REFUND'
-                },
-                { clock: manual.fixture.clock }
-            );
-            const scopeOnPayment = settleOnPayment(admin, credited, {
-                amount: 100,
-                manualPaymentScope: 'TOTAL'
-            });
+                    manualPaymentScope: 'TOTAL'
+                });
 
             // Assert
-            await expect(overBalance).rejects.toMatchObject({
+            await expect(overBalance()).rejects.toMatchObject({
                 code: 'VALIDATION_ERROR',
                 reason: 'REFUND_EXCEEDS_BALANCE'
             });
-            await expect(notRefundable).rejects.toMatchObject({
+            await expect(notRefundable()).rejects.toMatchObject({
                 code: 'ALREADY_EXISTS',
                 reason: 'PAYMENT_NOT_REFUNDABLE'
             });
-            await expect(noScope).rejects.toMatchObject({
+            await expect(noScope()).rejects.toMatchObject({
                 code: 'VALIDATION_ERROR',
                 reason: 'MANUAL_PAYMENT_SCOPE_REQUIRED'
             });
-            await expect(scopeOnPayment).rejects.toMatchObject({
+            await expect(scopeOnPayment()).rejects.toMatchObject({
                 code: 'VALIDATION_ERROR',
                 reason: 'MANUAL_PAYMENT_SCOPE_NOT_ALLOWED'
             });

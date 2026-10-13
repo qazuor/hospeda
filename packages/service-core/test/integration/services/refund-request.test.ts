@@ -120,13 +120,18 @@ describe('TEST:B5:6 AC:B5:9 RF1 is born REQUESTED and moves nothing', () => {
             );
 
             // Act
-            const attempt = requestRefund(
-                { source: { kind: 'PAYMENT', id: payment.id }, amount: 6001, reason: 'REVOCATION' },
-                { clock: fixture.clock }
-            );
+            const attempt = () =>
+                requestRefund(
+                    {
+                        source: { kind: 'PAYMENT', id: payment.id },
+                        amount: 6001,
+                        reason: 'REVOCATION'
+                    },
+                    { clock: fixture.clock }
+                );
 
             // Assert
-            await expect(attempt).rejects.toMatchObject({
+            await expect(attempt()).rejects.toMatchObject({
                 code: 'VALIDATION_ERROR',
                 reason: 'REFUND_EXCEEDS_BALANCE'
             });
@@ -147,25 +152,31 @@ describe('TEST:B5:6 AC:B5:9 RF1 is born REQUESTED and moves nothing', () => {
             const { manual } = await manualPaymentWithCoverage('AWAITING');
 
             // Act
-            const onPayment = requestRefund(
-                { source: { kind: 'PAYMENT', id: payment.id }, amount: 100, reason: 'REVOCATION' },
-                { clock: fixture.clock }
-            );
-            const onManual = requestRefund(
-                {
-                    source: { kind: 'MANUAL_PAYMENT', id: manual.id },
-                    amount: 100,
-                    reason: 'MARK_PROPOSAL'
-                },
-                { clock: fixture.clock }
-            );
+            const onPayment = () =>
+                requestRefund(
+                    {
+                        source: { kind: 'PAYMENT', id: payment.id },
+                        amount: 100,
+                        reason: 'REVOCATION'
+                    },
+                    { clock: fixture.clock }
+                );
+            const onManual = () =>
+                requestRefund(
+                    {
+                        source: { kind: 'MANUAL_PAYMENT', id: manual.id },
+                        amount: 100,
+                        reason: 'MARK_PROPOSAL'
+                    },
+                    { clock: fixture.clock }
+                );
 
             // Assert
-            await expect(onPayment).rejects.toMatchObject({
+            await expect(onPayment()).rejects.toMatchObject({
                 code: 'ALREADY_EXISTS',
                 reason: 'PAYMENT_NOT_REFUNDABLE'
             });
-            await expect(onManual).rejects.toMatchObject({
+            await expect(onManual()).rejects.toMatchObject({
                 code: 'ALREADY_EXISTS',
                 reason: 'PAYMENT_NOT_REFUNDABLE'
             });

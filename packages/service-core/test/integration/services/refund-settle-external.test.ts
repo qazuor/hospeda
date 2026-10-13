@@ -227,10 +227,10 @@ describe('TEST:B5:6 AC:B5:41 RF4 closes the open REQUESTED of RF1', () => {
             const paymentBefore = await paymentRow(credited.payment.id);
 
             // Act
-            const attempt = settleOnPayment(admin, credited, { amount: 5000 });
+            const attempt = () => settleOnPayment(admin, credited, { amount: 5000 });
 
             // Assert
-            await expect(attempt).rejects.toMatchObject({
+            await expect(attempt()).rejects.toMatchObject({
                 code: 'ALREADY_EXISTS',
                 reason: 'REQUESTED_AMOUNT_MISMATCH',
                 message: 'Settled amount 5000 differs from the requested 10000'
@@ -361,21 +361,23 @@ describe('TEST:B5:6 AC:B5:41 RF4 closes the open REQUESTED of RF1', () => {
             const executed = await settleOnPayment(admin, credited, { amount: 1000 });
 
             // Act
-            const onForeign = settleOnPayment(admin, credited, {
-                amount: 1000,
-                refundId: foreign.refundId
-            });
-            const onExecuted = settleOnPayment(admin, credited, {
-                amount: 1000,
-                refundId: executed.refundId
-            });
+            const onForeign = () =>
+                settleOnPayment(admin, credited, {
+                    amount: 1000,
+                    refundId: foreign.refundId
+                });
+            const onExecuted = () =>
+                settleOnPayment(admin, credited, {
+                    amount: 1000,
+                    refundId: executed.refundId
+                });
 
             // Assert
-            await expect(onForeign).rejects.toMatchObject({
+            await expect(onForeign()).rejects.toMatchObject({
                 code: 'NOT_FOUND',
                 reason: 'REFUND_NOT_FOUND'
             });
-            await expect(onExecuted).rejects.toMatchObject({
+            await expect(onExecuted()).rejects.toMatchObject({
                 code: 'ALREADY_EXISTS',
                 reason: 'REFUND_NOT_OPEN'
             });
