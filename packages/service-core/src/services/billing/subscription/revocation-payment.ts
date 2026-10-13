@@ -247,6 +247,12 @@ function readerIn(tx: DrizzleClient): BillingOptionReader {
     };
 }
 
+/**
+ * The cents of a manual payment whose subscription has no anchored option: not a commercial
+ * value but "unknown", which the service rejects as `REVOCATION_AMOUNT_UNAVAILABLE` (I-2).
+ */
+const UNKNOWN = 0;
+
 /** Σ of the refunds that already claim money of this source (every status but `FAILED`). */
 async function claimedOf(input: {
     readonly tx: DrizzleClient;
@@ -312,7 +318,7 @@ async function amountOf(input: {
         .from(subscriptions)
         .where(eq(subscriptions.id, input.ownerSubscriptionId))
         .limit(1);
-    if (!owner?.planVersionId || !owner.billingOptionId) return { amount: 0, currency: null };
+    if (!owner?.planVersionId || !owner.billingOptionId) return { amount: UNKNOWN, currency: null };
     const option = await readAnchoredBillingOption({
         subscription: {
             planVersionId: owner.planVersionId,
@@ -320,7 +326,7 @@ async function amountOf(input: {
         },
         reader: readerIn(tx)
     });
-    if (!option) return { amount: 0, currency: null };
+    if (!option) return { amount: UNKNOWN, currency: null };
     const claimed = await claimedOf({ tx, source: candidate.source });
     return { amount: option.amount - claimed, currency: option.currency };
 }
