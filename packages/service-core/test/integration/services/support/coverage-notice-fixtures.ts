@@ -10,11 +10,12 @@ import type {
     CoverageResponse,
     CoverageSource
 } from '@repo/billing-verticals-contract';
+import { users } from '@repo/db';
 import { createBillingCoverage } from '../../../../src/services/billing/coverage/billing-coverage';
 import { createCoverageNoticeRegistry } from '../../../../src/services/billing/coverage/coverage-notice-registry';
 import { unregisteredListingQuery } from '../../../../src/services/billing/coverage/coverage-ports';
 import { creditedPaymentsFromLedger } from '../../../../src/services/billing/payment/payment-ledger';
-import { getServiceTestPool } from '../helpers';
+import { getServiceTestDb, getServiceTestPool } from '../helpers';
 
 /** What the consumer saw when the notice reached it. */
 export interface ObservedNotice {
@@ -127,4 +128,120 @@ export async function cleanUpCoverageNoticeRows(input: {
     } finally {
         client.release();
     }
+}
+
+/**
+ * A plan choice for the census (corrida 2). The version is seeded
+ * `sellable: false, current: false` (I-8): the sale check reads the
+ * `planPolicy` port, so the census never adds a sellable plan.
+ */
+export async function seedCensusChoice(
+    input: { readonly vertical?: 'accommodation' | 'tourist'; readonly userId?: string } = {}
+): Promise<{
+    readonly userId: string;
+    readonly planVersionId: string;
+    readonly billingOptionId: string;
+}> {
+    const vertical = input.vertical ?? 'accommodation';
+    let userId = input.userId;
+    if (!userId) {
+        const [user] = await getServiceTestDb()
+            .insert(users)
+            .values({
+                email: `coverage-census-${crypto.randomUUID()}@example.test`,
+                displayName: 'Coverage census',
+                emailVerified: true,
+                lifecycleState: 'ACTIVE'
+            })
+            .returning({ id: users.id });
+        userId = user?.id;
+    }
+    if (!userId) throw new Error('census user missing');
+    const planId = (
+        await getServiceTestPool().query<{ id: string }>(
+            'INSERT INTO plan (vertical, slug, name) VALUES ($1, $2, $3) RETURNING id',
+            [vertical, `coverage-census-${crypto.randomUUID()}`, 'Census plan']
+        )
+    ).rows[0]?.id;
+    if (!planId) throw new Error('census plan missing');
+    const planVersionId = (
+        await getServiceTestPool().query<{ id: string }>(
+            `INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip)
+             VALUES ($1, $2, $3, false, false, 0, false, false) RETURNING id`,
+            [planId, vertical, Math.floor(Math.random() * 1_000_000_000) + 1000]
+        )
+    ).rows[0]?.id;
+    if (!planVersionId) throw new Error('census plan version missing');
+    const billingOptionId = (
+        await getServiceTestPool().query<{ id: string }>(
+            `INSERT INTO billing_option (plan_version_id, cycle, amount, currency)
+             VALUES ($1, 'monthly', 250000, 'ARS') RETURNING id`,
+            [planVersionId]
+        )
+    ).rows[0]?.id;
+    if (!billingOptionId) throw new Error('census billing option missing');
+    return { userId, planVersionId, billingOptionId };
+}
+
+/**
+ * Inserts one bare `PRINCIPAL` subscription row (no provider link), for the
+ * rows the census needs in a given state: a Tourist VIP, a predecessor or a
+ * live successor.
+ */
+export async function insertCensusSubscription(input: {
+    readonly userId: string;
+    readonly vertical: 'accommodation' | 'tourist';
+    readonly planVersionId: string;
+    readonly billingOptionId: string;
+    readonly status: string;
+    readonly succeedsId?: string;
+}): Promise<string> {
+    const id = (
+        await getServiceTestPool().query<{ id: string }>(
+            `INSERT INTO subscription (user_id, vertical, plan_version_id, billing_option_id, payment_method, status, class, succeeds_id, service_ends_at)
+             VALUES ($1, $2, $3, $4, 'CARD', $5, 'PRINCIPAL', $6, $7)
+             RETURNING id`,
+            [
+                input.userId,
+                input.vertical,
+                input.planVersionId,
+                input.billingOptionId,
+                input.status,
+                input.succeedsId ?? null,
+                input.status === 'CANCELLED' ? new Date() : null
+            ]
+        )
+    ).rows[0]?.id;
+    if (!id) throw new Error('census subscription missing');
+    return id;
+}
+
+/** The committed status of one subscription, read on ANOTHER connection than the writer's. */
+export async function committedSubscriptionStatus(subscriptionId: string): Promise<string | null> {
+    const rows = await getServiceTestPool().query<{ status: string }>(
+        'SELECT status FROM subscription WHERE id = $1',
+        [subscriptionId]
+    );
+    return rows.rows[0]?.status ?? null;
+}
+
+/** One notice and what another connection saw committed when it arrived. */
+export interface CensusObservation<T> {
+    readonly event: CoverageChangedEvent;
+    readonly committed: T;
+}
+
+/**
+ * A `coverageNotices` port that records every notice and, at the moment it
+ * receives it, runs `observe` on another connection: what it reads is what
+ * was already committed when the notice left.
+ */
+export function recordingCoverageNotices<T>(observe: (event: CoverageChangedEvent) => Promise<T>) {
+    const seen: CensusObservation<T>[] = [];
+    const coverageNotices = {
+        async emitCoverageChanged(event: CoverageChangedEvent) {
+            seen.push({ event, committed: await observe(event) });
+        }
+    };
+    return { coverageNotices, seen };
 }
