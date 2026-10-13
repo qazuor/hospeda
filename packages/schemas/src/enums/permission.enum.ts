@@ -872,6 +872,7 @@ export enum PermissionEnum {
     LISTING_FOREIGN_CONTENT_EDIT = 'listing.foreignContent.edit', // Allows editing another owner's listing content across all three verticals (action 15).
     LISTING_MODERATE = 'listing.moderate', // Allows moderating any listing in two levels (fix request or take-down) and lifting it; NUCLEO/08 §3 action 13 (AUT-113), the same permission that moderates a partner presence.
     LISTING_PURGE_ON_REQUEST = 'listing.purgeOnRequest', // Allows purging another owner's listing at the owner's request, with a reason (PB12); NUCLEO/08 §3 action 23.
+    USER_CLOSE_ON_REQUEST = 'user.closeOnRequest', // Allows closing another person's account at their request, with a reason: pseudonymizes it and removes its credentials; NUCLEO/08 §3 action 24.
     BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.
     BILLING_VIEW_OWN = 'billing.viewOwn', // Allows reading the account's own billing.
     TRIAL_EXTEND = 'trial.extend', // Allows extending another person's running trial past the ceiling with a mandatory reason (action 11, HOS-1445). SUPER_ADMIN-only.
