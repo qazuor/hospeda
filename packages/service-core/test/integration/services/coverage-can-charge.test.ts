@@ -242,6 +242,26 @@ describe('TEST:B4:4 puedeCobrarle answers on the confirmed cancellation (AC:B4:5
         expect(answer).toEqual({ canCharge: true });
     });
 
+    it('(a) the same CANCEL_SCHEDULED, once the handler re-read sees it cancelled ⇒ no', async () => {
+        // Arrange
+        const clock = adjustableClock();
+        const account = await signup(clock);
+        await moveRow({ subscriptionId: account.subscriptionId, status: 'CANCEL_SCHEDULED' });
+        clock.advance(ONE_HOUR);
+        const cancelledReadAt = clock.now();
+        await account.provider.pause({ authorizationId: account.authorizationId });
+
+        // Act
+        await rereadThroughHandler({ clock, fake: account.provider, status: 'cancelled' });
+        const answer = await canChargeAt(clock).canCharge({ userId: account.userId });
+
+        // Assert
+        expect({
+            column: await cancelledSeenAt(account.subscriptionId),
+            answer
+        }).toEqual({ column: cancelledReadAt, answer: { canCharge: false } });
+    });
+
     it('(b) a terminal row one of our transitions closed, still authorized at the fake ⇒ yes', async () => {
         // Arrange
         const clock = adjustableClock();
