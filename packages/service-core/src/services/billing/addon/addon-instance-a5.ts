@@ -140,7 +140,10 @@ async function coverageVerticalsOf(input: {
  * @param input.instanceId - The addon instance
  * @param input.clause - `ORPHANED` or `WITHDRAWN`
  * @param input.now - The instant of the act
- * @param ports - `políticaDeAddon` and `ficha`, for the coverage verticals
+ * @param ports - `políticaDeAddon` and `ficha`, for the coverage verticals (notas I-7). Part of
+ *   the contract (Coord-377): every caller (`runOrphanhood`; `S12` with `WITHDRAWN`, HOS-1569;
+ *   HOS-1546, HOS-1547, HOS-1570) passes them; with the production `ficha` a `LISTING`
+ *   instance throws and the caller's act rolls back (notas I-12)
  * @returns The cancelled addon, or `NOT_APPLICABLE`
  * @throws ServiceError when the instance does not exist or left its state under the lock
  */
