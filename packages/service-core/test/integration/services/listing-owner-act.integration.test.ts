@@ -13,16 +13,14 @@
  * Every test runs inside `withServiceTestTransaction`, which rolls back.
  */
 
-import { domainEventModel, type SelectDomainEvent } from '@repo/db';
+import { accommodations, domainEventModel, eq, type SelectDomainEvent } from '@repo/db';
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
     GastronomyTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
     PermissionEnum,
-    RoleEnum,
-    VisibilityEnum
+    PublicationStatusEnum,
+    RoleEnum
 } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -114,9 +112,6 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                         type: GastronomyTypeEnum.PARRILLA,
                         ownerId: ownerId as Uuid,
                         destinationId: destinationId as Uuid,
-                        visibility: VisibilityEnum.PRIVATE,
-                        lifecycleState: LifecycleStatusEnum.DRAFT,
-                        moderationState: ModerationStatusEnum.PENDING,
                         averageRating: 0,
                         reviewsCount: 0
                     },
@@ -177,9 +172,6 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                         isPriceOnRequest: false,
                         ownerId: ownerId as Uuid,
                         destinationId: destinationId as Uuid,
-                        visibility: VisibilityEnum.PRIVATE,
-                        lifecycleState: LifecycleStatusEnum.DRAFT,
-                        moderationState: ModerationStatusEnum.PENDING,
                         averageRating: 0,
                         reviewsCount: 0
                     } as never,
@@ -330,9 +322,14 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
         }
     );
 
-    // TEST:V9a:2 — AC:V9a:2
+    // TEST:V9a:2 — AC:V9a:2. Since V6.9b (HOS-1641) an owner edit can no
+    // longer carry a state column: the six legacy state columns are gone and
+    // `publicationStatus` is written only by the PB transitions (R3). The
+    // old/new half of AC:V9a:2 is covered by the unit test of
+    // `buildListingOwnerActChanges`; here a state value smuggled into the
+    // payload must reach neither the row nor the event.
     it.skipIf(!dbAvailable)(
-        'TEST:V9a:2 — editing the description and the state in one act stores only the description name and the state old/new',
+        'TEST:V9a:2 — editing the description stores only its name; a smuggled state value reaches neither the row nor the event',
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { userId, accommodationId } = await seedAccommodation(tx);
@@ -344,11 +341,17 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                     accommodationId,
                     {
                         description: newDescription,
-                        lifecycleState: LifecycleStatusEnum.INACTIVE
-                    },
+                        publicationStatus: PublicationStatusEnum.DRAFT
+                    } as never,
                     { tx }
                 );
                 expect(edited.error).toBeUndefined();
+
+                const [row] = await tx
+                    .select({ publicationStatus: accommodations.publicationStatus })
+                    .from(accommodations)
+                    .where(eq(accommodations.id, accommodationId));
+                expect(row?.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
 
                 const events = await domainEventModel.findByEntity({
                     entityType: 'accommodation',
@@ -356,14 +359,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                     tx
                 });
                 expect(events).toHaveLength(1);
-                expect(events[0]?.changes).toEqual([
-                    { field: 'description' },
-                    {
-                        field: 'lifecycleState',
-                        old: LifecycleStatusEnum.ACTIVE,
-                        new: LifecycleStatusEnum.INACTIVE
-                    }
-                ]);
+                expect(events[0]?.changes).toEqual([{ field: 'description' }]);
                 expect(JSON.stringify(events[0])).not.toContain(newDescription);
                 expect(JSON.stringify(events[0])).not.toContain('Seed accommodation description');
             });

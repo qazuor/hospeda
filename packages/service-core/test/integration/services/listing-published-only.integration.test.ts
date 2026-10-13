@@ -199,3 +199,110 @@ describe('TEST:V5:30 published-only conversations and reviews (DB)', () => {
         }
     );
 });
+
+/**
+ * V6.9b (HOS-1641): the public side reads `publicationStatus` and nothing else.
+ * A listing taken down by an admin (`MODERATED`) or erased (`PURGED`) answers
+ * a tourist exactly like a listing that does not exist, for a new conversation
+ * and for a new review alike. (AC:V5:5: what is not the actor's exists only
+ * while `PUBLISHED`.)
+ */
+describe('TEST:V5:30 MODERATED and PURGED listings are absent to a tourist (DB)', () => {
+    beforeAll(() => {
+        if (dbAvailable) getServiceTestDb();
+    });
+
+    afterAll(async () => {
+        if (dbAvailable) await closeServiceTestPool();
+    });
+
+    it.skipIf(!dbAvailable).each([PublicationStatusEnum.MODERATED, PublicationStatusEnum.PURGED])(
+        'a %s listing refuses a new conversation and a new review as NOT_FOUND, like an absent one',
+        async (status) => {
+            const db = getServiceTestDb();
+            await withServiceTestTransaction(async (tx) => {
+                setDb(tx);
+                try {
+                    const { accommodationId } = await seedAccommodation(tx, {
+                        publicationStatus: status
+                    });
+
+                    const touristId = crypto.randomUUID();
+                    await tx.insert(users).values({
+                        id: touristId,
+                        email: `tourist-${touristId}@example.com`,
+                        displayName: 'Tourist',
+                        emailVerified: true,
+                        lifecycleState: 'ACTIVE'
+                    });
+                    const tourist = {
+                        id: touristId,
+                        roles: [RoleEnum.USER],
+                        permissions: [
+                            PermissionEnum.CONVERSATION_REPLY_OWN,
+                            PermissionEnum.CONVERSATION_VIEW_OWN,
+                            PermissionEnum.ACCOMMODATION_REVIEW_CREATE
+                        ]
+                    };
+                    const logger = createLoggerMock();
+                    const conversations = new ConversationService(
+                        { logger },
+                        {
+                            authSecret: 'integration-test-secret-at-least-32-characters-long',
+                            siteUrl: ''
+                        }
+                    );
+                    const reviews = new AccommodationReviewService({ logger });
+
+                    const input = { accommodationId, message: 'Hola' };
+                    const reviewRefusal = async () => {
+                        try {
+                            await reviews.create(
+                                tourist,
+                                {
+                                    userId: touristId,
+                                    accommodationId,
+                                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                    title: 'Buena estadía',
+                                    content: 'La estadía fue excelente.',
+                                    rating: {
+                                        cleanliness: 5,
+                                        hospitality: 5,
+                                        services: 5,
+                                        accuracy: 5,
+                                        communication: 5,
+                                        location: 5
+                                    }
+                                },
+                                { tx, hookState: {} }
+                            );
+                        } catch (error) {
+                            if (error instanceof ServiceError) {
+                                return {
+                                    code: error.code,
+                                    message: error.message,
+                                    reason: error.reason
+                                };
+                            }
+                            throw error;
+                        }
+                        throw new Error('expected review refusal');
+                    };
+
+                    const hidden = await conversations.initiateAuthenticated(tourist, input);
+                    const hiddenReview = await reviewRefusal();
+                    await tx.delete(accommodations).where(eq(accommodations.id, accommodationId));
+                    const absent = await conversations.initiateAuthenticated(tourist, input);
+                    const absentReview = await reviewRefusal();
+
+                    expect(hidden.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+                    expect(hidden.error).toEqual(absent.error);
+                    expect(hiddenReview.code).toBe(ServiceErrorCode.NOT_FOUND);
+                    expect(hiddenReview).toEqual(absentReview);
+                } finally {
+                    setDb(db);
+                }
+            });
+        }
+    );
+});
