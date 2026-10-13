@@ -4,7 +4,12 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
 import { settleExternalRefund } from '../../../src/services/billing/refund/settle-external-refund.service.js';
 import type { Actor } from '../../../src/types/index.js';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers.js';
 import {
     type CreditedPayment,
     creditedPayment,
@@ -39,6 +44,40 @@ async function expectForbiddenAndUntouched(actor: Actor, credited: CreditedPayme
     });
     expect(await refundsOfPayment(credited.payment.id)).toEqual(refundsBefore);
     expect(await paymentRow(credited.payment.id)).toEqual(paymentBefore);
+}
+
+/**
+ * Holds a row lock on the REQUESTED row from a separate connection until both
+ * settlements are parked behind it (directly or behind each other), so their
+ * reads overlap before either writes. Without this the two calls rarely
+ * interleave, and the test passes even with every lock removed.
+ */
+async function withBarrierOnRefund<T>(refundId: string, run: () => Promise<T>): Promise<T> {
+    const barrier = await getServiceTestPool().connect();
+    try {
+        await barrier.query('BEGIN');
+        await barrier.query('SELECT id FROM refund WHERE id = $1 FOR UPDATE', [refundId]);
+        const barrierPid = (await barrier.query<{ pid: number }>('SELECT pg_backend_pid() AS pid'))
+            .rows[0]?.pid;
+        const running = run();
+        for (let poll = 0; poll < 100; poll++) {
+            const parked = await getServiceTestPool().query<{ parked: number }>(
+                `WITH direct AS (
+                     SELECT pid FROM pg_stat_activity WHERE $1 = ANY (pg_blocking_pids(pid))
+                 )
+                 SELECT count(*)::int AS parked FROM pg_stat_activity
+                 WHERE pid IN (SELECT pid FROM direct)
+                    OR pg_blocking_pids(pid) && ARRAY(SELECT pid FROM direct)`,
+                [barrierPid]
+            );
+            if ((parked.rows[0]?.parked ?? 0) >= 2) break;
+            await new Promise((resolve) => setTimeout(resolve, 50));
+        }
+        await barrier.query('COMMIT');
+        return await running;
+    } finally {
+        barrier.release();
+    }
 }
 
 describe('TEST:B5:6 AC:B5:10 admin action 14 authorizes inside the transaction', () => {
@@ -161,10 +200,9 @@ describe('TEST:B5:6 AC:B5:41 two concurrent settlements of one REQUESTED', () =>
             );
 
             // Act
-            const outcomes = await Promise.allSettled([
-                settleTotal(admin, credited),
-                settleTotal(admin, credited)
-            ]);
+            const outcomes = await withBarrierOnRefund(refundId, () =>
+                Promise.allSettled([settleTotal(admin, credited), settleTotal(admin, credited)])
+            );
 
             // Assert
             const fulfilled = outcomes.filter((outcome) => outcome.status === 'fulfilled');
