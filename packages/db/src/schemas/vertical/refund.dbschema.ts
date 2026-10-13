@@ -1,5 +1,14 @@
 import { sql } from 'drizzle-orm';
-import { check, integer, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+    check,
+    integer,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
 import { manualPayments } from './manual-payment.dbschema.ts';
 import { payments } from './payment.dbschema.ts';
@@ -7,6 +16,8 @@ import { quotedList } from './quoted-list.ts';
 
 export const REFUND_STATUSES = ['REQUESTED', 'CONFIRMED', 'EXECUTED', 'FAILED'] as const;
 export const REFUND_EXECUTION_CHANNELS = ['PROVIDER', 'EXTERNAL'] as const;
+/** Where a refund that happened outside our flow was settled (RF4, HOS-1540). */
+export const REFUND_EXTERNAL_CHANNELS = ['BANK_TRANSFER', 'PROVIDER_PANEL'] as const;
 
 /** Refund request and settlement record (B5.md, AC:B5:32). */
 export const refunds = pgTable(
@@ -29,6 +40,8 @@ export const refunds = pgTable(
         executedVia: varchar('executed_via', { length: 16 }),
         /** quién asentó */
         settledBy: uuid('settled_by').references(() => users.id),
+        /** por dónde se asentó una devolución por fuera (RF4) */
+        externalChannel: varchar('external_channel', { length: 16 }),
         /** referencia externa */
         externalRef: text('external_ref'),
         /** versión optimista */
@@ -55,7 +68,14 @@ export const refunds = pgTable(
             'ck_refund_settled_by_execution',
             sql`${t.settledBy} IS NULL OR ${t.status} = 'EXECUTED'`
         ),
-        version: check('ck_refund_version', sql`${t.version} >= 1`)
+        version: check('ck_refund_version', sql`${t.version} >= 1`),
+        externalChannel: check(
+            'ck_refund_external_channel',
+            sql`${t.externalChannel} IS NULL OR (${t.executedVia} IS NOT DISTINCT FROM 'EXTERNAL' AND ${t.externalChannel} IN (${quotedList(REFUND_EXTERNAL_CHANNELS)}))`
+        ),
+        providerPanelReference: uniqueIndex('uq_refund_provider_panel_reference')
+            .on(t.externalRef)
+            .where(sql`${t.externalChannel} = 'PROVIDER_PANEL'`)
     })
 );
 
