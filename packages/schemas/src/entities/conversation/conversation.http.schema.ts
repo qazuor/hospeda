@@ -196,13 +196,31 @@ export const OwnerThreadConversationSchema = ConversationSchema.extend({
 export type OwnerThreadConversation = z.infer<typeof OwnerThreadConversationSchema>;
 
 /**
+ * Whether the listing a conversation is about still admits new messages from
+ * the viewer of the thread (HOS-1492, V8a rows 28 and 35).
+ *
+ * - `AVAILABLE` — the viewer can write.
+ * - `NOT_PUBLISHED` — the tourist side only: the listing stopped being
+ *   published without reaching `PURGED`. It deliberately does not say why
+ *   (draft, archived, moderated or unpublished by billing).
+ * - `GONE` — the listing reached `PURGED`: the thread is read-only for both
+ *   sides and reads "this listing no longer exists".
+ */
+export const ConversationListingAvailabilitySchema = z.enum(['AVAILABLE', 'NOT_PUBLISHED', 'GONE']);
+
+/** TypeScript type inferred from {@link ConversationListingAvailabilitySchema}. */
+export type ConversationListingAvailability = z.infer<typeof ConversationListingAvailabilitySchema>;
+
+/**
  * Response body for `GET /api/v1/protected/conversations/owner/:id` (owner thread).
- * Wraps the enriched conversation, the message page, and the pagination cursor.
+ * Wraps the enriched conversation, the message page, the pagination cursor and
+ * the availability of the listing for new messages.
  */
 export const OwnerThreadResponseSchema = z.object({
     conversation: OwnerThreadConversationSchema,
     messages: z.array(MessageSchema),
-    nextCursor: z.string().datetime().nullable()
+    nextCursor: z.string().datetime().nullable(),
+    listingAvailability: ConversationListingAvailabilitySchema
 });
 
 /** TypeScript type inferred from {@link OwnerThreadResponseSchema}. */
@@ -228,12 +246,14 @@ export type ProtectedThreadConversation = z.infer<typeof ProtectedThreadConversa
 
 /**
  * Response body for `GET /api/v1/protected/conversations/:id` (guest thread).
- * Wraps the enriched conversation, the message page, and the pagination cursor.
+ * Wraps the enriched conversation, the message page, the pagination cursor and
+ * the availability of the listing for new messages.
  */
 export const ProtectedThreadResponseSchema = z.object({
     conversation: ProtectedThreadConversationSchema,
     messages: z.array(MessageSchema),
-    nextCursor: z.string().datetime().nullable()
+    nextCursor: z.string().datetime().nullable(),
+    listingAvailability: ConversationListingAvailabilitySchema
 });
 
 /** TypeScript type inferred from {@link ProtectedThreadResponseSchema}. */
