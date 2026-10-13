@@ -333,7 +333,7 @@ describe('TEST:B4:3 retenciónDetenida and coberturaPerdidaEn (AC:B4:4)', () => 
             coverageLostAt: S6_AT
         });
         release();
-        expect(await suspension).toBe(true);
+        expect(await suspension).toBe('SUSPENDED');
     });
 
     it('(d) a commit keeps both when the notice fails', async () => {
@@ -355,7 +355,7 @@ describe('TEST:B4:3 retenciónDetenida and coberturaPerdidaEn (AC:B4:4)', () => 
         });
 
         // Assert
-        expect(suspended).toBe(true);
+        expect(suspended).toBe('SUSPENDED');
         expect(notices.emitCoverageChanged).toHaveBeenCalledTimes(1);
         expect(await statusOf(subscriptionId)).toBe('SUSPENDED');
         expect(
@@ -383,7 +383,7 @@ describe('TEST:B4:3 retenciónDetenida and coberturaPerdidaEn (AC:B4:4)', () => 
         });
 
         // Assert
-        expect(suspended).toBe(true);
+        expect(suspended).toBe('SUSPENDED');
         expect(await statusOf(subscriptionId)).toBe('SUSPENDED');
         expect(await lossesOf(userId)).toEqual([]);
         expect(

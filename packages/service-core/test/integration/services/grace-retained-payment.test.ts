@@ -1,4 +1,5 @@
 import {
+    coverageLosses,
     emailOutbox,
     eq,
     reconciliationMarkPayments,
@@ -195,6 +196,13 @@ describe('TEST:B7:10 — S19 retains the unpaid-period payment (AC:B7:16)', () =
             expect(row.status).toBe('GRACE_PERIOD');
             expect(row.graceEndsAt).toEqual(s.graceEndsAt);
             expect(s.coverageSeen.filter((event) => event.change === 'REMOVED')).toHaveLength(0);
+            // The retention won, so S6 wrote nothing at all: not even HOS-1534's coverage_loss row.
+            expect(row.userId).not.toBeNull();
+            const losses = await getServiceTestDb()
+                .select({ vertical: coverageLosses.vertical })
+                .from(coverageLosses)
+                .where(eq(coverageLosses.userId, row.userId ?? ''));
+            expect(losses).toEqual([]);
             expect(errors).toHaveLength(1);
             expect(
                 (await retentionsOf(s.subscriptionId)).filter((r) => !r.releasedAt)
