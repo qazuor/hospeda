@@ -97,11 +97,23 @@ async function seedActive(provider: FakePaymentProvider) {
     return pending;
 }
 
-function plainFake(honest: readonly ('M1' | 'M6')[] = ['M1']) {
+function plainFake() {
     return new FakePaymentProvider({
         clock,
         idNamespace: crypto.randomUUID(),
-        honestAbout: honest.map((lie) => ({ lie, why: 'census fixture needs it honest' }))
+        honestAbout: [{ lie: 'M1', why: 'census signup must land its authorization' }]
+    });
+}
+
+/** A fake whose authorization changes produce one immediate delivery (for the webhook cases). */
+function deliveringFake() {
+    return new FakePaymentProvider({
+        clock,
+        idNamespace: crypto.randomUUID(),
+        honestAbout: [
+            { lie: 'M1', why: 'census signup must land its authorization' },
+            { lie: 'M6', why: 'the authorization change must produce one immediate delivery' }
+        ]
     });
 }
 
@@ -236,7 +248,7 @@ describe('TEST:B4:2 coverage notice census — every billing coverage writer not
     describe('(b) the provider cancellation mirror', () => {
         it('processProviderNotice emits REMOVED once the row is committed CANCELLED', async () => {
             // Arrange
-            const provider = plainFake(['M1', 'M6']);
+            const provider = deliveringFake();
             const { started, choice } = await seedActive(provider);
             provider.takeDeliveries();
             await provider.cancel({ authorizationId: started.authorizationId });
@@ -328,7 +340,7 @@ describe('TEST:B4:2 coverage notice census — every billing coverage writer not
 
         it('processProviderNotice (authorization notice) emits ADDED once the row is committed ACTIVE', async () => {
             // Arrange
-            const provider = plainFake(['M1', 'M6']);
+            const provider = deliveringFake();
             const { started, choice } = await startPending(provider);
             provider.takeDeliveries();
             await provider.approve({ authorizationId: started.authorizationId });
