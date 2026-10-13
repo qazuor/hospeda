@@ -10,12 +10,7 @@ import {
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import {
-    type AuthorizationStatus,
-    actStartInstant,
-    assertFreshForAct,
-    type PaymentProvider
-} from '@repo/payments';
+import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
@@ -100,20 +95,6 @@ type InTransactionVerdict =
     | { readonly kind: 'FAILED'; readonly failedCondition: LatePaymentFailedCondition }
     | { readonly kind: 'NO_ANCHOR' }
     | { readonly kind: 'LOST_RACE' };
-
-/**
- * Destination by the authorization status reread by id. The provider's `active` is
- * the domain's `authorized`; only it and `cancelled` decide S7 — `pending` and
- * `paused` are undecidable (H3) and write nothing.
- */
-const DESTINATION_BY_AUTHORIZATION: Readonly<
-    Record<AuthorizationStatus, ReactivateSuspendedDestination | null>
-> = {
-    active: 'ACTIVE',
-    cancelled: 'CANCEL_SCHEDULED',
-    pending: null,
-    paused: null
-};
 
 /**
  * Opens reason 7 `PAGO_TARDIO_RECHAZADO` with the payment hung (I-3), outside the
@@ -241,13 +222,34 @@ export async function reactivateSuspendedOnCreditedPayment(
         authorizationId: providerLink.providerId
     });
     const { snapshot: authorization } = assertFreshForAct({ read: authorizationRead, act });
-    const destination = DESTINATION_BY_AUTHORIZATION[authorization.status];
-    if (!destination) {
-        logger.error(
-            { subscriptionId, paymentId: payment.id, authorizationStatus: authorization.status },
-            'S7 cannot decide on the authorization status it reread; nothing written'
-        );
-        return { outcome: 'NOT_APPLICABLE', reason: 'UNDECIDABLE_AUTHORIZATION', subscriptionId };
+    // The provider's `active` is the domain's `authorized`; `pending`/`paused` are undecidable (H3).
+    let destination: ReactivateSuspendedDestination;
+    switch (authorization.status) {
+        case 'active':
+            destination = 'ACTIVE';
+            break;
+        case 'cancelled':
+            destination = 'CANCEL_SCHEDULED';
+            break;
+        case 'pending':
+        case 'paused':
+            logger.error(
+                {
+                    subscriptionId,
+                    paymentId: payment.id,
+                    authorizationStatus: authorization.status
+                },
+                'S7 cannot decide on the authorization status it reread; nothing written'
+            );
+            return {
+                outcome: 'NOT_APPLICABLE',
+                reason: 'UNDECIDABLE_AUTHORIZATION',
+                subscriptionId
+            };
+        default: {
+            const exhaustive: never = authorization.status;
+            return exhaustive;
+        }
     }
 
     const verdict = await getDb().transaction(async (tx): Promise<InTransactionVerdict> => {
