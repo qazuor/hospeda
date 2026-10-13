@@ -26,6 +26,7 @@ import {
     coveredPeriodRow,
     moneyState,
     refundsOfPayment,
+    seedOpenRetention,
     seedPaidAddonInstance,
     seedPaidSubscription,
     seedRequestedRefund,
@@ -247,6 +248,36 @@ describe('TEST:B5:6 admin action 14 route (AC:B5:10, AC:B5:41)', () => {
                 })
             })
         );
+    });
+
+    it('TEST:B7:10 h12 answers 409 RETAINED_PAYMENT_SUCCESSION_OPEN on a payment S19 retains (AC:B7:17)', async () => {
+        // Arrange
+        const seeded = await seedPaidSubscription(10000);
+        await seedOpenRetention({
+            subscriptionId: seeded.subscriptionId,
+            paymentId: seeded.paymentId
+        });
+        const before = await moneyState(seeded.paymentId);
+
+        // Act
+        const response = await settle({
+            paymentId: seeded.paymentId,
+            amount: 10000,
+            channel: 'BANK_TRANSFER',
+            reference: `TRX-${crypto.randomUUID()}`,
+            reason: 'OUT_OF_FLOW_REFUND'
+        });
+
+        // Assert
+        expect(response.status).toBe(409);
+        expect((await response.json()).error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'RETAINED_PAYMENT_SUCCESSION_OPEN'
+        });
+        const after = await moneyState(seeded.paymentId);
+        expect(after).toEqual(before);
+        expect(after.refunds).toHaveLength(0);
+        expect(audit).not.toHaveBeenCalled();
     });
 
     it('keeps the contract literals equal to the service and the database', () => {

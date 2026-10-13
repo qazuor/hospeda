@@ -382,6 +382,9 @@ is NOT enforced there is R3-style param validation.
 | `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
 | `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
 | `EXTERNAL_REFERENCE_ALREADY_SETTLED` | 409 | `ALREADY_EXISTS` |
+| `RETAINED_PAYMENT_SUCCESSION_OPEN` | 409 | `ALREADY_EXISTS` |
+
+`RETAINED_PAYMENT_SUCCESSION_OPEN` comes from the retained-payment gate (GUARD:G-R1-D, AC:B7:17, HOS-1561): the payment is retained by `S19` and the succession that retains it is still open, so no refund is recorded until it closes. Its `reason` is not in `SETTLE_EXTERNAL_REFUND_REJECTIONS`; the route adds it to its own `Record`.
 
 The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is what the action says before the person confirms (AC:B5:41). An empty or over-255 reference is normally a 400 from the request schema; `EXTERNAL_REFERENCE_INVALID` is the service's own check behind it.
 

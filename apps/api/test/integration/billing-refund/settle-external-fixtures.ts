@@ -22,6 +22,7 @@ import {
     planVersions,
     refunds,
     subscriptions,
+    successionRetainedPayments,
     users
 } from '@repo/db';
 import { type PermissionEnum, VerticalEnum } from '@repo/schemas';
@@ -194,6 +195,27 @@ export async function seedRequestedRefund(input: {
     return row.id;
 }
 
+/**
+ * An OPEN S19 retention of `paymentId` on `subscriptionId` (HOS-1561), as the
+ * retained-payment gate reads it: the seeded subscription is ACTIVE, so live.
+ * `cleanupSettleExternalRows` deletes it before its payment.
+ */
+export async function seedOpenRetention(input: {
+    readonly subscriptionId: string;
+    readonly paymentId: string;
+}): Promise<string> {
+    const [row] = await getDb()
+        .insert(successionRetainedPayments)
+        .values({
+            subscriptionId: input.subscriptionId,
+            paymentId: input.paymentId,
+            unpaidSince: SEEDED_AT
+        })
+        .returning({ id: successionRetainedPayments.id });
+    if (!row) throw new Error('Expected retention');
+    return row.id;
+}
+
 /** Every refund row of one payment, oldest first. */
 export async function refundsOfPayment(paymentId: string) {
     return getDb()
@@ -236,6 +258,9 @@ export async function cleanupSettleExternalRows(): Promise<void> {
     const db = getDb();
     const paymentIds = created.payments.splice(0);
     if (paymentIds.length > 0) {
+        await db
+            .delete(successionRetainedPayments)
+            .where(inArray(successionRetainedPayments.paymentId, paymentIds));
         await db.delete(refunds).where(inArray(refunds.paymentId, paymentIds));
         await db.delete(coveredPeriods).where(inArray(coveredPeriods.paymentId, paymentIds));
         await db.delete(payments).where(inArray(payments.id, paymentIds));
