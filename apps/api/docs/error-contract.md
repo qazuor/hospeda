@@ -403,3 +403,26 @@ permission, so a `POST` without a valid body answers 400 before 403
 
 The code was proposed by this PR under owner letter BS; `GET` returns the three
 preconditions so the panel can say which manual step is missing.
+
+### Action 24 over a partner application made without an account (AC:V8a:12)
+
+`GET` and `POST /api/v1/admin/partner-applications/{id}/replace-email`: the
+same action 24, same permission (`USER_CLOSE_ON_REQUEST`), same step 3 with no
+account as subject. The subject is the applicant, identified by the
+application's mailbox, so `actor = subject` is decided by mailbox inside the
+transaction. The account preconditions are NOT evaluated (no `canCharge`, no
+listings, no presence).
+
+| Situation | Status | `error.code` | `error.reason` |
+|---|---|---|---|
+| No session | **401** | `UNAUTHORIZED` | — |
+| Lacks `USER_CLOSE_ON_REQUEST`, or system actor | **403** | `FORBIDDEN` | — |
+| `POST` reason missing, blank or over 2000 characters | **400** | `VALIDATION_ERROR` | — |
+| Application does not exist, or its mailbox was already replaced (`@pseudonym.invalid`) | **404** | `NOT_FOUND` | — |
+| Actor = subject: the admin's own mailbox is the application's (ignoring case) | **403** | `FORBIDDEN` | — |
+| A live account carries the mailbox and holds an effective permission the actor lacks | **403** | `FORBIDDEN` | `SUBJECT_OUTRANKS_ACTOR` |
+| `POST`: a live account (`deleted_at IS NULL`) carries the mailbox, ignoring case | **409** | `ALREADY_EXISTS` | `APPLICATION_HAS_ACCOUNT` |
+
+`APPLICATION_HAS_ACCOUNT` exists so this route is never a shortcut around
+`puedeCobrarle`: that mailbox is replaced by closing the account, with its
+preconditions. A refusal writes nothing, not even the audit event.

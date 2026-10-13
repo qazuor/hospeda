@@ -1291,6 +1291,14 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/partner-applications/:id/replace-email"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-applications/:id/replace-email"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/partners"
         },
         {
