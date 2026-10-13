@@ -4,11 +4,16 @@ import {
     eq,
     getDb,
     isNull,
+    ne,
+    payments,
+    refunds,
     SUCCESSION_RETAINED_PAYMENT_RELEASE_REASONS,
     successionRetainedPayments
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
+import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
+import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import type { RetainedPeriodPayment } from './subscription-billing-ports';
 
@@ -65,7 +70,19 @@ export interface RetainPaymentForSuccessionResult {
  * notify; it only raises "the flag" (HOS-1561 H1/H4).
  *
  * Runs inside the caller's transaction, which already holds the subscription row
- * with `FOR UPDATE`. The insert runs in a SAVEPOINT so that the partial unique
+ * with `FOR UPDATE`. Before the savepoint it also locks the PAYMENT `FOR UPDATE`
+ * (HOS-1676, AC:1676:5; Coord-305/316): the refund gate of GUARD:G-R1-D
+ * (`assertRetainedPaymentRefundable`, run by RF1/RF4 after `lockRefundSource`)
+ * locks the payment, not the subscription, so without this lock an RF1 could read
+ * "no retention", this retention commit, and the RF1 commit its refund on a
+ * retained payment. With it the two serialize on the payment: if S19 locks first,
+ * the RF1 waits for this commit and its gate rejects; if the RF1 locks first, S19
+ * waits and then retains anyway (H-13 A: a refund that is not `FAILED` is logged
+ * with `warn`; the refundable balance keeps a later branch from returning it
+ * twice). Lock order: subscription → payment, the same as S36; RF1/RF4 take only
+ * the payment. A missing payment throws (fails closed).
+ *
+ * The insert runs in a SAVEPOINT so that the partial unique
  * index rejecting a second OPEN retention of the same payment (a replayed notice)
  * does not abort the caller's transaction; that rejection, recognised by the
  * constraint name in the `cause` chain, is `ALREADY_RETAINED`. Any other error is
@@ -91,6 +108,33 @@ export async function retainPaymentForSuccession(input: {
         unpaidSince: input.unpaidSince,
         now: input.now
     });
+    const [lockedPayment] = await input.tx
+        .select({ id: payments.id })
+        .from(payments)
+        .where(eq(payments.id, value.payment.id))
+        .for('update');
+    if (!lockedPayment)
+        throw new ServiceError(
+            ServiceErrorCode.NOT_FOUND,
+            'The payment to retain does not exist',
+            undefined,
+            'RETAINED_PAYMENT_NOT_FOUND'
+        );
+    const [claimed] = await input.tx
+        .select({ id: refunds.id, status: refunds.status })
+        .from(refunds)
+        .where(and(eq(refunds.paymentId, value.payment.id), ne(refunds.status, 'FAILED')))
+        .limit(1);
+    if (claimed)
+        logger.warn(
+            {
+                subscriptionId: value.subscriptionId,
+                paymentId: value.payment.id,
+                refundId: claimed.id,
+                refundStatus: claimed.status
+            },
+            'S19 retains a payment that already has a refund (H-13 A)'
+        );
     try {
         await input.tx.transaction(async (savepoint) => {
             await savepoint.insert(successionRetainedPayments).values({
