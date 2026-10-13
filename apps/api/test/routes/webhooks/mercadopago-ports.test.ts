@@ -1,3 +1,4 @@
+import { providerLinkCancellationSeen } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../src/utils/payment-provider', () => ({
@@ -21,5 +22,26 @@ describe('TEST:B4:2 the provider notice receiver notifies the process-wide regis
 
         // Assert
         expect(ports.coverageNotices).toBe(getCoverageNotices());
+    });
+});
+
+describe('AC:B4:11 the provider notice receiver annotates the cancellation seen in production (HOS-1534)', () => {
+    it('wires cancellationSeen to the real provider_link annotator', () => {
+        // Arrange / Act
+        const ports = buildMercadoPagoNoticePorts();
+
+        // Assert
+        expect(ports.cancellationSeen).toBe(providerLinkCancellationSeen);
+        expect(Object.keys(ports).sort()).toEqual(
+            [
+                'beforeCancelNotice',
+                'cancellationSeen',
+                'clock',
+                'coverageNotices',
+                'payments',
+                'planPolicy',
+                'provider'
+            ].sort()
+        );
     });
 });

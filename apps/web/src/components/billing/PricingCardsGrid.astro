@@ -172,6 +172,22 @@ const seeLessLabel = t('pricing.seeLess', 'Ver menos');
  * no business being added to it.
  */
 const consultPriceLabel = t('pricing.consultPrice');
+/**
+ * Row 1 of `V/19` §4 (HOS-1492, DEC-TRIAL-006 implication 2): on a TOURIST
+ * plan that grants a trial, starting it consumes the once-in-a-lifetime trial,
+ * and the card says so next to the trial line. Which plans carry it is decided
+ * by data (`hasTrial && trialDays > 0`, the same read as the trial line), never
+ * by a list of plans; which audiences carry it is this exhaustive record.
+ */
+const TRIAL_CONSUMES_NOTE_BY_AUDIENCE: Readonly<Record<PricingAudience, boolean>> = {
+	tourist: true,
+	owner: false,
+	gastronomy: false,
+	experience: false,
+	partner: false
+};
+const showsTrialConsumesNote = TRIAL_CONSUMES_NOTE_BY_AUDIENCE[audience];
+const trialConsumesNote = t('pricing.startConsumesTrialNote');
 
 /** Every card's copy, prices and item split — see `pricing-card-view.ts`. */
 const { cards, maxAnnualSavingPercent } = buildPricingCardViews({
@@ -418,6 +434,9 @@ const selectGroupName = `pricing-select-${audience}`;
 							<p class="pricing-card__trial">
 								{tPlural('pricing.trial', card.plan.trialDays)}
 							</p>
+						)}
+						{showsTrialConsumesNote && card.plan.hasTrial && card.plan.trialDays > 0 && (
+							<p class="pricing-card__trial-note">{trialConsumesNote}</p>
 						)}
 					</div>
 					{/*
@@ -996,6 +1015,18 @@ const selectGroupName = `pricing-select-${audience}`;
 	   `.pricing-card__annual-hint`, this element is never shown or hidden by the
 	   monthly/annual toggle — HOS-115 made the trial copy interval-neutral.
  */
+	/*
+	   Row 1 (HOS-1492): the tourist trial is consumed on start and is once in a
+	   lifetime. Plain muted text under the trial pill; like the pill, it is not
+	   touched by the monthly/annual toggle.
+	 */
+	.pricing-card__trial-note {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		line-height: 1.4;
+		margin: var(--pricing-card-rhythm-tight) 0 0;
+	}
 	.pricing-card__trial {
 		display: inline-flex;
 		align-items: center;

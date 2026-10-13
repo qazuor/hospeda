@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
     ConversationErrorReasonSchema,
+    ConversationListingAvailabilitySchema,
     InitiateAnonResponseSchema,
     InitiateAuthResponseSchema,
+    OwnerThreadResponseSchema,
+    ProtectedThreadResponseSchema,
     ThreadResponseSchema,
     UnreadCountResponseSchema
 } from '../../../src/entities/conversation/conversation.http.schema.js';
@@ -264,5 +267,63 @@ describe('UnreadCountResponseSchema', () => {
             const result = UnreadCountResponseSchema.safeParse({ count: 1.5 });
             expect(result.success).toBe(false);
         });
+    });
+});
+
+// ============================================================================
+// Listing availability on the threads (HOS-1492)
+// ============================================================================
+
+describe('ConversationListingAvailabilitySchema', () => {
+    it.each(['AVAILABLE', 'NOT_PUBLISHED', 'GONE'])('accepts %s', (value) => {
+        expect(ConversationListingAvailabilitySchema.safeParse(value).success).toBe(true);
+    });
+
+    it('rejects any other value (it never says why a listing is not published)', () => {
+        expect(ConversationListingAvailabilitySchema.safeParse('DRAFT').success).toBe(false);
+    });
+});
+
+describe('thread responses carry listingAvailability (HOS-1492)', () => {
+    const ownerThread = {
+        conversation: { ...baseConversation, accommodationName: 'Casa', guestName: 'Bob' },
+        messages: [baseMessage],
+        nextCursor: null
+    };
+    const guestThread = {
+        conversation: {
+            ...baseConversation,
+            accommodationName: 'Casa',
+            accommodationSlug: 'casa',
+            ownerName: 'Ana'
+        },
+        messages: [baseMessage],
+        nextCursor: null
+    };
+
+    it('TEST:V8a:6 the owner thread keeps GONE', () => {
+        const result = OwnerThreadResponseSchema.safeParse({
+            ...ownerThread,
+            listingAvailability: 'GONE'
+        });
+        expect(result.success).toBe(true);
+        expect(result.success && result.data.listingAvailability).toBe('GONE');
+    });
+
+    it('the owner thread rejects a payload without listingAvailability', () => {
+        expect(OwnerThreadResponseSchema.safeParse(ownerThread).success).toBe(false);
+    });
+
+    it('TEST:V8a:6 the tourist thread keeps NOT_PUBLISHED', () => {
+        const result = ProtectedThreadResponseSchema.safeParse({
+            ...guestThread,
+            listingAvailability: 'NOT_PUBLISHED'
+        });
+        expect(result.success).toBe(true);
+        expect(result.success && result.data.listingAvailability).toBe('NOT_PUBLISHED');
+    });
+
+    it('the tourist thread rejects a payload without listingAvailability', () => {
+        expect(ProtectedThreadResponseSchema.safeParse(guestThread).success).toBe(false);
     });
 });

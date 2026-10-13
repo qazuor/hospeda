@@ -1,3 +1,4 @@
+import type { BillingForVerticals } from '@repo/billing-verticals-contract';
 import {
     accommodations,
     and,
@@ -9,8 +10,8 @@ import {
     planCatalogModel
 } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
+import type { CoverageNoticeRegistry } from '@repo/service-core';
 import {
-    createBootstrapBillingForVerticals,
     type EffectiveSetPort,
     effectiveSetSnapshotCodec,
     type ListingAccessFacts,
@@ -19,13 +20,21 @@ import {
     readListingAccessFacts
 } from '@repo/verticals';
 import { createApiEffectiveSetCache } from '../effective-set-cache';
-import { createApiBillingCoverage } from './billing-coverage';
+import {
+    createApiBillingCanCharge,
+    createApiBillingCoverage,
+    createApiBillingRetentionStopped
+} from './billing-coverage';
 import { createBootstrapCoverageReader } from './bootstrap-coverage-reader';
 import { getCoverageNotices } from './coverage-notices';
 
 /** Production ports for the listing access resolver. */
 export interface ListingAccessPorts {
-    readonly billing: ReturnType<typeof createBootstrapBillingForVerticals>;
+    /**
+     * Billing's forward contract, every member real (contract §6.3, G13), plus the
+     * post-commit entry point of the shared coverage-changed registry.
+     */
+    readonly billing: BillingForVerticals & Pick<CoverageNoticeRegistry, 'emitCoverageChanged'>;
     readonly effectiveSet: EffectiveSetPort;
     readonly loadFacts: (args: {
         readonly vertical: ListingVertical;
@@ -39,15 +48,17 @@ let ports: ListingAccessPorts | undefined;
 export function getListingAccessPorts(): ListingAccessPorts {
     if (ports) return ports;
     const reader = createBootstrapCoverageReader();
-    // `coverage` is real (HOS-1532) and so is the coverage-changed registry
-    // (HOS-1533): `onCoverageChanged`/`emitCoverageChanged` come from the one
-    // process-wide registry the billing writers, the trial machine and the
-    // publication share. `retentionStopped` and `canCharge` stay the bootstrap
-    // ones until B4.3 (HOS-1534).
+    // Every billing answer is real: `coverage` (HOS-1532), `retentionStopped` and
+    // `canCharge` (HOS-1534), and the coverage-changed registry (HOS-1533):
+    // `onCoverageChanged`/`emitCoverageChanged` come from the one process-wide
+    // registry the billing writers, the trial machine and the publication share.
+    // The `reader` stays: the trial and BASE resolution are verticals' in both
+    // implementations, not a bootstrap answer (contract §6.3).
     const notices = getCoverageNotices();
     const billing: ListingAccessPorts['billing'] = {
-        ...createBootstrapBillingForVerticals({ reader }),
         coverage: createApiBillingCoverage({ reader }).coverage,
+        retentionStopped: createApiBillingRetentionStopped().retentionStopped,
+        canCharge: createApiBillingCanCharge().canCharge,
         onCoverageChanged: notices.onCoverageChanged,
         emitCoverageChanged: notices.emitCoverageChanged
     };

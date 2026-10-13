@@ -79,6 +79,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     // the real ledger port each one fails as "not registered". The sweep
                     // hands it to the comparisons (none here) and the zero-call checks.
                     markPayments: createPaymentReconciliationMarkPayments(clock),
+                    // AC:B11:6: retry our decided cancellations for 3 days, then mark 16.
+                    cancellationRetry: { beforeCancelNotice },
                     livenessPing: createSentryCronMonitorPing()
                 }
             );

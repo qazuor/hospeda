@@ -144,6 +144,10 @@
         "send": "Enviar",
         "sending": "Enviando…",
         "systemMessage": "Mensaje del sistema",
-        "title": "Conversación con {senderName}"
+        "title": "Conversación con {senderName}",
+        "listingAvailability": {
+            "gone": "Esta ficha ya no existe.",
+            "notPublished": "Por ahora no podés mandar mensajes sobre esta ficha."
+        }
     }
 }

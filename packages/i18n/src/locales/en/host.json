@@ -242,7 +242,19 @@
             "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request",
             "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",
-            "publishMissingRequirementsCta": "Complete in the editor"
+            "publishMissingRequirementsCta": "Complete in the editor",
+            "subscribeToPublish": {
+                "title": "Subscribe to publish",
+                "body": "Your listing is still unpublished. To publish it you need a {{vertical}} subscription.",
+                "vertical": {
+                    "accommodation": "accommodation",
+                    "gastronomy": "gastronomy",
+                    "experience": "experiences"
+                }
+            },
+            "unpublishTrialNote": "The free trial keeps running: unpublishing does not stop the trial clock.",
+            "unpublishRecurringNote_one": "You have {{count}} recurring featured placement on this listing: it keeps being charged while unpublished, until you cancel it.",
+            "unpublishRecurringNote_other": "You have {{count}} recurring featured placements on this listing: they keep being charged while unpublished, until you cancel them."
         },
         "editor": {
             "section": {

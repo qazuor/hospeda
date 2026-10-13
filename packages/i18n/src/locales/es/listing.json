@@ -329,6 +329,58 @@
             "notRestored": "Estas fichas no entraron: {{listings}}.",
             "criterion": "Vuelve primero la ficha que cayó al final, hasta llenar el cupo. Las fichas del sistema anterior que nunca se publicaron acá van primero, según su antigüedad de carga.",
             "nothingDeleted": "Las fichas que no entraron siguen ahí: no se borra ninguna."
-        }
+        },
+        "reason": "Motivo: {{reason}}",
+        "purgedByInactivity": {
+            "title": "Ficha borrada por inactividad",
+            "body": "Esta ficha existió, y su contenido se borró por inactividad."
+        },
+        "purgedFromModeration": {
+            "title": "Ficha borrada",
+            "body": "Esta ficha se borró mientras estaba moderada.",
+            "what": "Se borraron sus textos, sus fotos, sus preguntas frecuentes y sus horarios."
+        },
+        "purged": {
+            "title": "Ficha borrada",
+            "body": "Esta ficha se borró."
+        },
+        "neverReturns": "No vuelve: el borrado es definitivo.",
+        "archived": {
+            "title": "Ficha archivada",
+            "nothingDeleted": "No se borró nada: la ficha está archivada y no se ve en el sitio.",
+            "recurring_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando aunque esté archivada, hasta que lo des de baja.",
+            "recurring_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando aunque esté archivada, hasta que los des de baja.",
+            "canSeeAndExport": "La seguís viendo y podés exportarla.",
+            "returnsOnItsOwn": "Vuelve sola cuando recuperes la cobertura, o cuando el cupo vuelva a alcanzar, si hay lugar para ella.",
+            "backToDraft": "Podés traerla a borrador cuando quieras, sin pagar.",
+            "deletionDate": "Si sigue archivada, su contenido se borra a partir del {{date}}."
+        },
+        "moderated": {
+            "title": "Ficha moderada",
+            "hidden": "No se ve en el sitio hasta que un admin levante la moderación.",
+            "canDo": "Mientras tanto podés verla, exportarla, editarla y borrarla, pero no publicarla.",
+            "recurring_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando hasta que lo des de baja.",
+            "recurring_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando hasta que los des de baja."
+        },
+        "fixRequest": {
+            "title": "Te pidieron un arreglo en esta ficha",
+            "suggestedDate": "Fecha sugerida para corregirlo: {{date}}.",
+            "stillVisible": "Tu ficha sigue a la vista mientras tanto.",
+            "button": "Ya lo corregí",
+            "reported": "Avisaste que lo corregiste el {{date}}.",
+            "error": "No pudimos registrar tu aviso. Intentá de nuevo."
+        },
+        "lifted": {
+            "title": "Se levantó la moderación",
+            "returnedTo": {
+                "PUBLISHED": "Volvió a estar publicada.",
+                "DRAFT": "Volvió a borrador.",
+                "UNPUBLISHED_BY_BILLING": "Quedó sin publicar, porque hoy tu suscripción no tiene lugar para ella. No se borró nada.",
+                "ARCHIVED": "Sigue archivada, como estaba."
+            },
+            "draftIsYours": "Publicarla es decisión tuya.",
+            "fixRequestOpen": "El pedido de arreglo sigue abierto."
+        },
+        "surplusTitle": "Ficha despublicada por el límite de tu plan"
     }
 }

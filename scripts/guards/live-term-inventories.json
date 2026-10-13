@@ -69,6 +69,13 @@
             "row": null,
             "why": "AC:B7:17 (HOS-1561 H12, GUARD:G-R1-D): RF1 y RF4 no devuelven el pago que S19 retuvo mientras la fila que lo retiene siga viva (la sucesión no se resolvió); no tiene fila en el inventario del glosario.",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/coverage/can-charge.ts",
+            "symbol": "rowCanCharge",
+            "row": 27,
+            "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle cuenta toda suscripción de la cuenta en una fila viva menos CANCEL_SCHEDULED; la CANCEL_SCHEDULED y la terminal con provider_link cuentan mientras cancelled_seen_at esté vacío, y la CHARGE_DECLINED hasta que pase el plazo 16 desde esa columna.",
+            "subject": "subscription"
         }
     ],
     "grant_vivo_ancla_viva": [],
@@ -102,6 +109,18 @@
             "symbol": "retainedPaymentsFromLedger",
             "row": null,
             "why": "La fuente de pagos retenidos del barrido de cero llamadas (B11.8, HOS-1561 H11) excluye la retención cuyo pago ya cuelga sin resolver de una marca abierta PAGO_PENDIENTE_SIN_RAMA de esa fila, para no colgarlo dos veces (MARK_PAYMENT_ALREADY_HUNG); no tiene fila en el inventario del glosario."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/our-cancellation-retry.ts",
+            "symbol": "retryOurCancellation",
+            "row": null,
+            "why": "El reintento de una cancelación nuestra deja de reintentar mientras la fila tenga abierta la marca CANCELACION_SIN_CONFIRMAR (AC:B11:6; motivo 16)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/coverage/can-charge.ts",
+            "symbol": "countOpenUnconfirmedCancellationMarks",
+            "row": 12,
+            "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle, su mitad de la marca: cuenta las marcas CANCELACION_SIN_CONFIRMAR con lifted_at vacío sobre las suscripciones de la cuenta y, si hay una, contesta sí."
         }
     ],
     "cortesia_diferida": [

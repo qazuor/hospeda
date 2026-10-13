@@ -16,3 +16,11 @@
 .secondary {
     composes: secondaryCompact from "../account/AccountButton.module.css";
 }
+
+/* HOS-1492 rows 2 and 25: extra lines of the unpublish confirmation. */
+.note {
+    width: 100%;
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    line-height: 1.4;
+}

@@ -149,6 +149,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // instead, which is the failure this list exists to prevent.
     'experience.certificate',
     'account.changePassword',
+    // HOS-1492 — the row 30 "I fixed it" island (`ReportFixedButton.client.tsx`)
+    // renders `listing.notices.fixRequest.*`, and imports the notices module.
+    'listing.notices',
     'listing.owner',
     // The gastronomy-only editor panels (menu, daily specials, venue events)
     // live under their own namespace since the shared `listing` one was split.

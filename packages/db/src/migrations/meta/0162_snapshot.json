@@ -1,5 +1,5 @@
 {
-  "id": "13ab0b48-3b22-476f-a7ff-778337792523",
+  "id": "da849cc6-4b48-4f8a-b1dc-8e7ce2e4e82a",
   "prevId": "b4fc4254-701f-4d13-bdd0-b1e8f1c07c9b",
   "version": "7",
   "dialect": "postgresql",
@@ -28102,6 +28102,79 @@
       },
       "isRLSEnabled": false
     },
+    "public.coverage_loss": {
+      "name": "coverage_loss",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vertical": {
+          "name": "vertical",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lost_at": {
+          "name": "lost_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "coverage_loss_user_id_users_id_fk": {
+          "name": "coverage_loss_user_id_users_id_fk",
+          "tableFrom": "coverage_loss",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "coverage_loss_vertical_vertical_id_fk": {
+          "name": "coverage_loss_vertical_vertical_id_fk",
+          "tableFrom": "coverage_loss",
+          "tableTo": "vertical",
+          "columnsFrom": [
+            "vertical"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "pk_coverage_loss": {
+          "name": "pk_coverage_loss",
+          "columns": [
+            "user_id",
+            "vertical"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.covered_period": {
       "name": "covered_period",
       "schema": "",
@@ -29688,6 +29761,12 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "cancelled_seen_at": {
+          "name": "cancelled_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},
@@ -31227,8 +31306,8 @@
       },
       "isRLSEnabled": false
     },
-    "public.succession_retained_payment": {
-      "name": "succession_retained_payment",
+    "public.subscription_pause": {
+      "name": "subscription_pause",
       "schema": "",
       "columns": {
         "id": {
@@ -31244,40 +31323,33 @@
           "primaryKey": false,
           "notNull": true
         },
-        "payment_id": {
-          "name": "payment_id",
-          "type": "uuid",
+        "reason": {
+          "name": "reason",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "requested_months": {
+          "name": "requested_months",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "manual_payment_id": {
-          "name": "manual_payment_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "unpaid_since": {
-          "name": "unpaid_since",
+        "starts_at": {
+          "name": "starts_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true
         },
-        "retained_at": {
-          "name": "retained_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "released_at": {
-          "name": "released_at",
+        "expected_end_at": {
+          "name": "expected_end_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
-        "release_reason": {
-          "name": "release_reason",
-          "type": "varchar(32)",
+        "actual_end_at": {
+          "name": "actual_end_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },
@@ -31287,50 +31359,11 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
         }
       },
       "indexes": {
-        "uq_succession_retained_payment_open_payment": {
-          "name": "uq_succession_retained_payment_open_payment",
-          "columns": [
-            {
-              "expression": "payment_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"succession_retained_payment\".\"released_at\" IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "uq_succession_retained_payment_open_manual_payment": {
-          "name": "uq_succession_retained_payment_open_manual_payment",
-          "columns": [
-            {
-              "expression": "manual_payment_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "\"succession_retained_payment\".\"released_at\" IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_succession_retained_payment_open_subscription": {
-          "name": "idx_succession_retained_payment_open_subscription",
+        "uq_subscription_pause_open": {
+          "name": "uq_subscription_pause_open",
           "columns": [
             {
               "expression": "subscription_id",
@@ -31339,46 +31372,20 @@
               "nulls": "last"
             }
           ],
-          "isUnique": false,
-          "where": "\"succession_retained_payment\".\"released_at\" IS NULL",
+          "isUnique": true,
+          "where": "\"subscription_pause\".\"actual_end_at\" IS NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "fk_succession_retained_payment_subscription": {
-          "name": "fk_succession_retained_payment_subscription",
-          "tableFrom": "succession_retained_payment",
+        "subscription_pause_subscription_id_subscription_id_fk": {
+          "name": "subscription_pause_subscription_id_subscription_id_fk",
+          "tableFrom": "subscription_pause",
           "tableTo": "subscription",
           "columnsFrom": [
             "subscription_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "fk_succession_retained_payment_payment": {
-          "name": "fk_succession_retained_payment_payment",
-          "tableFrom": "succession_retained_payment",
-          "tableTo": "payment",
-          "columnsFrom": [
-            "payment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "fk_succession_retained_payment_manual_payment": {
-          "name": "fk_succession_retained_payment_manual_payment",
-          "tableFrom": "succession_retained_payment",
-          "tableTo": "manual_payment",
-          "columnsFrom": [
-            "manual_payment_id"
           ],
           "columnsTo": [
             "id"
@@ -31391,17 +31398,17 @@
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {
-        "ck_succession_retained_payment_one_payment": {
-          "name": "ck_succession_retained_payment_one_payment",
-          "value": "(\"succession_retained_payment\".\"payment_id\" IS NOT NULL) <> (\"succession_retained_payment\".\"manual_payment_id\" IS NOT NULL)"
+        "ck_subscription_pause_reason": {
+          "name": "ck_subscription_pause_reason",
+          "value": "\"subscription_pause\".\"reason\" IN ('CUSTOMER_REQUEST', 'COURTESY')"
         },
-        "ck_succession_retained_payment_release": {
-          "name": "ck_succession_retained_payment_release",
-          "value": "(\"succession_retained_payment\".\"released_at\" IS NULL) = (\"succession_retained_payment\".\"release_reason\" IS NULL)"
+        "ck_subscription_pause_expected_end": {
+          "name": "ck_subscription_pause_expected_end",
+          "value": "\"subscription_pause\".\"expected_end_at\" IS NULL OR \"subscription_pause\".\"expected_end_at\" >= \"subscription_pause\".\"starts_at\""
         },
-        "ck_succession_retained_payment_release_reason": {
-          "name": "ck_succession_retained_payment_release_reason",
-          "value": "\"succession_retained_payment\".\"release_reason\" IN ('REEVALUATED', 'SUCCESSION_CLOSED', 'PERSON_RESOLVED', 'PERMANENT_GRANT', 'REVOCATION_REFUNDED')"
+        "ck_subscription_pause_actual_end": {
+          "name": "ck_subscription_pause_actual_end",
+          "value": "\"subscription_pause\".\"actual_end_at\" IS NULL OR \"subscription_pause\".\"actual_end_at\" >= \"subscription_pause\".\"starts_at\""
         }
       },
       "isRLSEnabled": false

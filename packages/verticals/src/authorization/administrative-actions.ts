@@ -50,7 +50,10 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     ACC_5: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'V7 (HOS-1484)' },
     ACC_6: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'V7 (HOS-1489)' },
     ACC_7: { permissions: [], pendingOwnPermission: 'B11' },
-    ACC_8: { permissions: [], pendingOwnPermission: 'B8a' },
+    ACC_8: {
+        permissions: [PermissionEnum.BILLING_CANCEL_SUBSCRIPTION],
+        pendingOwnPermission: null
+    },
     ACC_9: { permissions: [], pendingOwnPermission: 'B8b' },
     ACC_10: { permissions: [], pendingOwnPermission: 'B8b' },
     ACC_11: { permissions: [], pendingOwnPermission: 'V4.3 (HOS-1445)' },

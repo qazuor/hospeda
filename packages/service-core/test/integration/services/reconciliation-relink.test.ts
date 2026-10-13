@@ -1,6 +1,7 @@
 import {
     domainEventModel,
     eq,
+    payments,
     providerLinks,
     reconciliationInventoryModel,
     reconciliationMarkModel,
@@ -103,7 +104,7 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
         const marks = await handleUnknownAuthorization(
             {
                 authorizationId: secondId,
-                arrival: { kind: 'CHARGE', payment },
+                arrival: { kind: 'CHARGE', chargeId: `charge-${crypto.randomUUID()}`, payment },
                 correlationId: chargeCorrelationId
             },
             {
@@ -132,7 +133,7 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
         ).toHaveLength(1);
     });
 
-    it('TEST:B11:2 writes a marked receipt tombstone for an unowned authorization and rejects an unowned charge before writes', async () => {
+    it('TEST:B11:2 writes a marked receipt tombstone for an unowned authorization, and a charged one for an unowned charge (HOS-1603)', async () => {
         const { fake, provider } = createReconciliationFake();
         const correlationId = crypto.randomUUID();
         const cancel = vi.spyOn(fake, 'cancel');
@@ -159,7 +160,7 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
             planVersionId: null,
             billingOptionId: null
         });
-        expect(cancel).not.toHaveBeenCalled();
+        expect(cancel).toHaveBeenCalledTimes(1);
 
         const missingUuidReference = crypto.randomUUID();
         const uuidOrphanId = await authorize(fake, missingUuidReference);
@@ -178,31 +179,42 @@ describe('TEST:B11:2 unknown authorization relinking', () => {
         });
 
         const noRowId = await authorize(fake, crypto.randomUUID());
+        const { chargeId } = await fake.charge({
+            authorizationId: noRowId,
+            amount: { amountMinor: 250000, currency: 'ARS' },
+            reference: 'unowned charge'
+        });
         const chargeCorrelationId = crypto.randomUUID();
-        await expect(
-            handleUnknownAuthorization(
-                {
-                    authorizationId: noRowId,
-                    arrival: {
-                        kind: 'CHARGE',
-                        payment: { source: 'PAYMENT', id: crypto.randomUUID() }
-                    },
-                    correlationId: chargeCorrelationId
-                },
-                { provider, clock: reconciliationClock }
-            )
-        ).rejects.toMatchObject({ reason: 'UNOWNED_CHARGE_NEEDS_RECEIPT_TOMBSTONE' });
+        const charged = await handleUnknownAuthorization(
+            {
+                authorizationId: noRowId,
+                arrival: { kind: 'CHARGE', chargeId },
+                correlationId: chargeCorrelationId
+            },
+            { provider, clock: reconciliationClock }
+        );
+        expect(charged).toMatchObject({
+            outcome: 'MARKED',
+            tombstone: true,
+            reason: 'PAGO_TARDIO_RECHAZADO',
+            cancellation: 'CONFIRMED'
+        });
+        expect(charged).not.toHaveProperty('credit');
+        if (charged.outcome !== 'MARKED') throw new Error('Expected a charged tombstone');
+        const [chargedTombstone] = await row(charged.subscriptionId);
+        expect(chargedTombstone).toMatchObject({ class: 'LAPIDA', status: 'CANCELLED' });
         expect(
             await getServiceTestDb()
                 .select()
-                .from(providerLinks)
-                .where(eq(providerLinks.providerId, noRowId))
-        ).toHaveLength(0);
+                .from(payments)
+                .where(eq(payments.subscriptionId, charged.subscriptionId))
+        ).toMatchObject([{ id: charged.paymentId, status: 'PENDING', providerFactId: chargeId }]);
         expect(
             (
                 await domainEventModel.findByCorrelationId({ correlationId: chargeCorrelationId })
             ).filter((event) => event.eventType === 'reconciliation.mark_opened')
-        ).toHaveLength(0);
+        ).toHaveLength(1);
+        expect(cancel).toHaveBeenCalledTimes(3);
     });
 
     it('TEST:B11:2 is idempotent and serializes concurrent notices for a row without a link', async () => {

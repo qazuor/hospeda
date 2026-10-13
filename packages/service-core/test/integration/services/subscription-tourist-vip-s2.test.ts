@@ -7,10 +7,14 @@ import {
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cancelInheritedTouristVips } from '../../../src/services/billing/subscription/cancel-inherited-tourist-vip.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
 
+// HOS-1603: the close now opens a transaction, so the client must exist even when it is mocked.
+beforeAll(() => {
+    getServiceTestDb();
+});
 afterAll(closeServiceTestPool);
 afterEach(() => vi.restoreAllMocks());
 
@@ -66,7 +70,10 @@ describe('TEST:B3:28 inherited Tourist VIP S2 clause', () => {
             }
         );
         expect(result).toEqual({ cancelled: 1, deferred: 0, skipped: 0 });
-        expect(close).toHaveBeenCalledWith({ subscriptionId, now: clock.now() });
+        // HOS-1603: the close now runs inside the transaction that may record the decision.
+        expect(close).toHaveBeenCalledWith(
+            expect.objectContaining({ subscriptionId, now: clock.now() })
+        );
         expect(cancel).not.toHaveBeenCalled();
         expect(beforeCancel).not.toHaveBeenCalled();
     });

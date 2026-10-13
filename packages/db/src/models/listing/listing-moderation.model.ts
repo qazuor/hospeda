@@ -149,6 +149,46 @@ export const listingModerationModel = {
         return rows[0] ?? null;
     },
 
+    /**
+     * The owner reports the open fix request as fixed (row 30, HOS-1492, H4).
+     * A conditional UPDATE over the open request that has no report yet: a
+     * second report never rewrites the first instant. It neither closes the
+     * request nor writes an event (the column IS the record).
+     *
+     * @returns `NO_OPEN` without an open request, `ALREADY` with the first
+     * instant when it was already reported, `REPORTED` with `at` otherwise.
+     */
+    async reportFixed(args: {
+        readonly tx: DrizzleClient;
+        readonly vertical: ListingVertical;
+        readonly listingId: string;
+        readonly at: Date;
+    }): Promise<
+        | { readonly status: 'NO_OPEN' }
+        | { readonly status: 'ALREADY'; readonly at: Date }
+        | { readonly status: 'REPORTED'; readonly at: Date }
+    > {
+        const rows = await args.tx
+            .update(fixRequests)
+            .set({ ownerReportedFixedAt: args.at })
+            .where(
+                and(
+                    eq(fixRequests.entityType, args.vertical),
+                    eq(fixRequests.entityId, args.listingId),
+                    isNull(fixRequests.closedAt),
+                    isNull(fixRequests.ownerReportedFixedAt)
+                )
+            )
+            .returning({ at: fixRequests.ownerReportedFixedAt });
+        const written = rows[0]?.at;
+        if (written) return { status: 'REPORTED', at: written };
+        const open = await listingModerationModel.readOpenFixRequest(args);
+        if (!open) return { status: 'NO_OPEN' };
+        if (!open.ownerReportedFixedAt)
+            throw new Error('fix request report changed inside the owner transaction');
+        return { status: 'ALREADY', at: open.ownerReportedFixedAt };
+    },
+
     /** Writes a fix-request audit event in the caller's transaction. */
     async insertFixRequestEvent(args: {
         readonly tx: DrizzleClient;

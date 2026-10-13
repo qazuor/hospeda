@@ -13,12 +13,20 @@
  * only its header until the leaf that rewrites "Mi Suscripción" against the
  * new billing (`B13a.4`) fills it in. It makes no billing call.
  *
+ * Under the header, `TrialSummary` (HOS-1492, row 4) shows the accumulated
+ * free-trial days per vertical and their origin. It reads the publish
+ * trial-summary route (not billing), one call per vertical in parallel; a
+ * vertical whose read fails is left out, never invented. The block is
+ * self-contained so B13a.4 can move it whole.
+ *
  * @route /{lang}/mi-cuenta/suscripcion/
  * @rendering SSR
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import TrialSummary from '@/components/account/TrialSummary.astro';
+import { publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -32,8 +40,28 @@ if (!user) {
 
 const { t } = createTranslations(locale);
 const title = t('account.pages.subscription.title', 'Suscripción');
+
+// Row 4 (HOS-1492): one trial-summary read per vertical the route admits.
+const TRIAL_SUMMARY_VERTICALS: readonly PublishVerticalSlug[] = [
+	'accommodation',
+	'gastronomy',
+	'experience'
+];
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const trialSummaryReads = await Promise.all(
+	TRIAL_SUMMARY_VERTICALS.map(async (vertical) => {
+		try {
+			const result = await publishApi.trialSummary({ vertical, cookieHeader });
+			return result.ok ? [{ vertical, summary: result.data }] : [];
+		} catch {
+			return [];
+		}
+	})
+);
+const trialSummaries = trialSummaryReads.flat();
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
 	<AccountPageHeader title={title} />
+	<TrialSummary locale={locale} entries={trialSummaries} />
 </AccountLayout>

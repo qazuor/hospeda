@@ -2,12 +2,16 @@
  * @file AlertsList.client.tsx
  * @description React island for the price-alert management page (SPEC-286 T-010).
  *
- * Renders the authenticated user's active price-alert subscriptions with:
+ * Renders the authenticated user's price-alert subscriptions with:
  *  - Accommodation name, subscription-time price, and target-drop threshold
  *  - Delete-one action (inline confirmation, optimistic removal on success)
  *  - Empty state (CTA to browse accommodations)
  *  - Plan-gate ("upgrade") state when the API reports the actor lacks the
  *    `PRICE_ALERTS` entitlement
+ *  - Closed alerts (HOS-1492, V8a row 27): an alert whose listing reached
+ *    `PURGED` (`closedBecauseListingGone`) is listed apart, as CLOSED, saying
+ *    only that the listing no longer exists — never why (that belongs to the
+ *    owner, row 20) — and without the active alert's threshold copy
  *
  * All API calls go to `/api/v1/protected/price-alerts/*`, mirroring the fetch
  * pattern used by `SearchHistoryList.client.tsx` (SPEC-289): plain `fetch`
@@ -29,7 +33,7 @@
  */
 
 import { BellIcon } from '@repo/icons';
-import type { PriceAlertResponse } from '@repo/schemas';
+import type { PriceAlertListItem } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { formatPrice } from '@/lib/format-utils';
@@ -47,7 +51,7 @@ import styles from './AlertsList.module.css';
 interface ListSuccessResponse {
     readonly success: true;
     readonly data?: {
-        readonly items?: PriceAlertResponse[];
+        readonly items?: PriceAlertListItem[];
     };
 }
 
@@ -96,7 +100,7 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
 
     // ── State ─────────────────────────────────────────────────────────────────
     const [status, setStatus] = useState<ListStatus>({ kind: 'loading' });
-    const [alerts, setAlerts] = useState<PriceAlertResponse[]>([]);
+    const [alerts, setAlerts] = useState<PriceAlertListItem[]>([]);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -328,85 +332,132 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
         );
     }
 
-    // ── Ready state (list) ────────────────────────────────────────────────────
+    // ── Ready state (lists) ───────────────────────────────────────────────────
 
+    /**
+     * One alert row. A closed alert (row 27) shows its name and the closed
+     * notice only: no subscription price and no "alert when it drops" line,
+     * because it no longer alerts. Both keep the delete action.
+     */
+    function renderItem(alert: PriceAlertListItem) {
+        const isDeleting = deletingId === alert.id;
+        const confirmingThis = confirmDeleteId === alert.id;
+
+        return (
+            <li
+                key={alert.id}
+                className={[styles.alertsItem, isDeleting ? styles.alertsItemDeleting : '']
+                    .filter(Boolean)
+                    .join(' ')}
+                aria-busy={isDeleting}
+                data-alert-state={alert.closedBecauseListingGone ? 'closed' : 'active'}
+            >
+                <div className={styles.alertsItemContent}>
+                    {/*
+                     * The API response has no `accommodationSlug`, only
+                     * `accommodationName` — rendered as plain text rather
+                     * than a link. A follow-up that adds the slug to
+                     * `PriceAlertResponseSchema` can turn this into an
+                     * `<a href={buildUrl({ locale, path: `alojamientos/${slug}` })}>`.
+                     */}
+                    <p className={styles.alertsItemName}>{alert.accommodationName}</p>
+
+                    {alert.closedBecauseListingGone ? (
+                        <p className={styles.alertsItemClosed}>
+                            {t('account.alerts.closedNotice')}
+                        </p>
+                    ) : (
+                        <div className={styles.alertsItemMeta}>
+                            <span className={styles.alertsItemPrice}>
+                                {t('account.alerts.item.priceLabel', 'Precio al suscribirte')}:{' '}
+                                {formatPrice({ amount: alert.basePriceSnapshot / 100, locale })}
+                            </span>
+                            <span className={styles.alertsItemTarget}>
+                                {t('account.alerts.item.targetLabel', 'Alertar cuando baje')}:{' '}
+                                {formatTargetDrop(alert.targetPercentDrop)}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                <div className={styles.alertsItemActions}>
+                    {confirmingThis ? (
+                        // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
+                        <div
+                            className={styles.alertsDeleteConfirm}
+                            role="group"
+                            aria-label={`${t('account.alerts.deleteConfirmAria', 'Confirmar eliminación de alerta')}: ${alert.accommodationName}`}
+                        >
+                            <button
+                                type="button"
+                                className={styles.alertsConfirmYes}
+                                onClick={() => void handleDeleteConfirm(alert.id)}
+                            >
+                                {t('account.alerts.deleteOneConfirm', 'Sí, eliminar')}
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.alertsConfirmNo}
+                                onClick={() => setConfirmDeleteId(null)}
+                            >
+                                {t('account.alerts.deleteCancel', 'Cancelar')}
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            className={styles.alertsDeleteBtn}
+                            onClick={() => setConfirmDeleteId(alert.id)}
+                            disabled={isDeleting || deletingId !== null}
+                            aria-label={`${t('account.alerts.deleteOne', 'Eliminar')}: ${alert.accommodationName}`}
+                        >
+                            {t('account.alerts.deleteOne', 'Eliminar')}
+                        </button>
+                    )}
+                </div>
+            </li>
+        );
+    }
+
+    const activeAlerts = alerts.filter((alert) => !alert.closedBecauseListingGone);
+    const closedAlerts = alerts.filter((alert) => alert.closedBecauseListingGone);
+
+    const activeList =
+        activeAlerts.length > 0 ? (
+            <ul
+                className={styles.alertsList}
+                aria-label={t('account.alerts.listLabel', 'Tus alertas de precio activas')}
+            >
+                {activeAlerts.map(renderItem)}
+            </ul>
+        ) : null;
+
+    // Without closed alerts the island looks exactly as before row 27.
+    if (closedAlerts.length === 0) {
+        return activeList;
+    }
+
+    // With closed alerts the two lists are separated and headed, so no list
+    // that holds a closed alert is called "active".
     return (
-        <ul
-            className={styles.alertsList}
-            aria-label={t('account.alerts.listLabel', 'Tus alertas de precio activas')}
-        >
-            {alerts.map((alert) => {
-                const isDeleting = deletingId === alert.id;
-                const confirmingThis = confirmDeleteId === alert.id;
-
-                return (
-                    <li
-                        key={alert.id}
-                        className={[styles.alertsItem, isDeleting ? styles.alertsItemDeleting : '']
-                            .filter(Boolean)
-                            .join(' ')}
-                        aria-busy={isDeleting}
-                    >
-                        <div className={styles.alertsItemContent}>
-                            {/*
-                             * The API response has no `accommodationSlug`, only
-                             * `accommodationName` — rendered as plain text rather
-                             * than a link. A follow-up that adds the slug to
-                             * `PriceAlertResponseSchema` can turn this into an
-                             * `<a href={buildUrl({ locale, path: `alojamientos/${slug}` })}>`.
-                             */}
-                            <p className={styles.alertsItemName}>{alert.accommodationName}</p>
-
-                            <div className={styles.alertsItemMeta}>
-                                <span className={styles.alertsItemPrice}>
-                                    {t('account.alerts.item.priceLabel', 'Precio al suscribirte')}:{' '}
-                                    {formatPrice({ amount: alert.basePriceSnapshot / 100, locale })}
-                                </span>
-                                <span className={styles.alertsItemTarget}>
-                                    {t('account.alerts.item.targetLabel', 'Alertar cuando baje')}:{' '}
-                                    {formatTargetDrop(alert.targetPercentDrop)}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className={styles.alertsItemActions}>
-                            {confirmingThis ? (
-                                // biome-ignore lint/a11y/useSemanticElements: div+role=group+aria-label groups the inline confirmation prompt with its action buttons; no native element fits (fieldset implies form fields, not an action confirmation)
-                                <div
-                                    className={styles.alertsDeleteConfirm}
-                                    role="group"
-                                    aria-label={`${t('account.alerts.deleteConfirmAria', 'Confirmar eliminación de alerta')}: ${alert.accommodationName}`}
-                                >
-                                    <button
-                                        type="button"
-                                        className={styles.alertsConfirmYes}
-                                        onClick={() => void handleDeleteConfirm(alert.id)}
-                                    >
-                                        {t('account.alerts.deleteOneConfirm', 'Sí, eliminar')}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={styles.alertsConfirmNo}
-                                        onClick={() => setConfirmDeleteId(null)}
-                                    >
-                                        {t('account.alerts.deleteCancel', 'Cancelar')}
-                                    </button>
-                                </div>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className={styles.alertsDeleteBtn}
-                                    onClick={() => setConfirmDeleteId(alert.id)}
-                                    disabled={isDeleting || deletingId !== null}
-                                    aria-label={`${t('account.alerts.deleteOne', 'Eliminar')}: ${alert.accommodationName}`}
-                                >
-                                    {t('account.alerts.deleteOne', 'Eliminar')}
-                                </button>
-                            )}
-                        </div>
-                    </li>
-                );
-            })}
-        </ul>
+        <div className={styles.alertsGroups}>
+            {activeList && (
+                <section className={styles.alertsGroup}>
+                    <h2 className={styles.alertsGroupHeading}>
+                        {t('account.alerts.activeHeading')}
+                    </h2>
+                    {activeList}
+                </section>
+            )}
+            <section className={styles.alertsGroup}>
+                <h2 className={styles.alertsGroupHeading}>{t('account.alerts.closedHeading')}</h2>
+                <ul
+                    className={styles.alertsList}
+                    aria-label={t('account.alerts.closedListLabel')}
+                >
+                    {closedAlerts.map(renderItem)}
+                </ul>
+            </section>
+        </div>
     );
 }

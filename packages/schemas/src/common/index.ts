@@ -55,6 +55,7 @@ export * from './listing-identity.schema.js';
 // Shared relational media row base (HOS-372) — gastronomy/experience media extend this
 export * from './listing-media.schema.js';
 export * from './listing-moderation.schema.js';
+export * from './listing-notices.schema.js';
 export * from './listing-owner-listing.schema.js';
 export * from './listing-purge-on-request.schema.js';
 export * from './listing-support-edit.schema.js';

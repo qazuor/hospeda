@@ -144,6 +144,10 @@
         "send": "Send",
         "sending": "Sending…",
         "systemMessage": "System message",
-        "title": "Conversation with {senderName}"
+        "title": "Conversation with {senderName}",
+        "listingAvailability": {
+            "gone": "This listing no longer exists.",
+            "notPublished": "For now you cannot send messages about this listing."
+        }
     }
 }

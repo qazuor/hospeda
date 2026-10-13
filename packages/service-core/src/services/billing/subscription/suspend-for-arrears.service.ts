@@ -4,12 +4,14 @@ import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
     type CancellationSeenAnnotator,
     noCancellationSeenAnnotation,
     type RetainedPeriodPayment,
+    recordAuthorizationSeenAlive,
     recordCancellationSeen
 } from './subscription-billing-ports';
 import { hasOpenRetention, openSuccessionRetentions } from './succession-retained-payment';
@@ -86,10 +88,13 @@ export type ArrearsSuspensionWrite = 'SUSPENDED' | 'LOST_RACE' | 'RETAINED_PAYME
  * The single write of S6 plus its post-commit coverage notice (G5 `via: "notice"`):
  * `<origin> → SUSPENDED`, then `REMOVED` is emitted once the transaction committed.
  * Inside the transaction the row is locked first and S19 is asked again (HOS-1561
- * H5): with an open retention nothing is written (`RETAINED_PAYMENT`) and an error
- * is logged, because the authorization was already cancelled by then. S19 locks
- * the same row, so the two serialize.
- * A notice failure is logged and undoes nothing. The grace clock is KEPT: on a
+ * H5): with an open retention nothing is written (`RETAINED_PAYMENT`: neither the
+ * `UPDATE` nor the coverage-loss row) and an error is logged, because the
+ * authorization was already cancelled by then. S19 locks the same row, so the two
+ * serialize. A notice failure is logged and undoes nothing. When no source is left,
+ * the same transaction records the coverage-loss instant
+ * (`recordCoverageLossIfUncovered`, contract §4.1) right after the `UPDATE`, so it
+ * survives a lost notice. The grace clock is KEPT: on a
  * `SUSPENDED` row `grace_started_at` is the anchor of the unpaid period that S7
  * binds condition 4 to (HOS-1560, H1); S7 empties it when the row leaves.
  *
@@ -133,7 +138,18 @@ export async function writeArrearsSuspension(input: {
                 userId: subscriptions.userId,
                 vertical: subscriptions.vertical
             });
-        return row ? { kind: 'SUSPENDED' as const, row } : { kind: 'LOST_RACE' as const };
+        if (!row) return { kind: 'LOST_RACE' as const };
+        // coberturaPerdidaEn in the same transaction as the drop (contract §4.1; I-5),
+        // only once the UPDATE moved the row: a retention exits above without writing it.
+        if (row.userId)
+            await recordCoverageLossIfUncovered({
+                tx,
+                userId: row.userId,
+                vertical: row.vertical ?? '',
+                lostAt: input.now,
+                clock: { now: () => input.now }
+            });
+        return { kind: 'SUSPENDED' as const, row };
     });
     if (written.kind === 'RETAINED_PAYMENT') {
         logger.error(
@@ -238,6 +254,11 @@ export async function suspendForArrears(
         });
         cancelCall = 'NOT_NEEDED';
     } else {
+        await recordAuthorizationSeenAlive({
+            annotator,
+            subscriptionId: subscription.id,
+            seenAt: authorization.readAt
+        });
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: subscription.id,
             userId: subscription.userId ?? '',
@@ -279,6 +300,12 @@ export async function suspendForArrears(
             const confirmed = await rereadAuthorization();
             if (confirmed.status === 'cancelled')
                 await recordCancellationSeen({
+                    annotator,
+                    subscriptionId: subscription.id,
+                    seenAt: confirmed.readAt
+                });
+            else
+                await recordAuthorizationSeenAlive({
                     annotator,
                     subscriptionId: subscription.id,
                     seenAt: confirmed.readAt

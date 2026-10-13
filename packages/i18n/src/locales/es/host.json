@@ -242,7 +242,19 @@
             "publishSubscriptionRequiredCta": "Ver planes",
             "priceOnRequest": "Precio a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
-            "publishMissingRequirementsCta": "Completar en el editor"
+            "publishMissingRequirementsCta": "Completar en el editor",
+            "subscribeToPublish": {
+                "title": "Suscribite para publicar",
+                "body": "Tu ficha sigue sin publicar. Para publicarla necesitás una suscripción de {{vertical}}.",
+                "vertical": {
+                    "accommodation": "alojamiento",
+                    "gastronomy": "gastronomía",
+                    "experience": "experiencias"
+                }
+            },
+            "unpublishTrialNote": "La prueba gratis sigue corriendo: despublicar no detiene el reloj del trial.",
+            "unpublishRecurringNote_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando aunque no esté publicada, hasta que lo des de baja.",
+            "unpublishRecurringNote_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando aunque no esté publicada, hasta que los des de baja."
         },
         "editor": {
             "section": {

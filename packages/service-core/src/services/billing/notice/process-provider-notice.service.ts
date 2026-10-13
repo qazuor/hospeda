@@ -19,6 +19,7 @@ import {
 } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
 import {
     type CoverageNotices,
     type PromoChargePolicy,
@@ -35,6 +36,7 @@ import {
     type FirstChargeReader,
     noCancellationSeenAnnotation,
     noCreditedPayments,
+    recordAuthorizationSeenAlive,
     recordCancellationSeen,
     type SubscriptionPayments,
     type SuccessionCloser,
@@ -158,6 +160,12 @@ export async function processProviderNotice(
                 subscriptionId: link.subscriptionId,
                 seenAt: readAt
             });
+        else
+            await recordAuthorizationSeenAlive({
+                annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                subscriptionId: link.subscriptionId,
+                seenAt: readAt
+            });
         let finalOutcome: Outcome = 'APPLIED';
         const payments = ports.payments ?? noCreditedPayments;
         const firstCharge = ports.firstCharge ?? unknownFirstCharge;
@@ -238,12 +246,13 @@ export async function processProviderNotice(
                     }
                 }
                 const cancelled = await getDb().transaction(async (tx) => {
+                    const cancelledAt = ports.clock.now();
                     const [updated] = await tx
                         .update(subscriptions)
                         .set({
                             status: 'CANCELLED',
                             serviceEndsAt: readAt,
-                            updatedAt: ports.clock.now()
+                            updatedAt: cancelledAt
                         })
                         .where(
                             and(eq(subscriptions.id, row.id), eq(subscriptions.status, 'ACTIVE'))
@@ -263,6 +272,15 @@ export async function processProviderNotice(
                         .limit(1);
                     if (successor)
                         await closer.closeSuccession({ predecessorSubscriptionId: row.id, tx });
+                    // coberturaPerdidaEn in the same transaction as the drop (contract §4.1; I-5).
+                    if (updated.userId)
+                        await recordCoverageLossIfUncovered({
+                            tx,
+                            userId: updated.userId,
+                            vertical: updated.vertical ?? '',
+                            lostAt: cancelledAt,
+                            clock: ports.clock
+                        });
                     return { userId: updated.userId, vertical: updated.vertical };
                 });
                 if (!cancelled) continue;
