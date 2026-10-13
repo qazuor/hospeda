@@ -21,6 +21,7 @@ import {
 import { createApiEffectiveSetCache } from '../effective-set-cache';
 import { createApiBillingCoverage } from './billing-coverage';
 import { createBootstrapCoverageReader } from './bootstrap-coverage-reader';
+import { getCoverageNotices } from './coverage-notices';
 
 /** Production ports for the listing access resolver. */
 export interface ListingAccessPorts {
@@ -38,12 +39,17 @@ let ports: ListingAccessPorts | undefined;
 export function getListingAccessPorts(): ListingAccessPorts {
     if (ports) return ports;
     const reader = createBootstrapCoverageReader();
-    // Only `coverage` is real (HOS-1532): `retentionStopped`, `canCharge` and the
-    // coverage-changed registry stay the bootstrap ones until B4.2/B4.3, so the
-    // trial machine and the publication keep listening to the same registry.
+    // `coverage` is real (HOS-1532) and so is the coverage-changed registry
+    // (HOS-1533): `onCoverageChanged`/`emitCoverageChanged` come from the one
+    // process-wide registry the billing writers, the trial machine and the
+    // publication share. `retentionStopped` and `canCharge` stay the bootstrap
+    // ones until B4.3 (HOS-1534).
+    const notices = getCoverageNotices();
     const billing: ListingAccessPorts['billing'] = {
         ...createBootstrapBillingForVerticals({ reader }),
-        coverage: createApiBillingCoverage({ reader }).coverage
+        coverage: createApiBillingCoverage({ reader }).coverage,
+        onCoverageChanged: notices.onCoverageChanged,
+        emitCoverageChanged: notices.emitCoverageChanged
     };
     const cache = createApiEffectiveSetCache(effectiveSetSnapshotCodec);
     const effectiveSet: EffectiveSetPort = ({ userId, vertical }) =>

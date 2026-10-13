@@ -178,15 +178,15 @@ async function suspensionFixture({
 
 describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
     it.skipIf(!isServiceTestDbAvailable())(
-        'a — suspends, empties the clock, cancels once and emits REMOVED after commit',
+        'a — suspends, keeps the clock as the unpaid-period anchor, cancels once and emits REMOVED after commit',
         async () => {
             const s = await suspensionFixture();
             await s.runCheck();
 
             const row = await subscriptionRow(s.subscriptionId);
             expect(row.status).toBe('SUSPENDED');
-            expect(row.graceStartedAt).toBeNull();
-            expect(row.graceEndsAt).toBeNull();
+            expect(row.graceStartedAt).toEqual(s.graceStartedAt);
+            expect(row.graceEndsAt).toEqual(s.graceEndsAt);
             expect(s.cancel).toHaveBeenCalledTimes(1);
             expect(await s.authorizationStatus()).toBe('cancelled');
             expect(s.beforeCancel).toHaveBeenCalledTimes(1);
@@ -337,7 +337,7 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
-        'h — GR-2 branch 2: a charge in flight at S6 is credited and does not reactivate',
+        'h — GR-2 branch 2: a charge in flight at S6 is credited; S5 does not run and S7 schedules the end (AC:B7:13)',
         async () => {
             const s = await suspensionFixture();
             let inFlight: string | undefined;
@@ -368,7 +368,12 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
             if (recorded.outcome !== 'CREDITED') throw new Error('Not credited');
             expect(recorded.credit.outcome).toBe('CREDITED');
             expect(recorded.exit).toBeUndefined();
-            expect((await subscriptionRow(s.subscriptionId)).status).toBe('SUSPENDED');
+            // HOS-1560: the cancelled authorization sends it to CANCEL_SCHEDULED by S7, never ACTIVE.
+            expect(recorded.reactivation).toMatchObject({
+                outcome: 'REACTIVATED',
+                destination: 'CANCEL_SCHEDULED'
+            });
+            expect((await subscriptionRow(s.subscriptionId)).status).toBe('CANCEL_SCHEDULED');
         }
     );
 

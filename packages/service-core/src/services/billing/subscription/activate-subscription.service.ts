@@ -2,6 +2,8 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { eq, getDb, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { VerticalEnumSchema } from '@repo/schemas';
+import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { activatePendingWithSignupNotice } from './activate-pending-with-signup-notice.js';
 import {
     cancelInheritedTouristVips,
@@ -16,6 +18,8 @@ export interface ActivateSubscriptionPorts {
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly touristVipInheritance: TouristVipInheritancePort;
+    /** Receives the post-commit S2 notice (B4.2); defaults to the unwired logger. */
+    readonly coverageNotices?: CoverageNotices;
 }
 
 export interface ActivateSubscriptionResult {
@@ -51,6 +55,30 @@ export async function activateSubscription(
         subscriptionId,
         now: ports.clock.now()
     });
+    if (activated) {
+        // S2 committed: the row now emits its source, replacing the predecessor's when it succeeds one.
+        const vertical = VerticalEnumSchema.safeParse(row.subscription.vertical);
+        if (row.subscription.userId && vertical.success) {
+            try {
+                await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged({
+                    userId: row.subscription.userId,
+                    vertical: vertical.data,
+                    sourceType: 'SUBSCRIPTION',
+                    change: row.subscription.succeedsId ? 'CHANGED' : 'ADDED'
+                });
+            } catch (error) {
+                logger.error(
+                    { subscriptionId, error },
+                    'Coverage changed notice failed after activation commit'
+                );
+            }
+        } else {
+            logger.error(
+                { subscriptionId, vertical: row.subscription.vertical },
+                'Activated subscription has no coverage subject to notify'
+            );
+        }
+    }
     if (activated && row.subscription.userId) {
         try {
             await cancelInheritedTouristVips({ userId: row.subscription.userId }, ports);

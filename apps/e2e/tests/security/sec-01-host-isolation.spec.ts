@@ -22,7 +22,8 @@
  *     route handler (`accommodation/protected/getById.ts`).
  *   - `PATCH  /api/v1/protected/accommodations/:id` — ownership enforced by the
  *     `ownership` middleware.
- *   - `DELETE /api/v1/protected/accommodations/:id` — same middleware.
+ *   - `POST   /api/v1/protected/accommodations/:id/purge` — PB12, the owner's
+ *     delete (HOS-1477); `listingAccess` answers 404 for a foreign row.
  *
  * All three answer **404** for a foreign row, never 403: a 403 would confirm
  * the id exists, which is the leak the error contract bans
@@ -30,6 +31,9 @@
  * `apps/api/src/middlewares/ownership.ts:279`). So this spec asserts 404
  * EXACTLY rather than a set — a regression to 403 is a real finding here, and a
  * three-value set would swallow it.
+ *
+ * The retired owner door `DELETE /api/v1/protected/accommodations/:id` is also
+ * tried, and must answer 404 because it no longer exists (HOS-1477, AC:V6:25).
  *
  * ## The control assertion
  *
@@ -124,27 +128,44 @@ test.describe('SEC-01: cross-host isolation @p0 @security', () => {
                 "middleware's answer for a foreign row)."
         ).toBe(404);
 
-        // ── 3. DELETE B's row as A → 404 ───────────────────────────────────
-        const foreignDelete = await page.request.delete(
+        // ── 3. Purge B's row as A (PB12) → 404 ─────────────────────────────
+        const foreignPurge = await page.request.post(
+            `${API_URL}/api/v1/protected/accommodations/${accB.id}/purge`,
+            { headers: asHostA }
+        );
+        expect(
+            foreignPurge.status(),
+            "Host A must not purge Host B's accommodation through PB12 (expected 404)."
+        ).toBe(404);
+
+        // ── 3b. The retired owner door → 404: it no longer exists ──────────
+        const retiredDelete = await page.request.delete(
             `${API_URL}/api/v1/protected/accommodations/${accB.id}`,
             { headers: asHostA }
         );
         expect(
-            foreignDelete.status(),
-            "Host A must not soft-delete Host B's accommodation (expected 404)."
+            retiredDelete.status(),
+            'DELETE /protected/accommodations/:id was retired by HOS-1477 (expected 404).'
         ).toBe(404);
 
-        // ── 4. DB invariant: B's row survived all three attempts ───────────
+        // ── 4. DB invariant: B's row survived all the attempts ─────────────
         // The status assertions above say the API refused; these say nothing
         // reached the table anyway. Both are needed: a handler could answer 404
         // after having already written.
-        const accBAfter = await execSQL<{ name: string; deleted_at: Date | null }>(
-            'SELECT name, deleted_at FROM accommodations WHERE id = $1',
-            [accB.id]
-        );
+        const accBAfter = await execSQL<{
+            name: string;
+            deleted_at: Date | null;
+            publication_status: string;
+        }>('SELECT name, deleted_at, publication_status FROM accommodations WHERE id = $1', [
+            accB.id
+        ]);
         expect(accBAfter[0]?.name, "Host B's accommodation name must be untouched").not.toBe(
             HIJACK_NAME
         );
+        expect(
+            accBAfter[0]?.publication_status,
+            "Host B's accommodation must not have been purged"
+        ).not.toBe('PURGED');
         expect(
             accBAfter[0]?.deleted_at,
             "Host B's accommodation must not have been soft-deleted"
@@ -166,7 +187,8 @@ test.describe('SEC-01: cross-host isolation @p0 @security', () => {
         for (const [label, response] of [
             ['GET', foreignGet],
             ['PATCH', foreignPatch],
-            ['DELETE', foreignDelete]
+            ['PURGE', foreignPurge],
+            ['DELETE (retired)', retiredDelete]
         ] as const) {
             const body = await response.text();
             expect(body, `${label} refusal must not leak B's slug`).not.toContain(accB.slug);

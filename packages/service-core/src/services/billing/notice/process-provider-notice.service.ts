@@ -9,6 +9,7 @@ import {
     providerLinks,
     subscriptions
 } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import {
     actStartInstant,
     assertFreshForAct,
@@ -16,11 +17,13 @@ import {
     type PaymentProvider,
     PaymentProviderError
 } from '@repo/payments';
+import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
-import type {
-    CoverageNotices,
-    PromoChargePolicy,
-    PromoExhaustion
+import {
+    type CoverageNotices,
+    type PromoChargePolicy,
+    type PromoExhaustion,
+    unwiredCoverageNotices
 } from '../payment/payment-ports.js';
 import { recordChargeFact } from '../payment/record-charge-fact.service.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
@@ -44,6 +47,8 @@ import {
     type ReadState
 } from './provider-notice-mirror.js';
 import { type MirrorDelegates, unregisteredMirrorDelegates } from './provider-notice-ports.js';
+
+const logger = createLogger('process-provider-notice');
 
 const inputSchema = z.strictObject({
     channel: z.enum(['WEBHOOKS', 'IPN']),
@@ -178,6 +183,30 @@ export async function processProviderNotice(
                     now: ports.clock.now()
                 });
                 if (!changed) continue;
+                // S2 committed: the row now emits its source, replacing the predecessor's when it succeeds one.
+                const vertical = VerticalEnumSchema.safeParse(row.vertical);
+                if (row.userId && vertical.success) {
+                    try {
+                        await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged(
+                            {
+                                userId: row.userId,
+                                vertical: vertical.data,
+                                sourceType: 'SUBSCRIPTION',
+                                change: row.succeedsId ? 'CHANGED' : 'ADDED'
+                            }
+                        );
+                    } catch (error) {
+                        logger.error(
+                            { subscriptionId: row.id, error },
+                            'Coverage changed notice failed after activation commit'
+                        );
+                    }
+                } else {
+                    logger.error(
+                        { subscriptionId: row.id, vertical: row.vertical },
+                        'Activated subscription has no coverage subject to notify'
+                    );
+                }
             }
             if (action.kind === 'DIVERGENCE') {
                 await openReconciliationMark({
@@ -208,7 +237,7 @@ export async function processProviderNotice(
                         break;
                     }
                 }
-                const changed = await getDb().transaction(async (tx) => {
+                const cancelled = await getDb().transaction(async (tx) => {
                     const [updated] = await tx
                         .update(subscriptions)
                         .set({
@@ -220,7 +249,7 @@ export async function processProviderNotice(
                             and(eq(subscriptions.id, row.id), eq(subscriptions.status, 'ACTIVE'))
                         )
                         .returning();
-                    if (!updated) return false;
+                    if (!updated) return null;
                     const [successor] = await tx
                         .select({ id: subscriptions.id })
                         .from(subscriptions)
@@ -234,9 +263,33 @@ export async function processProviderNotice(
                         .limit(1);
                     if (successor)
                         await closer.closeSuccession({ predecessorSubscriptionId: row.id, tx });
-                    return true;
+                    return { userId: updated.userId, vertical: updated.vertical };
                 });
-                if (!changed) continue;
+                if (!cancelled) continue;
+                // CANCELLED emits no source (03-contrato-de-cobertura.md:474): notice after commit.
+                const vertical = VerticalEnumSchema.safeParse(cancelled.vertical);
+                if (cancelled.userId && vertical.success) {
+                    try {
+                        await (ports.coverageNotices ?? unwiredCoverageNotices).emitCoverageChanged(
+                            {
+                                userId: cancelled.userId,
+                                vertical: vertical.data,
+                                sourceType: 'SUBSCRIPTION',
+                                change: 'REMOVED'
+                            }
+                        );
+                    } catch (error) {
+                        logger.error(
+                            { subscriptionId: row.id, error },
+                            'Coverage changed notice failed after provider cancellation commit'
+                        );
+                    }
+                } else {
+                    logger.error(
+                        { subscriptionId: row.id, vertical: cancelled.vertical },
+                        'Cancelled subscription has no coverage subject to notify'
+                    );
+                }
             }
             resolved = true;
             break;

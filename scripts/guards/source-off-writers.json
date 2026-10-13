@@ -35,10 +35,9 @@
         "file": "packages/db/src/models/subscription/subscription.model.ts",
         "symbol": "abandonPendingAuthorization",
         "table": "subscriptions",
-        "effect": "turns-off",
-        "via": "pending",
-        "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
-        "reason": "Abandoning pending authorization terminates its subscription source."
+        "effect": "neutral",
+        "via": null,
+        "reason": "S3 moves PENDING_AUTHORIZATION to ABANDONED; neither emits a coverage source (03-contrato-de-cobertura.md:466-467; I-6)."
     },
     {
         "file": "packages/db/src/models/subscription/subscription.model.ts",
@@ -63,9 +62,8 @@
         "symbol": "declineFirstCharge",
         "table": "subscriptions",
         "effect": "turns-off",
-        "via": "pending",
-        "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
-        "reason": "Declined first charge terminates the active subscription source."
+        "via": "notice",
+        "reason": "S16 moves ACTIVE to CHARGE_DECLINED, which emits no source (03-contrato-de-cobertura.md:475); the coverage notice is emitted after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/enter-grace.service.ts",
@@ -92,13 +90,20 @@
         "reason": "S6 moves GRACE_PERIOD to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/reactivate-suspended.service.ts",
+        "symbol": "reactivateSuspendedOnCreditedPayment",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "S7 moves SUSPENDED, which emits no source, to ACTIVE or CANCEL_SCHEDULED, which emit one (03-contrato-de-cobertura.md:468, 472-473, the nine states); the coverage notice ADDED is emitted after commit."
+    },
+    {
         "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
         "symbol": "processProviderNotice",
         "table": "subscriptions",
         "effect": "turns-off",
-        "via": "pending",
-        "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
-        "reason": "Provider cancellation notice ends active subscription coverage."
+        "via": "notice",
+        "reason": "The provider cancellation mirror moves ACTIVE to CANCELLED, which emits no source (03-contrato-de-cobertura.md:474); the coverage notice is emitted after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/start-succession.service.ts",

@@ -12,6 +12,7 @@ export * from './billing-settings.schema.js';
 export * from './checkout-retry.schema.js';
 export * from './customer-addons.schema.js';
 export * from './downgrade-preview.schema.js';
+export * from './external-refund-settlement.schema.js';
 export * from './link-preapproval.schema.js';
 export * from './orphan-payment-queue.schema.js';
 export * from './payer-email.schema.js';

@@ -2,6 +2,8 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { getDb, subscriptionModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { VerticalEnumSchema } from '@repo/schemas';
+import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { activatePendingWithSignupNotice } from './activate-pending-with-signup-notice.js';
 import {
     cancelInheritedTouristVips,
@@ -17,6 +19,8 @@ export interface ExpireAuthorizationWindowsPorts {
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly touristVipInheritance: TouristVipInheritancePort;
+    /** Receives the post-commit S2 notice (B4.2); defaults to the unwired logger. */
+    readonly coverageNotices?: CoverageNotices;
 }
 
 export interface ExpireAuthorizationWindowsSummary {
@@ -61,6 +65,32 @@ export async function expireAuthorizationWindows(
                 });
                 if (wrote) activated++;
                 else skipped++;
+                if (wrote) {
+                    // S2 committed: the row now emits its source, replacing the predecessor's when it succeeds one.
+                    const vertical = VerticalEnumSchema.safeParse(subscription.vertical);
+                    if (subscription.userId && vertical.success) {
+                        try {
+                            await (
+                                ports.coverageNotices ?? unwiredCoverageNotices
+                            ).emitCoverageChanged({
+                                userId: subscription.userId,
+                                vertical: vertical.data,
+                                sourceType: 'SUBSCRIPTION',
+                                change: subscription.succeedsId ? 'CHANGED' : 'ADDED'
+                            });
+                        } catch (error) {
+                            logger.error(
+                                { subscriptionId: subscription.id, error },
+                                'Coverage changed notice failed after activation commit'
+                            );
+                        }
+                    } else {
+                        logger.error(
+                            { subscriptionId: subscription.id, vertical: subscription.vertical },
+                            'Activated subscription has no coverage subject to notify'
+                        );
+                    }
+                }
                 if (wrote && subscription.userId) {
                     try {
                         const result = await cancelInheritedTouristVips(

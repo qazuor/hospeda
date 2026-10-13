@@ -2,7 +2,7 @@
  * Protected accommodation routes
  * Routes that require authentication
  *
- * IMPORTANT: Routes with ownership middleware (update, patch, softDelete) are
+ * IMPORTANT: Routes with ownership middleware (update, patch, purge) are
  * isolated in a dedicated sub-router to prevent their app.use() middleware from
  * leaking to other routes (e.g. contact). See route-factory.ts applyRouteMiddlewares().
  */
@@ -45,7 +45,6 @@ import { protectedRemoveOccupancyRoute } from './removeOccupancy';
 import { protectedReorderFaqsRoute } from './reorderFaqs';
 import { protectedReorderMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedMediaRoute } from './setFeaturedMedia';
-import { protectedSoftDeleteAccommodationRoute } from './softDelete';
 import { protectedAccommodationSupportEditsRoute } from './supportEdits';
 import { protectedUnpublishAccommodationRoute } from './unpublish';
 import { protectedUpdateAccommodationRoute } from './update';
@@ -60,7 +59,6 @@ import { protectedUpdateOccupancyEventRoute } from './updateOccupancyEvent';
 const ownershipRoutes = createRouter();
 ownershipRoutes.route('/', protectedUpdateAccommodationRoute);
 ownershipRoutes.route('/', protectedPatchAccommodationRoute);
-ownershipRoutes.route('/', protectedSoftDeleteAccommodationRoute);
 // POST /:id/unpublish - Transition ACTIVE → INACTIVE
 ownershipRoutes.route('/', protectedUnpublishAccommodationRoute);
 ownershipRoutes.route('/', protectedReactivateAccommodationRoute);

@@ -59,20 +59,6 @@ export const useCreateExperienceMutation = () => experienceHooks.useCreate();
 export const useUpdateExperienceMutation = () => experienceHooks.useUpdate();
 
 /**
- * Mutation hook to soft-delete an experience listing.
- *
- * @returns TanStack Query `UseMutationResult`
- */
-export const useDeleteExperienceMutation = () => experienceHooks.useDelete();
-
-/**
- * Mutation hook to restore a soft-deleted experience listing.
- *
- * @returns TanStack Query `UseMutationResult`
- */
-export const useRestoreExperienceMutation = () => experienceHooks.useRestore();
-
-/**
  * Mutation hook to reassign the owner of an experience listing.
  *
  * @returns TanStack Query `UseMutationResult`

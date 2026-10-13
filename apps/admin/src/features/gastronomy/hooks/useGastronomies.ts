@@ -15,10 +15,8 @@ export {
     gastronomyHooks,
     useAssignGastronomyOwnerMutation,
     useCreateGastronomyMutation,
-    useDeleteGastronomyMutation,
     useGastronomyPendingReviewsQuery,
     useGastronomyQuery,
     useModerateGastronomyReviewMutation,
-    useRestoreGastronomyMutation,
     useUpdateGastronomyMutation
 } from './useGastronomyQuery';

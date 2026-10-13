@@ -1,0 +1,4 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'billing.settleExternal' BEFORE 'trial.extend';--> statement-breakpoint
+ALTER TABLE "refund" ADD COLUMN "external_channel" varchar(16);--> statement-breakpoint
+CREATE UNIQUE INDEX "uq_refund_provider_panel_reference" ON "refund" USING btree ("external_ref") WHERE "refund"."external_channel" = 'PROVIDER_PANEL';--> statement-breakpoint
+ALTER TABLE "refund" ADD CONSTRAINT "ck_refund_external_channel" CHECK ("refund"."external_channel" IS NULL OR ("refund"."executed_via" IS NOT DISTINCT FROM 'EXTERNAL' AND "refund"."external_channel" IN ('BANK_TRANSFER', 'PROVIDER_PANEL')));

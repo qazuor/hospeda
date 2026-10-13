@@ -80,8 +80,10 @@ export interface SuspendForArrearsPorts {
 
 /**
  * The single write of S6 plus its post-commit coverage notice (G5 `via: "notice"`):
- * `<origin> → SUSPENDED` with the grace clock emptied, then `REMOVED` is emitted
- * once the transaction committed. A notice failure is logged and undoes nothing.
+ * `<origin> → SUSPENDED`, then `REMOVED` is emitted once the transaction committed.
+ * A notice failure is logged and undoes nothing. The grace clock is KEPT: on a
+ * `SUSPENDED` row `grace_started_at` is the anchor of the unpaid period that S7
+ * binds condition 4 to (HOS-1560, H1); S7 empties it when the row leaves.
  *
  * @param input.subscriptionId - The row being suspended
  * @param input.origin - The status the event leaves (the `UPDATE` guard)
@@ -100,8 +102,6 @@ export async function writeArrearsSuspension(input: {
             .update(subscriptions)
             .set({
                 status: 'SUSPENDED',
-                graceStartedAt: null,
-                graceEndsAt: null,
                 updatedAt: input.now
             })
             .where(
