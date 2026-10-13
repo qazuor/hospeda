@@ -281,8 +281,8 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
                 />
             )}
 
-            <!-- Delete: always available (soft-delete via protected endpoint,
-                 React island with inline confirmation) -->
+            <!-- Delete: always available (PB12 via the protected purge endpoint,
+                 the listing moves to PURGED; React island with inline confirmation) -->
             <DeleteButton
                 client:load
                 listingId={property.id}
