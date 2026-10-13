@@ -55,10 +55,43 @@ async function snapshot(paymentId: string) {
 
 const EXCEEDS = { code: 'VALIDATION_ERROR', reason: 'REFUND_EXCEEDS_BALANCE' };
 
+/** The sessions parked behind `pid`, directly or behind another parked session. */
+const PARKED_BEHIND = `WITH direct AS (
+         SELECT pid FROM pg_stat_activity WHERE $1 = ANY (pg_blocking_pids(pid))
+     )
+     SELECT count(*)::int AS parked FROM pg_stat_activity
+     WHERE pid IN (SELECT pid FROM direct)
+        OR pg_blocking_pids(pid) && ARRAY(SELECT pid FROM direct)`;
+
+/**
+ * Polls until at least `atLeast` sessions are parked behind the lock holder `pid`.
+ *
+ * @returns Whether the barrier was observed before the polling ran out (~5 s).
+ */
+async function waitUntilParked(pid: number | undefined, atLeast: number): Promise<boolean> {
+    for (let poll = 0; poll < 100; poll++) {
+        const parked = await getServiceTestPool().query<{ parked: number }>(PARKED_BEHIND, [pid]);
+        if ((parked.rows[0]?.parked ?? 0) >= atLeast) return true;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    return false;
+}
+
+/** Awaits a promise and returns its outcome: never a rejection. */
+async function settle<T>(promise: Promise<T>): Promise<PromiseSettledResult<T>> {
+    try {
+        return { status: 'fulfilled', value: await promise };
+    } catch (reason: unknown) {
+        return { status: 'rejected', reason };
+    }
+}
+
 /**
  * Holds the payment row from another connection until both acts are parked behind it (or
  * behind each other), so their reads of the balance overlap (molde of
- * `subscription-revocation-guards.test.ts`, `withBarrierOnPayment`).
+ * `subscription-revocation-guards.test.ts`, `withBarrierOnPayment`). If the two acts are
+ * never seen parked, the barrier was not armed and the test fails instead of passing on
+ * an unproven order.
  */
 async function withBarrierOnPayment<T>(paymentId: string, run: () => Promise<T>): Promise<T> {
     const barrier = await getServiceTestPool().connect();
@@ -67,22 +100,13 @@ async function withBarrierOnPayment<T>(paymentId: string, run: () => Promise<T>)
         await barrier.query('SELECT id FROM payment WHERE id = $1 FOR UPDATE', [paymentId]);
         const pid = (await barrier.query<{ pid: number }>('SELECT pg_backend_pid() AS pid')).rows[0]
             ?.pid;
-        const running = run();
-        for (let poll = 0; poll < 100; poll++) {
-            const parked = await getServiceTestPool().query<{ parked: number }>(
-                `WITH direct AS (
-                     SELECT pid FROM pg_stat_activity WHERE $1 = ANY (pg_blocking_pids(pid))
-                 )
-                 SELECT count(*)::int AS parked FROM pg_stat_activity
-                 WHERE pid IN (SELECT pid FROM direct)
-                    OR pg_blocking_pids(pid) && ARRAY(SELECT pid FROM direct)`,
-                [pid]
-            );
-            if ((parked.rows[0]?.parked ?? 0) >= 2) break;
-            await new Promise((resolve) => setTimeout(resolve, 50));
-        }
-        await barrier.query('COMMIT');
-        return await running;
+        const running = settle(run());
+        const armed = await waitUntilParked(pid, 2);
+        await barrier.query(armed ? 'COMMIT' : 'ROLLBACK');
+        const outcome = await running;
+        if (!armed) throw new Error('lock barrier not observed: the two acts never parked');
+        if (outcome.status === 'rejected') throw outcome.reason;
+        return outcome.value;
     } finally {
         barrier.release();
     }
@@ -191,10 +215,8 @@ describe('TEST:1680:1 AC-1680:1 the refundable balance discounts every non-FAILE
                     reason: 'REVOCATION',
                     status: 'REQUESTED'
                 });
-                rejection = await rf1(credited, 1, tx as unknown as DrizzleClient).then(
-                    () => null,
-                    (error: unknown) => error
-                );
+                const attempt = await settle(rf1(credited, 1, tx as unknown as DrizzleClient));
+                rejection = attempt.status === 'rejected' ? attempt.reason : null;
                 throw new Error('rollback outer transaction');
             });
 
@@ -291,20 +313,11 @@ describe('TEST:1680:3 AC-1680:3 two RF1 for the total at once leave one', () => 
                     .rows[0]?.pid;
 
                 // Act
-                const running = rf1(credited, 10000).then(
-                    (value) => ({ status: 'fulfilled' as const, value }),
-                    (reason: unknown) => ({ status: 'rejected' as const, reason })
-                );
-                for (let poll = 0; poll < 100; poll++) {
-                    const parked = await getServiceTestPool().query<{ parked: number }>(
-                        'SELECT count(*)::int AS parked FROM pg_stat_activity WHERE $1 = ANY (pg_blocking_pids(pid))',
-                        [pid]
-                    );
-                    if ((parked.rows[0]?.parked ?? 0) >= 1) break;
-                    await new Promise((resolve) => setTimeout(resolve, 50));
-                }
-                await other.query('COMMIT');
+                const running = settle(rf1(credited, 10000));
+                const armed = await waitUntilParked(pid, 1);
+                await other.query(armed ? 'COMMIT' : 'ROLLBACK');
                 outcome = await running;
+                if (!armed) throw new Error('lock barrier not observed: the RF1 never parked');
             } finally {
                 other.release();
             }
