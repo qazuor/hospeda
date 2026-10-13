@@ -360,7 +360,9 @@ describe('provider cancellation mirror', () => {
                     delegate: async (input) => {
                         expect(input).toEqual({
                             pair: 'PROVIDER_PAUSE_IS_ARREARS',
-                            subscriptionId: started.subscriptionId
+                            subscriptionId: started.subscriptionId,
+                            readAt: clock.now(),
+                            cancelledSeenAt: null
                         });
                         await delegate();
                     }
