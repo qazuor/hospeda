@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
     AccountCloseOnRequestResponseSchema,
     AccountCloseOnRequestSchema,
-    AccountClosurePreviewSchema
+    AccountClosurePreviewSchema,
+    PartnerApplicationEmailReplacementPreviewSchema,
+    PartnerApplicationEmailReplacementResponseSchema
 } from '../../src/common/account-close-on-request.schema.js';
 
 const AccountClosePreviewFixture = {
@@ -73,6 +75,60 @@ describe('TEST:V8a:13 AccountCloseOnRequestSchema (action 24 reason)', () => {
                 ...AccountClosePreviewFixture,
                 listingsNotPurged: -1
             }).success
+        ).toBe(false);
+    });
+});
+
+describe('TEST:V8a:14 action 24 over a partner application made without an account', () => {
+    const preview = {
+        applicationId: '33333333-3333-4333-8333-333333333333',
+        email: 'ana@example.com',
+        status: 'PENDING',
+        createdAt: '2026-10-12T12:00:00.000Z'
+    } as const;
+
+    it('accepts the preview for each application status', () => {
+        // Arrange
+        const statuses = ['PENDING', 'APPROVED', 'REJECTED'] as const;
+
+        // Act
+        const results = statuses.map(
+            (status) =>
+                PartnerApplicationEmailReplacementPreviewSchema.safeParse({ ...preview, status })
+                    .success
+        );
+
+        // Assert
+        expect(results).toEqual([true, true, true]);
+    });
+
+    it('rejects an unknown status, a non-uuid id and a non-ISO creation date', () => {
+        expect(
+            PartnerApplicationEmailReplacementPreviewSchema.safeParse({
+                ...preview,
+                status: 'CANCELLED'
+            }).success
+        ).toBe(false);
+        expect(
+            PartnerApplicationEmailReplacementPreviewSchema.safeParse({
+                ...preview,
+                applicationId: 'app-1'
+            }).success
+        ).toBe(false);
+        expect(
+            PartnerApplicationEmailReplacementPreviewSchema.safeParse({
+                ...preview,
+                createdAt: '12/10/2026'
+            }).success
+        ).toBe(false);
+    });
+
+    it('accepts only replaced: true as the response', () => {
+        expect(
+            PartnerApplicationEmailReplacementResponseSchema.safeParse({ replaced: true }).success
+        ).toBe(true);
+        expect(
+            PartnerApplicationEmailReplacementResponseSchema.safeParse({ replaced: false }).success
         ).toBe(false);
     });
 });

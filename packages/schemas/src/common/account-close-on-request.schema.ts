@@ -36,6 +36,33 @@ export const AccountClosurePreviewSchema = z.object({
     ready: z.boolean()
 });
 
+/**
+ * The read that precedes action 24 over a partner application made without an
+ * account (AC:V8a:12): which application's mailbox the action replaces, so the
+ * confirmation can say it. The body of the replacement reuses
+ * {@link AccountCloseOnRequestSchema} (the same mandatory reason).
+ */
+export const PartnerApplicationEmailReplacementPreviewSchema = z.object({
+    applicationId: z.string().uuid(),
+    email: z.string(),
+    status: z.enum(['PENDING', 'APPROVED', 'REJECTED']),
+    createdAt: z.string().datetime({ offset: true })
+});
+
+/** Response returned after action 24 replaced the mailbox of a partner application. */
+export const PartnerApplicationEmailReplacementResponseSchema = z.object({
+    replaced: z.literal(true)
+});
+
+/** The read that precedes action 24 over a partner application. */
+export type PartnerApplicationEmailReplacementPreview = z.infer<
+    typeof PartnerApplicationEmailReplacementPreviewSchema
+>;
+/** Response of action 24 over a partner application. */
+export type PartnerApplicationEmailReplacementResponse = z.infer<
+    typeof PartnerApplicationEmailReplacementResponseSchema
+>;
+
 /** Validated body of administrative action 24. */
 export type AccountCloseOnRequest = z.infer<typeof AccountCloseOnRequestSchema>;
 /** Response of administrative action 24. */
