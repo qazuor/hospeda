@@ -62,6 +62,13 @@
             "row": 6,
             "why": "AC:B7:6 (HOS-1558, S5): condición 3 del pago tardío, otra principal viva del mismo user + vertical (las seis, PENDING_AUTHORIZATION incluido).",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/coverage/can-charge.ts",
+            "symbol": "rowCanCharge",
+            "row": 27,
+            "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle cuenta toda suscripción de la cuenta en una fila viva menos CANCEL_SCHEDULED; la CANCEL_SCHEDULED y la terminal con provider_link cuentan mientras cancelled_seen_at esté vacío, y la CHARGE_DECLINED hasta que pase el plazo 16 desde esa columna.",
+            "subject": "subscription"
         }
     ],
     "grant_vivo_ancla_viva": [],
@@ -89,6 +96,12 @@
             "symbol": "hasOpenUnresolvedPeriodChargeMark",
             "row": null,
             "why": "La comprobación del vencimiento del grace no corre S6 mientras la fila tenga abierta la marca COBRO_DEL_PERIODO_SIN_RESOLVER (B/09 §6.2; motivo 21); no tiene fila en el inventario del glosario."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/coverage/can-charge.ts",
+            "symbol": "countOpenUnconfirmedCancellationMarks",
+            "row": 12,
+            "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle, su mitad de la marca: cuenta las marcas CANCELACION_SIN_CONFIRMAR con lifted_at vacío sobre las suscripciones de la cuenta y, si hay una, contesta sí."
         }
     ],
     "cortesia_diferida": [
