@@ -655,71 +655,41 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
             });
         });
 
-        describe('DELETE /api/v1/admin/experiences/:id (soft delete)', () => {
-            it('returns 403 when missing EXPERIENCE_DELETE', async () => {
-                const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}`, {
-                    method: 'DELETE',
-                    headers: adminNoPanelHeaders
-                });
-
-                expect(res.status).toBe(403);
-            });
-
-            it('returns 200 when admin has EXPERIENCE_DELETE', async () => {
-                experienceSvc.softDelete.mockResolvedValue({ data: { count: 1 } });
-
-                const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}`, {
-                    method: 'DELETE',
-                    headers: adminHeaders
-                });
-
-                expect(res.status).toBe(200);
-            });
-        });
-
-        describe('DELETE /api/v1/admin/experiences/:id/hard', () => {
-            it('returns 403 when missing EXPERIENCE_DELETE', async () => {
-                const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/hard`, {
-                    method: 'DELETE',
-                    headers: adminNoPanelHeaders
-                });
-
-                expect(res.status).toBe(403);
-            });
-
-            it('returns 200 when admin has EXPERIENCE_DELETE', async () => {
-                experienceSvc.hardDelete.mockResolvedValue({ data: { count: 1 } });
-
-                const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/hard`, {
-                    method: 'DELETE',
-                    headers: adminHeaders
-                });
-
-                expect(res.status).toBe(200);
-            });
-        });
-
-        describe('POST /api/v1/admin/experiences/:id/restore', () => {
-            it('returns 403 when missing EXPERIENCE_EDIT_ALL', async () => {
+        // TEST:V6:33 (b), AC:V6:25 (HOS-1477): the admin soft delete, hard delete and
+        // restore doors were retired. Only PB12 (owner) and action 23 (admin,
+        // `POST /{id}/purge`) delete a listing; the old paths are not registered, so
+        // Hono answers 404 even to an admin holding every experience permission, and
+        // to the authenticated owner tier, without ever reaching the service.
+        describe('TEST:V6:33 retired listing doors answer 404', () => {
+            it.each([
+                { method: 'DELETE', suffix: '' },
+                { method: 'DELETE', suffix: '/hard' },
+                { method: 'POST', suffix: '/restore' }
+            ])('$method /api/v1/admin/experiences/:id$suffix answers 404', async ({
+                method,
+                suffix
+            }) => {
                 const res = await app.request(
-                    `/api/v1/admin/experiences/${EXPERIENCE_ID}/restore`,
-                    { method: 'POST', headers: adminNoPanelHeaders }
+                    `/api/v1/admin/experiences/${EXPERIENCE_ID}${suffix}`,
+                    { method, headers: adminHeaders }
                 );
 
-                expect(res.status).toBe(403);
+                expect(res.status).toBe(404);
+                expect(experienceSvc.softDelete).not.toHaveBeenCalled();
+                expect(experienceSvc.hardDelete).not.toHaveBeenCalled();
+                expect(experienceSvc.restore).not.toHaveBeenCalled();
             });
 
-            it('returns 2xx on successful restore (gate passes with EXPERIENCE_EDIT_ALL)', async () => {
-                experienceSvc.restore.mockResolvedValue({ data: adminExperienceFixture });
+            it('DELETE /api/v1/protected/experiences/:id answers 404 to an authenticated actor', async () => {
+                // `touristHeaders` sends role TOURIST, which the mock-actor middleware
+                // rejects with 400 before routing; a valid authenticated USER is used.
+                const res = await app.request(`/api/v1/protected/experiences/${EXPERIENCE_ID}`, {
+                    method: 'DELETE',
+                    headers: { ...touristHeaders, 'x-mock-actor-role': 'USER' }
+                });
 
-                const res = await app.request(
-                    `/api/v1/admin/experiences/${EXPERIENCE_ID}/restore`,
-                    { method: 'POST', headers: adminHeaders }
-                );
-
-                // POST endpoints via createAdminRoute return 201; any 2xx means success
-                expect(res.status).not.toBe(401);
-                expect(res.status).not.toBe(403);
+                expect(res.status).toBe(404);
+                expect(experienceSvc.softDelete).not.toHaveBeenCalled();
             });
         });
 
