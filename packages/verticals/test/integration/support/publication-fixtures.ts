@@ -55,9 +55,7 @@ export async function seedPublicationListing(args: {
         description: 'Description',
         ownerId: args.userId,
         destinationId: args.destinationId,
-        publicationStatus: status,
-        lifecycleState: status === PublicationStatusEnum.PUBLISHED ? 'ACTIVE' : 'INACTIVE',
-        visibility: status === PublicationStatusEnum.PUBLISHED ? 'PUBLIC' : 'PRIVATE'
+        publicationStatus: status
     };
     if (args.vertical === 'accommodation')
         return new AccommodationModel().create(

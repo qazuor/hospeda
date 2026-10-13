@@ -1,29 +1,18 @@
-import { LifecycleStatusEnum, PublicationStatusEnum, VisibilityEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import type { ListingAccessFacts } from './resource-step';
 
 /**
- * TRANSITORY bridge for listings not backfilled by V6.9 yet.
- * A NULL status is published only for ACTIVE, PUBLIC listings without a
- * suspended owner or plan restriction. A written status always wins.
- * V6.9b (HOS-1641) removes this function and the legacy-column reads.
+ * Read authorization facts from a raw listing row.
+ *
+ * `publicationStatus` is the written value when it is one of the six states
+ * of `PublicationStatusEnum`, and `null` otherwise (absent, NULL or unknown):
+ * the authorization then fails closed. HOS-1641 (V6.9b) removed the
+ * transitory Coord-43 bridge that derived a status from the old columns.
+ *
+ * @param args - `entity`: the raw listing row, of any shape.
+ * @returns The owner id and publication status, or `null` when the row is not
+ *   an object or carries no `ownerId`.
  */
-export function resolveEffectivePublicationStatus(args: {
-    readonly publicationStatus: PublicationStatusEnum | null;
-    readonly lifecycleState: unknown;
-    readonly visibility: unknown;
-    readonly ownerSuspended?: unknown;
-    readonly planRestricted?: unknown;
-}): PublicationStatusEnum | null {
-    if (args.publicationStatus !== null) return args.publicationStatus;
-    return args.lifecycleState === LifecycleStatusEnum.ACTIVE &&
-        args.visibility === VisibilityEnum.PUBLIC &&
-        args.ownerSuspended !== true &&
-        args.planRestricted !== true
-        ? PublicationStatusEnum.PUBLISHED
-        : null;
-}
-
-/** Read authorization facts from a raw listing row. */
 export function readListingAccessFacts(args: {
     readonly entity: unknown;
 }): ListingAccessFacts | null {
@@ -32,16 +21,7 @@ export function readListingAccessFacts(args: {
     if (!('ownerId' in entity)) return null;
     const ownerId = typeof entity.ownerId === 'string' ? entity.ownerId : null;
     const status = 'publicationStatus' in entity ? entity.publicationStatus : null;
-    const writtenStatus = Object.values(PublicationStatusEnum).find((value) => value === status);
     const publicationStatus =
-        status !== null && status !== undefined && writtenStatus === undefined
-            ? null
-            : resolveEffectivePublicationStatus({
-                  publicationStatus: writtenStatus ?? null,
-                  lifecycleState: 'lifecycleState' in entity ? entity.lifecycleState : null,
-                  visibility: 'visibility' in entity ? entity.visibility : null,
-                  ownerSuspended: 'ownerSuspended' in entity ? entity.ownerSuspended : undefined,
-                  planRestricted: 'planRestricted' in entity ? entity.planRestricted : undefined
-              });
+        Object.values(PublicationStatusEnum).find((value) => value === status) ?? null;
     return { ownerId, publicationStatus };
 }

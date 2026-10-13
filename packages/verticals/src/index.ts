@@ -20,10 +20,7 @@ export {
     UnknownStepKeyError
 } from './authorization/entitlement-step';
 export { resolveLimitStep } from './authorization/limit-step';
-export {
-    readListingAccessFacts,
-    resolveEffectivePublicationStatus
-} from './authorization/listing-facts';
+export { readListingAccessFacts } from './authorization/listing-facts';
 export {
     FOREIGN_ADMITTING_STATES,
     LISTING_OPERATIONS,

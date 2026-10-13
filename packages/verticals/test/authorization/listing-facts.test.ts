@@ -1,9 +1,6 @@
 import { PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import {
-    readListingAccessFacts,
-    resolveEffectivePublicationStatus
-} from '../../src/authorization/listing-facts';
+import { readListingAccessFacts } from '../../src/authorization/listing-facts';
 
 describe('readListingAccessFacts', () => {
     it('returns null for non-objects and rows without ownerId', () => {
@@ -12,125 +9,34 @@ describe('readListingAccessFacts', () => {
         expect(readListingAccessFacts({ entity: {} })).toBeNull();
     });
 
-    it('keeps the owner while treating an unknown publication state as null', () => {
+    it.each(
+        Object.values(PublicationStatusEnum)
+    )('returns the written publication state %s as is', (status) => {
         expect(
-            readListingAccessFacts({ entity: { ownerId: 'owner', publicationStatus: 'OTHER' } })
-        ).toEqual({ ownerId: 'owner', publicationStatus: null });
-        expect(
-            readListingAccessFacts({
-                entity: {
-                    ownerId: 'owner',
-                    publicationStatus: 'OTHER',
-                    lifecycleState: 'ACTIVE',
-                    visibility: 'PUBLIC'
-                }
-            })
-        ).toEqual({ ownerId: 'owner', publicationStatus: null });
-        expect(
-            readListingAccessFacts({
-                entity: {
-                    ownerId: 'owner',
-                    publicationStatus: PublicationStatusEnum.PUBLISHED
-                }
-            })
-        ).toEqual({ ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED });
-    });
-});
-
-describe('resolveEffectivePublicationStatus (transitory V6.9 bridge)', () => {
-    const cases: ReadonlyArray<
-        readonly [
-            string,
-            PublicationStatusEnum | null,
-            unknown,
-            unknown,
-            PublicationStatusEnum | null,
-            { readonly ownerSuspended?: boolean; readonly planRestricted?: boolean }?
-        ]
-    > = [
-        [
-            'written DRAFT wins',
-            PublicationStatusEnum.DRAFT,
-            'ACTIVE',
-            'PUBLIC',
-            PublicationStatusEnum.DRAFT
-        ],
-        [
-            'written PUBLISHED wins',
-            PublicationStatusEnum.PUBLISHED,
-            'DRAFT',
-            'PRIVATE',
-            PublicationStatusEnum.PUBLISHED,
-            { ownerSuspended: true, planRestricted: true }
-        ],
-        ['ACTIVE + PUBLIC', null, 'ACTIVE', 'PUBLIC', PublicationStatusEnum.PUBLISHED],
-        [
-            'ACTIVE + PUBLIC + ownerSuspended',
-            null,
-            'ACTIVE',
-            'PUBLIC',
-            null,
-            { ownerSuspended: true }
-        ],
-        [
-            'ACTIVE + PUBLIC + planRestricted',
-            null,
-            'ACTIVE',
-            'PUBLIC',
-            null,
-            { planRestricted: true }
-        ],
-        ['ACTIVE + PRIVATE', null, 'ACTIVE', 'PRIVATE', null],
-        ['DRAFT + PUBLIC', null, 'DRAFT', 'PUBLIC', null],
-        ['ARCHIVED + PUBLIC', null, 'ARCHIVED', 'PUBLIC', null],
-        ['null lifecycle', null, null, 'PUBLIC', null],
-        ['null visibility', null, 'ACTIVE', null, null],
-        ['both null', null, null, null, null],
-        ['missing lifecycle', null, undefined, 'PUBLIC', null],
-        ['missing visibility', null, 'ACTIVE', undefined, null],
-        ['unknown lifecycle', null, 'OTHER', 'PUBLIC', null],
-        ['unknown visibility', null, 'ACTIVE', 'OTHER', null]
-    ];
-    for (const [name, publicationStatus, lifecycleState, visibility, expected, flags] of cases) {
-        it(name, () => {
-            expect(
-                resolveEffectivePublicationStatus({
-                    publicationStatus,
-                    lifecycleState,
-                    visibility,
-                    ...flags
-                })
-            ).toBe(expected);
-        });
-    }
-
-    it('feeds the effective status into listing access facts', () => {
-        expect(
-            readListingAccessFacts({
-                entity: {
-                    ownerId: 'owner',
-                    publicationStatus: null,
-                    lifecycleState: 'ACTIVE',
-                    visibility: 'PUBLIC'
-                }
-            })
-        ).toEqual({ ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED });
+            readListingAccessFacts({ entity: { ownerId: 'owner', publicationStatus: status } })
+        ).toEqual({ ownerId: 'owner', publicationStatus: status });
     });
 
+    // HOS-1641 (V6.9b): the transitory Coord-43 bridge is gone. A row without a
+    // valid written state fails closed — it is never derived as PUBLISHED.
     it.each([
-        'ownerSuspended',
-        'planRestricted'
-    ] as const)('passes %s from the row into the NULL-status bridge', (restriction) => {
+        ['absent', { ownerId: 'owner' }],
+        ['NULL', { ownerId: 'owner', publicationStatus: null }],
+        ['undefined', { ownerId: 'owner', publicationStatus: undefined }],
+        ['unknown', { ownerId: 'owner', publicationStatus: 'OTHER' }],
+        ['the old lifecycle value', { ownerId: 'owner', publicationStatus: 'ACTIVE' }]
+    ] as const)('fails closed to a null state when the written state is %s', (_name, entity) => {
+        expect(readListingAccessFacts({ entity })).toEqual({
+            ownerId: 'owner',
+            publicationStatus: null
+        });
+    });
+
+    it('keeps a null owner when ownerId is not a string', () => {
         expect(
             readListingAccessFacts({
-                entity: {
-                    ownerId: 'owner',
-                    publicationStatus: null,
-                    lifecycleState: 'ACTIVE',
-                    visibility: 'PUBLIC',
-                    [restriction]: true
-                }
+                entity: { ownerId: 42, publicationStatus: PublicationStatusEnum.PUBLISHED }
             })
-        ).toEqual({ ownerId: 'owner', publicationStatus: null });
+        ).toEqual({ ownerId: null, publicationStatus: PublicationStatusEnum.PUBLISHED });
     });
 });
