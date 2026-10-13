@@ -11,6 +11,7 @@ import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { PageTabs, userTabs } from '@/components/layout/PageTabs';
+import { AccountCloseOnRequestCard } from '@/features/users/components/AccountCloseOnRequestCard';
 import { UserAccommodationsCard } from '@/features/users/components/UserAccommodationsCard';
 import { UserPublicationsCard } from '@/features/users/components/UserPublicationsCard';
 import { useUserHeaderProps } from '@/features/users/hooks/useUserHeaderProps';
@@ -84,6 +85,10 @@ function UserViewPage() {
                 <UserPublicationsCard
                     userId={id}
                     permissions={entityData.userPermissions}
+                />
+                <AccountCloseOnRequestCard
+                    userId={id}
+                    onClosed={() => navigate({ to: '/access/users' })}
                 />
             </div>
         </EntityPageBase>
