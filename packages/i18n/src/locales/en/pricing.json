@@ -272,5 +272,5 @@
         "partnerPriceQ": "Why is there no price?",
         "partnerPriceA": "Because we do not charge an institution what we charge a corner shop, even at the same level. We share the current figures in the conversation."
     },
-    "trialConsumesNote": "Starting uses up your free trial, and the trial is once in a lifetime."
+    "startConsumesTrialNote": "Starting uses up your free trial, and the trial is once in a lifetime."
 }
