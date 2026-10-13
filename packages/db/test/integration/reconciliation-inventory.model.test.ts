@@ -1,6 +1,8 @@
 import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
+import { domainEventModel } from '../../src/models/domain-event/domain-event.model.ts';
 import { reconciliationInventoryModel as model } from '../../src/models/reconciliation-inventory/reconciliation-inventory.model.ts';
+import { domainEvent } from '../../src/schemas/domain-event/domain_event.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
 import { billingOptions } from '../../src/schemas/vertical/billing-option.dbschema.ts';
 import { plans, planVersions } from '../../src/schemas/vertical/plan-catalog.dbschema.ts';
@@ -347,6 +349,211 @@ describe('reconciliation inventory and re-link persistence', () => {
         expect(postgresCause(failure)).toMatchObject({
             code: '23514',
             constraint: 'ck_subscription_tombstone_provider_link'
+        });
+    });
+
+    describe('cancellation retry population (HOS-1603, AC:B11:6)', () => {
+        async function decide(args: {
+            readonly tx: DrizzleClient;
+            readonly subscriptionId: string;
+            readonly transition: string;
+            readonly decidedAt: Date;
+        }) {
+            return domainEventModel.insert({
+                eventType: 'subscription.provider_cancellation_decided',
+                entityType: 'subscription',
+                entityId: args.subscriptionId,
+                actorType: 'job',
+                correlationId: crypto.randomUUID(),
+                reason: args.transition,
+                occurredAt: args.decidedAt,
+                tx: args.tx
+            });
+        }
+
+        it('the CHECK accepts the new event type and still rejects an invented one', async () => {
+            await withTestTransaction(async (tx) => {
+                const written = await decide({
+                    tx,
+                    subscriptionId: crypto.randomUUID(),
+                    transition: 'S3',
+                    decidedAt: new Date('2026-10-01T00:00:00.000Z')
+                });
+                expect(written.eventType).toBe('subscription.provider_cancellation_decided');
+
+                let failure: unknown;
+                try {
+                    await tx.transaction(async (savepoint) => {
+                        await savepoint.insert(domainEvent).values({
+                            eventType: 'subscription.invented' as never,
+                            entityType: 'subscription',
+                            entityId: crypto.randomUUID(),
+                            actorType: 'job',
+                            correlationId: crypto.randomUUID()
+                        });
+                    });
+                } catch (error) {
+                    failure = error;
+                }
+                expect(postgresCause(failure)).toMatchObject({
+                    code: '23514',
+                    constraint: 'domain_event_event_type_check'
+                });
+            });
+        });
+
+        it('lists only terminal linked rows with a decision, each with its most recent one, by keyset', async () => {
+            await withTestTransaction(async (tx) => {
+                const anchors = await anchor(tx);
+                const early = new Date('2026-10-01T00:00:00.000Z');
+                const late = new Date('2026-10-02T00:00:00.000Z');
+                const expected = new Map<string, { transition: string; decidedAt: Date }>();
+                for (const status of ['CANCELLED', 'ABANDONED', 'CHARGE_DECLINED']) {
+                    const row = await addSubscription({ tx, anchors, status, linked: true });
+                    await decide({
+                        tx,
+                        subscriptionId: row.subscription.id,
+                        transition: 'S16',
+                        decidedAt: early
+                    });
+                    expected.set(row.subscription.id, { transition: 'S16', decidedAt: early });
+                }
+                const twice = await addSubscription({
+                    tx,
+                    anchors,
+                    status: 'CANCELLED',
+                    class: 'COMPLEMENTO',
+                    linked: true
+                });
+                await decide({
+                    tx,
+                    subscriptionId: twice.subscription.id,
+                    transition: 'A3',
+                    decidedAt: early
+                });
+                await decide({
+                    tx,
+                    subscriptionId: twice.subscription.id,
+                    transition: 'S21',
+                    decidedAt: late
+                });
+                expected.set(twice.subscription.id, { transition: 'S21', decidedAt: late });
+                const tombstone = await model.insertReceiptTombstone({ tx });
+                await model.insertProviderLink({
+                    subscriptionId: tombstone.id,
+                    provider: 'MERCADO_PAGO',
+                    providerId: `tombstone-${crypto.randomUUID()}`,
+                    tx
+                });
+                await decide({
+                    tx,
+                    subscriptionId: tombstone.id,
+                    transition: 'RECEPTION_TOMBSTONE',
+                    decidedAt: early
+                });
+                expected.set(tombstone.id, { transition: 'RECEPTION_TOMBSTONE', decidedAt: early });
+
+                const excluded: string[] = [];
+                const liveWithDecision = await addSubscription({
+                    tx,
+                    anchors,
+                    status: 'CANCEL_SCHEDULED',
+                    linked: true
+                });
+                await decide({
+                    tx,
+                    subscriptionId: liveWithDecision.subscription.id,
+                    transition: 'S11',
+                    decidedAt: early
+                });
+                excluded.push(liveWithDecision.subscription.id);
+                const terminalWithoutDecision = await addSubscription({
+                    tx,
+                    anchors,
+                    status: 'CANCELLED',
+                    linked: true
+                });
+                excluded.push(terminalWithoutDecision.subscription.id);
+                const terminalWithoutLink = await addSubscription({
+                    tx,
+                    anchors,
+                    status: 'ABANDONED',
+                    linked: false
+                });
+                await decide({
+                    tx,
+                    subscriptionId: terminalWithoutLink.subscription.id,
+                    transition: 'S3',
+                    decidedAt: early
+                });
+                excluded.push(terminalWithoutLink.subscription.id);
+                const mine = new Set([...expected.keys(), ...excluded]);
+
+                const seen: string[] = [];
+                let afterSubscriptionId: string | undefined;
+                while (true) {
+                    const page = await model.listCancellationRetryPage({
+                        afterSubscriptionId,
+                        limit: 2,
+                        tx
+                    });
+                    if (page.length === 0) break;
+                    for (const row of page) {
+                        if (!mine.has(row.subscription.id)) continue;
+                        seen.push(row.subscription.id);
+                        const wanted = expected.get(row.subscription.id);
+                        expect(row.providerLink.subscriptionId).toBe(row.subscription.id);
+                        expect(row.decision.transition).toBe(wanted?.transition);
+                        expect(row.decision.decidedAt.toISOString()).toBe(
+                            wanted?.decidedAt.toISOString()
+                        );
+                    }
+                    afterSubscriptionId = page.at(-1)?.subscription.id;
+                }
+                expect(seen).toEqual([...expected.keys()].sort());
+                expect(new Set(seen).size).toBe(seen.length);
+                for (const id of excluded) expect(seen).not.toContain(id);
+            });
+        });
+
+        it('findCancellationDecision returns the most recent decision, or null without one', async () => {
+            await withTestTransaction(async (tx) => {
+                const anchors = await anchor(tx);
+                const row = await addSubscription({
+                    tx,
+                    anchors,
+                    status: 'CANCEL_SCHEDULED',
+                    linked: true
+                });
+                expect(
+                    await model.findCancellationDecision({
+                        subscriptionId: row.subscription.id,
+                        tx
+                    })
+                ).toBeNull();
+                await decide({
+                    tx,
+                    subscriptionId: row.subscription.id,
+                    transition: 'S11',
+                    decidedAt: new Date('2026-10-01T00:00:00.000Z')
+                });
+                const newest = await decide({
+                    tx,
+                    subscriptionId: row.subscription.id,
+                    transition: 'S11',
+                    decidedAt: new Date('2026-10-03T00:00:00.000Z')
+                });
+                expect(
+                    await model.findCancellationDecision({
+                        subscriptionId: row.subscription.id,
+                        tx
+                    })
+                ).toEqual({
+                    eventId: newest.id,
+                    transition: 'S11',
+                    decidedAt: new Date('2026-10-03T00:00:00.000Z')
+                });
+            });
         });
     });
 });

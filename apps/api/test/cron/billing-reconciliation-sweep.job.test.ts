@@ -28,6 +28,7 @@ vi.mock('@repo/verticals', async (importOriginal) => ({
 
 import { creditedPaymentsFromLedger } from '@repo/service-core';
 import { billingReconciliationSweepJob } from '../../src/cron/jobs/billing-reconciliation-sweep.job';
+import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
 import { getCoverageNotices } from '../../src/utils/listing-access/coverage-notices';
 
 function context(dryRun = false): CronJobContext {
@@ -152,6 +153,57 @@ describe('billing reconciliation sweep cron', () => {
         const result = await billingReconciliationSweepJob.handler(context());
         expect(result).toMatchObject({ success: true, processed: 3, errors: 0 });
         expect(result.details).not.toHaveProperty('zeroCallChecks');
+    });
+
+    it('hands the cancellation retry port to the sweep (HOS-1603, AC:B11:6)', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 1,
+            runId: 'run-id',
+            complete: true,
+            pinged: true,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        await billingReconciliationSweepJob.handler(context());
+        const ports = mockSweep.mock.calls[0]?.[1] as {
+            cancellationRetry?: { beforeCancelNotice?: unknown };
+        };
+        expect(ports.cancellationRetry?.beforeCancelNotice).toBe(beforeCancelNotice);
+    });
+
+    it('fails the job when the cancellation retry failed a row (HOS-1603, AC:B11:6)', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 2,
+            runId: 'run-id',
+            complete: false,
+            pinged: false,
+            rowsFailed: 1,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [{ subscriptionId: 'retried-row', message: 'read failed' }],
+            cancellationRetry: {
+                stopped: 0,
+                confirmed: 0,
+                marked: 0,
+                noticePending: 0,
+                callFailed: 0,
+                sentUnconfirmed: 0,
+                rowsRead: 0,
+                rowsFailed: 1
+            },
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const result = await billingReconciliationSweepJob.handler(context());
+        expect(result).toMatchObject({ success: false, errors: 1 });
+        expect(result.details).toHaveProperty('failedSubscriptionIds', ['retried-row']);
+        expect(result.details).toMatchObject({ cancellationRetry: { rowsFailed: 1 } });
     });
 
     it('does not call the service during dry run', async () => {

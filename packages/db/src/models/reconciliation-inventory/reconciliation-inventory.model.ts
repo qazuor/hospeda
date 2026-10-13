@@ -1,5 +1,6 @@
-import { and, asc, eq, gt, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
+import { domainEvent } from '../../schemas/domain-event/domain_event.dbschema.ts';
 import {
     type InsertProviderLink,
     providerLinks,
@@ -23,6 +24,39 @@ export interface ListSweepInventoryPageInput {
 export interface SweepInventoryRow {
     readonly subscription: SelectSubscription;
     readonly providerLink: SelectProviderLink;
+}
+
+/** The domain event type that records our decision to cancel a preapproval (AC:B11:6). */
+const CANCELLATION_DECIDED_EVENT = 'subscription.provider_cancellation_decided' as const;
+
+/** Terminal subscription states (B11 §3: `CANCELLED`, `ABANDONED`, `CHARGE_DECLINED`). */
+const TERMINAL_SUBSCRIPTION_STATUSES = ['CANCELLED', 'ABANDONED', 'CHARGE_DECLINED'] as const;
+
+/** Our recorded decision to cancel one subscription's preapproval. */
+export interface CancellationDecision {
+    readonly eventId: string;
+    /** The transition code that decided the cancellation (the event's `reason`). */
+    readonly transition: string;
+    /** The instant of that transition (the event's `occurred_at`). */
+    readonly decidedAt: Date;
+}
+
+/** Input for one keyset page of the cancellation-retry population. */
+export interface ListCancellationRetryPageInput {
+    readonly afterSubscriptionId?: string;
+    readonly limit: number;
+    readonly tx?: DrizzleClient;
+}
+
+/** One terminal linked subscription with its most recent cancellation decision. */
+export interface CancellationRetryRow extends SweepInventoryRow {
+    readonly decision: CancellationDecision;
+}
+
+/** Input to read the most recent cancellation decision of one subscription. */
+export interface FindCancellationDecisionInput {
+    readonly subscriptionId: string;
+    readonly tx?: DrizzleClient;
 }
 
 /** Input to find a provider link by its provider-scoped identifier. */
@@ -61,7 +95,8 @@ export interface InsertReceiptTombstoneInput {
 export class ReconciliationInventoryModel {
     /**
      * Lists keyset-paginated linked PRINCIPAL and COMPLEMENTO rows in live states.
-     * Terminal rows return through the four exception queries added by B11.2 and later; a receipt
+     * Terminal rows return through the exception queries, starting with
+     * {@link ReconciliationInventoryModel.listCancellationRetryPage}; a receipt
      * tombstone is LAPIDA and enters through exception 4. INNER JOIN excludes rows without a
      * provider id to read; a creation without a response belongs to HOS-1610's creation sweep.
      */
@@ -84,6 +119,91 @@ export class ReconciliationInventoryModel {
             )
             .orderBy(asc(subscriptions.id))
             .limit(input.limit);
+    }
+
+    /**
+     * The population of exceptions 1 and 4 (AC:B11:6): only one of OUR transitions that sent the
+     * cancellation records the decision, so a terminal row from the mirror or from S17, or the
+     * tombstone of a probe, does not enter. Returns terminal rows (any class) with a provider link
+     * and at least one `subscription.provider_cancellation_decided` event, each with its most
+     * recent decision. Keyset by `subscription.id` ascending, like `listSweepInventoryPage`; the
+     * decision lookup rides `domain_event_entity_idx` (entity_type, entity_id, occurred_at).
+     */
+    async listCancellationRetryPage(
+        input: ListCancellationRetryPageInput
+    ): Promise<ReadonlyArray<CancellationRetryRow>> {
+        const db = input.tx ?? getDb();
+        const decision = db
+            .selectDistinctOn([domainEvent.entityId], {
+                entityId: domainEvent.entityId,
+                eventId: domainEvent.id,
+                transition: domainEvent.reason,
+                decidedAt: domainEvent.occurredAt
+            })
+            .from(domainEvent)
+            .where(
+                and(
+                    eq(domainEvent.entityType, 'subscription'),
+                    eq(domainEvent.eventType, CANCELLATION_DECIDED_EVENT)
+                )
+            )
+            .orderBy(domainEvent.entityId, desc(domainEvent.occurredAt), desc(domainEvent.id))
+            .as('decision');
+        const rows = await db
+            .select({
+                subscription: subscriptions,
+                providerLink: providerLinks,
+                eventId: decision.eventId,
+                transition: decision.transition,
+                decidedAt: decision.decidedAt
+            })
+            .from(subscriptions)
+            .innerJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
+            .innerJoin(decision, eq(decision.entityId, sql`${subscriptions.id}::text`))
+            .where(
+                and(
+                    inArray(subscriptions.status, TERMINAL_SUBSCRIPTION_STATUSES),
+                    input.afterSubscriptionId === undefined
+                        ? undefined
+                        : gt(subscriptions.id, input.afterSubscriptionId)
+                )
+            )
+            .orderBy(asc(subscriptions.id))
+            .limit(input.limit);
+        return rows.map((row) => ({
+            subscription: row.subscription,
+            providerLink: row.providerLink,
+            decision: {
+                eventId: row.eventId,
+                transition: row.transition ?? '',
+                decidedAt: row.decidedAt
+            }
+        }));
+    }
+
+    /** The most recent cancellation decision recorded for one subscription, or null. */
+    async findCancellationDecision(
+        input: FindCancellationDecisionInput
+    ): Promise<CancellationDecision | null> {
+        const db = input.tx ?? getDb();
+        const [row] = await db
+            .select({
+                eventId: domainEvent.id,
+                transition: domainEvent.reason,
+                decidedAt: domainEvent.occurredAt
+            })
+            .from(domainEvent)
+            .where(
+                and(
+                    eq(domainEvent.entityType, 'subscription'),
+                    eq(domainEvent.entityId, input.subscriptionId),
+                    eq(domainEvent.eventType, CANCELLATION_DECIDED_EVENT)
+                )
+            )
+            .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.id))
+            .limit(1);
+        if (!row) return null;
+        return { eventId: row.eventId, transition: row.transition ?? '', decidedAt: row.decidedAt };
     }
 
     /** Finds a provider link by the unique provider and provider id pair, or null. */

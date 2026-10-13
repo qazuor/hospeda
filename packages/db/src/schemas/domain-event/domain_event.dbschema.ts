@@ -32,6 +32,13 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   replaced by the administrative action 24 (`entity_type =
  *   'partner_application'`). The email is personal data, so `changes` carries
  *   only field names (NUCLEO/08 §3 action 24; HOS-1494).
+ * - `subscription.provider_cancellation_decided`: one of our transitions
+ *   decided to cancel the preapproval of this subscription (`entity_type =
+ *   'subscription'`, `entity_id` = its id, `reason` = the transition code,
+ *   `occurred_at` = the instant of the transition). It is the auditable record
+ *   the B11 sweep reads both the population and the 3-day retry clock from
+ *   (AC:B11:6; B11.md "the instant of the transition is already recorded:
+ *   every transition is auditable"; NUCLEO/08 §1.1 criterion 2; HOS-1603).
  */
 export const DOMAIN_EVENT_TYPES = [
     'email.undeliverable',
@@ -43,7 +50,8 @@ export const DOMAIN_EVENT_TYPES = [
     'trial.extended',
     'reconciliation.mark_opened',
     'account.closed_on_request',
-    'partner_application.email_replaced'
+    'partner_application.email_replaced',
+    'subscription.provider_cancellation_decided'
 ] as const;
 
 /** One type of the closed domain event catalog. */
