@@ -1,4 +1,4 @@
-import { PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
+import type { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import type { DrizzleClient } from '../../types.ts';
 import { domainEventModel } from '../domain-event/domain-event.model.ts';
@@ -48,19 +48,6 @@ function listingRow(row: Record<string, unknown>): PublicationListing {
         createdAt: new Date(String(row.createdAt)),
         inactiveSince: new Date(String(row.inactiveSince))
     };
-}
-
-/** V6.9b: borrar esta doble escritura al retirar las columnas viejas. */
-function legacyPublicationWrite(args: {
-    readonly vertical: ListingVertical;
-    readonly to: PublicationStatusEnum;
-}) {
-    const published = args.to === PublicationStatusEnum.PUBLISHED;
-    const lifecycle = published ? 'ACTIVE' : 'INACTIVE';
-    const visibility = published ? 'PUBLIC' : 'PRIVATE';
-    return args.vertical === 'accommodation'
-        ? sql`lifecycle_state = ${lifecycle}, visibility = ${visibility}, billing_unpublished_at = ${args.to === PublicationStatusEnum.UNPUBLISHED_BY_BILLING ? sql`now()` : sql`NULL`}`
-        : sql`lifecycle_state = ${lifecycle}, visibility = ${visibility}`;
 }
 
 /** Transaction-bound persistence for PB1, PB2, PB3 and PB6. */
@@ -273,7 +260,7 @@ export const listingPublicationModel = {
             : sql``;
         const result = await args.tx.execute(sql<{ id: string }>`
             UPDATE ${table(args.vertical)}
-            SET publication_status = ${args.to}, ${legacyPublicationWrite(args)} ${clock} ${deletion}
+            SET publication_status = ${args.to} ${clock} ${deletion}
             WHERE id = ${args.listingId} AND publication_status = ${args.from}
               AND deleted_at IS NULL RETURNING id`);
         return result.rows.length === 1;

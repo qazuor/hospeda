@@ -1,35 +1,24 @@
-import { LifecycleStatusEnum, PublicationStatusEnum, VisibilityEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 
-interface LegacyPublicationFacts {
-    readonly lifecycleState?: unknown;
-    readonly visibility?: unknown;
-    readonly ownerSuspended?: unknown;
-    readonly planRestricted?: unknown;
-}
-
-interface ListingBirthData extends LegacyPublicationFacts {
+interface ListingBirthData {
     readonly publicationStatus?: unknown;
     readonly inactiveSince?: unknown;
     readonly deadlinesVersion?: unknown;
 }
 
-/** TRANSITORY: the same rule as the Coord-43 bridge (`resolveEffectivePublicationStatus`); V6.1/V6.9b replace it with plain DRAFT once PB1 exists. */
-export function legacyPublicationStatus({
-    lifecycleState,
-    visibility,
-    ownerSuspended,
-    planRestricted
-}: LegacyPublicationFacts): PublicationStatusEnum {
-    return lifecycleState === LifecycleStatusEnum.ACTIVE &&
-        visibility === VisibilityEnum.PUBLIC &&
-        ownerSuspended !== true &&
-        planRestricted !== true
-        ? PublicationStatusEnum.PUBLISHED
-        : PublicationStatusEnum.DRAFT;
-}
-
-/** Completes the listing birth state without changing the caller's data. */
+/**
+ * Completes the listing birth state without changing the caller's data.
+ *
+ * A listing is born `DRAFT` unless the caller writes its `publicationStatus`
+ * (seeds and tests may; no API input carries it — only the PB transitions
+ * change it afterwards). The retention clock (`inactiveSince`) and the
+ * deadlines version are written together: both default to the birth instant
+ * and the current deadlines version, and passing only one of them throws.
+ *
+ * @param input - `data`: the insert values of the listing row.
+ * @returns `data` with the birth columns the caller did not set.
+ */
 export function withListingBirthColumns<T extends ListingBirthData>({
     data
 }: {
@@ -46,7 +35,7 @@ export function withListingBirthColumns<T extends ListingBirthData>({
         data: {
             ...data,
             ...(!Object.hasOwn(data, 'publicationStatus') && {
-                publicationStatus: legacyPublicationStatus(data)
+                publicationStatus: PublicationStatusEnum.DRAFT
             }),
             ...(!hasInactiveSince && { inactiveSince: sql`now()` }),
             ...(!hasDeadlinesVersion && {
