@@ -11,7 +11,7 @@ const src = readFileSync(
 describe('PricingCardsGrid subscribe button (TEST:V8a:3 / TEST:V8a:4)', () => {
     it('mounts one visible island outside the hasPlans conditional and only in checkout mode', () => {
         expect(src).toContain(
-            '<SubscribeButton client:visible locale={locale} vertical={subscribeVertical} />'
+            '<SubscribeButton client:idle locale={locale} vertical={subscribeVertical} />'
         );
         expect(src).toContain("ctaMode === 'checkout' && subscribeVertical !== null");
         expect(src.indexOf('<SubscribeButton')).toBeGreaterThan(src.lastIndexOf('{!hasPlans ?'));
