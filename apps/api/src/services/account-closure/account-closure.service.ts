@@ -12,12 +12,8 @@ import {
     listingPublicationModel
 } from '@repo/db';
 import { type AccountClosurePreview, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
-import { type Actor, isSystemActor, ServiceError } from '@repo/service-core';
-import {
-    isAdministrativeActionPermitted,
-    resolveAdministrativeActionStep,
-    trialMachineLockKey
-} from '@repo/verticals';
+import { type Actor, ServiceError } from '@repo/service-core';
+import { trialMachineLockKey } from '@repo/verticals';
 import { getRequestCorrelationId } from '../../lib/request-context';
 import { getClock } from '../../utils/clock';
 import { getListingAccessPorts } from '../../utils/listing-access/ports';
@@ -27,6 +23,7 @@ import {
     type AccountClosurePreconditions,
     selectAccountClosureRejection
 } from './account-closure-rejection';
+import { assertAction24Step3 } from './account-closure-step3';
 import {
     permissionsActorLacks,
     readSubjectEffectivePermissions,
@@ -231,19 +228,7 @@ export class AccountClosureService {
      * and the same `action` goes to the resolver (Coord-174, Coord-178).
      */
     private assertStep3(input: { readonly actor: Actor; readonly userId: string }): void {
-        const action = 'ACC_24' as const;
-        const permitted = isAdministrativeActionPermitted({
-            action,
-            actorPermissions: input.actor.permissions
-        });
-        const step = resolveAdministrativeActionStep({
-            action,
-            actorId: input.actor.id,
-            subjectId: input.userId,
-            permitted,
-            isSystemActor: isSystemActor(input.actor)
-        });
-        if (!step.allowed) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
+        assertAction24Step3({ actor: input.actor, subjectId: input.userId });
     }
 
     /**
