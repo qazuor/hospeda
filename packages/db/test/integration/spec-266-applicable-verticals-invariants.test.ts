@@ -98,10 +98,7 @@ function makeAccommodation(
         destinationId,
         publicationStatus: PublicationStatusEnum.PUBLISHED,
         inactiveSince: new Date(),
-        deadlinesVersion: 1,
-        lifecycleState: 'ACTIVE' as const,
-        visibility: 'PUBLIC' as const,
-        moderationState: 'PENDING' as const
+        deadlinesVersion: 1
     } satisfies typeof accommodations.$inferInsert;
 }
 

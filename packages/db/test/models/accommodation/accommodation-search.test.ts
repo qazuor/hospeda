@@ -9,6 +9,9 @@
  * (vi.spyOn(dbUtils, 'getDb')).  No real DB connection is required.
  */
 
+import { PublicationStatusEnum } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../../src/client';
 import {
@@ -927,103 +930,107 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
     });
 
     // =========================================================================
-    // activeOnly — lifecycle state filter (regression: visibility leak fix)
-    //
-    // `activeOnly: true` must push an extra eq(lifecycleState, 'ACTIVE') clause,
-    // producing a WHERE object with more chunks than the baseline (no filter).
-    // `activeOnly: false` (owner scope / VIP) must NOT add the clause so that
-    // non-ACTIVE accommodations (DRAFTs, INACTIVE, ARCHIVED) remain visible.
-    //
-    // This is the key regression guard: the fix must not hide an owner's own
-    // DRAFTs from their "my accommodations" list.
+    // publishedOnly — HOS-1641 (V6.9b): the public filter is ONE predicate,
+    // `publication_status = 'PUBLISHED'`, replacing the four old public-scope
+    // flags. `publishedOnly: false` (owner scope) must NOT add it, so an owner
+    // keeps seeing their own DRAFTs. The same filter, against real rows, is in
+    // `test/integration/accommodation-published-only.integration.test.ts`.
     // =========================================================================
 
-    describe('search() — activeOnly lifecycle filter', () => {
-        it('adds a WHERE clause when activeOnly is true (public scope)', async () => {
-            // Arrange — baseline: no filter
-            let baselineWhere: unknown;
-            const { db: baselineDb } = makeSearchMock({
-                items: [],
-                total: 0,
-                captureWhere: (clause) => {
-                    baselineWhere = clause;
-                }
-            });
-            getDb.mockReturnValue(baselineDb as any);
-            await model.search({});
+    /** Renders a captured WHERE clause to its SQL text and bound params. */
+    function renderWhere(clause: unknown): { sql: string; params: unknown[] } {
+        return new PgDialect().sqlToQuery(clause as SQL);
+    }
 
-            // Arrange — public scope: activeOnly=true
-            let publicWhere: unknown;
-            const { db: publicDb } = makeSearchMock({
-                items: [],
-                total: 0,
-                captureWhere: (clause) => {
-                    publicWhere = clause;
-                }
-            });
-            getDb.mockReturnValue(publicDb as any);
-            await model.search({ activeOnly: true });
+    /** The bound value compared against `publication_status`, or undefined. */
+    function publicationStatusParam(clause: unknown): unknown {
+        const { sql: text, params } = renderWhere(clause);
+        const match = /"publication_status" = \$(\d+)/.exec(text);
+        return match ? params[Number(match[1]) - 1] : undefined;
+    }
 
-            // Assert — public scope has more SQL chunks (the ACTIVE state predicate)
-            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
-            const publicChunks = (publicWhere as { queryChunks?: unknown[] })?.queryChunks;
-            expect(Array.isArray(baselineChunks)).toBe(true);
-            expect(Array.isArray(publicChunks)).toBe(true);
-            expect((publicChunks as unknown[]).length).toBeGreaterThan(
-                (baselineChunks as unknown[]).length
-            );
+    async function captureSearchWhere(params: { publishedOnly?: boolean }): Promise<unknown> {
+        let where: unknown;
+        const { db } = makeSearchMock({
+            items: [],
+            total: 0,
+            captureWhere: (clause) => {
+                where = clause;
+            }
+        });
+        getDb.mockReturnValue(db as any);
+        await model.search(params);
+        return where;
+    }
+
+    async function captureCountWhere(params: { publishedOnly?: boolean }): Promise<unknown> {
+        let where: unknown;
+        const { db } = makeCountMock({
+            total: 0,
+            captureWhere: (clause) => {
+                where = clause;
+            }
+        });
+        getDb.mockReturnValue(db as any);
+        await model.countByFilters(params);
+        return where;
+    }
+
+    const NON_PUBLISHED_STATES = Object.values(PublicationStatusEnum).filter(
+        (state) => state !== PublicationStatusEnum.PUBLISHED
+    );
+
+    describe('search() — publishedOnly filter', () => {
+        it('keeps a PUBLISHED listing: the predicate compares against PUBLISHED', async () => {
+            // Act
+            const where = await captureSearchWhere({ publishedOnly: true });
+
+            // Assert
+            expect(publicationStatusParam(where)).toBe(PublicationStatusEnum.PUBLISHED);
         });
 
-        it('does NOT add a WHERE clause when activeOnly is false (owner scope)', async () => {
-            // Arrange — baseline: no filter
-            let baselineWhere: unknown;
-            const { db: baselineDb } = makeSearchMock({
-                items: [],
-                total: 0,
-                captureWhere: (clause) => {
-                    baselineWhere = clause;
-                }
-            });
-            getDb.mockReturnValue(baselineDb as any);
-            await model.search({});
+        it.each(
+            NON_PUBLISHED_STATES
+        )('excludes a %s listing when publishedOnly is true', async (state) => {
+            // Act
+            const where = await captureSearchWhere({ publishedOnly: true });
 
-            // Arrange — owner scope: activeOnly=false (owner sees their own DRAFTs)
-            let ownerWhere: unknown;
-            const { db: ownerDb } = makeSearchMock({
-                items: [],
-                total: 0,
-                captureWhere: (clause) => {
-                    ownerWhere = clause;
-                }
-            });
-            getDb.mockReturnValue(ownerDb as any);
-            await model.search({ activeOnly: false });
+            // Assert — a row in `state` fails `publication_status = 'PUBLISHED'`
+            const param = publicationStatusParam(where);
+            expect(param).toBe(PublicationStatusEnum.PUBLISHED);
+            expect(param).not.toBe(state);
+        });
 
-            // Assert — owner scope WHERE has the same number of chunks as baseline
-            // (no extra ACTIVE predicate was pushed)
-            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
-            const ownerChunks = (ownerWhere as { queryChunks?: unknown[] })?.queryChunks;
-            expect(Array.isArray(baselineChunks)).toBe(true);
-            expect(Array.isArray(ownerChunks)).toBe(true);
-            expect((ownerChunks as unknown[]).length).toBe((baselineChunks as unknown[]).length);
+        it('does NOT filter by publication status when publishedOnly is false (owner scope)', async () => {
+            // Act
+            const where = await captureSearchWhere({ publishedOnly: false });
+
+            // Assert
+            expect(renderWhere(where).sql).not.toContain('publication_status');
         });
     });
 
-    describe('searchWithRelations() — activeOnly lifecycle filter', () => {
-        it('passes activeOnly=true to findMany WHERE when public scope', async () => {
-            // Arrange — baseline: no filter
-            let baselineArgs: unknown;
-            const { db: baselineDb } = makeSearchWithRelationsMock({ items: [], total: 0 });
-            baselineDb.query.accommodations.findMany = vi
-                .fn()
-                .mockImplementation((args: unknown) => {
-                    baselineArgs = args;
-                    return Promise.resolve([]);
-                });
-            getDb.mockReturnValue(baselineDb as any);
-            await model.searchWithRelations({});
+    describe('countByFilters() — publishedOnly filter', () => {
+        it('applies the same PUBLISHED predicate as search() (count/items parity)', async () => {
+            // Act
+            const where = await captureCountWhere({ publishedOnly: true });
 
-            // Arrange — public scope: activeOnly=true
+            // Assert
+            expect(publicationStatusParam(where)).toBe(PublicationStatusEnum.PUBLISHED);
+        });
+
+        it('does NOT filter by publication status when publishedOnly is false', async () => {
+            // Act
+            const where = await captureCountWhere({});
+
+            // Assert
+            expect(renderWhere(where).sql).not.toContain('publication_status');
+        });
+    });
+
+    describe('searchWithRelations() — publishedOnly filter', () => {
+        it('passes publishedOnly=true to findMany WHERE when public scope', async () => {
+            // Arrange
             let publicArgs: unknown;
             const { db: publicDb } = makeSearchWithRelationsMock({ items: [], total: 0 });
             publicDb.query.accommodations.findMany = vi.fn().mockImplementation((args: unknown) => {
@@ -1031,29 +1038,18 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
                 return Promise.resolve([]);
             });
             getDb.mockReturnValue(publicDb as any);
-            await model.searchWithRelations({ activeOnly: true });
 
-            // Both produce a WHERE clause; the public one is more constrained.
-            // Structural check: both have `where` defined; beyond that the
-            // WHERE SQL object is opaque, so we just verify both are truthy.
-            expect((baselineArgs as { where?: unknown })?.where).toBeDefined();
-            expect((publicArgs as { where?: unknown })?.where).toBeDefined();
+            // Act
+            await model.searchWithRelations({ publishedOnly: true });
+
+            // Assert
+            expect(publicationStatusParam((publicArgs as { where?: unknown })?.where)).toBe(
+                PublicationStatusEnum.PUBLISHED
+            );
         });
 
-        it('does NOT add lifecycle WHERE when activeOnly is false (owner sees own DRAFTs)', async () => {
-            // Arrange — no-filter baseline
-            let baselineArgs: unknown;
-            const { db: baselineDb } = makeSearchWithRelationsMock({ items: [], total: 0 });
-            baselineDb.query.accommodations.findMany = vi
-                .fn()
-                .mockImplementation((args: unknown) => {
-                    baselineArgs = args;
-                    return Promise.resolve([]);
-                });
-            getDb.mockReturnValue(baselineDb as any);
-            await model.searchWithRelations({});
-
-            // Arrange — owner scope: activeOnly=false
+        it('does NOT add the publication WHERE when publishedOnly is false (owner sees own DRAFTs)', async () => {
+            // Arrange
             let ownerArgs: unknown;
             const { db: ownerDb } = makeSearchWithRelationsMock({ items: [], total: 0 });
             ownerDb.query.accommodations.findMany = vi.fn().mockImplementation((args: unknown) => {
@@ -1061,12 +1057,14 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
                 return Promise.resolve([]);
             });
             getDb.mockReturnValue(ownerDb as any);
-            await model.searchWithRelations({ activeOnly: false });
 
-            // Both WHERE objects are still defined (isNull(deletedAt) is always pushed).
-            // The owner scope should NOT be more restrictive than the baseline.
-            expect((baselineArgs as { where?: unknown })?.where).toBeDefined();
-            expect((ownerArgs as { where?: unknown })?.where).toBeDefined();
+            // Act
+            await model.searchWithRelations({ publishedOnly: false });
+
+            // Assert
+            expect(renderWhere((ownerArgs as { where?: unknown })?.where).sql).not.toContain(
+                'publication_status'
+            );
         });
     });
 

@@ -54,8 +54,7 @@ async function seedAccommodation(tx: DrizzleClient, slugSuffix: string) {
             name: 'HOS-162 Cross-Provider Occupancy Test',
             summary: 'Regression test for the cross-provider occupancy collision fix.',
             type: 'HOUSE',
-            description: 'Accommodation inserted for the HOS-162 cross-provider occupancy test.',
-            lifecycleState: 'ACTIVE'
+            description: 'Accommodation inserted for the HOS-162 cross-provider occupancy test.'
         })
         .returning();
     if (!accommodation) throw new Error('Failed to insert accommodation');

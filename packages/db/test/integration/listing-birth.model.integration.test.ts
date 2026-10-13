@@ -16,7 +16,7 @@ const experienceModel = new ExperienceModel();
 afterAll(async () => closeTestPool());
 
 describe('listing birth model integration (TEST:V6:19)', () => {
-    it('writes accommodation birth state from the bridge, current version and paired clock', async () => {
+    it('writes accommodation birth state: DRAFT by default, the written status when given, current version and paired clock', async () => {
         await withTestTransaction(async (tx) => {
             const user = testData.user();
             const destination = testData.destination();
@@ -28,29 +28,27 @@ describe('listing birth model integration (TEST:V6:19)', () => {
                 description: 'Description',
                 type: 'CABIN',
                 ownerId: user.id,
-                destinationId: destination.id,
-                lifecycleState: 'ACTIVE',
-                visibility: 'PUBLIC'
+                destinationId: destination.id
             };
-            const published = await accommodationModel.create(
-                { ...base, slug: `birth-a-${crypto.randomUUID()}` } as Partial<Accommodation>,
+            const draft = await accommodationModel.create(
+                { ...base, slug: `birth-d-${crypto.randomUUID()}` } as Partial<Accommodation>,
                 tx
             );
-            expect(published.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
-            expect(published.inactiveSince).toBeInstanceOf(Date);
+            expect(draft.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
+            expect(draft.inactiveSince).toBeInstanceOf(Date);
             const current = await tx.execute(
                 sql`SELECT max(version)::int AS version FROM vertical_deadline_version`
             );
-            expect(published.deadlinesVersion).toBe(current.rows[0]?.version);
-            const restricted = await accommodationModel.create(
+            expect(draft.deadlinesVersion).toBe(current.rows[0]?.version);
+            const published = await accommodationModel.create(
                 {
                     ...base,
-                    slug: `birth-r-${crypto.randomUUID()}`,
-                    planRestricted: true
+                    slug: `birth-p-${crypto.randomUUID()}`,
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 } as Partial<Accommodation>,
                 tx
             );
-            expect(restricted.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
+            expect(published.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
             const explicit = await accommodationModel.create(
                 {
                     ...base,
@@ -87,13 +85,11 @@ describe('listing birth model integration (TEST:V6:19)', () => {
                     description: 'Description',
                     type: 'RESTAURANT',
                     ownerId: user.id,
-                    destinationId: destination.id,
-                    lifecycleState: 'ACTIVE',
-                    visibility: 'PUBLIC'
+                    destinationId: destination.id
                 } as Partial<Gastronomy>,
                 tx
             );
-            expect(row.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
+            expect(row.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
             expect(row.inactiveSince).toBeInstanceOf(Date);
             const current = await tx.execute(
                 sql`SELECT max(version)::int AS version FROM vertical_deadline_version`
@@ -116,13 +112,11 @@ describe('listing birth model integration (TEST:V6:19)', () => {
                     description: 'Description',
                     type: 'EXCURSION',
                     ownerId: user.id,
-                    destinationId: destination.id,
-                    lifecycleState: 'ACTIVE',
-                    visibility: 'PUBLIC'
+                    destinationId: destination.id
                 } as Partial<Experience>,
                 tx
             );
-            expect(row.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
+            expect(row.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
             expect(row.inactiveSince).toBeInstanceOf(Date);
             const current = await tx.execute(
                 sql`SELECT max(version)::int AS version FROM vertical_deadline_version`

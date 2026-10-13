@@ -11,9 +11,10 @@
 //       neutral `notification_log` by HOS-1419; B2 adds `billing_option`);
 //     - no `entity_subscriptions`, no `partner_subscriptions`, no
 //       `featured_listing_addon_grants`.
-//   And `accommodations` carries its three billing columns
-//     (`owner_suspended`, `plan_restricted`, `billing_unpublished_at`),
-//     which survive the demolition with their readers.
+//   `accommodations` kept its three billing columns (`owner_suspended`,
+//     `plan_restricted`, `billing_unpublished_at`) through the demolition
+//     (the over-data companion proves it at that migration); the FULL chain
+//     no longer has them, because V6.9b (HOS-1641) dropped them later.
 //
 //   TEST:U1:12 (AC:U1:7) — the extras `032` and `033` apply on the fresh chain
 //     and carry no trace of the retired grouping word; the seed dual-write
@@ -154,12 +155,14 @@ describe('TEST:U1:2 — full migration chain over an empty database (HOS-1416)',
         }
     });
 
-    it('gives accommodations its three surviving billing columns', async () => {
+    it('ends the full chain without the three accommodation billing columns (dropped by V6.9b, HOS-1641)', async () => {
         const columns = await columnsOf('accommodations');
 
-        expect(columns.has('owner_suspended')).toBe(true);
-        expect(columns.has('plan_restricted')).toBe(true);
-        expect(columns.has('billing_unpublished_at')).toBe(true);
+        // Sanity: the column read sees the table.
+        expect(columns.has('publication_status')).toBe(true);
+        expect(columns.has('owner_suspended')).toBe(false);
+        expect(columns.has('plan_restricted')).toBe(false);
+        expect(columns.has('billing_unpublished_at')).toBe(false);
     });
 });
 

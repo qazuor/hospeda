@@ -7,8 +7,8 @@
  * plus-and-up tourists (default) or reserved for vip-only (additive:
  * vip tourists see 'plus' + 'vip' rows, plus tourists see 'plus' only).
  *
- * This is a separate marker from plan_restricted (owner-side plan limit,
- * unrelated to tourist-side gating — see HOS-21 spec Data Model section).
+ * This is a separate marker from any owner-side plan limit (unrelated to
+ * tourist-side gating — see HOS-21 spec Data Model section).
  *
  * These are in-process schema tests — they do NOT require a running
  * PostgreSQL instance. They inspect Drizzle column/table metadata via
