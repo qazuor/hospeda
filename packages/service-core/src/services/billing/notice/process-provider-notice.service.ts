@@ -27,7 +27,12 @@ import {
     unwiredCoverageNotices
 } from '../payment/payment-ports.js';
 import { recordChargeFact } from '../payment/record-charge-fact.service.js';
+import {
+    handleUnknownAuthorization,
+    type UnknownAuthorizationArrival
+} from '../reconciliation/handle-unknown-authorization.service.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
+import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
 import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
@@ -72,6 +77,9 @@ type Outcome =
     | 'PAYMENT_RECORDED'
     | 'WAITING_FIRST_CHARGE_READING'
     | 'UNKNOWN_RESOURCE'
+    | 'RELINKED'
+    | 'UNKNOWN_BECAME_KNOWN'
+    | 'TOMBSTONE_WRITTEN'
     | 'RESOURCE_KIND_NOT_HANDLED'
     | 'UNSUPPORTED_NOTICE'
     | 'FAILED';
@@ -90,6 +98,77 @@ export interface ProcessProviderNoticePorts {
     readonly coverageNotices?: CoverageNotices;
     /** Reaches S7's Tourist VIP clause through `recordChargeFact` (AC:B7:31); unwired skips it. */
     readonly touristVipInheritance?: TouristVipInheritancePort;
+    /**
+     * Hangs a payment on a reconciliation mark. The unknown-authorization handler
+     * uses it to hang a receipt tombstone's payment on its mark (B11 §2.4), and
+     * `recordChargeFact` for S5's/S7's reason 7; unwired, both use their default.
+     */
+    readonly markPayments?: ReconciliationMarkPayments;
+}
+
+/**
+ * What the unknown-authorization handler left for the receiver: a final outcome
+ * to answer with, or `LINKED` when the authorization now has a `provider_link`
+ * (re-linked here, or by a concurrent process) and a charge can be recorded again.
+ */
+type UnknownResourceResolution =
+    | { readonly kind: 'OUTCOME'; readonly outcome: Outcome }
+    | { readonly kind: 'LINKED'; readonly outcome: Outcome };
+
+/**
+ * Hands an authorization with no `provider_link` to `handleUnknownAuthorization`
+ * (B11 §2.4, AC:1676:4): the webhook of an unknown preapproval IS its detection.
+ * The handler re-reads it by id and re-links it, writes a receipt tombstone (with
+ * its mark and, unless it is a manifest probe, its cancellation) or marks the
+ * named row. A resource the provider does not have (`NOT_FOUND`) has nothing to
+ * link or cancel: `UNKNOWN_RESOURCE`. Any other error propagates (ack `ERROR`).
+ * A re-link never mirrors in this notice: re-linking changes neither money nor
+ * state (AC:B11:2); the next notice or the sweep mirrors.
+ *
+ * @param input.authorizationId - The provider id with no `provider_link`
+ * @param input.arrival - What arrived: the authorization, or a charge of it
+ * @param ports - The receiver's ports
+ * @returns The outcome to answer with, or `LINKED`
+ */
+async function resolveUnknownAuthorization(
+    input: { readonly authorizationId: string; readonly arrival: UnknownAuthorizationArrival },
+    ports: ProcessProviderNoticePorts
+): Promise<UnknownResourceResolution> {
+    const correlationId = crypto.randomUUID();
+    let result: Awaited<ReturnType<typeof handleUnknownAuthorization>>;
+    try {
+        result = await handleUnknownAuthorization(
+            { authorizationId: input.authorizationId, arrival: input.arrival, correlationId },
+            {
+                provider: ports.provider,
+                clock: ports.clock,
+                beforeCancelNotice: ports.beforeCancelNotice,
+                ...(ports.markPayments === undefined ? {} : { markPayments: ports.markPayments }),
+                ...(ports.coverageNotices === undefined
+                    ? {}
+                    : { coverageNotices: ports.coverageNotices })
+            }
+        );
+    } catch (error) {
+        if (error instanceof PaymentProviderError && error.code === 'NOT_FOUND')
+            return { kind: 'OUTCOME', outcome: 'UNKNOWN_RESOURCE' };
+        throw error;
+    }
+    if (result.outcome === 'RELINKED') return { kind: 'LINKED', outcome: 'RELINKED' };
+    if (result.outcome === 'KNOWN') return { kind: 'LINKED', outcome: 'UNKNOWN_BECAME_KNOWN' };
+    if (result.tombstone) return { kind: 'OUTCOME', outcome: 'TOMBSTONE_WRITTEN' };
+    if (input.arrival.kind === 'CHARGE')
+        // H-11 A: the named row has a live link of its own; no payment is written on it.
+        logger.warn(
+            {
+                subscriptionId: result.subscriptionId,
+                chargeId: input.arrival.chargeId,
+                markId: result.markId,
+                correlationId
+            },
+            'Charge of an unknown authorization marked on the named row without a payment'
+        );
+    return { kind: 'OUTCOME', outcome: 'DIVERGENCE_MARKED' };
 }
 
 /** Processes a provider delivery by re-reading its resource; the delivery never supplies state. */
@@ -110,7 +189,19 @@ export async function processProviderNotice(
             throw error;
         }
         if (notice.resourceKind === 'charge') {
-            const result = await recordChargeFact({ chargeId: notice.resourceId }, ports);
+            let result = await recordChargeFact({ chargeId: notice.resourceId }, ports);
+            if (result.outcome === 'NO_SUBSCRIPTION' && result.authorizationId !== null) {
+                const unknown = await resolveUnknownAuthorization(
+                    {
+                        authorizationId: result.authorizationId,
+                        arrival: { kind: 'CHARGE', chargeId: notice.resourceId }
+                    },
+                    ports
+                );
+                if (unknown.kind === 'OUTCOME') return { ack: 'OK', outcome: unknown.outcome };
+                // Linked now: record the charge once more; a second NO_SUBSCRIPTION ends below.
+                result = await recordChargeFact({ chargeId: notice.resourceId }, ports);
+            }
             if (result.outcome === 'CARD_VALIDATION_IGNORED')
                 return { ack: 'OK', outcome: 'CARD_VALIDATION_IGNORED' };
             if (result.outcome === 'NO_SUBSCRIPTION')
@@ -145,7 +236,13 @@ export async function processProviderNotice(
             .from(providerLinks)
             .where(eq(providerLinks.providerId, notice.resourceId))
             .limit(1);
-        if (!link) return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
+        if (!link) {
+            const unknown = await resolveUnknownAuthorization(
+                { authorizationId: notice.resourceId, arrival: { kind: 'AUTHORIZATION' } },
+                ports
+            );
+            return { ack: 'OK', outcome: unknown.outcome };
+        }
         if (
             /^\d+$/.test(notice.version) &&
             /^\d+$/.test(link.lastAppliedVersion ?? '') &&
