@@ -94,7 +94,6 @@ async function seedCommittedDestination(): Promise<string> {
 /** An owner in PRE_TRIAL (no `trial` row) with one DRAFT accommodation. */
 async function seedDraftOwner(tx: DrizzleClient) {
     return seedAccommodation(tx, {
-        visibility: 'PRIVATE',
         publicationStatus: PublicationStatusEnum.DRAFT
     });
 }
@@ -252,8 +251,7 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                         country: 'Argentina',
                         coordinates: { lat: '-32.48', long: '-58.23' }
                     },
-                    lifecycleState: 'DRAFT',
-                    visibility: 'PRIVATE'
+                    publicationStatus: PublicationStatusEnum.DRAFT
                 } as unknown as AccommodationCreateInput;
 
                 // Act
@@ -412,11 +410,8 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 const { userId: ownerId, accommodationId } = await seedDraftOwner(tx);
                 const adminId = await seedUser(tx);
 
-                // A never-published draft: the one whose rename would move the slug.
-                await tx
-                    .update(accommodations)
-                    .set({ lifecycleState: 'DRAFT' } as never)
-                    .where(eq(accommodations.id, accommodationId));
+                // A never-published draft (seeded DRAFT): the one whose rename
+                // would move the slug.
                 const before = await readListing(tx, accommodationId);
                 const update = (data: Record<string, unknown>) =>
                     errorCodeOf(
@@ -430,7 +425,10 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 expect(
                     await update({
                         description: 'Texto nuevo de soporte que no debería escribirse nunca.',
-                        visibility: 'PUBLIC'
+                        // A non-content field the update schema still accepts. The
+                        // state columns no longer reach this gate: the update schema
+                        // has none since V6.9b (HOS-1641) and strips a smuggled one.
+                        type: 'CABIN'
                     })
                 ).toBe('FORBIDDEN');
                 expect(await update({ name: 'Cabaña renombrada', refreshSlugFromName: true })).toBe(
@@ -462,7 +460,7 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                         gastronomyService.update(
                             admin15(adminId),
                             gastronomyId,
-                            { visibility: 'PUBLIC' } as never,
+                            { type: 'PARRILLA' } as never,
                             { tx }
                         )
                     )

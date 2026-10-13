@@ -30,13 +30,11 @@
 
 import {
     GastronomyTypeEnum,
-    LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
     PriceRangeEnum,
     PublicationStatusEnum,
-    RoleEnum,
-    VisibilityEnum
+    RoleEnum
 } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -166,53 +164,48 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
     });
 
     // -----------------------------------------------------------------------
-    // T-1: Admin creates gastronomy listing (PRIVATE/INACTIVE initially)
+    // T-1: Admin creates gastronomy listing (born DRAFT)
     // -----------------------------------------------------------------------
 
-    it.skipIf(!dbAvailable)(
-        'T-1: admin creates a gastronomy listing (PRIVATE / INACTIVE)',
-        async () => {
-            await withServiceTestTransaction(async (tx) => {
-                // Arrange: seed owner + destination
-                const { ownerId, destinationId } = await seedGastronomy(tx);
-                const ctx: ServiceContext = { tx };
+    it.skipIf(!dbAvailable)('T-1: admin creates a gastronomy listing (born DRAFT)', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            // Arrange: seed owner + destination
+            const { ownerId, destinationId } = await seedGastronomy(tx);
+            const ctx: ServiceContext = { tx };
 
-                // Act: create via service using enum values and required non-null defaults.
-                // GastronomyAdminCreateInputSchema omits id/timestamps but keeps
-                // averageRating, reviewsCount (they have schema defaults
-                // but are still part of the required shape before omit).
-                const result = await gastronomyService.create(
-                    adminActor,
-                    {
-                        name: 'La Parrilla Admin',
-                        summary: 'Admin-created gastronomy listing summary',
-                        description: 'Admin-created gastronomy listing for integration test suite.',
-                        type: GastronomyTypeEnum.PARRILLA,
-                        ownerId: ownerId as `${string}-${string}-${string}-${string}-${string}`,
-                        destinationId:
-                            destinationId as `${string}-${string}-${string}-${string}-${string}`,
-                        visibility: VisibilityEnum.PRIVATE,
-                        lifecycleState: LifecycleStatusEnum.INACTIVE,
-                        moderationState: ModerationStatusEnum.PENDING,
-                        averageRating: 0,
-                        reviewsCount: 0
-                    },
-                    ctx
-                );
+            // Act: create via service using enum values and required non-null defaults.
+            // GastronomyAdminCreateInputSchema omits id/timestamps but keeps
+            // averageRating, reviewsCount (they have schema defaults
+            // but are still part of the required shape before omit).
+            const result = await gastronomyService.create(
+                adminActor,
+                {
+                    name: 'La Parrilla Admin',
+                    summary: 'Admin-created gastronomy listing summary',
+                    description: 'Admin-created gastronomy listing for integration test suite.',
+                    type: GastronomyTypeEnum.PARRILLA,
+                    ownerId: ownerId as `${string}-${string}-${string}-${string}-${string}`,
+                    destinationId:
+                        destinationId as `${string}-${string}-${string}-${string}-${string}`,
+                    averageRating: 0,
+                    reviewsCount: 0
+                },
+                ctx
+            );
 
-                // Assert
-                expect(result.error).toBeUndefined();
-                expect(result.data).toBeDefined();
-                if (!result.data) throw new Error('expected result.data to be populated');
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data).toBeDefined();
+            if (!result.data) throw new Error('expected result.data to be populated');
 
-                expect(result.data.name).toBe('La Parrilla Admin');
-                expect(result.data.ownerId).toBe(ownerId);
-                expect(result.data.destinationId).toBe(destinationId);
-                expect(result.data.visibility).toBe('PRIVATE');
-                expect(result.data.lifecycleState).toBe('INACTIVE');
-            });
-        }
-    );
+            expect(result.data.name).toBe('La Parrilla Admin');
+            expect(result.data.ownerId).toBe(ownerId);
+            expect(result.data.destinationId).toBe(destinationId);
+            // A listing is born DRAFT (V6.9b, HOS-1641): no create input sets
+            // its publication state.
+            expect(result.data.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
+        });
+    });
 
     // -----------------------------------------------------------------------
     // T-3: Owner assigned to listing (via model-level update — ownerId is
@@ -226,8 +219,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: seed listing + a second user (the intended owner)
                 const { ownerId: originalOwnerId, gastronomyId } = await seedGastronomy(tx, {
-                    visibility: 'PRIVATE',
-                    lifecycleState: 'INACTIVE'
+                    publicationStatus: PublicationStatusEnum.DRAFT
                 });
 
                 // Seed a new owner user
@@ -267,10 +259,9 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         'T-6: owner can update operational fields (priceRange / menuUrl)',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                // Arrange: seed listing that is PUBLIC/ACTIVE (owner can see it)
+                // Arrange: seed listing that is PUBLISHED (owner can see it)
                 const { ownerId, gastronomyId } = await seedGastronomy(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const ownerActor = createListingOwnerActor(ownerId);
                 const ctx: ServiceContext = { tx };
@@ -315,8 +306,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
             await withServiceTestTransaction(async (tx) => {
                 // Arrange
                 const { ownerId, gastronomyId } = await seedGastronomy(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const ownerActor = createListingOwnerActor(ownerId);
                 const ctx: ServiceContext = { tx };
@@ -360,10 +350,8 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         'T-8: review lifecycle — PENDING → APPROVED → listing rating recomputed',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                // Arrange: PUBLIC listing so the tourist reviewer can see it
+                // Arrange: PUBLISHED listing so the tourist reviewer can see it
                 const { gastronomyId } = await seedGastronomy(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE',
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
@@ -448,10 +436,8 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         'T-8b: review without granular rating breakdown is created (PENDING), no NOT NULL violation',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                // Arrange: PUBLIC listing + tourist reviewer
+                // Arrange: PUBLISHED listing + tourist reviewer
                 const { gastronomyId } = await seedGastronomy(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE',
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
@@ -502,8 +488,6 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { gastronomyId } = await seedGastronomy(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE',
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
