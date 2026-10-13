@@ -92,6 +92,14 @@
         "reason": "S6 moves GRACE_PERIOD to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/reactivate-suspended.service.ts",
+        "symbol": "reactivateSuspendedOnCreditedPayment",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": "notice",
+        "reason": "S7 moves SUSPENDED, which emits no source, to ACTIVE or CANCEL_SCHEDULED, which emit one (03-contrato-de-cobertura.md:468, 472-473, the nine states); the coverage notice ADDED is emitted after commit."
+    },
+    {
         "file": "packages/service-core/src/services/billing/notice/process-provider-notice.service.ts",
         "symbol": "processProviderNotice",
         "table": "subscriptions",
