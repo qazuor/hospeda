@@ -83,7 +83,7 @@ export const subscriptions = pgTable(
         }),
         /** Instante en que S4 leyó el rechazo que abrió el grace. */
         graceStartedAt: timestamp('grace_started_at', { withTimezone: true }),
-        /** Vencimiento calculado del grace; S5/S6 lo vacían al salir (B7.2). */
+        /** Vencimiento calculado del grace; S5/S7 lo vacían al salir; S6 lo conserva como ancla del período impago. */
         graceEndsAt: timestamp('grace_ends_at', { withTimezone: true }),
         /** sucede_a */
         succeedsId: uuid('succeeds_id').references((): AnyPgColumn => subscriptions.id),

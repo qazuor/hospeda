@@ -15,6 +15,8 @@ import type { EnterGraceResult } from '../subscription/enter-grace.service';
 import { enterGraceOnRejectedCharge } from '../subscription/enter-grace.service';
 import type { ExitGracePorts, ExitGraceResult } from '../subscription/exit-grace.service';
 import { exitGraceOnCreditedPayment } from '../subscription/exit-grace.service';
+import type { ReactivateSuspendedResult } from '../subscription/reactivate-suspended.service';
+import { reactivateSuspendedOnCreditedPayment } from '../subscription/reactivate-suspended.service';
 import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
 import type { CoverageNotices, PromoChargePolicy, PromoExhaustion } from './payment-ports';
@@ -29,9 +31,9 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly promoCharges?: PromoChargePolicy;
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
-    /** Hangs the payment on reason 7 when S5's conditions 2 or 3 fail (AC:B7:6). */
+    /** Hangs the payment on reason 7 when S5's or S7's conditions 2 or 3 fail (AC:B7:6, AC:B7:13). */
     readonly markPayments?: ReconciliationMarkPayments;
-    /** Who brought the charge, for S5's reason 7 (I-14): the notice (`provider`, default) or the sweep (`job`). */
+    /** Who brought the charge, for S5's/S7's reason 7 (I-14): the notice (`provider`, default) or the sweep (`job`). */
     readonly actorType?: ExitGracePorts['actorType'];
 }
 
@@ -45,6 +47,8 @@ export type RecordChargeFactResult =
           readonly credit: CreditPaymentResult;
           /** S5's outcome, present only when the linked row was in GRACE_PERIOD (I-6). */
           readonly exit?: ExitGraceResult;
+          /** S7's outcome, present only when the linked row was SUSPENDED (AC:B7:13). */
+          readonly reactivation?: ReactivateSuspendedResult;
       }
     | {
           readonly outcome: 'DECLINED';
@@ -147,6 +151,22 @@ export async function recordChargeFact(
                 }
             );
             return { outcome: 'CREDITED', paymentId, credit, exit };
+        }
+        if (
+            (credit.outcome === 'CREDITED' || credit.outcome === 'ALREADY_CREDITED') &&
+            linked.subscription.status === 'SUSPENDED'
+        ) {
+            const reactivation = await reactivateSuspendedOnCreditedPayment(
+                { paymentId },
+                {
+                    provider: ports.provider,
+                    clock: ports.clock,
+                    markPayments: ports.markPayments,
+                    actorType: ports.actorType,
+                    coverageNotices: ports.coverageNotices
+                }
+            );
+            return { outcome: 'CREDITED', paymentId, credit, reactivation };
         }
         return { outcome: 'CREDITED', paymentId, credit };
     }

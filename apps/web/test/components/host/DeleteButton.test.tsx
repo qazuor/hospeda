@@ -1,10 +1,10 @@
 /**
  * @file DeleteButton.test.tsx
  * @description The "Eliminar" island must: render the danger button, require an
- * inline confirmation, call the protected delete endpoint with the listing id
- * AND the right vertical on confirm, and surface an inline error on API failure.
- * This is the owner-facing entry point that exercises SPEC-230 (soft-deleted
- * rows leave the owner's protected list).
+ * inline confirmation, run PB12 (`publishApi.purge`) with the listing id AND the
+ * right vertical on confirm, and surface an inline error on API failure.
+ * HOS-1477 (AC:V6:25) made this button the delete of the design: PB12 on the
+ * three verticals, the listing moves to `PURGED`.
  *
  * HOS-1156 T-015 added the vertical. The last two cases below are the ones that
  * matter for AC-14: the panel on a gastronomy publish page must delete a
@@ -21,10 +21,10 @@ vi.mock('../../../src/components/host/UnpublishButton.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, p) => String(p) })
 }));
 
-const deleteDraftMock = vi.fn();
+const purgeMock = vi.fn();
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     publishApi: {
-        deleteDraft: (args: { vertical: string; id: string }) => deleteDraftMock(args)
+        purge: (args: { vertical: string; id: string }) => purgeMock(args)
     }
 }));
 
@@ -42,9 +42,9 @@ const renderButton = (vertical?: PublishVerticalSlug) =>
         />
     );
 
-describe('DeleteButton (owner soft-delete island)', () => {
+describe('DeleteButton (owner PB12 delete island)', () => {
     beforeEach(() => {
-        deleteDraftMock.mockReset();
+        purgeMock.mockReset();
         // Stub reload so the success path does not blow up the test environment.
         Object.defineProperty(window, 'location', {
             value: { reload: vi.fn() },
@@ -62,7 +62,7 @@ describe('DeleteButton (owner soft-delete island)', () => {
         expect(screen.getByText('¿Eliminar esta propiedad?')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Sí, eliminar' })).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
-        expect(deleteDraftMock).not.toHaveBeenCalled();
+        expect(purgeMock).not.toHaveBeenCalled();
     });
 
     it('cancelling returns to idle without calling the API', () => {
@@ -70,11 +70,11 @@ describe('DeleteButton (owner soft-delete island)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
         fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
         expect(screen.getByRole('button', { name: 'Eliminar' })).toBeInTheDocument();
-        expect(deleteDraftMock).not.toHaveBeenCalled();
+        expect(purgeMock).not.toHaveBeenCalled();
     });
 
     it('shows an inline error when the API call fails', async () => {
-        deleteDraftMock.mockResolvedValue({ ok: false, error: 'boom' });
+        purgeMock.mockResolvedValue({ ok: false, error: 'boom' });
         renderButton();
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
         fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
@@ -86,26 +86,26 @@ describe('DeleteButton (owner soft-delete island)', () => {
     });
 
     it('defaults to the accommodation vertical when the caller passes none', async () => {
-        deleteDraftMock.mockResolvedValue({ ok: true, data: {} });
+        purgeMock.mockResolvedValue({ ok: true, data: {} });
         renderButton();
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
         fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
         await waitFor(() =>
-            expect(deleteDraftMock).toHaveBeenCalledWith({
+            expect(purgeMock).toHaveBeenCalledWith({
                 vertical: 'accommodation',
                 id: 'listing-1'
             })
         );
     });
 
-    for (const vertical of ['gastronomy', 'experience'] as const) {
-        it(`deletes in the ${vertical} vertical when told to (AC-14)`, async () => {
-            deleteDraftMock.mockResolvedValue({ ok: true, data: {} });
+    for (const vertical of ['accommodation', 'gastronomy', 'experience'] as const) {
+        it(`runs PB12 in the ${vertical} vertical when told to (AC-14, AC:V6:25)`, async () => {
+            purgeMock.mockResolvedValue({ ok: true, data: {} });
             renderButton(vertical);
             fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
             fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
             await waitFor(() =>
-                expect(deleteDraftMock).toHaveBeenCalledWith({ vertical, id: 'listing-1' })
+                expect(purgeMock).toHaveBeenCalledWith({ vertical, id: 'listing-1' })
             );
         });
     }

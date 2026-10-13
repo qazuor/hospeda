@@ -557,9 +557,20 @@
             "guard": {
                 "is_succession_predecessor": false
             },
-            "reads": ["subscription.status", "payment.status"],
-            "inputs": ["provider:payment_by_id"],
-            "writes": ["subscription.status", "domain_event.changes"]
+            "reads": [
+                "subscription.status",
+                "payment.status",
+                "subscription.succeeds_id",
+                "subscription.succeeded_by_id"
+            ],
+            "inputs": ["provider:payment_by_id", "catalog:billing_conditions"],
+            "writes": [
+                "subscription.status",
+                "domain_event.changes",
+                "subscription.service_ends_at",
+                "subscription.grace_started_at",
+                "subscription.grace_ends_at"
+            ]
         },
         {
             "id": "TRANS:B:S8",

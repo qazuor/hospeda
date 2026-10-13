@@ -7,8 +7,6 @@
  *  - useExperienceQuery — detail fetch + enabled flag
  *  - useCreateExperienceMutation — POST + return value
  *  - useUpdateExperienceMutation — PUT/PATCH + return value
- *  - useDeleteExperienceMutation — DELETE + return value
- *  - useRestoreExperienceMutation — restore POST + return value
  *  - useAssignExperienceOwnerMutation — assign-owner POST + method
  *  - useModerateExperienceReviewMutation — review moderation POST
  *  - useExperiencePendingReviewsQuery — pending reviews list
@@ -25,11 +23,9 @@ import { fetchApi } from '@/lib/api/client';
 import {
     useAssignExperienceOwnerMutation,
     useCreateExperienceMutation,
-    useDeleteExperienceMutation,
     useExperiencePendingReviewsQuery,
     useExperienceQuery,
     useModerateExperienceReviewMutation,
-    useRestoreExperienceMutation,
     useUpdateExperienceMutation
 } from '../hooks/useExperienceQuery';
 
@@ -180,36 +176,6 @@ describe('useUpdateExperienceMutation', () => {
         } as never);
 
         expect(returned).toMatchObject({ name: 'Paseo en kayak actualizado' });
-    });
-});
-
-describe('useDeleteExperienceMutation', () => {
-    it('should DELETE an experience by ID', async () => {
-        mockedFetchApi.mockResolvedValue({ data: { success: true }, status: 200 } as never);
-
-        const { result } = renderHook(() => useDeleteExperienceMutation(), {
-            wrapper: createWrapper()
-        });
-
-        const returnedId = await result.current.mutateAsync(EXPERIENCE_ID);
-
-        expect(returnedId).toBe(EXPERIENCE_ID);
-        expect(mockedFetchApi).toHaveBeenCalledWith(expect.objectContaining({ method: 'DELETE' }));
-    });
-});
-
-describe('useRestoreExperienceMutation', () => {
-    it('should restore a soft-deleted experience', async () => {
-        mockedFetchApi.mockResolvedValue({ data: { success: true }, status: 200 } as never);
-
-        const { result } = renderHook(() => useRestoreExperienceMutation(), {
-            wrapper: createWrapper()
-        });
-
-        const returnedId = await result.current.mutateAsync(EXPERIENCE_ID);
-
-        expect(returnedId).toBe(EXPERIENCE_ID);
-        expect(mockedFetchApi).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST' }));
     });
 });
 

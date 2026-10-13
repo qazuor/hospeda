@@ -20,11 +20,9 @@ import { adminAddGastronomyMediaRoute } from './addMedia';
 import { adminAssignGastronomyOwnerRoute } from './assignOwner';
 import { adminBatchGastronomiesRoute } from './batch';
 import { adminCreateGastronomyRoute } from './create';
-import { adminDeleteGastronomyRoute } from './delete';
 import { adminGetGastronomyByIdRoute } from './getById';
 import { adminGetGastronomyFaqsRoute } from './getFaqs';
 import { adminGetGastronomyMediaRoute } from './getMedia';
-import { adminHardDeleteGastronomyRoute } from './hardDelete';
 import { adminListGastronomiesRoute } from './list';
 import { adminModerateGastronomyRoute } from './moderate';
 import { adminGastronomyOptionsRoute } from './options';
@@ -34,7 +32,6 @@ import { adminRemoveGastronomyFaqRoute } from './removeFaq';
 import { adminRemoveGastronomyMediaRoute } from './removeMedia';
 import { adminReorderGastronomyFaqsRoute } from './reorderFaqs';
 import { adminReorderGastronomyMediaRoute } from './reorderMedia';
-import { adminRestoreGastronomyRoute } from './restore';
 import { adminSetFeaturedGastronomyMediaRoute } from './setFeaturedMedia';
 import { adminUpdateGastronomyRoute } from './update';
 import { adminUpdateGastronomyFaqRoute } from './updateFaq';
@@ -68,15 +65,6 @@ app.route('/', adminUpdateGastronomyRoute);
 
 // PATCH /:id - Partial update
 app.route('/', adminPatchGastronomyRoute);
-
-// DELETE /:id - Soft delete
-app.route('/', adminDeleteGastronomyRoute);
-
-// DELETE /:id/hard - Hard delete
-app.route('/', adminHardDeleteGastronomyRoute);
-
-// POST /:id/restore - Restore soft-deleted listing
-app.route('/', adminRestoreGastronomyRoute);
 
 // POST /:id/assign-owner - Set/replace listing owner
 app.route('/', adminAssignGastronomyOwnerRoute);

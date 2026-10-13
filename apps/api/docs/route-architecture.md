@@ -156,7 +156,7 @@ src/routes/<entity>/
     create.ts           # createProtectedRoute
     update.ts           # createProtectedRoute
     patch.ts            # createProtectedRoute
-    softDelete.ts       # createProtectedRoute
+    purge.ts            # createProtectedRoute  (PB12: the owner deletes; HOS-1477 retired softDelete)
     import-from-url.ts  # createProtectedRoute (non-CRUD action: stateless URL import; OR-permission check + lazy AI quota)
     ...
   admin/
@@ -166,9 +166,7 @@ src/routes/<entity>/
     create.ts           # createAdminRoute
     update.ts           # createAdminRoute
     patch.ts            # createAdminRoute
-    delete.ts           # createAdminRoute  (soft delete)
-    hardDelete.ts       # createAdminRoute
-    restore.ts          # createAdminRoute
+    purge.ts            # createAdminRoute  (action 23: PB12 at the owner's request; HOS-1477 retired delete/hardDelete/restore)
     batch.ts            # createAdminRoute
     ...
 ```
@@ -582,9 +580,7 @@ Reviews have their own admin sub-router mounted at
 | `GET` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_VIEW_ALL` | Full admin details |
 | `PUT` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_EDIT_ALL` | Full update |
 | `PATCH` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_EDIT_ALL` | Partial update |
-| `DELETE` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_DELETE` | Soft delete |
-| `DELETE` | `/api/v1/admin/gastronomies/{id}/hard` | `GASTRONOMY_DELETE` | Permanent delete |
-| `POST` | `/api/v1/admin/gastronomies/{id}/restore` | `GASTRONOMY_EDIT_ALL` | Restore soft-deleted listing |
+| `POST` | `/api/v1/admin/gastronomies/{id}/purge` | `LISTING_PURGE_ON_REQUEST` (V5 chain, evaluated on the owner) | Action 23: runs PB12 at the owner's request, with a mandatory reason. The only staff delete; there is no soft delete, hard delete or restore of a listing (HOS-1477, AC:V6:25) |
 | `POST` | `/api/v1/admin/gastronomies/{id}/assign-owner` | `GASTRONOMY_EDIT_ALL` | Set or replace the `GASTRONOMY_OWNER` |
 | `GET` | `/api/v1/admin/gastronomies/{id}/faqs` | `GASTRONOMY_VIEW_ALL` | All FAQs including drafts |
 | `POST` | `/api/v1/admin/gastronomies/{id}/faqs` | `GASTRONOMY_EDIT_ALL` | Add FAQ |
@@ -652,9 +648,7 @@ Reviews have their own admin sub-router mounted at
 | `GET` | `/api/v1/admin/experiences/{id}` | `EXPERIENCE_VIEW_ALL` | Full admin details |
 | `PUT` | `/api/v1/admin/experiences/{id}` | `EXPERIENCE_EDIT_ALL` | Full update |
 | `PATCH` | `/api/v1/admin/experiences/{id}` | `EXPERIENCE_EDIT_ALL` | Partial update |
-| `DELETE` | `/api/v1/admin/experiences/{id}` | `EXPERIENCE_DELETE` | Soft delete |
-| `DELETE` | `/api/v1/admin/experiences/{id}/hard` | `EXPERIENCE_DELETE` | Permanent delete |
-| `POST` | `/api/v1/admin/experiences/{id}/restore` | `EXPERIENCE_EDIT_ALL` | Restore soft-deleted listing |
+| `POST` | `/api/v1/admin/experiences/{id}/purge` | `LISTING_PURGE_ON_REQUEST` (V5 chain, evaluated on the owner) | Action 23: runs PB12 at the owner's request, with a mandatory reason. The only staff delete; there is no soft delete, hard delete or restore of a listing (HOS-1477, AC:V6:25) |
 | `POST` | `/api/v1/admin/experiences/{id}/toggle-subscription` | `EXPERIENCE_EDIT_ALL` | Toggle MercadoPago subscription active/inactive |
 | `POST` | `/api/v1/admin/experiences/{id}/assign-owner` | `EXPERIENCE_EDIT_ALL` | Set or replace the `EXPERIENCE_OWNER` |
 | `GET` | `/api/v1/admin/experiences/{id}/faqs` | `EXPERIENCE_VIEW_ALL` | All FAQs including drafts |
@@ -681,7 +675,7 @@ Reviews are mounted on a separate sub-router at `/api/v1/admin/experiences/revie
 
 There is no umbrella router for these two verticals. The empty public and admin tiers were deleted, and the
 owner self-service routes live next to the rest of each vertical, following the
-accommodation pattern (`POST /` to create, `DELETE /{id}` to discard a draft):
+accommodation pattern (`POST /` to create, `POST /{id}/purge` to delete through PB12):
 
 - `/api/v1/protected/gastronomies` (OpenAPI tag `Gastronomy`)
 - `/api/v1/protected/experiences` (OpenAPI tag `Experience`)
@@ -699,8 +693,8 @@ else's answers the same **404** as one that does not exist (HOS-600).
 |--------|------|-----------------------|-------|
 | `POST` | `/api/v1/protected/gastronomies/` | none (authenticated session) | Owner self-service create (HOS-687: this is how an account BECOMES an owner). The listing is born `PRIVATE`/`DRAFT`; `createForOwner` grants the `GASTRONOMY_OWNER` role in the same transaction. |
 | `POST` | `/api/v1/protected/experiences/` | none (authenticated session) | Same, for `EXPERIENCE_OWNER`. The CHECKED owner-create schema also enforces the pricing rule (400). |
-| `DELETE` | `/api/v1/protected/gastronomies/{id}` | none (ownership is the gate) | Soft-deletes one of the caller's own DRAFT listings. Missing, foreign or already-deleted answers **404**; a non-DRAFT row answers 422. |
-| `DELETE` | `/api/v1/protected/experiences/{id}` | none (ownership is the gate) | Same, for experiences. |
+| `POST` | `/api/v1/protected/gastronomies/{id}/purge` | none (`listingAccess` DELETE: ownership is the gate) | PB12: the owner deletes one of their own listings; it moves to `PURGED` and its content is erased for good. A foreign listing answers **404**. Replaced the retired `DELETE /{id}` draft delete (HOS-1477, AC:V6:25). |
+| `POST` | `/api/v1/protected/experiences/{id}/purge` | none (`listingAccess` DELETE: ownership is the gate) | Same, for experiences. |
 
 ---
 

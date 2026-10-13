@@ -7,13 +7,11 @@
  */
 
 import { EditIcon } from '@repo/icons';
-import { ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
+import { ExperienceTypeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { createElement, Fragment } from 'react';
-import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { useDeleteExperienceMutation } from '../hooks/useExperienceQuery';
 import type { ExperienceListItem } from './experience.config';
 
 // ---------------------------------------------------------------------------
@@ -167,16 +165,7 @@ export const createExperienceColumns = (
                         'aria-label': t('admin-entities.actions.edit')
                     } as never,
                     createElement(EditIcon, { size: 16 })
-                ),
-                createElement(DeleteRowButton, {
-                    entityId: row.id ?? '',
-                    entityName: row.name ?? row.id ?? '',
-                    entityLabel: t('admin-entities.entities.experience.singular'),
-                    permission: PermissionEnum.EXPERIENCE_DELETE,
-                    useDeleteMutation: useDeleteExperienceMutation,
-                    variant: 'icon',
-                    entityGender: 'f'
-                })
+                )
             )
     }
 ];
