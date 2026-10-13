@@ -9,10 +9,10 @@ import type { BeforeCancelNotice } from './start-subscription.service';
 import {
     type CancellationSeenAnnotator,
     noCancellationSeenAnnotation,
-    noRetainedPeriodPayment,
     type RetainedPeriodPayment,
     recordCancellationSeen
 } from './subscription-billing-ports';
+import { hasOpenRetention, openSuccessionRetentions } from './succession-retained-payment';
 
 const logger = createLogger('suspend-for-arrears');
 
@@ -68,19 +68,27 @@ export type SuspendForArrearsResult =
               | 'LOST_RACE';
       };
 
-/** Ports of S6. The optional ones default until B4 / B4.2 / B7.4b wire them. */
+/** Ports of S6. The optional ones default until B4 / B4.2 wire them. */
 export interface SuspendForArrearsPorts {
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
+    /** Defaults to the real read of an open S19 retention (HOS-1561 H5). */
     readonly retainedPeriodPayment?: RetainedPeriodPayment;
     readonly cancellationSeen?: CancellationSeenAnnotator;
     readonly coverageNotices?: CoverageNotices;
 }
 
+/** What the single write of S6 did. */
+export type ArrearsSuspensionWrite = 'SUSPENDED' | 'LOST_RACE' | 'RETAINED_PAYMENT';
+
 /**
  * The single write of S6 plus its post-commit coverage notice (G5 `via: "notice"`):
  * `<origin> → SUSPENDED`, then `REMOVED` is emitted once the transaction committed.
+ * Inside the transaction the row is locked first and S19 is asked again (HOS-1561
+ * H5): with an open retention nothing is written (`RETAINED_PAYMENT`) and an error
+ * is logged, because the authorization was already cancelled by then. S19 locks
+ * the same row, so the two serialize.
  * A notice failure is logged and undoes nothing. The grace clock is KEPT: on a
  * `SUSPENDED` row `grace_started_at` is the anchor of the unpaid period that S7
  * binds condition 4 to (HOS-1560, H1); S7 empties it when the row leaves.
@@ -89,15 +97,25 @@ export interface SuspendForArrearsPorts {
  * @param input.origin - The status the event leaves (the `UPDATE` guard)
  * @param input.now - The write instant
  * @param input.coverageNotices - The coverage listener (B4.2 wires it)
- * @returns True when this call moved the row; false when it lost the race
+ * @returns `SUSPENDED` when this call moved the row; `LOST_RACE` when it was no
+ *   longer in the origin; `RETAINED_PAYMENT` when S19 retained a payment meanwhile
  */
 export async function writeArrearsSuspension(input: {
     readonly subscriptionId: string;
     readonly origin: 'GRACE_PERIOD';
     readonly now: Date;
     readonly coverageNotices: CoverageNotices;
-}): Promise<boolean> {
-    const updated = await getDb().transaction(async (tx) => {
+}): Promise<ArrearsSuspensionWrite> {
+    const written = await getDb().transaction(async (tx) => {
+        const [locked] = await tx
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, input.subscriptionId))
+            .limit(1)
+            .for('update');
+        if (locked?.status !== input.origin) return { kind: 'LOST_RACE' as const };
+        if (await hasOpenRetention({ subscriptionId: input.subscriptionId, tx }))
+            return { kind: 'RETAINED_PAYMENT' as const };
         const [row] = await tx
             .update(subscriptions)
             .set({
@@ -115,9 +133,17 @@ export async function writeArrearsSuspension(input: {
                 userId: subscriptions.userId,
                 vertical: subscriptions.vertical
             });
-        return row ?? null;
+        return row ? { kind: 'SUSPENDED' as const, row } : { kind: 'LOST_RACE' as const };
     });
-    if (!updated) return false;
+    if (written.kind === 'RETAINED_PAYMENT') {
+        logger.error(
+            { subscriptionId: input.subscriptionId },
+            'S19 retained a payment of the period after the arrears guard; the authorization is already cancelled and the row is not suspended'
+        );
+        return 'RETAINED_PAYMENT';
+    }
+    if (written.kind === 'LOST_RACE') return 'LOST_RACE';
+    const updated = written.row;
 
     const vertical = VerticalEnumSchema.safeParse(updated.vertical);
     if (updated.userId && vertical.success) {
@@ -140,7 +166,7 @@ export async function writeArrearsSuspension(input: {
             'Suspended subscription has no coverage subject to notify'
         );
     }
-    return true;
+    return 'SUSPENDED';
 }
 
 /**
@@ -149,7 +175,8 @@ export async function writeArrearsSuspension(input: {
  * `GRACE_PERIOD` card principal to `SUSPENDED` and cancels its authorization in
  * the same act, with S17's re-read rule (DEC-SUB-019):
  *
- * 1. no S19-retained payment of the period (I-7);
+ * 1. no S19-retained payment of the period (I-7); by default the real read of an
+ *    open retention, asked again inside the write (HOS-1561 H5);
  * 2. re-read the authorization by id; already `cancelled` → nothing is sent;
  * 3. otherwise our before-cancel notice first (DEC-MAIL-001): `NOT_YET_SENT`
  *    defers without calling or writing; `NO_RECIPIENT`/`DELIVERY_EXHAUSTED`
@@ -185,7 +212,7 @@ export async function suspendForArrears(
     if (subscription.class !== 'PRINCIPAL' || subscription.paymentMethod !== 'CARD')
         return { outcome: 'NOT_APPLICABLE', reason: 'NOT_CARD_PRINCIPAL' };
 
-    const retained = ports.retainedPeriodPayment ?? noRetainedPeriodPayment;
+    const retained = ports.retainedPeriodPayment ?? openSuccessionRetentions;
     if (await retained.hasRetainedPeriodPayment({ subscriptionId: subscription.id }))
         return { outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' };
 
@@ -268,13 +295,15 @@ export async function suspendForArrears(
         }
     }
 
-    const suspended = await writeArrearsSuspension({
+    const write = await writeArrearsSuspension({
         subscriptionId: subscription.id,
         origin,
         now: ports.clock.now(),
         coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
     });
-    if (!suspended) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
+    if (write === 'RETAINED_PAYMENT')
+        return { outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' };
+    if (write === 'LOST_RACE') return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
     logger.info(
         { subscriptionId: subscription.id, event: value.event, cancelCall },
         'Subscription suspended for arrears'

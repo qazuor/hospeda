@@ -8,8 +8,10 @@ import { openReconciliationMark } from '../reconciliation/open-reconciliation-ma
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import {
     checkLatePaymentConditions,
+    isLiveSuccessionPredecessor,
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
+import { retainPaymentForSuccession } from './succession-retained-payment';
 
 const logger = createLogger('exit-grace');
 const inputSchema = z.strictObject({ paymentId: z.uuid() });
@@ -75,12 +77,72 @@ export async function reactivateFromGrace(input: {
 }
 
 /**
+ * S19 from S5 (AC:B7:16, HOS-1561 H4): in a transaction of its own, rereads and
+ * locks the row, confirms it is still in `GRACE_PERIOD` and still the predecessor
+ * of a live succession, and only then records the payment as pending with
+ * `grace_started_at` as the anchor of the unpaid period. Nothing else is written:
+ * no mark, no notice, no refund, no `domain_event` (H14).
+ *
+ * @param input.subscriptionId - The predecessor in grace
+ * @param input.paymentId - The credited payment of the unpaid period
+ * @param input.now - The instant of the act
+ * @returns False when the reread no longer confirms the row (nothing written)
+ */
+async function retainForSuccession(input: {
+    readonly subscriptionId: string;
+    readonly paymentId: string;
+    readonly now: Date;
+}): Promise<boolean> {
+    const retained = await getDb().transaction(async (tx) => {
+        const [locked] = await tx
+            .select({ status: subscriptions.status, graceStartedAt: subscriptions.graceStartedAt })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, input.subscriptionId))
+            .limit(1)
+            .for('update');
+        if (locked?.status !== 'GRACE_PERIOD') return null;
+        if (!(await isLiveSuccessionPredecessor({ subscriptionId: input.subscriptionId, tx })))
+            return null;
+        const unpaidSince = locked.graceStartedAt ?? input.now;
+        const retention = await retainPaymentForSuccession({
+            subscriptionId: input.subscriptionId,
+            payment: { source: 'PAYMENT', id: input.paymentId },
+            unpaidSince,
+            now: input.now,
+            tx
+        });
+        return {
+            unpaidSince,
+            anchorMissing: locked.graceStartedAt === null,
+            alreadyRetained: retention.outcome === 'ALREADY_RETAINED'
+        };
+    });
+    if (!retained) return false;
+    if (retained.anchorMissing)
+        logger.warn(
+            { subscriptionId: input.subscriptionId, paymentId: input.paymentId },
+            'S19 retained a payment on a GRACE_PERIOD row without grace_started_at; the act instant is the anchor'
+        );
+    logger.info(
+        {
+            subscriptionId: input.subscriptionId,
+            paymentId: input.paymentId,
+            unpaidSince: retained.unpaidSince,
+            alreadyRetained: retained.alreadyRetained
+        },
+        'S19 retained the unpaid-period payment of a succession predecessor'
+    );
+    return true;
+}
+
+/**
  * S5 (AC:B7:6): a credited payment returns a `GRACE_PERIOD` card principal to
  * `ACTIVE` when the four conditions of `05` §3 hold, and turns the grace clock off.
  *
  * The payment must already be credited by P1 (I-5: separate transactions, P1
  * first). The predecessor of a succession in progress is left to S19 without a
- * mark (D-4); a duplicate of an already paid period is P1's `COBRO_DUPLICADO`
+ * mark (D-4), which records the payment as pending (HOS-1561 H4; `LOST_RACE` when
+ * the locked reread no longer confirms grace and succession); a duplicate of an already paid period is P1's `COBRO_DUPLICADO`
  * (D-3); conditions 2 and 3 open reason 7 `PAGO_TARDIO_RECHAZADO` (I-3).
  * The payment must cover THE period whose charge failed (condition 4 bound to the
  * grace's `grace_started_at`, see `paymentCoversUnpaidPeriod`): a replayed notice of
@@ -134,8 +196,15 @@ export async function exitGraceOnCreditedPayment(
         unpaidSince: subscription.graceStartedAt
     });
 
-    if ('retainedForS19' in verdict)
+    if ('retainedForS19' in verdict) {
+        const retained = await retainForSuccession({
+            subscriptionId: subscription.id,
+            paymentId: payment.id,
+            now: ports.clock.now()
+        });
+        if (!retained) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
         return { outcome: 'RETAINED_FOR_S19', subscriptionId: subscription.id };
+    }
     if (!verdict.ok) {
         const { failedCondition } = verdict;
         logger.warn(

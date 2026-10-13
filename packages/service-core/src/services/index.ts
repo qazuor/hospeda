@@ -121,6 +121,7 @@ export * from './billing/subscription/signup-declined-notice.js';
 export * from './billing/subscription/start-subscription.service.js';
 export * from './billing/subscription/start-succession.service.js';
 export * from './billing/subscription/subscription-billing-ports.js';
+export * from './billing/subscription/succession-retained-payment.js';
 export * from './billing/subscription/succession-target-guard.js';
 export * from './billing/subscription/suspend-for-arrears.service.js';
 export * from './contentModeration';
