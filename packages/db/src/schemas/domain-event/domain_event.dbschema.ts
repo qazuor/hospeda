@@ -24,6 +24,14 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  * - `trial.extended`: a running trial extended by the administrative action 11
  *   (origin `SUPER_ADMIN`, mandatory `reason`; HOS-1445, AC:V4:9). The
  *   redemption extensions are NOT here: they live in `canje_de_trial`.
+ * - `account.closed_on_request`: an account closed by the administrative
+ *   action 24 at its owner's request (`entity_type = 'user'`, the account is
+ *   the subject). The account is pseudonymized, so `changes` carries only FIELD
+ *   NAMES, never the old personal values (NUCLEO/08 §3 action 24; HOS-1494).
+ * - `partner_application.email_replaced`: the email of a partner application
+ *   replaced by the administrative action 24 (`entity_type =
+ *   'partner_application'`). The email is personal data, so `changes` carries
+ *   only field names (NUCLEO/08 §3 action 24; HOS-1494).
  */
 export const DOMAIN_EVENT_TYPES = [
     'email.undeliverable',
@@ -33,7 +41,9 @@ export const DOMAIN_EVENT_TYPES = [
     'listing.fix_request_opened',
     'listing.fix_request_closed',
     'trial.extended',
-    'reconciliation.mark_opened'
+    'reconciliation.mark_opened',
+    'account.closed_on_request',
+    'partner_application.email_replaced'
 ] as const;
 
 /** One type of the closed domain event catalog. */

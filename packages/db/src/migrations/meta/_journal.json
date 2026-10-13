@@ -1121,6 +1121,13 @@
       "when": 1791823585017,
       "tag": "0159_v8a2_purge_on_request_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 160,
+      "version": "7",
+      "when": 1791850576748,
+      "tag": "0160_v8a3_account_close_on_request",
+      "breakpoints": true
     }
   ]
 }
