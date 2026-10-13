@@ -17,6 +17,7 @@ import type {
     AccommodationImportStatusResponse,
     AccommodationOccupancy,
     AccommodationReviewListItem,
+    ConversationListingAvailability,
     DestinationReviewListItem,
     HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
@@ -31,6 +32,7 @@ import type {
     ReportFixedResponse,
     StartSubscriptionResponseSchema,
     SubscribeDestinationResponseSchema,
+    TrialSummaryResponse,
     UserBookmark,
     UserProtected,
     UserPublic,
@@ -702,6 +704,10 @@ export interface ConversationThreadResponse {
      * null when there are no older messages. Matches the API response shape;
      * mirrors OwnerConversationThreadResponse. */
     readonly nextCursor: string | null;
+    /** Whether the tourist can still write about the listing (HOS-1492, rows
+     * 28 and 35): `GONE` once it reached `PURGED`, `NOT_PUBLISHED` while it is
+     * not public (without saying why), otherwise `AVAILABLE`. */
+    readonly listingAvailability: ConversationListingAvailability;
 }
 
 /** Protected conversations API endpoints (require auth session) */
@@ -862,6 +868,9 @@ export interface OwnerConversationThreadResponse {
     readonly conversation: OwnerConversationDetail;
     readonly messages: readonly ConversationMessageItem[];
     readonly nextCursor: string | null;
+    /** Whether the owner can still write about the listing (HOS-1492, row 28):
+     * `GONE` once it reached `PURGED`, otherwise `AVAILABLE`. */
+    readonly listingAvailability: ConversationListingAvailability;
 }
 
 /** Protected owner conversations API endpoints (require auth + host role) */
@@ -2940,6 +2949,35 @@ export const publishApi = {
     }): Promise<ApiResult<ListingNoticesResponse>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/publish/listing-notices/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Reads the caller's accumulated trial days in one vertical and their origin
+     * (HOS-1492, row 4): `{ status: 'NONE' }` without a trial row, otherwise the
+     * status, the start and end instants, the total and the days from the plan,
+     * from promotions and granted by support. The surface only shows it.
+     *
+     * @param params.vertical - Which vertical to read.
+     * @param params.cookieHeader - Optional SSR cookie header.
+     * @returns The trial summary of the vertical.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.trialSummary({ vertical: 'accommodation', cookieHeader });
+     * if (result.ok && result.data.status !== 'NONE') console.log(result.data.totalDays);
+     * ```
+     */
+    trialSummary({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<TrialSummaryResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/trial-summary/${vertical}`,
             cookieHeader
         });
     },
