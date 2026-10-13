@@ -376,11 +376,21 @@ there never reveals whether the account exists.
 | System actor | **403** | `FORBIDDEN` | — |
 | Actor = subject (support closing its own account) | **403** | `FORBIDDEN` | — |
 | Target is a system account (`is_system_account = true`) | **403** | `FORBIDDEN` | — |
+| Target holds an effective permission the actor lacks (an ADMIN closing a SUPER_ADMIN) | **403** | `FORBIDDEN` | `SUBJECT_OUTRANKS_ACTOR` |
 | `POST` reason missing, blank or over 2000 characters | **400** | `VALIDATION_ERROR` | — |
 | Account does not exist, or is already closed (`deleted_at` set) | **404** | `NOT_FOUND` | — |
 | `canCharge` (`puedeCobrarle`) answers yes | **409** | `ALREADY_EXISTS` | `ACCOUNT_CAN_STILL_BE_CHARGED` |
 | A listing with `deleted_at IS NULL` is outside `PURGED` | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_LISTINGS` |
 | The live partner presence still holds content | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_PARTNER_PRESENCE` |
+
+`SUBJECT_OUTRANKS_ACTOR` (Coord-235) is decided inside the closure
+transaction, right after the account row is locked and before anything else is
+read or written: the subject's effective permissions (its roles'
+`role_permission` rows plus its per-user grants, minus its denies, as the actor
+middleware builds them) must all be held by the actor. No role is compared:
+support closes a peer or a less privileged account, never a more privileged
+one. It runs after the 404, so it never reveals more than existence, which the
+holder of the permission may already read.
 
 A 409 names the FIRST missing step of the manual closure, in its order (charge,
 then listings, then presence), and writes nothing, not even the audit event.

@@ -27,6 +27,11 @@ import {
     type AccountClosurePreconditions,
     selectAccountClosureRejection
 } from './account-closure-rejection';
+import {
+    permissionsActorLacks,
+    readSubjectEffectivePermissions,
+    SUBJECT_OUTRANKS_ACTOR
+} from './account-closure-subject-permissions';
 
 /**
  * The three listing verticals whose trial-machine lock action 24 takes, in this
@@ -57,7 +62,11 @@ interface LockedPreconditions extends AccountClosurePreconditions {
  * on the subject. Step 3 runs first, before any read, and derives `permitted`
  * only from this action's own permission (`isAdministrativeActionPermitted` with
  * `ACC_24`); a system actor, an actor without it, and an actor closing their own
- * account are refused with 403.
+ * account are refused with 403. Inside the transaction, once the account row is
+ * locked, a system account and a subject holding any effective permission the
+ * actor lacks (a SUPER_ADMIN, for an ADMIN) are refused with 403 too, without
+ * comparing roles (Coord-235): support closes peers and less privileged
+ * accounts only.
  *
  * Everything that decides is re-read and LOCKED inside the one transaction that
  * writes, in this order (H8, TOCTOU, Coord-182): the account row (`FOR UPDATE`),
@@ -104,7 +113,11 @@ export class AccountClosureService {
     }): Promise<AccountClosurePreview> {
         this.assertStep3(input);
         const read = await getDb().transaction(async (rawTx) =>
-            this.readLockedPreconditions({ tx: rawTx as DrizzleClient, userId: input.userId })
+            this.readLockedPreconditions({
+                tx: rawTx as DrizzleClient,
+                actor: input.actor,
+                userId: input.userId
+            })
         );
         return {
             userId: input.userId,
@@ -145,7 +158,7 @@ export class AccountClosureService {
 
         const written = await getDb().transaction(async (rawTx) => {
             const tx = rawTx as DrizzleClient;
-            const read = await this.readLockedPreconditions({ tx, userId });
+            const read = await this.readLockedPreconditions({ tx, actor, userId });
             const rejection = selectAccountClosureRejection(read).reason;
             if (rejection !== null) {
                 throw new ServiceError(
@@ -235,11 +248,14 @@ export class AccountClosureService {
 
     /**
      * The decision reads, in the order that closes the TOCTOU (H8): the account
-     * row, the three trial-machine locks, the listings, the presence, and only
-     * then `canCharge`, all inside the caller's transaction.
+     * row, the subject's effective permissions (refused with 403
+     * `SUBJECT_OUTRANKS_ACTOR` when it holds any the actor lacks, Coord-235), the
+     * three trial-machine locks, the listings, the presence, and only then
+     * `canCharge`, all inside the caller's transaction.
      */
     private async readLockedPreconditions(input: {
         readonly tx: DrizzleClient;
+        readonly actor: Actor;
         readonly userId: string;
     }): Promise<LockedPreconditions> {
         const { tx, userId } = input;
@@ -249,6 +265,19 @@ export class AccountClosureService {
         }
         if (account.isSystemAccount) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
+        }
+        const subject = await readSubjectEffectivePermissions({ tx, userId });
+        const outranked = permissionsActorLacks({
+            subjectPermissions: subject.permissions,
+            actorPermissions: input.actor.permissions
+        });
+        if (outranked.missing.length > 0) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Forbidden',
+                undefined,
+                SUBJECT_OUTRANKS_ACTOR
+            );
         }
         for (const vertical of LISTING_LOCK_VERTICALS) {
             await listingPublicationModel.lock({
