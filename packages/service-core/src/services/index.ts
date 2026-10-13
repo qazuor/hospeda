@@ -35,11 +35,8 @@ export * from './accommodation/accommodation.sync-featured-by-entitlement';
 // HookState types for service consumers
 export type {
     AccommodationHookState,
-    AccommodationPublishDeps,
     HostOnboardingResult,
-    PublishEligibility,
-    PublishTransactionContext,
-    StartLocalTrialResult
+    PublishEligibility
 } from './accommodation/accommodation.types';
 // HOS-1183: the publish/deny rule, stated once. These are values, so they do
 // not join the type-only block above. The `GET /publish-eligibility` route that

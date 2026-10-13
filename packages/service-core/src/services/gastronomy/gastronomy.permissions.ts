@@ -221,13 +221,13 @@ export function checkGastronomyCanEditFaqEntries(
  * Checks if the actor may view gastronomy listings (public read).
  *
  * For public/protected read paths, any actor is allowed to attempt to list;
- * the service layer enforces lifecycle+visibility filters on results.
+ * the service layer enforces the publication-status filter on results.
  * This is intentionally permissive — mirror accommodation's `checkCanList` pattern.
  *
  * @param _actor - The actor performing the action (currently unused).
  */
 export function checkGastronomyCanView(_actor: Actor): void {
-    // Public listings are viewable by all. The service enforces lifecycle/visibility.
+    // Public listings are viewable by all. The service enforces publication status.
     return;
 }
 

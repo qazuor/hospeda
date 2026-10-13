@@ -1,4 +1,4 @@
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { resolveAdministrativeAuthorization } from './administrative-authorization';
 
 /**
@@ -16,23 +16,26 @@ import { resolveAdministrativeAuthorization } from './administrative-authorizati
  * `CABIN` leaves a `countryhouse-...` URL that no longer matches the
  * accommodation's own type badge and filters). Name and type are evaluated
  * independently and either one changing is enough to consider regenerating;
- * the lifecycle/opt-in gate below applies identically regardless of which
+ * the publication/opt-in gate below applies identically regardless of which
  * one (or both) changed.
  *
- * `LifecycleStatusEnum` is what draws the published/unpublished line.
- * `DRAFT` is documented as "never published ... never having been
- * operational"; `INACTIVE` is "was active, currently paused" (its own
- * example being an accommodation paused for the season) and `ARCHIVED` is
- * retired-for-good. A paused or archived listing therefore HAS a public URL
- * that was indexed and shared, so it belongs on the same side as `ACTIVE`:
- * its address moves only if the owner asks for it.
+ * `PublicationStatusEnum` is what draws the published/unpublished line since
+ * V6.9b (HOS-1641), which retired `lifecycleState`. `DRAFT` is the listing
+ * being configured; every other state (`PUBLISHED`, `UNPUBLISHED_BY_BILLING`,
+ * `ARCHIVED`, `MODERATED`, `PURGED`) belongs to a listing that HAS been public,
+ * so its address moves only if the owner asks for it.
  *
- * Hence the gate is `!== DRAFT` rather than `=== ACTIVE`. The difference is
- * not cosmetic — under `=== ACTIVE`, renaming (or re-typing) a paused
- * listing moved its address without ever offering the choice this stage
- * exists to offer. An absent or unrecognized state falls on the published
- * side for the same reason: "cannot prove it was never published" has to
- * mean "leave the address alone".
+ * Hence the gate is `!== DRAFT` rather than `=== PUBLISHED`. Under
+ * `=== PUBLISHED`, renaming (or re-typing) a listing taken down by billing or
+ * moderation would move its address without ever offering the choice this
+ * stage exists to offer. An absent or unrecognized state falls on the
+ * published side for the same reason: "cannot prove it was never published"
+ * has to mean "leave the address alone".
+ *
+ * Known gap of the translation (V6.9b): an owner unpublish returns a listing
+ * from `PUBLISHED` to `DRAFT`, so a previously public `DRAFT` regenerates its
+ * slug on rename. The old `INACTIVE` told "paused" apart from "never
+ * published"; no publication state records "was ever published".
  *
  * There is deliberately no slug history and no redirect for a listing whose
  * slug moves — an unknown slug is a hard 404. That is exactly why the
@@ -41,7 +44,7 @@ import { resolveAdministrativeAuthorization } from './administrative-authorizati
  * without the owner's explicit `refreshSlugFromName` opt-in.
  */
 export function shouldRegenerateSlugOnListingChange(input: {
-    readonly currentLifecycleState?: string | null;
+    readonly currentPublicationStatus?: string | null;
     readonly currentName?: string | null;
     readonly nextName?: string | null;
     readonly currentType?: string | null;
@@ -80,7 +83,7 @@ export function shouldRegenerateSlugOnListingChange(input: {
 
     if (!nameChanged && !typeChanged) return false;
 
-    if (input.currentLifecycleState !== LifecycleStatusEnum.DRAFT) {
+    if (input.currentPublicationStatus !== PublicationStatusEnum.DRAFT) {
         return input.refreshSlugFromName === true;
     }
 

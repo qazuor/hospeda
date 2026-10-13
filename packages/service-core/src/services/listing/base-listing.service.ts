@@ -25,9 +25,7 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
-import type { ContentModerationChangeInput } from '@repo/schemas';
 import {
-    ContentModerationChangeInputSchema,
     DestinationTypeEnum,
     type PermissionEnum,
     RoleGrantReason,
@@ -52,7 +50,6 @@ import { withServiceTransaction } from '../../utils/transaction';
 import { grantRole } from '../user-role/user-role.service';
 import { syncListingAmenityJunction, syncListingFeatureJunction } from './listing.junction-sync';
 import {
-    checkCanModerateListing,
     hasListingPermission,
     VERTICAL_OWNER_ROLES,
     verticalPermission
@@ -120,8 +117,7 @@ export interface ListingEntity extends Record<string, unknown> {
     deletedAt?: Date | null;
     ownerId?: string | null;
     destinationId?: string | null;
-    visibility?: string | null;
-    lifecycleState?: string | null;
+    publicationStatus?: string | null;
     reviewsCount?: number | null;
     averageRating?: number | null;
     rating?: unknown | null;
@@ -412,110 +408,6 @@ export abstract class BaseListingService<
             amenityIds: amenityRows.items.map((row) => row.amenityId as string),
             featureIds: featureRows.items.map((row) => row.featureId as string)
         };
-    }
-
-    // -----------------------------------------------------------------------
-    // Listing moderation (HOS-686)
-    // -----------------------------------------------------------------------
-
-    /**
-     * Applies the platform's moderation verdict to one listing.
-     *
-     * Lives on the shared base so gastronomy and experience inherit ONE
-     * implementation (HOS-589 G-2) instead of carrying a copy each — the
-     * sharing layer accommodation never had.
-     *
-     * ## Why this exists
-     *
-     * Public reads already honour `moderationState === REJECTED` (a rejected
-     * listing is never exposed), but nothing in the system could WRITE that value: the owner
-     * write schemas strip `moderationState` on purpose, and no listing service
-     * exposed a moderate action. The branch was live and unreachable. This is
-     * the only writer, and it is the post-publication control that replaces the
-     * pre-publication admin gate.
-     *
-     * ## Why it does NOT go through `this.update()`
-     *
-     * `update()` runs `_canUpdate`, which is `checkCanEditOwnOrAll` —
-     * the vertical EDIT_ALL permission, or the owner holding its EDIT_OWN permission. Routing
-     * the verdict through it would AND the moderation authority with the edit
-     * authority: an account granted the vertical MODERATION_CHANGE permission and nothing
-     * else would be refused, and the new permission would be decorative. A
-     * listing's owner must never be able to clear their own rejection either.
-     * So the write goes through the model, exactly like every other `moderate()`
-     * in the repo.
-     *
-     * ## Why it schedules revalidation explicitly — the divergence that matters
-     *
-     * `AccommodationService.moderate` (`accommodation.service.ts:1979`) writes
-     * through `this.model.update()` too, but stops there. That bypasses
-     * `_afterUpdate`, which is where cache revalidation is scheduled — so
-     * moderating an accommodation does not purge the edge cache today.
-     *
-     * Copied faithfully, that would be fatal here rather than cosmetic:
-     * rejecting would mark the row, the reconciler would flip it to `PRIVATE`,
-     * and Cloudflare would keep serving the rejected listing off its destination
-     * page. Reactive moderation is the entire justification for removing the
-     * pre-publication gate, and it only holds if the takedown reaches the edge.
-     * Hence the explicit `_scheduleListingRevalidation` call below — the one
-     * place in HOS-589 where mirroring accommodation is the wrong instruction.
-     *
-     * The purge is scheduled with the row as it stands immediately AFTER the
-     * verdict, while it is still `ACTIVE` / `PUBLIC`: that is precisely the
-     * public footprint that has to be evicted. Waiting for the reconciler to
-     * flip visibility first would make `isListingPubliclyVisible` false
-     * and purge nothing.
-     *
-     * Accommodation's own missing purge is a pre-existing bug in another domain
-     * and is deliberately NOT fixed here (HOS-589 NG-3).
-     *
-     * @param input - The actor, the listing id, and the new moderation state.
-     * @param ctx - Optional service context for transaction propagation.
-     * @returns The updated listing, or a `ServiceError`.
-     */
-    public async moderate(
-        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
-        ctx?: ServiceContext
-    ): Promise<ServiceOutput<TEntity>> {
-        return this.runWithLoggingAndValidation({
-            methodName: `moderate(id=${input.id})`,
-            input: { actor: input.actor, moderationState: input.moderationState },
-            schema: ContentModerationChangeInputSchema,
-            ctx,
-            execute: async (validated, validatedActor, execCtx) => {
-                // `_revalidationEntityType` selects the listing's permission family.
-                checkCanModerateListing(validatedActor, this._revalidationEntityType);
-
-                const listing = await this.model.findById(input.id, execCtx?.tx);
-                if (!listing || listing.deletedAt) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `${this.entityName} ${input.id} not found`
-                    );
-                }
-
-                const patch = {
-                    moderationState: validated.moderationState,
-                    updatedById: validatedActor.id
-                    // TYPE-WORKAROUND: the generic base cannot narrow a two-key control patch to Partial<TEntity>; both keys exist on every listing table.
-                } as unknown as Partial<TEntity>;
-
-                const updated = await this.model.update({ id: input.id }, patch, execCtx?.tx);
-
-                if (!updated) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        `Failed to update ${this.entityName} moderationState`
-                    );
-                }
-
-                // AC-36. Not optional, not best-effort decoration: without this
-                // the rejected listing keeps being served from the edge.
-                await this._scheduleListingRevalidation(updated);
-
-                return updated;
-            }
-        });
     }
 
     // -----------------------------------------------------------------------
@@ -841,7 +733,10 @@ export abstract class BaseListingService<
             if (
                 current &&
                 shouldRegenerateSlugOnListingChange({
-                    currentLifecycleState: current.lifecycleState as string | null | undefined,
+                    currentPublicationStatus: current.publicationStatus as
+                        | string
+                        | null
+                        | undefined,
                     currentName: current.name as string | null | undefined,
                     nextName: typeof payload.name === 'string' ? payload.name : undefined,
                     slugWasProvided,
@@ -978,7 +873,7 @@ export abstract class BaseListingService<
      *
      * Mirrors the accommodation service's two established rules:
      *
-     * 1. **Only when publicly visible.** A DRAFT or PRIVATE listing has no
+     * 1. **Only when publicly visible.** A listing that is not PUBLISHED has no
      *    public footprint, so purging its (nonexistent) pages is pure waste and
      *    produced spurious 404s in production under HOS-203.
      * 2. **Never blocking.** Revalidation is a side effect of a content write;
@@ -1234,8 +1129,8 @@ export abstract class BaseListingService<
      * Owner-tier read backing the web self-service area (SPEC-249). Ownership IS
      * the gate: the query is hard-scoped to `ownerId = actor.id`, so an actor
      * only ever sees their own listings regardless of role, and across any
-     * visibility / lifecycle state (owners manage hidden and draft listings too,
-     * unlike the public `_executeSearch` which forces PUBLIC + ACTIVE).
+     * publication status (owners manage unpublished and draft listings too,
+     * unlike the public `_executeSearch` which forces PUBLISHED).
      *
      * A page size of 100 comfortably covers the admin-sells model, where an
      * owner holds a handful of listings; pagination can move to the route layer
@@ -1283,16 +1178,16 @@ export abstract class BaseListingService<
      * The counting twin of {@link listOwn}, and it exists for the same reason
      * that method does: **the public `count()` inherited from `BaseCrudRead`
      * cannot answer this question.** Both verticals' `_executeCount` mirror
-     * their `_executeSearch` and force `visibility: PUBLIC` +
-     * `lifecycleState: ACTIVE` (`gastronomy.service.ts` / `experience.service.ts`),
+     * their `_executeSearch` and force `publicationStatus: PUBLISHED`
+     * (`gastronomy.service.ts` / `experience.service.ts`),
      * because a public-search total has to match the page it paginates. A
      * listing created through the owner self-service route starts
-     * `PRIVATE`/`DRAFT` by construction (the owner self-service create routes D-3), so
+     * `DRAFT` by construction (the owner self-service create routes D-3), so
      * `count(actor, { ownerId })` reports ZERO for exactly the listings a quota
      * has to count — which is HOS-1247: three listings created on a plan of one,
      * every gate reading a count of zero and raising nothing.
      *
-     * Accommodation never had this hole: its `_executeCount` drops `activeOnly`
+     * Accommodation never had this hole: its `_executeCount` drops `publishedOnly`
      * when `params.ownerId === actor.id` (`accommodation.service.ts`), so its cap
      * always counted drafts. This method gives the two listing verticals the
      * same guarantee WITHOUT touching either vertical's public search/count
