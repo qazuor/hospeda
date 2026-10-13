@@ -386,3 +386,68 @@ is NOT enforced there is R3-style param validation.
 The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is what the action says before the person confirms (AC:B5:41). An empty or over-255 reference is normally a 400 from the request schema; `EXTERNAL_REFERENCE_INVALID` is the service's own check behind it.
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
+
+## Action 24 (V8a.3, HOS-1494)
+
+`GET` and `POST /api/v1/admin/users/{id}/close-on-request`: administrative
+action 24, close an account at its owner's request (ACC:24). Both share path and
+permission (`USER_CLOSE_ON_REQUEST`). Step 3 runs before any read, so a refusal
+there never reveals whether the account exists.
+
+| Situation | Status | `error.code` | `error.reason` |
+|---|---|---|---|
+| No session | **401** | `UNAUTHORIZED` | — |
+| Lacks `USER_CLOSE_ON_REQUEST` (also with `USER_DELETE` + `USER_HARD_DELETE`) | **403** | `FORBIDDEN` | — |
+| System actor | **403** | `FORBIDDEN` | — |
+| Actor = subject (support closing its own account) | **403** | `FORBIDDEN` | — |
+| Target is a system account (`is_system_account = true`) | **403** | `FORBIDDEN` | — |
+| Target holds an effective permission the actor lacks (an ADMIN closing a SUPER_ADMIN) | **403** | `FORBIDDEN` | `SUBJECT_OUTRANKS_ACTOR` |
+| `POST` reason missing, blank or over 2000 characters | **400** | `VALIDATION_ERROR` | — |
+| Account does not exist, or is already closed (`deleted_at` set) | **404** | `NOT_FOUND` | — |
+| `canCharge` (`puedeCobrarle`) answers yes | **409** | `ALREADY_EXISTS` | `ACCOUNT_CAN_STILL_BE_CHARGED` |
+| A listing with `deleted_at IS NULL` is outside `PURGED` | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_LISTINGS` |
+| The live partner presence still holds content | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_PARTNER_PRESENCE` |
+
+`SUBJECT_OUTRANKS_ACTOR` (Coord-235) is decided inside the closure
+transaction, right after the account row is locked and before anything else is
+read or written: the subject's effective permissions must all be held by the
+actor. They come from the SAME resolver the actor middleware uses,
+`resolveEffectivePermissions` in `src/middlewares/actor.ts` (Coord-240: a
+SUPER_ADMIN holds every permission; otherwise its roles' `role_permission` rows
+plus its per-user grants, minus its denies), read without caches and failing
+loudly. No role is compared:
+support closes a peer or a less privileged account, never a more privileged
+one. It runs after the 404, so it never reveals more than existence, which the
+holder of the permission may already read.
+
+A 409 names the FIRST missing step of the manual closure, in its order (charge,
+then listings, then presence), and writes nothing, not even the audit event.
+As everywhere in `createAdminRoute`, the body is validated before the route
+permission, so a `POST` without a valid body answers 400 before 403
+(previous to this PR, Coord-184).
+
+The code was proposed by this PR under owner letter BS; `GET` returns the three
+preconditions so the panel can say which manual step is missing.
+
+### Action 24 over a partner application made without an account (AC:V8a:12)
+
+`GET` and `POST /api/v1/admin/partner-applications/{id}/replace-email`: the
+same action 24, same permission (`USER_CLOSE_ON_REQUEST`), same step 3 with no
+account as subject. The subject is the applicant, identified by the
+application's mailbox, so `actor = subject` is decided by mailbox inside the
+transaction. The account preconditions are NOT evaluated (no `canCharge`, no
+listings, no presence).
+
+| Situation | Status | `error.code` | `error.reason` |
+|---|---|---|---|
+| No session | **401** | `UNAUTHORIZED` | — |
+| Lacks `USER_CLOSE_ON_REQUEST`, or system actor | **403** | `FORBIDDEN` | — |
+| `POST` reason missing, blank or over 2000 characters | **400** | `VALIDATION_ERROR` | — |
+| Application does not exist, or its mailbox was already replaced (`@pseudonym.invalid`) | **404** | `NOT_FOUND` | — |
+| Actor = subject: the admin's own mailbox is the application's (ignoring case) | **403** | `FORBIDDEN` | — |
+| A live account carries the mailbox and holds an effective permission the actor lacks | **403** | `FORBIDDEN` | `SUBJECT_OUTRANKS_ACTOR` |
+| `POST`: a live account (`deleted_at IS NULL`) carries the mailbox, ignoring case | **409** | `ALREADY_EXISTS` | `APPLICATION_HAS_ACCOUNT` |
+
+`APPLICATION_HAS_ACCOUNT` exists so this route is never a shortcut around
+`puedeCobrarle`: that mailbox is replaced by closing the account, with its
+preconditions. A refusal writes nothing, not even the audit event.

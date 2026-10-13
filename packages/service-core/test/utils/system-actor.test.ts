@@ -55,6 +55,29 @@ describe('TEST:V5:14 — la fábrica de actores de sistema', () => {
         expect(() => makeActor([permission])).toThrow(/ACC_23/);
     });
 
+    it('TEST:V8a:15 rejects the action 24 own permission user.closeOnRequest', () => {
+        expectDefinitionError(
+            () => makeActor([PermissionEnum.USER_CLOSE_ON_REQUEST]),
+            'ADMINISTRATIVE_PERMISSION',
+            PermissionEnum.USER_CLOSE_ON_REQUEST
+        );
+        expect(() => makeActor([PermissionEnum.USER_CLOSE_ON_REQUEST])).toThrow(
+            /administrative action ACC_24$/
+        );
+    });
+
+    it.each([
+        PermissionEnum.USER_DELETE,
+        PermissionEnum.USER_HARD_DELETE
+    ])('TEST:V8a:15 still rejects the retiring account permission %s as former ACC_24', (permission) => {
+        expectDefinitionError(
+            () => makeActor([permission]),
+            'ADMINISTRATIVE_PERMISSION',
+            permission
+        );
+        expect(() => makeActor([permission])).toThrow(/administrative action ACC_24$/);
+    });
+
     it('rejects the complete PermissionEnum with its explicit error', () => {
         const allPermissions = Object.values(PermissionEnum);
         expectDefinitionError(() => makeActor(allPermissions), 'ALL_PERMISSIONS');

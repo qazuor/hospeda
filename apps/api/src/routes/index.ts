@@ -130,6 +130,7 @@ import {
     protectedOwnerPromotionRoutes,
     publicOwnerPromotionRoutes
 } from './owner-promotion';
+import { adminPartnerApplicationRoutes } from './partner-application';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
     adminCreatePartnerMentionsRoute,
@@ -537,6 +538,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Users
         app.route('/api/v1/admin/users', adminUserRoutes);
+        // ACC:24 on an application made without an account (HOS-1494); V8b adds the applications panel here
+        app.route('/api/v1/admin/partner-applications', adminPartnerApplicationRoutes);
 
         // Core entities
         app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);

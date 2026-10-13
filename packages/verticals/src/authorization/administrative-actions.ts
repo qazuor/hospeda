@@ -75,8 +75,8 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         pendingOwnPermission: null
     },
     ACC_24: {
-        permissions: [PermissionEnum.USER_DELETE, PermissionEnum.USER_HARD_DELETE],
-        pendingOwnPermission: 'V8a (HOS-1494)'
+        permissions: [PermissionEnum.USER_CLOSE_ON_REQUEST],
+        pendingOwnPermission: null
     },
     ACC_25: {
         permissions: [PermissionEnum.PARTNER_MANAGE],
@@ -98,10 +98,11 @@ export const ADMINISTRATIVE_ACTION_PERMISSION_SET: ReadonlySet<PermissionEnum> =
 /**
  * Permissions that guarded an administrative action before it got its own
  * permission, mapped to the action they used to guard. They are still granted
- * to staff until V6.7 (HOS-1477) retires them, so they stay administrative:
- * a system actor must keep being refused them even though no action row lists
- * them any more. Retired by V6.7, HOS-1477 (action 23 moved to
- * `LISTING_PURGE_ON_REQUEST` in V8a.2, HOS-1493).
+ * to staff roles, so they stay administrative: a system actor must keep being
+ * refused them even though no action row lists them any more. Two actions
+ * left entries here: action 23 moved to `LISTING_PURGE_ON_REQUEST` (V8a.2,
+ * HOS-1493) and action 24 moved to `USER_CLOSE_ON_REQUEST` (V8a.3, HOS-1494).
+ * An entry leaves this list only once no role is granted its permission.
  */
 export const RETIRING_ADMINISTRATIVE_PERMISSIONS: readonly {
     readonly permission: PermissionEnum;
@@ -110,7 +111,9 @@ export const RETIRING_ADMINISTRATIVE_PERMISSIONS: readonly {
     { permission: PermissionEnum.ACCOMMODATION_DELETE_ANY, formerAction: 'ACC_23' },
     { permission: PermissionEnum.ACCOMMODATION_HARD_DELETE, formerAction: 'ACC_23' },
     { permission: PermissionEnum.GASTRONOMY_DELETE, formerAction: 'ACC_23' },
-    { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' }
+    { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
+    { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
+    { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' }
 ];
 
 /**

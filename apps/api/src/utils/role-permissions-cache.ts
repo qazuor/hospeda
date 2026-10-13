@@ -199,6 +199,25 @@ export async function getPermissionsForRoles(params: {
 }
 
 /**
+ * Reads the UNION of the permissions of every role in the set straight from the
+ * database: no cache, and a failed read THROWS instead of degrading to a partial
+ * set. For a decision that must never act on a stale or incomplete set (action 24
+ * reading its subject, Coord-240); the request path keeps
+ * {@link getPermissionsForRoles}.
+ *
+ * @param params.roles - Every role held. An empty array yields an empty set.
+ * @returns The distinct permissions granted by any of the roles.
+ * @throws When any role lookup fails.
+ */
+export async function readPermissionsForRolesUncached(params: {
+    roles: readonly RoleEnum[];
+}): Promise<PermissionEnum[]> {
+    const distinctRoles = Array.from(new Set(params.roles));
+    const perRole = await Promise.all(distinctRoles.map((role) => queryRolePermissions(role)));
+    return Array.from(new Set(perRole.flat()));
+}
+
+/**
  * Query role permissions from the database.
  */
 async function queryRolePermissions(role: RoleEnum): Promise<PermissionEnum[]> {

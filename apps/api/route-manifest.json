@@ -1295,6 +1295,14 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/partner-applications/:id/replace-email"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-applications/:id/replace-email"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/partners"
         },
         {
@@ -2024,6 +2032,14 @@
         {
             "method": "PUT",
             "path": "/api/v1/admin/users/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/users/:id/close-on-request"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/users/:id/close-on-request"
         },
         {
             "method": "GET",
