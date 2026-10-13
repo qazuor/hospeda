@@ -9,6 +9,7 @@ import { type CreditPaymentResult, creditPayment } from '../payment/credit-payme
 import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import { openReconciliationMark } from './open-reconciliation-mark.service.js';
+import { recordProviderCancellationDecided } from './provider-cancellation-decision.js';
 import type { ReconciliationMarkPayments } from './reconciliation-mark-payments.port.js';
 
 const logger = createLogger('receipt-tombstone');
@@ -108,6 +109,11 @@ export async function writeChargeTombstone(
         readonly authorizationId: string;
         readonly charge: Extract<UnknownChargeReading, { kind: 'CHARGE' }>;
         readonly correlationId: string;
+        /**
+         * When the tombstone is not a probe: the instant the decision to cancel is recorded with
+         * (AC:B11:6). Absent for a probe, which had no call and records nothing (AC:B11:4).
+         */
+        readonly cancellationDecidedAt?: Date;
     },
     ports: WriteChargeTombstonePorts
 ): Promise<WriteChargeTombstoneResult> {
@@ -152,6 +158,17 @@ export async function writeChargeTombstone(
                 },
                 { markPayments }
             );
+            if (input.cancellationDecidedAt) {
+                await recordProviderCancellationDecided({
+                    subscriptionId: tombstone.id,
+                    transition: 'RECEPTION_TOMBSTONE',
+                    decidedAt: input.cancellationDecidedAt,
+                    actor: { type: 'provider' },
+                    correlationId: input.correlationId,
+                    changes: [{ field: 'status', new: 'CANCELLED' }],
+                    tx
+                });
+            }
             return {
                 outcome: 'WRITTEN' as const,
                 subscriptionId: tombstone.id,

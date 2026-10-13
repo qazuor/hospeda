@@ -21,6 +21,7 @@ import {
     cancelOurAuthorization
 } from './cancel-our-authorization.js';
 import { openReconciliationMark } from './open-reconciliation-mark.service.js';
+import { recordProviderCancellationDecided } from './provider-cancellation-decision.js';
 import { readUnknownCharge, writeChargeTombstone } from './receipt-tombstone.service.js';
 import type {
     HangablePayment,
@@ -224,17 +225,18 @@ export async function handleUnknownAuthorization(
  * Sends the cancellation of a receipt tombstone's authorization in the same act
  * that wrote it (AC:B11:3), unless the id is a probe of the manifest (AC:B11:4).
  * The tombstone stays `CANCELLED` whatever happens; a call that did not apply is
- * retried by the sweep.
+ * retried by the sweep. `isProbe` is decided once, before the tombstone's
+ * transaction, and decides both the decision record and this call.
  */
 async function cancelTombstoneAuthorization(
-    input: { readonly subscriptionId: string; readonly authorizationId: string },
+    input: {
+        readonly subscriptionId: string;
+        readonly authorizationId: string;
+        readonly isProbe: boolean;
+    },
     ports: HandleUnknownAuthorizationPorts
 ): Promise<TombstoneCancellation> {
-    const { isProbe } = isProbeSubject({
-        id: input.authorizationId,
-        manifest: ports.probeManifest ?? PROBE_MANIFEST
-    });
-    if (isProbe) {
+    if (input.isProbe) {
         logger.info(
             { subscriptionId: input.subscriptionId, authorizationId: input.authorizationId },
             'Receipt tombstone of a manifest probe: its authorization is not cancelled'
@@ -256,6 +258,14 @@ async function createTombstone(
     input: HandleUnknownAuthorizationInput,
     ports: HandleUnknownAuthorizationPorts
 ): Promise<HandleUnknownAuthorizationResult> {
+    // One manifest lookup decides both things: whether the decision is recorded and whether
+    // the call goes out. A probe had no call, so it never enters the sweep's retry (AC:B11:4).
+    const { isProbe } = isProbeSubject({
+        id: input.authorizationId,
+        manifest: ports.probeManifest ?? PROBE_MANIFEST
+    });
+    // The tombstone has no transition: the 3-day retry clock starts when it is written (AC:B11:6).
+    const decidedAt = ports.clock.now();
     if (input.arrival.kind === 'CHARGE') {
         const charge = await readUnknownCharge(
             { authorizationId: input.authorizationId, chargeId: input.arrival.chargeId },
@@ -266,13 +276,18 @@ async function createTombstone(
                 {
                     authorizationId: input.authorizationId,
                     charge,
-                    correlationId: input.correlationId
+                    correlationId: input.correlationId,
+                    ...(isProbe ? {} : { cancellationDecidedAt: decidedAt })
                 },
                 ports
             );
             if (written.outcome === 'KNOWN') return written;
             const cancellation = await cancelTombstoneAuthorization(
-                { subscriptionId: written.subscriptionId, authorizationId: input.authorizationId },
+                {
+                    subscriptionId: written.subscriptionId,
+                    authorizationId: input.authorizationId,
+                    isProbe
+                },
                 ports
             );
             return {
@@ -311,6 +326,17 @@ async function createTombstone(
                 },
                 ports.markPayments
             );
+            if (!isProbe) {
+                await recordProviderCancellationDecided({
+                    subscriptionId: tombstone.id,
+                    transition: 'RECEPTION_TOMBSTONE',
+                    decidedAt,
+                    actor: { type: 'provider' },
+                    correlationId: input.correlationId,
+                    changes: [{ field: 'status', new: 'CANCELLED' }],
+                    tx
+                });
+            }
             return { ...result, tombstone: true as const };
         });
     } catch (error) {
@@ -332,7 +358,11 @@ async function createTombstone(
         );
     }
     const cancellation = await cancelTombstoneAuthorization(
-        { subscriptionId: created.subscriptionId, authorizationId: input.authorizationId },
+        {
+            subscriptionId: created.subscriptionId,
+            authorizationId: input.authorizationId,
+            isProbe
+        },
         ports
     );
     return { ...created, cancellation };
