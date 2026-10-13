@@ -359,6 +359,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
         // HOS-1540: action 14 (settle a charge or refund that happened outside our flow) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_SETTLE_EXTERNAL,
+        // HOS-1543: action 8 (cancel a subscription; with the revocation motive it runs S36) — SUPER_ADMIN-only.
+        PermissionEnum.BILLING_CANCEL_SUBSCRIPTION,
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
 

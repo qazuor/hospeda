@@ -876,6 +876,7 @@ export enum PermissionEnum {
     BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.
     BILLING_VIEW_OWN = 'billing.viewOwn', // Allows reading the account's own billing.
     BILLING_SETTLE_EXTERNAL = 'billing.settleExternal', // Allows settling a charge or a refund that already happened outside our flow (RF4 and the P1 settlement); NUCLEO/08 §3 action 14.
+    BILLING_CANCEL_SUBSCRIPTION = 'billing.cancelSubscription', // Allows cancelling a subscription with administrative action 8 (NUCLEO/08 §3); with the revocation motive it runs S36.
     TRIAL_EXTEND = 'trial.extend', // Allows extending another person's running trial past the ceiling with a mandatory reason (action 11, HOS-1445). SUPER_ADMIN-only.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).

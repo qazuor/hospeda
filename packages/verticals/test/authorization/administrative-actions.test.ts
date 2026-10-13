@@ -137,6 +137,37 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
+    it('HOS-1543 assigns ACC_8 only its own cancel-subscription permission (base of S36)', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_8).toEqual({
+            permissions: [PermissionEnum.BILLING_CANCEL_SUBSCRIPTION],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.BILLING_CANCEL_SUBSCRIPTION)
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.BILLING_CANCEL_SUBSCRIPTION)
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_8',
+                actorPermissions: [
+                    PermissionEnum.BILLING_SETTLE_EXTERNAL,
+                    PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+                    PermissionEnum.BILLING_SETTINGS_WRITE,
+                    PermissionEnum.PAYMENT_REFUND,
+                    PermissionEnum.REFUND_PROCESS
+                ]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_8',
+                actorPermissions: [PermissionEnum.BILLING_CANCEL_SUBSCRIPTION]
+            })
+        ).toBe(true);
+    });
+
     it('TEST:V8a:15 assigns ACC_24 only its own close-on-request permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_24).toEqual({
             permissions: [PermissionEnum.USER_CLOSE_ON_REQUEST],

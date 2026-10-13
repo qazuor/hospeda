@@ -387,6 +387,29 @@ The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 
+## Action 8 revocation rejections (B5, S36)
+
+`GET` and `POST /api/v1/admin/billing-subscription/{subscriptionId}/revocation` (ACC:8 with reason revocation, S36; HOS-1543) answer every typed rejection of `previewSubscriptionRevocation` and `revokeSubscription` with its `reason`. The preview rejects with the same reasons as the act and writes nothing. The mapping lives in `src/routes/billing-subscription/admin/revocation.ts` as an exhaustive `Record` over `REVOKE_SUBSCRIPTION_REJECTIONS`, so a new service reason without an entry breaks the typecheck.
+
+| `reason` | Status | `error.code` |
+|---|---|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `REVOCATION_NOT_PRINCIPAL` | 409 | `ALREADY_EXISTS` |
+| `REVOCATION_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+| `REVOCATION_PAYMENT_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `REVOCATION_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `PAYMENT_NOT_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `REVOCATION_NO_CREDITED_PAYMENT` | 422 | `VALIDATION_ERROR` |
+| `REVOCATION_WINDOW_CLOSED` | 422 | `VALIDATION_ERROR` |
+| `REVOCATION_AMOUNT_UNAVAILABLE` | 422 | `VALIDATION_ERROR` |
+| `REFUND_EXCEEDS_BALANCE` | 422 | `VALIDATION_ERROR` |
+| `REFUND_AMOUNT_INVALID` | 422 | `VALIDATION_ERROR` |
+
+A non-uuid `subscriptionId`, or a body without a uuid `expectedPaymentId`, with an extra key, or with an empty or over-2000 `note`, is a 400 from the request schema. `REVOCATION_PAYMENT_CHANGED` means the last credited payment is no longer the one the preview showed: the person confirms again. A second revocation of the same row is `REVOCATION_STATE_NOT_ALLOWED` (it is already `CANCELLED`); `REVOCATION_STATE_CHANGED` is a concurrent act that moved the row while this one held it. `REFUND_EXCEEDS_BALANCE` is a payment whose open or executed refunds already claim its whole balance: nothing is cancelled.
+
+The permission is the route's scope (`billing.cancelSubscription`); the subject, the system actor and `actor = subject` are decided inside the revocation transaction, so a 403 can come from either. The row is read before the subject, so a missing subscription answers 404 to an actor holding the permission, as in action 14.
+
 ## Action 24 (V8a.3, HOS-1494)
 
 `GET` and `POST /api/v1/admin/users/{id}/close-on-request`: administrative
