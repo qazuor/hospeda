@@ -175,6 +175,16 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 'lo ya pagado no se reembolsa',
                 'Mercado Pago'
             ]
+        },
+        {
+            // HOS-1545 AC:B5:27: the email A5 sends before cancelling an orphaned addon's charge.
+            template: 'billing.addon-cancelled',
+            payload: { subscriptionId },
+            expected: [
+                'Lo que este addon complementaba ya no está activo',
+                'No se te va a volver a cobrar',
+                'Mercado Pago'
+            ]
         }
     ])('renders $template through the production sender', async ({
         template,
