@@ -65,6 +65,7 @@ export * from './attraction/attraction.service';
 export * from './auditLog/index.js';
 export * from './billing/coverage/addon-sources.js';
 export * from './billing/coverage/billing-coverage.js';
+export * from './billing/coverage/can-charge.js';
 export * from './billing/coverage/coverage-notice-registry.js';
 export * from './billing/coverage/coverage-ports.js';
 export * from './billing/coverage/subscription-sources.js';
