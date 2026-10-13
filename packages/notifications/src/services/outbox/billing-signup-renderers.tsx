@@ -1,5 +1,7 @@
 import type { EmailOutboxRow } from '@repo/db';
 import {
+    ADDON_CANCELLED_SUBJECT,
+    AddonCancelled,
     ARREARS_SUSPENSION_SUBJECT,
     ArrearsSuspension,
     type ArrearsSuspensionOneTimeAddon,
@@ -52,6 +54,13 @@ function touristVipInheritedCancel(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de cancelación de Turista VIP');
     return { subject: TOURIST_VIP_INHERITED_CANCEL_SUBJECT, react: <TouristVipInheritedCancel /> };
+}
+
+function addonCancelled(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de cancelación del addon');
+    return { subject: ADDON_CANCELLED_SUBJECT, react: <AddonCancelled /> };
 }
 
 function incomplete(row: EmailOutboxRow) {
@@ -126,7 +135,8 @@ function arrearsSuspension(row: EmailOutboxRow) {
 /**
  * Renderers for the notices emitted by the subscription signup flow, plus the
  * arrears suspension notice of S6 (AC:B7:30) and the notice that precedes the
- * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31).
+ * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31), and the
+ * notice that precedes cancelling an orphaned addon's preapproval (A5, AC:B5:27).
  */
 export function createBillingSignupRenderers(_input: {
     readonly siteUrl: string;
@@ -136,6 +146,7 @@ export function createBillingSignupRenderers(_input: {
         'billing.before-cancel': ({ row }) => beforeCancel(row),
         'billing.signup-incomplete': ({ row }) => incomplete(row),
         'billing.arrears-suspension': ({ row }) => arrearsSuspension(row),
-        'billing.tourist-vip-inherited-cancel': ({ row }) => touristVipInheritedCancel(row)
+        'billing.tourist-vip-inherited-cancel': ({ row }) => touristVipInheritedCancel(row),
+        'billing.addon-cancelled': ({ row }) => addonCancelled(row)
     };
 }

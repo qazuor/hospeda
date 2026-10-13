@@ -184,12 +184,34 @@ describe('billing signup outbox renderers', () => {
         ).toThrow(TypeError);
     });
 
+    it('HOS-1545 AC:B5:27 — renders the orphaned addon cancellation: no further charge, no ids', async () => {
+        // Arrange
+        const template = 'billing.addon-cancelled';
+
+        // Act
+        const result = await renderers[template]!({
+            row: row({ template, payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+
+        // Assert
+        expect(result.subject).toBe('Cancelamos el cobro de tu addon');
+        expect(html).toContain(
+            'Lo que este addon complementaba ya no está activo, así que cancelamos su cobro.'
+        );
+        expect(html).toContain('No se te va a volver a cobrar.');
+        expect(html).toContain('Puede llegarte un correo de Mercado Pago avisando la cancelación.');
+        expect(html).not.toContain(subscriptionId);
+    });
+
     it.each([
         ['billing.signup-confirmed', { subscriptionId }],
         ['billing.before-cancel', {}],
         ['billing.signup-incomplete', { subscriptionId, vertical: 'accommodation' }],
         ['billing.tourist-vip-inherited-cancel', {}],
-        ['billing.tourist-vip-inherited-cancel', { subscriptionId: 42 }]
+        ['billing.tourist-vip-inherited-cancel', { subscriptionId: 42 }],
+        ['billing.addon-cancelled', {}],
+        ['billing.addon-cancelled', { subscriptionId: 42 }]
     ])('rejects invalid payloads for %s', (template, payload) => {
         expect(() => renderers[template]!({ row: row({ template, payload }) })).toThrow(TypeError);
     });
