@@ -440,7 +440,26 @@
         "usageUnlimited": "Unlimited",
         "usageWarning": "You're approaching the limit",
         "usageAtLimit": "Limit reached",
-        "usageOf": "{{current}} of {{max}}"
+        "usageOf": "{{current}} of {{max}}",
+        "trialSummary": {
+            "title": "Your free {{vertical}} trial",
+            "vertical": {
+                "accommodation": "accommodation",
+                "gastronomy": "gastronomy",
+                "experience": "experiences"
+            },
+            "total_one": "{{count}} trial day in total",
+            "total_other": "{{count}} trial days in total",
+            "origins": {
+                "base_one": "{{count}} from the plan",
+                "base_other": "{{count}} from the plan",
+                "promo_one": "{{count}} from promotions",
+                "promo_other": "{{count}} from promotions",
+                "support_one": "{{count}} granted by support",
+                "support_other": "{{count}} granted by support"
+            },
+            "dates": "From {{start}} to {{end}}"
+        }
     },
     "favorites": {
         "tabs": {
@@ -964,7 +983,11 @@
             "message": "Price alerts are available on Plus and VIP plans. Upgrade your plan to access this feature.",
             "cta": "View plans"
         },
-        "listLabel": "Your active price alerts"
+        "listLabel": "Your active price alerts",
+        "closedNotice": "This alert was closed because that listing no longer exists.",
+        "activeHeading": "Active alerts",
+        "closedHeading": "Closed alerts",
+        "closedListLabel": "Your closed price alerts"
     },
     "exclusiveDeals": {
         "loading": "Loading exclusive deals...",

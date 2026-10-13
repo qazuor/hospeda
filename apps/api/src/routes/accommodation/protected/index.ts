@@ -44,6 +44,7 @@ import { protectedRemoveMediaRoute } from './removeMedia';
 import { protectedRemoveOccupancyRoute } from './removeOccupancy';
 import { protectedReorderFaqsRoute } from './reorderFaqs';
 import { protectedReorderMediaRoute } from './reorderMedia';
+import { protectedAccommodationReportFixedRoute } from './reportFixed';
 import { protectedSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { protectedAccommodationSupportEditsRoute } from './supportEdits';
 import { protectedUnpublishAccommodationRoute } from './unpublish';
@@ -64,6 +65,7 @@ ownershipRoutes.route('/', protectedUnpublishAccommodationRoute);
 ownershipRoutes.route('/', protectedReactivateAccommodationRoute);
 ownershipRoutes.route('/', protectedPurgeAccommodationRoute);
 ownershipRoutes.route('/', protectedAccommodationSupportEditsRoute);
+ownershipRoutes.route('/', protectedAccommodationReportFixedRoute);
 // POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)
 ownershipRoutes.route('/', protectedPublishAccommodationRoute);
 

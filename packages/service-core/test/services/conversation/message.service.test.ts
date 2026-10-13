@@ -320,11 +320,11 @@ describe('MessageService', () => {
     });
 
     describe('TEST:V5:30 guest messages after publication changes', () => {
-        it('masks PURGED as an absent conversation for the guest, while the owner can reply', async () => {
+        it('masks a DRAFT listing as an absent conversation for the guest, while the owner can reply', async () => {
             const conversation = makeConversation();
             asMock(conversationModelMock.findById).mockResolvedValue(conversation);
             asMock(accommodationModelMock.findById).mockResolvedValue(
-                makeAccommodation({ publicationStatus: PublicationStatusEnum.PURGED })
+                makeAccommodation({ publicationStatus: PublicationStatusEnum.DRAFT })
             );
             const guest = await service.createMessage(ACTOR, {
                 conversationId: CONVERSATION_ID,
@@ -344,6 +344,53 @@ describe('MessageService', () => {
             });
             expect(owner.error).toBeUndefined();
             expect(messageModelMock.create).toHaveBeenCalledOnce();
+        });
+    });
+
+    describe('TEST:V8a:6 no new message about a PURGED listing (HOS-1492)', () => {
+        it('refuses the owner with ACCOMMODATION_DELETED', async () => {
+            // Arrange
+            asMock(conversationModelMock.findById).mockResolvedValue(makeConversation());
+            asMock(accommodationModelMock.findById).mockResolvedValue(
+                makeAccommodation({ publicationStatus: PublicationStatusEnum.PURGED })
+            );
+
+            // Act
+            const owner = await service.createMessage(ADMIN_ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.OWNER,
+                body: 'An owner reply'
+            });
+
+            // Assert
+            expect(owner.error).toMatchObject({
+                code: 'VALIDATION_ERROR',
+                reason: 'ACCOMMODATION_DELETED'
+            });
+            expect(messageModelMock.create).not.toHaveBeenCalled();
+            expect(conversationModelMock.update).not.toHaveBeenCalled();
+        });
+
+        it('refuses the guest with ACCOMMODATION_DELETED', async () => {
+            // Arrange
+            asMock(conversationModelMock.findById).mockResolvedValue(makeConversation());
+            asMock(accommodationModelMock.findById).mockResolvedValue(
+                makeAccommodation({ publicationStatus: PublicationStatusEnum.PURGED })
+            );
+
+            // Act
+            const guest = await service.createMessage(ACTOR, {
+                conversationId: CONVERSATION_ID,
+                senderType: MessageSenderTypeEnum.GUEST,
+                body: 'A guest message'
+            });
+
+            // Assert
+            expect(guest.error).toMatchObject({
+                code: 'VALIDATION_ERROR',
+                reason: 'ACCOMMODATION_DELETED'
+            });
+            expect(messageModelMock.create).not.toHaveBeenCalled();
         });
     });
 

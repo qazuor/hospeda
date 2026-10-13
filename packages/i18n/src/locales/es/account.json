@@ -440,7 +440,26 @@
         "usageUnlimited": "Ilimitado",
         "usageWarning": "Estás cerca del límite",
         "usageAtLimit": "Límite alcanzado",
-        "usageOf": "{{current}} de {{max}}"
+        "usageOf": "{{current}} de {{max}}",
+        "trialSummary": {
+            "title": "Tu prueba gratis de {{vertical}}",
+            "vertical": {
+                "accommodation": "alojamiento",
+                "gastronomy": "gastronomía",
+                "experience": "experiencias"
+            },
+            "total_one": "{{count}} día de prueba en total",
+            "total_other": "{{count}} días de prueba en total",
+            "origins": {
+                "base_one": "{{count}} del plan",
+                "base_other": "{{count}} del plan",
+                "promo_one": "{{count}} por promociones",
+                "promo_other": "{{count}} por promociones",
+                "support_one": "{{count}} regalado por soporte",
+                "support_other": "{{count}} regalados por soporte"
+            },
+            "dates": "Del {{start}} al {{end}}"
+        }
     },
     "favorites": {
         "tabs": {
@@ -964,7 +983,11 @@
             "message": "Las alertas de precio están disponibles en los planes Plus y VIP. Actualizá tu plan para acceder.",
             "cta": "Ver planes"
         },
-        "listLabel": "Tus alertas de precio activas"
+        "listLabel": "Tus alertas de precio activas",
+        "closedNotice": "Esta alerta se cerró porque esa ficha ya no existe.",
+        "activeHeading": "Alertas activas",
+        "closedHeading": "Alertas cerradas",
+        "closedListLabel": "Tus alertas de precio cerradas"
     },
     "exclusiveDeals": {
         "loading": "Cargando ofertas exclusivas...",

@@ -33,7 +33,7 @@ describe('TEST:V5:30 published-only conversations and reviews (DB)', () => {
     });
 
     it.skipIf(!dbAvailable)(
-        'creates on PUBLISHED, masks DRAFT, and keeps PURGED threads readable',
+        'creates on PUBLISHED, masks DRAFT, and keeps PURGED threads readable but closed to new messages',
         async () => {
             const db = getServiceTestDb();
             await withServiceTestTransaction(async (tx) => {
@@ -168,16 +168,20 @@ describe('TEST:V5:30 published-only conversations and reviews (DB)', () => {
                         senderType: MessageSenderTypeEnum.GUEST,
                         body: '¿Hay novedades?'
                     });
+                    // AC:V8a:5 (HOS-1492): a PURGED listing's thread is read-only for both sides.
                     expect(refused.error).toMatchObject({
-                        code: ServiceErrorCode.NOT_FOUND,
-                        reason: 'CONVERSATION_NOT_FOUND'
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        reason: 'ACCOMMODATION_DELETED'
                     });
                     const reply = await messages.createMessage(owner, {
                         conversationId: opened.data.conversationId,
                         senderType: MessageSenderTypeEnum.OWNER,
                         body: 'Sí, te respondo.'
                     });
-                    expect(reply.error).toBeUndefined();
+                    expect(reply.error).toMatchObject({
+                        code: ServiceErrorCode.VALIDATION_ERROR,
+                        reason: 'ACCOMMODATION_DELETED'
+                    });
                     const complete = await conversations.getThread(
                         tourist,
                         {
@@ -186,7 +190,8 @@ describe('TEST:V5:30 published-only conversations and reviews (DB)', () => {
                         },
                         []
                     );
-                    expect(complete.data?.messages).toHaveLength(2);
+                    expect(complete.error).toBeUndefined();
+                    expect(complete.data?.messages).toHaveLength(1);
                 } finally {
                     setDb(db);
                 }

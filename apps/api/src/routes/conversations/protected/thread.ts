@@ -15,7 +15,11 @@ import {
     ServiceErrorCode,
     ThreadQuerySchema
 } from '@repo/schemas';
-import { ConversationService, createSystemActor } from '@repo/service-core';
+import {
+    ConversationService,
+    createSystemActor,
+    resolveConversationListingAvailability
+} from '@repo/service-core';
 
 const accommodationModel = new AccommodationModel();
 const userModel = new UserModel();
@@ -185,8 +189,16 @@ router.get('/:id', async (c) => {
         const nextCursor =
             hasMore && messages.length > 0 ? (messages[0]?.createdAt?.toISOString() ?? null) : null;
 
+        // Whether the tourist can still write about this listing (HOS-1492,
+        // rows 28 and 35): the same question createMessage asks.
+        const listingAvailability = resolveConversationListingAvailability({
+            viewer: 'GUEST',
+            actorId: actor.id,
+            listing: accommodation
+        });
+
         return createResponse(
-            { conversation: enrichedConversation, messages, nextCursor },
+            { conversation: enrichedConversation, messages, nextCursor, listingAvailability },
             c,
             200,
             ProtectedThreadResponseSchema

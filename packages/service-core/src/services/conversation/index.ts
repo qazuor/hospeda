@@ -14,6 +14,7 @@ export type { GenerateTokenResult } from './access-token.service';
 export * from './access-token.service';
 export * from './conversation.permissions.js';
 export * from './conversation.service.js';
+export * from './listing-availability.js';
 export type { GetMessagesResult } from './message.service.js';
 export * from './message.service.js';
 export type { AdvanceScheduleResult } from './notification-schedule.service';

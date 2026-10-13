@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     AccessTokenSchema,
     GuestConversationResponseSchema,
+    GuestThreadResponseSchema,
     RequestAccessSchema,
     VerificationTokenPayloadSchema
 } from '../../../src/entities/conversation/conversation.access.schema.js';
@@ -210,5 +211,39 @@ describe('GuestConversationResponseSchema', () => {
             const result = GuestConversationResponseSchema.safeParse(rest);
             expect(result.success).toBe(false);
         });
+    });
+});
+
+// ============================================================================
+// GuestThreadResponseSchema — listing availability (HOS-1492)
+// ============================================================================
+
+describe('GuestThreadResponseSchema — listingAvailability (HOS-1492)', () => {
+    const thread = {
+        conversation: {
+            id: UUID_CONV,
+            status: 'PENDING_OWNER',
+            accommodationId: UUID_ACC,
+            lastReadAtByOwner: null,
+            createdAt: '2025-04-01T10:00:00.000Z',
+            accommodationName: 'Casa del Río',
+            accommodationSlug: 'casa-del-rio',
+            ownerName: 'Ana'
+        },
+        messages: [validMessage],
+        hasMore: false
+    };
+
+    it('TEST:V8a:6 keeps GONE for the anonymous guest', () => {
+        const result = GuestThreadResponseSchema.safeParse({
+            ...thread,
+            listingAvailability: 'GONE'
+        });
+        expect(result.success).toBe(true);
+        expect(result.success && result.data.listingAvailability).toBe('GONE');
+    });
+
+    it('rejects a payload without listingAvailability', () => {
+        expect(GuestThreadResponseSchema.safeParse(thread).success).toBe(false);
     });
 });

@@ -242,7 +242,19 @@
             "publishSubscriptionRequiredCta": "Ver planos",
             "priceOnRequest": "Preço a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
-            "publishMissingRequirementsCta": "Completar no editor"
+            "publishMissingRequirementsCta": "Completar no editor",
+            "subscribeToPublish": {
+                "title": "Assine para publicar",
+                "body": "O seu anúncio continua sem publicar. Para publicá-lo você precisa de uma assinatura de {{vertical}}.",
+                "vertical": {
+                    "accommodation": "hospedagem",
+                    "gastronomy": "gastronomia",
+                    "experience": "experiências"
+                }
+            },
+            "unpublishTrialNote": "A avaliação gratuita continua correndo: despublicar não para o relógio da avaliação.",
+            "unpublishRecurringNote_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado mesmo sem publicar, até você cancelá-lo.",
+            "unpublishRecurringNote_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo sem publicar, até você cancelá-los."
         },
         "editor": {
             "section": {
