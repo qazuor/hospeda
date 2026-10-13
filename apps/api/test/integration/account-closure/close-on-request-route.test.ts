@@ -50,8 +50,6 @@ const REASON = 'Juan pidió por correo que demos de baja su cuenta';
 const createdUsers: string[] = [];
 const createdListings: string[] = [];
 const createdPartners: string[] = [];
-/** `role_permission` rows this file had to add; removed after each test. */
-const addedRolePermissions: { role: RoleEnum; permission: PermissionEnum }[] = [];
 
 function path(userId: string): string {
     return `/api/v1/admin/users/${userId}/close-on-request`;
@@ -118,15 +116,6 @@ async function rolePermissions(role: RoleEnum): Promise<PermissionEnum[]> {
     return rows.rows.map((row) => String(row.permission) as PermissionEnum);
 }
 
-/** Makes sure `role` is granted `permission`, remembering a row this file added. */
-async function ensureRoleGrants(role: RoleEnum, permission: PermissionEnum): Promise<void> {
-    const inserted = await getDb().execute(
-        sql`INSERT INTO role_permission (role, permission) VALUES (${role}, ${permission})
-            ON CONFLICT DO NOTHING RETURNING role`
-    );
-    if (inserted.rows.length > 0) addedRolePermissions.push({ role, permission });
-}
-
 async function holdRole(userId: string, role: RoleEnum): Promise<void> {
     await getDb().execute(
         sql`INSERT INTO user_role (user_id, role) VALUES (${userId}::uuid, ${role})`
@@ -167,14 +156,10 @@ afterEach(async () => {
     for (const id of createdPartners.splice(0)) {
         await db.execute(sql`DELETE FROM partners WHERE id = ${id}::uuid`);
     }
-    for (const { role, permission } of addedRolePermissions.splice(0)) {
-        await db.execute(
-            sql`DELETE FROM role_permission WHERE role = ${role} AND permission = ${permission}`
-        );
-    }
     for (const id of createdUsers.splice(0)) {
         await db.execute(sql`DELETE FROM account WHERE user_id = ${id}::uuid`);
         await db.execute(sql`DELETE FROM user_role WHERE user_id = ${id}::uuid`);
+        await db.execute(sql`DELETE FROM user_permission WHERE user_id = ${id}::uuid`);
         await db.execute(sql`DELETE FROM users WHERE id = ${id}::uuid`);
     }
 });
@@ -342,8 +327,17 @@ describe('TEST:V8a:12 action 24 is refused while something can still charge, a l
     });
 
     it('answers 403 SUBJECT_OUTRANKS_ACTOR when an ADMIN targets a SUPER_ADMIN, and writes nothing', async () => {
-        // Arrange: the SUPER_ADMIN holds USER_UPDATE_ROLES through its role; support does not
-        await ensureRoleGrants(RoleEnum.SUPER_ADMIN, PermissionEnum.USER_UPDATE_ROLES);
+        // Arrange: support holds every `role_permission` row of SUPER_ADMIN, plus action 24.
+        // The role rows alone would let it through; the SUPER_ADMIN hat grants EVERY
+        // permission (the actor middleware's resolver), so the subject still outranks it.
+        const supportPermissions = [
+            ...new Set([
+                ...(await rolePermissions(RoleEnum.SUPER_ADMIN)),
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.USER_CLOSE_ON_REQUEST
+            ])
+        ];
+        expect(supportPermissions.length).toBeLessThan(Object.values(PermissionEnum).length);
         const superAdmin = await account();
         await holdRole(superAdmin, RoleEnum.SUPER_ADMIN);
         const { id: adminId } = await createOwner();
@@ -351,8 +345,18 @@ describe('TEST:V8a:12 action 24 is refused while something can still charge, a l
         const before = await footprint(superAdmin);
 
         // Act
-        const response = await call({ method: 'POST', userId: superAdmin, adminId });
-        const preview = await call({ method: 'GET', userId: superAdmin, adminId });
+        const response = await call({
+            method: 'POST',
+            userId: superAdmin,
+            adminId,
+            permissions: supportPermissions
+        });
+        const preview = await call({
+            method: 'GET',
+            userId: superAdmin,
+            adminId,
+            permissions: supportPermissions
+        });
 
         // Assert
         expect(response.status).toBe(403);
@@ -360,6 +364,21 @@ describe('TEST:V8a:12 action 24 is refused while something can still charge, a l
         expect(response.body.error?.reason).toBe('SUBJECT_OUTRANKS_ACTOR');
         expect(preview.status).toBe(403);
         expect(await footprint(superAdmin)).toEqual(before);
+    });
+
+    it('answers 403 SUBJECT_OUTRANKS_ACTOR for a per-user grant the actor lacks', async () => {
+        const subject = await account();
+        await getDb().execute(sql`INSERT INTO user_permission (user_id, permission, effect)
+            VALUES (${subject}::uuid, ${PermissionEnum.USER_UPDATE_ROLES}, 'grant')`);
+        const { id: adminId } = await createOwner();
+        createdUsers.push(adminId);
+        const before = await footprint(subject);
+
+        const response = await call({ method: 'POST', userId: subject, adminId });
+
+        expect(response.status).toBe(403);
+        expect(response.body.error?.reason).toBe('SUBJECT_OUTRANKS_ACTOR');
+        expect(await footprint(subject)).toEqual(before);
     });
 
     it('lets an ADMIN close a peer ADMIN and a SUPER_ADMIN close an ADMIN', async () => {

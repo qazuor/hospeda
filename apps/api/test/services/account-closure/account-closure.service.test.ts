@@ -64,6 +64,7 @@ vi.mock('../../../src/utils/listing-access/ports', () => ({
         throw new Error('the injected billing port must be used');
     }
 }));
+vi.mock('../../../src/middlewares/actor', () => ({ resolveEffectivePermissions: vi.fn() }));
 vi.mock(
     '../../../src/services/account-closure/account-closure-subject-permissions',
     async (importOriginal) => ({
