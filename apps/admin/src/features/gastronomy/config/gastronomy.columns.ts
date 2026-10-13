@@ -7,13 +7,11 @@
  */
 
 import { EditIcon } from '@repo/icons';
-import { GastronomyTypeEnum, PermissionEnum, PriceRangeEnum } from '@repo/schemas';
+import { GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { createElement, Fragment } from 'react';
-import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { useDeleteGastronomyMutation } from '../hooks/useGastronomyQuery';
 import type { GastronomyListItem } from './gastronomy.config';
 
 // ---------------------------------------------------------------------------
@@ -185,16 +183,7 @@ export const createGastronomyColumns = (
                         'aria-label': t('admin-entities.actions.edit')
                     } as never,
                     createElement(EditIcon, { size: 16 })
-                ),
-                createElement(DeleteRowButton, {
-                    entityId: row.id,
-                    entityName: row.name,
-                    entityLabel: t('admin-entities.entities.gastronomy.singular'),
-                    permission: PermissionEnum.GASTRONOMY_DELETE,
-                    useDeleteMutation: useDeleteGastronomyMutation,
-                    variant: 'icon',
-                    entityGender: 'f'
-                })
+                )
             )
     }
 ];

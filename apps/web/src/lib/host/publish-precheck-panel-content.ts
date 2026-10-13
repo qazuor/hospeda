@@ -103,8 +103,8 @@ export interface PrecheckPanelLinkAction {
 
 /**
  * The "Borrar borrador" action — rendered via the existing `DeleteButton`
- * island (soft-deletes the DRAFT, then reloads so the precheck re-derives
- * `create_direct` once quota is freed). Carries no `href`; the consumer
+ * island (runs PB12 on the DRAFT, which moves to `PURGED`, then reloads so the
+ * precheck re-derives its branch). Carries no `href`; the consumer
  * supplies the accommodation id separately.
  */
 export interface PrecheckPanelDeleteAction {

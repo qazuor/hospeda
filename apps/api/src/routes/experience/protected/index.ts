@@ -30,7 +30,6 @@ import {
 } from './certificates';
 import { protectedCreateExperienceListingRoute } from './create';
 import { protectedCreateExperienceReviewRoute } from './createReview';
-import { protectedDeleteExperienceDraftRoute } from './deleteDraft';
 import { protectedGetExperienceByIdRoute } from './getById';
 import { protectedGetExperienceMediaRoute } from './getMedia';
 import { protectedListMyExperienceRoute } from './listMine';
@@ -57,10 +56,6 @@ const app = createRouter();
 // POST / — Owner self-service create (HOS-166 §7.2). Root path, so it cannot
 // collide with any /{id}/... route.
 app.route('/', protectedCreateExperienceListingRoute);
-
-// DELETE /{id} — Owner discards one of their own DRAFTs (HOS-1156 AC-14).
-// Only DELETE registered on /{id} itself; the /{id}/... DELETEs are longer.
-app.route('/', protectedDeleteExperienceDraftRoute);
 
 // PUT /{id}/faqs/reorder — Must be before /{id}/faqs/{faqId} (PUT).
 app.route('/', protectedReorderExperienceFaqsRoute);

@@ -15,10 +15,8 @@ export {
     experienceHooks,
     useAssignExperienceOwnerMutation,
     useCreateExperienceMutation,
-    useDeleteExperienceMutation,
     useExperiencePendingReviewsQuery,
     useExperienceQuery,
     useModerateExperienceReviewMutation,
-    useRestoreExperienceMutation,
     useUpdateExperienceMutation
 } from './useExperienceQuery';

@@ -1201,9 +1201,11 @@ would otherwise re-derive wrongly:
 The per-vertical cap, the six-cell decision matrix and the delete-draft action
 are shared with the API: see `LIMIT_KEY_BY_PUBLISH_VERTICAL` (`@repo/billing`),
 `GET /api/v1/protected/publish/precheck/{vertical}` and
-`DELETE /api/v1/protected/{gastronomies,experiences}/{id}`. Accommodation keeps
-its own delete (`DELETE /protected/accommodations/{id}`), which already accepted
-its owner; `publishApi.deleteDraft` owns that branch so the island does not.
+`POST /api/v1/protected/{accommodations,gastronomies,experiences}/{id}/purge`.
+The owner's delete button runs PB12 on the three verticals (HOS-1477): the
+listing moves to `PURGED` and its content is erased for good. The old
+`DELETE /protected/{plural}/{id}` doors are retired; `publishApi.purge` is the
+only wrapper, so the island does not know the endpoint.
 
 ## Common Gotchas
 

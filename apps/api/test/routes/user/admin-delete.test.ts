@@ -1,9 +1,10 @@
 /**
- * Unit tests for admin user delete and hard delete routes (GAP-009).
+ * Unit tests for the admin user delete route (GAP-009).
  *
- * Verifies that both PII-critical operations (soft delete and permanent
- * hard delete) emit a USER_ADMIN_MUTATION audit log entry with the
- * correct actorId, targetUserId, and operation fields.
+ * Verifies that the PII-critical soft delete emits a USER_ADMIN_MUTATION
+ * audit log entry with the correct actorId, targetUserId, and operation
+ * fields. The permanent hard delete route was retired by V6.7 (HOS-1477,
+ * AC:V6:25).
  *
  * Pattern: mock `createAdminRoute` to capture the handler function directly,
  * then invoke it with a mock context. This avoids instantiating the full
@@ -30,10 +31,9 @@ const { capturedHandlers } = vi.hoisted(() => ({
     >()
 }));
 
-const { auditLogSpy, mockSoftDelete, mockHardDelete } = vi.hoisted(() => ({
+const { auditLogSpy, mockSoftDelete } = vi.hoisted(() => ({
     auditLogSpy: vi.fn(),
-    mockSoftDelete: vi.fn(),
-    mockHardDelete: vi.fn()
+    mockSoftDelete: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -74,8 +74,7 @@ vi.mock('../../../src/utils/actor', () => ({
 vi.mock('@repo/service-core', () => ({
     UserService: vi.fn(function () {
         return {
-            softDelete: mockSoftDelete,
-            hardDelete: mockHardDelete
+            softDelete: mockSoftDelete
         };
     }),
     ServiceError: class ServiceError extends Error {
@@ -111,7 +110,6 @@ import { AuditEventType } from '../../../src/utils/audit-logger';
 
 // Trigger module execution so createAdminRoute captures the handlers.
 await import('../../../src/routes/user/admin/delete');
-await import('../../../src/routes/user/admin/hardDelete');
 
 const mockGetActorFromContext = vi.mocked(getActorFromContext);
 
@@ -232,78 +230,6 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
             const entry = auditLogSpy.mock.calls[0]?.[0] as Record<string, unknown>;
             expect(entry.operation).toBe('soft_delete');
             expect(entry.operation).not.toBe('hard_delete');
-        });
-    });
-
-    // -------------------------------------------------------------------------
-    // Hard delete (DELETE /admin/users/{id}/hard)
-    // -------------------------------------------------------------------------
-
-    describe('adminHardDeleteUserRoute handler (hard delete)', () => {
-        it('should emit USER_ADMIN_MUTATION audit log with hard_delete operation on success', async () => {
-            // Arrange
-            mockHardDelete.mockResolvedValue({ data: { count: 1 }, error: undefined });
-            const handler = getHandler('/{id}/hard');
-            const ctx = buildMockContext() as unknown as Context;
-
-            // Act
-            await handler(ctx, { id: TARGET_USER_ID }, {});
-
-            // Assert
-            expect(auditLogSpy).toHaveBeenCalledOnce();
-            const entry = auditLogSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-            expect(entry).toMatchObject({
-                auditEvent: AuditEventType.USER_ADMIN_MUTATION,
-                actorId: ADMIN_ACTOR.id,
-                targetUserId: TARGET_USER_ID,
-                operation: 'hard_delete'
-            });
-        });
-
-        it('should NOT emit audit log when service returns an error', async () => {
-            // Arrange
-            mockHardDelete.mockResolvedValue({
-                data: undefined,
-                error: { code: 'NOT_FOUND', message: 'User not found' }
-            });
-            const handler = getHandler('/{id}/hard');
-            const ctx = buildMockContext() as unknown as Context;
-
-            // Act
-            await expect(handler(ctx, { id: TARGET_USER_ID }, {})).rejects.toThrow();
-
-            // Assert
-            expect(auditLogSpy).not.toHaveBeenCalled();
-        });
-
-        it('should capture the targetUserId from route params', async () => {
-            // Arrange
-            const specificId = 'specific-target-user-999';
-            mockHardDelete.mockResolvedValue({ data: { id: specificId }, error: undefined });
-            const handler = getHandler('/{id}/hard');
-            const ctx = buildMockContext() as unknown as Context;
-
-            // Act
-            await handler(ctx, { id: specificId }, {});
-
-            // Assert
-            const entry = auditLogSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-            expect(entry.targetUserId).toBe(specificId);
-        });
-
-        it('should use hard_delete (not soft_delete) as the operation field', async () => {
-            // Arrange
-            mockHardDelete.mockResolvedValue({ data: { count: 1 }, error: undefined });
-            const handler = getHandler('/{id}/hard');
-            const ctx = buildMockContext() as unknown as Context;
-
-            // Act
-            await handler(ctx, { id: TARGET_USER_ID }, {});
-
-            // Assert
-            const entry = auditLogSpy.mock.calls[0]?.[0] as Record<string, unknown>;
-            expect(entry.operation).toBe('hard_delete');
-            expect(entry.operation).not.toBe('soft_delete');
         });
     });
 

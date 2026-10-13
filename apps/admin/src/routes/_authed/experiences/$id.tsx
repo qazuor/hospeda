@@ -4,7 +4,8 @@
  *  - FAQs sub-tab (FaqManager, experiences entity type)
  *  - Reviews moderation sub-tab (pending reviews + approve/reject actions)
  *  - Assign-owner action (OwnerSelect + useAssignExperienceOwnerMutation)
- *  - Delete action
+ *  - Purge action at the owner's request (action 23, ListingPurgeOnRequestCard);
+ *    the panel has no other listing delete or restore (HOS-1477, AC:V6:25)
  *
  * Mirrors the gastronomy view page pattern (SPEC-240 T-028).
  */
@@ -12,7 +13,6 @@
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { FaqManager } from '@/components/faqs/FaqManager';
@@ -23,7 +23,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import {
     useAssignExperienceOwnerMutation,
-    useDeleteExperienceMutation,
     useExperiencePage,
     useExperiencePendingReviewsQuery,
     useModerateExperienceMutation,
@@ -231,16 +230,6 @@ function ExperienceViewPage() {
                     entityId={id}
                     entityName={experience?.name ?? id}
                     onPurged={() => navigate({ to: '/experiences' })}
-                />
-                <DeleteRowButton
-                    entityId={id}
-                    entityName={experience?.name ?? id}
-                    entityLabel={t('admin-entities.entities.experience.singular')}
-                    permission={PermissionEnum.EXPERIENCE_DELETE}
-                    useDeleteMutation={useDeleteExperienceMutation}
-                    variant="full"
-                    entityGender="f"
-                    onDeleted={() => navigate({ to: '/experiences' })}
                 />
             </div>
 

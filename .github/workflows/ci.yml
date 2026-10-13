@@ -354,6 +354,9 @@ jobs:
       # GUARD:G-R6-B (HOS-1476, AC:V6:15). Its own step, like every guard here.
       - name: Check the closed lists of listing.inactive_since (GUARD:G-R6-B)
         run: pnpm check:listing-clock
+      # AC:V6:25 (HOS-1477). Its own step, like every guard here.
+      - name: Check no listing delete or restore door outside PB12 and action 23 (AC:V6:25)
+        run: pnpm check:listing-delete-doors
       # GUARD:G15 (HOS-1510, AC:B1:9). Its own step, like every guard here. The fake
       # payment provider lies only from its closed list, each lie in one place and
       # each row whole (a); a test turns a lie off only by naming it and saying
