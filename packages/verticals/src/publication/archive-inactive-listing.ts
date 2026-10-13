@@ -1,5 +1,6 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import { PublicationStatusEnum } from '@repo/schemas';
+import { buildListingArchivedPayload, LISTING_ARCHIVED_TEMPLATE } from './archive-notices';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
 import type {
     PostCommitWarning,
@@ -114,6 +115,26 @@ export async function archiveInactiveListing(args: {
                 correlationId: args.correlationId,
                 deletionAnnouncedAt,
                 oldDeletionAnnouncedAt: listing.deletionAnnouncedAt
+            });
+            // AC:V6:28: the on-archive notice rides the same transaction as the transition.
+            const listingAddonCount = coverage.sources.filter(
+                (source) =>
+                    source.type === 'ADDON' &&
+                    source.scope === 'LISTING' &&
+                    source.target === listing.id
+            ).length;
+            await tx.enqueueListingNotice({
+                template: LISTING_ARCHIVED_TEMPLATE,
+                recipientUserId: args.ownerId,
+                payload: buildListingArchivedPayload({
+                    vertical: args.vertical,
+                    listingId: listing.id,
+                    transition,
+                    deletionAnnouncedAt,
+                    listingAddonCount
+                }),
+                correlationId: args.correlationId,
+                occurrenceKey: `listing-archived:${listing.id}`
             });
             return {
                 archived: true,
