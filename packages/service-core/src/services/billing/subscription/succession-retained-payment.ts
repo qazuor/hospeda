@@ -73,13 +73,16 @@ export interface RetainPaymentForSuccessionResult {
  * with `FOR UPDATE`. Before the savepoint it also locks the PAYMENT `FOR UPDATE`
  * (HOS-1676, AC:1676:5; Coord-305/316): the refund gate of GUARD:G-R1-D
  * (`assertRetainedPaymentRefundable`, run by RF1/RF4 after `lockRefundSource`)
- * locks the payment, not the subscription, so without this lock an RF1 could read
- * "no retention", this retention commit, and the RF1 commit its refund on a
- * retained payment. With it the two serialize on the payment: if S19 locks first,
- * the RF1 waits for this commit and its gate rejects; if the RF1 locks first, S19
- * waits and then retains anyway (H-13 A: a refund that is not `FAILED` is logged
- * with `warn`; the refundable balance keeps a later branch from returning it
- * twice). Lock order: subscription → payment, the same as S36; RF1/RF4 take only
+ * locks the payment, not the subscription. The two serialize on the payment: if
+ * S19 locks first, the RF1 waits for this commit and its gate rejects; if the RF1
+ * locks first, S19 waits and then retains anyway (H-13 A: a refund that is not
+ * `FAILED` is logged with `warn`; the refundable balance keeps a later branch from
+ * returning it twice). Measured (TEST:1676:5, mutation 4): the retention's foreign
+ * key to `payment` already takes `FOR KEY SHARE` on the INSERT, which conflicts with
+ * the gate's `FOR UPDATE`, so the serialization does not depend on this lock alone;
+ * what this lock adds is an explicit order that does not rest on the foreign key,
+ * taken BEFORE the refund read below, so the H-13 A read sees a refund the RF1 just
+ * committed. Lock order: subscription → payment, the same as S36; RF1/RF4 take only
  * the payment. A missing payment throws (fails closed).
  *
  * The insert runs in a SAVEPOINT so that the partial unique
