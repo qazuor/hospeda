@@ -362,6 +362,31 @@ is NOT enforced there is R3-style param validation.
 
 `PLAN_NOT_FOR_SALE` is 422; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. The new rejection is 409 because the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
 
+## Action 14 rejections (B5.3)
+
+`POST /api/v1/admin/billing-refunds/external` (ACC:14, RF4) answers every typed rejection of `settleExternalRefund` with its `reason`. The mapping lives in `src/routes/billing-refund/admin/settle-external.ts` as an exhaustive `Record` over `SETTLE_EXTERNAL_REFUND_REJECTIONS`, so a new service reason without an entry breaks the typecheck.
+
+| `reason` | Status | `error.code` |
+|---|---|---|
+| `REFUND_AMOUNT_INVALID` | 422 | `VALIDATION_ERROR` |
+| `EXTERNAL_REFERENCE_INVALID` | 422 | `VALIDATION_ERROR` |
+| `REFUND_EXCEEDS_BALANCE` | 422 | `VALIDATION_ERROR` |
+| `MANUAL_PAYMENT_SCOPE_REQUIRED` | 422 | `VALIDATION_ERROR` |
+| `MANUAL_PAYMENT_SCOPE_NOT_ALLOWED` | 422 | `VALIDATION_ERROR` |
+| `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `PAYMENT_NOT_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `REQUESTED_AMOUNT_MISMATCH` | 409 | `ALREADY_EXISTS` |
+| `OPEN_REQUESTS_AMBIGUOUS` | 409 | `ALREADY_EXISTS` |
+| `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `EXTERNAL_REFERENCE_ALREADY_SETTLED` | 409 | `ALREADY_EXISTS` |
+
+The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is what the action says before the person confirms (AC:B5:41). An empty or over-255 reference is normally a 400 from the request schema; `EXTERNAL_REFERENCE_INVALID` is the service's own check behind it.
+
+The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
+
 ## Action 24 (V8a.3, HOS-1494)
 
 `GET` and `POST /api/v1/admin/users/{id}/close-on-request`: administrative

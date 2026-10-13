@@ -1,5 +1,5 @@
 {
-  "id": "ffc2ae50-4a86-400f-ab7d-bcebdbec2591",
+  "id": "04128bff-1d77-469b-8d09-aab874ebf6a3",
   "prevId": "e1a43f0e-23cb-436e-b728-a292e54a554f",
   "version": "7",
   "dialect": "postgresql",
@@ -8196,7 +8196,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -30511,6 +30511,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "external_channel": {
+          "name": "external_channel",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": false
+        },
         "external_ref": {
           "name": "external_ref",
           "type": "text",
@@ -30539,7 +30545,24 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "uq_refund_provider_panel_reference": {
+          "name": "uq_refund_provider_panel_reference",
+          "columns": [
+            {
+              "expression": "external_ref",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"refund\".\"external_channel\" = 'PROVIDER_PANEL'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "refund_payment_id_payment_id_fk": {
           "name": "refund_payment_id_payment_id_fk",
@@ -30625,6 +30648,10 @@
         "ck_refund_version": {
           "name": "ck_refund_version",
           "value": "\"refund\".\"version\" >= 1"
+        },
+        "ck_refund_external_channel": {
+          "name": "ck_refund_external_channel",
+          "value": "\"refund\".\"external_channel\" IS NULL OR (\"refund\".\"executed_via\" IS NOT DISTINCT FROM 'EXTERNAL' AND \"refund\".\"external_channel\" IN ('BANK_TRANSFER', 'PROVIDER_PANEL'))"
         }
       },
       "isRLSEnabled": false
@@ -32460,9 +32487,9 @@
         "listing.foreignContent.edit",
         "listing.moderate",
         "listing.purgeOnRequest",
-        "user.closeOnRequest",
         "billing.subscription.inspect",
         "billing.viewOwn",
+        "billing.settleExternal",
         "trial.extend",
         "user.update.self",
         "ai.settings.manage",

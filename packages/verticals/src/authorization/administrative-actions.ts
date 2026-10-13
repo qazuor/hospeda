@@ -56,7 +56,7 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
     ACC_11: { permissions: [], pendingOwnPermission: 'V4.3 (HOS-1445)' },
     ACC_12: { permissions: [PermissionEnum.LISTING_MODERATE], pendingOwnPermission: null },
     ACC_13: { permissions: [], pendingOwnPermission: 'B6' },
-    ACC_14: { permissions: [], pendingOwnPermission: 'B5 (HOS-1540)' },
+    ACC_14: { permissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL], pendingOwnPermission: null },
     ACC_15: {
         permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT],
         pendingOwnPermission: null

@@ -55,6 +55,7 @@ import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { publicAuthorRoutes } from './author/public/index.js';
 import { adminBillingDeadlineRoutes } from './billing-deadlines/admin/index.js';
+import { adminBillingRefundRoutes } from './billing-refund/admin/index.js';
 import { adminBillingSubscriptionRoutes } from './billing-subscription/admin/inspect.js';
 import {
     protectedBillingSubscriptionReadRoutes,
@@ -663,6 +664,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);
+        app.route('/api/v1/admin/billing-refunds', adminBillingRefundRoutes);
         app.route('/api/v1/admin/trials', adminTrialRoutes);
         app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
 

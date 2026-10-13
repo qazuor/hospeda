@@ -2,6 +2,8 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import { touristVipModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import { VerticalEnum } from '@repo/schemas';
+import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import type { BeforeCancelNotice } from './start-subscription.service';
 
 const logger = createLogger('cancel-inherited-tourist-vip');
@@ -17,6 +19,8 @@ export interface CancelInheritedTouristVipPorts {
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly touristVipInheritance: TouristVipInheritancePort;
+    /** Receives the post-commit `REMOVED` tourist notice (B4.2); defaults to the unwired logger. */
+    readonly coverageNotices?: CoverageNotices;
 }
 
 /** Aggregate outcome of a cancellation clause or bounded retry sweep. */
@@ -38,67 +42,67 @@ export async function cancelInheritedTouristVips(
     let deferred = 0;
     let skipped = 0;
     const rows = await touristVipModel.findCancellableRows({ userId: input.userId });
+    const notices = ports.coverageNotices ?? unwiredCoverageNotices;
     for (const row of rows) {
         const { subscription, providerLink } = row;
+        let closed: boolean;
         try {
-            if (!providerLink) {
-                if (
-                    await touristVipModel.closeCancelledVip({
+            if (providerLink) {
+                const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
+                actStartInstant({ act });
+                const read = await ports.provider.readAuthorization({
+                    authorizationId: providerLink.providerId
+                });
+                const { snapshot } = assertFreshForAct({ read, act });
+                if (snapshot.status !== 'cancelled') {
+                    const notice = await ports.beforeCancelNotice.beforeCancel({
                         subscriptionId: subscription.id,
-                        now: ports.clock.now()
-                    })
-                )
-                    cancelled++;
-                else skipped++;
-                continue;
+                        userId: input.userId,
+                        kind: 'TOURIST_VIP_INHERITED'
+                    });
+                    if (notice === 'NOT_YET_SENT') {
+                        deferred++;
+                        continue;
+                    }
+                    if (notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED') {
+                        logger.warn(
+                            { subscriptionId: subscription.id, notice },
+                            'Inherited Tourist VIP notice is not deliverable'
+                        );
+                    }
+                    await ports.provider.cancel({ authorizationId: providerLink.providerId });
+                }
             }
-            const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
-            actStartInstant({ act });
-            const read = await ports.provider.readAuthorization({
-                authorizationId: providerLink.providerId
-            });
-            const { snapshot } = assertFreshForAct({ read, act });
-            if (snapshot.status === 'cancelled') {
-                if (
-                    await touristVipModel.closeCancelledVip({
-                        subscriptionId: subscription.id,
-                        now: ports.clock.now()
-                    })
-                )
-                    cancelled++;
-                else skipped++;
-                continue;
-            }
-            const notice = await ports.beforeCancelNotice.beforeCancel({
+            closed = await touristVipModel.closeCancelledVip({
                 subscriptionId: subscription.id,
-                userId: input.userId,
-                kind: 'TOURIST_VIP_INHERITED'
+                now: ports.clock.now()
             });
-            if (notice === 'NOT_YET_SENT') {
-                deferred++;
-                continue;
-            }
-            if (notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED') {
-                logger.warn(
-                    { subscriptionId: subscription.id, notice },
-                    'Inherited Tourist VIP notice is not deliverable'
-                );
-            }
-            await ports.provider.cancel({ authorizationId: providerLink.providerId });
-            if (
-                await touristVipModel.closeCancelledVip({
-                    subscriptionId: subscription.id,
-                    now: ports.clock.now()
-                })
-            )
-                cancelled++;
-            else skipped++;
         } catch (error) {
             logger.error(
                 { subscriptionId: subscription.id, error },
                 'Inherited Tourist VIP could not be cancelled'
             );
             deferred++;
+            continue;
+        }
+        if (!closed) {
+            skipped++;
+            continue;
+        }
+        cancelled++;
+        // closeCancelledVip committed on its own: the tourist source is gone (I-5).
+        try {
+            await notices.emitCoverageChanged({
+                userId: input.userId,
+                vertical: VerticalEnum.TOURIST,
+                sourceType: 'SUBSCRIPTION',
+                change: 'REMOVED'
+            });
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, error },
+                'Coverage changed notice failed after Tourist VIP cancellation commit'
+            );
         }
     }
     return { cancelled, deferred, skipped };

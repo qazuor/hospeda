@@ -1,7 +1,7 @@
 /**
  * @fileoverview HOS-1494 grant for administrative action 24 (close another
  * person's account at their request, with a reason).
- * Run `db:migrate` (0160) before this migration or the new enum value fails
+ * Run `db:migrate` (0161) before this migration or the new enum value fails
  * with `invalid input value for enum permission_enum`.
  */
 import { rolePermission } from '@repo/db';
@@ -10,7 +10,7 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 /** Required additive migration metadata. */
 export const meta = {
-    name: '0122-hos1494-close-on-request-permission',
+    name: '0123-hos1494-close-on-request-permission',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
@@ -18,7 +18,7 @@ export const meta = {
 /** Roles allowed to close an account at its owner's request. */
 export const STAFF_ROLES: readonly RoleEnum[] = [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN];
 
-/** Exact role grants added after structural migration 0160. */
+/** Exact role grants added after structural migration 0161. */
 export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = STAFF_ROLES.map(
     (role) => ({ role, permission: PermissionEnum.USER_CLOSE_ON_REQUEST })
 );

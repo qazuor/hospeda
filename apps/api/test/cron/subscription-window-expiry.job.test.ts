@@ -19,6 +19,7 @@ vi.mock('../../src/utils/payment-provider.js', () => ({ getPaymentProvider: () =
 import { subscriptionWindowExpiryJob } from '../../src/cron/jobs/subscription-window-expiry.job';
 import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
 import { touristVipInheritance } from '../../src/routes/billing-subscription/tourist-vip-inheritance';
+import { getCoverageNotices } from '../../src/utils/listing-access/coverage-notices';
 
 const context = (dryRun = false): CronJobContext => ({
     logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -53,14 +54,19 @@ describe('subscription-window-expiry cron', () => {
             provider: mockProvider,
             clock: mockClock,
             beforeCancelNotice,
-            touristVipInheritance
+            touristVipInheritance,
+            coverageNotices: getCoverageNotices()
         });
         expect(mockSweep).toHaveBeenCalledWith(100, {
             provider: mockProvider,
             clock: mockClock,
             beforeCancelNotice,
-            touristVipInheritance
+            touristVipInheritance,
+            coverageNotices: getCoverageNotices()
         });
+        // HOS-1533: S2 and the VIP closure notify the ONE process-wide registry (identity, not shape).
+        expect(mockExpire.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
+        expect(mockSweep.mock.calls[0]?.[1].coverageNotices).toBe(getCoverageNotices());
         expect(result).toMatchObject({
             success: true,
             processed: 5,

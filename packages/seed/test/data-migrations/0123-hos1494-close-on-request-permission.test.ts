@@ -1,7 +1,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0122-hos1494-close-on-request-permission.js';
+import * as migration from '../../src/data-migrations/0123-hos1494-close-on-request-permission.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -26,7 +26,7 @@ function buildCtx(inserted: unknown[]): { ctx: SeedMigrationCtx; values: () => u
 describe('TEST:V8a:15 HOS-1494 account close on request seed migration', () => {
     it('is required, additive, and grants the baseline permission to both staff roles', () => {
         expect(migration.meta).toEqual({
-            name: '0122-hos1494-close-on-request-permission',
+            name: '0123-hos1494-close-on-request-permission',
             group: 'required',
             destructive: false
         });
