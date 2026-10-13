@@ -24,6 +24,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { createBillingCanCharge } from '../../../src/services/billing/coverage/can-charge.js';
 import { getCurrentBillingDeadlines } from '../../../src/services/billing/deadlines/billing-deadlines.service.js';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
+import { createProviderNoticeMirrorDelegates } from '../../../src/services/billing/notice/provider-notice-delegates.js';
 import { declineFirstCharge } from '../../../src/services/billing/subscription/decline-first-charge.service.js';
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
@@ -483,5 +484,101 @@ describe('TEST:B4:5 a provider cancellation after a rejection counts for the 16t
             pastDeadline: { canCharge: false }
         });
         expect(await cancelledSeenAt(account.subscriptionId)).toEqual(T);
+    });
+});
+
+/**
+ * Cancels the authorization at the fake and runs the REAL notice handler with the REAL mirror
+ * delegates (HOS-1676) on that notice; returns the instant of its re-read.
+ */
+async function providerCancelsThroughHandler(input: {
+    readonly clock: TestClock;
+    readonly account: Awaited<ReturnType<typeof signup>>;
+}): Promise<Date> {
+    const { clock, account } = input;
+    await account.provider.cancel({ authorizationId: account.authorizationId });
+    let delivery: Parameters<FakePaymentProvider['decodeNotice']>[0] | undefined;
+    for (const candidate of account.provider.takeDeliveries().deliveries)
+        if ((await account.provider.decodeNotice(candidate)).resourceKind === 'authorization')
+            delivery = candidate;
+    if (!delivery) throw new Error('missing authorization notice');
+    const readAt = clock.now();
+    const ports = {
+        provider: account.provider,
+        clock,
+        beforeCancelNotice: { beforeCancel: async () => 'SENT' as const }
+    };
+    const result = await processProviderNotice(
+        { channel: 'WEBHOOKS', delivery },
+        {
+            ...ports,
+            payments: { hasCreditedPayment: async () => true },
+            delegates: createProviderNoticeMirrorDelegates(ports),
+            cancellationSeen: providerLinkCancellationSeen
+        }
+    );
+    expect(result.ack).toBe('OK');
+    return readAt;
+}
+
+describe('TEST:1676:2 the mirror CANCELLED after a rejection counts for the 16th deadline (AC:1676:2)', () => {
+    it('CANCELLED_ON_GRACE by the real delegate: yes at the column and on day 6, no from 7 days on', async () => {
+        // Arrange
+        const clock = adjustableClock();
+        const account = await signup(clock);
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({
+                status: 'GRACE_PERIOD',
+                graceStartedAt: new Date('2026-09-28T00:00:00.000Z'),
+                graceEndsAt: new Date('2026-10-08T00:00:00.000Z')
+            })
+            .where(eq(subscriptions.id, account.subscriptionId));
+        clock.advance(ONE_HOUR);
+
+        // Act
+        const readAt = await providerCancelsThroughHandler({ clock, account });
+        const ask = (at: Date) =>
+            canChargeAt(frozenClock(at)).canCharge({ userId: account.userId });
+        const answers = {
+            seen: await ask(readAt),
+            day6: await ask(new Date(readAt.getTime() + 6 * DAY_MS)),
+            day7: await ask(new Date(readAt.getTime() + 7 * DAY_MS))
+        };
+
+        // Assert
+        const [row] = await getServiceTestDb()
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, account.subscriptionId));
+        expect(row?.status).toBe('CANCELLED');
+        expect(await cancelledSeenAt(account.subscriptionId)).toEqual(readAt);
+        expect(answers).toEqual({
+            seen: { canCharge: true },
+            day6: { canCharge: true },
+            day7: { canCharge: false }
+        });
+    });
+
+    it('a CANCELLED from the PROVIDER_CANCEL branch (ACTIVE, no event) answers no at once', async () => {
+        // Arrange
+        const clock = adjustableClock();
+        const account = await signup(clock);
+        clock.advance(ONE_HOUR);
+
+        // Act
+        const readAt = await providerCancelsThroughHandler({ clock, account });
+        const answer = await canChargeAt(frozenClock(readAt)).canCharge({
+            userId: account.userId
+        });
+
+        // Assert
+        const [row] = await getServiceTestDb()
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, account.subscriptionId));
+        expect(row?.status).toBe('CANCELLED');
+        expect(await cancelledSeenAt(account.subscriptionId)).toEqual(readAt);
+        expect(answer).toEqual({ canCharge: false });
     });
 });

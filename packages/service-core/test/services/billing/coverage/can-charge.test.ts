@@ -12,13 +12,22 @@ const now = new Date('2026-10-12T12:00:00.000Z');
 const seenAt = new Date('2026-10-05T12:00:00.000Z');
 const WINDOW_DAYS = 7;
 
+/** A row of the test; `providerCancelledAfterRejection` defaults to false (HOS-1676 H-3). */
+type TestRow = Omit<CanChargeRow, 'providerCancelledAfterRejection'> &
+    Partial<Pick<CanChargeRow, 'providerCancelledAfterRejection'>>;
+
 function decide(input: {
-    readonly rows: readonly CanChargeRow[];
+    readonly rows: readonly TestRow[];
     readonly marks?: number;
     readonly at?: Date;
 }): boolean {
     return decideCanCharge({
-        rows: input.rows,
+        rows: input.rows.map(
+            (row): CanChargeRow => ({
+                ...row,
+                providerCancelledAfterRejection: row.providerCancelledAfterRejection ?? false
+            })
+        ),
         openUnconfirmedCancellationMarks: input.marks ?? 0,
         now: input.at ?? now,
         rereadWindowDays: WINDOW_DAYS
@@ -134,6 +143,52 @@ describe('decideCanCharge (AC:B4:5, AC:B4:6)', () => {
             justBefore: true,
             boundary: false,
             minuteAfter: false
+        });
+    });
+
+    it('TEST:1676:2 rule 3: the mirror CANCELLED after a rejection counts until the 16th deadline ends', () => {
+        // Arrange
+        const afterRejection = {
+            status: 'CANCELLED',
+            hasProviderLink: true,
+            cancelledSeenAt: seenAt,
+            providerCancelledAfterRejection: true
+        };
+        const plainCancelled = {
+            status: 'CANCELLED',
+            hasProviderLink: true,
+            cancelledSeenAt: seenAt,
+            providerCancelledAfterRejection: false
+        };
+        const declined = {
+            status: 'CHARGE_DECLINED',
+            hasProviderLink: true,
+            cancelledSeenAt: seenAt,
+            providerCancelledAfterRejection: false
+        };
+        const base = seenAt.getTime();
+        const instants = {
+            seenAt: new Date(base),
+            day6: new Date(base + 6 * DAY_MS),
+            boundary: new Date(base + 7 * DAY_MS)
+        };
+        const answersFor = (row: TestRow) =>
+            Object.fromEntries(
+                Object.entries(instants).map(([name, at]) => [name, decide({ rows: [row], at })])
+            );
+
+        // Act
+        const answers = {
+            afterRejection: answersFor(afterRejection),
+            plainCancelled: answersFor(plainCancelled),
+            declined: answersFor(declined)
+        };
+
+        // Assert
+        expect(answers).toEqual({
+            afterRejection: { seenAt: true, day6: true, boundary: false },
+            plainCancelled: { seenAt: false, day6: false, boundary: false },
+            declined: { seenAt: true, day6: true, boundary: false }
         });
     });
 
