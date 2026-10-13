@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PublicationStatusEnumSchema } from '../enums/publication-status.schema.js';
 import { SubscriptionStatusEnumSchema } from '../enums/subscription-status.schema.js';
 
 // ============================================================================
@@ -43,39 +44,34 @@ export const OwnerListingSummarySchema = z.object({
     type: z.string(),
 
     /**
-     * Whether the listing is currently publicly visible.
-     *
-     * Derived from the entity `visibility` (PUBLIC vs anything else). Visibility
-     * is reconciler-driven from the listing's subscription (SPEC-239), so this is
-     * the single owner-facing signal of whether the ficha is live — the summary
-     * deliberately does NOT surface raw subscription/billing state (out of scope
-     * per SPEC-249 §4), and it stays consistent across both verticals (gastronomy
-     * has no `hasActiveSubscription` column; experiences does).
+     * The listing's publication state (`PublicationStatusEnum`, HOS-1641): the
+     * six states the PB publication transitions move it through. The owner
+     * surfaces read this to decide which state and which actions a card shows
+     * (e.g. a `PURGED` listing offers none).
+     */
+    publicationStatus: PublicationStatusEnumSchema,
+
+    /**
+     * Whether the listing is currently publicly visible:
+     * `publicationStatus === PUBLISHED` (HOS-1641). `PUBLISHED` is the only
+     * state a stranger can read, so this is the single owner-facing signal of
+     * whether the ficha is live — the summary deliberately does NOT surface raw
+     * subscription/billing state (out of scope per SPEC-249 §4).
      */
     isPublic: z.boolean(),
 
     /**
-     * Whether the listing has a public page RIGHT NOW — BOTH clauses.
+     * Whether the listing has a public page RIGHT NOW:
+     * `publicationStatus === PUBLISHED` (HOS-1641), the predicate the public
+     * read and every protected route that prints something for a listing use.
      *
-     * `lifecycleState === ACTIVE && visibility === PUBLIC`, which is the
-     * predicate the public read and every protected route that prints something
-     * for a listing actually use. {@link isPublic} above is only the second half
-     * of it, and the two are not the same question: the admin schemas accept
-     * `lifecycleState` on its own, so a staff PATCH to INACTIVE that leaves
-     * `visibility` standing produces a row `isPublic` calls published and the API
-     * answers 404 for.
-     *
-     * Added by HOS-982 PR 2 rather than by widening `isPublic`, deliberately.
-     * `isPublic` drives `resolveListingCardState`, so changing its
-     * meaning would reclassify those rows as drafts and offer their owners a
-     * "Publicar y pagar" CTA — a billing path, on a listing staff deactivated on
-     * purpose. That is a product decision; this field is the narrow one, and it
-     * exists so a surface that must match the API's answer can ask the API's
-     * question.
+     * Since HOS-1641 it answers the same as {@link isPublic}: both used to be
+     * derived from separate old columns (HOS-982 PR 2 added this one because
+     * the single-column `isPublic` could call a row published that the API
+     * answered 404 for). Both stay so existing consumers keep parsing.
      *
      * Optional, so a client parsing an older response still validates. A consumer
-     * that finds it absent MUST treat it as not published: falling back to
-     * `isPublic` would silently restore the single-clause bug it exists to remove.
+     * that finds it absent MUST treat it as not published.
      */
     hasPublicPage: z.boolean().optional(),
 

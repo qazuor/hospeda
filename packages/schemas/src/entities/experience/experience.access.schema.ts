@@ -144,8 +144,8 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     reviewsCount: true,
     rating: true,
 
-    // Visibility
-    visibility: true,
+    // No publication state here (HOS-1641): every listing a stranger can read
+    // is PUBLISHED, so exposing it would say nothing.
 
     // SEO (public)
     seo: true,
@@ -306,7 +306,6 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     averageRating: true,
     reviewsCount: true,
     rating: true,
-    visibility: true,
     seo: true,
     tags: true,
     priceFrom: true,
@@ -345,8 +344,9 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     // Social networks
     socialNetworks: true,
 
-    // Lifecycle (for owners — they need to know if subscription is off)
-    lifecycleState: true,
+    // Publication state (for owners, HOS-1641): the six `PublicationStatusEnum`
+    // values, written only by the PB publication transitions.
+    publicationStatus: true,
 
     // FAQs
     faqs: true,

@@ -175,9 +175,6 @@ export type GastronomyGetHttp = z.infer<typeof GastronomyGetHttpSchema>;
 // HTTP TO DOMAIN CONVERSION FUNCTIONS
 // ============================================================================
 
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
-import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
-import { VisibilityEnum } from '../../enums/visibility.enum.js';
 import type {
     GastronomyAdminCreateInput,
     GastronomyUpdateInput
@@ -243,12 +240,10 @@ export const httpToDomainGastronomyCreate = (
     priceRange: httpData.priceRange,
     menuUrl: httpData.menuUrl,
 
-    // Server-managed defaults
-    moderationState: ModerationStatusEnum.PENDING,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    // Server-managed defaults. The publication state is not an input: the
+    // listing is born DRAFT and only the PB transitions move it (HOS-1641).
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PUBLIC,
 
     // Contact info mapping from flat HTTP fields
     ...(httpData.phone !== undefined ||
@@ -359,8 +354,8 @@ export const httpToDomainGastronomyUpdate = (
  * If the `Exclude<>` type is NOT `never`, there are domain fields the HTTP
  * converter does NOT emit. Many of these are intentionally absent because they
  * are either:
- *   a) Server-managed (ownerId, reviewsCount, averageRating, lifecycleState,
- *      moderationState, visibility) — injected by the service, not by HTTP.
+ *   a) Server-managed (ownerId, reviewsCount, averageRating,
+ *      publicationStatus) — injected by the service, not by HTTP.
  *   b) Rich content not carried by the basic HTTP form (richDescription, seo*,
  *      adminInfo, tags, faqs, rating, openingHours, media, i18n variants).
  *

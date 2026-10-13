@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { ExperienceTypeEnumSchema } from '../../enums/index.js';
+import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
 
 /**
  * Admin search schema for experience listings.
@@ -22,6 +23,18 @@ import { ExperienceTypeEnumSchema } from '../../enums/index.js';
  * ```
  */
 export const ExperienceAdminSearchSchema = AdminSearchBaseSchema.extend({
+    /**
+     * Filter by `publicationStatus` (HOS-1641). REPLACES the base `status`,
+     * which is a `LifecycleStatusEnum` filter: experience listings no longer carry a
+     * lifecycle column, so the panel filters on the six `PublicationStatusEnum`
+     * values instead. `'all'` (the default) does not filter. Same override as
+     * `HostTradeBenefitUsageAdminSearchSchema`.
+     */
+    status: z
+        .enum(['all', ...Object.values(PublicationStatusEnum)] as [string, ...string[]])
+        .default('all')
+        .describe('Filter by publication status. Use "all" to show all statuses'),
+
     /** Filter by experience sub-type. */
     type: ExperienceTypeEnumSchema.optional().describe('Filter by experience type'),
 

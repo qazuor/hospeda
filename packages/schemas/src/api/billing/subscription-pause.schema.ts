@@ -49,8 +49,8 @@ export type SubscriptionPauseResumeRequest = z.infer<typeof SubscriptionPauseRes
  * Response body shared by the self-serve pause and resume endpoints.
  *
  * `accommodationsUpdated` is the number of the owner's accommodations whose
- * denormalized `ownerSuspended` flag flipped as part of the service-suspension
- * side effect. It is always `0` for a non-accommodation-domain subscription
+ * service-suspension state changed as part of the service-suspension side
+ * effect. It is always `0` for a non-accommodation-domain subscription
  * (gastronomy, experience, partner) — that domain's listing visibility is
  * driven by the shared subscription-linked-entities bridge instead, which has
  * no per-accommodation count to report (HOS-1278).
@@ -63,7 +63,7 @@ export const SubscriptionPauseResumeResponseSchema = z.object({
         .number()
         .int()
         .describe(
-            "Count of the owner's accommodations whose ownerSuspended flag changed. " +
+            "Count of the owner's accommodations whose service-suspension state changed. " +
                 'Always 0 for a non-accommodation-domain subscription.'
         )
 });

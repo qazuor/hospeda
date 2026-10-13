@@ -4,17 +4,15 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
 import { ExperienceRatingSchema } from '../../common/experience-rating.schema.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
-import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { ListingIdentityFields } from '../../common/listing-identity.schema.js';
 import { BaseMediaFields, BaseVideosFields } from '../../common/media.schema.js';
-import { BaseModerationFields } from '../../common/moderation.schema.js';
 import { OpeningHoursFields } from '../../common/opening-hours.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { SocialNetworkFields } from '../../common/social.schema.js';
 import { TagsFields } from '../../common/tags.schema.js';
-import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { ExperiencePriceUnitEnumSchema, ExperienceTypeEnumSchema } from '../../enums/index.js';
+import { PublicationStatusEnumSchema } from '../../enums/publication-status.schema.js';
 import { ExperienceFaqSchema } from './subtypes/experience.faq.schema.js';
 
 /**
@@ -118,9 +116,8 @@ function experienceChecklistSchema(input: {
  * - Social: social network links via `SocialNetworkFields`
  * - Media: featured image + gallery + videos via `BaseMediaFields`
  * - Reviews: aggregate reviewsCount/averageRating via `BaseReviewFields`
- * - Lifecycle: lifecycleState via `BaseLifecycleFields`
- * - Moderation: moderationState via `BaseModerationFields`
- * - Visibility: visibility via `BaseVisibilityFields`
+ * - Publication: `publicationStatus` (`PublicationStatusEnum`), written only by
+ *   the PB publication transitions (HOS-1641)
  * - SEO: title/description via `BaseSeoFields`
  * - Admin: adminInfo via `BaseAdminFields`
  * - Tags: tags array via `TagsFields`
@@ -378,10 +375,16 @@ export const ExperienceSchema = z.object({
      */
     featuredByEntitlement: z.boolean().default(false),
 
+    /**
+     * Publication state of the listing (`PublicationStatusEnum`, the `listing`
+     * state of `V/03` §9). It replaces the old lifecycle, visibility and
+     * moderation columns (HOS-1641): only `PUBLISHED` is public.
+     * Server-managed: written ONLY by the PB publication transitions, never
+     * through a create/update input (it is omitted from those schemas).
+     */
+    publicationStatus: PublicationStatusEnumSchema,
+
     // Base field groups — spread in the same order as GastronomySchema
-    ...BaseLifecycleFields,
-    ...BaseModerationFields,
-    ...BaseVisibilityFields,
     ...BaseReviewFields,
     ...BaseSeoFields,
     ...BaseContactFields,

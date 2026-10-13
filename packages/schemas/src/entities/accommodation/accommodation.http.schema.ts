@@ -372,7 +372,8 @@ export type AccommodationCreateHttp = z.infer<typeof AccommodationCreateHttpSche
  * (`httpToDomainAccommodationCreateDraft`) can reuse the same mapping logic
  * without reimplementing the nested transformations.
  *
- * The resulting record is always persisted with `lifecycleState: DRAFT`.
+ * The resulting record is always born `publicationStatus: DRAFT` (the model
+ * sets it; no HTTP input carries it — HOS-1641).
  */
 export const AccommodationCreateDraftHttpSchema = z.object({
     // --- Required essentials ---
@@ -683,9 +684,7 @@ export const httpToDomainAccommodationSearch = (
 
 import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { mediaAssetUrl } from '../../common/media.schema.js';
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
-import { VisibilityEnum } from '../../enums/visibility.enum.js';
 
 // ---------------------------------------------------------------------------
 // Media normalisation helper (SPEC-208)
@@ -844,12 +843,10 @@ export const httpToDomainAccommodationCreate = (
     type: httpData.type,
     destinationId: httpData.destinationId,
     ownerId: httpData.ownerId,
-    // Required fields with sensible defaults using proper enums
-    moderationState: ModerationStatusEnum.PENDING,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    // Required fields with sensible defaults. The publication state is not an
+    // input: the listing is born DRAFT and only the PB transitions move it.
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PUBLIC,
 
     // ✅ COMPLETED: Proper nested object structures
 
@@ -966,10 +963,10 @@ const DRAFT_DESCRIPTION_PLACEHOLDER =
  * `httpToDomainAccommodationCreate` (SPEC-258 single source of truth).
  *
  * Forced server-side overrides:
- * - `lifecycleState`: always `DRAFT`
- * - `visibility`: always `PRIVATE`
- * - `moderationState`: always `PENDING`
  * - `ownerId`: always injected from the authenticated actor
+ *
+ * The publication state is not part of the input: the listing is born
+ * `DRAFT` and only the PB publication transitions move it (HOS-1641).
  *
  * @param httpData - Validated HTTP draft input.
  * @param ownerId - Authenticated actor ID (injected by the route handler).
@@ -988,11 +985,8 @@ export const httpToDomainAccommodationCreateDraft = (
     ownerId,
 
     // --- Forced server-side overrides ---
-    moderationState: ModerationStatusEnum.PENDING,
-    lifecycleState: LifecycleStatusEnum.DRAFT,
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PRIVATE,
 
     // --- Optional: location (→ location JSONB) ---
     // Emit the `location` block only when at least one location field is present.

@@ -137,9 +137,6 @@ export type ExperienceGetHttp = z.infer<typeof ExperienceGetHttpSchema>;
 // ============================================================================
 
 import { httpBodyBoolean } from '../../common/boolean-params.js';
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
-import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
-import { VisibilityEnum } from '../../enums/visibility.enum.js';
 import type {
     ExperienceAdminCreateInput,
     ExperienceUpdateInput
@@ -198,12 +195,10 @@ export const httpToDomainExperienceCreate = (
     priceUnit: httpData.priceUnit,
     isPriceOnRequest: httpData.isPriceOnRequest,
 
-    // Server-managed defaults
-    moderationState: ModerationStatusEnum.PENDING,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    // Server-managed defaults. The publication state is not an input: the
+    // listing is born DRAFT and only the PB transitions move it (HOS-1641).
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PUBLIC,
 
     // HOS-1046 / HOS-1056: the flat HTTP create surface does not collect the
     // practical ficha fields — they are filled in afterwards, from the owner
