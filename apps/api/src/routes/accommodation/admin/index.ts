@@ -10,12 +10,10 @@ import { adminAddMediaRoute } from './addMedia';
 import { adminArchiveMediaRoute } from './archiveMedia';
 import { adminBatchAccommodationsRoute } from './batch';
 import { adminCreateAccommodationRoute } from './create';
-import { adminDeleteAccommodationRoute } from './delete';
 import { adminGetAccommodationByIdRoute } from './getById';
 import { adminGetFaqsRoute } from './getFaqs';
 import { adminGetMediaRoute } from './getMedia';
 import { adminGetOccupancyRoute } from './getOccupancy';
-import { adminHardDeleteAccommodationRoute } from './hardDelete';
 import { adminListAccommodationsRoute } from './list';
 import { adminModerateAccommodationRoute } from './moderate';
 import { adminAccommodationOptionsRoute } from './options';
@@ -25,7 +23,6 @@ import { adminRemoveFaqRoute } from './removeFaq';
 import { adminRemoveMediaRoute } from './removeMedia';
 import { adminReorderAccommodationFaqsRoute } from './reorderFaqs';
 import { adminReorderMediaRoute } from './reorderMedia';
-import { adminRestoreAccommodationRoute } from './restore';
 import { adminRestoreMediaRoute } from './restoreMedia';
 import { adminSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { adminUpdateAccommodationRoute } from './update';
@@ -61,15 +58,6 @@ app.route('/', adminUpdateAccommodationRoute);
 
 // PATCH /:id - Patch accommodation
 app.route('/', adminPatchAccommodationRoute);
-
-// DELETE /:id - Soft delete accommodation
-app.route('/', adminDeleteAccommodationRoute);
-
-// DELETE /:id/hard - Hard delete accommodation
-app.route('/', adminHardDeleteAccommodationRoute);
-
-// POST /:id/restore - Restore accommodation
-app.route('/', adminRestoreAccommodationRoute);
 
 // POST /:id/verify - Verify / unverify accommodation
 app.route('/', adminVerifyAccommodationRoute);

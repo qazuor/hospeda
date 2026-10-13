@@ -20,11 +20,9 @@ import { adminAddExperienceMediaRoute } from './addMedia';
 import { adminAssignExperienceOwnerRoute } from './assignOwner';
 import { adminBatchExperiencesRoute } from './batch';
 import { adminCreateExperienceRoute } from './create';
-import { adminDeleteExperienceRoute } from './delete';
 import { adminGetExperienceByIdRoute } from './getById';
 import { adminGetExperienceFaqsRoute } from './getFaqs';
 import { adminGetExperienceMediaRoute } from './getMedia';
-import { adminHardDeleteExperienceRoute } from './hardDelete';
 import { adminListExperiencesRoute } from './list';
 import { adminModerateExperienceRoute } from './moderate';
 import { adminExperienceOptionsRoute } from './options';
@@ -34,7 +32,6 @@ import { adminRemoveExperienceFaqRoute } from './removeFaq';
 import { adminRemoveExperienceMediaRoute } from './removeMedia';
 import { adminReorderExperienceFaqsRoute } from './reorderFaqs';
 import { adminReorderExperienceMediaRoute } from './reorderMedia';
-import { adminRestoreExperienceRoute } from './restore';
 import { adminSetFeaturedExperienceMediaRoute } from './setFeaturedMedia';
 import { adminUpdateExperienceRoute } from './update';
 import { adminUpdateExperienceFaqRoute } from './updateFaq';
@@ -68,15 +65,6 @@ app.route('/', adminUpdateExperienceRoute);
 
 // PATCH /:id - Partial update
 app.route('/', adminPatchExperienceRoute);
-
-// DELETE /:id - Soft delete
-app.route('/', adminDeleteExperienceRoute);
-
-// DELETE /:id/hard - Hard delete
-app.route('/', adminHardDeleteExperienceRoute);
-
-// POST /:id/restore - Restore soft-deleted listing
-app.route('/', adminRestoreExperienceRoute);
 
 // POST /:id/assign-owner - Set/replace listing owner
 app.route('/', adminAssignExperienceOwnerRoute);
