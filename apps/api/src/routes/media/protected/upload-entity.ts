@@ -13,8 +13,19 @@
  * user. Validates file size, MIME type, and image dimensions before uploading
  * to Cloudinary. Returns the resulting URL, publicId, width, and height.
  *
+ * Listing access (HOS-1682): for the three verticals with a listing
+ * (accommodation, gastronomy, experience) the route runs the listing access
+ * chain (`enforceListingAccess`, operation EDIT) with the vertical of the
+ * service branch, after the ownership check and before the gallery cap, the
+ * file read and the provider call: listing state, coverage, capability and the
+ * plan limit apply here as they do on the persisting `addMedia` routes.
+ * Destination, event and post are not listings and do not run the chain.
+ *
+ * Every upload, the `featured` one included, creates a NEW asset under a
+ * unique public id: an upload never overwrites an existing image.
+ *
  * Response contract follows the admin upload pattern:
- *   - HTTP 200 on success (uploads may overwrite existing assets).
+ *   - HTTP 200 on success.
  *   - Body wrapped via ResponseFactory as `{ success, data, metadata }`.
  *   - `data.moderationState` is always `'APPROVED'`.
  */
@@ -23,7 +34,8 @@ import {
     ENTITY_GALLERY_CAPS,
     getGalleryCap,
     ProtectedUploadEntityRequestSchema,
-    UploadResponseDataSchema
+    UploadResponseDataSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import {
     AccommodationService,
@@ -34,7 +46,9 @@ import {
     PostService
 } from '@repo/service-core';
 import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { enforceListingAccess } from '../../../middlewares/listing-access';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import {
@@ -43,7 +57,9 @@ import {
     validateContentLength,
     validateFile
 } from '../../../services/media/upload-helpers';
+import type { ListingAccessConfig } from '../../../types/authorization';
 import { getActorFromContext } from '../../../utils/actor';
+import { accommodationGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -125,12 +141,92 @@ const resolveEntityService = (
     }
 };
 
+/** One listing access declaration, in the `listingAccess:` shape G2 scans. */
+type UploadListingAccess = { readonly listingAccess: ListingAccessConfig };
+
+/**
+ * Listing access of the upload, per listing vertical and role (HOS-1682).
+ *
+ * Each entry mirrors the persisting route the uploaded asset ends up in: the
+ * accommodation gallery takes `addMedia`'s plan photo limit, the accommodation
+ * featured image takes `addFeaturedMedia`'s `requested: 1`, and gastronomy and
+ * experience declare no limit, like their own `addMedia`/`addFeaturedMedia`.
+ * The vertical is named literally per branch: it is the vertical of the table
+ * the service branch reads the listing from, never a value of the request.
+ */
+const UPLOAD_LISTING_ACCESS = {
+    accommodationGallery: {
+        listingAccess: {
+            vertical: VerticalEnum.ACCOMMODATION,
+            operation: 'EDIT',
+            idParam: 'id',
+            limit: accommodationGalleryPhotoLimit
+        }
+    },
+    accommodationFeatured: {
+        listingAccess: {
+            vertical: VerticalEnum.ACCOMMODATION,
+            operation: 'EDIT',
+            idParam: 'id',
+            limit: async () => ({ key: 'max_photos_per_accommodation', requested: 1 })
+        }
+    },
+    gastronomy: {
+        listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' }
+    },
+    experience: {
+        listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' }
+    }
+} satisfies Record<string, UploadListingAccess>;
+
+/**
+ * Resolve the listing access the upload runs, or `null` when the entity type
+ * is not a listing (destination, event, post).
+ *
+ * @param input.entityType - The validated entity type; the same branch picks the service.
+ * @param input.role - The validated upload role.
+ * @returns The listing access config of that branch, or `null`.
+ */
+const resolveUploadListingAccess = ({
+    entityType,
+    role
+}: {
+    readonly entityType:
+        | 'accommodation'
+        | 'destination'
+        | 'event'
+        | 'post'
+        | 'gastronomy'
+        | 'experience';
+    readonly role: 'featured' | 'gallery';
+}): ListingAccessConfig | null => {
+    switch (entityType) {
+        case 'accommodation':
+            return role === 'gallery'
+                ? UPLOAD_LISTING_ACCESS.accommodationGallery.listingAccess
+                : UPLOAD_LISTING_ACCESS.accommodationFeatured.listingAccess;
+        case 'gastronomy':
+            return UPLOAD_LISTING_ACCESS.gastronomy.listingAccess;
+        case 'experience':
+            return UPLOAD_LISTING_ACCESS.experience.listingAccess;
+        case 'destination':
+        case 'event':
+        case 'post':
+            return null;
+        default: {
+            const exhaustive: never = entityType;
+            throw new Error(`Unhandled upload entity type: ${String(exhaustive)}`);
+        }
+    }
+};
+
 /**
  * POST /api/v1/protected/media/upload-entity
  * Upload an entity image (featured or gallery) for the authenticated user's entity.
  *
  * Ownership check: the entity must have `ownerId === actor.id`.
- * Success status is 200 (uploads may overwrite existing assets).
+ * Listing verticals also run listing access (HOS-1682).
+ * Success status is 200; every upload creates a new asset.
  */
 export const protectedUploadEntityRoute = createProtectedRoute({
     method: 'post',
@@ -322,6 +418,28 @@ export const protectedUploadEntityRoute = createProtectedRoute({
             }
         }
 
+        // ── 3c. Listing access (HOS-1682) ─────────────────────────────────────
+        // The three listing verticals run the chain: listing state, coverage,
+        // capability and the plan limit. Its NOT_FOUND is answered with the
+        // SAME body as "no such entity" (HOS-600); every other refusal is a
+        // ServiceError the route factory maps (403 gates).
+        const listingAccess = resolveUploadListingAccess({ entityType, role });
+        if (listingAccess) {
+            try {
+                await enforceListingAccess({
+                    ctx,
+                    params: { id: entityId },
+                    config: listingAccess,
+                    tier: 'protected'
+                });
+            } catch (error) {
+                if (error instanceof HTTPException && error.status === 404) {
+                    return mediaEntityNotFoundResponse({ ctx });
+                }
+                throw error;
+            }
+        }
+
         // ── 3d. Enforce gallery cap ───────────────────────────────────────────
         if (role === 'gallery') {
             // Counted via the shared resolver so this path and the admin upload
@@ -384,7 +502,14 @@ export const protectedUploadEntityRoute = createProtectedRoute({
 
         // ── 6. Build storage path ─────────────────────────────────────────────
         const folder = buildEntityFolder(entityType, entityId);
-        const publicId = role === 'featured' ? 'featured' : `gallery/${generateGalleryId()}`;
+        // HOS-1682 (Coord-356): `featured` gets a unique public id like the
+        // gallery. A fixed `featured` name could be overwritten from this route,
+        // which persists nothing, without passing through `addFeaturedMedia`;
+        // the effective cover is chosen by `setFeaturedMedia`, not by the name.
+        const publicId =
+            role === 'featured'
+                ? `featured/${generateGalleryId()}`
+                : `gallery/${generateGalleryId()}`;
 
         // ── 7. Upload to Cloudinary ───────────────────────────────────────────
         const result = await uploadToProvider(provider, {
