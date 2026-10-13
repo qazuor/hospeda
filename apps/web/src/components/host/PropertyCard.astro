@@ -18,12 +18,14 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { type PublishAffordance, UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { Accommodation } from '@repo/schemas';
+import type { Accommodation, ListingNoticesItem } from '@repo/schemas';
 import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
 import { getMediaUrl } from '@repo/media';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import btn from '@/components/account/AccountButton.module.css';
 import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
+import ListingNotices from '@/components/listing/ListingNotices.astro';
+import { buildUnpublishConfirmNotes } from '@/lib/listing/listing-notices';
 import { DeleteButton } from './DeleteButton.client';
 import { PublishButton } from './PublishButton.client';
 import { UnpublishButton } from './UnpublishButton.client';
@@ -51,14 +53,32 @@ export interface Props {
      * (HOS-1668 C-2). It used to default to a publishable verdict (fail-open).
      */
     readonly publishAffordance?: PublishAffordance;
+    /**
+     * This listing's entry of `GET /protected/publish/listing-notices/accommodation`
+     * (HOS-1492): its notices (rows 8/9, 18, 20, 24, 30, 31) and its recurring
+     * add-ons (row 25). `undefined` when the read failed: no notice, never an
+     * invented one.
+     */
+    readonly notices?: ListingNoticesItem;
+    /**
+     * Whether the owner's accommodation trial is running (row 2), from the same
+     * read. `null` (or absent) when unknown: the unpublish confirmation says
+     * nothing about the trial.
+     */
+    readonly trialRunning?: boolean | null;
 }
 
 const {
     property,
     locale,
-    publishAffordance = UNKNOWN_PUBLISH_AFFORDANCE
+    publishAffordance = UNKNOWN_PUBLISH_AFFORDANCE,
+    notices,
+    trialRunning = null
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
+
+/** Rows 2 and 25: the unpublish confirmation lines, read from the notices read. */
+const unpublishNotes = buildUnpublishConfirmNotes({ t, tPlural, trialRunning, item: notices });
 
 /**
  * Resolve thumbnail: first gallery image url, or featured image url, or placeholder.
@@ -224,6 +244,9 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
             </p>
         )}
 
+        <!-- HOS-1492: the listing's notices (rows 8/9, 18, 20, 24, 30, 31). -->
+        <ListingNotices locale={locale} vertical="accommodation" listingId={property.id} item={notices} />
+
         <!-- ACTIONS -->
         <div class="prop-card__actions" role="group" aria-label={property.name}>
             <!-- Edit: always available (routes to web editor) -->
@@ -254,6 +277,8 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
                     confirmYes={t('host.properties.card.actions.confirmYes', 'Sí, despublicar')}
                     confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
                     errorText={t('host.properties.card.unpublishError', 'No se pudo despublicar. Intentá de nuevo.')}
+                    trialNote={unpublishNotes.trialNote}
+                    recurringNote={unpublishNotes.recurringNote}
                 />
             )}
 

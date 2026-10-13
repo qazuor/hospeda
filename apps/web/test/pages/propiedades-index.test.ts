@@ -100,3 +100,37 @@ describe("propiedades/index.astro — the card reads the server's publish decisi
         );
     });
 });
+
+describe('propiedades/index.astro — the listing notices read (HOS-1492)', () => {
+    it('reads the notices in the SAME Promise.all as the other card reads', () => {
+        const promiseAll = propiedadesIndexSource.slice(
+            propiedadesIndexSource.indexOf('await Promise.all(['),
+            propiedadesIndexSource.indexOf(
+                ']);',
+                propiedadesIndexSource.indexOf('await Promise.all([')
+            )
+        );
+        expect(promiseAll).toContain(
+            "publishApi.subscribeDestination({ vertical: 'accommodation', cookieHeader })"
+        );
+        expect(promiseAll).toContain(
+            "publishApi.listingNotices({ vertical: 'accommodation', cookieHeader })"
+        );
+    });
+
+    it('a failed read leaves the cards without notices and the page renders', () => {
+        expect(propiedadesIndexSource).toContain(
+            'let listingNotices: ListingNoticesIndex = EMPTY_LISTING_NOTICES_INDEX;'
+        );
+        expect(propiedadesIndexSource).toContain(
+            'listingNotices = indexListingNotices({ result: noticesResult });'
+        );
+    });
+
+    it('hands every card its own entry and the trial reading', () => {
+        expect(propiedadesIndexSource).toContain(
+            'notices={listingNotices.byListingId.get(property.id)}'
+        );
+        expect(propiedadesIndexSource).toContain('trialRunning={listingNotices.trialRunning}');
+    });
+});
