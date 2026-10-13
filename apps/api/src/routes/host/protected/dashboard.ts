@@ -9,7 +9,7 @@
  * GET /api/v1/protected/host/dashboard
  */
 
-import { LifecycleStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import { PublicationStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { AccommodationService, ConversationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -89,18 +89,16 @@ async function resolveProperties(input: {
         const list = result.data.accommodations;
         const accommodationIds = list.map((item) => item.id);
 
-        const published = list.filter(
-            (item) => item.lifecycleState === LifecycleStatusEnum.ACTIVE
-        ).length;
-        const draft = list.filter(
-            (item) => item.lifecycleState === LifecycleStatusEnum.DRAFT
-        ).length;
-        const archived = list.filter(
-            (item) => item.lifecycleState === LifecycleStatusEnum.ARCHIVED
-        ).length;
+        // V6.9b (HOS-1641): counted by the single publication state.
+        const countIn = (status: PublicationStatusEnum): number =>
+            list.filter((item) => item.publicationStatus === status).length;
+        const published = countIn(PublicationStatusEnum.PUBLISHED);
+        const draft = countIn(PublicationStatusEnum.DRAFT);
+        const archived = countIn(PublicationStatusEnum.ARCHIVED);
 
         return {
-            // INACTIVE is counted in `total` but has no dedicated field.
+            // UNPUBLISHED_BY_BILLING, MODERATED and PURGED are counted in `total`
+            // but have no dedicated field.
             properties: { total: list.length, published, draft, archived },
             accommodationIds
         };

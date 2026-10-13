@@ -50,8 +50,8 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
         //
         // `checkCanView` consults the reader through four mechanisms — `isOwner`,
         // ACCOMMODATION_VIEW_ALL, ACCOMMODATION_VIEW_PRIVATE and the VIP entitlement —
-        // across the lifecycle, owner-suspended, plan-restricted and visibility
-        // branches. So the same `:id` answers 200 for an owner/staff/VIP and 404/403
+        // across the publication-state branch (V6.9b; before, the old lifecycle,
+        // owner-suspended, plan-restricted and visibility branches). So the same `:id` answers 200 for an owner/staff/VIP and 404/403
         // for everyone else. This route sits under a PUBLIC_CACHE_ENDPOINTS
         // prefix whose key carries no actor, and 200s are cacheable — so an owner
         // opening their own DRAFT listing parks that 200 in the slot every anonymous

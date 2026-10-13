@@ -62,7 +62,7 @@ app.route('/', adminPatchAccommodationRoute);
 // POST /:id/verify - Verify / unverify accommodation
 app.route('/', adminVerifyAccommodationRoute);
 
-// POST /:id/moderate - ACC:12 two-level publication moderation; V6.9b removes legacy moderation_state.
+// POST /:id/moderate - ACC:12 two-level publication moderation; the legacy moderation column was retired by V6.9b.
 app.route('/', adminModerateAccommodationRoute);
 
 // POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).

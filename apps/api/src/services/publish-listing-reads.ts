@@ -34,7 +34,7 @@
  * @module services/publish-listing-reads
  */
 
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import {
     AccommodationService,
     type Actor,
@@ -138,7 +138,7 @@ function serviceFor(vertical: PublishVertical) {
 /**
  * Counts the listings one owner holds in one vertical.
  *
- * Counts across every lifecycle state, drafts included, because that is what the
+ * Counts across every publication state, drafts included, because that is what the
  * cap counts: a DRAFT listing occupies a slot exactly as a published one does.
  * Soft-deleted rows are excluded.
  *
@@ -146,19 +146,20 @@ function serviceFor(vertical: PublishVertical) {
  *
  * This used to be one `service.count(actor, { ownerId: actor.id })` for all
  * three verticals, and the sentence above was FALSE for two of them. A gastronomy or experience
- * `_executeCount` mirrors its `_executeSearch` and forces `visibility: PUBLIC` +
- * `lifecycleState: ACTIVE` (`gastronomy.service.ts:550`,
- * `experience.service.ts:510`) so a public-search total matches the page it
- * paginates. Every owner-created listing starts `PRIVATE`/`DRAFT`
+ * `_executeCount` mirrors its `_executeSearch` and forces
+ * `publicationStatus: PUBLISHED` (`gastronomy.service.ts:541`,
+ * `experience.service.ts:501`; before V6.9b the pair of old visibility and
+ * lifecycle columns) so a public-search total matches the page it
+ * paginates. Every owner-created listing starts `DRAFT`
  * (`gastronomy/protected/create.ts` and `experience/protected/create.ts` D-3) — so this function returned ZERO for
  * precisely the rows the cap exists to count, `checkLimit` compared `0 <
  * maxAllowed`, and three listings went onto a plan of one with nothing raised.
  *
  * So gastronomy and experience now read through `countOwn`, the counting twin of the `listOwn`
  * that backs `GET /{vertical}/mine` — hard-scoped to `ownerId = actor.id`,
- * across every visibility and lifecycle state. Accommodation keeps calling
- * `count()`: its `_executeCount` already drops `activeOnly` when
- * `params.ownerId === actor.id` (`accommodation.service.ts:2666`), which is why
+ * across every publication state. Accommodation keeps calling
+ * `count()`: its `_executeCount` passes `publishedOnly: false` when
+ * `params.ownerId === actor.id` (`accommodation.service.ts:2093`), which is why
  * that cap has always counted drafts, and routing it through a new call would
  * change the one vertical that bills correctly today.
  *
@@ -170,7 +171,8 @@ function serviceFor(vertical: PublishVertical) {
  * ## A PLAN-RESTRICTED listing still counts (HOS-1122) — undecided, not chosen
  *
  * This counts every listing the owner holds, including one a plan downgrade
- * took private (`entity_subscriptions.plan_restricted = true`). So an owner cut
+ * took down (`UNPUBLISHED_BY_BILLING`; the old plan-restriction flags no longer
+ * exist). So an owner cut
  * from three listings to one cannot create a replacement for either of the two
  * now hidden: their quota is full of listings nobody can see.
  *
@@ -207,7 +209,7 @@ export async function countOwnListings(input: {
     }
 
     // The split the docblock above explains: a gastronomy or experience vertical MUST NOT go
-    // through `count()`, whose forced PUBLIC+ACTIVE filter reports zero for
+    // through `count()`, whose forced PUBLISHED filter reports zero for
     // every owner-created draft.
     // TYPE-WORKAROUND: BaseCrudService.count() takes z.infer<TSearchSchema> and
     // TypeScript cannot narrow the generic at a call site that is polymorphic
@@ -234,13 +236,15 @@ export async function countOwnListings(input: {
  * ## Why this reads through `list()` and not the vertical's `/mine` endpoint
  *
  * `OwnerListingSummarySchema` — what `GET /{vertical}/mine` returns —
- * carries `isPublic` and NOT `lifecycleState` (HOS-1156 F-1). Those are not the
+ * carried `isPublic` and no state at all (HOS-1156 F-1). Those are not the
  * same question: a finished listing waiting on checkout is non-public and is not
  * a draft. Deriving "half-finished" from that projection would count listings the
- * owner already completed, and offer to "resume" one that needs nothing.
+ * owner already completed, and offer to "resume" one that needs nothing. The
+ * summary now carries `publicationStatus` too (V6.9b); this read stays on
+ * `list()`, which filters in the database and caps the page.
  *
  * `list()` validates against `listOptionsSchema`, which declares `where` as an
- * open record, so the lifecycle filter reaches the model rather than being
+ * open record, so the `publicationStatus` filter reaches the model rather than being
  * stripped the way an undeclared *search* filter would be.
  *
  * @param input.vertical - Which vertical to read.
@@ -264,7 +268,7 @@ export async function listOwnDraftListings(input: {
         pageSize: MAX_DRAFTS_RETURNED,
         where: {
             ownerId: actor.id,
-            lifecycleState: LifecycleStatusEnum.DRAFT,
+            publicationStatus: PublicationStatusEnum.DRAFT,
             deletedAt: null
         },
         sortBy: 'createdAt',

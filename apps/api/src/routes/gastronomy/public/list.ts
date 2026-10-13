@@ -2,8 +2,8 @@
  * Public gastronomy list endpoint (T-042)
  * Returns a paginated list of visible gastronomy listings with filtering and sorting.
  *
- * Visibility contract: only listings with lifecycleState=ACTIVE AND visibility=PUBLIC
- * are returned. The GastronomyService._executeSearch already applies deletedAt=null;
+ * Visibility contract: only listings with publicationStatus=PUBLISHED are returned
+ * (V6.9b, HOS-1641). The GastronomyService._executeSearch already applies deletedAt=null;
  * the route relies on the service's public-tier contract for the remaining gates.
  */
 import {

@@ -30,11 +30,13 @@ const logger = createLogger('entity-resolver');
 
 /**
  * Creates a concrete {@link EntityResolver} that queries the database
- * for published entities using Drizzle ORM models.
+ * for the slugs a revalidation needs, using Drizzle ORM models.
  *
- * The resolver filters for entities that are:
- * - Not soft-deleted (deletedAt is null)
- * - Publicly visible (visibility = 'PUBLIC')
+ * The resolver maps an id to its addressing data only. It does NOT filter by
+ * publication state or soft-deletion: a listing that just left `PUBLISHED`
+ * (V6.9b, HOS-1641) must still resolve, so the pages that showed it get
+ * purged. Whether a change is worth announcing is decided elsewhere
+ * (`indexnow-visibility.ts`).
  *
  * @returns An EntityResolver implementation backed by the database
  *

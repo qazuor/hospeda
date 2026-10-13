@@ -12,13 +12,13 @@
  * ## D-3 — server-forced fields
  *
  * `ExperienceOwnerCreateInputCheckedSchema` already OMITS `ownerId`, `slug`,
- * `lifecycleState`, `visibility`, `isFeatured`, `moderationState` — this
- * handler is the only place those values come from:
+ * `publicationStatus` and `isFeatured` — this handler is the only place
+ * `ownerId` comes from:
  * - `ownerId` — always `actor.id`.
  * - `slug` — never set here; `BaseListingService._beforeCreate` derives it
  *   server-side from `name` (HOS-166 OQ-3).
- * - `visibility: PRIVATE`, `lifecycleState: DRAFT` — every owner-created
- *   listing starts hidden.
+ * - `publicationStatus` — never set here: every listing is born `DRAFT` by
+ *   the model (V6.9b, HOS-1641); only the publication machine moves it.
  *
  * ## Permission — an authenticated session, and nothing else (HOS-687)
  *
@@ -36,10 +36,8 @@ import {
     type ExperienceOwnerCreateInput,
     ExperienceOwnerCreateInputCheckedSchema,
     ExperienceProtectedSchema,
-    LifecycleStatusEnum,
     ServiceErrorCode,
-    VerticalEnum,
-    VisibilityEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -58,21 +56,19 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
     const actor = getActorFromContext(ctx);
     const data = body as ExperienceOwnerCreateInput;
 
-    // Re-parse through the full admin create schema so moderationState/reviewsCount/averageRating get
+    // Re-parse through the full admin create schema so reviewsCount/averageRating get
     // their schema defaults.
     //
     // `safeParse`, not `.parse()` (H-156): the CHECKED schema carries the
     // cross-field pricing rule. The route's own
     // `ExperienceOwnerCreateInputCheckedSchema` already refuses a bad body with
     // a 400 before this line runs (HOS-425); `safeParse` stays because this
-    // call re-checks a body that has had `ownerId`/`visibility`/
-    // `lifecycleState` stamped onto it since validation, and an unmapped
+    // call re-checks a body that has had `ownerId` stamped onto it
+    // since validation, and an unmapped
     // ZodError would surface as a 500 for what is plainly a bad request.
     const parsed = ExperienceAdminCreateInputCheckedSchema.safeParse({
         ...data,
-        ownerId: actor.id,
-        visibility: VisibilityEnum.PRIVATE,
-        lifecycleState: LifecycleStatusEnum.DRAFT
+        ownerId: actor.id
     });
 
     if (!parsed.success) {
@@ -98,8 +94,8 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
 /**
  * POST /api/v1/protected/experiences/
  *
- * Creates an experience listing owned by the caller. Starts `visibility:
- * PRIVATE`, `lifecycleState: DRAFT` (D-3) — see module docstring.
+ * Creates an experience listing owned by the caller. Starts as a
+ * `DRAFT` (D-3) — see module docstring.
  */
 export const protectedCreateExperienceListingRoute = createProtectedRoute({
     method: 'post',
@@ -107,7 +103,7 @@ export const protectedCreateExperienceListingRoute = createProtectedRoute({
     listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'CREATE' },
     summary: 'Create an experience listing (owner self-service)',
     description:
-        'Creates an experience listing owned by the authenticated caller and grants them the EXPERIENCE_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes it. Requires an authenticated session and no experience permission.',
+        'Creates an experience listing owned by the authenticated caller and grants them the EXPERIENCE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no experience permission.',
     tags: ['Experience'],
     // No `requiredPermissions` on purpose (HOS-687) — see the module docstring.
     // H-156: the CHECKED variant carries the cross-field pricing rule

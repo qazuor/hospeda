@@ -11,16 +11,13 @@
  * minted destination ignores the downloader's language. One thing differs here:
  * the staff bypass is `GASTRONOMY_VIEW_ALL`, not `ACCOMMODATION_UPDATE_ANY`.
  *
- * ## The publicity check is BOTH clauses, as in accommodation
+ * ## The publicity check is the publication state, as in accommodation
  *
- * `visibility === PUBLIC` alone is not "published". `GastronomyService._canView`
- * answers NOT_FOUND to every non-owner on a `lifecycleState !== ACTIVE` row, and
- * `public/list.ts` states the public contract as
- * `lifecycleState=ACTIVE AND visibility=PUBLIC`. The normal publish path writes
- * the two columns together, but the admin
- * schemas accept `lifecycleState` on its own — so a listing PATCHed to INACTIVE
- * with its visibility untouched would otherwise pass this route, mint a code and
- * be printed, and every scan of that paper would 404 permanently. Paper is not
+ * Only `publicationStatus === PUBLISHED` is "published" (V6.9b, HOS-1641).
+ * `GastronomyService._canView` answers NOT_FOUND to every non-owner on any other
+ * state, and `public/list.ts` states the public contract the same way. A listing
+ * in any other state would otherwise pass this route, mint a code and be
+ * printed, and every scan of that paper would 404 permanently. Paper is not
  * correctable; this check is cheap.
  *
  * Not to be confused with `menuQr.ts`, which is the code printed on a TABLE and
@@ -34,11 +31,10 @@
 
 import {
     EntityTypeEnum,
-    LifecycleStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { entityNotFoundError, GastronomyService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -88,12 +84,9 @@ export async function handleGetGastronomyQrSheet(
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }
 
-    // BOTH clauses — see the docblock. A row that is PUBLIC but not ACTIVE has
-    // no public page, and a code printed for it 404s on every scan, forever.
-    if (
-        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE ||
-        entity.visibility !== VisibilityEnum.PUBLIC
-    ) {
+    // Only PUBLISHED has a public page (V6.9b, HOS-1641). A code printed for
+    // any other state 404s on every scan, forever.
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately (HOS-600).
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }

@@ -3,7 +3,7 @@
  * Returns accommodations similar to the given one, matched by type or destination.
  */
 import { accommodationMediaModel, accommodations, getDb } from '@repo/db';
-import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
+import { AccommodationPublicSchema, PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { composeAccommodationMedia, ServiceError } from '@repo/service-core';
 import { and, desc, eq, isNull, ne, or, type SQL } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -54,10 +54,10 @@ export const publicGetSimilarRoute = createPublicRoute({
 
         // Fetch current accommodation to get type and destinationId.
         // HOS-288: a bare `eq(id)` answered 200 with a full recommendation list for a
-        // soft-deleted / DRAFT / PRIVATE id. With these predicates the row is simply not
+        // soft-deleted or unpublished id. With these predicates the row is simply not
         // found and the NOT_FOUND throw right below fires.
         //
-        // For DRAFT/PRIVATE that closes an enumeration oracle. For soft-deleted it does
+        // For an unpublished listing that closes an enumeration oracle. For soft-deleted it does
         // NOT — `checkCanViewAccommodation` deliberately answers 410 GONE on
         // `/accommodations/:slug` for a formerly-PUBLIC deleted listing so crawlers
         // deindex it (HOS-117 T-022), i.e. existence is disclosed there by design. The
@@ -76,7 +76,7 @@ export const publicGetSimilarRoute = createPublicRoute({
         // would turn the leak into cache poisoning.
         //
         // Accepted cost: a token-bearing owner or VIP asking `/similar` for their own
-        // DRAFT/PRIVATE listing now gets 404 instead of recommendations. No first-party
+        // unpublished listing now gets 404 instead of recommendations. No first-party
         // regression — `apps/web` issues this SSR call with no cookie header, so it is
         // already anonymous, and the section degrades to empty via `Promise.allSettled`.
         const current = await db
@@ -89,8 +89,7 @@ export const publicGetSimilarRoute = createPublicRoute({
                 and(
                     eq(accommodations.id, id),
                     isNull(accommodations.deletedAt),
-                    eq(accommodations.lifecycleState, 'ACTIVE'),
-                    eq(accommodations.visibility, 'PUBLIC')
+                    eq(accommodations.publicationStatus, PublicationStatusEnum.PUBLISHED)
                 )
             )
             .limit(1);
@@ -122,8 +121,8 @@ export const publicGetSimilarRoute = createPublicRoute({
         const where = and(
             orCondition,
             ne(accommodations.id, id),
-            eq(accommodations.lifecycleState, 'ACTIVE'),
-            eq(accommodations.visibility, 'PUBLIC'),
+            // V6.9b (HOS-1641): PUBLISHED is the only public state.
+            eq(accommodations.publicationStatus, PublicationStatusEnum.PUBLISHED),
             // HOS-288: soft-deleted rows must never reach a public response.
             // `AccommodationModel` defaults to excluding them on findAll/count/
             // findAllWithRelations, but this handler is a RAW relational query on
@@ -174,12 +173,8 @@ export const publicGetSimilarRoute = createPublicRoute({
                 extraInfo: true,
                 destinationId: true,
                 ownerId: true,
-                visibility: true,
-                lifecycleState: true,
                 createdAt: true,
                 updatedAt: true,
-                ownerSuspended: true,
-                planRestricted: true,
                 contactInfo: true,
                 socialNetworks: true,
                 // richDescription and its SPEC-212 i18n sibling intentionally excluded —
@@ -196,7 +191,6 @@ export const publicGetSimilarRoute = createPublicRoute({
                 createdById: false,
                 updatedById: false,
                 lastWarnedAt: false,
-                moderationState: false,
                 schedule: false,
                 rating: false
             },
