@@ -26,16 +26,18 @@ import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments
 const logger = createLogger('our-cancellation-retry');
 
 /**
- * The notice kind each transition asked for when it decided the cancellation. Only the
- * inherited Tourist VIP's clause asks with a kind; every other transition uses the default
- * notice. The template is part of the notice's dedupe key, so the retry must repeat the kind
- * or it enqueues a second, generic notice and waits for it.
+ * The notice kind each transition asked for when it decided the cancellation. The inherited
+ * Tourist VIP's clause and A5 (an orphaned addon's complement, AC:B5:27) ask with their own
+ * kind; every other transition uses the default notice. The template is part of the notice's
+ * dedupe key, so the retry must repeat the kind or it enqueues a second, generic notice and
+ * waits for it.
  */
 const NOTICE_KIND_BY_TRANSITION: ReadonlyMap<
     string,
     NonNullable<CancelOurAuthorizationInput['kind']>
 > = new Map<ProviderCancellationTransition, NonNullable<CancelOurAuthorizationInput['kind']>>([
-    ['TOURIST_VIP_INHERITED', 'TOURIST_VIP_INHERITED']
+    ['TOURIST_VIP_INHERITED', 'TOURIST_VIP_INHERITED'],
+    ['A5', 'ADDON_CANCELLED']
 ]);
 
 /**

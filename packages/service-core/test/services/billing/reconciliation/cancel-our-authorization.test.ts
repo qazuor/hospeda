@@ -109,6 +109,30 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
         });
     });
 
+    it('HOS-1545 AC:B5:27 — passes ADDON_CANCELLED to beforeCancel as is', async () => {
+        // Arrange
+        const { provider, clock, authorizationId, calls } = await setup();
+        const subscriptionId = crypto.randomUUID();
+        const userId = crypto.randomUUID();
+        const beforeCancelNotice = notice('SENT', calls);
+
+        // Act
+        const result = await cancelOurAuthorization(
+            { subscriptionId, userId, authorizationId, kind: 'ADDON_CANCELLED' },
+            { provider, clock, beforeCancelNotice }
+        );
+
+        // Assert
+        expect(result).toEqual({ outcome: 'CONFIRMED' });
+        expect(beforeCancelNotice.beforeCancel).toHaveBeenCalledTimes(1);
+        expect(beforeCancelNotice.beforeCancel.mock.calls[0]?.[0]).toStrictEqual({
+            subscriptionId,
+            userId,
+            kind: 'ADDON_CANCELLED'
+        });
+        expect(calls).toEqual(['read', 'notice', 'cancel', 'read']);
+    });
+
     it('without a kind sends no kind key to beforeCancel', async () => {
         const { provider, clock, authorizationId, calls } = await setup();
         const subscriptionId = crypto.randomUUID();
