@@ -17,6 +17,7 @@ import {
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
+import { expect } from 'vitest';
 import type {
     AddonOrphanhoodPorts,
     LiveAnchorReader
@@ -28,6 +29,9 @@ import {
     seedCoveragePlanVersion,
     seedCoverageUser
 } from './coverage-fixtures';
+
+/** The vertical of the VERTICAL_SUBSCRIPTION helpers below. */
+export const ORPHAN_VERTICAL = 'accommodation';
 
 /** The instant every orphanhood test reads as "now". */
 export const orphanNow = new Date('2026-10-13T12:00:00.000Z');
@@ -277,4 +281,51 @@ export async function readMoneyTrail(tx: DrizzleClient, subscriptionId: string) 
         .innerJoin(payments, eq(payments.id, refunds.paymentId))
         .where(eq(payments.subscriptionId, subscriptionId));
     return { marks, refunds: refundRows };
+}
+
+/** A VERTICAL_SUBSCRIPTION instance on `targetId`, with a card complement linked to MP. */
+export async function seedVerticalAddon(
+    tx: DrizzleClient,
+    input: {
+        readonly userId: string;
+        readonly targetId: string;
+        readonly instanceStatus?: string;
+        readonly complementStatus?: string;
+    }
+) {
+    const complement = await seedComplement(tx, {
+        userId: input.userId,
+        vertical: ORPHAN_VERTICAL,
+        status: input.complementStatus ?? 'ACTIVE'
+    });
+    const { instanceId } = await seedOrphanInstance(tx, {
+        ownerId: input.userId,
+        scopeType: 'VERTICAL_SUBSCRIPTION',
+        compatibleVerticals: [ORPHAN_VERTICAL],
+        status: input.instanceStatus ?? 'ACTIVE',
+        targetId: input.targetId,
+        complementSubscriptionId: complement.subscriptionId
+    });
+    return { instanceId, complementId: complement.subscriptionId, complement };
+}
+
+export async function expectUntouched(
+    tx: DrizzleClient,
+    seeded: { readonly instanceId: string; readonly complementId: string },
+    instanceStatus = 'ACTIVE'
+) {
+    expect((await readInstance(tx, seeded.instanceId)).status).toBe(instanceStatus);
+    expect((await readSubscription(tx, seeded.complementId)).status).toBe('ACTIVE');
+    expect(await readDecisions(tx, seeded.complementId)).toHaveLength(0);
+}
+
+export async function expectOrphaned(
+    tx: DrizzleClient,
+    seeded: { readonly instanceId: string; readonly complementId: string }
+) {
+    expect((await readInstance(tx, seeded.instanceId)).status).toBe('CANCELLED');
+    expect((await readSubscription(tx, seeded.complementId)).status).toBe('CANCELLED');
+    const decisions = await readDecisions(tx, seeded.complementId);
+    expect(decisions).toHaveLength(1);
+    expect(decisions[0]?.reason).toBe('A5');
 }
