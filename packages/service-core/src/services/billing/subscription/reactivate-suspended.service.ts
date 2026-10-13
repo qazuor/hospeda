@@ -20,9 +20,15 @@ import { openReconciliationMark } from '../reconciliation/open-reconciliation-ma
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import { billingPeriodEnd } from './billing-period-end';
 import {
+    type CancelInheritedTouristVipSummary,
+    cancelInheritedTouristVips,
+    type TouristVipInheritancePort
+} from './cancel-inherited-tourist-vip.service';
+import {
     checkLatePaymentConditions,
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
+import type { BeforeCancelNotice } from './start-subscription.service';
 
 const logger = createLogger('reactivate-suspended');
 const inputSchema = z.strictObject({ paymentId: z.uuid(), unpaidSince: z.date().optional() });
@@ -53,6 +59,11 @@ export type ReactivateSuspendedResult =
           readonly destination: ReactivateSuspendedDestination;
           /** The end of the paid period on `CANCEL_SCHEDULED`; `null` on `ACTIVE`. */
           readonly serviceEndsAt: Date | null;
+          /**
+           * The Tourist VIP clause's outcome (AC:B7:31), run after the commit; absent when
+           * the clause was not wired or threw (the window-expiry sweep retries it).
+           */
+          readonly touristVip?: CancelInheritedTouristVipSummary;
       }
     | { readonly outcome: 'RETAINED_FOR_S19'; readonly subscriptionId: string }
     | {
@@ -80,6 +91,10 @@ export interface ReactivateSuspendedPorts {
     readonly markPayments?: ReconciliationMarkPayments;
     readonly actorType?: 'provider' | 'job';
     readonly coverageNotices?: CoverageNotices;
+    /** Our email before the paid Tourist VIP is cancelled (AC:B7:31, H10); unwired skips the clause. */
+    readonly beforeCancelNotice?: BeforeCancelNotice;
+    /** Whether the user's plan grants Tourist VIP again (AC:B7:31, H10); unwired skips the clause. */
+    readonly touristVipInheritance?: TouristVipInheritancePort;
 }
 
 /** The verdict reached inside the row's transaction. */
@@ -167,6 +182,46 @@ async function emitAddedAfterCommit(input: {
 }
 
 /**
+ * The mirror of S2's clause (AC:B7:31): once S7 committed, a plan that grants
+ * Tourist VIP again cancels the user's paid Tourist VIP, our email first and no
+ * refund. The clause rereads inheritance, the VIP rows and their authorizations
+ * itself; nothing decided before S7's transaction is passed in. An unwired port
+ * or a failure is logged and undoes nothing: `sweepInheritedTouristVips` retries.
+ */
+async function cancelInheritedTouristVipAfterCommit(input: {
+    readonly subscriptionId: string;
+    readonly userId: string | null;
+    readonly ports: ReactivateSuspendedPorts;
+}): Promise<CancelInheritedTouristVipSummary | undefined> {
+    const { ports } = input;
+    if (!input.userId || !ports.beforeCancelNotice || !ports.touristVipInheritance) {
+        logger.warn(
+            { subscriptionId: input.subscriptionId, userId: input.userId },
+            'Tourist VIP clause not wired; the window-expiry sweep retries'
+        );
+        return undefined;
+    }
+    try {
+        return await cancelInheritedTouristVips(
+            { userId: input.userId },
+            {
+                provider: ports.provider,
+                clock: ports.clock,
+                beforeCancelNotice: ports.beforeCancelNotice,
+                touristVipInheritance: ports.touristVipInheritance,
+                coverageNotices: ports.coverageNotices
+            }
+        );
+    } catch (error) {
+        logger.error(
+            { subscriptionId: input.subscriptionId, error },
+            'Inherited Tourist VIP cancellation will be retried'
+        );
+        return undefined;
+    }
+}
+
+/**
  * S7 (AC:B7:13): a credited payment returns a `SUSPENDED` card principal to
  * `ACTIVE` when the four conditions of `05` §3 hold — or to `CANCEL_SCHEDULED`,
  * with the service ending at the end of the paid period, when the authorization
@@ -180,11 +235,12 @@ async function emitAddedAfterCommit(input: {
  * Conditions 2 and 3 open reason 7; condition 4 (a duplicate or a replay of an
  * already paid period) opens nothing (D-3). No anchor opens reason 7 (H4); an
  * authorization neither `authorized` nor `cancelled` writes nothing (H3).
- * `ADDED` goes to the coverage listener after the commit.
+ * `ADDED` goes to the coverage listener after the commit; then, outside any
+ * transaction, the Tourist VIP clause runs on the reactivated row's user (AC:B7:31).
  *
  * @param input.paymentId - The credited payment
  * @param input.unpaidSince - The unpaid-period anchor (S19's re-evaluation); defaults to `grace_started_at`
- * @param ports - Provider, clock, mark payment port, actor type and coverage listener
+ * @param ports - Provider, clock, mark payment port, actor type, coverage listener and the Tourist VIP clause's ports
  * @returns The S7 outcome
  */
 export async function reactivateSuspendedOnCreditedPayment(
@@ -362,11 +418,17 @@ export async function reactivateSuspendedOnCreditedPayment(
                 vertical: verdict.vertical,
                 coverageNotices: ports.coverageNotices ?? unwiredCoverageNotices
             });
+            const touristVip = await cancelInheritedTouristVipAfterCommit({
+                subscriptionId,
+                userId: verdict.userId,
+                ports
+            });
             return {
                 outcome: 'REACTIVATED',
                 subscriptionId,
                 destination: verdict.destination,
-                serviceEndsAt: verdict.serviceEndsAt
+                serviceEndsAt: verdict.serviceEndsAt,
+                ...(touristVip ? { touristVip } : {})
             };
         }
         default: {
