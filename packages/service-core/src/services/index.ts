@@ -115,6 +115,7 @@ export * from './billing/subscription/exit-grace.service.js';
 export * from './billing/subscription/expire-authorization-windows.service.js';
 export * from './billing/subscription/grace-started-notice.js';
 export * from './billing/subscription/late-payment-conditions.js';
+export * from './billing/subscription/provider-link-cancellation-seen.js';
 export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/signup-confirmed-notice.js';
 export * from './billing/subscription/signup-declined-notice.js';
