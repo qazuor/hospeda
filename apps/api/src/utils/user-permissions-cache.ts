@@ -51,9 +51,16 @@ const userPermissionModel = new RUserPermissionModel();
  * Get a user's direct permission overrides split into `grants` and `denies`.
  * Uses an in-memory cache with TTL to avoid repeated DB queries.
  *
+ * A failed read THROWS and is never cached (HOS-1674). Degrading to "no
+ * overrides" would fail OPEN: the `deny` overrides would vanish and the actor
+ * would get back, for that request, permissions its role grants but an override
+ * takes away. The actor middleware turns the error into a retryable 503.
+ * Concurrent callers sharing the pending read all receive the same rejection.
+ *
  * @param params - Parameters object
  * @param params.userId - The user ID to look up overrides for
  * @returns The user's grant and deny overrides
+ * @throws When the read fails.
  */
 export async function getUserPermissionsWithEffect({
     userId
@@ -90,9 +97,9 @@ export async function getUserPermissionsWithEffect({
         return value;
     } catch (error) {
         apiLogger.error(
-            `Failed to load permission overrides for user ${userId}: ${error instanceof Error ? error.message : String(error)}`
+            `Failed to load permission overrides for user ${userId}: ${error instanceof Error ? error.message : String(error)}. Refusing to drop the deny overrides.`
         );
-        return { grants: [], denies: [] };
+        throw error;
     } finally {
         pendingQueries.delete(userId);
     }
@@ -109,6 +116,7 @@ export async function getUserPermissionsWithEffect({
  * @param params - Parameters object
  * @param params.userId - The user ID to look up permissions for
  * @returns Array of PermissionEnum values granted directly to the user
+ * @throws When the read fails.
  */
 export async function getUserPermissions({
     userId
@@ -120,10 +128,10 @@ export async function getUserPermissions({
 }
 
 /**
- * Reads a user's permission overrides straight from the database: no cache, and a
- * failed read THROWS instead of degrading to "no overrides". For a decision that
- * must never act on a stale or incomplete set (action 24 reading its subject,
- * Coord-240); the request path keeps {@link getUserPermissionsWithEffect}.
+ * Reads a user's permission overrides straight from the database, bypassing the
+ * cache. For a decision that must never act on a stale set (action 24 reading its
+ * subject, Coord-240); the request path keeps {@link getUserPermissionsWithEffect}.
+ * Both throw on a failed read (HOS-1674): the only difference is the cache.
  *
  * @param params.userId - The user whose overrides are read.
  * @returns The grant and deny overrides.
