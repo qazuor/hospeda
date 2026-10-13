@@ -29,12 +29,12 @@ import {
 } from '../reconciliation/cancel-our-authorization';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import type { RefundSource } from '../refund/refund-source';
-import { requestRefund } from '../refund/request-refund.service';
 import {
     type RevocablePayment,
     revocationRejection as reject,
     resolveRevokedPayment
 } from './revocation-payment';
+import { requestRevocationRefund } from './revocation-refund';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service';
 import {
     type CancellationSeenAnnotator,
@@ -462,16 +462,14 @@ export async function revokeSubscription(
                 changes: [{ field: 'status', old: reading.origin, new: 'CANCELLED' }],
                 tx
             });
-        // i. RF1 for the total; any rejection rolls the whole act back
-        const { refundId } = await requestRefund(
-            {
-                source: reading.payment.source,
-                amount: reading.payment.amount,
-                reason: 'REVOCATION'
-            },
-            { clock: ports.clock, tx }
-        );
-        // S18 (AC:B5:34, HOS-1547) and the orphaning A5/S21 (AC:B5:24, HOS-1546) run here, inside this transaction.
+        // i. RF1 for the total and, for a payment S19 retained, its flag off (AC:B5:23); any rejection rolls the whole act back
+        const { refundId } = await requestRevocationRefund({
+            tx,
+            payment: reading.payment,
+            now,
+            clock: ports.clock
+        });
+        // S18 (AC:B5:34, HOS-1547) and the orphaning A5/S21 (AC:B5:24, HOS-1546) run here, AFTER the RF1 and the flag off, inside this transaction.
         return { reading, refundId };
     });
 
