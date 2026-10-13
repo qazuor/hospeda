@@ -12,14 +12,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { injectClock } from '../../../src/utils/clock';
 import {
     buildBillingCoveragePorts,
-    createApiBillingCoverage
+    createApiBillingCanCharge,
+    createApiBillingCoverage,
+    createApiBillingRetentionStopped
 } from '../../../src/utils/listing-access/billing-coverage';
 
 const mocks = vi.hoisted(() => ({
     addonPolicy: vi.fn(),
     createPlanCatalogInverse: vi.fn(),
     resolveTrialAndBaseSources: vi.fn(),
-    createBillingCoverage: vi.fn()
+    createBillingCoverage: vi.fn(),
+    createBillingCanCharge: vi.fn(),
+    createBillingRetentionStopped: vi.fn()
 }));
 
 vi.mock('@repo/db', async () => {
@@ -39,6 +43,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ...original,
         createBillingCoverage: mocks.createBillingCoverage.mockImplementation(
             original.createBillingCoverage
+        ),
+        createBillingCanCharge: mocks.createBillingCanCharge.mockImplementation(
+            original.createBillingCanCharge
+        ),
+        createBillingRetentionStopped: mocks.createBillingRetentionStopped.mockImplementation(
+            original.createBillingRetentionStopped
         )
     };
 });
@@ -49,6 +59,8 @@ beforeEach(() => {
     mocks.createPlanCatalogInverse.mockReset().mockReturnValue({ addonPolicy: mocks.addonPolicy });
     mocks.resolveTrialAndBaseSources.mockReset();
     mocks.createBillingCoverage.mockClear();
+    mocks.createBillingCanCharge.mockClear();
+    mocks.createBillingRetentionStopped.mockClear();
 });
 
 describe('buildBillingCoveragePorts', () => {
@@ -108,5 +120,47 @@ describe('createApiBillingCoverage', () => {
                 addonPolicy: mocks.addonPolicy
             })
         });
+    });
+});
+
+describe('AC:B4:5 AC:B4:6 US:B4:3 createApiBillingCanCharge', () => {
+    it("assembles billing's real canCharge, with the deadlines in force and a lazy clock", () => {
+        // Arrange
+        injectClock({ clock: { now: () => new Date('2026-01-01T00:00:00.000Z') } });
+
+        // Act
+        const billing = createApiBillingCanCharge();
+        const later = new Date('2026-10-12T12:00:00.000Z');
+        injectClock({ clock: { now: () => later } });
+
+        // Assert
+        expect(typeof billing.canCharge).toBe('function');
+        expect(mocks.createBillingCanCharge).toHaveBeenCalledTimes(1);
+        const [{ ports }] = mocks.createBillingCanCharge.mock.calls[0] as [
+            { ports: { clock: { now(): Date }; deadlines?: unknown } }
+        ];
+        expect(Object.keys(ports)).toEqual(['clock']);
+        expect(ports.clock.now()).toEqual(later);
+    });
+});
+
+describe('AC:B4:4 createApiBillingRetentionStopped', () => {
+    it("assembles billing's real retentionStopped with a lazy clock", () => {
+        // Arrange
+        injectClock({ clock: { now: () => new Date('2026-01-01T00:00:00.000Z') } });
+
+        // Act
+        const billing = createApiBillingRetentionStopped();
+        const later = new Date('2026-10-12T12:00:00.000Z');
+        injectClock({ clock: { now: () => later } });
+
+        // Assert
+        expect(typeof billing.retentionStopped).toBe('function');
+        expect(mocks.createBillingRetentionStopped).toHaveBeenCalledTimes(1);
+        const [{ ports }] = mocks.createBillingRetentionStopped.mock.calls[0] as [
+            { ports: { clock: { now(): Date } } }
+        ];
+        expect(Object.keys(ports)).toEqual(['clock']);
+        expect(ports.clock.now()).toEqual(later);
     });
 });
