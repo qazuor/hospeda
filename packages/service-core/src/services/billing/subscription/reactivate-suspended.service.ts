@@ -10,7 +10,12 @@ import {
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import {
+    type AuthorizationStatus,
+    actStartInstant,
+    assertFreshForAct,
+    type PaymentProvider
+} from '@repo/payments';
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
@@ -96,10 +101,18 @@ type InTransactionVerdict =
     | { readonly kind: 'NO_ANCHOR' }
     | { readonly kind: 'LOST_RACE' };
 
-/** Destination by the authorization status reread by id (only the two S7 decides on). */
-const DESTINATION_BY_AUTHORIZATION: Readonly<Record<string, ReactivateSuspendedDestination>> = {
-    authorized: 'ACTIVE',
-    cancelled: 'CANCEL_SCHEDULED'
+/**
+ * Destination by the authorization status reread by id. The provider's `active` is
+ * the domain's `authorized`; only it and `cancelled` decide S7 — `pending` and
+ * `paused` are undecidable (H3) and write nothing.
+ */
+const DESTINATION_BY_AUTHORIZATION: Readonly<
+    Record<AuthorizationStatus, ReactivateSuspendedDestination | null>
+> = {
+    active: 'ACTIVE',
+    cancelled: 'CANCEL_SCHEDULED',
+    pending: null,
+    paused: null
 };
 
 /**
