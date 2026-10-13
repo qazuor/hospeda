@@ -48,8 +48,7 @@ const NESTED_WITH_PREMIUM = {
     // HOS-929: billing-derived flag of the ACCOMMODATION'S owner — a third party
     // relative to whoever authored the embedding post/promotion/review.
     featuredByEntitlement: true,
-    visibility: 'PUBLIC',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-01-01T00:00:00.000Z',
     richDescription: '## Premium\n\n**must not survive**',

@@ -5,13 +5,11 @@ import {
     createBaseAuditFields,
     createBaseContactFields,
     createBaseIdFields,
-    createBaseLifecycleFields,
     createBaseMediaFields,
-    createBaseModerationFields,
     createBaseReviewFields,
     createBaseSeoFields,
     createBaseTagsFields,
-    createBaseVisibilityFields
+    createPublicationStatusFields
 } from './common.fixtures.js';
 
 /**
@@ -109,9 +107,7 @@ export const createValidGastronomy = () => ({
     destinationId: faker.string.uuid(),
     ownerId: faker.string.uuid(),
     isFeatured: faker.datatype.boolean({ probability: 0.2 }),
-    ...createBaseLifecycleFields(),
-    ...createBaseModerationFields(),
-    ...createBaseVisibilityFields(),
+    ...createPublicationStatusFields(),
     ...createBaseReviewFields(),
     ...createBaseSeoFields(),
     ...createBaseContactFields(),
@@ -137,9 +133,7 @@ export const createMinimalGastronomy = () => ({
     destinationId: faker.string.uuid(),
     ownerId: faker.string.uuid(),
     isFeatured: false,
-    lifecycleState: 'DRAFT',
-    moderationState: 'PENDING',
-    visibility: 'PRIVATE',
+    publicationStatus: 'DRAFT',
     reviewsCount: 0,
     averageRating: 0,
     createdAt: new Date(),

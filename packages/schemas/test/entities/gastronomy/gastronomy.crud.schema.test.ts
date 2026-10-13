@@ -123,15 +123,10 @@ describe('GastronomyUpdateInputSchema (admin update)', () => {
         expect(() => GastronomyUpdateInputSchema.parse(data)).toThrow(ZodError);
     });
 
-    it('should NOT inject default visibility when field is absent (PATCH semantics)', () => {
-        // A PATCH with only `name` must NOT silently inject visibility:'PUBLIC'
+    it('should NOT carry publicationStatus when field is absent (PATCH semantics)', () => {
+        // A PATCH with only `name` must NOT carry a publication state (HOS-1641)
         const result = GastronomyUpdateInputSchema.parse({ name: 'Foo' });
-        expect('visibility' in result).toBe(false);
-    });
-
-    it('should NOT inject default moderationState when field is absent (PATCH semantics)', () => {
-        const result = GastronomyUpdateInputSchema.parse({ name: 'Foo' });
-        expect('moderationState' in result).toBe(false);
+        expect('publicationStatus' in result).toBe(false);
     });
 
     it('should NOT inject default isFeatured when field is absent (PATCH semantics)', () => {

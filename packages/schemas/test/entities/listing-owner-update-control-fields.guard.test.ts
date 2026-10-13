@@ -2,11 +2,12 @@
  * Guard: the owner-facing listing update payload must never carry a control
  * field (HOS-589 AC-11, HOS-166 §6.2).
  *
- * HOS-686 gives listings a `moderate()` action and a dedicated admin
- * route. That makes the owner side of the boundary load-bearing rather than
- * incidental: if `moderationState` ever became owner-writable, an owner could
- * clear their own rejection through an ordinary PATCH and the reconciler would
- * put the listing straight back on the public site.
+ * Since HOS-1641 the listing state is ONE field, `publicationStatus`, and only
+ * the PB publication transitions write it — taking a listing down by
+ * moderation is PB10 (`POST /api/v1/admin/{vertical}/:id/moderate`). That makes
+ * the owner side of the boundary load-bearing rather than incidental: if
+ * `publicationStatus` ever became owner-writable, an owner could lift their own
+ * moderation, or publish without paying, through an ordinary PATCH.
  *
  * The schemas are non-strict, so a re-added field would NOT throw — it would be
  * accepted and written, with the owner's PATCH returning 200 either way. That
@@ -17,14 +18,10 @@
 import { describe, expect, it } from 'vitest';
 import { ExperienceOwnerUpdateInputSchema } from '../../src/entities/experience/experience.crud.schema.js';
 import { GastronomyOwnerUpdateInputSchema } from '../../src/entities/gastronomy/gastronomy.crud.schema.js';
-import {
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    VisibilityEnum
-} from '../../src/enums/index.js';
+import { PublicationStatusEnum } from '../../src/enums/index.js';
 
 /** Fields an owner must never move through their own update payload. */
-const CONTROL_FIELDS = ['moderationState', 'visibility', 'lifecycleState', 'isFeatured'] as const;
+const CONTROL_FIELDS = ['publicationStatus', 'isFeatured'] as const;
 
 const OWNER_SCHEMAS = [
     { name: 'GastronomyOwnerUpdateInputSchema', schema: GastronomyOwnerUpdateInputSchema },
@@ -37,7 +34,7 @@ describe('listing owner update payload excludes the control fields (AC-11)', () 
             it(`${name} does not declare ${field}`, () => {
                 expect(
                     Object.keys(schema.shape),
-                    `${field} is back in ${name}. Control fields move through their dedicated admin action — moderationState through POST /api/v1/admin/{gastronomies|experiences}/:id/moderate, which is where GASTRONOMY_MODERATION_CHANGE / EXPERIENCE_MODERATION_CHANGE is enforced.`
+                    `${field} is back in ${name}. Control fields move through their dedicated action — publicationStatus only through the PB publication transitions (moderation is PB10, POST /api/v1/admin/{gastronomies|experiences}/:id/moderate).`
                 ).not.toContain(field);
             });
         }
@@ -45,9 +42,7 @@ describe('listing owner update payload excludes the control fields (AC-11)', () 
         it(`${name} strips a control-field payload instead of persisting it`, () => {
             const result = schema.safeParse({
                 name: 'A perfectly ordinary edit',
-                moderationState: ModerationStatusEnum.APPROVED,
-                visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
                 isFeatured: true
             });
 

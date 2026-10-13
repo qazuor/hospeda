@@ -43,7 +43,6 @@ const basePayload = {
     location: { street: 'Test St', number: '1' },
     averageRating: 0,
     reviewsCount: 0,
-    visibility: 'PUBLIC' as const,
     seo: null,
     price: null,
     tags: [],
@@ -51,14 +50,11 @@ const basePayload = {
     // Fields required by protected / admin schemas
     ownerId: 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f',
     contactInfo: { mobilePhone: '+15550123456' },
-    lifecycleState: 'ACTIVE' as const,
+    publicationStatus: 'PUBLISHED' as const,
     faqs: [],
     createdAt: new Date(),
     updatedAt: new Date(),
     // Admin-only fields
-    moderationState: 'APPROVED' as const,
-    ownerSuspended: false,
-    planRestricted: false,
     createdById: 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f',
     updatedById: 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f',
     deletedAt: null,

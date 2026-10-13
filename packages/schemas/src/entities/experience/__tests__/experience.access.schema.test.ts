@@ -34,7 +34,7 @@ const buildPublicExperience = (
     hasActiveSubscription: true,
     isFeatured: false,
     destinationId: VALID_UUID,
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     averageRating: 4.5,
     reviewsCount: 12,
     createdAt: new Date('2024-01-01'),
@@ -216,7 +216,7 @@ describe('ExperienceProtectedSchema', () => {
             ...buildPublicExperience(),
             ownerId: VALID_UUID,
             contactInfo: { mobilePhone: '+54911234567' },
-            lifecycleState: 'ACTIVE',
+            publicationStatus: 'PUBLISHED',
             updatedAt: new Date('2024-01-02')
         };
         const result = ExperienceProtectedSchema.safeParse(raw);
@@ -227,7 +227,7 @@ describe('ExperienceProtectedSchema', () => {
         const raw = {
             ...buildPublicExperience(),
             ownerId: VALID_UUID,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: 'PUBLISHED',
             updatedAt: new Date('2024-01-02')
         };
         const result = ExperienceProtectedSchema.safeParse(raw);
@@ -241,7 +241,7 @@ describe('ExperienceProtectedSchema', () => {
         const raw = {
             ...buildPublicExperience(),
             ownerId: VALID_UUID,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: 'PUBLISHED',
             updatedAt: new Date('2024-01-02'),
             adminInfo: { internalNote: 'SENSITIVE' }
         };
@@ -263,8 +263,7 @@ describe('ExperienceAdminSchema', () => {
             ...buildPublicExperience(),
             ownerId: VALID_UUID,
             contactInfo: { mobilePhone: '+54911234567' },
-            lifecycleState: 'ACTIVE',
-            moderationState: 'APPROVED',
+            publicationStatus: 'PUBLISHED',
             adminInfo: { internalNote: 'Verified owner' },
             updatedAt: new Date('2024-01-02'),
             createdById: VALID_UUID,
@@ -279,7 +278,7 @@ describe('ExperienceAdminSchema', () => {
         const raw = {
             ...buildPublicExperience(),
             ownerId: VALID_UUID,
-            lifecycleState: 'DRAFT',
+            publicationStatus: 'DRAFT',
             description: 'Short desc',
             updatedAt: new Date('2024-01-02')
         };
@@ -298,8 +297,7 @@ describe('ExperienceAdminListItemSchema', () => {
     const buildAdminRow = (overrides: Record<string, unknown> = {}) => ({
         ...buildPublicExperience(),
         ownerId: VALID_UUID,
-        lifecycleState: 'ACTIVE',
-        moderationState: 'APPROVED',
+        publicationStatus: 'PUBLISHED',
         ...overrides
     });
 
@@ -452,7 +450,7 @@ describe('meeting point across the access tiers (HOS-1048)', () => {
                 meetingPointLong: -58.2333
             }),
             ownerId: VALID_UUID,
-            lifecycleState: 'ACTIVE'
+            publicationStatus: 'PUBLISHED'
         };
 
         // Act
@@ -522,7 +520,7 @@ describe('practical ficha fields reach the public tier', () => {
         const raw = {
             ...buildWithPracticalFields(),
             ownerId: VALID_UUID,
-            lifecycleState: 'ACTIVE'
+            publicationStatus: 'PUBLISHED'
         };
 
         const result = ExperienceProtectedSchema.safeParse(raw);

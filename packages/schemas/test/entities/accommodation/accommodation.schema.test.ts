@@ -65,7 +65,7 @@ describe('AccommodationSchema', () => {
             const invalidData = {
                 ...validData,
                 type: 'INVALID_TYPE',
-                visibility: 'INVALID_VISIBILITY'
+                publicationStatus: 'INVALID_STATE'
             };
 
             expect(() => AccommodationSchema.parse(invalidData)).toThrow(ZodError);
