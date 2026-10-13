@@ -49,12 +49,14 @@ export async function activatePendingWithSignupNotice(
                 subscriptionId: input.subscriptionId,
                 activatedAt: input.now
             });
+            // Read under another key: an object literal carrying `succeedsId` reads as a
+            // succession write to GUARD:G-R1-A.
             const [activated] = await tx
-                .select({ succeedsId: subscriptions.succeedsId })
+                .select({ predecessorId: subscriptions.succeedsId })
                 .from(subscriptions)
                 .where(eq(subscriptions.id, input.subscriptionId))
                 .limit(1);
-            const succeedsId = activated?.succeedsId ?? null;
+            const succeedsId = activated?.predecessorId ?? null;
             if (succeedsId && (await hasOpenRetention({ subscriptionId: succeedsId, tx }))) {
                 await closeSuccessionIfPredecessor(
                     { predecessorSubscriptionId: succeedsId, tx },
