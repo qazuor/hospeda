@@ -42,13 +42,13 @@ afterEach(async () => {
 });
 
 function newFake(honestM8 = false) {
-    const fake = new FakePaymentProvider({
-        idNamespace: crypto.randomUUID(),
-        clock,
-        ...(honestM8
-            ? { honestAbout: [{ lie: 'M8' as const, why: 'the tombstone charge lands approved' }] }
-            : {})
-    });
+    const fake = honestM8
+        ? new FakePaymentProvider({
+              idNamespace: crypto.randomUUID(),
+              clock,
+              honestAbout: [{ lie: 'M8', why: 'the tombstone charge lands approved' }]
+          })
+        : new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock });
     return { fake, provider: fake as unknown as PaymentProvider };
 }
 
