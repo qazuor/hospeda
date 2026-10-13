@@ -8,8 +8,14 @@ const beforeCancelNotice: BeforeCancelNotice = { beforeCancel: async () => 'SENT
 const DAY_MS = 86_400_000;
 
 /** Builds a paid ACTIVE card subscription and moves its clock to the next cycle. */
-export async function graceFixture({ graceDays = 7 }: { readonly graceDays?: number } = {}) {
-    const fixture = await paymentFixture();
+export async function graceFixture({
+    graceDays = 7,
+    inheritsTouristVip = false
+}: {
+    readonly graceDays?: number;
+    readonly inheritsTouristVip?: boolean;
+} = {}) {
+    const fixture = await paymentFixture({ inheritsTouristVip });
     const initialCharge = await fixture.provider.charge({
         authorizationId: fixture.started.authorizationId,
         amount: { amountMinor: 250000, currency: 'ARS' },
@@ -45,13 +51,16 @@ export async function graceFixture({ graceDays = 7 }: { readonly graceDays?: num
 export async function graceWithFailedCycle({
     graceDays = 7,
     approveOnAttempt,
-    beforeS4
+    beforeS4,
+    inheritsTouristVip = false
 }: {
     readonly graceDays?: number;
+    /** Whether the seeded plan version inherits Tourist VIP (AC:B7:30); `false` by default. */
+    readonly inheritsTouristVip?: boolean;
     readonly approveOnAttempt?: 2 | 3 | 4;
     readonly beforeS4?: (fixture: Awaited<ReturnType<typeof graceFixture>>) => Promise<void>;
 } = {}) {
-    const fixture = await graceFixture({ graceDays });
+    const fixture = await graceFixture({ graceDays, inheritsTouristVip });
     const { chargeId } = await fixture.provider.failChargeCycle({
         authorizationId: fixture.started.authorizationId,
         declineReason: 'issuer_declined',

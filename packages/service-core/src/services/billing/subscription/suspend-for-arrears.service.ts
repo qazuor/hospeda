@@ -5,6 +5,7 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
+import { readArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
     type CancellationSeenAnnotator,
@@ -150,7 +151,9 @@ export async function writeArrearsSuspension(input: {
  * the same act, with S17's re-read rule (DEC-SUB-019):
  *
  * 1. no S19-retained payment of the period (I-7);
- * 2. re-read the authorization by id; already `cancelled` → nothing is sent;
+ * 2. read what the suspension notice says (AC:B7:30), then re-read the
+ *    authorization by id; already `cancelled` → no cancel call, and the same
+ *    notice is enqueued without blocking (H2);
  * 3. otherwise our before-cancel notice first (DEC-MAIL-001): `NOT_YET_SENT`
  *    defers without calling or writing; `NO_RECIPIENT`/`DELIVERY_EXHAUSTED`
  *    cancel anyway and escalate (D-8);
@@ -189,6 +192,14 @@ export async function suspendForArrears(
     if (await retained.hasRetainedPeriodPayment({ subscriptionId: subscription.id }))
         return { outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' };
 
+    // What the suspension notice says (AC:B7:30), read while the row is still in
+    // its origin status. It decides nothing; if it throws, S6 throws and the
+    // sweep retries, so no half notice is ever sent.
+    const content = await readArrearsSuspensionNoticeContent({
+        subscription,
+        now: ports.clock.now()
+    });
+
     const annotator = ports.cancellationSeen ?? noCancellationSeenAnnotation;
     const rereadAuthorization = async () => {
         const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
@@ -210,12 +221,34 @@ export async function suspendForArrears(
             seenAt: authorization.readAt
         });
         cancelCall = 'NOT_NEEDED';
+        // H2: the same suspension notice goes out, but there is no cancellation
+        // to precede (DEC-MAIL-001), so its outcome never blocks the write.
+        try {
+            const notice = await ports.beforeCancelNotice.beforeCancel({
+                subscriptionId: subscription.id,
+                userId: subscription.userId ?? '',
+                kind: 'ARREARS_SUSPENSION',
+                occurrenceId: value.occurrenceId,
+                content
+            });
+            if (notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED')
+                logger.warn(
+                    { subscriptionId: subscription.id, notice, event: value.event },
+                    'Arrears suspension notice is not deliverable; suspending anyway'
+                );
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, event: value.event, error },
+                'Arrears suspension notice could not be enqueued; suspending anyway'
+            );
+        }
     } else {
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: subscription.id,
             userId: subscription.userId ?? '',
             kind: 'ARREARS_SUSPENSION',
-            occurrenceId: value.occurrenceId
+            occurrenceId: value.occurrenceId,
+            content
         });
         if (notice === 'NOT_YET_SENT')
             return {
