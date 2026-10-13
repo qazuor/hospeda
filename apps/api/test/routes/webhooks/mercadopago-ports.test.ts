@@ -12,6 +12,7 @@ vi.mock('../../../src/utils/clock', () => ({
     getClock: () => ({ clock: { now: () => new Date('2026-10-12T12:00:00.000Z') } })
 }));
 
+import { touristVipInheritance } from '../../../src/routes/billing-subscription/tourist-vip-inheritance';
 import { buildMercadoPagoNoticePorts } from '../../../src/routes/webhooks/mercadopago-ports';
 import { getCoverageNotices } from '../../../src/utils/listing-access/coverage-notices';
 
@@ -22,6 +23,17 @@ describe('TEST:B4:2 the provider notice receiver notifies the process-wide regis
 
         // Assert
         expect(ports.coverageNotices).toBe(getCoverageNotices());
+    });
+});
+
+describe("AC:B7:31 the provider notice receiver wires S7's Tourist VIP clause (HOS-1566)", () => {
+    it('wires touristVipInheritance to the production inheritance port', () => {
+        // Arrange / Act
+        const ports = buildMercadoPagoNoticePorts();
+
+        // Assert
+        expect(ports.touristVipInheritance).toBe(touristVipInheritance);
+        expect(typeof ports.touristVipInheritance.inherits).toBe('function');
     });
 });
 
@@ -40,7 +52,8 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
                 'coverageNotices',
                 'payments',
                 'planPolicy',
-                'provider'
+                'provider',
+                'touristVipInheritance'
             ].sort()
         );
     });

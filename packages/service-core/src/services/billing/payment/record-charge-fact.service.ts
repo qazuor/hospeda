@@ -6,6 +6,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
+import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service';
 import type {
     DeclineFirstChargePorts,
     DeclineFirstChargeResult
@@ -35,6 +36,8 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly markPayments?: ReconciliationMarkPayments;
     /** Who brought the charge, for S5's/S7's reason 7 (I-14): the notice (`provider`, default) or the sweep (`job`). */
     readonly actorType?: ExitGracePorts['actorType'];
+    /** Whether the plan S7 restores grants Tourist VIP again (AC:B7:31); unwired skips that clause. */
+    readonly touristVipInheritance?: TouristVipInheritancePort;
 }
 
 export type RecordChargeFactResult =
@@ -163,7 +166,9 @@ export async function recordChargeFact(
                     clock: ports.clock,
                     markPayments: ports.markPayments,
                     actorType: ports.actorType,
-                    coverageNotices: ports.coverageNotices
+                    coverageNotices: ports.coverageNotices,
+                    beforeCancelNotice: ports.beforeCancelNotice,
+                    touristVipInheritance: ports.touristVipInheritance
                 }
             );
             return { outcome: 'CREDITED', paymentId, credit, reactivation };

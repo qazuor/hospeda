@@ -1,4 +1,5 @@
 import { emailOutbox, eq, getDb, inArray, users } from '@repo/db';
+import type { ArrearsSuspensionNoticeContent } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { beforeCancelNotice } from '../../../src/routes/billing-subscription/before-cancel-notice';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -20,6 +21,15 @@ async function seedUser() {
     seededUserIds.push(user.id);
     return user;
 }
+
+/** A test content of the arrears suspension notice (AC:B7:30). */
+const CONTENT: ArrearsSuspensionNoticeContent = {
+    vertical: 'accommodation',
+    paymentMethod: 'CARD',
+    touristVipLost: true,
+    oneTimeAddons: [{ name: 'Destacado 30 días', remainingDays: 10 }],
+    promoLost: true
+};
 
 async function outboxOf(userId: string) {
     return getDb().select().from(emailOutbox).where(eq(emailOutbox.recipientUserId, userId));
@@ -45,14 +55,22 @@ describe('AC:B7:7 — the arrears suspension notice is keyed by the clock that e
             subscriptionId,
             userId: user.id,
             kind: 'ARREARS_SUSPENSION' as const,
-            occurrenceId: `${subscriptionId}:grace-expired:2026-10-15T03:00:00.000Z`
+            occurrenceId: `${subscriptionId}:grace-expired:2026-10-15T03:00:00.000Z`,
+            content: CONTENT
         };
         expect(await beforeCancelNotice.beforeCancel(first)).toBe('NOT_YET_SENT');
         expect(await beforeCancelNotice.beforeCancel(first)).toBe('NOT_YET_SENT');
         const once = await outboxOf(user.id);
         expect(once).toHaveLength(1);
         expect(once[0]?.template).toBe('billing.arrears-suspension');
-        expect(once[0]?.payload).toEqual({ subscriptionId });
+        expect(once[0]?.payload).toEqual({
+            subscriptionId,
+            vertical: 'accommodation',
+            paymentMethod: 'CARD',
+            touristVipLost: true,
+            oneTimeAddons: [{ name: 'Destacado 30 días', remainingDays: 10 }],
+            promoLost: true
+        });
 
         expect(
             await beforeCancelNotice.beforeCancel({
@@ -78,6 +96,22 @@ describe('AC:B7:7 — the arrears suspension notice is keyed by the clock that e
         const rows = await outboxOf(user.id);
         expect(rows).toHaveLength(1);
         expect(rows[0]?.template).toBe('billing.before-cancel');
+        expect(rows[0]?.payload).toEqual({ subscriptionId });
+    });
+
+    it('AC:B7:30 — without content the arrears payload stays { subscriptionId }', async () => {
+        const user = await seedUser();
+        const subscriptionId = crypto.randomUUID();
+        await beforeCancelNotice.beforeCancel({
+            subscriptionId,
+            userId: user.id,
+            kind: 'ARREARS_SUSPENSION',
+            occurrenceId: `${subscriptionId}:grace-expired:2026-10-15T03:00:00.000Z`
+        });
+        const rows = await outboxOf(user.id);
+        expect(rows).toHaveLength(1);
+        expect(rows[0]?.template).toBe('billing.arrears-suspension');
+        expect(rows[0]?.payload).toEqual({ subscriptionId });
     });
 
     it('reads the four delivery outcomes of the arrears notice', async () => {

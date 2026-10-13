@@ -1,8 +1,13 @@
 import type { EmailOutboxRow } from '@repo/db';
 import {
+    ARREARS_SUSPENSION_SUBJECT,
+    ArrearsSuspension,
+    type ArrearsSuspensionOneTimeAddon,
     SignupBeforeCancel,
     SignupConfirmed,
-    SignupIncomplete
+    SignupIncomplete,
+    TOURIST_VIP_INHERITED_CANCEL_SUBJECT,
+    TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
@@ -42,6 +47,13 @@ function beforeCancel(row: EmailOutboxRow) {
     return { subject: 'Tu autorización pendiente venció', react: <SignupBeforeCancel /> };
 }
 
+function touristVipInheritedCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de cancelación de Turista VIP');
+    return { subject: TOURIST_VIP_INHERITED_CANCEL_SUBJECT, react: <TouristVipInheritedCancel /> };
+}
+
 function incomplete(row: EmailOutboxRow) {
     const data = objectPayload(row);
     if (
@@ -63,13 +75,67 @@ function incomplete(row: EmailOutboxRow) {
     };
 }
 
-/** Renderers for the three notices emitted by the subscription signup flow. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function oneTimeAddonsOf(value: unknown): readonly ArrearsSuspensionOneTimeAddon[] | null {
+    if (!Array.isArray(value)) return null;
+    const addons: ArrearsSuspensionOneTimeAddon[] = [];
+    for (const item of value) {
+        if (!isRecord(item)) return null;
+        const { name, remainingDays } = item;
+        if (
+            typeof name !== 'string' ||
+            typeof remainingDays !== 'number' ||
+            !Number.isInteger(remainingDays) ||
+            remainingDays < 1
+        )
+            return null;
+        addons.push({ name, remainingDays });
+    }
+    return addons;
+}
+
+function arrearsSuspension(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    const oneTimeAddons = oneTimeAddonsOf(data.oneTimeAddons);
+    if (
+        typeof data.subscriptionId !== 'string' ||
+        typeof data.vertical !== 'string' ||
+        (data.paymentMethod !== 'CARD' && data.paymentMethod !== 'MANUAL') ||
+        typeof data.touristVipLost !== 'boolean' ||
+        typeof data.promoLost !== 'boolean' ||
+        oneTimeAddons === null
+    )
+        throw new TypeError('Faltan datos requeridos del aviso de suspensión');
+    return {
+        subject: ARREARS_SUSPENSION_SUBJECT,
+        react: (
+            <ArrearsSuspension
+                vertical={data.vertical}
+                paymentMethod={data.paymentMethod}
+                touristVipLost={data.touristVipLost}
+                oneTimeAddons={oneTimeAddons}
+                promoLost={data.promoLost}
+            />
+        )
+    };
+}
+
+/**
+ * Renderers for the notices emitted by the subscription signup flow, plus the
+ * arrears suspension notice of S6 (AC:B7:30) and the notice that precedes the
+ * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31).
+ */
 export function createBillingSignupRenderers(_input: {
     readonly siteUrl: string;
 }): Readonly<Record<string, OutboxMailRenderer>> {
     return {
         'billing.signup-confirmed': ({ row }) => confirmed(row),
         'billing.before-cancel': ({ row }) => beforeCancel(row),
-        'billing.signup-incomplete': ({ row }) => incomplete(row)
+        'billing.signup-incomplete': ({ row }) => incomplete(row),
+        'billing.arrears-suspension': ({ row }) => arrearsSuspension(row),
+        'billing.tourist-vip-inherited-cancel': ({ row }) => touristVipInheritedCancel(row)
     };
 }

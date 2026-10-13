@@ -29,6 +29,7 @@ vi.mock('@repo/verticals', async (importOriginal) => ({
 import { creditedPaymentsFromLedger } from '@repo/service-core';
 import { billingReconciliationSweepJob } from '../../src/cron/jobs/billing-reconciliation-sweep.job';
 import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
+import { touristVipInheritance } from '../../src/routes/billing-subscription/tourist-vip-inheritance';
 import { getCoverageNotices } from '../../src/utils/listing-access/coverage-notices';
 
 function context(dryRun = false): CronJobContext {
@@ -95,6 +96,11 @@ describe('billing reconciliation sweep cron', () => {
             (mockGraceExpiryCheck.mock.calls[0]?.[0] as { coverageNotices?: unknown })
                 .coverageNotices
         ).toBe(getCoverageNotices());
+        // AC:B7:31: S7, reached by settling a charged period, gets the real inheritance port.
+        expect(
+            (mockGraceExpiryCheck.mock.calls[0]?.[0] as { touristVipInheritance?: unknown })
+                .touristVipInheritance
+        ).toBe(touristVipInheritance);
         expect(mockGraceExpiryCheck.mock.calls[0]?.[0]).not.toHaveProperty(
             'unresolvedPeriodCharges'
         );

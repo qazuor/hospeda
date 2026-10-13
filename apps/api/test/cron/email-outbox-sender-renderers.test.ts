@@ -147,6 +147,34 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 closedCourtesyMonths: 2
             },
             expected: ['Gastronomía', '2 meses de cortesía', 'volver a suscribirte']
+        },
+        {
+            template: 'billing.arrears-suspension',
+            payload: {
+                subscriptionId,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                touristVipLost: true,
+                oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
+                promoLost: true
+            },
+            expected: [
+                'volvé a suscribirte con una tarjeta que funcione',
+                'Si tenías una promo, al volver la perdés.',
+                'Turista VIP',
+                'a «Destacado» le quedan 10 días.'
+            ]
+        },
+        {
+            // AC:B7:31: the email S2's and S7's clause sends before cancelling an inherited VIP.
+            template: 'billing.tourist-vip-inherited-cancel',
+            payload: { subscriptionId },
+            expected: [
+                'Tu plan ya te da los beneficios de Turista VIP',
+                'No se te va a volver a cobrar',
+                'lo ya pagado no se reembolsa',
+                'Mercado Pago'
+            ]
         }
     ])('renders $template through the production sender', async ({
         template,

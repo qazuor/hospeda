@@ -2,6 +2,7 @@
  * Billing email templates
  */
 
+export * from './arrears-suspension.js';
 export * from './payment-failure.js';
 export * from './payment-success.js';
 export * from './plan-change-confirmation.js';
@@ -11,3 +12,4 @@ export * from './renewal-reminder.js';
 export * from './signup-before-cancel.js';
 export * from './signup-confirmed.js';
 export * from './signup-incomplete.js';
+export * from './tourist-vip-inherited-cancel.js';

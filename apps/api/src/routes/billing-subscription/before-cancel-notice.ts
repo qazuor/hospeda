@@ -22,9 +22,10 @@ const TEMPLATE_BY_KIND: Readonly<Record<BeforeCancelKind | 'DEFAULT', string>> =
  * Outbox contract for the notice that precedes every cancellation we execute.
  * The occurrence is the fact that decided the cancellation (`occurrenceId`,
  * defaulting to the subscription id), so a retry reads the row already enqueued.
+ * The arrears suspension carries its `content` (AC:B7:30) into the payload.
  */
 export const beforeCancelNotice: BeforeCancelNotice = {
-    async beforeCancel({ subscriptionId, userId, kind, occurrenceId }) {
+    async beforeCancel({ subscriptionId, userId, kind, occurrenceId, content }) {
         const [recipient] = await getDb()
             .select({ email: users.email, deletedAt: users.deletedAt })
             .from(users)
@@ -41,7 +42,7 @@ export const beforeCancelNotice: BeforeCancelNotice = {
             recipientUserId: userId,
             recipientEmail: recipient.email,
             template,
-            payload: { subscriptionId },
+            payload: { subscriptionId, ...(content ?? {}) },
             dedupKey
         });
         if (recipient.deletedAt) return 'NO_RECIPIENT';

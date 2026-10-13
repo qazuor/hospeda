@@ -29,6 +29,7 @@ import {
 import { recordChargeFact } from '../payment/record-charge-fact.service.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import { activatePendingWithSignupNotice } from '../subscription/activate-pending-with-signup-notice.js';
+import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
@@ -87,6 +88,8 @@ export interface ProcessProviderNoticePorts {
     readonly promoCharges?: PromoChargePolicy;
     readonly promoExhaustion?: PromoExhaustion;
     readonly coverageNotices?: CoverageNotices;
+    /** Reaches S7's Tourist VIP clause through `recordChargeFact` (AC:B7:31); unwired skips it. */
+    readonly touristVipInheritance?: TouristVipInheritancePort;
 }
 
 /** Processes a provider delivery by re-reading its resource; the delivery never supplies state. */

@@ -194,7 +194,14 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
                 subscriptionId: s.subscriptionId,
                 userId: s.fixture.user.id,
                 kind: 'ARREARS_SUSPENSION',
-                occurrenceId: `${s.subscriptionId}:grace-expired:${s.graceEndsAt.toISOString()}`
+                occurrenceId: `${s.subscriptionId}:grace-expired:${s.graceEndsAt.toISOString()}`,
+                content: {
+                    vertical: 'accommodation',
+                    paymentMethod: 'CARD',
+                    touristVipLost: false,
+                    oneTimeAddons: [],
+                    promoLost: false
+                }
             });
             expect(s.coverageSeen).toEqual([
                 {
@@ -291,9 +298,9 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
-        'f — an authorization already cancelled is not cancelled again',
+        'f — already cancelled: not cancelled again, the notice is enqueued once and does not block (AC:B7:30, H2)',
         async () => {
-            const s = await suspensionFixture();
+            const s = await suspensionFixture({ notice: 'NOT_YET_SENT' });
             await s.fixture.provider.cancel({ authorizationId: s.fixture.started.authorizationId });
             expect(await s.runS6()).toEqual({
                 outcome: 'SUSPENDED',
@@ -301,7 +308,20 @@ describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
                 cancelCall: 'NOT_NEEDED'
             });
             expect(s.cancel).toHaveBeenCalledTimes(0);
-            expect(s.beforeCancel).not.toHaveBeenCalled();
+            expect(s.beforeCancel).toHaveBeenCalledTimes(1);
+            expect(s.beforeCancel).toHaveBeenCalledWith({
+                subscriptionId: s.subscriptionId,
+                userId: s.fixture.user.id,
+                kind: 'ARREARS_SUSPENSION',
+                occurrenceId: s.occurrenceId,
+                content: {
+                    vertical: 'accommodation',
+                    paymentMethod: 'CARD',
+                    touristVipLost: false,
+                    oneTimeAddons: [],
+                    promoLost: false
+                }
+            });
             expect((await subscriptionRow(s.subscriptionId)).status).toBe('SUSPENDED');
         }
     );
