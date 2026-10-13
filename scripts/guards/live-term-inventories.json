@@ -89,6 +89,12 @@
             "symbol": "hasOpenUnresolvedPeriodChargeMark",
             "row": null,
             "why": "La comprobación del vencimiento del grace no corre S6 mientras la fila tenga abierta la marca COBRO_DEL_PERIODO_SIN_RESOLVER (B/09 §6.2; motivo 21); no tiene fila en el inventario del glosario."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/our-cancellation-retry.ts",
+            "symbol": "retryOurCancellation",
+            "row": null,
+            "why": "El reintento de una cancelación nuestra deja de reintentar mientras la fila tenga abierta la marca CANCELACION_SIN_CONFIRMAR (AC:B11:6; motivo 16)."
         }
     ],
     "cortesia_diferida": [
