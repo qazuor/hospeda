@@ -361,3 +361,32 @@ is NOT enforced there is R3-style param validation.
 ## S1 rejections (B3)
 
 `PLAN_NOT_FOR_SALE` is 422; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. The new rejection is 409 because the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
+
+## Action 24 (V8a.3, HOS-1494)
+
+`GET` and `POST /api/v1/admin/users/{id}/close-on-request`: administrative
+action 24, close an account at its owner's request (ACC:24). Both share path and
+permission (`USER_CLOSE_ON_REQUEST`). Step 3 runs before any read, so a refusal
+there never reveals whether the account exists.
+
+| Situation | Status | `error.code` | `error.reason` |
+|---|---|---|---|
+| No session | **401** | `UNAUTHORIZED` | — |
+| Lacks `USER_CLOSE_ON_REQUEST` (also with `USER_DELETE` + `USER_HARD_DELETE`) | **403** | `FORBIDDEN` | — |
+| System actor | **403** | `FORBIDDEN` | — |
+| Actor = subject (support closing its own account) | **403** | `FORBIDDEN` | — |
+| Target is a system account (`is_system_account = true`) | **403** | `FORBIDDEN` | — |
+| `POST` reason missing, blank or over 2000 characters | **400** | `VALIDATION_ERROR` | — |
+| Account does not exist, or is already closed (`deleted_at` set) | **404** | `NOT_FOUND` | — |
+| `canCharge` (`puedeCobrarle`) answers yes | **409** | `ALREADY_EXISTS` | `ACCOUNT_CAN_STILL_BE_CHARGED` |
+| A listing with `deleted_at IS NULL` is outside `PURGED` | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_LISTINGS` |
+| The live partner presence still holds content | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_PARTNER_PRESENCE` |
+
+A 409 names the FIRST missing step of the manual closure, in its order (charge,
+then listings, then presence), and writes nothing, not even the audit event.
+As everywhere in `createAdminRoute`, the body is validated before the route
+permission, so a `POST` without a valid body answers 400 before 403
+(previous to this PR, Coord-184).
+
+The code was proposed by this PR under owner letter BS; `GET` returns the three
+preconditions so the panel can say which manual step is missing.
