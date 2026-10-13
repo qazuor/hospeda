@@ -18,6 +18,7 @@ import {
     accommodationMedia,
     accommodations,
     billingOptions,
+    destinations,
     domainEventModel,
     emailOutbox,
     eq,
@@ -41,9 +42,9 @@ import { TRIAL_CAMPAIGN_TEMPLATES } from '../../../src/utils/trial/trial-campaig
 import { subscribeTrialCoverageConversion } from '../../../src/utils/trial/trial-coverage-listener';
 import { testDb } from '../../e2e/setup/test-database';
 import {
-    createDestination,
     createListing,
     createTrial,
+    createVerticalDestination,
     ensureAccommodationCatalog
 } from '../listing-publication/publication-routes.helpers';
 
@@ -60,6 +61,7 @@ interface Created {
     userId: string;
     billingOptionId?: string;
     listingId?: string;
+    destinationId?: string;
 }
 
 const created: Created[] = [];
@@ -102,6 +104,9 @@ afterEach(async () => {
                 .delete(accommodationMedia)
                 .where(eq(accommodationMedia.accommodationId, rows.listingId));
             await db.delete(accommodations).where(eq(accommodations.id, rows.listingId));
+        }
+        if (rows.destinationId) {
+            await db.delete(destinations).where(eq(destinations.id, rows.destinationId));
         }
     }
 });
@@ -272,7 +277,8 @@ describe('Coord-99 — the coverage notice drives T2, T5 and T8 through the comp
     it('(c) T8: without a trial row and with the activation event exercised, the first payment consumes the trial', async () => {
         // Arrange
         const owner = await seedOwner();
-        const destinationId = await createDestination();
+        const destinationId = await createVerticalDestination();
+        owner.destinationId = destinationId;
         owner.listingId = await createListing({
             ownerId: owner.userId,
             destinationId,

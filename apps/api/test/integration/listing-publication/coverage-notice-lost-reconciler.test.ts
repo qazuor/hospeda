@@ -19,6 +19,7 @@ import {
     accommodationMedia,
     accommodations,
     billingOptions,
+    destinations,
     emailOutbox,
     eq,
     getDb,
@@ -42,9 +43,9 @@ import { getListingReconcilerPorts } from '../../../src/utils/listing-publicatio
 import { subscribeTrialCoverageConversion } from '../../../src/utils/trial/trial-coverage-listener';
 import { testDb } from '../../e2e/setup/test-database';
 import {
-    createDestination,
     createListing,
     createTrial,
+    createVerticalDestination,
     ensureAccommodationCatalog
 } from './publication-routes.helpers';
 
@@ -81,6 +82,7 @@ interface Created {
     userId: string;
     billingOptionId?: string;
     listingId?: string;
+    destinationId?: string;
 }
 
 const created: Created[] = [];
@@ -112,6 +114,9 @@ afterEach(async () => {
                 .delete(accommodationMedia)
                 .where(eq(accommodationMedia.accommodationId, rows.listingId));
             await db.delete(accommodations).where(eq(accommodations.id, rows.listingId));
+        }
+        if (rows.destinationId) {
+            await db.delete(destinations).where(eq(destinations.id, rows.destinationId));
         }
         const subscriptionIds = sql`(SELECT id FROM subscription WHERE user_id = ${rows.userId})`;
         await db.delete(emailOutbox).where(eq(emailOutbox.recipientUserId, rows.userId));
@@ -211,7 +216,8 @@ describe('TEST:B4:2 — a lost coverage-back notice is repaired by the daily rec
         const rows: Created = { userId: user.id };
         created.push(rows);
         await createTrial({ userId: user.id, status: 'TRIAL_EXPIRED' });
-        const destinationId = await createDestination();
+        const destinationId = await createVerticalDestination();
+        rows.destinationId = destinationId;
         rows.listingId = await createListing({
             ownerId: user.id,
             destinationId,
