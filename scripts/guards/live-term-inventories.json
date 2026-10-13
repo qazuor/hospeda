@@ -96,6 +96,12 @@
             "symbol": "hasOpenUnresolvedPeriodChargeMark",
             "row": null,
             "why": "La comprobación del vencimiento del grace no corre S6 mientras la fila tenga abierta la marca COBRO_DEL_PERIODO_SIN_RESOLVER (B/09 §6.2; motivo 21); no tiene fila en el inventario del glosario."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/succession-retention-ports.ts",
+            "symbol": "retainedPaymentsFromLedger",
+            "row": null,
+            "why": "La fuente de pagos retenidos del barrido de cero llamadas (B11.8, HOS-1561 H11) excluye la retención cuyo pago ya cuelga sin resolver de una marca abierta PAGO_PENDIENTE_SIN_RAMA de esa fila, para no colgarlo dos veces (MARK_PAYMENT_ALREADY_HUNG); no tiene fila en el inventario del glosario."
         }
     ],
     "cortesia_diferida": [
