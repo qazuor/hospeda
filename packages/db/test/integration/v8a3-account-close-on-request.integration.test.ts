@@ -14,7 +14,10 @@ import {
     DomainEventModel,
     type InsertDomainEventInput
 } from '../../src/models/domain-event/domain-event.model.ts';
-import type { DomainEventType } from '../../src/schemas/domain-event/domain_event.dbschema.ts';
+import {
+    DOMAIN_EVENT_TYPES,
+    type DomainEventType
+} from '../../src/schemas/domain-event/domain_event.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 import { closeTestPool, withTestTransaction } from './helpers.ts';
 
@@ -69,6 +72,23 @@ describe('TEST:V8a:15 account close on request permission and event types', () =
 
             // Assert
             expect(result.rows).toHaveLength(1);
+        });
+    });
+
+    it('declares both action 24 event types in the TS catalog the CHECK mirrors', async () => {
+        await withTestTransaction(async (tx) => {
+            // Arrange
+            const result = await tx.execute(
+                sql`SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname = 'domain_event_event_type_check'`
+            );
+            const definition = String((result.rows[0] as { def?: unknown } | undefined)?.def);
+
+            // Act + Assert: the TS list carries both new types, and the CHECK each TS type.
+            expect(DOMAIN_EVENT_TYPES).toContain('account.closed_on_request');
+            expect(DOMAIN_EVENT_TYPES).toContain('partner_application.email_replaced');
+            for (const eventType of DOMAIN_EVENT_TYPES) {
+                expect(definition).toContain(`'${eventType}'`);
+            }
         });
     });
 
