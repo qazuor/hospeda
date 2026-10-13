@@ -279,10 +279,11 @@ describe('TEST:B5:6 AC:B5:41 RF4 closes the open REQUESTED of RF1', () => {
             // Arrange
             const credited = await creditedPayment();
             const admin = await seedAdminActor();
+            // HOS-1680: the open REQUESTED claims part of the balance; the separate settlement must fit in the rest.
             const { refundId } = await requestRefund(
                 {
                     source: { kind: 'PAYMENT', id: credited.payment.id },
-                    amount: 10000,
+                    amount: 6000,
                     reason: 'REVOCATION'
                 },
                 { clock: credited.fixture.clock }

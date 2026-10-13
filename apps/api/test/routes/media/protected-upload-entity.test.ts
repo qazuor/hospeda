@@ -16,8 +16,14 @@
 
 process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
 
-import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
+import {
+    ENTITY_GALLERY_CAPS,
+    PermissionEnum,
+    PublicationStatusEnum,
+    type VerticalEnum
+} from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearSlidingWindowStore } from '../../../src/middlewares/rate-limit';
 import { createAuthenticatedRequest, createMockUserActor } from '../../helpers/auth';
@@ -30,7 +36,48 @@ vi.mock('../../../src/services/media', () => ({
     })
 }));
 
+// HOS-1682: the success path now runs listing access. The owner's listing is
+// PUBLISHED and covered, with the edit capability and room in the photo limit,
+// so these cases keep asserting what they asserted before the chain existed.
 const OWNER_ID = '00000000-0000-4000-8000-000000000099';
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: OWNER_ID, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: OWNER_ID
+        }),
+        billing: {
+            coverage: async () => ({
+                covered: true,
+                sources: [
+                    {
+                        type: 'BASE',
+                        reference: { kind: 'PLAN_VERSION', planVersionId: 'base' },
+                        scope: 'VERTICAL',
+                        target: null,
+                        since: new Date('2025-01-01'),
+                        until: 'NEVER_EXPIRES',
+                        charged: null,
+                        floor: null
+                    }
+                ]
+            })
+        },
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [
+                    { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
+                    { key: 'max_photos_per_accommodation', value: 1000, strategy: 'SUM' }
+                ]
+            })
+    })
+}));
+
 const ENTITY_ID = '00000000-0000-4000-8000-0000000000aa';
 const _OTHER_USER_ID = '00000000-0000-4000-8000-0000000000bb';
 

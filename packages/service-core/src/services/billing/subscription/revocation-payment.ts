@@ -7,8 +7,6 @@ import {
     inArray,
     manualPayments,
     payments,
-    refunds,
-    sql,
     subscriptions
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
@@ -18,7 +16,11 @@ import {
     type BillingOptionReader,
     readAnchoredBillingOption
 } from '../read-anchored-billing-option';
-import type { RefundSource } from '../refund/refund-source';
+import {
+    claimedRefundAmount,
+    REFUNDABLE_PAYMENT_STATUSES,
+    type RefundSource
+} from '../refund/refund-source';
 
 /**
  * The revocation window of S36, in calendar days after the day of the charge being revoked
@@ -38,18 +40,13 @@ const CREDITED_PAYMENT_STATUSES = [
     'CHARGED_BACK'
 ] as const;
 
-/**
- * Of the credited statuses, the ones money can still be returned from (`refund-source.ts`). A
+/*
+ * Of the credited statuses, the ones money can still be returned from are
+ * `REFUNDABLE_PAYMENT_STATUSES` of `refund-source.ts`, shared with RF1/RF4 (HOS-1680). A
  * `REFUNDED` or `CHARGED_BACK` payment stays the "last credited payment" (it is never skipped
  * for an older one), but it is not refundable, so S36 rejects as a whole (I-3; Coord-333).
+ * What already claims a payment is summed by `claimedRefundAmount` of the same module.
  */
-const REFUNDABLE_PAYMENT_STATUSES: readonly string[] = ['SUCCEEDED', 'PARTIALLY_REFUNDED'];
-
-/**
- * Refund statuses that already claim money of a payment: every one but `FAILED`. An open
- * `REQUESTED`/`CONFIRMED` counts too, or S36 would ask for the same total twice (Coord-333).
- */
-const CLAIMING_REFUND_STATUSES = ['REQUESTED', 'CONFIRMED', 'EXECUTED'] as const;
 
 /** Every `reason` a rejection of S36 carries, for an exhaustive HTTP mapping (I-10). */
 export const REVOKE_SUBSCRIPTION_REJECTIONS = [
@@ -253,24 +250,10 @@ function readerIn(tx: DrizzleClient): BillingOptionReader {
  */
 const UNKNOWN = 0;
 
-/** Σ of the refunds that already claim money of this source (every status but `FAILED`). */
-async function claimedOf(input: {
-    readonly tx: DrizzleClient;
-    readonly source: RefundSource;
-}): Promise<number> {
-    const column = input.source.kind === 'PAYMENT' ? refunds.paymentId : refunds.manualPaymentId;
-    const [claimed] = await input.tx
-        .select({ amount: sql<number>`coalesce(sum(${refunds.amount}), 0)::int` })
-        .from(refunds)
-        .where(
-            and(eq(column, input.source.id), inArray(refunds.status, [...CLAIMING_REFUND_STATUSES]))
-        );
-    return claimed?.amount ?? 0;
-}
-
 /**
  * Locks the source `FOR UPDATE` (the act only): every RF1/RF4 writer locks the same row
- * before inserting a refund, so the claimed sum read next cannot move until the commit.
+ * before inserting a refund, so the claimed sum read next (`claimedRefundAmount`, the same
+ * one `requestRefund` validates against; HOS-1680) cannot move until the commit.
  */
 async function lockSource(input: {
     readonly tx: DrizzleClient;
@@ -292,7 +275,8 @@ async function lockSource(input: {
 
 /**
  * The amount S36 returns for a candidate (I-2, I-3): the payment amount, or the anchored
- * price of a manual payment, minus every refund that already claims it. A manual payment
+ * price of a manual payment, minus every refund that already claims it (the shared
+ * `claimedRefundAmount`, every status but `FAILED`; HOS-1680). A manual payment
  * without an anchored option answers 0 (the service rejects it as unavailable).
  */
 async function amountOf(input: {
@@ -307,7 +291,7 @@ async function amountOf(input: {
             .from(payments)
             .where(eq(payments.id, candidate.source.id))
             .limit(1);
-        const claimed = await claimedOf({ tx, source: candidate.source });
+        const claimed = await claimedRefundAmount({ tx, source: candidate.source });
         return { amount: (payment?.amount ?? 0) - claimed, currency: payment?.currency ?? null };
     }
     const [owner] = await tx
@@ -327,7 +311,7 @@ async function amountOf(input: {
         reader: readerIn(tx)
     });
     if (!option) return { amount: UNKNOWN, currency: null };
-    const claimed = await claimedOf({ tx, source: candidate.source });
+    const claimed = await claimedRefundAmount({ tx, source: candidate.source });
     return { amount: option.amount - claimed, currency: option.currency };
 }
 
