@@ -511,7 +511,9 @@
                 "subscription.status",
                 "domain_event.changes",
                 "subscription.grace_started_at",
-                "subscription.grace_ends_at"
+                "subscription.grace_ends_at",
+                "succession_retained_payment.released_at",
+                "succession_retained_payment.release_reason"
             ]
         },
         {
@@ -532,7 +534,8 @@
                 "subscription.succeeds_id",
                 "subscription.succeeded_by_id",
                 "payment.status",
-                "subscription.grace_ends_at"
+                "subscription.grace_ends_at",
+                "succession_retained_payment.released_at"
             ],
             "inputs": [
                 "provider:read_by_id",
@@ -569,7 +572,9 @@
                 "domain_event.changes",
                 "subscription.service_ends_at",
                 "subscription.grace_started_at",
-                "subscription.grace_ends_at"
+                "subscription.grace_ends_at",
+                "succession_retained_payment.released_at",
+                "succession_retained_payment.release_reason"
             ]
         },
         {
@@ -759,7 +764,13 @@
                 "payment.status"
             ],
             "inputs": [],
-            "writes": ["domain_event.changes"]
+            "writes": [
+                "domain_event.changes",
+                "succession_retained_payment.subscription_id",
+                "succession_retained_payment.payment_id",
+                "succession_retained_payment.unpaid_since",
+                "succession_retained_payment.retained_at"
+            ]
         },
         {
             "id": "TRANS:B:S20",
