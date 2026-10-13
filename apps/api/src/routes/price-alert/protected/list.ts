@@ -7,7 +7,7 @@
  * @route GET /api/v1/protected/price-alerts
  * @module routes/price-alert/protected/list
  */
-import { PriceAlertResponseSchema } from '@repo/schemas';
+import { PriceAlertListItemSchema, PublicationStatusEnum } from '@repo/schemas';
 import { AlertSubscriptionService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -24,7 +24,12 @@ const alertSubscriptionService = new AlertSubscriptionService({ logger: apiLogge
  * forces `userId: actor.id`) and eager-loads the `accommodation` relation
  * (`getDefaultListRelations()`), so each item carries a runtime
  * `.accommodation` object this route flattens into `accommodationName` to
- * match {@link PriceAlertResponseSchema}.
+ * match {@link PriceAlertListItemSchema}.
+ *
+ * `closedBecauseListingGone` (HOS-1492, V8a row 27) is `true` when the alert
+ * is closed AND its listing reached `PURGED`. It never says why the listing
+ * stopped existing: that belongs to the owner (row 20). The relation already
+ * carries the listing's `publicationStatus`, so no extra read happens.
  */
 export const listPriceAlertsRoute = createProtectedRoute({
     method: 'get',
@@ -34,7 +39,7 @@ export const listPriceAlertsRoute = createProtectedRoute({
         "Returns the authenticated actor's own price-alert subscriptions, including a denormalized accommodation name for display.",
     tags: ['Price Alerts'],
     responseSchema: z.object({
-        items: z.array(PriceAlertResponseSchema),
+        items: z.array(PriceAlertListItemSchema),
         total: z.number()
     }),
     handler: async (ctx) => {
@@ -47,10 +52,15 @@ export const listPriceAlertsRoute = createProtectedRoute({
         }
 
         const items = (result.data?.items ?? []).map((item) => {
-            const withRelation = item as typeof item & { accommodation?: { name?: string } };
+            const withRelation = item as typeof item & {
+                accommodation?: { name?: string; publicationStatus?: string | null };
+            };
             return {
                 ...item,
-                accommodationName: withRelation.accommodation?.name ?? ''
+                accommodationName: withRelation.accommodation?.name ?? '',
+                closedBecauseListingGone:
+                    item.isActive === false &&
+                    withRelation.accommodation?.publicationStatus === PublicationStatusEnum.PURGED
             };
         });
 

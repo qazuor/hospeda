@@ -14,7 +14,7 @@ import {
     ServiceErrorCode,
     ThreadQuerySchema
 } from '@repo/schemas';
-import { ConversationService } from '@repo/service-core';
+import { ConversationService, resolveConversationListingAvailability } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { getActorFromContext } from '../../../../utils/actor';
 import { createRouter } from '../../../../utils/create-app';
@@ -199,8 +199,15 @@ router.get('/:id', async (c) => {
 
         const enrichedConversation = { ...convRaw, accommodationName, guestName };
 
+        // Whether the owner can still write about this listing (HOS-1492, row 28).
+        const listingAvailability = resolveConversationListingAvailability({
+            viewer: 'OWNER',
+            actorId: actor.id,
+            listing: accRow
+        });
+
         return createResponse(
-            { conversation: enrichedConversation, messages, nextCursor },
+            { conversation: enrichedConversation, messages, nextCursor, listingAvailability },
             c,
             200,
             OwnerThreadResponseSchema
