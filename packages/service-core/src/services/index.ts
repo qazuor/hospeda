@@ -75,6 +75,7 @@ export * from './billing/deadlines/billing-deadlines.service.js';
 export * from './billing/notice/mirror-cancelled-on-grace.js';
 export * from './billing/notice/process-provider-notice.service.js';
 export * from './billing/notice/provider-delivery-channel.js';
+export * from './billing/notice/provider-notice-delegates.js';
 export * from './billing/notice/provider-notice-mirror.js';
 export * from './billing/notice/provider-notice-ports.js';
 export * from './billing/notice/purge-provider-notifications.service.js';

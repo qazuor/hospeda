@@ -229,7 +229,12 @@ export async function processProviderNotice(
                 finalOutcome = 'DIVERGENCE_MARKED';
             }
             if (action.kind === 'DELEGATE') {
-                await delegates.delegate({ pair: action.pair, subscriptionId: row.id });
+                await delegates.delegate({
+                    pair: action.pair,
+                    subscriptionId: row.id,
+                    readAt,
+                    cancelledSeenAt: link.cancelledSeenAt
+                });
                 finalOutcome = 'DELEGATED';
             }
             if (action.kind === 'PROVIDER_CANCEL') {

@@ -1,5 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { and, eq, getDb, subscriptions } from '@repo/db';
+import { and, domainEventModel, eq, getDb, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
@@ -50,7 +50,11 @@ export type MirrorProviderCancellationOnGraceResult =
  * so the `REMOVED` coverage notice is emitted after the commit; a notice error is
  * only logged. A closer error rolls the cancellation back.
  *
- * Not registered in the API webhook: no mirror pair is registered yet (notes H7).
+ * Registered as the `CANCELLED_ON_GRACE` delegate by `createProviderNoticeMirrorDelegates`
+ * (`provider-notice-delegates.ts`, HOS-1676). In the same transaction as the cancellation it
+ * writes `subscription.provider_cancelled_after_rejection` (HOS-1676 H-2): a row in grace is
+ * one whose charge was rejected, and `canCharge` and the `LIVE_PREAPPROVAL_ON_CLOSED_ROW` pair
+ * read that event to tell this `CANCELLED` apart from every other one.
  *
  * @param input.subscriptionId - The row in grace
  * @param input.readAt - The provider read instant
@@ -93,6 +97,20 @@ export async function mirrorProviderCancellationOnGrace(
                 vertical: subscriptions.vertical
             });
         if (!row) throw new Error('Locked grace row vanished before its cancellation');
+        // The mark of «cancelled by the provider after a rejection» (HOS-1676 H-2): same
+        // transaction as the drop, so a rolled-back cancellation leaves no event.
+        await domainEventModel.insert({
+            eventType: 'subscription.provider_cancelled_after_rejection',
+            entityType: 'subscription',
+            entityId: value.subscriptionId,
+            actorType: 'provider',
+            actorId: null,
+            correlationId: crypto.randomUUID(),
+            changes: [{ field: 'status', old: 'GRACE_PERIOD', new: 'CANCELLED' }],
+            reason: 'CANCELLED_ON_GRACE',
+            occurredAt: value.readAt,
+            tx
+        });
         const closed = await closeSuccessionIfPredecessor(
             { predecessorSubscriptionId: value.subscriptionId, tx },
             { successionCloser: ports.successionCloser }
