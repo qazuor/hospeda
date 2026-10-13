@@ -35,7 +35,9 @@ import {
     createOutboxMailRenderer,
     createOutboxOptOutReader,
     createTrialCampaignRenderers,
+    createVerticalListingRenderers,
     type EmailOutboxDeliveryDeps,
+    type ListingNamesReader,
     OUTBOX_MAIL_RENDERERS,
     type OutboxEscalation,
     PreferenceService,
@@ -45,6 +47,7 @@ import { getClock } from '../../utils/clock.js';
 import { resolveOutboxEmailClientConfig } from '../../utils/e2e-mail-capture.js';
 import { getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
+import { readListingNames } from '../../utils/listing-publication/listing-names-reader.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
 
 /** The sender runs every minute. */
@@ -57,17 +60,26 @@ export const EMAIL_OUTBOX_LEASE_MS = 5 * 60 * 1000;
 export const EMAIL_OUTBOX_BATCH_SIZE = 50;
 
 /**
- * Builds the production outbox renderer with the shared and trial templates.
+ * Builds the production outbox renderer with the shared, trial, signup and
+ * vertical listing notice templates.
  *
- * @param input - Renderer configuration.
+ * @param input - Renderer configuration. `readListingNames` defaults to the
+ *   database reader; tests inject a fake.
  * @returns The renderer used by the outbox sender.
  */
-export function buildOutboxSenderRender(input: { readonly siteUrl: string }) {
+export function buildOutboxSenderRender(input: {
+    readonly siteUrl: string;
+    readonly readListingNames?: ListingNamesReader;
+}) {
     return createOutboxMailRenderer({
         renderers: {
             ...OUTBOX_MAIL_RENDERERS,
             ...createTrialCampaignRenderers({ siteUrl: input.siteUrl }),
-            ...createBillingSignupRenderers({ siteUrl: input.siteUrl })
+            ...createBillingSignupRenderers({ siteUrl: input.siteUrl }),
+            ...createVerticalListingRenderers({
+                siteUrl: input.siteUrl,
+                readListingNames: input.readListingNames ?? readListingNames
+            })
         }
     });
 }

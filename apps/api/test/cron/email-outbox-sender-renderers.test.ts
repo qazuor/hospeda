@@ -3,6 +3,17 @@ import { NotificationType, OUTBOX_MAIL_RENDERERS } from '@repo/notifications';
 import { createElement, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import {
+    LISTING_FIX_REQUESTED_TEMPLATE,
+    LISTING_MODERATED_TEMPLATE,
+    LISTING_MODERATION_LEVEL_CHANGED_TEMPLATE,
+    LISTING_MODERATION_LIFTED_TEMPLATE
+} from '../../../../packages/verticals/src/publication/moderation-notices';
+import { LISTING_RESTITUTION_TEMPLATE } from '../../../../packages/verticals/src/publication/publication-notices';
+import {
+    LISTING_PURGED_TEMPLATE,
+    PRICE_ALERT_CLOSED_TEMPLATE
+} from '../../../../packages/verticals/src/publication/purge-notices';
 import { buildOutboxSenderRender } from '../../src/cron/jobs/email-outbox-sender.job.js';
 
 function row(template: string, payload: Record<string, unknown>): EmailOutboxRow {
@@ -146,5 +157,100 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
         expect(result.subject.trim()).not.toBe('');
         for (const phrase of expected) expect(html).toContain(phrase);
         expect(html).not.toContain(subscriptionId);
+    });
+});
+
+describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listing notices (HOS-1492)', () => {
+    const listingId = '2f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11';
+    const readListingNames = async ({ ids }: { readonly ids: readonly string[] }) =>
+        new Map(ids.map((id) => [id, 'Cabañas del Río'] as const));
+    const render = buildOutboxSenderRender({
+        siteUrl: 'https://hospeda.test',
+        readListingNames
+    });
+
+    it('registers every template constant that @repo/verticals enqueues', () => {
+        expect([
+            PRICE_ALERT_CLOSED_TEMPLATE,
+            LISTING_PURGED_TEMPLATE,
+            LISTING_MODERATED_TEMPLATE,
+            LISTING_FIX_REQUESTED_TEMPLATE,
+            LISTING_MODERATION_LEVEL_CHANGED_TEMPLATE,
+            LISTING_MODERATION_LIFTED_TEMPLATE,
+            LISTING_RESTITUTION_TEMPLATE
+        ]).toEqual([
+            'verticals.price-alert-closed',
+            'verticals.listing-purged',
+            'verticals.listing-moderated',
+            'verticals.listing-fix-requested',
+            'verticals.listing-moderation-level-changed',
+            'verticals.listing-moderation-lifted',
+            'verticals.listing-restitution'
+        ]);
+    });
+
+    it.each([
+        {
+            template: PRICE_ALERT_CLOSED_TEMPLATE,
+            payload: { vertical: 'accommodation', listingId, alertId: 'alert-1' },
+            expected: ['se cerró porque esa ficha ya no existe']
+        },
+        {
+            template: LISTING_PURGED_TEMPLATE,
+            payload: { vertical: 'accommodation', listingId, bySupport: true },
+            expected: ['Se borró tu ficha Cabañas del Río.', 'a pedido tuyo', 'no vuelve']
+        },
+        {
+            template: LISTING_MODERATED_TEMPLATE,
+            payload: { vertical: 'gastronomy', listingId, reason: 'Fotos', fixRequestOpen: false },
+            expected: ['Motivo: Fotos', 'levante la moderación', 'destaques recurrentes']
+        },
+        {
+            template: LISTING_FIX_REQUESTED_TEMPLATE,
+            payload: { vertical: 'experience', listingId, reason: 'Horario', fixRequestOpen: true },
+            expected: ['Motivo: Horario', 'Tu ficha sigue a la vista', '/es/mi-cuenta/comercio/']
+        },
+        {
+            template: LISTING_MODERATION_LEVEL_CHANGED_TEMPLATE,
+            payload: {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'DRAFT',
+                fixRequestOpen: true
+            },
+            expected: ['Volvió a borrador', 'El pedido de arreglo sigue abierto']
+        },
+        {
+            template: LISTING_MODERATION_LIFTED_TEMPLATE,
+            payload: {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'PUBLISHED',
+                fixRequestOpen: false
+            },
+            expected: ['Volvió a estar publicada']
+        },
+        {
+            template: LISTING_RESTITUTION_TEMPLATE,
+            payload: {
+                vertical: 'accommodation',
+                restoredListingIds: [listingId],
+                notRestoredListingIds: [],
+                criterion: 'LAST_FELL_FIRST_BACK'
+            },
+            expected: ['Volvieron estas fichas: Cabañas del Río.', 'cayó al final']
+        }
+    ])('renders $template through the production sender', async ({
+        template,
+        payload,
+        expected
+    }) => {
+        const result = await render({ row: row(template, payload) });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject.trim()).not.toBe('');
+        for (const phrase of expected) expect(html).toContain(phrase);
+        expect(html).not.toContain(listingId);
     });
 });
