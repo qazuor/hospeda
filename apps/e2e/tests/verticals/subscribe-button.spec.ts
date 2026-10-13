@@ -23,12 +23,13 @@ async function attachSession(
     await page.context().addCookies(cookies);
 }
 
-test.describe('Subscribe button destinations @verticals @billing', () => {
-    test.beforeEach(async ({ page }) => {
-        // The consent backdrop intercepts the click on the pricing subscribe link.
-        await seedCookieConsent(page);
-    });
+test.beforeEach(async ({ page }) => {
+    // The consent backdrop intercepts the click on the pricing subscribe link.
+    await seedCookieConsent(page);
+});
 
+// Own users only, no global state: safe in the parallel PR suite (@p0).
+test.describe('Subscribe button destinations @p0 @verticals @billing', () => {
     test('TEST:V8a:3 sends a PRE_TRIAL owner to publish and a spent-trial owner to checkout', async ({
         page
     }) => {
@@ -52,6 +53,10 @@ test.describe('Subscribe button destinations @verticals @billing', () => {
                 [consumed.id]
             );
             expect(spentTrial).toEqual({ status: 'TRIAL_EXPIRED', ended: true });
+            const preTrialRows = await execSQL('SELECT 1 FROM trial WHERE user_id = $1', [
+                preTrial.id
+            ]);
+            expect(preTrialRows).toHaveLength(0);
 
             await attachSession(page, preTrial.sessionCookie);
             await page.goto(`${WEB_URL}/es/planes/anfitriones/precios/`);
@@ -72,7 +77,12 @@ test.describe('Subscribe button destinations @verticals @billing', () => {
             await cleanupTestUsers(getDbPool(), [preTrial.id, consumed.id]);
         }
     });
+});
 
+// Deliberately NOT @p0: TEST:V8a:4 retires the GLOBAL accommodation catalog while it
+// runs, and the PR suite runs @p0 fully parallel with 4 workers, so every other spec
+// reading the catalog at that moment would break.
+test.describe('Subscribe button with no plans @verticals @billing', () => {
     test('TEST:V8a:4 shows no plans in pricing and after publish is rejected', async ({ page }) => {
         const owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         let restoreCatalog: (() => Promise<void>) | null = null;
