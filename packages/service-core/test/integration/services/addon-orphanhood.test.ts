@@ -336,7 +336,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                             id: otherLeft.subscriptionId,
                             userId: otherOwner,
                             vertical: V,
-                            succeedsId: null
+                            predecessorId: null
                         }
                     },
                     ports

@@ -309,7 +309,7 @@ export async function runOrphanhood(
             status: subscriptions.status,
             userId: subscriptions.userId,
             vertical: subscriptions.vertical,
-            succeedsId: subscriptions.succeedsId
+            predecessorId: subscriptions.succeedsId
         })
         .from(subscriptions)
         .where(eq(subscriptions.id, input.subscriptionId))
@@ -323,7 +323,18 @@ export async function runOrphanhood(
         );
     if (row.class !== 'PRINCIPAL' || isStillLive(row.status)) return { cancelled: [] };
 
-    const { candidates } = await findOrphanhoodCandidates({ tx, leftRow: row }, ports);
+    const { candidates } = await findOrphanhoodCandidates(
+        {
+            tx,
+            leftRow: {
+                id: row.id,
+                userId: row.userId,
+                vertical: row.vertical,
+                predecessorId: row.predecessorId
+            }
+        },
+        ports
+    );
     const cancelled: CancelledAddon[] = [];
     for (const candidate of candidates) {
         const orphaned = await isAddonInstanceOrphaned(

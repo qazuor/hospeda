@@ -39,7 +39,7 @@ export interface OrphanhoodLeftRow {
     readonly userId: string | null;
     readonly vertical: string | null;
     /** `sucede_a`: when the row was a successor, its predecessor (group 2). */
-    readonly succeedsId: string | null;
+    readonly predecessorId: string | null;
 }
 
 /** The instance the predicate evaluates, with what its scope needs. */
@@ -72,7 +72,7 @@ const leftRowSchema = z.object({
     id: z.uuid(),
     userId: z.uuid().nullable(),
     vertical: z.string().min(1).nullable(),
-    succeedsId: z.uuid().nullable()
+    predecessorId: z.uuid().nullable()
 });
 
 const instanceSchema = z.object({
@@ -120,7 +120,7 @@ export async function findOrphanhoodCandidates(
     const parsed = leftRowSchema.safeParse(input.leftRow);
     if (!parsed.success) invalid(parsed.error.issues);
     const { tx, leftRow } = input;
-    const targets = leftRow.succeedsId ? [leftRow.id, leftRow.succeedsId] : [leftRow.id];
+    const targets = leftRow.predecessorId ? [leftRow.id, leftRow.predecessorId] : [leftRow.id];
     const reach = leftRow.userId
         ? or(inArray(addonInstances.targetId, targets), eq(addonInstances.ownerId, leftRow.userId))
         : inArray(addonInstances.targetId, targets);
@@ -200,9 +200,9 @@ async function livePrincipals(input: {
     readonly tx: DrizzleClient;
     readonly userId: string;
     readonly vertical: string;
-}): Promise<readonly { readonly id: string; readonly succeedsId: string | null }[]> {
+}): Promise<readonly { readonly id: string; readonly predecessorId: string | null }[]> {
     return input.tx
-        .select({ id: subscriptions.id, succeedsId: subscriptions.succeedsId })
+        .select({ id: subscriptions.id, predecessorId: subscriptions.succeedsId })
         .from(subscriptions)
         .where(
             and(
@@ -308,9 +308,9 @@ export async function isAddonInstanceOrphaned(
                     if (await payments.hasCreditedPayment({ subscriptionId: principal.id, tx }))
                         return false;
                     if (
-                        principal.succeedsId &&
+                        principal.predecessorId &&
                         (await payments.hasCreditedPayment({
-                            subscriptionId: principal.succeedsId,
+                            subscriptionId: principal.predecessorId,
                             tx
                         }))
                     )
