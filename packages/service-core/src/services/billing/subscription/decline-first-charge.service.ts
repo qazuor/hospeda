@@ -12,6 +12,7 @@ import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { enqueueSignupDeclinedNotice } from './signup-declined-notice';
 import type { BeforeCancelNotice } from './start-subscription.service';
@@ -184,9 +185,10 @@ export async function declineFirstCharge(
     }
 
     const declined = await getDb().transaction(async (tx) => {
+        const declinedAt = ports.clock.now();
         const [updated] = await tx
             .update(subscriptions)
-            .set({ status: 'CHARGE_DECLINED', updatedAt: ports.clock.now() })
+            .set({ status: 'CHARGE_DECLINED', updatedAt: declinedAt })
             .where(and(eq(subscriptions.id, subscription.id), eq(subscriptions.status, 'ACTIVE')))
             .returning();
         if (!updated) return null;
@@ -208,9 +210,21 @@ export async function declineFirstCharge(
                 )
             )
             .limit(1);
-        if (!successor) return { successionClosed: false, subject };
-        await successionCloser.closeSuccession({ predecessorSubscriptionId: subscription.id, tx });
-        return { successionClosed: true, subject };
+        if (successor)
+            await successionCloser.closeSuccession({
+                predecessorSubscriptionId: subscription.id,
+                tx
+            });
+        // coberturaPerdidaEn in the same transaction as the drop (contract §4.1; I-5).
+        if (updated.userId)
+            await recordCoverageLossIfUncovered({
+                tx,
+                userId: updated.userId,
+                vertical: updated.vertical ?? '',
+                lostAt: declinedAt,
+                clock: ports.clock
+            });
+        return { successionClosed: Boolean(successor), subject };
     });
     if (declined === null) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
 
