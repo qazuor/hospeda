@@ -1,18 +1,31 @@
 /**
- * LISTA:B11 against the fake. Here: clauses 1, 5, 9 (second half), 11 and 15
- * (HOS-1602, HOS-1603). The other sixteen (2–4, 6–8, the first half of 9, 10,
- * 12–14 and 16–21) are completed by B11.10 (HOS-1610) and the sibling leaves.
+ * LISTA:B11 against the fake. Here: clauses 1, 5, 9 (second half), 11, 15 and 16
+ * (HOS-1602, HOS-1603). The other fifteen (2–4, 6–8, the first half of 9, 10,
+ * 12–14 and 17–21) are completed by B11.10 (HOS-1610) and the sibling leaves.
  */
-import { eq, providerLinks, RECONCILIATION_MARK_REASON_CATALOG, subscriptions } from '@repo/db';
+import {
+    eq,
+    providerLinks,
+    RECONCILIATION_MARK_REASON_CATALOG,
+    reconciliationInventoryModel,
+    subscriptions
+} from '@repo/db';
 import { parseProbeManifest } from '@repo/payments';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { handleUnknownAuthorization } from '../../../src/services/billing/reconciliation/handle-unknown-authorization.service.js';
+import {
+    CANCEL_SCHEDULED_TRANSITIONS,
+    SALVEDAD_1_TRANSITIONS,
+    SALVEDAD_4_TRANSITIONS
+} from '../../../src/services/billing/reconciliation/provider-cancellation-decision.js';
 import { runReconciliationSweep } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
 import {
     createReconciliationFake,
     reconciliationClock,
     seedSubscription,
+    trackSeededReconciliationRow,
+    withSeededCancellationRetryInventory,
     withSeededReconciliationInventory
 } from './reconciliation-sweep-fixtures.js';
 import {
@@ -169,5 +182,38 @@ describe('TEST:B11:20 el juego de salida contra el falso', () => {
         expect(RECONCILIATION_MARK_REASON_CATALOG.PAGO_TARDIO_RECHAZADO.defaultProposal).toBe(
             'REFUND'
         );
+    });
+
+    it('LISTA:B11 cláusula 16: la salvedad 4 del barrido cuenta once filas de la spec más la del Turista VIP heredado (Coord-289) y una sola lápida, la de recepción', async () => {
+        // B11.md:372: S12, S3, S13, S16, S20, S22, S23, S24, S31, S36 and the receipt tombstone;
+        // the twelfth is the inherited Tourist VIP, by the owner's decision H3 → b (Coord-289).
+        const spec = ['S12', 'S3', 'S13', 'S16', 'S20', 'S22', 'S23', 'S24', 'S31', 'S36'];
+        expect(SALVEDAD_4_TRANSITIONS).toHaveLength(12);
+        expect([...SALVEDAD_4_TRANSITIONS].sort()).toEqual(
+            [...spec, 'RECEPTION_TOMBSTONE', 'TOURIST_VIP_INHERITED'].sort()
+        );
+        expect(SALVEDAD_4_TRANSITIONS.filter((code) => code.endsWith('_TOMBSTONE'))).toEqual([
+            'RECEPTION_TOMBSTONE'
+        ]);
+        expect([...SALVEDAD_1_TRANSITIONS]).toContain('S21');
+        expect([...SALVEDAD_4_TRANSITIONS]).not.toContain('S21');
+        expect([...CANCEL_SCHEDULED_TRANSITIONS]).toEqual(['S11']);
+
+        // A receipt tombstone with its decision enters the retry pass.
+        const { fake, provider } = createChargingFake();
+        const { authorizationId, chargeId } = await unknownDebit(fake);
+        const { result } = await handleCharge({ authorizationId, chargeId }, { provider });
+        if (result.outcome !== 'MARKED') throw new Error('Expected a tombstone');
+        trackSeededReconciliationRow(result.subscriptionId);
+        const page = await withSeededCancellationRetryInventory(() =>
+            reconciliationInventoryModel.listCancellationRetryPage({ limit: 10 })
+        );
+        expect(
+            page.map((row) => [
+                row.subscription.id,
+                row.subscription.class,
+                row.decision.transition
+            ])
+        ).toEqual([[result.subscriptionId, 'LAPIDA', 'RECEPTION_TOMBSTONE']]);
     });
 });

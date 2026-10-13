@@ -7,7 +7,14 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
+import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
+import {
+    createOurCancellationRetryTally,
+    type OurCancellationRetryCounts,
+    retryOurCancellation,
+    runOurCancellationRetry
+} from './our-cancellation-retry.js';
 import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
 import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
@@ -32,6 +39,11 @@ export interface ReconciliationSweepPorts {
     readonly markPayments?: ReconciliationMarkPayments;
     readonly zeroCallChecks?: ZeroCallChecksPorts;
     readonly livenessPing?: SweepLivenessPing;
+    /**
+     * The retry of our decided cancellations (AC:B11:6). Optional: without it the sweep does
+     * exactly what it did before. Provider and clock are the sweep's own.
+     */
+    readonly cancellationRetry?: { readonly beforeCancelNotice: BeforeCancelNotice };
 }
 
 export type ReconciliationRowCheck = (input: ReconciliationComparisonInput) => Promise<void>;
@@ -54,6 +66,11 @@ export interface ReconciliationSweepSummary {
     readonly startedAt: Date;
     readonly finishedAt: Date;
     readonly zeroCallChecks?: ZeroCallChecksSummary;
+    /** Outcomes of the cancellation retry (live `CANCEL_SCHEDULED` rows plus the terminal pass). */
+    readonly cancellationRetry?: OurCancellationRetryCounts & {
+        readonly rowsRead: number;
+        readonly rowsFailed: number;
+    };
 }
 
 function errorMessage(error: unknown): string {
@@ -75,6 +92,15 @@ export async function runReconciliationSweep(
     let marksOpened = 0;
     let marksAccumulated = 0;
     let afterSubscriptionId: string | undefined;
+    const retryPorts = ports.cancellationRetry
+        ? {
+              provider: ports.provider,
+              clock: ports.clock,
+              beforeCancelNotice: ports.cancellationRetry.beforeCancelNotice,
+              markPayments: ports.markPayments
+          }
+        : undefined;
+    const retryTally = createOurCancellationRetryTally();
 
     for (;;) {
         const page = await reconciliationInventoryModel.listSweepInventoryPage({
@@ -105,6 +131,25 @@ export async function runReconciliationSweep(
                 for (const check of ports.rowChecks ?? []) {
                     await check({ subscription, providerLink, read, act });
                 }
+                // A live CANCEL_SCHEDULED left by S11 is retried here, with this loop's read (I8).
+                if (retryPorts && subscription.status === 'CANCEL_SCHEDULED') {
+                    const decision = await reconciliationInventoryModel.findCancellationDecision({
+                        subscriptionId: subscription.id
+                    });
+                    if (decision) {
+                        const retried = await retryOurCancellation(
+                            {
+                                subscription,
+                                providerLink,
+                                decision,
+                                correlationId,
+                                prior: { read, act }
+                            },
+                            retryPorts
+                        );
+                        retryTally.add(retried.outcome);
+                    }
+                }
             } catch (error) {
                 rowsFailed++;
                 const message = errorMessage(error);
@@ -117,6 +162,25 @@ export async function runReconciliationSweep(
         }
         if (page.length < pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
+    }
+
+    let cancellationRetry: ReconciliationSweepSummary['cancellationRetry'];
+    if (retryPorts) {
+        const pass = await runOurCancellationRetry({ correlationId, pageSize }, retryPorts);
+        rowsRead += pass.rowsRead;
+        rowsFailed += pass.rowsFailed;
+        failures.push(...pass.failures);
+        const live = retryTally.snapshot();
+        cancellationRetry = {
+            stopped: live.stopped + pass.stopped,
+            confirmed: live.confirmed + pass.confirmed,
+            marked: live.marked + pass.marked,
+            noticePending: live.noticePending + pass.noticePending,
+            callFailed: live.callFailed + pass.callFailed,
+            sentUnconfirmed: live.sentUnconfirmed + pass.sentUnconfirmed,
+            rowsRead: pass.rowsRead,
+            rowsFailed: pass.rowsFailed
+        };
     }
 
     const zeroCallChecks = ports.zeroCallChecks
@@ -154,6 +218,7 @@ export async function runReconciliationSweep(
         failures,
         startedAt,
         finishedAt,
-        ...(zeroCallChecks ? { zeroCallChecks } : {})
+        ...(zeroCallChecks ? { zeroCallChecks } : {}),
+        ...(cancellationRetry ? { cancellationRetry } : {})
     };
 }
