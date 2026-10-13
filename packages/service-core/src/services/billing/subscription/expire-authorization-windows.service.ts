@@ -13,6 +13,7 @@ import { exitGraceOnCreditedPayment } from './exit-grace.service';
 import { reactivateSuspendedOnCreditedPayment } from './reactivate-suspended.service';
 import { enqueueSignupIncompleteNotice } from './signup-incomplete-notice.ts';
 import type { BeforeCancelNotice } from './start-subscription.service';
+import type { SuccessionCloser } from './subscription-billing-ports';
 import { findOpenRetentionsBySubscription } from './succession-retained-payment';
 
 const logger = createLogger('subscription-window-expiry');
@@ -24,6 +25,12 @@ export interface ExpireAuthorizationWindowsPorts {
     readonly touristVipInheritance: TouristVipInheritancePort;
     /** Receives the post-commit S2 notice (B4.2); defaults to the unwired logger. */
     readonly coverageNotices?: CoverageNotices;
+    /**
+     * S18's interface (B8b), handed to S2 for branch 1 (AC:B7:25): when the
+     * activated successor's predecessor holds an S19 retention. Defaults to
+     * `unimplementedSuccessionCloser`, which throws.
+     */
+    readonly successionCloser?: SuccessionCloser;
 }
 
 export interface ExpireAuthorizationWindowsSummary {
@@ -153,10 +160,10 @@ export async function expireAuthorizationWindows(
             const { snapshot } = assertFreshForAct({ read, act });
 
             if (snapshot.status === 'active') {
-                const wrote = await activatePendingWithSignupNotice({
-                    subscriptionId: subscription.id,
-                    now: ports.clock.now()
-                });
+                const wrote = await activatePendingWithSignupNotice(
+                    { subscriptionId: subscription.id, now: ports.clock.now() },
+                    { successionCloser: ports.successionCloser }
+                );
                 if (wrote) activated++;
                 else skipped++;
                 if (wrote) {

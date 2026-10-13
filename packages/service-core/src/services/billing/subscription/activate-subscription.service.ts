@@ -10,6 +10,7 @@ import {
     type TouristVipInheritancePort
 } from './cancel-inherited-tourist-vip.service';
 import type { BeforeCancelNotice } from './start-subscription.service';
+import type { SuccessionCloser } from './subscription-billing-ports';
 
 const logger = createLogger('subscription-activation');
 
@@ -20,6 +21,12 @@ export interface ActivateSubscriptionPorts {
     readonly touristVipInheritance: TouristVipInheritancePort;
     /** Receives the post-commit S2 notice (B4.2); defaults to the unwired logger. */
     readonly coverageNotices?: CoverageNotices;
+    /**
+     * S18's interface (B8b), handed to S2 for branch 1 (AC:B7:25): when the
+     * activated successor's predecessor holds an S19 retention. Defaults to
+     * `unimplementedSuccessionCloser`, which throws.
+     */
+    readonly successionCloser?: SuccessionCloser;
 }
 
 export interface ActivateSubscriptionResult {
@@ -51,10 +58,10 @@ export async function activateSubscription(
     const { snapshot } = assertFreshForAct({ read, act });
     if (snapshot.status !== 'active') return { activated: false, subscriptionId };
 
-    const activated = await activatePendingWithSignupNotice({
-        subscriptionId,
-        now: ports.clock.now()
-    });
+    const activated = await activatePendingWithSignupNotice(
+        { subscriptionId, now: ports.clock.now() },
+        { successionCloser: ports.successionCloser }
+    );
     if (activated) {
         // S2 committed: the row now emits its source, replacing the predecessor's when it succeeds one.
         const vertical = VerticalEnumSchema.safeParse(row.subscription.vertical);

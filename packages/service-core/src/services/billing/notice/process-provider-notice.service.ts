@@ -178,10 +178,10 @@ export async function processProviderNotice(
                 ];
             if (action.kind === 'NOOP') finalOutcome = 'NOOP';
             if (action.kind === 'S2') {
-                const changed = await activatePendingWithSignupNotice({
-                    subscriptionId: row.id,
-                    now: ports.clock.now()
-                });
+                const changed = await activatePendingWithSignupNotice(
+                    { subscriptionId: row.id, now: ports.clock.now() },
+                    { successionCloser: closer }
+                );
                 if (!changed) continue;
                 // S2 committed: the row now emits its source, replacing the predecessor's when it succeeds one.
                 const vertical = VerticalEnumSchema.safeParse(row.vertical);

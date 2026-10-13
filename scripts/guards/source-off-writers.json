@@ -106,6 +106,14 @@
         "reason": "The provider cancellation mirror moves ACTIVE to CANCELLED, which emits no source (03-contrato-de-cobertura.md:474); the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/notice/mirror-cancelled-on-grace.ts",
+        "symbol": "mirrorProviderCancellationOnGrace",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "The provider cancellation mirror of the CANCELLED_ON_GRACE pair moves GRACE_PERIOD to CANCELLED, which emits no source (03-contrato-de-cobertura.md:474); the coverage notice is emitted after commit (HOS-1561 H7)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/start-succession.service.ts",
         "symbol": "startSuccession",
         "table": "subscriptions",
