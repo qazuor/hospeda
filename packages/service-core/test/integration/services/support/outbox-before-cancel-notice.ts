@@ -25,13 +25,16 @@ const TEMPLATE_BY_KIND: Readonly<Record<BeforeCancelKind | 'DEFAULT', string>> =
  * (`apps/api/src/routes/billing-subscription/before-cancel-notice.ts`); keep in
  * sync. It enqueues the same template, dedup key and payload (with the notice
  * `content`), and reads the same outbox row for the status. With `deliver`, the
- * enqueued row is marked `sent` first, as the outbox sender would.
+ * enqueued row is marked `sent` first, as the outbox sender would; with
+ * `failWith`, it is marked `failed` with that `last_error` (an undeliverable
+ * address or a definitive failure after the retries).
  *
  * @param input.deliver - Whether the enqueued row is delivered before its status is read
+ * @param input.failWith - The `last_error` of a row the sender gave up on before its status is read
  * @returns The notice port
  */
 export function outboxBeforeCancelNotice(
-    input: { readonly deliver?: boolean } = {}
+    input: { readonly deliver?: boolean; readonly failWith?: string } = {}
 ): BeforeCancelNotice {
     return {
         async beforeCancel({
@@ -65,6 +68,11 @@ export function outboxBeforeCancelNotice(
                 await db
                     .update(emailOutbox)
                     .set({ status: 'sent' })
+                    .where(eq(emailOutbox.dedupKey, dedupKey));
+            if (input.failWith)
+                await db
+                    .update(emailOutbox)
+                    .set({ status: 'failed', lastError: input.failWith })
                     .where(eq(emailOutbox.dedupKey, dedupKey));
             if (recipient.deletedAt) return 'NO_RECIPIENT';
             const [row] = await db
