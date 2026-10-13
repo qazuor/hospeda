@@ -6,6 +6,10 @@ import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { createRouter } from '../../../utils/create-app';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { readSubscription } from '../read-subscription';
+import {
+    adminRevokeSubscriptionRoute,
+    adminSubscriptionRevocationPreviewRoute
+} from './revocation';
 
 /** Inspect one subscription with the entity-specific permission. */
 export const adminInspectSubscriptionRoute = createAdminRoute({
@@ -36,5 +40,7 @@ export const adminInspectSubscriptionRoute = createAdminRoute({
 
 const router = createRouter();
 router.route('/', adminInspectSubscriptionRoute);
+router.route('/', adminSubscriptionRevocationPreviewRoute);
+router.route('/', adminRevokeSubscriptionRoute);
 
 export { router as adminBillingSubscriptionRoutes };

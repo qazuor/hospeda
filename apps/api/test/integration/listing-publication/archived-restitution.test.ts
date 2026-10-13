@@ -12,6 +12,7 @@ import { type Accommodation, PublicationStatusEnum, VerticalEnum } from '@repo/s
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { archiveInactiveListing } from '../../../../../packages/verticals/src/publication/archive-inactive-listing';
+import { LISTING_ARCHIVED_TEMPLATE } from '../../../../../packages/verticals/src/publication/archive-notices';
 import { LISTING_RESTITUTION_TEMPLATE } from '../../../../../packages/verticals/src/publication/publication-notices';
 import { injectClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -77,9 +78,28 @@ describe('TEST:V6:10 PB7 restitution from archived origins', () => {
                 .select()
                 .from(emailOutbox)
                 .where(eq(emailOutbox.recipientUserId, ownerId));
-            expect(notices).toHaveLength(1);
-            expect(notices[0]?.template).toBe(LISTING_RESTITUTION_TEMPLATE);
-            expect(notices[0]?.payload).toMatchObject({ restoredListingIds: [pb4] });
+            const restitutions = notices.filter(
+                (notice) => notice.template === LISTING_RESTITUTION_TEMPLATE
+            );
+            expect(restitutions).toHaveLength(1);
+            expect(restitutions[0]?.template).toBe(LISTING_RESTITUTION_TEMPLATE);
+            expect(restitutions[0]?.payload).toMatchObject({ restoredListingIds: [pb4] });
+            const archivedNotices = notices.filter(
+                (notice) => notice.template === LISTING_ARCHIVED_TEMPLATE
+            );
+            expect(archivedNotices).toHaveLength(2);
+            expect(
+                archivedNotices.map((notice) => ({
+                    transition: notice.payload.transition,
+                    listingId: notice.payload.listingId
+                }))
+            ).toEqual(
+                expect.arrayContaining([
+                    { transition: 'PB4', listingId: pb4 },
+                    { transition: 'PB5', listingId: pb5 }
+                ])
+            );
+            expect(notices).toHaveLength(3);
             const events = await domainEventModel.findByEntity({
                 tx: getDb(),
                 entityType: VerticalEnum.ACCOMMODATION,

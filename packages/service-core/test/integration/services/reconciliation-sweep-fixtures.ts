@@ -1,6 +1,8 @@
 import {
     billingDeadlineVersions,
+    type DrizzleClient,
     eq,
+    getDb,
     providerLinks,
     reconciliationInventoryModel,
     subscriptionModel,
@@ -11,6 +13,10 @@ import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
 import { vi } from 'vitest';
+import {
+    type ProviderCancellationTransition,
+    recordProviderCancellationDecided
+} from '../../../src/services/billing/reconciliation/provider-cancellation-decision.js';
 import { getServiceTestDb, getServiceTestPool } from './helpers.js';
 
 const seededIds = new Set<string>();
@@ -39,6 +45,54 @@ export async function withSeededReconciliationInventory<T>(run: () => Promise<T>
     }
 }
 
+/** Adds a row created outside `seedSubscription` (e.g. a receipt tombstone) to this test's inventory. */
+export function trackSeededReconciliationRow(subscriptionId: string): void {
+    seededIds.add(subscriptionId);
+}
+
+/**
+ * Isolates the cancellation-retry population (HOS-1603, AC:B11:6) to this test's rows, like
+ * {@link withSeededReconciliationInventory}: other suites leave terminal rows with decisions.
+ */
+export async function withSeededCancellationRetryInventory<T>(run: () => Promise<T>): Promise<T> {
+    const original = reconciliationInventoryModel.listCancellationRetryPage.bind(
+        reconciliationInventoryModel
+    );
+    const spy = vi.spyOn(reconciliationInventoryModel, 'listCancellationRetryPage');
+    spy.mockImplementation(async (input) => {
+        const rows = await original({ ...input, limit: 10_000, afterSubscriptionId: undefined });
+        const owned = rows.filter(({ subscription }) => seededIds.has(subscription.id));
+        const after =
+            input.afterSubscriptionId === undefined
+                ? owned
+                : owned.filter(({ subscription }) => subscription.id > input.afterSubscriptionId!);
+        return after.slice(0, input.limit);
+    });
+    try {
+        return await run();
+    } finally {
+        spy.mockRestore();
+    }
+}
+
+/** Seeds one recorded cancellation decision, written in its own transaction. */
+export async function seedCancellationDecision(input: {
+    readonly subscriptionId: string;
+    readonly transition: ProviderCancellationTransition;
+    readonly decidedAt: Date;
+}) {
+    return getDb().transaction(async (tx) =>
+        recordProviderCancellationDecided({
+            subscriptionId: input.subscriptionId,
+            transition: input.transition,
+            decidedAt: input.decidedAt,
+            actor: { type: 'job' },
+            correlationId: crypto.randomUUID(),
+            tx: tx as unknown as DrizzleClient
+        })
+    );
+}
+
 export const reconciliationClock = { now: () => new Date('2026-10-11T12:00:00.000Z') };
 export const reconciliationDeadlineValues = {
     '10': { cardHours: 72, manualDays: 7 },
@@ -58,7 +112,7 @@ export function createReconciliationFake(clock = reconciliationClock) {
     return { fake, provider: fake as unknown as PaymentProvider };
 }
 
-async function anchors() {
+async function anchors(vertical: 'accommodation' | 'tourist' = 'accommodation') {
     const db = getServiceTestDb();
     const userIds: string[] = [];
     await db
@@ -79,14 +133,14 @@ async function anchors() {
     const planId = (
         await getServiceTestPool().query<{ id: string }>(
             'INSERT INTO plan (vertical, slug, name) VALUES ($1, $2, $3) RETURNING id',
-            ['accommodation', `reconciliation-${crypto.randomUUID()}`, 'Reconciliation']
+            [vertical, `reconciliation-${crypto.randomUUID()}`, 'Reconciliation']
         )
     ).rows[0]?.id;
     if (!planId) throw new Error('No plan was seeded');
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
-            "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, 'accommodation', $2, true, true, 0, false) RETURNING id",
-            [planId, Math.floor(Math.random() * 100000000) + 1]
+            'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $3, $2, true, true, 0, false) RETURNING id',
+            [planId, Math.floor(Math.random() * 100000000) + 1, vertical]
         )
     ).rows[0]?.id;
     if (!versionId) throw new Error('No plan version was seeded');
@@ -107,12 +161,13 @@ export async function seedSubscription(
         paymentMethod?: 'CARD' | 'MANUAL';
         withLink?: boolean;
         fake?: FakePaymentProvider;
+        vertical?: 'accommodation' | 'tourist';
     } = {}
 ) {
-    const choice = await anchors();
+    const choice = await anchors(options.vertical);
     const pending = await subscriptionModel.createPendingAuthorization({
         userId: choice.userId,
-        vertical: 'accommodation',
+        vertical: options.vertical ?? 'accommodation',
         planVersionId: choice.versionId,
         billingOptionId: choice.optionId,
         authorizationWindowDeadlineVersion: 1,

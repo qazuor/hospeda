@@ -106,6 +106,7 @@ import { type JSX, useState } from 'react';
 import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { NO_PLANS_AVAILABLE_MESSAGE, type PublishAffordance } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
@@ -152,9 +153,10 @@ export interface PublishButtonProps {
     /** Error message shown on generic API failure (already-translated). */
     readonly errorText: string;
     /**
-     * Message shown when publish fails because the owner has no active
-     * subscription (`403 subscription_required`, already-translated). Since
-     * HOS-171 this is the normal outcome of a first publish, not an edge case.
+     * Message for `403 subscription_required` (already-translated). Kept for
+     * the callers' contract; since HOS-1492 that branch shows the row 21
+     * "subscribe to publish" notice instead, the same as the `checkout`
+     * affordance.
      */
     readonly subscriptionRequiredMessage: string;
     /** Label for the link to the plans page in that same case (already-translated). */
@@ -223,7 +225,7 @@ export function PublishButton({
     confirmYes,
     confirmNo,
     errorText,
-    subscriptionRequiredMessage,
+    subscriptionRequiredMessage: _subscriptionRequiredMessage,
     subscriptionRequiredCta,
     missingRequirementsMessage,
     missingRequirementsCta,
@@ -238,6 +240,12 @@ export function PublishButton({
         readonly AccommodationPublishRequirementId[]
     >([]);
     const { t } = createTranslations(locale);
+    /**
+     * Row 21 (AC:V8a:4, HOS-1492): "subscribe to publish". Only the copy; it
+     * shows where the affordance (`checkout`) or the server
+     * (`subscription_required`) already said publishing needs a subscription.
+     */
+    const subscribeToPublish = buildSubscribeToPublishCopy({ t, vertical: 'accommodation' });
 
     /** User clicked the main "Publicar" button → enter confirmation mode. */
     function handleRequestConfirm(): void {
@@ -357,14 +365,24 @@ export function PublishButton({
         );
     }
 
+    // Row 21: the listing stays unpublished and publishing needs a
+    // subscription in this vertical. The plan link keeps its exact accessible
+    // name ("Elegir plan de anfitrión").
     if (!affordance.canPublish) {
         return (
-            <a
-                href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
-                className={`${styles.action} ${styles.primary}`}
+            <span
+                className={styles.subscribeToPublish}
+                data-testid="publish-subscribe-to-publish"
             >
-                {choosePlanLabel}
-            </a>
+                <strong>{subscribeToPublish.title}</strong>
+                <span>{subscribeToPublish.body}</span>
+                <a
+                    href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
+                    className={`${styles.action} ${styles.primary}`}
+                >
+                    {choosePlanLabel}
+                </a>
+            </span>
         );
     }
 
@@ -404,23 +422,11 @@ export function PublishButton({
         return (
             <span
                 role="alert"
-                style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '6px',
-                    alignItems: 'center',
-                    width: '100%'
-                }}
+                className={styles.subscribeToPublish}
+                data-testid="publish-subscribe-to-publish"
             >
-                <span
-                    style={{
-                        fontSize: '0.8125rem',
-                        color: 'var(--core-foreground)',
-                        width: '100%'
-                    }}
-                >
-                    {subscriptionRequiredMessage}
-                </span>
+                <strong>{subscribeToPublish.title}</strong>
+                <span>{subscribeToPublish.body}</span>
                 <a
                     href={plansUrl}
                     className={`${styles.action} ${styles.primary}`}

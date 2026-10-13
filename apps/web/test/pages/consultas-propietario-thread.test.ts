@@ -86,3 +86,39 @@ describe('consultas-propietario/[conversationId].astro (SPEC-206 owner thread)',
         expect(source).toMatch(/conversations\/owner\/.*\/messages/);
     });
 });
+
+const markup = source.slice(source.lastIndexOf('---') + 3);
+
+describe('consultas-propietario/[conversationId].astro — row 28 (HOS-1492)', () => {
+    it('reads listingAvailability from the owner thread response', () => {
+        expect(source).toContain(
+            'const { conversation, messages, nextCursor, listingAvailability } = result.data;'
+        );
+        expect(source).toContain(
+            "const listingAdmitsMessages = listingAvailability === 'AVAILABLE';"
+        );
+    });
+
+    it('TEST:V8a:6 — canReply is false once the listing is GONE', () => {
+        expect(source).toMatch(
+            /const canReply =\s*listingAdmitsMessages && !closedStatuses\.includes\(conversation\.status\.toUpperCase\(\)\);/
+        );
+    });
+
+    it('TEST:V8a:6 — GONE: "this listing no longer exists" replaces the reply form', () => {
+        expect(source).toContain(
+            "import ListingGoneNotice from '@/components/account/ListingGoneNotice.astro';"
+        );
+        expect(markup).toMatch(
+            /\{!listingAdmitsMessages \? \(\s*<ListingGoneNotice locale=\{locale\} availability=\{listingAvailability\} \/>\s*\) : canReply \? \(\s*<ConversationReply\s+client:load/
+        );
+    });
+
+    it('TEST:V8a:6 — the whole conversation stays visible whatever the availability', () => {
+        expect(markup).toContain('{messages.map((msg) => (');
+        expect(markup.indexOf('{messages.map(')).toBeLessThan(
+            markup.indexOf('{!listingAdmitsMessages')
+        );
+        expect(markup).not.toMatch(/listingAdmitsMessages\s*&&/);
+    });
+});

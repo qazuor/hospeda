@@ -349,3 +349,52 @@ describe("PublishButton — the affordance is the server's publish decision (HOS
         expect(publishMock).not.toHaveBeenCalled();
     });
 });
+
+describe('PublishButton — row 21 "suscribite para publicar" (HOS-1492, AC:V8a:4)', () => {
+    const TITLE = 'Suscribite para publicar';
+    const BODY =
+        'Tu ficha sigue sin publicar. Para publicarla necesitás una suscripción de alojamiento.';
+
+    it('TEST:V8a:5 the checkout affordance says it, and keeps the plan link with its exact name', () => {
+        // Arrange / Act
+        render(<PublishButton {...props({ affordance: CHECKOUT })} />);
+
+        // Assert
+        const notice = screen.getByTestId('publish-subscribe-to-publish');
+        expect(notice).toHaveTextContent(TITLE);
+        expect(notice).toHaveTextContent(BODY);
+        expect(screen.getByRole('link', { name: 'Elegir plan de anfitrión' })).toBeInTheDocument();
+        expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('TEST:V8a:5 the reactive subscription_required says the same notice', async () => {
+        // Arrange
+        publishMock.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'FORBIDDEN', message: 'subscription_required' }
+        });
+        const user = userEvent.setup();
+        render(<PublishButton {...props()} />);
+
+        // Act
+        await user.click(screen.getByRole('button', { name: 'Publicar' }));
+        await user.click(screen.getByRole('button', { name: 'Sí, publicar' }));
+
+        // Assert
+        const notice = await screen.findByTestId('publish-subscribe-to-publish');
+        expect(notice).toHaveTextContent(TITLE);
+        expect(notice).toHaveTextContent(BODY);
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toBeInTheDocument();
+    });
+
+    it('is absent where publishing goes through or the read failed', () => {
+        // Arrange / Act
+        for (const affordance of [COVERED, PUBLISH, UNKNOWN]) {
+            const { unmount } = render(<PublishButton {...props({ affordance })} />);
+
+            // Assert
+            expect(document.body).not.toHaveTextContent(/suscribite/i);
+            unmount();
+        }
+    });
+});

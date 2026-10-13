@@ -6,6 +6,7 @@ import {
     MessageSenderTypeEnum,
     NotificationRecipientSideEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
@@ -356,6 +357,21 @@ export class MessageService extends BaseService {
                         throw new ServiceError(
                             ServiceErrorCode.VALIDATION_ERROR,
                             `Accommodation has been removed: ${conversation.accommodationId}`,
+                            undefined,
+                            'ACCOMMODATION_DELETED'
+                        );
+                    }
+
+                    // A PURGED listing no longer exists for anybody: its conversation is
+                    // read-only for the guest AND the owner (HOS-1492, AC:V8a:5, row 28).
+                    // Checked before the guest-only step so the owner is refused too.
+                    if (
+                        readListingAccessFacts({ entity: accommodation })?.publicationStatus ===
+                        PublicationStatusEnum.PURGED
+                    ) {
+                        throw new ServiceError(
+                            ServiceErrorCode.VALIDATION_ERROR,
+                            `Accommodation no longer exists: ${conversation.accommodationId}`,
                             undefined,
                             'ACCOMMODATION_DELETED'
                         );

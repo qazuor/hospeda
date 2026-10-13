@@ -1,3 +1,4 @@
+import { providerLinkCancellationSeen } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../src/utils/payment-provider', () => ({
@@ -33,5 +34,27 @@ describe("AC:B7:31 the provider notice receiver wires S7's Tourist VIP clause (H
         // Assert
         expect(ports.touristVipInheritance).toBe(touristVipInheritance);
         expect(typeof ports.touristVipInheritance.inherits).toBe('function');
+    });
+});
+
+describe('AC:B4:11 the provider notice receiver annotates the cancellation seen in production (HOS-1534)', () => {
+    it('wires cancellationSeen to the real provider_link annotator', () => {
+        // Arrange / Act
+        const ports = buildMercadoPagoNoticePorts();
+
+        // Assert
+        expect(ports.cancellationSeen).toBe(providerLinkCancellationSeen);
+        expect(Object.keys(ports).sort()).toEqual(
+            [
+                'beforeCancelNotice',
+                'cancellationSeen',
+                'clock',
+                'coverageNotices',
+                'payments',
+                'planPolicy',
+                'provider',
+                'touristVipInheritance'
+            ].sort()
+        );
     });
 });

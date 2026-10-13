@@ -4,6 +4,7 @@ import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { readArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import type { BeforeCancelNotice } from './start-subscription.service';
@@ -12,6 +13,7 @@ import {
     noCancellationSeenAnnotation,
     noRetainedPeriodPayment,
     type RetainedPeriodPayment,
+    recordAuthorizationSeenAlive,
     recordCancellationSeen
 } from './subscription-billing-ports';
 
@@ -82,7 +84,9 @@ export interface SuspendForArrearsPorts {
 /**
  * The single write of S6 plus its post-commit coverage notice (G5 `via: "notice"`):
  * `<origin> → SUSPENDED`, then `REMOVED` is emitted once the transaction committed.
- * A notice failure is logged and undoes nothing. The grace clock is KEPT: on a
+ * A notice failure is logged and undoes nothing. When no source is left, the same
+ * transaction records the coverage-loss instant (`recordCoverageLossIfUncovered`,
+ * contract §4.1), so it survives a lost notice. The grace clock is KEPT: on a
  * `SUSPENDED` row `grace_started_at` is the anchor of the unpaid period that S7
  * binds condition 4 to (HOS-1560, H1); S7 empties it when the row leaves.
  *
@@ -116,7 +120,17 @@ export async function writeArrearsSuspension(input: {
                 userId: subscriptions.userId,
                 vertical: subscriptions.vertical
             });
-        return row ?? null;
+        if (!row) return null;
+        // coberturaPerdidaEn in the same transaction as the drop (contract §4.1; I-5).
+        if (row.userId)
+            await recordCoverageLossIfUncovered({
+                tx,
+                userId: row.userId,
+                vertical: row.vertical ?? '',
+                lostAt: input.now,
+                clock: { now: () => input.now }
+            });
+        return row;
     });
     if (!updated) return false;
 
@@ -243,6 +257,11 @@ export async function suspendForArrears(
             );
         }
     } else {
+        await recordAuthorizationSeenAlive({
+            annotator,
+            subscriptionId: subscription.id,
+            seenAt: authorization.readAt
+        });
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: subscription.id,
             userId: subscription.userId ?? '',
@@ -285,6 +304,12 @@ export async function suspendForArrears(
             const confirmed = await rereadAuthorization();
             if (confirmed.status === 'cancelled')
                 await recordCancellationSeen({
+                    annotator,
+                    subscriptionId: subscription.id,
+                    seenAt: confirmed.readAt
+                });
+            else
+                await recordAuthorizationSeenAlive({
                     annotator,
                     subscriptionId: subscription.id,
                     seenAt: confirmed.readAt

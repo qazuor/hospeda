@@ -158,3 +158,26 @@ describe('PropertyCard.astro — the publish affordance fails closed (HOS-1668)'
         );
     });
 });
+
+describe('PropertyCard.astro — the listing notices and the unpublish lines (HOS-1492)', () => {
+    it('TEST:V8a:5 / TEST:V8a:7 mounts the notices with this listing entry of the read', () => {
+        expect(propertyCardSource).toContain(
+            "import ListingNotices from '@/components/listing/ListingNotices.astro';"
+        );
+        expect(propertyCardSource).toContain(
+            '<ListingNotices locale={locale} vertical="accommodation" listingId={property.id} item={notices} />'
+        );
+    });
+
+    it('TEST:V8a:7 rows 2 and 25 reach the unpublish confirmation from the read, never derived here', () => {
+        expect(propertyCardSource).toContain(
+            'const unpublishNotes = buildUnpublishConfirmNotes({ t, tPlural, trialRunning, item: notices });'
+        );
+        expect(propertyCardSource).toContain('trialNote={unpublishNotes.trialNote}');
+        expect(propertyCardSource).toContain('recurringNote={unpublishNotes.recurringNote}');
+    });
+
+    it('an unknown trial defaults to null (no trial line), not to a running trial', () => {
+        expect(propertyCardSource).toMatch(/trialRunning = null\n\} = Astro\.props;/);
+    });
+});

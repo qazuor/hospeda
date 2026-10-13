@@ -17,18 +17,22 @@ import type {
     AccommodationImportStatusResponse,
     AccommodationOccupancy,
     AccommodationReviewListItem,
+    ConversationListingAvailability,
     DestinationReviewListItem,
     HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
     HostTradeOwnerUpdate,
     HostTradeReviewCreateBody,
     HostTradeReviewUpdateBody,
+    ListingNoticesResponse,
     ListingSupportEditsResponse,
     OccupancySourceEnum,
     PriceAlertResponse,
     ProtectedEffectiveSetResponse,
+    ReportFixedResponse,
     StartSubscriptionResponseSchema,
     SubscribeDestinationResponseSchema,
+    TrialSummaryResponse,
     UserBookmark,
     UserProtected,
     UserPublic,
@@ -700,6 +704,10 @@ export interface ConversationThreadResponse {
      * null when there are no older messages. Matches the API response shape;
      * mirrors OwnerConversationThreadResponse. */
     readonly nextCursor: string | null;
+    /** Whether the tourist can still write about the listing (HOS-1492, rows
+     * 28 and 35): `GONE` once it reached `PURGED`, `NOT_PUBLISHED` while it is
+     * not public (without saying why), otherwise `AVAILABLE`. */
+    readonly listingAvailability: ConversationListingAvailability;
 }
 
 /** Protected conversations API endpoints (require auth session) */
@@ -860,6 +868,9 @@ export interface OwnerConversationThreadResponse {
     readonly conversation: OwnerConversationDetail;
     readonly messages: readonly ConversationMessageItem[];
     readonly nextCursor: string | null;
+    /** Whether the owner can still write about the listing (HOS-1492, row 28):
+     * `GONE` once it reached `PURGED`, otherwise `AVAILABLE`. */
+    readonly listingAvailability: ConversationListingAvailability;
 }
 
 /** Protected owner conversations API endpoints (require auth + host role) */
@@ -2908,6 +2919,93 @@ export const publishApi = {
         return apiClient.getProtected({
             path: `${PROTECTED}/publish/subscribe-destination/${vertical}`,
             cookieHeader
+        });
+    },
+
+    /**
+     * Reads the notices of every listing the caller owns in one vertical
+     * (HOS-1492, V8a.1b): `PURGED` (rows 20 and 31), archived (row 18),
+     * moderated (row 24), fix request and lifted moderation (row 30) and surplus
+     * (rows 8/9), plus whether the trial is running (row 2) and the recurring
+     * add-ons per listing (rows 18, 24, 25). The surface only shows what the
+     * read resolved; it never decides.
+     *
+     * @param params.vertical - Which vertical to read.
+     * @param params.cookieHeader - Optional SSR cookie header.
+     * @returns `{ trialRunning, items: { listingId, publicationStatus, recurringListingAddons, notices }[] }`.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.listingNotices({ vertical: 'accommodation', cookieHeader });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    listingNotices({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<ListingNoticesResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/listing-notices/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Reads the caller's accumulated trial days in one vertical and their origin
+     * (HOS-1492, row 4): `{ status: 'NONE' }` without a trial row, otherwise the
+     * status, the start and end instants, the total and the days from the plan,
+     * from promotions and granted by support. The surface only shows it.
+     *
+     * @param params.vertical - Which vertical to read.
+     * @param params.cookieHeader - Optional SSR cookie header.
+     * @returns The trial summary of the vertical.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.trialSummary({ vertical: 'accommodation', cookieHeader });
+     * if (result.ok && result.data.status !== 'NONE') console.log(result.data.totalDays);
+     * ```
+     */
+    trialSummary({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<TrialSummaryResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/trial-summary/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Tells the admin the owner fixed what an open fix request asked (row 30,
+     * HOS-1492). Idempotent: a second report answers the first instant. Does
+     * not close the request.
+     *
+     * @param params.vertical - The listing's vertical.
+     * @param params.id - The listing id.
+     * @returns `{ ownerReportedFixedAt }`; a 409 `NO_OPEN_FIX_REQUEST` when no request is open.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.reportFixed({ vertical: 'accommodation', id });
+     * if (result.ok) console.log(result.data.ownerReportedFixedAt);
+     * ```
+     */
+    reportFixed({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<ReportFixedResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/fix-request/report-fixed`
         });
     },
 

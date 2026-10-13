@@ -8,6 +8,7 @@
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { ConversationReply } from '@/components/account/ConversationReply.client';
+import ListingGoneNotice from '@/components/account/ListingGoneNotice.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -42,11 +43,15 @@ if (!result.ok) {
     return new Response(null, { status: 404 });
 }
 
-const { conversation, messages, nextCursor } = result.data;
+const { conversation, messages, nextCursor, listingAvailability } = result.data;
 
-// Determine if reply is allowed
+// Determine if reply is allowed: the conversation must be open AND its listing
+// must still admit new messages (HOS-1492, rows 28 and 35). Otherwise the
+// whole conversation stays visible, read-only, under `ListingGoneNotice`.
 const closedStatuses = ['CLOSED', 'BLOCKED'];
-const canReply = !closedStatuses.includes(conversation.status.toUpperCase());
+const listingAdmitsMessages = listingAvailability === 'AVAILABLE';
+const canReply =
+    listingAdmitsMessages && !closedStatuses.includes(conversation.status.toUpperCase());
 
 // Determine if owner read receipt should be shown
 let showOwnerReadReceipt = false;
@@ -150,7 +155,9 @@ const olderCursor = nextCursor;
             </p>
         )}
 
-        {canReply ? (
+        {!listingAdmitsMessages ? (
+            <ListingGoneNotice locale={locale} availability={listingAvailability} />
+        ) : canReply ? (
             <ConversationReply
                 client:visible
                 mode="auth"

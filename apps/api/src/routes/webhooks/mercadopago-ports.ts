@@ -1,5 +1,5 @@
 import { planCatalogModel } from '@repo/db';
-import { creditedPaymentsFromLedger } from '@repo/service-core';
+import { creditedPaymentsFromLedger, providerLinkCancellationSeen } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
 import { getClock } from '../../utils/clock';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices';
@@ -12,6 +12,10 @@ import { touristVipInheritance } from '../billing-subscription/tourist-vip-inher
  * `coverageNotices` is the process-wide registry (HOS-1533), so the notices the
  * receiver's transitions emit after their commit reach the verticals listeners.
  * `touristVipInheritance` feeds S7's Tourist VIP clause (AC:B7:31).
+ * `cancellationSeen` is the real annotator backed by `provider_link`
+ * (AC:B4:11, HOS-1534): the handler's and S16's re-reads write
+ * `cancelled_seen_at` when they see the preapproval `cancelled` and clear it
+ * when a newer re-read sees it alive, which is what `canCharge` reads.
  */
 export function buildMercadoPagoNoticePorts() {
     return {
@@ -22,6 +26,7 @@ export function buildMercadoPagoNoticePorts() {
         payments: creditedPaymentsFromLedger,
         coverageNotices: getCoverageNotices(),
         // AC:B7:31: S7, reached through the charge notice, cancels a paid Tourist VIP the plan grants again.
-        touristVipInheritance
+        touristVipInheritance,
+        cancellationSeen: providerLinkCancellationSeen
     };
 }

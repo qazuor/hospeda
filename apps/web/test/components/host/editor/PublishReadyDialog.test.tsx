@@ -129,3 +129,35 @@ describe('PublishReadyDialog', () => {
         expect(screen.queryByText('Ver planes')).not.toBeInTheDocument();
     });
 });
+
+describe('PublishReadyDialog — row 21 "suscribite para publicar" (HOS-1492, AC:V8a:4)', () => {
+    it('TEST:V8a:5 the stale verdict says subscribe to publish, in the vertical', async () => {
+        // Arrange
+        publishMock.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'FORBIDDEN', message: 'subscription_required' }
+        });
+        const user = userEvent.setup();
+        render(<PublishReadyDialog {...props()} />);
+
+        // Act
+        await user.click(screen.getByText('Publicar ahora'));
+
+        // Assert
+        await waitFor(() =>
+            expect(screen.getByText('Suscribite para publicar')).toBeInTheDocument()
+        );
+        expect(screen.getByTestId('publish-ready-subscribe-to-publish')).toHaveTextContent(
+            'Tu ficha sigue sin publicar. Para publicarla necesitás una suscripción de alojamiento.'
+        );
+        expect(screen.getByText('Ver planes')).toBeInTheDocument();
+    });
+
+    it('does not say it while offering to publish', () => {
+        // Arrange / Act
+        render(<PublishReadyDialog {...props()} />);
+
+        // Assert
+        expect(document.body).not.toHaveTextContent(/suscribite/i);
+    });
+});
