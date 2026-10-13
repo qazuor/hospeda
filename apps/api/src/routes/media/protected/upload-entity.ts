@@ -34,8 +34,7 @@ import {
     ENTITY_GALLERY_CAPS,
     getGalleryCap,
     ProtectedUploadEntityRequestSchema,
-    UploadResponseDataSchema,
-    VerticalEnum
+    UploadResponseDataSchema
 } from '@repo/schemas';
 import {
     AccommodationService,
@@ -46,9 +45,7 @@ import {
     PostService
 } from '@repo/service-core';
 import type { Context } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
-import { enforceListingAccess } from '../../../middlewares/listing-access';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getMediaProvider } from '../../../services/media';
 import {
@@ -57,15 +54,14 @@ import {
     validateContentLength,
     validateFile
 } from '../../../services/media/upload-helpers';
-import type { ListingAccessConfig } from '../../../types/authorization';
 import { getActorFromContext } from '../../../utils/actor';
-import { accommodationGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import { type MediaEntityType, validateEntityMediaPermission } from '../admin/permissions';
 import { mediaEntityNotFoundResponse } from '../entity-not-found';
 import { resolveVisibleGalleryCount } from '../gallery-count';
+import { runUploadListingAccess } from './upload-entity-listing-access';
 
 /** Reusable Zod validator for actor.id UUID format. */
 const ActorIdSchema = z.string().uuid();
@@ -138,85 +134,6 @@ const resolveEntityService = (
             return new ExperienceService({ logger: apiLogger });
         default:
             return null;
-    }
-};
-
-/** One listing access declaration, in the `listingAccess:` shape G2 scans. */
-type UploadListingAccess = { readonly listingAccess: ListingAccessConfig };
-
-/**
- * Listing access of the upload, per listing vertical and role (HOS-1682).
- *
- * Each entry mirrors the persisting route the uploaded asset ends up in: the
- * accommodation gallery takes `addMedia`'s plan photo limit, the accommodation
- * featured image takes `addFeaturedMedia`'s `requested: 1`, and gastronomy and
- * experience declare no limit, like their own `addMedia`/`addFeaturedMedia`.
- * The vertical is named literally per branch: it is the vertical of the table
- * the service branch reads the listing from, never a value of the request.
- */
-const UPLOAD_LISTING_ACCESS = {
-    accommodationGallery: {
-        listingAccess: {
-            vertical: VerticalEnum.ACCOMMODATION,
-            operation: 'EDIT',
-            idParam: 'id',
-            limit: accommodationGalleryPhotoLimit
-        }
-    },
-    accommodationFeatured: {
-        listingAccess: {
-            vertical: VerticalEnum.ACCOMMODATION,
-            operation: 'EDIT',
-            idParam: 'id',
-            limit: async () => ({ key: 'max_photos_per_accommodation', requested: 1 })
-        }
-    },
-    gastronomy: {
-        listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'EDIT', idParam: 'id' }
-    },
-    experience: {
-        listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' }
-    }
-} satisfies Record<string, UploadListingAccess>;
-
-/**
- * Resolve the listing access the upload runs, or `null` when the entity type
- * is not a listing (destination, event, post).
- *
- * @param input.entityType - The validated entity type; the same branch picks the service.
- * @param input.role - The validated upload role.
- * @returns The listing access config of that branch, or `null`.
- */
-const resolveUploadListingAccess = ({
-    entityType,
-    role
-}: {
-    readonly entityType:
-        | 'accommodation'
-        | 'destination'
-        | 'event'
-        | 'post'
-        | 'gastronomy'
-        | 'experience';
-    readonly role: 'featured' | 'gallery';
-}): ListingAccessConfig | null => {
-    switch (entityType) {
-        case 'accommodation':
-            return role === 'gallery'
-                ? UPLOAD_LISTING_ACCESS.accommodationGallery.listingAccess
-                : UPLOAD_LISTING_ACCESS.accommodationFeatured.listingAccess;
-        case 'gastronomy':
-            return UPLOAD_LISTING_ACCESS.gastronomy.listingAccess;
-        case 'experience':
-            return UPLOAD_LISTING_ACCESS.experience.listingAccess;
-        case 'destination':
-        case 'event':
-        case 'post':
-            return null;
-        default: {
-            const exhaustive: never = entityType;
-            throw new Error(`Unhandled upload entity type: ${String(exhaustive)}`);
-        }
     }
 };
 
@@ -423,22 +340,13 @@ export const protectedUploadEntityRoute = createProtectedRoute({
         // capability and the plan limit. Its NOT_FOUND is answered with the
         // SAME body as "no such entity" (HOS-600); every other refusal is a
         // ServiceError the route factory maps (403 gates).
-        const listingAccess = resolveUploadListingAccess({ entityType, role });
-        if (listingAccess) {
-            try {
-                await enforceListingAccess({
-                    ctx,
-                    params: { id: entityId },
-                    config: listingAccess,
-                    tier: 'protected'
-                });
-            } catch (error) {
-                if (error instanceof HTTPException && error.status === 404) {
-                    return mediaEntityNotFoundResponse({ ctx });
-                }
-                throw error;
-            }
-        }
+        const listingAccessRefusal = await runUploadListingAccess({
+            ctx,
+            entityType,
+            entityId,
+            role
+        });
+        if (listingAccessRefusal) return listingAccessRefusal;
 
         // ── 3d. Enforce gallery cap ───────────────────────────────────────────
         if (role === 'gallery') {

@@ -8,6 +8,7 @@ import {
     CONFIG_TYPE_FILE,
     RESOLVER_FILE,
     run,
+    UPLOAD_ENTITY_ACCESS_FILE,
     UPLOAD_ENTITY_FILE
 } from '../check-vertical-context';
 
@@ -23,7 +24,8 @@ const TREE_FILES = [
     MIDDLEWARE,
     UPDATE_ROUTE,
     BROCHURE_ROUTE,
-    UPLOAD_ENTITY_FILE
+    UPLOAD_ENTITY_FILE,
+    UPLOAD_ENTITY_ACCESS_FILE
 ] as const;
 const UPDATE_ACCESS =
     "listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' }";
@@ -202,39 +204,61 @@ describe('TEST:V5:26 - G2 (a) and (b): the vertical context is declared and take
         const computed = tempTree();
         mutate(
             computed,
-            UPLOAD_ENTITY_FILE,
+            UPLOAD_ENTITY_ACCESS_FILE,
             'vertical: VerticalEnum.GASTRONOMY',
             'vertical: entityType as never'
         );
         expectFailure(
             computed,
-            `G2 (b): ${UPLOAD_ENTITY_FILE}:`,
+            `G2 (b): ${UPLOAD_ENTITY_ACCESS_FILE}:`,
             'listingAccess computes its vertical (entityType as never)'
         );
         const undeclared = tempTree();
-        mutate(undeclared, UPLOAD_ENTITY_FILE, 'vertical: VerticalEnum.GASTRONOMY, ', '');
+        mutate(undeclared, UPLOAD_ENTITY_ACCESS_FILE, 'vertical: VerticalEnum.GASTRONOMY, ', '');
         expectFailure(
             undeclared,
-            `G2 (a): ${UPLOAD_ENTITY_FILE}:`,
+            `G2 (a): ${UPLOAD_ENTITY_ACCESS_FILE}:`,
             'route-config does not declare its vertical context'
         );
         const noExperience = tempTree();
         mutate(
             noExperience,
-            UPLOAD_ENTITY_FILE,
+            UPLOAD_ENTITY_ACCESS_FILE,
             "listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' }",
             "other: { operation: 'EDIT', idParam: 'id' }"
         );
         expectFailure(
             noExperience,
-            `G2 (b): ${UPLOAD_ENTITY_FILE} declares no listingAccess site for VerticalEnum.EXPERIENCE`
+            `G2 (b): ${UPLOAD_ENTITY_ACCESS_FILE} declares no listingAccess site for VerticalEnum.EXPERIENCE`
         );
         const noCall = tempTree();
-        mutate(noCall, UPLOAD_ENTITY_FILE, 'await enforceListingAccess({', 'await skipAccess({');
-        expectFailure(noCall, `G2 (b): ${UPLOAD_ENTITY_FILE} does not call enforceListingAccess`);
-        const noFile = tempTree();
-        unlinkSync(path.join(noFile, UPLOAD_ENTITY_FILE));
-        expectFailure(noFile, `G2 (b): cannot read ${UPLOAD_ENTITY_FILE}`);
+        mutate(
+            noCall,
+            UPLOAD_ENTITY_ACCESS_FILE,
+            'await enforceListingAccess({',
+            'await skipAccess({'
+        );
+        expectFailure(
+            noCall,
+            `G2 (b): ${UPLOAD_ENTITY_ACCESS_FILE} does not call enforceListingAccess`
+        );
+        const noRouteCall = tempTree();
+        mutate(
+            noRouteCall,
+            UPLOAD_ENTITY_FILE,
+            'await runUploadListingAccess({',
+            'await skipUploadAccess({'
+        );
+        expectFailure(
+            noRouteCall,
+            `G2 (b): ${UPLOAD_ENTITY_FILE} does not call runUploadListingAccess`
+        );
+        const noRoute = tempTree();
+        unlinkSync(path.join(noRoute, UPLOAD_ENTITY_FILE));
+        expectFailure(noRoute, `G2 (b): cannot read ${UPLOAD_ENTITY_FILE}`);
+        const noModule = tempTree();
+        unlinkSync(path.join(noModule, UPLOAD_ENTITY_ACCESS_FILE));
+        expectFailure(noModule, `G2 (b): cannot read ${UPLOAD_ENTITY_ACCESS_FILE}`);
     });
 
     it('fails closed without the config type, without a resolver call, or with too few routes', () => {

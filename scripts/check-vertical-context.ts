@@ -20,13 +20,14 @@
  * - (b2) the `vertical` of every `resolveListingAccess` call and the
  *   `resourceVertical` of every `resolveResourceVertical` call contain none of
  *   the request names of `REQUEST_NAMES`;
- * - (b3) the media upload of the listings (`UPLOAD_ENTITY_FILE`) runs the chain
- *   with the vertical of the resource: the file declares one `listingAccess`
- *   site per listing vertical, each naming its `VerticalEnum` member (rules (a)
- *   and (b1) apply to them like to any route config), and calls
- *   `enforceListingAccess` (HOS-1682).
- * It fails closed when a signature file, type or function is missing, when the
- * listing media upload file is missing, and when the scan is suspiciously small
+ * - (b3) the media upload of the listings runs the chain with the vertical of
+ *   the resource: its listing access module (`UPLOAD_ENTITY_ACCESS_FILE`)
+ *   declares one `listingAccess` site per listing vertical, each naming its
+ *   `VerticalEnum` member (rules (a) and (b1) apply to them like to any route
+ *   config), and calls `enforceListingAccess`; the route (`UPLOAD_ENTITY_FILE`)
+ *   calls that module's `runUploadListingAccess` (HOS-1682).
+ * It fails closed when a signature file, type or function is missing, when
+ * either listing media upload file is missing, and when the scan is suspiciously small
  * or finds no `resolveListingAccess` call.
  *
  * What it does NOT verify:
@@ -65,6 +66,11 @@ export const LISTING_VERTICAL_MEMBERS = ['ACCOMMODATION', 'GASTRONOMY', 'EXPERIE
 export const REQUEST_NAMES = ['body', 'params', 'query', 'headers', 'request', 'req'] as const;
 /** The media upload of the listings, which must run the chain per vertical (HOS-1682). */
 export const UPLOAD_ENTITY_FILE = 'apps/api/src/routes/media/protected/upload-entity.ts';
+/** The upload's listing access module: the literal sites and the chain call. */
+export const UPLOAD_ENTITY_ACCESS_FILE =
+    'apps/api/src/routes/media/protected/upload-entity-listing-access.ts';
+/** The module entry point the route must call. */
+export const UPLOAD_ENTITY_ACCESS_ENTRY = 'runUploadListingAccess';
 /** Fewer `listingAccess` route configs than this means the scan is broken. */
 export const MIN_ROUTE_CONFIGS = 100;
 /** Fewer production files than this means the file listing is broken. */
@@ -211,39 +217,60 @@ function checkCall(site: OperationSite, where: string): readonly string[] {
     ];
 }
 
+/** Whether `source` (parsed as `file`) calls the plain identifier `name`. */
+function callsIdentifier(file: string, source: string, name: string): boolean {
+    return (
+        findNode(
+            parse(file, source),
+            (node): node is ts.CallExpression =>
+                ts.isCallExpression(node) &&
+                ts.isIdentifier(node.expression) &&
+                node.expression.text === name
+        ) !== null
+    );
+}
+
 /**
- * (b3): the listing media upload declares a `listingAccess` site naming each
- * listing vertical and calls `enforceListingAccess` (HOS-1682).
+ * (b3): the listing media upload's access module declares a `listingAccess`
+ * site naming each listing vertical and calls `enforceListingAccess`, and the
+ * route calls the module's entry point (HOS-1682).
  */
-function checkUploadEntity(
-    source: string | null,
-    sites: readonly OperationSite[]
-): readonly string[] {
-    if (source === null)
-        return [
+function checkUploadEntity(args: {
+    readonly routeSource: string | null;
+    readonly accessSource: string | null;
+    readonly sites: readonly OperationSite[];
+}): readonly string[] {
+    const { routeSource, accessSource, sites } = args;
+    const problems: string[] = [];
+    if (routeSource === null)
+        problems.push(
             `G2 (b): cannot read ${UPLOAD_ENTITY_FILE}: the listing media upload must run the chain`
-        ];
+        );
+    else if (!callsIdentifier(UPLOAD_ENTITY_FILE, routeSource, UPLOAD_ENTITY_ACCESS_ENTRY))
+        problems.push(
+            `G2 (b): ${UPLOAD_ENTITY_FILE} does not call ${UPLOAD_ENTITY_ACCESS_ENTRY}: the listing media upload must run the chain`
+        );
+    if (accessSource === null) {
+        problems.push(
+            `G2 (b): cannot read ${UPLOAD_ENTITY_ACCESS_FILE}: the listing media upload must run the chain`
+        );
+        return problems;
+    }
     const named = new Set<string>();
     for (const site of sites) {
-        if (site.file !== UPLOAD_ENTITY_FILE || site.kind !== 'route-config') continue;
+        if (site.file !== UPLOAD_ENTITY_ACCESS_FILE || site.kind !== 'route-config') continue;
         const vertical = site.properties.get('vertical');
         const member = vertical ? namedMember(vertical) : null;
         if (member) named.add(member);
     }
-    const problems: string[] = LISTING_VERTICAL_MEMBERS.filter((member) => !named.has(member)).map(
-        (member) =>
-            `G2 (b): ${UPLOAD_ENTITY_FILE} declares no listingAccess site for VerticalEnum.${member}: the listing media upload must run the chain with the vertical of the resource`
-    );
-    const call = findNode(
-        parse(UPLOAD_ENTITY_FILE, source),
-        (node): node is ts.CallExpression =>
-            ts.isCallExpression(node) &&
-            ts.isIdentifier(node.expression) &&
-            node.expression.text === 'enforceListingAccess'
-    );
-    if (!call)
+    for (const member of LISTING_VERTICAL_MEMBERS)
+        if (!named.has(member))
+            problems.push(
+                `G2 (b): ${UPLOAD_ENTITY_ACCESS_FILE} declares no listingAccess site for VerticalEnum.${member}: the listing media upload must run the chain with the vertical of the resource`
+            );
+    if (!callsIdentifier(UPLOAD_ENTITY_ACCESS_FILE, accessSource, 'enforceListingAccess'))
         problems.push(
-            `G2 (b): ${UPLOAD_ENTITY_FILE} does not call enforceListingAccess: the listing media upload must run the chain`
+            `G2 (b): ${UPLOAD_ENTITY_ACCESS_FILE} does not call enforceListingAccess: the listing media upload must run the chain`
         );
     return problems;
 }
@@ -303,7 +330,13 @@ export function run(
         );
     if (resolverCalls === 0)
         problems.push('G2 (a, b): found no resolveListingAccess call in production code');
-    problems.push(...checkUploadEntity(readFile(root, UPLOAD_ENTITY_FILE), sites));
+    problems.push(
+        ...checkUploadEntity({
+            routeSource: readFile(root, UPLOAD_ENTITY_FILE),
+            accessSource: readFile(root, UPLOAD_ENTITY_ACCESS_FILE),
+            sites
+        })
+    );
 
     if (problems.length > 0) {
         return {
