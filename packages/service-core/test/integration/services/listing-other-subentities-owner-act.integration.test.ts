@@ -43,7 +43,13 @@ async function expectActs(input: {
         tx: input.tx
     });
     expect(events).toHaveLength(input.fields.length);
-    expect(events.map((event) => event.changes)).toEqual(input.fields.map((field) => [{ field }]));
+    // Compared as a set: every act shares the transaction's `now()` as its
+    // `occurredAt`, so `findByEntity` has no defined order among them.
+    const byField = (a: unknown, b: unknown): number =>
+        JSON.stringify(a).localeCompare(JSON.stringify(b));
+    expect(events.map((event) => event.changes).sort(byField)).toEqual(
+        input.fields.map((field) => [{ field }]).sort(byField)
+    );
     for (const event of events) {
         expect(event.eventType).toBe('listing.edited');
         expect(event.actorId).toBe(input.ownerId);
