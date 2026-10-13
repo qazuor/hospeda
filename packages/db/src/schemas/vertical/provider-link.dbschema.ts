@@ -17,7 +17,9 @@ export const providerLinks = pgTable(
         /** última `version` del recurso que aplicamos */
         lastAppliedVersion: varchar('last_applied_version', { length: 255 }),
         /** `last_modified` de la última relectura por id */
-        lastModified: timestamp('last_modified', { withTimezone: true })
+        lastModified: timestamp('last_modified', { withTimezone: true }),
+        /** instante de la primera relectura por id que vio el preapproval `cancelled`; la vacía una relectura que lo ve vivo */
+        cancelledSeenAt: timestamp('cancelled_seen_at', { withTimezone: true })
     },
     (t) => ({
         subscriptionUnique: unique('uq_provider_link_subscription').on(t.subscriptionId),
