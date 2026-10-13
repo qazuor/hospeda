@@ -366,6 +366,10 @@
             "path": "/api/v1/admin/billing-deadlines/preview"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/external"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId"
         },

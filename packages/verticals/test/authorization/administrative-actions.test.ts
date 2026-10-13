@@ -5,6 +5,7 @@ import {
     ADMINISTRATIVE_ACTION_PERMISSION_SET,
     ADMINISTRATIVE_ACTION_PERMISSIONS,
     ADMINISTRATIVE_ACTIONS,
+    isAdministrativeActionPermitted,
     RETIRING_ADMINISTRATIVE_PERMISSIONS,
     SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET
 } from '../../src/authorization/administrative-actions';
@@ -101,6 +102,38 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         });
         expect(
             ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.LISTING_PURGE_ON_REQUEST)
+        ).toBe(true);
+    });
+
+    it('TEST:B5:6 assigns ACC_14 only its own settle-external permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_14).toEqual({
+            permissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.BILLING_SETTLE_EXTERNAL)
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.BILLING_SETTLE_EXTERNAL)
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_14',
+                actorPermissions: [
+                    PermissionEnum.REFUND_PROCESS,
+                    PermissionEnum.PAYMENT_REFUND,
+                    PermissionEnum.REFUND_APPROVE,
+                    PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
+                    PermissionEnum.PARTNER_MANAGE,
+                    PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT
+                ]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_14',
+                actorPermissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL]
+            })
         ).toBe(true);
     });
 
