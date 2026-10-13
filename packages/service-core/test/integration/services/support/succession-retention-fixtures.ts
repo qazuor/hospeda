@@ -1,4 +1,5 @@
 import type { CoverageChangedEvent } from '@repo/billing-verticals-contract';
+import type { DrizzleClient } from '@repo/db';
 import {
     and,
     domainEvent,
@@ -13,7 +14,8 @@ import {
     subscriptions,
     successionRetainedPayments
 } from '@repo/db';
-import type { PaymentProvider } from '@repo/payments';
+import type { NoticeDelivery, PaymentProvider } from '@repo/payments';
+import { encodeFakeNotice } from '@repo/payments/fake';
 import { vi } from 'vitest';
 import type { CoverageNotices } from '../../../../src/services/billing/payment/payment-ports.js';
 import { openReconciliationMark } from '../../../../src/services/billing/reconciliation/open-reconciliation-mark.service.js';
@@ -26,6 +28,7 @@ import {
     expireAuthorizationWindows
 } from '../../../../src/services/billing/subscription/expire-authorization-windows.service.js';
 import type { BeforeCancelNotice } from '../../../../src/services/billing/subscription/start-subscription.service.js';
+import type { SuccessionCloser } from '../../../../src/services/billing/subscription/subscription-billing-ports.js';
 import { retainPaymentForSuccession } from '../../../../src/services/billing/subscription/succession-retained-payment.js';
 import {
     type SuspendForArrearsPorts,
@@ -323,9 +326,13 @@ export async function expireSuccessorWindow(
     return { successorAuthorizationId: created.authorizationId };
 }
 
-/** S3 over this case's successor only, with the case's provider, clock and listener. */
+/**
+ * S3 over this case's successor only, with the case's provider, clock and listener
+ * (and S18's interface when the case passes one, for branch 1).
+ */
 export async function runS3(
-    s: Awaited<ReturnType<typeof predecessorInGrace>>
+    s: Awaited<ReturnType<typeof predecessorInGrace>>,
+    extra: { readonly successionCloser?: SuccessionCloser } = {}
 ): Promise<ExpireAuthorizationWindowsSummary> {
     const beforeCancelNotice: BeforeCancelNotice = { beforeCancel: async () => 'SENT' };
     return withSeededSubscriptionSweep(20, () =>
@@ -334,9 +341,77 @@ export async function runS3(
             clock: s.fixture.clock,
             beforeCancelNotice,
             touristVipInheritance: noTouristVip,
-            coverageNotices: s.chargePorts.coverageNotices
+            coverageNotices: s.chargePorts.coverageNotices,
+            ...(extra.successionCloser ? { successionCloser: extra.successionCloser } : {})
         })
     );
+}
+
+/** What the spy closer saw when S18 was called, read with the transaction it received. */
+export interface SuccessionCloseSeen {
+    readonly predecessorSubscriptionId: string;
+    /** The predecessor's status read with the received `tx` (inside the act). */
+    readonly predecessorStatusInTx: string | undefined;
+    /** The successors' statuses read with the received `tx` (inside the act). */
+    readonly successorStatusesInTx: readonly string[];
+    /** The predecessor's status read OUTSIDE the transaction (what is committed). */
+    readonly predecessorStatusCommitted: string | undefined;
+    /** The successors' statuses read OUTSIDE the transaction (what is committed). */
+    readonly successorStatusesCommitted: readonly string[];
+}
+
+/**
+ * A `SuccessionCloser` spy (TEST:B7:16): when called it reads, with the `tx` it
+ * received, the predecessor and its successors, and the same rows from a separate
+ * connection. Seeing the act's write in the `tx` but not outside proves the call
+ * happens in that act: same transaction, before the commit.
+ */
+export function spySuccessionCloser(): {
+    readonly closer: SuccessionCloser;
+    readonly seen: SuccessionCloseSeen[];
+} {
+    const seen: SuccessionCloseSeen[] = [];
+    const statuses = async (db: DrizzleClient, predecessorId: string) => {
+        const [predecessor] = await db
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, predecessorId));
+        const successors = await db
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.succeedsId, predecessorId));
+        return {
+            predecessor: predecessor?.status,
+            successors: successors.map((row) => row.status)
+        };
+    };
+    const closer: SuccessionCloser = {
+        closeSuccession: vi.fn(async ({ predecessorSubscriptionId, tx }) => {
+            const inTx = await statuses(tx, predecessorSubscriptionId);
+            const committed = await statuses(getServiceTestDb(), predecessorSubscriptionId);
+            seen.push({
+                predecessorSubscriptionId,
+                predecessorStatusInTx: inTx.predecessor,
+                successorStatusesInTx: inTx.successors,
+                predecessorStatusCommitted: committed.predecessor,
+                successorStatusesCommitted: committed.successors
+            });
+        })
+    };
+    return { closer, seen };
+}
+
+/** A provider notice delivery about one authorization, as the fake encodes it. */
+export function authorizationDelivery(authorizationId: string): NoticeDelivery {
+    const { body, contentType } = encodeFakeNotice({
+        notice: {
+            resourceKind: 'authorization',
+            resourceId: authorizationId,
+            version: String(Date.now())
+        },
+        format: 'json'
+    });
+    return { headers: { 'content-type': contentType }, body };
 }
 
 /**

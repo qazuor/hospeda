@@ -1,8 +1,20 @@
-import { emailOutbox, eq, reconciliationMarkPayments, subscriptions } from '@repo/db';
+import {
+    emailOutbox,
+    eq,
+    reconciliationMarkPayments,
+    subscriptions,
+    successionRetainedPayments
+} from '@repo/db';
 import { type LogEntry, registerHook, unregisterHook } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { createPaymentReconciliationMarkPayments } from '../../../src/services/billing/payment/payment-ledger.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
+import {
+    noDeterminableRetainedPaymentBranch,
+    retainedPaymentsFromLedger
+} from '../../../src/services/billing/reconciliation/sweep/succession-retention-ports.js';
+import { runZeroCallChecks } from '../../../src/services/billing/reconciliation/sweep/zero-call-checks.service.js';
 import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
 import { settleExternalRefund } from '../../../src/services/billing/refund/settle-external-refund.service.js';
 import { exitGraceOnCreditedPayment } from '../../../src/services/billing/subscription/exit-grace.service.js';
@@ -445,6 +457,118 @@ describe('TEST:B7:10 — S19 retains the unpaid-period payment (AC:B7:16)', () =
                 new Set([requested.refundId, settled.refundId])
             );
             expect((await retentionsOf(s.subscriptionId))[0]?.releasedAt).toBeNull();
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'l — the sweep: a retention whose successor died opens PAGO_PENDIENTE_SIN_RAMA with the payment hung once; a second run neither fails nor hangs it again',
+        async () => {
+            // Arrange: the successor died without S3 (seeded ABANDONED), so no act closed the flag.
+            const s = await predecessorInGrace({ approveOnAttempt: 2 });
+            seeded.push(s.seeded);
+            s.fixture.advanceToAttempt(2);
+            await recordChargeFact({ chargeId: s.fixture.chargeId }, s.chargePorts);
+            const payment = await paymentFor(s.fixture.chargeId);
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'ABANDONED' })
+                .where(eq(subscriptions.id, s.successor.id));
+            // The ports the cron wires (billing-reconciliation-sweep.job.ts).
+            const ports = {
+                retainedPayments: retainedPaymentsFromLedger,
+                retainedPaymentBranches: noDeterminableRetainedPaymentBranch,
+                markPayments: createPaymentReconciliationMarkPayments(s.fixture.clock)
+            };
+            const ownFailures = (summary: Awaited<ReturnType<typeof runZeroCallChecks>>) =>
+                summary.failures.filter((failure) => failure.subjectId === s.subscriptionId);
+            const hungOf = async (markId: string) =>
+                getServiceTestDb()
+                    .select()
+                    .from(reconciliationMarkPayments)
+                    .where(eq(reconciliationMarkPayments.markId, markId));
+
+            // Act
+            const first = await runZeroCallChecks({}, ports);
+
+            // Assert
+            expect(ownFailures(first)).toEqual([]);
+            const marks = await openMarksOf(s.subscriptionId);
+            expect(marks.map((mark) => mark.reason)).toEqual(['PAGO_PENDIENTE_SIN_RAMA']);
+            const markId = marks[0]?.id ?? '';
+            const hung = await hungOf(markId);
+            expect(hung).toHaveLength(1);
+            expect(hung[0]).toMatchObject({ paymentId: payment.id, resolvedAt: null });
+            expect(
+                (await retentionsOf(s.subscriptionId)).map((retention) => retention.releasedAt)
+            ).toEqual([null]);
+            const listed = await retainedPaymentsFromLedger.listRetainedPayments();
+            expect(listed.filter((row) => row.subscriptionId === s.subscriptionId)).toEqual([]);
+
+            // Act: the next day's run.
+            const second = await runZeroCallChecks({}, ports);
+
+            // Assert
+            expect(ownFailures(second)).toEqual([]);
+            expect((await openMarksOf(s.subscriptionId)).map((mark) => mark.id)).toEqual([markId]);
+            expect(await hungOf(markId)).toHaveLength(1);
+            expect(await refundsOf(payment.id)).toHaveLength(0);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'l — the sweep leaves a retention with its successor live untouched, and never lists a closed one',
+        async () => {
+            // Arrange
+            const live = await predecessorInGrace({ approveOnAttempt: 2 });
+            seeded.push(live.seeded);
+            live.fixture.advanceToAttempt(2);
+            await recordChargeFact({ chargeId: live.fixture.chargeId }, live.chargePorts);
+            const livePayment = await paymentFor(live.fixture.chargeId);
+            const closed = await predecessorInGrace({ approveOnAttempt: 2 });
+            seeded.push(closed.seeded);
+            closed.fixture.advanceToAttempt(2);
+            await recordChargeFact({ chargeId: closed.fixture.chargeId }, closed.chargePorts);
+            const db = getServiceTestDb();
+            await db
+                .update(successionRetainedPayments)
+                .set({ releasedAt: new Date(), releaseReason: 'REEVALUATED' })
+                .where(eq(successionRetainedPayments.subscriptionId, closed.subscriptionId));
+            await db
+                .update(subscriptions)
+                .set({ status: 'ABANDONED' })
+                .where(eq(subscriptions.id, closed.successor.id));
+
+            // Act
+            const listed = await retainedPaymentsFromLedger.listRetainedPayments();
+            const summary = await runZeroCallChecks(
+                {},
+                {
+                    retainedPayments: retainedPaymentsFromLedger,
+                    retainedPaymentBranches: noDeterminableRetainedPaymentBranch,
+                    markPayments: createPaymentReconciliationMarkPayments(live.fixture.clock)
+                }
+            );
+
+            // Assert
+            const own = listed.filter((row) =>
+                [live.subscriptionId, closed.subscriptionId].includes(row.subscriptionId)
+            );
+            expect(own).toEqual([
+                {
+                    subscriptionId: live.subscriptionId,
+                    payment: { source: 'PAYMENT', id: livePayment.id }
+                }
+            ]);
+            expect(
+                summary.failures.filter((failure) =>
+                    [live.subscriptionId, closed.subscriptionId].includes(failure.subjectId ?? '')
+                )
+            ).toEqual([]);
+            expect(await openMarksOf(live.subscriptionId)).toHaveLength(0);
+            expect(await openMarksOf(closed.subscriptionId)).toHaveLength(0);
+            expect(
+                (await retentionsOf(live.subscriptionId)).map((retention) => retention.releasedAt)
+            ).toEqual([null]);
         }
     );
 });
