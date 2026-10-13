@@ -63,20 +63,6 @@ export const useCreateGastronomyMutation = () => gastronomyHooks.useCreate();
 export const useUpdateGastronomyMutation = () => gastronomyHooks.useUpdate();
 
 /**
- * Mutation hook to soft-delete a gastronomy listing.
- *
- * @returns TanStack Query `UseMutationResult`
- */
-export const useDeleteGastronomyMutation = () => gastronomyHooks.useDelete();
-
-/**
- * Mutation hook to restore a soft-deleted gastronomy listing.
- *
- * @returns TanStack Query `UseMutationResult`
- */
-export const useRestoreGastronomyMutation = () => gastronomyHooks.useRestore();
-
-/**
  * Mutation hook to reassign the owner of a gastronomy listing.
  *
  * @returns TanStack Query `UseMutationResult`

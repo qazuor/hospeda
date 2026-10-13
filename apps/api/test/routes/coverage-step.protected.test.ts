@@ -25,7 +25,6 @@ import { protectedRemoveOccupancyRoute } from '../../src/routes/accommodation/pr
 import { protectedReorderFaqsRoute } from '../../src/routes/accommodation/protected/reorderFaqs.ts';
 import { protectedReorderMediaRoute } from '../../src/routes/accommodation/protected/reorderMedia.ts';
 import { protectedSetFeaturedMediaRoute } from '../../src/routes/accommodation/protected/setFeaturedMedia.ts';
-import { protectedSoftDeleteAccommodationRoute } from '../../src/routes/accommodation/protected/softDelete';
 import { protectedUnpublishAccommodationRoute } from '../../src/routes/accommodation/protected/unpublish';
 import { updateFaqRoute } from '../../src/routes/accommodation/protected/updateFaq.ts';
 import { protectedUpdateMediaRoute } from '../../src/routes/accommodation/protected/updateMedia.ts';
@@ -35,7 +34,6 @@ import { protectedAddExperienceFeaturedMediaRoute } from '../../src/routes/exper
 import { protectedAddExperienceMediaRoute } from '../../src/routes/experience/protected/addMedia.ts';
 import { protectedIssueExperienceCertificateRoute } from '../../src/routes/experience/protected/certificates';
 import { protectedCreateExperienceListingRoute } from '../../src/routes/experience/protected/create';
-import { protectedDeleteExperienceDraftRoute } from '../../src/routes/experience/protected/deleteDraft';
 import { protectedPatchExperienceRoute } from '../../src/routes/experience/protected/patch';
 import { protectedPublishExperienceRoute } from '../../src/routes/experience/protected/publish';
 import { protectedRemoveExperienceFaqRoute } from '../../src/routes/experience/protected/removeFaq.ts';
@@ -50,7 +48,6 @@ import { protectedAddGastronomyFaqRoute } from '../../src/routes/gastronomy/prot
 import { protectedAddGastronomyFeaturedMediaRoute } from '../../src/routes/gastronomy/protected/addFeaturedMedia.ts';
 import { protectedAddGastronomyMediaRoute } from '../../src/routes/gastronomy/protected/addMedia.ts';
 import { protectedCreateGastronomyListingRoute } from '../../src/routes/gastronomy/protected/create';
-import { protectedDeleteGastronomyDraftRoute } from '../../src/routes/gastronomy/protected/deleteDraft';
 import { protectedDeleteGastronomyMenuFileRoute } from '../../src/routes/gastronomy/protected/deleteMenuFile';
 import { protectedPatchGastronomyRoute } from '../../src/routes/gastronomy/protected/patch';
 import { protectedPublishGastronomyRoute } from '../../src/routes/gastronomy/protected/publish';
@@ -252,15 +249,6 @@ const cases = [
         vertical: VerticalEnum.ACCOMMODATION
     },
     {
-        file: 'accommodation/protected/softDelete.ts',
-        route: protectedSoftDeleteAccommodationRoute,
-        method: 'DELETE',
-        path: '/{id}',
-        body: undefined,
-        operation: 'DELETE',
-        vertical: VerticalEnum.ACCOMMODATION
-    },
-    {
         file: 'accommodation/protected/unpublish.ts',
         route: protectedUnpublishAccommodationRoute,
         method: 'POST',
@@ -297,15 +285,6 @@ const cases = [
         vertical: VerticalEnum.EXPERIENCE
     },
     {
-        file: 'experience/protected/deleteDraft.ts',
-        route: protectedDeleteExperienceDraftRoute,
-        method: 'DELETE',
-        path: '/{id}',
-        body: undefined,
-        operation: 'DELETE',
-        vertical: VerticalEnum.EXPERIENCE
-    },
-    {
         file: 'experience/protected/publish.ts',
         route: protectedPublishExperienceRoute,
         method: 'POST',
@@ -339,15 +318,6 @@ const cases = [
         path: '/',
         body: gastronomyCreate,
         operation: 'CREATE',
-        vertical: VerticalEnum.GASTRONOMY
-    },
-    {
-        file: 'gastronomy/protected/deleteDraft.ts',
-        route: protectedDeleteGastronomyDraftRoute,
-        method: 'DELETE',
-        path: '/{id}',
-        body: undefined,
-        operation: 'DELETE',
         vertical: VerticalEnum.GASTRONOMY
     },
     {

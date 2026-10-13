@@ -2912,46 +2912,40 @@ export const publishApi = {
     },
 
     /**
-     * Soft-deletes one DRAFT listing the caller owns, in any publish vertical
-     * (HOS-1156 T-015, AC-14).
+     * Deletes one listing the caller owns by running PB12, in any publish
+     * vertical (HOS-1477, AC:V6:25).
      *
-     * The precheck panel's "borrar el borrador" is the FREE way past a full
-     * plan, and it must delete a draft OF THE VERTICAL BEING PUBLISHED — a
-     * gastronomy owner blocked on gastronomy is not helped by deleting a
-     * property.
+     * Calls `POST /protected/{plural}/{id}/purge` on the three verticals. The
+     * listing moves to `PURGED`: its content is erased and it never comes back
+     * (`PURGED` is final). It is not a soft delete, so `deleted_at` stays NULL.
      *
-     * ## Why this dispatches instead of calling one endpoint
+     * ## Why there is no branch per vertical any more
      *
-     * The two halves land on different routes on purpose. Accommodation keeps
-     * `DELETE /protected/accommodations/{id}`, which has accepted its owner
-     * since BETA-197 and is live in production; routing it through the gastronomy/experience
-     * endpoints would move a working flow for no gain (HOS-1156 R-2). Listing
-     * had no owner-facing delete at all before this change, so it gets the new
-     * one. The branch lives here, in the API layer that already knows about
-     * endpoints, rather than inside the island that renders the button.
+     * The owner's delete button IS the delete of the design (NUCLEO/08 §3,
+     * `02-nucleo.md:1455-1459`): every other door that deleted or restored a
+     * listing was retired (HOS-1477), so the three verticals share the same
+     * PB12 route and only the plural segment changes.
      *
-     * @param params.vertical - Which vertical's draft to delete.
+     * @param params.vertical - Which vertical the listing belongs to.
      * @param params.id - The listing id.
-     * @returns The delete result.
+     * @returns The purge result (`{ purged: true }` on success).
      *
      * @example
      * ```ts
-     * const result = await publishApi.deleteDraft({ vertical: 'gastronomy', id });
+     * const result = await publishApi.purge({ vertical: 'gastronomy', id });
      * if (result.ok) window.location.reload();
      * ```
      */
-    deleteDraft({
+    purge({
         vertical,
         id
     }: {
         readonly vertical: PublishVerticalSlug;
         readonly id: string;
     }): Promise<ApiResult<Record<string, unknown>>> {
-        if (vertical === 'accommodation') {
-            return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
-        }
-        const segment = vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
-        return apiClient.delete({ path: `${PROTECTED}/${segment}/${id}` });
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/purge`
+        });
     }
 };
 
@@ -3091,26 +3085,6 @@ export const accommodationEditApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/${id}/publish`
         });
-    },
-
-    /**
-     * Soft-delete an accommodation.
-     * Calls `DELETE /protected/accommodations/:id`, which enforces ownership
-     * (or `ACCOMMODATION_DELETE_ANY`). The accommodation is soft-deleted, so it
-     * disappears from the owner's listings and the public site (SPEC-230 filters
-     * soft-deleted rows out of every protected list).
-     *
-     * @param params - Accommodation ID to delete
-     * @returns The delete result
-     *
-     * @example
-     * ```ts
-     * const result = await accommodationEditApi.softDelete({ id: 'acc-uuid' });
-     * if (result.ok) console.log('Accommodation deleted');
-     * ```
-     */
-    softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
-        return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
     },
 
     /**

@@ -12,7 +12,6 @@ import { adminCreateUserRoute } from './create';
 import { adminDeleteUserRoute } from './delete';
 import { adminGetUserEffectiveSetRoute } from './effective-set';
 import { adminGetUserByIdRoute } from './getById';
-import { adminHardDeleteUserRoute } from './hardDelete';
 import { adminListUsersRoute } from './list';
 import { adminUserOptionsRoute } from './options';
 import { adminPatchUserRoute } from './patch';
@@ -103,9 +102,6 @@ app.route('/', adminPatchUserRoute);
 
 // DELETE /:id - Soft delete user
 app.route('/', adminDeleteUserRoute);
-
-// DELETE /:id/hard - Hard delete user
-app.route('/', adminHardDeleteUserRoute);
 
 // POST /:id/restore - Restore soft-deleted user
 app.route('/', adminRestoreUserRoute);

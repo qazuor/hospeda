@@ -1,22 +1,24 @@
 /**
  * @file DeleteButton.client.tsx
  * @description React island that renders a "Eliminar" danger button with an
- * inline confirmation step, soft-deleting one of the caller's own listings.
+ * inline confirmation step, deleting one of the caller's own listings through
+ * PB12 (the listing moves to `PURGED`).
  *
  * Flow:
  *  1. Idle  → shows the "Eliminar" button.
  *  2. Click → swaps to inline confirmation: "¿Confirmar? [Sí] [No]".
- *  3. Confirm (Sí) → calls the vertical's own delete endpoint, disabling the UI
- *                    while pending.
- *  4. Success → reloads the page; the deleted card drops out of the list
- *               (SPEC-230 filters soft-deleted rows from protected lists).
+ *  3. Confirm (Sí) → runs PB12 (`POST /protected/{plural}/{id}/purge`),
+ *                    disabling the UI while pending.
+ *  4. Success → reloads the page so the list reflects the listing, now
+ *               `PURGED`: its content is erased and it never comes back.
  *  5. Error   → shows inline error message, re-enables the button.
  *  6. No (cancel) → returns to step 1.
  *
  * HOS-1156 T-015 widened this from accommodations to all three publish
- * verticals. The button does not know which endpoint answers — `publishApi
- * .deleteDraft` owns that branch — so this island stayed a state machine and a
- * bit of markup, which is all it ever was.
+ * verticals; HOS-1477 made the button the delete of the design (PB12, AC:V6:25).
+ * The button does not know which endpoint answers — `publishApi.purge` owns
+ * that — so this island stayed a state machine and a bit of markup, which is
+ * all it ever was.
  *
  * Mirrors UnpublishButton.client.tsx (same inline-confirm UX, shared CSS module).
  */
@@ -56,7 +58,8 @@ export interface DeleteButtonProps {
 }
 
 /**
- * DeleteButton — danger action island that soft-deletes one listing.
+ * DeleteButton — danger action island that deletes one listing through PB12
+ * (the listing moves to `PURGED`).
  *
  * Renders inline using the shared AccountButton compact variants (BETA-143e)
  * composed by `./UnpublishButton.module.css`, matching PropertyCard's other
@@ -94,7 +97,7 @@ export function DeleteButton({
         setState('pending');
         setApiError(null);
 
-        const result = await publishApi.deleteDraft({ vertical, id: listingId });
+        const result = await publishApi.purge({ vertical, id: listingId });
 
         if (!result.ok) {
             setApiError(errorText);
@@ -102,7 +105,7 @@ export function DeleteButton({
             return;
         }
 
-        // Reload so the list re-renders without the now soft-deleted card.
+        // Reload so the list re-renders with the listing now PURGED by PB12.
         window.location.reload();
     }
 

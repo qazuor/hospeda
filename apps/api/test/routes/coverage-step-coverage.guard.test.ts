@@ -13,12 +13,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
     'accommodation/admin/create.ts': { operation: 'CREATE' },
-    'accommodation/admin/delete.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
-    'accommodation/admin/hardDelete.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
     'accommodation/admin/moderate.ts': {
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
@@ -28,9 +22,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/admin/removeMedia.ts': { operation: 'EDIT' },
     'accommodation/admin/reorderFaqs.ts': { operation: 'EDIT' },
     'accommodation/admin/reorderMedia.ts': { operation: 'EDIT' },
-    'accommodation/admin/restore.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
     'accommodation/admin/restoreMedia.ts': { operation: 'EDIT' },
     'accommodation/admin/setFeaturedMedia.ts': { operation: 'EDIT' },
     'accommodation/admin/update.ts': { operation: 'EDIT' },
@@ -66,7 +57,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/protected/reorderFaqs.ts': { operation: 'EDIT' },
     'accommodation/protected/reorderMedia.ts': { operation: 'EDIT' },
     'accommodation/protected/setFeaturedMedia.ts': { operation: 'EDIT' },
-    'accommodation/protected/softDelete.ts': { operation: 'DELETE' },
     'accommodation/protected/unpublish.ts': { operation: 'EDIT' },
     'accommodation/protected/update.ts': { operation: 'EDIT' },
     'accommodation/protected/updateFaq.ts': { operation: 'EDIT' },
@@ -100,12 +90,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
     'experience/admin/create.ts': { operation: 'CREATE' },
-    'experience/admin/delete.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
-    'experience/admin/hardDelete.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
     'experience/admin/moderate.ts': {
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
@@ -115,9 +99,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'experience/admin/removeMedia.ts': { operation: 'EDIT' },
     'experience/admin/reorderFaqs.ts': { operation: 'EDIT' },
     'experience/admin/reorderMedia.ts': { operation: 'EDIT' },
-    'experience/admin/restore.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
     'experience/admin/setFeaturedMedia.ts': { operation: 'EDIT' },
     'experience/admin/update.ts': { operation: 'EDIT' },
     'experience/admin/updateFaq.ts': { operation: 'EDIT' },
@@ -130,7 +111,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'experience/protected/createReview.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
-    'experience/protected/deleteDraft.ts': { operation: 'DELETE' },
     'experience/protected/publish.ts': { operation: 'PUBLISH' },
     'experience/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'experience/protected/purge.ts': { operation: 'DELETE' },
@@ -162,12 +142,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
         exempt: 'Lectura por lote (POST que lee por ids, exige *_VIEW_ALL): no escribe.'
     },
     'gastronomy/admin/create.ts': { operation: 'CREATE' },
-    'gastronomy/admin/delete.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
-    'gastronomy/admin/hardDelete.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
     'gastronomy/admin/moderate.ts': {
         exempt: 'ACC:12 (moderar): capacidad del actor, sin pasos 5 a 7 sobre el sujeto (V5.md §3.2 regla 3); la construyó V6.5 con `LISTING_MODERATE`.'
     },
@@ -177,9 +151,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'gastronomy/admin/removeMedia.ts': { operation: 'EDIT' },
     'gastronomy/admin/reorderFaqs.ts': { operation: 'EDIT' },
     'gastronomy/admin/reorderMedia.ts': { operation: 'EDIT' },
-    'gastronomy/admin/restore.ts': {
-        exempt: 'Puerta de borrado/restauración del admin que retira V6.7 (AC:V6:25, BD-012); el borrado ajeno a pedido del dueño es ACC:23 (V8a.2, AC:V8a:9).'
-    },
     'gastronomy/admin/setFeaturedMedia.ts': { operation: 'EDIT' },
     'gastronomy/admin/update.ts': { operation: 'EDIT' },
     'gastronomy/admin/updateFaq.ts': { operation: 'EDIT' },
@@ -191,7 +162,6 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'gastronomy/protected/createReview.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
-    'gastronomy/protected/deleteDraft.ts': { operation: 'DELETE' },
     'gastronomy/protected/publish.ts': { operation: 'PUBLISH' },
     'gastronomy/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'gastronomy/protected/purge.ts': { operation: 'DELETE' },
@@ -239,9 +209,9 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))
         .sort();
 
-    it('discovers exactly the frozen 140 route files', () => {
+    it('discovers exactly the frozen 134 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(146);
+        expect(Object.keys(EXPECTED)).toHaveLength(134);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {
