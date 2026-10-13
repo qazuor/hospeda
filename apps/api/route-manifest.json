@@ -2230,6 +2230,10 @@
             "path": "/api/v1/protected/accommodations/:id/faqs/reorder"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/accommodations/:id/fix-request/report-fixed"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/accommodations/:id/media"
         },
@@ -2618,6 +2622,10 @@
             "path": "/api/v1/protected/experiences/:id/faqs/reorder"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/experiences/:id/fix-request/report-fixed"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/experiences/:id/media"
         },
@@ -2756,6 +2764,10 @@
         {
             "method": "PUT",
             "path": "/api/v1/protected/gastronomies/:id/faqs/reorder"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/gastronomies/:id/fix-request/report-fixed"
         },
         {
             "method": "GET",
@@ -3139,11 +3151,19 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/publish/listing-notices/:vertical"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/publish/precheck/:vertical"
         },
         {
             "method": "GET",
             "path": "/api/v1/protected/publish/subscribe-destination/:vertical"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/publish/trial-summary/:vertical"
         },
         {
             "method": "GET",

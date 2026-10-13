@@ -51,6 +51,9 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'accommodation/protected/publish.ts': { operation: 'PUBLISH' },
     'accommodation/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'accommodation/protected/purge.ts': { operation: 'DELETE' },
+    'accommodation/protected/reportFixed.ts': {
+        exempt: 'Aviso del dueño de que corrigió un pedido de arreglo (fila 30, V8a.1b): no es contenido, publicación ni borrado; se autoriza por propiedad.'
+    },
     'accommodation/protected/removeFaq.ts': { operation: 'EDIT' },
     'accommodation/protected/removeMedia.ts': { operation: 'EDIT' },
     'accommodation/protected/removeOccupancy.ts': { operation: 'EDIT' },
@@ -114,6 +117,9 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'experience/protected/publish.ts': { operation: 'PUBLISH' },
     'experience/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'experience/protected/purge.ts': { operation: 'DELETE' },
+    'experience/protected/reportFixed.ts': {
+        exempt: 'Aviso del dueño de que corrigió un pedido de arreglo (fila 30, V8a.1b): no es contenido, publicación ni borrado; se autoriza por propiedad.'
+    },
     'experience/protected/patch.ts': { operation: 'EDIT' },
     'experience/protected/unpublish.ts': { operation: 'EDIT' },
     'experience/protected/removeFaq.ts': { operation: 'EDIT' },
@@ -165,6 +171,9 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'gastronomy/protected/publish.ts': { operation: 'PUBLISH' },
     'gastronomy/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'gastronomy/protected/purge.ts': { operation: 'DELETE' },
+    'gastronomy/protected/reportFixed.ts': {
+        exempt: 'Aviso del dueño de que corrigió un pedido de arreglo (fila 30, V8a.1b): no es contenido, publicación ni borrado; se autoriza por propiedad.'
+    },
     'gastronomy/protected/deleteMenuFile.ts': { operation: 'EDIT' },
     'gastronomy/protected/unpublish.ts': { operation: 'EDIT' },
     'gastronomy/protected/patch.ts': { operation: 'EDIT' },
@@ -209,9 +218,9 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))
         .sort();
 
-    it('discovers exactly the frozen 134 route files', () => {
+    it('discovers exactly the frozen 137 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(134);
+        expect(Object.keys(EXPECTED)).toHaveLength(137);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {
