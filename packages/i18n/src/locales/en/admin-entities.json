@@ -1010,5 +1010,34 @@
         "successMessage": "The listing {name} was deleted at its owner's request.",
         "errorTitle": "The listing could not be deleted",
         "stateChanged": "The listing changed in the meantime (for example, its owner changed) and was not deleted. Reload the page and check it before trying again."
+    },
+    "accountCloseOnRequest": {
+        "action": "Close the account at its owner's request",
+        "title": "Close the account at its owner's request",
+        "loading": "Checking what the account still has…",
+        "notFound": "This account no longer exists or has already been closed.",
+        "forbidden": "You cannot close your own account or a system account: another team account with the permission does it.",
+        "loadError": "We could not check the account. Close this and try again.",
+        "blocked": {
+            "intro": "It cannot be closed yet. Missing:",
+            "canCharge": "It still has a subscription that can charge: cancel it first (and wait for Mercado Pago to confirm the cancellation).",
+            "listings": "It still has listings that were not deleted ({count}): delete them with \"Delete at the owner's request\".",
+            "partnerPresence": "It has a Partner presence with content: it has to be emptied first."
+        },
+        "whatHappens": {
+            "account": "You are about to close the account of {name} ({email}) at its owner's request.",
+            "nothingLeft": "Nothing is left to charge, and it has no listing or Partner presence.",
+            "pseudonymised": "The account is not deleted: it is pseudonymised and loses access for good. Its name, email and phone are replaced, its password and Google sign-ins are deleted, and its sessions are closed.",
+            "untouched": "Receipts and the log are not touched."
+        },
+        "reasonLabel": "Why",
+        "reasonHelp": "It is kept in the log, together with who closed it and whose it was.",
+        "cancel": "Cancel",
+        "close": "Close",
+        "confirm": "Close the account",
+        "successTitle": "Account closed",
+        "successMessage": "The account was closed at its owner's request.",
+        "errorTitle": "The account could not be closed",
+        "stateChanged": "The account changed since you opened this confirmation and was not closed. We checked again what it still has."
     }
 }

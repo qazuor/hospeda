@@ -1010,5 +1010,34 @@
         "successMessage": "O anúncio {name} foi excluído a pedido do dono.",
         "errorTitle": "Não foi possível excluir o anúncio",
         "stateChanged": "O anúncio mudou nesse meio-tempo (por exemplo, mudou de dono) e não foi excluído. Recarregue a página e confira antes de tentar de novo."
+    },
+    "accountCloseOnRequest": {
+        "action": "Encerrar a conta a pedido do dono",
+        "title": "Encerrar a conta a pedido do dono",
+        "loading": "Verificando o que ainda resta na conta…",
+        "notFound": "Esta conta não existe mais ou já foi encerrada.",
+        "forbidden": "Você não pode encerrar a sua própria conta nem uma conta do sistema: quem faz isso é outra conta da equipe com a permissão.",
+        "loadError": "Não conseguimos verificar a conta. Feche e tente de novo.",
+        "blocked": {
+            "intro": "Ainda não é possível encerrá-la. Falta:",
+            "canCharge": "Ainda há uma assinatura que pode cobrar: cancele-a primeiro (e espere o Mercado Pago confirmar o cancelamento).",
+            "listings": "Ainda há anúncios não excluídos ({count}): exclua-os com \"Excluir a pedido do dono\".",
+            "partnerPresence": "Há uma presença de Partner com conteúdo: é preciso esvaziá-la primeiro."
+        },
+        "whatHappens": {
+            "account": "Você vai encerrar a conta de {name} ({email}) a pedido do dono.",
+            "nothingLeft": "Não resta cobrança, anúncio nem presença de Partner.",
+            "pseudonymised": "A conta não é excluída: é pseudonimizada e fica sem acesso para sempre. O nome, o e-mail e o telefone são substituídos, a senha e os acessos com Google são apagados, e as sessões são encerradas.",
+            "untouched": "Os comprovantes e o registro não são alterados."
+        },
+        "reasonLabel": "Por quê",
+        "reasonHelp": "Fica no registro, junto com quem a encerrou e de quem era.",
+        "cancel": "Cancelar",
+        "close": "Fechar",
+        "confirm": "Encerrar a conta",
+        "successTitle": "Conta encerrada",
+        "successMessage": "A conta foi encerrada a pedido do dono.",
+        "errorTitle": "Não foi possível encerrar a conta",
+        "stateChanged": "A conta mudou desde que você abriu esta confirmação e não foi encerrada. Verificamos de novo o que ainda resta."
     }
 }

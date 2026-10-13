@@ -1010,5 +1010,34 @@
         "successMessage": "La ficha {name} se borró a pedido de su dueño.",
         "errorTitle": "No se pudo borrar la ficha",
         "stateChanged": "La ficha cambió mientras tanto (por ejemplo, cambió de dueño) y no se borró. Recargá la página y revisala antes de volver a intentar."
+    },
+    "accountCloseOnRequest": {
+        "action": "Dar de baja la cuenta a pedido de su dueño",
+        "title": "Dar de baja la cuenta a pedido de su dueño",
+        "loading": "Revisando qué le queda a la cuenta…",
+        "notFound": "Esta cuenta ya no existe o ya se dio de baja.",
+        "forbidden": "No podés darte de baja a vos mismo ni a una cuenta del sistema: lo hace otra cuenta del equipo con el permiso.",
+        "loadError": "No pudimos revisar la cuenta. Cerrá y volvé a intentar.",
+        "blocked": {
+            "intro": "Todavía no se puede dar de baja. Falta:",
+            "canCharge": "Le queda una suscripción que todavía puede cobrar: cancelala primero (y esperá a que Mercado Pago confirme la cancelación).",
+            "listings": "Le quedan fichas sin borrar ({count}): borralas con «Borrar a pedido del dueño».",
+            "partnerPresence": "Tiene una presencia de Partner con contenido: hay que vaciarla primero."
+        },
+        "whatHappens": {
+            "account": "Vas a dar de baja la cuenta de {name} ({email}) a pedido de su dueño.",
+            "nothingLeft": "No le queda cobro, ficha ni presencia de Partner.",
+            "pseudonymised": "La cuenta no se borra: se seudonimiza y queda sin acceso para siempre. Su nombre, correo y teléfono se reemplazan, se borran su contraseña y sus accesos con Google, y se cierran sus sesiones.",
+            "untouched": "Los comprobantes y el registro no se tocan."
+        },
+        "reasonLabel": "Por qué",
+        "reasonHelp": "Queda en el registro, junto con quién la dio de baja y de quién era.",
+        "cancel": "Cancelar",
+        "close": "Cerrar",
+        "confirm": "Dar de baja la cuenta",
+        "successTitle": "Cuenta dada de baja",
+        "successMessage": "La cuenta se dio de baja a pedido de su dueño.",
+        "errorTitle": "No se pudo dar de baja la cuenta",
+        "stateChanged": "La cuenta cambió desde que abriste esta confirmación y no se dio de baja. Volvimos a revisar qué le queda."
     }
 }
