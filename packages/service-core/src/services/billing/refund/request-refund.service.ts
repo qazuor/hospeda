@@ -35,6 +35,10 @@ export type RequestRefundInput = {
  *
  * Runs in `ports.tx` when given (S36 calls it from its own transaction), or in
  * a transaction of its own. The payment is locked `FOR UPDATE` while it is read.
+ * The refundable balance discounts every refund that already claims the payment:
+ * the open ones (`REQUESTED`, `CONFIRMED`) and the executed ones, never a `FAILED`
+ * one (`assertWithinBalance`, HOS-1680). Two requests for the total, from any flow,
+ * leave one: the second waits on the lock and then sees the first.
  *
  * @param input - The source, amount and reason.
  * @param ports - The clock and an optional outer transaction.

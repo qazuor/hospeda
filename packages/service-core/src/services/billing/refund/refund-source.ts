@@ -6,6 +6,7 @@ import {
     isNull,
     LIVE_SUBSCRIPTION_STATUSES,
     manualPayments,
+    ne,
     payments,
     refunds,
     sql,
@@ -26,8 +27,19 @@ export type LockedRefundSource =
     | { readonly kind: 'PAYMENT'; readonly payment: SelectPayment }
     | { readonly kind: 'MANUAL_PAYMENT'; readonly manualPayment: SelectManualPayment };
 
-/** Payment statuses a refund may be requested or settled on (notes H8). */
-const REFUNDABLE_PAYMENT_STATUSES: readonly string[] = ['SUCCEEDED', 'PARTIALLY_REFUNDED'];
+/**
+ * Payment statuses a refund may be requested or settled on (notes H8). A `REFUNDED` or
+ * `CHARGED_BACK` payment is not refundable (HOS-1680). S36 reuses this list too.
+ */
+export const REFUNDABLE_PAYMENT_STATUSES: readonly string[] = ['SUCCEEDED', 'PARTIALLY_REFUNDED'];
+
+/**
+ * Refund statuses that already claim money of a payment: every one but `FAILED`. An open
+ * `REQUESTED`/`CONFIRMED` counts too, or two requests would ask for the same total twice
+ * (Coord-333, HOS-1680). Local literals on purpose: nothing from `@repo/db` is evaluated at
+ * module level.
+ */
+export const CLAIMING_REFUND_STATUSES = ['REQUESTED', 'CONFIRMED', 'EXECUTED'] as const;
 
 /**
  * Read the refund source and lock it `FOR UPDATE` in the given transaction.
@@ -137,25 +149,69 @@ export async function assertRetainedPaymentRefundable(input: {
 }
 
 /**
- * Reject an amount over the payment's balance: `payment.amount − Σ EXECUTED
- * refunds` (notes H7). Other open `REQUESTED` rows are not discounted. A
- * `manual_payment` has no amount (DEC-SUB-013), so it is never checked.
+ * The CLAIMED sum of a refund source: Σ `refund.amount` of every refund of that payment
+ * (or manual payment) that already claims its money, i.e. every status but `FAILED`
+ * (`CLAIMING_REFUND_STATUSES`; Coord-333/351, HOS-1680). It is what the refundable balance
+ * discounts. It is NOT the payment's accumulated refund of P3/P4/P5 (AC:B5:6), which counts
+ * only `EXECUTED` rows (`apply-executed-refund.service.ts`).
  *
- * @param input - The transaction, the locked source and the amount to refund.
+ * Runs in the caller's transaction, never `getDb()`. The caller has already locked the
+ * source `FOR UPDATE` (`lockRefundSource`, or S36's own lock), so the sum cannot move
+ * until its commit.
+ *
+ * @param input.tx - The caller's transaction (the source is already locked)
+ * @param input.source - The payment or manual payment
+ * @param input.excludeRefundId - A refund left out of the sum (RF4: the `REQUESTED` it closes)
+ * @returns The claimed cents (0 when nothing claims it)
+ */
+export async function claimedRefundAmount(input: {
+    readonly tx: DrizzleClient;
+    readonly source: RefundSource;
+    readonly excludeRefundId?: string;
+}): Promise<number> {
+    const column = input.source.kind === 'PAYMENT' ? refunds.paymentId : refunds.manualPaymentId;
+    const [claimed] = await input.tx
+        .select({ amount: sql<number>`coalesce(sum(${refunds.amount}), 0)::int` })
+        .from(refunds)
+        .where(
+            and(
+                eq(column, input.source.id),
+                inArray(refunds.status, [...CLAIMING_REFUND_STATUSES]),
+                input.excludeRefundId === undefined
+                    ? undefined
+                    : ne(refunds.id, input.excludeRefundId)
+            )
+        );
+    return claimed?.amount ?? 0;
+}
+
+/**
+ * Reject an amount over the payment's refundable balance: `payment.amount − Σ` of every
+ * refund of that payment that is not `FAILED` (`REQUESTED`, `CONFIRMED`, `EXECUTED`;
+ * Coord-333/351, HOS-1680). This replaces notes H7 of HOS-1540, which discounted only
+ * `EXECUTED` rows and let two open requests ask for the whole payment each. The payment
+ * is already locked by `lockRefundSource` in the same transaction, so a concurrent writer
+ * waits for this one's commit and then reads its row. A `manual_payment` has no amount
+ * (DEC-SUB-013), so it is never checked (I-2).
+ *
+ * @param input - The transaction, the locked source, the amount to refund and, for RF4, the
+ *   `REQUESTED` row the settlement closes (it does not count against itself).
  * @throws ServiceError VALIDATION_ERROR `REFUND_EXCEEDS_BALANCE`.
  */
 export async function assertWithinBalance(input: {
     readonly tx: DrizzleClient;
     readonly locked: LockedRefundSource;
     readonly amount: number;
+    readonly excludeRefundId?: string;
 }): Promise<void> {
     if (input.locked.kind !== 'PAYMENT') return;
     const { payment } = input.locked;
-    const [sum] = await input.tx
-        .select({ amount: sql<number>`coalesce(sum(${refunds.amount}), 0)::int` })
-        .from(refunds)
-        .where(and(eq(refunds.paymentId, payment.id), eq(refunds.status, 'EXECUTED')));
-    const balance = payment.amount - (sum?.amount ?? 0);
+    const claimed = await claimedRefundAmount({
+        tx: input.tx,
+        source: { kind: 'PAYMENT', id: payment.id },
+        excludeRefundId: input.excludeRefundId
+    });
+    const balance = payment.amount - claimed;
     if (input.amount > balance)
         throw new ServiceError(
             ServiceErrorCode.VALIDATION_ERROR,
