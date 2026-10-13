@@ -12,3 +12,4 @@ export * from './renewal-reminder.js';
 export * from './signup-before-cancel.js';
 export * from './signup-confirmed.js';
 export * from './signup-incomplete.js';
+export * from './tourist-vip-inherited-cancel.js';

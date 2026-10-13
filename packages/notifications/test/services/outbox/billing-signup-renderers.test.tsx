@@ -58,6 +58,26 @@ describe('billing signup outbox renderers', () => {
         expect(incompleteHtml).not.toContain(subscriptionId);
     });
 
+    it('AC:B7:31 — renders the inherited Tourist VIP cancellation: no further charge, no refund, no ids', async () => {
+        // Arrange
+        const template = 'billing.tourist-vip-inherited-cancel';
+
+        // Act
+        const result = await renderers[template]!({
+            row: row({ template, payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+
+        // Assert
+        expect(result.subject).toBe('Cancelamos tu suscripción a Turista VIP');
+        expect(html).toContain('Tu plan ya te da los beneficios de Turista VIP');
+        expect(html).toContain('cancelamos la suscripción que pagabas por separado');
+        expect(html).toContain('No se te va a volver a cobrar');
+        expect(html).toContain('lo ya pagado no se reembolsa');
+        expect(html).toContain('Mercado Pago');
+        expect(html).not.toContain(subscriptionId);
+    });
+
     it('AC:B7:30 — renders the card arrears suspension with promo, Tourist VIP and addon days', async () => {
         const result = await renderers['billing.arrears-suspension']!({
             row: row({
@@ -167,7 +187,9 @@ describe('billing signup outbox renderers', () => {
     it.each([
         ['billing.signup-confirmed', { subscriptionId }],
         ['billing.before-cancel', {}],
-        ['billing.signup-incomplete', { subscriptionId, vertical: 'accommodation' }]
+        ['billing.signup-incomplete', { subscriptionId, vertical: 'accommodation' }],
+        ['billing.tourist-vip-inherited-cancel', {}],
+        ['billing.tourist-vip-inherited-cancel', { subscriptionId: 42 }]
     ])('rejects invalid payloads for %s', (template, payload) => {
         expect(() => renderers[template]!({ row: row({ template, payload }) })).toThrow(TypeError);
     });
