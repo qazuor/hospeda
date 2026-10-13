@@ -5,11 +5,14 @@
 //
 // Cleanup: rows seeded directly are DELETED after each test (reconciliation_mark, provider_link,
 // subscription, children first); rows created by the real signup are left terminal (CANCELLED).
-// Users and the non-sellable plan versions stay (plan versions are immutable).
+// The `coverage_loss` rows of every seeded user are DELETED too: the turns-off writers (S16, S6,
+// the provider's cancellation and, since HOS-1676 Coord-376, the CANCELLED_ON_GRACE mirror)
+// record one. Users and the non-sellable plan versions stay (plan versions are immutable).
 import type { Clock } from '@repo/billing-verticals-contract';
 import {
     and,
     billingDeadlineVersions,
+    coverageLosses,
     eq,
     inArray,
     LIVE_SUBSCRIPTION_STATUSES,
@@ -47,6 +50,8 @@ const T = new Date('2026-10-02T10:00:00.000Z');
 const seeded: string[] = [];
 /** Rows the real signup created: left terminal after each test. */
 const handled: string[] = [];
+/** Users seeded by this file: their coverage losses are deleted after each test. */
+const seededUsers: string[] = [];
 
 beforeAll(async () => {
     await getServiceTestDb()
@@ -74,8 +79,11 @@ afterEach(async () => {
                     inArray(subscriptions.status, [...LIVE_SUBSCRIPTION_STATUSES])
                 )
             );
+    if (seededUsers.length > 0)
+        await db.delete(coverageLosses).where(inArray(coverageLosses.userId, seededUsers));
     seeded.length = 0;
     handled.length = 0;
+    seededUsers.length = 0;
 });
 afterAll(closeServiceTestPool);
 
@@ -102,6 +110,7 @@ async function seedAccount(input: {
 }): Promise<{ readonly userId: string; readonly subscriptionId: string }> {
     const db = getServiceTestDb();
     const { userId } = await seedCoverageUser(db);
+    seededUsers.push(userId);
     const { planVersionId, billingOptionId } = await seedCoveragePlanVersion(db, 'accommodation');
     const { subscriptionId } = await seedCoverageSubscription(db, {
         userId,
@@ -127,6 +136,7 @@ async function seedAccount(input: {
 async function signup(clock: TestClock) {
     const db = getServiceTestDb();
     const { userId } = await seedCoverageUser(db);
+    seededUsers.push(userId);
     const { billingOptionId } = await seedCoveragePlanVersion(db, 'accommodation');
     const provider = new FakePaymentProvider({
         idNamespace: crypto.randomUUID(),
@@ -359,6 +369,7 @@ describe('TEST:B4:4 puedeCobrarle answers on the confirmed cancellation (AC:B4:5
             reason: 'CANCELACION_SIN_CONFIRMAR'
         });
         const { userId } = await seedCoverageUser(getServiceTestDb());
+        seededUsers.push(userId);
 
         // Act
         const answers = {
