@@ -1,11 +1,16 @@
-import { emailOutbox, eq } from '@repo/db';
+import { emailOutbox, eq, reconciliationMarkPayments, subscriptions } from '@repo/db';
 import { type LogEntry, registerHook, unregisterHook } from '@repo/logger';
+import type { PaymentProvider } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
+import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
+import { settleExternalRefund } from '../../../src/services/billing/refund/settle-external-refund.service.js';
 import { exitGraceOnCreditedPayment } from '../../../src/services/billing/subscription/exit-grace.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
+import { seedAdminActor } from './support/refund-fixtures.js';
 import {
     domainEventsOf,
+    expireSuccessorWindow,
     openMarksOf,
     paymentFor,
     predecessorInGrace,
@@ -13,7 +18,9 @@ import {
     retainInOwnTransaction,
     retentionsOf,
     retireSuccessionCases,
+    runS3,
     type SeededSuccession,
+    seedStuckSuccessionMark,
     subscriptionRow
 } from './support/succession-retention-fixtures.js';
 
@@ -214,6 +221,230 @@ describe('TEST:B7:10 — S19 retains the unpaid-period payment (AC:B7:16)', () =
             expect((await subscriptionRow(s.subscriptionId)).status).toBe('GRACE_PERIOD');
             expect(await openMarksOf(s.subscriptionId)).toHaveLength(0);
             expect(s.cancel).not.toHaveBeenCalled();
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'e — branch 2 from GRACE_PERIOD: S3 abandons the successor and S5 reactivates the predecessor, closing the retention REEVALUATED',
+        async () => {
+            // Arrange
+            const s = await predecessorInGrace({ approveOnAttempt: 2 });
+            seeded.push(s.seeded);
+            s.fixture.advanceToAttempt(2);
+            const retained = await recordChargeFact(
+                { chargeId: s.fixture.chargeId },
+                s.chargePorts
+            );
+            expect(retained).toMatchObject({ exit: { outcome: 'RETAINED_FOR_S19' } });
+            const payment = await paymentFor(s.fixture.chargeId);
+            await expireSuccessorWindow(s);
+
+            // Act
+            const summary = await runS3(s);
+
+            // Assert
+            expect(summary).toMatchObject({ abandoned: 1, retainedReevaluated: 1 });
+            expect((await subscriptionRow(s.successor.id)).status).toBe('ABANDONED');
+            const row = await subscriptionRow(s.subscriptionId);
+            expect(row.status).toBe('ACTIVE');
+            expect(row.graceStartedAt).toBeNull();
+            expect(row.graceEndsAt).toBeNull();
+            const retentions = await retentionsOf(s.subscriptionId);
+            expect(retentions).toHaveLength(1);
+            expect(retentions[0]).toMatchObject({
+                paymentId: payment.id,
+                releaseReason: 'REEVALUATED'
+            });
+            expect(retentions[0]?.releasedAt).toBeInstanceOf(Date);
+            expect(await openMarksOf(s.subscriptionId)).toHaveLength(0);
+            expect(await refundsOf(payment.id)).toHaveLength(0);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'e — branch 2 from SUSPENDED: S7 brings the predecessor back (CANCEL_SCHEDULED, authorization cancelled) and closes the retention REEVALUATED',
+        async () => {
+            // Arrange: S6 cancels the authorization; the in-flight retry is retained by S7.
+            const s = await predecessorInGrace({ approveOnAttempt: 3 });
+            seeded.push(s.seeded);
+            s.expireClock();
+            expect(await s.runS6()).toMatchObject({ outcome: 'SUSPENDED' });
+            s.fixture.advanceToAttempt(3);
+            const retained = await recordChargeFact(
+                { chargeId: s.fixture.chargeId },
+                s.chargePorts
+            );
+            expect(retained).toMatchObject({ reactivation: { outcome: 'RETAINED_FOR_S19' } });
+            const payment = await paymentFor(s.fixture.chargeId);
+            const [open] = await retentionsOf(s.subscriptionId);
+            expect(open?.unpaidSince).toEqual(s.graceStartedAt);
+            await expireSuccessorWindow(s);
+            const coverageBefore = s.coverageSeen.length;
+
+            // Act
+            const summary = await runS3(s);
+
+            // Assert
+            expect(summary).toMatchObject({ abandoned: 1, retainedReevaluated: 1 });
+            expect((await subscriptionRow(s.successor.id)).status).toBe('ABANDONED');
+            const row = await subscriptionRow(s.subscriptionId);
+            expect(row.status).toBe('CANCEL_SCHEDULED');
+            expect(row.serviceEndsAt).toBeInstanceOf(Date);
+            expect(row.graceStartedAt).toBeNull();
+            const retentions = await retentionsOf(s.subscriptionId);
+            expect(retentions).toHaveLength(1);
+            expect(retentions[0]).toMatchObject({
+                paymentId: payment.id,
+                unpaidSince: s.graceStartedAt,
+                releaseReason: 'REEVALUATED'
+            });
+            expect(retentions[0]?.releasedAt).toBeInstanceOf(Date);
+            expect(await openMarksOf(s.subscriptionId)).toHaveLength(0);
+            expect(s.coverageSeen.slice(coverageBefore).map((event) => event.change)).toContain(
+                'ADDED'
+            );
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'e — branch 2 with a failing condition (amount differs): still in grace, reason 7 with the payment hung, retention closed REEVALUATED',
+        async () => {
+            // Arrange
+            const s = await predecessorInGrace({ approveOnAttempt: 2 });
+            seeded.push(s.seeded);
+            s.fixture.advanceToAttempt(2);
+            await recordChargeFact({ chargeId: s.fixture.chargeId }, s.chargePorts);
+            const payment = await paymentFor(s.fixture.chargeId);
+            await (s.fixture.provider as PaymentProvider).changeAmount({
+                authorizationId: s.fixture.started.authorizationId,
+                amount: { amountMinor: 300000, currency: 'ARS' }
+            });
+            await expireSuccessorWindow(s);
+
+            // Act
+            const summary = await runS3(s);
+
+            // Assert
+            expect(summary).toMatchObject({ abandoned: 1, retainedReevaluated: 1 });
+            expect((await subscriptionRow(s.subscriptionId)).status).toBe('GRACE_PERIOD');
+            const marks = await openMarksOf(s.subscriptionId);
+            expect(marks.map((mark) => mark.reason)).toEqual(['PAGO_TARDIO_RECHAZADO']);
+            const hung = await getServiceTestDb()
+                .select()
+                .from(reconciliationMarkPayments)
+                .where(eq(reconciliationMarkPayments.markId, marks[0]?.id ?? ''));
+            expect(hung.map((link) => link.paymentId)).toEqual([payment.id]);
+            const [retention] = await retentionsOf(s.subscriptionId);
+            expect(retention).toMatchObject({
+                paymentId: payment.id,
+                releaseReason: 'REEVALUATED'
+            });
+            expect(await refundsOf(payment.id)).toHaveLength(0);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'f — branch 3, the stuck succession: with the mark seeded and the successor live nothing closes the retention; S6 does not run and the refund is rejected',
+        async () => {
+            // Arrange
+            const s = await predecessorInGrace({ approveOnAttempt: 2 });
+            seeded.push(s.seeded);
+            s.fixture.advanceToAttempt(2);
+            await recordChargeFact({ chargeId: s.fixture.chargeId }, s.chargePorts);
+            const payment = await paymentFor(s.fixture.chargeId);
+            await seedStuckSuccessionMark(s.subscriptionId);
+            s.expireClock();
+
+            // Act
+            const suspension = await s.runS6();
+            const refund = requestRefund(
+                {
+                    source: { kind: 'PAYMENT', id: payment.id },
+                    amount: payment.amount,
+                    reason: 'MARK_PROPOSAL'
+                },
+                { clock: s.fixture.clock }
+            );
+
+            // Assert
+            expect(suspension).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' });
+            await expect(refund).rejects.toMatchObject({
+                reason: 'RETAINED_PAYMENT_SUCCESSION_OPEN'
+            });
+            expect(s.cancel).not.toHaveBeenCalled();
+            expect((await subscriptionRow(s.subscriptionId)).status).toBe('GRACE_PERIOD');
+            expect((await subscriptionRow(s.successor.id)).status).toBe('PENDING_AUTHORIZATION');
+            const [retention] = await retentionsOf(s.subscriptionId);
+            expect(retention).toMatchObject({
+                paymentId: payment.id,
+                releasedAt: null,
+                releaseReason: null
+            });
+            expect((await openMarksOf(s.subscriptionId)).map((mark) => mark.reason)).toEqual([
+                'CANCELACION_SIN_CONFIRMAR'
+            ]);
+            expect(await refundsOf(payment.id)).toHaveLength(0);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'i — the gate: RF1 and RF4 on the retained payment are rejected while the predecessor is live, and go through once it is CANCELLED',
+        async () => {
+            // Arrange
+            const s = await predecessorInGrace({ approveOnAttempt: 2 });
+            seeded.push(s.seeded);
+            s.fixture.advanceToAttempt(2);
+            await recordChargeFact({ chargeId: s.fixture.chargeId }, s.chargePorts);
+            const payment = await paymentFor(s.fixture.chargeId);
+            const admin = await seedAdminActor();
+            const rf1 = () =>
+                requestRefund(
+                    {
+                        source: { kind: 'PAYMENT', id: payment.id },
+                        amount: 1000,
+                        reason: 'MARK_PROPOSAL'
+                    },
+                    { clock: s.fixture.clock }
+                );
+            const rf4 = () =>
+                settleExternalRefund(
+                    {
+                        actor: admin,
+                        source: { kind: 'PAYMENT', id: payment.id },
+                        amount: 1000,
+                        channel: 'BANK_TRANSFER',
+                        reference: `op-${crypto.randomUUID()}`,
+                        reason: 'OUT_OF_FLOW_REFUND'
+                    },
+                    { clock: s.fixture.clock }
+                );
+
+            // Act + Assert: the predecessor is live (GRACE_PERIOD) and its retention is open.
+            await expect(rf1()).rejects.toMatchObject({
+                reason: 'RETAINED_PAYMENT_SUCCESSION_OPEN'
+            });
+            await expect(rf4()).rejects.toMatchObject({
+                reason: 'RETAINED_PAYMENT_SUCCESSION_OPEN'
+            });
+            expect(await refundsOf(payment.id)).toHaveLength(0);
+
+            // Arrange: branches 1, 5 and 6 leave the predecessor CANCELLED (seeded).
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'CANCELLED', graceStartedAt: null, graceEndsAt: null })
+                .where(eq(subscriptions.id, s.subscriptionId));
+
+            // Act
+            const requested = await rf1();
+            const settled = await rf4();
+
+            // Assert
+            const refunds = await refundsOf(payment.id);
+            // RF4 may close the open RF1 instead of creating another row (AC:B5:41).
+            expect(new Set(refunds.map((refund) => refund.id))).toEqual(
+                new Set([requested.refundId, settled.refundId])
+            );
+            expect((await retentionsOf(s.subscriptionId))[0]?.releasedAt).toBeNull();
         }
     );
 });

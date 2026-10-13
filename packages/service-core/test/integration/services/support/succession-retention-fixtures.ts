@@ -16,10 +16,15 @@ import {
 import type { PaymentProvider } from '@repo/payments';
 import { vi } from 'vitest';
 import type { CoverageNotices } from '../../../../src/services/billing/payment/payment-ports.js';
+import { openReconciliationMark } from '../../../../src/services/billing/reconciliation/open-reconciliation-mark.service.js';
 import {
     createGraceExpiryCheck,
     graceExpiredOccurrenceId
 } from '../../../../src/services/billing/reconciliation/sweep/grace-expiry-check.js';
+import {
+    type ExpireAuthorizationWindowsSummary,
+    expireAuthorizationWindows
+} from '../../../../src/services/billing/subscription/expire-authorization-windows.service.js';
 import type { BeforeCancelNotice } from '../../../../src/services/billing/subscription/start-subscription.service.js';
 import { retainPaymentForSuccession } from '../../../../src/services/billing/subscription/succession-retained-payment.js';
 import {
@@ -28,6 +33,8 @@ import {
 } from '../../../../src/services/billing/subscription/suspend-for-arrears.service.js';
 import { getServiceTestDb } from '../helpers.js';
 import { graceWithFailedCycle } from './grace-fixtures.js';
+import { seededSubscriptionIds, withSeededSubscriptionSweep } from './subscription-window-sweep.js';
+import { noTouristVip } from './tourist-vip.js';
 
 const HOUR_MS = 3_600_000;
 
@@ -40,16 +47,28 @@ export interface SeededSuccession {
 }
 
 /**
- * Retires what the cases seeded (HOS-1561): retentions first (they point at the
- * payments), then open marks, the users' outbox rows, and the rows to `CANCELLED`
+ * Retires what the cases seeded (HOS-1561): retentions and refunds first (they
+ * point at the payments), then open marks, the users' outbox rows, and the rows to `CANCELLED`
  * with the clock empty, so no live row, open mark or open retention outlives them.
  */
 export async function retireSuccessionCases(cases: readonly SeededSuccession[]): Promise<void> {
     const db = getServiceTestDb();
+    seededSubscriptionIds.clear();
     for (const { subscriptionIds, userId } of cases) {
         await db
             .delete(successionRetainedPayments)
             .where(inArray(successionRetainedPayments.subscriptionId, [...subscriptionIds]));
+        const ownPayments = await db
+            .select({ id: payments.id })
+            .from(payments)
+            .where(inArray(payments.subscriptionId, [...subscriptionIds]));
+        if (ownPayments.length > 0)
+            await db.delete(refunds).where(
+                inArray(
+                    refunds.paymentId,
+                    ownPayments.map((payment) => payment.id)
+                )
+            );
         await db
             .update(reconciliationMarks)
             .set({ liftedAt: new Date(), liftedBy: userId })
@@ -269,4 +288,66 @@ export async function predecessorInGrace({
             onBeforeCancel = hook;
         }
     };
+}
+
+/**
+ * Branch 2 seed (HOS-1561 H9): gives the predecessor's live successor a card
+ * authorization in the fake that is NOT authorized (`pending`), its provider link
+ * and an authorization window that already expired, and lists it for S3's sweep.
+ */
+export async function expireSuccessorWindow(
+    s: Awaited<ReturnType<typeof predecessorInGrace>>
+): Promise<{ readonly successorAuthorizationId: string }> {
+    const real = s.fixture.provider as PaymentProvider;
+    const created = await real.authorize({
+        reference: s.successor.id,
+        amount: { amountMinor: 250000, currency: 'ARS' },
+        cadence: { everyMonths: 1 },
+        reason: 'Successor plan',
+        returnUrl: 'https://example.test/return'
+    });
+    const db = getServiceTestDb();
+    await db.insert(providerLinks).values({
+        subscriptionId: s.successor.id,
+        provider: 'MERCADO_PAGO',
+        providerId: created.authorizationId
+    });
+    await db
+        .update(subscriptions)
+        .set({
+            authorizationWindowDeadlineVersion: 1,
+            authorizationWindowEndsAt: new Date(s.fixture.clock.now().getTime() - 60_000)
+        })
+        .where(eq(subscriptions.id, s.successor.id));
+    seededSubscriptionIds.add(s.successor.id);
+    return { successorAuthorizationId: created.authorizationId };
+}
+
+/** S3 over this case's successor only, with the case's provider, clock and listener. */
+export async function runS3(
+    s: Awaited<ReturnType<typeof predecessorInGrace>>
+): Promise<ExpireAuthorizationWindowsSummary> {
+    const beforeCancelNotice: BeforeCancelNotice = { beforeCancel: async () => 'SENT' };
+    return withSeededSubscriptionSweep(20, () =>
+        expireAuthorizationWindows(20, {
+            provider: s.chargePorts.provider,
+            clock: s.fixture.clock,
+            beforeCancelNotice,
+            touristVipInheritance: noTouristVip,
+            coverageNotices: s.chargePorts.coverageNotices
+        })
+    );
+}
+
+/**
+ * Branch 3 seed (HOS-1561 H10): the mark of a stuck succession on the predecessor,
+ * as S14 leaves it when the provider cancellation fails on a live authorization.
+ */
+export async function seedStuckSuccessionMark(subscriptionId: string): Promise<void> {
+    await openReconciliationMark({
+        subject: { kind: 'SUBSCRIPTION', subscriptionId },
+        reason: 'CANCELACION_SIN_CONFIRMAR',
+        actor: { type: 'job' },
+        correlationId: subscriptionId
+    });
 }
