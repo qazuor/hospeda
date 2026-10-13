@@ -8,8 +8,10 @@ import { openReconciliationMark } from '../reconciliation/open-reconciliation-ma
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import {
     checkLatePaymentConditions,
+    isLiveSuccessionPredecessor,
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
+import { releaseRetainedPayment, retainPaymentForSuccession } from './succession-retained-payment';
 
 const logger = createLogger('exit-grace');
 const inputSchema = z.strictObject({ paymentId: z.uuid() });
@@ -46,13 +48,19 @@ export interface ExitGracePorts {
  * The single write of S5: `GRACE_PERIOD → ACTIVE` with the grace clock turned off.
  * The `status` guard makes a concurrent transition lose instead of overwriting it.
  *
+ * When `paymentId` is given (S5 deciding a credited payment), that payment's open
+ * S19 retention, if any, is closed with `REEVALUATED` in the same transaction as
+ * the write (branch 2, HOS-1561 H9). Callers that omit it see no change.
+ *
  * @param input.subscriptionId - The row leaving grace
  * @param input.now - The write instant
+ * @param input.paymentId - Optional: the payment whose destination this write decides
  * @returns True when this call moved the row; false when it was no longer in grace
  */
 export async function reactivateFromGrace(input: {
     readonly subscriptionId: string;
     readonly now: Date;
+    readonly paymentId?: string;
 }): Promise<boolean> {
     return getDb().transaction(async (tx) => {
         const [updated] = await tx
@@ -70,8 +78,74 @@ export async function reactivateFromGrace(input: {
                 )
             )
             .returning({ id: subscriptions.id });
+        if (updated && input.paymentId)
+            await releaseRetainedPayment({
+                paymentId: input.paymentId,
+                reason: 'REEVALUATED',
+                now: input.now,
+                tx
+            });
         return Boolean(updated);
     });
+}
+
+/**
+ * S19 from S5 (AC:B7:16, HOS-1561 H4): in a transaction of its own, rereads and
+ * locks the row, confirms it is still in `GRACE_PERIOD` and still the predecessor
+ * of a live succession, and only then records the payment as pending with
+ * `grace_started_at` as the anchor of the unpaid period. Nothing else is written:
+ * no mark, no notice, no refund, no `domain_event` (H14).
+ *
+ * @param input.subscriptionId - The predecessor in grace
+ * @param input.paymentId - The credited payment of the unpaid period
+ * @param input.now - The instant of the act
+ * @returns False when the reread no longer confirms the row (nothing written)
+ */
+async function retainForSuccession(input: {
+    readonly subscriptionId: string;
+    readonly paymentId: string;
+    readonly now: Date;
+}): Promise<boolean> {
+    const retained = await getDb().transaction(async (tx) => {
+        const [locked] = await tx
+            .select({ status: subscriptions.status, graceStartedAt: subscriptions.graceStartedAt })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, input.subscriptionId))
+            .limit(1)
+            .for('update');
+        if (locked?.status !== 'GRACE_PERIOD') return null;
+        if (!(await isLiveSuccessionPredecessor({ subscriptionId: input.subscriptionId, tx })))
+            return null;
+        const unpaidSince = locked.graceStartedAt ?? input.now;
+        const retention = await retainPaymentForSuccession({
+            subscriptionId: input.subscriptionId,
+            payment: { source: 'PAYMENT', id: input.paymentId },
+            unpaidSince,
+            now: input.now,
+            tx
+        });
+        return {
+            unpaidSince,
+            anchorMissing: locked.graceStartedAt === null,
+            alreadyRetained: retention.outcome === 'ALREADY_RETAINED'
+        };
+    });
+    if (!retained) return false;
+    if (retained.anchorMissing)
+        logger.warn(
+            { subscriptionId: input.subscriptionId, paymentId: input.paymentId },
+            'S19 retained a payment on a GRACE_PERIOD row without grace_started_at; the act instant is the anchor'
+        );
+    logger.info(
+        {
+            subscriptionId: input.subscriptionId,
+            paymentId: input.paymentId,
+            unpaidSince: retained.unpaidSince,
+            alreadyRetained: retained.alreadyRetained
+        },
+        'S19 retained the unpaid-period payment of a succession predecessor'
+    );
+    return true;
 }
 
 /**
@@ -80,11 +154,15 @@ export async function reactivateFromGrace(input: {
  *
  * The payment must already be credited by P1 (I-5: separate transactions, P1
  * first). The predecessor of a succession in progress is left to S19 without a
- * mark (D-4); a duplicate of an already paid period is P1's `COBRO_DUPLICADO`
+ * mark (D-4), which records the payment as pending (HOS-1561 H4; `LOST_RACE` when
+ * the locked reread no longer confirms grace and succession); a duplicate of an already paid period is P1's `COBRO_DUPLICADO`
  * (D-3); conditions 2 and 3 open reason 7 `PAGO_TARDIO_RECHAZADO` (I-3).
  * The payment must cover THE period whose charge failed (condition 4 bound to the
  * grace's `grace_started_at`, see `paymentCoversUnpaidPeriod`): a replayed notice of
  * an earlier, already credited payment (`ALREADY_CREDITED`) never leaves grace.
+ * When S5 decides the payment's destination (`REACTIVATED` or `CONDITION_FAILED`)
+ * it closes that payment's open S19 retention with `REEVALUATED` (branch 2, S3's
+ * re-evaluation, HOS-1561 H9); `RETAINED_FOR_S19` and `NOT_APPLICABLE` leave it.
  *
  * @param input.paymentId - The credited payment
  * @param ports - Provider, clock, mark payment port and actor type
@@ -134,8 +212,15 @@ export async function exitGraceOnCreditedPayment(
         unpaidSince: subscription.graceStartedAt
     });
 
-    if ('retainedForS19' in verdict)
+    if ('retainedForS19' in verdict) {
+        const retained = await retainForSuccession({
+            subscriptionId: subscription.id,
+            paymentId: payment.id,
+            now: ports.clock.now()
+        });
+        if (!retained) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
         return { outcome: 'RETAINED_FOR_S19', subscriptionId: subscription.id };
+    }
     if (!verdict.ok) {
         const { failedCondition } = verdict;
         logger.warn(
@@ -158,12 +243,23 @@ export async function exitGraceOnCreditedPayment(
                 }
             );
         }
+        // Branch 2 (HOS-1561 H9): the payment's destination is decided, so its S19 flag
+        // (if any) is turned off. After the mark, so a failed mark leaves it up.
+        await getDb().transaction(async (tx) => {
+            await releaseRetainedPayment({
+                paymentId: payment.id,
+                reason: 'REEVALUATED',
+                now: ports.clock.now(),
+                tx
+            });
+        });
         return { outcome: 'CONDITION_FAILED', subscriptionId: subscription.id, failedCondition };
     }
 
     const reactivated = await reactivateFromGrace({
         subscriptionId: subscription.id,
-        now: ports.clock.now()
+        now: ports.clock.now(),
+        paymentId: payment.id
     });
     if (!reactivated) return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
     logger.info(

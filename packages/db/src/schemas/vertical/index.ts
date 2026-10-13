@@ -27,5 +27,6 @@ export * from './refund-call.dbschema.ts';
 export * from './scheduled-change.dbschema.ts';
 export * from './subscription.dbschema.ts';
 export * from './subscription-pause.dbschema.ts';
+export * from './succession-retained-payment.dbschema.ts';
 export * from './vertical.dbschema.ts';
 export * from './vertical-deadline-version.dbschema.ts';

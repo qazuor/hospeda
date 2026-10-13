@@ -9,7 +9,8 @@ import {
     payments,
     reconciliationMarkPayments,
     reconciliationMarks,
-    subscriptions
+    subscriptions,
+    successionRetainedPayments
 } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
@@ -35,6 +36,10 @@ const seeded: { subscriptionIds: string[]; userId: string }[] = [];
 afterEach(async () => {
     const db = getServiceTestDb();
     for (const { subscriptionIds, userId } of seeded.splice(0)) {
+        // Retentions of the predecessor cases go first (HOS-1561): they point at the payments.
+        await db
+            .delete(successionRetainedPayments)
+            .where(inArray(successionRetainedPayments.subscriptionId, subscriptionIds));
         await db
             .update(reconciliationMarks)
             .set({ liftedAt: new Date(), liftedBy: userId })
@@ -307,6 +312,19 @@ describe('TEST:B7:8 — S7 from SUSPENDED (AC:B7:13)', () => {
             expect(await subscriptionRow(s.subscriptionId)).toEqual(before);
             expect(await openMarks(s.subscriptionId)).toHaveLength(0);
             expect(s.spy.added()).toHaveLength(0);
+            // S19 recorded the payment as pending (HOS-1561).
+            const payment = await paymentFor(s.fixture.chargeId);
+            expect(
+                await getServiceTestDb()
+                    .select()
+                    .from(successionRetainedPayments)
+                    .where(
+                        and(
+                            eq(successionRetainedPayments.paymentId, payment.id),
+                            isNull(successionRetainedPayments.releasedAt)
+                        )
+                    )
+            ).toHaveLength(1);
         }
     );
 

@@ -92,8 +92,10 @@ export const noCreditedPayments: SubscriptionPayments = {
 };
 
 /**
- * S6's guard (AC:B7:7): a credited payment of the unpaid period retained by S19
- * keeps the row out of `SUSPENDED` until it is resolved.
+ * S6's guard (AC:B7:7, AC:B7:16): a credited payment of the unpaid period retained
+ * by S19 keeps the row out of `SUSPENDED` until it is resolved. S6's default is the
+ * real read of `succession_retained_payment` (an open retention of the row,
+ * HOS-1561 H5); a read error is thrown, never read as "no retention".
  */
 export interface RetainedPeriodPayment {
     /** True when S19 holds a credited payment of the period pending resolution. */
@@ -102,13 +104,6 @@ export interface RetainedPeriodPayment {
         readonly tx?: DrizzleClient;
     }): Promise<boolean>;
 }
-
-/** S19 has no writer until B7.4b (HOS-1561), which replaces this default. */
-export const noRetainedPeriodPayment: RetainedPeriodPayment = {
-    async hasRetainedPeriodPayment() {
-        return false;
-    }
-};
 
 /** B8b injects the S18 implementation, replacing the default. */
 export interface SuccessionCloser {

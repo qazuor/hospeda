@@ -26,7 +26,11 @@ vi.mock('@repo/verticals', async (importOriginal) => ({
     createPlanCatalogInverse: () => ({ planPolicy: mockPlanPolicy })
 }));
 
-import { creditedPaymentsFromLedger } from '@repo/service-core';
+import {
+    creditedPaymentsFromLedger,
+    noDeterminableRetainedPaymentBranch,
+    retainedPaymentsFromLedger
+} from '@repo/service-core';
 import { billingReconciliationSweepJob } from '../../src/cron/jobs/billing-reconciliation-sweep.job';
 import { beforeCancelNotice } from '../../src/routes/billing-subscription/before-cancel-notice';
 import { touristVipInheritance } from '../../src/routes/billing-subscription/tourist-vip-inheritance';
@@ -77,7 +81,10 @@ describe('billing reconciliation sweep cron', () => {
                 provider: mockProvider,
                 clock: mockClock,
                 rowChecks: [expect.any(Function), expect.any(Function)],
-                zeroCallChecks: {},
+                zeroCallChecks: {
+                    retainedPayments: retainedPaymentsFromLedger,
+                    retainedPaymentBranches: noDeterminableRetainedPaymentBranch
+                },
                 livenessPing: expect.any(Object)
             })
         );
@@ -108,6 +115,41 @@ describe('billing reconciliation sweep cron', () => {
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['failed-id']);
         expect(result.details).toMatchObject({ runId: 'run-id', complete: false, pinged: false });
         expect(result.details).not.toHaveProperty('failures');
+    });
+
+    it('TEST:B7:10 l wires the S19 retention ports into the zero-call check (HOS-1561 H11, Coord-74)', async () => {
+        // Arrange
+        mockSweep.mockResolvedValue({
+            rowsRead: 0,
+            runId: 'run-id',
+            complete: true,
+            pinged: true,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+
+        // Act
+        await billingReconciliationSweepJob.handler(context());
+
+        // Assert
+        const ports = mockSweep.mock.calls[0]?.[1] as {
+            zeroCallChecks?: { retainedPayments?: unknown; retainedPaymentBranches?: unknown };
+            markPayments?: unknown;
+        };
+        expect(ports.zeroCallChecks?.retainedPayments).toBe(retainedPaymentsFromLedger);
+        expect(ports.zeroCallChecks?.retainedPaymentBranches).toBe(
+            noDeterminableRetainedPaymentBranch
+        );
+        // The mark opened for a retained payment hangs it through the real ledger port.
+        expect(ports.markPayments).toEqual({
+            hang: expect.any(Function),
+            countUnresolved: expect.any(Function)
+        });
     });
 
     it('counts zero-call check failures in the job result', async () => {

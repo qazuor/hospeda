@@ -29,6 +29,7 @@ import {
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
 import type { BeforeCancelNotice } from './start-subscription.service';
+import { releaseRetainedPayment, retainPaymentForSuccession } from './succession-retained-payment';
 
 const logger = createLogger('reactivate-suspended');
 const inputSchema = z.strictObject({ paymentId: z.uuid(), unpaidSince: z.date().optional() });
@@ -106,7 +107,12 @@ type InTransactionVerdict =
           readonly userId: string | null;
           readonly vertical: string | null;
       }
-    | { readonly kind: 'RETAINED' }
+    | {
+          readonly kind: 'RETAINED';
+          readonly unpaidSince: Date;
+          readonly anchorMissing: boolean;
+          readonly alreadyRetained: boolean;
+      }
     | { readonly kind: 'FAILED'; readonly failedCondition: LatePaymentFailedCondition }
     | { readonly kind: 'NO_ANCHOR' }
     | { readonly kind: 'LOST_RACE' };
@@ -231,7 +237,13 @@ async function cancelInheritedTouristVipAfterCommit(input: {
  * The payment must already be credited by P1 (separate transactions, P1 first).
  * The provider is reread outside any transaction; the row is then reread and
  * row-locked inside the transaction that writes, and its status, the succession
- * (D-4 → `RETAINED_FOR_S19`, no mark) and condition 3 are decided there.
+ * (D-4 → `RETAINED_FOR_S19`, no mark) and condition 3 are decided there. On
+ * `RETAINED_FOR_S19` S19 records the payment as pending in that same transaction
+ * (`succession_retained_payment`, HOS-1561 H4): no mark, no notice, no refund.
+ * When S7 instead decides the payment's destination (`WRITTEN`, a failed
+ * condition 2, 3 or 4, or no anchor) it closes that payment's open retention with
+ * `REEVALUATED` in the same transaction (branch 2, S3's re-evaluation, HOS-1561
+ * H9); `RETAINED` and a lost race leave it open.
  * Conditions 2 and 3 open reason 7; condition 4 (a duplicate or a replay of an
  * already paid period) opens nothing (D-3). No anchor opens reason 7 (H4); an
  * authorization neither `authorized` nor `cancelled` writes nothing (H3).
@@ -329,8 +341,38 @@ export async function reactivateSuspendedOnCreditedPayment(
             unpaidSince,
             tx
         });
-        if ('retainedForS19' in conditions) return { kind: 'RETAINED' };
+        if ('retainedForS19' in conditions) {
+            // S19 (AC:B7:16, HOS-1561 H4): the payment is recorded and left pending, with the
+            // row still locked. Without an anchor the act's instant is the only honest one.
+            const now = ports.clock.now();
+            const anchor = unpaidSince ?? now;
+            const retention = await retainPaymentForSuccession({
+                subscriptionId,
+                payment: { source: 'PAYMENT', id: payment.id },
+                unpaidSince: anchor,
+                now,
+                tx
+            });
+            return {
+                kind: 'RETAINED',
+                unpaidSince: anchor,
+                anchorMissing: unpaidSince === null,
+                alreadyRetained: retention.outcome === 'ALREADY_RETAINED'
+            };
+        }
+        // Branch 2 (HOS-1561 H9): the act that decides this payment's destination turns
+        // its S19 flag off in this same transaction. A payment without an open
+        // retention (the usual case) is not touched.
+        const releaseRetention = async (): Promise<void> => {
+            await releaseRetainedPayment({
+                paymentId: payment.id,
+                reason: 'REEVALUATED',
+                now: ports.clock.now(),
+                tx
+            });
+        };
         if (!conditions.ok) {
+            await releaseRetention();
             // Without an anchor condition 4 fails closed; that is H4, not a duplicate (D-3).
             if (conditions.failedCondition === 4 && unpaidSince === null)
                 return { kind: 'NO_ANCHOR' };
@@ -370,6 +412,7 @@ export async function reactivateSuspendedOnCreditedPayment(
             .where(and(eq(subscriptions.id, subscriptionId), eq(subscriptions.status, 'SUSPENDED')))
             .returning({ userId: subscriptions.userId, vertical: subscriptions.vertical });
         if (!updated) return { kind: 'LOST_RACE' };
+        await releaseRetention();
         return {
             kind: 'WRITTEN',
             destination,
@@ -383,6 +426,20 @@ export async function reactivateSuspendedOnCreditedPayment(
         case 'LOST_RACE':
             return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE', subscriptionId };
         case 'RETAINED':
+            if (verdict.anchorMissing)
+                logger.warn(
+                    { subscriptionId, paymentId: payment.id },
+                    'S19 retained a payment on a SUSPENDED row without an unpaid-period anchor; the act instant is the anchor'
+                );
+            logger.info(
+                {
+                    subscriptionId,
+                    paymentId: payment.id,
+                    unpaidSince: verdict.unpaidSince,
+                    alreadyRetained: verdict.alreadyRetained
+                },
+                'S19 retained the unpaid-period payment of a succession predecessor'
+            );
             return { outcome: 'RETAINED_FOR_S19', subscriptionId };
         case 'NO_ANCHOR':
             logger.error(

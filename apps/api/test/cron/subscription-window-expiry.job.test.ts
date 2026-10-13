@@ -36,7 +36,9 @@ beforeEach(() => {
         activated: 2,
         cancelCalls: 2,
         noticePending: 1,
-        skipped: 0
+        skipped: 0,
+        touristVipCancelled: 0,
+        retainedReevaluated: 1
     });
     mockSweep.mockResolvedValue({ cancelled: 1, deferred: 2, skipped: 0 });
 });
@@ -71,7 +73,8 @@ describe('subscription-window-expiry cron', () => {
             success: true,
             processed: 5,
             errors: 0,
-            details: { cancelled: 1, deferred: 2 }
+            // HOS-1561 H9: branch 2's re-evaluation count reaches the run's details.
+            details: { cancelled: 1, deferred: 2, retainedReevaluated: 1 }
         });
     });
 
