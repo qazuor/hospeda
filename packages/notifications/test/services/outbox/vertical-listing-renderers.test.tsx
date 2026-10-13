@@ -227,6 +227,10 @@ describe('vertical listing notice renderers (HOS-1492, AC:V8a:5 and AC:V8a:6)', 
         ['verticals.price-alert-closed', { vertical: 'accommodation', alertId: ALERT_ID }],
         ['verticals.price-alert-closed', { vertical: 'accommodation', listingId: LISTING_ID }],
         ['verticals.listing-purged', { vertical: 'accommodation', bySupport: false }],
+        [
+            'verticals.listing-purged',
+            { vertical: 'accommodation', listingName: 'Cabañas', bySupport: false }
+        ],
         ['verticals.listing-purged', { vertical: 'accommodation', listingId: LISTING_ID }],
         [
             'verticals.listing-purged',
@@ -281,11 +285,13 @@ describe('vertical listing notice renderers (HOS-1492, AC:V8a:5 and AC:V8a:6)', 
             }
         ]
     ])('rejects an incomplete payload for %s (%#)', async (template, payload) => {
-        const { renderers } = buildRenderers();
+        const { renderers, readListingNames } = buildRenderers();
 
         await expect(
             Promise.resolve().then(() => renderers[template]!({ row: row({ template, payload }) }))
         ).rejects.toThrow(TypeError);
+        // The payload is validated before any name is read.
+        expect(readListingNames).not.toHaveBeenCalled();
     });
 
     it.each([
