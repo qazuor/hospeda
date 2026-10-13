@@ -11,7 +11,9 @@ import {
     sql,
     subscriptions
 } from '@repo/db';
+import { ServiceErrorCode } from '@repo/schemas';
 import { startOfMarketDay } from '@repo/utils';
+import { ServiceError } from '../../../types';
 import {
     type BillingOptionReader,
     readAnchoredBillingOption
@@ -48,6 +50,54 @@ const REFUNDABLE_PAYMENT_STATUSES: readonly string[] = ['SUCCEEDED', 'PARTIALLY_
  * `REQUESTED`/`CONFIRMED` counts too, or S36 would ask for the same total twice (Coord-333).
  */
 const CLAIMING_REFUND_STATUSES = ['REQUESTED', 'CONFIRMED', 'EXECUTED'] as const;
+
+/** Every `reason` a rejection of S36 carries, for an exhaustive HTTP mapping (I-10). */
+export const REVOKE_SUBSCRIPTION_REJECTIONS = [
+    'SUBSCRIPTION_NOT_FOUND',
+    'ADMINISTRATIVE_ACTION_FORBIDDEN',
+    'REVOCATION_NOT_PRINCIPAL',
+    'REVOCATION_STATE_NOT_ALLOWED',
+    'REVOCATION_NO_CREDITED_PAYMENT',
+    'REVOCATION_WINDOW_CLOSED',
+    'REVOCATION_AMOUNT_UNAVAILABLE',
+    'REVOCATION_PAYMENT_CHANGED',
+    'REVOCATION_STATE_CHANGED',
+    'PAYMENT_NOT_REFUNDABLE',
+    'REFUND_EXCEEDS_BALANCE',
+    'REFUND_AMOUNT_INVALID'
+] as const;
+
+/** A rejection reason of S36. The last three are thrown by `requestRefund` as they are. */
+export type RevokeSubscriptionRejection = (typeof REVOKE_SUBSCRIPTION_REJECTIONS)[number];
+
+const REJECTION_CODES: Readonly<Record<RevokeSubscriptionRejection, ServiceErrorCode>> = {
+    SUBSCRIPTION_NOT_FOUND: ServiceErrorCode.NOT_FOUND,
+    ADMINISTRATIVE_ACTION_FORBIDDEN: ServiceErrorCode.FORBIDDEN,
+    REVOCATION_NOT_PRINCIPAL: ServiceErrorCode.ALREADY_EXISTS,
+    REVOCATION_STATE_NOT_ALLOWED: ServiceErrorCode.ALREADY_EXISTS,
+    REVOCATION_NO_CREDITED_PAYMENT: ServiceErrorCode.VALIDATION_ERROR,
+    REVOCATION_WINDOW_CLOSED: ServiceErrorCode.VALIDATION_ERROR,
+    REVOCATION_AMOUNT_UNAVAILABLE: ServiceErrorCode.VALIDATION_ERROR,
+    REVOCATION_PAYMENT_CHANGED: ServiceErrorCode.ALREADY_EXISTS,
+    REVOCATION_STATE_CHANGED: ServiceErrorCode.ALREADY_EXISTS,
+    PAYMENT_NOT_REFUNDABLE: ServiceErrorCode.ALREADY_EXISTS,
+    REFUND_EXCEEDS_BALANCE: ServiceErrorCode.VALIDATION_ERROR,
+    REFUND_AMOUNT_INVALID: ServiceErrorCode.VALIDATION_ERROR
+};
+
+/**
+ * A typed rejection of S36: `ServiceError` with the reason's code (I-10), never `INTERNAL_ERROR`.
+ *
+ * @param reason - One of `REVOKE_SUBSCRIPTION_REJECTIONS`
+ * @param message - The developer-facing message
+ * @returns The error to throw
+ */
+export function revocationRejection(
+    reason: RevokeSubscriptionRejection,
+    message: string
+): ServiceError {
+    return new ServiceError(REJECTION_CODES[reason], message, undefined, reason);
+}
 
 /** The payment S36 returns by its RF1, found through the `sucedida_por` chain (AC:B5:22). */
 export interface RevocablePayment {
@@ -318,4 +368,52 @@ export async function findRevocablePayment(input: {
         current = await predecessorOf({ tx: input.tx, subscriptionId: current });
     }
     return null;
+}
+
+/**
+ * Steps d–f of S36, shared by its preview and its act: the last credited payment through the
+ * `sucedida_por` chain (AC:B5:22), its 10-day window (AC:B5:21) and the payment the preview
+ * showed. With `lock` the chosen payment is locked `FOR UPDATE` before its claims are summed.
+ *
+ * @param input.tx - The caller's transaction
+ * @param input.subscriptionId - The row being revoked
+ * @param input.now - The act's instant
+ * @param input.expectedPaymentId - The payment the preview showed, when given
+ * @param input.lock - True for the act, false for the read-only preview
+ * @returns The payment and the exclusive end of its window
+ * @throws ServiceError `REVOCATION_NO_CREDITED_PAYMENT` | `PAYMENT_NOT_REFUNDABLE` |
+ *   `REVOCATION_AMOUNT_UNAVAILABLE` | `REFUND_EXCEEDS_BALANCE` | `REVOCATION_WINDOW_CLOSED` |
+ *   `REVOCATION_PAYMENT_CHANGED`
+ */
+export async function resolveRevokedPayment(input: {
+    readonly tx: DrizzleClient;
+    readonly subscriptionId: string;
+    readonly now: Date;
+    readonly expectedPaymentId?: string;
+    readonly lock: boolean;
+}): Promise<{ readonly payment: RevocablePayment; readonly windowEndsAt: Date }> {
+    const reject = revocationRejection;
+    const payment = await findRevocablePayment({
+        tx: input.tx,
+        subscriptionId: input.subscriptionId,
+        lockPayment: input.lock
+    });
+    if (!payment) throw reject('REVOCATION_NO_CREDITED_PAYMENT', 'No credited payment to revoke');
+    // A REFUNDED/CHARGED_BACK last payment rejects the whole act; never an older one (I-3).
+    if (!payment.refundable)
+        throw reject('PAYMENT_NOT_REFUNDABLE', 'The last credited payment is not refundable');
+    if (payment.source.kind === 'MANUAL_PAYMENT' && payment.currency === null)
+        throw reject(
+            'REVOCATION_AMOUNT_UNAVAILABLE',
+            'The manual payment has no anchored price to refund'
+        );
+    // Open or executed refunds already claim it all: never a second request for the total.
+    if (payment.amount <= 0)
+        throw reject('REFUND_EXCEEDS_BALANCE', 'Every cent of the payment is already claimed');
+    const windowEndsAt = revocationWindowEndsAt({ chargedAt: payment.chargedAt });
+    if (input.now.getTime() >= windowEndsAt.getTime())
+        throw reject('REVOCATION_WINDOW_CLOSED', 'The 10 calendar-day revocation window closed');
+    if (input.expectedPaymentId !== undefined && input.expectedPaymentId !== payment.source.id)
+        throw reject('REVOCATION_PAYMENT_CHANGED', 'The revoked payment changed since the preview');
+    return { payment, windowEndsAt };
 }

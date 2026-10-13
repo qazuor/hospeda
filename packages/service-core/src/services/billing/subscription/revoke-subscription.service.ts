@@ -3,7 +3,6 @@
  * right of withdrawal with admin action 8, «cancelar una suscripción», reason revocation. It is
  * ONE operation (DEC-RF-001 part 1): the row goes to `CANCELLED` with its service ended now,
  * and an RF1 for the total of the last credited payment is born in the same transaction.
- *
  * The transition is written BEFORE the provider call, and the call happens after the commit.
  * From S17's rule S36 takes the re-read, not the «if it fails, it does not happen»: its event
  * is a human act nobody re-evaluates, so like S22–S24 the row reaches `CANCELLED` whatever the
@@ -17,10 +16,10 @@ import type { DrizzleClient } from '@repo/db';
 import { and, eq, getDb, isNull, providerLinks, subscriptionPauses, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
+import { VerticalEnumSchema } from '@repo/schemas';
 import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
 import { z } from 'zod';
-import { type Actor, ServiceError } from '../../../types';
+import type { Actor } from '../../../types';
 import { isSystemActor } from '../../../utils/system-actor';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import type { CoverageNotices } from '../payment/payment-ports';
@@ -32,9 +31,9 @@ import { recordProviderCancellationDecided } from '../reconciliation/provider-ca
 import type { RefundSource } from '../refund/refund-source';
 import { requestRefund } from '../refund/request-refund.service';
 import {
-    findRevocablePayment,
     type RevocablePayment,
-    revocationWindowEndsAt
+    revocationRejection as reject,
+    resolveRevokedPayment
 } from './revocation-payment';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service';
 import {
@@ -48,25 +47,6 @@ const logger = createLogger('revoke-subscription');
 
 /** The administrative action S36 executes: one constant for the helper and the step (Coord-178). */
 const ACTION = 'ACC_8' as const;
-
-/** Every `reason` a rejection of S36 carries, for an exhaustive HTTP mapping (I-10). */
-export const REVOKE_SUBSCRIPTION_REJECTIONS = [
-    'SUBSCRIPTION_NOT_FOUND',
-    'ADMINISTRATIVE_ACTION_FORBIDDEN',
-    'REVOCATION_NOT_PRINCIPAL',
-    'REVOCATION_STATE_NOT_ALLOWED',
-    'REVOCATION_NO_CREDITED_PAYMENT',
-    'REVOCATION_WINDOW_CLOSED',
-    'REVOCATION_AMOUNT_UNAVAILABLE',
-    'REVOCATION_PAYMENT_CHANGED',
-    'REVOCATION_STATE_CHANGED',
-    'PAYMENT_NOT_REFUNDABLE',
-    'REFUND_EXCEEDS_BALANCE',
-    'REFUND_AMOUNT_INVALID'
-] as const;
-
-/** A rejection reason of S36. The last three are thrown by `requestRefund` as they are. */
-export type RevokeSubscriptionRejection = (typeof REVOKE_SUBSCRIPTION_REJECTIONS)[number];
 
 /** The states S36 leaves (TRANS:B:S36 «desde»; PAUSED with either reason). */
 export const REVOCATION_ORIGINS = ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED', 'PAUSED'] as const;
@@ -126,25 +106,6 @@ export interface RevokeSubscriptionResult {
     readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
 }
 
-const REJECTION_CODES: Readonly<Record<RevokeSubscriptionRejection, ServiceErrorCode>> = {
-    SUBSCRIPTION_NOT_FOUND: ServiceErrorCode.NOT_FOUND,
-    ADMINISTRATIVE_ACTION_FORBIDDEN: ServiceErrorCode.FORBIDDEN,
-    REVOCATION_NOT_PRINCIPAL: ServiceErrorCode.ALREADY_EXISTS,
-    REVOCATION_STATE_NOT_ALLOWED: ServiceErrorCode.ALREADY_EXISTS,
-    REVOCATION_NO_CREDITED_PAYMENT: ServiceErrorCode.VALIDATION_ERROR,
-    REVOCATION_WINDOW_CLOSED: ServiceErrorCode.VALIDATION_ERROR,
-    REVOCATION_AMOUNT_UNAVAILABLE: ServiceErrorCode.VALIDATION_ERROR,
-    REVOCATION_PAYMENT_CHANGED: ServiceErrorCode.ALREADY_EXISTS,
-    REVOCATION_STATE_CHANGED: ServiceErrorCode.ALREADY_EXISTS,
-    PAYMENT_NOT_REFUNDABLE: ServiceErrorCode.ALREADY_EXISTS,
-    REFUND_EXCEEDS_BALANCE: ServiceErrorCode.VALIDATION_ERROR,
-    REFUND_AMOUNT_INVALID: ServiceErrorCode.VALIDATION_ERROR
-};
-
-function reject(reason: RevokeSubscriptionRejection, message: string): ServiceError {
-    return new ServiceError(REJECTION_CODES[reason], message, undefined, reason);
-}
-
 /** Which origin closes a pause (h). Exhaustive by origin, never a ternary. */
 const CLOSES_OPEN_PAUSE: Readonly<Record<RevocationOrigin, boolean>> = {
     ACTIVE: false,
@@ -164,7 +125,7 @@ const CANCEL_CALL_BY_OUTCOME: Readonly<
     SENT_UNCONFIRMED: 'SENT'
 };
 
-const inputSchema = z.object({ subscriptionId: z.uuid(), expectedPaymentId: z.uuid().optional() });
+const idSchema = z.uuid();
 
 function isRevocationOrigin(status: string): status is RevocationOrigin {
     return (REVOCATION_ORIGINS as readonly string[]).includes(status);
@@ -228,33 +189,14 @@ async function readRevocation(input: {
             `A ${subscription.status} subscription cannot be revoked`
         );
 
-    // d. the last credited payment, through the sucedida_por chain (AC:B5:22)
-    const payment = await findRevocablePayment({
+    // d–f. the last credited payment through `sucedida_por`, its window, the preview's payment
+    const { payment, windowEndsAt } = await resolveRevokedPayment({
         tx,
         subscriptionId: subscription.id,
-        lockPayment: input.lock
+        now: input.now,
+        expectedPaymentId: input.expectedPaymentId,
+        lock: input.lock
     });
-    if (!payment) throw reject('REVOCATION_NO_CREDITED_PAYMENT', 'No credited payment to revoke');
-    // A REFUNDED/CHARGED_BACK last payment rejects the whole act; never an older one (I-3).
-    if (!payment.refundable)
-        throw reject('PAYMENT_NOT_REFUNDABLE', 'The last credited payment is not refundable');
-    if (payment.source.kind === 'MANUAL_PAYMENT' && payment.currency === null)
-        throw reject(
-            'REVOCATION_AMOUNT_UNAVAILABLE',
-            'The manual payment has no anchored price to refund'
-        );
-    // Open or executed refunds already claim it all: never a second request for the total.
-    if (payment.amount <= 0)
-        throw reject('REFUND_EXCEEDS_BALANCE', 'Every cent of the payment is already claimed');
-
-    // e. the legal window (AC:B5:21)
-    const windowEndsAt = revocationWindowEndsAt({ chargedAt: payment.chargedAt });
-    if (input.now.getTime() >= windowEndsAt.getTime())
-        throw reject('REVOCATION_WINDOW_CLOSED', 'The 10 calendar-day revocation window closed');
-
-    // f. the confirmation the person saw is still the one that would run
-    if (input.expectedPaymentId !== undefined && input.expectedPaymentId !== payment.source.id)
-        throw reject('REVOCATION_PAYMENT_CHANGED', 'The revoked payment changed since the preview');
 
     const [link] = await tx
         .select({ providerId: providerLinks.providerId })
@@ -336,7 +278,7 @@ export async function previewSubscriptionRevocation(
     input: { readonly actor: Actor; readonly subscriptionId: string },
     ports: { readonly clock: Clock }
 ): Promise<SubscriptionRevocationPreview> {
-    if (!inputSchema.safeParse({ subscriptionId: input.subscriptionId }).success)
+    if (!idSchema.safeParse(input.subscriptionId).success)
         throw reject('SUBSCRIPTION_NOT_FOUND', 'Subscription not found');
     const reading = await getDb().transaction(
         (tx) =>
@@ -478,16 +420,9 @@ export async function revokeSubscription(
     },
     ports: RevokeSubscriptionPorts
 ): Promise<RevokeSubscriptionResult> {
-    const parsed = inputSchema.safeParse({
-        subscriptionId: input.subscriptionId,
-        expectedPaymentId: input.expectedPaymentId
-    });
-    if (!parsed.success) {
-        const badId = parsed.error.issues.some((issue) => issue.path[0] === 'subscriptionId');
-        throw badId
-            ? reject('SUBSCRIPTION_NOT_FOUND', 'Subscription not found')
-            : reject('REVOCATION_PAYMENT_CHANGED', 'The revoked payment changed since the preview');
-    }
+    // A non-uuid id names no row; a non-uuid expected payment never matches one (step f).
+    if (!idSchema.safeParse(input.subscriptionId).success)
+        throw reject('SUBSCRIPTION_NOT_FOUND', 'Subscription not found');
     const now = ports.clock.now();
     const committed = await getDb().transaction(async (tx) => {
         const reading = await readRevocation({
