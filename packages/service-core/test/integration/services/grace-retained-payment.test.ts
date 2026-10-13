@@ -2,6 +2,7 @@ import {
     coverageLosses,
     emailOutbox,
     eq,
+    inArray,
     reconciliationMarkPayments,
     subscriptions,
     successionRetainedPayments
@@ -45,8 +46,58 @@ const seeded: SeededSuccession[] = [];
 /** Retentions first, then marks, outbox and rows (HOS-1561): nothing open outlives a case. */
 afterEach(async () => {
     unregisterHook(HOOK);
-    await retireSuccessionCases(seeded.splice(0));
+    const cases = seeded.splice(0);
+    await retireSuccessionCases(cases);
+    if (cases.length > 0)
+        await getServiceTestDb()
+            .delete(coverageLosses)
+            .where(
+                inArray(
+                    coverageLosses.userId,
+                    cases.map((own) => own.userId)
+                )
+            );
 });
+
+/** The `coverage_loss` rows of one person (HOS-1534), every vertical. */
+async function coverageLossesOf(userId: string) {
+    return getServiceTestDb()
+        .select({ vertical: coverageLosses.vertical, lostAt: coverageLosses.lostAt })
+        .from(coverageLosses)
+        .where(eq(coverageLosses.userId, userId));
+}
+
+/**
+ * Case d with no other source left (HOS-1561, Coord-346): the predecessor in grace
+ * and its successor already `ABANDONED`, so nothing else covers the vertical and a
+ * suspension WOULD record the coverage loss. With `retainDuringS6`, S19 retains a
+ * payment of the period between S6's guard and its write (the race of case d).
+ */
+async function uncoveredPredecessorInGrace({
+    retainDuringS6
+}: {
+    readonly retainDuringS6: boolean;
+}) {
+    const s = await predecessorInGrace();
+    seeded.push(s.seeded);
+    await getServiceTestDb()
+        .update(subscriptions)
+        .set({ status: 'ABANDONED' })
+        .where(eq(subscriptions.id, s.successor.id));
+    if (retainDuringS6) {
+        const retained = await paymentFor(s.fixture.initialChargeId);
+        s.setBeforeCancel(async () => {
+            await retainInOwnTransaction({
+                subscriptionId: s.subscriptionId,
+                paymentId: retained.id,
+                unpaidSince: s.graceStartedAt,
+                now: s.fixture.clock.now()
+            });
+        });
+    }
+    s.expireClock();
+    return s;
+}
 
 /** The outbox rows of the user that name the arrears suspension notice. */
 async function arrearsNotices(userId: string) {
@@ -207,6 +258,53 @@ describe('TEST:B7:10 — S19 retains the unpaid-period payment (AC:B7:16)', () =
             expect(
                 (await retentionsOf(s.subscriptionId)).filter((r) => !r.releasedAt)
             ).toHaveLength(1);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'd2 — the race with no other source left: the retention wins and S6 writes no coverage_loss for the vertical',
+        async () => {
+            // Arrange
+            const s = await uncoveredPredecessorInGrace({ retainDuringS6: true });
+            const before = await subscriptionRow(s.subscriptionId);
+            expect(before.userId).not.toBeNull();
+            expect((await subscriptionRow(s.successor.id)).status).toBe('ABANDONED');
+
+            // Act
+            const result = await s.runS6();
+
+            // Assert
+            expect(result).toEqual({ outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' });
+            expect(s.cancel).toHaveBeenCalledTimes(1);
+            const row = await subscriptionRow(s.subscriptionId);
+            expect(row.status).toBe('GRACE_PERIOD');
+            expect(row.graceEndsAt).toEqual(before.graceEndsAt);
+            expect(
+                (await retentionsOf(s.subscriptionId)).filter((r) => !r.releasedAt)
+            ).toHaveLength(1);
+            const losses = await coverageLossesOf(before.userId ?? '');
+            expect(losses.filter((loss) => loss.vertical === before.vertical)).toEqual([]);
+            expect(s.coverageSeen.filter((event) => event.change === 'REMOVED')).toHaveLength(0);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'd3 — control: the same scenario without a retention suspends and DOES write the coverage_loss row',
+        async () => {
+            // Arrange
+            const s = await uncoveredPredecessorInGrace({ retainDuringS6: false });
+            const before = await subscriptionRow(s.subscriptionId);
+            expect(before.userId).not.toBeNull();
+
+            // Act
+            const result = await s.runS6();
+
+            // Assert
+            expect(result).toMatchObject({ outcome: 'SUSPENDED', cancelCall: 'SENT' });
+            expect((await subscriptionRow(s.subscriptionId)).status).toBe('SUSPENDED');
+            expect(await retentionsOf(s.subscriptionId)).toHaveLength(0);
+            const losses = await coverageLossesOf(before.userId ?? '');
+            expect(losses.filter((loss) => loss.vertical === before.vertical)).toHaveLength(1);
         }
     );
 
