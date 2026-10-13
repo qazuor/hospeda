@@ -3,7 +3,7 @@ import {
     AccommodationTypeEnum,
     AccommodationUpdateInputSchema,
     DestinationTypeEnum,
-    LifecycleStatusEnum,
+    PublicationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -117,7 +117,7 @@ describe('AccommodationService.update', () => {
             name: 'Nombre original',
             slug: 'house-nombre-original',
             type: AccommodationTypeEnum.HOUSE,
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            publicationStatus: PublicationStatusEnum.DRAFT
         });
         const updateInput = { name: 'Nombre nuevo' };
 
@@ -152,7 +152,7 @@ describe('AccommodationService.update', () => {
             name: 'Publicado original',
             slug: 'house-publicado-original',
             type: AccommodationTypeEnum.HOUSE,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         const updateInput = { name: 'Publicado renombrado' };
 
@@ -182,7 +182,7 @@ describe('AccommodationService.update', () => {
             name: 'Publicado original',
             slug: 'house-publicado-original',
             type: AccommodationTypeEnum.HOUSE,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         const updateInput = {
             name: 'Publicado renombrado',
@@ -233,7 +233,7 @@ describe('AccommodationService.update', () => {
             name: 'Nombre sin cambios',
             slug: 'countryhouse-nombre-sin-cambios',
             type: AccommodationTypeEnum.COUNTRY_HOUSE,
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            publicationStatus: PublicationStatusEnum.DRAFT
         });
         const updateInput = { type: AccommodationTypeEnum.CABIN };
 
@@ -270,7 +270,7 @@ describe('AccommodationService.update', () => {
             name: 'Nombre sin cambios',
             slug: 'countryhouse-nombre-sin-cambios',
             type: AccommodationTypeEnum.COUNTRY_HOUSE,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         const updateInput = { type: AccommodationTypeEnum.CABIN };
 
@@ -300,7 +300,7 @@ describe('AccommodationService.update', () => {
             name: 'Nombre sin cambios',
             slug: 'countryhouse-nombre-sin-cambios',
             type: AccommodationTypeEnum.COUNTRY_HOUSE,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         const updateInput = {
             type: AccommodationTypeEnum.CABIN,
@@ -338,7 +338,7 @@ describe('AccommodationService.update', () => {
             name: 'Nombre sin cambios',
             slug: 'cabin-nombre-sin-cambios',
             type: AccommodationTypeEnum.CABIN,
-            lifecycleState: LifecycleStatusEnum.DRAFT
+            publicationStatus: PublicationStatusEnum.DRAFT
         });
         const updateInput = { type: AccommodationTypeEnum.CABIN };
 

@@ -19,17 +19,14 @@
  * DB interactions are fully mocked — no real DB is touched.
  */
 
-import { legacyPublicationStatus } from '@repo/db';
 import type { Experience } from '@repo/schemas';
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -71,13 +68,7 @@ function makeExperienceEntity(overrides: Partial<Experience> = {}): Experience {
         isPriceOnRequest: false,
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        visibility: VisibilityEnum.PUBLIC,
-        publicationStatus: legacyPublicationStatus({
-            lifecycleState: overrides.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
-            visibility: overrides.visibility ?? VisibilityEnum.PUBLIC
-        }),
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
         inactiveSince: new Date('2024-01-01'),
         deadlinesVersion: 1,
         averageRating: 0,
@@ -409,7 +400,7 @@ describe('ExperienceService.updateOwn — schema enforcement', () => {
 // can now edit them. `summary` is also owner-editable. HOS-166 D-1 further
 // reverses SPEC-239 decision #5: `name`, `description`, `destinationId` are
 // now owner-editable identity fields too. `slug` stays admin-only post-create
-// (OQ-3); only true control fields (lifecycle/visibility/moderation/
+// (OQ-3); only true control fields (publicationStatus/
 // ownerId) remain stripped.
 describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
     it('persists name/description/destinationId/type/priceFrom/priceUnit/summary/i18n; strips slug + control fields', async () => {
@@ -428,9 +419,7 @@ describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-
                 'Una descripción base actualizada por el propio dueño del comercio para su ficha.', // HOS-166 D-1 — must persist
             destinationId: '00000000-0000-4000-a000-0000000000ff', // HOS-166 D-1 — must persist
             slug: 'forged-slug', // immutable post-create (OQ-3) — stripped
-            lifecycleState: LifecycleStatusEnum.ARCHIVED, // control field — stripped
-            visibility: VisibilityEnum.PRIVATE, // control field — stripped
-            moderationState: ModerationStatusEnum.REJECTED, // control field — stripped
+            publicationStatus: PublicationStatusEnum.MODERATED, // control field — stripped
             ownerId: '00000000-0000-4000-a000-0000000000fe' // control field — stripped
         };
 
@@ -450,13 +439,7 @@ describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-
         expect(updatePayload.destinationId).toBe(payload.destinationId); // HOS-166 D-1
 
         // Immutable slug + control fields are still stripped by the owner-update schema.
-        for (const forbidden of [
-            'slug',
-            'lifecycleState',
-            'visibility',
-            'moderationState',
-            'ownerId'
-        ]) {
+        for (const forbidden of ['slug', 'publicationStatus', 'ownerId']) {
             expect(updatePayload).not.toHaveProperty(forbidden);
         }
     });
@@ -532,7 +515,7 @@ describe('ExperienceService search filter forwarding', () => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService public search visibility filter (AC-6.2)', () => {
-    it('forces visibility=PUBLIC + lifecycleState=ACTIVE on public search (no hidden-listing leak)', async () => {
+    it('forces publicationStatus=PUBLISHED on public search (no hidden-listing leak)', async () => {
         const service = makeService(makeExperienceEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -544,12 +527,11 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
         expect(mockFindAllWithRelations).toHaveBeenCalled();
         expect(mockFindAllWithRelations.mock.calls[0][1]).toMatchObject({
             deletedAt: null,
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 
-    it('cannot be widened by a caller-supplied visibility/lifecycle param', async () => {
+    it('cannot be widened by a caller-supplied publicationStatus param', async () => {
         const service = makeService(makeExperienceEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -557,8 +539,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
         )._executeSearch(
             {
-                visibility: VisibilityEnum.PRIVATE,
-                lifecycleState: LifecycleStatusEnum.DRAFT,
+                publicationStatus: PublicationStatusEnum.DRAFT,
                 page: 1,
                 pageSize: 10
             },
@@ -569,8 +550,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
         // The forced gates are applied AFTER the spread, so they win.
         // arg[1] is the where object in findAllWithRelations
         expect(mockFindAllWithRelations.mock.calls[0][1]).toMatchObject({
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 
@@ -584,8 +564,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
 
         expect(mockCount.mock.calls[0][0]).toMatchObject({
             deletedAt: null,
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 });
@@ -631,7 +610,7 @@ describe('ExperienceService._canView', () => {
         // deletion. Refined product decision: 410 is reserved for content that
         // was actually publicly discoverable.
         const entity = makeExperienceEntity({
-            visibility: VisibilityEnum.PUBLIC,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -651,7 +630,7 @@ describe('ExperienceService._canView', () => {
         // must not be observably distinguishable from never-existed (uniform
         // 404), preserving the anti-enumeration contract.
         const entity = makeExperienceEntity({
-            visibility: VisibilityEnum.PRIVATE,
+            publicationStatus: PublicationStatusEnum.DRAFT,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -666,7 +645,7 @@ describe('ExperienceService._canView', () => {
 
     it('should allow staff with EXPERIENCE_VIEW_ALL to view deleted entities', () => {
         const entity = makeExperienceEntity({
-            visibility: VisibilityEnum.PUBLIC,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -674,14 +653,14 @@ describe('ExperienceService._canView', () => {
     });
 
     it('should throw NOT_FOUND for PRIVATE listing when actor is not owner or staff', () => {
-        const entity = makeExperienceEntity({ visibility: VisibilityEnum.PRIVATE });
+        const entity = makeExperienceEntity({ publicationStatus: PublicationStatusEnum.DRAFT });
         const service = makeService(entity);
         const publicActor: Actor = { id: OTHER_USER, roles: [RoleEnum.USER], permissions: [] };
         expect(() => (service as AnyService)._canView(publicActor, entity)).toThrow();
     });
 
     it('should allow owner to view their own PRIVATE listing', () => {
-        const entity = makeExperienceEntity({ visibility: VisibilityEnum.PRIVATE });
+        const entity = makeExperienceEntity({ publicationStatus: PublicationStatusEnum.DRAFT });
         const service = makeService(entity);
         expect(() => (service as AnyService)._canView(ownerActor, entity)).not.toThrow();
     });

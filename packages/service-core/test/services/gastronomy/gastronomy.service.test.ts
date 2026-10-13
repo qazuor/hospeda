@@ -17,13 +17,11 @@
 import type { Gastronomy } from '@repo/schemas';
 import {
     GastronomyTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
     PermissionEnum,
     PriceRangeEnum,
+    PublicationStatusEnum,
     RoleEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -63,9 +61,7 @@ function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}):
         type: GastronomyTypeEnum.PARRILLA,
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        visibility: VisibilityEnum.PUBLIC,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
         averageRating: 0,
         reviewsCount: 0,
         createdAt: new Date('2024-01-01'),
@@ -349,7 +345,7 @@ describe('GastronomyService.updateOwn', () => {
 // listing, so the owner has to own their own identity). `slug` stays
 // admin-only post-create (HOS-166 OQ-3 — derived server-side from `name` at
 // create, staff-only rename after). Only true control fields
-// (lifecycle/visibility/moderation/ownerId) remain stripped.
+// (publicationStatus/ownerId) remain stripped.
 describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
     it('persists name/description/destinationId/type/summary/i18n; strips control fields + slug', async () => {
         const entity = makeGastronomyEntity();
@@ -366,9 +362,7 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
                 'Una descripción base actualizada por el propio dueño del comercio para su ficha.', // HOS-166 D-1 — must persist
             destinationId: '00000000-0000-4000-a000-0000000000ff', // HOS-166 D-1 — must persist
             slug: 'forged-slug', // immutable post-create (OQ-3) — stripped
-            lifecycleState: LifecycleStatusEnum.ARCHIVED, // control field — stripped
-            visibility: VisibilityEnum.PRIVATE, // control field — stripped
-            moderationState: ModerationStatusEnum.REJECTED, // control field — stripped
+            publicationStatus: PublicationStatusEnum.MODERATED, // control field — stripped
             ownerId: '00000000-0000-4000-a000-0000000000fe' // control field — stripped
         };
 
@@ -387,13 +381,7 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
         expect(updatePayload.destinationId).toBe(payload.destinationId);
 
         // Control fields + immutable slug are still stripped by the owner-update schema.
-        for (const forbidden of [
-            'slug',
-            'lifecycleState',
-            'visibility',
-            'moderationState',
-            'ownerId'
-        ]) {
+        for (const forbidden of ['slug', 'publicationStatus', 'ownerId']) {
             expect(updatePayload).not.toHaveProperty(forbidden);
         }
     });
@@ -564,7 +552,7 @@ describe('GastronomyService._canView', () => {
         // deindex) instead of NOT_FOUND (404, never existed) — but only because
         // this listing was PUBLIC (indexable) before deletion.
         const entity = makeGastronomyEntity({
-            visibility: VisibilityEnum.PUBLIC,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -580,7 +568,7 @@ describe('GastronomyService._canView', () => {
         // A PRIVATE listing was never publicly discoverable, so its deletion
         // must stay a uniform 404 (never distinguishable from never-existed).
         const entity = makeGastronomyEntity({
-            visibility: VisibilityEnum.PRIVATE,
+            publicationStatus: PublicationStatusEnum.DRAFT,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -594,7 +582,7 @@ describe('GastronomyService._canView', () => {
 
     it('should allow staff with GASTRONOMY_VIEW_ALL to view deleted entities', () => {
         const entity = makeGastronomyEntity({
-            visibility: VisibilityEnum.PUBLIC,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -618,7 +606,7 @@ describe('GastronomyService.ENTITY_NAME', () => {
 // ---------------------------------------------------------------------------
 
 describe('GastronomyService public search visibility filter (AC-6.2)', () => {
-    it('forces visibility=PUBLIC + lifecycleState=ACTIVE on public search (no hidden-listing leak)', async () => {
+    it('forces publicationStatus=PUBLISHED on public search (no hidden-listing leak)', async () => {
         const service = makeService(makeGastronomyEntity());
         const model = (service as AnyService).model;
         await service.search(otherUserActor, { page: 1, pageSize: 10 });
@@ -626,8 +614,7 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
         expect(model.findAllWithRelations).toHaveBeenCalled();
         expect(model.findAllWithRelations.mock.calls[0][1]).toMatchObject({
             deletedAt: null,
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 
@@ -637,8 +624,7 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
         await service.count(otherUserActor, { page: 1, pageSize: 10 });
         expect(model.count).toHaveBeenCalled();
         expect(model.count.mock.calls[0][0]).toMatchObject({
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 });
@@ -733,7 +719,7 @@ describe('GastronomyService._executeSearch — B7a regression (destination relat
         );
     });
 
-    it('preserves the AC-6.2 security invariant (visibility=PUBLIC + lifecycleState=ACTIVE + deletedAt=null) in the where argument', async () => {
+    it('preserves the AC-6.2 security invariant (publicationStatus=PUBLISHED + deletedAt=null) in the where argument', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
@@ -745,8 +731,7 @@ describe('GastronomyService._executeSearch — B7a regression (destination relat
         // arg[1] is the where object in findAllWithRelations
         expect(mockFindAllWithRelations.mock.calls[0]?.[1]).toMatchObject({
             deletedAt: null,
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         // Scalar filters from caller are forwarded too
         expect(mockFindAllWithRelations.mock.calls[0]?.[1]).toMatchObject({

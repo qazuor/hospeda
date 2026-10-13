@@ -16,7 +16,6 @@ import {
     checkCanEditAll,
     checkCanEditOwn,
     checkCanEditOwnOrAll,
-    checkCanModerateListing,
     checkCanModerateReview,
     checkCanViewAll
 } from '../../../src/services/listing/listing.permissions';
@@ -258,15 +257,6 @@ describe('HOS-1077 per-vertical permission split', () => {
             );
         });
 
-        it('rejects EXPERIENCE_MODERATION_CHANGE on a gastronomy check', () => {
-            expectForbidden(() =>
-                checkCanModerateListing(
-                    makeActor([PermissionEnum.EXPERIENCE_MODERATION_CHANGE]),
-                    'gastronomy'
-                )
-            );
-        });
-
         it('rejects a gastronomy owner editing their own experience-vertical row', () => {
             expectForbidden(() =>
                 checkCanEditOwn(
@@ -300,15 +290,6 @@ describe('HOS-1077 per-vertical permission split', () => {
                 )
             ).not.toThrow();
         });
-
-        it('accepts EXPERIENCE_MODERATION_CHANGE on an experience listing', () => {
-            expect(() =>
-                checkCanModerateListing(
-                    makeActor([PermissionEnum.EXPERIENCE_MODERATION_CHANGE]),
-                    'experience'
-                )
-            ).not.toThrow();
-        });
     });
 
     describe('one vertical does NOT grant the other — the whole point of HOS-1077', () => {
@@ -329,15 +310,6 @@ describe('HOS-1077 per-vertical permission split', () => {
                 checkCanModerateReview(
                     makeActor([PermissionEnum.GASTRONOMY_MODERATE_REVIEW]),
                     'experience'
-                )
-            );
-        });
-
-        it('EXPERIENCE_MODERATION_CHANGE is refused on a gastronomy listing', () => {
-            expectForbidden(() =>
-                checkCanModerateListing(
-                    makeActor([PermissionEnum.EXPERIENCE_MODERATION_CHANGE]),
-                    'gastronomy'
                 )
             );
         });

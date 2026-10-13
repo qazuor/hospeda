@@ -19,8 +19,8 @@ import type { AccommodationModel, RAccommodationAmenityModel, UserModel } from '
 import {
     AccommodationTypeEnum,
     DestinationTypeEnum,
-    LifecycleStatusEnum,
     PriceCurrencyEnum,
+    PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -174,7 +174,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-001',
                 ownerId: 'user-001',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -279,13 +279,13 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(result.error).toBeDefined();
         });
 
-        it('forces ownerId to actor.id and lifecycleState to DRAFT (defense in depth)', async () => {
+        it('forces ownerId to actor.id and writes no publication state (born DRAFT by the model)', async () => {
             // Arrange
             const actor = createActor({ id: 'user-002' });
             const created = createMockAccommodation({
                 id: 'acc-002',
                 ownerId: 'user-002',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -297,7 +297,10 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(createCalls).toHaveLength(1);
             const payload = createCalls[0]?.[0];
             expect(payload.ownerId).toBe('user-002');
-            expect(payload.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            // V6.9b (HOS-1641): only the publication machine writes the state;
+            // the model's birth columns make the row DRAFT.
+            expect(payload).not.toHaveProperty('publicationStatus');
+            expect(payload).not.toHaveProperty('lifecycleState');
             expect(payload.lastWarnedAt).toBeNull();
             expect(payload.createdById).toBe('user-002');
         });
@@ -314,7 +317,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-created',
                 ownerId: 'user-003',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -374,7 +377,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-host-new',
                 ownerId: 'user-host',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -398,7 +401,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-host-second-draft',
                 ownerId: 'user-host-draft',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -624,7 +627,7 @@ describe('AccommodationService.createForOnboarding', () => {
             const created = createMockAccommodation({
                 id: 'acc-minimal',
                 ownerId: 'user-minimal',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                publicationStatus: PublicationStatusEnum.DRAFT
             });
             (accommodationModel.create as Mock).mockResolvedValue(created);
 
@@ -644,7 +647,7 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(payload.price).toBeUndefined();
             expect(payload.contactInfo).toBeUndefined();
             // Required forced fields are still set
-            expect(payload.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            expect(payload).not.toHaveProperty('publicationStatus');
             expect(payload.ownerId).toBe('user-minimal');
         });
     });

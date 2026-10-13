@@ -104,7 +104,7 @@ const ENTITY: TestEntity = {
     type: 'RESTAURANT',
     ownerId: OWNER_ID,
     destinationId: DEST_ID_CITY,
-    lifecycleState: 'ACTIVE'
+    publicationStatus: 'PUBLISHED'
 } as TestEntity;
 
 const createSchema = z.object({

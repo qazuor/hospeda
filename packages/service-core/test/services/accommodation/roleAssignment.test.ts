@@ -24,7 +24,7 @@
  */
 
 import type { AccommodationModel, UserModel } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PublicationStatusEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Mock } from 'vitest';
 
 // HOS-1499: every listing write now runs in a transaction and records the
@@ -246,33 +246,33 @@ describe('AccommodationService.update — HOST grant on ACTIVE transition', () =
     function arrangeUpdate(params: {
         id: string;
         ownerId: string;
-        initialState: LifecycleStatusEnum;
-        finalState: LifecycleStatusEnum;
+        initialState: PublicationStatusEnum;
+        finalState: PublicationStatusEnum;
     }): void {
         const existing = createMockAccommodation({
             id: params.id,
             ownerId: params.ownerId,
-            lifecycleState: params.initialState
+            publicationStatus: params.initialState
         });
         asMock(accommodationModel.findById).mockResolvedValue(existing);
         asMock(accommodationModel.update).mockResolvedValue(
-            createMockAccommodation({ ...existing, lifecycleState: params.finalState })
+            createMockAccommodation({ ...existing, publicationStatus: params.finalState })
         );
     }
 
-    it('grants HOST to the owner when the accommodation becomes ACTIVE', async () => {
+    it('grants HOST to the owner when the updated accommodation is PUBLISHED', async () => {
         // Arrange
         const actor = createAdminActor();
         arrangeUpdate({
             id: 'acc-001',
             ownerId: 'owner-001',
-            initialState: LifecycleStatusEnum.DRAFT,
-            finalState: LifecycleStatusEnum.ACTIVE
+            initialState: PublicationStatusEnum.DRAFT,
+            finalState: PublicationStatusEnum.PUBLISHED
         });
 
         // Act
         const result = await service.update(actor, 'acc-001', {
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            summary: 'An edited summary for the accommodation.'
         });
 
         // Assert
@@ -287,21 +287,22 @@ describe('AccommodationService.update — HOST grant on ACTIVE transition', () =
     });
 
     it.each([
-        LifecycleStatusEnum.DRAFT,
-        LifecycleStatusEnum.ARCHIVED
+        PublicationStatusEnum.DRAFT,
+        PublicationStatusEnum.ARCHIVED,
+        PublicationStatusEnum.MODERATED
     ])('does NOT grant when the accommodation lands on %s', async (finalState) => {
         // Arrange
         const actor = createAdminActor();
         arrangeUpdate({
             id: `acc-${finalState}`,
             ownerId: `owner-${finalState}`,
-            initialState: LifecycleStatusEnum.ACTIVE,
+            initialState: PublicationStatusEnum.PUBLISHED,
             finalState
         });
 
         // Act
         const result = await service.update(actor, `acc-${finalState}`, {
-            lifecycleState: finalState
+            summary: 'An edited summary for the accommodation.'
         });
 
         // Assert
@@ -315,8 +316,8 @@ describe('AccommodationService.update — HOST grant on ACTIVE transition', () =
         arrangeUpdate({
             id: 'acc-name',
             ownerId: 'owner-name-update',
-            initialState: LifecycleStatusEnum.DRAFT,
-            finalState: LifecycleStatusEnum.DRAFT
+            initialState: PublicationStatusEnum.DRAFT,
+            finalState: PublicationStatusEnum.DRAFT
         });
 
         // Act
@@ -339,8 +340,8 @@ describe('AccommodationService.update — HOST grant on ACTIVE transition', () =
         arrangeUpdate({
             id: 'acc-grant-fail',
             ownerId: 'owner-grant-fail',
-            initialState: LifecycleStatusEnum.DRAFT,
-            finalState: LifecycleStatusEnum.ACTIVE
+            initialState: PublicationStatusEnum.DRAFT,
+            finalState: PublicationStatusEnum.PUBLISHED
         });
         grantRoleMock.mockResolvedValue({
             error: new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'grant exploded')
@@ -348,7 +349,7 @@ describe('AccommodationService.update — HOST grant on ACTIVE transition', () =
 
         // Act
         const result = await service.update(actor, 'acc-grant-fail', {
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            summary: 'An edited summary for the accommodation.'
         });
 
         // Assert
@@ -361,13 +362,13 @@ describe('AccommodationService.update — HOST grant on ACTIVE transition', () =
         arrangeUpdate({
             id: 'acc-forbidden',
             ownerId: 'owner-forbidden',
-            initialState: LifecycleStatusEnum.DRAFT,
-            finalState: LifecycleStatusEnum.ACTIVE
+            initialState: PublicationStatusEnum.DRAFT,
+            finalState: PublicationStatusEnum.PUBLISHED
         });
 
         // Act
         const result = await service.update(actor, 'acc-forbidden', {
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            summary: 'An edited summary for the accommodation.'
         });
 
         // Assert

@@ -12,7 +12,7 @@
  * and projects `cityDestination` onto each summary, mirroring `_afterList`.
  */
 import type { AccommodationMediaModel, AccommodationModel } from '@repo/db';
-import { PermissionEnum, VisibilityEnum } from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import {
@@ -103,12 +103,12 @@ describe('AccommodationService.compareByIds() (HOS-85)', () => {
             createMockAccommodation({
                 id: ACC_ID_1,
                 destinationId: DESTINATION_ID,
-                visibility: VisibilityEnum.PUBLIC
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             }),
             createMockAccommodation({
                 id: ACC_ID_2,
                 destinationId: DESTINATION_ID,
-                visibility: VisibilityEnum.PUBLIC
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             })
         ];
         findByIdsMock.mockResolvedValue(accommodations);
@@ -146,12 +146,12 @@ describe('AccommodationService.compareByIds() (HOS-85)', () => {
         const accommodation = createMockAccommodation({
             id: ACC_ID_1,
             destinationId: DESTINATION_ID,
-            visibility: VisibilityEnum.PUBLIC
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         const otherAccommodation = createMockAccommodation({
             id: ACC_ID_2,
             destinationId: DESTINATION_ID,
-            visibility: VisibilityEnum.PUBLIC
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         findByIdsMock.mockResolvedValue([accommodation, otherAccommodation]);
         destinationFindByIdsMock.mockResolvedValue([]); // destination row missing/deleted

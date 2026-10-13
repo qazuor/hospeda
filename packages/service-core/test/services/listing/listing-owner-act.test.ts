@@ -87,13 +87,13 @@ describe('buildListingOwnerActChanges', () => {
     // TEST:V9a:2 (unit) — AC:V9a:2
     it('keeps only the NAME of a content field and old/new of a state field', () => {
         const { changes } = buildListingOwnerActChanges({
-            before: { description: 'texto viejo', lifecycleState: 'ACTIVE' },
-            payload: { description: 'texto nuevo', lifecycleState: 'INACTIVE' }
+            before: { description: 'texto viejo', publicationStatus: 'PUBLISHED' },
+            payload: { description: 'texto nuevo', publicationStatus: 'DRAFT' }
         });
 
         expect(changes).toEqual([
             { field: 'description' },
-            { field: 'lifecycleState', old: 'ACTIVE', new: 'INACTIVE' }
+            { field: 'publicationStatus', old: 'PUBLISHED', new: 'DRAFT' }
         ]);
         expect(JSON.stringify(changes)).not.toContain('texto');
     });
@@ -120,10 +120,10 @@ describe('buildListingOwnerActChanges', () => {
 
     it('omits unchanged fields and bookkeeping keys on an edit', () => {
         const { changes } = buildListingOwnerActChanges({
-            before: { summary: 'igual', visibility: 'PUBLIC' },
+            before: { summary: 'igual', publicationStatus: 'PUBLISHED' },
             payload: {
                 summary: 'igual',
-                visibility: 'PUBLIC',
+                publicationStatus: 'PUBLISHED',
                 updatedById: OWNER_ID,
                 refreshSlugFromName: true
             }
@@ -143,10 +143,10 @@ describe('buildListingOwnerActChanges', () => {
 
     it('on a create, stores the new value of a state field and no old one', () => {
         const { changes } = buildListingOwnerActChanges({
-            payload: { name: 'Mi ficha', lifecycleState: 'DRAFT' }
+            payload: { name: 'Mi ficha', publicationStatus: 'DRAFT' }
         });
 
-        expect(changes).toEqual([{ field: 'lifecycleState', new: 'DRAFT' }, { field: 'name' }]);
+        expect(changes).toEqual([{ field: 'name' }, { field: 'publicationStatus', new: 'DRAFT' }]);
     });
 });
 

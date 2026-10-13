@@ -147,8 +147,7 @@ function buildService(ownerId: string = OWNER_ID) {
         findById: vi.fn().mockResolvedValue({
             id: ACCOMMODATION_ID,
             ownerId,
-            visibility: 'PRIVATE',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         })
     };
     return new AccommodationService({} as ServiceConfig, accommodationModel as never);

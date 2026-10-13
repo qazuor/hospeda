@@ -120,10 +120,8 @@ describe('AccommodationService.searchWithRelations', () => {
             amenities: undefined,
             isFeatured: undefined,
             isAvailable: undefined,
-            excludeRestricted: false,
-            excludeOwnerSuspended: false,
-            excludePlanRestricted: false,
-            activeOnly: false
+            // A non-owner, staff included, reads PUBLISHED only (AC:V5:5, HOS-1641)
+            publishedOnly: true
         });
     });
 
@@ -193,10 +191,8 @@ describe('AccommodationService.searchWithRelations', () => {
             amenities: undefined,
             isFeatured: undefined,
             isAvailable: undefined,
-            excludeRestricted: false,
-            excludeOwnerSuspended: false,
-            excludePlanRestricted: false,
-            activeOnly: false
+            // A non-owner, staff included, reads PUBLISHED only (AC:V5:5, HOS-1641)
+            publishedOnly: true
         });
     });
 
@@ -237,10 +233,8 @@ describe('AccommodationService.searchWithRelations', () => {
             amenities: undefined,
             isFeatured: undefined,
             isAvailable: undefined,
-            excludeRestricted: false,
-            excludeOwnerSuspended: false,
-            excludePlanRestricted: false,
-            activeOnly: false
+            // A non-owner, staff included, reads PUBLISHED only (AC:V5:5, HOS-1641)
+            publishedOnly: true
         });
     });
 
@@ -295,7 +289,7 @@ describe('AccommodationService.searchWithRelations', () => {
                 minBedrooms: 1,
                 minBathrooms: 1,
                 minRating: 4,
-                excludeRestricted: false
+                publishedOnly: true
             })
         );
     });
@@ -317,19 +311,19 @@ describe('AccommodationService.searchWithRelations', () => {
         expect(afterSearchSpy).toHaveBeenCalled();
     });
 
-    // SPEC-143 #29 — service-suspension public filter
-    it('excludes service-suspended owners for a non-VIP searcher', async () => {
+    // AC:V5:5 (HOS-1641) — PUBLISHED-only public filter
+    it('reads PUBLISHED listings only for a non-owner searcher', async () => {
         asMock(model.searchWithRelations).mockResolvedValue(paginatedWithRelations([]));
         const nonVip = createActor({ permissions: [] });
 
         await service.searchWithRelations(nonVip, { page: 1, pageSize: 10 });
 
         expect(model.searchWithRelations).toHaveBeenCalledWith(
-            expect.objectContaining({ excludeOwnerSuspended: true })
+            expect.objectContaining({ publishedOnly: true })
         );
     });
 
-    it('lets an owner see their OWN service-suspended listings (ownerId === self)', async () => {
+    it('lets an owner see their OWN listings in every state (ownerId === self)', async () => {
         asMock(model.searchWithRelations).mockResolvedValue(paginatedWithRelations([]));
         const host = createActor({ permissions: [] });
 
@@ -340,7 +334,7 @@ describe('AccommodationService.searchWithRelations', () => {
         });
 
         expect(model.searchWithRelations).toHaveBeenCalledWith(
-            expect.objectContaining({ excludeOwnerSuspended: false })
+            expect.objectContaining({ publishedOnly: false })
         );
     });
 });
