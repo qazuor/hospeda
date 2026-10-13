@@ -22,6 +22,7 @@ import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
+import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import { resolveLiveCommitmentReuse } from './resolve-live-commitment';
 
@@ -42,6 +43,11 @@ export interface BeforeCancelNotice {
         readonly kind?: 'TOURIST_VIP_INHERITED' | 'ARREARS_SUSPENSION';
         /** The occurrence of the fact that decided the cancellation; defaults to the subscription id. */
         readonly occurrenceId?: string;
+        /**
+         * What the notice says. Only `ARREARS_SUSPENSION` carries it (AC:B7:30):
+         * the tourist losses, one-time addon days, how to come back and the promo line.
+         */
+        readonly content?: ArrearsSuspensionNoticeContent;
     }): Promise<BeforeCancelNoticeStatus>;
 }
 
