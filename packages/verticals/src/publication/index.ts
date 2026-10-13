@@ -1,4 +1,5 @@
 export * from './archive-inactive-listing';
+export * from './archive-notices';
 export * from './coverage-recalculation';
 export * from './coverage-reconciler';
 export * from './coverage-reconciler-types';

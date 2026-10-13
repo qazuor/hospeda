@@ -32,6 +32,7 @@ import {
     BrevoEmailTransport,
     createBillingSignupRenderers,
     createEmailClient,
+    createListingArchivedRenderers,
     createOutboxMailRenderer,
     createOutboxOptOutReader,
     createTrialCampaignRenderers,
@@ -79,7 +80,8 @@ export function buildOutboxSenderRender(input: {
             ...createVerticalListingRenderers({
                 siteUrl: input.siteUrl,
                 readListingNames: input.readListingNames ?? readListingNames
-            })
+            }),
+            ...createListingArchivedRenderers({ siteUrl: input.siteUrl })
         }
     });
 }
