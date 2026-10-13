@@ -69,6 +69,7 @@ export * from './billing/coverage/can-charge.js';
 export * from './billing/coverage/coverage-loss.js';
 export * from './billing/coverage/coverage-notice-registry.js';
 export * from './billing/coverage/coverage-ports.js';
+export * from './billing/coverage/retention-stopped.js';
 export * from './billing/coverage/subscription-sources.js';
 export * from './billing/deadlines/billing-deadlines.service.js';
 export * from './billing/notice/process-provider-notice.service.js';
