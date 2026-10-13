@@ -10,6 +10,7 @@ import {
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
 import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
+import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
@@ -65,7 +66,10 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             beforeCancelNotice,
                             payments: creditedPaymentsFromLedger,
                             planPolicy,
-                            coverageNotices: getCoverageNotices()
+                            coverageNotices: getCoverageNotices(),
+                            // AC:B7:31: a charged period settled on a SUSPENDED row runs S7, whose
+                            // clause cancels a paid Tourist VIP the restored plan grants again.
+                            touristVipInheritance
                         })
                     ],
                     // B11.8's second zero-call check (Coord-74, HOS-1561 H11): the open S19

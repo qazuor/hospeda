@@ -40,10 +40,13 @@ function adjustableClock() {
 export async function paymentFixture({
     honestM8 = true,
     withoutRP12 = true,
+    inheritsTouristVip = false,
     simulate
 }: {
     readonly honestM8?: boolean;
     readonly withoutRP12?: boolean;
+    /** Whether the seeded plan version inherits Tourist VIP (AC:B7:30); `false` by default. */
+    readonly inheritsTouristVip?: boolean;
     readonly simulate?: readonly {
         readonly simulation: 'noticesOutOfOrder';
         readonly why: string;
@@ -73,8 +76,8 @@ export async function paymentFixture({
     if (!planId) throw new Error('payment fixture plan missing');
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
-            "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip) VALUES ($1, 'accommodation', $2, true, true, 0, false, false) RETURNING id",
-            [planId, Math.floor(Math.random() * 1_000_000_000)]
+            "INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause, inherits_tourist_vip) VALUES ($1, 'accommodation', $2, true, true, 0, false, $3) RETURNING id",
+            [planId, Math.floor(Math.random() * 1_000_000_000), inheritsTouristVip]
         )
     ).rows[0]?.id;
     if (!versionId) throw new Error('payment fixture version missing');
