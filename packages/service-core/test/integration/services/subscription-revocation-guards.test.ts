@@ -356,6 +356,58 @@ describe('TEST:B5:11 AC:B5:20 two revocations of the same row at once', () => {
             .where(eq(refunds.paymentId, f.payment!.id));
         expect(rows).toHaveLength(1);
     });
+
+    it.skipIf(live)(
+        '(k4) an RF1 for the total committed by another flow while S36 waits: no second RF1',
+        async () => {
+            // Arrange: another transaction holds the payment and inserts its own REQUESTED
+            const f = await revocationFixture();
+            f.at(f.day(5));
+            const actor = await seedRevocationActor();
+            const other = await getServiceTestPool().connect();
+            let outcome: PromiseSettledResult<unknown>;
+            try {
+                await other.query('BEGIN');
+                await other.query('SELECT id FROM payment WHERE id = $1 FOR UPDATE', [
+                    f.payment!.id
+                ]);
+                await other.query(
+                    "INSERT INTO refund (payment_id, amount, reason, status) VALUES ($1, 10000, 'REVOCATION', 'REQUESTED')",
+                    [f.payment!.id]
+                );
+                const pid = (await other.query<{ pid: number }>('SELECT pg_backend_pid() AS pid'))
+                    .rows[0]?.pid;
+                const running = revoke(f, actor).then(
+                    (value) => ({ status: 'fulfilled' as const, value }),
+                    (reason: unknown) => ({ status: 'rejected' as const, reason })
+                );
+                for (let poll = 0; poll < 100; poll++) {
+                    const parked = await getServiceTestPool().query<{ parked: number }>(
+                        'SELECT count(*)::int AS parked FROM pg_stat_activity WHERE $1 = ANY (pg_blocking_pids(pid))',
+                        [pid]
+                    );
+                    if ((parked.rows[0]?.parked ?? 0) >= 1) break;
+                    await new Promise((resolve) => setTimeout(resolve, 50));
+                }
+                await other.query('COMMIT');
+                outcome = await running;
+            } finally {
+                other.release();
+            }
+
+            // Assert: S36 sees the committed claim and rejects; one REQUESTED, the other flow's
+            expect(outcome).toMatchObject({
+                status: 'rejected',
+                reason: { reason: 'REFUND_EXCEEDS_BALANCE' }
+            });
+            const rows = await getServiceTestDb()
+                .select()
+                .from(refunds)
+                .where(eq(refunds.paymentId, f.payment!.id));
+            expect(rows).toHaveLength(1);
+            expect((await untouchedState(f)).status).toBe('ACTIVE');
+        }
+    );
 });
 
 describe('TEST:B5:11 AC:B5:20 (t) the confirmation says the three things and writes nothing', () => {
@@ -415,4 +467,25 @@ describe('TEST:B5:11 AC:B5:20 (t) the confirmation says the three things and wri
             })
         ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
     });
+
+    for (const status of ['REFUNDED', 'CHARGED_BACK'] as const) {
+        it.skipIf(live)(
+            `(k) a ${status} last payment: the preview rejects too, before any RF1 is tried`,
+            async () => {
+                const f = await revocationFixture();
+                await seedCreditedPayment({
+                    subscriptionId: f.subscriptionId,
+                    factAt: new Date(CHARGE_DAY_0.getTime() + DAY_MS),
+                    status
+                });
+                f.at(f.day(5));
+                await expect(
+                    previewSubscriptionRevocation(
+                        { actor: await seedRevocationActor(), subscriptionId: f.subscriptionId },
+                        { clock: f.fixture.clock }
+                    )
+                ).rejects.toMatchObject({ reason: 'PAYMENT_NOT_REFUNDABLE' });
+            }
+        );
+    }
 });
