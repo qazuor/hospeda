@@ -152,6 +152,17 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 'Turista VIP',
                 'a «Destacado» le quedan 10 días.'
             ]
+        },
+        {
+            // AC:B7:31: the email S2's and S7's clause sends before cancelling an inherited VIP.
+            template: 'billing.tourist-vip-inherited-cancel',
+            payload: { subscriptionId },
+            expected: [
+                'Tu plan ya te da los beneficios de Turista VIP',
+                'No se te va a volver a cobrar',
+                'lo ya pagado no se reembolsa',
+                'Mercado Pago'
+            ]
         }
     ])('renders $template through the production sender', async ({
         template,
