@@ -2059,6 +2059,14 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/users/:id/close-on-request"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/users/:id/close-on-request"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/users/:id/effective-set"
         },
         {

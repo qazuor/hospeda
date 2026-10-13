@@ -4,6 +4,10 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { adminUserBatchRoute } from './batch';
+import {
+    adminAccountClosurePreviewRoute,
+    adminCloseAccountOnRequestRoute
+} from './close-on-request';
 import { adminCreateUserRoute } from './create';
 import { adminDeleteUserRoute } from './delete';
 import { adminGetUserEffectiveSetRoute } from './effective-set';
@@ -74,6 +78,16 @@ app.route('/', adminSetTrustedEditorRoute);
 app.route('/', adminGetUserRolesRoute);
 app.route('/', adminGrantUserRoleRoute);
 app.route('/', adminRevokeUserRoleRoute);
+
+// Administrative action 24, close an account at its owner's request (ACC:24,
+// HOS-1494). Registered BEFORE the /:id routes, like the sub-paths above. The
+// read and the closure share path AND permission (USER_CLOSE_ON_REQUEST) on
+// purpose: route middlewares are per path and method-agnostic, so one gate
+// covers both.
+// GET  /:id/close-on-request
+// POST /:id/close-on-request
+app.route('/', adminAccountClosurePreviewRoute);
+app.route('/', adminCloseAccountOnRequestRoute);
 
 // POST / - Create user
 app.route('/', adminCreateUserRoute);
