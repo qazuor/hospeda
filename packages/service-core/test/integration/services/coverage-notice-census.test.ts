@@ -31,6 +31,7 @@ import {
     recordingCoverageNotices,
     seedCensusChoice
 } from './support/coverage-notice-fixtures';
+import { graceWithFailedCycle } from './support/grace-fixtures';
 import { billingDeadlineValues } from './support/payment-fixtures';
 import { namespaceFake } from './support/payment-provider';
 import {
@@ -515,6 +516,39 @@ describe('TEST:B4:2 coverage notice census — every billing coverage writer not
             await expect(call).rejects.toThrow('succession closer failed inside the transaction');
             expect(seen).toEqual([]);
             expect(await committedSubscriptionStatus(started.subscriptionId)).toBe('ACTIVE');
+        });
+    });
+
+    describe('(f) S7 — a late payment reactivates a SUSPENDED row (HOS-1560)', () => {
+        it('recordChargeFact of the late approved retry emits ADDED once the row is committed ACTIVE', async () => {
+            // Arrange: a card principal in grace by a failed cycle the provider approves on attempt 2,
+            // left SUSPENDED with its unpaid-period anchor while its authorization stays active (H6).
+            const fixture = await graceWithFailedCycle({ approveOnAttempt: 2 });
+            seededUserIds.push(fixture.user.id);
+            const subscriptionId = fixture.started.subscriptionId;
+            await getServiceTestPool().query(
+                "UPDATE subscription SET status = 'SUSPENDED' WHERE id = $1",
+                [subscriptionId]
+            );
+            fixture.advanceToAttempt(2);
+            const { coverageNotices, seen } = recordingCoverageNotices(() =>
+                committedSubscriptionStatus(subscriptionId)
+            );
+
+            // Act
+            const result = await recordChargeFact(
+                { chargeId: fixture.chargeId },
+                { ...fixture.ports, coverageNotices }
+            );
+
+            // Assert
+            expect(result).toMatchObject({
+                outcome: 'CREDITED',
+                reactivation: { outcome: 'REACTIVATED', subscriptionId, destination: 'ACTIVE' }
+            });
+            expect(seen).toEqual([
+                { event: noticeFor(fixture.user.id, 'ADDED'), committed: 'ACTIVE' }
+            ]);
         });
     });
 });
