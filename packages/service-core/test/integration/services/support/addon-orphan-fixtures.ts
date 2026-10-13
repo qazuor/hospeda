@@ -1,7 +1,8 @@
 /**
  * Fixtures for the addon orphanhood, A5 and S21 (HOS-1545, B5.6). Every helper writes through
  * the transaction it receives, so a test run inside `withServiceTestTransaction` leaves no row
- * behind. Reuses `coverage-fixtures.ts` without editing it.
+ * behind; `seedCommittedOrphans` is the exception (it commits, for the provider half) and
+ * `retireCommittedOrphanRows` cleans it. Reuses `coverage-fixtures.ts` without editing it.
  */
 import type { ListingResponse } from '@repo/billing-verticals-contract';
 import {
@@ -9,7 +10,9 @@ import {
     addonProducts,
     type DrizzleClient,
     domainEventModel,
+    emailOutbox,
     eq,
+    inArray,
     payments,
     providerLinks,
     reconciliationMarks,
@@ -17,11 +20,13 @@ import {
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
+import type { FakePaymentProvider } from '@repo/payments/fake';
 import { expect } from 'vitest';
 import type {
     AddonOrphanhoodPorts,
     LiveAnchorReader
 } from '../../../../src/services/billing/addon/addon-orphanhood-ports';
+import { getServiceTestDb } from '../helpers';
 import {
     addonPolicyFromTx,
     seedCoverageAddon,
@@ -328,4 +333,104 @@ export async function expectOrphaned(
     const decisions = await readDecisions(tx, seeded.complementId);
     expect(decisions).toHaveLength(1);
     expect(decisions[0]?.reason).toBe('A5');
+}
+
+const committedInstances: string[] = [];
+const committedSubscriptions: string[] = [];
+const committedUsers: string[] = [];
+
+/**
+ * Takes every COMMITTED orphan row out of the live populations and drops its mail (HOS-1545,
+ * corrida 2, where the provider call goes after the commit): instances and subscriptions end
+ * `CANCELLED` without a grace clock, and the outbox rows of the seeded owners are deleted.
+ */
+export async function retireCommittedOrphanRows(): Promise<void> {
+    const db = getServiceTestDb();
+    const instances = committedInstances.splice(0);
+    const subs = committedSubscriptions.splice(0);
+    const people = committedUsers.splice(0);
+    if (instances.length > 0)
+        await db
+            .update(addonInstances)
+            .set({ status: 'CANCELLED' })
+            .where(inArray(addonInstances.id, instances));
+    if (subs.length > 0) {
+        await db.delete(subscriptionPauses).where(inArray(subscriptionPauses.subscriptionId, subs));
+        await db
+            .update(subscriptions)
+            .set({ status: 'CANCELLED', graceStartedAt: null, graceEndsAt: null })
+            .where(inArray(subscriptions.id, subs));
+    }
+    if (people.length > 0)
+        await db.delete(emailOutbox).where(inArray(emailOutbox.recipientUserId, people));
+}
+
+/**
+ * COMMITTED rows for the provider half of A5: an owner, a PRINCIPAL already `CANCELLED` (it
+ * left the live rows) and `count` ACTIVE VERTICAL_SUBSCRIPTION instances on it, each with its
+ * own ACTIVE card complement linked to a real, approved preapproval of the fake. Random ids;
+ * {@link retireCommittedOrphanRows} takes them out after each test.
+ */
+export async function seedCommittedOrphans(input: {
+    readonly fake: FakePaymentProvider;
+    readonly count?: number;
+}): Promise<{
+    readonly userId: string;
+    readonly principalId: string;
+    readonly addons: readonly {
+        readonly instanceId: string;
+        readonly complementId: string;
+        readonly authorizationId: string;
+    }[];
+}> {
+    const authorizationIds: string[] = [];
+    for (let i = 0; i < (input.count ?? 1); i++) {
+        const { authorizationId } = await input.fake.authorize({
+            reference: `orphan-${crypto.randomUUID()}`,
+            amount: { amountMinor: 500000, currency: 'ARS' },
+            cadence: { everyMonths: 1 },
+            reason: 'addon orphanhood provider fixture',
+            returnUrl: 'https://example.test/return',
+            payerEmail: `payer-${crypto.randomUUID()}@example.test`
+        });
+        await input.fake.approve({ authorizationId });
+        authorizationIds.push(authorizationId);
+    }
+    return getServiceTestDb().transaction(async (raw) => {
+        const tx = raw as unknown as DrizzleClient;
+        const { userId } = await seedOrphanOwner(tx);
+        committedUsers.push(userId);
+        const { subscriptionId: principalId } = await seedPrincipal(tx, {
+            userId,
+            vertical: ORPHAN_VERTICAL,
+            status: 'CANCELLED'
+        });
+        committedSubscriptions.push(principalId);
+        const addons = [];
+        for (const authorizationId of authorizationIds) {
+            const { subscriptionId: complementId } = await seedComplement(tx, {
+                userId,
+                vertical: ORPHAN_VERTICAL,
+                status: 'ACTIVE',
+                withLink: false
+            });
+            committedSubscriptions.push(complementId);
+            await tx.insert(providerLinks).values({
+                subscriptionId: complementId,
+                provider: 'MERCADO_PAGO',
+                providerId: authorizationId
+            });
+            const { instanceId } = await seedOrphanInstance(tx, {
+                ownerId: userId,
+                scopeType: 'VERTICAL_SUBSCRIPTION',
+                compatibleVerticals: [ORPHAN_VERTICAL],
+                status: 'ACTIVE',
+                targetId: principalId,
+                complementSubscriptionId: complementId
+            });
+            committedInstances.push(instanceId);
+            addons.push({ instanceId, complementId, authorizationId });
+        }
+        return { userId, principalId, addons };
+    });
 }
