@@ -65,6 +65,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         })
                     ],
                     zeroCallChecks: {},
+                    // AC:B11:6: retry our decided cancellations for 3 days, then mark 16.
+                    cancellationRetry: { beforeCancelNotice },
                     livenessPing: createSentryCronMonitorPing()
                 }
             );

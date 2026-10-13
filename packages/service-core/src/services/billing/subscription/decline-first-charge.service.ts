@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
 import {
     and,
@@ -14,6 +15,7 @@ import { VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
+import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { enqueueSignupDeclinedNotice } from './signup-declined-notice';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
@@ -192,6 +194,19 @@ export async function declineFirstCharge(
             .where(and(eq(subscriptions.id, subscription.id), eq(subscriptions.status, 'ACTIVE')))
             .returning();
         if (!updated) return null;
+        // S16 decided the cancellation; with the re-read already `cancelled` there was no call to
+        // confirm, so only a sent, failed or deferred call enters the sweep's retry (AC:B11:6).
+        if (cancelCall !== 'NOT_NEEDED') {
+            await recordProviderCancellationDecided({
+                subscriptionId: subscription.id,
+                transition: 'S16',
+                decidedAt: declinedAt,
+                actor: { type: 'provider' },
+                correlationId: randomUUID(),
+                changes: [{ field: 'status', old: 'ACTIVE', new: 'CHARGE_DECLINED' }],
+                tx
+            });
+        }
         const subject = { userId: updated.userId, vertical: updated.vertical };
 
         await enqueueSignupDeclinedNotice({
