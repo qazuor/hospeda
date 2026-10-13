@@ -5,6 +5,7 @@ import {
     ADMINISTRATIVE_ACTION_PERMISSION_SET,
     ADMINISTRATIVE_ACTION_PERMISSIONS,
     ADMINISTRATIVE_ACTIONS,
+    isAdministrativeActionPermitted,
     RETIRING_ADMINISTRATIVE_PERMISSIONS,
     SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET
 } from '../../src/authorization/administrative-actions';
@@ -104,17 +105,48 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
-    it('TEST:V8a:10 keeps the four retiring delete permissions forbidden to a system actor', () => {
-        const retiring = [
-            PermissionEnum.ACCOMMODATION_DELETE_ANY,
-            PermissionEnum.ACCOMMODATION_HARD_DELETE,
-            PermissionEnum.GASTRONOMY_DELETE,
-            PermissionEnum.EXPERIENCE_DELETE
-        ];
-        expect(RETIRING_ADMINISTRATIVE_PERMISSIONS.map((entry) => entry.permission)).toEqual(
-            retiring
+    it('TEST:V8a:15 assigns ACC_24 only its own close-on-request permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_24).toEqual({
+            permissions: [PermissionEnum.USER_CLOSE_ON_REQUEST],
+            pendingOwnPermission: null
+        });
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.USER_CLOSE_ON_REQUEST)).toBe(
+            true
         );
-        for (const permission of retiring) {
+    });
+
+    it('TEST:V8a:15 opens ACC_24 only with its own permission, and never another action', () => {
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_24',
+                actorPermissions: [PermissionEnum.USER_DELETE, PermissionEnum.USER_HARD_DELETE]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_24',
+                actorPermissions: [PermissionEnum.USER_CLOSE_ON_REQUEST]
+            })
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_23',
+                actorPermissions: [PermissionEnum.USER_CLOSE_ON_REQUEST]
+            })
+        ).toBe(false);
+    });
+
+    it('TEST:V8a:10 TEST:V8a:15 keeps the six retiring delete permissions forbidden to a system actor', () => {
+        const retiring = [
+            { permission: PermissionEnum.ACCOMMODATION_DELETE_ANY, formerAction: 'ACC_23' },
+            { permission: PermissionEnum.ACCOMMODATION_HARD_DELETE, formerAction: 'ACC_23' },
+            { permission: PermissionEnum.GASTRONOMY_DELETE, formerAction: 'ACC_23' },
+            { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
+            { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
+            { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' }
+        ];
+        expect(RETIRING_ADMINISTRATIVE_PERMISSIONS).toEqual(retiring);
+        for (const { permission } of retiring) {
             expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(permission)).toBe(false);
             expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(permission)).toBe(true);
         }
