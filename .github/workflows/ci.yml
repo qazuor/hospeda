@@ -819,7 +819,9 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 20 was the ceiling until the HOS-1352 wave 18: the job ran 14.6-19.6 min
+    # and was cut five times in one night with every test already passed.
+    timeout-minutes: 30
     needs: build
 
     services:
