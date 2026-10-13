@@ -19,6 +19,7 @@ import {
     type CancellationSeenAnnotator,
     noCancellationSeenAnnotation,
     noCreditedPayments,
+    recordAuthorizationSeenAlive,
     recordCancellationSeen,
     type SubscriptionPayments,
     type SuccessionCloser,
@@ -120,6 +121,11 @@ export async function declineFirstCharge(
         });
         cancelCall = 'NOT_NEEDED';
     } else {
+        await recordAuthorizationSeenAlive({
+            annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+            subscriptionId: subscription.id,
+            seenAt: authorization.readAt
+        });
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: subscription.id,
             userId: subscription.userId ?? ''
@@ -155,6 +161,12 @@ export async function declineFirstCharge(
             const confirmed = await rereadAuthorization();
             if (confirmed.status === 'cancelled')
                 await recordCancellationSeen({
+                    annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                    subscriptionId: subscription.id,
+                    seenAt: confirmed.readAt
+                });
+            else
+                await recordAuthorizationSeenAlive({
                     annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
                     subscriptionId: subscription.id,
                     seenAt: confirmed.readAt

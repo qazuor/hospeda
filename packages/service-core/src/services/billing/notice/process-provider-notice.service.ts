@@ -35,6 +35,7 @@ import {
     type FirstChargeReader,
     noCancellationSeenAnnotation,
     noCreditedPayments,
+    recordAuthorizationSeenAlive,
     recordCancellationSeen,
     type SubscriptionPayments,
     type SuccessionCloser,
@@ -154,6 +155,12 @@ export async function processProviderNotice(
         const { snapshot, readAt } = assertFreshForAct({ read, act });
         if (snapshot.status === 'cancelled')
             await recordCancellationSeen({
+                annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                subscriptionId: link.subscriptionId,
+                seenAt: readAt
+            });
+        else
+            await recordAuthorizationSeenAlive({
                 annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
                 subscriptionId: link.subscriptionId,
                 seenAt: readAt

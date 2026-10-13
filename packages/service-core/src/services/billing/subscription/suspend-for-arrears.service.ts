@@ -11,6 +11,7 @@ import {
     noCancellationSeenAnnotation,
     noRetainedPeriodPayment,
     type RetainedPeriodPayment,
+    recordAuthorizationSeenAlive,
     recordCancellationSeen
 } from './subscription-billing-ports';
 
@@ -211,6 +212,11 @@ export async function suspendForArrears(
         });
         cancelCall = 'NOT_NEEDED';
     } else {
+        await recordAuthorizationSeenAlive({
+            annotator,
+            subscriptionId: subscription.id,
+            seenAt: authorization.readAt
+        });
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: subscription.id,
             userId: subscription.userId ?? '',
@@ -252,6 +258,12 @@ export async function suspendForArrears(
             const confirmed = await rereadAuthorization();
             if (confirmed.status === 'cancelled')
                 await recordCancellationSeen({
+                    annotator,
+                    subscriptionId: subscription.id,
+                    seenAt: confirmed.readAt
+                });
+            else
+                await recordAuthorizationSeenAlive({
                     annotator,
                     subscriptionId: subscription.id,
                     seenAt: confirmed.readAt
