@@ -187,7 +187,7 @@ export function createOurCancellationRetryTally() {
         add(outcome: OurCancellationRetryOutcome): void {
             counts[COUNT_KEY[outcome]]++;
         },
-        snapshot(): OurCancellationRetryCounts {
+        totals(): OurCancellationRetryCounts {
             return { ...counts };
         }
     };
@@ -245,5 +245,5 @@ export async function runOurCancellationRetry(
         if (page.length < input.pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }
-    return { ...tally.snapshot(), rowsRead, rowsFailed: failures.length, failures };
+    return { ...tally.totals(), rowsRead, rowsFailed: failures.length, failures };
 }

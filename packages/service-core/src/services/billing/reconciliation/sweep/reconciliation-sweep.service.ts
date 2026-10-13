@@ -170,7 +170,7 @@ export async function runReconciliationSweep(
         rowsRead += pass.rowsRead;
         rowsFailed += pass.rowsFailed;
         failures.push(...pass.failures);
-        const live = retryTally.snapshot();
+        const live = retryTally.totals();
         cancellationRetry = {
             stopped: live.stopped + pass.stopped,
             confirmed: live.confirmed + pass.confirmed,
