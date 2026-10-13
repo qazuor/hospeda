@@ -178,15 +178,15 @@ async function suspensionFixture({
 
 describe('TEST:B7:5 — S6 when the grace clock runs out (AC:B7:7)', () => {
     it.skipIf(!isServiceTestDbAvailable())(
-        'a — suspends, empties the clock, cancels once and emits REMOVED after commit',
+        'a — suspends, keeps the clock as the unpaid-period anchor, cancels once and emits REMOVED after commit',
         async () => {
             const s = await suspensionFixture();
             await s.runCheck();
 
             const row = await subscriptionRow(s.subscriptionId);
             expect(row.status).toBe('SUSPENDED');
-            expect(row.graceStartedAt).toBeNull();
-            expect(row.graceEndsAt).toBeNull();
+            expect(row.graceStartedAt).toEqual(s.graceStartedAt);
+            expect(row.graceEndsAt).toEqual(s.graceEndsAt);
             expect(s.cancel).toHaveBeenCalledTimes(1);
             expect(await s.authorizationStatus()).toBe('cancelled');
             expect(s.beforeCancel).toHaveBeenCalledTimes(1);
