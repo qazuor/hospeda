@@ -214,6 +214,43 @@ describe('GET /api/v1/public/conversations/guest/:token', () => {
         expect(body.data.hasMore).toBe(false);
     });
 
+    // ── Listing availability (HOS-1492, rows 28 and 35) ─────────────────────────
+
+    it.each([
+        ['PUBLISHED', 'AVAILABLE'],
+        ['PURGED', 'GONE'],
+        ['DRAFT', 'NOT_PUBLISHED']
+    ])('TEST:V8a:6 a %s listing reads listingAvailability %s with every message', async (status, expected) => {
+        // Arrange
+        mockFindAccommodation.mockResolvedValue({
+            ...MOCK_ACCOMMODATION,
+            publicationStatus: status
+        });
+        mockValidateToken.mockResolvedValueOnce({
+            data: {
+                conversationId: CONVERSATION_ID,
+                revokedAt: null,
+                expiresAt: new Date(Date.now() + 1_000_000)
+            },
+            error: undefined
+        });
+        mockGetThread.mockResolvedValueOnce({
+            data: { conversation: MOCK_CONVERSATION, messages: MOCK_MESSAGES, hasMore: false },
+            error: undefined
+        });
+
+        // Act
+        const res = await app.request('/guest/valid-raw-token-32chars-xxxxxxxxxxx');
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = (await res.json()) as {
+            data: { messages: unknown[]; listingAvailability: string };
+        };
+        expect(body.data.listingAvailability).toBe(expected);
+        expect(body.data.messages).toHaveLength(MOCK_MESSAGES.length);
+    });
+
     // ── Token expired ─────────────────────────────────────────────────────────
 
     it('returns 401 with reason TOKEN_EXPIRED when token is expired', async () => {

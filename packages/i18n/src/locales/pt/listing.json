@@ -329,6 +329,58 @@
             "notRestored": "Estes anúncios não puderam voltar: {{listings}}.",
             "criterion": "Volta primeiro o anúncio que caiu por último, até preencher as vagas. Anúncios do sistema antigo que nunca foram publicados aqui vêm primeiro, pela data de criação mais antiga.",
             "nothingDeleted": "Os anúncios que não voltaram continuam aqui; nenhum é apagado."
-        }
+        },
+        "reason": "Motivo: {{reason}}",
+        "purgedByInactivity": {
+            "title": "Anúncio apagado por inatividade",
+            "body": "Este anúncio existiu, e o seu conteúdo foi apagado por inatividade."
+        },
+        "purgedFromModeration": {
+            "title": "Anúncio apagado",
+            "body": "Este anúncio foi apagado enquanto estava moderado.",
+            "what": "Foram apagados os textos, as fotos, as perguntas frequentes e os horários."
+        },
+        "purged": {
+            "title": "Anúncio apagado",
+            "body": "Este anúncio foi apagado."
+        },
+        "neverReturns": "Ele não volta: a exclusão é definitiva.",
+        "archived": {
+            "title": "Anúncio arquivado",
+            "nothingDeleted": "Nada foi apagado: o anúncio está arquivado e não aparece no site.",
+            "recurring_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado mesmo arquivado, até você cancelá-lo.",
+            "recurring_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo arquivado, até você cancelá-los.",
+            "canSeeAndExport": "Você continua vendo o anúncio e pode exportá-lo.",
+            "returnsOnItsOwn": "Ele volta sozinho quando você recuperar a cobertura, ou quando as vagas voltarem a ser suficientes, se houver lugar para ele.",
+            "backToDraft": "Você pode trazê-lo de volta para rascunho quando quiser, sem pagar.",
+            "deletionDate": "Se continuar arquivado, o seu conteúdo será apagado a partir de {{date}}."
+        },
+        "moderated": {
+            "title": "Anúncio moderado",
+            "hidden": "Não aparece no site até que um admin retire a moderação.",
+            "canDo": "Enquanto isso você pode vê-lo, exportá-lo, editá-lo e apagá-lo, mas não publicá-lo.",
+            "recurring_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado até você cancelá-lo.",
+            "recurring_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados até você cancelá-los."
+        },
+        "fixRequest": {
+            "title": "Pediram uma correção neste anúncio",
+            "suggestedDate": "Data sugerida para corrigir: {{date}}.",
+            "stillVisible": "O seu anúncio continua visível enquanto isso.",
+            "button": "Já corrigi",
+            "reported": "Você avisou que corrigiu em {{date}}.",
+            "error": "Não foi possível registrar o seu aviso. Tente novamente."
+        },
+        "lifted": {
+            "title": "A moderação foi retirada",
+            "returnedTo": {
+                "PUBLISHED": "Voltou a estar publicado.",
+                "DRAFT": "Voltou para rascunho.",
+                "UNPUBLISHED_BY_BILLING": "Ficou sem publicar, porque hoje a sua assinatura não tem lugar para ele. Nada foi apagado.",
+                "ARCHIVED": "Continua arquivado, como estava."
+            },
+            "draftIsYours": "Publicá-lo é decisão sua.",
+            "fixRequestOpen": "O pedido de correção continua aberto."
+        },
+        "surplusTitle": "Anúncio despublicado pelo limite do seu plano"
     }
 }

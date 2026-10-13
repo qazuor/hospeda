@@ -5,3 +5,4 @@ export * from './email-outbox-suppression.js';
 export * from './email-provider-bounce.js';
 export * from './listing-archived-renderers.js';
 export * from './trial-campaign-renderers.js';
+export * from './vertical-listing-renderers.js';

@@ -219,3 +219,32 @@
         justify-content: flex-start;
     }
 }
+
+/* ─── Closed alerts (HOS-1492, V8a row 27) ────────────────────────────────── */
+
+.alertsGroups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+.alertsGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.alertsGroupHeading {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.alertsItemClosed {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}

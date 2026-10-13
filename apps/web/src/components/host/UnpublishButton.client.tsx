@@ -56,6 +56,18 @@ export interface UnpublishButtonProps {
     readonly confirmNo: string;
     /** Error message shown on API failure (already-translated). */
     readonly errorText: string;
+    /**
+     * Row 2 (HOS-1492): "the free trial keeps running", already-translated.
+     * Passed by the card only when the listing-notices read says the trial is
+     * running; absent otherwise (or when the read failed).
+     */
+    readonly trialNote?: string;
+    /**
+     * Row 25 (HOS-1492): the recurring boosts on this listing keep being
+     * charged while unpublished, already-translated. Passed only when the read
+     * counted any.
+     */
+    readonly recurringNote?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -78,7 +90,9 @@ export function UnpublishButton({
     confirmText,
     confirmYes,
     confirmNo,
-    errorText
+    errorText,
+    trialNote,
+    recurringNote
 }: UnpublishButtonProps): JSX.Element {
     const [state, setState] = useState<UnpublishState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
@@ -161,6 +175,22 @@ export function UnpublishButton({
                 >
                     {confirmText}
                 </span>
+                {trialNote && (
+                    <span
+                        className={styles.note}
+                        data-testid="unpublish-trial-note"
+                    >
+                        {trialNote}
+                    </span>
+                )}
+                {recurringNote && (
+                    <span
+                        className={styles.note}
+                        data-testid="unpublish-recurring-note"
+                    >
+                        {recurringNote}
+                    </span>
+                )}
                 <button
                     type="button"
                     className={styles.danger}

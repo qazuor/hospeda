@@ -1,0 +1,55 @@
+---
+/**
+ * @file ListingGoneNotice.astro
+ * @description Rows 28 and 35 of a conversation thread (HOS-1492, V8a.1b):
+ * what the thread says when the listing it is about no longer admits new
+ * messages from the viewer.
+ *
+ * - `GONE` (row 28, both inboxes): the listing reached `PURGED` — "this
+ *   listing no longer exists".
+ * - `NOT_PUBLISHED` (row 35, the tourist's inbox only): the listing stopped
+ *   being published without reaching `PURGED` — the tourist cannot write about
+ *   it for now. It deliberately does NOT say why (draft, archived, moderated or
+ *   unpublished by billing): answering that is what precision 7 denies anyone
+ *   who is not the owner.
+ * - `AVAILABLE`: renders nothing.
+ *
+ * Server-rendered, no island and no fetch: the thread page hands in the
+ * `listingAvailability` the API resolved. The component decides nothing; the
+ * copy per availability is an exhaustive `Record`.
+ */
+import type { ConversationListingAvailability } from '@repo/schemas';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import styles from './ListingGoneNotice.module.css';
+
+interface Props {
+	/** Page locale. */
+	readonly locale: SupportedLocale;
+	/** Availability of the listing for new messages, as the thread read resolved it. */
+	readonly availability: ConversationListingAvailability;
+}
+
+/** The copy per availability; `null` renders nothing. */
+const NOTICE_KEY_BY_AVAILABILITY: Readonly<Record<ConversationListingAvailability, string | null>> = {
+	AVAILABLE: null,
+	NOT_PUBLISHED: 'conversations.thread.listingAvailability.notPublished',
+	GONE: 'conversations.thread.listingAvailability.gone'
+};
+
+const { locale, availability } = Astro.props;
+const { t } = createTranslations(locale);
+const noticeKey = NOTICE_KEY_BY_AVAILABILITY[availability];
+---
+
+{
+	noticeKey && (
+		<p
+			class={styles.notice}
+			role="status"
+			data-testid="listing-gone-notice"
+			data-listing-availability={availability}
+		>
+			{t(noticeKey)}
+		</p>
+	)
+}
