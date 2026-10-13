@@ -1,9 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
 import { getDb, subscriptionModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
+import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { activatePendingWithSignupNotice } from './activate-pending-with-signup-notice.js';
 import {
     cancelInheritedTouristVips,
@@ -135,10 +137,11 @@ export async function expireAuthorizationWindows(
             }
         }
 
+        const abandonedAt = ports.clock.now();
         const result = await getDb().transaction(async (tx) => {
             const wrote = await subscriptionModel.abandonPendingAuthorization({
                 subscriptionId: subscription.id,
-                now: ports.clock.now(),
+                now: abandonedAt,
                 tx
             });
             if (wrote.wrote) {
@@ -147,6 +150,21 @@ export async function expireAuthorizationWindows(
                     subscription,
                     closedCourtesyMonths: wrote.closedCourtesyMonths
                 });
+                // S3 decided the cancellation even when the notice deferred the call: the sweep
+                // finishes it (AC:B11:6). A manual payer had no call, so it records nothing.
+                if (subscription.paymentMethod !== 'MANUAL' && providerLink) {
+                    await recordProviderCancellationDecided({
+                        subscriptionId: subscription.id,
+                        transition: 'S3',
+                        decidedAt: abandonedAt,
+                        actor: { type: 'job' },
+                        correlationId: randomUUID(),
+                        changes: [
+                            { field: 'status', old: 'PENDING_AUTHORIZATION', new: 'ABANDONED' }
+                        ],
+                        tx
+                    });
+                }
             }
             return wrote;
         });

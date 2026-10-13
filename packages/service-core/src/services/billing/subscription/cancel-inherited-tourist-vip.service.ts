@@ -1,9 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
-import { touristVipModel } from '@repo/db';
+import { getDb, touristVipModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { VerticalEnum } from '@repo/schemas';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
+import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import type { BeforeCancelNotice } from './start-subscription.service';
 
 const logger = createLogger('cancel-inherited-tourist-vip');
@@ -46,6 +48,7 @@ export async function cancelInheritedTouristVips(
     for (const row of rows) {
         const { subscription, providerLink } = row;
         let closed: boolean;
+        let called = false;
         try {
             if (providerLink) {
                 const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
@@ -71,11 +74,31 @@ export async function cancelInheritedTouristVips(
                         );
                     }
                     await ports.provider.cancel({ authorizationId: providerLink.providerId });
+                    called = true;
                 }
             }
-            closed = await touristVipModel.closeCancelledVip({
-                subscriptionId: subscription.id,
-                now: ports.clock.now()
+            const closedAt = ports.clock.now();
+            closed = await getDb().transaction(async (tx) => {
+                const wrote = await touristVipModel.closeCancelledVip({
+                    subscriptionId: subscription.id,
+                    now: closedAt,
+                    tx
+                });
+                // Our call cancelled its own preapproval and nobody re-reads it: the sweep retries
+                // it as the twelfth row (H3 → b, Coord-289; AC:B11:6). No link or an already
+                // cancelled re-read means no call, so nothing is recorded.
+                if (wrote && called) {
+                    await recordProviderCancellationDecided({
+                        subscriptionId: subscription.id,
+                        transition: 'TOURIST_VIP_INHERITED',
+                        decidedAt: closedAt,
+                        actor: { type: 'job' },
+                        correlationId: randomUUID(),
+                        changes: [{ field: 'status', new: 'CANCELLED' }],
+                        tx
+                    });
+                }
+                return wrote;
             });
         } catch (error) {
             logger.error(
