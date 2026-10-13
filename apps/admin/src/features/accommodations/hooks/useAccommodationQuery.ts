@@ -334,29 +334,6 @@ export const useVerifyAccommodationMutation = (id: string) => {
 };
 
 /**
- * Mutation hook for deleting accommodations
- */
-export const useDeleteAccommodationMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (id: string): Promise<void> => {
-            await fetchApi({
-                path: `/api/v1/admin/accommodations/${id}`,
-                method: 'DELETE'
-            });
-        },
-        onSuccess: (_, deletedId) => {
-            // Remove from cache
-            queryClient.removeQueries({ queryKey: accommodationQueryKeys.detail(deletedId) });
-
-            // Invalidate lists
-            queryClient.invalidateQueries({ queryKey: invalidateAccommodationLists() });
-        }
-    });
-};
-
-/**
  * Hook for async field uniqueness validation.
  *
  * Unlike a hook-factory returning a callback that itself calls `useQuery`
