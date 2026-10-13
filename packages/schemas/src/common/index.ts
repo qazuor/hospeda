@@ -2,6 +2,8 @@
 // Foundation schemas (Phase 1) - explicit exports to avoid conflicts
 
 // Schemas
+// Administrative action 24, close an account at its owner's request (HOS-1494)
+export * from './account-close-on-request.schema.js';
 export * from './admin.schema.js';
 // Admin search
 export * from './admin-search.schema.js';

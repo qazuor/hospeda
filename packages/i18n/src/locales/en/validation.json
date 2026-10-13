@@ -2059,6 +2059,12 @@
                 "invalid": "The suggested date is not valid"
             }
         },
+        "accountCloseOnRequest": {
+            "reason": {
+                "required": "Write the reason for the account closure.",
+                "max": "The reason cannot exceed 2000 characters."
+            }
+        },
         "listingPurgeOnRequest": {
             "reason": {
                 "required": "Write the reason for the deletion.",

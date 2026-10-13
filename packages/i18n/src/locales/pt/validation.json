@@ -2059,6 +2059,12 @@
                 "invalid": "A data sugerida não é válida"
             }
         },
+        "accountCloseOnRequest": {
+            "reason": {
+                "required": "Escreva o motivo do encerramento da conta.",
+                "max": "O motivo não pode ultrapassar 2000 caracteres."
+            }
+        },
         "listingPurgeOnRequest": {
             "reason": {
                 "required": "Escreva o motivo da exclusão.",

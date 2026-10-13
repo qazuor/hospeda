@@ -2059,6 +2059,12 @@
                 "invalid": "La fecha sugerida no es válida"
             }
         },
+        "accountCloseOnRequest": {
+            "reason": {
+                "required": "Escribí el motivo de la baja.",
+                "max": "El motivo no puede superar los 2000 caracteres."
+            }
+        },
         "listingPurgeOnRequest": {
             "reason": {
                 "required": "Escribí el motivo del borrado.",
