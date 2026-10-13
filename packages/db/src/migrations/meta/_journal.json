@@ -1135,6 +1135,13 @@
       "when": 1791868041726,
       "tag": "0161_v8a3_account_close_on_request",
       "breakpoints": true
+    },
+    {
+      "idx": 162,
+      "version": "7",
+      "when": 1791879532860,
+      "tag": "0162_b55_revocation",
+      "breakpoints": true
     }
   ]
 }
