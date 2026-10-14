@@ -10,7 +10,7 @@ import {
     subscriptions
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
 import { createProviderNoticeMirrorDelegates } from '../../../src/services/billing/notice/provider-notice-delegates.js';
 import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger.js';
@@ -347,6 +347,33 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 AC:B7:11 — el receptor de pausa del prove
                 reason: 'TRANSICION_NO_DECLARADA',
                 liftedAt: null
             });
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        '(i) la relectura por id descarta una pausa que ya volvió a authorized',
+        async () => {
+            const f = await graceFixture();
+            const id = f.started.subscriptionId;
+            seeded.push({ subscriptionIds: [id], userId: f.user.id });
+            await f.provider.failChargeCycle({
+                authorizationId: f.started.authorizationId,
+                declineReason: 'issuer_declined'
+            });
+            await f.provider.pause({ authorizationId: f.started.authorizationId });
+            const originalRead = f.provider.readAuthorization.bind(f.provider);
+            let reads = 0;
+            vi.spyOn(f.provider, 'readAuthorization').mockImplementation(async (input) => {
+                reads += 1;
+                if (reads === 2)
+                    await f.provider.resume({ authorizationId: f.started.authorizationId });
+                return originalRead(input);
+            });
+            const result = await receiver(f);
+            expect(result).toEqual({ ack: 'OK', outcome: 'DELEGATED' });
+            expect(reads).toBe(2);
+            expect((await row(id)).status).toBe('ACTIVE');
+            expect(await arrearsMails(f.user.id)).toHaveLength(0);
         }
     );
 });
