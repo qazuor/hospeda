@@ -38,6 +38,7 @@ import {
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
+    subscriptionServiceEndJob,
     subscriptionWindowExpiryJob,
     trialMachineExpiryJob,
     viewMonthlyRollupJob
@@ -76,6 +77,7 @@ export const cronJobs: CronJobDefinition[] = [
     hostTradeStatsReconcileJob,
     hostTradeUsageExpiryJob,
     hostTradeUsageReminderJob,
+    subscriptionServiceEndJob,
     subscriptionWindowExpiryJob,
     trialMachineExpiryJob,
     entityViewsPurgeJob,

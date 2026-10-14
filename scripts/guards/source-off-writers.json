@@ -144,5 +144,21 @@
         "effect": "neutral",
         "via": null,
         "reason": "S21 cancels a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL)"
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
+        "symbol": "applyS12ToPrincipal",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S12 moves a PRINCIPAL CANCEL_SCHEDULED whose service_ends_at passed to CANCELLED (AC:B8a:5); the coverage notice is emitted after commit by emitServiceEndRemoved."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
+        "symbol": "applyS12ToComplement",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S12 closes a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL); its instance turns off through applyA5."
     }
 ]
