@@ -15,6 +15,7 @@ export * from './plan-change-confirmation.js';
 export * from './plan-price-change-notice.js';
 export * from './purchase-confirmation.js';
 export * from './renewal-reminder.js';
+export * from './renewal-upcoming.js';
 export * from './revocation-cancel.js';
 export * from './scheduled-cancellation.js';
 export * from './signup-before-cancel.js';

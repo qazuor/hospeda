@@ -1,5 +1,5 @@
 {
-  "id": "a106fdbe-e607-4816-bbd6-925ed6adc063",
+  "id": "51fa012c-7ff3-49c9-bf1c-9fd1ec2f82e5",
   "prevId": "5f4385a6-9a5b-45a1-8029-0dae873edf7c",
   "version": "7",
   "dialect": "postgresql",
@@ -27219,12 +27219,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "title_anchor_id": {
-          "name": "title_anchor_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "order_request_id": {
           "name": "order_request_id",
           "type": "varchar(64)",
@@ -27328,19 +27322,6 @@
           "tableTo": "subscription",
           "columnsFrom": [
             "complement_subscription_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "addon_instance_title_anchor_id_permanent_grant_vertical_id_fk": {
-          "name": "addon_instance_title_anchor_id_permanent_grant_vertical_id_fk",
-          "tableFrom": "addon_instance",
-          "tableTo": "permanent_grant_vertical",
-          "columnsFrom": [
-            "title_anchor_id"
           ],
           "columnsTo": [
             "id"
@@ -28419,255 +28400,6 @@
         "ck_payment_version": {
           "name": "ck_payment_version",
           "value": "\"payment\".\"version\" >= 1"
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.permanent_grant_vertical": {
-      "name": "permanent_grant_vertical",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "permanent_grant_id": {
-          "name": "permanent_grant_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "vertical": {
-          "name": "vertical",
-          "type": "varchar(32)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "plan_id": {
-          "name": "plan_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "floor_plan_version_id": {
-          "name": "floor_plan_version_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "permanent_grant_vertical_permanent_grant_id_permanent_grant_id_fk": {
-          "name": "permanent_grant_vertical_permanent_grant_id_permanent_grant_id_fk",
-          "tableFrom": "permanent_grant_vertical",
-          "tableTo": "permanent_grant",
-          "columnsFrom": [
-            "permanent_grant_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "fk_permanent_grant_vertical_plan": {
-          "name": "fk_permanent_grant_vertical_plan",
-          "tableFrom": "permanent_grant_vertical",
-          "tableTo": "plan",
-          "columnsFrom": [
-            "plan_id",
-            "vertical"
-          ],
-          "columnsTo": [
-            "id",
-            "vertical"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "fk_permanent_grant_vertical_floor": {
-          "name": "fk_permanent_grant_vertical_floor",
-          "tableFrom": "permanent_grant_vertical",
-          "tableTo": "plan_version",
-          "columnsFrom": [
-            "floor_plan_version_id",
-            "plan_id"
-          ],
-          "columnsTo": [
-            "id",
-            "plan_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "uq_permanent_grant_vertical_grant_vertical": {
-          "name": "uq_permanent_grant_vertical_grant_vertical",
-          "nullsNotDistinct": false,
-          "columns": [
-            "permanent_grant_id",
-            "vertical"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.permanent_grant": {
-      "name": "permanent_grant",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "beneficiary_user_id": {
-          "name": "beneficiary_user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "includes_addons": {
-          "name": "includes_addons",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "granted_by": {
-          "name": "granted_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "affected_subscription_ids": {
-          "name": "affected_subscription_ids",
-          "type": "uuid[]",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'"
-        },
-        "revoked_at": {
-          "name": "revoked_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "revoked_by": {
-          "name": "revoked_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "revocation_reason": {
-          "name": "revocation_reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "uq_permanent_grant_live_beneficiary": {
-          "name": "uq_permanent_grant_live_beneficiary",
-          "columns": [
-            {
-              "expression": "beneficiary_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "where": "revoked_at IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "permanent_grant_beneficiary_user_id_users_id_fk": {
-          "name": "permanent_grant_beneficiary_user_id_users_id_fk",
-          "tableFrom": "permanent_grant",
-          "tableTo": "users",
-          "columnsFrom": [
-            "beneficiary_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "permanent_grant_granted_by_users_id_fk": {
-          "name": "permanent_grant_granted_by_users_id_fk",
-          "tableFrom": "permanent_grant",
-          "tableTo": "users",
-          "columnsFrom": [
-            "granted_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "permanent_grant_revoked_by_users_id_fk": {
-          "name": "permanent_grant_revoked_by_users_id_fk",
-          "tableFrom": "permanent_grant",
-          "tableTo": "users",
-          "columnsFrom": [
-            "revoked_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {
-        "ck_permanent_grant_revocation_together": {
-          "name": "ck_permanent_grant_revocation_together",
-          "value": "(\"permanent_grant\".\"revoked_at\" IS NULL AND \"permanent_grant\".\"revoked_by\" IS NULL AND \"permanent_grant\".\"revocation_reason\" IS NULL) OR (\"permanent_grant\".\"revoked_at\" IS NOT NULL AND \"permanent_grant\".\"revoked_by\" IS NOT NULL AND \"permanent_grant\".\"revocation_reason\" IS NOT NULL AND btrim(\"permanent_grant\".\"revocation_reason\") <> '')"
         }
       },
       "isRLSEnabled": false
@@ -31131,6 +30863,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "renewal_notice_deadline_version": {
+          "name": "renewal_notice_deadline_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "renewal_notice_charge_at": {
+          "name": "renewal_notice_charge_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "succeeds_id": {
           "name": "succeeds_id",
           "type": "uuid",
@@ -31244,6 +30988,19 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
+        "subscription_renewal_notice_deadline_version_billing_deadline_version_version_fk": {
+          "name": "subscription_renewal_notice_deadline_version_billing_deadline_version_version_fk",
+          "tableFrom": "subscription",
+          "tableTo": "billing_deadline_version",
+          "columnsFrom": [
+            "renewal_notice_deadline_version"
+          ],
+          "columnsTo": [
+            "version"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
         "subscription_succeeds_id_subscription_id_fk": {
           "name": "subscription_succeeds_id_subscription_id_fk",
           "tableFrom": "subscription",
@@ -31340,6 +31097,10 @@
         "ck_subscription_grace_clock_pair": {
           "name": "ck_subscription_grace_clock_pair",
           "value": "(\"subscription\".\"grace_started_at\" IS NULL AND \"subscription\".\"grace_ends_at\" IS NULL) OR (\"subscription\".\"grace_started_at\" IS NOT NULL AND \"subscription\".\"grace_ends_at\" IS NOT NULL AND \"subscription\".\"grace_ends_at\" >= \"subscription\".\"grace_started_at\")"
+        },
+        "ck_subscription_renewal_notice_pair": {
+          "name": "ck_subscription_renewal_notice_pair",
+          "value": "(\"subscription\".\"renewal_notice_deadline_version\" IS NULL AND \"subscription\".\"renewal_notice_charge_at\" IS NULL) OR (\"subscription\".\"renewal_notice_deadline_version\" IS NOT NULL AND \"subscription\".\"renewal_notice_charge_at\" IS NOT NULL)"
         }
       },
       "isRLSEnabled": false
