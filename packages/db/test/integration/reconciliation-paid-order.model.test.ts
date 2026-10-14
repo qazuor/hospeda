@@ -41,17 +41,27 @@ async function seeder(tx: DrizzleClient) {
             scopeType: 'USER'
         })
         .returning();
+    // A periodic product may not anchor a fixed-days version (ck_addon_product_periodic_not_fixed_days).
+    const [periodicVersion] = await tx
+        .insert(addonVersions)
+        .values({
+            addonId: addon?.id as string,
+            validity: 'WHILE_SUBSCRIPTION_ALIVE',
+            scopeType: 'USER'
+        })
+        .returning();
     const instance = async (input: {
         readonly status?: string;
         readonly chargeKind?: 'UNA_VEZ' | 'PERIODICO';
         readonly key?: { readonly operation?: string; readonly createdAt?: Date } | null;
     }) => {
         const periodic = input.chargeKind === 'PERIODICO';
+        const versionId = (periodic ? periodicVersion?.id : version?.id) as string;
         const [product] = await tx
             .insert(addonProducts)
             .values({
                 addonId: addon?.id as string,
-                versionId: version?.id as string,
+                versionId,
                 price: 100,
                 currency: 'ARS',
                 chargeKind: periodic ? 'PERIODICO' : 'UNA_VEZ',
@@ -63,7 +73,7 @@ async function seeder(tx: DrizzleClient) {
             .insert(addonInstances)
             .values({
                 productId: product?.id as string,
-                addonVersionId: version?.id as string,
+                addonVersionId: versionId,
                 ownerId: user?.id as string,
                 status: input.status ?? 'ABANDONED',
                 orderRequestId: `b114-request-${crypto.randomUUID()}`
