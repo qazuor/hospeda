@@ -23,6 +23,7 @@ import {
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
 import { createProviderNoticeMirrorDelegates } from '../../../src/services/billing/notice/provider-notice-delegates.js';
+import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger.js';
 import type { CoverageNotices } from '../../../src/services/billing/payment/payment-ports.js';
 import { providerLinkCancellationSeen } from '../../../src/services/billing/subscription/provider-link-cancellation-seen.js';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service.js';
@@ -122,6 +123,8 @@ function receive(input: {
         provider: input.fixture.provider,
         clock: input.fixture.clock,
         beforeCancelNotice,
+        payments: creditedPaymentsFromLedger,
+        planPolicy: input.fixture.planPolicy,
         coverageNotices: input.coverageNotices,
         ...(input.successionCloser ? { successionCloser: input.successionCloser } : {})
     };
@@ -254,13 +257,17 @@ describe('TEST:1676:1 CANCELLED_ON_GRACE is registered in the receiver (AC:1676:
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
-        '(iv) H-1: an unregistered pair (paused × ACTIVE, PROVIDER_PAUSE_IS_ARREARS) still answers ERROR',
+        '(iv) B7.3: paused × ACTIVE ⇒ DELEGATED and SUSPENDED by S6',
         async () => {
             // Arrange
             const fixture = await graceFixture();
             const subscriptionId = fixture.started.subscriptionId;
             seeded.push({ subscriptionIds: [subscriptionId], userId: fixture.user.id });
             expect((await subscriptionRow(subscriptionId)).status).toBe('ACTIVE');
+            await fixture.provider.failChargeCycle({
+                authorizationId: fixture.started.authorizationId,
+                declineReason: 'issuer_declined'
+            });
             await fixture.provider.pause({ authorizationId: fixture.started.authorizationId });
 
             // Act
@@ -270,9 +277,28 @@ describe('TEST:1676:1 CANCELLED_ON_GRACE is registered in the receiver (AC:1676:
             });
 
             // Assert
-            expect(result).toEqual({ ack: 'ERROR', outcome: 'FAILED' });
-            expect((await subscriptionRow(subscriptionId)).status).toBe('ACTIVE');
+            expect(result).toEqual({ ack: 'OK', outcome: 'DELEGATED' });
+            expect((await subscriptionRow(subscriptionId)).status).toBe('SUSPENDED');
             expect(await afterRejectionEvents(subscriptionId)).toHaveLength(0);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        '(v) H-1: active × PAUSED (RESUME_MIRROR) stays ERROR',
+        async () => {
+            const fixture = await graceFixture();
+            const subscriptionId = fixture.started.subscriptionId;
+            seeded.push({ subscriptionIds: [subscriptionId], userId: fixture.user.id });
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'PAUSED' })
+                .where(eq(subscriptions.id, subscriptionId));
+            const result = await receive({
+                fixture,
+                delivery: authorizationDelivery(fixture.started.authorizationId)
+            });
+            expect(result).toEqual({ ack: 'ERROR', outcome: 'FAILED' });
+            expect((await subscriptionRow(subscriptionId)).status).toBe('PAUSED');
         }
     );
 });
