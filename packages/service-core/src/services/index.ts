@@ -132,6 +132,7 @@ export * from './billing/subscription/provider-link-cancellation-seen.js';
 export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/revocation-payment.js';
 export * from './billing/subscription/revoke-subscription.service.js';
+export * from './billing/subscription/service-end-s12.js';
 export * from './billing/subscription/signup-confirmed-notice.js';
 export * from './billing/subscription/signup-declined-notice.js';
 export * from './billing/subscription/start-subscription.service.js';
