@@ -14,6 +14,12 @@
  * B9a adds its GRANT case, with the `floor` it carries, to this set when it
  * plugs the grants in (B4 "Lista cuando", clause 3).
  *
+ * The G-R2-C case of the real ADDON source runs here, over seeded rows (B4
+ * "Lista cuando", clause 7; AC:B4:8, AC:B4:10): a `USER` and a `GLOBAL` addon
+ * appear as sources in the vertical their product declares compatible and in
+ * no other. It asserts BOTH halves: a case asserting only the absence would
+ * pass against the bootstrap too, and prove nothing.
+ *
  * Test support, not production, and not a `*.test.ts` file: the closed
  * `include` of the integration config never collects it on its own; the test
  * that registers it decides the harness.
@@ -42,6 +48,14 @@ export interface RealCoverageCaseHarness {
          * with no trial.
          */
         readonly activeSubscription: (args: UserVerticalArgs) => Promise<void>;
+        /**
+         * A live `USER` addon and a live `GLOBAL` addon of that person, both
+         * of products compatible ONLY with `compatibleVertical` (G-R2-C).
+         */
+        readonly compatibleAddons: (args: {
+            userId: string;
+            compatibleVertical: VerticalEnum;
+        }) => Promise<void>;
     };
     /** A person id nobody else in this harness uses. */
     readonly newUserId: () => string;
@@ -52,6 +66,10 @@ const SUBSCRIBED_VERTICAL = VerticalEnum.ACCOMMODATION;
 
 /** A second vertical, where the person holds no subscription. */
 const OTHER_VERTICAL = VerticalEnum.GASTRONOMY;
+
+/** The name of the G-R2-C case (B4 "Lista cuando", clause 7), exact: the exit test looks it up. */
+export const G_R2_C_CASE =
+    'a USER and a GLOBAL addon appear only in the verticals their product declares compatible (G-R2-C)';
 
 /** Asserts the response validates against the contract; returns it typed. */
 function expectValid(args: {
@@ -116,6 +134,33 @@ export function realCoverageCaseSet(
                 response.sources.some((source) => source.type === 'SUBSCRIPTION'),
                 'no SUBSCRIPTION source in a vertical the person did not subscribe in'
             ).toBe(false);
+        });
+
+        it(G_R2_C_CASE, async () => {
+            const h = await makeHarness();
+            const userId = h.newUserId();
+            await h.arrange.compatibleAddons({ userId, compatibleVertical: SUBSCRIBED_VERTICAL });
+
+            const compatible = expectValid({
+                expect,
+                response: await h.subject.coverage({ userId, vertical: SUBSCRIBED_VERTICAL })
+            });
+            const other = expectValid({
+                expect,
+                response: await h.subject.coverage({ userId, vertical: OTHER_VERTICAL })
+            });
+
+            expect(
+                compatible.sources
+                    .filter((source) => source.type === 'ADDON')
+                    .map((source) => source.scope)
+                    .sort(),
+                'a USER and a GLOBAL ADDON source in the vertical their product declares compatible'
+            ).toEqual(['GLOBAL', 'USER']);
+            expect(
+                other.sources.filter((source) => source.type === 'ADDON'),
+                'no ADDON source in a vertical their product does not declare compatible'
+            ).toEqual([]);
         });
     });
 }
