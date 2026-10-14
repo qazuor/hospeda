@@ -242,13 +242,15 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice at 5 and 1 days, w
                     })
                 );
             }
-            await sendRenewalNotices(
+            const run = await sendRenewalNotices(
                 { limit: 50, db: tx },
                 {
                     clock: { now: () => renewalNow('2001-06-26') },
                     readCurrentDeadlines: async () => currentVersion()
                 }
             );
+            expect(run.failed).toBe(0);
+            expect(run.skipped).toBe(0);
             for (const { subscriptionId } of seeded) {
                 const [clock] = await tx
                     .select({ version: subscriptions.renewalNoticeDeadlineVersion })
