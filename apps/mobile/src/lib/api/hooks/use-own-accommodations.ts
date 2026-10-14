@@ -3,7 +3,7 @@
  * @description Hooks for host-scoped accommodation list and single item (SPEC-243 T-041/T-042).
  *
  * List endpoint:   GET /api/v1/protected/accommodations
- *   Query params:  page, pageSize, lifecycleState?, sortBy?, sortOrder?
+ *   Query params:  page, pageSize, publicationStatus?, sortBy?, sortOrder?
  *   Response data: { items: AccommodationProtected[], pagination: { total, page, pageSize, totalPages } }
  *
  * Detail endpoint: GET /api/v1/protected/accommodations/:id
@@ -11,16 +11,13 @@
  *
  * @module lib/api/hooks/use-own-accommodations
  */
-import { AccommodationProtectedSchema } from '@repo/schemas';
+import { AccommodationProtectedSchema, type PublicationStatusEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { useApiQuery } from '../use-api-query';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-/** Lifecycle state filter values accepted by the list endpoint. */
-export type AccommodationLifecycleFilter = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
 /** Sort field options for the list endpoint. */
 export type AccommodationSortBy = 'createdAt' | 'name' | 'updatedAt';
@@ -77,12 +74,36 @@ export interface UseOwnAccommodationsInput {
     readonly page?: number;
     /** Items per page. Defaults to 12. */
     readonly pageSize?: number;
-    /** Filter by lifecycle state. Omit to return all states. */
-    readonly lifecycleState?: AccommodationLifecycleFilter;
+    /** Filter by publication state (HOS-1641). Omit to return all states. */
+    readonly publicationStatus?: PublicationStatusEnum;
     /** Sort field. */
     readonly sortBy?: AccommodationSortBy;
     /** Sort direction. */
     readonly sortOrder?: AccommodationSortOrder;
+}
+
+/**
+ * Builds the query string params of `GET /api/v1/protected/accommodations`.
+ *
+ * The endpoint filters on `publicationStatus`; it no longer knows
+ * `lifecycleState`, and its strict query validation answers 400 to a
+ * parameter it does not declare (HOS-1641).
+ *
+ * @param input - Pagination, filter and sort params.
+ * @returns `{ params }`, only with the keys that were given.
+ */
+export function buildOwnAccommodationsQuery({
+    page = 1,
+    pageSize = 12,
+    publicationStatus,
+    sortBy,
+    sortOrder
+}: UseOwnAccommodationsInput = {}): { readonly params: Record<string, unknown> } {
+    const params: Record<string, unknown> = { page, pageSize };
+    if (publicationStatus) params.publicationStatus = publicationStatus;
+    if (sortBy) params.sortBy = sortBy;
+    if (sortOrder) params.sortOrder = sortOrder;
+    return { params };
 }
 
 /**
@@ -100,17 +121,8 @@ export interface UseOwnAccommodationsInput {
  * data?.items.forEach(item => console.log(item.name));
  * ```
  */
-export function useOwnAccommodations({
-    page = 1,
-    pageSize = 12,
-    lifecycleState,
-    sortBy,
-    sortOrder
-}: UseOwnAccommodationsInput = {}) {
-    const params: Record<string, unknown> = { page, pageSize };
-    if (lifecycleState) params.lifecycleState = lifecycleState;
-    if (sortBy) params.sortBy = sortBy;
-    if (sortOrder) params.sortOrder = sortOrder;
+export function useOwnAccommodations(input: UseOwnAccommodationsInput = {}) {
+    const { params } = buildOwnAccommodationsQuery(input);
 
     return useApiQuery({
         queryKey: ownAccommodationKeys.list(params),

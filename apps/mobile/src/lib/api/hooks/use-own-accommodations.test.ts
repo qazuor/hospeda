@@ -15,6 +15,7 @@
  * - apiFetch success: returns typed data
  */
 
+import { PublicationStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError, ApiSchemaError } from '../errors';
 
@@ -39,7 +40,7 @@ vi.mock('expo-constants', () => ({
 // ---------------------------------------------------------------------------
 
 import { apiFetch } from '../client';
-import { OwnAccommodationsListSchema } from './use-own-accommodations';
+import { buildOwnAccommodationsQuery, OwnAccommodationsListSchema } from './use-own-accommodations';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -88,7 +89,6 @@ const makeAccommodationItem = (_suffix = '001') => ({
     },
     averageRating: 0,
     reviewsCount: 0,
-    visibility: 'PUBLIC',
     seo: null,
     price: null,
     tags: [],
@@ -96,7 +96,7 @@ const makeAccommodationItem = (_suffix = '001') => ({
     ownerId: UUID_OWNER,
     contactInfo: { mobilePhone: '+5411 12345678' },
     socialNetworks: null,
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     faqs: [],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z'
@@ -222,5 +222,40 @@ describe('apiFetch with own accommodations path — error handling', () => {
         expect(data.items).toHaveLength(1);
         expect(data.items[0]?.id).toBe(UUID_ACC);
         expect(data.pagination.pageSize).toBe(12);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Query params (HOS-1641)
+// ---------------------------------------------------------------------------
+
+describe('buildOwnAccommodationsQuery', () => {
+    it('filters on publicationStatus, never on the retired lifecycleState', () => {
+        // Arrange / Act
+        const { params } = buildOwnAccommodationsQuery({
+            publicationStatus: PublicationStatusEnum.MODERATED
+        });
+
+        // Assert
+        expect(params).toEqual({
+            page: 1,
+            pageSize: 12,
+            publicationStatus: PublicationStatusEnum.MODERATED
+        });
+        expect(params).not.toHaveProperty('lifecycleState');
+    });
+
+    it('sends no state filter when none is given', () => {
+        const { params } = buildOwnAccommodationsQuery({ page: 2, pageSize: 5, sortBy: 'name' });
+        expect(params).toEqual({ page: 2, pageSize: 5, sortBy: 'name' });
+    });
+
+    it('an item without publicationStatus fails the protected schema', () => {
+        const { publicationStatus: _omitted, ...item } = makeAccommodationItem();
+        const result = OwnAccommodationsListSchema.safeParse({
+            items: [item],
+            pagination: validPagination
+        });
+        expect(result.success).toBe(false);
     });
 });
