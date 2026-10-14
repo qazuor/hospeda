@@ -108,6 +108,7 @@ export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/reconciliation-divergence.js';
 export * from './billing/reconciliation/sweep/reconciliation-sweep.service.js';
 export * from './billing/reconciliation/sweep/succession-retention-ports.js';
+export * from './billing/reconciliation/sweep/successor-grace-check.js';
 export * from './billing/reconciliation/sweep/sweep-liveness-ping.port.js';
 export * from './billing/reconciliation/sweep/unresolved-period-charge.port.js';
 export * from './billing/reconciliation/sweep/zero-call-checks.service.js';

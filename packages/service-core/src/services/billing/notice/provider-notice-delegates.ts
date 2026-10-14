@@ -1,12 +1,17 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { PaymentProvider } from '@repo/payments';
+import { creditedPaymentsFromLedger } from '../payment/payment-ledger.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
+import { successorProviderCancelledOccurrenceId } from '../reconciliation/sweep/grace-expiry-check.js';
+import { readPayingSuccessorInGrace } from '../subscription/paying-predecessor-successor.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
+    type SubscriptionPayments,
     type SuccessionCloser,
     unimplementedSuccessionCloser
 } from '../subscription/subscription-billing-ports.js';
+import { suspendForArrears } from '../subscription/suspend-for-arrears.service.js';
 import { handleLivePreapprovalOnClosedRow } from './live-preapproval-on-closed-row.js';
 import { mirrorProviderCancellationOnGrace } from './mirror-cancelled-on-grace.js';
 import {
@@ -29,6 +34,8 @@ export interface ProviderNoticeMirrorDelegatesPorts {
     readonly markPayments?: ReconciliationMarkPayments;
     /** S18's interface (B8b); defaults to `unimplementedSuccessionCloser`, like the receiver. */
     readonly successionCloser?: SuccessionCloser;
+    /** The credited-payment read of the AC:B7:4 exception; defaults to the payment ledger. */
+    readonly payments?: SubscriptionPayments;
 }
 
 /**
@@ -37,7 +44,9 @@ export interface ProviderNoticeMirrorDelegatesPorts {
  *
  * - `CANCELLED_ON_GRACE` → {@link mirrorProviderCancellationOnGrace} (branch 5, HOS-1561 H7).
  *   Its `NOT_APPLICABLE` (the row left grace in between: a race) does not throw: the delegate
- *   returns and the receiver answers `DELEGATED`; the function already logs it.
+ *   returns and the receiver answers `DELEGATED`; the function already logs it. Except on
+ *   the successor of a paying predecessor in grace (AC:B7:4, D-8): that row goes to S6 by
+ *   its fifth event (`suspendForArrears`), never to the mirror; a read error throws.
  * - `LIVE_PREAPPROVAL_ON_CLOSED_ROW` → {@link handleLivePreapprovalOnClosedRow} (H-7): retry our
  *   decided cancellation, send the one S16 would have sent on a revived rejection terminal, or
  *   mark the divergence. Its three answers return (the receiver answers `DELEGATED`); it throws
@@ -57,6 +66,32 @@ export function createProviderNoticeMirrorDelegates(
         async delegate(input: MirrorDelegateInput): Promise<void> {
             switch (input.pair) {
                 case 'CANCELLED_ON_GRACE': {
+                    // D-8 (04-catalogos §10.1, B11.md:262): on the successor of a paying
+                    // predecessor that entered grace by S4's successor branch, `cancelled` is
+                    // S6 by its fifth event, not the mirror (AC:B7:4, DEC-SUB-022).
+                    const successor = await readPayingSuccessorInGrace({
+                        subscriptionId: input.subscriptionId,
+                        payments: ports.payments ?? creditedPaymentsFromLedger
+                    });
+                    if (successor !== null) {
+                        await suspendForArrears(
+                            {
+                                subscriptionId: successor.id,
+                                event: 'SUCCESSOR_PROVIDER_CANCELLED',
+                                occurrenceId: successorProviderCancelledOccurrenceId({
+                                    subscriptionId: successor.id,
+                                    graceStartedAt: successor.graceStartedAt
+                                })
+                            },
+                            {
+                                provider: ports.provider,
+                                clock: ports.clock,
+                                beforeCancelNotice: ports.beforeCancelNotice,
+                                coverageNotices: ports.coverageNotices
+                            }
+                        );
+                        return;
+                    }
                     await mirrorProviderCancellationOnGrace(
                         { subscriptionId: input.subscriptionId, readAt: input.readAt },
                         {

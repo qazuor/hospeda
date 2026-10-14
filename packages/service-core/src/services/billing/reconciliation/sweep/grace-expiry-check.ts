@@ -57,6 +57,37 @@ export function graceExpiredOccurrenceId(input: {
 }
 
 /**
+ * The S6 occurrence of the fifth event (AC:B7:4): the preapproval of the successor
+ * of a paying predecessor in grace read `cancelled`. One per grace, shared by the
+ * sweep and the receiver, so the two never enqueue two suspension notices (I-2).
+ *
+ * @param input.subscriptionId - The successor in grace
+ * @param input.graceStartedAt - The instant its grace started
+ * @returns The occurrence id used as the before-cancel notice's dedup occurrence
+ */
+export function successorProviderCancelledOccurrenceId(input: {
+    readonly subscriptionId: string;
+    readonly graceStartedAt: Date;
+}): string {
+    return `${input.subscriptionId}:successor-provider-cancelled:${input.graceStartedAt.toISOString()}`;
+}
+
+/**
+ * The S6 occurrence of the second event (AC:B7:4; B7.3 reuses it): the preapproval
+ * of a row in grace read `paused`. One per grace (I-2).
+ *
+ * @param input.subscriptionId - The row in grace
+ * @param input.graceStartedAt - The instant its grace started
+ * @returns The occurrence id used as the before-cancel notice's dedup occurrence
+ */
+export function providerPauseObservedOccurrenceId(input: {
+    readonly subscriptionId: string;
+    readonly graceStartedAt: Date;
+}): string {
+    return `${input.subscriptionId}:provider-pause-observed:${input.graceStartedAt.toISOString()}`;
+}
+
+/**
  * Settles a period the `B/09` §4 read showed as charged (AC:B7:8, the "re-read
  * of S6" half of AC:B7:6; D-2): re-reads the charge by id, creates its `payment`
  * if missing and runs P1, through `recordChargeFact` with the sweep as the actor

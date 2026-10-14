@@ -20,17 +20,30 @@ import { hasOpenRetention, openSuccessionRetentions } from './succession-retaine
 const logger = createLogger('suspend-for-arrears');
 
 /**
- * The events that move a row to `SUSPENDED` by S6. Only the first one exists
- * today: the grace clock ran out (AC:B7:7). B7.3 and B7.1b add their events here.
+ * The events that move a row to `SUSPENDED` by S6 (TRANS:B:S6, corpus names in
+ * `transition-tables.json`):
+ * - `GRACE_EXPIRED` — first event, the grace clock ran out (AC:B7:7);
+ * - `PROVIDER_PAUSE_OBSERVED` — second event (`provider_pause_observed`), for now
+ *   only the successor of a paying predecessor in grace whose preapproval the
+ *   sweep reads `paused` (AC:B7:4); B7.3 adds the `ACTIVE` origin (AC:B7:9);
+ * - `SUCCESSOR_PROVIDER_CANCELLED` — fifth event (`successor_provider_cancelled`),
+ *   that successor's preapproval read `cancelled` by the sweep or the receiver
+ *   (AC:B7:4, DEC-SUB-022).
  */
-export const SUSPEND_FOR_ARREARS_EVENTS = ['GRACE_EXPIRED'] as const;
+export const SUSPEND_FOR_ARREARS_EVENTS = [
+    'GRACE_EXPIRED',
+    'PROVIDER_PAUSE_OBSERVED',
+    'SUCCESSOR_PROVIDER_CANCELLED'
+] as const;
 
 /** One of the S6 events this service implements. */
 export type SuspendForArrearsEvent = (typeof SUSPEND_FOR_ARREARS_EVENTS)[number];
 
 /** The state each S6 event leaves; the `UPDATE` is guarded by it. */
 const ORIGIN_STATUS_BY_EVENT: Readonly<Record<SuspendForArrearsEvent, 'GRACE_PERIOD'>> = {
-    GRACE_EXPIRED: 'GRACE_PERIOD'
+    GRACE_EXPIRED: 'GRACE_PERIOD',
+    PROVIDER_PAUSE_OBSERVED: 'GRACE_PERIOD',
+    SUCCESSOR_PROVIDER_CANCELLED: 'GRACE_PERIOD'
 };
 
 const inputSchema = z.strictObject({
@@ -187,8 +200,11 @@ export async function writeArrearsSuspension(input: {
 }
 
 /**
- * S6 (AC:B7:7), first event: the grace clock ran out and the `B/09` §4 read did
- * not show a credited charge of the period (the caller decided that). Moves a
+ * S6 (AC:B7:7, AC:B7:4). First event: the grace clock ran out and the `B/09` §4
+ * read did not show a credited charge of the period (the caller decided that).
+ * Second and fifth events (AC:B7:4): the successor of a paying predecessor in
+ * grace whose preapproval was read `paused` or `cancelled` (the caller decided
+ * that from a read by id). Every event moves a
  * `GRACE_PERIOD` card principal to `SUSPENDED` and cancels its authorization in
  * the same act, with S17's re-read rule (DEC-SUB-019):
  *

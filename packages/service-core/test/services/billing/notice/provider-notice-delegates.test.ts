@@ -16,12 +16,27 @@ vi.mock(
     '../../../../src/services/billing/notice/live-preapproval-on-closed-row.js',
     () => liveMock
 );
+const successorMock = vi.hoisted(() => ({
+    readPayingSuccessorInGrace: vi.fn()
+}));
+vi.mock(
+    '../../../../src/services/billing/subscription/paying-predecessor-successor.js',
+    () => successorMock
+);
+const suspendMock = vi.hoisted(() => ({
+    suspendForArrears: vi.fn()
+}));
+vi.mock(
+    '../../../../src/services/billing/subscription/suspend-for-arrears.service.js',
+    () => suspendMock
+);
 
 import { createProviderNoticeMirrorDelegates } from '../../../../src/services/billing/notice/provider-notice-delegates.js';
 import {
     MIRROR_PAIR_IDS,
     type MirrorPairId
 } from '../../../../src/services/billing/notice/provider-notice-ports.js';
+import { creditedPaymentsFromLedger } from '../../../../src/services/billing/payment/payment-ledger.js';
 import type { SuccessionCloser } from '../../../../src/services/billing/subscription/subscription-billing-ports.js';
 import { unimplementedSuccessionCloser } from '../../../../src/services/billing/subscription/subscription-billing-ports.js';
 
@@ -53,9 +68,76 @@ function ports(successionCloser?: SuccessionCloser) {
 beforeEach(() => {
     mirrorMock.mirrorProviderCancellationOnGrace.mockReset();
     liveMock.handleLivePreapprovalOnClosedRow.mockReset();
+    successorMock.readPayingSuccessorInGrace.mockReset();
+    successorMock.readPayingSuccessorInGrace.mockResolvedValue(null);
+    suspendMock.suspendForArrears.mockReset();
 });
 
 describe('createProviderNoticeMirrorDelegates (HOS-1676 H-5)', () => {
+    it('AC:B7:4 routes CANCELLED_ON_GRACE on the successor of a paying predecessor in grace to S6, not the mirror', async () => {
+        // Arrange
+        const graceStartedAt = new Date('2026-10-05T03:00:00.000Z');
+        successorMock.readPayingSuccessorInGrace.mockResolvedValue({
+            id: subscriptionId,
+            graceStartedAt
+        });
+        suspendMock.suspendForArrears.mockResolvedValue({
+            outcome: 'SUSPENDED',
+            subscriptionId,
+            cancelCall: 'NOT_NEEDED'
+        });
+        const built = ports();
+        const delegates = createProviderNoticeMirrorDelegates(built);
+
+        // Act
+        await delegates.delegate({
+            pair: 'CANCELLED_ON_GRACE',
+            subscriptionId,
+            readAt,
+            cancelledSeenAt: null
+        });
+
+        // Assert
+        expect(successorMock.readPayingSuccessorInGrace).toHaveBeenCalledWith({
+            subscriptionId,
+            payments: creditedPaymentsFromLedger
+        });
+        expect(suspendMock.suspendForArrears).toHaveBeenCalledTimes(1);
+        expect(suspendMock.suspendForArrears).toHaveBeenCalledWith(
+            {
+                subscriptionId,
+                event: 'SUCCESSOR_PROVIDER_CANCELLED',
+                occurrenceId: `${subscriptionId}:successor-provider-cancelled:2026-10-05T03:00:00.000Z`
+            },
+            {
+                provider: built.provider,
+                clock,
+                beforeCancelNotice: built.beforeCancelNotice,
+                coverageNotices: undefined
+            }
+        );
+        expect(mirrorMock.mirrorProviderCancellationOnGrace).not.toHaveBeenCalled();
+    });
+
+    it('AC:B7:4 a read error of the successor check throws and neither suspends nor mirrors', async () => {
+        // Arrange
+        successorMock.readPayingSuccessorInGrace.mockRejectedValue(new Error('db down'));
+        const delegates = createProviderNoticeMirrorDelegates(ports());
+
+        // Act
+        const attempt = delegates.delegate({
+            pair: 'CANCELLED_ON_GRACE',
+            subscriptionId,
+            readAt,
+            cancelledSeenAt: null
+        });
+
+        // Assert
+        await expect(attempt).rejects.toThrow('db down');
+        expect(suspendMock.suspendForArrears).not.toHaveBeenCalled();
+        expect(mirrorMock.mirrorProviderCancellationOnGrace).not.toHaveBeenCalled();
+    });
+
     it('routes CANCELLED_ON_GRACE to mirrorProviderCancellationOnGrace with readAt and S18 defaulted', async () => {
         // Arrange
         mirrorMock.mirrorProviderCancellationOnGrace.mockResolvedValue({
@@ -78,6 +160,8 @@ describe('createProviderNoticeMirrorDelegates (HOS-1676 H-5)', () => {
             { subscriptionId, readAt },
             { clock, successionCloser: unimplementedSuccessionCloser, coverageNotices: undefined }
         );
+        // A row in grace that is not the successor of a paying predecessor keeps the mirror.
+        expect(suspendMock.suspendForArrears).not.toHaveBeenCalled();
     });
 
     it('passes an injected S18 through and does not throw on NOT_APPLICABLE (a race)', async () => {

@@ -103,3 +103,58 @@ export async function isSuccessorOfPayingPredecessor({
     if (!payingSuccessorShape({ successor: subscription, predecessor })) return false;
     return payments.hasCreditedPayment({ subscriptionId: predecessor.id, tx });
 }
+
+/** A row the sweep or the receiver may find in grace through the successor branch of S4. */
+export interface PayingSuccessorInGraceCandidate extends PayingSuccessorCandidate {
+    readonly status: string;
+}
+
+/**
+ * Whether the row is in `GRACE_PERIOD` because it entered by the successor branch of
+ * S4 (AC:B7:4, DEC-SUB-022; I-1, derived, no column): a card principal in grace,
+ * with no credited payment of its own, that {@link isSuccessorOfPayingPredecessor}
+ * admits. Only that row has its preapproval re-read every day and is suspended by
+ * S6 (second or fifth event) when the provider paused or cancelled it. A read
+ * error is thrown, never taken as "not that successor".
+ */
+export async function isPayingSuccessorInGrace({
+    subscription,
+    payments,
+    tx
+}: {
+    readonly subscription: PayingSuccessorInGraceCandidate;
+    readonly payments: SubscriptionPayments;
+    readonly tx?: DrizzleClient;
+}): Promise<boolean> {
+    if (subscription.status !== 'GRACE_PERIOD') return false;
+    if (!successorDeclaredFromPayingBase({ successor: subscription })) return false;
+    if (await payments.hasCreditedPayment({ subscriptionId: subscription.id, tx })) return false;
+    return isSuccessorOfPayingPredecessor({ subscription, payments, tx });
+}
+
+/**
+ * Reads the row by id and answers whether it is the successor of a paying
+ * predecessor in grace ({@link isPayingSuccessorInGrace}); the receiver asks this
+ * before mirroring a provider cancellation on grace (D-8).
+ *
+ * @returns The row's id and grace start when it is that successor, else `null`
+ */
+export async function readPayingSuccessorInGrace({
+    subscriptionId,
+    payments,
+    tx
+}: {
+    readonly subscriptionId: string;
+    readonly payments: SubscriptionPayments;
+    readonly tx?: DrizzleClient;
+}): Promise<{ readonly id: string; readonly graceStartedAt: Date } | null> {
+    const db = tx ?? getDb();
+    const [row] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.id, subscriptionId))
+        .limit(1);
+    if (!row || row.graceStartedAt === null) return null;
+    if (!(await isPayingSuccessorInGrace({ subscription: row, payments, tx }))) return null;
+    return { id: row.id, graceStartedAt: row.graceStartedAt };
+}
