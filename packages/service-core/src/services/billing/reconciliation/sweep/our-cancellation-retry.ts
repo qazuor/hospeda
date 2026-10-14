@@ -22,6 +22,7 @@ import {
 import { openReconciliationMark } from '../open-reconciliation-mark.service.js';
 import type { ProviderCancellationTransition } from '../provider-cancellation-decision.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
+import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
 
 const logger = createLogger('our-cancellation-retry');
 
@@ -115,6 +116,7 @@ export interface RetryOurCancellationPorts {
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly markPayments?: ReconciliationMarkPayments;
+    readonly afterRead?: (input: ReconciliationComparisonInput) => Promise<void>;
 }
 
 /** Result of {@link retryOurCancellation}. */
@@ -170,6 +172,12 @@ export async function retryOurCancellation(
         prior = { read, act };
     }
     const fresh = assertFreshForAct({ read: prior.read, act: prior.act });
+    await ports.afterRead?.({
+        subscription: input.subscription,
+        providerLink: input.providerLink,
+        read: prior.read,
+        act: prior.act
+    });
     if (fresh.snapshot.status === 'cancelled') return { outcome: 'CONFIRMED', read: true };
 
     const deadline = input.decision.decidedAt.getTime() + OUR_CANCELLATION_RETRY_WINDOW_MS;
