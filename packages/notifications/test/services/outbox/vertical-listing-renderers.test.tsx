@@ -4,6 +4,7 @@ import {
     createVerticalListingRenderers,
     type ListingNamesReader
 } from '../../../src/services/outbox/vertical-listing-renderers.js';
+import { LISTING_CONTENT_EDITED_BY_SUPPORT_SUBJECT } from '../../../src/templates/verticals/index.js';
 import { row } from './outbox-batch.harness.js';
 
 const LISTING_ID = '2f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11';
@@ -318,5 +319,131 @@ describe('vertical listing notice renderers (HOS-1492, AC:V8a:5 and AC:V8a:6)', 
         await expect(
             Promise.resolve().then(() => renderers[template]!({ row: row({ template, payload }) }))
         ).rejects.toThrow('no tiene nombre');
+    });
+});
+
+describe('TEST:1675:1 AC:1675:1 AC:1675:3 the support content-edit notice (row 26) renders', () => {
+    it('uses carried name, market date, ordered parts, unchanged status and contact link', async () => {
+        const reader = vi.fn<ListingNamesReader>(async () => new Map());
+        const { renderers } = buildRenderers(reader);
+        const result = await renderers['verticals.listing-content-edited-by-support']!({
+            row: row({
+                template: 'verticals.listing-content-edited-by-support',
+                payload: {
+                    vertical: 'accommodation',
+                    listingId: LISTING_ID,
+                    listingName: 'Cabañas del Río',
+                    editedAt: '2026-10-20T02:00:00.000Z',
+                    parts: ['texts', 'photos']
+                }
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe(LISTING_CONTENT_EDITED_BY_SUPPORT_SUBJECT);
+        expect(html).toContain('Cabañas del Río');
+        expect(html).toContain('19 de octubre de 2026');
+        expect(html).toContain('los textos y las fotos');
+        expect(html).toContain('No se publicó, no se destacó ni se borró por eso');
+        expect(html).toContain('https://hospeda.test/es/contacto/');
+        expect(html).not.toContain(LISTING_ID);
+        expect(reader).not.toHaveBeenCalled();
+    });
+
+    it('reads a missing carried name by vertical and listing id', async () => {
+        const reader = vi.fn<ListingNamesReader>(
+            async () => new Map([[LISTING_ID, 'Nombre desde lector']])
+        );
+        const { renderers } = buildRenderers(reader);
+        const result = await renderers['verticals.listing-content-edited-by-support']!({
+            row: row({
+                template: 'verticals.listing-content-edited-by-support',
+                payload: {
+                    vertical: 'experience',
+                    listingId: LISTING_ID,
+                    listingName: null,
+                    editedAt: '2026-10-20T12:00:00.000Z',
+                    parts: ['faq']
+                }
+            })
+        });
+        expect(renderToStaticMarkup(result.react)).toContain('Nombre desde lector');
+        expect(reader).toHaveBeenCalledWith({ vertical: 'experience', ids: [LISTING_ID] });
+    });
+
+    it('omits the parts list when empty', async () => {
+        const { renderers } = buildRenderers();
+        const result = await renderers['verticals.listing-content-edited-by-support']!({
+            row: row({
+                template: 'verticals.listing-content-edited-by-support',
+                payload: {
+                    vertical: 'gastronomy',
+                    listingId: LISTING_ID,
+                    listingName: 'Parrilla',
+                    editedAt: '2026-10-20T12:00:00.000Z',
+                    parts: []
+                }
+            })
+        });
+        expect(renderToStaticMarkup(result.react)).toContain('Parrilla el 20 de octubre de 2026.');
+        expect(renderToStaticMarkup(result.react)).not.toContain(': .');
+    });
+
+    it.each([
+        [
+            'unknown part',
+            {
+                vertical: 'accommodation',
+                listingId: LISTING_ID,
+                listingName: 'Ficha',
+                editedAt: '2026-10-20T12:00:00.000Z',
+                parts: ['unknown']
+            }
+        ],
+        [
+            'invalid vertical',
+            {
+                vertical: 'tourist',
+                listingId: LISTING_ID,
+                listingName: 'Ficha',
+                editedAt: '2026-10-20T12:00:00.000Z',
+                parts: []
+            }
+        ],
+        [
+            'bad instant',
+            {
+                vertical: 'accommodation',
+                listingId: LISTING_ID,
+                listingName: 'Ficha',
+                editedAt: '2026-10-20',
+                parts: []
+            }
+        ]
+    ])('rejects %s', async (_case, payload) => {
+        const { renderers } = buildRenderers();
+        await expect(
+            renderers['verticals.listing-content-edited-by-support']!({
+                row: row({ template: 'verticals.listing-content-edited-by-support', payload })
+            })
+        ).rejects.toBeInstanceOf(TypeError);
+    });
+
+    it('rejects a listing name missing from both payload and reader', async () => {
+        const reader = vi.fn<ListingNamesReader>(async () => new Map());
+        const { renderers } = buildRenderers(reader);
+        await expect(
+            renderers['verticals.listing-content-edited-by-support']!({
+                row: row({
+                    template: 'verticals.listing-content-edited-by-support',
+                    payload: {
+                        vertical: 'accommodation',
+                        listingId: LISTING_ID,
+                        listingName: null,
+                        editedAt: '2026-10-20T12:00:00.000Z',
+                        parts: []
+                    }
+                })
+            })
+        ).rejects.toBeInstanceOf(TypeError);
     });
 });
