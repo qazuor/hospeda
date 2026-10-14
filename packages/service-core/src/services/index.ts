@@ -108,6 +108,7 @@ export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decisi
 export * from './billing/reconciliation/sweep/comparisons/expected-amount.js';
 export * from './billing/reconciliation/sweep/comparisons/listed-charges.js';
 export * from './billing/reconciliation/sweep/comparisons/period-charges-comparison.js';
+export * from './billing/reconciliation/sweep/comparisons/reconciliation-daily-summary.port.js';
 export * from './billing/reconciliation/sweep/comparisons/state-comparison.js';
 export * from './billing/reconciliation/sweep/comparisons/unregistered-charge-reason.js';
 export * from './billing/reconciliation/sweep/credited-payments-check.js';
