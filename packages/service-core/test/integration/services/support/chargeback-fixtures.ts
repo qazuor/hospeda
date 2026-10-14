@@ -28,6 +28,7 @@ import { paymentFixture } from './payment-fixtures.js';
 
 const beforeCancelNotice = { beforeCancel: async () => 'SENT' as const };
 const seeded: { readonly subscriptionId: string; readonly userId: string }[] = [];
+const RETIRED_FACT_AT = new Date('2000-01-01T00:00:00.000Z');
 
 /** The payment fixture a chargeback case starts from. */
 export type ChargebackFixture = Awaited<ReturnType<typeof paymentFixture>>;
@@ -195,5 +196,10 @@ export async function retireChargebackFixtures(): Promise<void> {
             .update(subscriptions)
             .set({ status: 'CANCELLED' })
             .where(eq(subscriptions.id, subscriptionId));
+        // Out of every credited-payments window, so no other sweep re-reads them.
+        await db
+            .update(payments)
+            .set({ factAt: RETIRED_FACT_AT })
+            .where(eq(payments.subscriptionId, subscriptionId));
     }
 }
