@@ -244,7 +244,7 @@ describe('TEST:B13a:3a AC:B13a:4 the purge preview names what the listing loses'
 
     it.each(
         listingVerticals
-    )('rejects an authenticated actor without READ_OWN on a %s listing', async (vertical) => {
+    )('returns 404 to a foreign actor for a %s listing', async (vertical) => {
         const owner = await createOwner();
         const stranger = await createOwner();
         ownerIds.add(owner.id);
@@ -266,15 +266,14 @@ describe('TEST:B13a:3a AC:B13a:4 the purge preview names what the listing loses'
                       complete: false
                   });
         listingIds.push(id);
-        const actorId = vertical === VerticalEnum.ACCOMMODATION ? owner.id : stranger.id;
         const response = await readResponse(
             await app.request(previewPath(vertical, id), {
-                headers: actorHeaders({ id: actorId, permissions: [] })
+                headers: actorHeaders({ id: stranger.id, permissions: [] })
             })
         );
 
-        expect([403, 404]).toContain(response.status);
-        expect(response.body.error?.code).toBe(response.status === 403 ? 'FORBIDDEN' : 'NOT_FOUND');
+        expect(response.status).toBe(404);
+        expect(response.body.error?.code).toBe('NOT_FOUND');
     });
 
     it.each([
