@@ -211,10 +211,10 @@
             "status": {
                 "DRAFT": "Rascunho",
                 "PUBLISHED": "Publicada",
-                "UNPUBLISHED_BY_BILLING": "Despublicado pelo seu plano",
-                "ARCHIVED": "Arquivado",
-                "MODERATED": "Moderado",
-                "PURGED": "Excluído"
+                "UNPUBLISHED_BY_BILLING": "Despublicada pelo seu plano",
+                "ARCHIVED": "Arquivada",
+                "MODERATED": "Moderada",
+                "PURGED": "Excluída"
             },
             "actions": {
                 "edit": "Editar",
