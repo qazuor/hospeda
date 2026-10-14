@@ -211,8 +211,10 @@
             "status": {
                 "DRAFT": "Rascunho",
                 "PUBLISHED": "Publicada",
-                "SUSPENDED": "Suspensa",
-                "INACTIVE": "Pausada"
+                "UNPUBLISHED_BY_BILLING": "Despublicado pelo seu plano",
+                "ARCHIVED": "Arquivado",
+                "MODERATED": "Moderado",
+                "PURGED": "Excluído"
             },
             "actions": {
                 "edit": "Editar",
