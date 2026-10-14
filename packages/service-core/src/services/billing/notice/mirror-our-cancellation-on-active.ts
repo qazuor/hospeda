@@ -38,14 +38,11 @@ const serviceInputSchema = z.strictObject({
 });
 
 /**
- * Returns the end of service for R18, using the newest open paid period or the
- * remaining first-charge credit. AC:B7:15; B/03 §10.1 (`04-catalogos.md:2106`)
- * and DEC-SUB-019📌2 require preserving paid service after our cancellation lost
- * its write. The accepted residuals at `04-catalogos.md:2317-2327` remain: the
- * queued notice is the evidence, with the known stale-notice edge. R18-b enters
- * this same transaction after the update in HOS-1562.
+ * Computes the service end date for the R18 mirror using the newest open paid
+ * period (via `billingPeriodEnd`) or the remaining first-charge credit
+ * (`DEC-SUB-006`). Pure function — no database access, no side effects.
  * @param input - Payment period, cadence, optional first-charge credit and fresh read instant
- * @returns The scheduled service end
+ * @returns The scheduled service end date
  */
 export function ourCancellationServiceEnd(input: {
     readonly lastPaidPeriodStart: Date | null;
@@ -69,11 +66,23 @@ export type MirrorOurCancellationResult =
     | { readonly outcome: 'LOST_RACE' };
 
 /**
- * Mirrors a cancellation we sent before S5/S2 restored ACTIVE, retaining the
- * paid period. Its row lock, evidence read and conditional write share one
- * transaction; the CHANGED notice is best effort after commit. It never cuts
- * coverage, calls the payment provider or enqueues email. See AC:B7:15 and
- * R18 in B/03 §10.1.
+ * R18 mirror (AC:B7:15; B/03 §10.1, `04-catalogos.md:2106`; DEC-SUB-019📌2).
+ * When `S6` or `S3` cancels our preapproval but a payment (`S5`) or
+ * authorization (`S2`) rewrites the row back to ACTIVE, this function locks
+ * the row, verifies we enqueued a «before-cancel» notice by `kind` (template)
+ * + `payload.subscriptionId` (Coord-522: never the occurrence or dedup_key),
+ * computes the service end from the newest open paid period, writes
+ * `CANCEL_SCHEDULED` with the computed end, and emits a post-commit `CHANGED`
+ * coverage notice. It never opens a `coverage_loss` record, calls the
+ * payment provider, enqueues email, or touches grace-clock columns.
+ *
+ * Accepted residuals (`04-catalogos.md:2317-2327`): stale queued notice;
+ * subscriber-initiated MP cancellation indistinguishable from provider's;
+ * `S6` on a suppressed recipient (hard bounce, no notice).
+ *
+ * R18-b (the complementary-subscription cancel via `S11` rule) enters this
+ * same transaction after the `UPDATE`, in HOS-1562 (B7.5).
+ *
  * @param input - The receiver's already re-read subscription and cadence
  * @param ports - Clock and optional post-commit coverage listener
  * @returns Whether our notice was found and the active row was scheduled
