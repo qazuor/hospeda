@@ -14,6 +14,14 @@
         "active": "Ativo",
         "archived": "Arquivado"
     },
+    "publicationStatus": {
+        "draft": "Rascunho",
+        "published": "Publicada",
+        "unpublishedByBilling": "Despublicada pelo plano",
+        "archived": "Arquivada",
+        "moderated": "Moderada",
+        "purged": "Excluída"
+    },
     "destinationType": {
         "label": "Tipo de destino",
         "country": "País",
