@@ -1,5 +1,6 @@
 import type { EmailOutboxRow } from '@repo/db';
 import { NotificationType, OUTBOX_MAIL_RENDERERS } from '@repo/notifications';
+import { BEFORE_CANCEL_TEMPLATE_BY_KIND } from '@repo/service-core';
 import { LISTING_ARCHIVED_TEMPLATE } from '@repo/verticals';
 import { createElement, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -185,6 +186,33 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 'No se te va a volver a cobrar',
                 'Mercado Pago'
             ]
+        },
+        {
+            // HOS-1683 AC:1683:2: S16's and S1's notice before cancelling the signup's authorization.
+            template: 'billing.first-charge-declined-cancel',
+            payload: { subscriptionId },
+            expected: ['El primer cobro de tu suscripción fue rechazado', 'Mercado Pago']
+        },
+        {
+            // HOS-1683 AC:1683:2: S36's notice before cancelling a revoked subscription.
+            template: 'billing.revocation-cancel',
+            payload: { subscriptionId },
+            expected: ['Registramos la revocación que pediste', 'Mercado Pago']
+        },
+        {
+            // HOS-1683 AC:1683:2: REJECTION_REVIVED's notice before cancelling a live authorization.
+            template: 'billing.closed-subscription-authorization-cancel',
+            payload: { subscriptionId },
+            expected: ['una suscripción tuya que ya no se renueva', 'Mercado Pago']
+        },
+        {
+            // HOS-1683 AC:1683:2: S11's notice before cancelling the automatic charge.
+            template: 'billing.scheduled-cancellation',
+            payload: { subscriptionId },
+            expected: [
+                'El servicio sigue hasta el final del período que ya pagaste',
+                'Mercado Pago'
+            ]
         }
     ])('renders $template through the production sender', async ({
         template,
@@ -196,6 +224,44 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
         expect(result.subject.trim()).not.toBe('');
         for (const phrase of expected) expect(html).toContain(phrase);
         expect(html).not.toContain(subscriptionId);
+    });
+});
+
+describe('TEST:1683:4 AC:1683:2 every before-cancel template renders through the production sender', () => {
+    const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
+    const subscriptionId = '8b17fa49-59f3-4a13-a0d5-fd42e6bac482';
+    const arrearsPayload = {
+        subscriptionId,
+        vertical: 'accommodation',
+        paymentMethod: 'CARD',
+        touristVipLost: true,
+        oneTimeAddons: [{ name: 'Destacado', remainingDays: 10 }],
+        promoLost: true
+    };
+    const payloadOf = (kind: string) =>
+        kind === 'ARREARS_SUSPENSION' ? arrearsPayload : { subscriptionId };
+
+    it.each(
+        Object.entries(BEFORE_CANCEL_TEMPLATE_BY_KIND)
+    )('%s renders %s with a subject (a kind without a renderer turns this red, Coord-283)', async (kind, template) => {
+        // Act
+        const result = await render({ row: row(template, payloadOf(kind)) });
+
+        // Assert
+        expect(result.subject.trim()).not.toBe('');
+        expect(renderToStaticMarkup(result.react)).not.toContain(subscriptionId);
+    });
+
+    it('only AUTHORIZATION_EXPIRED says the pending authorization expired', async () => {
+        // Act
+        const saying: string[] = [];
+        for (const [kind, template] of Object.entries(BEFORE_CANCEL_TEMPLATE_BY_KIND)) {
+            const result = await render({ row: row(template, payloadOf(kind)) });
+            if (result.subject === 'Tu autorización pendiente venció') saying.push(kind);
+        }
+
+        // Assert
+        expect(saying).toStrictEqual(['AUTHORIZATION_EXPIRED']);
     });
 });
 
