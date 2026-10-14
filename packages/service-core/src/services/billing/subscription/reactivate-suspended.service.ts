@@ -14,9 +14,7 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
-import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
-import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import { billingPeriodEnd } from './billing-period-end';
 import {
@@ -28,14 +26,13 @@ import {
     checkLatePaymentConditions,
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
+import { openLatePaymentRejectedMark } from './late-payment-rejected-mark';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import { releaseRetainedPayment, retainPaymentForSuccession } from './succession-retained-payment';
 
 const logger = createLogger('reactivate-suspended');
 const inputSchema = z.strictObject({ paymentId: z.uuid(), unpaidSince: z.date().optional() });
 const S7_ADMITTED_STATUSES = ['SUSPENDED'] as const;
-/** HOS-1548: hanging the same payment twice on the same mark is refused; a replay must not fail S7. */
-const MARK_PAYMENT_ALREADY_HUNG = 'MARK_PAYMENT_ALREADY_HUNG';
 
 /** Where S7 leaves the row: `ACTIVE`, or `CANCEL_SCHEDULED` when the authorization is already cancelled. */
 export type ReactivateSuspendedDestination = 'ACTIVE' | 'CANCEL_SCHEDULED';
@@ -116,43 +113,6 @@ type InTransactionVerdict =
     | { readonly kind: 'FAILED'; readonly failedCondition: LatePaymentFailedCondition }
     | { readonly kind: 'NO_ANCHOR' }
     | { readonly kind: 'LOST_RACE' };
-
-/**
- * Opens reason 7 `PAGO_TARDIO_RECHAZADO` with the payment hung (I-3), outside the
- * row's transaction. A payment already hung on that mark (a replayed notice) is
- * logged and not retried.
- */
-async function openLatePaymentRejectedMark(input: {
-    readonly subscriptionId: string;
-    readonly paymentId: string;
-    readonly ports: ReactivateSuspendedPorts;
-}): Promise<void> {
-    const { ports } = input;
-    try {
-        await openReconciliationMark(
-            {
-                subject: { kind: 'SUBSCRIPTION', subscriptionId: input.subscriptionId },
-                reason: 'PAGO_TARDIO_RECHAZADO',
-                payment: { source: 'PAYMENT', id: input.paymentId },
-                actor: { type: ports.actorType ?? 'provider' },
-                correlationId: input.paymentId
-            },
-            {
-                markPayments:
-                    ports.markPayments ?? createPaymentReconciliationMarkPayments(ports.clock)
-            }
-        );
-    } catch (error) {
-        if (error instanceof ServiceError && error.reason === MARK_PAYMENT_ALREADY_HUNG) {
-            logger.info(
-                { subscriptionId: input.subscriptionId, paymentId: input.paymentId },
-                'Late payment already hung on its reason 7 mark'
-            );
-            return;
-        }
-        throw error;
-    }
-}
 
 /**
  * Emits `ADDED` once the row's transaction committed (AC:B4:2, G5 `via: "notice"`):
