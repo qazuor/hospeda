@@ -60,6 +60,9 @@ afterEach(async () => {
             .update(payments)
             .set({ status: 'FAILED' })
             .where(eq(payments.subscriptionId, row.subscriptionId));
+        await db
+            .delete(coveredPeriods)
+            .where(eq(coveredPeriods.subscriptionId, row.subscriptionId));
         const [subscription] = await db
             .select({ class: subscriptions.class })
             .from(subscriptions)
