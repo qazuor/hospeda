@@ -1,12 +1,16 @@
 /**
- * Guard: the listing detail routes must actually render the reject control
- * (HOS-589 AC-26).
+ * Guard: the listing detail routes render the listing's state card
+ * (HOS-589 AC-26; read-only since HOS-1641, Coord-424).
  *
- * The endpoint and the widget can both be perfect while nobody can reach them:
- * deleting the card from a route file is a one-line change that breaks no test,
- * fails no typecheck, and produces a page that looks entirely normal. The whole
- * point of AC-26 is that "a route with no control is reachable only by a
- * hand-crafted request", so the wiring itself needs an assertion.
+ * The card used to be the reject control: an inline select posting
+ * `{ moderationState }` to `POST /:id/moderate`. Since HOS-1641 that column is
+ * gone and the endpoint takes a moderation ACTION, so the card shows the
+ * listing's `publicationStatus` (where a moderation reads as `MODERATED`) and
+ * mutates nothing. The action-based moderation control arrives with HOS-1684;
+ * when it lands, this guard goes back to asserting the control.
+ *
+ * What it asserts now: the card is still on both routes, it is fed
+ * `publicationStatus`, and no moderation mutation is wired into it.
  *
  * Route files are excluded from the admin unit suite's coverage and are not
  * rendered here (a TanStack file route needs a router), so this reads the
@@ -21,62 +25,46 @@ const ROUTES = [
     {
         vertical: 'gastronomy',
         path: '../src/routes/_authed/gastronomies/$id.tsx',
-        listingHook: 'useModerateGastronomyMutation',
-        reviewHook: 'useModerateGastronomyReviewMutation',
-        labelKey: 'admin-entities.entities.gastronomy.singular'
+        entity: 'gastronomy'
     },
     {
         vertical: 'experience',
         path: '../src/routes/_authed/experiences/$id.tsx',
-        listingHook: 'useModerateExperienceMutation',
-        reviewHook: 'useModerateExperienceReviewMutation',
-        labelKey: 'admin-entities.entities.experience.singular'
+        entity: 'experience'
     }
 ] as const;
 
 const readRoute = (relativePath: string): string =>
     readFileSync(join(__dirname, relativePath), 'utf8');
 
-describe('the reject control is present on both listing detail routes (AC-26)', () => {
-    for (const { vertical, path, listingHook, reviewHook, labelKey } of ROUTES) {
+/** The `<ListingModerationCard … />` JSX block of a route. */
+function cardBlock(source: string): string {
+    const start = source.indexOf('<ListingModerationCard');
+    expect(start, 'card not found').toBeGreaterThan(-1);
+    return source.slice(start, source.indexOf('/>', start) + 2);
+}
+
+describe('the listing state card is present on both listing detail routes (AC-26)', () => {
+    for (const { vertical, path, entity } of ROUTES) {
         describe(vertical, () => {
             it('renders ListingModerationCard', () => {
                 expect(
                     readRoute(path),
-                    `The ${vertical} detail route no longer renders ListingModerationCard. Without it POST /:id/moderate is only callable by hand, which is precisely what AC-26 forbids.`
+                    `The ${vertical} detail route no longer renders ListingModerationCard.`
                 ).toContain('<ListingModerationCard');
             });
 
-            it('wires the LISTING moderation hook into that card, not the review one', () => {
-                const source = readRoute(path);
-
-                // Cut the card's own JSX block before asserting: the route also
-                // renders a reviews panel driven by `useModerate*ReviewMutation`,
-                // so a whole-file `toContain` would pass on either hook and this
-                // guard would be blind to the exact confusion it exists to catch.
-                const start = source.indexOf('<ListingModerationCard');
-                expect(start, 'card not found').toBeGreaterThan(-1);
-                const block = source.slice(start, source.indexOf('/>', start));
-
-                expect(
-                    block,
-                    `The card must be driven by ${listingHook}. ${reviewHook} moderates reviews written about the listing and would leave the listing itself unmoderatable.`
-                ).toContain(listingHook);
-                expect(block).not.toContain(reviewHook);
+            it('feeds the card the listing publicationStatus', () => {
+                expect(cardBlock(readRoute(path))).toContain(
+                    `publicationStatus={${entity}?.publicationStatus}`
+                );
             });
 
-            it('feeds the card the listing name, current state and entity label', () => {
+            it('wires no moderation mutation and reads no retired column', () => {
                 const source = readRoute(path);
-                const start = source.indexOf('<ListingModerationCard');
-                const block = source.slice(start, source.indexOf('/>', start));
-
-                // `currentValue` is the one that fails silently: without it the
-                // badge renders an em dash and choosing the state it already has
-                // is a no-op the admin cannot tell from a broken control.
-                expect(block).toContain('currentValue=');
-                expect(block).toContain('moderationState');
-                expect(block).toContain('entityName=');
-                expect(block).toContain(labelKey);
+                const block = cardBlock(source);
+                expect(block).not.toMatch(/useModerate|Mutation|currentValue/);
+                expect(source).not.toMatch(/moderationState/);
             });
         });
     }

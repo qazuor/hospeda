@@ -28,7 +28,6 @@ export type {
     AssignOwnerInput,
     ListingEntityHooks,
     ListingEntityHooksConfig,
-    ListingModerationPatch,
     ModerateReviewInput,
     PendingReviewsQueryParams,
     ReviewModerationDecision

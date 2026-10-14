@@ -8,7 +8,7 @@
  *    the panel has no other listing delete or restore (HOS-1477, AC:V6:25)
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import type { PublicationStatusEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -23,7 +23,6 @@ import {
     useAssignGastronomyOwnerMutation,
     useGastronomyPage,
     useGastronomyPendingReviewsQuery,
-    useModerateGastronomyMutation,
     useModerateGastronomyReviewMutation
 } from '@/features/gastronomy';
 import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
@@ -221,7 +220,11 @@ function GastronomyViewPage() {
     const entityData = useGastronomyPage(id);
 
     const gastronomy = entityData.entity as
-        | { name?: string; ownerId?: string | null; moderationState?: string | null }
+        | {
+              name?: string;
+              ownerId?: string | null;
+              publicationStatus?: PublicationStatusEnum | null;
+          }
         | undefined;
 
     return (
@@ -245,17 +248,10 @@ function GastronomyViewPage() {
                     />
                 </div>
 
-                {/* HOS-686 AC-26: the reject action, where an admin can reach
-                    it. `POST /:id/moderate` without this control would only be
-                    callable by hand. */}
-                <ListingModerationCard
-                    entityId={id}
-                    entityName={gastronomy?.name ?? id}
-                    entityLabelKey="admin-entities.entities.gastronomy.singular"
-                    currentValue={gastronomy?.moderationState}
-                    permission={PermissionEnum.GASTRONOMY_MODERATION_CHANGE}
-                    useModerateMutation={useModerateGastronomyMutation}
-                />
+                {/* HOS-686 AC-26, read-only since HOS-1641 (Coord-424): the
+                    listing's publication state. The action-based moderation control
+                    (`POST /:id/moderate`) arrives with HOS-1684. */}
+                <ListingModerationCard publicationStatus={gastronomy?.publicationStatus} />
 
                 <GastronomyAssignOwner
                     gastronomyId={id}
