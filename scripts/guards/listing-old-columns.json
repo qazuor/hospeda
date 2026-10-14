@@ -1,0 +1,493 @@
+{
+    "$comment": "Closed exclusion list of TEST:V6:18 (scripts/check-listing-old-columns.ts, AC:V6:32, HOS-1641). subEntityFilePatterns switch off rule (d) only, by a case-insensitive fragment of the FILE NAME. subEntityReferences allow exactly `count` rule (d) occurrences of `name` in one file (one more fails; one fewer makes the entry dead). files switch off every rule for one file. An entry that suppresses nothing fails the guard.",
+    "subEntityFilePatterns": [
+        {
+            "pattern": "review",
+            "table": "accommodation_reviews, gastronomy_reviews, experience_reviews (moderation_state, lifecycle_state)",
+            "reason": "Review files: the review keeps its own moderation_state and lifecycle_state (R6)."
+        },
+        {
+            "pattern": "faq",
+            "table": "accommodation_faqs, gastronomy_faqs, experience_faqs (lifecycle_state)",
+            "reason": "FAQ files: the FAQ keeps its own lifecycle_state (R6)."
+        },
+        {
+            "pattern": "media",
+            "table": "accommodation_media, gastronomy_media, experience_media (moderation_state)",
+            "reason": "Media files: each photo/video keeps its own moderation_state (R6)."
+        },
+        {
+            "pattern": "gallery",
+            "table": "accommodation_media, gastronomy_media, experience_media (moderation_state of a gallery photo)",
+            "reason": "Gallery files: each gallery photo keeps its own moderation_state (R6)."
+        },
+        {
+            "pattern": "photo",
+            "table": "accommodation_media (moderation_state of a photo)",
+            "reason": "Photo files: each photo keeps its own moderation_state (R6)."
+        },
+        {
+            "pattern": "video",
+            "table": "embedded media videos (moderation_state of a video)",
+            "reason": "Video files: each embedded video keeps its own moderation_state (R6)."
+        },
+        {
+            "pattern": "amenit",
+            "table": "amenities (lifecycle_state)",
+            "reason": "Amenity files: the amenity catalog keeps its own lifecycle_state (R6)."
+        },
+        {
+            "pattern": "feature",
+            "table": "features (lifecycle_state)",
+            "reason": "Feature files: the feature catalog keeps its own lifecycle_state (R6)."
+        },
+        {
+            "pattern": "poi",
+            "table": "points_of_interest (lifecycle_state)",
+            "reason": "Point-of-interest files: the POI keeps its own lifecycle_state (R6)."
+        },
+        {
+            "pattern": "promotion",
+            "table": "owner_promotions (lifecycle_state)",
+            "reason": "Owner-promotion files: the promotion keeps its own lifecycle_state (R6)."
+        },
+        {
+            "pattern": "externalreputation",
+            "table": "accommodation external listings (lifecycle_state, visibility)",
+            "reason": "External-reputation files: the external listing keeps its own state (R6)."
+        },
+        {
+            "pattern": "iadata",
+            "table": "accommodation_ia_data (lifecycle_state)",
+            "reason": "AI-data files: accommodation_ia_data keeps its own lifecycle_state (R6)."
+        }
+    ],
+    "subEntityReferences": [
+        {
+            "file": "apps/api/src/routes/accommodation/admin/getById.ts",
+            "name": "lifecycleState",
+            "count": 2,
+            "table": "amenities, features",
+            "reason": "The amenity and feature junction rows project their own lifecycleState."
+        },
+        {
+            "file": "apps/api/src/routes/accommodation/protected/createDraft.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "none (OpenAPI description)",
+            "reason": "Stale OpenAPI description text (\"lifecycleState=DRAFT\"), not a read; scope request to rewrite it as publicationStatus. Remove this entry when it is rewritten."
+        },
+        {
+            "file": "apps/api/src/routes/accommodation/protected/getById.ts",
+            "name": "lifecycleState",
+            "count": 4,
+            "table": "amenities, features",
+            "reason": "The amenity and feature junction rows project their own lifecycleState."
+        },
+        {
+            "file": "apps/api/src/routes/accommodation/public/getBySlug.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "accommodation_faqs",
+            "reason": "Filters the public FAQs by their own lifecycleState."
+        },
+        {
+            "file": "apps/api/src/routes/accommodation/reviews/admin/moderate.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_reviews",
+            "reason": "Route description of review moderation."
+        },
+        {
+            "file": "apps/api/src/routes/experience/reviews/admin/moderate.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "experience_reviews",
+            "reason": "Route description of review moderation."
+        },
+        {
+            "file": "apps/api/src/routes/gastronomy/reviews/admin/list.ts",
+            "name": "moderationState",
+            "count": 2,
+            "table": "gastronomy_reviews",
+            "reason": "The admin review list filters reviews by their own moderationState."
+        },
+        {
+            "file": "apps/api/src/routes/gastronomy/reviews/admin/moderate.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "gastronomy_reviews",
+            "reason": "Route description of review moderation."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/admin/getById.applicable-verticals.test.ts",
+            "name": "lifecycleState",
+            "count": 4,
+            "table": "amenities, features, accommodation_media",
+            "reason": "Amenity/feature mock rows and the featured image keep their own state."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/admin/getById.applicable-verticals.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "amenities, features, accommodation_media",
+            "reason": "Amenity/feature mock rows and the featured image keep their own state."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/admin/list-moderation-filter.test.ts",
+            "name": "moderationState",
+            "count": 32,
+            "table": "accommodation_reviews, destination_reviews",
+            "reason": "Tests the moderationState filter of the admin REVIEW list schemas."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/admin/moderate.test.ts",
+            "name": "moderationState",
+            "count": 3,
+            "table": "accommodation_reviews",
+            "reason": "Mock review rows of review moderation."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/protected/getById-junctions.test.ts",
+            "name": "lifecycleState",
+            "count": 5,
+            "table": "amenities, features, accommodation_media",
+            "reason": "Amenity/feature mock rows and the featured image keep their own state."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/protected/getById-junctions.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "amenities, features, accommodation_media",
+            "reason": "Amenity/feature mock rows and the featured image keep their own state."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/protected/getById-rich-description.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_media",
+            "reason": "Featured image fixture keeps its own moderationState."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/protected/list-rich-description.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_media",
+            "reason": "Featured image fixture keeps its own moderationState."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/public/getBySlug.contact-info.test.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "accommodation_faqs, accommodation_media",
+            "reason": "The FAQ column mock and the featured image keep their own state."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/public/getBySlug.contact-info.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_faqs, accommodation_media",
+            "reason": "The FAQ column mock and the featured image keep their own state."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/public/getBySlug.rich-description.test.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "accommodation_faqs",
+            "reason": "The FAQ column mock keeps its own lifecycleState."
+        },
+        {
+            "file": "apps/api/test/routes/accommodation/public/types-backward-compat.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_media",
+            "reason": "Featured image fixture keeps its own moderationState."
+        },
+        {
+            "file": "apps/api/test/routes/experience/experience.routes.test.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "experience_reviews",
+            "reason": "Mock review rows keep their own moderationState and lifecycleState."
+        },
+        {
+            "file": "apps/api/test/routes/experience/experience.routes.test.ts",
+            "name": "moderationState",
+            "count": 2,
+            "table": "experience_reviews",
+            "reason": "Mock review rows keep their own moderationState and lifecycleState."
+        },
+        {
+            "file": "apps/e2e/tests/host/host-01-onboarding-handoff.spec.ts",
+            "name": "moderation_state",
+            "count": 1,
+            "table": "accommodation_media",
+            "reason": "Raw INSERT into accommodation_media writes the photo moderation_state."
+        },
+        {
+            "file": "apps/web/src/components/host/editor/EditorHub.astro",
+            "name": "visibility",
+            "count": 3,
+            "table": "none (editor sections)",
+            "reason": "Editor section visibility map (which editor sections show), not a listing column."
+        },
+        {
+            "file": "apps/web/src/components/host/editor/EditorRouteNav.astro",
+            "name": "visibility",
+            "count": 3,
+            "table": "none (editor sections)",
+            "reason": "Editor section visibility map (which editor sections show), not a listing column."
+        },
+        {
+            "file": "apps/web/src/components/host/host-trades/merge-saved-reply.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "host_trade provider replies",
+            "reason": "The provider reply keeps its own moderationState."
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar/index.astro",
+            "name": "visibility",
+            "count": 1,
+            "table": "none (editor sections)",
+            "reason": "Editor section visibility prop, not a listing column."
+        },
+        {
+            "file": "apps/web/test/components/host/PropertyCard.test.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "none (absence assertion)",
+            "reason": "Asserts the card source does NOT read the old columns."
+        },
+        {
+            "file": "apps/web/test/components/host/PropertyCard.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "none (absence assertion)",
+            "reason": "Asserts the card source does NOT read the old columns."
+        },
+        {
+            "file": "apps/web/test/components/host/PropertyCard.test.ts",
+            "name": "visibility",
+            "count": 2,
+            "table": "none (absence assertion)",
+            "reason": "Asserts the card source does NOT read the old columns."
+        },
+        {
+            "file": "apps/web/test/components/host/editor/EditorHub.test.ts",
+            "name": "visibility",
+            "count": 3,
+            "table": "none (editor sections)",
+            "reason": "Editor section visibility map, not a listing column."
+        },
+        {
+            "file": "apps/web/test/components/host/host-trades/ProviderPanels.test.tsx",
+            "name": "moderationState",
+            "count": 6,
+            "table": "host_trade provider replies",
+            "reason": "Provider reply fixtures keep their own moderationState."
+        },
+        {
+            "file": "apps/web/test/components/host/host-trades/merge-saved-reply.test.ts",
+            "name": "moderationState",
+            "count": 3,
+            "table": "host_trade provider replies",
+            "reason": "Provider reply fixtures keep their own moderationState."
+        },
+        {
+            "file": "apps/web/test/components/listing/ListingEditor.payload.test.tsx",
+            "name": "moderationState",
+            "count": 3,
+            "table": "listing media",
+            "reason": "Gallery image fixtures keep their own moderationState."
+        },
+        {
+            "file": "apps/web/test/components/listing/ListingEditor.test.tsx",
+            "name": "moderationState",
+            "count": 2,
+            "table": "none (absence assertion)",
+            "reason": "Asserts the editor payload does NOT carry visibility/moderationState."
+        },
+        {
+            "file": "apps/web/test/components/listing/ListingEditor.test.tsx",
+            "name": "visibility",
+            "count": 2,
+            "table": "none (absence assertion)",
+            "reason": "Asserts the editor payload does NOT carry visibility/moderationState."
+        },
+        {
+            "file": "apps/web/test/lib/listing/listing-editor-detail.test.ts",
+            "name": "visibility",
+            "count": 1,
+            "table": "none (channel flags)",
+            "reason": "Test title about the contact channel visibility flags."
+        },
+        {
+            "file": "packages/db/src/models/accommodation/accommodation.model.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "users",
+            "reason": "The owner relation selects the user lifecycleState column."
+        },
+        {
+            "file": "packages/schemas/src/entities/accommodation/accommodation.http.schema.ts",
+            "name": "moderationState",
+            "count": 10,
+            "table": "accommodation_media",
+            "reason": "HTTP image/video shapes carry each media item moderationState."
+        },
+        {
+            "file": "packages/schemas/src/entities/experience/__tests__/experience.schema.test.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "experience_faqs; none (test title)",
+            "reason": "FAQ fixture lifecycleState and a test title stating the public tier has no visibility."
+        },
+        {
+            "file": "packages/schemas/src/entities/experience/__tests__/experience.schema.test.ts",
+            "name": "visibility",
+            "count": 1,
+            "table": "experience_faqs; none (test title)",
+            "reason": "FAQ fixture lifecycleState and a test title stating the public tier has no visibility."
+        },
+        {
+            "file": "packages/schemas/test/entities/accommodation/accommodation.access.schema.test.ts",
+            "name": "moderationState",
+            "count": 2,
+            "table": "accommodation_media",
+            "reason": "Photo fixtures keep their own moderationState."
+        },
+        {
+            "file": "packages/schemas/test/entities/accommodation/accommodation.http.schema.test.ts",
+            "name": "moderationState",
+            "count": 6,
+            "table": "accommodation_media",
+            "reason": "Image/video fixtures keep their own moderationState."
+        },
+        {
+            "file": "packages/schemas/test/entities/gastronomy/gastronomy.schema.test.ts",
+            "name": "visibility",
+            "count": 1,
+            "table": "none (test title)",
+            "reason": "Test title stating the public tier has no visibility."
+        },
+        {
+            "file": "packages/service-core/src/services/accommodation/accommodation.service.ts",
+            "name": "moderationState",
+            "count": 2,
+            "table": "accommodation_media",
+            "reason": "The new media row gets its own moderationState."
+        },
+        {
+            "file": "packages/service-core/src/services/listing/listing-support-edit.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "listing media",
+            "reason": "Action 15 gates a nested media moderationState."
+        },
+        {
+            "file": "packages/service-core/test/services/accommodation/accommodation.normalizers.test.ts",
+            "name": "visibility",
+            "count": 1,
+            "table": "none (test title)",
+            "reason": "Test title stating no visibility default is injected."
+        },
+        {
+            "file": "packages/service-core/test/services/accommodation/accommodation.permissions.test.ts",
+            "name": "visibility",
+            "count": 1,
+            "table": "none (test title)",
+            "reason": "Test title naming the visibility permission hook."
+        },
+        {
+            "file": "packages/service-core/test/services/accommodation/accommodation.revalidation-visibility.test.ts",
+            "name": "visibility",
+            "count": 1,
+            "table": "none (test title)",
+            "reason": "Describe title about public-visibility revalidation gating."
+        },
+        {
+            "file": "packages/service-core/test/services/accommodation/create.test.ts",
+            "name": "moderationState",
+            "count": 2,
+            "table": "accommodation_media",
+            "reason": "Featured/gallery image fixtures keep their own moderationState."
+        },
+        {
+            "file": "packages/service-core/test/services/accommodation/createForOnboarding.test.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "none (absence assertion)",
+            "reason": "Asserts the onboarding payload does NOT carry lifecycleState."
+        },
+        {
+            "file": "packages/service-core/test/services/accommodation/getByDestination.test.ts",
+            "name": "visibility",
+            "count": 1,
+            "table": "none (test title)",
+            "reason": "Test title about the public visibility filters."
+        },
+        {
+            "file": "packages/service-core/test/services/experience/experience.service.test.ts",
+            "name": "visibility",
+            "count": 2,
+            "table": "none (test title)",
+            "reason": "Describe/test titles about the public visibility filter."
+        },
+        {
+            "file": "packages/service-core/test/services/gastronomy/gastronomy.service.test.ts",
+            "name": "visibility",
+            "count": 2,
+            "table": "none (test title)",
+            "reason": "Describe/test titles about the public visibility filter."
+        },
+        {
+            "file": "packages/service-core/test/services/listing/listing-support-edit.test.ts",
+            "name": "moderationState",
+            "count": 5,
+            "table": "listing media",
+            "reason": "Action 15 tests over nested media moderationState."
+        },
+        {
+            "file": "packages/service-core/test/services/listing/subentity-action15-gates.test.ts",
+            "name": "moderationState",
+            "count": 3,
+            "table": "listing media",
+            "reason": "Media fixtures keep their own moderationState."
+        }
+    ],
+    "files": [
+        {
+            "file": "packages/db/test/integration/cut-migration-over-data.test.ts",
+            "reason": "Migration-history test: builds or inserts the pre-V6.9b columns to prove a structural migration. Stops before 0148 (paso 3)."
+        },
+        {
+            "file": "packages/db/test/integration/legacy-schema-migration-from-empty.test.ts",
+            "reason": "Migration-history test: builds or inserts the pre-V6.9b columns to prove a structural migration. Asserts the three accommodation-only columns are gone at the end of the chain."
+        },
+        {
+            "file": "packages/db/test/integration/legacy-schema-migration-over-data.test.ts",
+            "reason": "Migration-history test: builds or inserts the pre-V6.9b columns to prove a structural migration. Stops before *_v69b_listing_old_columns and then asserts V6.9b dropped them."
+        },
+        {
+            "file": "packages/db/test/integration/listing-publication-model-from-empty.test.ts",
+            "reason": "TEST:V6:17: names the twelve dropped (table, column) pairs as text to assert they are ABSENT."
+        },
+        {
+            "file": "packages/schemas/test/entities/accommodation/accommodation.publication-status.schema.test.ts",
+            "reason": "Names the six old fields as text to assert the contract does NOT carry them."
+        },
+        {
+            "file": "packages/service-core/test/services/owner-promotion/ownerPromotion.service.test.ts",
+            "reason": "Asserts owner_promotions sends NO planRestricted filter (that column was dropped from owner_promotions by HOS-1419; R6)."
+        },
+        {
+            "file": "scripts/check-listing-old-columns.ts",
+            "reason": "The guard itself: it spells the forbidden names to define the check."
+        },
+        {
+            "file": "scripts/__tests__/check-listing-old-columns.test.ts",
+            "reason": "The guard test: it feeds the forbidden names as in-memory inputs."
+        }
+    ]
+}
