@@ -34,7 +34,11 @@ export type PeriodChargesVerdict =
  * (Coord-454). Such a period is not `CHARGED`, so a row in grace still reaches
  * S6; a partial refund still counts as charged, as it does for the credit.
  */
-function moneyWentBack({ charge }: { readonly charge: ChargeSnapshot }): boolean {
+function moneyWentBack({
+    charge
+}: {
+    readonly charge: ProviderRead<ChargeSnapshot>['snapshot'];
+}): boolean {
     if (charge.chargedBack) return true;
     const charged = charge.amount.amountMinor;
     return charged > 0 && charge.refundedAmount.amountMinor >= charged;
