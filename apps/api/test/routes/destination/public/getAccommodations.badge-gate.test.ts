@@ -131,12 +131,9 @@ function makeAccommodation(
         extraInfo: null,
         destinationId: DEST_ID,
         ownerId: OWNER_WITH_BADGE,
-        visibility: 'PUBLIC',
-        lifecycleState: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
         updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-        ownerSuspended: false,
-        planRestricted: false,
         ...overrides
     };
 }

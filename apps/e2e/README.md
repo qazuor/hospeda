@@ -189,9 +189,10 @@ if (!planId) {
 }
 await createSubscription({ userId: host.id, planId, status: 'active' });
 
+// import { PublicationStatusEnum } from '@repo/schemas';
 const accommodation = await createAccommodation({
     ownerId: host.id,
-    lifecycleState: 'ACTIVE',
+    publicationStatus: PublicationStatusEnum.PUBLISHED,
     slugPrefix: '<test-id>'
 });
 ```
@@ -268,7 +269,7 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 ## Common pitfalls (discovered during authoring)
 
 1. **`interface` rejected by `execSQL<T>`.** Use `type X = { ... } & Record<string, unknown>` instead. TS 5 does not auto-widen interfaces to satisfy the index-signature constraint.
-2. **Snake-case columns vs camelCase fields.** DB columns are snake_case (`first_name`, `lifecycle_state`); request bodies / API responses are camelCase (`firstName`, `lifecycleState`). Don't mix them in `execSQL` projections.
+2. **Snake-case columns vs camelCase fields.** DB columns are snake_case (`first_name`, `publication_status`); request bodies / API responses are camelCase (`firstName`, `publicationStatus`). Don't mix them in `execSQL` projections.
 3. **`createSubscription` requires a real plan id.** The fixture inserts a `billing_subscriptions` row; the FK to `billing_plans.id` is enforced at the DB level. Always pull the plan id from a `SELECT id FROM billing_plans WHERE is_active = true` first; do NOT pass a hard-coded UUID.
 4. **`drizzle-kit push` is not enough.** Triggers, materialized views, and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any push, run `packages/db/scripts/apply-postgres-extras.sh`. The E2E seed step does this automatically; manual runs must too.
 5. **Cancellation has TWO bits to flip.** `status='cancelled'` AND `current_period_end` (preserved during grace, forced past for expired). HOST-04 / E2E-8 both exercise this; copy that pattern rather than rolling your own.
@@ -312,7 +313,7 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 | `column "role" does not exist` from any `execSQL` | Query still targets the `users.role` scalar, dropped by HOS-296 | Read hats with `getUserRoles(userId)` (fixtures/db-helpers.ts); write them with `setUserRole` / `demoteHostToUser`. Never `SELECT`/`UPDATE` `users.role` |
 | Mailpit timeout | SMTP transport not wired OR the email subject regex doesn't match locale | Check Mailpit web UI at :8025 for the actual subject line |
 | Webhook returns 401 | HMAC signature mismatch | Confirm `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is set in BOTH the API process and this test process |
-| `lifecycle_state` returns `'DRAFT'` after PATCH `lifecycleState:'ACTIVE'` | Subscription gate blocked publish — paywall returned 402/403 | Inspect the response status; look for HOST-07b / HOST-04 expected behavior |
+| `publication_status` returns `'DRAFT'` after `POST .../publish` | Subscription gate blocked publish — paywall returned 402/403 | Inspect the response status; look for HOST-07b / HOST-04 expected behavior |
 | Save button enabled + clicked but `waitForResponse(PATCH)` times out, no request in the network log | Cookie-consent banner backdrop intercepting the click (pitfall #11) | Add `seedCookieConsent(page)` in a `test.beforeEach` (fixtures/browser-helpers.ts) |
 
 ## CI scripts (`scripts/ci/`)

@@ -14,6 +14,14 @@
         "active": "Active",
         "archived": "Archived"
     },
+    "publicationStatus": {
+        "draft": "Draft",
+        "published": "Published",
+        "unpublishedByBilling": "Unpublished by the plan",
+        "archived": "Archived",
+        "moderated": "Moderated",
+        "purged": "Deleted"
+    },
     "destinationType": {
         "label": "Destination type",
         "country": "Country",

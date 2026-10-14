@@ -6,7 +6,7 @@
  * Uses manual Hono route (not createProtectedRoute) to avoid the ownership
  * middleware that other protected accommodation routes apply via app.use().
  */
-import { ServiceErrorCode } from '@repo/schemas';
+import { PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
@@ -98,8 +98,8 @@ app.get('/:id/contact', async (c) => {
 
     const accommodation = result.data;
 
-    // Guard: only expose contact info for active public accommodations
-    if (accommodation?.lifecycleState !== 'ACTIVE' || accommodation.visibility !== 'PUBLIC') {
+    // Guard: only expose contact info for PUBLISHED accommodations (V6.9b)
+    if (accommodation?.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         return c.json(
             {
                 success: false,

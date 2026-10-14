@@ -66,8 +66,7 @@ const common = {
     description: 'A sufficiently detailed description for the protected listing schema.',
     ownerId: CALLER_ID,
     destinationId: '55555555-5555-4555-8555-555555555555',
-    lifecycleState: 'ACTIVE',
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     averageRating: 4.5,
     reviewsCount: 0,
     isFeatured: false,
@@ -102,7 +101,6 @@ const fixtures = {
         type: 'PARRILLA',
         isPriceOnRequest: false,
         featuredByEntitlement: false,
-        moderationState: 'APPROVED',
         openingHours: null
     },
     experience: {
@@ -111,8 +109,7 @@ const fixtures = {
         priceFrom: 1500000,
         priceUnit: 'per_person',
         isPriceOnRequest: false,
-        featuredByEntitlement: false,
-        moderationState: 'APPROVED'
+        featuredByEntitlement: false
     }
 } as const;
 

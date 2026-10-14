@@ -58,7 +58,6 @@ function makeAccommodation(id: string, slug: string, type: AccommodationTypeEnum
             'Description of the test accommodation. This needs to be at least 30 characters long.',
         isFeatured: false,
         destinationId: '33333333-3333-4333-8333-333333333333',
-        visibility: 'PUBLIC',
         averageRating: 3.5,
         reviewsCount: 5,
         media: VALID_MEDIA,

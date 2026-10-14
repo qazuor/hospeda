@@ -81,8 +81,8 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
     reviewsCount: true,
     rating: true,
 
-    // Visibility
-    visibility: true,
+    // No publication state here (HOS-1641): every listing a stranger can read
+    // is PUBLISHED, so exposing it would say nothing.
 
     // SEO (public)
     seo: true,
@@ -262,7 +262,6 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     averageRating: true,
     reviewsCount: true,
     rating: true,
-    visibility: true,
     seo: true,
     tags: true,
     priceRange: true,
@@ -280,8 +279,9 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     // Social networks
     socialNetworks: true,
 
-    // Lifecycle (for owners)
-    lifecycleState: true,
+    // Publication state (for owners, HOS-1641): the six `PublicationStatusEnum`
+    // values, written only by the PB publication transitions.
+    publicationStatus: true,
 
     // FAQs
     faqs: true,

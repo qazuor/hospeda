@@ -143,7 +143,7 @@ describe('the editor actually routes its payload through the restriction', () =>
         // The memo has to re-run when the page's section changes, or a client
         // navigation between two sections would keep the previous one's mask.
         expect(editor).toMatch(
-            /\[formData, baseline, vertical, currentLifecycleState, sectionId\]/
+            /\[formData, baseline, vertical, currentPublicationStatus, sectionId\]/
         );
     });
 });

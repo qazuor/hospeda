@@ -275,8 +275,8 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     averageRating: true,
     reviewsCount: true,
 
-    // Visibility
-    visibility: true,
+    // No publication state here (HOS-1641): every listing a stranger can read
+    // is PUBLISHED, so exposing it would say nothing.
 
     // SEO (public)
     seo: true,
@@ -581,7 +581,6 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     location: true,
     averageRating: true,
     reviewsCount: true,
-    visibility: true,
     seo: true,
     price: true,
     tags: true,
@@ -596,8 +595,9 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     // Social networks
     socialNetworks: true,
 
-    // Lifecycle (for owners)
-    lifecycleState: true,
+    // Publication state (for owners, HOS-1641): the six `PublicationStatusEnum`
+    // values, written only by the PB publication transitions.
+    publicationStatus: true,
 
     // FAQs
     faqs: true,

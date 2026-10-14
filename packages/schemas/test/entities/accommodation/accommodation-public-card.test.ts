@@ -29,7 +29,6 @@ const NESTED_WITH_PREMIUM = {
     destinationId: '22222222-2222-4222-8222-222222222222',
     isFeatured: false,
     isVerified: false,
-    visibility: 'PUBLIC',
     richDescription: '## Premium\n\n**must not survive**',
     richDescriptionI18n: {
         es: '## Premium ES',

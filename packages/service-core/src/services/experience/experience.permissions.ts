@@ -222,13 +222,13 @@ export function checkExperienceCanEditFaqEntries(
  * Checks if the actor may view experience listings (public read).
  *
  * For public/protected read paths, any actor is allowed to attempt to list;
- * the service layer enforces lifecycle+visibility filters on results.
+ * the service layer enforces the publication-status filter on results.
  * This is intentionally permissive — mirrors gastronomy's pattern.
  *
  * @param _actor - The actor performing the action (currently unused).
  */
 export function checkExperienceCanView(_actor: Actor): void {
-    // Public listings are viewable by all. The service enforces lifecycle/visibility.
+    // Public listings are viewable by all. The service enforces publication status.
     return;
 }
 

@@ -12,15 +12,16 @@
  * a count of `0`, compared `0 < 1`, and correctly allowed the request.
  *
  * The count was zero because it went through `count()`, whose `_executeCount`
- * mirrors the PUBLIC search and therefore forces `visibility: PUBLIC` +
- * `lifecycleState: ACTIVE`. Every listing an owner creates through the
- * self-service route starts `PRIVATE`/`DRAFT` (the owner self-service create routes
+ * mirrors the PUBLIC search and therefore forces `publicationStatus: PUBLISHED`
+ * (the old `visibility: PUBLIC` + `lifecycleState: ACTIVE`, V6.9b HOS-1641).
+ * Every listing an owner creates through the
+ * self-service route starts `DRAFT` (the owner self-service create routes
  * D-3). So the one query a quota depends on excluded, by construction, exactly
  * the rows the quota exists to count.
  *
  * Hence two assertions per vertical, and neither is redundant:
  *
- *  1. **`countOwn` does not narrow by visibility or lifecycle.** This is the fix.
+ *  1. **`countOwn` does not narrow by publication status.** This is the fix.
  *  2. **`_executeCount` still DOES.** This is the trap. It is asserted here on
  *     purpose rather than left to the public-search suite: without it, someone
  *     "simplifying" `countOwn` back into `count()` sees every test in this file
@@ -89,10 +90,9 @@ describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", (
 
         const where = model.count.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(where).toMatchObject({ ownerId: OWNER_ID, deletedAt: null });
-        // The whole point. A DRAFT/PRIVATE listing occupies a quota slot, so a
-        // predicate that names either column here would reproduce the bug.
-        expect(where).not.toHaveProperty('visibility');
-        expect(where).not.toHaveProperty('lifecycleState');
+        // The whole point. A DRAFT listing occupies a quota slot, so a
+        // predicate that names the state column here would reproduce the bug.
+        expect(where).not.toHaveProperty('publicationStatus');
     });
 
     it('experience: scopes to the owner and narrows by nothing else', async () => {
@@ -104,8 +104,7 @@ describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", (
 
         const where = model.count.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(where).toMatchObject({ ownerId: OWNER_ID, deletedAt: null });
-        expect(where).not.toHaveProperty('visibility');
-        expect(where).not.toHaveProperty('lifecycleState');
+        expect(where).not.toHaveProperty('publicationStatus');
     });
 
     it('refuses an actor with no id rather than counting the whole platform', async () => {
@@ -119,8 +118,8 @@ describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", (
     });
 });
 
-describe('the trap countOwn exists to avoid: _executeCount forces PUBLIC + ACTIVE', () => {
-    it('gastronomy: the public count narrows by visibility AND lifecycle', async () => {
+describe('the trap countOwn exists to avoid: _executeCount forces PUBLISHED', () => {
+    it('gastronomy: the public count narrows by publication status', async () => {
         const { service, model } = makeGastronomyService(0);
 
         await (
@@ -132,12 +131,11 @@ describe('the trap countOwn exists to avoid: _executeCount forces PUBLIC + ACTIV
         // why the quota no longer reads through here.
         expect(where).toMatchObject({
             ownerId: OWNER_ID,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE'
+            publicationStatus: 'PUBLISHED'
         });
     });
 
-    it('experience: the public count narrows by visibility AND lifecycle', async () => {
+    it('experience: the public count narrows by publication status', async () => {
         const { service, model } = makeExperienceService(0);
 
         await (
@@ -147,8 +145,7 @@ describe('the trap countOwn exists to avoid: _executeCount forces PUBLIC + ACTIV
         const where = model.count.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(where).toMatchObject({
             ownerId: OWNER_ID,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE'
+            publicationStatus: 'PUBLISHED'
         });
     });
 });

@@ -37,7 +37,7 @@ export const protectedCreateAccommodationDraftRoute = createProtectedRoute({
     path: '/draft',
     summary: 'Create accommodation draft',
     description:
-        'Creates a new accommodation with lifecycleState=DRAFT and the minimum required fields. Requires ACCOMMODATION_CREATE permission.',
+        'Creates a new accommodation with publicationStatus=DRAFT and the minimum required fields. Requires ACCOMMODATION_CREATE permission.',
     tags: ['Accommodations'],
     requiredPermissions: [PermissionEnum.ACCOMMODATION_CREATE],
     requestBody: AccommodationCreateDraftHttpSchema,

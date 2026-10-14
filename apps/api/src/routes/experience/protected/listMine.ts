@@ -9,12 +9,7 @@
  * MUST be registered BEFORE the `/{id}` route so Hono does not treat the literal
  * `mine` path segment as an `:id` param.
  */
-import {
-    LifecycleStatusEnum,
-    OwnerListingListSchema,
-    ProductDomainEnum,
-    VisibilityEnum
-} from '@repo/schemas';
+import { OwnerListingListSchema, ProductDomainEnum, PublicationStatusEnum } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -50,16 +45,13 @@ export const protectedListMyExperienceRoute = createProtectedRoute({
             name: listing.name,
             slug: listing.slug,
             type: listing.type,
-            isPublic: listing.visibility === VisibilityEnum.PUBLIC,
-            // HOS-982 PR 2. BOTH clauses, and a second field rather than a
-            // widening of `isPublic` above — see the schema for why. A row
-            // that is PUBLIC but not ACTIVE has no public page, and every
-            // protected route that prints something for a listing answers
-            // 404 for it; a card that asked only `isPublic` would offer
-            // downloads that cannot work and render a code that cannot scan.
-            hasPublicPage:
-                listing.lifecycleState === LifecycleStatusEnum.ACTIVE &&
-                listing.visibility === VisibilityEnum.PUBLIC
+            // V6.9b (HOS-1641): both flags read the single publication state.
+            // Only a PUBLISHED listing is public and has a public page; every
+            // protected route that prints something for a listing answers 404
+            // for any other state, so a card must not offer those downloads.
+            isPublic: listing.publicationStatus === PublicationStatusEnum.PUBLISHED,
+            hasPublicPage: listing.publicationStatus === PublicationStatusEnum.PUBLISHED,
+            publicationStatus: listing.publicationStatus
             // subscriptionStatus was removed with the legacy billing system
             // (HOS-1416).
         }));

@@ -11,13 +11,14 @@
  * All test data, comments, and documentation are in English, following project guidelines.
  */
 import type { AccommodationModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { ServiceError } from '../../../src/types';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
+import { getMockId } from '../../factories/utilsFactory';
 import {
     createLoggerMock,
     createModelMock,
@@ -120,5 +121,67 @@ describe('AccommodationService.getBySlug', () => {
         const result = await service.getBySlug(actor, entity.slug);
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();
+    });
+});
+
+/**
+ * AC:V5:5 / HOS-1641: the public read by slug answers only a PUBLISHED
+ * accommodation to another account; every other publication status answers
+ * exactly like a missing row. Runs the REAL `checkCanView` (no spy).
+ */
+describe('AccommodationService.getBySlug — public read by publication status (HOS-1641)', () => {
+    let service: AccommodationService;
+    let model: ReturnType<typeof createModelMock>;
+    // NOT the factory's default user id, which is also the default owner id.
+    const stranger = () =>
+        createActor({ id: getMockId('user', 'hos-1641-stranger'), permissions: [] });
+
+    beforeEach(() => {
+        vi.restoreAllMocks();
+        model = createModelMock();
+        service = new AccommodationService(
+            { logger: mockLogger },
+            model as unknown as AccommodationModel,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
+    });
+
+    const arrange = (publicationStatus: PublicationStatusEnum) => {
+        const entity = createAccommodationWithMockIds({ deletedAt: undefined, publicationStatus });
+        (model.findOne as Mock).mockResolvedValue(entity);
+        (model.findOneWithRelations as Mock).mockResolvedValue(entity);
+        return entity;
+    };
+
+    it('answers a PUBLISHED accommodation to another account', async () => {
+        const entity = arrange(PublicationStatusEnum.PUBLISHED);
+
+        const result = await service.getBySlug(stranger(), entity.slug);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.slug).toBe(entity.slug);
+    });
+
+    it.each([
+        PublicationStatusEnum.MODERATED,
+        PublicationStatusEnum.ARCHIVED,
+        PublicationStatusEnum.DRAFT,
+        PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+        PublicationStatusEnum.PURGED
+    ])('answers NOT_FOUND for a %s accommodation, like a missing row', async (status) => {
+        const entity = arrange(status);
+
+        const result = await service.getBySlug(stranger(), entity.slug);
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 });

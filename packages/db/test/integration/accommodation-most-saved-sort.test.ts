@@ -67,8 +67,7 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
                     name: 'SPEC-213 MostSaved Regression Test',
                     summary: 'Regression test for mostSaved sort bug.',
                     type: 'HOUSE',
-                    description: 'Accommodation inserted for the mostSaved sort regression test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation inserted for the mostSaved sort regression test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');
@@ -132,8 +131,7 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
                     name: 'SPEC-213 Order A (bookmarked)',
                     summary: 'Accommodation A — bookmarked.',
                     type: 'HOUSE',
-                    description: 'Accommodation A for mostSaved ordering regression test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation A for mostSaved ordering regression test.'
                 })
                 .returning();
             if (!accommodationA) throw new Error('Failed to insert accommodation A');
@@ -151,8 +149,7 @@ describe('AccommodationModel.searchWithRelations — mostSaved sort (SPEC-213 re
                     name: 'SPEC-213 Order B (no bookmark)',
                     summary: 'Accommodation B — not bookmarked.',
                     type: 'HOUSE',
-                    description: 'Accommodation B for mostSaved ordering regression test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation B for mostSaved ordering regression test.'
                 })
                 .returning();
             if (!accommodationB) throw new Error('Failed to insert accommodation B');

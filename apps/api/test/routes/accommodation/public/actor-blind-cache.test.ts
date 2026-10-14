@@ -245,8 +245,8 @@ describe('HOS-353 — the six cached public accommodation handlers resolve as a 
     });
 
     it('getSummary: hands a guest actor to the service, for a VIP/staff caller', async () => {
-        // The heaviest disclosure of the six: this payload names `visibility`,
-        // `lifecycleState`, `ownerId` and `slug`.
+        // The heaviest disclosure of the six: this payload names `ownerId` and
+        // `slug`.
         mockGetById.mockResolvedValue({ data: null, error: null });
 
         const app = await buildApp(

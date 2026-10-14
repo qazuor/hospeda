@@ -4,7 +4,7 @@
  * Verifies that the `GET /api/v1/public/accommodations/:id/similar` route
  * serializes responses through `AccommodationPublicSchema` and NEVER leaks
  * internal-only fields such as `createdById`, `updatedById`, `deletedAt`,
- * `deletedById`, `adminInfo`, `moderationState`, `lastWarnedAt`, `translationMeta`.
+ * `deletedById`, `adminInfo`, `publicationStatus`, `lastWarnedAt`, `translationMeta`.
  *
  * Before SPEC-210 the route used `z.array(z.record(z.string(), z.unknown()))`,
  * a full passthrough that relied solely on a data-level strip in the handler.
@@ -77,7 +77,7 @@ describe('GET /api/v1/public/accommodations/:id/similar — schema enforcement (
          *   - createdById, updatedById   — BaseAuditFields
          *   - deletedAt, deletedById     — soft-delete audit
          *   - adminInfo                  — admin-only moderation notes
-         *   - moderationState            — internal lifecycle flag
+         *   - publicationStatus          — internal publication state
          *   - lastWarnedAt               — internal operational field
          *   - translationMeta            — internal translation metadata (SPEC-212)
          *
@@ -107,7 +107,7 @@ describe('GET /api/v1/public/accommodations/:id/similar — schema enforcement (
                         'deletedAt',
                         'deletedById',
                         'adminInfo',
-                        'moderationState',
+                        'publicationStatus',
                         'lastWarnedAt',
                         'translationMeta'
                     ];
@@ -215,7 +215,7 @@ describe('GET /api/v1/public/accommodations/:id/similar — schema enforcement (
             }
         });
 
-        it('AccommodationPublicSchema.safeParse() strips adminInfo, moderationState, lastWarnedAt, translationMeta', () => {
+        it('AccommodationPublicSchema.safeParse() strips adminInfo, publicationStatus, lastWarnedAt, translationMeta', () => {
             const raw = {
                 id: TEST_UUID,
                 slug: 'similar-test',
@@ -228,7 +228,7 @@ describe('GET /api/v1/public/accommodations/:id/similar — schema enforcement (
                 destinationId: TEST_UUID_2,
                 // Admin-only internal fields
                 adminInfo: { notes: 'Private note', favorite: false },
-                moderationState: 'PENDING',
+                publicationStatus: 'MODERATED',
                 lastWarnedAt: new Date(),
                 translationMeta: { es: { name: { status: 'approved' } } }
             };
@@ -238,7 +238,7 @@ describe('GET /api/v1/public/accommodations/:id/similar — schema enforcement (
             if (result.success) {
                 const data = result.data as Record<string, unknown>;
                 expect(data).not.toHaveProperty('adminInfo');
-                expect(data).not.toHaveProperty('moderationState');
+                expect(data).not.toHaveProperty('publicationStatus');
                 expect(data).not.toHaveProperty('lastWarnedAt');
                 expect(data).not.toHaveProperty('translationMeta');
             }

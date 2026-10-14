@@ -19,7 +19,6 @@ import {
     experiences,
     gastronomies,
     gastronomyReviews,
-    legacyPublicationStatus,
     ownerPromotions,
     postSponsors,
     postSponsorships,
@@ -34,7 +33,7 @@ import {
     userBookmarks,
     users
 } from '@repo/db';
-import type { PublicationStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
@@ -128,8 +127,7 @@ interface SeedAccommodationOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
     readonly accommodationId?: string;
-    readonly visibility?: string;
-    readonly ownerSuspended?: boolean;
+    /** Publication state; defaults to `PUBLISHED` (an active, public listing). */
     readonly publicationStatus?: PublicationStatusEnum;
     readonly inactiveSince?: Date;
     readonly deadlinesVersion?: number;
@@ -206,16 +204,7 @@ export async function seedAccommodation(
                 url: 'https://example.com/seed-accommodation.jpg'
             }
         },
-        lifecycleState: 'ACTIVE',
-        visibility: overrides.visibility ?? 'PUBLIC',
-        ownerSuspended: overrides.ownerSuspended ?? false,
-        publicationStatus:
-            overrides.publicationStatus ??
-            legacyPublicationStatus({
-                lifecycleState: 'ACTIVE',
-                visibility: overrides.visibility ?? 'PUBLIC',
-                ownerSuspended: overrides.ownerSuspended ?? false
-            }),
+        publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.PUBLISHED,
         inactiveSince: overrides.inactiveSince ?? new Date(),
         deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof accommodations.$inferInsert);
@@ -777,9 +766,7 @@ interface SeedGastronomyOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
     readonly gastronomyId?: string;
-    readonly visibility?: string;
-    readonly lifecycleState?: string;
-    readonly moderationState?: string;
+    /** Publication state; defaults to `DRAFT` (never public). */
     readonly publicationStatus?: PublicationStatusEnum;
     readonly inactiveSince?: Date;
     readonly deadlinesVersion?: number;
@@ -789,9 +776,8 @@ interface SeedGastronomyOverrides {
  * Inserts a User (owner), a Destination (CITY), and a Gastronomy listing
  * referencing both. Returns all three IDs.
  *
- * The gastronomy is created with `visibility=PRIVATE` and
- * `lifecycleState=INACTIVE` so reconciliation tests can assert the
- * PUBLIC/ACTIVE flip.
+ * The gastronomy is created `DRAFT` by default so reconciliation tests can
+ * assert the flip to `PUBLISHED`.
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
  * @param overrides - Optional ID / field overrides.
@@ -850,15 +836,7 @@ export async function seedGastronomy(
         type: 'RESTAURANT',
         ownerId,
         destinationId,
-        visibility: overrides.visibility ?? 'PRIVATE',
-        lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
-        moderationState: overrides.moderationState ?? 'PENDING',
-        publicationStatus:
-            overrides.publicationStatus ??
-            legacyPublicationStatus({
-                lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
-                visibility: overrides.visibility ?? 'PRIVATE'
-            }),
+        publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.DRAFT,
         inactiveSince: overrides.inactiveSince ?? new Date(),
         deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof gastronomies.$inferInsert);
@@ -916,9 +894,7 @@ interface SeedExperienceOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
     readonly experienceId?: string;
-    readonly visibility?: string;
-    readonly lifecycleState?: string;
-    readonly moderationState?: string;
+    /** Publication state; defaults to `DRAFT` (never public). */
     readonly publicationStatus?: PublicationStatusEnum;
     readonly inactiveSince?: Date;
     readonly deadlinesVersion?: number;
@@ -928,9 +904,8 @@ interface SeedExperienceOverrides {
  * Inserts a User (owner), a Destination (CITY), and an Experience listing
  * referencing both. Returns all three IDs.
  *
- * Mirrors `seedGastronomy`: the experience is created with `visibility=PRIVATE`
- * and `lifecycleState=INACTIVE` by default so reconciliation tests can assert
- * the PUBLIC/ACTIVE flip. `priceFrom` is left at its DB default (0) with
+ * Mirrors `seedGastronomy`: the experience is created `DRAFT` by default so
+ * reconciliation tests can assert the flip to `PUBLISHED`. `priceFrom` is left at its DB default (0) with
  * `isPriceOnRequest=false`, which is deliberately an incomplete listing for
  * `resolveListingCompleteness` (missing `priceFrom`) — same role
  * `seedGastronomy`'s default row plays for the gastronomy completeness tests.
@@ -994,15 +969,7 @@ export async function seedExperience(
         isPriceOnRequest: false,
         ownerId,
         destinationId,
-        visibility: overrides.visibility ?? 'PRIVATE',
-        lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
-        moderationState: overrides.moderationState ?? 'PENDING',
-        publicationStatus:
-            overrides.publicationStatus ??
-            legacyPublicationStatus({
-                lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
-                visibility: overrides.visibility ?? 'PRIVATE'
-            }),
+        publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.DRAFT,
         inactiveSince: overrides.inactiveSince ?? new Date(),
         deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof experiences.$inferInsert);

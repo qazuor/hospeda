@@ -74,8 +74,7 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
     async function getFirstActiveAccommodationId(): Promise<string | null> {
         const rows = await execSQL<{ id: string }>(
             `SELECT id FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 1`

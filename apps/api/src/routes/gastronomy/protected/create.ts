@@ -12,14 +12,14 @@
  * ## D-3 — server-forced fields
  *
  * `GastronomyOwnerCreateInputSchema` already OMITS `ownerId`, `slug`,
- * `lifecycleState`, `visibility`, `isFeatured`, `moderationState` — this
- * handler is the only place those values come from:
+ * `publicationStatus` and `isFeatured` — this handler is the only place
+ * `ownerId` comes from:
  * - `ownerId` — always `actor.id`. An owner can only ever create a listing
  *   for themselves.
  * - `slug` — never set here; `BaseListingService._beforeCreate` derives it
  *   server-side from `name` (HOS-166 OQ-3).
- * - `visibility: PRIVATE`, `lifecycleState: DRAFT` — every owner-created
- *   listing starts hidden.
+ * - `publicationStatus` — never set here: every listing is born `DRAFT` by
+ *   the model (V6.9b, HOS-1641); only the publication machine moves it.
  *
  * ## Permission — an authenticated session, and nothing else (HOS-687)
  *
@@ -41,9 +41,7 @@ import {
     type GastronomyOwnerCreateInput,
     GastronomyOwnerCreateInputSchema,
     GastronomyProtectedSchema,
-    LifecycleStatusEnum,
-    VerticalEnum,
-    VisibilityEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -64,16 +62,14 @@ export async function handleCreateGastronomyListing(ctx: Context, body: Record<s
     const data = body as GastronomyOwnerCreateInput;
 
     // Re-parse through the FULL admin create schema so every other
-    // .default() field (isFeatured, moderationState, reviewsCount,
+    // .default() field (isFeatured, reviewsCount,
     // averageRating) is populated the same way an admin create would be —
     // `create()` re-validates against this exact schema internally, so this
     // is a cheap, type-correct way to merge the server-forced fields without
     // hand-listing every default (D-3).
     const createInput = GastronomyAdminCreateInputSchema.parse({
         ...data,
-        ownerId: actor.id,
-        visibility: VisibilityEnum.PRIVATE,
-        lifecycleState: LifecycleStatusEnum.DRAFT
+        ownerId: actor.id
     });
 
     // `createForOwner`, not `create`: the role grant and the insert share one
@@ -90,8 +86,8 @@ export async function handleCreateGastronomyListing(ctx: Context, body: Record<s
 /**
  * POST /api/v1/protected/gastronomies/
  *
- * Creates a gastronomy listing owned by the caller. Starts `visibility:
- * PRIVATE`, `lifecycleState: DRAFT` (D-3) — see module docstring.
+ * Creates a gastronomy listing owned by the caller. Starts as a
+ * `DRAFT` (D-3) — see module docstring.
  */
 export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     method: 'post',
@@ -99,7 +95,7 @@ export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     listingAccess: { vertical: VerticalEnum.GASTRONOMY, operation: 'CREATE' },
     summary: 'Create a gastronomy listing (owner self-service)',
     description:
-        'Creates a gastronomy listing owned by the authenticated caller and grants them the GASTRONOMY_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes it. Requires an authenticated session and no gastronomy permission.',
+        'Creates a gastronomy listing owned by the authenticated caller and grants them the GASTRONOMY_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no gastronomy permission.',
     tags: ['Gastronomy'],
     // No `requiredPermissions` on purpose (HOS-687): this route is how an
     // account BECOMES a gastronomy owner, so demanding the owner's permission

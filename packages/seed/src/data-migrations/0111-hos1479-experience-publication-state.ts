@@ -1,11 +1,20 @@
 /**
- * HOS-1479: bring existing inline experience fixtures into line with the
- * publication state written by the baseline seed. The structural cut 0148
- * backfills publication columns on live rows first; this migration handles
- * any surviving fixture rows and is safe to repeat.
+ * @fileoverview
+ * HOS-1479 originally brought the inline experience fixtures into line with
+ * the publication state the baseline seed writes, by reading each row's old
+ * `lifecycle_state` and `visibility` columns.
+ *
+ * HOS-1641 (V6.9b) turned it into a no-op, keeping its ledger name:
+ * - the structural cut `0148_cut_paso_3` already filled `publication_status`
+ *   for every live experience row with the same rule (`ACTIVE` + `PUBLIC` →
+ *   `PUBLISHED`, anything else → `DRAFT`), so there is nothing left to move;
+ * - the structural migration of HOS-1641 drops the columns this module read,
+ *   and on a live environment `db:migrate` runs before `db:seed:migrate`, so
+ *   reading them here would fail;
+ * - `meta.requiresColumns` does not apply: it would abort the runner forever
+ *   on any environment holding experience rows, for a backfill that has no
+ *   rows to move.
  */
-import { experiences, legacyPublicationStatus } from '@repo/db';
-import { eq, inArray } from 'drizzle-orm';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
@@ -14,39 +23,11 @@ export const meta = {
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
 
-const fixtureSlugs = [
-    'excursion-rio-uruguay-concepcion',
-    'alquiler-kayak-colon-termas',
-    'guia-turistica-gualeguaychu-carnaval',
-    'paseo-en-lancha-concordia-lago',
-    'tour-cultural-casas-historicas-concepcion'
-] as const;
-
-/** Synchronize existing fixture rows without creating demo content in live databases. */
-export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
-    const rows = await ctx.db
-        .select({
-            id: experiences.id,
-            lifecycleState: experiences.lifecycleState,
-            visibility: experiences.visibility,
-            publicationStatus: experiences.publicationStatus
-        })
-        .from(experiences)
-        .where(inArray(experiences.slug, fixtureSlugs));
-
-    let updated = 0;
-    for (const row of rows) {
-        const publicationStatus = legacyPublicationStatus(row);
-        if (row.publicationStatus === publicationStatus) continue;
-        await ctx.db
-            .update(experiences)
-            .set({ publicationStatus })
-            .where(eq(experiences.id, row.id));
-        updated++;
-    }
-
+/** No-op: `0148_cut_paso_3` already wrote the publication state the old columns implied. */
+export async function up(_ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     return {
-        summary: `Synchronized publication status for ${updated} existing experience fixture(s).`,
-        counts: { updated }
+        summary:
+            'No experience rows required synchronizing; 0148_cut_paso_3 already wrote publication_status.',
+        counts: { updated: 0 }
     };
 }

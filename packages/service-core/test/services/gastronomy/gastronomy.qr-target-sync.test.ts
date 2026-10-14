@@ -14,13 +14,11 @@
 
 import {
     EntityTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
     QrCodeSourceEnum,
-    RoleEnum,
-    VisibilityEnum
+    RoleEnum
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -61,9 +59,7 @@ const makeGastronomy = (overrides: Record<string, unknown> = {}) => ({
     type: 'PARRILLA',
     destinationId: getMockId('destination', 'dest-gastro-qr-1'),
     ownerId: OWNER_ID,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-    moderationState: ModerationStatusEnum.APPROVED,
-    visibility: VisibilityEnum.PUBLIC,
+    publicationStatus: PublicationStatusEnum.PUBLISHED,
     isFeatured: false,
     averageRating: 0,
     reviewsCount: 0,

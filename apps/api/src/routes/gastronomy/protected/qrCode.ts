@@ -8,7 +8,7 @@
  * The accommodation twin (`routes/accommodation/protected/qrCode.ts`) carries
  * the full reasoning: why the dashboard needs the SVG rather than the PDF, why
  * this is the SAME code the printable sheet carries and not a second one, why
- * both clauses of "published" are checked before anything is minted, and why
+ * the "published" state is checked before anything is minted, and why
  * there is no entitlement gate. One thing differs here: the staff bypass is
  * `GASTRONOMY_VIEW_ALL`, not `ACCOMMODATION_UPDATE_ANY`.
  *
@@ -26,11 +26,10 @@
 
 import {
     EntityTypeEnum,
-    LifecycleStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { entityNotFoundError, GastronomyService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -81,12 +80,9 @@ export async function handleGetGastronomyQrCode(
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }
 
-    // BOTH clauses — see the accommodation twin. Checked BEFORE anything is
+    // Only PUBLISHED has a public page (V6.9b). Checked BEFORE anything is
     // minted, so a listing with no public page leaves no live `qr_codes` row.
-    if (
-        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE ||
-        entity.visibility !== VisibilityEnum.PUBLIC
-    ) {
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately (HOS-600).
         throw entityNotFoundError({ entityName: GastronomyService.ENTITY_NAME });
     }

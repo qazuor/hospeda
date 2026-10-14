@@ -87,7 +87,7 @@ const RAW_SUMMARY = 'Resumen viejo, distinto del que se publica.';
 const MOCK_DATA: AccommodationEditData = {
     id: 'acc-1',
     slug: 'cabanas-cheroga',
-    lifecycleState: 'DRAFT',
+    publicationStatus: 'DRAFT',
     name: RAW_NAME,
     summary: RAW_SUMMARY,
     description: 'Descripción larga',

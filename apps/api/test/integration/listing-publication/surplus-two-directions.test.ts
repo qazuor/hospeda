@@ -82,9 +82,7 @@ describe('TEST:V6:5 production publication listener', () => {
                     ownerId: user.id,
                     destinationId: destination.id,
                     type: 'CABIN',
-                    publicationStatus: PublicationStatusEnum.PUBLISHED,
-                    lifecycleState: 'ACTIVE',
-                    visibility: 'PUBLIC'
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 } as Partial<Accommodation>,
                 db
             );

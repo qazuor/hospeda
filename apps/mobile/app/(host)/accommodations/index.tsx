@@ -9,6 +9,10 @@ import {
     View
 } from 'react-native';
 import { theme } from '../../../src/design';
+import {
+    getPublicationStatusBadge,
+    type PublicationStatusTone
+} from '../../../src/lib/accommodation-publication-status';
 import type { OwnAccommodationsList } from '../../../src/lib/api/hooks/use-own-accommodations';
 import { useOwnAccommodations } from '../../../src/lib/api/hooks/use-own-accommodations';
 import { getTranslation } from '../../../src/lib/i18n';
@@ -23,7 +27,7 @@ type AccommodationListItem = OwnAccommodationsList['items'][number];
  *
  * Fetches GET /api/v1/protected/accommodations (page 1, pageSize 12).
  * Renders a FlatList of accommodation cards with name, destination city,
- * and lifecycle state badge.
+ * and publication state badge (`publicationStatus`, HOS-1641).
  *
  * Tapping a card navigates to ./[id] (detail + edit screen).
  *
@@ -108,12 +112,13 @@ interface AccommodationCardProps {
 
 /**
  * Renders a single accommodation summary card.
- * Shows: name, destination city (from cityDestination or destinationId), lifecycle badge.
+ * Shows: name, destination city (from cityDestination or destinationId), publication state badge.
  */
 function AccommodationCard({ item, onPress, t }: AccommodationCardProps) {
     const cityName = item.cityDestination?.name ?? null;
-    const lifecycleLabel = getLifecycleLabel(item.lifecycleState, t);
-    const lifecycleBadgeStyle = getLifecycleBadgeStyle(item.lifecycleState);
+    const statusBadge = getPublicationStatusBadge({ status: item.publicationStatus });
+    const statusLabel = t(statusBadge.labelKey);
+    const statusBadgeStyle = BADGE_TONE_STYLES[statusBadge.tone];
 
     return (
         <TouchableOpacity
@@ -139,8 +144,8 @@ function AccommodationCard({ item, onPress, t }: AccommodationCardProps) {
                         </Text>
                     ) : null}
                 </View>
-                <View style={[styles.lifecycleBadge, lifecycleBadgeStyle]}>
-                    <Text style={styles.lifecycleBadgeText}>{lifecycleLabel}</Text>
+                <View style={[styles.statusBadge, statusBadgeStyle]}>
+                    <Text style={styles.statusBadgeText}>{statusLabel}</Text>
                 </View>
             </View>
         </TouchableOpacity>
@@ -151,37 +156,14 @@ function AccommodationCard({ item, onPress, t }: AccommodationCardProps) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Returns the i18n label for a lifecycle state.
- */
-function getLifecycleLabel(state: string, t: (key: string) => string): string {
-    const map: Record<string, string> = {
-        ACTIVE: t('mobile.host.accommodations.lifecycleActive'),
-        DRAFT: t('mobile.host.accommodations.lifecycleDraft'),
-        ARCHIVED: t('mobile.host.accommodations.lifecycleArchived')
-    };
-    return map[state] ?? state;
-}
-
-/**
- * Returns style overrides for the lifecycle badge background.
- */
-function getLifecycleBadgeStyle(state: string): object {
-    switch (state) {
-        case 'ACTIVE':
-            return badgeActiveStyle;
-        case 'DRAFT':
-            return badgeDraftStyle;
-        case 'ARCHIVED':
-            return badgeArchivedStyle;
-        default:
-            return {};
-    }
-}
-
-const badgeActiveStyle = { backgroundColor: theme.colors.success[100] };
-const badgeDraftStyle = { backgroundColor: theme.colors.river[100] };
-const badgeArchivedStyle = { backgroundColor: theme.colors.neutral[200] };
+/** Background of the state badge per tone. */
+const BADGE_TONE_STYLES: Readonly<Record<PublicationStatusTone, object>> = {
+    success: { backgroundColor: theme.colors.success[100] },
+    draft: { backgroundColor: theme.colors.river[100] },
+    warning: { backgroundColor: theme.colors.warning[100] },
+    neutral: { backgroundColor: theme.colors.neutral[200] },
+    danger: { backgroundColor: theme.colors.danger[100] }
+};
 
 // ---------------------------------------------------------------------------
 // Styles — module scope (ADR-034)
@@ -266,13 +248,13 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.semantic.bodySm,
         color: theme.colors.neutral[500]
     },
-    lifecycleBadge: {
+    statusBadge: {
         borderRadius: theme.radius.semantic.pill,
         paddingHorizontal: theme.spacing[3],
         paddingVertical: theme.spacing[1],
         alignSelf: 'flex-start'
     },
-    lifecycleBadgeText: {
+    statusBadgeText: {
         fontSize: theme.typography.semantic.caption,
         fontWeight: '600',
         color: theme.colors.neutral[700]

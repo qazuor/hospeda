@@ -10,12 +10,12 @@
  *  - Does NOT render price range badge when absent
  *  - Renders the formatted creation date when provided
  *  - Renders the ownerId when provided
- *  - Renders the lifecycleStatus when provided
+ *  - Renders the publicationStatus
  *  - Has an accessible aria-label on the link
  *  - Calls onSelect when clicked
  */
 
-import { GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
+import { GastronomyTypeEnum, PriceRangeEnum, PublicationStatusEnum } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import * as React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -57,7 +57,7 @@ const BASE_GASTRONOMY: GastronomyListItem = {
     ownerId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     createdAt: new Date('2024-03-15T10:00:00.000Z'),
     featuredByEntitlement: false,
-    lifecycleStatus: 'ACTIVE'
+    publicationStatus: PublicationStatusEnum.PUBLISHED
 };
 
 function renderCard(overrides?: Partial<GastronomyListItem>, onSelect?: (id: string) => void) {
@@ -106,9 +106,9 @@ describe('GastronomyCard — rendering', () => {
         expect(screen.queryByText('$$')).not.toBeInTheDocument();
     });
 
-    it('should render the lifecycleStatus', () => {
-        renderCard({ lifecycleStatus: 'ACTIVE' });
-        expect(screen.getByText('ACTIVE')).toBeInTheDocument();
+    it('should render the publicationStatus', () => {
+        renderCard({ publicationStatus: PublicationStatusEnum.MODERATED });
+        expect(screen.getByText(PublicationStatusEnum.MODERATED)).toBeInTheDocument();
     });
 
     it('should render the ownerId', () => {

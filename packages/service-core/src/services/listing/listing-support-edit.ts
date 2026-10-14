@@ -267,8 +267,6 @@ export function assertSupportCreateIsDraft(input: {
     if (!isAction15Scope()) return { rejectedFields: [] };
     const { data } = input;
     const allowed: Readonly<Record<string, (value: unknown) => boolean>> = {
-        lifecycleState: (value) => value === 'DRAFT',
-        visibility: (value) => value === 'PRIVATE',
         publicationStatus: (value) => value === 'DRAFT',
         isFeatured: (value) => value === false,
         featuredByEntitlement: (value) => value === false

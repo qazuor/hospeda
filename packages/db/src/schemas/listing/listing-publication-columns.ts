@@ -19,9 +19,11 @@ import { PublicationStatusPgEnum } from './publication_status.dbschema.ts';
 export function listingPublicationColumns() {
     return {
         /**
-         * The listing state of `V/03` §9 (see `PublicationStatusEnum`). Replaces
-         * `lifecycle_state`, `visibility` and `moderation_state`, which the paso-3
-         * cut migration (V6.9b) drops.
+         * The listing state of `V/03` §9 (see `PublicationStatusEnum`). It
+         * replaced `lifecycle_state`, `visibility` and `moderation_state` (and,
+         * on `accommodations`, `owner_suspended`, `plan_restricted` and
+         * `billing_unpublished_at`), which V6.9b (HOS-1641) dropped in the
+         * paso-3 migration. Public reads ask `publication_status = 'PUBLISHED'`.
          */
         publicationStatus: PublicationStatusPgEnum('publication_status').notNull(),
 

@@ -246,7 +246,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
         ownerId: 'owner-1',
         name: 'La Parrilla',
         slug: 'la-parrilla',
-        lifecycleState: 'DRAFT',
+        publicationStatus: 'DRAFT',
         destinationId: DESTINATION_1,
         description: 'Descripción original con suficiente longitud para pasar validación.',
         ...overrides
@@ -375,7 +375,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
 
     describe('published slug refresh opt-in (HOS-784 stage 2)', () => {
         it('does not send refreshSlugFromName by default when a published listing is renamed', async () => {
-            renderEditor('gastronomy', buildListing({ lifecycleState: 'ACTIVE' }));
+            renderEditor('gastronomy', buildListing({ publicationStatus: 'PUBLISHED' }));
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Parrilla Nueva' }
@@ -388,7 +388,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         it('sends refreshSlugFromName when the owner opts in on a published rename', async () => {
-            renderEditor('gastronomy', buildListing({ lifecycleState: 'ACTIVE' }));
+            renderEditor('gastronomy', buildListing({ publicationStatus: 'PUBLISHED' }));
 
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Parrilla Nueva' }

@@ -12,6 +12,7 @@ import { Link } from '@tanstack/react-router';
 import { createElement, Fragment } from 'react';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
 import type { ExperienceListItem } from './experience.config';
 
 // ---------------------------------------------------------------------------
@@ -132,11 +133,13 @@ export const createExperienceColumns = (
         }
     },
     {
-        id: 'lifecycleStatus',
+        // HOS-1641: the listing's single, read-only publication state.
+        id: 'publicationStatus',
         header: t('admin-entities.columns.status'),
-        accessorKey: 'lifecycleStatus',
+        accessorKey: 'publicationStatus',
         enableSorting: true,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.BADGE,
+        badgeOptions: getPublicationStatusBadgeOptions({ t })
     },
     {
         id: 'createdAt',

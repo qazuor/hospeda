@@ -26,7 +26,6 @@ import {
     AccommodationCreateDraftHttpSchema,
     type AccommodationCreateInput,
     AccommodationCreateInputSchema,
-    AccommodationExtraInfoRequiredForPublishSchema,
     type AccommodationFaq,
     type AccommodationFaqAddInput,
     AccommodationFaqAddInputSchema,
@@ -93,7 +92,6 @@ import {
     // The one shared publish-requirement list (H-101) — the editor hub reads the
     // very same module, which is what stops the two lists from drifting again.
     buildPublishRequirementsReason,
-    type ContentModerationChangeInput,
     type CountResponse,
     DestinationTypeEnum,
     type EntityFilters,
@@ -101,16 +99,15 @@ import {
     httpToDomainAccommodationCreateDraft,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
-    LifecycleStatusEnum,
     ModerationStatusEnum,
     type NearbyPoi,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
     RoleGrantReason,
     resolveMissingPublishRequirements,
     ServiceErrorCode,
     type Success,
-    VisibilityEnum,
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema
 } from '@repo/schemas';
@@ -178,7 +175,6 @@ import {
     checkCanFindOptions,
     checkCanHardDelete,
     checkCanList,
-    checkCanModerate,
     checkCanRestore,
     checkCanSoftDelete,
     checkCanUpdate,
@@ -195,18 +191,7 @@ import {
     projectAccommodationOwnerAvatar,
     projectAccommodationOwnerAvatarList
 } from './accommodation.projections';
-import type {
-    AccommodationHookState,
-    AccommodationPublishDeps,
-    HostOnboardingResult,
-    PublishTransactionContext,
-    StartLocalTrialResult
-} from './accommodation.types';
-import {
-    FIRST_PUBLISH_PAUSED_REASON,
-    publishEligibilityAllowsPublish,
-    publishEligibilityStartsLocalTrial
-} from './accommodation.types';
+import type { AccommodationHookState, HostOnboardingResult } from './accommodation.types';
 
 /** Entity-specific filter fields for accommodation admin search. */
 type AccommodationEntityFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
@@ -340,13 +325,6 @@ export class AccommodationService extends BaseCrudService<
     private readonly mediaProvider: ImageProvider | null;
 
     /**
-     * Optional billing dependencies required by `publish()`. Wired by the API layer
-     * (apps/api) which has access to TrialService and the QZPay client. Routes that
-     * never publish (e.g. read endpoints) instantiate the service without these.
-     */
-    private readonly _publishDeps: AccommodationPublishDeps | null;
-
-    /**
      * Junction model for `r_accommodation_amenity`. Used by the SPEC-172 transactional
      * sync helpers to insert/delete amenity associations alongside create/update.
      */
@@ -392,8 +370,9 @@ export class AccommodationService extends BaseCrudService<
      * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
      * @param _userModel - Unused. The owner-suspension guard that read it was removed
      *   (HOS-1419); the positional slot is kept so existing callers do not shift.
-     * @param publishDeps - Optional billing dependencies required by `publish()`.
-     *   Required only when calling `publish()`; other methods do not need them.
+     * @param _publishDeps - Unused. `publish()`, which read it, was retired with the
+     *   legacy listing columns (V6.9b, HOS-1641); the positional slot is kept so
+     *   existing callers do not shift.
      * @param rAmenityModel - Optional junction model for `r_accommodation_amenity` (for testing/mocking).
      * @param rFeatureModel - Optional junction model for `r_accommodation_feature` (for testing/mocking).
      * @param amenityModel - Optional catalog model for `amenities` (for testing/mocking).
@@ -409,7 +388,7 @@ export class AccommodationService extends BaseCrudService<
         model?: AccommodationModel,
         mediaProvider?: ImageProvider | null,
         _userModel?: UserModel,
-        publishDeps?: AccommodationPublishDeps | null,
+        _publishDeps?: null,
         rAmenityModel?: RAccommodationAmenityModel,
         rFeatureModel?: RAccommodationFeatureModel,
         amenityModel?: AmenityModel,
@@ -429,7 +408,6 @@ export class AccommodationService extends BaseCrudService<
         });
         this._destinationModel = new DestinationModel();
         this.mediaProvider = mediaProvider ?? null;
-        this._publishDeps = publishDeps ?? null;
         this._rAmenityModel = rAmenityModel ?? new RAccommodationAmenityModel();
         this._rFeatureModel = rFeatureModel ?? new RAccommodationFeatureModel();
         this._amenityModel = amenityModel ?? new AmenityModel();
@@ -570,8 +548,8 @@ export class AccommodationService extends BaseCrudService<
     protected _canUpdate(actor: Actor, entity: Accommodation): void {
         // Every `_canUpdate` caller writes content (the row, its FAQ, media and
         // IA data), so an explicitly authorized action 15 may pass (ACC:15,
-        // HOS-1493). `unpublish` and `_canUpdateVisibility` call
-        // `checkCanUpdate` directly, which action 15 never satisfies.
+        // HOS-1493). `_canUpdateVisibility` calls `checkCanUpdate` directly,
+        // which action 15 never satisfies.
         if (checkAction15CanUpdate(actor, entity)) return;
         checkCanUpdate(actor, entity);
     }
@@ -631,13 +609,15 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * @inheritdoc
-     * For accommodations, visibility can be changed by anyone who can update the entity.
-     * This could be evolved to a specific `ACCOMMODATION_UPDATE_VISIBILITY` permission if needed.
+     * Required by the base class. Accommodations have no `visibility` column since
+     * V6.9b (HOS-1641): what the public sees is `publicationStatus`, written only by
+     * the publication machine. The generic visibility write keeps the update
+     * permission check so it can never be a looser door than `update`.
      */
     protected _canUpdateVisibility(
         actor: Actor,
         entity: Accommodation,
-        _newVisibility: Accommodation['visibility']
+        _newVisibility: unknown
     ): void {
         checkCanUpdate(actor, entity);
     }
@@ -832,35 +812,6 @@ export class AccommodationService extends BaseCrudService<
     ): Promise<Partial<Accommodation>> {
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: data as Record<string, unknown> });
-        // HOS-153: an accommodation may only be created directly in ACTIVE state with
-        // complete capacity. `publish()` enforces this for DRAFT/INACTIVE -> ACTIVE
-        // transitions, but a direct `create({ lifecycleState: ACTIVE })` — reachable via
-        // `POST /api/v1/admin/accommodations`, whose route takes the domain input straight
-        // through without going through `publish()` — would otherwise bypass the guard.
-        // Re-check here so the "ACTIVE => complete capacity" invariant holds on every
-        // create path (mirrors the publish() capacity guard).
-        //
-        // KNOWN, DELIBERATE DIVERGENCE (H-101): this checks the four capacity
-        // fields only, while `publish()` also requires a main image. It is not an
-        // oversight. This path is admin-only, and at create time the media arrives
-        // in the same payload rather than in `accommodation_media`, so the main
-        // image cannot be resolved the way the publish gate resolves it. An admin
-        // creating an ACTIVE listing with no photo therefore still can — which is
-        // the same public page with a broken <img> the owner decided to stop the
-        // OWNER from producing. Closing this needs the media to be readable here,
-        // which is a change to the create pipeline, not to this guard.
-        if (data.lifecycleState === LifecycleStatusEnum.ACTIVE) {
-            const capacityCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
-                data.extraInfo ?? {}
-            );
-            if (!capacityCheck.success) {
-                throw new ServiceError(
-                    ServiceErrorCode.VALIDATION_ERROR,
-                    'Cannot create an ACTIVE accommodation: capacity details (capacity, minNights, bedrooms, bathrooms) are incomplete'
-                );
-            }
-        }
-
         await this._assertDestinationIsCity(data.destinationId);
 
         // SPEC-172: capture junction sync inputs in hookState.
@@ -935,22 +886,19 @@ export class AccommodationService extends BaseCrudService<
      * Whether an accommodation is visible to the public — the only case in which
      * its change should trigger public-page (ISR/Cloudflare) revalidation.
      *
-     * An accommodation is public iff it is both published (`lifecycleState`
-     * `ACTIVE`) AND `visibility` `PUBLIC`. A DRAFT (any visibility) or a
-     * `PRIVATE`/`RESTRICTED` listing never appears on public pages, so purging
-     * public paths for it is wasted work (HOS-203).
+     * An accommodation is public iff its `publicationStatus` is `PUBLISHED`, the
+     * only state another account can see (AC:V5:5). Every other state (`DRAFT`,
+     * `UNPUBLISHED_BY_BILLING`, `ARCHIVED`, `MODERATED`, `PURGED`) never appears
+     * on public pages, so purging public paths for it is wasted work (HOS-203).
+     * V6.9b (HOS-1641) replaced the old `lifecycleState`/`visibility` pair.
      *
-     * @param entity - Accommodation-like object carrying `lifecycleState`/`visibility`.
+     * @param entity - Accommodation-like object carrying `publicationStatus`.
      * @returns `true` when the listing is publicly visible.
      */
     private _isPubliclyVisible(entity: {
-        readonly lifecycleState?: Accommodation['lifecycleState'];
-        readonly visibility?: Accommodation['visibility'];
+        readonly publicationStatus?: Accommodation['publicationStatus'];
     }): boolean {
-        return (
-            entity.lifecycleState === LifecycleStatusEnum.ACTIVE &&
-            entity.visibility === VisibilityEnum.PUBLIC
-        );
+        return entity.publicationStatus === PublicationStatusEnum.PUBLISHED;
     }
 
     /**
@@ -1105,18 +1053,10 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Captures the current `lifecycleState` of the entity before an update and stores it
-     * in `ctx.hookState.previousLifecycleState` for use in `_afterUpdate`.
-     *
-     * Note: The base `_beforeUpdate` receives only the update payload, not the entity ID.
-     * To retrieve the current state, we read `lifecycleState` from the incoming update data
-     * is NOT sufficient — we need the state BEFORE the update. Because `AccommodationUpdateInputSchema`
-     * omits `id`, the entity must be re-fetched via a model lookup keyed on any available field.
-     * Since no unique field is reliably present in all update payloads (slug is optional),
-     * we store `undefined` here and rely on idempotent logic in `_afterUpdate` instead.
-     *
-     * The `_afterUpdate` hook is idempotent: it only assigns HOST role if the user does not
-     * already hold a privileged role, so repeated ACTIVE-state updates are safe no-ops.
+     * Captures the pre-update state an update needs (`ctx.hookState`): the row
+     * before the edit, its translatable fields, a regenerated slug when the
+     * slug policy asks for one, and whether the listing was public
+     * (`publicationStatus === PUBLISHED`) before the update.
      *
      * SPEC-172: also strips `amenityIds`/`featureIds` from the returned payload (they are
      * write-only junction sync inputs, not columns in the `accommodations` table) and stores
@@ -1141,13 +1081,6 @@ export class AccommodationService extends BaseCrudService<
             await this._assertDestinationIsCity(data.destinationId);
         }
 
-        // Store the incoming lifecycleState (target state) so _afterUpdate can read it.
-        // The idempotency guard in _afterUpdate handles the case where this is unchanged.
-        if (ctx.hookState) {
-            ctx.hookState.previousLifecycleState =
-                typeof data.lifecycleState === 'string' ? data.lifecycleState : undefined;
-        }
-
         // SPEC-212 AC-5: capture translatable field values from the entity BEFORE the update
         // so _afterUpdate can diff and re-translate ONLY fields that actually changed.
         // The entity ID is available via ctx.hookState.updateId (set by the update() override).
@@ -1161,7 +1094,7 @@ export class AccommodationService extends BaseCrudService<
                 if (
                     current &&
                     shouldRegenerateSlugOnListingChange({
-                        currentLifecycleState: current.lifecycleState,
+                        currentPublicationStatus: current.publicationStatus,
                         currentName: current.name,
                         nextName: data.name,
                         currentType: current.type,
@@ -1190,8 +1123,8 @@ export class AccommodationService extends BaseCrudService<
                     richDescription: current?.richDescription ?? undefined
                 };
                 // HOS-203: remember whether the listing was publicly visible BEFORE
-                // the update, so _afterUpdate can still revalidate an ACTIVE→DRAFT
-                // unpublish (the public page that just disappeared must be purged),
+                // the update, so _afterUpdate can still revalidate a listing that
+                // left PUBLISHED (the public page that just disappeared must be purged),
                 // while skipping revalidation for edits that stay private end-to-end.
                 ctx.hookState.previousPubliclyVisible = current
                     ? this._isPubliclyVisible(current)
@@ -1239,12 +1172,11 @@ export class AccommodationService extends BaseCrudService<
 
     /**
      * Schedules revalidation after an accommodation update, and auto-assigns the HOST
-     * role to the owning user when the accommodation's `lifecycleState` transitions to
-     * `ACTIVE` for the first time.
+     * role to the owning user while the accommodation is `PUBLISHED`.
      *
      * Role assignment is idempotent: if the user already holds `HOST`, `ADMIN`,
      * `CLIENT_MANAGER`, or `SUPER_ADMIN`, no change is made. This ensures the hook is
-     * safe to fire on any ACTIVE-state update, not just the initial transition.
+     * safe to fire on any update of a published listing.
      *
      * Role assignment uses `UserModel` directly (bypassing `UserService` permission checks)
      * because this is a system-level side effect that should not depend on the actor's
@@ -1325,21 +1257,20 @@ export class AccommodationService extends BaseCrudService<
             }).changes
         });
 
-        // HOS-203: skip public revalidation when the listing is private BOTH before
-        // and after the update. Editing a DRAFT/PRIVATE listing has no public footprint,
-        // so purging public paths is wasted work (and logged 404s in prod). We still
-        // revalidate when the listing is public now (normal edit / publish) OR was
-        // public before (e.g. an ACTIVE→DRAFT unpublish via update must purge the page
-        // that just disappeared). `previousPubliclyVisible` is captured in _beforeUpdate;
+        // HOS-203: skip public revalidation when the listing is not PUBLISHED BOTH
+        // before and after the update. Editing an unpublished listing has no public
+        // footprint, so purging public paths is wasted work (and logged 404s in prod).
+        // We still revalidate when the listing is public now OR was public before
+        // (the page that just disappeared must be purged). `previousPubliclyVisible` is captured in _beforeUpdate;
         // `undefined` (before-state unknown) falls through to revalidating — the safe default.
         const wasPubliclyVisible = ctx.hookState?.previousPubliclyVisible;
         if (this._isPubliclyVisible(entity) || wasPubliclyVisible !== false) {
             await this._scheduleAccommodationRevalidation(entity);
         }
 
-        // Auto-assign HOST role when accommodation becomes ACTIVE.
-        // Uses an idempotency guard so this is safe on any ACTIVE-state update.
-        if (entity.lifecycleState === LifecycleStatusEnum.ACTIVE && entity.ownerId) {
+        // Auto-assign HOST role while the accommodation is PUBLISHED (H8, HOS-1641).
+        // Uses an idempotency guard so this is safe on any update of a published listing.
+        if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED && entity.ownerId) {
             await this._assignHostRoleIfNeeded(entity.ownerId, ctx);
         }
 
@@ -1414,7 +1345,7 @@ export class AccommodationService extends BaseCrudService<
      * `max_accommodations` like any other create (enforced by
      * `enforceAccommodationLimit()` on the route, with no bypass).
      *
-     * A fresh DRAFT is inserted with `ownerId = actor.id`, `lifecycleState = DRAFT`,
+     * A fresh DRAFT is inserted with `ownerId = actor.id`, `publicationStatus = DRAFT` (the model's birth state),
      * `lastWarnedAt = null`, and the owner is atomically promoted USER -> HOST in the
      * same transaction. The promotion is required so the owner gains the HOST role's
      * permissions (manage their own accommodations, upload media, etc.) — NOT for
@@ -1422,7 +1353,7 @@ export class AccommodationService extends BaseCrudService<
      * staff-only; see HOS-152). When the actor is already HOST (or higher) the role
      * promotion is a no-op but a new DRAFT is still created so their input is not
      * lost. The trial subscription is NOT created here — it is deferred to the first
-     * publish (see `publish()`).
+     * publish (PB1 of the listing publication machine).
      *
      * Slug generation and destination validation reuse the same `_beforeCreate` hook
      * as the generic create flow, so the resulting row is structurally identical to
@@ -1475,8 +1406,7 @@ export class AccommodationService extends BaseCrudService<
                 // required so the owner gains the HOST role's permissions right
                 // away (manage own accommodations, upload media, etc.) — NOT for
                 // admin panel access, which HOST does not have. The trial
-                // subscription is still deferred to the first publish — see
-                // `publish()`.
+                // subscription is still deferred to the first publish (PB1).
                 const result = await withServiceTransaction(
                     async (txCtx) => {
                         // Run _beforeCreate inside the tx so that hookState mutations
@@ -1492,7 +1422,6 @@ export class AccommodationService extends BaseCrudService<
                             ...domainInput,
                             ...processedData,
                             ownerId: validatedActor.id,
-                            lifecycleState: LifecycleStatusEnum.DRAFT,
                             lastWarnedAt: null,
                             createdById: validatedActor.id,
                             updatedById: validatedActor.id
@@ -1632,45 +1561,16 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Intercepts updates to enforce billing gates and route lifecycle transitions
-     * through the correct publish flow.
+     * Updates an accommodation inside a write transaction.
      *
-     * SPEC-217: gates writes for regular HOST owners whose subscription is lapsed
-     * (`subscription_required`). Actors with `ACCOMMODATION_UPDATE_ANY` are excluded.
+     * SPEC-172 / HOS-1499: when no external transaction is supplied, opens one so
+     * the update, the amenity/feature junction sync and the owner-act event are
+     * fully atomic.
      *
-     * HOS-217-followup: `checkEligibility` became category-aware (it now requires an
-     * *owner*-category plan, not just any active subscription), which made this gate
-     * over-broad — a HOST with a non-owner plan (e.g. a tourist plan) could no longer
-     * even edit a still-unpublished DRAFT, when the intent was only to block
-     * *publishing*. The gate is therefore scoped to accommodations that are ALREADY
-     * ACTIVE: editing a DRAFT (or any other non-ACTIVE state) never requires an owner
-     * plan, only transitioning it to ACTIVE does (enforced separately by `publish()`,
-     * which is untouched by this scoping). The gate fires before any DB write so a
-     * lapsed host can never mutate an already-published accommodation regardless of
-     * the payload.
-     *
-     * SPEC-172: when `amenityIds` or `featureIds` are present in the update payload,
-     * wraps the full update + junction sync in a `withServiceTransaction` boundary so
-     * the accommodation update and the junction mutations are fully atomic.
-     *
-     * Behaviour matrix:
-     * - `publishDeps` wired AND current accommodation is ACTIVE AND owner has
-     *   `subscription_required` AND actor is not admin:
-     *   → reject with FORBIDDEN immediately (all writes on that ACTIVE accommodation
-     *     blocked). A DRAFT (or any non-ACTIVE) accommodation never hits this branch,
-     *     regardless of owner eligibility.
-     * - `lifecycleState === ACTIVE` AND current state is NOT ACTIVE AND
-     *   `publishDeps` are wired AND eligibility is NOT `subscription_required`:
-     *   → apply any non-lifecycle fields via the regular update pipeline first,
-     *     then delegate to `publish()`.
-     * - Anything else → fall through to the standard `BaseCrudService.update()`
-     *   (including the legacy `_afterUpdate.assignHostRoleIfNeeded` best-effort
-     *   path used by callers that have not wired billing deps, e.g. unit tests
-     *   exercising lifecycle hooks in isolation).
-     *
-     * The `publishDeps` gate keeps this override fully backwards compatible:
-     * service consumers that never wired billing dependencies see the same
-     * behaviour as before this method existed.
+     * Publication is NOT routed through here: `publicationStatus` is never part of
+     * an update input (R3, HOS-1641) and only the PB transitions of the listing
+     * publication machine write it. The old billing gate and the `lifecycleState:
+     * ACTIVE` → `publish()` branch were retired with the legacy columns (V6.9b).
      */
     public override async update(
         actor: Actor,
@@ -1683,71 +1583,6 @@ export class AccommodationService extends BaseCrudService<
         const resolvedCtx: ServiceContext<AccommodationHookState> = { hookState: {}, ...ctx };
         if (resolvedCtx.hookState) {
             resolvedCtx.hookState.updateId = id;
-        }
-
-        // SPEC-217: fetch accommodation once so both the write-gate and the
-        // publish branch below can reuse the result without a second DB round-trip.
-        const current = this._publishDeps ? await this.model.findById(id, resolvedCtx?.tx) : null;
-
-        // SPEC-217: gate writes for owners whose subscription is lapsed. An
-        // actor with ACCOMMODATION_UPDATE_ANY may edit without this owner gate.
-        // The gate only fires when publishDeps are wired; services instantiated
-        // without billing deps (e.g. unit tests) are unaffected.
-        //
-        // HOS-217-followup: also only fires when the accommodation is ALREADY
-        // ACTIVE. `checkEligibility` became category-aware (requires an owner-
-        // category plan), and applying that requirement to DRAFT edits was
-        // over-broad — a HOST with a non-owner plan (e.g. tourist) could no
-        // longer even edit an unpublished draft, when only *publishing* it
-        // should require an owner plan. Editing a DRAFT (or any non-ACTIVE
-        // state) is always allowed here; the publish-time check below (and in
-        // `publish()`) is what actually enforces the owner-plan requirement.
-        if (this._publishDeps && current && current.lifecycleState === LifecycleStatusEnum.ACTIVE) {
-            const actorIsAdmin = actor.permissions.includes(
-                PermissionEnum.ACCOMMODATION_UPDATE_ANY
-            );
-            if (!actorIsAdmin) {
-                const eligibility = await this._publishDeps.checkEligibility(
-                    current.ownerId,
-                    resolvedCtx
-                );
-                if (!publishEligibilityAllowsPublish(eligibility)) {
-                    return {
-                        error: new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required')
-                    };
-                }
-            }
-        }
-
-        const target = (data as { lifecycleState?: unknown }).lifecycleState;
-        if (target === LifecycleStatusEnum.ACTIVE && this._publishDeps) {
-            if (current && current.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
-                const { lifecycleState: _drop, ...restFields } = data as Record<string, unknown>;
-                // If the caller set `visibility` in the same request, it is applied
-                // via `super.update` below; publish must then NOT auto-promote it.
-                const callerSetVisibility = 'visibility' in restFields;
-                if (Object.keys(restFields).length > 0) {
-                    const updateResult = resolvedCtx.tx
-                        ? await super.update(
-                              actor,
-                              id,
-                              restFields as AccommodationUpdateInput,
-                              resolvedCtx
-                          )
-                        : await this._runInWriteTransaction({
-                              ctx: resolvedCtx,
-                              run: (txCtx) =>
-                                  super.update(
-                                      actor,
-                                      id,
-                                      restFields as AccommodationUpdateInput,
-                                      txCtx
-                                  )
-                          });
-                    if (updateResult.error) return updateResult;
-                }
-                return this.publish(actor, id, resolvedCtx, { callerSetVisibility });
-            }
         }
 
         // HOS-372 — `media` is READ-ONLY on this entity. The relational
@@ -1779,283 +1614,6 @@ export class AccommodationService extends BaseCrudService<
         }
 
         return super.update(actor, id, normalizedData, resolvedCtx);
-    }
-
-    /**
-     * Whether an admin paused new signups, read through the optional
-     * {@link AccommodationPublishDeps.readNewSignupsFreeze} dep. Absent dep
-     * reads as "not frozen", so services wired without it keep today's flow.
-     *
-     * @returns `true` only while the freeze is on.
-     */
-    private async isNewSignupsFrozen(): Promise<boolean> {
-        const read = this._publishDeps?.readNewSignupsFreeze;
-        if (!read) {
-            return false;
-        }
-        const { frozen } = await read();
-        return frozen === true;
-    }
-
-    /**
-     * Atomically transitions an accommodation to `ACTIVE` (the "publish" flow),
-     * orchestrating billing trial creation when the owner is publishing for the
-     * first time.
-     *
-     * Role promotion (USER -> HOST) is NOT done here — it happens earlier, at
-     * draft creation time in `createForOnboarding`, so the owner has the HOST
-     * role's permissions (manage own accommodations, upload media, etc.) to
-     * complete the listing — not for admin panel access, which HOST does not
-     * have. By the time `publish` runs, the owner is already HOST (or higher).
-     *
-     * Flow:
-     *
-     *  1. Fetch the accommodation. Authorize: actor must be the owner OR hold
-     *     `ACCOMMODATION_UPDATE_ANY`.
-     *  2. If already `ACTIVE`, return it idempotently.
-     *  3. Ask the billing layer for the owner's
-     *     publish eligibility (`first_publish` / `has_active_sub` /
-     *     `subscription_required`). `subscription_required` rejects with
-     *     FORBIDDEN here — deliberately BEFORE the completeness guard (H-99): a
-     *     missing subscription is the one rejection an owner cannot resolve by
-     *     editing, so they should meet it first rather than after filling in
-     *     `bathrooms`.
-     *  4. Capacity-completeness guard (HOS-152): validate `extraInfo` against
-     *     `AccommodationExtraInfoRequiredForPublishSchema`. If `capacity`/
-     *     `minNights`/`bedrooms`/`bathrooms` are missing, reject with
-     *     `VALIDATION_ERROR`.
-     *  5. Open a short transaction (HOS-1012 G-2) containing BOTH writes:
-     *      - when eligibility was `first_publish`, insert the Hospeda-owned,
-     *        no-card trial subscription (`startLocalTrial`) — the clock starts
-     *        at publish, not at signup (D-1);
-     *      - update accommodation lifecycleState to ACTIVE.
-     *     They commit together or not at all. Nothing external is called inside
-     *     the boundary, which is what makes that possible: the trial is a local
-     *     row with `mp_subscription_id = NULL`, so unlike the pre-HOS-171
-     *     MercadoPago trial it needs no saga, no timeout and no compensating
-     *     cancel.
-     *  6. After the commit, clear the owner's entitlement cache
-     *     (`onTrialStarted`, INV-1) — best effort, a failure here never fails a
-     *     publish that already landed.
-     *  7. Schedule revalidation as a best-effort side effect (never rolls back
-     *     the publish on revalidation errors).
-     *
-     * @param actor - The user (or admin) performing the publish.
-     * @param id - The accommodation ID to publish.
-     * @param ctx - Optional service context. When provided with a transaction,
-     *   the fetch-and-validate phase runs inside it; the publish transaction
-     *   itself is always opened independently to keep the boundary short.
-     * @param opts - Optional publish options.
-     * @param opts.callerSetVisibility - When `true`, the caller already set the
-     *   accommodation's `visibility` explicitly (e.g. an admin patch that carries
-     *   both `lifecycleState: ACTIVE` and a `visibility` value), so publish must
-     *   NOT auto-promote it. When omitted/`false`, publish promotes a `PRIVATE`
-     *   onboarding draft to `PUBLIC` (see the visibility note inside the method).
-     * @returns The updated `Accommodation` on success, or a `ServiceError` on
-     *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `VALIDATION_ERROR`,
-     *   `CONFIGURATION_ERROR`, `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
-     */
-    public async publish(
-        actor: Actor,
-        id: string,
-        ctx?: ServiceContext,
-        opts?: { readonly callerSetVisibility?: boolean }
-    ): Promise<ServiceOutput<Accommodation>> {
-        return this.runWithLoggingAndValidation({
-            methodName: `publish(id=${id})`,
-            input: { actor },
-            schema: z.object({}),
-            ctx,
-            execute: async (_, validatedActor, execCtx) => {
-                const accommodation = await this.model.findById(id, execCtx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Accommodation ${id} not found`
-                    );
-                }
-
-                const isOwner = accommodation.ownerId === validatedActor.id;
-                const isAdmin = validatedActor.permissions.includes(
-                    PermissionEnum.ACCOMMODATION_UPDATE_ANY
-                );
-                if (!isOwner && !isAdmin) {
-                    throw new ServiceError(
-                        ServiceErrorCode.FORBIDDEN,
-                        'Permission denied: only the owner or an admin can publish this accommodation'
-                    );
-                }
-
-                if (accommodation.lifecycleState === LifecycleStatusEnum.ACTIVE) {
-                    return accommodation;
-                }
-
-                // This runs BEFORE the completeness guard below (H-99). It used to
-                // run after, which meant an owner with no plan was told to go fill
-                // in `bathrooms`, did so, retried, and only THEN hit the
-                // subscription wall — two frustrations in the most expensive order.
-                // A missing subscription is the one rejection the host cannot
-                // resolve by editing, so it is the one they should see first.
-                let startsLocalTrial = false;
-
-                if (!this._publishDeps) {
-                    throw new ServiceError(
-                        ServiceErrorCode.CONFIGURATION_ERROR,
-                        'Publish requires billing dependencies; AccommodationService was instantiated without publishDeps'
-                    );
-                }
-                const eligibility = await this._publishDeps.checkEligibility(
-                    accommodation.ownerId,
-                    execCtx
-                );
-                // An owner with no live subscription and no trial left in
-                // this vertical goes to the plans page. `first_publish` is
-                // the other branch: they still have their accommodation
-                // trial, so publishing GRANTS it (HOS-1012 D-1 — the clock
-                // starts when the listing goes live, not at signup) and the
-                // insert happens below, inside the same transaction as the
-                // lifecycle flip.
-                if (!publishEligibilityAllowsPublish(eligibility)) {
-                    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
-                }
-                startsLocalTrial = publishEligibilityStartsLocalTrial(eligibility);
-
-                // Admin-paused signups (`billing_settings.newPaidSignupsFrozen`).
-                // A first publish starts a trial, and a trial is a new
-                // signup, so the OWNER's own first publish is refused here —
-                // before the completeness guard (same H-99 reasoning as the
-                // subscription refusal above: editing cannot resolve it) and
-                // long before the trial insert and the lifecycle flip, so the
-                // listing stays a draft. An admin publishing on the owner's
-                // behalf (`!isOwner`) is exempt, like every admin action.
-                if (startsLocalTrial && isOwner && (await this.isNewSignupsFrozen())) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN,
-                        'Publishing new listings is temporarily paused. The listing was kept as a draft.',
-                        undefined,
-                        FIRST_PUBLISH_PAUSED_REASON
-                    );
-                }
-
-                await this.assertPublishCompleteness({ accommodation, ctx: execCtx });
-
-                // Visibility promotion (SPEC-217): onboarding drafts are created
-                // PRIVATE (intentionally hidden while unpublished). Publishing must
-                // reveal them so the public detail-by-slug endpoint can serve the
-                // listing; otherwise `checkCanView` rejects anonymous readers (404).
-                // We promote ONLY a PRIVATE source — never RESTRICTED or PUBLIC — so a
-                // deliberately-restricted listing is not silently leaked public on
-                // activation. And when the caller set `visibility` explicitly in the
-                // same request (`callerSetVisibility`), we respect their choice and
-                // skip promotion entirely.
-                const shouldPromoteVisibility =
-                    !opts?.callerSetVisibility &&
-                    accommodation.visibility === VisibilityEnum.PRIVATE;
-
-                // HOS-1012 G-2: the trial insert and the lifecycle flip commit
-                // together or neither does. A publish that succeeds while the
-                // trial insert fails leaves a live listing with no clock —
-                // permanently free. A trial that starts while the publish fails
-                // burns days for nothing.
-                //
-                // Still no compensation wrapper, and deliberately so: the trial
-                // is a local row, not a MercadoPago preapproval, so the database
-                // rolls it back. Nothing external is touched in here (ADR-019),
-                // which is exactly what lets both writes share one boundary.
-                //
-                // The trial goes FIRST: `startLocalTrial` returning null means
-                // the owner cannot be given a clock, and that must reject before
-                // the listing is written to at all.
-                const {
-                    updated,
-                    trial
-                }: { updated: Accommodation; trial: StartLocalTrialResult | null } =
-                    await withServiceTransaction(
-                        async (txCtx) => {
-                            let startedTrial: StartLocalTrialResult | null = null;
-                            if (startsLocalTrial) {
-                                // Narrowed here rather than at the top: `_publishDeps`
-                                // is only guaranteed non-null on the non-exempt path,
-                                // which is the only path that can set the flag.
-                                startedTrial =
-                                    (await this._publishDeps?.startLocalTrial({
-                                        ownerId: accommodation.ownerId,
-                                        ctx: txCtx as PublishTransactionContext
-                                    })) ?? null;
-                                if (!startedTrial) {
-                                    // No customer row, no trial plan, or billing is
-                                    // off. Publishing anyway would hand out an
-                                    // unbounded free listing.
-                                    throw new ServiceError(
-                                        ServiceErrorCode.FORBIDDEN,
-                                        'subscription_required'
-                                    );
-                                }
-                            }
-                            const next = await this.model.update(
-                                { id },
-                                {
-                                    lifecycleState: LifecycleStatusEnum.ACTIVE,
-                                    // HOS-1181: cleared in the SAME write as the
-                                    // lifecycle flip — never a follow-up update.
-                                    // A marker that could outlive its publish (a
-                                    // crash between two writes) would later
-                                    // republish a listing its owner has since
-                                    // deliberately unpublished. Cleared on EVERY
-                                    // publish, not just the win-back republish,
-                                    // because "live" is what makes the marker
-                                    // meaningless, no matter who published.
-                                    billingUnpublishedAt: null,
-                                    ...(shouldPromoteVisibility
-                                        ? { visibility: VisibilityEnum.PUBLIC }
-                                        : {}),
-                                    updatedById: validatedActor.id
-                                },
-                                txCtx.tx
-                            );
-                            if (!next) {
-                                throw new ServiceError(
-                                    ServiceErrorCode.INTERNAL_ERROR,
-                                    'Failed to flip accommodation lifecycleState to ACTIVE'
-                                );
-                            }
-                            return { updated: next, trial: startedTrial };
-                        },
-                        undefined,
-                        { timeoutMs: 5000 }
-                    );
-
-                // INV-1, and only reachable once the transaction above has
-                // COMMITTED. A local trial has no preapproval and therefore no
-                // webhook, so this is the only thing that will ever drop the
-                // owner's cached (empty) entitlement set — without it they are
-                // told they are live and still gated for up to 5 minutes. The
-                // API-side hook also re-points the SHARED entity_subscriptions
-                // cache through the reconcile bridge (HOS-1336): without that
-                // half, every owner-gated read keeps answering "no entitlements"
-                // for up to the 6-hour reconcile-cron interval.
-                if (trial) {
-                    try {
-                        await this._publishDeps?.onTrialStarted(trial);
-                    } catch (error) {
-                        // The publish is already committed and the trial row is
-                        // durable. Failing the request now would tell the owner
-                        // their listing did not go live when it did; the caches
-                        // self-heal on their own timers (the in-memory
-                        // entitlement cache within its TTL, entity_subscriptions
-                        // at the next reconcile-cron tick).
-                        this.logger.error(
-                            { error, ...trial },
-                            '[accommodation.publish] trial post-commit hook failed (non-blocking; caches self-heal on their own timers)'
-                        );
-                    }
-                }
-
-                await this._scheduleAccommodationRevalidation(updated, '[accommodation.publish] ');
-
-                return updated;
-            }
-        });
     }
 
     /** Enforces the accommodation's existing publish-completeness requirements. */
@@ -2090,166 +1648,6 @@ export class AccommodationService extends BaseCrudService<
                 buildPublishRequirementsReason({ missing: missingRequirements })
             );
         }
-    }
-
-    /**
-     * Applies the platform's moderation verdict to one accommodation (H-102).
-     *
-     * Until this existed, an accommodation could not leave `PENDING` by any
-     * route: `ACCOMMODATION_MODERATION_CHANGE` was granted in the seed and read
-     * by nothing, and the only moderation endpoint under `routes/accommodation/`
-     * moderated REVIEWS, not the listing. Every accommodation row in production
-     * was `PENDING`, published ones included, and the admin's pending counter —
-     * which does count them — had no action that could ever bring it down.
-     *
-     * Touches `moderationState` and nothing else, exactly like the post and
-     * event equivalents: approving does not publish, rejecting does not
-     * unpublish. Public visibility stays governed by `lifecycleState` and
-     * `visibility` alone. That is deliberate and matches every other content
-     * entity — no public read of an accommodation, post, event or destination
-     * filters on `moderationState` today, so making this one gate reads would
-     * have pulled live listings off the site on deploy.
-     *
-     * @param input - actor, accommodation id, and the new moderation state
-     * @param ctx - optional service context for transaction propagation
-     * @returns The updated accommodation or a service error
-     */
-    public async moderate(
-        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
-        ctx?: ServiceContext
-    ): Promise<ServiceOutput<Accommodation>> {
-        return this.runWithLoggingAndValidation({
-            methodName: `moderate(id=${input.id})`,
-            input: { actor: input.actor },
-            schema: z.object({}),
-            ctx,
-            execute: async (_, validatedActor, execCtx) => {
-                checkCanModerate(validatedActor);
-
-                const accommodation = await this.model.findById(input.id, execCtx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Accommodation ${input.id} not found`
-                    );
-                }
-
-                const updated = await this.model.update(
-                    { id: input.id },
-                    {
-                        moderationState: input.moderationState,
-                        updatedById: validatedActor.id
-                    },
-                    execCtx?.tx
-                );
-                if (!updated) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        'Failed to update accommodation moderationState'
-                    );
-                }
-
-                return updated;
-            }
-        });
-    }
-
-    /**
-     * Transitions an accommodation from `ACTIVE` to `INACTIVE` (paused).
-     *
-     * The accommodation stops appearing on the public site immediately after
-     * unpublishing. It can be reactivated at any time by the owner. This is a
-     * soft pause — the accommodation retains all data, FAQs, media, and settings.
-     *
-     * Permission model mirrors `publish()`:
-     * - The actor must be the owner (`ACCOMMODATION_UPDATE_OWN`) or hold
-     *   `ACCOMMODATION_UPDATE_ANY`.
-     * - Owner-suspended accommodations are also blocked by `checkCanUpdate`.
-     *
-     * HOS-1181: `opts.billingUnpublish` marks this unpublish as BILLING-initiated
-     * by stamping `billingUnpublishedAt` in the SAME write that flips
-     * `lifecycleState` to INACTIVE. Only the accommodation trial-expiry cron
-     * passes it today. An owner's own unpublish from the panel does not — the
-     * two write the same row shape otherwise, and the marker is what lets a
-     * later win-back republish (when the owner pays) tell them apart. The
-     * marker is cleared by the next `publish()`, in its own transactional
-     * write, so it never survives as a stale flag on a live row.
-     *
-     * @param actor - The actor performing the unpublish action.
-     * @param id    - The accommodation ID to unpublish.
-     * @param ctx   - Optional service context (transaction / hookState).
-     * @param opts  - Optional unpublish options.
-     * @param opts.billingUnpublish - Set `billingUnpublishedAt` alongside the
-     *   lifecycle flip (billing-initiated unpublish, HOS-1181).
-     * @returns A `ServiceOutput` containing the updated accommodation, or a
-     *   `ServiceError` on permission / state / update failure.
-     *
-     * @throws {ServiceError} NOT_FOUND    — accommodation does not exist.
-     * @throws {ServiceError} FORBIDDEN    — actor lacks update permission or owner is suspended.
-     * @throws {ServiceError} VALIDATION_ERROR — accommodation is not currently ACTIVE.
-     * @throws {ServiceError} INTERNAL_ERROR — DB update returned nothing.
-     */
-    public async unpublish(
-        actor: Actor,
-        id: string,
-        ctx?: ServiceContext,
-        opts?: { readonly billingUnpublish?: boolean }
-    ): Promise<ServiceOutput<Accommodation>> {
-        return this.runWithLoggingAndValidation({
-            methodName: `unpublish(id=${id})`,
-            input: { actor },
-            schema: z.object({}),
-            ctx,
-            execute: async (_, validatedActor, execCtx) => {
-                const accommodation = await this.model.findById(id, execCtx?.tx);
-                if (!accommodation) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Accommodation ${id} not found`
-                    );
-                }
-
-                // Reuse checkCanUpdate: verifies ownership OR ACCOMMODATION_UPDATE_ANY,
-                // and blocks edits when ownerSuspended (billing pause).
-                checkCanUpdate(validatedActor, accommodation);
-
-                if (accommodation.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        'Only an active accommodation can be unpublished'
-                    );
-                }
-
-                const updated = await this.model.update(
-                    { id },
-                    {
-                        lifecycleState: LifecycleStatusEnum.INACTIVE,
-                        // HOS-1181: same write, not a second one — a marker that
-                        // could land after a failed follow-up update would republish
-                        // a listing whose lifecycle flip rolled back, and a lifecycle
-                        // flip without the marker would silently drop the listing
-                        // from every future win-back republish.
-                        ...(opts?.billingUnpublish ? { billingUnpublishedAt: new Date() } : {}),
-                        updatedById: validatedActor.id
-                    },
-                    execCtx?.tx
-                );
-
-                if (!updated) {
-                    throw new ServiceError(
-                        ServiceErrorCode.INTERNAL_ERROR,
-                        'Failed to flip accommodation lifecycleState to INACTIVE'
-                    );
-                }
-
-                await this._scheduleAccommodationRevalidation(
-                    updated,
-                    '[accommodation.unpublish] '
-                );
-
-                return updated;
-            }
-        });
     }
 
     /**
@@ -2307,15 +1705,6 @@ export class AccommodationService extends BaseCrudService<
         if (granted.error) {
             throw granted.error;
         }
-    }
-
-    protected async _afterUpdateVisibility(
-        entity: Accommodation,
-        _actor: Actor,
-        _ctx: ServiceContext
-    ): Promise<Accommodation> {
-        await this._scheduleAccommodationRevalidation(entity);
-        return entity;
     }
 
     protected async _beforeRestore(
@@ -2663,21 +2052,14 @@ export class AccommodationService extends BaseCrudService<
         actor: Actor,
         ctx: ServiceContext
     ) {
-        const hasVipAccess =
-            actor.entitlements?.has('vip_visibility_access') ||
-            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
-
         // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
         // before reaching this hook (SPEC-088) and re-publishes them via
         // ctx.pagination. Forward them explicitly so the model uses the
         // caller-provided pageSize instead of falling back to its default of 10.
-        // An owner listing their OWN accommodations (ownerId === self) still
-        // sees their service-suspended listings; for everyone else (non-VIP)
-        // suspended listings are hidden. Admins / VIP see all. (SPEC-143 #29)
         //
-        // SPEC-167 T-004: plan-restricted accommodations follow the same owner
-        // visibility rule — owner always sees their own restricted items (so they
-        // can choose/restore); everyone else (non-VIP) has them hidden.
+        // Another account's listing exists only while PUBLISHED (AC:V5:5,
+        // HOS-1641). An owner listing their OWN accommodations (ownerId === self)
+        // still sees every state; everyone else sees PUBLISHED only.
         const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
 
         return this.model.searchWithRelations({
@@ -2686,13 +2068,7 @@ export class AccommodationService extends BaseCrudService<
             pageSize: ctx.pagination?.pageSize ?? 10,
             sortBy: ctx.pagination?.sortBy,
             sortOrder: ctx.pagination?.sortOrder,
-            excludeRestricted: !hasVipAccess,
-            excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-            excludePlanRestricted: !hasVipAccess && !isOwnScope,
-            // Restrict to ACTIVE lifecycle state for public reads.
-            // Owners always see their own non-ACTIVE accommodations (so their
-            // "my listings" view shows DRAFTs); VIP/staff see all lifecycleStates.
-            activeOnly: !hasVipAccess && !isOwnScope
+            publishedOnly: !isOwnScope
         });
     }
 
@@ -2708,21 +2084,13 @@ export class AccommodationService extends BaseCrudService<
         actor: Actor,
         _ctx: ServiceContext
     ) {
-        const hasVipAccess =
-            actor.entitlements?.has('vip_visibility_access') ||
-            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
-
-        // Mirror _executeSearch so count and search agree on what is visible.
-        // SPEC-167 T-004: plan-restricted items are excluded from public counts
-        // but owners always see their own (isOwnScope mirrors ownerSuspended rule).
+        // Mirror _executeSearch so count and search agree on what is visible:
+        // PUBLISHED only, except an owner counting their own listings.
         const isOwnScope = !!params.ownerId && params.ownerId === actor.id;
 
         return this.model.countByFilters({
             ...params,
-            excludeRestricted: !hasVipAccess,
-            excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-            excludePlanRestricted: !hasVipAccess && !isOwnScope,
-            activeOnly: !hasVipAccess && !isOwnScope
+            publishedOnly: !isOwnScope
         });
     }
 
@@ -2765,10 +2133,6 @@ export class AccommodationService extends BaseCrudService<
                 const page = processedParams.page ?? 1;
                 const pageSize = processedParams.pageSize ?? 10;
 
-                const hasVipAccess =
-                    validatedActor.entitlements?.has('vip_visibility_access') ||
-                    hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
-
                 // Forward every validated field to the model via spread so the
                 // search path stays in lockstep with `_executeSearch`. The
                 // previous manual literal silently dropped fields added later
@@ -2778,16 +2142,13 @@ export class AccommodationService extends BaseCrudService<
                 const isOwnScope =
                     !!processedParams.ownerId && processedParams.ownerId === validatedActor.id;
 
-                // SPEC-167 T-004: plan-restricted accommodations are excluded from
-                // public reads, but owners always see their own restricted items.
+                // PUBLISHED only, except an owner reading their own listings
+                // (AC:V5:5, HOS-1641).
                 const modelParams = {
                     ...processedParams,
                     page,
                     pageSize,
-                    excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-                    excludePlanRestricted: !hasVipAccess && !isOwnScope,
-                    activeOnly: !hasVipAccess && !isOwnScope
+                    publishedOnly: !isOwnScope
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
@@ -2838,19 +2199,11 @@ export class AccommodationService extends BaseCrudService<
             execute: async (validated, actor) => {
                 await this._canList(actor);
 
-                const hasVipAccess =
-                    actor.entitlements?.has('vip_visibility_access') ||
-                    hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
-
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
-                    excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess,
-                    // SPEC-167 T-004: top-rated list is always a public view (no
-                    // own-scope), so plan-restricted mirrors ownerSuspended exactly.
-                    excludePlanRestricted: !hasVipAccess,
-                    activeOnly: !hasVipAccess
+                    // A top-rated list is always a public view (no own-scope).
+                    publishedOnly: true
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
@@ -3296,14 +2649,12 @@ export class AccommodationService extends BaseCrudService<
      * Gets accommodations by destination.
      *
      * Uses `searchWithRelations` (not the raw `findAll`) so the public visibility
-     * predicate is enforced at the DB query level:
-     * - `ownerSuspended=true` accommodations are hidden from public actors.
-     * - `planRestricted=true` accommodations are hidden from public actors.
+     * predicate is enforced at the DB query level: only `PUBLISHED` listings are
+     * returned (AC:V5:5, HOS-1641).
      *
      * SPEC-167 T-026: this is a public-only path — there is no `ownerId` in the
-     * params, so there is no own-scope exemption. The only bypass is VIP access
-     * (`vip_visibility_access` entitlement or `ACCOMMODATION_VIEW_ALL` permission),
-     * which mirrors the predicate applied by `getTopRatedByDestination`.
+     * params, so there is no own-scope exemption and no bypass; it mirrors the
+     * predicate applied by `getTopRatedByDestination`.
      *
      * @param actor - The actor performing the action
      * @param data - The input object containing destinationId
@@ -3322,20 +2673,13 @@ export class AccommodationService extends BaseCrudService<
             execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
 
-                const hasVipAccess =
-                    validatedActor.entitlements?.has('vip_visibility_access') ||
-                    hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
-
                 const result = await this.model.searchWithRelations(
                     {
                         destinationId: validated.destinationId,
                         page: validated.page ?? 1,
                         pageSize: validated.pageSize ?? 10,
-                        // SPEC-167 T-026: destination list is always a public view (no
-                        // own-scope), so both visibility flags mirror each other exactly.
-                        excludeOwnerSuspended: !hasVipAccess,
-                        excludePlanRestricted: !hasVipAccess,
-                        activeOnly: !hasVipAccess
+                        // SPEC-167 T-026: destination list is always a public view.
+                        publishedOnly: true
                     },
                     ctx?.tx
                 );
@@ -3387,18 +2731,11 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const hasVipAccess =
-                    actor.entitlements?.has('vip_visibility_access') ||
-                    hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
-
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
                     destinationId: validated.destinationId,
-                    excludeRestricted: !hasVipAccess,
-                    excludeOwnerSuspended: !hasVipAccess,
                     // SPEC-167 T-004: destination top-rated is always a public view.
-                    excludePlanRestricted: !hasVipAccess,
-                    activeOnly: !hasVipAccess
+                    publishedOnly: true
                 });
 
                 const normalized =

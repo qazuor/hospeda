@@ -195,16 +195,11 @@ describe('TEST:V5:19 authenticated actors are not affected', () => {
 });
 
 describe('TEST:V5:19 vertical pre-condition before step 1', () => {
-    // Depends on the transitory NULL bridge; HOS-1641 (V6.9b) removes it and this case with it.
-    it('TRANSITORY bridge: guest READ_PUBLIC on published row via readListingAccessFacts → allowed', async () => {
+    it('guest READ_PUBLIC on a raw PUBLISHED row via readListingAccessFacts → allowed', async () => {
         const port = ports();
-        const rawEntity = {
-            ownerId: 'owner',
-            publicationStatus: null,
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC'
-        } as const;
-        const facts = readListingAccessFacts({ entity: rawEntity });
+        const facts = readListingAccessFacts({
+            entity: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED }
+        });
         const result = await resolveListingAccess({
             actorId: null,
             vertical: VerticalEnum.ACCOMMODATION,
@@ -215,16 +210,11 @@ describe('TEST:V5:19 vertical pre-condition before step 1', () => {
         expect(result).toEqual({ allowed: true, subjectId: null, evaluatedSteps: [4] });
     });
 
-    it('TRANSITORY bridge: ownerSuspended=true → NULL status → guest READ_PUBLIC → NOT_FOUND', async () => {
+    it('guest READ_PUBLIC on a raw row with a NULL state via readListingAccessFacts → NOT_FOUND (no bridge, HOS-1641)', async () => {
         const port = ports();
-        const rawEntity = {
-            ownerId: 'owner',
-            publicationStatus: null,
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC',
-            ownerSuspended: true
-        } as const;
-        const facts = readListingAccessFacts({ entity: rawEntity });
+        const facts = readListingAccessFacts({
+            entity: { ownerId: 'owner', publicationStatus: null }
+        });
         const result = await resolveListingAccess({
             actorId: null,
             vertical: VerticalEnum.ACCOMMODATION,

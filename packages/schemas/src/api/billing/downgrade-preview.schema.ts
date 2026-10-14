@@ -332,7 +332,7 @@ const KeepSelectionsObjectSchema = z.object({
     /**
      * Accommodation UUIDs the host explicitly wants to KEEP active after
      * the downgrade applies. All other active accommodations exceeding the
-     * cap will be plan-restricted (unpublished / `planRestricted` flag).
+     * cap will be unpublished by billing (`UNPUBLISHED_BY_BILLING`).
      *
      * The list is intersected with the actual set of active accommodations
      * owned by the host at apply time — stale UUIDs are silently ignored.

@@ -36,13 +36,7 @@ import { randomUUID } from 'node:crypto';
  * Uses testDb.setup()/clean()/teardown() + direct `getDb()` inserts, mirroring
  * `test/integration/destination/detail-includes-points-of-interest.test.ts`.
  */
-import {
-    accommodations,
-    destinations,
-    getDb,
-    legacyPublicationStatus,
-    pointsOfInterest
-} from '@repo/db';
+import { accommodations, destinations, getDb, pointsOfInterest } from '@repo/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -110,12 +104,7 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             description: 'Accommodation seeded for the HOS-145 T-005 nearby-POIs integration test.',
             ownerId,
             destinationId: destId,
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC',
-            publicationStatus: legacyPublicationStatus({
-                lifecycleState: 'ACTIVE',
-                visibility: 'PUBLIC'
-            }),
+            publicationStatus: 'PUBLISHED',
             inactiveSince: new Date(),
             deadlinesVersion: 1,
             location: { coordinates: { lat: accLat, long: accLong } }
@@ -130,12 +119,7 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             description: 'Accommodation seeded for the HOS-145 T-005 nearby-POIs integration test.',
             ownerId,
             destinationId: destId,
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC',
-            publicationStatus: legacyPublicationStatus({
-                lifecycleState: 'ACTIVE',
-                visibility: 'PUBLIC'
-            }),
+            publicationStatus: 'PUBLISHED',
             inactiveSince: new Date(),
             deadlinesVersion: 1
         } as typeof accommodations.$inferInsert);
@@ -154,12 +138,7 @@ describe('GET /accommodations/:slug/nearby-pois (HOS-145 T-005)', () => {
             description: 'Accommodation seeded for the HOS-145 T-005 nearby-POIs integration test.',
             ownerId,
             destinationId: destId,
-            lifecycleState: 'DRAFT',
-            visibility: 'PUBLIC',
-            publicationStatus: legacyPublicationStatus({
-                lifecycleState: 'DRAFT',
-                visibility: 'PUBLIC'
-            }),
+            publicationStatus: 'DRAFT',
             inactiveSince: new Date(),
             deadlinesVersion: 1,
             location: { coordinates: { lat: accLat, long: accLong } }

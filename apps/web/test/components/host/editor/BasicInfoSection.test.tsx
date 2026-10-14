@@ -99,7 +99,7 @@ vi.mock('@/components/host/editor/RichTextEditor.module.css', () => ({
 const MOCK_DATA = {
     id: 'acc-1',
     slug: 'test-hotel',
-    lifecycleState: 'DRAFT',
+    publicationStatus: 'DRAFT',
     name: 'Test Hotel',
     summary: 'Test summary for accommodation',
     description: 'Test description with content',

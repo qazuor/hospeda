@@ -220,7 +220,8 @@ export interface MarketComparisonData {
 export interface AccommodationEditData {
     readonly id: string;
     readonly slug: string;
-    readonly lifecycleState: string;
+    /** The listing's publication state (`PublicationStatusEnum`, HOS-1641). */
+    readonly publicationStatus: string;
     readonly name: string;
     readonly summary: string;
     readonly description: string;

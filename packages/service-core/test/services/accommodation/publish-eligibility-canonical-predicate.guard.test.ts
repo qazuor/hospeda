@@ -44,21 +44,13 @@ const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../src'
 /** Where the rule lives. Every other file must call into it. */
 const PREDICATE_FILE = 'services/accommodation/accommodation.types.ts';
 
-/**
- * Files that decide publishability, and how many predicate calls each must
- * contain — one per gate. `accommodation.service.ts` has two: `update()`'s
- * ACTIVE-transition guard and `publish()` itself.
+/*
+ * The two publish gates that called the predicate — `update()`'s
+ * ACTIVE-transition guard and `AccommodationService.publish()` — were retired
+ * with the legacy listing columns (V6.9b, HOS-1641): publishing now goes
+ * through the listing publication machine. What stays is the scan below: no
+ * file under src/ may hand-roll a publish decision.
  */
-const PUBLISH_GATE_FILES = [
-    { file: 'services/accommodation/accommodation.service.ts', minCalls: 2 }
-] as const;
-
-/** An actual invocation of the canonical predicate, not a mention in prose. */
-const PREDICATE_USE = /publishEligibilityAllowsPublish\s*\(/g;
-
-/** Importing the canonical predicate from where it is defined. */
-const PREDICATE_IMPORT =
-    /publishEligibilityAllowsPublish[\s\S]{0,200}?from\s+['"][^'"]*accommodation\.types['"]/;
 
 /** Every verdict literal, in either quote style. */
 const VERDICT_LITERAL = /['"](?:first_publish|has_active_sub|subscription_required)['"]/g;
@@ -148,32 +140,6 @@ function collectSourceFiles(dir: string, base: string): string[] {
 }
 
 describe('HOS-1183 guard: service-core publish gates use the canonical predicate', () => {
-    it.each(
-        PUBLISH_GATE_FILES.map((f) => f.file)
-    )('%s imports publishEligibilityAllowsPublish', (file) => {
-        expect(
-            readSrc(file),
-            `${file} does not import publishEligibilityAllowsPublish from ` +
-                'accommodation.types. Publishability must be resolved by the shared ' +
-                'predicate so the server and the publish button cannot disagree ' +
-                '(HOS-1183 AC-4).'
-        ).toMatch(PREDICATE_IMPORT);
-    });
-
-    it.each(PUBLISH_GATE_FILES)('$file calls the predicate at least $minCalls time(s)', ({
-        file,
-        minCalls
-    }) => {
-        const useCount = [...readSrc(file).matchAll(PREDICATE_USE)].length;
-        expect(
-            useCount,
-            `${file} calls publishEligibilityAllowsPublish only ${useCount} time(s), ` +
-                `expected at least ${minCalls}. Every publish gate in this file must ` +
-                "route through it — update()'s ACTIVE-transition guard and publish() " +
-                'are two separate gates enforcing one rule.'
-        ).toBeGreaterThanOrEqual(minCalls);
-    });
-
     it('no unreviewed file under src/ hand-rolls a publish decision', () => {
         const allowed = new Set(DECISION_SCAN_EXCLUSIONS.map((e) => e.file));
         const offenders = collectSourceFiles(SRC_ROOT, SRC_ROOT)

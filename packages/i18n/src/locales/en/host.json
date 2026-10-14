@@ -211,8 +211,10 @@
             "status": {
                 "DRAFT": "Draft",
                 "PUBLISHED": "Published",
-                "SUSPENDED": "Suspended",
-                "INACTIVE": "Paused"
+                "UNPUBLISHED_BY_BILLING": "Unpublished by your plan",
+                "ARCHIVED": "Archived",
+                "MODERATED": "Moderated",
+                "PURGED": "Deleted"
             },
             "actions": {
                 "edit": "Edit",

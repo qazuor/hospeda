@@ -15,11 +15,9 @@ import type {
 } from '@repo/schemas';
 import {
     AccommodationTypeEnum,
-    LifecycleStatusEnum,
     ModerationStatusEnum,
     PriceCurrencyEnum,
-    PublicationStatusEnum,
-    VisibilityEnum
+    PublicationStatusEnum
 } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
 
@@ -51,7 +49,7 @@ const basePrice: AccommodationPrice = {
     currency: PriceCurrencyEnum.USD
 };
 
-/** Accommodation row after the V6.9 publication cut. */
+/** Accommodation row after the V6.9 publication cut (V6.9b removed the six legacy columns). */
 export type MockAccommodation = Accommodation & {
     publicationStatus: PublicationStatusEnum;
     inactiveSince: Date;
@@ -76,8 +74,6 @@ export const createMockAccommodation = (
     // HOS-929: billing-derived featuring (SPEC-292, renamed SPEC-309 OQ-3) —
     // the only featuring source since HOS-1419; defaults false.
     featuredByEntitlement: false,
-    ownerSuspended: false,
-    planRestricted: false,
     // Server-managed (SPEC-237): owner-controlled master toggle for external reputation block.
     showExternalReputation: false,
     // SPEC-291: verification badge fields. Default unverified.
@@ -87,21 +83,8 @@ export const createMockAccommodation = (
     reviewsCount: 0,
     averageRating: 0,
 
-    // Base lifecycle fields
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
-
-    // Base moderation fields
-    moderationState: ModerationStatusEnum.APPROVED,
-
-    // Base visibility fields
-    visibility: VisibilityEnum.PUBLIC,
-    publicationStatus:
-        (overrides.lifecycleState ?? LifecycleStatusEnum.ACTIVE) === LifecycleStatusEnum.ACTIVE &&
-        (overrides.visibility ?? VisibilityEnum.PUBLIC) === VisibilityEnum.PUBLIC &&
-        overrides.ownerSuspended !== true &&
-        overrides.planRestricted !== true
-            ? PublicationStatusEnum.PUBLISHED
-            : PublicationStatusEnum.DRAFT,
+    // Publication state (V6.9b, HOS-1641): public by default.
+    publicationStatus: PublicationStatusEnum.PUBLISHED,
     inactiveSince: new Date('2024-01-01'),
     deadlinesVersion: 1,
 
@@ -168,9 +151,6 @@ export const createMockAccommodationCreateInput = (
         ownerId: getMockId('user') as string,
         reviewsCount: 0,
         averageRating: 0,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        visibility: VisibilityEnum.PUBLIC,
 
         // Postal address fields (SPEC-095): geographic context lives on destination relation.
         location: {
@@ -259,51 +239,52 @@ export default {
 // ============================================================================
 
 /**
- * Creates an accommodation with PUBLIC visibility
+ * Creates a PUBLISHED accommodation
  */
 export const createPublicAccommodation = (overrides?: Partial<Accommodation>): Accommodation => {
     return createMockAccommodation({
-        visibility: VisibilityEnum.PUBLIC,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
         ...overrides
     });
 };
 
 /**
- * Creates an accommodation with PRIVATE visibility (draft)
+ * Creates a DRAFT accommodation
  */
 export const createDraftAccommodation = (overrides?: Partial<Accommodation>): Accommodation => {
     return createMockAccommodation({
-        visibility: VisibilityEnum.PRIVATE,
+        publicationStatus: PublicationStatusEnum.DRAFT,
         ...overrides
     });
 };
 
 /**
- * Creates an accommodation with PENDING moderation status
+ * Creates an accommodation not yet public: the publication model has no
+ * "pending moderation" state, so a pending listing is a DRAFT (HOS-1641).
  */
 export const createPendingAccommodation = (overrides?: Partial<Accommodation>): Accommodation => {
     return createMockAccommodation({
-        moderationState: ModerationStatusEnum.PENDING,
+        publicationStatus: PublicationStatusEnum.DRAFT,
         ...overrides
     });
 };
 
 /**
- * Creates an accommodation with REJECTED moderation status
+ * Creates an accommodation taken down by moderation (MODERATED)
  */
 export const createRejectedAccommodation = (overrides?: Partial<Accommodation>): Accommodation => {
     return createMockAccommodation({
-        moderationState: ModerationStatusEnum.REJECTED,
+        publicationStatus: PublicationStatusEnum.MODERATED,
         ...overrides
     });
 };
 
 /**
- * Creates an accommodation with ARCHIVED lifecycle status
+ * Creates an ARCHIVED accommodation
  */
 export const createArchivedAccommodation = (overrides?: Partial<Accommodation>): Accommodation => {
     return createMockAccommodation({
-        lifecycleState: LifecycleStatusEnum.ARCHIVED,
+        publicationStatus: PublicationStatusEnum.ARCHIVED,
         ...overrides
     });
 };
@@ -343,27 +324,27 @@ export class AccommodationFactoryBuilder {
     }
 
     public public() {
-        this.data.visibility = VisibilityEnum.PUBLIC;
+        this.data.publicationStatus = PublicationStatusEnum.PUBLISHED;
         return this;
     }
 
     public draft() {
-        this.data.visibility = VisibilityEnum.PRIVATE;
+        this.data.publicationStatus = PublicationStatusEnum.DRAFT;
         return this;
     }
 
     public pending() {
-        this.data.moderationState = ModerationStatusEnum.PENDING;
+        this.data.publicationStatus = PublicationStatusEnum.DRAFT;
         return this;
     }
 
     public rejected() {
-        this.data.moderationState = ModerationStatusEnum.REJECTED;
+        this.data.publicationStatus = PublicationStatusEnum.MODERATED;
         return this;
     }
 
     public archived() {
-        this.data.lifecycleState = LifecycleStatusEnum.ARCHIVED;
+        this.data.publicationStatus = PublicationStatusEnum.ARCHIVED;
         return this;
     }
 

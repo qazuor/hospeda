@@ -5,10 +5,17 @@
  * Shows thumbnail image, name, status badge (with color coding), location, price per night,
  * and contextual action links (edit, view on site, publish, unpublish).
  *
- * Status badge mapping:
- * - DRAFT    → amber background  → i18n key `host.properties.card.status.DRAFT`
- * - ACTIVE   → green background  → i18n key `host.properties.card.status.PUBLISHED` (user-facing label)
- * - ARCHIVED → red background    → i18n key `host.properties.card.status.SUSPENDED`
+ * Status badge mapping (HOS-1641: read from `publicationStatus`, one entry per
+ * `PublicationStatusEnum` value, i18n key `host.properties.card.status.<STATE>`):
+ * - DRAFT                  → amber
+ * - PUBLISHED              → green
+ * - UNPUBLISHED_BY_BILLING → inactive
+ * - ARCHIVED               → inactive
+ * - MODERATED              → red
+ * - PURGED                 → red
+ *
+ * The actions per state come from `resolvePropertyCardActions`
+ * (`@/lib/host/property-card-actions`); a `PURGED` listing renders none.
  *
  * SPEC-208 PR2: Edit link added — routes to the web editor page at
  * `/{locale}/mi-cuenta/propiedades/{id}/editar/` instead of the admin panel.
@@ -19,13 +26,14 @@ import { buildUrl } from '@/lib/urls';
 import { type PublishAffordance, UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { Accommodation, ListingNoticesItem } from '@repo/schemas';
-import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { getMediaUrl } from '@repo/media';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import btn from '@/components/account/AccountButton.module.css';
 import { ListingQrSheet } from '@/components/shared/qr/ListingQrSheet.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import { buildUnpublishConfirmNotes } from '@/lib/listing/listing-notices';
+import { hasAnyPropertyCardAction, resolvePropertyCardActions } from '@/lib/host/property-card-actions';
 import { DeleteButton } from './DeleteButton.client';
 import { PublishButton } from './PublishButton.client';
 import { UnpublishButton } from './UnpublishButton.client';
@@ -104,32 +112,40 @@ const thumbnailAlt: string =
     property.media?.featuredImage?.caption ??
     property.name;
 
-/** Status badge label and CSS modifier class. */
-const lifecycleState = property.lifecycleState;
+/** Status badge label and CSS modifier class (HOS-1641: `publicationStatus`). */
+const publicationStatus = property.publicationStatus;
 
 type BadgeVariant = 'amber' | 'green' | 'red' | 'inactive';
 
-const STATUS_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
-    [LifecycleStatusEnum.DRAFT]: {
+const STATUS_MAP: Record<PublicationStatusEnum, { label: string; variant: BadgeVariant }> = {
+    [PublicationStatusEnum.DRAFT]: {
         label: t('host.properties.card.status.DRAFT', 'Borrador'),
         variant: 'amber'
     },
-    [LifecycleStatusEnum.ACTIVE]: {
+    [PublicationStatusEnum.PUBLISHED]: {
         label: t('host.properties.card.status.PUBLISHED', 'Publicada'),
         variant: 'green'
     },
-    [LifecycleStatusEnum.INACTIVE]: {
-        label: t('host.properties.card.status.INACTIVE', 'Pausada'),
+    [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: {
+        label: t('host.properties.card.status.UNPUBLISHED_BY_BILLING', 'Sin publicar por tu plan'),
         variant: 'inactive'
     },
-    [LifecycleStatusEnum.ARCHIVED]: {
-        label: t('host.properties.card.status.SUSPENDED', 'Suspendida'),
+    [PublicationStatusEnum.ARCHIVED]: {
+        label: t('host.properties.card.status.ARCHIVED', 'Archivada'),
+        variant: 'inactive'
+    },
+    [PublicationStatusEnum.MODERATED]: {
+        label: t('host.properties.card.status.MODERATED', 'Moderada'),
+        variant: 'red'
+    },
+    [PublicationStatusEnum.PURGED]: {
+        label: t('host.properties.card.status.PURGED', 'Eliminada'),
         variant: 'red'
     }
 };
 
-const statusInfo = STATUS_MAP[lifecycleState] ?? {
-    label: lifecycleState,
+const statusInfo = STATUS_MAP[publicationStatus] ?? {
+    label: publicationStatus,
     variant: 'amber' as BadgeVariant
 };
 
@@ -174,23 +190,22 @@ const priceOnRequestLabel = t('host.properties.card.priceOnRequest', 'Precio a c
 const editUrl = buildUrl({ locale, path: `mi-cuenta/propiedades/${property.id}/editar` });
 const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` });
 
-const isActive = lifecycleState === LifecycleStatusEnum.ACTIVE;
-const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
-
 /**
- * Whether this property has a public page right now — BOTH clauses, HOS-982.
+ * The actions this card renders, per publication state (HOS-1641, H11).
  *
- * `visibility === PUBLIC` alone is not "published": a DRAFT row can carry PUBLIC
- * visibility and still have no page. The API's `qr-sheet` route checks exactly
- * this pair before it will print a code (see `protected/qrSheet.ts`), so the card
- * has to ask the same question — otherwise it would offer a download that can
- * only ever answer 404.
+ * `actions.canPrintQrSheet` is `publicationStatus === PUBLISHED` (HOS-982): only
+ * a published listing has a public page, which is exactly what the API's
+ * `qr-sheet` route checks before it will print a code, so the card never offers
+ * a download that can only answer 404. It is resolved HERE, from the row the
+ * page already fetched, and never from a failed request: that route answers one
+ * indistinguishable 404 for "not yours", "does not exist" and "not published",
+ * by design.
  *
- * It is resolved HERE, from the row the page already fetched, and never from a
- * failed request: that route answers one indistinguishable 404 for "not yours",
- * "does not exist" and "not published", by design.
+ * A `PURGED` listing gets no action at all (Coord-351 F4): only the HOS-1492
+ * row-20 notice above says it existed and was deleted.
  */
-const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLIC;
+const actions = resolvePropertyCardActions({ publicationStatus });
+const hasAnyAction = hasAnyPropertyCardAction({ actions });
 ---
 
 <article class="prop-card">
@@ -247,15 +262,18 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
         <!-- HOS-1492: the listing's notices (rows 8/9, 18, 20, 24, 30, 31). -->
         <ListingNotices locale={locale} vertical="accommodation" listingId={property.id} item={notices} />
 
-        <!-- ACTIONS -->
+        <!-- ACTIONS: none at all for a PURGED listing (HOS-1641, Coord-351 F4) -->
+        {hasAnyAction && (
         <div class="prop-card__actions" role="group" aria-label={property.name}>
-            <!-- Edit: always available (routes to web editor) -->
-            <a href={editUrl} class:list={['prop-card__action', btn.secondaryCompact]}>
-                {t('host.properties.card.actions.edit', 'Editar')}
-            </a>
+            <!-- Edit: every state but PURGED (routes to web editor) -->
+            {actions.edit && (
+                <a href={editUrl} class:list={['prop-card__action', btn.secondaryCompact]}>
+                    {t('host.properties.card.actions.edit', 'Editar')}
+                </a>
+            )}
 
-            <!-- View on site: only when ACTIVE -->
-            {isActive && (
+            <!-- View on site: only when PUBLISHED -->
+            {actions.viewOnSite && (
                 <a
                     href={viewOnSiteUrl}
                     class:list={['prop-card__action', btn.secondaryCompact]}
@@ -266,8 +284,8 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
                 </a>
             )}
 
-            <!-- Unpublish: only when ACTIVE (React island with inline confirmation) -->
-            {isActive && (
+            <!-- Unpublish: only when PUBLISHED (React island with inline confirmation) -->
+            {actions.unpublish && (
                 <UnpublishButton
                     client:load
                     accommodationId={property.id}
@@ -284,7 +302,7 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
 
             <!-- Publish: only when DRAFT (guided web-native action with trial
                  messaging, React island with inline confirmation — HOS-110) -->
-            {isDraft && (
+            {actions.publish && (
                 <PublishButton
                     client:load
                     accommodationId={property.id}
@@ -306,41 +324,49 @@ const canPrintQrSheet = isActive && property.visibility === VisibilityEnum.PUBLI
                 />
             )}
 
-            <!-- Delete: always available (PB12 via the protected purge endpoint,
-                 the listing moves to PURGED; React island with inline confirmation) -->
-            <DeleteButton
-                client:load
-                listingId={property.id}
-                locale={locale}
-                label={t('host.properties.card.actions.delete', 'Eliminar')}
-                confirmText={t('host.properties.card.actions.deleteConfirm', '¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.')}
-                confirmYes={t('host.properties.card.actions.deleteYes', 'Sí, eliminar')}
-                confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
-                errorText={t('host.properties.card.deleteError', 'No se pudo eliminar. Intentá de nuevo.')}
-            />
+            <!-- Delete: every state but PURGED (PB12 via the protected purge
+                 endpoint, the listing moves to PURGED, so a purged listing has
+                 nothing left to delete; React island with inline confirmation) -->
+            {actions.delete && (
+                <DeleteButton
+                    client:load
+                    listingId={property.id}
+                    locale={locale}
+                    label={t('host.properties.card.actions.delete', 'Eliminar')}
+                    confirmText={t('host.properties.card.actions.deleteConfirm', '¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.')}
+                    confirmYes={t('host.properties.card.actions.deleteYes', 'Sí, eliminar')}
+                    confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
+                    errorText={t('host.properties.card.deleteError', 'No se pudo eliminar. Intentá de nuevo.')}
+                />
+            )}
         </div>
+        )}
 
         <!-- HOS-982: the printable QR sheet. Its own block below the action row
              rather than another chip inside it — it carries an explanatory line
              and a status message, which the row of one-word actions has no shape
-             for. Rendered in EVERY lifecycle state on purpose: a draft's owner
-             reads what publishing unlocks instead of finding nothing at all.
+             for. Rendered in every publication state but PURGED on purpose: a
+             draft's owner reads what publishing unlocks instead of finding
+             nothing at all, while a purged listing has nothing to print
+             (HOS-1641). Printable only when PUBLISHED (`canPrintQrSheet`).
              `client:visible` (not `client:load` like the row's confirm-dialog
              islands) because this is one card in a grid AND the panel fetches
              its QR image on mount: hydrating eagerly would fire one request per
              card in the whole grid on page load, most of them for cards nobody
              scrolls to. Deferring to visibility is what keeps that proportional
              to what is actually looked at. -->
-        <div class="prop-card__qr">
-            <ListingQrSheet
-                client:visible
-                vertical="accommodation"
-                listingId={property.id}
-                slug={property.slug}
-                locale={locale}
-                isPublished={canPrintQrSheet}
-            />
-        </div>
+        {actions.qrBlock && (
+            <div class="prop-card__qr">
+                <ListingQrSheet
+                    client:visible
+                    vertical="accommodation"
+                    listingId={property.id}
+                    slug={property.slug}
+                    locale={locale}
+                    isPublished={actions.canPrintQrSheet}
+                />
+            </div>
+        )}
     </div>
 </article>
 

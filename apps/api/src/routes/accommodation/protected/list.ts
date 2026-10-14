@@ -2,7 +2,7 @@
  * Protected list own accommodations endpoint
  * Returns only accommodations owned by the authenticated user.
  */
-import { AccommodationProtectedSchema, LifecycleStatusEnum } from '@repo/schemas';
+import { AccommodationProtectedSchema, PublicationStatusEnumSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -24,7 +24,7 @@ export const protectedListOwnAccommodationsRoute = createProtectedListRoute({
     path: '/',
     summary: 'List own accommodations',
     description:
-        'Returns a paginated list of accommodations owned by the authenticated user. Optionally filter by lifecycleState.',
+        'Returns a paginated list of accommodations owned by the authenticated user. Optionally filter by publicationStatus.',
     tags: ['Accommodations'],
     // No permission gate: the handler filters strictly by `ownerId = actor.id`,
     // so any authenticated user sees only their own listings. The previous
@@ -32,13 +32,9 @@ export const protectedListOwnAccommodationsRoute = createProtectedListRoute({
     // permission that is not part of the default HOST role, which made the
     // page return 403 for the very users it was built for.
     requestQuery: {
-        lifecycleState: z
-            .enum([
-                LifecycleStatusEnum.DRAFT,
-                LifecycleStatusEnum.ACTIVE,
-                LifecycleStatusEnum.ARCHIVED
-            ])
-            .optional(),
+        // V6.9b (HOS-1641): the owner filters by the single publication state,
+        // any of its six values.
+        publicationStatus: PublicationStatusEnumSchema.optional(),
         page: z.coerce.number().int().min(1).default(1).optional(),
         pageSize: z.coerce.number().int().min(1).max(100).default(50).optional(),
         // Sort params accepted from the web UI listing page. Without these
@@ -60,8 +56,8 @@ export const protectedListOwnAccommodationsRoute = createProtectedListRoute({
 
         const where: Record<string, unknown> = { ownerId: actor.id };
 
-        if (query?.lifecycleState) {
-            where.lifecycleState = query.lifecycleState;
+        if (query?.publicationStatus) {
+            where.publicationStatus = query.publicationStatus;
         }
 
         const result = await accommodationService.list(actor, {

@@ -60,9 +60,11 @@ describe('gastronomia/[slug].astro', () => {
             );
         });
 
-        it('returns 404 for non-PUBLIC visibility values', () => {
-            // The visibility check must exclude PRIVATE and RESTRICTED
-            expect(src).toContain("visibility !== 'PUBLIC'");
+        it('reads no old publication column: a non-PUBLISHED listing 404s through the public read (HOS-1641)', () => {
+            // The public read answers only PUBLISHED (AC:V5:5); every other state
+            // is the same 404 as an unknown slug, already returned by `!result.ok`.
+            expect(src).not.toMatch(/raw\.(visibility|lifecycleState|moderationState)/);
+            expect(src).toContain('if (!result.ok)');
         });
     });
 

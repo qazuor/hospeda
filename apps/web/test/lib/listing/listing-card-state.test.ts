@@ -4,13 +4,41 @@
  * (HOS-166 §8 point 6). Pure function — no DB, no mocks needed.
  */
 
-import { SubscriptionStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { resolveListingCardState } from '../../../src/lib/listing/listing-card-state';
 
 describe('resolveListingCardState', () => {
+    it('returns purged for a PURGED listing before any other signal (HOS-1641, Coord-351 F4)', () => {
+        const state = resolveListingCardState({
+            publicationStatus: PublicationStatusEnum.PURGED,
+            isPublic: true,
+            completeness: { complete: false, missing: ['summary'] },
+            subscriptionStatus: SubscriptionStatusEnum.PAST_DUE,
+            isCheckoutStarting: true
+        });
+
+        expect(state).toEqual({ kind: 'purged' });
+    });
+
+    it.each([
+        PublicationStatusEnum.DRAFT,
+        PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+        PublicationStatusEnum.ARCHIVED,
+        PublicationStatusEnum.MODERATED
+    ])('never returns purged for %s', (publicationStatus) => {
+        const state = resolveListingCardState({
+            publicationStatus,
+            isPublic: false,
+            completeness: { complete: true, missing: [] }
+        });
+
+        expect(state).toEqual({ kind: 'draft-complete' });
+    });
+
     it('returns published when the listing is public, regardless of completeness', () => {
         const state = resolveListingCardState({
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             isPublic: true,
             completeness: null
         });
@@ -20,6 +48,7 @@ describe('resolveListingCardState', () => {
 
     it('returns draft-incomplete with the missing list when not public and incomplete', () => {
         const state = resolveListingCardState({
+            publicationStatus: PublicationStatusEnum.DRAFT,
             isPublic: false,
             completeness: { complete: false, missing: ['summary', 'contactInfo'] }
         });
@@ -32,6 +61,7 @@ describe('resolveListingCardState', () => {
 
     it('returns draft-complete when not public and complete', () => {
         const state = resolveListingCardState({
+            publicationStatus: PublicationStatusEnum.DRAFT,
             isPublic: false,
             completeness: { complete: true, missing: [] }
         });
@@ -41,6 +71,7 @@ describe('resolveListingCardState', () => {
 
     it('returns unknown when completeness could not be determined', () => {
         const state = resolveListingCardState({
+            publicationStatus: PublicationStatusEnum.DRAFT,
             isPublic: false,
             completeness: null
         });
@@ -50,6 +81,7 @@ describe('resolveListingCardState', () => {
 
     it('returns pending-payment when a checkout is in flight, overriding draft states', () => {
         const state = resolveListingCardState({
+            publicationStatus: PublicationStatusEnum.DRAFT,
             isPublic: false,
             completeness: { complete: true, missing: [] },
             isCheckoutStarting: true
@@ -60,6 +92,7 @@ describe('resolveListingCardState', () => {
 
     it('never returns pending-payment once the listing is already published', () => {
         const state = resolveListingCardState({
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             isPublic: true,
             completeness: null,
             isCheckoutStarting: true
@@ -71,6 +104,7 @@ describe('resolveListingCardState', () => {
     describe('suspended (HOS-166 judgment-day W1)', () => {
         it('returns suspended when subscriptionStatus is past_due and the listing is not public', () => {
             const state = resolveListingCardState({
+                publicationStatus: PublicationStatusEnum.DRAFT,
                 isPublic: false,
                 completeness: { complete: true, missing: [] },
                 subscriptionStatus: SubscriptionStatusEnum.PAST_DUE
@@ -81,6 +115,7 @@ describe('resolveListingCardState', () => {
 
         it('prefers published over suspended when isPublic is still true (reconciliation-lag window)', () => {
             const state = resolveListingCardState({
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
                 isPublic: true,
                 completeness: null,
                 subscriptionStatus: SubscriptionStatusEnum.PAST_DUE
@@ -91,6 +126,7 @@ describe('resolveListingCardState', () => {
 
         it('does not treat other non-active statuses (e.g. paused) as suspended — falls through to the honest draft state', () => {
             const state = resolveListingCardState({
+                publicationStatus: PublicationStatusEnum.DRAFT,
                 isPublic: false,
                 completeness: { complete: true, missing: [] },
                 subscriptionStatus: SubscriptionStatusEnum.PAUSED
@@ -101,6 +137,7 @@ describe('resolveListingCardState', () => {
 
         it('ignores a missing subscriptionStatus (never provided) — falls through to completeness-based states', () => {
             const state = resolveListingCardState({
+                publicationStatus: PublicationStatusEnum.DRAFT,
                 isPublic: false,
                 completeness: { complete: false, missing: ['summary'] }
             });

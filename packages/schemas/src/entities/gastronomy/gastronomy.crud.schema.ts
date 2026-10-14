@@ -45,6 +45,9 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
     // featured-by-entitlement sync primitives — never from a request body, not
     // even an admin's. Same treatment as `accommodations.featuredByEntitlement`.
     featuredByEntitlement: true,
+    // HOS-1641: server-managed. Only the PB publication transitions write the
+    // publication state — never a request body, not even an admin's.
+    publicationStatus: true,
     // HOS-895: the uploaded menu photo/PDF. Written ONLY by
     // `POST`/`DELETE /gastronomies/{id}/menu-file`, in the same
     // request that stores or destroys the Cloudinary asset — never
@@ -140,8 +143,8 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  * enable slug-squatting and break indexed links. Any `slug` key in an owner
  * PATCH body is silently stripped (Zod's default unknown-key behaviour).
  *
- * **Control fields stay admin-only (HOS-166 §6.2 / AC-19):** `lifecycleState`,
- * `visibility`, `moderationState`, `ownerId` are **intentionally
+ * **Control fields stay out (HOS-166 §6.2 / AC-19, HOS-1641):** `publicationStatus`
+ * and `ownerId` are **intentionally
  * absent** from this schema — these are the *control* fields (as opposed to
  * *identity*), and the reversal above is scoped to identity only. Any of these
  * keys in an owner PATCH body is silently stripped.
@@ -168,8 +171,8 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
- * - `lifecycleState`, `visibility`, `moderationState`, `ownerId`
- *   (control fields — HOS-166 §6.2)
+ * - `publicationStatus` (written only by the PB publication transitions —
+ *   HOS-1641), `ownerId` (control fields — HOS-166 §6.2)
  * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)
  */
 export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
@@ -227,7 +230,7 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
  * (`POST /api/v1/protected/gastronomies/`, HOS-166 §7.2).
  *
  * Unlike {@link GastronomyAdminCreateInputSchema} (which trusts the caller for
- * `ownerId`/`slug`/lifecycle/visibility because only staff can reach it), this
+ * `ownerId`/`slug` because only staff can reach it), this
  * schema **omits every server-forced or control field** so the route handler
  * is the only place those values can come from:
  *
@@ -235,10 +238,9 @@ export type GastronomyOwnerUpdateInput = z.infer<typeof GastronomyOwnerUpdateInp
  *   `actor.id` (D-3 — an owner can only ever create a listing for themselves).
  * - `slug` — never accepted from the body; derived server-side from `name` at
  *   create time by `BaseListingService._beforeCreate` (HOS-166 OQ-3).
- * - `lifecycleState`, `visibility`, `moderationState` — control
- *   fields; the route always forces `visibility: PRIVATE` and
- *   `lifecycleState: DRAFT` on create (HOS-166 D-3 — complete first, pay
- *   after). `moderationState` is left to its schema default.
+ * - `publicationStatus` — control field; a listing is born `DRAFT` and only
+ *   the PB publication transitions move it (HOS-166 D-3 — complete first, pay
+ *   after; HOS-1641).
  * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates;
  *   nonsensical on a brand-new listing with no reviews yet.
  *
@@ -294,13 +296,11 @@ export const GastronomyOwnerCreateInputSchema = GastronomySchema.omit({
     // Server-forced — never accepted from the owner's request body.
     ownerId: true,
     slug: true,
-    lifecycleState: true,
-    visibility: true,
+    publicationStatus: true,
     // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
     // primitives, never through create/update — the same treatment
     // `accommodation.crud.schema.ts` gives its twin.
     featuredByEntitlement: true,
-    moderationState: true,
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,
     averageRating: true,
@@ -350,14 +350,15 @@ export type GastronomyOwnerCreateInput = z.infer<typeof GastronomyOwnerCreateInp
  *   the review subsystem, not by the admin CRUD path.
  *
  * Explicitly omitting them here enforces that constraint at the schema boundary,
- * matching the spirit of accommodation's omit of `ownerSuspended`/`planRestricted`.
+ * matching the spirit of accommodation's omit of its server-managed flags.
+ * `publicationStatus` is omitted for the same reason: only the PB publication
+ * transitions write it (HOS-1641).
  */
 export const GastronomyUpdateInputSchema = z
     .object(
         // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
-        // this, a PATCH like `{ lifecycleState: 'ACTIVE' }` would arrive at the
-        // service carrying injected defaults (`visibility:'PUBLIC'`,
-        // `moderationState:'PENDING'`, review stats, etc.),
+        // this, a PATCH like `{ name: 'x' }` would arrive at the service carrying
+        // injected defaults (`featuredByEntitlement:false`, review stats, etc.),
         // silently overwriting server state. Stripping the top-level defaults
         // restores correct "absent key = no change" PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
@@ -378,8 +379,11 @@ export const GastronomyUpdateInputSchema = z
                 // their own update and feature their listing without buying the
                 // add-on, which is the exact product HOS-1286 exists to sell.
                 featuredByEntitlement: true,
+                // Server-managed (HOS-1641): only the PB publication transitions
+                // write the publication state.
+                publicationStatus: true,
                 // Server-managed: ownership change requires a dedicated admin action,
-                // not a generic PATCH body (mirrors accommodation's ownerSuspended omit).
+                // not a generic PATCH body.
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.
                 reviewsCount: true,

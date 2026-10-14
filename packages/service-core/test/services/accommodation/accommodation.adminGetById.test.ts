@@ -53,8 +53,8 @@ const actorWith = (permissions: PermissionEnum[], id = OWNER_ID): Actor => ({
     permissions
 });
 
-const ownAccommodation = { id: ACC_ID, ownerId: OWNER_ID, visibility: 'PRIVATE' };
-const othersPublicAccommodation = { id: ACC_ID, ownerId: OTHER_ID, visibility: 'PUBLIC' };
+const ownAccommodation = { id: ACC_ID, ownerId: OWNER_ID, publicationStatus: 'DRAFT' };
+const othersPublicAccommodation = { id: ACC_ID, ownerId: OTHER_ID, publicationStatus: 'PUBLISHED' };
 
 describe('AccommodationService.adminGetById (SPEC-169)', () => {
     let model: MockAccommodationModel;

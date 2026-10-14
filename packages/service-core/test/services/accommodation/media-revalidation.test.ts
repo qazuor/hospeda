@@ -23,11 +23,10 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { domainEventModel, resetDb, setDb } from '@repo/db';
 import {
-    LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
-    RoleEnum,
-    VisibilityEnum
+    PublicationStatusEnum,
+    RoleEnum
 } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -98,8 +97,8 @@ function makeMediaDbMock(updateResult: unknown[]) {
 
 /**
  * Builds the service over an accommodation with the given publication state.
- * `_isPubliclyVisible` requires BOTH `lifecycleState: ACTIVE` and
- * `visibility: PUBLIC`, so a DRAFT listing is the negative control.
+ * `_isPubliclyVisible` requires `publicationStatus: PUBLISHED` (HOS-1641), so a
+ * DRAFT listing is the negative control.
  */
 function buildService({ isPublic }: { readonly isPublic: boolean }) {
     const accommodationModel = {
@@ -108,8 +107,9 @@ function buildService({ isPublic }: { readonly isPublic: boolean }) {
             ownerId: ownerActor.id,
             slug: 'cabana-del-rio',
             destinationId: DESTINATION_ID,
-            lifecycleState: isPublic ? LifecycleStatusEnum.ACTIVE : LifecycleStatusEnum.DRAFT,
-            visibility: isPublic ? VisibilityEnum.PUBLIC : VisibilityEnum.PRIVATE
+            publicationStatus: isPublic
+                ? PublicationStatusEnum.PUBLISHED
+                : PublicationStatusEnum.DRAFT
         })
     };
     return new AccommodationService({} as ServiceConfig, accommodationModel as never);

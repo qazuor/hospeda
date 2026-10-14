@@ -9,9 +9,7 @@
     "type": "HELADERIA",
     "priceRange": "BUDGET",
     "menuUrl": null,
-    "visibility": "PUBLIC",
-    "lifecycleState": "ACTIVE",
-    "moderationState": "APPROVED",
+    "publicationStatus": "PUBLISHED",
     "contactInfo": {
         "personalEmail": "heladerialuna.concordia@gmail.com",
         "mobilePhone": "+54 9 3454 500004",

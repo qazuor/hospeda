@@ -44,7 +44,6 @@ export {
     useCreateGastronomyMutation,
     useGastronomyPendingReviewsQuery,
     useGastronomyQuery,
-    useModerateGastronomyMutation,
     useModerateGastronomyReviewMutation,
     useUpdateGastronomyMutation
 } from './hooks/useGastronomyQuery';

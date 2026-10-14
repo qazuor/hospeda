@@ -53,7 +53,7 @@ describe.each([
     'gastronomy',
     'experience'
 ] as const)('listing publication model: %s', (vertical) => {
-    it('locks, reads, counts, changes conditionally, stamps paired clock, dual-writes and audits', async () => {
+    it('locks, reads, counts, changes conditionally, stamps paired clock and audits', async () => {
         await withTestTransaction(async (tx) => {
             const user = testData.user();
             const destination = testData.destination();
@@ -146,13 +146,9 @@ describe.each([
                 experience: 'experiences'
             }[vertical];
             const rows = await tx.execute(
-                sql`SELECT publication_status, lifecycle_state, visibility, inactive_since, deadlines_version FROM ${sql.identifier(table)} WHERE id = ${first.id}`
+                sql`SELECT publication_status, inactive_since, deadlines_version FROM ${sql.identifier(table)} WHERE id = ${first.id}`
             );
-            expect(rows.rows[0]).toMatchObject({
-                publication_status: 'PUBLISHED',
-                lifecycle_state: 'ACTIVE',
-                visibility: 'PUBLIC'
-            });
+            expect(rows.rows[0]).toMatchObject({ publication_status: 'PUBLISHED' });
             expect(new Date(String(rows.rows[0]?.inactive_since))).toEqual(at);
             const version = await tx.execute(
                 sql`SELECT max(version) AS version FROM vertical_deadline_version`
@@ -186,15 +182,10 @@ describe.each([
                     to: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
                 })
             ).toBe(true);
-            const legacy = await tx.execute(
-                sql`SELECT lifecycle_state, visibility${vertical === 'accommodation' ? sql`, billing_unpublished_at` : sql``} FROM ${sql.identifier(table)} WHERE id = ${first.id}`
+            const unpublished = await tx.execute(
+                sql`SELECT publication_status FROM ${sql.identifier(table)} WHERE id = ${first.id}`
             );
-            expect(legacy.rows[0]).toMatchObject({
-                lifecycle_state: 'INACTIVE',
-                visibility: 'PRIVATE'
-            });
-            if (vertical === 'accommodation')
-                expect(legacy.rows[0]?.billing_unpublished_at).toBeTruthy();
+            expect(unpublished.rows[0]).toEqual({ publication_status: 'UNPUBLISHED_BY_BILLING' });
             expect(
                 await listingPublicationModel.setPublicationStatus({
                     tx,
@@ -204,15 +195,10 @@ describe.each([
                     to: PublicationStatusEnum.DRAFT
                 })
             ).toBe(true);
-            const draftLegacy = await tx.execute(
-                sql`SELECT lifecycle_state, visibility${vertical === 'accommodation' ? sql`, billing_unpublished_at` : sql``} FROM ${sql.identifier(table)} WHERE id = ${first.id}`
+            const draft = await tx.execute(
+                sql`SELECT publication_status FROM ${sql.identifier(table)} WHERE id = ${first.id}`
             );
-            expect(draftLegacy.rows[0]).toMatchObject({
-                lifecycle_state: 'INACTIVE',
-                visibility: 'PRIVATE'
-            });
-            if (vertical === 'accommodation')
-                expect(draftLegacy.rows[0]?.billing_unpublished_at).toBeNull();
+            expect(draft.rows[0]).toEqual({ publication_status: 'DRAFT' });
             const announced = new Date('2026-10-12T12:00:00.000Z');
             expect(
                 await listingPublicationModel.setPublicationStatus({

@@ -2,7 +2,7 @@
  * Regression tests for GET /api/v1/protected/gastronomies/:id — ownership IDOR fix.
  *
  * Security context: GastronomyProtectedSchema exposes owner-private fields
- * (contactInfo, ownerId, lifecycleState, richDescription, audit dates) that
+ * (contactInfo, ownerId, publicationStatus, richDescription, audit dates) that
  * the public tier never returns. Before this fix any authenticated user could
  * fetch any listing via the protected tier, leaking those PII fields.
  *
@@ -37,15 +37,13 @@ const MOCK_GASTRONOMY = {
     description: 'Descripción detallada de la parrilla de prueba.',
     ownerId: OWNER_ID,
     destinationId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-    lifecycleState: 'ACTIVE',
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     averageRating: 4.5,
     reviewsCount: 0,
     isPriceOnRequest: false,
     isFeatured: false,
     // HOS-1286: the protected tier serializes both featuring sources separately.
     featuredByEntitlement: false,
-    moderationState: 'APPROVED',
     media: null,
     seo: null,
     socialNetworks: null,

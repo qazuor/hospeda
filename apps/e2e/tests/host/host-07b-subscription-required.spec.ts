@@ -23,6 +23,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import {
     createAccommodation,
     createSubscription,
@@ -95,7 +96,7 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
 
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'DRAFT',
+            publicationStatus: PublicationStatusEnum.DRAFT,
             slugPrefix: 'host-07b-acc'
         });
 
@@ -131,10 +132,10 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
         ).toBe(true);
 
         // ── 3. DB invariant: accommodation remained DRAFT ─────────────────
-        const accAfter = await execSQL<{ lifecycle_state: string }>(
-            'SELECT lifecycle_state FROM accommodations WHERE id = $1',
+        const accAfter = await execSQL<{ publication_status: string }>(
+            'SELECT publication_status FROM accommodations WHERE id = $1',
             [accommodation.id]
         );
-        expect(accAfter[0]?.lifecycle_state).toBe('DRAFT');
+        expect(accAfter[0]?.publication_status).toBe('DRAFT');
     });
 });

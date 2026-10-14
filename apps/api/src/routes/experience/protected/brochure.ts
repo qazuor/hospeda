@@ -25,10 +25,10 @@
 import {
     EntityTypeEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
-    VerticalEnum,
-    VisibilityEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, entityNotFoundError } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -69,7 +69,7 @@ export async function handleGetExperienceBrochure(
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }
 
-    if (entity.visibility !== VisibilityEnum.PUBLIC) {
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately: the error
         // contract's anti-enumeration rule wants one spelling of a 404, and two
         // would let a caller tell "not yours" from "not published" (HOS-600).

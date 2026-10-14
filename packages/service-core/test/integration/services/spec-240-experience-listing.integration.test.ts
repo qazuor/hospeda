@@ -47,12 +47,10 @@
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
-    LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
     PublicationStatusEnum,
-    RoleEnum,
-    VisibilityEnum
+    RoleEnum
 } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ExperienceReviewService } from '../../../src/services/experience/experience.review.service';
@@ -175,62 +173,57 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
     });
 
     // -----------------------------------------------------------------------
-    // T-1: Admin creates experience listing (PRIVATE/INACTIVE initially)
+    // T-1: Admin creates experience listing (born DRAFT)
     // -----------------------------------------------------------------------
 
-    it.skipIf(!dbAvailable)(
-        'T-1: admin creates an experience listing (PRIVATE / INACTIVE)',
-        async () => {
-            await withServiceTestTransaction(async (tx) => {
-                // Arrange: seed owner + destination
-                const { ownerId, destinationId } = await seedExperience(tx);
-                const ctx: ServiceContext = { tx };
+    it.skipIf(!dbAvailable)('T-1: admin creates an experience listing (born DRAFT)', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            // Arrange: seed owner + destination
+            const { ownerId, destinationId } = await seedExperience(tx);
+            const ctx: ServiceContext = { tx };
 
-                // Act
-                const result = await experienceService.create(
-                    adminActor,
-                    {
-                        name: 'City Kayak Tour Admin',
-                        summary: 'Admin-created experience listing summary',
-                        description: 'Admin-created experience listing for integration test suite.',
-                        type: ExperienceTypeEnum.KAYAK_RENTAL,
-                        priceFrom: 150000,
-                        priceUnit: ExperiencePriceUnitEnum.PER_PERSON,
-                        isPriceOnRequest: false,
-                        ownerId: ownerId as `${string}-${string}-${string}-${string}-${string}`,
-                        destinationId:
-                            destinationId as `${string}-${string}-${string}-${string}-${string}`,
-                        visibility: VisibilityEnum.PRIVATE,
-                        lifecycleState: LifecycleStatusEnum.INACTIVE,
-                        moderationState: ModerationStatusEnum.PENDING,
-                        averageRating: 0,
-                        reviewsCount: 0,
-                        // These all carry a Zod `.default()`, which makes them
-                        // optional on INPUT but not on the OUTPUT type `z.infer`
-                        // resolves to (same reason the gastronomy admin-create
-                        // test above states averageRating/reviewsCount
-                        // explicitly) — so `tsc` requires them here.
-                        meetingPointDirections: [],
-                        whatToBring: [],
-                        requirements: [],
-                        acceptsPrivateGroups: false
-                    },
-                    ctx
-                );
+            // Act
+            const result = await experienceService.create(
+                adminActor,
+                {
+                    name: 'City Kayak Tour Admin',
+                    summary: 'Admin-created experience listing summary',
+                    description: 'Admin-created experience listing for integration test suite.',
+                    type: ExperienceTypeEnum.KAYAK_RENTAL,
+                    priceFrom: 150000,
+                    priceUnit: ExperiencePriceUnitEnum.PER_PERSON,
+                    isPriceOnRequest: false,
+                    ownerId: ownerId as `${string}-${string}-${string}-${string}-${string}`,
+                    destinationId:
+                        destinationId as `${string}-${string}-${string}-${string}-${string}`,
+                    averageRating: 0,
+                    reviewsCount: 0,
+                    // These all carry a Zod `.default()`, which makes them
+                    // optional on INPUT but not on the OUTPUT type `z.infer`
+                    // resolves to (same reason the gastronomy admin-create
+                    // test above states averageRating/reviewsCount
+                    // explicitly) — so `tsc` requires them here.
+                    meetingPointDirections: [],
+                    whatToBring: [],
+                    requirements: [],
+                    acceptsPrivateGroups: false
+                },
+                ctx
+            );
 
-                // Assert
-                expect(result.error).toBeUndefined();
-                expect(result.data).toBeDefined();
-                if (!result.data) throw new Error('expected result.data to be populated');
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data).toBeDefined();
+            if (!result.data) throw new Error('expected result.data to be populated');
 
-                expect(result.data.name).toBe('City Kayak Tour Admin');
-                expect(result.data.ownerId).toBe(ownerId);
-                expect(result.data.destinationId).toBe(destinationId);
-                expect(result.data.visibility).toBe('PRIVATE');
-                expect(result.data.lifecycleState).toBe('INACTIVE');
-            });
-        }
-    );
+            expect(result.data.name).toBe('City Kayak Tour Admin');
+            expect(result.data.ownerId).toBe(ownerId);
+            expect(result.data.destinationId).toBe(destinationId);
+            // A listing is born DRAFT (V6.9b, HOS-1641): no create input sets
+            // its publication state.
+            expect(result.data.publicationStatus).toBe(PublicationStatusEnum.DRAFT);
+        });
+    });
 
     // -----------------------------------------------------------------------
     // T-3: Owner assigned to listing (via model-level update — ownerId is
@@ -243,8 +236,7 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { ownerId: originalOwnerId, experienceId } = await seedExperience(tx, {
-                    visibility: 'PRIVATE',
-                    lifecycleState: 'INACTIVE'
+                    publicationStatus: PublicationStatusEnum.DRAFT
                 });
 
                 const { users, experienceModel } = await import('@repo/db');
@@ -280,8 +272,7 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { ownerId, experienceId } = await seedExperience(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const ownerActor = createListingOwnerActor(ownerId);
                 const ctx: ServiceContext = { tx };
@@ -318,8 +309,7 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { ownerId, experienceId } = await seedExperience(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE'
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const ownerActor = createListingOwnerActor(ownerId);
                 const ctx: ServiceContext = { tx };
@@ -360,8 +350,6 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { experienceId } = await seedExperience(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE',
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
@@ -442,8 +430,6 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { experienceId } = await seedExperience(tx, {
-                    visibility: 'PUBLIC',
-                    lifecycleState: 'ACTIVE',
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);

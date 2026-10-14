@@ -825,7 +825,7 @@ describe('ListingEditor', () => {
             });
         });
 
-        it('control fields (visibility/lifecycleState/moderationState/isFeatured/ownerId) stay absent from the payload', async () => {
+        it('control fields (visibility/publicationStatus/moderationState/isFeatured/ownerId) stay absent from the payload', async () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
@@ -846,7 +846,7 @@ describe('ListingEditor', () => {
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;
             expect(body).not.toHaveProperty('visibility');
-            expect(body).not.toHaveProperty('lifecycleState');
+            expect(body).not.toHaveProperty('publicationStatus');
             expect(body).not.toHaveProperty('moderationState');
             expect(body).not.toHaveProperty('isFeatured');
             expect(body).not.toHaveProperty('ownerId');

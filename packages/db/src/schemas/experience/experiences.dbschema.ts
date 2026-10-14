@@ -20,13 +20,7 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
-import {
-    ExperiencePriceUnitPgEnum,
-    ExperienceTypePgEnum,
-    LifecycleStatusPgEnum,
-    ModerationStatusPgEnum,
-    VisibilityPgEnum
-} from '../enums.dbschema.ts';
+import { ExperiencePriceUnitPgEnum, ExperienceTypePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { experienceFaqs } from './experience_faq.dbschema.ts';
@@ -39,7 +33,7 @@ import { rExperienceFeature } from './r_experience_feature.dbschema.ts';
  *
  * Mirrors the gastronomy table shape as closely as possible:
  * - Same audit columns (createdById, updatedById, deletedById)
- * - Same lifecycle / visibility / moderation state pg enums
+ * - Same publication state (`listingPublicationColumns`, V/03 §9)
  * - Same jsonb contact/social/media/seo/adminInfo pattern
  * - Same i18n columns pattern (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
  * - Same rating aggregate columns (reviewsCount, averageRating, rating)
@@ -261,10 +255,6 @@ export const experiences = pgTable(
         destinationId: uuid('destination_id')
             .notNull()
             .references(() => destinations.id, { onDelete: 'restrict' }),
-        // Visibility / lifecycle / moderation (reuse existing pg enums)
-        visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
-        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('DRAFT'),
-        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         /**
          * Denormalized billing-state flag (HOS-1286) — mirror of
          * `accommodations.featured_by_entitlement`. True while a
@@ -317,7 +307,14 @@ export const experiences = pgTable(
         experiences_destinationId_idx: index('experiences_destinationId_idx').on(
             table.destinationId
         ),
-        experiences_visibility_idx: index('experiences_visibility_idx').on(table.visibility),
+        // HOS-1641 (V6.9b): public and per-destination reads filter on
+        // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
+        experiences_publicationStatus_idx: index('experiences_publicationStatus_idx').on(
+            table.publicationStatus
+        ),
+        experiences_destinationId_publicationStatus_idx: index(
+            'experiences_destinationId_publicationStatus_idx'
+        ).on(table.destinationId, table.publicationStatus),
         // HOS-1286: parallel index for featuredByEntitlement — see the twin on
         // `gastronomies` and the accommodations pair it mirrors.
         experiences_featuredByEntitlement_idx: index('experiences_featuredByEntitlement_idx').on(
@@ -326,18 +323,11 @@ export const experiences = pgTable(
         experiences_type_idx: index('experiences_type_idx').on(table.type),
         experiences_ownerId_idx: index('experiences_ownerId_idx').on(table.ownerId),
         experiences_deletedAt_idx: index('experiences_deletedAt_idx').on(table.deletedAt),
-        experiences_moderationState_idx: index('experiences_moderationState_idx').on(
-            table.moderationState
-        ),
         // Composite: owner + soft-delete (mirrors gastronomy pattern)
         experiences_ownerId_deletedAt_idx: index('experiences_ownerId_deletedAt_idx').on(
             table.ownerId,
             table.deletedAt
-        ),
-        // Composite: destination + visibility (mirrors gastronomy pattern)
-        experiences_destinationId_visibility_idx: index(
-            'experiences_destinationId_visibility_idx'
-        ).on(table.destinationId, table.visibility)
+        )
     })
 );
 

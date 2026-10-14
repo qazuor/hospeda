@@ -23,8 +23,7 @@
  * BaseCrudService.
  *
  * **Invariant:** ONLY `featuredByEntitlement` and `updatedAt` are written. No
- * other column (lifecycle, visibility, ownerSuspended, planRestricted,
- * deletedAt) is touched.
+ * other column (`publicationStatus`, deletedAt) is touched.
  *
  * **Idempotency:** calling with the same `active` value more than once is
  * safe — rows already in the target state are re-written to the same value

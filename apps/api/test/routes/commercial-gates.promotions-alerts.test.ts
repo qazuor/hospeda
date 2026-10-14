@@ -179,9 +179,7 @@ const GASTRONOMY = {
     description: 'A test venue description',
     destinationId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     ownerId: IDS.gastroPro,
-    lifecycleState: 'ACTIVE',
-    moderationState: 'APPROVED',
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     averageRating: 0,
     reviewsCount: 0,
     media: null,
@@ -311,8 +309,7 @@ beforeEach(() => {
             id: IDS.listing,
             name: 'Cabin',
             ownerId: IDS.ownerBasic,
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC',
+            publicationStatus: 'PUBLISHED',
             contactInfo: { whatsapp: '+541234567890' }
         },
         error: undefined

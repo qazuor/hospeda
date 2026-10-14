@@ -71,7 +71,7 @@ test.describe('GUEST-03: guest registration + favorites @p0 @guest @auth', () =>
         // ── 2. Pick 3 published accommodations from seed ───────────────────
         const accs = await execSQL<{ id: string; slug: string }>(
             `SELECT id, slug FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE' AND deleted_at IS NULL
+             WHERE publication_status = 'PUBLISHED' AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 3`
         );

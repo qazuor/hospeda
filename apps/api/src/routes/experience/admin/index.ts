@@ -69,7 +69,7 @@ app.route('/', adminPatchExperienceRoute);
 // POST /:id/assign-owner - Set/replace listing owner
 app.route('/', adminAssignExperienceOwnerRoute);
 
-// POST /:id/moderate - ACC:12 two-level publication moderation; V6.9b retires legacy moderation_state.
+// POST /:id/moderate - ACC:12 two-level publication moderation; the legacy moderation column was retired by V6.9b.
 app.route('/', adminModerateExperienceRoute);
 
 // POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).

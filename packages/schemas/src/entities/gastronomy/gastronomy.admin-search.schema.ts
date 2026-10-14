@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/index.js';
+import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
 
 /**
  * Admin search schema for gastronomy listings.
@@ -23,6 +24,18 @@ import { GastronomyTypeEnumSchema, PriceRangeEnumSchema } from '../../enums/inde
  * ```
  */
 export const GastronomyAdminSearchSchema = AdminSearchBaseSchema.extend({
+    /**
+     * Filter by `publicationStatus` (HOS-1641). REPLACES the base `status`,
+     * which is a `LifecycleStatusEnum` filter: gastronomy listings no longer carry a
+     * lifecycle column, so the panel filters on the six `PublicationStatusEnum`
+     * values instead. `'all'` (the default) does not filter. Same override as
+     * `HostTradeBenefitUsageAdminSearchSchema`.
+     */
+    status: z
+        .enum(['all', ...Object.values(PublicationStatusEnum)] as [string, ...string[]])
+        .default('all')
+        .describe('Filter by publication status. Use "all" to show all statuses'),
+
     /** Filter by gastronomy sub-type. */
     type: GastronomyTypeEnumSchema.optional().describe('Filter by gastronomy type'),
 

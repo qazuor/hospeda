@@ -286,12 +286,12 @@ function buildPatchPayload({
     current,
     baseline,
     vertical,
-    lifecycleState
+    publicationStatus
 }: {
     current: ListingEditData;
     baseline: ListingEditData;
     vertical: GastronomyOrExperience;
-    lifecycleState?: string | null;
+    publicationStatus?: string | null;
 }): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
 
@@ -313,7 +313,7 @@ function buildPatchPayload({
     Object.assign(
         payload,
         buildSlugRefreshPayload({
-            currentLifecycleState: lifecycleState,
+            currentPublicationStatus: publicationStatus,
             initialName: baseline.name,
             currentName: current.name,
             refreshSlugFromName: current.refreshSlugFromName
@@ -609,7 +609,7 @@ export function ListingEditor({
     // Only the values still read by the orchestrator's own JSX. Everything else
     // reaches its section component through the `data` prop (HOS-258 PR 2).
     const { openingHours, amenityIds, featureIds, i18nValues } = formData;
-    const currentLifecycleState = String(data.lifecycleState ?? 'DRAFT');
+    const currentPublicationStatus = String(data.publicationStatus ?? 'DRAFT');
 
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
 
@@ -687,15 +687,15 @@ export function ListingEditor({
                     current: formData,
                     baseline,
                     vertical,
-                    lifecycleState: currentLifecycleState
+                    publicationStatus: currentPublicationStatus
                 }),
                 sectionId
             }),
-        [formData, baseline, vertical, currentLifecycleState, sectionId]
+        [formData, baseline, vertical, currentPublicationStatus, sectionId]
     );
 
     const shouldOfferSlugRefresh = shouldOfferPublishedSlugRefresh({
-        currentLifecycleState,
+        currentPublicationStatus,
         initialName: baseline.name,
         currentName: formData.name
     });

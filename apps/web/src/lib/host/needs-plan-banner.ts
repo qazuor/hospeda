@@ -62,7 +62,7 @@ export interface NeedsPlanBannerParams {
  * const showNeedsPlanBanner = shouldShowNeedsPlanBanner({
  *   isEmpty: properties.length === 0,
  *   fetchError,
- *   hasDraftProperty: properties.some((p) => p.lifecycleState === LifecycleStatusEnum.DRAFT),
+ *   hasDraftProperty: properties.some((p) => p.publicationStatus === PublicationStatusEnum.DRAFT),
  *   hasOwnerPlan
  * });
  * ```

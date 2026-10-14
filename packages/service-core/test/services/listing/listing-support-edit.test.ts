@@ -107,7 +107,7 @@ describe('buildSupportEditParts', () => {
         const { parts } = buildSupportEditParts({
             changes: [
                 { field: 'priceRange' },
-                { field: 'lifecycleState', old: 'ACTIVE', new: 'INACTIVE' },
+                { field: 'inactiveSince', old: 'A', new: 'B' },
                 { field: 'publicationStatus', new: 'DRAFT' }
             ]
         });
@@ -117,7 +117,9 @@ describe('buildSupportEditParts', () => {
 
     it('returns no parts when only non-content fields changed', () => {
         expect(
-            buildSupportEditParts({ changes: [{ field: 'visibility', old: 'A', new: 'B' }] }).parts
+            buildSupportEditParts({
+                changes: [{ field: 'publicationStatus', old: 'PUBLISHED', new: 'DRAFT' }]
+            }).parts
         ).toEqual([]);
     });
 });
@@ -161,7 +163,7 @@ describe('assertSupportEditContentOnly', () => {
         await expect(
             inScope(OWNER_ID, async () =>
                 assertSupportEditContentOnly({
-                    data: { description: 'x', visibility: 'PUBLIC', ownerId: 'someone' }
+                    data: { description: 'x', publicationStatus: 'PUBLISHED', ownerId: 'someone' }
                 })
             )
         ).rejects.toMatchObject({ code: 'FORBIDDEN' });
@@ -195,20 +197,19 @@ describe('assertSupportEditContentOnly', () => {
     it('is a no-op outside an action-15 scope', () => {
         expect(
             assertSupportEditContentOnly({
-                data: { visibility: 'PUBLIC', lifecycleState: 'ACTIVE' }
+                data: { publicationStatus: 'PUBLISHED', ownerId: 'someone' }
             })
         ).toEqual({ rejectedFields: [] });
     });
 });
 
 describe('assertSupportCreateIsDraft', () => {
-    it('accepts a draft, private, unfeatured, pending create inside an action-15 scope', async () => {
+    it('accepts a draft, unfeatured, pending create inside an action-15 scope', async () => {
         const result = await inScope(OWNER_ID, async () =>
             assertSupportCreateIsDraft({
                 data: {
                     name: 'x',
-                    lifecycleState: 'DRAFT',
-                    visibility: 'PRIVATE',
+                    publicationStatus: 'DRAFT',
                     isFeatured: false,
                     moderationState: 'PENDING'
                 }
@@ -219,8 +220,7 @@ describe('assertSupportCreateIsDraft', () => {
 
     it('refuses a create born published, public, featured or approved inside an action-15 scope', async () => {
         for (const data of [
-            { lifecycleState: 'ACTIVE' },
-            { visibility: 'PUBLIC' },
+            { publicationStatus: 'PUBLISHED' },
             { isFeatured: true },
             { moderationState: 'APPROVED' },
             { media: { featuredImage: { moderationState: 'APPROVED' } } }
@@ -232,7 +232,7 @@ describe('assertSupportCreateIsDraft', () => {
     });
 
     it('is a no-op outside an action-15 scope', () => {
-        expect(assertSupportCreateIsDraft({ data: { lifecycleState: 'ACTIVE' } })).toEqual({
+        expect(assertSupportCreateIsDraft({ data: { publicationStatus: 'PUBLISHED' } })).toEqual({
             rejectedFields: []
         });
     });
@@ -371,7 +371,7 @@ describe('recordListingSupportEdit', () => {
 /** A model double answering `findById` with a listing of OWNER_ID and accepting any update. */
 const ownedListingModel = () => ({
     entityName: 'listing',
-    findById: vi.fn(async () => ({ id: LISTING_ID, ownerId: OWNER_ID, ownerSuspended: false })),
+    findById: vi.fn(async () => ({ id: LISTING_ID, ownerId: OWNER_ID })),
     update: vi.fn(async () => ({ id: LISTING_ID }))
 });
 

@@ -47,6 +47,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -80,12 +81,12 @@ test.describe('SEC-01: cross-host isolation @p0 @security', () => {
 
         const accA = await createAccommodation({
             ownerId: hostA.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'sec-01-a'
         });
         const accB = await createAccommodation({
             ownerId: hostB.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'sec-01-b'
         });
 

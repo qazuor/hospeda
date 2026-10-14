@@ -35,7 +35,7 @@ interface AccommodationRow {
     readonly id: string;
     readonly name: string;
     readonly type: string;
-    readonly lifecycleState: string;
+    readonly publicationStatus: string;
     readonly isFeatured: boolean;
     readonly createdAt: string;
 }
@@ -229,9 +229,9 @@ function createTestColumns({
             enableSorting: true
         },
         {
-            id: 'lifecycleState',
+            id: 'publicationStatus',
             header: 'Status',
-            accessorKey: 'lifecycleState',
+            accessorKey: 'publicationStatus',
             enableSorting: true
         },
         {
@@ -254,7 +254,7 @@ function createTestRows(count: number): readonly AccommodationRow[] {
         id: `acc-${i + 1}`,
         name: `Accommodation ${i + 1}`,
         type: i % 2 === 0 ? 'HOTEL' : 'HOSTEL',
-        lifecycleState: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
         isFeatured: i === 0,
         createdAt: `2026-01-0${(i % 9) + 1}T00:00:00.000Z`
     }));
@@ -682,7 +682,7 @@ describe('Accommodations table interactions', () => {
                     id: 'acc-edit-001',
                     name: 'Hotel to Edit',
                     type: 'HOTEL',
-                    lifecycleState: 'ACTIVE',
+                    publicationStatus: 'PUBLISHED',
                     isFeatured: false,
                     createdAt: '2026-01-01T00:00:00.000Z'
                 }
@@ -725,7 +725,7 @@ describe('Accommodations table interactions', () => {
                     id: 'acc-no-link-001',
                     name: 'No Link Hotel',
                     type: 'HOTEL',
-                    lifecycleState: 'ACTIVE',
+                    publicationStatus: 'PUBLISHED',
                     isFeatured: false,
                     createdAt: '2026-01-01T00:00:00.000Z'
                 }

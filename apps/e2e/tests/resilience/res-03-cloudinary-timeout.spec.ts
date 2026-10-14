@@ -35,6 +35,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -60,7 +61,7 @@ test.describe('RES-03: Cloudinary missing-asset tolerance @p0 @resilience @accom
 
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'res-03'
         });
 

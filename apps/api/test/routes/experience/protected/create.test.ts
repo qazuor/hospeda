@@ -6,8 +6,8 @@
  * with `ExperienceService` replaced by a spy so the exact payload passed to
  * `createForOwner()` can be inspected without a live DB.
  *
- * Covers (AC-19, D-3): `ownerId` is always `actor.id`; `visibility` is always
- * PRIVATE and `lifecycleState` always DRAFT; owner-create schema strips
+ * Covers (AC-19, D-3): `ownerId` is always `actor.id`; no publication state
+ * is ever passed (the model births the listing DRAFT); owner-create schema strips
  * server-owned fields; the owner path goes through `createForOwner`; service
  * errors surface as `ServiceError` with the same code.
  *
@@ -75,7 +75,7 @@ vi.mock('../../../../src/utils/actor', () => ({
     getActorFromContext: (ctx: { get: (key: string) => unknown }) => ctx.get('actor')
 }));
 
-import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { handleCreateExperienceListing } from '../../../../src/routes/experience/protected/create';
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
@@ -128,17 +128,19 @@ describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {
         expect(createInput.ownerId).toBe(OWNER_ID);
     });
 
-    it('forces visibility=PRIVATE and lifecycleState=DRAFT', async () => {
+    it('never passes a publication state, even when the body supplies one (V6.9b: born DRAFT by the model)', async () => {
         const ctx = createMockContext();
 
-        await handleCreateExperienceListing(ctx as never, VALID_EXPERIENCE_BODY);
+        await handleCreateExperienceListing(ctx as never, {
+            ...VALID_EXPERIENCE_BODY,
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        });
 
         const [, createInput] = mockCreateForOwner.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];
-        expect(createInput.visibility).toBe(VisibilityEnum.PRIVATE);
-        expect(createInput.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+        expect(createInput).not.toHaveProperty('publicationStatus');
     });
 
     it('routes the owner create through createForOwner, never the plain create (HOS-687)', async () => {

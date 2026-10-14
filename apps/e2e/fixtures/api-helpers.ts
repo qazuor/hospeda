@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { VerticalEnum } from '@repo/schemas';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { execSQL, getDbPool, hasOldBillingSchema } from './db-helpers.ts';
 import { ensureListingOwnerTrial } from './listing-owner-trial.ts';
 
@@ -641,9 +641,12 @@ export async function getAnyCityDestinationId(): Promise<string> {
 }
 
 /**
- * Creates a DRAFT accommodation owned by `ownerId` directly via SQL.
- * Use when a test needs an accommodation but doesn't want to drive the
- * full host-onboarding UI flow.
+ * Creates an accommodation owned by `ownerId` directly via SQL, born in
+ * `publicationStatus` (default `DRAFT`). Use when a test needs an accommodation
+ * but doesn't want to drive the full host-onboarding UI flow. Pass
+ * `PublicationStatusEnum.PUBLISHED` for a listing the public surface must show
+ * (HOS-1641: `publication_status` is the only publication column; the old
+ * `lifecycle_state` / `visibility` / `moderation_state` trio is gone).
  *
  * `extraInfo` defaults to a COMPLETE capacity payload (`capacity`, `minNights`,
  * `bedrooms`, `bathrooms` all present) so accommodations created through this
@@ -657,14 +660,14 @@ export async function createAccommodation(options: {
     readonly ownerId: string;
     readonly destinationId?: string;
     readonly slugPrefix?: string;
-    readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+    readonly publicationStatus?: PublicationStatusEnum;
     readonly extraInfo?: Record<string, unknown>;
     /** Skip the normal active-trial fixture to exercise the PRE_TRIAL publish flow. */
     readonly withTrial?: boolean;
 }): Promise<CreatedAccommodation> {
     const destinationId = options.destinationId ?? (await getAnyCityDestinationId());
     const slug = `${options.slugPrefix ?? 'e2e-acc'}-${Date.now().toString(36)}-${randomToken(2)}`;
-    const lifecycleState = options.lifecycleState ?? 'DRAFT';
+    const publicationStatus = options.publicationStatus ?? PublicationStatusEnum.DRAFT;
     const extraInfo = options.extraInfo ?? {
         capacity: 4,
         minNights: 1,
@@ -674,15 +677,13 @@ export async function createAccommodation(options: {
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO accommodations (
              slug, name, summary, description, type,
-             owner_id, destination_id, lifecycle_state,
-             visibility, moderation_state, extra_info,
+             owner_id, destination_id, extra_info,
              publication_status, inactive_since, deadlines_version,
              created_at, updated_at
          ) VALUES (
              $1, $2, $3, $4, $5::accommodation_type_enum,
-             $6, $7, $8::lifecycle_status_enum,
-             'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, $9::jsonb,
-             CASE WHEN $8::lifecycle_status_enum = 'ACTIVE' AND 'PUBLIC'::visibility_enum = 'PUBLIC' THEN 'PUBLISHED' ELSE 'DRAFT' END::publication_status_enum, NOW(), 1,
+             $6, $7, $9::jsonb,
+             $8::publication_status_enum, NOW(), 1,
              NOW(), NOW()
          ) RETURNING id`,
         [
@@ -693,7 +694,7 @@ export async function createAccommodation(options: {
             'HOUSE',
             options.ownerId,
             destinationId,
-            lifecycleState,
+            publicationStatus,
             JSON.stringify(extraInfo)
         ]
     );

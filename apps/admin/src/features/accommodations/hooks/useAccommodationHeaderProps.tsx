@@ -13,12 +13,9 @@ import { getAccommodationTypeIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import type { EntityPageHeaderMedia } from '@/components/entity-header/EntityPageHeader';
-import {
-    getLifecycleStateBadgeOptions,
-    getModerationStateBadgeOptions,
-    getVisibilityBadgeOptions
-} from '@/components/entity-list/columns.factory.types';
+import type { ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeCell } from '@/components/table/cells/BadgeCell';
+import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
 
 import type { AccommodationCore } from '../schemas/accommodation-client.schema';
 
@@ -32,7 +29,7 @@ export interface AccommodationHeaderProps {
     readonly media: EntityPageHeaderMedia | undefined;
     /** "<TypeLabel> · <DestinationName>" — undefined when neither is known. */
     readonly subtitle: string | undefined;
-    /** Stack of state badges (visibility · lifecycle · moderation). */
+    /** The listing's publication-state badge (HOS-1641). */
     readonly badges: ReactNode;
 }
 
@@ -63,7 +60,7 @@ export const useAccommodationHeaderProps = ({
         // ---- Subtitle ("<Type> · <Destination>") --------------------------
         const subtitle = buildSubtitle(entityRecord, tForHelpers);
 
-        // ---- Badges (visibility / lifecycle / moderation) -----------------
+        // ---- Badge (publication state) ------------------------------------
         const badges = buildBadges(entityRecord, tForHelpers);
 
         return { media, subtitle, badges };
@@ -111,32 +108,13 @@ function buildSubtitle(
 }
 
 function buildBadges(entity: Record<string, unknown>, t: (key: string) => string): ReactNode {
-    const visibility = entity.visibility as string | undefined;
-    const lifecycleState = entity.lifecycleState as string | undefined;
-    const moderationState = entity.moderationState as string | undefined;
-
-    const tFn = t as Parameters<typeof getVisibilityBadgeOptions>[0];
+    const publicationStatus = entity.publicationStatus as string | undefined;
+    if (!publicationStatus) return null;
 
     return (
-        <>
-            {visibility && (
-                <BadgeCell
-                    value={visibility}
-                    options={getVisibilityBadgeOptions(tFn)}
-                />
-            )}
-            {lifecycleState && (
-                <BadgeCell
-                    value={lifecycleState}
-                    options={getLifecycleStateBadgeOptions(tFn)}
-                />
-            )}
-            {moderationState && (
-                <BadgeCell
-                    value={moderationState}
-                    options={getModerationStateBadgeOptions(tFn)}
-                />
-            )}
-        </>
+        <BadgeCell
+            value={publicationStatus}
+            options={getPublicationStatusBadgeOptions({ t: t as ColumnTFunction })}
+        />
     );
 }

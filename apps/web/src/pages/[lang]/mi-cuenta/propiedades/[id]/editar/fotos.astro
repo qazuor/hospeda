@@ -42,7 +42,7 @@ const publishContext = {
 	minNights: data.accommodation.minNights,
 	bedrooms: data.accommodation.bedrooms,
 	bathrooms: data.accommodation.bathrooms,
-	isDraft: data.accommodation.lifecycleState === 'DRAFT',
+	isDraft: data.accommodation.publicationStatus === 'DRAFT',
 	trialDays,
 };
 ---

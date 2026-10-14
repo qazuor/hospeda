@@ -140,7 +140,7 @@ const PUBLISHED_ACCOMMODATION = {
     location: { city: 'Test City', country: 'Test Country' },
     averageRating: 0,
     reviewsCount: 0,
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     seo: undefined,
     price: { price: 100, currency: 'USD' },
     tags: [],
@@ -148,7 +148,6 @@ const PUBLISHED_ACCOMMODATION = {
     ownerId: ACTOR_ID,
     contactInfo: undefined,
     socialNetworks: undefined,
-    lifecycleState: 'ACTIVE',
     faqs: [],
     createdAt: NOW,
     updatedAt: NOW
@@ -207,7 +206,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
                 const body = await res.json();
                 expect(body.success).toBe(true);
                 expect(body.data.id).toBe(ACCOMMODATION_ID);
-                expect(body.data.lifecycleState).toBe('ACTIVE');
+                expect(body.data.publicationStatus).toBe('PUBLISHED');
             } else {
                 // Response-schema strictness is orthogonal to this regression
                 // test's purpose — the route MUST be registered and MUST have

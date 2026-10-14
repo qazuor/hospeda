@@ -91,7 +91,6 @@ const makeAccommodationProtected = () => ({
     },
     averageRating: 0,
     reviewsCount: 0,
-    visibility: 'PUBLIC',
     seo: null,
     price: null,
     tags: [],
@@ -99,7 +98,7 @@ const makeAccommodationProtected = () => ({
     ownerId: UUID_OWNER,
     contactInfo: { mobilePhone: '+5411 12345678' },
     socialNetworks: null,
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     faqs: [],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z'

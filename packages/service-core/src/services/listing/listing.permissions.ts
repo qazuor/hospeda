@@ -372,34 +372,3 @@ export function checkCanModerateReview(actor: Actor, vertical: GastronomyOrExper
         );
     }
 }
-
-/**
- * Verifies the actor may change the moderation state of a gastronomy or experience LISTING.
- * Requires the applicable vertical MODERATION_CHANGE permission (HOS-686).
- *
- * ## Why this is not {@link checkCanModerateReview}
- *
- * the applicable vertical MODERATE_REVIEW permission moderates reviews written *about* a listing. This
- * one moderates the listing itself — the takedown verdict public reads honour
- * (`moderationState === REJECTED` keeps the listing out of public results). Anyone grepping "moderate" under the listing layer finds
- * the review check first and can reasonably conclude the listing case is
- * already covered. It is not: they are two distinct authorities.
- *
- * ## Why accommodation's `checkCanModerate` could not be reused
- *
- * `accommodation.permissions.ts:313` hardcodes
- * `ACCOMMODATION_MODERATION_CHANGE` and accepts no permission parameter, so it
- * is not generic over domains.
- *
- * @param actor - The actor performing the action.
- * @param vertical - The vertical whose `moderationChange` permission is required.
- * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
- */
-export function checkCanModerateListing(actor: Actor, vertical: GastronomyOrExperience): void {
-    if (!hasListingPermission(actor, 'moderationChange', vertical)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Permission denied: Insufficient permissions to moderate listing'
-        );
-    }
-}

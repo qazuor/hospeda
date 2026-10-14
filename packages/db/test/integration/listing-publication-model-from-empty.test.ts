@@ -10,8 +10,11 @@
 // partial unique index: at most one OPEN request per listing.
 //
 // V6.8a added the publication columns as nullable. V6.9 fills them through
-// write `C` and enforces NOT NULL without a default. The six legacy columns
-// remain until V6.9b.
+// write `C` and enforces NOT NULL without a default. V6.9b (HOS-1641) drops the
+// six legacy columns — `lifecycle_state`, `visibility` and `moderation_state` on
+// the three tables, plus `owner_suspended`, `plan_restricted` and
+// `billing_unpublished_at` on `accommodations` — and indexes
+// `publication_status` (alone and with `destination_id`) on each table.
 //
 // Self-contained on purpose: it creates its OWN uniquely named database, applies
 // the chain with real `drizzle-kit migrate`, and drops only that database.
@@ -109,6 +112,53 @@ describe('the publication_status enum (TEST:V6:17)', () => {
              ORDER BY e.enumsortorder`
         );
         expect(result.rows.map((row) => row.label)).toEqual([...PUBLICATION_STATUSES]);
+    });
+});
+
+/** The twelve (table, column) pairs that V6.9b dropped. */
+const DROPPED_COLUMNS: ReadonlyArray<readonly [string, string]> = [
+    ...LISTING_TABLES.flatMap((table) =>
+        ['lifecycle_state', 'visibility', 'moderation_state'].map(
+            (column) => [table, column] as const
+        )
+    ),
+    ['accommodations', 'owner_suspended'],
+    ['accommodations', 'plan_restricted'],
+    ['accommodations', 'billing_unpublished_at']
+];
+
+describe('the six legacy listing columns are gone (TEST:V6:17, HOS-1641)', () => {
+    it('no listing table carries any of the twelve dropped (table, column) pairs', async () => {
+        const result = await scratch.query<{ table_name: string; column_name: string }>(
+            `SELECT table_name, column_name
+             FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = ANY($1::text[])`,
+            [[...LISTING_TABLES]]
+        );
+        const present = new Set(result.rows.map((row) => `${row.table_name}.${row.column_name}`));
+        expect(DROPPED_COLUMNS).toHaveLength(12);
+        // Sanity: the query does see the listing tables.
+        expect(present.has('accommodations.publication_status')).toBe(true);
+        expect(
+            DROPPED_COLUMNS.map(([table, column]) => `${table}.${column}`).filter((pair) =>
+                present.has(pair)
+            )
+        ).toEqual([]);
+    });
+
+    it.each(
+        LISTING_TABLES
+    )('%s has the two publication_status indexes that replaced the old ones', async (table) => {
+        const result = await scratch.query<{ indexname: string; indexdef: string }>(
+            `SELECT indexname, indexdef FROM pg_indexes
+                 WHERE schemaname = 'public' AND tablename = $1`,
+            [table]
+        );
+        const byName = new Map(result.rows.map((row) => [row.indexname, row.indexdef]));
+        expect(byName.get(`${table}_publicationStatus_idx`)).toMatch(/\(publication_status\)$/);
+        expect(byName.get(`${table}_destinationId_publicationStatus_idx`)).toMatch(
+            /\(destination_id, publication_status\)$/
+        );
     });
 });
 

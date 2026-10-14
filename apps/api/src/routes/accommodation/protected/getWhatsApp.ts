@@ -4,7 +4,7 @@
  * effective tourist capabilities.
  */
 
-import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import { PublicationStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 
 import { getActorFromContext, isGuestActor } from '../../../utils/actor';
@@ -85,8 +85,8 @@ app.get('/:id/whatsapp', async (c) => {
 
     const accommodation = result.data;
 
-    // Guard: only expose contact data for active public accommodations.
-    if (accommodation?.lifecycleState !== 'ACTIVE' || accommodation.visibility !== 'PUBLIC') {
+    // Guard: only expose contact data for PUBLISHED accommodations (V6.9b).
+    if (accommodation?.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         return c.json(
             {
                 success: false,

@@ -15,10 +15,8 @@ export const mockAccommodation = {
     destinationId: 'dest-test-001',
     ownerId: 'user-test-001',
 
-    // Lifecycle, moderation, visibility
-    lifecycleState: 'ACTIVE',
-    moderationState: 'APPROVED',
-    visibility: 'PUBLIC',
+    // Publication state (replaces lifecycle/moderation/visibility, HOS-1641)
+    publicationStatus: 'PUBLISHED',
 
     // Audit fields
     createdAt: '2026-01-01T00:00:00.000Z',

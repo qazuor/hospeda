@@ -17,7 +17,7 @@
 
 import { DestinationModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 
 /** Logger for the media entry point, which has no service instance to borrow one from. */
@@ -42,8 +42,7 @@ export interface RevalidatableListing {
     readonly id: string;
     readonly slug: string;
     readonly destinationId?: string | null;
-    readonly lifecycleState?: string | null;
-    readonly visibility?: string | null;
+    readonly publicationStatus?: string | null;
 }
 
 /** Minimal logger surface — avoids importing the service's own logger type. */
@@ -54,18 +53,17 @@ interface RevalidationLogger {
 /**
  * Whether a listing is visible to the public, and therefore worth purging.
  *
- * Reads the two fields as strings because `ListingEntity` types them as
- * `string | null`, and compares against the enums rather than string literals so
- * a renamed enum value is a compile error rather than a silent always-false.
+ * A listing is public iff its `publicationStatus` is `PUBLISHED` (AC:V5:5;
+ * V6.9b replaced the old `lifecycleState`/`visibility` pair, HOS-1641). Reads
+ * the field as a string because `ListingEntity` types it as `string | null`,
+ * and compares against the enum rather than a string literal so a renamed enum
+ * value is a compile error rather than a silent always-false.
  *
  * @param entity - The listing to test.
  * @returns `true` when the listing has a public page.
  */
 export function isListingPubliclyVisible(entity: RevalidatableListing): boolean {
-    return (
-        entity.lifecycleState === LifecycleStatusEnum.ACTIVE &&
-        entity.visibility === VisibilityEnum.PUBLIC
-    );
+    return entity.publicationStatus === PublicationStatusEnum.PUBLISHED;
 }
 
 /**
@@ -73,7 +71,7 @@ export function isListingPubliclyVisible(entity: RevalidatableListing): boolean 
  *
  * Two rules, both inherited from the accommodation side:
  *
- * 1. **Only when publicly visible.** A DRAFT or PRIVATE listing has no public
+ * 1. **Only when publicly visible.** A listing that is not PUBLISHED has no public
  *    footprint, so purging its (nonexistent) pages is waste, and produced
  *    spurious 404s in production under HOS-203.
  * 2. **Never blocking.** A Cloudflare outage must not fail the write that

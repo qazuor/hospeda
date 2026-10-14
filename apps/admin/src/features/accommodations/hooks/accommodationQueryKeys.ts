@@ -99,12 +99,8 @@ export interface AccommodationListFilters {
     destinationId?: string | string[];
     /** Filter by owner */
     ownerId?: string | string[];
-    /** Filter by lifecycle status */
-    lifecycleState?: string | string[];
-    /** Filter by moderation status */
-    moderationState?: string | string[];
-    /** Filter by visibility */
-    visibility?: string | string[];
+    /** Filter by publication state (`PublicationStatusEnum`, HOS-1641) */
+    publicationStatus?: string | string[];
     /** Filter by featured status */
     featured?: boolean;
     /** Filter by date range */

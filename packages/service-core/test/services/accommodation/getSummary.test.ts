@@ -6,7 +6,7 @@
  */
 import { AccommodationModel } from '@repo/db';
 import type { AccommodationSummaryParamsSchema } from '@repo/schemas';
-import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
+import { PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { z } from 'zod';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -64,7 +64,9 @@ describe('AccommodationService.getSummary', () => {
             makeMediaModelStub() as any
         );
         actor = new ActorFactoryBuilder().host().build();
-        accommodation = createMockAccommodation({ lifecycleState: LifecycleStatusEnum.ACTIVE });
+        accommodation = createMockAccommodation({
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        });
         input = { id: accommodation.id };
     });
 

@@ -49,10 +49,9 @@ import {
     ExperienceSearchSchema,
     type ExperienceUpdateInput,
     ExperienceUpdateInputSchema,
-    LifecycleStatusEnum,
     PermissionEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    PublicationStatusEnum,
+    ServiceErrorCode
 } from '@repo/schemas';
 import type {
     Actor,
@@ -314,8 +313,8 @@ export class ExperienceService extends BaseListingService<
         checkExperienceCanView(actor);
 
         // Soft-deleted listings existed but are permanently gone. Only those that
-        // were PUBLIC (indexable) surface as GONE (410) so crawlers/LLM fetchers
-        // deindex the URL fast; deleted PRIVATE content that was never public
+        // were PUBLISHED (indexable) surface as GONE (410) so crawlers/LLM fetchers
+        // deindex the URL fast; deleted content that was never public
         // returns NOT_FOUND (404, uniform) to preserve the anti-enumeration
         // contract (SPEC-092 T-087). Staff with EXPERIENCE_VIEW_ALL still see it
         // for management (HOS-117 T-022).
@@ -324,7 +323,7 @@ export class ExperienceService extends BaseListingService<
             entity.deletedAt !== undefined &&
             !hasPermission(actor, PermissionEnum.EXPERIENCE_VIEW_ALL)
         ) {
-            if (entity.visibility === VisibilityEnum.PUBLIC) {
+            if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
                 throw new ServiceError(ServiceErrorCode.GONE, 'Experience is gone');
             }
             throw entityNotFoundError({ entityName: EXPERIENCE_ENTITY_NAME });
@@ -436,7 +435,7 @@ export class ExperienceService extends BaseListingService<
         } = params;
 
         // Public search MUST only surface listings with an active subscription
-        // (AC-6.2 / AC-4.3): force visibility=PUBLIC + lifecycleState=ACTIVE AFTER
+        // (AC-6.2 / AC-4.3): force publicationStatus=PUBLISHED AFTER
         // the caller's scalar filters so no query param can widen the result set.
         // Relations (destination, owner) are loaded so the web card transform can
         // read destinationName without an N+1 query (Bug B3 fix).
@@ -452,8 +451,7 @@ export class ExperienceService extends BaseListingService<
             {
                 ...scalarFilters,
                 deletedAt: null,
-                visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             },
             {
                 page,
@@ -500,8 +498,7 @@ export class ExperienceService extends BaseListingService<
             {
                 ...scalarFilters,
                 deletedAt: null,
-                visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             },
             { tx: ctx?.tx }
         );

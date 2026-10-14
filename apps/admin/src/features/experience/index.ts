@@ -31,7 +31,6 @@ export {
     useCreateExperienceMutation,
     useExperiencePendingReviewsQuery,
     useExperienceQuery,
-    useModerateExperienceMutation,
     useModerateExperienceReviewMutation,
     useUpdateExperienceMutation
 } from './hooks/useExperienceQuery';

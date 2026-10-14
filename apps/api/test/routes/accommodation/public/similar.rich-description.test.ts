@@ -51,12 +51,9 @@ const ACCOMMODATION_WITH_RICH = {
     extraInfo: null,
     destinationId: 'dddddddd-0000-4000-8000-000000000001',
     ownerId: 'eeeeeeee-0000-4000-8000-000000000001',
-    visibility: 'PUBLIC',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     createdAt: new Date('2026-01-01T00:00:00.000Z'),
     updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-    ownerSuspended: false,
-    planRestricted: false,
     contactInfo: null,
     socialNetworks: null,
     destination: {
@@ -86,10 +83,9 @@ vi.mock('@repo/db', async (importOriginal) => {
         accommodations: {
             id: 'acc.id',
             slug: 'acc.slug',
+            publicationStatus: 'acc.publicationStatus',
             type: 'acc.type',
             destinationId: 'acc.destinationId',
-            lifecycleState: 'acc.lifecycleState',
-            visibility: 'acc.visibility',
             averageRating: 'acc.averageRating'
         },
         accommodationMediaModel: {

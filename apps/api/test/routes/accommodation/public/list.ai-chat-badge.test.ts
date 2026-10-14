@@ -50,8 +50,7 @@ function accommodation(overrides: Record<string, unknown>): Record<string, unkno
         extraInfo: null,
         destinationId: 'dddddddd-0000-4000-8000-000000000004',
         ownerId: OWNER_WITH_AI,
-        visibility: 'PUBLIC',
-        lifecycleState: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
         updatedAt: new Date('2026-01-01T00:00:00.000Z'),
         ...overrides

@@ -9,6 +9,7 @@
  * removed with the old billing system.
  */
 
+import { PublicationStatusEnum } from '@repo/schemas';
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ListingActions } from '../../../src/components/listing/ListingActions.client';
@@ -56,6 +57,7 @@ function buildListing(
         name: 'La Parrilla',
         slug: 'la-parrilla',
         type: 'RESTAURANT',
+        publicationStatus: PublicationStatusEnum.DRAFT,
         isPublic: false,
         completeness: null,
         ...overrides
@@ -116,9 +118,11 @@ describe('ListingActions', () => {
         });
 
         /*
-         * HOS-982 PR 2. `isPublic` is visibility ALONE; the API also requires
-         * `lifecycleState === ACTIVE`. A staff PATCH to INACTIVE that leaves
-         * visibility standing produces this row, and it renders the published
+         * HOS-982 PR 2. Before HOS-1641 `isPublic` and `hasPublicPage` came from
+         * separate old columns, and a staff PATCH that left one standing
+         * produced this row (since HOS-1641 both are `PUBLISHED`, so the API no
+         * longer produces it, but the card still trusts only `hasPublicPage`).
+         * It renders the published
          * badge and the public link (both pre-existing, both out of this change's
          * scope) — but the QR panel must not join them, because every request it
          * would make answers 404. Before this fix the card carried three
@@ -216,6 +220,45 @@ describe('ListingActions', () => {
 
             expect(screen.getByText('Borrador — listo para publicar')).toBeInTheDocument();
             expect(screen.queryByTestId('listing-checklist')).not.toBeInTheDocument();
+        });
+    });
+
+    describe('purged state (HOS-1641, Coord-351 F4)', () => {
+        it('renders NO action at all for a PURGED listing — no badge, link, download or checklist', () => {
+            const fetchMock = vi.fn();
+            vi.stubGlobal('fetch', fetchMock);
+
+            const { container } = render(
+                <ListingActions
+                    listing={buildListing({
+                        publicationStatus: PublicationStatusEnum.PURGED,
+                        completeness: { complete: false, missing: ['summary'] }
+                    })}
+                    locale="es"
+                />
+            );
+
+            expect(container).toBeEmptyDOMElement();
+            expect(screen.queryByRole('link')).not.toBeInTheDocument();
+            expect(screen.queryByRole('button')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('listing-qr-sheet')).not.toBeInTheDocument();
+            expect(screen.queryByTestId('listing-checklist')).not.toBeInTheDocument();
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('wins over a stale isPublic: a PURGED listing never renders the published branch', () => {
+            const { container } = render(
+                <ListingActions
+                    listing={buildListing({
+                        publicationStatus: PublicationStatusEnum.PURGED,
+                        isPublic: true,
+                        hasPublicPage: true
+                    })}
+                    locale="es"
+                />
+            );
+
+            expect(container).toBeEmptyDOMElement();
         });
     });
 

@@ -13,13 +13,7 @@
  */
 
 import type { Experience } from '@repo/schemas';
-import {
-    ExperiencePriceUnitEnum,
-    ExperienceTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    VisibilityEnum
-} from '@repo/schemas';
+import { ExperiencePriceUnitEnum, ExperienceTypeEnum, PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     projectExperienceOwnerAvatar,
@@ -43,9 +37,7 @@ function makeEntity(overrides: Partial<Record<string, unknown>> = {}): Experienc
         isPriceOnRequest: false,
         destinationId: '00000000-0000-4000-a000-000000000002',
         ownerId: '00000000-0000-4000-a000-000000000003',
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        visibility: VisibilityEnum.PUBLIC,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
         averageRating: 4.5,
         reviewsCount: 12,
         createdAt: new Date('2024-01-01'),

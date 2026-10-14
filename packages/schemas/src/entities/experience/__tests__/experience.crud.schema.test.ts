@@ -35,9 +35,6 @@ const buildAdminCreateInput = (
     // Postgres and came back as a bare 500.
     ownerId: VALID_UUID,
     isFeatured: false,
-    lifecycleState: 'ACTIVE',
-    moderationState: 'PENDING',
-    visibility: 'PUBLIC',
     reviewsCount: 0,
     averageRating: 0,
     ...overrides
@@ -402,29 +399,13 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
             }
         });
 
-        it('should strip "lifecycleState" (control field — admin-only)', () => {
-            const result = ExperienceOwnerUpdateInputSchema.safeParse({ lifecycleState: 'ACTIVE' });
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect((result.data as Record<string, unknown>).lifecycleState).toBeUndefined();
-            }
-        });
-
-        it('should strip "visibility" (control field — admin-only)', () => {
-            const result = ExperienceOwnerUpdateInputSchema.safeParse({ visibility: 'PUBLIC' });
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect((result.data as Record<string, unknown>).visibility).toBeUndefined();
-            }
-        });
-
-        it('should strip "moderationState" (control field — admin-only)', () => {
+        it('should strip "publicationStatus" (control field — only the PB transitions write it)', () => {
             const result = ExperienceOwnerUpdateInputSchema.safeParse({
-                moderationState: 'APPROVED'
+                publicationStatus: 'PUBLISHED'
             });
             expect(result.success).toBe(true);
             if (result.success) {
-                expect((result.data as Record<string, unknown>).moderationState).toBeUndefined();
+                expect((result.data as Record<string, unknown>).publicationStatus).toBeUndefined();
             }
         });
     });
@@ -481,23 +462,13 @@ describe('ExperienceOwnerCreateInputSchema', () => {
         }
     });
 
-    it('should strip "visibility" even if supplied — the route forces PRIVATE (D-3)', () => {
+    it('should strip "publicationStatus" even if supplied — a listing is born DRAFT (D-3, HOS-1641)', () => {
         const result = ExperienceOwnerCreateInputSchema.safeParse(
-            buildOwnerCreateInput({ visibility: 'PUBLIC' })
+            buildOwnerCreateInput({ publicationStatus: 'PUBLISHED' })
         );
         expect(result.success).toBe(true);
         if (result.success) {
-            expect((result.data as Record<string, unknown>).visibility).toBeUndefined();
-        }
-    });
-
-    it('should strip "lifecycleState" even if supplied — the route forces DRAFT (D-3)', () => {
-        const result = ExperienceOwnerCreateInputSchema.safeParse(
-            buildOwnerCreateInput({ lifecycleState: 'ACTIVE' })
-        );
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect((result.data as Record<string, unknown>).lifecycleState).toBeUndefined();
+            expect((result.data as Record<string, unknown>).publicationStatus).toBeUndefined();
         }
     });
 

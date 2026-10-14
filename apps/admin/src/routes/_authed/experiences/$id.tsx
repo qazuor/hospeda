@@ -10,7 +10,7 @@
  * Mirrors the gastronomy view page pattern (SPEC-240 T-028).
  */
 
-import { PermissionEnum } from '@repo/schemas';
+import type { PublicationStatusEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -25,7 +25,6 @@ import {
     useAssignExperienceOwnerMutation,
     useExperiencePage,
     useExperiencePendingReviewsQuery,
-    useModerateExperienceMutation,
     useModerateExperienceReviewMutation
 } from '@/features/experience';
 import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
@@ -213,7 +212,11 @@ function ExperienceViewPage() {
     const entityData = useExperiencePage(id);
 
     const experience = entityData.entity as
-        | { name?: string; ownerId?: string | null; moderationState?: string | null }
+        | {
+              name?: string;
+              ownerId?: string | null;
+              publicationStatus?: PublicationStatusEnum | null;
+          }
         | undefined;
 
     return (
@@ -233,17 +236,10 @@ function ExperienceViewPage() {
                 />
             </div>
 
-            {/* HOS-686 AC-26: the reject action, where an admin can reach it.
-                `POST /:id/moderate` without this control would only be callable
-                by hand. */}
-            <ListingModerationCard
-                entityId={id}
-                entityName={experience?.name ?? id}
-                entityLabelKey="admin-entities.entities.experience.singular"
-                currentValue={experience?.moderationState}
-                permission={PermissionEnum.EXPERIENCE_MODERATION_CHANGE}
-                useModerateMutation={useModerateExperienceMutation}
-            />
+            {/* HOS-686 AC-26, read-only since HOS-1641 (Coord-424): the
+                listing's publication state. The action-based moderation control
+                (`POST /:id/moderate`) arrives with HOS-1684. */}
+            <ListingModerationCard publicationStatus={experience?.publicationStatus} />
 
             <ExperienceAssignOwner
                 experienceId={id}

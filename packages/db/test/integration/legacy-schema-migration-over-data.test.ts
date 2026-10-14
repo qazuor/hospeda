@@ -15,7 +15,9 @@
 //   - `accommodations` keeps its three billing columns with THEIR DATA —
 //     `owner_suspended`, `plan_restricted` and `billing_unpublished_at`
 //     arrive exactly as they were written pre-migration, in both the set and
-//     the unset shape.
+//     the unset shape. That is checked BEFORE the V6.9b migration (HOS-1641),
+//     which drops them later in the chain: `beforeAll` stops right before it,
+//     and the last case applies it and the rest of the chain.
 //
 // Unlike the shared integration database (provisioned by global-setup at the
 // LATEST migration), this file provisions and tears down its OWN ephemeral
@@ -39,6 +41,17 @@ const CONNECTION_BASE =
 
 /** The demolition migration and its tag, read straight from the journal. */
 const DEMOLITION_TAG = '0125_robust_cassandra_nova';
+
+/** Suffix of the V6.9b migration (HOS-1641) that drops the six old listing columns. */
+const OLD_COLUMNS_DROP_SUFFIX = '_v69b_listing_old_columns';
+
+/** Journal index of the V6.9b migration; the chain is applied up to it in `beforeAll`. */
+function oldColumnsDropIdx(entries: readonly JournalEntry[]): number {
+    const idx = entries.find((e) => e.tag.endsWith(OLD_COLUMNS_DROP_SUFFIX))?.idx;
+    if (idx === undefined)
+        throw new Error(`Journal has no entry ending in ${OLD_COLUMNS_DROP_SUFFIX}`);
+    return idx;
+}
 
 function adminConnectionString(): string {
     const url = new URL(CONNECTION_BASE);
@@ -181,8 +194,10 @@ beforeAll(async () => {
         ).rowCount
     ).toBe(1);
 
-    // 4. Apply the demolition (0125) and every migration after it.
-    for (const entry of entries.filter((e) => e.idx >= demolitionIdx)) {
+    // 4. Apply the demolition (0125) and every migration after it, up to the
+    //    V6.9b drop of the old listing columns (applied by the last case).
+    const dropIdx = oldColumnsDropIdx(entries);
+    for (const entry of entries.filter((e) => e.idx >= demolitionIdx && e.idx < dropIdx)) {
         await applyMigrationFile(legacyPool, entry.tag);
     }
 }, 300_000);
@@ -283,5 +298,23 @@ describe('TEST:U1:3 — demolition migration over legacy data (HOS-1416)', () =>
         expect(clean.owner_suspended).toBe(false);
         expect(clean.plan_restricted).toBe(false);
         expect(clean.billing_unpublished_at).toBeNull();
+
+        // V6.9b (HOS-1641) then drops them, with the rest of the chain.
+        const entries = readJournal();
+        for (const entry of entries.filter((e) => e.idx >= oldColumnsDropIdx(entries))) {
+            await applyMigrationFile(legacyPool, entry.tag);
+        }
+        const after = await legacyPool.query<{ column_name: string }>(
+            `SELECT column_name FROM information_schema.columns
+             WHERE table_schema = 'public' AND table_name = 'accommodations'`
+        );
+        const afterNames = new Set(after.rows.map((r) => r.column_name));
+        expect(afterNames.has('owner_suspended')).toBe(false);
+        expect(afterNames.has('plan_restricted')).toBe(false);
+        expect(afterNames.has('billing_unpublished_at')).toBe(false);
+        const kept = await legacyPool.query(
+            `SELECT 1 FROM "accommodations" WHERE "slug" IN ('legacy-suspended-cabin', 'legacy-clean-cabin')`
+        );
+        expect(kept.rowCount).toBe(2);
     });
 });

@@ -32,24 +32,15 @@ describe('buildAccommodationVisibilityCondition (HOS-21 T-006)', () => {
         expect(rendered).toMatch(/"owner_promotions"\."accommodation_id" is null/i);
     });
 
-    it('excludes accommodations with visibility = RESTRICTED', () => {
-        const rendered = render(buildAccommodationVisibilityCondition());
-        expect(rendered).toMatch(/"accommodations"\."visibility"\s*<>/i);
+    it('requires the accommodation to be PUBLISHED (HOS-1641)', () => {
+        const query = dialect.sqlToQuery(buildAccommodationVisibilityCondition());
+        expect(query.sql).toMatch(/"accommodations"\."publication_status"\s*=\s*\$\d+/i);
+        expect(query.params).toContain('PUBLISHED');
     });
 
-    it('excludes owner-suspended accommodations', () => {
+    it('reads no other accommodation state column', () => {
         const rendered = render(buildAccommodationVisibilityCondition());
-        expect(rendered).toMatch(/"accommodations"\."owner_suspended"\s*=/i);
-    });
-
-    it('excludes plan-restricted accommodations', () => {
-        const rendered = render(buildAccommodationVisibilityCondition());
-        expect(rendered).toMatch(/"accommodations"\."plan_restricted"\s*=/i);
-    });
-
-    it('restricts to ACTIVE lifecycleState', () => {
-        const rendered = render(buildAccommodationVisibilityCondition());
-        expect(rendered).toMatch(/"accommodations"\."lifecycle_state"\s*=/i);
+        expect(rendered).not.toMatch(/"accommodations"\."(visibility|lifecycle_state)"/i);
     });
 
     it('joins on accommodations.id = ownerPromotions.accommodationId via EXISTS', () => {

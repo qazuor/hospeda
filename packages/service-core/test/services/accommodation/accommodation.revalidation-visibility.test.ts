@@ -1,6 +1,7 @@
 /**
  * @fileoverview HOS-203 regression: public-page revalidation must fire ONLY when
- * an accommodation is publicly visible (lifecycle ACTIVE + visibility PUBLIC).
+ * an accommodation is publicly visible (`publicationStatus` PUBLISHED since
+ * V6.9b, HOS-1641; before, lifecycle ACTIVE + visibility PUBLIC).
  *
  * Before the fix, `_afterCreate` / `_afterUpdate` scheduled revalidation of the
  * destination's PUBLIC paths unconditionally, so creating (or editing) a
@@ -9,12 +10,7 @@
  */
 
 import type { AccommodationModel } from '@repo/db';
-import {
-    DestinationTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    VisibilityEnum
-} from '@repo/schemas';
+import { DestinationTypeEnum, PublicationStatusEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -26,8 +22,8 @@ import { createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, makeMediaModelStub } from '../../utils/modelMockFactory';
 
-// HOS-296: `_afterUpdate` grants the owner the HOST hat when a listing becomes
-// ACTIVE, and the grant is no longer best-effort — a failure fails the update.
+// HOS-296: `_afterUpdate` grants the owner the HOST hat while a listing is
+// PUBLISHED, and the grant is no longer best-effort — a failure fails the update.
 // These suites mock every other DB touchpoint, so the primitive is stubbed here
 // too; the grant's own behaviour is covered by `roleAssignment.test.ts`.
 vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
@@ -106,21 +102,25 @@ describe('AccommodationService revalidation gating by public visibility (HOS-203
         vi.clearAllMocks();
     });
 
+    /** Every publication status another account cannot see (AC:V5:5, HOS-1641). */
+    const NOT_PUBLISHED = [
+        PublicationStatusEnum.DRAFT,
+        PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+        PublicationStatusEnum.ARCHIVED,
+        PublicationStatusEnum.MODERATED,
+        PublicationStatusEnum.PURGED
+    ] as const;
+
+    const listingIn = (id: string, publicationStatus: PublicationStatusEnum) =>
+        createMockAccommodation({ id, slug: 'mock-slug', publicationStatus });
+
     describe('create', () => {
-        it('does NOT schedule revalidation when the new listing is a DRAFT/PRIVATE draft', async () => {
+        it.each(
+            NOT_PUBLISHED
+        )('does NOT schedule revalidation when the new listing is born %s', async (publicationStatus) => {
             const actor = createAdminActor();
-            const input = createMockAccommodationCreateInput({
-                lifecycleState: LifecycleStatusEnum.DRAFT,
-                visibility: VisibilityEnum.PRIVATE
-            });
-            (model.create as Mock).mockResolvedValue(
-                createMockAccommodation({
-                    id: 'mock-id',
-                    slug: 'mock-slug',
-                    lifecycleState: LifecycleStatusEnum.DRAFT,
-                    visibility: VisibilityEnum.PRIVATE
-                })
-            );
+            const input = createMockAccommodationCreateInput();
+            (model.create as Mock).mockResolvedValue(listingIn('mock-id', publicationStatus));
 
             const result = await service.create(actor, input);
 
@@ -128,16 +128,11 @@ describe('AccommodationService revalidation gating by public visibility (HOS-203
             expect(mockScheduleRevalidation).not.toHaveBeenCalled();
         });
 
-        it('schedules revalidation when the new listing is ACTIVE/PUBLIC', async () => {
+        it('schedules revalidation when the new listing is PUBLISHED', async () => {
             const actor = createAdminActor();
             const input = createMockAccommodationCreateInput();
             (model.create as Mock).mockResolvedValue(
-                createMockAccommodation({
-                    id: 'mock-id',
-                    slug: 'mock-slug',
-                    lifecycleState: LifecycleStatusEnum.ACTIVE,
-                    visibility: VisibilityEnum.PUBLIC
-                })
+                listingIn('mock-id', PublicationStatusEnum.PUBLISHED)
             );
 
             const result = await service.create(actor, input);
@@ -148,53 +143,17 @@ describe('AccommodationService revalidation gating by public visibility (HOS-203
                 expect.objectContaining({ entityType: 'accommodation', slug: 'mock-slug' })
             );
         });
-
-        it('does NOT schedule revalidation for a DRAFT that is nominally PUBLIC (not yet published)', async () => {
-            const actor = createAdminActor();
-            const input = createMockAccommodationCreateInput({
-                lifecycleState: LifecycleStatusEnum.DRAFT,
-                visibility: VisibilityEnum.PUBLIC
-            });
-            (model.create as Mock).mockResolvedValue(
-                createMockAccommodation({
-                    id: 'mock-id',
-                    slug: 'mock-slug',
-                    lifecycleState: LifecycleStatusEnum.DRAFT,
-                    visibility: VisibilityEnum.PUBLIC
-                })
-            );
-
-            const result = await service.create(actor, input);
-
-            expect(result.error).toBeUndefined();
-            expect(mockScheduleRevalidation).not.toHaveBeenCalled();
-        });
     });
 
     describe('update', () => {
-        const draftPrivate = (id: string) =>
-            createMockAccommodation({
-                id,
-                slug: 'mock-slug',
-                lifecycleState: LifecycleStatusEnum.DRAFT,
-                visibility: VisibilityEnum.PRIVATE,
-                moderationState: ModerationStatusEnum.APPROVED
-            });
-        const activePublic = (id: string) =>
-            createMockAccommodation({
-                id,
-                slug: 'mock-slug',
-                lifecycleState: LifecycleStatusEnum.ACTIVE,
-                visibility: VisibilityEnum.PUBLIC,
-                moderationState: ModerationStatusEnum.APPROVED
-            });
-
-        it('does NOT schedule revalidation when editing a listing that stays DRAFT/PRIVATE', async () => {
+        it.each(
+            NOT_PUBLISHED
+        )('does NOT schedule revalidation when editing a listing that stays %s', async (publicationStatus) => {
             const actor = createAdminActor();
             const id = 'mock-id';
-            (model.findById as Mock).mockResolvedValue(draftPrivate(id));
+            (model.findById as Mock).mockResolvedValue(listingIn(id, publicationStatus));
             (model.update as Mock).mockResolvedValue({
-                ...draftPrivate(id),
+                ...listingIn(id, publicationStatus),
                 summary: 'edited summary'
             });
 
@@ -204,14 +163,12 @@ describe('AccommodationService revalidation gating by public visibility (HOS-203
             expect(mockScheduleRevalidation).not.toHaveBeenCalled();
         });
 
-        it('schedules revalidation when editing a live ACTIVE/PUBLIC listing', async () => {
+        it('schedules revalidation when editing a live PUBLISHED listing', async () => {
             const actor = createAdminActor();
             const id = 'mock-id';
-            (model.findById as Mock).mockResolvedValue(activePublic(id));
-            (model.update as Mock).mockResolvedValue({
-                ...activePublic(id),
-                summary: 'edited summary'
-            });
+            const published = listingIn(id, PublicationStatusEnum.PUBLISHED);
+            (model.findById as Mock).mockResolvedValue(published);
+            (model.update as Mock).mockResolvedValue({ ...published, summary: 'edited summary' });
 
             const result = await service.update(actor, id, { summary: 'edited summary' });
 
@@ -219,34 +176,30 @@ describe('AccommodationService revalidation gating by public visibility (HOS-203
             expect(mockScheduleRevalidation).toHaveBeenCalledTimes(1);
         });
 
-        it('schedules revalidation when a DRAFT/PRIVATE listing is published (→ACTIVE/PUBLIC) via a generic update', async () => {
+        it('schedules revalidation when the row the update returns is PUBLISHED although it was a DRAFT before', async () => {
             const actor = createAdminActor();
             const id = 'mock-id';
-            // Was private before; the update makes it public. The `_isPubliclyVisible(entity)`
-            // first disjunct must fire even though the before-state was private.
-            (model.findById as Mock).mockResolvedValue(draftPrivate(id));
-            (model.update as Mock).mockResolvedValue(activePublic(id));
+            // The `_isPubliclyVisible(entity)` first disjunct must fire even though
+            // the before-state was not public.
+            (model.findById as Mock).mockResolvedValue(listingIn(id, PublicationStatusEnum.DRAFT));
+            (model.update as Mock).mockResolvedValue(
+                listingIn(id, PublicationStatusEnum.PUBLISHED)
+            );
 
-            const result = await service.update(actor, id, {
-                lifecycleState: LifecycleStatusEnum.ACTIVE,
-                visibility: VisibilityEnum.PUBLIC
-            });
+            const result = await service.update(actor, id, { summary: 'edited summary' });
 
             expect(result.error).toBeUndefined();
             expect(mockScheduleRevalidation).toHaveBeenCalledTimes(1);
         });
 
-        it('schedules revalidation when a live listing is unpublished (ACTIVE→DRAFT) via update', async () => {
+        it('schedules revalidation when a listing that WAS PUBLISHED is no longer public after the update', async () => {
             const actor = createAdminActor();
             const id = 'mock-id';
-            // Was public before the update; ends up as a DRAFT. The public page that
-            // just disappeared must still be purged, so revalidation MUST fire.
-            (model.findById as Mock).mockResolvedValue(activePublic(id));
-            (model.update as Mock).mockResolvedValue({
-                ...activePublic(id),
-                lifecycleState: LifecycleStatusEnum.DRAFT,
-                visibility: VisibilityEnum.PRIVATE
-            });
+            // The public page that just disappeared must still be purged.
+            (model.findById as Mock).mockResolvedValue(
+                listingIn(id, PublicationStatusEnum.PUBLISHED)
+            );
+            (model.update as Mock).mockResolvedValue(listingIn(id, PublicationStatusEnum.DRAFT));
 
             const result = await service.update(actor, id, { summary: 'edited summary' });
 

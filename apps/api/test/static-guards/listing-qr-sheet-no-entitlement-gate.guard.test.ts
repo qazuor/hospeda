@@ -125,30 +125,28 @@ describe('the listing QR is ungated, on both surfaces of all three verticals (HO
         expect(source).not.toContain('EntitlementKey');
     });
 
-    it.each(SHEET_ROUTES)('$vertical $surface: still refuses a listing that is not PUBLIC', ({
+    it.each(SHEET_ROUTES)('$vertical $surface: still refuses a listing that is not PUBLISHED', ({
         path
     }) => {
         // The gate that DOES survive: no public ficha, no code. Asserted here so
         // that "ungated" can never be read as "unchecked".
         const source = readCode(path);
-        expect(source).toContain('VisibilityEnum.PUBLIC');
+        expect(source).toContain('PublicationStatusEnum.PUBLISHED');
         expect(source).toContain('entityNotFoundError');
     });
 
-    it.each(SHEET_ROUTES)('$vertical $surface: also refuses a listing that is not ACTIVE', ({
+    it.each(SHEET_ROUTES)('$vertical $surface: decides publicity by the publication state alone', ({
         path
     }) => {
-        // BOTH halves of "published", in all three verticals. The gastronomy and experience two
-        // checked visibility alone until this was found: their services answer
-        // NOT_FOUND to every non-owner on a non-ACTIVE row, so a listing PATCHed
-        // to INACTIVE with PUBLIC visibility left standing would have minted a
-        // code and been printed — and every scan of that paper 404s forever.
-        //
-        // Static as well as behavioural (`test/routes/listing-qr-sheet.test.ts`
-        // exercises the branch) because the failure mode is a clause being
-        // DROPPED while every other assertion about the route stays green.
+        // V6.9b (HOS-1641): the old lifecycle and visibility pair is gone, and a
+        // route that rebuilt "published" from it would compile against a stale
+        // type and print a sheet whose every scan 404s. Static as well as
+        // behavioural (`test/routes/listing-qr-sheet.test.ts` exercises every
+        // non-PUBLISHED state) because the failure mode is a clause being
+        // swapped while every other assertion about the route stays green.
         const source = readCode(path);
-        expect(source).toContain('LifecycleStatusEnum.ACTIVE');
+        expect(source).not.toContain('LifecycleStatusEnum');
+        expect(source).not.toContain('VisibilityEnum');
     });
 
     it.each(SHEET_ROUTES)('$vertical $surface: mints through the central QR point', ({ path }) => {

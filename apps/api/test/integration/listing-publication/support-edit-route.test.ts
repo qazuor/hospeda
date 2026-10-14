@@ -57,7 +57,7 @@ const REASON = 'La dueña pidió por teléfono que le carguemos la ficha';
 /** Owners this file seeded; their listings are removed after each test. */
 const owners: string[] = [];
 
-/** A create body on behalf of `ownerId`, born a private draft (ACC:15). */
+/** A create body on behalf of `ownerId`, born a draft (ACC:15). */
 function createBody(vertical: Vertical, ownerId: string, destinationId: string) {
     return {
         name: 'Ficha cargada por soporte',
@@ -71,8 +71,6 @@ function createBody(vertical: Vertical, ownerId: string, destinationId: string) 
             country: 'Argentina',
             coordinates: { lat: '-32.48', long: '-58.23' }
         },
-        lifecycleState: 'DRAFT',
-        visibility: 'PRIVATE',
         ...typeFields[vertical]
     };
 }
@@ -365,7 +363,10 @@ describe.each(verticals)('TEST:V8a:9 action 15 asks for its own permission — %
                 permissions: [PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT, perms[vertical].viewAll],
                 reason: encodeURIComponent(REASON)
             }),
-            body: JSON.stringify({ visibility: 'PUBLIC' })
+            // Not content on purpose (the public URL), and still accepted by the
+            // admin update schema of the three verticals: the refusal is action
+            // 15's, not Zod's. (The old probe, `visibility`, left with HOS-1641.)
+            body: JSON.stringify({ refreshSlugFromName: true })
         });
 
         // Assert

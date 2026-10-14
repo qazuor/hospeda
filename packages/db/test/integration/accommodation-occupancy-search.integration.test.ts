@@ -70,8 +70,7 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
                     name: 'HOS-43 Occupancy Exclusion Test',
                     summary: 'Regression test for the checkIn/checkOut occupancy filter.',
                     type: 'HOUSE',
-                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');
@@ -135,8 +134,7 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
                     name: 'HOS-43 Occupancy Checkout-Day-Free Test',
                     summary: 'Regression test for the checkIn/checkOut occupancy filter.',
                     type: 'HOUSE',
-                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');
@@ -200,8 +198,7 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
                     name: 'HOS-43 Occupancy Retrocompat Test',
                     summary: 'Regression test for the checkIn/checkOut occupancy filter.',
                     type: 'HOUSE',
-                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');
@@ -250,8 +247,7 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
                     summary: 'Regression test for the cross-provider occupancy collision fix.',
                     type: 'HOUSE',
                     description:
-                        'Accommodation inserted for the HOS-162 multi-source occupancy filter test.',
-                    lifecycleState: 'ACTIVE'
+                        'Accommodation inserted for the HOS-162 multi-source occupancy filter test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');

@@ -13,7 +13,7 @@
  *  - Badge options for type include all ExperienceTypeEnum values
  */
 
-import { ExperienceTypeEnum } from '@repo/schemas';
+import { ExperienceTypeEnum, PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { ColumnType } from '@/components/table/DataTable';
 import { createExperienceColumns } from '../config/experience.columns';
@@ -94,6 +94,7 @@ describe('createExperienceColumns — column details', () => {
             destinationId: 'dest-1',
             ownerId: 'owner-1',
             featuredByEntitlement: false,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             createdAt: new Date()
         });
         expect(link).toMatchObject({
@@ -112,6 +113,7 @@ describe('createExperienceColumns — column details', () => {
             destinationId: 'dest-1',
             ownerId: null as unknown as string,
             featuredByEntitlement: false,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             createdAt: new Date()
         });
         expect(link).toBeUndefined();

@@ -1,5 +1,10 @@
 /** Host dashboard property counts and unread conversations after plan removal. */
-import { LifecycleStatusEnum, RoleEnum, ServiceErrorCode, type VerticalEnum } from '@repo/schemas';
+import {
+    PublicationStatusEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    type VerticalEnum
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
@@ -52,7 +57,7 @@ const { hostDashboardRoute } = await import('../../../src/routes/host/protected/
 // ---------------------------------------------------------------------------
 
 /** Build a successful getByOwner result wrapping the given accommodations. */
-function ok(accommodations: Array<{ id: string; lifecycleState: LifecycleStatusEnum }>) {
+function ok(accommodations: Array<{ id: string; publicationStatus: PublicationStatusEnum }>) {
     return { data: { accommodations }, error: undefined };
 }
 
@@ -142,15 +147,15 @@ function buildApp(): Hono<AppBindings> {
 // ---------------------------------------------------------------------------
 
 describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
-    describe('properties mapping (grouped by lifecycleState)', () => {
-        it('groups counts: 2 ACTIVE + 1 DRAFT + 1 ARCHIVED → total 4', async () => {
+    describe('properties mapping (grouped by publicationStatus)', () => {
+        it('groups counts: 2 PUBLISHED + 1 DRAFT + 1 ARCHIVED → total 4', async () => {
             // Arrange
             getByOwnerMock.mockResolvedValue(
                 ok([
-                    { id: 'a1', lifecycleState: LifecycleStatusEnum.ACTIVE },
-                    { id: 'a2', lifecycleState: LifecycleStatusEnum.ACTIVE },
-                    { id: 'd1', lifecycleState: LifecycleStatusEnum.DRAFT },
-                    { id: 'ar1', lifecycleState: LifecycleStatusEnum.ARCHIVED }
+                    { id: 'a1', publicationStatus: PublicationStatusEnum.PUBLISHED },
+                    { id: 'a2', publicationStatus: PublicationStatusEnum.PUBLISHED },
+                    { id: 'd1', publicationStatus: PublicationStatusEnum.DRAFT },
+                    { id: 'ar1', publicationStatus: PublicationStatusEnum.ARCHIVED }
                 ])
             );
             const app = buildApp();
@@ -169,12 +174,14 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             });
         });
 
-        it('counts INACTIVE in total only (no dedicated field)', async () => {
+        it('counts UNPUBLISHED_BY_BILLING, MODERATED and PURGED in total only (no dedicated field)', async () => {
             // Arrange
             getByOwnerMock.mockResolvedValue(
                 ok([
-                    { id: 'a1', lifecycleState: LifecycleStatusEnum.ACTIVE },
-                    { id: 'i1', lifecycleState: LifecycleStatusEnum.INACTIVE }
+                    { id: 'a1', publicationStatus: PublicationStatusEnum.PUBLISHED },
+                    { id: 'u1', publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING },
+                    { id: 'm1', publicationStatus: PublicationStatusEnum.MODERATED },
+                    { id: 'p1', publicationStatus: PublicationStatusEnum.PURGED }
                 ])
             );
             const app = buildApp();
@@ -185,7 +192,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
 
             // Assert
             expect(body.data.properties).toEqual({
-                total: 2,
+                total: 4,
                 published: 1,
                 draft: 0,
                 archived: 0
@@ -211,7 +218,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
         it('returns the mapped count from getUnreadCount when accommodations exist', async () => {
             // Arrange
             getByOwnerMock.mockResolvedValue(
-                ok([{ id: 'a1', lifecycleState: LifecycleStatusEnum.ACTIVE }])
+                ok([{ id: 'a1', publicationStatus: PublicationStatusEnum.PUBLISHED }])
             );
             getUnreadCountMock.mockResolvedValue({ data: { count: 7 }, error: undefined });
             const app = buildApp();
@@ -244,7 +251,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
         it('degrades unread to 0 when getUnreadCount rejects', async () => {
             // Arrange
             getByOwnerMock.mockResolvedValue(
-                ok([{ id: 'a1', lifecycleState: LifecycleStatusEnum.ACTIVE }])
+                ok([{ id: 'a1', publicationStatus: PublicationStatusEnum.PUBLISHED }])
             );
             getUnreadCountMock.mockRejectedValue(new Error('conversation service down'));
             const app = buildApp();

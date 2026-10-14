@@ -6,9 +6,9 @@
  * - 401 when unauthenticated
  * - Authenticated owner: listOwn is called with the session actor and the
  *   result is mapped to owner-listing summaries (vertical = 'experience',
- *   isPublic derived from visibility)
+ *   isPublic and hasPublicPage derived from publicationStatus)
  */
-import { LifecycleStatusEnum, ProductDomainEnum, VisibilityEnum } from '@repo/schemas';
+import { ProductDomainEnum, PublicationStatusEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
@@ -21,29 +21,24 @@ const MOCK_LISTINGS = [
         name: 'Kayak al atardecer',
         slug: 'kayak-al-atardecer',
         type: 'TOUR_GUIDE',
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        visibility: VisibilityEnum.PUBLIC
+        publicationStatus: PublicationStatusEnum.PUBLISHED
     },
     {
         id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
         name: 'Taller oculto',
         slug: 'taller-oculto',
         type: 'WORKSHOP',
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        visibility: VisibilityEnum.PRIVATE
+        publicationStatus: PublicationStatusEnum.DRAFT
     },
-    // HOS-982 PR 2: the row where the two clauses disagree. Reachable via
-    // a staff PATCH to INACTIVE that leaves `visibility` standing — the
-    // admin schemas accept `lifecycleState` on its own. It is PUBLIC, so
-    // `isPublic` calls it published; it has no public page, so every
-    // protected route that prints something for it answers 404.
+    // HOS-982 PR 2 / V6.9b: a listing taken down by the system. It has no
+    // public page, so every protected route that prints something for it
+    // answers 404, and neither flag may call it published.
     {
         id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
         name: 'Cabalgata pausada',
         slug: 'cabalgata-pausada',
         type: 'TOUR_GUIDE',
-        lifecycleState: LifecycleStatusEnum.INACTIVE,
-        visibility: VisibilityEnum.PUBLIC
+        publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
     }
 ];
 
@@ -133,12 +128,9 @@ describe('GET /api/v1/protected/experiences/mine', () => {
             expect(listings[0]?.slug).toBe('kayak-al-atardecer');
             expect(listings[0]?.isPublic).toBe(true);
             expect(listings[1]?.isPublic).toBe(false);
-            // HOS-982 PR 2: `hasPublicPage` is BOTH clauses, and the third
-            // fixture is what tells it apart from `isPublic` — visibility
-            // says published, lifecycle says otherwise, and every protected
-            // route that prints something for that row answers 404. A card
-            // that asked only `isPublic` would offer its owner downloads
-            // that cannot work and render a code that cannot scan.
+            // HOS-982 PR 2 / V6.9b: both flags read the publication state;
+            // only PUBLISHED has a public page, and every protected route that
+            // prints something for any other state answers 404.
             //
             // NOTHING BELOW THE `if (!capturedActor) return;` ABOVE RUNS.
             // `listOwn` is never reached through `initApp()` with mock-actor
@@ -151,8 +143,11 @@ describe('GET /api/v1/protected/experiences/mine', () => {
             // today, and reading them as coverage is the trap.
             expect(listings[0]?.hasPublicPage).toBe(true);
             expect(listings[1]?.hasPublicPage).toBe(false);
-            expect(listings[2]?.isPublic).toBe(true);
+            expect(listings[2]?.isPublic).toBe(false);
             expect(listings[2]?.hasPublicPage).toBe(false);
+            expect(listings[2]?.publicationStatus).toBe(
+                PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+            );
             // HOS-166 W1: subscriptionStatus is resolved per listing (present
             // when a link row exists, null when the listing was never subscribed).
             expect(listings[0]?.subscriptionStatus).toBe('active');

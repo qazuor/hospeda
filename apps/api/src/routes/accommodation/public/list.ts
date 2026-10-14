@@ -152,10 +152,10 @@ export const publicListAccommodationsRoute = createPublicListRoute({
 
         // HOS-353: resolve visibility against a GUEST actor, never the caller.
         //
-        // `_executeSearch` derives `excludeRestricted` / `excludeOwnerSuspended` /
-        // `excludePlanRestricted` / `activeOnly` from the actor, so a VIP or a
-        // holder of ACCOMMODATION_VIEW_ALL gets RESTRICTED, DRAFT, owner-suspended
-        // and plan-restricted rows. This route is the first entry of
+        // `_executeSearch` derives `publishedOnly` from the actor (V6.9b: off only
+        // for an owner reading their own scope, who then gets unpublished rows).
+        // When this was written the same derivation also widened the result for
+        // a VIP or a holder of ACCOMMODATION_VIEW_ALL. This route is the first entry of
         // PUBLIC_CACHE_ENDPOINTS and its cache key carries no actor, so that widened
         // response is then replayed to every anonymous visitor for the TTL. The
         // service behavior is correct and stays as it is — it is load-bearing for

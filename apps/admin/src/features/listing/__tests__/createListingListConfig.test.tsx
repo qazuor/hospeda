@@ -261,12 +261,17 @@ describe('createListingIdentitySection', () => {
         expect(ids).toContain('ownerId');
     });
 
-    it('AC-4: contains state/moderation fields (view/edit only)', () => {
+    it('AC-4: contains the moderation note fields (view/edit only)', () => {
         const ids = section.fields.map((f) => f.id);
-        expect(ids).toContain('lifecycleStatus');
-        expect(ids).toContain('moderationStatus');
         expect(ids).toContain('moderationNotes');
         expect(ids).toContain('rejectionReason');
+    });
+
+    it('does not edit the publication state: no lifecycle or moderation selects (HOS-1641)', () => {
+        const ids = section.fields.map((f) => f.id);
+        expect(ids).not.toContain('lifecycleStatus');
+        expect(ids).not.toContain('moderationStatus');
+        expect(ids).not.toContain('publicationStatus');
     });
 
     it('AC-4: the identity section has no isFeatured field (column dropped, HOS-1419)', () => {

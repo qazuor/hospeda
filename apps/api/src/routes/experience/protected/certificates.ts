@@ -36,10 +36,10 @@ import {
     type ExperienceCertificateOutput,
     ExperienceCertificateOutputSchema,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
-    VerticalEnum,
-    VisibilityEnum
+    VerticalEnum
 } from '@repo/schemas';
 import {
     ExperienceService,
@@ -242,11 +242,11 @@ export const protectedListExperienceCertificatesRoute = createProtectedRoute({
  * so the schema machinery validates nothing here — which is exactly why the
  * e2e test asserts the header pair and the PDF magic bytes directly.
  *
- * **Refuses a listing that is not PUBLIC**, and that is not a copy of the
+ * **Refuses a listing that is not PUBLISHED** (V6.9b), and that is not a copy of the
  * brochure's rule for its own sake: this sheet carries a QR pointing at the
  * experience's public ficha, and printing one for an unpublished listing puts a
  * permanent 404 on a piece of paper somebody keeps. Issuing and listing stay
- * open regardless of visibility, so unpublishing never costs an owner their
+ * open regardless of publication, so unpublishing never costs an owner their
  * record — only the ability to print a sheet whose link would be dead.
  */
 export const protectedGetExperienceCertificatePdfRoute = createProtectedRoute({
@@ -271,7 +271,7 @@ export const protectedGetExperienceCertificatePdfRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const experience = await requireOwnedExperience(ctx, params.id as string);
 
-        if (experience.visibility !== VisibilityEnum.PUBLIC) {
+        if (experience.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
             // Same canonical message as the ownership branch, deliberately: two
             // spellings would let a caller tell "not yours" from "not
             // published".

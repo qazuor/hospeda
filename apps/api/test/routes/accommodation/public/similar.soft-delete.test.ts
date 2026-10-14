@@ -7,8 +7,8 @@
  * entirely — so the model-level soft-delete default added in HOS-288 does NOT
  * reach it and the exclusion has to be written out explicitly. Production had
  * 107 soft-deleted accommodations, all of which this endpoint happily returned
- * (it filtered `visibility = 'PUBLIC'` and `lifecycleState = 'ACTIVE'` but
- * never `deleted_at IS NULL`).
+ * (it filtered the listing's public state but never `deleted_at IS NULL`;
+ * since V6.9b that state is `publication_status = 'PUBLISHED'`).
  *
  * Asserting on a filtered result set is impossible here: the mocked client
  * returns whatever rows the test hands it, so it can never prove a predicate
@@ -32,6 +32,8 @@ const mockFindByAccommodations = vi.fn().mockResolvedValue(new Map());
 
 /** Sentinel used as the `accommodations.deletedAt` column stub. */
 const DELETED_AT_COLUMN = 'acc.deletedAt';
+/** Sentinel used as the `accommodations.publicationStatus` column stub (V6.9b). */
+const PUBLICATION_STATUS_COLUMN = 'acc.publicationStatus';
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
@@ -50,8 +52,7 @@ vi.mock('@repo/db', () => ({
         slug: 'acc.slug',
         type: 'acc.type',
         destinationId: 'acc.destinationId',
-        lifecycleState: 'acc.lifecycleState',
-        visibility: 'acc.visibility',
+        publicationStatus: PUBLICATION_STATUS_COLUMN,
         averageRating: 'acc.averageRating',
         deletedAt: DELETED_AT_COLUMN
     }
@@ -162,6 +163,20 @@ function leftOperandOf(clause: unknown): unknown {
     return chunksOf(clause)?.[1];
 }
 
+/**
+ * True when the (possibly AND-composed) clause has `publicationStatus = 'PUBLISHED'`
+ * (V6.9b). With the stubbed (string) columns, `eq(col, value)` compiles to
+ * `['', col, ' = ', value, '']`, so the right operand sits at index 3 verbatim.
+ */
+function hasPublishedOnly(clause: unknown): boolean {
+    return flattenAndConditions(clause).some(
+        (c) =>
+            operatorOf(c) === ' = ' &&
+            leftOperandOf(c) === PUBLICATION_STATUS_COLUMN &&
+            (chunksOf(c)?.[3] as unknown) === 'PUBLISHED'
+    );
+}
+
 /** True when the (possibly AND-composed) clause has an `IS NULL` on `deletedAt`. */
 function hasDeletedAtIsNull(clause: unknown): boolean {
     return flattenAndConditions(clause).some(
@@ -236,14 +251,16 @@ describe('publicGetSimilarRoute — HOS-288 soft-deleted rows must be excluded',
         expect(hasDeletedAtIsNull(where)).toBe(true);
     });
 
-    it('keeps the pre-existing visibility/lifecycle predicates alongside it', async () => {
+    it('keeps the PUBLISHED-only predicate alongside it, on both queries (V6.9b)', async () => {
         const app = await buildApp();
         await app.request(`/${SOURCE_ID}/similar`);
 
         const where = (mockFindMany.mock.calls[0]?.[0] as { where?: unknown } | undefined)?.where;
         const conditions = flattenAndConditions(where);
-        // or(type, destination) + ne(id) + eq(lifecycleState) + eq(visibility) + isNull(deletedAt)
-        expect(conditions).toHaveLength(5);
+        // or(type, destination) + ne(id) + eq(publicationStatus) + isNull(deletedAt)
+        expect(conditions).toHaveLength(4);
         expect(hasDeletedAtIsNull(where)).toBe(true);
+        expect(hasPublishedOnly(where)).toBe(true);
+        expect(hasPublishedOnly(sourceLookupWhere)).toBe(true);
     });
 });

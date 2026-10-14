@@ -62,12 +62,11 @@ import type {
 } from '@repo/schemas';
 import {
     getGalleryCap,
-    LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -893,8 +892,7 @@ describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
             ownerId: OWNER_ID,
             slug: 'la-parrilla',
             destinationId: undefined,
-            lifecycleState: LifecycleStatusEnum.ACTIVE,
-            visibility: VisibilityEnum.PUBLIC
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         };
     }
 
@@ -928,8 +926,7 @@ describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
         // — and produced logged 404s in production under HOS-203.
         const model = makeGastronomyModel({
             ...publicListing(),
-            lifecycleState: LifecycleStatusEnum.DRAFT,
-            visibility: VisibilityEnum.PRIVATE
+            publicationStatus: PublicationStatusEnum.DRAFT
         });
 
         const result = await addGastronomyMedia(

@@ -14,7 +14,7 @@
  *    `ownerId === actor.id || GASTRONOMY_VIEW_ALL` check `protected/getById.ts`
  *    makes, answering NOT_FOUND for a listing that is not the caller's. A 403
  *    would confirm the id exists.
- * 4. **Is there a public ficha at all** — a listing that is not `PUBLIC` has no
+ * 4. **Is there a public ficha at all** — a listing that is not `PUBLISHED` has no
  *    public page to print, and the QR would point at a 404. NOT_FOUND.
  *
  * ## Why the response is a raw `Response`
@@ -33,10 +33,10 @@
 import {
     EntityTypeEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
-    VerticalEnum,
-    VisibilityEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { entityNotFoundError, GastronomyService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -81,7 +81,7 @@ export async function handleGetGastronomyBrochure(
 
     // The brochure is a print of the PUBLIC ficha. A listing with no public
     // ficha has nothing to print, and its QR would send every reader to a 404.
-    if (entity.visibility !== VisibilityEnum.PUBLIC) {
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately: the error
         // contract's anti-enumeration rule wants one spelling of a 404, and two
         // would let a caller tell "not yours" from "not published" (HOS-600).

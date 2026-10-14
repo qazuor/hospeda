@@ -95,7 +95,10 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     // HOS-1286: server-managed billing flag. Written ONLY by the
     // featured-by-entitlement sync primitives — never from a request body, not
     // even an admin's. Same treatment as `accommodations.featuredByEntitlement`.
-    featuredByEntitlement: true
+    featuredByEntitlement: true,
+    // HOS-1641: server-managed. Only the PB publication transitions write the
+    // publication state — never a request body, not even an admin's.
+    publicationStatus: true
 }).extend({
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
@@ -188,8 +191,8 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * enable slug-squatting and break indexed links. Any `slug` key in an owner
  * PATCH body is silently stripped (Zod's default unknown-key behaviour).
  *
- * **Control fields stay admin-only (HOS-166 §6.2 / AC-19):** `lifecycleState`,
- * `visibility`, `moderationState`, `ownerId` are **intentionally
+ * **Control fields stay out (HOS-166 §6.2 / AC-19, HOS-1641):** `publicationStatus`
+ * and `ownerId` are **intentionally
  * absent** from this schema — the reversal above is scoped to identity only.
  * Any of these keys in an owner PATCH body is silently stripped.
  *
@@ -226,8 +229,8 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  *
  * NOT permitted for owner (admin-only — control fields + immutable identity):
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
- * - `lifecycleState`, `visibility`, `moderationState`, `ownerId`
- *   (control fields — HOS-166 §6.2)
+ * - `publicationStatus` (written only by the PB publication transitions —
+ *   HOS-1641), `ownerId` (control fields — HOS-166 §6.2)
  */
 export const ExperienceOwnerUpdateInputSchema = z
     .object(
@@ -320,8 +323,8 @@ export type ExperienceOwnerUpdateInput = z.infer<typeof ExperienceOwnerUpdateInp
  *
  * - `ownerId` — never accepted; the route forces `actor.id`.
  * - `slug` — never accepted; derived server-side from `name` (HOS-166 OQ-3).
- * - `lifecycleState`, `visibility`, `moderationState` — control
- *   fields; the route forces `visibility: PRIVATE` + `lifecycleState: DRAFT`.
+ * - `publicationStatus` — control field; a listing is born `DRAFT` and only
+ *   the PB publication transitions move it (HOS-1641).
  * - `reviewsCount`, `averageRating`, `rating` — server-computed aggregates.
  *
  * `destinationId` stays `.optional()` (mirrors the admin create schema) —
@@ -338,13 +341,11 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     // Server-forced — never accepted from the owner's request body.
     ownerId: true,
     slug: true,
-    lifecycleState: true,
-    visibility: true,
+    publicationStatus: true,
     // HOS-1286: server-managed. Written ONLY by the featured-by-entitlement sync
     // primitives, never through create/update — the same treatment
     // `accommodation.crud.schema.ts` gives its twin.
     featuredByEntitlement: true,
-    moderationState: true,
     // Server-computed aggregates — nonsensical on create.
     reviewsCount: true,
     averageRating: true,
@@ -429,7 +430,7 @@ export type ExperienceOwnerCreateInput = z.infer<typeof ExperienceOwnerCreateInp
  * ### Why server-managed fields are explicitly omitted
  *
  * Even though `stripShapeDefaults` removes `.default()` wrappers, fields like
- * `ownerId`, `reviewsCount` and `averageRating` must
+ * `ownerId`, `publicationStatus`, `reviewsCount` and `averageRating` must
  * never arrive at the service from a generic PATCH body:
  *
  * - `ownerId` — immutable after creation; ownership change requires a dedicated
@@ -440,8 +441,8 @@ export type ExperienceOwnerCreateInput = z.infer<typeof ExperienceOwnerCreateInp
 export const ExperienceUpdateInputSchema = z
     .object(
         // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
-        // this, a PATCH like `{ lifecycleState: 'ACTIVE' }` would arrive at the
-        // service carrying injected defaults, silently overwriting server state.
+        // this, a PATCH like `{ name: 'x' }` would arrive at the service carrying
+        // injected defaults, silently overwriting server state.
         // Stripping the top-level defaults restores correct "absent key = no change"
         // PATCH semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
@@ -462,6 +463,9 @@ export const ExperienceUpdateInputSchema = z
                 // their own update and feature their listing without buying the
                 // add-on, which is the exact product HOS-1286 exists to sell.
                 featuredByEntitlement: true,
+                // Server-managed (HOS-1641): only the PB publication transitions
+                // write the publication state.
+                publicationStatus: true,
                 // Server-managed: ownership change requires a dedicated admin action.
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.

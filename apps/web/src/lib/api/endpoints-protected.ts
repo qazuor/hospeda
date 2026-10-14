@@ -29,6 +29,7 @@ import type {
     OccupancySourceEnum,
     PriceAlertResponse,
     ProtectedEffectiveSetResponse,
+    PublicationStatusEnum,
     ReportFixedResponse,
     StartSubscriptionResponseSchema,
     SubscribeDestinationResponseSchema,
@@ -2544,7 +2545,6 @@ interface AccommodationContactResponse {
 }
 
 /** Accommodation lifecycle state values used as query filter */
-type AccommodationLifecycleState = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
 /** Protected accommodation API endpoints (require auth). */
 export const protectedAccommodationsApi = {
@@ -2606,7 +2606,8 @@ export const protectedAccommodationsApi = {
      * List accommodations owned by the authenticated user.
      * Results are filtered server-side to only include accommodations where ownerId === actor.id.
      *
-     * @param params - Optional pagination and lifecycle state filter
+     * @param params - Optional pagination and publication-state filter (HOS-1641:
+     *   the query parameter is `publicationStatus`, any `PublicationStatusEnum` value)
      * @returns Paginated list of the user's accommodations
      *
      * @example
@@ -2618,7 +2619,7 @@ export const protectedAccommodationsApi = {
     listOwn(params?: {
         readonly page?: number;
         readonly pageSize?: number;
-        readonly lifecycleState?: AccommodationLifecycleState;
+        readonly publicationStatus?: PublicationStatusEnum;
     }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
         return apiClient.getListProtected({ path: `${PROTECTED}/accommodations`, params });
     },
@@ -3164,8 +3165,8 @@ export const accommodationEditApi = {
      * the plans page — where the card is collected and the trial begins.
      *
      * Calls the dedicated `/publish` endpoint (HOS-110) instead of the
-     * generic `update()` PATCH — the general update schema strips
-     * `lifecycleState`, so sending it via `update()` is a silent no-op.
+     * generic `update()` PATCH — publishing is the PB1 transition, and no
+     * update input accepts `publicationStatus` (HOS-1641).
      * Only the owner or a user with ACCOMMODATION_UPDATE_ANY can call this.
      *
      * @param params - Accommodation ID to publish

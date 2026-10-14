@@ -2,7 +2,7 @@
  * experiences.seed.ts — Experience listing seeder (SPEC-240 T-014).
  *
  * Inserts 5 experience listings covering different types, price units, and
- * visibility states.  Mirrors the gastronomy seeder pattern from SPEC-239
+ * publication states.  Mirrors the gastronomy seeder pattern from SPEC-239
  * but uses direct Drizzle-level insertion (bypassing ExperienceService.create)
  * because the seed reuses the gastronomy owner and grants `EXPERIENCE_OWNER`
  * before inserting that user's experience listings. (It used to have a second
@@ -27,15 +27,15 @@
  * child-table fixtures (FAQs/reviews) exist for this entity yet.
  *
  * Seeded listings:
- *  1. EXCURSION       — Concepción del Uruguay, per_person, ACTIVE+PUBLIC+hasActiveSub=true
- *  2. KAYAK_RENTAL    — Colón, per_hour, ACTIVE+PUBLIC+hasActiveSub=true
- *  3. TOUR_GUIDE      — Gualeguaychú, isPriceOnRequest, ACTIVE+PUBLIC+hasActiveSub=true
- *  4. BOAT_TRIP       — Concordia, per_group, DRAFT+PRIVATE+hasActiveSub=false (non-visible)
- *  5. CULTURAL_TOUR   — Concepción del Uruguay, per_person, DRAFT+PUBLIC+hasActiveSub=false (non-visible)
+ *  1. EXCURSION       — Concepción del Uruguay, per_person, PUBLISHED+hasActiveSub=true
+ *  2. KAYAK_RENTAL    — Colón, per_hour, PUBLISHED+hasActiveSub=true
+ *  3. TOUR_GUIDE      — Gualeguaychú, isPriceOnRequest, PUBLISHED+hasActiveSub=true
+ *  4. BOAT_TRIP       — Concordia, per_group, DRAFT+hasActiveSub=false (non-visible)
+ *  5. CULTURAL_TOUR   — Concepción del Uruguay, per_person, DRAFT+hasActiveSub=false (non-visible)
  */
 
-import { ExperienceMediaModel, legacyPublicationStatus } from '@repo/db';
-import { RoleEnum, RoleGrantReason } from '@repo/schemas';
+import { ExperienceMediaModel } from '@repo/db';
+import { PublicationStatusEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { Pool } from 'pg';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
@@ -65,9 +65,8 @@ interface ExperienceInsertInput {
     priceFrom: number;
     priceUnit: string;
     isPriceOnRequest: boolean;
-    visibility: string;
-    lifecycleState: string;
-    moderationState: string;
+    /** Publication state the listing is born with (HOS-1641: replaces the three old state columns). */
+    publicationStatus: PublicationStatusEnum;
     ownerId: string;
     destinationId: string;
     createdById: string;
@@ -142,9 +141,7 @@ function buildExperienceInputs(
             priceFrom: 850000,
             priceUnit: 'per_person',
             isPriceOnRequest: false,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE',
-            moderationState: 'APPROVED',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             ownerId: listingOwnerId,
             destinationId: concepcion,
             createdById: superAdminId,
@@ -178,9 +175,7 @@ function buildExperienceInputs(
             priceFrom: 350000,
             priceUnit: 'per_hour',
             isPriceOnRequest: false,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE',
-            moderationState: 'APPROVED',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             ownerId: listingOwnerId,
             destinationId: colon,
             createdById: superAdminId,
@@ -214,9 +209,7 @@ function buildExperienceInputs(
             priceFrom: 0,
             priceUnit: 'per_group',
             isPriceOnRequest: true,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE',
-            moderationState: 'APPROVED',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             ownerId: listingOwnerId,
             destinationId: gualeguaychu,
             createdById: superAdminId,
@@ -250,9 +243,7 @@ function buildExperienceInputs(
             priceFrom: 1200000,
             priceUnit: 'per_group',
             isPriceOnRequest: false,
-            visibility: 'PRIVATE',
-            lifecycleState: 'DRAFT',
-            moderationState: 'PENDING',
+            publicationStatus: PublicationStatusEnum.DRAFT,
             ownerId: listingOwnerId,
             destinationId: concordia,
             createdById: superAdminId,
@@ -287,9 +278,7 @@ function buildExperienceInputs(
             priceFrom: 650000,
             priceUnit: 'per_person',
             isPriceOnRequest: false,
-            visibility: 'PUBLIC',
-            lifecycleState: 'DRAFT',
-            moderationState: 'PENDING',
+            publicationStatus: PublicationStatusEnum.DRAFT,
             ownerId: listingOwnerId,
             destinationId: concepcion,
             createdById: superAdminId,
@@ -474,15 +463,13 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                 `INSERT INTO experiences
                    (id, slug, name, summary, description, type,
                     price_from, price_unit, is_price_on_request,
-                    visibility, lifecycle_state, moderation_state,
                     owner_id, destination_id, created_by_id, updated_by_id,
                     publication_status, inactive_since, deadlines_version)
                  VALUES
                    ($1, $2, $3, $4, $5, $6,
                     $7, $8, $9,
-                    $10, $11, $12,
-                    $13, $14, $15, $15,
-                    $16::publication_status_enum, now(), 1)
+                    $10, $11, $12, $12,
+                    $13::publication_status_enum, now(), 1)
                  ON CONFLICT (slug) DO NOTHING
                  RETURNING id`,
                 [
@@ -495,16 +482,10 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                     input.priceFrom,
                     input.priceUnit,
                     input.isPriceOnRequest,
-                    input.visibility,
-                    input.lifecycleState,
-                    input.moderationState,
                     input.ownerId,
                     input.destinationId,
                     input.createdById,
-                    legacyPublicationStatus({
-                        lifecycleState: input.lifecycleState,
-                        visibility: input.visibility
-                    })
+                    input.publicationStatus
                 ]
             );
 

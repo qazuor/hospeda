@@ -6,7 +6,6 @@ import {
     destinations,
     eq,
     getDb,
-    legacyPublicationStatus,
     plans,
     planVersions,
     trials
@@ -14,6 +13,7 @@ import {
 import {
     FLOOR_PLAN_ROLE,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
     TRIAL_PLAN_ROLE,
     TrialStatusEnum,
@@ -249,13 +249,7 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
                 type: 'HOTEL',
                 ownerId: owner.id,
                 destinationId: seedDestId,
-                visibility: 'PUBLIC',
-                lifecycleState: 'ACTIVE',
-                moderationState: 'APPROVED',
-                publicationStatus: legacyPublicationStatus({
-                    lifecycleState: 'ACTIVE',
-                    visibility: 'PUBLIC'
-                }),
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
                 inactiveSince: new Date(),
                 deadlinesVersion: 1
             })

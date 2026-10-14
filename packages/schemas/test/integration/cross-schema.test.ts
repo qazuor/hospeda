@@ -52,16 +52,15 @@ describe('Cross-Schema Integration Tests', () => {
         });
 
         it('should have consistent visibility field types where applicable', () => {
-            const accommodation = createValidAccommodation();
+            // Listings (accommodation) carry `publicationStatus` instead of a
+            // visibility column since HOS-1641, so they are not part of this check.
             const destination = createValidDestination();
             const post = createValidPost();
 
-            const accommodationResult = AccommodationSchema.parse(accommodation);
             const destinationResult = DestinationSchema.parse(destination);
             const postResult = PostSchema.parse(post);
 
             // All should have consistent visibility enums
-            expect(['PUBLIC', 'PRIVATE', 'RESTRICTED']).toContain(accommodationResult.visibility);
             expect(['PUBLIC', 'PRIVATE', 'RESTRICTED']).toContain(destinationResult.visibility);
             expect(['PUBLIC', 'PRIVATE', 'RESTRICTED']).toContain(postResult.visibility);
         });

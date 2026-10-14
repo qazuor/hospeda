@@ -133,9 +133,7 @@ async function createFixture(): Promise<{ ownerId: string; listingIds: string[] 
                 ownerId: owner.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: PublicationStatusEnum.PUBLISHED,
-                lifecycleState: 'ACTIVE',
-                visibility: 'PUBLIC'
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             } as Partial<Accommodation>,
             db
         );

@@ -45,15 +45,14 @@
  * documents exist for opposite reasons, one is a premium marketing asset handed
  * to a customer and the other is an acquisition channel we WANT on every door.
  *
- * ## Both clauses of "published", in all three verticals
+ * ## "Published" is one state, in all three verticals
  *
- * `visibility === PUBLIC` alone is not "published": a DRAFT row can carry PUBLIC
- * visibility and has no page. `AccommodationService`'s own predicate is
- * `lifecycleState === ACTIVE && visibility === PUBLIC`, and that is what decides
- * whether the public page exists, so it is what decides whether a code may be
- * printed for it. The gastronomy and experience twins check the same pair, for
- * the same reason — their services' `_canView` answers NOT_FOUND to every
- * non-owner on a non-ACTIVE row too.
+ * Only `publicationStatus === PUBLISHED` has a public page (V6.9b, HOS-1641:
+ * the single publication state replaced the old lifecycle and visibility). That
+ * is what decides whether the public page exists, so it is what decides whether
+ * a code may be printed for it. The gastronomy and experience twins check the
+ * same state, for the same reason — their services' `_canView` answers
+ * NOT_FOUND to every non-owner on a listing that is not PUBLISHED too.
  *
  * ## The sheet's language and the code's destination are two decisions
  *
@@ -71,11 +70,10 @@
 import {
     AccommodationIdSchema,
     EntityTypeEnum,
-    LifecycleStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationService, entityNotFoundError } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -125,10 +123,7 @@ export async function handleGetAccommodationQrSheet(
         throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
     }
 
-    if (
-        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE ||
-        entity.visibility !== VisibilityEnum.PUBLIC
-    ) {
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
     }
 

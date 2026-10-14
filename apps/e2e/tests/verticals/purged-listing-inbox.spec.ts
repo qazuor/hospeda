@@ -13,6 +13,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import {
     createAccommodation,
     createUser,
@@ -51,7 +52,7 @@ test.describe('Inboxes of a purged listing @verticals', () => {
             const listing = await createAccommodation({
                 ownerId: owner.id,
                 slugPrefix: 'v8a-purged-inbox',
-                lifecycleState: 'ACTIVE'
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             });
             listingId = listing.id;
             const { alertId } = await seedPriceAlert({ userId: tourist.id, listingId });

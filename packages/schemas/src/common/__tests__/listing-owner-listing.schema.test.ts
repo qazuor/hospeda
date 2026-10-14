@@ -14,6 +14,7 @@ const gastronomyRow = {
     name: 'La Parrilla',
     slug: 'la-parrilla',
     type: 'restaurant',
+    publicationStatus: 'PUBLISHED',
     isPublic: true
 };
 
@@ -23,6 +24,7 @@ const experienceRow = {
     name: 'Kayak al atardecer',
     slug: 'kayak-al-atardecer',
     type: 'tour',
+    publicationStatus: 'DRAFT',
     isPublic: false
 };
 
@@ -51,6 +53,26 @@ describe('OwnerListingSummarySchema', () => {
             id: 'not-a-uuid'
         });
         expect(result.success).toBe(false);
+    });
+
+    it('carries the publication state (HOS-1641) and rejects a value outside the six states', () => {
+        // Arrange
+        const purged = { ...gastronomyRow, publicationStatus: 'PURGED', isPublic: false };
+        const legacy = { ...gastronomyRow, publicationStatus: 'ACTIVE' };
+        const { publicationStatus: _omitted, ...missing } = gastronomyRow;
+
+        // Act
+        const purgedResult = OwnerListingSummarySchema.safeParse(purged);
+        const legacyResult = OwnerListingSummarySchema.safeParse(legacy);
+        const missingResult = OwnerListingSummarySchema.safeParse(missing);
+
+        // Assert
+        expect(purgedResult.success).toBe(true);
+        if (purgedResult.success) {
+            expect(purgedResult.data.publicationStatus).toBe('PURGED');
+        }
+        expect(legacyResult.success).toBe(false);
+        expect(missingResult.success).toBe(false);
     });
 });
 

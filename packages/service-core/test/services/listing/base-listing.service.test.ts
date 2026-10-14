@@ -447,7 +447,7 @@ describe('BaseListingService — draft rename slug sync (_beforeUpdate)', () => 
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         } as TestEntity;
         const { svc, model } = makeService(current);
         const actor = makeActor();
@@ -467,7 +467,7 @@ describe('BaseListingService — draft rename slug sync (_beforeUpdate)', () => 
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'ACTIVE'
+            publicationStatus: 'PUBLISHED'
         } as TestEntity;
         const { svc, model } = makeService(current);
         const actor = makeActor();
@@ -485,7 +485,7 @@ describe('BaseListingService — draft rename slug sync (_beforeUpdate)', () => 
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'ACTIVE'
+            publicationStatus: 'PUBLISHED'
         } as TestEntity;
         const { svc, model } = makeService(current);
         const actor = makeActor();
@@ -511,7 +511,7 @@ describe('BaseListingService — draft rename slug sync (_beforeUpdate)', () => 
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         } as TestEntity;
         const { svc, model } = makeService(current);
         const actor = makeActor();
@@ -533,7 +533,7 @@ describe('BaseListingService — draft rename slug sync (_beforeUpdate)', () => 
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         } as TestEntity;
         const { svc, model } = makeService(current);
         const actor = makeActor();
@@ -555,7 +555,7 @@ describe('BaseListingService — draft rename slug sync (_beforeUpdate)', () => 
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         } as TestEntity;
         const { svc, model } = makeService(current);
         const actor = makeActor();
@@ -573,7 +573,7 @@ describe('BaseListingService — draft rename slug sync (_beforeUpdate)', () => 
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         } as TestEntity;
         const { svc, model } = makeService(current);
         const actor = makeActor();
@@ -602,7 +602,7 @@ describe('BaseListingService — draft rename slug sync (public update path)', (
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         }) as TestEntity;
 
     it('regenerates the slug of a renamed draft when called with no context', async () => {
@@ -626,7 +626,7 @@ describe('BaseListingService — draft rename slug sync (public update path)', (
     it('leaves the slug of a renamed published listing alone when called with no context', async () => {
         const { svc, model } = makeService({
             ...draftListing(),
-            lifecycleState: 'ACTIVE'
+            publicationStatus: 'PUBLISHED'
         } as TestEntity);
         const actor = makeActor();
 
@@ -1004,7 +1004,7 @@ describe('BaseListingService — owner act rides the write transaction (HOS-1499
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
-            lifecycleState: 'DRAFT',
+            publicationStatus: 'DRAFT',
             ownerId: OWNER_ID
         }) as TestEntity;
 

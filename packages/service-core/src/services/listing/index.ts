@@ -35,7 +35,6 @@ export {
     checkCanDeleteListing,
     checkCanEditAll,
     checkCanEditOwn,
-    checkCanModerateListing,
     checkCanModerateReview,
     checkCanViewAll
 } from './listing.permissions';

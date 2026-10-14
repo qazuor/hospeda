@@ -206,9 +206,7 @@
         }
     ],
     "tagIds": ["032-tag-relax", "016-tag-entre-rios", "030-tag-playa-rio"],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC",
+    "publicationStatus": "PUBLISHED",
     "reviewsCount": 0,
-    "averageRating": 0,
-    "moderationState": "APPROVED"
+    "averageRating": 0
 }

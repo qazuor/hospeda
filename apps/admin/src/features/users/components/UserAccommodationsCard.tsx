@@ -1,9 +1,5 @@
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
-import {
-    getLifecycleStateBadgeOptions,
-    getVisibilityBadgeOptions
-} from '@/components/entity-list/columns.factory.types';
 import { EmptyState } from '@/components/feedback/EmptyState';
 import { BadgeCell } from '@/components/table/cells/BadgeCell';
 import { Button } from '@/components/ui/button';
@@ -16,6 +12,7 @@ import {
 } from '@/components/ui-wrapped/Card';
 import { useAccommodationListQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import type { Accommodation } from '@/features/accommodations/schemas/accommodations.schemas';
+import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
@@ -111,16 +108,12 @@ export function UserAccommodationsCard({ userId }: UserAccommodationsCardProps) 
                                                     accommodation.slug ||
                                                     accommodation.id}
                                             </Link>
-                                            {accommodation.visibility ? (
+                                            {accommodation.publicationStatus ? (
                                                 <BadgeCell
-                                                    value={accommodation.visibility}
-                                                    options={getVisibilityBadgeOptions(t)}
-                                                />
-                                            ) : null}
-                                            {accommodation.lifecycleState ? (
-                                                <BadgeCell
-                                                    value={accommodation.lifecycleState}
-                                                    options={getLifecycleStateBadgeOptions(t)}
+                                                    value={accommodation.publicationStatus}
+                                                    options={getPublicationStatusBadgeOptions({
+                                                        t
+                                                    })}
                                                 />
                                             ) : null}
                                         </div>

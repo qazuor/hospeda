@@ -39,8 +39,8 @@
  *  - The candidate pool is sourced from `AccommodationModel.findTopRated`
  *    (the same query `AccommodationService.getTopRated` uses for its public
  *    "popular" list) rather than a fresh query — it already applies the
- *    public-visibility flags (excludes RESTRICTED/owner-suspended/plan-
- *    restricted/non-ACTIVE accommodations) and eager-loads `destination`
+ *    public-visibility flag (`publishedOnly`: only `PUBLISHED` accommodations,
+ *    HOS-1641) and eager-loads `destination`
  *    (for the materialized path) and `amenities` (for the Jaccard component)
  *    in a single query. Reusing it means the personalized feed and the
  *    cold-start fallback share one sourcing + projection pipeline.
@@ -314,10 +314,7 @@ export class RecommendationService extends BaseService {
                         // post-query exclusion filter below (findTopRated has no
                         // native "exclude these ids" clause).
                         limit: CANDIDATE_POOL_CAP + knownIdSet.size,
-                        excludeRestricted: true,
-                        excludeOwnerSuspended: true,
-                        excludePlanRestricted: true,
-                        activeOnly: true
+                        publishedOnly: true
                     },
                     tx
                 )) as JoinedAccommodationRow[];

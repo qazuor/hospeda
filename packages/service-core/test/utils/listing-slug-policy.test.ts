@@ -1,4 +1,4 @@
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { runWithAdministrativeAuthorization } from '../../src/utils/administrative-authorization';
 import { shouldRegenerateSlugOnListingChange } from '../../src/utils/listing-slug-policy';
@@ -8,8 +8,8 @@ import { shouldRegenerateSlugOnListingChange } from '../../src/utils/listing-slu
  * never been published. Every case below varies exactly one input away from
  * this baseline.
  */
-const renameOf = (lifecycleState: string | null | undefined) => ({
-    currentLifecycleState: lifecycleState,
+const renameOf = (publicationStatus: string | null | undefined) => ({
+    currentPublicationStatus: publicationStatus,
     currentName: 'Casa del Río',
     nextName: 'Casa del Arroyo',
     slugWasProvided: false
@@ -20,8 +20,8 @@ const renameOf = (lifecycleState: string | null | undefined) => ({
  * type differs. `nextName` is deliberately omitted (undefined) to model a
  * real partial update payload that never touched the `name` field.
  */
-const typeChangeOf = (lifecycleState: string | null | undefined) => ({
-    currentLifecycleState: lifecycleState,
+const typeChangeOf = (publicationStatus: string | null | undefined) => ({
+    currentPublicationStatus: publicationStatus,
     currentName: 'Casa del Río',
     currentType: 'COUNTRY_HOUSE',
     nextType: 'CABIN',
@@ -29,54 +29,49 @@ const typeChangeOf = (lifecycleState: string | null | undefined) => ({
 });
 
 describe('shouldRegenerateSlugOnListingChange', () => {
-    describe('lifecycle gate (rename)', () => {
+    describe('publication gate (rename)', () => {
         it('regenerates for a DRAFT listing — it has no public URL to protect', () => {
-            expect(shouldRegenerateSlugOnListingChange(renameOf(LifecycleStatusEnum.DRAFT))).toBe(
+            expect(shouldRegenerateSlugOnListingChange(renameOf(PublicationStatusEnum.DRAFT))).toBe(
                 true
             );
         });
 
-        it('keeps the slug of an ACTIVE listing', () => {
-            expect(shouldRegenerateSlugOnListingChange(renameOf(LifecycleStatusEnum.ACTIVE))).toBe(
-                false
-            );
-        });
-
-        it('keeps the slug of an INACTIVE listing — paused, but its URL was published', () => {
-            // The enum documents INACTIVE as "was active, currently paused",
-            // with "accommodation paused for vacation" as its own example. A
-            // `!== ACTIVE` gate moves that listing's indexed URL on rename.
+        it('keeps the slug of a PUBLISHED listing', () => {
             expect(
-                shouldRegenerateSlugOnListingChange(renameOf(LifecycleStatusEnum.INACTIVE))
+                shouldRegenerateSlugOnListingChange(renameOf(PublicationStatusEnum.PUBLISHED))
             ).toBe(false);
         });
 
-        it('keeps the slug of an ARCHIVED listing — retired, but its URL was published', () => {
-            expect(
-                shouldRegenerateSlugOnListingChange(renameOf(LifecycleStatusEnum.ARCHIVED))
-            ).toBe(false);
+        it.each([
+            PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+            PublicationStatusEnum.ARCHIVED,
+            PublicationStatusEnum.MODERATED,
+            PublicationStatusEnum.PURGED
+        ])('keeps the slug of a %s listing — taken down, but its URL was published', (status) => {
+            // A `=== PUBLISHED` gate would move that listing's indexed URL on rename.
+            expect(shouldRegenerateSlugOnListingChange(renameOf(status))).toBe(false);
         });
 
         it.each([
             ['null', null],
             ['undefined', undefined],
             ['an unrecognized value', 'PENDING_REVIEW']
-        ])('keeps the slug when the lifecycle state is %s', (_label, lifecycleState) => {
+        ])('keeps the slug when the publication status is %s', (_label, publicationStatus) => {
             // Unknown means "cannot prove it was never published", and the
             // conservative side of that is to leave the URL alone.
-            expect(shouldRegenerateSlugOnListingChange(renameOf(lifecycleState))).toBe(false);
+            expect(shouldRegenerateSlugOnListingChange(renameOf(publicationStatus))).toBe(false);
         });
     });
 
     describe('the published side needs an explicit opt-in (stage 2)', () => {
         it.each([
-            ['ACTIVE', LifecycleStatusEnum.ACTIVE],
-            ['INACTIVE', LifecycleStatusEnum.INACTIVE],
-            ['ARCHIVED', LifecycleStatusEnum.ARCHIVED]
-        ])('regenerates a %s listing when the owner asks for it', (_label, lifecycleState) => {
+            ['PUBLISHED', PublicationStatusEnum.PUBLISHED],
+            ['UNPUBLISHED_BY_BILLING', PublicationStatusEnum.UNPUBLISHED_BY_BILLING],
+            ['ARCHIVED', PublicationStatusEnum.ARCHIVED]
+        ])('regenerates a %s listing when the owner asks for it', (_label, publicationStatus) => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(lifecycleState),
+                    ...renameOf(publicationStatus),
                     refreshSlugFromName: true
                 })
             ).toBe(true);
@@ -88,7 +83,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         ])('keeps a published slug when the opt-in is %s', (_label, refreshSlugFromName) => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.ACTIVE),
+                    ...renameOf(PublicationStatusEnum.PUBLISHED),
                     refreshSlugFromName
                 })
             ).toBe(false);
@@ -97,7 +92,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('does not need the opt-in for a draft — it has no address to protect', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.DRAFT),
+                    ...renameOf(PublicationStatusEnum.DRAFT),
                     refreshSlugFromName: false
                 })
             ).toBe(true);
@@ -106,7 +101,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('ignores the opt-in when the caller also provided a slug', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.ACTIVE),
+                    ...renameOf(PublicationStatusEnum.PUBLISHED),
                     slugWasProvided: true,
                     refreshSlugFromName: true
                 })
@@ -116,7 +111,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('ignores the opt-in when the name did not actually change', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.ACTIVE),
+                    ...renameOf(PublicationStatusEnum.PUBLISHED),
                     nextName: 'Casa del Río',
                     refreshSlugFromName: true
                 })
@@ -128,7 +123,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('keeps a caller-provided slug even on a draft rename', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.DRAFT),
+                    ...renameOf(PublicationStatusEnum.DRAFT),
                     slugWasProvided: true
                 })
             ).toBe(false);
@@ -139,7 +134,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('does not regenerate when the name is unchanged', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.DRAFT),
+                    ...renameOf(PublicationStatusEnum.DRAFT),
                     nextName: 'Casa del Río'
                 })
             ).toBe(false);
@@ -148,7 +143,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('does not regenerate when the name changes only in surrounding whitespace', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.DRAFT),
+                    ...renameOf(PublicationStatusEnum.DRAFT),
                     nextName: '  Casa del Río  '
                 })
             ).toBe(false);
@@ -162,7 +157,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         ])('does not regenerate when the next name is %s', (_label, nextName) => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.DRAFT),
+                    ...renameOf(PublicationStatusEnum.DRAFT),
                     nextName
                 })
             ).toBe(false);
@@ -171,7 +166,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('regenerates when a draft with no current name is given one', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...renameOf(LifecycleStatusEnum.DRAFT),
+                    ...renameOf(PublicationStatusEnum.DRAFT),
                     currentName: null
                 })
             ).toBe(true);
@@ -181,20 +176,20 @@ describe('shouldRegenerateSlugOnListingChange', () => {
     describe('HOS-879: a type change is evaluated exactly like a rename', () => {
         it('DRAFT + type-only change regenerates (case 1)', () => {
             expect(
-                shouldRegenerateSlugOnListingChange(typeChangeOf(LifecycleStatusEnum.DRAFT))
+                shouldRegenerateSlugOnListingChange(typeChangeOf(PublicationStatusEnum.DRAFT))
             ).toBe(true);
         });
 
         it('published + type-only change WITHOUT opt-in does not regenerate (case 2)', () => {
             expect(
-                shouldRegenerateSlugOnListingChange(typeChangeOf(LifecycleStatusEnum.ACTIVE))
+                shouldRegenerateSlugOnListingChange(typeChangeOf(PublicationStatusEnum.PUBLISHED))
             ).toBe(false);
         });
 
         it('published + type-only change WITH opt-in regenerates (case 3)', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...typeChangeOf(LifecycleStatusEnum.ACTIVE),
+                    ...typeChangeOf(PublicationStatusEnum.PUBLISHED),
                     refreshSlugFromName: true
                 })
             ).toBe(true);
@@ -203,7 +198,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('neither name nor type changes: does not regenerate (case 4)', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    currentLifecycleState: LifecycleStatusEnum.DRAFT,
+                    currentPublicationStatus: PublicationStatusEnum.DRAFT,
                     currentName: 'Casa del Río',
                     currentType: 'CABIN',
                     nextType: 'CABIN',
@@ -215,7 +210,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('neither name nor type changes on a published listing, even with the opt-in on', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    currentLifecycleState: LifecycleStatusEnum.ACTIVE,
+                    currentPublicationStatus: PublicationStatusEnum.PUBLISHED,
                     currentName: 'Casa del Río',
                     currentType: 'CABIN',
                     nextType: 'CABIN',
@@ -225,16 +220,18 @@ describe('shouldRegenerateSlugOnListingChange', () => {
             ).toBe(false);
         });
 
-        it('a type-only change on an INACTIVE (paused) listing needs the opt-in too', () => {
+        it('a type-only change on an UNPUBLISHED_BY_BILLING listing needs the opt-in too', () => {
             expect(
-                shouldRegenerateSlugOnListingChange(typeChangeOf(LifecycleStatusEnum.INACTIVE))
+                shouldRegenerateSlugOnListingChange(
+                    typeChangeOf(PublicationStatusEnum.UNPUBLISHED_BY_BILLING)
+                )
             ).toBe(false);
         });
 
         it('a caller-provided slug wins over a type change too', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    ...typeChangeOf(LifecycleStatusEnum.DRAFT),
+                    ...typeChangeOf(PublicationStatusEnum.DRAFT),
                     slugWasProvided: true
                 })
             ).toBe(false);
@@ -243,7 +240,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
         it('both name AND type changing on a DRAFT still regenerates', () => {
             expect(
                 shouldRegenerateSlugOnListingChange({
-                    currentLifecycleState: LifecycleStatusEnum.DRAFT,
+                    currentPublicationStatus: PublicationStatusEnum.DRAFT,
                     currentName: 'Casa del Río',
                     nextName: 'Casa del Arroyo',
                     currentType: 'COUNTRY_HOUSE',
@@ -257,7 +254,7 @@ describe('shouldRegenerateSlugOnListingChange', () => {
 
 describe('shouldRegenerateSlugOnListingChange under action 15 (ACC:15, HOS-1493)', () => {
     const renameDraft = {
-        currentLifecycleState: LifecycleStatusEnum.DRAFT,
+        currentPublicationStatus: PublicationStatusEnum.DRAFT,
         currentName: 'Casa del Río',
         nextName: 'Casa del Arroyo',
         slugWasProvided: false
@@ -270,7 +267,7 @@ describe('shouldRegenerateSlugOnListingChange under action 15 (ACC:15, HOS-1493)
                 shouldRegenerateSlugOnListingChange(renameDraft),
                 shouldRegenerateSlugOnListingChange({
                     ...renameDraft,
-                    currentLifecycleState: LifecycleStatusEnum.ACTIVE,
+                    currentPublicationStatus: PublicationStatusEnum.PUBLISHED,
                     refreshSlugFromName: true
                 })
             ]

@@ -66,15 +66,11 @@ export type ListingSubEntityField =
  * an event; anything else is content and keeps only its name.
  */
 export const LISTING_NON_CONTENT_FIELDS = [
-    'lifecycleState',
-    'visibility',
-    'moderationState',
-    'ownerSuspended',
-    'planRestricted',
-    'billingUnpublishedAt',
-    // The new publication model's state and clock columns (HOS-1478,
+    // The publication model's state and clock columns (HOS-1478,
     // `listing-publication-columns.ts`): state, version of the deadlines and
-    // dates — never content.
+    // dates — never content. The six legacy state columns they replaced left
+    // with V6.9b (HOS-1641); events already written with them are read as
+    // they were stored.
     'publicationStatus',
     'inactiveSince',
     'deadlinesVersion',

@@ -53,8 +53,7 @@ async function seedAccommodation(tx: DrizzleClient, slugSuffix: string) {
             name: 'HOS-157 Calendar Sync Test',
             summary: 'Regression test for the AccommodationCalendarSyncModel.',
             type: 'HOUSE',
-            description: 'Accommodation inserted for the HOS-157 calendar sync model test.',
-            lifecycleState: 'ACTIVE'
+            description: 'Accommodation inserted for the HOS-157 calendar sync model test.'
         })
         .returning();
     if (!accommodation) throw new Error('Failed to insert accommodation');
