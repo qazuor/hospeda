@@ -18,7 +18,9 @@ type Entry = {
     via: string | null;
     reason: string;
     owner?: string;
+    notifiedBy?: string;
 };
+const EMITTERS = ['emitCoverageChanged', 'runAfterCommit', 'recalculateCoverage'];
 
 function files(root: string): string[] {
     return execFileSync('git', ['ls-files', '-co', '--exclude-standard', '-z'], {
@@ -75,6 +77,52 @@ function writerSites(file: string, source: string) {
     scan(sf);
     return sites.map((s) => ({ ...s, calls }));
 }
+/** First line of every call in a source, by callee name (identifier or property). */
+function callLines(file: string, source: string): Map<string, number> {
+    const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+    const lines = new Map<string, number>();
+    function scan(n: ts.Node): void {
+        if (ts.isCallExpression(n)) {
+            const name = ts.isPropertyAccessExpression(n.expression)
+                ? n.expression.name.text
+                : ts.isIdentifier(n.expression)
+                  ? n.expression.text
+                  : '';
+            if (name && !lines.has(name))
+                lines.set(name, sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1);
+        }
+        ts.forEachChild(n, scan);
+    }
+    scan(sf);
+    return lines;
+}
+/**
+ * A `turns-off` writer whose coverage notice is emitted by its caller, after
+ * the caller's commit: the writer's file never emits, the `notifiedBy` file
+ * must call the writer's symbol AND an emitter (HOS-1536, I-6).
+ */
+function callerErrors(args: {
+    root: string;
+    scanned: readonly string[];
+    entry: Entry;
+    site: { file: string; line: number };
+}): string[] {
+    const { root, scanned, entry, site } = args;
+    if (!entry.notifiedBy)
+        return [`G5: ${site.file}:${site.line} caller-notified writer has no notifiedBy`];
+    if (!scanned.includes(entry.notifiedBy))
+        return [`G5: ${entry.notifiedBy}:1 notifiedBy is not a scanned production file`];
+    const calls = callLines(entry.notifiedBy, readFileSync(join(root, entry.notifiedBy), 'utf8'));
+    const errors: string[] = [];
+    const symbolLine = calls.get(entry.symbol);
+    if (symbolLine === undefined)
+        errors.push(`G5: ${entry.notifiedBy}:1 notifiedBy does not call ${entry.symbol}`);
+    if (!EMITTERS.some((name) => calls.has(name)))
+        errors.push(
+            `G5: ${entry.notifiedBy}:${symbolLine ?? 1} notifiedBy emits no surplus reconciler notice`
+        );
+    return errors;
+}
 export function run(
     args: { root?: string; minScannedFiles?: number; inventory?: readonly Entry[] } = {}
 ) {
@@ -113,6 +161,8 @@ export function run(
             errors.push(
                 `G5: ${site.file}:${site.line} ${site.table} turns off without surplus reconciler notice`
             );
+        if (entry.effect === 'turns-off' && entry.via === 'caller')
+            errors.push(...callerErrors({ root, scanned, entry, site }));
         if (entry.effect === 'turns-off' && entry.via === 'pending' && !entry.owner)
             errors.push(`G5: ${site.file}:${site.line} pending source writer has no owner`);
         if (entry.effect === 'turns-off' && !entry.via)

@@ -53,9 +53,9 @@
         "symbol": "closeCancelledVip",
         "table": "subscriptions",
         "effect": "turns-off",
-        "via": "pending",
-        "owner": "B4 subscription coverage notice (HOS-1532\u2013HOS-1536)",
-        "reason": "Cancellation and service end remove the VIP coverage source."
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/cancel-inherited-tourist-vip.service.ts",
+        "reason": "Cancellation and service end remove the VIP coverage source; the caller cancelInheritedTouristVips emits the coverage notice after its commit (TEST:B4:2, census)."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/decline-first-charge.service.ts",
