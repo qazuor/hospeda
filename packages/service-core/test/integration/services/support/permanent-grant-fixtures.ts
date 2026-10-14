@@ -1,10 +1,15 @@
 import {
+    addonInstances,
+    courtesyGrants,
     type DrizzleClient,
+    inArray,
     permanentGrants,
     permanentGrantVerticals,
     plans,
     planVersions
 } from '@repo/db';
+import { getServiceTestDb, getServiceTestPool } from '../helpers';
+import { cleanUpCoverageNoticeRows } from './coverage-notice-fixtures.js';
 
 /** Inserts a plan and current floor version for one vertical. */
 export async function seedGrantPlan(
@@ -76,4 +81,30 @@ export async function seedPermanentGrant(
         anchorIds.push(row.id);
     }
     return { grantId: grant.id, anchorIds };
+}
+
+/** Cleans committed grant-test rows without truncating shared integration tables. */
+export async function retirePermanentGrantRows(userIds: readonly string[]): Promise<void> {
+    if (userIds.length === 0) return;
+    const db = getServiceTestDb();
+    const grants = await db
+        .select({ id: permanentGrants.id })
+        .from(permanentGrants)
+        .where(inArray(permanentGrants.beneficiaryUserId, [...userIds]));
+    const grantIds = grants.map(({ id }) => id);
+    if (grantIds.length > 0)
+        await db
+            .delete(permanentGrantVerticals)
+            .where(inArray(permanentGrantVerticals.permanentGrantId, grantIds));
+    await db
+        .delete(permanentGrants)
+        .where(inArray(permanentGrants.beneficiaryUserId, [...userIds]));
+    await db.delete(courtesyGrants).where(inArray(courtesyGrants.beneficiaryUserId, [...userIds]));
+    await db.delete(addonInstances).where(inArray(addonInstances.ownerId, [...userIds]));
+    await getServiceTestPool().query(
+        'DELETE FROM subscription_pause WHERE subscription_id IN (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))',
+        [userIds]
+    );
+    await cleanUpCoverageNoticeRows({ userIds, promoCodeIds: [] });
+    await getServiceTestPool().query('DELETE FROM users WHERE id = ANY($1::uuid[])', [userIds]);
 }

@@ -1,7 +1,8 @@
-import { addonInstances, eq } from '@repo/db';
+import { addonInstances, eq, subscriptions } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runOrphanhood } from '../../../src/services/billing/addon/addon-instance-a5';
+import { grantPermanentGrant } from '../../../src/services/billing/grant/permanent-grant.service.js';
 import { hasLivePermanentGrantAnchor } from '../../../src/services/billing/grant/permanent-grant-live-anchors';
 import {
     closeServiceTestPool,
@@ -13,6 +14,7 @@ import {
     expectOrphaned,
     expectUntouched,
     orphanNow,
+    readDecisions,
     readInstance,
     seedOrphanInstance,
     seedOrphanOwner,
@@ -20,7 +22,11 @@ import {
     seedVerticalAddon
 } from './support/addon-orphan-fixtures';
 import { addonPolicyFromTx } from './support/coverage-fixtures';
-import { seedPermanentGrant } from './support/permanent-grant-fixtures';
+import {
+    retirePermanentGrantRows,
+    seedGrantPlan,
+    seedPermanentGrant
+} from './support/permanent-grant-fixtures';
 
 afterAll(closeServiceTestPool);
 
@@ -188,6 +194,59 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     hasLivePermanentGrantAnchor({ userId: 'invalid', vertical: V, tx })
                 ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
             });
+        });
+    }
+);
+
+describe.skipIf(!isServiceTestDbAvailable())(
+    'TEST:B9a:1 — S13 keeps an addon protected by the new live anchor (AC:B9a:1)',
+    () => {
+        it('i — the grant act cancels the principal while A5 leaves its anchored addon and complement active', async () => {
+            const seeded = await getServiceTestDb().transaction(async (tx) => {
+                const { userId } = await seedOrphanOwner(tx);
+                const { userId: adminId } = await seedOrphanOwner(tx);
+                const { subscriptionId } = await seedPrincipal(tx, {
+                    userId,
+                    vertical: V,
+                    status: 'ACTIVE'
+                });
+                const addon = await seedVerticalAddon(tx, { userId, targetId: subscriptionId });
+                const plan = await seedGrantPlan(tx, V);
+                return { userId, adminId, subscriptionId, addon, plan };
+            });
+            try {
+                const result = await grantPermanentGrant(
+                    {
+                        beneficiaryUserId: seeded.userId,
+                        grantedBy: seeded.adminId,
+                        reason: 'live anchor orphanhood case',
+                        includesAddons: false,
+                        anchors: [{ vertical: V, ...seeded.plan }]
+                    },
+                    {
+                        clock: { now: () => orphanNow },
+                        coverageNotices: { emitCoverageChanged: async () => undefined },
+                        orphanhood: {
+                            addonPolicy: addonPolicyFromTx(getServiceTestDb()),
+                            listing: async () => {
+                                throw new Error('no listing addon');
+                            }
+                        }
+                    }
+                );
+                const [principal] = await getServiceTestDb()
+                    .select()
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, seeded.subscriptionId));
+                expect(principal?.status).toBe('CANCELLED');
+                await expectUntouched(getServiceTestDb(), seeded.addon);
+                expect(
+                    await readDecisions(getServiceTestDb(), seeded.addon.complementId)
+                ).toHaveLength(0);
+                expect(result.cancelledSubscriptionIds).toEqual([seeded.subscriptionId]);
+            } finally {
+                await retirePermanentGrantRows([seeded.userId, seeded.adminId]);
+            }
         });
     }
 );
