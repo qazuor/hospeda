@@ -104,6 +104,9 @@ const ENQUEUE_SITES: Readonly<
         'verticals.listing-moderated',
         'verticals.listing-moderation-level-changed'
     ],
+    'packages/verticals/src/publication/purge-inactive-listing.ts': [
+        'verticals.price-alert-closed'
+    ],
     'packages/verticals/src/publication/purge-listing.ts': [
         'verticals.listing-purged',
         'verticals.price-alert-closed'
