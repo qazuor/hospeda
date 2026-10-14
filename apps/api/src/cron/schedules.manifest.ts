@@ -115,6 +115,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Expire subscription authorization windows after provider re-read and prior notice (HOS-1521, AC:B3:9-10).'
     },
     {
+        name: 'subscription-service-end',
+        displayName: 'Fin de servicio de bajas programadas',
+        category: 'billing',
+        schedule: '*/15 * * * *',
+        description:
+            'Run S12 on scheduled cancellations whose end of service passed (HOS-1569, AC:B8a:5-6).'
+    },
+    {
         name: 'host-trade-usage-reminder',
         displayName: 'Recordatorio de usos del beneficio',
         category: 'notifications',
