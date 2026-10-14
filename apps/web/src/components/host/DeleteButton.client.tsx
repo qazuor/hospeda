@@ -23,13 +23,26 @@
  * Mirrors UnpublishButton.client.tsx (same inline-confirm UX, shared CSS module).
  */
 
-import { type JSX, useState } from 'react';
+import type { ListingLostAddon } from '@repo/schemas';
+import { MARKET_TIMEZONE } from '@repo/utils';
+import { type JSX, useEffect, useMemo, useRef, useState } from 'react';
 import { type PublishVerticalSlug, publishApi } from '@/lib/api/endpoints-protected';
-import type { SupportedLocale } from '@/lib/i18n';
+import { formatDate, formatPrice } from '@/lib/format-utils';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './UnpublishButton.module.css';
 
 /** State machine for the delete button. */
 type DeleteState = 'idle' | 'confirming' | 'pending' | 'error';
+type PurgePreviewState =
+    | { readonly status: 'idle' | 'loading' | 'error' }
+    | { readonly status: 'ready'; readonly lostAddons: readonly ListingLostAddon[] };
+
+const CYCLE_KEY = {
+    monthly: 'listing.owner.purgeAddons.cycle.monthly',
+    quarterly: 'listing.owner.purgeAddons.cycle.quarterly',
+    semiannual: 'listing.owner.purgeAddons.cycle.semiannual',
+    annual: 'listing.owner.purgeAddons.cycle.annual'
+} as const;
 
 /**
  * Props for the DeleteButton component.
@@ -70,7 +83,7 @@ export interface DeleteButtonProps {
 export function DeleteButton({
     listingId,
     vertical = 'accommodation',
-    locale: _locale,
+    locale,
     label,
     confirmText,
     confirmYes,
@@ -79,10 +92,45 @@ export function DeleteButton({
 }: DeleteButtonProps): JSX.Element {
     const [state, setState] = useState<DeleteState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
+    const [previewAttempt, setPreviewAttempt] = useState(0);
+    const [preview, setPreview] = useState<PurgePreviewState>({ status: 'idle' });
+    const { t } = useMemo(() => createTranslations(locale), [locale]);
+    const activePreviewAttempt = useRef(0);
+
+    useEffect(() => {
+        if (state !== 'confirming') {
+            setPreview({ status: 'idle' });
+            return;
+        }
+
+        let cancelled = false;
+        const requestAttempt = previewAttempt;
+        activePreviewAttempt.current = requestAttempt;
+        setPreview({ status: 'loading' });
+        void publishApi.purgePreview({ vertical, id: listingId }).then(
+            (result) => {
+                if (cancelled || activePreviewAttempt.current !== requestAttempt) return;
+                setPreview(
+                    result.ok
+                        ? { status: 'ready', lostAddons: result.data.lostAddons }
+                        : { status: 'error' }
+                );
+            },
+            () => {
+                if (!cancelled && activePreviewAttempt.current === requestAttempt)
+                    setPreview({ status: 'error' });
+            }
+        );
+
+        return () => {
+            cancelled = true;
+        };
+    }, [state, listingId, vertical, previewAttempt]);
 
     /** User clicked the main "Eliminar" button → enter confirmation mode. */
     function handleRequestConfirm(): void {
         setApiError(null);
+        setPreview({ status: 'loading' });
         setState('confirming');
     }
 
@@ -94,6 +142,7 @@ export function DeleteButton({
 
     /** User clicked "Sí, eliminar" → call the API. */
     async function handleConfirm(): Promise<void> {
+        if (preview.status !== 'ready') return;
         setState('pending');
         setApiError(null);
 
@@ -107,6 +156,46 @@ export function DeleteButton({
 
         // Reload so the list re-renders with the listing now PURGED by PB12.
         window.location.reload();
+    }
+
+    function handleRetryPreview(): void {
+        setPreview({ status: 'loading' });
+        setPreviewAttempt((attempt) => attempt + 1);
+    }
+
+    function cycleLabel(cycle: NonNullable<ListingLostAddon['cycle']>): string {
+        return t(CYCLE_KEY[cycle]);
+    }
+
+    function formatLostAddon(addon: ListingLostAddon): string {
+        const price = formatPrice({
+            amount: addon.price / 100,
+            currency: addon.currency,
+            locale,
+            showDecimals: true
+        });
+        let duration = '';
+        switch (addon.chargeKind) {
+            case 'PERIODICO':
+                if (addon.cycle) duration = cycleLabel(addon.cycle);
+                break;
+            case 'UNA_VEZ':
+                if (addon.endsAt) {
+                    duration = t('listing.owner.purgeAddons.until', undefined, {
+                        date: formatDate({
+                            date: addon.endsAt,
+                            locale,
+                            options: { timeZone: MARKET_TIMEZONE }
+                        })
+                    });
+                }
+                break;
+        }
+        const pending =
+            addon.status === 'PENDING_AUTHORIZATION'
+                ? ` ${t('listing.owner.purgeAddons.pending')}`
+                : '';
+        return [addon.name, price, duration, pending].filter(Boolean).join(' · ');
     }
 
     // ── Idle / error ──────────────────────────────────────────────────────
@@ -158,9 +247,62 @@ export function DeleteButton({
                 >
                     {confirmText}
                 </span>
+                {preview.status === 'loading' && (
+                    <span
+                        aria-live="polite"
+                        aria-busy="true"
+                    >
+                        {confirmYes}…
+                    </span>
+                )}
+                {preview.status === 'error' && (
+                    <span
+                        role="alert"
+                        style={{ width: '100%' }}
+                    >
+                        <span>{t('listing.owner.purgeAddons.loadError')}</span>{' '}
+                        <button
+                            type="button"
+                            className={styles.secondary}
+                            onClick={handleRetryPreview}
+                        >
+                            {t('listing.owner.purgeAddons.retry')}
+                        </button>
+                    </span>
+                )}
+                {preview.status === 'ready' && (
+                    <>
+                        {preview.lostAddons.length > 0 && (
+                            <strong style={{ width: '100%' }}>
+                                {t('listing.owner.purgeAddons.title')}
+                            </strong>
+                        )}
+                        <ul
+                            data-testid="purge-lost-addons"
+                            data-count={preview.lostAddons.length}
+                            style={{ width: '100%', margin: 0, paddingInlineStart: '1.25rem' }}
+                        >
+                            {preview.lostAddons.map((addon) => (
+                                <li
+                                    data-testid="purge-lost-addon"
+                                    key={addon.addonInstanceId}
+                                >
+                                    {formatLostAddon(addon)}
+                                </li>
+                            ))}
+                        </ul>
+                        {preview.lostAddons.length > 0 && (
+                            <p style={{ width: '100%', margin: 0 }}>
+                                {t('listing.owner.purgeAddons.clockRuns')}
+                            </p>
+                        )}
+                    </>
+                )}
                 <button
                     type="button"
                     className={styles.danger}
+                    disabled={preview.status !== 'ready'}
+                    aria-busy={preview.status === 'loading'}
                     onClick={handleConfirm}
                 >
                     {confirmYes}

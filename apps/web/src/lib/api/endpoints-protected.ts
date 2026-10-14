@@ -25,6 +25,7 @@ import type {
     HostTradeReviewCreateBody,
     HostTradeReviewUpdateBody,
     ListingNoticesResponse,
+    ListingPurgePreviewResponse,
     ListingSupportEditsResponse,
     OccupancySourceEnum,
     PriceAlertResponse,
@@ -3044,6 +3045,31 @@ export const publishApi = {
     }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/purge`
+        });
+    },
+
+    /**
+     * Reads the live listing add-ons that will be left behind by PB12.
+     *
+     * @param params.vertical - Which listing vertical the listing belongs to.
+     * @param params.id - The listing id.
+     * @returns `{ lostAddons }`, in acquisition order, or an API error.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.purgePreview({ vertical: 'accommodation', id });
+     * if (result.ok) console.log(result.data.lostAddons);
+     * ```
+     */
+    purgePreview({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<ListingPurgePreviewResponse>> {
+        return apiClient.getProtected<ListingPurgePreviewResponse>({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/purge-preview`
         });
     }
 };
