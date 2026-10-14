@@ -3,6 +3,8 @@ import {
     createGraceExpiryCheck,
     createLostFirstRejectionCheck,
     createPaymentReconciliationMarkPayments,
+    createPeriodChargesComparison,
+    createStateComparison,
     createSuccessorGraceCheck,
     creditedPaymentsFromLedger,
     noDeterminableRetainedPaymentBranch,
@@ -49,6 +51,10 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 {
                     provider,
                     clock,
+                    comparisons: [
+                        createStateComparison(),
+                        createPeriodChargesComparison({ provider })
+                    ],
                     rowChecks: [
                         createLostFirstRejectionCheck({
                             provider,
@@ -93,7 +99,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     },
                     // The mark opened for a retained payment hangs it (AC:B5:32); without
                     // the real ledger port each one fails as "not registered". The sweep
-                    // hands it to the comparisons (none here) and the zero-call checks.
+                    // hands it to the comparisons and the zero-call checks.
                     markPayments: createPaymentReconciliationMarkPayments(clock),
                     // AC:B11:6: retry our decided cancellations for 3 days, then mark 16.
                     cancellationRetry: { beforeCancelNotice },
