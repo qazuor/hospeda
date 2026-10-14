@@ -392,3 +392,23 @@ describe('TEST:B5:11 AC:B5:20 AC:B5:21 S36 revokes in one act', () => {
         }
     );
 });
+
+describe('TEST:1683:3 AC:1683:2 S36 asks its notice with its own kind', () => {
+    it.skipIf(live)(
+        'TEST:1683:3 revoking a card row with a live preapproval asks for REVOCATION, never the default',
+        async () => {
+            // Arrange
+            const f = await revocationFixture({ origin: 'ACTIVE' });
+            const actor = await seedRevocationActor();
+            f.at(f.day(5));
+
+            // Act
+            await revoke(f, actor);
+
+            // Assert
+            expect(f.beforeCancel.mock.calls).toStrictEqual([
+                [{ subscriptionId: f.subscriptionId, userId: f.userId, kind: 'REVOCATION' }]
+            ]);
+        }
+    );
+});

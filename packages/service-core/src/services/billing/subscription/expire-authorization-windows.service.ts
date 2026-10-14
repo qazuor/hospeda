@@ -219,7 +219,8 @@ export async function expireAuthorizationWindows(
             if (snapshot.status !== 'cancelled') {
                 const notice = await ports.beforeCancelNotice.beforeCancel({
                     subscriptionId: subscription.id,
-                    userId: subscription.userId!
+                    userId: subscription.userId!,
+                    kind: 'AUTHORIZATION_EXPIRED'
                 });
                 if (notice === 'NOT_YET_SENT') {
                     noticePending++;

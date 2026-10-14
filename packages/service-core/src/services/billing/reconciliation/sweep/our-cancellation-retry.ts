@@ -16,7 +16,7 @@ import {
 } from '@repo/payments';
 import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
 import {
-    type CancelOurAuthorizationInput,
+    type CancelOurAuthorizationNoticeKind,
     cancelOurAuthorization
 } from '../cancel-our-authorization.js';
 import { openReconciliationMark } from '../open-reconciliation-mark.service.js';
@@ -26,19 +26,60 @@ import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments
 const logger = createLogger('our-cancellation-retry');
 
 /**
- * The notice kind each transition asked for when it decided the cancellation. The inherited
- * Tourist VIP's clause and A5 (an orphaned addon's complement, AC:B5:27) ask with their own
- * kind; every other transition uses the default notice. The template is part of the notice's
- * dedupe key, so the retry must repeat the kind or it enqueues a second, generic notice and
- * waits for it.
+ * The before-cancel notice kind of every transition that decides a cancellation (AC:1683:1): the
+ * inventory of HOS-1683, total by type, so a new transition does not compile until it is
+ * declared here. The template is part of the notice's dedupe key (DEC-MAIL-001, precision 3), so
+ * the retry repeats the kind of the first attempt and never enqueues a second notice. There is
+ * no default notice: `RECIPIENTLESS` asks for none, and `UNDECLARED` fails closed (the retry
+ * throws before the notice or the call); the leaf that adds a writer for one declares its kind
+ * in the same PR, and `before-cancel-notice-kinds.guard.test.ts` enforces it.
  */
-const NOTICE_KIND_BY_TRANSITION: ReadonlyMap<
-    string,
-    NonNullable<CancelOurAuthorizationInput['kind']>
-> = new Map<ProviderCancellationTransition, NonNullable<CancelOurAuthorizationInput['kind']>>([
-    ['TOURIST_VIP_INHERITED', 'TOURIST_VIP_INHERITED'],
-    ['A5', 'ADDON_CANCELLED']
-]);
+export const BEFORE_CANCEL_KIND_BY_TRANSITION: Readonly<
+    Record<
+        ProviderCancellationTransition,
+        CancelOurAuthorizationNoticeKind | 'RECIPIENTLESS' | 'UNDECLARED'
+    >
+> = {
+    S3: 'AUTHORIZATION_EXPIRED',
+    S16: 'FIRST_CHARGE_DECLINED',
+    S36: 'REVOCATION',
+    REJECTION_REVIVED: 'LIVE_AUTHORIZATION_ON_CLOSED_ROW',
+    // S11 cancels at once and the row stays CANCEL_SCHEDULED; the live loop retries it.
+    S11: 'SCHEDULED_CANCELLATION',
+    // S12 never calls: the cancellation is S11's, so it inherits S11's kind.
+    S12: 'SCHEDULED_CANCELLATION',
+    TOURIST_VIP_INHERITED: 'TOURIST_VIP_INHERITED',
+    A5: 'ADDON_CANCELLED',
+    // The receipt tombstone names no row, so it never has a recipient.
+    RECEPTION_TOMBSTONE: 'RECIPIENTLESS',
+    // No writer records S13 yet: its leaf declares the kind in the same PR.
+    S13: 'UNDECLARED',
+    // No writer records S20 yet: its leaf declares the kind in the same PR.
+    S20: 'UNDECLARED',
+    // S21 never calls: its call is A5's or A6's.
+    S21: 'UNDECLARED',
+    // No writer records S22 yet: its leaf declares the kind in the same PR.
+    S22: 'UNDECLARED',
+    // No writer records S23 yet: HOS-1570 declares its kind.
+    S23: 'UNDECLARED',
+    // No writer records S24 yet: HOS-1570 declares its kind.
+    S24: 'UNDECLARED',
+    // No writer records S31 yet: its leaf declares the kind in the same PR.
+    S31: 'UNDECLARED',
+    // No writer records A3 yet: its leaf declares the kind in the same PR.
+    A3: 'UNDECLARED',
+    // No writer records A6 yet: its leaf declares the kind in the same PR.
+    A6: 'UNDECLARED'
+};
+
+/** The retry map's value for a transition read from the database; an unknown one is undeclared. */
+function kindOfTransition(
+    transition: string
+): (typeof BEFORE_CANCEL_KIND_BY_TRANSITION)[ProviderCancellationTransition] {
+    return Object.hasOwn(BEFORE_CANCEL_KIND_BY_TRANSITION, transition)
+        ? BEFORE_CANCEL_KIND_BY_TRANSITION[transition as ProviderCancellationTransition]
+        : 'UNDECLARED';
+}
 
 /**
  * Up to 3 days after the transition, by time and not by runs (DEC-CONC-002 📌1; MOT:16). It
@@ -97,14 +138,17 @@ export interface RetryOurCancellationResult {
  * 3. `cancelled` → `CONFIRMED`.
  * 4. With the window elapsed → opens mark 16, without calling the provider. Its
  *    `reconciliation.mark_opened` event is the alert on the DEC-OBS-001 channel.
- * 5. Otherwise → `cancelOurAuthorization`. The notice uses the default occurrence (the
- *    subscription id), the same S3 and S16 used, so it goes out once per cancellation. A
- *    `TOURIST_VIP_INHERITED` decision asks with that kind, as its clause did.
+ * 5. Otherwise → `cancelOurAuthorization`. Every decision asks with the kind of its
+ *    transition (`BEFORE_CANCEL_KIND_BY_TRANSITION`), the same its first attempt asked with,
+ *    and the default occurrence (the subscription id), so the notice goes out once per
+ *    cancellation. A tombstone asks for no notice; an `UNDECLARED` transition (or one the map
+ *    does not know) throws before the notice or the call (HOS-1683, it fails closed).
  *
  * @param input - The row, its link, its decision, the correlation and an optional prior read
  * @param ports - Provider, clock, the before-cancel notice and the optional mark payments port
  * @returns The outcome, whether the row was read and the mark outcome when one was opened
- * @throws when the read by id fails (the caller counts the row as failed)
+ * @throws when the read by id fails, or the transition declares no notice kind (the caller
+ *   counts the row as failed)
  */
 export async function retryOurCancellation(
     input: RetryOurCancellationInput,
@@ -151,14 +195,19 @@ export async function retryOurCancellation(
         return { outcome: 'MARKED', read: true, markOutcome: opened.outcome };
     }
 
-    const kind = NOTICE_KIND_BY_TRANSITION.get(input.decision.transition);
+    const declared = kindOfTransition(input.decision.transition);
+    if (declared === 'UNDECLARED') {
+        throw new Error(
+            `Transition ${input.decision.transition} declares no before-cancel notice kind; subscription ${input.subscription.id} was not cancelled`
+        );
+    }
     const { outcome } = await cancelOurAuthorization(
         {
             subscriptionId: input.subscription.id,
             userId: input.subscription.userId,
             authorizationId: input.providerLink.providerId,
             prior,
-            ...(kind ? { kind } : {})
+            kind: declared === 'RECIPIENTLESS' ? null : declared
         },
         {
             provider: ports.provider,

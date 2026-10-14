@@ -6,6 +6,7 @@ export * from './coverage-reconciler-types';
 export * from './fix-request';
 export * from './inactivity-archive-run';
 export * from './lift-moderation';
+export * from './listing-inverse';
 export * from './moderate-listing';
 export * from './moderation-notices';
 export * from './moderation-origin';

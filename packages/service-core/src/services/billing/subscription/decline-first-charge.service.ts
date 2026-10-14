@@ -131,7 +131,8 @@ export async function declineFirstCharge(
         });
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: subscription.id,
-            userId: subscription.userId ?? ''
+            userId: subscription.userId ?? '',
+            kind: 'FIRST_CHARGE_DECLINED'
         });
         if (notice === 'NOT_YET_SENT') {
             cancelCall = 'DEFERRED';
