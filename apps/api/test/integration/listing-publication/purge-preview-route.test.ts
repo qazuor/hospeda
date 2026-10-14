@@ -242,18 +242,30 @@ describe('TEST:B13a:3a AC:B13a:4 the purge preview names what the listing loses'
         expect(malformed.status).toBe(400);
     });
 
-    it('rejects an authenticated owner without READ_OWN on a purged listing', async () => {
+    it.each(
+        listingVerticals
+    )('rejects an authenticated owner without READ_OWN on a purged %s listing', async (vertical) => {
         const owner = await createOwner();
         ownerIds.add(owner.id);
-        const id = await createListing({
-            ownerId: owner.id,
-            destinationId: await makeDestination(),
-            status: PublicationStatusEnum.PURGED,
-            complete: false
-        });
+        const destinationId = await makeDestination();
+        const id =
+            vertical === VerticalEnum.ACCOMMODATION
+                ? await createListing({
+                      ownerId: owner.id,
+                      destinationId,
+                      status: PublicationStatusEnum.PURGED,
+                      complete: false
+                  })
+                : await createVerticalListing({
+                      vertical,
+                      ownerId: owner.id,
+                      destinationId,
+                      status: PublicationStatusEnum.PURGED,
+                      complete: false
+                  });
         listingIds.push(id);
         const response = await readResponse(
-            await app.request(previewPath(VerticalEnum.ACCOMMODATION, id), {
+            await app.request(previewPath(vertical, id), {
                 headers: actorHeaders({ id: owner.id, permissions: [] })
             })
         );
