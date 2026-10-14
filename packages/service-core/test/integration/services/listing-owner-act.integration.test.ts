@@ -149,7 +149,8 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                     });
                     expect(event.correlationId).toBe(correlationId);
                 }
-                expect(events[1]?.changes).toEqual([{ field: 'summary' }]);
+                const editedEvent = events.find((e) => e.eventType === 'listing.edited');
+                expect(editedEvent?.changes).toEqual([{ field: 'summary' }]);
             });
         }
     );
