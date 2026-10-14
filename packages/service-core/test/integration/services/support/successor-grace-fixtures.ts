@@ -1,4 +1,4 @@
-import { emailOutbox, eq, inArray, subscriptions } from '@repo/db';
+import { coverageLosses, emailOutbox, eq, inArray, subscriptions } from '@repo/db';
 import { vi } from 'vitest';
 import { creditedPaymentsFromLedger } from '../../../../src/services/billing/payment/payment-ledger.js';
 import { activateSubscription } from '../../../../src/services/billing/subscription/activate-subscription.service.js';
@@ -147,7 +147,7 @@ export async function successorGraceFixture({
     };
 }
 
-/** Retires the seeded rows: CANCELLED with an empty clock, and the users' outbox rows deleted. */
+/** Retires the seeded rows: CANCELLED with an empty clock; the users' outbox and coverage-loss rows deleted. */
 export async function retireSuccessorGraceRows(cases: readonly SeededSuccessorCase[]) {
     if (cases.length === 0) return;
     const db = getServiceTestDb();
@@ -163,6 +163,12 @@ export async function retireSuccessorGraceRows(cases: readonly SeededSuccessorCa
     await db.delete(emailOutbox).where(
         inArray(
             emailOutbox.recipientUserId,
+            cases.map(({ userId }) => userId)
+        )
+    );
+    await db.delete(coverageLosses).where(
+        inArray(
+            coverageLosses.userId,
             cases.map(({ userId }) => userId)
         )
     );
