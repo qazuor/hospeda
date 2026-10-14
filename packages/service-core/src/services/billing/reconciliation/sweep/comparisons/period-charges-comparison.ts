@@ -20,7 +20,12 @@ import {
     isLiveSuccessionPredecessor
 } from '../../../subscription/late-payment-conditions.js';
 import type { ReconciliationComparison } from '../reconciliation-divergence.js';
+import { compareCreditedChargeAmount } from './credited-charge-amount.js';
+import type { ExpectedAmountPolicy } from './expected-amount.js';
+import { createCutExpectedAmountPolicy } from './expected-amount.js';
 import { readListedCharges } from './listed-charges.js';
+import type { ReconciliationDailySummary } from './reconciliation-daily-summary.port.js';
+import { loggedReconciliationDailySummary } from './reconciliation-daily-summary.port.js';
 import { reasonForUnregisteredCharge } from './unregistered-charge-reason.js';
 
 async function findPayment(input: { readonly provider: string; readonly chargeId: string }) {
@@ -94,7 +99,13 @@ async function paymentCoversUnpaidPeriod(input: {
  */
 export function createPeriodChargesComparison(ports: {
     readonly provider: PaymentProvider;
+    readonly expectedAmounts?: ExpectedAmountPolicy;
+    readonly dailySummary?: ReconciliationDailySummary;
 }): ReconciliationComparison {
+    const amountPorts = {
+        expectedAmounts: ports.expectedAmounts ?? createCutExpectedAmountPolicy(),
+        dailySummary: ports.dailySummary ?? loggedReconciliationDailySummary
+    };
     return async ({ subscription, providerLink, read, act }) => {
         const status = SUBSCRIPTION_STATUSES.find((item) => item === subscription.status);
         if (!status) return [];
@@ -128,13 +139,22 @@ export function createPeriodChargesComparison(ports: {
                 provider: providerLink.provider,
                 chargeId: charge.chargeId
             });
-            if (
-                payment &&
-                ['SUCCEEDED', 'PARTIALLY_REFUNDED', 'REFUNDED', 'CHARGED_BACK'].includes(
-                    payment.status
-                )
-            )
+            if (payment?.status === 'REFUNDED' || payment?.status === 'CHARGED_BACK') continue;
+            if (payment && ['SUCCEEDED', 'PARTIALLY_REFUNDED'].includes(payment.status)) {
+                divergences.push(
+                    ...(await compareCreditedChargeAmount({
+                        subscription,
+                        paymentId: payment.id,
+                        chargeId: charge.chargeId,
+                        chargedMinor: amountMinor,
+                        chargeCurrency: charge.amount.currency,
+                        chargeCreatedAt: new Date(charge.createdAt),
+                        isAlreadyHung: () => alreadyHung({ paymentId: payment.id }),
+                        ports: amountPorts
+                    }))
+                );
                 continue;
+            }
             if (payment && (await alreadyHung({ paymentId: payment.id }))) continue;
 
             const cancellationDecision = [
