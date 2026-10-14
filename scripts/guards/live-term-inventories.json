@@ -106,6 +106,13 @@
             "subject": "addon_instance"
         },
         {
+            "file": "apps/api/src/services/listing-publication/listing-purge-preview.service.ts",
+            "symbol": "readListingPurgePreview",
+            "row": 3,
+            "why": "AC:B13a:4 (HOS-1618): la confirmación lee las instancias vivas de scope LISTING que quedan asociadas a la ficha borrada.",
+            "subject": "addon_instance"
+        },
+        {
             "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
             "symbol": "runOrphanhood",
             "row": null,
