@@ -10,6 +10,11 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
 import {
+    type CreditedPaymentsCheckPorts,
+    type CreditedPaymentsCheckSummary,
+    runCreditedPaymentsCheck
+} from './credited-payments-check.js';
+import {
     createOurCancellationRetryTally,
     type OurCancellationRetryCounts,
     retryOurCancellation,
@@ -44,6 +49,11 @@ export interface ReconciliationSweepPorts {
      * exactly what it did before. Provider and clock are the sweep's own.
      */
     readonly cancellationRetry?: { readonly beforeCancelNotice: BeforeCancelNotice };
+    /**
+     * The credited-payments check (AC:B11:12, AC:B11:27). Optional: without it the sweep
+     * does exactly what it did before. Provider, clock and S14 port are the sweep's own.
+     */
+    readonly creditedPayments?: CreditedPaymentsCheckPorts;
 }
 
 export type ReconciliationRowCheck = (input: ReconciliationComparisonInput) => Promise<void>;
@@ -71,6 +81,8 @@ export interface ReconciliationSweepSummary {
         readonly rowsRead: number;
         readonly rowsFailed: number;
     };
+    /** Outcomes of the credited-payments check, when it ran. */
+    readonly creditedPayments?: CreditedPaymentsCheckSummary;
 }
 
 function errorMessage(error: unknown): string {
@@ -183,6 +195,24 @@ export async function runReconciliationSweep(
         };
     }
 
+    let creditedPayments: CreditedPaymentsCheckSummary | undefined;
+    if (ports.creditedPayments) {
+        creditedPayments = await runCreditedPaymentsCheck(
+            { correlationId, pageSize },
+            {
+                ...ports.creditedPayments,
+                provider: ports.provider,
+                clock: ports.clock,
+                markPayments: ports.markPayments
+            }
+        );
+        rowsRead += creditedPayments.examined;
+        rowsFailed += creditedPayments.failures.length;
+        for (const failure of creditedPayments.failures)
+            if (failure.subscriptionId !== null)
+                failures.push({ subscriptionId: failure.subscriptionId, message: failure.message });
+    }
+
     const zeroCallChecks = ports.zeroCallChecks
         ? await runZeroCallChecks(
               { correlationId, pageSize },
@@ -219,6 +249,7 @@ export async function runReconciliationSweep(
         startedAt,
         finishedAt,
         ...(zeroCallChecks ? { zeroCallChecks } : {}),
-        ...(cancellationRetry ? { cancellationRetry } : {})
+        ...(cancellationRetry ? { cancellationRetry } : {}),
+        ...(creditedPayments ? { creditedPayments } : {})
     };
 }

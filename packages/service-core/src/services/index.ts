@@ -103,6 +103,7 @@ export * from './billing/reconciliation/period-charges/read-period-charges.js';
 export * from './billing/reconciliation/provider-cancellation-decision.js';
 export * from './billing/reconciliation/receipt-tombstone.service.js';
 export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
+export * from './billing/reconciliation/sweep/credited-payments-check.js';
 export * from './billing/reconciliation/sweep/grace-expiry-check.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
