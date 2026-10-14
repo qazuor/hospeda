@@ -137,7 +137,8 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
     });
 
     it.each([
-        ['failed request', { ok: false, error: { status: 503 } }],
+        ['server failure', { ok: false, error: { status: 503 } }],
+        ['missing option', { ok: false, error: { status: 404 } }],
         ['invalid response body', { ok: true, data: { vertical: 'unknown', trial: {} } }]
     ])('shows the conditional notice for %s', (_label, result) => {
         expect(resolveSignupTrialNotice({ result })).toEqual({ kind: 'UNKNOWN' });
