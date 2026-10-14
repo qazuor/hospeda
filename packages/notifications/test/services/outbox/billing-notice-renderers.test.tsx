@@ -94,6 +94,11 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
 
     it.each([
         ['signup empty payload', 'billing.signup-declined', {}],
+        [
+            'invalid signup vertical',
+            'billing.signup-declined',
+            { subscriptionId, vertical: 42, declineReason: null }
+        ],
         ['grace empty payload', 'billing.grace-started', {}],
         ['payment empty payload', 'billing.payment-credited', {}],
         [
