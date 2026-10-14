@@ -35,7 +35,9 @@ describe('signup checkout page — B3 UI (B3.md:1045-1053)', () => {
     it('renders the checkout island on load with request locale and noindex metadata', () => {
         expect(indexSrc).toContain('Astro.locals.locale');
         expect(indexSrc).not.toContain('Astro.params.lang');
-        expect(indexSrc).toContain('<SignupCheckout client:load');
+        expect(indexSrc).toContain('<SignupCheckout');
+        expect(indexSrc).toContain('trialNotice={trialNotice}');
+        expect(indexSrc).toContain('billingSubscriptionApi.signupNotice');
         expect(indexSrc).toContain('noindex={true}');
         expect(indexSrc).toContain('canonical={canonicalUrl}');
         expect(indexSrc).toContain("t('billing.checkout.signup.title')");

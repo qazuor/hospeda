@@ -32,6 +32,7 @@ import type {
     ProtectedEffectiveSetResponse,
     PublicationStatusEnum,
     ReportFixedResponse,
+    SignupNoticeResponse,
     StartSubscriptionResponseSchema,
     SubscribeDestinationResponseSchema,
     TrialSummaryResponse,
@@ -5495,6 +5496,19 @@ export type StartSubscriptionResponse = z.infer<typeof StartSubscriptionResponse
 
 /** Protected S1 endpoint for starting a signup checkout. */
 export const billingSubscriptionApi = {
+    /** Read the selected option's vertical and the current user's trial notice. */
+    signupNotice({
+        billingOptionId,
+        cookieHeader
+    }: {
+        readonly billingOptionId: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<SignupNoticeResponse>> {
+        return apiClient.getProtected<SignupNoticeResponse>({
+            path: `${PROTECTED}/billing/subscriptions/signup-notice/${billingOptionId}`,
+            cookieHeader
+        });
+    },
     /** Start signup for the selected billing option. */
     start({
         billingOptionId

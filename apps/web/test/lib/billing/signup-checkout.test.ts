@@ -8,6 +8,7 @@ import {
     isDisplayableCheckoutUrl,
     parseSignupOptionId,
     resolveSignupRejection,
+    resolveSignupTrialNotice,
     SIGNUP_VERTICAL_LABEL_KEY
 } from '@/lib/billing/signup-checkout';
 
@@ -98,5 +99,47 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
         expect(SIGNUP_VERTICAL_LABEL_KEY.accommodation).toBe(
             'billing.checkout.signup.vertical.accommodation'
         );
+    });
+});
+
+describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
+    it('preserves a running trial end and day count', () => {
+        expect(
+            resolveSignupTrialNotice({
+                result: {
+                    ok: true,
+                    data: {
+                        vertical: 'accommodation',
+                        trial: {
+                            status: 'RUNNING',
+                            endsAt: '2026-10-20T08:00:00.000Z',
+                            daysLeft: 11
+                        }
+                    }
+                }
+            })
+        ).toEqual({
+            kind: 'RUNNING',
+            daysLeft: 11,
+            endsAt: '2026-10-20T08:00:00.000Z'
+        });
+    });
+
+    it('omits a notice when the trial is not running', () => {
+        expect(
+            resolveSignupTrialNotice({
+                result: {
+                    ok: true,
+                    data: { vertical: 'gastronomy', trial: { status: 'NOT_RUNNING' } }
+                }
+            })
+        ).toBeNull();
+    });
+
+    it.each([
+        ['failed request', { ok: false, error: { status: 503 } }],
+        ['invalid response body', { ok: true, data: { vertical: 'unknown', trial: {} } }]
+    ])('shows the conditional notice for %s', (_label, result) => {
+        expect(resolveSignupTrialNotice({ result })).toEqual({ kind: 'UNKNOWN' });
     });
 });

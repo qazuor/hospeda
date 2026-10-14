@@ -1,9 +1,38 @@
 /** Pure URL, rejection, vertical, and date helpers for the signup checkout. */
-import type { StartSubscriptionRejectionReason, VerticalEnum } from '@repo/schemas';
+import {
+    SignupNoticeResponseSchema,
+    type StartSubscriptionRejectionReason,
+    type VerticalEnum
+} from '@repo/schemas';
 import { MARKET_TIMEZONE } from '@repo/utils';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrlWithParams } from '@/lib/urls';
+
+/** Trial state rendered before an explicit signup confirmation. */
+export type SignupTrialNotice =
+    | { readonly kind: 'RUNNING'; readonly daysLeft: number; readonly endsAt: string }
+    | { readonly kind: 'UNKNOWN' };
+
+/** Resolve a protected signup notice, failing toward the conditional warning. */
+export function resolveSignupTrialNotice({
+    result
+}: {
+    readonly result: unknown;
+}): SignupTrialNotice | null {
+    if (!result || typeof result !== 'object' || !('ok' in result) || result.ok !== true) {
+        return { kind: 'UNKNOWN' };
+    }
+    if (!('data' in result)) return { kind: 'UNKNOWN' };
+    const parsed = SignupNoticeResponseSchema.safeParse(result.data);
+    if (!parsed.success) return { kind: 'UNKNOWN' };
+    if (parsed.data.trial.status === 'NOT_RUNNING') return null;
+    return {
+        kind: 'RUNNING',
+        daysLeft: parsed.data.trial.daysLeft,
+        endsAt: parsed.data.trial.endsAt
+    };
+}
 
 /** Query parameter that identifies the billing option selected for signup. */
 export const SIGNUP_CHECKOUT_OPTION_PARAM = 'opcion';
