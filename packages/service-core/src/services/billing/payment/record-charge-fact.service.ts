@@ -18,6 +18,7 @@ import type { ExitGracePorts, ExitGraceResult } from '../subscription/exit-grace
 import { exitGraceOnCreditedPayment } from '../subscription/exit-grace.service';
 import type { ReactivateSuspendedResult } from '../subscription/reactivate-suspended.service';
 import { reactivateSuspendedOnCreditedPayment } from '../subscription/reactivate-suspended.service';
+import type { ScheduledChangeApplier } from '../subscription/subscription-billing-ports';
 import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
 import type { CoverageNotices, PromoChargePolicy, PromoExhaustion } from './payment-ports';
@@ -38,6 +39,8 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly actorType?: ExitGracePorts['actorType'];
     /** Whether the plan S7 restores grants Tourist VIP again (AC:B7:31); unwired skips that clause. */
     readonly touristVipInheritance?: TouristVipInheritancePort;
+    /** S38's interface, handed to S7 (AC:B7:28); unwired falls back to S7's failing default. */
+    readonly scheduledChangeApplier?: ScheduledChangeApplier;
 }
 
 export type RecordChargeFactResult =
@@ -177,7 +180,8 @@ export async function recordChargeFact(
                     actorType: ports.actorType,
                     coverageNotices: ports.coverageNotices,
                     beforeCancelNotice: ports.beforeCancelNotice,
-                    touristVipInheritance: ports.touristVipInheritance
+                    touristVipInheritance: ports.touristVipInheritance,
+                    scheduledChangeApplier: ports.scheduledChangeApplier
                 }
             );
             return { outcome: 'CREDITED', paymentId, credit, reactivation };
