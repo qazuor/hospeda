@@ -20,6 +20,11 @@ import {
     retryOurCancellation,
     runOurCancellationRetry
 } from './our-cancellation-retry.js';
+import {
+    type PaidOrdersCheckPorts,
+    type PaidOrdersCheckSummary,
+    runPaidOrdersCheck
+} from './paid-orders-check.js';
 import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
 import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
 import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
@@ -54,6 +59,11 @@ export interface ReconciliationSweepPorts {
      * does exactly what it did before. Provider, clock and S14 port are the sweep's own.
      */
     readonly creditedPayments?: CreditedPaymentsCheckPorts;
+    /**
+     * The paid-orders check (AC:B11:13). Optional: without it the sweep does exactly
+     * what it did before. Provider and clock are the sweep's own.
+     */
+    readonly paidOrders?: PaidOrdersCheckPorts;
 }
 
 export type ReconciliationRowCheck = (input: ReconciliationComparisonInput) => Promise<void>;
@@ -83,6 +93,8 @@ export interface ReconciliationSweepSummary {
     };
     /** Outcomes of the credited-payments check, when it ran. */
     readonly creditedPayments?: CreditedPaymentsCheckSummary;
+    /** Outcomes of the paid-orders check, when it ran. */
+    readonly paidOrders?: PaidOrdersCheckSummary;
 }
 
 function errorMessage(error: unknown): string {
@@ -213,6 +225,16 @@ export async function runReconciliationSweep(
                 failures.push({ subscriptionId: failure.subscriptionId, message: failure.message });
     }
 
+    let paidOrders: PaidOrdersCheckSummary | undefined;
+    if (ports.paidOrders) {
+        paidOrders = await runPaidOrdersCheck(
+            { correlationId, pageSize },
+            { ...ports.paidOrders, provider: ports.provider, clock: ports.clock }
+        );
+        rowsRead += paidOrders.examined;
+        rowsFailed += paidOrders.failures.length;
+    }
+
     const zeroCallChecks = ports.zeroCallChecks
         ? await runZeroCallChecks(
               { correlationId, pageSize },
@@ -250,6 +272,7 @@ export async function runReconciliationSweep(
         finishedAt,
         ...(zeroCallChecks ? { zeroCallChecks } : {}),
         ...(cancellationRetry ? { cancellationRetry } : {}),
-        ...(creditedPayments ? { creditedPayments } : {})
+        ...(creditedPayments ? { creditedPayments } : {}),
+        ...(paidOrders ? { paidOrders } : {})
     };
 }
