@@ -203,8 +203,8 @@ applyCacheHeaders({
 			: [CACHE_TAG_COLLECTIONS.accommodation]
 });
 
-// Extract lifecycle fields directly from raw API response (not in AccommodationDetailData)
-const accommodationLifecycleState = String(rawAccommodation.lifecycleState ?? 'ACTIVE');
+// Extract the soft-delete field directly from raw API response (not in AccommodationDetailData).
+// No publication state: the public read answers only PUBLISHED listings (HOS-1641).
 const accommodationDeletedAt = rawAccommodation.deletedAt
     ? String(rawAccommodation.deletedAt)
     : null;
@@ -725,7 +725,6 @@ const faqSections = accommodation.faqs.map((faq) => ({
                     client:idle
                     accommodation={{
                         id: accommodation.id,
-                        lifecycleState: accommodationLifecycleState,
                         deletedAt: accommodationDeletedAt,
                         type: accommodation.type,
                         destinationId: accommodation.destination.id,

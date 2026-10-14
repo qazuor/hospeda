@@ -97,8 +97,8 @@ export interface ListingQrSheetProps {
      * Whether the listing has a public page right now.
      *
      * Resolved by the CALLER from the listing state it already holds — an
-     * accommodation is `lifecycleState === ACTIVE && visibility === PUBLIC`, a
-     * listing is `isPublic`. It is deliberately not derived from a failed
+     * accommodation is `publicationStatus === PUBLISHED` (HOS-1641), a
+     * listing is `hasPublicPage`. It is deliberately not derived from a failed
      * request: see the module docblock.
      */
     readonly isPublished: boolean;

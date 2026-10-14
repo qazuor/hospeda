@@ -29,7 +29,8 @@
  * Two independent conditions 404, mirroring the listing's own rules plus
  * one of its own:
  * - the slug does not resolve to a public venue (same rule as `[slug].astro`:
- *   `!result.ok` → 404, non-`PUBLIC` visibility → 404, soft-deleted → 410);
+ *   `!result.ok` → 404, which covers a non-`PUBLISHED` venue since HOS-1641,
+ *   soft-deleted → 410);
  * - the venue has no menu content at all — neither a structured carta nor an
  *   uploaded file. Mirrors `GastronomyMenu.astro`'s own render gate
  *   (`hasStructuredMenu || hasFile`) so the two can never disagree about
@@ -80,11 +81,9 @@ if (!result.ok) {
 
 const raw = result.data as unknown as Record<string, unknown>;
 
-// --- Visibility gate (same as the listing) ---
-const visibility = raw.visibility as string | undefined;
-if (visibility && visibility !== 'PUBLIC') {
-    return new Response(null, { status: 404 });
-}
+// --- Publication gate (same as the listing, HOS-1641) ---
+// None here: the public read answers only a PUBLISHED venue, so a
+// non-published one already 404s through `!result.ok` above.
 
 const gastronomy = toGastronomyDetailPageProps({ item: raw, locale });
 
