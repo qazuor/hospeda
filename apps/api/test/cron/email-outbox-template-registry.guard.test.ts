@@ -104,6 +104,9 @@ const ENQUEUE_SITES: Readonly<
         'verticals.listing-moderated',
         'verticals.listing-moderation-level-changed'
     ],
+    'packages/verticals/src/publication/purge-inactive-listing.ts': [
+        'verticals.price-alert-closed'
+    ],
     'packages/verticals/src/publication/purge-listing.ts': [
         'verticals.listing-purged',
         'verticals.price-alert-closed'
@@ -228,7 +231,8 @@ describe('TEST:1675:2 AC:1675:1 the four pending templates render through the pr
             {
                 subscriptionId: 'private-subscription',
                 vertical: 'accommodation',
-                declineReason: null
+                declineReason: null,
+                successionPredecessor: false
             },
             'No se te cobró nada'
         ],

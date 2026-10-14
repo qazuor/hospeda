@@ -15,7 +15,11 @@ const openedAt = new Date('2026-10-01T03:00:00.000Z');
 let current = openedAt;
 const clock = { now: () => current };
 
-async function seedActive() {
+async function seedActive({
+    declineReason = 'issuer_declined'
+}: {
+    readonly declineReason?: string | null;
+} = {}) {
     const [user] = await getServiceTestDb()
         .insert(users)
         .values({
@@ -85,7 +89,7 @@ async function seedActive() {
     if (!activated) throw new Error('Could not activate fixture subscription');
     const charge = await fake.declineCharge({
         authorizationId: started.authorizationId,
-        declineReason: 'issuer_declined'
+        declineReason
     });
     const [row] = await getServiceTestDb()
         .select()
@@ -537,5 +541,45 @@ describe('TEST:B3:17 declineFirstCharge', () => {
             reason: 'LOST_RACE'
         });
         expect(await ownOutbox(own.started.subscriptionId)).toHaveLength(0);
+    });
+});
+
+describe('TEST:B13a:4a AC:B13a:5 S16 queues the facts the declined-signup mail needs', () => {
+    it('queues the raw status_detail and false when the signup has no successor', async () => {
+        current = openedAt;
+        const own = await seedActive({ declineReason: 'cc_rejected_high_risk' });
+        await resultFor(own, ports(providerWithCancel(own.fake), own.beforeCancelNotice));
+
+        const [mail] = await ownOutbox(own.started.subscriptionId);
+        expect(mail?.payload).toMatchObject({
+            declineReason: 'cc_rejected_high_risk',
+            successionPredecessor: false
+        });
+    });
+
+    it('queues true when the declined signup is a live succession predecessor', async () => {
+        current = openedAt;
+        const own = await seedActive({ declineReason: 'cc_rejected_high_risk' });
+        if (!own.row.userId || !own.row.billingOptionId || !own.row.planVersionId)
+            throw new Error('Fixture anchors missing');
+        await getServiceTestDb().insert(subscriptions).values({
+            userId: own.row.userId,
+            vertical: own.row.vertical,
+            planVersionId: own.row.planVersionId,
+            billingOptionId: own.row.billingOptionId,
+            paymentMethod: 'CARD',
+            class: 'PRINCIPAL',
+            status: 'PENDING_AUTHORIZATION',
+            succeedsId: own.row.id
+        });
+        await resultFor(
+            own,
+            ports(providerWithCancel(own.fake), own.beforeCancelNotice, {
+                successionCloser: { closeSuccession: async () => {} }
+            })
+        );
+
+        const [mail] = await ownOutbox(own.started.subscriptionId);
+        expect(mail?.payload).toMatchObject({ successionPredecessor: true });
     });
 });

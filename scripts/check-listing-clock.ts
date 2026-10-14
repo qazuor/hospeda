@@ -39,7 +39,7 @@ import { type ClockSite, scanTree } from './listing-clock-scan';
 export const MIN_SCANNED_FILES = 1000;
 
 /** Consumers still to be built (V9b). It only goes down (Coord-93). */
-export const PENDING_CEILING = 3;
+export const PENDING_CEILING = 2;
 
 /** Default inventory path, relative to the repository root. */
 export const INVENTORY_PATH = 'scripts/guards/listing-clock-inventory.json';

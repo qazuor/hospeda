@@ -36,6 +36,7 @@ import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { protectedPublishAccommodationRoute } from './publish';
 import { protectedPurgeAccommodationRoute } from './purge';
+import { protectedAccommodationPurgePreviewRoute } from './purgePreview';
 import { protectedGetAccommodationQrCodeRoute } from './qrCode';
 import { protectedGetAccommodationQrSheetRoute } from './qrSheet';
 import { protectedReactivateAccommodationRoute } from './reactivate';
@@ -64,6 +65,7 @@ ownershipRoutes.route('/', protectedPatchAccommodationRoute);
 ownershipRoutes.route('/', protectedUnpublishAccommodationRoute);
 ownershipRoutes.route('/', protectedReactivateAccommodationRoute);
 ownershipRoutes.route('/', protectedPurgeAccommodationRoute);
+ownershipRoutes.route('/', protectedAccommodationPurgePreviewRoute);
 ownershipRoutes.route('/', protectedAccommodationSupportEditsRoute);
 ownershipRoutes.route('/', protectedAccommodationReportFixedRoute);
 // POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)

@@ -3,3 +3,9 @@
 // email, so the payer never reads a raw provider code.
 export type { CheckoutReasonI18nKey, CheckoutReasonKey } from './resolve-reason.js';
 export { resolveReasonI18nKey, resolveReasonKey } from './resolve-reason.js';
+export {
+    resolveSignupDeclinedMessage,
+    SIGNUP_DECLINED_CAUSE_BY_STATUS_DETAIL,
+    type SignupDeclinedCause,
+    type SignupDeclinedRetry
+} from './signup-declined-reason.js';
