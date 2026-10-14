@@ -127,7 +127,14 @@
             "subject": "subscription"
         }
     ],
-    "grant_vivo_ancla_viva": [],
+    "grant_vivo_ancla_viva": [
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-live-anchors.ts",
+            "symbol": "hasLivePermanentGrantAnchor",
+            "row": 2,
+            "why": "Tercera mitad de la orfandad (B/16 §4.2): ¿hay un ancla viva en esa vertical?"
+        }
+    ],
     "marca_abierta": [
         {
             "file": "packages/service-core/src/services/billing/reconciliation/open-reconciliation-mark.service.ts",
