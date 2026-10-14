@@ -9,6 +9,20 @@
     },
     "owner": {
         "nav": "My business",
+        "purgeAddons": {
+            "title": "These add-ons are lost with the listing, with no refund:",
+            "clockRuns": "An add-on does not move to another listing and its term keeps running.",
+            "cycle": {
+                "monthly": "per month",
+                "quarterly": "per quarter",
+                "semiannual": "per half-year",
+                "annual": "per year"
+            },
+            "until": "until {{date}}",
+            "pending": "(pending authorization)",
+            "loadError": "We could not read this listing's add-ons. Try again before deleting it.",
+            "retry": "Retry"
+        },
         "list": {
             "title": "My business",
             "subtitle": "Manage the information of your published listings.",
