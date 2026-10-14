@@ -1039,5 +1039,65 @@
         "successMessage": "The account was closed at its owner's request.",
         "errorTitle": "The account could not be closed",
         "stateChanged": "The account changed since you opened this confirmation and was not closed. We checked again what it still has."
+    },
+    "listingModeration": {
+        "title": "Listing moderation",
+        "statusLabel": "Status",
+        "fixRequestOpen": "Fix request: open",
+        "fixRequestClosed": "Fix request: closed",
+        "resultLabel": "Last action",
+        "reasonLabel": "Why",
+        "reasonHelp": "The owner gets it in the notice and it is kept in the audit log.",
+        "cancel": "Cancel",
+        "actions": {
+            "requestFix": "Request a fix",
+            "takeDown": "Take the listing down",
+            "lift": "Lift the moderation",
+            "closeFixRequest": "Close the fix request"
+        },
+        "dialog": {
+            "requestFix": {
+                "title": "Request a fix",
+                "description": "You are asking the owner of \"{name}\" to fix the listing. The listing stays where it is and the owner gets a notice with the reason.",
+                "suggestedDateLabel": "Suggested date (optional)"
+            },
+            "takeDown": {
+                "title": "Take the listing down",
+                "description": "You are taking \"{name}\" down. The listing leaves the public site until you lift the moderation.",
+                "ownerNotice": "The owner gets a notice with the reason. They can view, edit and delete it, but not publish it.",
+                "featured": "If it has recurring featured placements, they keep being charged until the owner cancels them."
+            },
+            "lift": {
+                "title": "Lift the moderation",
+                "description": "You are lifting the moderation of \"{name}\". The listing goes back to where it was before it was taken down and the owner gets a notice.",
+                "keepFixRequestLabel": "Keep it with a fix request",
+                "keepFixRequestHelp": "The listing goes back to where it was and the request stays open."
+            },
+            "closeFixRequest": {
+                "title": "Close the fix request",
+                "description": "You are closing the fix request of \"{name}\". The listing does not change state."
+            }
+        },
+        "confirm": {
+            "requestFix": "Request the fix",
+            "takeDown": "Take the listing down",
+            "lift": "Lift the moderation",
+            "closeFixRequest": "Close the request"
+        },
+        "successTitle": "Done",
+        "successMessage": "The listing is now: {status}.",
+        "errors": {
+            "title": "The listing could not be moderated",
+            "invalid": "Check the reason: it cannot be empty or longer than 2000 characters.",
+            "forbidden": "You do not have permission to moderate listings.",
+            "notFound": "The listing no longer exists.",
+            "generic": "The listing could not be moderated.",
+            "conflict": {
+                "requestFix": "The listing already has an open fix request, or its state changed. Reload the page.",
+                "takeDown": "The listing changed state and was not taken down. Reload the page.",
+                "lift": "The listing is no longer moderated. Reload the page.",
+                "closeFixRequest": "The listing has no open fix request."
+            }
+        }
     }
 }

@@ -14,11 +14,16 @@ export type { ListingGalleryManagerProps } from './components/ListingGalleryMana
 
 // Relational gallery manager UI (HOS-382)
 export { ListingGalleryManager } from './components/ListingGalleryManager';
+export type { ListingModerationCardProps } from './components/ListingModerationCard';
+// Listing moderation by action, with reason (HOS-1684)
+export { ListingModerationCard } from './components/ListingModerationCard';
 export type { ListingPurgeOnRequestCardProps } from './components/ListingPurgeOnRequestCard';
 // Administrative action 23: purge at the owner's request (HOS-1493)
 export { ListingPurgeOnRequestCard } from './components/ListingPurgeOnRequestCard';
 // List config factory
 export { createListingListConfig } from './config/createListingListConfig';
+// HOS-1684
+export type { ListingModerationActionKind } from './config/listing-moderation-actions';
 // Shared section builders
 export {
     createListingIdentitySection,
@@ -48,6 +53,11 @@ export {
     useListingMediaRemove,
     useListingMediaSetFeatured
 } from './hooks/useListingMedia';
+// HOS-1684
+export {
+    buildModerateListingPath,
+    useModerateListingMutation
+} from './hooks/useModerateListingMutation';
 export type {
     PurgeListingOnRequestInput,
     PurgeListingOnRequestResult,
