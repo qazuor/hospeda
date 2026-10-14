@@ -398,18 +398,22 @@ describe('TEST:B11:8 AC:B11:9 the amount comparison: a divergence appears withou
         if (handled.result.outcome !== 'MARKED') throw new Error('Expected a receipt tombstone');
         trackSeededReconciliationRow(handled.result.subscriptionId);
         track(handled.result.subscriptionId, cleanupActor.subscription.userId);
-        const summary = await withSeededCancellationRetryInventory(() =>
-            runReconciliationSweep(
-                {},
-                {
-                    provider,
-                    clock: reconciliationClock,
-                    cancellationRetry: {
-                        beforeCancelNotice: { beforeCancel: async () => 'NO_RECIPIENT' }
-                    },
-                    markPayments: createPaymentReconciliationMarkPayments(reconciliationClock),
-                    comparisons: [createAmountComparison({ provider, clock: reconciliationClock })]
-                }
+        const summary = await withSeededReconciliationInventory(() =>
+            withSeededCancellationRetryInventory(() =>
+                runReconciliationSweep(
+                    {},
+                    {
+                        provider,
+                        clock: reconciliationClock,
+                        cancellationRetry: {
+                            beforeCancelNotice: { beforeCancel: async () => 'NO_RECIPIENT' }
+                        },
+                        markPayments: createPaymentReconciliationMarkPayments(reconciliationClock),
+                        comparisons: [
+                            createAmountComparison({ provider, clock: reconciliationClock })
+                        ]
+                    }
+                )
             )
         );
         expect(summary.rowsFailed).toBe(0);
