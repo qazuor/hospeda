@@ -1,3 +1,4 @@
+import { resolveSignupDeclinedMessage } from '@repo/billing';
 import type { EmailOutboxRow } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 import {
@@ -206,15 +207,22 @@ function signupDeclined(row: EmailOutboxRow, subscriptionUrl: string) {
         data.subscriptionId.trim() === '' ||
         typeof data.vertical !== 'string' ||
         data.vertical.trim() === '' ||
-        (data.declineReason !== null && typeof data.declineReason !== 'string')
+        (data.declineReason !== null && typeof data.declineReason !== 'string') ||
+        typeof data.successionPredecessor !== 'boolean'
     )
         throw new TypeError('Faltan datos requeridos del aviso de alta rechazada');
+    const { cause, retry } = resolveSignupDeclinedMessage({
+        declineReason: data.declineReason as string | null,
+        successionPredecessor: data.successionPredecessor
+    });
     return {
         subject: SIGNUP_DECLINED_SUBJECT,
         react: (
             <SignupDeclined
                 vertical={data.vertical}
                 subscriptionUrl={subscriptionUrl}
+                cause={cause}
+                retry={retry}
             />
         )
     };
@@ -294,7 +302,7 @@ function paymentCredited(row: EmailOutboxRow) {
  * arrears suspension notice of S6 (AC:B7:30) and the notice that precedes the
  * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31), the
  * notice that precedes cancelling an orphaned addon's preapproval (A5, AC:B5:27), and the
- * before-cancel notices of HOS-1683, plus S16 signup decline, S4 grace start and P1 credited payment (HOS-1675), one per kind with no default: a declined first charge
+ * before-cancel notices of HOS-1683, plus S16 signup decline, S4 grace start and P1 credited payment (HOS-1675); HOS-1618 adds AC:B13a:5 branches to signup-declined. Each kind has no default: a declined first charge
  * (S16/S1), a revocation (S36), a live authorization on a closed row (REJECTION_REVIVED) and
  * a scheduled cancellation (S11/S12). `billing.before-cancel` is S3's alone.
  */

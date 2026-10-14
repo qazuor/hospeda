@@ -15,6 +15,11 @@ import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { parseSignupOptionId } from '@/lib/billing/signup-checkout';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import {
+    resolveSignupTrialNotice,
+    type SignupTrialNotice
+} from '@/lib/billing/signup-checkout';
 
 export const prerender = false;
 
@@ -49,9 +54,25 @@ const { t } = createTranslations(locale);
 const title = t('billing.checkout.signup.title');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles: user.roles }) });
+let trialNotice: SignupTrialNotice | null;
+try {
+    const result = await billingSubscriptionApi.signupNotice({
+        billingOptionId: optionId,
+        cookieHeader: cookieHeader ?? undefined
+    });
+    trialNotice = resolveSignupTrialNotice({ result });
+} catch {
+    trialNotice = { kind: 'UNKNOWN' } as const;
+}
 ---
 
 <BaseLayout locale={locale} title={title} description={title}>
     <SEOHead slot="head" title={title} description={title} locale={locale} canonical={canonicalUrl} noindex={true} />
-    <SignupCheckout client:load locale={locale} billingOptionId={optionId} plansHref={plansHref} />
+    <SignupCheckout
+        client:load
+        locale={locale}
+        billingOptionId={optionId}
+        plansHref={plansHref}
+        trialNotice={trialNotice}
+    />
 </BaseLayout>

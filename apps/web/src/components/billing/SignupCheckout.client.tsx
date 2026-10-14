@@ -4,7 +4,8 @@ import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import {
     formatSignupWindowEnd,
     resolveSignupRejection,
-    SIGNUP_VERTICAL_LABEL_KEY
+    SIGNUP_VERTICAL_LABEL_KEY,
+    type SignupTrialNotice
 } from '@/lib/billing/signup-checkout';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
@@ -15,6 +16,7 @@ export interface SignupCheckoutProps {
     readonly locale: SupportedLocale;
     readonly billingOptionId: string;
     readonly plansHref: string;
+    readonly trialNotice: SignupTrialNotice | null;
 }
 
 type CheckoutView =
@@ -23,9 +25,14 @@ type CheckoutView =
     | { readonly state: 'rejected'; readonly rejection: ReturnType<typeof resolveSignupRejection> };
 
 /** Render and start a signup only after an explicit confirmation click. */
-export function SignupCheckout({ locale, billingOptionId, plansHref }: SignupCheckoutProps) {
+export function SignupCheckout({
+    locale,
+    billingOptionId,
+    plansHref,
+    trialNotice
+}: SignupCheckoutProps) {
     const [view, setView] = useState<CheckoutView>({ state: 'idle' });
-    const { t } = useMemo(() => createTranslations(locale), [locale]);
+    const { t, tPlural } = useMemo(() => createTranslations(locale), [locale]);
 
     const start = async () => {
         if (view.state === 'submitting' || view.state === 'pending') return;
@@ -63,17 +70,49 @@ export function SignupCheckout({ locale, billingOptionId, plansHref }: SignupChe
                 </>
             )}
             {view.state === 'idle' || view.state === 'submitting' ? (
-                <button
-                    className={styles.primary}
-                    type="button"
-                    data-testid="signup-checkout-confirm"
-                    disabled={busy}
-                    onClick={() => void start()}
-                >
-                    {busy
-                        ? t('billing.checkout.signup.submitting')
-                        : t('billing.checkout.signup.confirm')}
-                </button>
+                <>
+                    {trialNotice && (
+                        <div
+                            className={styles.trialNotice}
+                            data-testid="signup-checkout-trial-notice"
+                            data-kind={trialNotice.kind}
+                            role="note"
+                        >
+                            {trialNotice.kind === 'RUNNING' ? (
+                                <>
+                                    <p>
+                                        {tPlural(
+                                            'billing.checkout.signup.trialNotice.running',
+                                            trialNotice.daysLeft,
+                                            {
+                                                days: trialNotice.daysLeft,
+                                                date: formatSignupWindowEnd({
+                                                    iso: trialNotice.endsAt,
+                                                    locale
+                                                })
+                                            }
+                                        )}
+                                    </p>
+                                    <p>{t('billing.checkout.signup.trialNotice.endsOnCharge')}</p>
+                                    <p>{t('billing.checkout.signup.trialNotice.keepsOnDecline')}</p>
+                                </>
+                            ) : (
+                                <p>{t('billing.checkout.signup.trialNotice.unknown')}</p>
+                            )}
+                        </div>
+                    )}
+                    <button
+                        className={styles.primary}
+                        type="button"
+                        data-testid="signup-checkout-confirm"
+                        disabled={busy}
+                        onClick={() => void start()}
+                    >
+                        {busy
+                            ? t('billing.checkout.signup.submitting')
+                            : t('billing.checkout.signup.confirm')}
+                    </button>
+                </>
             ) : null}
             {pending && (
                 <div

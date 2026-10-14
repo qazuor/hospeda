@@ -232,6 +232,13 @@
                 "commitmentTaken": "Ya tenés una suscripción en curso en esta vertical.",
                 "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos."
             },
+            "trialNotice": {
+                "running_one": "Estás en tu período de prueba: te queda {{days}} día, hasta el {{date}}.",
+                "running_other": "Estás en tu período de prueba: te quedan {{days}} días, hasta el {{date}}.",
+                "endsOnCharge": "Si el primer cobro se acredita, tu prueba termina y perdés esos días.",
+                "keepsOnDecline": "Si el cobro se rechaza, seguís en tu prueba con esos días.",
+                "unknown": "Si estás en tu período de prueba en esta vertical: al acreditarse el primer cobro termina y perdés los días que te quedaban; si el cobro se rechaza, seguís en tu prueba con esos días."
+            },
             "retry": "Intentar de nuevo",
             "vertical": {
                 "accommodation": "alojamiento",

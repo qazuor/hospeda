@@ -25,13 +25,14 @@ async function render(
 
 describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and payment-credited notices render', () => {
     it.each([
-        'cc_rejected_high_risk',
+        'cc_rejected_call_for_authorize',
         null
     ])('renders generic signup decline for declineReason %s without identifiers', async (declineReason) => {
         const { subject, html } = await render('billing.signup-declined', {
             subscriptionId,
             vertical: 'accommodation',
-            declineReason
+            declineReason,
+            successionPredecessor: false
         });
         expect(subject).toBe(SIGNUP_DECLINED_SUBJECT);
         expect(html).toContain('No se te cobró nada');
@@ -97,7 +98,12 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
         [
             'invalid signup vertical',
             'billing.signup-declined',
-            { subscriptionId, vertical: 42, declineReason: null }
+            {
+                subscriptionId,
+                vertical: 42,
+                declineReason: null,
+                successionPredecessor: false
+            }
         ],
         ['grace empty payload', 'billing.grace-started', {}],
         ['payment empty payload', 'billing.payment-credited', {}],
@@ -150,5 +156,72 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
         ]
     ])('rejects %s', async (_case, template, payload) => {
         await expect(render(template, payload)).rejects.toBeInstanceOf(TypeError);
+    });
+});
+
+describe('TEST:B13a:4b AC:B13a:5 the declined-signup mail says why and what to do', () => {
+    async function signupMail(
+        declineReason: string | null,
+        successionPredecessor = false
+    ): Promise<string> {
+        const { html } = await render('billing.signup-declined', {
+            subscriptionId,
+            vertical: 'accommodation',
+            declineReason,
+            successionPredecessor
+        });
+        return html;
+    }
+
+    it('explains provider risk without asking the person to check a working card', async () => {
+        const html = await signupMail('cc_rejected_high_risk');
+        expect(html).toContain('tu tarjeta está bien');
+        expect(html).not.toContain('Revisá tu tarjeta');
+    });
+
+    it('asks to check the payment method for a measured card failure', async () => {
+        const html = await signupMail('cc_rejected_insufficient_amount');
+        expect(html).toContain('Revisá tu tarjeta');
+        expect(html).not.toContain('tu tarjeta está bien');
+    });
+
+    it.each([
+        'cc_rejected_call_for_authorize',
+        null
+    ] as const)('keeps the generic copy for unmapped status_detail %s', async (declineReason) => {
+        const html = await signupMail(declineReason);
+        expect(html).not.toContain('Revisá tu tarjeta');
+        expect(html).not.toContain('tu tarjeta está bien');
+        expect(html).toContain('No se te cobró nada');
+        expect(html).toContain('Si estabas en tu período de prueba en esta vertical');
+    });
+
+    it('keeps the no-charge and trial copy in mapped branches', async () => {
+        for (const declineReason of ['cc_rejected_high_risk', 'cc_rejected_insufficient_amount']) {
+            const html = await signupMail(declineReason);
+            expect(html).toContain('No se te cobró nada');
+            expect(html).toContain('Si estabas en tu período de prueba en esta vertical');
+        }
+    });
+
+    it('finishes the already open successor checkout instead of starting another signup', async () => {
+        const html = await signupMail('cc_rejected_high_risk', true);
+        expect(html).toContain('terminalo desde Mi Suscripción');
+        expect(html).not.toContain('empezá un alta nueva');
+    });
+
+    it('offers a new signup when there is no successor', async () => {
+        const html = await signupMail('cc_rejected_high_risk', false);
+        expect(html).toContain('empezá un alta nueva');
+    });
+
+    it('rejects payloads without successionPredecessor', async () => {
+        await expect(
+            render('billing.signup-declined', {
+                subscriptionId,
+                vertical: 'accommodation',
+                declineReason: 'cc_rejected_high_risk'
+            })
+        ).rejects.toThrow(TypeError);
     });
 });
