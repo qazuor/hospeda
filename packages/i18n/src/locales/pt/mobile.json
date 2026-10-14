@@ -38,9 +38,14 @@
         },
         "accommodations": {
             "listTitle": "Minhas fichas",
-            "lifecycleActive": "Ativa",
-            "lifecycleDraft": "Rascunho",
-            "lifecycleArchived": "Arquivada",
+            "status": {
+                "DRAFT": "Rascunho",
+                "PUBLISHED": "Publicada",
+                "UNPUBLISHED_BY_BILLING": "Despublicado pelo seu plano",
+                "ARCHIVED": "Arquivado",
+                "MODERATED": "Moderado",
+                "PURGED": "Excluído"
+            },
             "loading": "Carregando fichas...",
             "error": "Não foi possível carregar as fichas. Tente novamente.",
             "empty": "Você ainda não tem fichas.",
