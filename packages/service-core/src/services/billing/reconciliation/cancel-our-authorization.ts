@@ -8,6 +8,7 @@ import {
     type PaymentProvider,
     type ProviderRead
 } from '@repo/payments';
+import type { BeforeCancelNoticeKind } from '../subscription/before-cancel-notice-kinds.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 
 const logger = createLogger('cancel-our-authorization');
@@ -20,9 +21,13 @@ export type CancelOurAuthorizationOutcome =
     | 'CONFIRMED'
     | 'SENT_UNCONFIRMED';
 
-/** The notice kinds a before-cancel notice can carry (its template is part of the dedupe key). */
-export type CancelOurAuthorizationNoticeKind = NonNullable<
-    Parameters<BeforeCancelNotice['beforeCancel']>[0]['kind']
+/**
+ * The notice kinds a cancellation through this helper can ask for (its template is part of the
+ * dedupe key). S6's `ARREARS_SUSPENSION` never goes through it: S6 retries itself.
+ */
+export type CancelOurAuthorizationNoticeKind = Exclude<
+    BeforeCancelNoticeKind,
+    'ARREARS_SUSPENSION'
 >;
 
 /** Input of {@link cancelOurAuthorization}. */
@@ -34,15 +39,14 @@ export interface CancelOurAuthorizationInput {
     /** The provider authorization to cancel. */
     readonly authorizationId: string;
     /**
-     * The notice kind the deciding transition asked for; passed to `beforeCancel` only when
-     * present. The notice's template is part of its dedupe key, so a retry must ask with the
-     * same kind as the transition did, or it enqueues a second, generic notice. The occurrence
-     * is always the default one (the subscription id).
+     * The notice kind the deciding transition asked for; mandatory, there is no default notice
+     * (HOS-1683). The notice's template is part of its dedupe key, so a retry must ask with the
+     * same kind as the transition did, or it enqueues a second notice and waits for it. `null`
+     * only for a row that has no recipient by construction (a receipt tombstone): with a
+     * recipient, `null` fails closed. The occurrence is always the default one (the
+     * subscription id).
      */
-    readonly kind?: Extract<
-        CancelOurAuthorizationNoticeKind,
-        'TOURIST_VIP_INHERITED' | 'ADDON_CANCELLED'
-    >;
+    readonly kind: CancelOurAuthorizationNoticeKind | null;
     /** A read by id the caller already took, with the act it was taken for. */
     readonly prior?: {
         readonly read: ProviderRead<AuthorizationSnapshot>;
@@ -86,10 +90,11 @@ async function rereadIsCancelled(
  * 1. Re-reads by id first (or checks `prior` is fresh for its act); an
  *    authorization already `cancelled` is not called again. A failed first
  *    read calls nothing and reports `CALL_FAILED` (the sweep retries).
- * 2. With a recipient and a notice port, asks for the before-cancel notice (with
- *    `input.kind` when given):
- *    `NOT_YET_SENT` defers the call; `NO_RECIPIENT`/`DELIVERY_EXHAUSTED` warn and
- *    call anyway. Without a recipient there is no notice, and it never blocks.
+ * 2. With a recipient and a notice port, asks for the before-cancel notice with
+ *    `input.kind`: `NOT_YET_SENT` defers the call; `NO_RECIPIENT`/`DELIVERY_EXHAUSTED`
+ *    warn and call anyway. A recipient without a kind fails closed: no notice, no call,
+ *    `CALL_FAILED` (HOS-1683, never a generic notice). Without a recipient there is no
+ *    notice, and it never blocks.
  * 3. Calls `cancel`; a failure is logged and reported, never thrown.
  * 4. Re-reads by id after the call to confirm it.
  *
@@ -126,10 +131,17 @@ export async function cancelOurAuthorization(
     if (cancelledBefore) return { outcome: 'ALREADY_CANCELLED' };
 
     if (input.userId && ports.beforeCancelNotice) {
+        if (input.kind === null) {
+            logger.error(
+                { subscriptionId: input.subscriptionId },
+                'A cancellation with a recipient declared no notice kind; nothing was called'
+            );
+            return { outcome: 'CALL_FAILED' };
+        }
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: input.subscriptionId,
             userId: input.userId,
-            ...(input.kind ? { kind: input.kind } : {})
+            kind: input.kind
         });
         if (notice === 'NOT_YET_SENT') return { outcome: 'NOTICE_PENDING' };
         if (notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED')

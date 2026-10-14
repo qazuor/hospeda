@@ -33,7 +33,7 @@ import {
 import type { PaymentProvider } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { PermissionEnum, type RoleEnum, VerticalEnum } from '@repo/schemas';
-import { startSubscription } from '@repo/service-core';
+import { BEFORE_CANCEL_TEMPLATE_BY_KIND, startSubscription } from '@repo/service-core';
 
 export const DAY_MS = 86_400_000;
 /** The instant every request of these tests happens at: 2026-10-05 09:00 in Buenos Aires. */
@@ -295,8 +295,8 @@ export async function seedCardRevocable(input: {
 }
 
 /**
- * Puts the before-cancel notice of S36 in the outbox ahead of the act, in a final state, so the
- * real `beforeCancelNotice` reads it: `sent` → `SENT`; `failed` with a hard bounce →
+ * Puts the before-cancel notice of S36 (its `REVOCATION` kind, `billing.revocation-cancel`) in
+ * the outbox ahead of the act, in a final state, so the real `beforeCancelNotice` reads it: `sent` → `SENT`; `failed` with a hard bounce →
  * `NO_RECIPIENT`; `failed` otherwise → `DELIVERY_EXHAUSTED`.
  */
 export async function presetBeforeCancelNotice(input: {
@@ -305,7 +305,7 @@ export async function presetBeforeCancelNotice(input: {
     readonly status: 'sent' | 'failed';
     readonly lastError?: string;
 }): Promise<void> {
-    const template = 'billing.before-cancel';
+    const template = BEFORE_CANCEL_TEMPLATE_BY_KIND.REVOCATION;
     const dedupKey = buildEmailDedupKey({
         recipient: input.ownerId,
         template,

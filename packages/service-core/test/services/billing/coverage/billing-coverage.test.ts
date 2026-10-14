@@ -3,10 +3,7 @@ import { VerticalEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { resolveAddonSources } from '../../../../src/services/billing/coverage/addon-sources';
 import { createBillingCoverage } from '../../../../src/services/billing/coverage/billing-coverage';
-import {
-    type BillingCoveragePorts,
-    unregisteredListingQuery
-} from '../../../../src/services/billing/coverage/coverage-ports';
+import type { BillingCoveragePorts } from '../../../../src/services/billing/coverage/coverage-ports';
 import { resolveSubscriptionSources } from '../../../../src/services/billing/coverage/subscription-sources';
 
 vi.mock('../../../../src/services/billing/coverage/subscription-sources', () => ({
@@ -59,7 +56,9 @@ function fakePorts(trialAndBase: CoverageResponse): BillingCoveragePorts {
         addonPolicy: vi.fn(async () => {
             throw new Error('addonPolicy is not reached: the addon resolver is faked');
         }),
-        listing: unregisteredListingQuery.listing,
+        listing: vi.fn(async () => {
+            throw new Error('listing is not reached: no LISTING addon is resolved');
+        }),
         trialAndBase: vi.fn(async () => trialAndBase)
     };
 }
@@ -158,16 +157,5 @@ describe('billing real coverage assembler (AC:B4:1, AC:B4:7)', () => {
         // Assert
         await expect(coverage).rejects.toThrow();
         expect(ports.trialAndBase).not.toHaveBeenCalled();
-    });
-
-    it('fails visibly through the unregistered listing query port (X-1)', async () => {
-        // Act
-        const listing = unregisteredListingQuery.listing({ listingId: 'listing-1' });
-
-        // Assert
-        await expect(listing).rejects.toMatchObject({
-            code: 'INTERNAL_ERROR',
-            reason: 'LISTING_QUERY_NOT_REGISTERED'
-        });
     });
 });

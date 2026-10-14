@@ -57,7 +57,12 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
         const { provider, clock, authorizationId, calls } = await setup({ cancelled: true });
         const beforeCancelNotice = notice('SENT', calls);
         const result = await cancelOurAuthorization(
-            { subscriptionId: crypto.randomUUID(), userId: crypto.randomUUID(), authorizationId },
+            {
+                subscriptionId: crypto.randomUUID(),
+                userId: crypto.randomUUID(),
+                authorizationId,
+                kind: 'AUTHORIZATION_EXPIRED'
+            },
             { provider, clock, beforeCancelNotice }
         );
         expect(result).toEqual({ outcome: 'ALREADY_CANCELLED' });
@@ -68,7 +73,12 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
     it('defers the call while the notice is NOT_YET_SENT', async () => {
         const { provider, clock, authorizationId, calls } = await setup();
         const result = await cancelOurAuthorization(
-            { subscriptionId: crypto.randomUUID(), userId: crypto.randomUUID(), authorizationId },
+            {
+                subscriptionId: crypto.randomUUID(),
+                userId: crypto.randomUUID(),
+                authorizationId,
+                kind: 'AUTHORIZATION_EXPIRED'
+            },
             { provider, clock, beforeCancelNotice: notice('NOT_YET_SENT', calls) }
         );
         expect(result).toEqual({ outcome: 'NOTICE_PENDING' });
@@ -84,12 +94,16 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
         const userId = crypto.randomUUID();
         const beforeCancelNotice = notice(status, calls);
         const result = await cancelOurAuthorization(
-            { subscriptionId, userId, authorizationId },
+            { subscriptionId, userId, authorizationId, kind: 'AUTHORIZATION_EXPIRED' },
             { provider, clock, beforeCancelNotice }
         );
         expect(result).toEqual({ outcome: 'CONFIRMED' });
         expect(calls).toEqual(['read', 'notice', 'cancel', 'read']);
-        expect(beforeCancelNotice.beforeCancel).toHaveBeenCalledWith({ subscriptionId, userId });
+        expect(beforeCancelNotice.beforeCancel).toHaveBeenCalledWith({
+            subscriptionId,
+            userId,
+            kind: 'AUTHORIZATION_EXPIRED'
+        });
     });
 
     it('passes the notice kind to beforeCancel when given, with the default occurrence', async () => {
@@ -133,25 +147,24 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
         expect(calls).toEqual(['read', 'notice', 'cancel', 'read']);
     });
 
-    it('without a kind sends no kind key to beforeCancel', async () => {
+    it('passes AUTHORIZATION_EXPIRED (S3) to beforeCancel as is', async () => {
         const { provider, clock, authorizationId, calls } = await setup();
         const subscriptionId = crypto.randomUUID();
         const userId = crypto.randomUUID();
         const beforeCancelNotice = notice('SENT', calls);
         await cancelOurAuthorization(
-            { subscriptionId, userId, authorizationId },
+            { subscriptionId, userId, authorizationId, kind: 'AUTHORIZATION_EXPIRED' },
             { provider, clock, beforeCancelNotice }
         );
         const sent = beforeCancelNotice.beforeCancel.mock.calls[0]?.[0];
-        expect(sent).toStrictEqual({ subscriptionId, userId });
-        expect(Object.keys(sent ?? {})).not.toContain('kind');
+        expect(sent).toStrictEqual({ subscriptionId, userId, kind: 'AUTHORIZATION_EXPIRED' });
     });
 
     it('without a recipient asks for no notice and calls', async () => {
         const { provider, clock, authorizationId, calls } = await setup();
         const beforeCancelNotice = notice('NOT_YET_SENT', calls);
         const result = await cancelOurAuthorization(
-            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId },
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
             { provider, clock, beforeCancelNotice }
         );
         expect(result).toEqual({ outcome: 'CONFIRMED' });
@@ -166,7 +179,7 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
             throw new Error('provider body must not be logged');
         });
         const result = await cancelOurAuthorization(
-            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId },
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
             { provider, clock }
         );
         expect(result).toEqual({ outcome: 'CALL_FAILED' });
@@ -180,7 +193,7 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
             return { accepted: true as const, resourceId: authorizationId };
         });
         const result = await cancelOurAuthorization(
-            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId },
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
             { provider, clock }
         );
         expect(result).toEqual({ outcome: 'SENT_UNCONFIRMED' });
@@ -194,7 +207,7 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
         read.mockImplementationOnce(async (input) => original.call(fake, input));
         read.mockRejectedValueOnce(new Error('read failed'));
         const result = await cancelOurAuthorization(
-            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId },
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
             { provider, clock }
         );
         expect(result).toEqual({ outcome: 'SENT_UNCONFIRMED' });
@@ -204,7 +217,7 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
         const { fake, provider, clock, authorizationId, calls } = await setup();
         vi.spyOn(fake, 'readAuthorization').mockRejectedValueOnce(new Error('read failed'));
         const result = await cancelOurAuthorization(
-            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId },
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
             { provider, clock }
         );
         expect(result).toEqual({ outcome: 'CALL_FAILED' });
@@ -222,6 +235,7 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
                 subscriptionId: crypto.randomUUID(),
                 userId: null,
                 authorizationId,
+                kind: null,
                 prior: { read, act }
             },
             { provider, clock }
@@ -243,11 +257,36 @@ describe('cancelOurAuthorization (AC:B11:3, AC:B11:6)', () => {
                     subscriptionId: crypto.randomUUID(),
                     userId: null,
                     authorizationId,
+                    kind: null,
                     prior: { read, act }
                 },
                 { provider, clock }
             )
         ).rejects.toMatchObject({ reason: 'STALE_READ' });
         expect(calls).toEqual([]);
+    });
+});
+
+describe('TEST:1683:5 AC:1683:3 a recipient without a kind fails closed', () => {
+    it('asks for no notice, calls nothing and reports CALL_FAILED', async () => {
+        // Arrange
+        const { provider, clock, authorizationId, calls } = await setup();
+        const beforeCancelNotice = notice('SENT', calls);
+
+        // Act
+        const result = await cancelOurAuthorization(
+            {
+                subscriptionId: crypto.randomUUID(),
+                userId: crypto.randomUUID(),
+                authorizationId,
+                kind: null
+            },
+            { provider, clock, beforeCancelNotice }
+        );
+
+        // Assert
+        expect(result).toStrictEqual({ outcome: 'CALL_FAILED' });
+        expect(beforeCancelNotice.beforeCancel).not.toHaveBeenCalled();
+        expect(calls).not.toContain('cancel');
     });
 });

@@ -7,21 +7,12 @@ import {
     getDb,
     users
 } from '@repo/db';
-import type { BeforeCancelNotice } from '@repo/service-core';
-
-type BeforeCancelKind = NonNullable<Parameters<BeforeCancelNotice['beforeCancel']>[0]['kind']>;
-
-/** The outbox template of each before-cancel kind (X-1: S6 has its own arrears template). */
-const TEMPLATE_BY_KIND: Readonly<Record<BeforeCancelKind | 'DEFAULT', string>> = {
-    DEFAULT: 'billing.before-cancel',
-    TOURIST_VIP_INHERITED: 'billing.tourist-vip-inherited-cancel',
-    ARREARS_SUSPENSION: 'billing.arrears-suspension',
-    ADDON_CANCELLED: 'billing.addon-cancelled'
-};
+import { BEFORE_CANCEL_TEMPLATE_BY_KIND, type BeforeCancelNotice } from '@repo/service-core';
 
 /**
  * Outbox contract for the notice that precedes every cancellation we execute.
- * The occurrence is the fact that decided the cancellation (`occurrenceId`,
+ * The template comes from the mandatory `kind`, through service-core's
+ * `BEFORE_CANCEL_TEMPLATE_BY_KIND`: there is no default notice (HOS-1683). The occurrence is the fact that decided the cancellation (`occurrenceId`,
  * defaulting to the subscription id), so a retry reads the row already enqueued.
  * The arrears suspension carries its `content` (AC:B7:30) into the payload.
  */
@@ -33,7 +24,7 @@ export const beforeCancelNotice: BeforeCancelNotice = {
             .where(eq(users.id, userId))
             .limit(1);
         if (!recipient) return 'NO_RECIPIENT';
-        const template = TEMPLATE_BY_KIND[kind ?? 'DEFAULT'];
+        const template = BEFORE_CANCEL_TEMPLATE_BY_KIND[kind];
         const dedupKey = buildEmailDedupKey({
             recipient: userId,
             template,
