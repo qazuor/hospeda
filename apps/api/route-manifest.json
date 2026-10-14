@@ -2299,6 +2299,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/accommodations/:id/purge-preview"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/accommodations/:id/qr"
         },
         {
@@ -2671,6 +2675,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/experiences/:id/purge-preview"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/experiences/:id/qr"
         },
         {
@@ -2840,6 +2848,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/gastronomies/:id/purge"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/gastronomies/:id/purge-preview"
         },
         {
             "method": "GET",
