@@ -1,7 +1,8 @@
 /**
- * Local half of TRANS:B:S13 (DEC-GRANT-001, DEC-GRANT-013, B7:26): cancel live
- * principals, release S19 and run A5 in one transaction. No S18, coverage loss or
- * provider decision in this transaction and cancels the provider authorization after commit.
+ * Transactional half of TRANS:B:S13 (DEC-GRANT-001, DEC-GRANT-013, B7:26):
+ * cancel live principals, record S13 provider-cancellation decisions, release
+ * S19 and run A5 in one transaction. Provider authorization cancellation,
+ * coverage notices and add-on provider work happen after commit.
  */
 
 import type { Clock } from '@repo/billing-verticals-contract';
@@ -156,6 +157,22 @@ async function writeS13Cancellation(input: {
             );
 }
 
+/**
+ * Applies the local S13 effects of a permanent-grant act inside its transaction.
+ * It locks the beneficiary's live principal subscriptions in the supplied
+ * verticals, cancels them, records S13 decisions for card authorizations,
+ * releases S19 retention, closes applicable deferred courtesy balances and
+ * runs A5 orphanhood handling. It does not call the payment provider; that
+ * cancellation is performed after the surrounding transaction commits.
+ *
+ * @param input Transaction, grant and beneficiary identifiers, affected
+ *   verticals, act time and actor recorded in provider decisions.
+ * @param ports Orphanhood dependencies used while processing cancelled rows.
+ * @returns Cancelled subscriptions and IDs/effects produced by S19, courtesy
+ *   closure and A5.
+ * @throws {ServiceError} When the actor is invalid, a required row is missing,
+ *   or a locked subscription changes unexpectedly.
+ */
 export async function runS13InTransaction(
     input: {
         readonly tx: DrizzleClient;

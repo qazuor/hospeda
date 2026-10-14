@@ -34,6 +34,13 @@ import {
     type S13CancelCall
 } from './permanent-grant-s13.js';
 
+/**
+ * Dependencies used by permanent-grant acts.
+ *
+ * The caller authorizes ACC_2 before invoking these services (AC:B9a:9,
+ * HOS-1584); HOS-1582 exposes no route for either act. Coverage notifications
+ * and orphanhood/provider ports handle their respective post-commit effects.
+ */
 export interface PermanentGrantPorts {
     readonly clock: Clock;
     readonly coverageNotices: CoverageNotices;
@@ -83,6 +90,23 @@ function invalidInput(error: unknown): ServiceError {
     );
 }
 
+/**
+ * Creates a permanent grant with its initial vertical anchors and applies S13
+ * to the beneficiary's live principal subscriptions in those verticals.
+ *
+ * Local cancellation, retention release, courtesy closure and add-on
+ * orphanhood run in one transaction. Coverage notices and provider
+ * cancellation happen after commit. The anchor floor is stored as a reference;
+ * current-plan policy validation and the live GRANT coverage source belong to
+ * HOS-1585.
+ *
+ * @param raw Grant beneficiary, authorizing actor, reason, add-on policy and
+ *   at least one unique vertical anchor.
+ * @param ports Clock and integrations required for local and post-commit work.
+ * @returns Created grant and anchor IDs, local S13 effects and provider results.
+ * @throws {ServiceError} When input is invalid, a referenced grant write fails,
+ *   or a transactional S13 operation cannot complete.
+ */
 export async function grantPermanentGrant(
     raw: {
         readonly beneficiaryUserId: string;
@@ -183,6 +207,19 @@ export async function grantPermanentGrant(
     };
 }
 
+/**
+ * Adds one vertical anchor to an existing live permanent grant and applies
+ * S13 only to the beneficiary's live principal subscriptions in that vertical.
+ * The anchor and local cancellation effects are committed atomically; coverage
+ * notices and provider cancellation run after commit. The floor is stored as a
+ * reference and is not checked against current plan policy in this service.
+ *
+ * @param raw Grant ID, authorizing actor and the vertical's plan floor.
+ * @param ports Clock and integrations required for local and post-commit work.
+ * @returns The new anchor ID, local S13 effects and provider results.
+ * @throws {ServiceError} When input is invalid, the grant is missing or revoked,
+ *   or a transactional S13 operation cannot complete.
+ */
 export async function anchorPermanentGrantVertical(
     raw: {
         readonly permanentGrantId: string;
