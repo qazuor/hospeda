@@ -1,4 +1,5 @@
 import type { EmailOutboxRow } from '@repo/db';
+import { getLocalDateString } from '@repo/utils';
 import {
     ADDON_CANCELLED_SUBJECT,
     AddonCancelled,
@@ -9,17 +10,29 @@ import {
     ClosedSubscriptionAuthorizationCancel,
     FIRST_CHARGE_DECLINED_CANCEL_SUBJECT,
     FirstChargeDeclinedCancel,
+    GRACE_STARTED_SUBJECT,
+    GraceStarted,
+    PAYMENT_CREDITED_SUBJECT,
+    PaymentCredited,
+    PERMANENT_GRANT_CANCEL_SUBJECT,
+    PermanentGrantCancel,
     REVOCATION_CANCEL_SUBJECT,
     RevocationCancel,
     SCHEDULED_CANCELLATION_SUBJECT,
     ScheduledCancellation,
+    SIGNUP_DECLINED_SUBJECT,
     SignupBeforeCancel,
     SignupConfirmed,
+    SignupDeclined,
     SignupIncomplete,
     TOURIST_VIP_INHERITED_CANCEL_SUBJECT,
     TouristVipInheritedCancel
 } from '../../templates/billing/index.js';
+import { formatCurrency, formatDate } from '../../templates/utils/index.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
+
+const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
+const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
 function objectPayload(row: EmailOutboxRow): Record<string, unknown> {
     const payload: unknown = row.payload;
@@ -85,6 +98,15 @@ function revocationCancel(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de cancelación por revocación');
     return { subject: REVOCATION_CANCEL_SUBJECT, react: <RevocationCancel /> };
+}
+
+function permanentGrantCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError(
+            'Faltan datos requeridos del aviso de cancelación por grant permanente'
+        );
+    return { subject: PERMANENT_GRANT_CANCEL_SUBJECT, react: <PermanentGrantCancel /> };
 }
 
 function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
@@ -177,19 +199,113 @@ function arrearsSuspension(row: EmailOutboxRow) {
     };
 }
 
+function signupDeclined(row: EmailOutboxRow, subscriptionUrl: string) {
+    const data = objectPayload(row);
+    if (
+        typeof data.subscriptionId !== 'string' ||
+        data.subscriptionId.trim() === '' ||
+        typeof data.vertical !== 'string' ||
+        data.vertical.trim() === '' ||
+        (data.declineReason !== null && typeof data.declineReason !== 'string')
+    )
+        throw new TypeError('Faltan datos requeridos del aviso de alta rechazada');
+    return {
+        subject: SIGNUP_DECLINED_SUBJECT,
+        react: (
+            <SignupDeclined
+                vertical={data.vertical}
+                subscriptionUrl={subscriptionUrl}
+            />
+        )
+    };
+}
+
+function graceStarted(row: EmailOutboxRow, subscriptionUrl: string) {
+    const data = objectPayload(row);
+    const graceEndsAt =
+        typeof data.graceEndsAt === 'string' && ISO_INSTANT.test(data.graceEndsAt)
+            ? new Date(data.graceEndsAt)
+            : null;
+    if (
+        typeof data.subscriptionId !== 'string' ||
+        data.subscriptionId.trim() === '' ||
+        typeof data.vertical !== 'string' ||
+        data.vertical.trim() === '' ||
+        !graceEndsAt ||
+        Number.isNaN(graceEndsAt.getTime())
+    )
+        throw new TypeError('Faltan datos requeridos del aviso de inicio del grace');
+    const graceEndDate = formatDate({ dateString: getLocalDateString({ instant: graceEndsAt }) });
+    return {
+        subject: GRACE_STARTED_SUBJECT,
+        react: (
+            <GraceStarted
+                vertical={data.vertical}
+                graceEndDate={graceEndDate}
+                subscriptionUrl={subscriptionUrl}
+            />
+        )
+    };
+}
+
+function paymentCredited(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    const hasSubscription =
+        Object.hasOwn(data, 'subscriptionId') &&
+        (typeof data.subscriptionId === 'string' || data.subscriptionId === null);
+    const hasAddon =
+        Object.hasOwn(data, 'addonInstanceId') &&
+        typeof data.addonInstanceId === 'string' &&
+        data.addonInstanceId.trim() !== '';
+    if (
+        typeof data.paymentId !== 'string' ||
+        data.paymentId.trim() === '' ||
+        typeof data.currency !== 'string' ||
+        data.currency.trim() === '' ||
+        typeof data.receiptId !== 'string' ||
+        data.receiptId.trim() === '' ||
+        typeof data.amountMinor !== 'number' ||
+        !Number.isInteger(data.amountMinor) ||
+        data.amountMinor < 0 ||
+        typeof data.receiptNumber !== 'number' ||
+        !Number.isInteger(data.receiptNumber) ||
+        data.receiptNumber <= 0 ||
+        Number(hasSubscription) + Number(hasAddon) !== 1 ||
+        (hasSubscription &&
+            typeof data.subscriptionId === 'string' &&
+            data.subscriptionId.trim() === '')
+    )
+        throw new TypeError('Faltan datos requeridos del aviso de pago acreditado');
+    const creditedDate = formatDate({ dateString: getLocalDateString({ instant: row.createdAt }) });
+    return {
+        subject: PAYMENT_CREDITED_SUBJECT,
+        react: (
+            <PaymentCredited
+                amount={formatCurrency({ amount: data.amountMinor, currency: data.currency })}
+                receiptNumber={data.receiptNumber}
+                creditedDate={creditedDate}
+            />
+        )
+    };
+}
+
 /**
  * Renderers for the notices emitted by the subscription signup flow, plus the
  * arrears suspension notice of S6 (AC:B7:30) and the notice that precedes the
  * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31), the
  * notice that precedes cancelling an orphaned addon's preapproval (A5, AC:B5:27), and the
- * before-cancel notices of HOS-1683, one per kind with no default: a declined first charge
+ * before-cancel notices of HOS-1683, plus S16 signup decline, S4 grace start and P1 credited payment (HOS-1675), one per kind with no default: a declined first charge
  * (S16/S1), a revocation (S36), a live authorization on a closed row (REJECTION_REVIVED) and
  * a scheduled cancellation (S11/S12). `billing.before-cancel` is S3's alone.
  */
-export function createBillingSignupRenderers(_input: {
+export function createBillingSignupRenderers(input: {
     readonly siteUrl: string;
 }): Readonly<Record<string, OutboxMailRenderer>> {
+    const subscriptionUrl = `${input.siteUrl.replace(/\/$/, '')}${SUBSCRIPTION_PATH}`;
     return {
+        'billing.signup-declined': ({ row }) => signupDeclined(row, subscriptionUrl),
+        'billing.grace-started': ({ row }) => graceStarted(row, subscriptionUrl),
+        'billing.payment-credited': ({ row }) => paymentCredited(row),
         'billing.signup-confirmed': ({ row }) => confirmed(row),
         'billing.before-cancel': ({ row }) => beforeCancel(row),
         'billing.signup-incomplete': ({ row }) => incomplete(row),
@@ -198,6 +314,7 @@ export function createBillingSignupRenderers(_input: {
         'billing.addon-cancelled': ({ row }) => addonCancelled(row),
         'billing.first-charge-declined-cancel': ({ row }) => firstChargeDeclinedCancel(row),
         'billing.revocation-cancel': ({ row }) => revocationCancel(row),
+        'billing.permanent-grant-cancel': ({ row }) => permanentGrantCancel(row),
         'billing.closed-subscription-authorization-cancel': ({ row }) =>
             closedSubscriptionAuthorizationCancel(row),
         'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row)

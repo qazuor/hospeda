@@ -160,5 +160,29 @@
         "effect": "neutral",
         "via": null,
         "reason": "S12 closes a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL); its instance turns off through applyA5."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-s13.ts",
+        "symbol": "writeS13Cancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S13 moves every live PRINCIPAL row of an anchored vertical to CANCELLED (TRANS:B:S13, AC:B9a:1); the coverage notice is emitted after commit in the same file."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/grant/permanent-grant-courtesy.ts",
+        "symbol": "closeDeferredCourtesyBalances",
+        "table": "courtesyGrants",
+        "effect": "neutral",
+        "via": null,
+        "reason": "A deferred courtesy emits no coverage source (B9a.md:461-464); S13 only closes its balance (DEC-GRANT-013)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/renewal-notice.ts",
+        "symbol": "stampRenewalNoticeClock",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Stamps the PLAZO:13 deadline version and the charge date it applies to on an ACTIVE row (AC:B13a:13); coverage does not change."
     }
 ]

@@ -13,6 +13,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
 import { addons, addonVersions } from './addon-catalog.dbschema.ts';
+import { permanentGrantVerticals } from './permanent-grant.dbschema.ts';
 import { quotedList } from './quoted-list.ts';
 import { subscriptions } from './subscription.dbschema.ts';
 
@@ -112,6 +113,8 @@ export const addonInstances = pgTable(
         complementSubscriptionId: uuid('complement_subscription_id').references(
             () => subscriptions.id
         ),
+        /** El ancla del título (BN): nula cuando el título es el ordinario de esa vertical; la escribe S20 (B9a.1b, HOS-1583). */
+        titleAnchorId: uuid('title_anchor_id').references(() => permanentGrantVerticals.id),
         /** pedido */
         orderRequestId: varchar('order_request_id', { length: 64 }),
         /** id de la orden */
