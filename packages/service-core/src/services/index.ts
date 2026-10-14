@@ -108,6 +108,7 @@ export * from './billing/reconciliation/sweep/grace-expiry-check.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
+export * from './billing/reconciliation/sweep/provider-pause-check.js';
 export * from './billing/reconciliation/sweep/reconciliation-divergence.js';
 export * from './billing/reconciliation/sweep/reconciliation-sweep.service.js';
 export * from './billing/reconciliation/sweep/succession-retention-ports.js';
