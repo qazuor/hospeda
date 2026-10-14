@@ -1,4 +1,9 @@
-import type { ReconciliationMarkReason, SelectProviderLink, SelectSubscription } from '@repo/db';
+import type {
+    DomainEventChange,
+    ReconciliationMarkReason,
+    SelectProviderLink,
+    SelectSubscription
+} from '@repo/db';
 import type { ActStart, AuthorizationSnapshot, ProviderRead } from '@repo/payments';
 import { openReconciliationMark } from '../open-reconciliation-mark.service.js';
 import type {
@@ -9,6 +14,7 @@ import type {
 export interface ReconciliationDivergence {
     readonly reason: ReconciliationMarkReason;
     readonly payment?: HangablePayment;
+    readonly detail?: readonly DomainEventChange[];
 }
 
 export interface ReconciliationComparisonInput {
@@ -41,6 +47,7 @@ export async function recordDivergence(
             subject: { kind: 'SUBSCRIPTION', subscriptionId: input.subscriptionId },
             reason,
             payment: input.divergence.payment,
+            ...(input.divergence.detail ? { detail: input.divergence.detail } : {}),
             actor: { type: 'job' },
             correlationId: input.correlationId
         },

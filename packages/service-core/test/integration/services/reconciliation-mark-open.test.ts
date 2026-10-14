@@ -1,19 +1,41 @@
 import {
     billingDeadlineVersions,
     domainEventModel,
+    eq,
     reconciliationMarkModel,
     subscriptionModel,
+    subscriptions,
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers';
 import { noTouristVip } from './support/tourist-vip.ts';
 
 afterAll(closeServiceTestPool);
+const detailFixtures: Array<{ readonly subscriptionId: string; readonly userId: string }> = [];
+afterEach(async () => {
+    const db = getServiceTestDb();
+    for (const fixture of detailFixtures.splice(0)) {
+        for (const mark of await reconciliationMarkModel.listOpen({
+            subject: { kind: 'SUBSCRIPTION', subscriptionId: fixture.subscriptionId }
+        })) {
+            await reconciliationMarkModel.lift({
+                markId: mark.id,
+                expectedVersion: mark.version,
+                liftedBy: fixture.userId,
+                now: new Date()
+            });
+        }
+        await db
+            .update(subscriptions)
+            .set({ status: 'ABANDONED' })
+            .where(eq(subscriptions.id, fixture.subscriptionId));
+    }
+});
 const deadlines = {
     '10': { cardHours: 72, manualDays: 7 },
     '11': { noticeDays: 60, contactDays: [30, 7] },
@@ -82,6 +104,41 @@ async function fixture() {
 const actor = (id: string) => ({ type: 'admin' as const, id });
 
 describe('TEST:B3:14 S14 reconciliation marks', () => {
+    it('TEST:B11:10 H4 appends detail after the fixed event fields and preserves the default event', async () => {
+        const { subscriptionId, userId } = await fixture();
+        detailFixtures.push({ subscriptionId, userId });
+        const correlationId = crypto.randomUUID();
+        const detail = [
+            { field: 'provider.charge_id', new: 'charge-detail' },
+            { field: 'provider.charge_amount_minor', new: 1800000 }
+        ];
+        await openReconciliationMark({
+            subject: { kind: 'SUBSCRIPTION', subscriptionId },
+            reason: 'COBRO_SIN_REGISTRAR',
+            detail,
+            actor: actor(userId),
+            correlationId
+        });
+        await openReconciliationMark({
+            subject: { kind: 'SUBSCRIPTION', subscriptionId },
+            reason: 'TRANSICION_NO_DECLARADA',
+            actor: actor(userId),
+            correlationId
+        });
+        const events = (await domainEventModel.findByCorrelationId({ correlationId })).filter(
+            (event) => event.eventType === 'reconciliation.mark_opened'
+        );
+        const withDetail = events.find((event) =>
+            event.changes.some((change) => change.field === 'provider.charge_id')
+        );
+        const withoutDetail = events.find((event) =>
+            event.changes.every((change) => !change.field.startsWith('provider.'))
+        );
+        expect(withDetail?.changes).toHaveLength(5);
+        expect(withDetail?.changes.slice(-2)).toEqual(detail);
+        expect(withoutDetail?.changes).toHaveLength(3);
+    });
+
     it('opens once, accumulates repeated reason events, and allows another reason', async () => {
         const { subscriptionId, userId } = await fixture();
         const before = (

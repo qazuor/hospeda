@@ -193,6 +193,12 @@
             "why": "El reintento de una cancelación nuestra deja de reintentar mientras la fila tenga abierta la marca CANCELACION_SIN_CONFIRMAR (AC:B11:6; motivo 16)."
         },
         {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/comparisons/period-charges-comparison.ts",
+            "symbol": "alreadyHung",
+            "row": null,
+            "why": "AC:B11:10 (H8): una carga pendiente ya colgada sin resolver de cualquier marca abierta no se vuelve a emitir ni hace fallar la fila."
+        },
+        {
             "file": "packages/service-core/src/services/billing/coverage/can-charge.ts",
             "symbol": "countOpenUnconfirmedCancellationMarks",
             "row": 12,
