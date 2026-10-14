@@ -75,9 +75,19 @@ function stripComments(source: string): string {
     return result;
 }
 
+// readOrder is a read by id like readCharge (HOS-1605), not a search.
 const searchMethods = CAPABILITY_METHODS.read.filter(
-    (name) => name !== 'readAuthorization' && name !== 'readCharge'
+    (name) => name !== 'readAuthorization' && name !== 'readCharge' && name !== 'readOrder'
 );
+
+/**
+ * AC:B11:13 + EX-57 (HOS-1605): the paid-orders check lists its instances from our
+ * base and only LOCATES an instance's order by its request id; the decision is the
+ * re-read by id (readOrder). The search is allowed there and nowhere else.
+ */
+const SEARCH_ALLOWED_IN: Readonly<Record<string, string>> = {
+    searchOrders: join(SWEEP_DIR, 'paid-orders-check.ts')
+};
 
 describe('TEST:B11:1 ningún barrido lista desde el buscador', () => {
     it('derives all search methods from the read capability and excludes them from the sweep sources', () => {
@@ -85,11 +95,16 @@ describe('TEST:B11:1 ningún barrido lista desde el buscador', () => {
         expect(searchMethods.length).toBeGreaterThan(0);
         const files = [...sourceFiles(SWEEP_DIR), JOB];
         expect(files.length).toBeGreaterThanOrEqual(3);
-        const sources = files.map((file) => stripComments(readFileSync(file, 'utf8')));
-        expect(sources.some((source) => source.includes('readAuthorization'))).toBe(true);
+        const sources = files.map((file) => ({
+            file,
+            source: stripComments(readFileSync(file, 'utf8'))
+        }));
+        expect(sources.some(({ source }) => source.includes('readAuthorization'))).toBe(true);
         for (const method of searchMethods) {
-            for (const source of sources)
-                expect(source, method).not.toMatch(new RegExp(`\\b${method}\\b`));
+            for (const { file, source } of sources) {
+                if (SEARCH_ALLOWED_IN[method] === file) continue;
+                expect(source, `${method} in ${file}`).not.toMatch(new RegExp(`\\b${method}\\b`));
+            }
         }
     });
 
