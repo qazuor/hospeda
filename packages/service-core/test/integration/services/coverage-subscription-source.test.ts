@@ -1,9 +1,8 @@
-import type { CoverageSource } from '@repo/billing-verticals-contract';
+import type { CoverageSource, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import type { DrizzleClient } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { createBillingCoverage } from '../../../src/services/billing/coverage/billing-coverage';
-import { unregisteredListingQuery } from '../../../src/services/billing/coverage/coverage-ports';
 import { resolveSubscriptionSources } from '../../../src/services/billing/coverage/subscription-sources';
 import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger';
 import {
@@ -22,6 +21,15 @@ import {
 } from './support/coverage-fixtures';
 
 afterAll(closeServiceTestPool);
+
+/**
+ * A `ficha` (`listing`) double that fails visibly: no `LISTING` addon is
+ * seeded here, so billing must never ask for one. Production composes the real
+ * query of verticals (HOS-1483, AC:V6:26).
+ */
+const failingListingQuery: VerticalsForBilling['listing'] = async () => {
+    throw new Error('ficha must not be called: no LISTING addon is seeded');
+};
 
 const ports = { clock: frozenClock(), payments: creditedPaymentsFromLedger };
 
@@ -359,7 +367,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                         addonPolicy: async () => {
                             throw new Error('no addon instance is seeded');
                         },
-                        listing: unregisteredListingQuery.listing,
+                        listing: failingListingQuery,
                         trialAndBase: async () => ({ covered: false, sources: [base] })
                     },
                     tx
