@@ -2,11 +2,16 @@
  * TEST:B13a:23 (e2e admin half, AC:B13a:23) — an accommodation gate reads V3.
  * Tags: @p1 @admin
  *
- * Coord-58: the accommodation trial has no screen entitlement, so an owner
- * with only a trial meets the closed gate (the absent-key case). The
- * present-key case lives here too since B4 (HOS-1536, Coord-58): billing's
- * real coverage turns a live subscription into a source whose ANCHORED version
- * grants its keys, so an `owner-premium` subscriber opens the gate.
+ * The absent-key case is an owner with neither a trial nor a subscription: a
+ * trial derives its entitlements from the highest-rank sellable version
+ * (AC:V3:4), which grants every screen key, so no trial owner can meet a
+ * closed gate (HOS-1536, Coord-467). The present-key case lives here too since
+ * B4 (HOS-1536, Coord-58): billing's real coverage turns a live subscription
+ * into a source whose ANCHORED version grants its keys, so an `owner-premium`
+ * subscriber with no trial opens the gate, and only the subscription can.
+ *
+ * The page title is read inside `entity-page-header`: the entity page also
+ * renders an `sr-only` h1 with the same name.
  */
 
 import { expect, test } from '@playwright/test';
@@ -28,7 +33,7 @@ test.describe('TEST:B13a:23 AC:B13a:23 admin effective-set gate @p1 @admin', () 
         }
     });
 
-    test('closes advanced statistics for an owner with an active trial but no key', async ({
+    test('closes advanced statistics for an owner with no trial and no subscription', async ({
         page
     }) => {
         const superAdmin = await createUser({ role: 'SUPER_ADMIN' }, { apiBaseUrl: API_URL });
@@ -39,7 +44,8 @@ test.describe('TEST:B13a:23 AC:B13a:23 admin effective-set gate @p1 @admin', () 
         userIdsToCleanup.push(owner.id);
         const accommodation = await createAccommodation({
             ownerId: owner.id,
-            slugPrefix: 'adm-06'
+            slugPrefix: 'adm-06',
+            withTrial: false
         });
 
         await page.context().addCookies(
@@ -60,9 +66,11 @@ test.describe('TEST:B13a:23 AC:B13a:23 admin effective-set gate @p1 @admin', () 
 
         // A loaded page and the owner's exact API read are prerequisites for
         // any negative assertion: an empty page must never satisfy this test.
-        await expect(page.getByRole('heading', { name: 'E2E Test Accommodation' })).toBeVisible({
-            timeout: 30_000
-        });
+        await expect(
+            page
+                .getByTestId('entity-page-header')
+                .getByRole('heading', { name: 'E2E Test Accommodation' })
+        ).toBeVisible({ timeout: 30_000 });
         await page.getByRole('button', { name: /Estadísticas y Métricas/i }).click();
         const response = await effectiveSetResponse;
         expect(response.status()).toBe(200);
@@ -97,7 +105,8 @@ test.describe('TEST:B13a:23 AC:B13a:23 admin effective-set gate @p1 @admin', () 
         userIdsToCleanup.push(owner.id);
         const accommodation = await createAccommodation({
             ownerId: owner.id,
-            slugPrefix: 'adm-06-key'
+            slugPrefix: 'adm-06-key',
+            withTrial: false
         });
         await seedActivePlanHolder({ userId: owner.id, slug: 'owner-premium' });
 
@@ -117,9 +126,11 @@ test.describe('TEST:B13a:23 AC:B13a:23 admin effective-set gate @p1 @admin', () 
             waitUntil: 'domcontentloaded'
         });
 
-        await expect(page.getByRole('heading', { name: 'E2E Test Accommodation' })).toBeVisible({
-            timeout: 30_000
-        });
+        await expect(
+            page
+                .getByTestId('entity-page-header')
+                .getByRole('heading', { name: 'E2E Test Accommodation' })
+        ).toBeVisible({ timeout: 30_000 });
         await page.getByRole('button', { name: /Estadísticas y Métricas/i }).click();
         const response = await effectiveSetResponse;
         expect(response.status()).toBe(200);

@@ -1,11 +1,17 @@
-/** TEST:B13a:25 — web effective-set gates (Coord-58, AC:B13a:27). */
+/**
+ * TEST:B13a:25 — web effective-set gates (Coord-58, AC:B13a:27).
+ *
+ * The absent-key owner holds neither a trial nor a subscription: a trial
+ * derives its entitlements from the highest-rank sellable version (AC:V3:4),
+ * which grants `create_promotions`, so a trial owner can never meet the closed
+ * gate (HOS-1536, Coord-467). The present-key owner holds only an
+ * `owner-basico` subscription, so the key can come from nowhere else.
+ */
 
 import { expect, type Page, test } from '@playwright/test';
-import { VerticalEnum } from '@repo/schemas';
 import { createUser, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
-import { ensureListingOwnerTrial } from '../../fixtures/listing-owner-trial.ts';
 import { seedActivePlanHolder } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -22,7 +28,6 @@ test.describe('TEST:B13a:25 AC:B13a:27 web effective-set gates @p1 @host', () =>
         owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIdsToCleanup.push(owner.id);
         await markProfileCompleted({ userId: owner.id });
-        await ensureListingOwnerTrial(getDbPool(), owner.id, VerticalEnum.ACCOMMODATION);
     });
 
     test.afterAll(async () => {
@@ -43,7 +48,7 @@ test.describe('TEST:B13a:25 AC:B13a:27 web effective-set gates @p1 @host', () =>
         await seedCookieConsent(page);
     }
 
-    test('closes promotions for a trial owner without the create key', async ({ page }) => {
+    test('closes promotions for an owner with no trial and no subscription', async ({ page }) => {
         await prepareOwner(page);
         const oldEndpointRequests: string[] = [];
         page.on('request', (request) => {
@@ -106,13 +111,12 @@ test.describe('TEST:B13a:25 AC:B13a:27 web effective-set gates @p1 @host', () =>
         page
     }) => {
         // Its OWN owner (HOS-1536, Coord-58, I-8): the shared owner of the
-        // beforeAll may sit cached without the key. The trial mirrors the
-        // shared owner's path into the page; the key comes from the
-        // owner-basico subscription through billing's real coverage (B4).
+        // beforeAll may sit cached without the key. No trial: the key must
+        // come from the owner-basico subscription through billing's real
+        // coverage (B4), never from a trial's derived set (AC:V3:4).
         const keyedOwner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIdsToCleanup.push(keyedOwner.id);
         await markProfileCompleted({ userId: keyedOwner.id });
-        await ensureListingOwnerTrial(getDbPool(), keyedOwner.id, VerticalEnum.ACCOMMODATION);
         await seedActivePlanHolder({ userId: keyedOwner.id, slug: 'owner-basico' });
         await page.context().addCookies(
             keyedOwner.sessionCookie.split('; ').map((cookie) => {
