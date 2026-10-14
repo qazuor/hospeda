@@ -3,7 +3,8 @@
  * @description Per-listing state badge + checklist island for the
  * `mi-cuenta/comercio` owner index (HOS-166 §8 points 4/5/6).
  *
- * Renders the listing-card state machine (`resolveListingCardState`): the
+ * Renders the listing-card state machine (`resolveListingCardState`): nothing
+ * at all for a `PURGED` listing (HOS-1641, Coord-351 F4), the
  * published badge with the public-page link, the brochure and QR downloads
  * (and the certificate for an experience), or, for a draft, the checklist of
  * what is still missing.
@@ -49,13 +50,20 @@ const PUBLIC_PATH_BY_VERTICAL: Record<OwnerListingSummaryWithState['vertical'], 
  * ListingActions — renders the right badge/checklist for a single
  * owner-listing card, driven by `resolveListingCardState`.
  */
-export function ListingActions({ listing, locale }: ListingActionsProps): JSX.Element {
+export function ListingActions({ listing, locale }: ListingActionsProps): JSX.Element | null {
     const { t } = createTranslations(locale);
 
     const state: ListingCardState = resolveListingCardState({
+        publicationStatus: listing.publicationStatus,
         isPublic: listing.isPublic,
         completeness: listing.completeness
     });
+
+    // A purged listing offers no action, not even a badge: the HOS-1492
+    // row-20 notice rendered next to this island is what tells the owner.
+    if (state.kind === 'purged') {
+        return null;
+    }
 
     if (state.kind === 'published') {
         const publicUrl = buildUrl({
@@ -95,11 +103,11 @@ export function ListingActions({ listing, locale }: ListingActionsProps): JSX.El
                  * so restricting it would cost us rather than the subscriber.
                  *
                  * `isPublished` is `hasPublicPage` and NOT `isPublic`, even though
-                 * this branch only renders when `isPublic` is true. They answer
-                 * different questions: `isPublic` is visibility alone, while the
-                 * API also requires `lifecycleState === ACTIVE`, and a staff PATCH
-                 * to INACTIVE that leaves visibility standing produces a row where
-                 * the two disagree. Passing `isPublic` here put three contradictory
+                 * this branch only renders when `isPublic` is true. Since HOS-1641
+                 * both are `publicationStatus === PUBLISHED`; before it they were
+                 * derived from separate old columns, and a staff PATCH that left
+                 * one standing produced a row where the two disagreed. Passing
+                 * `isPublic` here then put three contradictory
                  * sentences on one card for that row — the panel mounted, asked for
                  * the code, got the anti-enumeration 404, said "we could not show
                  * the code but you can download the sheet anyway", and the download

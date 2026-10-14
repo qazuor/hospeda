@@ -21,7 +21,7 @@ import type {
     OwnerListingSummary,
     ResolveListingCompletenessResult
 } from '@repo/schemas';
-import { resolveListingCompleteness } from '@repo/schemas';
+import { PublicationStatusEnum, resolveListingCompleteness } from '@repo/schemas';
 import { apiClient } from '../api/client';
 import type { ApiResult } from '../api/types';
 
@@ -144,7 +144,9 @@ export async function fetchOwnerListingsWithState({
 
     return Promise.all(
         summaries.map(async (summary): Promise<OwnerListingSummaryWithState> => {
-            if (summary.isPublic) {
+            // A purged listing has nothing left to complete (HOS-1641): its card
+            // renders no action, so its detail is not fetched either.
+            if (summary.isPublic || summary.publicationStatus === PublicationStatusEnum.PURGED) {
                 return { ...summary, completeness: null };
             }
 
@@ -182,8 +184,8 @@ export type CreateOwnerListingPayload =
  *
  * `POST /api/v1/protected/gastronomies` or `POST /api/v1/protected/experiences`
  * depending on the vertical (the accommodation pattern: `POST /`). The
- * server forces `ownerId = actor.id`, `visibility: PRIVATE`,
- * `lifecycleState: DRAFT`, and derives `slug` from `name` — none of those are
+ * server forces `ownerId = actor.id`, the listing is born
+ * `publicationStatus: DRAFT` (HOS-1641), and derives `slug` from `name` — none of those are
  * ever sent from here (D-3).
  *
  * D-4 compliance: this function takes plain listing data and has never heard

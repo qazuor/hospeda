@@ -32,6 +32,7 @@ import { fetchOwnerListingsWithState } from '@/lib/listing/owner-listings';
 import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PublicationStatusEnum } from '@repo/schemas';
 
 export const prerender = false;
 
@@ -55,6 +56,14 @@ const subtitle = t('listing.owner.list.subtitle', '');
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 const listings = await fetchOwnerListingsWithState({ cookieHeader });
+
+/**
+ * HOS-1641 (Coord-351 F4): a `PURGED` listing offers no action — no edit link,
+ * no badge or download from `ListingActions`, no menu QR. It stays in the list
+ * only so its HOS-1492 row-20 notice can say it existed and was deleted.
+ */
+const isPurged = (listing: (typeof listings)[number]): boolean =>
+    listing.publicationStatus === PublicationStatusEnum.PURGED;
 
 // HOS-1492: the notices of each listing (rows 8/9, 18, 20, 24, 30, 31), read
 // once per vertical this page lists. A failed read leaves that vertical's
@@ -128,7 +137,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
             client:visible
             locale={locale}
             listings={listings
-                .filter((listing) => listing.vertical === 'gastronomy')
+                .filter((listing) => listing.vertical === 'gastronomy' && !isPurged(listing))
                 .map((listing) => ({ id: listing.id, name: listing.name }))}
         />
     </div>
@@ -177,15 +186,17 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
                                 item={noticesByVertical.get(listing.vertical)?.byListingId.get(listing.id)}
                             />
 
-                            <a
-                                class="mc-list__edit"
-                                href={buildUrl({
-                                    locale,
-                                    path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar`
-                                })}
-                            >
-                                {t('listing.owner.list.edit', 'Editar')}
-                            </a>
+                            {!isPurged(listing) && (
+                                <a
+                                    class="mc-list__edit"
+                                    href={buildUrl({
+                                        locale,
+                                        path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar`
+                                    })}
+                                >
+                                    {t('listing.owner.list.edit', 'Editar')}
+                                </a>
+                            )}
                         </li>
                     ))}
                 </ul>

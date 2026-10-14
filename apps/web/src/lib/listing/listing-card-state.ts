@@ -13,9 +13,16 @@
  */
 
 import type { SubscriptionStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 
 /** Discriminated union of every card state the UI can render. */
 export type ListingCardState =
+    /**
+     * The listing is `PURGED` (HOS-1641, Coord-351 F4): final, its content is
+     * gone, so the card offers no action at all. Only the HOS-1492 row-20
+     * notice says it existed and was deleted.
+     */
+    | { readonly kind: 'purged' }
     | { readonly kind: 'published' }
     | { readonly kind: 'draft-incomplete'; readonly missing: readonly string[] }
     | { readonly kind: 'draft-complete' }
@@ -39,6 +46,9 @@ export type ListingCardState =
  * index page can actually obtain today (HOS-166 PR-C, extended judgment-day
  * W1):
  *
+ * - `purged` — from `OwnerListingSummary.publicationStatus === PURGED`
+ *   (HOS-1641). Checked first: a purged listing is never public and has
+ *   nothing left to edit, complete or print.
  * - `published` — from `OwnerListingSummary.isPublic` (reconciler-driven,
  *   real and reliable). Takes priority over every other signal: the
  *   visibility reconciler is the single source of truth for whether the
@@ -66,6 +76,8 @@ export type ListingCardState =
  *   cross-visit "checkout started, webhook/poll pending" badge is a
  *   follow-up, not built here).
  *
+ * @param params.publicationStatus - From the listing summary; only `PURGED`
+ *   is distinguished here (every other state is described by `isPublic`).
  * @param params.isPublic - From the listing summary.
  * @param params.completeness - The completeness preview, or `null` when the
  *   listing is public (not computed) or its detail fetch failed.
@@ -81,11 +93,13 @@ export type ListingCardState =
  *   for THIS listing right now (client-only, optimistic local state).
  */
 export function resolveListingCardState({
+    publicationStatus,
     isPublic,
     completeness,
     subscriptionStatus = null,
     isCheckoutStarting = false
 }: {
+    readonly publicationStatus: PublicationStatusEnum;
     readonly isPublic: boolean;
     readonly completeness: {
         readonly complete: boolean;
@@ -94,6 +108,10 @@ export function resolveListingCardState({
     readonly subscriptionStatus?: SubscriptionStatusEnum | null;
     readonly isCheckoutStarting?: boolean;
 }): ListingCardState {
+    if (publicationStatus === PublicationStatusEnum.PURGED) {
+        return { kind: 'purged' };
+    }
+
     if (isPublic) {
         return { kind: 'published' };
     }
