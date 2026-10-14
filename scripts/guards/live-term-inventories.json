@@ -64,6 +64,13 @@
             "subject": "subscription"
         },
         {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-s13.ts",
+            "symbol": "readS13Rows",
+            "row": null,
+            "why": "S13 bloquea y selecciona todas las principales vivas de las verticales que ancla el acto.",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/service-core/src/services/billing/refund/refund-source.ts",
             "symbol": "assertRetainedPaymentRefundable",
             "row": null,
@@ -127,7 +134,20 @@
             "subject": "subscription"
         }
     ],
-    "grant_vivo_ancla_viva": [],
+    "grant_vivo_ancla_viva": [
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-live-anchors.ts",
+            "symbol": "hasLivePermanentGrantAnchor",
+            "row": 2,
+            "why": "Tercera mitad de la orfandad (B/16 §4.2): ¿hay un ancla viva en esa vertical?"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant.service.ts",
+            "symbol": "anchorPermanentGrantVertical",
+            "row": 6,
+            "why": "Anclar exige un grant vivo: a uno revocado no se le ancla nada."
+        }
+    ],
     "marca_abierta": [
         {
             "file": "packages/service-core/src/services/billing/reconciliation/open-reconciliation-mark.service.ts",
@@ -173,6 +193,12 @@
         }
     ],
     "cortesia_diferida": [
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-courtesy.ts",
+            "symbol": "closeDeferredCourtesyBalances",
+            "row": 9,
+            "why": "S13 cierra el saldo diferido en las verticales que el acto ancla (DEC-GRANT-013)."
+        },
         {
             "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
             "symbol": "balanceMonths",

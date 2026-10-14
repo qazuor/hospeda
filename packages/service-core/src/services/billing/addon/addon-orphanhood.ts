@@ -21,14 +21,11 @@ import {
 import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
+import { permanentGrantLiveAnchors } from '../grant/permanent-grant-live-anchors.js';
 import { creditedPaymentsFromLedger } from '../payment/payment-ledger';
 import { isLiveSuccessionPredecessor } from '../subscription/late-payment-conditions';
 import type { SubscriptionPayments } from '../subscription/subscription-billing-ports';
-import {
-    type AddonOrphanhoodPorts,
-    type LiveAnchorReader,
-    noLiveAnchors
-} from './addon-orphanhood-ports';
+import type { AddonOrphanhoodPorts, LiveAnchorReader } from './addon-orphanhood-ports';
 
 /** The scope type of an anchored addon version (contract §4.1). */
 export type AddonScopeType = AddonPolicyResponse['scopeType'];
@@ -92,7 +89,7 @@ function invalid(issues: unknown): never {
 }
 
 function anchorsOf(ports: AddonOrphanhoodPorts): LiveAnchorReader {
-    return ports.liveAnchors ?? noLiveAnchors;
+    return ports.liveAnchors ?? permanentGrantLiveAnchors;
 }
 
 function paymentsOf(ports: AddonOrphanhoodPorts): SubscriptionPayments {
