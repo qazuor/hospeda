@@ -1614,5 +1614,76 @@
             "deleted": "Promo code deleted successfully",
             "deleteError": "Error deleting promo code"
         }
+    },
+    "subscriptionRevocation": {
+        "title": "Revoke a subscription (right of withdrawal)",
+        "motive": "Reason: revocation under the right of withdrawal.",
+        "loading": "Checking the subscription's last charge…",
+        "notFound": "This subscription does not exist.",
+        "forbidden": "You cannot revoke this subscription: it is yours or belongs to a system account. Another team member with the permission revokes it.",
+        "loadError": "We could not check the subscription. Try again.",
+        "ready": {
+            "intro": "You are about to register the revocation. In a single act:"
+        },
+        "origin": {
+            "label": "Current status: {state}",
+            "ACTIVE": "Active",
+            "GRACE_PERIOD": "In grace period",
+            "CANCEL_SCHEDULED": "Cancellation scheduled",
+            "PAUSED": "Paused"
+        },
+        "originExtra": {
+            "GRACE_PERIOD": "The grace period clock is stopped.",
+            "PAUSED": "The pause is closed."
+        },
+        "effects": {
+            "authorization": "Their automatic debit in Mercado Pago is cancelled. We email them first to let them know.",
+            "noAuthorization": "They have no automatic debit in Mercado Pago: there is nothing to cancel there.",
+            "service": "The service ends right now, without waiting for the end of the period.",
+            "refund": "A refund of {amount} is requested: everything still refundable from the charge of {chargedAt}. The money only goes out once a person confirms that refund."
+        },
+        "predecessor": "That charge belongs to the previous subscription, which this one succeeds: the refund comes from that charge.",
+        "window": "It is within the window: it can be revoked until {lastDay} inclusive (10 calendar days from the charge).",
+        "noteLabel": "Note (optional)",
+        "noteHelp": "It is kept in the log, together with who revoked it.",
+        "confirm": "Revoke: cancel, end the service and request the refund",
+        "blocked": {
+            "intro": "It cannot be revoked. Nothing was cancelled.",
+            "REFUND_EXCEEDS_BALANCE": "That charge already has refunds requested or made for its whole amount. The revocation is not registered: the subscription is not cancelled and the service is not ended. Resolve that refund first.",
+            "PAYMENT_NOT_REFUNDABLE": "The last charge was already refunded or has a chargeback: it cannot be refunded again.",
+            "REVOCATION_WINDOW_CLOSED": "More than 10 calendar days have passed since the last charge: the revocation window has closed.",
+            "REVOCATION_NO_CREDITED_PAYMENT": "There is no credited charge to refund.",
+            "REVOCATION_AMOUNT_UNAVAILABLE": "We do not know how much was paid in the last manual payment: it has no anchored price.",
+            "REVOCATION_NOT_PRINCIPAL": "Only a main subscription can be revoked, not an add-on's.",
+            "REVOCATION_STATE_NOT_ALLOWED": "The subscription is not active, in grace, scheduled for cancellation or paused (for example, it is already cancelled).",
+            "REFUND_AMOUNT_INVALID": "The amount to refund is not valid.",
+            "REVOCATION_PAYMENT_CHANGED": "The last charge changed since you opened this screen, and nothing was revoked. Check the new charge and confirm again.",
+            "REVOCATION_STATE_CHANGED": "The subscription changed in the meantime, and nothing was revoked. We checked it again.",
+            "SUBSCRIPTION_NOT_FOUND": "This subscription does not exist.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "You cannot revoke this subscription: it is yours or belongs to a system account. Another team member with the permission revokes it.",
+            "unknown": "It cannot be revoked now (code {reason})."
+        },
+        "notice": {
+            "REVOCATION_PAYMENT_CHANGED": "The last charge changed since you opened this screen, and nothing was revoked. Check the new charge and confirm again.",
+            "REVOCATION_STATE_CHANGED": "The subscription changed in the meantime, and nothing was revoked. We checked it again."
+        },
+        "result": {
+            "title": "Subscription revoked",
+            "cancelled": "It is cancelled and without service since {serviceEndedAt}.",
+            "refund": "A refund of {amount} was requested (request {refundId}). The money goes out once a person confirms it.",
+            "cancelCall": {
+                "SENT": "The cancellation was sent to Mercado Pago.",
+                "NOT_NEEDED": "Mercado Pago already had it cancelled.",
+                "NOTICE_PENDING": "The cancellation in Mercado Pago waits for our email to go out. The sweep sends it.",
+                "FAILED": "The call to Mercado Pago failed. The subscription is cancelled anyway: the sweep retries the cancellation.",
+                "NOT_APPLICABLE": "There was nothing to cancel in Mercado Pago."
+            },
+            "escalated": {
+                "NO_RECIPIENT": "There was no one to send the prior notice to; the cancellation went out anyway.",
+                "DELIVERY_EXHAUSTED": "The prior notice could not be delivered after the retries; the cancellation went out anyway."
+            }
+        },
+        "successTitle": "Subscription revoked",
+        "errorTitle": "The subscription could not be revoked"
     }
 }

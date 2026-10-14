@@ -1614,5 +1614,76 @@
             "deleted": "Código promocional excluído com sucesso",
             "deleteError": "Erro ao excluir código"
         }
+    },
+    "subscriptionRevocation": {
+        "title": "Revogar uma assinatura (direito de arrependimento)",
+        "motive": "Motivo: revogação pelo direito de arrependimento.",
+        "loading": "Verificando a última cobrança da assinatura…",
+        "notFound": "Esta assinatura não existe.",
+        "forbidden": "Você não pode revogar esta assinatura: é sua ou é de uma conta do sistema. Outra pessoa da equipe com a permissão a revoga.",
+        "loadError": "Não conseguimos verificar a assinatura. Tente novamente.",
+        "ready": {
+            "intro": "Você vai registrar a revogação. Em um único ato:"
+        },
+        "origin": {
+            "label": "Estado atual: {state}",
+            "ACTIVE": "Ativa",
+            "GRACE_PERIOD": "Em período de carência",
+            "CANCEL_SCHEDULED": "Com cancelamento agendado",
+            "PAUSED": "Pausada"
+        },
+        "originExtra": {
+            "GRACE_PERIOD": "O relógio do período de carência é desligado.",
+            "PAUSED": "A pausa é encerrada."
+        },
+        "effects": {
+            "authorization": "O débito automático no Mercado Pago é cancelado. Antes enviamos um e-mail avisando.",
+            "noAuthorization": "Não tem débito automático no Mercado Pago: não há nada para cancelar lá.",
+            "service": "O serviço é cortado agora mesmo, sem esperar o fim do período.",
+            "refund": "É solicitada a devolução de {amount}: tudo o que ainda resta devolver da cobrança de {chargedAt}. O dinheiro só sai quando uma pessoa confirmar essa devolução."
+        },
+        "predecessor": "Essa cobrança é da assinatura anterior, da qual esta é sucessora: a devolução sai dessa cobrança.",
+        "window": "Está dentro do prazo: pode ser revogada até {lastDay} inclusive (10 dias corridos desde a cobrança).",
+        "noteLabel": "Nota (opcional)",
+        "noteHelp": "Fica no registro, junto com quem a revogou.",
+        "confirm": "Revogar: cancelar, cortar o serviço e solicitar a devolução",
+        "blocked": {
+            "intro": "Não é possível revogar. Nada foi cancelado.",
+            "REFUND_EXCEEDS_BALANCE": "Essa cobrança já tem devoluções solicitadas ou feitas por todo o seu valor. A revogação não é registrada: a assinatura não é cancelada nem o serviço é cortado. Resolva primeiro essa devolução.",
+            "PAYMENT_NOT_REFUNDABLE": "A última cobrança já foi devolvida ou tem um estorno: não pode ser devolvida outra vez.",
+            "REVOCATION_WINDOW_CLOSED": "Passaram mais de 10 dias corridos desde a última cobrança: o prazo para revogar venceu.",
+            "REVOCATION_NO_CREDITED_PAYMENT": "Não há nenhuma cobrança creditada para devolver.",
+            "REVOCATION_AMOUNT_UNAVAILABLE": "Não sabemos quanto foi pago no último pagamento manual: não tem um preço ancorado.",
+            "REVOCATION_NOT_PRINCIPAL": "Só se revoga uma assinatura principal, não a de um complemento.",
+            "REVOCATION_STATE_NOT_ALLOWED": "A assinatura não está ativa, em carência, com cancelamento agendado nem pausada (por exemplo, já está cancelada).",
+            "REFUND_AMOUNT_INVALID": "O valor a devolver não é válido.",
+            "REVOCATION_PAYMENT_CHANGED": "A última cobrança mudou desde que você abriu esta tela, e nada foi revogado. Revise a nova cobrança e confirme outra vez.",
+            "REVOCATION_STATE_CHANGED": "A assinatura mudou nesse meio-tempo, e nada foi revogado. Nós a verificamos novamente.",
+            "SUBSCRIPTION_NOT_FOUND": "Esta assinatura não existe.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "Você não pode revogar esta assinatura: é sua ou é de uma conta do sistema. Outra pessoa da equipe com a permissão a revoga.",
+            "unknown": "Não é possível revogar agora (código {reason})."
+        },
+        "notice": {
+            "REVOCATION_PAYMENT_CHANGED": "A última cobrança mudou desde que você abriu esta tela, e nada foi revogado. Revise a nova cobrança e confirme outra vez.",
+            "REVOCATION_STATE_CHANGED": "A assinatura mudou nesse meio-tempo, e nada foi revogado. Nós a verificamos novamente."
+        },
+        "result": {
+            "title": "Assinatura revogada",
+            "cancelled": "Ficou cancelada e sem serviço desde {serviceEndedAt}.",
+            "refund": "Foi solicitada a devolução de {amount} (pedido {refundId}). O dinheiro sai quando uma pessoa a confirmar.",
+            "cancelCall": {
+                "SENT": "O cancelamento foi enviado ao Mercado Pago.",
+                "NOT_NEEDED": "O Mercado Pago já a tinha cancelada.",
+                "NOTICE_PENDING": "O cancelamento no Mercado Pago espera que nosso e-mail saia. A varredura o envia.",
+                "FAILED": "A chamada ao Mercado Pago falhou. A assinatura ficou cancelada mesmo assim: a varredura tenta o cancelamento de novo.",
+                "NOT_APPLICABLE": "Não havia nada para cancelar no Mercado Pago."
+            },
+            "escalated": {
+                "NO_RECIPIENT": "Não havia para quem enviar o aviso prévio; o cancelamento saiu mesmo assim.",
+                "DELIVERY_EXHAUSTED": "O aviso prévio não pôde ser entregue após as tentativas; o cancelamento saiu mesmo assim."
+            }
+        },
+        "successTitle": "Assinatura revogada",
+        "errorTitle": "Não foi possível revogar a assinatura"
     }
 }
