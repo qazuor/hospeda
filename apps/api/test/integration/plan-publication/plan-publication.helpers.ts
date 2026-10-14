@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+    billingOptions,
     eq,
     getDb,
     plans,
@@ -100,6 +101,7 @@ export async function insertVersion(args: {
     inheritsTouristVip?: boolean;
     entitlements?: { key: string; planQuota?: number | null; trialQuota?: number | null }[];
     limits?: { key: string; value: number }[];
+    billingCycles?: string[];
 }): Promise<string> {
     return getDb().transaction(async (tx) => {
         const [version] = await tx
@@ -133,6 +135,16 @@ export async function insertVersion(args: {
                     planVersionId: version.id,
                     key: item.key,
                     value: item.value
+                }))
+            );
+        }
+        if (args.billingCycles?.length) {
+            await tx.insert(billingOptions).values(
+                args.billingCycles.map((cycle) => ({
+                    planVersionId: version.id,
+                    cycle,
+                    amount: 1000,
+                    currency: 'ARS'
                 }))
             );
         }
