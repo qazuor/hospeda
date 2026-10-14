@@ -232,6 +232,13 @@
                 "commitmentTaken": "You already have an active subscription in this vertical.",
                 "generic": "We could not start your subscription. Please try again in a few minutes."
             },
+            "trialNotice": {
+                "running_one": "You are on your trial: {{days}} day left, until {{date}}.",
+                "running_other": "You are on your trial: {{days}} days left, until {{date}}.",
+                "endsOnCharge": "If the first charge goes through, your trial ends and you lose those days.",
+                "keepsOnDecline": "If the charge is declined, you stay on your trial with those days.",
+                "unknown": "If you are on a trial in this category: when the first charge goes through it ends and you lose the days you had left; if the charge is declined, you stay on your trial with those days."
+            },
             "retry": "Try again",
             "vertical": {
                 "accommodation": "accommodation",
