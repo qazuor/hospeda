@@ -50,6 +50,7 @@ export interface CreditedPaymentsCheckSummary {
 }
 
 function errorMessage(error: unknown): string {
+    if (error instanceof ServiceError && error.reason) return `${error.reason}: ${error.message}`;
     return error instanceof Error ? error.message : String(error);
 }
 
