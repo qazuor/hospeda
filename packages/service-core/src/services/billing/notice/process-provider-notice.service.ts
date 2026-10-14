@@ -51,6 +51,7 @@ import {
     unimplementedSuccessionCloser,
     unknownFirstCharge
 } from '../subscription/subscription-billing-ports.js';
+import { mirrorOurCancellationOnActive } from './mirror-our-cancellation-on-active.js';
 import {
     getProviderNoticeMirror,
     type ProviderNoticeMirror,
@@ -366,6 +367,16 @@ export async function processProviderNotice(
                         break;
                     }
                 }
+                const ours = await mirrorOurCancellationOnActive(
+                    { subscriptionId: row.id, readAt, everyMonths: snapshot.cadence.everyMonths },
+                    { clock: ports.clock, coverageNotices: ports.coverageNotices }
+                );
+                if (ours.outcome === 'LOST_RACE') continue;
+                if (ours.outcome === 'SCHEDULED') {
+                    resolved = true;
+                    break;
+                }
+                // NOT_OURS: mirror the provider's (or payer's) cancellation below.
                 const cancelled = await getDb().transaction(async (tx) => {
                     const cancelledAt = ports.clock.now();
                     const [updated] = await tx

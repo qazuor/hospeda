@@ -184,5 +184,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "Stamps the PLAZO:13 deadline version and the charge date it applies to on an ACTIVE row (AC:B13a:13); coverage does not change."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/notice/mirror-our-cancellation-on-active.ts",
+        "symbol": "mirrorOurCancellationOnActive",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "The R18 mirror (AC:B7:15) moves ACTIVE to CANCEL_SCHEDULED; both emit a SUBSCRIPTION source (03-contrato-de-cobertura.md:468, 473), only its end gets a date; the CHANGED notice is emitted after commit."
     }
 ]
