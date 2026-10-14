@@ -238,8 +238,10 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
                 subject: { kind: 'SUBSCRIPTION', subscriptionId: seeded.subscription.id }
             })
         ).toEqual([]);
+    });
 
-        const honestFake = new FakePaymentProvider({
+    it('TEST:B11:9 (k) M7 disabled with a healthy recorded charge opens no mark', async () => {
+        const fake = new FakePaymentProvider({
             idNamespace: crypto.randomUUID(),
             clock: reconciliationClock,
             honestAbout: [
@@ -247,44 +249,40 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
                 { lie: 'M8', why: 'the healthy-charge control must settle before reconciliation' }
             ]
         });
-        const healthy = await seedSubscription({
-            status: 'ACTIVE',
-            withLink: true,
-            fake: honestFake
-        });
-        track(healthy.subscription.id, healthy.subscription.userId);
-        const healthyCharge = await honestFake.charge({
-            authorizationId: healthy.providerId!,
+        const seeded = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
+        track(seeded.subscription.id, seeded.subscription.userId);
+        const charge = await fake.charge({
+            authorizationId: seeded.providerId!,
             amount: { amountMinor: 250000, currency: 'ARS' },
-            reference: healthy.subscription.id
+            reference: seeded.subscription.id
         });
         await recordChargeFact(
-            { chargeId: healthyCharge.chargeId },
+            { chargeId: charge.chargeId },
             {
-                provider: honestFake as unknown as PaymentProvider,
+                provider: fake as unknown as PaymentProvider,
                 clock: reconciliationClock,
                 beforeCancelNotice: outboxBeforeCancelNotice()
             }
         );
-        const healthySummary = await withSeededReconciliationInventory(() =>
+        const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
                 {},
                 {
-                    provider: honestFake as unknown as PaymentProvider,
+                    provider: fake as unknown as PaymentProvider,
                     clock: reconciliationClock,
                     markPayments: createPaymentReconciliationMarkPayments(reconciliationClock),
                     comparisons: [
                         createPeriodChargesComparison({
-                            provider: honestFake as unknown as PaymentProvider
+                            provider: fake as unknown as PaymentProvider
                         })
                     ]
                 }
             )
         );
-        expect(healthySummary).toMatchObject({ divergences: 0, rowsFailed: 0 });
+        expect(summary).toMatchObject({ divergences: 0, rowsFailed: 0 });
         expect(
             await reconciliationMarkModel.listOpen({
-                subject: { kind: 'SUBSCRIPTION', subscriptionId: healthy.subscription.id }
+                subject: { kind: 'SUBSCRIPTION', subscriptionId: seeded.subscription.id }
             })
         ).toEqual([]);
     });
@@ -557,6 +555,10 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
         if (!eligible.subscription.userId || !ineligible.subscription.userId) {
             throw new Error('Fixture subscription has no user');
         }
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ status: 'ABANDONED' })
+            .where(eq(subscriptions.id, liveSibling.subscription.id));
         await getServiceTestDb()
             .update(subscriptions)
             .set({ userId: ineligible.subscription.userId })
