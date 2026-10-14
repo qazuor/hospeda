@@ -6,25 +6,18 @@ import {
     eq,
     users
 } from '@repo/db';
+import { BEFORE_CANCEL_TEMPLATE_BY_KIND } from '../../../../src/services/billing/subscription/before-cancel-notice-kinds.js';
 import type {
     BeforeCancelNotice,
     BeforeCancelNoticeStatus
 } from '../../../../src/services/billing/subscription/start-subscription.service.js';
 import { getServiceTestDb } from '../helpers.js';
 
-type BeforeCancelKind = NonNullable<Parameters<BeforeCancelNotice['beforeCancel']>[0]['kind']>;
-
-const TEMPLATE_BY_KIND: Readonly<Record<BeforeCancelKind | 'DEFAULT', string>> = {
-    DEFAULT: 'billing.before-cancel',
-    TOURIST_VIP_INHERITED: 'billing.tourist-vip-inherited-cancel',
-    ARREARS_SUSPENSION: 'billing.arrears-suspension',
-    ADDON_CANCELLED: 'billing.addon-cancelled'
-};
-
 /**
  * A database-backed `BeforeCancelNotice`: mirror of the API adapter
  * (`apps/api/src/routes/billing-subscription/before-cancel-notice.ts`); keep in
- * sync. It enqueues the same template, dedup key and payload (with the notice
+ * sync. It picks the template from the same `BEFORE_CANCEL_TEMPLATE_BY_KIND` (no
+ * default, HOS-1683) and enqueues the same template, dedup key and payload (with the notice
  * `content`), and reads the same outbox row for the status. With `deliver`, the
  * enqueued row is marked `sent` first, as the outbox sender would; with
  * `failWith`, it is marked `failed` with that `last_error` (an undeliverable
@@ -52,7 +45,7 @@ export function outboxBeforeCancelNotice(
                 .where(eq(users.id, userId))
                 .limit(1);
             if (!recipient) return 'NO_RECIPIENT';
-            const template = TEMPLATE_BY_KIND[kind ?? 'DEFAULT'];
+            const template = BEFORE_CANCEL_TEMPLATE_BY_KIND[kind];
             const dedupKey = buildEmailDedupKey({
                 recipient: userId,
                 template,

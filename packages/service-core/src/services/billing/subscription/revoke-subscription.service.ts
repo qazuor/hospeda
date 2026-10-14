@@ -375,8 +375,9 @@ async function cancelAtProvider(input: {
                 return notice;
             }
         };
+        const target = { subscriptionId, userId: reading.userId, authorizationId };
         const { outcome } = await cancelOurAuthorization(
-            { subscriptionId, userId: reading.userId, authorizationId, prior: { read, act } },
+            { ...target, kind: 'REVOCATION', prior: { read, act } },
             { provider: ports.provider, clock: ports.clock, beforeCancelNotice: observedNotice }
         );
         if (outcome === 'CONFIRMED')

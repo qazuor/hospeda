@@ -360,6 +360,9 @@ jobs:
       # TEST:V6:18 (HOS-1641, AC:V6:32). Its own step, like every guard here.
       - name: Check no file reads the six old listing columns (TEST:V6:18)
         run: pnpm check:listing-old-columns
+      # TEST:V6:31 (HOS-1481, AC:V6:23). Its own step, like every guard here.
+      - name: Check partners has no tier and no start or end dates (TEST:V6:31)
+        run: pnpm check:partner-no-tier-and-dates
       # GUARD:G15 (HOS-1510, AC:B1:9). Its own step, like every guard here. The fake
       # payment provider lies only from its closed list, each lie in one place and
       # each row whole (a); a test turns a lie off only by naming it and saying

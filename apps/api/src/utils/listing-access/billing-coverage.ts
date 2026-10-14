@@ -10,8 +10,9 @@
  * `onCoverageChanged`/`emitCoverageChanged` composed beside it in `ports.ts`
  * (B4.2, HOS-1533, from `coverage-notices.ts`): no bootstrap answer for billing
  * reaches production (contract §6.3, G13).
- * `CORTESÍA` and `GRANT` answer "none" until B9a, and `ficha` fails visibly
- * until V6.13 registers it (decision X-1).
+ * `CORTESÍA` and `GRANT` answer "none" until B9a. `ficha` is the real query of
+ * verticals over the listing tables, registered here by V6.13 (AC:V6:26,
+ * HOS-1483), replacing the port that failed visibly (decision X-1).
  */
 
 import type { Clock } from '@repo/billing-verticals-contract';
@@ -21,8 +22,7 @@ import {
     createBillingCanCharge,
     createBillingCoverage,
     createBillingRetentionStopped,
-    creditedPaymentsFromLedger,
-    unregisteredListingQuery
+    creditedPaymentsFromLedger
 } from '@repo/service-core';
 import {
     type BootstrapCoverageReader,
@@ -30,6 +30,7 @@ import {
     resolveTrialAndBaseSources
 } from '@repo/verticals';
 import { getClock } from '../clock';
+import { createApiListingInverse } from '../listing-publication/listing-inverse';
 
 /**
  * The clock of billing's real answers, read on EVERY call (`getClock()` inside
@@ -58,7 +59,7 @@ export function buildBillingCoveragePorts(args: { readonly reader: BootstrapCove
             clock: { now: () => getClock().clock.now() },
             payments: creditedPaymentsFromLedger,
             addonPolicy: createPlanCatalogInverse({ reader: planCatalogModel }).addonPolicy,
-            listing: unregisteredListingQuery.listing,
+            listing: createApiListingInverse().listing,
             trialAndBase: (input) => resolveTrialAndBaseSources({ reader, input })
         }
     };

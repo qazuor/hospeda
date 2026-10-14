@@ -5,6 +5,14 @@ import {
     ARREARS_SUSPENSION_SUBJECT,
     ArrearsSuspension,
     type ArrearsSuspensionOneTimeAddon,
+    CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
+    ClosedSubscriptionAuthorizationCancel,
+    FIRST_CHARGE_DECLINED_CANCEL_SUBJECT,
+    FirstChargeDeclinedCancel,
+    REVOCATION_CANCEL_SUBJECT,
+    RevocationCancel,
+    SCHEDULED_CANCELLATION_SUBJECT,
+    ScheduledCancellation,
     SignupBeforeCancel,
     SignupConfirmed,
     SignupIncomplete,
@@ -61,6 +69,43 @@ function addonCancelled(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de cancelación del addon');
     return { subject: ADDON_CANCELLED_SUBJECT, react: <AddonCancelled /> };
+}
+
+function firstChargeDeclinedCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError(
+            'Faltan datos requeridos del aviso de cancelación por primer cobro rechazado'
+        );
+    return { subject: FIRST_CHARGE_DECLINED_CANCEL_SUBJECT, react: <FirstChargeDeclinedCancel /> };
+}
+
+function revocationCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError('Faltan datos requeridos del aviso de cancelación por revocación');
+    return { subject: REVOCATION_CANCEL_SUBJECT, react: <RevocationCancel /> };
+}
+
+function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError(
+            'Faltan datos requeridos del aviso de cancelación de una autorización que seguía activa'
+        );
+    return {
+        subject: CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
+        react: <ClosedSubscriptionAuthorizationCancel />
+    };
+}
+
+function scheduledCancellation(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError(
+            'Faltan datos requeridos del aviso de cancelación del cobro automático'
+        );
+    return { subject: SCHEDULED_CANCELLATION_SUBJECT, react: <ScheduledCancellation /> };
 }
 
 function incomplete(row: EmailOutboxRow) {
@@ -135,8 +180,11 @@ function arrearsSuspension(row: EmailOutboxRow) {
 /**
  * Renderers for the notices emitted by the subscription signup flow, plus the
  * arrears suspension notice of S6 (AC:B7:30) and the notice that precedes the
- * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31), and the
- * notice that precedes cancelling an orphaned addon's preapproval (A5, AC:B5:27).
+ * cancellation of an inherited Tourist VIP by S2's and S7's clause (AC:B7:31), the
+ * notice that precedes cancelling an orphaned addon's preapproval (A5, AC:B5:27), and the
+ * before-cancel notices of HOS-1683, one per kind with no default: a declined first charge
+ * (S16/S1), a revocation (S36), a live authorization on a closed row (REJECTION_REVIVED) and
+ * a scheduled cancellation (S11/S12). `billing.before-cancel` is S3's alone.
  */
 export function createBillingSignupRenderers(_input: {
     readonly siteUrl: string;
@@ -147,6 +195,11 @@ export function createBillingSignupRenderers(_input: {
         'billing.signup-incomplete': ({ row }) => incomplete(row),
         'billing.arrears-suspension': ({ row }) => arrearsSuspension(row),
         'billing.tourist-vip-inherited-cancel': ({ row }) => touristVipInheritedCancel(row),
-        'billing.addon-cancelled': ({ row }) => addonCancelled(row)
+        'billing.addon-cancelled': ({ row }) => addonCancelled(row),
+        'billing.first-charge-declined-cancel': ({ row }) => firstChargeDeclinedCancel(row),
+        'billing.revocation-cancel': ({ row }) => revocationCancel(row),
+        'billing.closed-subscription-authorization-cancel': ({ row }) =>
+            closedSubscriptionAuthorizationCancel(row),
+        'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row)
     };
 }
