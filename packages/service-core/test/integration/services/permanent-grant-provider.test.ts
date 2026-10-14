@@ -30,6 +30,7 @@ import { retirePermanentGrantRows, seedGrantPlan } from './support/permanent-gra
 const now = new Date('2026-10-14T12:00:00.000Z');
 const clock = { now: () => now };
 const users: string[] = [];
+const subscriptionIds: string[] = [];
 const V = [VerticalEnum.ACCOMMODATION, VerticalEnum.GASTRONOMY, VerticalEnum.EXPERIENCE] as const;
 afterAll(closeServiceTestPool);
 afterEach(async () => {
@@ -37,6 +38,13 @@ afterEach(async () => {
         await getServiceTestDb()
             .delete(emailOutbox)
             .where(inArray(emailOutbox.recipientUserId, users));
+    const ids = subscriptionIds.splice(0);
+    if (ids.length) {
+        await getServiceTestDb()
+            .delete(providerLinks)
+            .where(inArray(providerLinks.subscriptionId, ids));
+        await getServiceTestDb().delete(subscriptions).where(inArray(subscriptions.id, ids));
+    }
     await retirePermanentGrantRows(users.splice(0));
 });
 
@@ -65,6 +73,7 @@ async function seedProviderRow(input: {
         ...plan,
         status: input.status
     });
+    subscriptionIds.push(subscriptionId);
     await getServiceTestDb().insert(providerLinks).values({
         subscriptionId,
         provider: 'MERCADO_PAGO',
@@ -323,6 +332,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 ...version,
                 status: 'ACTIVE'
             });
+            subscriptionIds.push(row.subscriptionId);
             const anchor = await seedGrantPlan(getServiceTestDb(), V[0]);
             const result = await grantPermanentGrant(
                 {
