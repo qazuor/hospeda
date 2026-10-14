@@ -357,6 +357,9 @@ jobs:
       # AC:V6:25 (HOS-1477). Its own step, like every guard here.
       - name: Check no listing delete or restore door outside PB12 and action 23 (AC:V6:25)
         run: pnpm check:listing-delete-doors
+      # TEST:V6:18 (HOS-1641, AC:V6:32). Its own step, like every guard here.
+      - name: Check no file reads the six old listing columns (TEST:V6:18)
+        run: pnpm check:listing-old-columns
       # GUARD:G15 (HOS-1510, AC:B1:9). Its own step, like every guard here. The fake
       # payment provider lies only from its closed list, each lie in one place and
       # each row whole (a); a test turns a lie off only by naming it and saying
