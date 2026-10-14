@@ -9,7 +9,8 @@ const {
     mockGraceExpiryCheck,
     mockSuccessorGraceCheck,
     mockStateComparison,
-    mockPeriodChargesComparison
+    mockPeriodChargesComparison,
+    mockAmountComparison
 } = vi.hoisted(() => ({
     mockSuccessorGraceCheck: vi.fn((_ports: unknown) => async () => undefined),
     mockSweep: vi.fn(),
@@ -18,7 +19,10 @@ const {
     mockPlanPolicy: vi.fn(),
     mockGraceExpiryCheck: vi.fn((_ports: unknown) => async () => undefined),
     mockStateComparison: vi.fn(() => ({ kind: 'state-comparison' })),
-    mockPeriodChargesComparison: vi.fn((_ports: unknown) => ({ kind: 'period-charges-comparison' }))
+    mockPeriodChargesComparison: vi.fn((_ports: unknown) => ({
+        kind: 'period-charges-comparison'
+    })),
+    mockAmountComparison: vi.fn((_ports: unknown) => ({ kind: 'amount-comparison' }))
 }));
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
@@ -26,7 +30,8 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     createGraceExpiryCheck: mockGraceExpiryCheck,
     createSuccessorGraceCheck: mockSuccessorGraceCheck,
     createStateComparison: mockStateComparison,
-    createPeriodChargesComparison: mockPeriodChargesComparison
+    createPeriodChargesComparison: mockPeriodChargesComparison,
+    createAmountComparison: mockAmountComparison
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
 vi.mock('../../src/utils/payment-provider.js', () => ({ getPaymentProvider: () => mockProvider }));
@@ -40,6 +45,7 @@ vi.mock('@repo/verticals', async (importOriginal) => ({
 }));
 
 import {
+    createAmountComparison,
     createPeriodChargesComparison,
     createStateComparison,
     creditedPaymentsFromLedger,
@@ -145,7 +151,7 @@ describe('billing reconciliation sweep cron', () => {
         expect(result.details).not.toHaveProperty('failures');
     });
 
-    it('TEST:B11:7 / TEST:B11:9 wiring passes both comparisons in order', async () => {
+    it('TEST:B11:7 / TEST:B11:9 / TEST:B11:8 wiring passes three comparisons in order', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 0,
             runId: 'run-id',
@@ -165,13 +171,20 @@ describe('billing reconciliation sweep cron', () => {
         const comparisons = mockSweep.mock.calls[0]?.[1]?.comparisons;
         expect(comparisons).toEqual([
             mockStateComparison.mock.results[0]?.value,
-            mockPeriodChargesComparison.mock.results[0]?.value
+            mockPeriodChargesComparison.mock.results[0]?.value,
+            mockAmountComparison.mock.results[0]?.value
         ]);
         expect(comparisons?.[0]).toBe(mockStateComparison.mock.results[0]?.value);
         expect(comparisons?.[1]).toBe(mockPeriodChargesComparison.mock.results[0]?.value);
+        expect(comparisons?.[2]).toBe(mockAmountComparison.mock.results[0]?.value);
         expect(mockPeriodChargesComparison).toHaveBeenCalledWith({ provider: mockProvider });
+        expect(mockAmountComparison).toHaveBeenCalledWith({
+            provider: mockProvider,
+            clock: mockClock
+        });
         expect(createStateComparison).toBe(mockStateComparison);
         expect(createPeriodChargesComparison).toBe(mockPeriodChargesComparison);
+        expect(createAmountComparison).toBe(mockAmountComparison);
     });
 
     it('TEST:B7:10 l wires the S19 retention ports into the zero-call check (HOS-1561 H11, Coord-74)', async () => {

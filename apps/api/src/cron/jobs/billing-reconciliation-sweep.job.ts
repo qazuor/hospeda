@@ -1,5 +1,6 @@
 import { planCatalogModel } from '@repo/db';
 import {
+    createAmountComparison,
     createGraceExpiryCheck,
     createLostFirstRejectionCheck,
     createPaymentReconciliationMarkPayments,
@@ -53,7 +54,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     clock,
                     comparisons: [
                         createStateComparison(),
-                        createPeriodChargesComparison({ provider })
+                        createPeriodChargesComparison({ provider }),
+                        createAmountComparison({ provider, clock })
                     ],
                     rowChecks: [
                         createLostFirstRejectionCheck({
