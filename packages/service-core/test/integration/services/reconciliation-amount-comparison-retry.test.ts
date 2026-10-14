@@ -154,12 +154,8 @@ describe('TEST:B11:8 AC:B11:9 amount mutation retry window (MOT:5)', () => {
             authorizationId: seeded.providerId!,
             amount: { amountMinor: 300000, currency: 'ARS' }
         });
-        const mutations = {
-            findLatest: async () => ({
-                transition: 'S30' as const,
-                decidedAt: adjustable.clock.now()
-            })
-        };
+        const decidedAt = adjustable.clock.now();
+        const mutations = { findLatest: async () => ({ transition: 'S30' as const, decidedAt }) };
         adjustable.advance(1);
         expect(await run({ provider: fake, clock: adjustable.clock, mutations })).toMatchObject({
             marksOpened: 0,
