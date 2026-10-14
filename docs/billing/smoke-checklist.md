@@ -8,12 +8,21 @@ actual cron schedules on the first day.
 The labels `status-needs-smoke-staging` and `status-needs-smoke-prod` go **only on HOS-1352**,
 never on the piece issue (GATE:M1).
 
+## Scope
+
+This checklist covers what the design declares non-simulable (B/20 §5.1): a real checkout on the
+application page, Mercado Pago transactional emails to the customer, edge cache and revalidation
+at Cloudflare, and the actual cron schedules on the first day. It does **not** replace end-to-end
+or unit tests — it is a manual smoke run on a live environment.
+
+Each later phase adds its own items to this checklist (GATE:FP.2).
+
 ## How to use this checklist
 
 Each part is executed in its own environment and signed off separately.
 
-- **Part 1 (staging)** is executed inside the cutover rehearsal ([PASO:0](../scripts/cutover/README.md#paso-0),
-  [GATE:M3](../scripts/cutover/README.md#gate-m3)). Before merging any PR that touches billing to
+- **Part 1 (staging)** is executed inside the cutover rehearsal ([PASO:0](../../scripts/cutover/README.md#paso-0),
+  [GATE:M3](../../scripts/cutover/README.md#gate-m3)). Before merging any PR that touches billing to
   `staging`, run the relevant staging items (CLAUDE.md).
 - **Part 2 (production)** is executed in step 5c of the cutover, after step 5. It is run **only
   by the owner**, with their card and an amount approved in advance. Its observation — together
@@ -107,7 +116,7 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** Each cron's schedule matches the manifest; the Sentry monitors exist with the
   correct interval and check-in margin.
 - **Evidence:** Screenshot of the Sentry Crons page for the staging environment; the manifest file.
-  Sentry monitors: see [Cutover smoke: the Sentry cron monitors](../scripts/cutover/README.md#cutover-smoke-the-sentry-cron-monitors).
+  Sentry monitors: see [Cutover smoke: the Sentry cron monitors](../../scripts/cutover/README.md#cutover-smoke-the-sentry-cron-monitors).
 - **Covers:** Cron schedule correctness on staging.
 
 ### Sign-off
@@ -176,7 +185,7 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** Each cron matches the manifest schedule; the Sentry monitors exist with the
   correct interval.
 - **Evidence:** Screenshot of the Sentry Crons page for production; the manifest file.
-  Sentry monitors: see [Cutover smoke: the Sentry cron monitors](../scripts/cutover/README.md#cutover-smoke-the-sentry-cron-monitors).
+  Sentry monitors: see [Cutover smoke: the Sentry cron monitors](../../scripts/cutover/README.md#cutover-smoke-the-sentry-cron-monitors).
 - **Covers:** Cron schedules on production, the first day (includes
   `billing-reconciliation-sweep` and `subscription-renewal-notice`).
 
@@ -192,13 +201,13 @@ and seven days of clean daily sweeps) — is what retires `status-needs-smoke-pr
 
 ## Extending this checklist in later phases
 
-Each later phase extends this checklist with its own items ([GATE:FP.2](../scripts/cutover/README.md#gate-fp-2)):
+Each later phase extends this checklist with its own items ([GATE:FP.2](../../scripts/cutover/README.md#gate-fp-2)):
 the staging part, executed before merging the phase branch to `staging`, and a production 5c
 own to the phase, with the owner's card and an approved amount, after the phase reaches production.
 
 ## Related
 
-- [Cutover script (U3)](../scripts/cutover/README.md) — TEST:U3:11 (manual smoke for the owner) and
+- [Cutover script (U3)](../../scripts/cutover/README.md) — TEST:U3:11 (manual smoke for the owner) and
   TEST:U3:12 (staging rehearsal smoke), plus the Sentry cron monitors.
-- [CLAUDE.md — billing testing](../CLAUDE.md) — the smoke rule requiring staging and production
+- [CLAUDE.md — billing testing](../../CLAUDE.md) — the smoke rule requiring staging and production
   manual verification before merge and production promotion.

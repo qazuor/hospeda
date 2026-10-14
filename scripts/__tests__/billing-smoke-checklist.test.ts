@@ -47,7 +47,7 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
         const part1 = part1Match![0];
         expect(part1).toContain('TEST:B13a:14');
         expect(part1).toContain('TEST:B3:23');
-        expect(part1).toLowerCase().toContain('sandbox');
+        expect(part1.toLowerCase()).toContain('sandbox');
         expect(part1.toLowerCase()).toContain('rehearsal');
     });
 
@@ -74,7 +74,7 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
 
     it('every S* item has the five required lines', () => {
         const itemMatches = [
-            ...source.matchAll(/### (S\d+ — .+?)\n([\s\S]*?)(?=### P\d+|### Sign-off|$))/g)
+            ...source.matchAll(/### (S\d+ — .+?)\n([\s\S]*?)(?=### P\d+|### Sign-off|$)/g)
         ];
         for (const [, _id, body] of itemMatches) {
             expect(body).toContain('**Preconditions:**');
@@ -89,7 +89,7 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
         const part2Match = source.match(/## Part 2 — Production.*?(?=## Extending|## Related|$)/s);
         expect(part2Match).toBeTruthy();
         const part2 = part2Match![0];
-        const itemMatches = [...part2.matchAll(/### (P\d+ — .+?)\n([\s\S]*?)(?=### Sign-off|$))/g)];
+        const itemMatches = [...part2.matchAll(/### (P\d+ — .+?)\n([\s\S]*?)(?=### Sign-off|$)/g)];
         for (const [, _id, body] of itemMatches) {
             expect(body).toContain('**Preconditions:**');
             expect(body).toContain('**Steps:**');
@@ -102,18 +102,18 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
     it('every relative link ](…) resolves to an existing file', () => {
         const relativeLinks = [...source.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
         const nonFileLinks = relativeLinks
-            .filter(([_, _label, href]) => {
+            .filter(([_match, _label, href]) => {
                 // Anchor-only links and external links are OK
                 if (href.startsWith('#')) return false;
                 if (href.startsWith('http')) return false;
                 return true;
             })
-            .map(([_, __, href]) => href);
+            .map(([_match, _label, href]) => href);
 
         for (const link of nonFileLinks) {
             // Remove anchor if present
             const pathOnly = link.split('#')[0];
-            const fullPath = path.join(path.dirname(CHECKLIST), pathOnly);
+            const fullPath = path.resolve(path.dirname(CHECKLIST), pathOnly);
             expect(
                 require('node:fs').existsSync(fullPath),
                 `${link} does not resolve to an existing file`
