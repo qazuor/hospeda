@@ -303,7 +303,7 @@ export async function anchorPermanentGrantVertical(
     };
 }
 
-/** Re-run the whole act; resume is not a cursor (TRANS:B:S13, contexto §4). */
+/** Reanudar es volver a correr el acto entero, no llevar un cursor (TRANS:B:S13, contexto §4). */
 export async function resumePermanentGrant(
     input: { readonly permanentGrantId: string; readonly actorId: string },
     ports: PermanentGrantPorts
