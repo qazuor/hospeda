@@ -21,14 +21,7 @@
  * @module test/integration/ai/faq-ai-context-visibility
  */
 
-import {
-    accommodationFaqs,
-    accommodations,
-    destinations,
-    getDb,
-    legacyPublicationStatus,
-    users
-} from '@repo/db';
+import { accommodationFaqs, accommodations, destinations, getDb, users } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -53,7 +46,7 @@ const touristActor: Actor = {
 };
 
 /**
- * Seeds an owner, a destination, a PUBLIC/ACTIVE accommodation, and two FAQs:
+ * Seeds an owner, a destination, a PUBLISHED accommodation, and two FAQs:
  * one AI-usable (the "pileta" FAQ the smoke expected the assistant to use)
  * and one explicitly NOT AI-usable (the complement — must never reach the
  * model regardless of how the first case is fixed).
@@ -112,13 +105,7 @@ async function seedAccommodationWithFaqs(): Promise<void> {
                 url: 'https://example.com/hos-670-accommodation.jpg'
             }
         },
-        lifecycleState: 'ACTIVE',
-        visibility: 'PUBLIC',
-        ownerSuspended: false,
-        publicationStatus: legacyPublicationStatus({
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC'
-        }),
+        publicationStatus: 'PUBLISHED',
         inactiveSince: new Date(),
         deadlinesVersion: 1
     } as typeof accommodations.$inferInsert);

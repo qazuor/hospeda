@@ -399,7 +399,6 @@ export async function createListing(args: {
     readonly status: PublicationStatusEnum;
     readonly complete?: boolean;
 }): Promise<string> {
-    const published = args.status === 'PUBLISHED';
     const listing = await new AccommodationModel().create(
         {
             name: 'Matrix listing',
@@ -411,8 +410,6 @@ export async function createListing(args: {
             destinationId: args.destinationId,
             type: 'CABIN',
             publicationStatus: args.status,
-            lifecycleState: published ? 'ACTIVE' : 'INACTIVE',
-            visibility: published ? 'PUBLIC' : 'PRIVATE',
             ...(args.complete === false
                 ? {}
                 : { extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 } })
@@ -440,7 +437,6 @@ export async function createVerticalListing(args: {
     readonly status: PublicationStatusEnum;
     readonly complete?: boolean;
 }): Promise<string> {
-    const published = args.status === 'PUBLISHED';
     const common = {
         name: 'Matrix listing',
         slug: `matrix-${randomUUID()}`,
@@ -450,8 +446,6 @@ export async function createVerticalListing(args: {
         createdById: args.ownerId,
         destinationId: args.destinationId,
         publicationStatus: args.status,
-        lifecycleState: published ? 'ACTIVE' : 'INACTIVE',
-        visibility: published ? 'PUBLIC' : 'PRIVATE',
         contactInfo: { workPhone: '+541100000000' }
     };
     if (args.vertical === VerticalEnum.GASTRONOMY) {

@@ -70,9 +70,7 @@ describe('TEST:V6 API coverage recalculation', () => {
                 ownerId: user.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: PublicationStatusEnum.PUBLISHED,
-                lifecycleState: 'ACTIVE',
-                visibility: 'PUBLIC'
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             } as Partial<Accommodation>,
             db
         );
@@ -90,9 +88,7 @@ describe('TEST:V6 API coverage recalculation', () => {
                     ownerId: user.id,
                     destinationId: destination.id,
                     type: 'CABIN',
-                    publicationStatus: status,
-                    lifecycleState: 'INACTIVE',
-                    visibility: 'PRIVATE'
+                    publicationStatus: status
                 } as Partial<Accommodation>,
                 db
             );
@@ -180,9 +176,7 @@ describe('TEST:V6 API coverage recalculation', () => {
                         ownerId: user.id,
                         destinationId: destination.id,
                         type: 'CABIN',
-                        publicationStatus: PublicationStatusEnum.DRAFT,
-                        lifecycleState: 'INACTIVE',
-                        visibility: 'PRIVATE'
+                        publicationStatus: PublicationStatusEnum.DRAFT
                     } as Partial<Accommodation>,
                     db
                 );
@@ -299,11 +293,7 @@ describe('TEST:V6 API coverage recalculation', () => {
                         ownerId: user.id,
                         destinationId: destination.id,
                         type: 'CABIN',
-                        publicationStatus: status,
-                        lifecycleState:
-                            status === PublicationStatusEnum.PUBLISHED ? 'ACTIVE' : 'INACTIVE',
-                        visibility:
-                            status === PublicationStatusEnum.PUBLISHED ? 'PUBLIC' : 'PRIVATE'
+                        publicationStatus: status
                     } as Partial<Accommodation>,
                     db
                 );

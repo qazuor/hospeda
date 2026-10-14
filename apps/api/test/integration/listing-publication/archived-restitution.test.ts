@@ -158,9 +158,7 @@ async function createArchivedPair(): Promise<{ ownerId: string; pb4: string; pb5
                 ownerId: owner.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: status,
-                lifecycleState: status === PublicationStatusEnum.PUBLISHED ? 'ACTIVE' : 'INACTIVE',
-                visibility: status === PublicationStatusEnum.PUBLISHED ? 'PUBLIC' : 'PRIVATE'
+                publicationStatus: status
             } as Partial<Accommodation>,
             db
         );

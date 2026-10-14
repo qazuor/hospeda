@@ -144,10 +144,7 @@ describe('TEST:V6:7 API daily coverage reconciler', () => {
                     ownerId: owner.id,
                     destinationId: destinationId,
                     type: 'CABIN',
-                    publicationStatus: status,
-                    lifecycleState:
-                        status === PublicationStatusEnum.PUBLISHED ? 'ACTIVE' : 'INACTIVE',
-                    visibility: status === PublicationStatusEnum.PUBLISHED ? 'PUBLIC' : 'PRIVATE'
+                    publicationStatus: status
                 } as Partial<Accommodation>,
                 db
             );
@@ -242,9 +239,7 @@ describe('TEST:V6:7 API daily coverage reconciler', () => {
                 ownerId: owner.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: PublicationStatusEnum.PUBLISHED,
-                lifecycleState: 'ACTIVE',
-                visibility: 'PUBLIC'
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             } as Partial<Accommodation>,
             db
         );
@@ -316,9 +311,7 @@ describe('TEST:V6:7 API daily coverage reconciler', () => {
                 ownerId: owner.id,
                 destinationId: destination.id,
                 type: 'CABIN',
-                publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
-                lifecycleState: 'INACTIVE',
-                visibility: 'PRIVATE'
+                publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
             } as Partial<Accommodation>,
             db
         );
