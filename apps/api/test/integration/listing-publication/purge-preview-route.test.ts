@@ -258,8 +258,8 @@ describe('TEST:B13a:3a AC:B13a:4 the purge preview names what the listing loses'
             })
         );
 
-        expect(response.status).toBe(403);
-        expect(response.body.error?.code).toBe('FORBIDDEN');
+        expect(response.status).toBe(404);
+        expect(response.body.error?.code).toBe('NOT_FOUND');
     });
 
     it.each([
