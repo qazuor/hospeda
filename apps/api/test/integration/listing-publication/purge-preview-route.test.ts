@@ -242,20 +242,24 @@ describe('TEST:B13a:3a AC:B13a:4 the purge preview names what the listing loses'
         expect(malformed.status).toBe(400);
     });
 
-    it('rejects an authenticated actor without READ_OWN for another owner listing', async () => {
+    it('rejects an authenticated owner without READ_OWN on a purged listing', async () => {
         const owner = await createOwner();
-        const actor = await createOwner();
         ownerIds.add(owner.id);
-        ownerIds.add(actor.id);
-        const id = await makeListing(VerticalEnum.ACCOMMODATION, owner.id, await makeDestination());
+        const id = await createListing({
+            ownerId: owner.id,
+            destinationId: await makeDestination(),
+            status: PublicationStatusEnum.PURGED,
+            complete: false
+        });
+        listingIds.push(id);
         const response = await readResponse(
             await app.request(previewPath(VerticalEnum.ACCOMMODATION, id), {
-                headers: actorHeaders({ id: actor.id, permissions: [] })
+                headers: actorHeaders({ id: owner.id, permissions: [] })
             })
         );
 
-        expect(response.status).toBe(404);
-        expect(response.body.error?.code).toBe('NOT_FOUND');
+        expect(response.status).toBe(403);
+        expect(response.body.error?.code).toBe('FORBIDDEN');
     });
 
     it.each([
