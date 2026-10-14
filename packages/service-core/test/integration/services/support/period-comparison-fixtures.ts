@@ -64,3 +64,19 @@ export async function seedDifferentScheduledAmount(input: {
     if (!change) throw new Error('Could not seed destination scheduled change');
     return { change, targetPlanVersionId, targetBillingOptionId };
 }
+
+/** Changes the anchored list price used by expected amount for an individual period case. */
+export async function setExpectedPlanAmount(input: {
+    readonly subscriptionId: string;
+    readonly amountMinor: number;
+}) {
+    const [row] = await getServiceTestDb()
+        .select({ billingOptionId: subscriptions.billingOptionId })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, input.subscriptionId));
+    if (!row?.billingOptionId) throw new Error('Subscription has no anchored billing option');
+    await getServiceTestPool().query('UPDATE billing_option SET amount = $1 WHERE id = $2', [
+        input.amountMinor,
+        row.billingOptionId
+    ]);
+}
