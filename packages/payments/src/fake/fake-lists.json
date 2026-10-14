@@ -205,6 +205,12 @@
                 { "row": "EX-36", "date": "2026-09-29", "accounts": ["sandbox"] },
                 { "row": "PA-3", "date": "2026-09-15", "accounts": ["production"] }
             ]
+        },
+        {
+            "id": "RP13",
+            "kind": "rule",
+            "name": "an order search needs both creation dates, spans at most 30 days and matches the reference exactly",
+            "measured": [{ "row": "EX-57", "date": "2026-09-30", "accounts": ["sandbox"] }]
         }
     ],
     "simulations": [

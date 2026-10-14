@@ -26,6 +26,10 @@ import type {
     ChargeSnapshot,
     MutationAcknowledgement,
     NoticeDelivery,
+    OrderRef,
+    OrderSearchInput,
+    OrderSearchResult,
+    OrderSnapshot,
     PaymentProvider,
     ProviderNotice,
     RefundInput,
@@ -41,6 +45,8 @@ import {
     ChargeInputSchema,
     ChargeRefSchema,
     NoticeDeliverySchema,
+    OrderRefSchema,
+    OrderSearchInputSchema,
     PaymentProviderOptionsSchema,
     parseProviderInput,
     RefundInputSchema
@@ -344,6 +350,18 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
 
     async listCharges(input: AuthorizationRef): Promise<ChargeListResult> {
         parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'read' });
+        throw notImplemented({ capability: 'read' });
+    }
+
+    /** Capability 7 · read an order by id. Not spoken over HTTP yet: HOS-1669 adds it. */
+    async readOrder(input: OrderRef): Promise<ProviderRead<OrderSnapshot>> {
+        parseProviderInput({ schema: OrderRefSchema, input, capability: 'read' });
+        throw notImplemented({ capability: 'read' });
+    }
+
+    /** Capability 7 · search orders (EX-57). Not spoken over HTTP yet: HOS-1669 adds it. */
+    async searchOrders(input: OrderSearchInput): Promise<OrderSearchResult> {
+        parseProviderInput({ schema: OrderSearchInputSchema, input, capability: 'read' });
         throw notImplemented({ capability: 'read' });
     }
 

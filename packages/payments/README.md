@@ -62,7 +62,7 @@ closed lists and one apart, validated at load (`FAKE_LISTS`):
 - **`lies`, M1..M13**: each row has its name, the matrix rows it comes from
   (date and account) and the test that proves our code resists it
   (`defenseTest`).
-- **`rules`, RP1..RP12**: provider rules and measured behaviour. Rules stay on;
+- **`rules`, RP1..RP13**: provider rules and measured behaviour. Rules stay on;
   measured behaviour can be turned off by name with a reason.
 - **`simulations`**: network cases nobody measured (`lostResponse`,
   `networkCut`, `noticesOutOfOrder`). Not lies, never counted as such.
@@ -85,7 +85,7 @@ an amount change), M6 (notices late, repeated or never; a refund in three
 deliveries and two formats; a charge once per channel), M8 (a charge lands at
 minute :02 of the next hour), M10 (the broken link), M11 (an open link never
 expires), M13 (the first partial refund refused as not refundable), M1 on
-creation and M9 on a future first charge; and RP1 to RP9 and RP11 (RP7, RP8 and RP11 are switchable by name).
+creation and M9 on a future first charge; and RP1 to RP9, RP11 and RP13 (RP7, RP8 and RP11 are switchable by name; RP13, the order search bounds of EX-57, is a rule). One-time orders enter the fake only through the test handle `placeOrder`; the HTTP adapter answers `readOrder`/`searchOrders` with `NOT_IMPLEMENTED` until HOS-1669.
 The other rows (M2, M12; RP10, RP12) stay in the list and arrive with the units that add their surface to the interface. The fake implements M7 and RP7, RP8 and RP11.
 
 Every delay of the fake runs on the injected clock: advance it to see a late

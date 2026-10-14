@@ -16,6 +16,8 @@ import type {
     ChargeRef,
     Money,
     NoticeDelivery,
+    OrderRef,
+    OrderSearchInput,
     RefundInput
 } from './payment-provider';
 
@@ -72,6 +74,18 @@ export const AuthorizationRefSchema: z.ZodType<AuthorizationRef> = z.strictObjec
 /** Identifies one charge (capability 7). */
 export const ChargeRefSchema: z.ZodType<ChargeRef> = z.strictObject({
     chargeId: NonEmptyId
+});
+
+/** Identifies one one-time order (capability 7). */
+export const OrderRefSchema: z.ZodType<OrderRef> = z.strictObject({
+    orderId: NonEmptyId
+});
+
+/** Order search criteria (capability 7, EX-57): both creation dates are required. */
+export const OrderSearchInputSchema: z.ZodType<OrderSearchInput> = z.strictObject({
+    reference: NonEmptyId,
+    createdFrom: z.iso.datetime({ offset: true }),
+    createdTo: z.iso.datetime({ offset: true })
 });
 
 /** Input of capability 6. */

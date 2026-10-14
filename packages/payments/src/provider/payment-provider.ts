@@ -193,6 +193,48 @@ export interface ChargeSnapshot {
 
 export type ChargePurpose = 'charge' | 'cardValidation';
 
+/** Identifies one one-time order (capability 7). */
+export interface OrderRef {
+    readonly orderId: string;
+}
+
+/**
+ * Capability 7 output: a one-time order, read by id. `reference` is our
+ * identifier of the customer's request; `hasApprovedPayment` says whether a
+ * payment of the order was approved.
+ */
+export interface OrderSnapshot {
+    readonly orderId: string;
+    readonly reference: string;
+    /** The ISO 8601 instant the order was created. */
+    readonly createdAt: string;
+    readonly hasApprovedPayment: boolean;
+}
+
+/**
+ * Capability 7 input: search orders by our request identifier. The search is
+ * NOT a source of truth (INV:D6): it only yields ids, re-read by id before any
+ * decision. Both creation dates are required and the range may not exceed 30
+ * days (EX-57); dates are ISO 8601.
+ */
+export interface OrderSearchInput {
+    readonly reference: string;
+    readonly createdFrom: string;
+    readonly createdTo: string;
+}
+
+/** One order a search found: ids to re-read, never state. */
+export interface OrderSummary {
+    readonly orderId: string;
+    readonly reference: string;
+    readonly createdAt: string;
+}
+
+/** Capability 7 output of an order search. */
+export interface OrderSearchResult {
+    readonly orders: readonly OrderSummary[];
+}
+
 /** Capability 8 input: one delivery as it reached our receiver. */
 export interface NoticeDelivery {
     readonly headers: Readonly<Record<string, string>>;
@@ -211,7 +253,7 @@ export interface ProviderNotice {
 
 /**
  * The eight capabilities as methods. `pauseAndResume` is two methods and `read`
- * is two (an authorization and a charge); `CAPABILITY_METHODS` maps each method
+ * is several (an authorization, a charge and an order, plus their listings); `CAPABILITY_METHODS` maps each method
  * to its capability. Every method receives one object and resolves one object;
  * a refusal rejects with `PaymentProviderError`.
  */
@@ -253,6 +295,17 @@ export interface PaymentProvider {
     readCharge(input: ChargeRef): Promise<ProviderRead<ChargeSnapshot>>;
     /** List ids only; not a ProviderRead or state source. Compare completeness to chargeRecordCount. */
     listCharges(input: AuthorizationRef): Promise<ChargeListResult>;
+    /**
+     * Capability 7 · read a one-time order by id. The read carries its instant
+     * (AC:B1:4): a decision takes it through `assertFreshForAct`.
+     */
+    readOrder(input: OrderRef): Promise<ProviderRead<OrderSnapshot>>;
+    /**
+     * Capability 7 · search orders by our request identifier (EX-57). Not a
+     * ProviderRead: no decision may rely on it (INV:D6); re-read each id with
+     * `readOrder`.
+     */
+    searchOrders(input: OrderSearchInput): Promise<OrderSearchResult>;
     /** Capability 8 · turn a delivery into a notice (kind, id, version only). */
     decodeNotice(input: NoticeDelivery): Promise<ProviderNotice>;
 }
