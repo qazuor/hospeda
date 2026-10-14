@@ -401,8 +401,11 @@ describe('TEST:B11:9 AC:B11:10 terminal, cancellation-retry, and tombstone charg
         );
         expect(events).toHaveLength(1);
         expect(
-            events[0]?.changes.some(
-                (change) => change.field === 'provider.charge_id' && change.new === second.chargeId
+            events.some((event) =>
+                event.changes.some(
+                    (change) =>
+                        change.field === 'provider.charge_id' && change.new === second.chargeId
+                )
             )
         ).toBe(true);
     });

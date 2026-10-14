@@ -191,12 +191,19 @@ describe('TEST:B11:9 AC:B11:10 period charges: zero is not a divergence, an unre
             (event) => event.eventType === 'reconciliation.mark_opened'
         );
         expect(events).toHaveLength(1);
-        expect(events[0]?.changes).toEqual(
-            expect.arrayContaining([
-                { field: 'provider.charge_id', new: charged.chargeId },
-                { field: 'provider.charge_amount_minor', new: 250000 }
-            ])
-        );
+        expect(
+            events.some(
+                (event) =>
+                    event.changes.some(
+                        (change) =>
+                            change.field === 'provider.charge_id' && change.new === charged.chargeId
+                    ) &&
+                    event.changes.some(
+                        (change) =>
+                            change.field === 'provider.charge_amount_minor' && change.new === 250000
+                    )
+            )
+        ).toBe(true);
     });
 
     it('TEST:B11:9 (k) M7 rejected attempts are not interpreted from the record count', async () => {

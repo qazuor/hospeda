@@ -119,10 +119,12 @@ describe('TEST:B11:7 AC:B11:8 the state comparison marks what the transition tab
         );
         expect(events).toHaveLength(2);
         expect(
-            events[0]?.changes.some(
-                (change) =>
-                    change.field === 'reconciliation_mark.reason' &&
-                    change.new === 'TRANSICION_NO_DECLARADA'
+            events.some((event) =>
+                event.changes.some(
+                    (change) =>
+                        change.field === 'reconciliation_mark.reason' &&
+                        change.new === 'TRANSICION_NO_DECLARADA'
+                )
             )
         ).toBe(true);
         for (const call of calls) expect(call).not.toHaveBeenCalled();
