@@ -125,6 +125,32 @@ export const unimplementedSuccessionCloser: SuccessionCloser = {
     }
 };
 
+/**
+ * S38's internal interface (TRANS:B:S38, AC:B7:28): when S7 returns a row to `ACTIVE` or
+ * `CANCEL_SCHEDULED` with a scheduled change whose date passed while it was suspended, S7
+ * calls it in its own transaction. B8b injects the S38 implementation, replacing the default
+ * (DEC-ARCH-017📌6).
+ */
+export interface ScheduledChangeApplier {
+    /** Applies the row's due scheduled change in the caller's transaction. */
+    applyScheduledChange(input: {
+        readonly subscriptionId: string;
+        readonly tx: DrizzleClient;
+    }): Promise<void>;
+}
+
+/** Applying a due scheduled change without B8b registered must fail visibly. */
+export const unimplementedScheduledChangeApplier: ScheduledChangeApplier = {
+    async applyScheduledChange() {
+        throw new ServiceError(
+            ServiceErrorCode.INTERNAL_ERROR,
+            'Scheduled change applier is not registered',
+            undefined,
+            'SCHEDULED_CHANGE_APPLIER_NOT_REGISTERED'
+        );
+    }
+};
+
 export interface FirstChargeReader {
     readFirstCharge(input: {
         readonly subscriptionId: string;

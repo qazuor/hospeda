@@ -5,6 +5,7 @@ import {
     noCreditedPayments,
     recordAuthorizationSeenAlive,
     recordCancellationSeen,
+    unimplementedScheduledChangeApplier,
     unimplementedSuccessionCloser
 } from '../../../../src/services/billing/subscription/subscription-billing-ports';
 
@@ -24,6 +25,15 @@ describe('subscription billing ports defaults', () => {
                 tx: {} as never
             })
         ).rejects.toMatchObject({ reason: 'SUCCESSION_CLOSER_NOT_REGISTERED' });
+    });
+
+    it('fails visibly when the scheduled change applier has not been registered', async () => {
+        await expect(
+            unimplementedScheduledChangeApplier.applyScheduledChange({
+                subscriptionId: crypto.randomUUID(),
+                tx: {} as never
+            })
+        ).rejects.toMatchObject({ reason: 'SCHEDULED_CHANGE_APPLIER_NOT_REGISTERED' });
     });
 
     it('keeps the default annotation a no-op and logs but swallows annotator errors', async () => {

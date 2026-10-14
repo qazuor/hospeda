@@ -28,7 +28,10 @@ import {
     expireAuthorizationWindows
 } from '../../../../src/services/billing/subscription/expire-authorization-windows.service.js';
 import type { BeforeCancelNotice } from '../../../../src/services/billing/subscription/start-subscription.service.js';
-import type { SuccessionCloser } from '../../../../src/services/billing/subscription/subscription-billing-ports.js';
+import type {
+    ScheduledChangeApplier,
+    SuccessionCloser
+} from '../../../../src/services/billing/subscription/subscription-billing-ports.js';
 import { retainPaymentForSuccession } from '../../../../src/services/billing/subscription/succession-retained-payment.js';
 import {
     type SuspendForArrearsPorts,
@@ -328,11 +331,14 @@ export async function expireSuccessorWindow(
 
 /**
  * S3 over this case's successor only, with the case's provider, clock and listener
- * (and S18's interface when the case passes one, for branch 1).
+ * (and S18's interface when the case passes one, for branch 1; S38's, for S7 on branch 2).
  */
 export async function runS3(
     s: Awaited<ReturnType<typeof predecessorInGrace>>,
-    extra: { readonly successionCloser?: SuccessionCloser } = {}
+    extra: {
+        readonly successionCloser?: SuccessionCloser;
+        readonly scheduledChangeApplier?: ScheduledChangeApplier;
+    } = {}
 ): Promise<ExpireAuthorizationWindowsSummary> {
     const beforeCancelNotice: BeforeCancelNotice = { beforeCancel: async () => 'SENT' };
     return withSeededSubscriptionSweep(20, () =>
@@ -342,7 +348,10 @@ export async function runS3(
             beforeCancelNotice,
             touristVipInheritance: noTouristVip,
             coverageNotices: s.chargePorts.coverageNotices,
-            ...(extra.successionCloser ? { successionCloser: extra.successionCloser } : {})
+            ...(extra.successionCloser ? { successionCloser: extra.successionCloser } : {}),
+            ...(extra.scheduledChangeApplier
+                ? { scheduledChangeApplier: extra.scheduledChangeApplier }
+                : {})
         })
     );
 }
