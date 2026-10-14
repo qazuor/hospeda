@@ -25,11 +25,6 @@ import {
 const path = '/api/v1/protected/billing/subscriptions/signup-notice';
 const now = new Date('2026-10-10T12:00:00.000Z');
 const clock = { now: () => now };
-const fixtureUsers = new Set<string>();
-const fixturePlans = new Set<string>();
-const fixtureVersions = new Set<string>();
-const fixtureOptions = new Set<string>();
-
 async function createUser() {
     const [user] = await getDb()
         .insert(users)
@@ -41,7 +36,6 @@ async function createUser() {
         })
         .returning();
     if (!user) throw new Error('No signup notice user');
-    fixtureUsers.add(user.id);
     return user;
 }
 
@@ -51,7 +45,6 @@ async function createOption(vertical: string) {
         .values({ vertical, slug: `b13a-notice-${randomUUID()}`, name: 'Checkout plan' })
         .returning();
     if (!plan) throw new Error('No signup notice plan');
-    fixturePlans.add(plan.id);
     const [version] = await getDb()
         .insert(planVersions)
         .values({
@@ -65,13 +58,11 @@ async function createOption(vertical: string) {
         })
         .returning();
     if (!version) throw new Error('No signup notice plan version');
-    fixtureVersions.add(version.id);
     const [option] = await getDb()
         .insert(billingOptions)
         .values({ planVersionId: version.id, cycle: 'monthly', amount: 100000, currency: 'ARS' })
         .returning();
     if (!option) throw new Error('No signup notice billing option');
-    fixtureOptions.add(option.id);
     return option;
 }
 
@@ -106,12 +97,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    const db = getDb();
-    for (const id of fixtureOptions)
-        await db.delete(billingOptions).where(eq(billingOptions.id, id));
-    for (const id of fixtureVersions) await db.delete(planVersions).where(eq(planVersions.id, id));
-    for (const id of fixturePlans) await db.delete(plans).where(eq(plans.id, id));
-    // Trial rows are permanent by contract; their own test database is dropped below.
+    // Published plan versions are immutable; the ephemeral test database owns these fixtures.
     await testDb.teardown();
 });
 
