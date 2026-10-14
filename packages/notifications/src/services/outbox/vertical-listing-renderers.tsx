@@ -1,6 +1,10 @@
 import type { EmailOutboxRow } from '@repo/db';
+import { getLocalDateString } from '@repo/utils';
+import { formatDate } from '../../templates/utils/index.js';
 import {
+    LISTING_CONTENT_EDITED_BY_SUPPORT_SUBJECT,
     LISTING_RETURNED_TO_COPY,
+    ListingContentEditedBySupport,
     ListingFixRequested,
     ListingModerated,
     ListingModerationLevelChanged,
@@ -11,6 +15,16 @@ import {
     PriceAlertClosed
 } from '../../templates/verticals/index.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
+
+const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+// These literals mirror SupportEditPartSchema in @repo/schemas, which notifications does not depend on.
+const SUPPORT_EDIT_PART_LABELS = {
+    texts: 'los textos',
+    photos: 'las fotos',
+    faq: 'las preguntas frecuentes',
+    hours: 'los horarios',
+    other: 'otros datos'
+} as const;
 
 /**
  * The verticals whose listings share the publication machine. Literal values
@@ -99,6 +113,7 @@ function readBoolean(data: Record<string, unknown>, key: string): boolean {
  * an id without a name throws, so the mail retries instead of going out with
  * a gap (H9 of HOS-1492).
  *
+ * Also renders action 15 support content edits (V/19 §4 row 26, HOS-1675).
  * @param input - Site URL for links, and the listing names reader.
  * @returns The renderers keyed by outbox template.
  */
@@ -134,6 +149,52 @@ export function createVerticalListingRenderers(input: {
     }
 
     return {
+        'verticals.listing-content-edited-by-support': async ({ row }) => {
+            const data = objectPayload(row);
+            const vertical = readVertical(data);
+            const listingId = readText(data, 'listingId');
+            const instant =
+                typeof data.editedAt === 'string' && ISO_INSTANT.test(data.editedAt)
+                    ? new Date(data.editedAt)
+                    : null;
+            if (!instant || Number.isNaN(instant.getTime()))
+                throw new TypeError('La fecha de edición del aviso de soporte no es válida');
+            if (!Array.isArray(data.parts))
+                throw new TypeError('Las partes editadas del aviso de soporte no son válidas');
+            const labels: string[] = [];
+            for (const part of data.parts) {
+                if (typeof part !== 'string' || !Object.hasOwn(SUPPORT_EDIT_PART_LABELS, part))
+                    throw new TypeError(
+                        'El aviso de soporte contiene una parte editada desconocida'
+                    );
+                labels.push(
+                    SUPPORT_EDIT_PART_LABELS[part as keyof typeof SUPPORT_EDIT_PART_LABELS]
+                );
+            }
+            const carriedName =
+                typeof data.listingName === 'string' && data.listingName.trim() !== ''
+                    ? data.listingName
+                    : null;
+            const name = carriedName ?? (await listingName({ ...data, vertical, listingId }));
+            const editedDate = formatDate({ dateString: getLocalDateString({ instant }) });
+            const partsText =
+                labels.length === 0
+                    ? null
+                    : new Intl.ListFormat('es-AR', { style: 'long', type: 'conjunction' }).format(
+                          labels
+                      );
+            return {
+                subject: LISTING_CONTENT_EDITED_BY_SUPPORT_SUBJECT,
+                react: (
+                    <ListingContentEditedBySupport
+                        listingName={name}
+                        editedDate={editedDate}
+                        partsText={partsText}
+                        contactUrl={`${site}/es/contacto/`}
+                    />
+                )
+            };
+        },
         'verticals.price-alert-closed': async ({ row }) => {
             const data = objectPayload(row);
             readText(data, 'alertId');
