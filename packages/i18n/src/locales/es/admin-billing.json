@@ -1614,5 +1614,76 @@
             "deleted": "Código promocional eliminado correctamente",
             "deleteError": "Error al eliminar código"
         }
+    },
+    "subscriptionRevocation": {
+        "title": "Revocar una suscripción (derecho de arrepentimiento)",
+        "motive": "Motivo: revocación del derecho de arrepentimiento.",
+        "loading": "Revisando el último cobro de la suscripción…",
+        "notFound": "Esta suscripción no existe.",
+        "forbidden": "No podés revocar esta suscripción: es tuya o es de una cuenta del sistema. La revoca otra persona del equipo con el permiso.",
+        "loadError": "No pudimos revisar la suscripción. Volvé a intentar.",
+        "ready": {
+            "intro": "Vas a registrar la revocación. En un solo acto:"
+        },
+        "origin": {
+            "label": "Estado actual: {state}",
+            "ACTIVE": "Activa",
+            "GRACE_PERIOD": "En período de gracia",
+            "CANCEL_SCHEDULED": "Con baja programada",
+            "PAUSED": "Pausada"
+        },
+        "originExtra": {
+            "GRACE_PERIOD": "Se apaga el reloj del período de gracia.",
+            "PAUSED": "Se cierra la pausa."
+        },
+        "effects": {
+            "authorization": "Se cancela su débito automático en Mercado Pago. Antes le mandamos un correo avisándole.",
+            "noAuthorization": "No tiene débito automático en Mercado Pago: no hay nada que cancelar ahí.",
+            "service": "Se corta el servicio ahora mismo, sin esperar al fin del período.",
+            "refund": "Se pide la devolución de {amount}: todo lo que queda por devolver del cobro del {chargedAt}. La plata sale recién cuando una persona confirme esa devolución."
+        },
+        "predecessor": "Ese cobro es de la suscripción anterior, de la que ésta es sucesora: la devolución sale de ese cobro.",
+        "window": "Está dentro del plazo: se puede revocar hasta el {lastDay} inclusive (10 días corridos desde el cobro).",
+        "noteLabel": "Nota (opcional)",
+        "noteHelp": "Queda en el registro, junto con quién la revocó.",
+        "confirm": "Revocar: cancelar, cortar el servicio y pedir la devolución",
+        "blocked": {
+            "intro": "No se puede revocar. No se canceló nada.",
+            "REFUND_EXCEEDS_BALANCE": "Ese cobro ya tiene devoluciones pedidas o hechas por todo su monto. La revocación no se registra: no se cancela la suscripción ni se corta el servicio. Resolvé primero esa devolución.",
+            "PAYMENT_NOT_REFUNDABLE": "El último cobro ya se devolvió o tiene un contracargo: no se puede devolver otra vez.",
+            "REVOCATION_WINDOW_CLOSED": "Pasaron más de 10 días corridos desde el último cobro: venció el plazo para revocar.",
+            "REVOCATION_NO_CREDITED_PAYMENT": "No hay ningún cobro acreditado para devolver.",
+            "REVOCATION_AMOUNT_UNAVAILABLE": "No sabemos cuánto se pagó en el último pago manual: no tiene un precio anclado.",
+            "REVOCATION_NOT_PRINCIPAL": "Sólo se revoca una suscripción principal, no la de un complemento.",
+            "REVOCATION_STATE_NOT_ALLOWED": "La suscripción no está activa, en gracia, con baja programada ni pausada (por ejemplo, ya está cancelada).",
+            "REFUND_AMOUNT_INVALID": "El monto a devolver no es válido.",
+            "REVOCATION_PAYMENT_CHANGED": "El último cobro cambió desde que abriste esta pantalla, y no se revocó nada. Revisá el cobro nuevo y confirmá otra vez.",
+            "REVOCATION_STATE_CHANGED": "La suscripción cambió mientras tanto, y no se revocó nada. La volvimos a revisar.",
+            "SUBSCRIPTION_NOT_FOUND": "Esta suscripción no existe.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "No podés revocar esta suscripción: es tuya o es de una cuenta del sistema. La revoca otra persona del equipo con el permiso.",
+            "unknown": "No se puede revocar ahora (código {reason})."
+        },
+        "notice": {
+            "REVOCATION_PAYMENT_CHANGED": "El último cobro cambió desde que abriste esta pantalla, y no se revocó nada. Revisá el cobro nuevo y confirmá otra vez.",
+            "REVOCATION_STATE_CHANGED": "La suscripción cambió mientras tanto, y no se revocó nada. La volvimos a revisar."
+        },
+        "result": {
+            "title": "Suscripción revocada",
+            "cancelled": "Quedó cancelada y sin servicio desde el {serviceEndedAt}.",
+            "refund": "Se pidió la devolución de {amount} (pedido {refundId}). La plata sale cuando una persona la confirme.",
+            "cancelCall": {
+                "SENT": "Se mandó la cancelación a Mercado Pago.",
+                "NOT_NEEDED": "Mercado Pago ya la tenía cancelada.",
+                "NOTICE_PENDING": "La cancelación en Mercado Pago espera a que salga nuestro correo. La manda el barrido.",
+                "FAILED": "La llamada a Mercado Pago falló. La suscripción igual quedó cancelada: el barrido reintenta la cancelación.",
+                "NOT_APPLICABLE": "No había nada que cancelar en Mercado Pago."
+            },
+            "escalated": {
+                "NO_RECIPIENT": "No había a quién mandarle el aviso previo; la cancelación salió igual.",
+                "DELIVERY_EXHAUSTED": "El aviso previo no se pudo entregar después de los reintentos; la cancelación salió igual."
+            }
+        },
+        "successTitle": "Suscripción revocada",
+        "errorTitle": "No se pudo revocar la suscripción"
     }
 }

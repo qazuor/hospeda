@@ -76,6 +76,55 @@
             "row": 27,
             "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle cuenta toda suscripción de la cuenta en una fila viva menos CANCEL_SCHEDULED; la CANCEL_SCHEDULED y la terminal con provider_link cuentan mientras cancelled_seen_at esté vacío, y la CHARGE_DECLINED hasta que pase el plazo 16 desde esa columna; desde HOS-1676 también la CANCELLED del espejo tras un rechazo (CANCELLED_ON_GRACE, con el evento subscription.provider_cancelled_after_rejection), con la misma ventana.",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-orphanhood.ts",
+            "symbol": "findOrphanhoodCandidates",
+            "row": 18,
+            "why": "AC:B5:25 (HOS-1545): los candidatos de B/16 §4.3 son las instancias del desde de A5, las dos con una autorización que puede cobrar (PENDING_AUTHORIZATION y ACTIVE).",
+            "subject": "addon_instance"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-orphanhood.ts",
+            "symbol": "isAddonInstanceOrphaned",
+            "row": 5,
+            "why": "AC:B5:25 (HOS-1545): primera mitad del addon huérfano, el objetivo dejó de ser fila viva; para LISTING sobre el conjunto de las principales del user + vertical y para USER/GLOBAL sobre las principales vivas y pagando de cada vertical compatible (las seis).",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-orphanhood.ts",
+            "symbol": "verticalSubscriptionOrphaned",
+            "row": 11,
+            "why": "AC:B5:25 (HOS-1545): segunda mitad del addon huérfano, ninguna fila viva con sucede_a apuntándola; reusa isLiveSuccessionPredecessor (fila 8) sin reescribir el predicado, y lee sucedida_por, que no se borra.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
+            "symbol": "applyA5",
+            "row": 18,
+            "why": "AC:B5:25 (HOS-1545): el desde de A5, sólo PENDING_AUTHORIZATION y ACTIVE; fuera de esos dos A5 no escribe nada.",
+            "subject": "addon_instance"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
+            "symbol": "runOrphanhood",
+            "row": null,
+            "why": "AC:B5:25 (HOS-1545): el disparador de B/16 §4.3 es que la principal haya salido de las filas vivas (las seis), no un estado de llegada; si sigue viva no se evalúa nada. Es el evento, no una mitad del predicado (ésa es la fila 5, en addon-orphanhood.ts), así que no tiene fila propia en el inventario del glosario.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
+            "symbol": "applyS21",
+            "row": 20,
+            "why": "AC:B5:28 (HOS-1545): el desde de S21, toda fila viva DE COMPLEMENTO (las seis) de la que cuelga una instancia; ABANDONED y CHARGE_DECLINED quedan afuera.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
+            "symbol": "findComplementsAwaitingS21",
+            "row": 20,
+            "why": "AC:B5:28 (HOS-1545): la re-evaluación de S21, las filas vivas DE COMPLEMENTO (las seis) cuya instancia ya está CANCELLED: la corrida que murió entre A5 y S21.",
+            "subject": "subscription"
         }
     ],
     "grant_vivo_ancla_viva": [],

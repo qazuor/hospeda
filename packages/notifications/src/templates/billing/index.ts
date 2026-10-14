@@ -2,6 +2,7 @@
  * Billing email templates
  */
 
+export * from './addon-cancelled.js';
 export * from './arrears-suspension.js';
 export * from './payment-failure.js';
 export * from './payment-success.js';

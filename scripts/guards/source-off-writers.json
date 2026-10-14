@@ -128,5 +128,21 @@
         "effect": "neutral",
         "via": null,
         "reason": "Only links the predecessor to its successor (succeededById); the predecessor keeps its status and its coverage until the successor activates, so no coverage source turns off here (HOS-1530, inventoried at merge by HOS-1491)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a5.ts",
+        "symbol": "applyA5",
+        "table": "addonInstances",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "A5 moves a PENDING_AUTHORIZATION/ACTIVE addon instance to CANCELLED (AC:B5:25); an ACTIVE instance stops emitting its ADDON source and emitAddonCoverageRemoved sends the coverage notice after the caller's commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/complement-s21.ts",
+        "symbol": "applyS21",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S21 cancels a COMPLEMENTO row, which emits no coverage source (subscription-sources.ts filters PRINCIPAL)"
     }
 ]

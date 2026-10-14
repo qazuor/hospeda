@@ -15,7 +15,8 @@ type BeforeCancelKind = NonNullable<Parameters<BeforeCancelNotice['beforeCancel'
 const TEMPLATE_BY_KIND: Readonly<Record<BeforeCancelKind | 'DEFAULT', string>> = {
     DEFAULT: 'billing.before-cancel',
     TOURIST_VIP_INHERITED: 'billing.tourist-vip-inherited-cancel',
-    ARREARS_SUSPENSION: 'billing.arrears-suspension'
+    ARREARS_SUSPENSION: 'billing.arrears-suspension',
+    ADDON_CANCELLED: 'billing.addon-cancelled'
 };
 
 /**

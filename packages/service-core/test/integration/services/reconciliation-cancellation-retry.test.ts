@@ -4,6 +4,7 @@
  */
 import {
     and,
+    emailOutbox,
     eq,
     inArray,
     payments,
@@ -32,6 +33,7 @@ import {
     markOpenedEvents,
     unknownCharge
 } from './reconciliation-tombstone-fixtures.js';
+import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 const T0 = new Date('2026-11-01T10:00:00.000Z');
@@ -402,5 +404,35 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
             { subscriptionId: vip.id, userId: vip.userId, kind: 'TOURIST_VIP_INHERITED' }
         ]);
         expect(sentFor(s3.id)).toStrictEqual([{ subscriptionId: s3.id, userId: s3.userId }]);
+    });
+
+    it('HOS-1545 TEST:B5:13 AC:B5:27 — an A5 retry on a terminal complement enqueues billing.addon-cancelled and no billing.before-cancel', async () => {
+        // Arrange
+        const { fake } = newFake();
+        const h = harness(fake);
+        const complement = await decided({
+            fake,
+            status: 'CANCELLED',
+            class: 'COMPLEMENTO',
+            transition: 'A5'
+        });
+        const notice = outboxBeforeCancelNotice();
+
+        // Act
+        await runDay(0, fake, notice.beforeCancel);
+
+        // Assert
+        const enqueued = await getServiceTestDb()
+            .select({ template: emailOutbox.template, payload: emailOutbox.payload })
+            .from(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, complement.userId!));
+        expect(enqueued).toStrictEqual([
+            { template: 'billing.addon-cancelled', payload: { subscriptionId: complement.id } }
+        ]);
+        // The notice is not sent yet, so the retry defers the call.
+        expect(calledWith(h.cancel, complement.providerId)).toBe(0);
+        await getServiceTestDb()
+            .delete(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, complement.userId!));
     });
 });

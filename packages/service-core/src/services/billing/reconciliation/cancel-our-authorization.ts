@@ -39,7 +39,10 @@ export interface CancelOurAuthorizationInput {
      * same kind as the transition did, or it enqueues a second, generic notice. The occurrence
      * is always the default one (the subscription id).
      */
-    readonly kind?: Extract<CancelOurAuthorizationNoticeKind, 'TOURIST_VIP_INHERITED'>;
+    readonly kind?: Extract<
+        CancelOurAuthorizationNoticeKind,
+        'TOURIST_VIP_INHERITED' | 'ADDON_CANCELLED'
+    >;
     /** A read by id the caller already took, with the act it was taken for. */
     readonly prior?: {
         readonly read: ProviderRead<AuthorizationSnapshot>;
