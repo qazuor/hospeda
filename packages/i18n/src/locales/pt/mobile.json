@@ -41,10 +41,10 @@
             "status": {
                 "DRAFT": "Rascunho",
                 "PUBLISHED": "Publicada",
-                "UNPUBLISHED_BY_BILLING": "Despublicado pelo seu plano",
-                "ARCHIVED": "Arquivado",
-                "MODERATED": "Moderado",
-                "PURGED": "Excluído"
+                "UNPUBLISHED_BY_BILLING": "Despublicada pelo seu plano",
+                "ARCHIVED": "Arquivada",
+                "MODERATED": "Moderada",
+                "PURGED": "Excluída"
             },
             "loading": "Carregando fichas...",
             "error": "Não foi possível carregar as fichas. Tente novamente.",
