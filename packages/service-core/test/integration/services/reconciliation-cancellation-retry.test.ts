@@ -17,6 +17,7 @@ import { type PaymentProvider, parseProbeManifest } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProviderCancellationTransition } from '../../../src/services/billing/reconciliation/provider-cancellation-decision.js';
+import { BEFORE_CANCEL_KIND_BY_TRANSITION } from '../../../src/services/billing/reconciliation/sweep/our-cancellation-retry.js';
 import { runReconciliationSweep } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service.js';
 import type { BeforeCancelNotice } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
@@ -128,7 +129,8 @@ async function decided(input: {
     return {
         id: seeded.subscription.id,
         userId: seeded.subscription.userId,
-        providerId: seeded.providerId!
+        providerId: seeded.providerId!,
+        transition: input.transition
     };
 }
 
@@ -193,11 +195,11 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
         const s3 = await decided({ fake, status: 'ABANDONED', transition: 'S3' });
         const s16 = await decided({ fake, status: 'CHARGE_DECLINED', transition: 'S16' });
         const s36 = await decided({ fake, status: 'CANCELLED', transition: 'S36' });
-        const a3 = await decided({
+        const a5 = await decided({
             fake,
             status: 'CANCELLED',
             class: 'COMPLEMENTO',
-            transition: 'A3'
+            transition: 'A5'
         });
         const s11 = await decided({ fake, status: 'CANCEL_SCHEDULED', transition: 'S11' });
         const vip = await decided({
@@ -215,9 +217,10 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
         const tombstone = {
             id: result.subscriptionId,
             userId: null,
-            providerId: debit.authorizationId
+            providerId: debit.authorizationId,
+            transition: 'RECEPTION_TOMBSTONE' as const
         };
-        const rows = [s3, s16, s36, a3, s11, vip, tombstone];
+        const rows = [s3, s16, s36, a5, s11, vip, tombstone];
         const withUser = rows.filter((row) => row.userId !== null);
         const ids = rows.map(({ id }) => id);
         const before = await moneyAndRows(ids);
@@ -237,11 +240,11 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
             expect(h.beforeCancel).toHaveBeenCalledTimes(withUser.length);
             for (const row of withUser) {
                 // Same occurrence every day (the subscription id), never an occurrenceId of the run;
-                // the VIP's row repeats its clause's kind (the template is in the dedupe key).
+                // every row repeats its transition's kind (the template is in the dedupe key).
                 expect(h.beforeCancel).toHaveBeenCalledWith({
                     subscriptionId: row.id,
                     userId: row.userId,
-                    ...(row === vip ? { kind: 'TOURIST_VIP_INHERITED' } : {})
+                    kind: BEFORE_CANCEL_KIND_BY_TRANSITION[row.transition]
                 });
                 expect(h.events.indexOf(`notice:${row.id}`)).toBeLessThan(
                     h.events.indexOf(`cancel:${row.providerId}`)
@@ -384,7 +387,7 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
         expect(await openMarks16([terminal.id, scheduled.id])).toEqual([]);
     });
 
-    it('TEST:B11:6 (h) the Tourist VIP retry asks for the notice with its kind; an S3 retry asks without one', async () => {
+    it('TEST:B11:6 (h) TEST:1683:2 the Tourist VIP retry asks for the notice with its kind; S3, S16, S36 and S11 ask with theirs', async () => {
         const { fake } = newFake();
         const h = harness(fake);
         const vip = await decided({
@@ -394,16 +397,30 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
             transition: 'TOURIST_VIP_INHERITED'
         });
         const s3 = await decided({ fake, status: 'ABANDONED', transition: 'S3' });
+        const s16 = await decided({ fake, status: 'CHARGE_DECLINED', transition: 'S16' });
+        const s36 = await decided({ fake, status: 'CANCELLED', transition: 'S36' });
+        const s11 = await decided({ fake, status: 'CANCEL_SCHEDULED', transition: 'S11' });
         await runDay(0, fake, h.beforeCancel);
         const sentFor = (subscriptionId: string) =>
             h.beforeCancel.mock.calls
                 .map(([input]) => input)
                 .filter((input) => input.subscriptionId === subscriptionId);
-        // toStrictEqual: no occurrenceId and, for S3, no kind key at all.
+        // toStrictEqual: no occurrenceId, and every row with its own kind (no default, HOS-1683).
         expect(sentFor(vip.id)).toStrictEqual([
             { subscriptionId: vip.id, userId: vip.userId, kind: 'TOURIST_VIP_INHERITED' }
         ]);
-        expect(sentFor(s3.id)).toStrictEqual([{ subscriptionId: s3.id, userId: s3.userId }]);
+        expect(sentFor(s3.id)).toStrictEqual([
+            { subscriptionId: s3.id, userId: s3.userId, kind: 'AUTHORIZATION_EXPIRED' }
+        ]);
+        expect(sentFor(s16.id)).toStrictEqual([
+            { subscriptionId: s16.id, userId: s16.userId, kind: 'FIRST_CHARGE_DECLINED' }
+        ]);
+        expect(sentFor(s36.id)).toStrictEqual([
+            { subscriptionId: s36.id, userId: s36.userId, kind: 'REVOCATION' }
+        ]);
+        expect(sentFor(s11.id)).toStrictEqual([
+            { subscriptionId: s11.id, userId: s11.userId, kind: 'SCHEDULED_CANCELLATION' }
+        ]);
     });
 
     it('HOS-1545 TEST:B5:13 AC:B5:27 — an A5 retry on a terminal complement enqueues billing.addon-cancelled and no billing.before-cancel', async () => {
@@ -434,5 +451,97 @@ describe('TEST:B11:6 el reintento de 3 días', () => {
         await getServiceTestDb()
             .delete(emailOutbox)
             .where(eq(emailOutbox.recipientUserId, complement.userId!));
+    });
+});
+
+/** The templates enqueued for one user, sorted (a test never takes a row by position). */
+async function templatesOf(userId: string) {
+    const rows = await getServiceTestDb()
+        .select({ template: emailOutbox.template })
+        .from(emailOutbox)
+        .where(eq(emailOutbox.recipientUserId, userId));
+    return rows.map(({ template }) => template).sort();
+}
+
+describe('TEST:1683:2 AC:1683:1 AC:1683:3 the retry repeats each transition kind and never falls back', () => {
+    it('TEST:1683:2 (i) an UNDECLARED transition fails its row closed, before the notice or the call; day 3 still marks it', async () => {
+        // Arrange
+        const { fake } = newFake();
+        const h = harness(fake);
+        const a3 = await decided({
+            fake,
+            status: 'CANCELLED',
+            class: 'COMPLEMENTO',
+            transition: 'A3'
+        });
+        const s36 = await decided({ fake, status: 'CANCELLED', transition: 'S36' });
+
+        // Act
+        const day0 = await runDay(0, fake, h.beforeCancel);
+
+        // Assert
+        expect(day0.summary.rowsFailed).toBe(1);
+        const failures = day0.summary.failures.filter(
+            ({ subscriptionId }) => subscriptionId === a3.id
+        );
+        expect(failures).toHaveLength(1);
+        expect(failures[0]?.message).toContain('A3');
+        const askedFor = h.beforeCancel.mock.calls.map(([input]) => input.subscriptionId);
+        expect(askedFor).not.toContain(a3.id);
+        expect(calledWith(h.cancel, a3.providerId)).toBe(0);
+        expect(h.beforeCancel).toHaveBeenCalledWith({
+            subscriptionId: s36.id,
+            userId: s36.userId,
+            kind: 'REVOCATION'
+        });
+
+        // Act: the window runs out before the kind is resolved.
+        await runDay(3, fake, h.beforeCancel);
+
+        // Assert
+        expect(await openMarks16([a3.id])).toHaveLength(1);
+    });
+
+    it('TEST:1683:2 (j) an S36 retry enqueues billing.revocation-cancel once and never billing.before-cancel', async () => {
+        // Arrange
+        const { fake } = newFake();
+        harness(fake);
+        const row = await decided({ fake, status: 'CANCELLED', transition: 'S36' });
+        const notice = outboxBeforeCancelNotice();
+
+        // Act
+        await runDay(0, fake, notice.beforeCancel);
+        await runDay(1, fake, notice.beforeCancel);
+
+        // Assert
+        const templates = await templatesOf(row.userId!);
+        expect(templates).toStrictEqual(['billing.revocation-cancel']);
+        expect(templates).not.toContain('billing.before-cancel');
+        await getServiceTestDb()
+            .delete(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, row.userId!));
+    });
+
+    it.each([
+        ['S16', 'CHARGE_DECLINED', 'billing.first-charge-declined-cancel'],
+        ['REJECTION_REVIVED', 'CHARGE_DECLINED', 'billing.closed-subscription-authorization-cancel']
+    ] as const)('TEST:1683:2 (k) a %s retry on a %s row enqueues %s once and never billing.before-cancel', async (transition, status, template) => {
+        // Arrange
+        const { fake } = newFake();
+        harness(fake);
+        const row = await decided({ fake, status, transition });
+        const notice = outboxBeforeCancelNotice();
+
+        // Act
+        await runDay(0, fake, notice.beforeCancel);
+        await runDay(1, fake, notice.beforeCancel);
+
+        // Assert
+        const templates = await templatesOf(row.userId!);
+        expect(templates).toStrictEqual([template]);
+        expect(templates).not.toContain('billing.before-cancel');
+        await getServiceTestDb()
+            .delete(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, row.userId!));
     });
 });

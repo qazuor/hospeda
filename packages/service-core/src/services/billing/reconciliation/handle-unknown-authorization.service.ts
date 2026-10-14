@@ -247,7 +247,8 @@ async function cancelTombstoneAuthorization(
         {
             subscriptionId: input.subscriptionId,
             userId: null,
-            authorizationId: input.authorizationId
+            authorizationId: input.authorizationId,
+            kind: null
         },
         ports
     );
