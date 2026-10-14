@@ -1,4 +1,4 @@
-import { addonInstances, type DrizzleClient, eq } from '@repo/db';
+import { addonInstances, eq } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runOrphanhood } from '../../../src/services/billing/addon/addon-instance-a5';
@@ -10,8 +10,10 @@ import {
     withServiceTestTransaction
 } from './helpers';
 import {
+    expectOrphaned,
     expectUntouched,
     orphanNow,
+    readInstance,
     seedOrphanInstance,
     seedOrphanOwner,
     seedPrincipal,
@@ -126,6 +128,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     { addonPolicy: addonPolicyFromTx(tx), listing }
                 );
                 expect(result.cancelled).toContain(seeded.instanceId);
+                expect((await readInstance(tx, seeded.instanceId)).status).toBe('CANCELLED');
             });
         });
 
@@ -149,12 +152,13 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     anchors,
                     revoked
                 });
-                const seeded = await seedVerticalCase(tx, userId, subscriptionId);
+                const seeded = await seedVerticalAddon(tx, { userId, targetId: subscriptionId });
                 const result = await runOrphanhood(
                     { tx, subscriptionId, now: orphanNow },
                     { addonPolicy: addonPolicyFromTx(tx), listing }
                 );
                 expect(result.cancelled).toContain(seeded.instanceId);
+                await expectOrphaned(tx, seeded);
             });
         });
 
@@ -187,13 +191,3 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
     }
 );
-
-async function seedVerticalCase(tx: DrizzleClient, ownerId: string, targetId: string) {
-    return seedOrphanInstance(tx, {
-        ownerId,
-        scopeType: 'VERTICAL_SUBSCRIPTION',
-        compatibleVerticals: [V],
-        status: 'ACTIVE',
-        targetId
-    });
-}
