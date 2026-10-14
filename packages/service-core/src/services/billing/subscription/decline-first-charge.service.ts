@@ -209,12 +209,6 @@ export async function declineFirstCharge(
             });
         }
         const subject = { userId: updated.userId, vertical: updated.vertical };
-
-        await enqueueSignupDeclinedNotice({
-            tx,
-            subscription: updated,
-            declineReason: charge.declineReason
-        });
         const [successor] = await tx
             .select({ id: subscriptions.id })
             .from(subscriptions)
@@ -226,6 +220,12 @@ export async function declineFirstCharge(
                 )
             )
             .limit(1);
+        await enqueueSignupDeclinedNotice({
+            tx,
+            subscription: updated,
+            declineReason: charge.declineReason,
+            successionPredecessor: Boolean(successor)
+        });
         if (successor)
             await successionCloser.closeSuccession({
                 predecessorSubscriptionId: subscription.id,
