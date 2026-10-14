@@ -100,7 +100,11 @@ describe.each(
                   });
         const fixture = { ownerId: owner.id, destinationId, listingId };
         fixtureIds.push(fixture);
-        const texts = [1, 2, 3].map((n) => `Texto ${n} V9b2 ${randomUUID()}`);
+        const texts = [
+            'Texto uno V9b2',
+            `Texto dos V9b2 ${randomUUID()}`,
+            `Texto tres V9b2 ${randomUUID()}`
+        ];
         const summaryText = `Resumen V9b2 ${randomUUID()}`;
         const service = await editService(vertical);
         const actor = ownerActor(owner.id);
