@@ -285,7 +285,7 @@ describe('billing reconciliation sweep cron', () => {
         // Assert
         expect(mockSweep).toHaveBeenCalledWith(
             { correlationId: expect.any(String) },
-            expect.objectContaining({ creditedPayments: {} })
+            expect.objectContaining({ creditedPayments: {}, paidOrders: {} })
         );
         expect(result).toMatchObject({ success: false, processed: 4, errors: 1 });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['paid-row']);
