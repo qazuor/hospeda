@@ -1039,5 +1039,65 @@
         "successMessage": "A conta foi encerrada a pedido do dono.",
         "errorTitle": "Não foi possível encerrar a conta",
         "stateChanged": "A conta mudou desde que você abriu esta confirmação e não foi encerrada. Verificamos de novo o que ainda resta."
+    },
+    "listingModeration": {
+        "title": "Moderação da ficha",
+        "statusLabel": "Status",
+        "fixRequestOpen": "Pedido de correção: aberto",
+        "fixRequestClosed": "Pedido de correção: encerrado",
+        "resultLabel": "Última ação",
+        "reasonLabel": "Por quê",
+        "reasonHelp": "O dono recebe o motivo no aviso e ele fica no registro.",
+        "cancel": "Cancelar",
+        "actions": {
+            "requestFix": "Pedir uma correção",
+            "takeDown": "Retirar a ficha",
+            "lift": "Suspender a moderação",
+            "closeFixRequest": "Encerrar o pedido de correção"
+        },
+        "dialog": {
+            "requestFix": {
+                "title": "Pedir uma correção",
+                "description": "Você vai pedir ao dono de «{name}» que corrija a ficha. A ficha continua onde está e o dono recebe o aviso com o motivo.",
+                "suggestedDateLabel": "Data sugerida (opcional)"
+            },
+            "takeDown": {
+                "title": "Retirar a ficha",
+                "description": "Você vai retirar «{name}». A ficha sai do site público até que você a libere.",
+                "ownerNotice": "O dono recebe o aviso com o motivo. Pode vê-la, editá-la e excluí-la, mas não publicá-la.",
+                "featured": "Se ela tiver destaques recorrentes, eles continuam sendo cobrados até que o dono os cancele."
+            },
+            "lift": {
+                "title": "Suspender a moderação",
+                "description": "Você vai suspender a moderação de «{name}». A ficha volta para onde estava antes de ser retirada e o dono recebe o aviso.",
+                "keepFixRequestLabel": "Mantê-la com pedido de correção",
+                "keepFixRequestHelp": "A ficha volta para onde estava e o pedido continua aberto."
+            },
+            "closeFixRequest": {
+                "title": "Encerrar o pedido de correção",
+                "description": "Você vai encerrar o pedido de correção de «{name}». A ficha não muda de estado."
+            }
+        },
+        "confirm": {
+            "requestFix": "Pedir a correção",
+            "takeDown": "Retirar a ficha",
+            "lift": "Suspender a moderação",
+            "closeFixRequest": "Encerrar o pedido"
+        },
+        "successTitle": "Pronto",
+        "successMessage": "A ficha ficou: {status}.",
+        "errors": {
+            "title": "Não foi possível moderar a ficha",
+            "invalid": "Revise o motivo: ele não pode ficar vazio nem passar de 2000 caracteres.",
+            "forbidden": "Você não tem permissão para moderar fichas.",
+            "notFound": "A ficha não existe mais.",
+            "generic": "Não foi possível moderar a ficha.",
+            "conflict": {
+                "requestFix": "A ficha já tem um pedido de correção aberto, ou mudou de estado. Recarregue a página.",
+                "takeDown": "A ficha mudou de estado e não foi retirada. Recarregue a página.",
+                "lift": "A ficha não está mais moderada. Recarregue a página.",
+                "closeFixRequest": "A ficha não tem um pedido de correção aberto."
+            }
+        }
     }
 }
