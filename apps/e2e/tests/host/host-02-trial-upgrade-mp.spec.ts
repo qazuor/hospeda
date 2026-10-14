@@ -56,6 +56,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import {
     createAccommodation,
     createSubscription,
@@ -133,7 +134,7 @@ test.describe('HOST-02: trial → MP upgrade @p0 @host @billing @real-payment', 
 
         await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'host-02'
         });
 

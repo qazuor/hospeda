@@ -6,12 +6,11 @@
  *
  * Preconditions:
  *   - Host with an active paid subscription (so writes are allowed).
- *   - One accommodation owned by the host in `lifecycleState='ACTIVE'` and
- *     `visibility='PUBLIC'`.
+ *   - One accommodation owned by the host in `publicationStatus='PUBLISHED'`.
  *
  * What this validates:
  *  1. Before unpublish: public GET by id responds with the accommodation data.
- *  2. After unpublish (lifecycle_state → DRAFT): public GET by id returns
+ *  2. After unpublish (publication_status → DRAFT): public GET by id returns
  *     null/404 — anonymous readers cannot see DRAFT content.
  *  3. After unpublish: public list/search does not include the accommodation.
  *  4. DB invariant: the row was modified, not deleted.
@@ -20,6 +19,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -44,7 +44,7 @@ test.describe('ACC-03: host unpublishes — accommodation disappears @p0 @accomm
 
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'acc-03'
         });
 
@@ -59,14 +59,13 @@ test.describe('ACC-03: host unpublishes — accommodation disappears @p0 @accomm
         const beforeBody = (await beforeRes.json()) as { data?: { id: string } | null };
         expect(beforeBody.data?.id).toBe(accommodation.id);
 
-        // ── 2. Unpublish: write both publication columns ───────────────────
+        // ── 2. Unpublish: write the publication status ─────────────────────
         // We update via SQL because the protected/admin patch endpoints have
         // a wider validation surface; ACC-03 validates the public-visibility
         // contract, not the publish/unpublish UI flow (covered by HOST-01).
         await execSQL(
             `UPDATE accommodations
-             SET lifecycle_state = 'DRAFT',
-                 publication_status = 'DRAFT',
+             SET publication_status = 'DRAFT',
                  updated_at = NOW()
              WHERE id = $1`,
             [accommodation.id]
@@ -101,12 +100,12 @@ test.describe('ACC-03: host unpublishes — accommodation disappears @p0 @accomm
         const ids = listBody.data?.items?.map((row) => row.id) ?? [];
         expect(ids).not.toContain(accommodation.id);
 
-        // ── 5. DB invariant: row exists, lifecycle is DRAFT, not deleted ──
-        const rows = await execSQL<{ lifecycle_state: string; deleted_at: string | null }>(
-            'SELECT lifecycle_state, deleted_at FROM accommodations WHERE id = $1',
+        // ── 5. DB invariant: row exists, status is DRAFT, not deleted ─────
+        const rows = await execSQL<{ publication_status: string; deleted_at: string | null }>(
+            'SELECT publication_status, deleted_at FROM accommodations WHERE id = $1',
             [accommodation.id]
         );
-        expect(rows[0]?.lifecycle_state).toBe('DRAFT');
+        expect(rows[0]?.publication_status).toBe('DRAFT');
         expect(rows[0]?.deleted_at).toBeNull();
     });
 });

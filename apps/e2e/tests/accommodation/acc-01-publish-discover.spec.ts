@@ -27,6 +27,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import {
     buildE2eFolderRoot,
@@ -67,7 +68,7 @@ test.describe('ACC-01: host publishes, guest discovers @p0 @accommodation @cloud
 
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'acc-01'
         });
 

@@ -19,6 +19,7 @@
  */
 
 import { expect, type Page, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import {
     createAccommodation,
     createUser,
@@ -72,7 +73,9 @@ async function createListing(input: {
     const listing = await createAccommodation({
         ownerId: input.ownerId,
         slugPrefix: 'v8a-notices',
-        lifecycleState: input.published ? 'ACTIVE' : 'DRAFT'
+        publicationStatus: input.published
+            ? PublicationStatusEnum.PUBLISHED
+            : PublicationStatusEnum.DRAFT
     });
     created.listingIds.push(listing.id);
     await renameListing({ listingId: listing.id, name: input.name });
@@ -435,7 +438,7 @@ test.describe('Listing notices of V8a @verticals', () => {
         });
         await execSQL(
             `UPDATE accommodations
-                SET publication_status = 'DRAFT', lifecycle_state = 'DRAFT'
+                SET publication_status = 'DRAFT'
               WHERE id = $1`,
             [listingId]
         );

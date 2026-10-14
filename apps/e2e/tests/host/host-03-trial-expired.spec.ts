@@ -19,6 +19,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { PublicationStatusEnum } from '@repo/schemas';
 import {
     createAccommodation,
     createSubscription,
@@ -89,7 +90,7 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
         // Pre-existing published accommodation owned by the host.
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'host-03-acc'
         });
 
