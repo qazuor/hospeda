@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
+import { isSuccessorOfPayingPredecessor } from './paying-predecessor-successor';
 import { enqueueSignupDeclinedNotice } from './signup-declined-notice';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
@@ -98,10 +99,9 @@ export async function declineFirstCharge(
 
     if (await payments.hasCreditedPayment({ subscriptionId: subscription.id }))
         return { outcome: 'NOT_APPLICABLE', reason: 'HAS_CREDITED_PAYMENT' };
-    if (
-        subscription.succeedsId &&
-        (await payments.hasCreditedPayment({ subscriptionId: subscription.succeedsId }))
-    )
+    // The successor of a paying predecessor belongs to S4 (AC:B7:4, DEC-SUB-022), read by the
+    // same predicate S4 uses; every other successor dies here as a signup.
+    if (await isSuccessorOfPayingPredecessor({ subscription, payments }))
         return { outcome: 'NOT_APPLICABLE', reason: 'LEFT_TO_S4' };
 
     const rereadAuthorization = async () => {

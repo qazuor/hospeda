@@ -176,16 +176,22 @@ export async function signup(input: {
     readonly app: App;
     readonly billingOptionId: string;
     readonly subjects: Subjects;
+    /** Signs up an existing user of the file instead of a new one (a successor, HOS-1557). */
+    readonly userId?: string;
 }) {
-    const [user] = await getDb()
-        .insert(users)
-        .values({
-            email: `hos1676-delegates-${crypto.randomUUID()}@example.test`,
-            displayName: 'HOS-1676 delegates user',
-            emailVerified: true,
-            lifecycleState: 'ACTIVE'
-        })
-        .returning();
+    const user = input.userId
+        ? { id: input.userId }
+        : (
+              await getDb()
+                  .insert(users)
+                  .values({
+                      email: `hos1676-delegates-${crypto.randomUUID()}@example.test`,
+                      displayName: 'HOS-1676 delegates user',
+                      emailVerified: true,
+                      lifecycleState: 'ACTIVE'
+                  })
+                  .returning()
+          )[0];
     if (!user) throw new Error('No user created');
     input.subjects.users.add(user.id);
     const response = await input.app.request('/api/v1/protected/billing/subscriptions', {

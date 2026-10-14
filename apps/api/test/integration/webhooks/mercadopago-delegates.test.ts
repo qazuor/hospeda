@@ -234,6 +234,86 @@ describe('TEST:1676:6 the three delegates are registered in the API, one notice 
         ).toEqual(['CANCELLED_ON_GRACE']);
     });
 
+    it('TEST:B7:2 (AC:B7:4, D-8) a cancelled preapproval over the successor of a paying predecessor in grace ⇒ 200, SUSPENDED by S6, not CANCELLED', async () => {
+        // Arrange: a paying predecessor (one credited cycle), cancelled as S17 leaves it.
+        const predecessor = await activeSignup();
+        const paid = await fake.charge({
+            authorizationId: predecessor.authorizationId,
+            amount: { amountMinor: 100000, currency: 'ARS' },
+            reference: 'hos1557-paid-cycle'
+        });
+        clock.advance({ ms: 60 * 60 * 1000 });
+        await fake.readCharge({ chargeId: paid.chargeId });
+        await deliver(dueDeliveryOf({ type: 'payment', id: paid.chargeId }));
+        await getDb()
+            .update(subscriptions)
+            .set({ status: 'CANCELLED' })
+            .where(eq(subscriptions.id, predecessor.subscriptionId));
+        // Its successor, declared from ACTIVE: the first charge after its window (AC:B3:24).
+        const successor = await signup({
+            app,
+            billingOptionId,
+            subjects,
+            userId: predecessor.userId
+        });
+        server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
+        await fake.approve({ authorizationId: successor.authorizationId });
+        clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        await deliver(
+            dueDeliveryOf({ type: 'subscription_preapproval', id: successor.authorizationId })
+        );
+        expect(await statusOf(successor.subscriptionId)).toBe('ACTIVE');
+        const windowEndsAt = new Date(clock.now().getTime() + 3 * DAY);
+        await getDb()
+            .update(subscriptions)
+            .set({
+                succeedsId: predecessor.subscriptionId,
+                authorizationWindowEndsAt: windowEndsAt,
+                firstChargeAt: new Date(windowEndsAt.getTime() + DAY)
+            })
+            .where(eq(subscriptions.id, successor.subscriptionId));
+        await getDb()
+            .update(subscriptions)
+            .set({ succeededById: successor.subscriptionId })
+            .where(eq(subscriptions.id, predecessor.subscriptionId));
+        // Its first charge is rejected ⇒ S4's successor branch opens grace.
+        server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
+        const { chargeId } = await fake.declineCharge({
+            authorizationId: successor.authorizationId,
+            declineReason: 'issuer_declined'
+        });
+        clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        await deliver(dueDeliveryOf({ type: 'payment', id: chargeId }));
+        expect(await statusOf(successor.subscriptionId)).toBe('GRACE_PERIOD');
+        server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
+
+        // Act: the provider cancels the successor's preapproval and notifies it.
+        await fake.cancel({ authorizationId: successor.authorizationId });
+        await deliver(await nextPreapprovalNotice(successor.authorizationId));
+
+        // Assert: S6 by its fifth event, never the mirror.
+        expect(await statusOf(successor.subscriptionId)).toBe('SUSPENDED');
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: successor.subscriptionId
+        });
+        expect(
+            events.filter(
+                (event) => event.eventType === 'subscription.provider_cancelled_after_rejection'
+            )
+        ).toEqual([]);
+        const arrears = await getDb()
+            .select({ id: emailOutbox.id })
+            .from(emailOutbox)
+            .where(
+                and(
+                    eq(emailOutbox.recipientUserId, predecessor.userId),
+                    eq(emailOutbox.template, 'billing.arrears-suspension')
+                )
+            );
+        expect(arrears).toHaveLength(1);
+    });
+
     it('TEST:1676:6 (2) a live preapproval over a CHARGE_DECLINED row seen cancelled 2 days ago ⇒ 200, REJECTION_REVIVED; once the before-cancel mail is out, the next live notice sends the cancellation to the fake', async () => {
         // Arrange: an S16 terminal without a decision whose preapproval the provider shows alive.
         const created = await activeSignup();

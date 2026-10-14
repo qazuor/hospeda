@@ -6,6 +6,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { enqueueGraceStartedNotice } from './grace-started-notice';
+import { isSuccessorOfPayingPredecessor } from './paying-predecessor-successor';
 import { noCreditedPayments, type SubscriptionPayments } from './subscription-billing-ports';
 
 const logger = createLogger('enter-grace');
@@ -47,7 +48,13 @@ export interface EnterGracePorts {
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
 }
 
-/** Re-reads the rejected charge by id and opens grace for a paid card principal. */
+/**
+ * S4: re-reads the rejected charge by id and opens grace for a paid card principal.
+ *
+ * A row with no credited payment of its own also enters grace when it is the
+ * successor of a paying predecessor (AC:B7:4, DEC-SUB-022), read by
+ * `isSuccessorOfPayingPredecessor`, the same predicate S16 uses to step aside.
+ */
 export async function enterGraceOnRejectedCharge(
     input: { readonly chargeId: string },
     ports: EnterGracePorts
@@ -79,7 +86,13 @@ export async function enterGraceOnRejectedCharge(
         return { outcome: 'NOT_APPLICABLE', reason: 'NOT_CARD_PRINCIPAL' };
 
     const paymentsPort = ports.payments ?? noCreditedPayments;
-    if (!(await paymentsPort.hasCreditedPayment({ subscriptionId: subscription.id })))
+    // A row without a credited payment of its own enters grace only as the successor of a
+    // paying predecessor (AC:B7:4, DEC-SUB-022); S16 reads the same predicate, so the two
+    // guards stay complementary (TRANS:B:S4, TRANS:B:S16).
+    if (
+        !(await paymentsPort.hasCreditedPayment({ subscriptionId: subscription.id })) &&
+        !(await isSuccessorOfPayingPredecessor({ subscription, payments: paymentsPort }))
+    )
         return { outcome: 'NOT_APPLICABLE', reason: 'NO_CREDITED_PAYMENT' };
 
     const [paidCurrentPeriod] = await getDb()
