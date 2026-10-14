@@ -231,20 +231,28 @@ describe('TEST:B11:9 AC:B11:10 terminal, cancellation-retry, and tombstone charg
         const eligible = await seedSubscription({ status: 'SUSPENDED', withLink: true, fake });
         const ineligible = await seedSubscription({ status: 'SUSPENDED', withLink: true, fake });
         const liveSibling = await seedSubscription({ status: 'ACTIVE' });
+        const predecessor = await seedSubscription({ status: 'ABANDONED' });
         track(eligible.subscription.id, eligible.subscription.userId);
         track(ineligible.subscription.id, ineligible.subscription.userId);
         track(liveSibling.subscription.id, liveSibling.subscription.userId);
+        track(predecessor.subscription.id, predecessor.subscription.userId);
         if (!eligible.subscription.userId || !ineligible.subscription.userId) {
             throw new Error('Fixture subscription has no user');
         }
         await getServiceTestDb()
             .update(subscriptions)
-            .set({ status: 'ABANDONED' })
+            .set({
+                userId: ineligible.subscription.userId,
+                succeedsId: predecessor.subscription.id
+            })
             .where(eq(subscriptions.id, liveSibling.subscription.id));
         await getServiceTestDb()
             .update(subscriptions)
-            .set({ userId: ineligible.subscription.userId })
-            .where(eq(subscriptions.id, liveSibling.subscription.id));
+            .set({
+                userId: ineligible.subscription.userId,
+                succeededById: liveSibling.subscription.id
+            })
+            .where(eq(subscriptions.id, predecessor.subscription.id));
         for (const row of [eligible, ineligible]) {
             await getServiceTestDb()
                 .update(subscriptions)
