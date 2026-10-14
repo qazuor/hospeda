@@ -3,6 +3,7 @@ import {
     createGraceExpiryCheck,
     createLostFirstRejectionCheck,
     createPaymentReconciliationMarkPayments,
+    createSuccessorGraceCheck,
     creditedPaymentsFromLedger,
     noDeterminableRetainedPaymentBranch,
     retainedPaymentsFromLedger,
@@ -54,6 +55,17 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                             clock,
                             payments: creditedPaymentsFromLedger,
                             planPolicy
+                        }),
+                        // AC:B7:4 (DEC-SUB-022): the successor of a paying predecessor that
+                        // entered grace has its preapproval re-read every day; `cancelled` or
+                        // `paused` ends that grace by S6 (fifth / second event). Before the
+                        // expiry check, which takes the row once its clock ran out (D-12).
+                        createSuccessorGraceCheck({
+                            provider,
+                            clock,
+                            beforeCancelNotice,
+                            payments: creditedPaymentsFromLedger,
+                            coverageNotices: getCoverageNotices()
                         }),
                         // AC:B7:7/AC:B7:8: S6 when the grace clock ran out, or P1 + S5 when the
                         // period charged. The coverage notice goes to the process-wide registry
