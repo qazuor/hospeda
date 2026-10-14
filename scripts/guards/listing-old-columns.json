@@ -1,5 +1,5 @@
 {
-    "$comment": "Closed exclusion list of TEST:V6:18 (scripts/check-listing-old-columns.ts, AC:V6:32, HOS-1641). subEntityFilePatterns switch off rule (d) only, by a case-insensitive fragment of the FILE NAME. subEntityReferences allow exactly `count` rule (d) occurrences of `name` in one file (one more fails; one fewer makes the entry dead). files switch off every rule for one file. An entry that suppresses nothing fails the guard.",
+    "$comment": "Closed exclusion list of TEST:V6:18 (scripts/check-listing-old-columns.ts, AC:V6:32, HOS-1641). subEntityFilePatterns switch off rule (d) only, by a case-insensitive fragment of the FILE NAME. subEntityReferences allow exactly `count` rule (d) occurrences of `name` in one file (one more fails; one fewer makes the entry dead). files switch off every rule for one file. An entry that suppresses nothing fails the guard. Why subEntityReferences exist (Coord-427): the key listing files (model, service, routes) also name sub-entity columns; excluding them whole under `files` would blind rule (d) in exactly the files that matter (the TEST:V6:18 mutation on accommodation.model.ts would survive), so each one allows only its counted mentions.",
     "subEntityFilePatterns": [
         {
             "pattern": "review",
@@ -69,13 +69,6 @@
             "count": 2,
             "table": "amenities, features",
             "reason": "The amenity and feature junction rows project their own lifecycleState."
-        },
-        {
-            "file": "apps/api/src/routes/accommodation/protected/createDraft.ts",
-            "name": "lifecycleState",
-            "count": 1,
-            "table": "none (OpenAPI description)",
-            "reason": "Stale OpenAPI description text (\"lifecycleState=DRAFT\"), not a read; scope request to rewrite it as publicationStatus. Remove this entry when it is rewritten."
         },
         {
             "file": "apps/api/src/routes/accommodation/protected/getById.ts",
