@@ -12,7 +12,11 @@
  * is the photo's own). Exclusions (closed list, `scripts/guards/listing-old-columns.json`):
  * sub-entity file-name patterns and counted sub-entity references switch off (d)
  * only; single files switch off every rule; an exclusion that suppresses nothing
- * fails. Exit 0 clean; exit 1 on a violation or a broken/empty scan.
+ * fails. Why counted references exist (Coord-427): the most important listing
+ * files (the model, the service, the routes) also name sub-entity columns (the
+ * owner `users` relation, a photo, an amenity); excluding them whole would blind
+ * rule (d) there, so each such file allows exactly its counted mentions and one
+ * more is a violation. Exit 0 clean; exit 1 on a violation or a broken/empty scan.
  */
 
 import { execFileSync } from 'node:child_process';
