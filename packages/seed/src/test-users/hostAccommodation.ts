@@ -13,15 +13,17 @@ import {
 } from '@repo/db';
 import type { AccommodationCreateInput, Destination } from '@repo/schemas';
 import {
+    AccommodationCreateInputSchema,
     AccommodationTypeEnum,
     DestinationTypeEnum,
     PermissionEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
+    PublicationStatusEnum,
     RoleEnum
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
-import { AccommodationService } from '@repo/service-core';
+import { AccommodationService, DestinationService } from '@repo/service-core';
 import {
     IMAGE_POOL_BY_TYPE,
     type PooledAccommodationType
@@ -285,6 +287,26 @@ export function buildHostAccommodationCoreFields(
 }
 
 /**
+ * Builds the model row for a host seed accommodation, born `PUBLISHED` (HOS-1641
+ * Coord-420): the create input never names a state (R3), so the seed passes it at
+ * birth, which `withListingBirthColumns` respects. Parsed like `service.create` did.
+ * @param input.coreFields - Output of {@link buildHostAccommodationCoreFields}.
+ * @param input.actorId - The owner's id, recorded as creator and updater.
+ * @returns The row to pass to `AccommodationModel.create`.
+ */
+export function buildHostAccommodationBirthRow(input: {
+    readonly coreFields: AccommodationCreateInput;
+    readonly actorId: string;
+}): Record<string, unknown> {
+    return {
+        ...AccommodationCreateInputSchema.parse(input.coreFields),
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
+        createdById: input.actorId,
+        updatedById: input.actorId
+    };
+}
+
+/**
  * Resolves the CITY destination to use for host seed accommodations.
  *
  * Tries the well-known `concepcion-del-uruguay` slug first (fast path — it is
@@ -372,16 +394,11 @@ async function fetchAccommodationCatalogIds(db: DrizzleClient): Promise<{
  * @returns `'created'` when a new accommodation was inserted, `'skipped'`
  *   when the user already had one.
  *
- * @throws {Error} When no CITY destination exists, or when
- *   `AccommodationService.create` fails validation/permissions.
+ * @throws {Error} When no CITY destination exists, or the core fields fail their schema.
  *
  * @example
  * ```ts
- * await ensureHostAccommodation({
- *   userId: 'uuid-host-pro',
- *   spec: { email: 'host-pro@local.test', displayName: 'Host Pro' },
- *   db: getDb()
- * });
+ * await ensureHostAccommodation({ userId: 'uuid-host-pro', spec: hostProSpec, db: getDb() });
  * ```
  */
 export async function ensureHostAccommodation(params: {
@@ -421,14 +438,13 @@ export async function ensureHostAccommodation(params: {
         permissions: HOST_ACCOMMODATION_ACTOR_PERMISSIONS
     };
 
+    // HOS-1641 Coord-420: born PUBLISHED via the model; the count the service kept is refreshed here.
     const service = new AccommodationService({});
-    const createResult = await service.create(actor, coreFields);
-    if (!createResult.data) {
-        throw new Error(
-            `Failed to create host accommodation for ${spec.email}: ${createResult.error?.message ?? 'unknown error'}`
-        );
-    }
-    const accommodationId = createResult.data.id;
+    const created = await accommodationModel.create(
+        buildHostAccommodationBirthRow({ coreFields, actorId: userId })
+    );
+    const accommodationId = created.id;
+    await new DestinationService({}).updateAccommodationsCount(destination.id);
 
     // ── Amenities + features: every catalog entry applicable to 'accommodation' ──
     const { amenityIds, featureIds } = await fetchAccommodationCatalogIds(db);

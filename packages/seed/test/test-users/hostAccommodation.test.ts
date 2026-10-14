@@ -2,7 +2,7 @@
  * Unit tests for the pure, DB-free builders in `hostAccommodation.ts` (HOS-30).
  *
  * `ensureHostAccommodation` itself (the DB-orchestrating idempotency check +
- * AccommodationService.create + junction inserts) is NOT unit tested here —
+ * model create + junction inserts) is NOT unit tested here —
  * it requires a live database, matching the existing precedent in this
  * package: `testUsers.seed.ts`'s own DB-touching helpers (`ensureBillingCustomer`,
  * `ensureSubscription`, etc.) have no unit test coverage either, and are
@@ -11,10 +11,15 @@
  * the same split: unit-test what's pure, verify the DB-touching path via a
  * real `pnpm db:seed:test-users` run instead.
  */
-import { AccommodationCreateInputSchema, AccommodationTypeEnum } from '@repo/schemas';
+import {
+    AccommodationCreateInputSchema,
+    AccommodationTypeEnum,
+    PublicationStatusEnum
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     ACCOMMODATION_TYPE_BY_EMAIL,
+    buildHostAccommodationBirthRow,
     buildHostAccommodationCoreFields,
     buildHostAccommodationPrice
 } from '../../src/test-users/hostAccommodation.js';
@@ -179,5 +184,46 @@ describe('buildHostAccommodationCoreFields', () => {
         expect(fields.name).toContain('Host Pro');
         expect(fields.description).toContain('HOS-30');
         expect(fields.description).toContain('prueba');
+    });
+});
+
+describe('buildHostAccommodationBirthRow (HOS-1641 Coord-420)', () => {
+    it('should give the host test user a PUBLISHED accommodation at birth', () => {
+        // Arrange
+        const coreFields = buildHostAccommodationCoreFields({
+            spec: { email: 'host-pro@local.test', displayName: 'Host Pro' },
+            ownerId: VALID_OWNER_ID,
+            destinationId: VALID_DESTINATION_ID,
+            coordinates: VALID_COORDINATES
+        });
+
+        // Act
+        const row = buildHostAccommodationBirthRow({ coreFields, actorId: VALID_OWNER_ID });
+
+        // Assert
+        expect(row.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
+        expect(row).toMatchObject({
+            slug: 'alojamiento-completo-host-pro',
+            ownerId: VALID_OWNER_ID,
+            destinationId: VALID_DESTINATION_ID,
+            createdById: VALID_OWNER_ID,
+            updatedById: VALID_OWNER_ID
+        });
+        for (const oldKey of ['lifecycleState', 'visibility', 'moderationState']) {
+            expect(row).not.toHaveProperty(oldKey);
+        }
+    });
+
+    it('should reject core fields that fail the create schema, as service.create did', () => {
+        // Arrange
+        const coreFields = buildHostAccommodationCoreFields({
+            spec: { email: 'host-pro@local.test', displayName: 'Host Pro' },
+            ownerId: 'not-a-uuid',
+            destinationId: VALID_DESTINATION_ID,
+            coordinates: VALID_COORDINATES
+        });
+
+        // Act / Assert
+        expect(() => buildHostAccommodationBirthRow({ coreFields, actorId: 'x' })).toThrow();
     });
 });
