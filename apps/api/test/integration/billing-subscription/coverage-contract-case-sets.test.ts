@@ -9,8 +9,8 @@
  *   reader: the only difference between the two harnesses is the billing half.
  * - (iii): the real implementation's own case set (`realCoverageCaseSet`) runs
  *   entire against the real one.
- * - (iv): that own set holds a case the bootstrap does not pass: "an ACTIVE
- *   subscription covers".
+ * - (iv): that own set holds two cases the bootstrap does not pass: "an ACTIVE
+ *   subscription covers" and the G-R2-C case of the ADDON source.
  * - (v): the shared set's distinctive case (PRE_TRIAL, contract §5.1) fails
  *   against a constant implementation, both "always covered" and "never
  *   anything". This block reads no database.
@@ -64,7 +64,12 @@ import {
     ensureAccommodationCatalog,
     MATRIX_NOW
 } from '../listing-publication/publication-routes.helpers';
-import { type RealCoverageCaseHarness, realCoverageCaseSet } from './real-coverage-case-set';
+import { deleteAddonInstances, seedUserAndGlobalAddons } from './real-coverage-addon-fixtures';
+import {
+    G_R2_C_CASE,
+    type RealCoverageCaseHarness,
+    realCoverageCaseSet
+} from './real-coverage-case-set';
 
 /** Users seeded by one harness: one per case of either set is enough. */
 const USERS_PER_HARNESS = 2;
@@ -72,6 +77,7 @@ const USERS_PER_HARNESS = 2;
 /** Everything the cases wrote, cleaned in `afterEach`. */
 const createdUserIds: string[] = [];
 const createdBillingOptionIds: string[] = [];
+const createdAddonInstanceIds: string[] = [];
 
 beforeAll(async () => {
     await testDb.setup();
@@ -84,6 +90,7 @@ afterEach(async () => {
     const db = getDb();
     const userIds = createdUserIds.splice(0);
     const billingOptionIds = createdBillingOptionIds.splice(0);
+    await deleteAddonInstances({ instanceIds: createdAddonInstanceIds.splice(0) });
     for (const userId of userIds) {
         await db.delete(subscriptions).where(eq(subscriptions.userId, userId));
     }
@@ -202,7 +209,12 @@ async function makeDbHarness(args: {
                     vertical: asTrialVertical(who),
                     status: 'TRIAL_EXPIRED'
                 }),
-            activeSubscription: seedActiveSubscription
+            activeSubscription: seedActiveSubscription,
+            // The bootstrap ignores these rows; that is why it fails the G-R2-C case.
+            compatibleAddons: async (who) => {
+                const { instanceIds } = await seedUserAndGlobalAddons(who);
+                createdAddonInstanceIds.push(...instanceIds);
+            }
         },
         act: {
             // T1's write, committed (`createTrial` runs outside a transaction),
@@ -370,7 +382,7 @@ describe("TEST:B4:9 (AC:B4:9) (iii) the real implementation's own case set passe
 });
 
 describe("TEST:B4:9 (AC:B4:9) (iv) the real implementation's own set has a case the bootstrap does not pass", () => {
-    it('against the bootstrap, exactly "an ACTIVE subscription covers" fails', async () => {
+    it('against the bootstrap, exactly two cases fail: "an ACTIVE subscription covers" and the G-R2-C case', async () => {
         // Arrange
         const cases = collect({
             register: (runner) =>
@@ -382,7 +394,7 @@ describe("TEST:B4:9 (AC:B4:9) (iv) the real implementation's own set has a case 
 
         // Assert
         expect(cases.length).toBeGreaterThanOrEqual(2);
-        expect(failed.map((testCase) => testCase.name)).toEqual([ACTIVE_COVERS_CASE]);
+        expect(failed.map((testCase) => testCase.name)).toEqual([ACTIVE_COVERS_CASE, G_R2_C_CASE]);
     });
 });
 
@@ -424,7 +436,8 @@ describe('TEST:B4:9 (AC:B4:9) (vi) the collector is not empty, so (iv) and (v) c
         // Assert
         expect(own.map((testCase) => testCase.name)).toEqual([
             ACTIVE_COVERS_CASE,
-            'an ACTIVE subscription does not cover another vertical'
+            'an ACTIVE subscription does not cover another vertical',
+            G_R2_C_CASE
         ]);
         expect(shared.length).toBeGreaterThanOrEqual(5);
         expect(shared.map((testCase) => testCase.name)).toContain(PRE_TRIAL_CASE);

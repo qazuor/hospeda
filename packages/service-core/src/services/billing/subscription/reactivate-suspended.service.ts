@@ -14,9 +14,7 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import { ServiceErrorCode, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
-import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
-import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import { billingPeriodEnd } from './billing-period-end';
 import {
@@ -28,14 +26,18 @@ import {
     checkLatePaymentConditions,
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
+import { openLatePaymentRejectedMark } from './late-payment-rejected-mark';
+import { applyOverdueScheduledChangeOnReturn } from './scheduled-change-on-return';
 import type { BeforeCancelNotice } from './start-subscription.service';
+import {
+    type ScheduledChangeApplier,
+    unimplementedScheduledChangeApplier
+} from './subscription-billing-ports';
 import { releaseRetainedPayment, retainPaymentForSuccession } from './succession-retained-payment';
 
 const logger = createLogger('reactivate-suspended');
 const inputSchema = z.strictObject({ paymentId: z.uuid(), unpaidSince: z.date().optional() });
 const S7_ADMITTED_STATUSES = ['SUSPENDED'] as const;
-/** HOS-1548: hanging the same payment twice on the same mark is refused; a replay must not fail S7. */
-const MARK_PAYMENT_ALREADY_HUNG = 'MARK_PAYMENT_ALREADY_HUNG';
 
 /** Where S7 leaves the row: `ACTIVE`, or `CANCEL_SCHEDULED` when the authorization is already cancelled. */
 export type ReactivateSuspendedDestination = 'ACTIVE' | 'CANCEL_SCHEDULED';
@@ -96,6 +98,8 @@ export interface ReactivateSuspendedPorts {
     readonly beforeCancelNotice?: BeforeCancelNotice;
     /** Whether the user's plan grants Tourist VIP again (AC:B7:31, H10); unwired skips the clause. */
     readonly touristVipInheritance?: TouristVipInheritancePort;
+    /** S38's interface (AC:B7:28); defaults to `unimplementedScheduledChangeApplier`. */
+    readonly scheduledChangeApplier?: ScheduledChangeApplier;
 }
 
 /** The verdict reached inside the row's transaction. */
@@ -116,43 +120,6 @@ type InTransactionVerdict =
     | { readonly kind: 'FAILED'; readonly failedCondition: LatePaymentFailedCondition }
     | { readonly kind: 'NO_ANCHOR' }
     | { readonly kind: 'LOST_RACE' };
-
-/**
- * Opens reason 7 `PAGO_TARDIO_RECHAZADO` with the payment hung (I-3), outside the
- * row's transaction. A payment already hung on that mark (a replayed notice) is
- * logged and not retried.
- */
-async function openLatePaymentRejectedMark(input: {
-    readonly subscriptionId: string;
-    readonly paymentId: string;
-    readonly ports: ReactivateSuspendedPorts;
-}): Promise<void> {
-    const { ports } = input;
-    try {
-        await openReconciliationMark(
-            {
-                subject: { kind: 'SUBSCRIPTION', subscriptionId: input.subscriptionId },
-                reason: 'PAGO_TARDIO_RECHAZADO',
-                payment: { source: 'PAYMENT', id: input.paymentId },
-                actor: { type: ports.actorType ?? 'provider' },
-                correlationId: input.paymentId
-            },
-            {
-                markPayments:
-                    ports.markPayments ?? createPaymentReconciliationMarkPayments(ports.clock)
-            }
-        );
-    } catch (error) {
-        if (error instanceof ServiceError && error.reason === MARK_PAYMENT_ALREADY_HUNG) {
-            logger.info(
-                { subscriptionId: input.subscriptionId, paymentId: input.paymentId },
-                'Late payment already hung on its reason 7 mark'
-            );
-            return;
-        }
-        throw error;
-    }
-}
 
 /**
  * Emits `ADDED` once the row's transaction committed (AC:B4:2, G5 `via: "notice"`):
@@ -244,6 +211,8 @@ async function cancelInheritedTouristVipAfterCommit(input: {
  * condition 2, 3 or 4, or no anchor) it closes that payment's open retention with
  * `REEVALUATED` in the same transaction (branch 2, S3's re-evaluation, HOS-1561
  * H9); `RETAINED` and a lost race leave it open.
+ * Only on `WRITTEN`, in that same transaction, a scheduled change whose date passed
+ * while the row was suspended is handed to S38 (AC:B7:28); its error rolls S7 back.
  * Conditions 2 and 3 open reason 7; condition 4 (a duplicate or a replay of an
  * already paid period) opens nothing (D-3). No anchor opens reason 7 (H4); an
  * authorization neither `authorized` nor `cancelled` writes nothing (H3).
@@ -413,6 +382,13 @@ export async function reactivateSuspendedOnCreditedPayment(
             .returning({ userId: subscriptions.userId, vertical: subscriptions.vertical });
         if (!updated) return { kind: 'LOST_RACE' };
         await releaseRetention();
+        await applyOverdueScheduledChangeOnReturn(
+            { subscriptionId, now: ports.clock.now(), tx },
+            {
+                scheduledChangeApplier:
+                    ports.scheduledChangeApplier ?? unimplementedScheduledChangeApplier
+            }
+        );
         return {
             kind: 'WRITTEN',
             destination,

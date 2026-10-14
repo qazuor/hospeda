@@ -23,6 +23,7 @@ import type { ExitGracePorts, ExitGraceResult } from '../subscription/exit-grace
 import { exitGraceOnCreditedPayment } from '../subscription/exit-grace.service';
 import type { ReactivateSuspendedResult } from '../subscription/reactivate-suspended.service';
 import { reactivateSuspendedOnCreditedPayment } from '../subscription/reactivate-suspended.service';
+import type { ScheduledChangeApplier } from '../subscription/subscription-billing-ports';
 import type { CreditPaymentResult } from './credit-payment.service';
 import { creditPayment } from './credit-payment.service';
 import type { CoverageNotices, PromoChargePolicy, PromoExhaustion } from './payment-ports';
@@ -48,6 +49,8 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
      * implementation with `markPayments`.
      */
     readonly chargebacks?: ChargebackDetection;
+    /** S38's interface, handed to S7 (AC:B7:28); unwired falls back to S7's failing default. */
+    readonly scheduledChangeApplier?: ScheduledChangeApplier;
 }
 
 /** The payment states a read chargeback is handed to the interface from (AC:B11:27). */
@@ -240,7 +243,8 @@ export async function recordChargeFact(
                     actorType: ports.actorType,
                     coverageNotices: ports.coverageNotices,
                     beforeCancelNotice: ports.beforeCancelNotice,
-                    touristVipInheritance: ports.touristVipInheritance
+                    touristVipInheritance: ports.touristVipInheritance,
+                    scheduledChangeApplier: ports.scheduledChangeApplier
                 }
             );
             return { outcome: 'CREDITED', paymentId, credit, reactivation };

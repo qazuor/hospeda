@@ -45,6 +45,7 @@ import {
     noCreditedPayments,
     recordAuthorizationSeenAlive,
     recordCancellationSeen,
+    type ScheduledChangeApplier,
     type SubscriptionPayments,
     type SuccessionCloser,
     unimplementedSuccessionCloser,
@@ -102,6 +103,8 @@ export interface ProcessProviderNoticePorts {
     readonly coverageNotices?: CoverageNotices;
     /** Reaches S7's Tourist VIP clause through `recordChargeFact` (AC:B7:31); unwired skips it. */
     readonly touristVipInheritance?: TouristVipInheritancePort;
+    /** S38's interface, reaching S7 through `recordChargeFact` (AC:B7:28); unwired uses its failing default. */
+    readonly scheduledChangeApplier?: ScheduledChangeApplier;
     /**
      * Hangs a payment on a reconciliation mark. The unknown-authorization handler
      * uses it to hang a receipt tombstone's payment on its mark (B11 §2.4), and

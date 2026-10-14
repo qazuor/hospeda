@@ -1,11 +1,18 @@
-/** TEST:B13a:25 — web effective-set gates (Coord-58, AC:B13a:27). */
+/**
+ * TEST:B13a:25 — web effective-set gates (Coord-58, AC:B13a:27).
+ *
+ * The absent-key owner holds neither a trial nor a subscription: a trial
+ * derives its entitlements from the highest-rank sellable version (AC:V3:4),
+ * which grants `create_promotions`, so a trial owner can never meet the closed
+ * gate (HOS-1536, Coord-467). The present-key owner holds only an
+ * `owner-basico` subscription, so the key can come from nowhere else.
+ */
 
 import { expect, type Page, test } from '@playwright/test';
-import { VerticalEnum } from '@repo/schemas';
 import { createUser, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
-import { ensureListingOwnerTrial } from '../../fixtures/listing-owner-trial.ts';
+import { seedActivePlanHolder } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
@@ -21,7 +28,6 @@ test.describe('TEST:B13a:25 AC:B13a:27 web effective-set gates @p1 @host', () =>
         owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIdsToCleanup.push(owner.id);
         await markProfileCompleted({ userId: owner.id });
-        await ensureListingOwnerTrial(getDbPool(), owner.id, VerticalEnum.ACCOMMODATION);
     });
 
     test.afterAll(async () => {
@@ -42,7 +48,7 @@ test.describe('TEST:B13a:25 AC:B13a:27 web effective-set gates @p1 @host', () =>
         await seedCookieConsent(page);
     }
 
-    test('closes promotions for a trial owner without the create key', async ({ page }) => {
+    test('closes promotions for an owner with no trial and no subscription', async ({ page }) => {
         await prepareOwner(page);
         const oldEndpointRequests: string[] = [];
         page.on('request', (request) => {
@@ -98,6 +104,51 @@ test.describe('TEST:B13a:25 AC:B13a:27 web effective-set gates @p1 @host', () =>
         expect(response.status()).toBe(500);
         await expect(page.getByText('Tu plan no incluye promociones')).toBeVisible();
         await expect(page.getByRole('link', { name: 'Nueva promoción' })).toHaveCount(0);
+        expect(oldEndpointRequests).toEqual([]);
+    });
+
+    test('opens promotions for an owner whose live subscription grants the create key', async ({
+        page
+    }) => {
+        // Its OWN owner (HOS-1536, Coord-58, I-8): the shared owner of the
+        // beforeAll may sit cached without the key. No trial: the key must
+        // come from the owner-basico subscription through billing's real
+        // coverage (B4), never from a trial's derived set (AC:V3:4).
+        const keyedOwner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
+        userIdsToCleanup.push(keyedOwner.id);
+        await markProfileCompleted({ userId: keyedOwner.id });
+        await seedActivePlanHolder({ userId: keyedOwner.id, slug: 'owner-basico' });
+        await page.context().addCookies(
+            keyedOwner.sessionCookie.split('; ').map((cookie) => {
+                const [name, ...value] = cookie.split('=');
+                return { name: (name ?? '').trim(), value: value.join('='), url: WEB_URL };
+            })
+        );
+        await seedCookieConsent(page);
+        const oldEndpointRequests: string[] = [];
+        page.on('request', (request) => {
+            if (request.url().includes('/protected/users/me/entitlements')) {
+                oldEndpointRequests.push(request.url());
+            }
+        });
+        const effectiveSetResponse = page.waitForResponse(
+            (response) =>
+                response.url().includes(EFFECTIVE_SET_PATH) && response.request().method() === 'GET'
+        );
+        await page.goto(`${WEB_URL}${PROMOTIONS_PATH}`, { waitUntil: 'domcontentloaded' });
+
+        await expect(page.getByRole('heading', { name: 'Mis promociones' })).toBeVisible({
+            timeout: 30_000
+        });
+        const response = await effectiveSetResponse;
+        expect(response.status()).toBe(200);
+        const body = (await response.json()) as {
+            data?: { entitlements?: Record<string, number | string> };
+        };
+        expect(body.data?.entitlements).toHaveProperty('create_promotions');
+        // The positive assertion first: the open gate shows its link.
+        await expect(page.getByRole('link', { name: 'Nueva promoción' })).toBeVisible();
+        await expect(page.getByText('Tu plan no incluye promociones')).toHaveCount(0);
         expect(oldEndpointRequests).toEqual([]);
     });
 });
