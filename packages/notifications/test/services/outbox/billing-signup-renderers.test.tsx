@@ -4,6 +4,7 @@ import { createBillingSignupRenderers } from '../../../src/services/outbox/billi
 import {
     CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
     FIRST_CHARGE_DECLINED_CANCEL_SUBJECT,
+    PERMANENT_GRANT_CANCEL_SUBJECT,
     REVOCATION_CANCEL_SUBJECT,
     SCHEDULED_CANCELLATION_SUBJECT
 } from '../../../src/templates/billing/index.js';
@@ -210,6 +211,21 @@ describe('billing signup outbox renderers', () => {
         expect(html).not.toContain(subscriptionId);
     });
 
+    it('HOS-1582 — renders permanent grant cancellation and rejects an invalid payload', async () => {
+        const template = 'billing.permanent-grant-cancel';
+        const result = await renderers[template]!({
+            row: row({ template, payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe(PERMANENT_GRANT_CANCEL_SUBJECT);
+        expect(html).toContain('Te otorgamos acceso permanente sin costo en Hospeda');
+        expect(html).toContain('Mercado Pago');
+        expect(html).not.toContain(subscriptionId);
+        expect(() => renderers[template]!({ row: row({ template, payload: {} }) })).toThrow(
+            TypeError
+        );
+    });
+
     it.each([
         ['billing.signup-confirmed', { subscriptionId }],
         ['billing.before-cancel', {}],
@@ -222,6 +238,8 @@ describe('billing signup outbox renderers', () => {
         ['billing.first-charge-declined-cancel', { subscriptionId: 42 }],
         ['billing.revocation-cancel', {}],
         ['billing.revocation-cancel', { subscriptionId: 42 }],
+        ['billing.permanent-grant-cancel', {}],
+        ['billing.permanent-grant-cancel', { subscriptionId: 42 }],
         ['billing.closed-subscription-authorization-cancel', {}],
         ['billing.closed-subscription-authorization-cancel', { subscriptionId: 42 }],
         ['billing.scheduled-cancellation', {}],
