@@ -234,9 +234,13 @@ describe('TEST:1676:3 LIVE_PREAPPROVAL_ON_CLOSED_ROW is registered and answers O
             ]);
             expect(cancel).toHaveBeenCalledTimes(1);
             expect(order).toEqual(['cancel:1']);
+            // TEST:1683:3 AC:1683:2: REJECTION_REVIVED's own template, never S3's.
             expect(await beforeCancelOutboxOf(row.userId)).toEqual([
-                { template: 'billing.before-cancel' }
+                { template: 'billing.closed-subscription-authorization-cancel' }
             ]);
+            expect(await beforeCancelOutboxOf(row.userId)).not.toContainEqual({
+                template: 'billing.before-cancel'
+            });
             expect(await providerStatus(fake, row.authorizationId)).toBe('cancelled');
             expect(await cancelledSeenAtOf(row.subscriptionId)).toBeNull();
             expect(await openReasonsOf(row.subscriptionId)).toEqual([]);
@@ -301,7 +305,11 @@ describe('TEST:1676:3 LIVE_PREAPPROVAL_ON_CLOSED_ROW is registered and answers O
                 { reason: 'REJECTION_REVIVED', occurredAt: readAt }
             ]);
             expect(cancel).toHaveBeenCalledTimes(1);
+            // TEST:1683:3 AC:1683:2: REJECTION_REVIVED's own template, never S3's.
             expect(await beforeCancelOutboxOf(fixture.user.id)).toContainEqual({
+                template: 'billing.closed-subscription-authorization-cancel'
+            });
+            expect(await beforeCancelOutboxOf(fixture.user.id)).not.toContainEqual({
                 template: 'billing.before-cancel'
             });
             expect(await providerStatus(fixture.provider, authorizationId)).toBe('cancelled');

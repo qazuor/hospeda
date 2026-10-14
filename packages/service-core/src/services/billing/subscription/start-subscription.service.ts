@@ -23,6 +23,7 @@ import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
+import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import { resolveLiveCommitmentReuse } from './resolve-live-commitment';
 
@@ -35,12 +36,16 @@ export type BeforeCancelNoticeStatus =
     | 'DELIVERY_EXHAUSTED'
     | 'NOT_YET_SENT';
 
-/** Enqueue and inspect the once-per-cancellation notice. */
+/**
+ * Enqueue and inspect the once-per-cancellation notice. The `kind` is mandatory and picks the
+ * template: there is no default notice (HOS-1683), so every cancellation declares what it says.
+ */
 export interface BeforeCancelNotice {
     beforeCancel(input: {
         readonly subscriptionId: string;
         readonly userId: string;
-        readonly kind?: 'TOURIST_VIP_INHERITED' | 'ARREARS_SUSPENSION' | 'ADDON_CANCELLED';
+        /** Which notice this cancellation sends; see `BEFORE_CANCEL_TEMPLATE_BY_KIND`. */
+        readonly kind: BeforeCancelNoticeKind;
         /** The occurrence of the fact that decided the cancellation; defaults to the subscription id. */
         readonly occurrenceId?: string;
         /**
@@ -250,7 +255,8 @@ export async function startSubscription(
         closing = true;
         const notice = await ports.beforeCancelNotice.beforeCancel({
             subscriptionId: row.subscription.id,
-            userId: input.userId
+            userId: input.userId,
+            kind: 'FIRST_CHARGE_DECLINED'
         });
         if (notice === 'SENT' || notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED') {
             try {

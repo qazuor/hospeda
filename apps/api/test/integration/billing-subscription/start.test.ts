@@ -422,7 +422,7 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
     it('TEST:B3:3 enqueues one before-cancel notice and reads its four delivery outcomes', async () => {
         const { user } = await fixture(true);
         const subscriptionId = crypto.randomUUID();
-        const input = { subscriptionId, userId: user.id };
+        const input = { subscriptionId, userId: user.id, kind: 'AUTHORIZATION_EXPIRED' as const };
         expect(await beforeCancelNotice.beforeCancel(input)).toBe('NOT_YET_SENT');
         expect(await beforeCancelNotice.beforeCancel(input)).toBe('NOT_YET_SENT');
         const rows = await getDb()
@@ -454,7 +454,8 @@ describe('TEST:B3:2 protected S1 route rejects a retired checkout link', () => {
         expect(
             await beforeCancelNotice.beforeCancel({
                 subscriptionId: crypto.randomUUID(),
-                userId: user.id
+                userId: user.id,
+                kind: 'AUTHORIZATION_EXPIRED'
             })
         ).toBe('NO_RECIPIENT');
         expect(

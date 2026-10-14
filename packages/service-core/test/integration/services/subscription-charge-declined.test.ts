@@ -181,6 +181,12 @@ describe('TEST:B3:17 declineFirstCharge', () => {
             successionClosed: false
         });
         expect(cancel).toHaveBeenCalledTimes(1);
+        // TEST:1683:3 AC:1683:2: S16 asks its first notice with its own kind.
+        expect(own.beforeCancelNotice.beforeCancel).toHaveBeenCalledWith({
+            subscriptionId: own.started.subscriptionId,
+            userId: own.userId,
+            kind: 'FIRST_CHARGE_DECLINED'
+        });
         expect(
             (await own.fake.readAuthorization({ authorizationId: own.started.authorizationId }))
                 .snapshot.status

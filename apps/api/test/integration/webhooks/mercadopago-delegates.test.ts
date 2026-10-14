@@ -29,6 +29,7 @@ import {
 import { MercadoPagoPaymentProvider } from '@repo/payments';
 import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
 import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments/fake-server';
+import { BEFORE_CANCEL_TEMPLATE_BY_KIND } from '@repo/service-core';
 import { createAdjustableClock } from '@repo/test-clock';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -163,7 +164,10 @@ async function nextPreapprovalNotice(authorizationId: string) {
     });
 }
 
-/** The `billing.before-cancel` mails enqueued for one user. */
+/**
+ * The before-cancel mails of REJECTION_REVIVED (`LIVE_AUTHORIZATION_ON_CLOSED_ROW`,
+ * `billing.closed-subscription-authorization-cancel`) enqueued for one user.
+ */
 async function beforeCancelMails(userId: string) {
     return getDb()
         .select({ id: emailOutbox.id, status: emailOutbox.status })
@@ -171,7 +175,10 @@ async function beforeCancelMails(userId: string) {
         .where(
             and(
                 eq(emailOutbox.recipientUserId, userId),
-                eq(emailOutbox.template, 'billing.before-cancel')
+                eq(
+                    emailOutbox.template,
+                    BEFORE_CANCEL_TEMPLATE_BY_KIND.LIVE_AUTHORIZATION_ON_CLOSED_ROW
+                )
             )
         );
 }

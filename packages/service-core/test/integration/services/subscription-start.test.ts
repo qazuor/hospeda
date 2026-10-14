@@ -282,9 +282,11 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
             order.push('cancel');
             return realCancel(input);
         });
+        const kinds: string[] = [];
         const notice: BeforeCancelNotice = {
-            beforeCancel: async () => {
+            beforeCancel: async (input) => {
                 order.push('notice');
+                kinds.push(input.kind);
                 return 'SENT';
             }
         };
@@ -295,6 +297,8 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
             )
         ).rejects.toMatchObject({ reason: 'PREVIOUS_ATTEMPT_CLOSING' });
         expect(order).toEqual(['notice', 'cancel', 'notice', 'cancel']);
+        // TEST:1683:3 AC:1683:2: S1 re-cancels S16's row with S16's kind (same dedupe key).
+        expect(kinds).toEqual(['FIRST_CHARGE_DECLINED', 'FIRST_CHARGE_DECLINED']);
         expect(rereads).toHaveBeenCalledTimes(2);
         const rows = await getDb()
             .select()
