@@ -123,6 +123,42 @@ async function resultFor(
     return declineFirstCharge({ chargeId: own.chargeId }, activePorts);
 }
 
+/**
+ * Seeds a CANCELLED card predecessor of `own` and turns `own` into its successor, with its
+ * first charge after its authorization window (declared from ACTIVE) or at its birth
+ * (the successor of a card SUSPENDED, AC:B3:24).
+ */
+async function seedPayingPredecessorOf(
+    own: Awaited<ReturnType<typeof seedActive>>,
+    { firstChargeAfterWindow }: { readonly firstChargeAfterWindow: boolean }
+) {
+    const windowEndsAt = own.row.authorizationWindowEndsAt;
+    if (!windowEndsAt) throw new Error('No authorization window');
+    const [predecessor] = await getServiceTestDb()
+        .insert(subscriptions)
+        .values({
+            userId: own.row.userId,
+            vertical: own.row.vertical,
+            planVersionId: own.row.planVersionId,
+            billingOptionId: own.row.billingOptionId,
+            paymentMethod: 'CARD',
+            class: 'PRINCIPAL',
+            status: 'CANCELLED'
+        })
+        .returning();
+    if (!predecessor) throw new Error('No predecessor');
+    await getServiceTestDb()
+        .update(subscriptions)
+        .set({
+            succeedsId: predecessor.id,
+            firstChargeAt: firstChargeAfterWindow
+                ? new Date(windowEndsAt.getTime() + 86_400_000)
+                : clock.now()
+        })
+        .where(eq(subscriptions.id, own.row.id));
+    return predecessor;
+}
+
 async function ownOutbox(subscriptionId: string) {
     const rows = await getServiceTestDb().select().from(emailOutbox);
     return rows.filter(
@@ -422,23 +458,10 @@ describe('TEST:B3:17 declineFirstCharge', () => {
 
         current = openedAt;
         const leftToS4 = await seedActive();
-        const [predecessor] = await getServiceTestDb()
-            .insert(subscriptions)
-            .values({
-                userId: leftToS4.row.userId,
-                vertical: leftToS4.row.vertical,
-                planVersionId: leftToS4.row.planVersionId,
-                billingOptionId: leftToS4.row.billingOptionId,
-                paymentMethod: 'CARD',
-                class: 'PRINCIPAL',
-                status: 'CANCELLED'
-            })
-            .returning();
-        if (!predecessor) throw new Error('No predecessor');
-        await getServiceTestDb()
-            .update(subscriptions)
-            .set({ succeedsId: predecessor.id })
-            .where(eq(subscriptions.id, leftToS4.row.id));
+        // A successor declared from ACTIVE: its first charge is after its window (AC:B7:4).
+        const predecessor = await seedPayingPredecessorOf(leftToS4, {
+            firstChargeAfterWindow: true
+        });
         expect(
             await resultFor(
                 leftToS4,
@@ -458,6 +481,37 @@ describe('TEST:B3:17 declineFirstCharge', () => {
                     .where(eq(subscriptions.id, leftToS4.row.id))
             )[0]?.status
         ).toBe('ACTIVE');
+    });
+
+    it('TEST:B3:17 f2 — a successor whose first charge is not after its window dies by S16', async () => {
+        current = openedAt;
+        const own = await seedActive();
+        // The successor of a card SUSPENDED charges on authorization (AC:B3:24): not S4's.
+        const predecessor = await seedPayingPredecessorOf(own, { firstChargeAfterWindow: false });
+        expect(
+            await resultFor(
+                own,
+                ports(providerWithCancel(own.fake), own.beforeCancelNotice, {
+                    payments: {
+                        hasCreditedPayment: async ({ subscriptionId }) =>
+                            subscriptionId === predecessor.id
+                    }
+                })
+            )
+        ).toEqual({
+            outcome: 'DECLINED',
+            subscriptionId: own.row.id,
+            cancelCall: 'SENT',
+            successionClosed: false
+        });
+        expect(
+            (
+                await getServiceTestDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, own.row.id))
+            )[0]?.status
+        ).toBe('CHARGE_DECLINED');
     });
 
     it('TEST:B3:17 g — conditional active update reports a lost race without declined notice', async () => {
