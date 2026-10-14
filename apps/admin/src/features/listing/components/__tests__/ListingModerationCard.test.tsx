@@ -374,7 +374,7 @@ describe('TEST:1684:4 AC-1684:2 the API answer and its typed rejections', () => 
         ['TAKE_DOWN', PublicationStatusEnum.PUBLISHED, 403, es.errors.forbidden, 'error'],
         ['REQUEST_FIX', PublicationStatusEnum.PUBLISHED, 404, es.errors.notFound, 'error'],
         ['CLOSE_FIX_REQUEST', PublicationStatusEnum.DRAFT, 400, es.errors.invalid, 'error']
-    ] as const)('%s answered %i reads as its own text (%s) and closes the dialog', async (action, publicationStatus, status, message, variant) => {
+    ] as const)('%s on %s answered %i reads as its own text and closes the dialog', async (action, publicationStatus, status, message, variant) => {
         // Arrange
         mutateAsync.mockRejectedValue(new ApiError('Listing state changed', { status }));
         renderCard({ publicationStatus });
