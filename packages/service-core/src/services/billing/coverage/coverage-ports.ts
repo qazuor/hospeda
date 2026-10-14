@@ -36,10 +36,12 @@ export interface BillingCoveragePorts {
 }
 
 /**
- * Fails visibly until `ficha` exists in production. V6.13 (AC:V6:26) builds
- * the real `ficha(idDeFicha)` and replaces this port at the composition root
- * (HOS-1532 decision X-1). Safe meanwhile because no `LISTING` addon instance
- * exists until B10 sells one, and B10 lands after V6.
+ * A `ficha` port that fails visibly (HOS-1532 decision X-1). Production no
+ * longer uses it: V6.13 (AC:V6:26, HOS-1483) built the real
+ * `ficha(idDeFicha)` and registered it at the composition root
+ * (`apps/api/src/utils/listing-access/billing-coverage.ts`). It survives only
+ * as a test double for billing integration fixtures that seed no `LISTING`
+ * addon; it must never be composed into production again.
  */
 export const unregisteredListingQuery: Pick<VerticalsForBilling, 'listing'> = {
     async listing() {
