@@ -123,6 +123,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Run S12 on scheduled cancellations whose end of service passed (HOS-1569, AC:B8a:5-6).'
     },
     {
+        name: 'subscription-renewal-notice',
+        displayName: 'Avisos de renovación',
+        category: 'billing',
+        schedule: '0 9 * * *',
+        description:
+            'Enqueue the renewal notice at 5 and 1 days before the next charge (HOS-1622, AC:B13a:13).'
+    },
+    {
         name: 'host-trade-usage-reminder',
         displayName: 'Recordatorio de usos del beneficio',
         category: 'notifications',
