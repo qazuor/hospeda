@@ -101,7 +101,7 @@ describe.each(
         const fixture = { ownerId: owner.id, destinationId, listingId };
         fixtureIds.push(fixture);
         const texts = [
-            'Texto uno V9b2 edición',
+            'Texto uno V9b2 edición purgada',
             `Texto dos V9b2 ${randomUUID()}`,
             `Texto tres V9b2 ${randomUUID()}`
         ];
