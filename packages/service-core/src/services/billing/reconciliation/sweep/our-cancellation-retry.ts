@@ -52,8 +52,7 @@ export const BEFORE_CANCEL_KIND_BY_TRANSITION: Readonly<
     A5: 'ADDON_CANCELLED',
     // The receipt tombstone names no row, so it never has a recipient.
     RECEPTION_TOMBSTONE: 'RECIPIENTLESS',
-    // No writer records S13 yet: its leaf declares the kind in the same PR.
-    S13: 'UNDECLARED',
+    S13: 'PERMANENT_GRANT',
     // No writer records S20 yet: its leaf declares the kind in the same PR.
     S20: 'UNDECLARED',
     // S21 never calls: its call is A5's or A6's.

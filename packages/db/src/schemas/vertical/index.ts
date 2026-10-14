@@ -9,6 +9,7 @@ export * from './covered-period.dbschema.ts';
 export * from './idempotency-key.dbschema.ts';
 export * from './manual-payment.dbschema.ts';
 export * from './payment.dbschema.ts';
+export * from './permanent-grant.dbschema.ts';
 export * from './plan-catalog.dbschema.ts';
 export * from './plan-migration.dbschema.ts';
 export * from './promo.dbschema.ts';
