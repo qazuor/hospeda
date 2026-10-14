@@ -93,7 +93,9 @@ describe.each([
         );
         const listingTable = vertical === VerticalEnum.GASTRONOMY ? 'gastronomies' : `${vertical}s`;
         await db.execute(
-            sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary' WHERE id = ${archived.id}`
+            vertical === VerticalEnum.GASTRONOMY
+                ? sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary', opening_hours = '{"monday":{"open":"09:00","close":"17:00"}}'::jsonb WHERE id = ${archived.id}`
+                : sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary' WHERE id = ${archived.id}`
         );
         const faqTable =
             vertical === VerticalEnum.ACCOMMODATION
@@ -232,7 +234,7 @@ describe.each([
         });
         expect(result).toMatchObject({ purged: true });
         const after = await db.execute(
-            sql`SELECT id, publication_status, deleted_at, name, description, summary FROM ${sql.raw(listingTable)} WHERE id = ${archived.id}`
+            sql`SELECT id, publication_status, deleted_at, name, description, summary${vertical === VerticalEnum.GASTRONOMY || vertical === VerticalEnum.EXPERIENCE ? sql`, opening_hours` : sql``} FROM ${sql.raw(listingTable)} WHERE id = ${archived.id}`
         );
         expect(after.rows).toHaveLength(1);
         expect(after.rows[0]).toMatchObject({
@@ -242,6 +244,9 @@ describe.each([
             description: '',
             summary: ''
         });
+        if (vertical === VerticalEnum.GASTRONOMY || vertical === VerticalEnum.EXPERIENCE) {
+            expect(after.rows[0]).toMatchObject({ opening_hours: null });
+        }
         expect(
             (
                 await db.execute(
