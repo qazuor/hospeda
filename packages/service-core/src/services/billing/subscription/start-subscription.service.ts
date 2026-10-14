@@ -40,7 +40,7 @@ export interface BeforeCancelNotice {
     beforeCancel(input: {
         readonly subscriptionId: string;
         readonly userId: string;
-        readonly kind?: 'TOURIST_VIP_INHERITED' | 'ARREARS_SUSPENSION';
+        readonly kind?: 'TOURIST_VIP_INHERITED' | 'ARREARS_SUSPENSION' | 'ADDON_CANCELLED';
         /** The occurrence of the fact that decided the cancellation; defaults to the subscription id. */
         readonly occurrenceId?: string;
         /**
