@@ -550,10 +550,10 @@ describe('HOS-1582 TEST:B9a:1 AC:B9a:1 — the sweep retries an S13 decision wit
     it('asks with PERMANENT_GRANT and retries the preapproval once', async () => {
         const { fake } = newFake();
         const row = await decided({ fake, status: 'CANCELLED', transition: 'S13' });
-        const notice = outboxBeforeCancelNotice({ deliver: true });
-        const result = await runDay(0, fake, notice.beforeCancel);
+        const beforeCancel = vi.fn(outboxBeforeCancelNotice({ deliver: true }).beforeCancel);
+        const result = await runDay(0, fake, beforeCancel);
         expect(result.summary.rowsFailed).toBe(0);
-        expect(notice.beforeCancel).toHaveBeenCalledWith({
+        expect(beforeCancel).toHaveBeenCalledWith({
             subscriptionId: row.id,
             userId: row.userId,
             kind: 'PERMANENT_GRANT'
