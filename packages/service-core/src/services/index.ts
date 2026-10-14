@@ -94,6 +94,7 @@ export * from './billing/payment/payment-ports.js';
 export * from './billing/payment/record-charge-fact.service.js';
 export * from './billing/read-anchored-billing-option.js';
 export * from './billing/reconciliation/cancel-our-authorization.js';
+export * from './billing/reconciliation/chargeback/chargeback-detection.js';
 export * from './billing/reconciliation/creations/creations-sweep.service.js';
 export * from './billing/reconciliation/handle-unknown-authorization.service.js';
 export * from './billing/reconciliation/lift-reconciliation-mark.service.js';
