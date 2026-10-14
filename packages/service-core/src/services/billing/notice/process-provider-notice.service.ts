@@ -27,6 +27,7 @@ import {
     unwiredCoverageNotices
 } from '../payment/payment-ports.js';
 import { recordChargeFact } from '../payment/record-charge-fact.service.js';
+import type { ChargebackDetection } from '../reconciliation/chargeback/chargeback-detection.js';
 import {
     handleUnknownAuthorization,
     type UnknownAuthorizationArrival
@@ -83,6 +84,9 @@ type Outcome =
     | 'TOMBSTONE_WRITTEN'
     | 'RESOURCE_KIND_NOT_HANDLED'
     | 'UNSUPPORTED_NOTICE'
+    | 'CHARGEBACK_MARKED'
+    | 'CHARGEBACK_ON_UNCREDITED'
+    | 'REFUNDED_NOT_CREDITED'
     | 'FAILED';
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
@@ -107,6 +111,8 @@ export interface ProcessProviderNoticePorts {
      * `recordChargeFact` for S5's/S7's reason 7; unwired, both use their default.
      */
     readonly markPayments?: ReconciliationMarkPayments;
+    /** The internal chargeback interface (AC:B11:27), handed to `recordChargeFact`. */
+    readonly chargebacks?: ChargebackDetection;
 }
 
 /**
@@ -219,6 +225,13 @@ export async function processProviderNotice(
                             ? 'PAYMENT_CREDITED'
                             : 'PAYMENT_ALREADY_CREDITED'
                 };
+            if (result.outcome === 'CHARGEBACK_DETECTED')
+                return { ack: 'OK', outcome: 'CHARGEBACK_MARKED' };
+            if (
+                result.outcome === 'CHARGEBACK_ON_UNCREDITED' ||
+                result.outcome === 'REFUNDED_NOT_CREDITED'
+            )
+                return { ack: 'OK', outcome: result.outcome };
             if (result.outcome === 'GRACE')
                 return {
                     ack: 'OK',

@@ -5,6 +5,11 @@ import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import {
+    type ChargebackDetection,
+    type ChargebackDetectionResult,
+    createChargebackDetection
+} from '../reconciliation/chargeback/chargeback-detection';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service';
 import type {
@@ -39,9 +44,21 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
     readonly actorType?: ExitGracePorts['actorType'];
     /** Whether the plan S7 restores grants Tourist VIP again (AC:B7:31); unwired skips that clause. */
     readonly touristVipInheritance?: TouristVipInheritancePort;
+    /**
+     * The internal chargeback interface of AC:B11:27; unwired, the cut's
+     * implementation with `markPayments`.
+     */
+    readonly chargebacks?: ChargebackDetection;
     /** S38's interface, handed to S7 (AC:B7:28); unwired falls back to S7's failing default. */
     readonly scheduledChangeApplier?: ScheduledChangeApplier;
 }
+
+/** The payment states a read chargeback is handed to the interface from (AC:B11:27). */
+const CHARGEBACK_PAYMENT_STATUSES: readonly string[] = [
+    'SUCCEEDED',
+    'PARTIALLY_REFUNDED',
+    'REFUNDED'
+];
 
 export type RecordChargeFactResult =
     | { readonly outcome: 'CARD_VALIDATION_IGNORED' }
@@ -69,7 +86,20 @@ export type RecordChargeFactResult =
           readonly paymentId: string;
           readonly decline: DeclineFirstChargeResult;
       }
-    | { readonly outcome: 'GRACE'; readonly paymentId: string; readonly grace: EnterGraceResult };
+    | { readonly outcome: 'GRACE'; readonly paymentId: string; readonly grace: EnterGraceResult }
+    | {
+          /** The charge reads charged back on a credited payment: the interface ran (AC:B11:27). */
+          readonly outcome: 'CHARGEBACK_DETECTED';
+          readonly paymentId: string;
+          readonly detection: ChargebackDetectionResult;
+      }
+    /** Charged back on a payment we never credited: nothing is credited (HOS-1605 H7). */
+    | { readonly outcome: 'CHARGEBACK_ON_UNCREDITED'; readonly paymentId: string }
+    /**
+     * The charge collected and was refunded in full before or after we read it:
+     * it credits nothing and runs no S5/S7 (fail closed; a refunded payment used to make the read throw).
+     */
+    | { readonly outcome: 'REFUNDED_NOT_CREDITED'; readonly paymentId: string };
 
 /** Reads one provider charge by id and records/advances its payment fact. */
 export async function recordChargeFact(
@@ -140,6 +170,39 @@ export async function recordChargeFact(
                 'PAYMENT_FACT_DUPLICATE_ROW_MISSING'
             );
         paymentId = existing.id;
+    }
+
+    if (charge.chargedBack) {
+        const [payment] = await getDb()
+            .select({
+                id: payments.id,
+                status: payments.status,
+                subscriptionId: payments.subscriptionId
+            })
+            .from(payments)
+            .where(eq(payments.id, paymentId))
+            .limit(1);
+        if (payment && CHARGEBACK_PAYMENT_STATUSES.includes(payment.status)) {
+            const chargebacks =
+                ports.chargebacks ??
+                createChargebackDetection({ markPayments: ports.markPayments });
+            const detection = await chargebacks.detect({
+                payment,
+                actor: ports.actorType ?? 'provider',
+                correlationId: crypto.randomUUID()
+            });
+            return { outcome: 'CHARGEBACK_DETECTED', paymentId, detection };
+        }
+        logger.warn({ paymentId }, 'Chargeback read on a payment we never credited; not crediting');
+        return { outcome: 'CHARGEBACK_ON_UNCREDITED', paymentId };
+    }
+    if (
+        charge.status === 'approved' &&
+        charge.amount.amountMinor > 0 &&
+        charge.refundedAmount.amountMinor >= charge.amount.amountMinor
+    ) {
+        logger.warn({ paymentId }, 'Charge was refunded in full; it credits nothing');
+        return { outcome: 'REFUNDED_NOT_CREDITED', paymentId };
     }
 
     if (charge.status === 'approved') {

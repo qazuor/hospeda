@@ -6,6 +6,8 @@ import {
     addonInstances,
     addonProducts
 } from '../../src/schemas/vertical/addon-product.dbschema.ts';
+import { payments } from '../../src/schemas/vertical/payment.dbschema.ts';
+import { reconciliationMarkPayments } from '../../src/schemas/vertical/reconciliation-mark-payment.dbschema.ts';
 import { subscriptions } from '../../src/schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 import { closeTestPool, withTestTransaction } from './helpers.ts';
@@ -233,6 +235,56 @@ describe('support for TEST:B3:14 and TEST:B3:15 — reconciliation mark model', 
             ).toEqual([other.id]);
             const [after] = await tx.select().from(subscriptions);
             expect(after).toEqual(subject.subscription);
+        });
+    });
+
+    it('support for TEST:B11:27 — tells whether a payment ever hung on a mark of one reason, open or lifted (H6)', async () => {
+        await withTestTransaction(async (tx) => {
+            const subject = await fixture(tx);
+            const subscriptionId = subject.subscription.id;
+            const markSubject = { kind: 'SUBSCRIPTION' as const, subscriptionId };
+            const newPayment = async (factId: string) => {
+                const [row] = await tx
+                    .insert(payments)
+                    .values({
+                        subscriptionId,
+                        amount: 10_000,
+                        currency: 'ARS',
+                        status: 'SUCCEEDED',
+                        provider: 'mercadopago',
+                        providerFactId: `b114-model-${factId}-${crypto.randomUUID()}`,
+                        factAt: new Date('2026-10-10T10:00:00.000Z')
+                    })
+                    .returning({ id: payments.id });
+                return row?.id as string;
+            };
+            const hung = await newPayment('hung');
+            const other = await newPayment('other');
+            const mark = await model.insertOpen({
+                subject: markSubject,
+                reason: 'CONTRACARGO',
+                tx
+            });
+            await tx
+                .insert(reconciliationMarkPayments)
+                .values({ markId: mark.id, paymentId: hung });
+            const ask = (paymentId: string, reason: 'CONTRACARGO' | 'REEMBOLSO_FUERA_DEL_FLUJO') =>
+                model.hasPaymentHungOnReason({ subscriptionId, paymentId, reason, tx });
+
+            expect(await ask(hung, 'CONTRACARGO')).toBe(true);
+            expect(await ask(hung, 'REEMBOLSO_FUERA_DEL_FLUJO')).toBe(false);
+            expect(await ask(other, 'CONTRACARGO')).toBe(false);
+
+            const lifted = await model.lift({
+                markId: mark.id,
+                expectedVersion: 1,
+                liftedBy: subject.userId,
+                now: new Date('2026-10-11T10:00:00.000Z'),
+                tx
+            });
+            expect(lifted.outcome).toBe('LIFTED');
+            expect(await ask(hung, 'CONTRACARGO')).toBe(true);
+            expect(await ask(other, 'CONTRACARGO')).toBe(false);
         });
     });
 });

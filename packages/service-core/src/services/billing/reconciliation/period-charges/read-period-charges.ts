@@ -1,6 +1,7 @@
 import type {
     ActStart,
     AuthorizationSnapshot,
+    ChargeSnapshot,
     PaymentProvider,
     ProviderRead
 } from '@repo/payments';
@@ -27,6 +28,21 @@ export type PeriodChargesVerdict =
           readonly latestCharge?: PeriodChargesLatestCharge;
       }
     | { readonly verdict: 'NO_CURRENT_PERIOD' };
+
+/**
+ * Whether an approved charge kept no money: charged back, or refunded in full
+ * (Coord-454). Such a period is not `CHARGED`, so a row in grace still reaches
+ * S6; a partial refund still counts as charged, as it does for the credit.
+ */
+function moneyWentBack({
+    charge
+}: {
+    readonly charge: ProviderRead<ChargeSnapshot>['snapshot'];
+}): boolean {
+    if (charge.chargedBack) return true;
+    const charged = charge.amount.amountMinor;
+    return charged > 0 && charge.refundedAmount.amountMinor >= charged;
+}
 
 /**
  * Reads every listed charge by id and decides only from the current period's
@@ -80,7 +96,7 @@ export async function readPeriodCharges(
         const current = latest;
         if (current.status === 'pending')
             return { verdict: 'UNKNOWN', reason: 'PENDING_CHARGE', latestCharge };
-        return current.status === 'approved'
+        return current.status === 'approved' && !moneyWentBack({ charge: current })
             ? { verdict: 'CHARGED', chargeId: current.chargeId }
             : { verdict: 'NOT_CHARGED', chargeId: current.chargeId };
     } catch {

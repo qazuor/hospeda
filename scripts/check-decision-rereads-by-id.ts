@@ -34,7 +34,7 @@
  *   adapter's read by id (`ProviderRead`, handed over by `assertFreshForAct`).
  *   Outside `packages/payments/`: any code naming `stampProviderRead` (only an
  *   implementation builds a read); and in a file importing `@repo/payments`, a
- *   provider state type (`AuthorizationSnapshot`, `ChargeSnapshot`,
+ *   provider state type (`AuthorizationSnapshot`, `ChargeSnapshot`, `OrderSnapshot`,
  *   `AuthorizationStatus`, `ChargeStatus`) named anywhere but inside
  *   `ProviderRead<…>` or an import/export clause, a `.snapshot` read off anything but `assertFreshForAct(…)`
  *   or an identifier bound to it, or a `snapshot` destructured from anything
@@ -193,7 +193,8 @@ function withValidTargets({ masked }: { readonly masked: MaskedSource }): string
 }
 
 /** A provider state type: only allowed inside `ProviderRead<…>`. */
-const STATE_TYPE = /\b(?:AuthorizationSnapshot|ChargeSnapshot|AuthorizationStatus|ChargeStatus)\b/g;
+const STATE_TYPE =
+    /\b(?:AuthorizationSnapshot|ChargeSnapshot|OrderSnapshot|AuthorizationStatus|ChargeStatus)\b/g;
 
 const IDENT = /^[A-Za-z_$][\w$]*/;
 

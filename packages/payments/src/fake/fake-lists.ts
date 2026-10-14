@@ -7,7 +7,7 @@
  *   the matrix rows it comes from (with date and account), and the test that
  *   proves our code resists it. By default the fake tells every lie it
  *   implements; a test may turn one off only by naming it and saying why.
- * - **The provider's own rules and measured behaviour**, RP1..RP12: rules stay
+ * - **The provider's own rules and measured behaviour**, RP1..RP13: rules stay
  *   on; a measured behaviour can be turned off by name with a reason.
  * - **The simulations**: network cases nobody measured (a lost answer, a cut
  *   network, notices out of order). Not lies, never counted as such, and off
@@ -136,7 +136,7 @@ export const FAKE_LISTS: FakeLists = Object.freeze(parseFakeLists({ input: fakeL
 /** The closed list of measured lies, M1..M13. */
 export const FAKE_LIES: readonly FakeLie[] = FAKE_LISTS.lies;
 
-/** The provider's own rules and measured behaviour, RP1..RP12. */
+/** The provider's own rules and measured behaviour, RP1..RP13. */
 export const FAKE_RULES: readonly FakeRule[] = FAKE_LISTS.rules;
 
 /** What the fake simulates without having measured it. */

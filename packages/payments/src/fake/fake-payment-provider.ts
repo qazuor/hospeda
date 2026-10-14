@@ -39,6 +39,10 @@ import type {
     ChargeSnapshot,
     MutationAcknowledgement,
     NoticeDelivery,
+    OrderRef,
+    OrderSearchInput,
+    OrderSearchResult,
+    OrderSnapshot,
     PaymentProvider,
     ProviderNotice,
     RefundInput,
@@ -53,11 +57,14 @@ import {
     ChargeInputSchema,
     ChargeRefSchema,
     NoticeDeliverySchema,
+    OrderRefSchema,
+    OrderSearchInputSchema,
     parseProviderInput,
     RefundInputSchema
 } from '../provider/schemas';
 import { createFakeCardValidation } from './fake-card-validation';
 import { applyFakeChargeCycles, fakeCycleRetryInstants } from './fake-charge-cycle';
+import { applyFakeChargeback } from './fake-chargeback';
 import { FakeLedger } from './fake-ledger';
 import type { FakeBehaviourId, FakeLieId } from './fake-lists';
 import { decodeFakeNotice } from './fake-notice';
@@ -66,6 +73,7 @@ import {
     type FakePaymentProviderOptions,
     parseFakeOptions
 } from './fake-options';
+import { FakeOrders } from './fake-orders';
 import { FakeOutbox } from './fake-outbox';
 import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
 import { searchStoredAuthorizations } from './fake-search';
@@ -87,6 +95,7 @@ export class FakePaymentProvider implements PaymentProvider {
 
     private readonly outbox: FakeOutbox;
     private readonly ledger: FakeLedger;
+    private readonly orders: FakeOrders;
     private readonly clock: Clock;
     private readonly honest: ReadonlySet<string>;
     private readonly simulating: ReadonlySet<string>;
@@ -116,6 +125,7 @@ export class FakePaymentProvider implements PaymentProvider {
             outOfOrder: this.simulating.has('noticesOutOfOrder')
         });
         this.ledger = new FakeLedger({ outbox: this.outbox, idNamespace: parsed.idNamespace });
+        this.orders = new FakeOrders({ ledger: this.ledger, clock: this.clock });
     }
 
     /**
@@ -262,7 +272,8 @@ export class FakePaymentProvider implements PaymentProvider {
                 refundedAmount: {
                     amountMinor: 0,
                     currency: authorization.snapshot.amount.currency
-                }
+                },
+                chargedBack: false
             },
             version: 1,
             settleAt: null,
@@ -349,7 +360,8 @@ export class FakePaymentProvider implements PaymentProvider {
                         status: late ? 'pending' : 'approved',
                         declineReason: null,
                         amount: { ...value.amount },
-                        refundedAmount: { amountMinor: 0, currency: value.amount.currency }
+                        refundedAmount: { amountMinor: 0, currency: value.amount.currency },
+                        chargedBack: false
                     },
                     version: 1,
                     settleAt: late ? nextChargeBatch({ at: this.now() }) : null,
@@ -581,6 +593,31 @@ export class FakePaymentProvider implements PaymentProvider {
         return stampProviderRead({ snapshot, clock: this.clock });
     }
 
+    /** Capability 7 · read a one-time order by id. */
+    async readOrder(input: OrderRef): Promise<ProviderRead<OrderSnapshot>> {
+        const ref = { schema: OrderRefSchema, input, capability: 'read' } as const;
+        const { orderId } = parseProviderInput(ref).value;
+        this.catchUp();
+        return stampProviderRead({ snapshot: this.orders.read({ orderId }), clock: this.clock });
+    }
+
+    /** Capability 7 · search orders by exact reference inside a bounded range (RP13, EX-57). */
+    async searchOrders(input: OrderSearchInput): Promise<OrderSearchResult> {
+        const ref = { schema: OrderSearchInputSchema, input, capability: 'read' } as const;
+        const { value } = parseProviderInput(ref);
+        this.catchUp();
+        return this.orders.search(value);
+    }
+
+    /** Test handle (not a PaymentProvider method): the customer places an order, paid or not. */
+    placeOrder(input: {
+        readonly reference: string;
+        readonly createdAt?: string;
+        readonly paid: boolean;
+    }): { readonly orderId: string } {
+        return this.orders.place(input);
+    }
+
     /** Capability 8 · decode one of the fake's own deliveries, in either format, into a notice. */
     async decodeNotice(input: NoticeDelivery): Promise<ProviderNotice> {
         const { value } = parseProviderInput({
@@ -589,6 +626,15 @@ export class FakePaymentProvider implements PaymentProvider {
             capability: 'notify'
         });
         return decodeFakeNotice({ delivery: value }).notice;
+    }
+
+    /** Test handle, like `approve` (not a PaymentProvider method): the payer disputes an approved charge. */
+    async chargeBack(input: ChargeRef): Promise<MutationAcknowledgement> {
+        const ref = { schema: ChargeRefSchema, input, capability: 'read' } as const;
+        const { chargeId } = parseProviderInput(ref).value;
+        this.catchUp();
+        applyFakeChargeback({ ledger: this.ledger, chargeId });
+        return { accepted: true, resourceId: chargeId };
     }
 
     /**

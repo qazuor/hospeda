@@ -117,6 +117,16 @@ describe('TEST:B1:9 turning a measured behaviour off by name', () => {
         expect(FAKE_RULES.find((r) => r.id === 'RP1')?.kind).toBe('rule');
     });
 
+    it('TEST:B11:12 (support) (e) refuses to turn RP13 off: the order search rule is a rule', () => {
+        expect(FAKE_RULES.find((r) => r.id === 'RP13')?.kind).toBe('rule');
+        expect(() =>
+            build({
+                clock,
+                withoutBehaviour: [{ behaviour: 'RP13', why: 'search without bounds' }]
+            })
+        ).toThrow(/not a measured behaviour of the list/);
+    });
+
     it('accepts each implemented measured behaviour with its reason', () => {
         for (const behaviour of ['RP7', 'RP8', 'RP11', 'RP12'] as const)
             expect(() =>

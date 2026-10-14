@@ -41,7 +41,7 @@
  *   lie off by name and see the honest path come back.
  * - Simulations (`simulate: [...]`): they are not lies and G15 does not count
  *   them (`B/20` §3.2); the fake refuses an unnamed one at runtime.
- * - Provider rules (RP1-RP6) are never turned off; measured behaviours (RP7-RP12)
+ * - Provider rules (RP1-RP6, RP13) are never turned off; measured behaviours (RP7-RP12)
  *   may be turned off only by name and with a reason.
  *
  * Exit codes: 0 = clean; 1 = a violation, or a scan too small to trust.

@@ -259,6 +259,17 @@ describe('the predicates, unit by unit', () => {
             })
         ).toEqual([]);
     });
+
+    it('(b) HOS-1605: a bare OrderSnapshot is provider state outside ProviderRead<…>', () => {
+        const source =
+            "import type { OrderSnapshot, ProviderRead } from '@repo/payments';\n" +
+            'export const paid = (order: OrderSnapshot) => order.hasApprovedPayment;\n';
+        expect(findStateOutsideRead({ file: 'a.ts', source }).length).toBeGreaterThan(0);
+        const wrapped =
+            "import type { OrderSnapshot, ProviderRead } from '@repo/payments';\n" +
+            'export type Read = ProviderRead<OrderSnapshot>;\n';
+        expect(findStateOutsideRead({ file: 'a.ts', source: wrapped })).toEqual([]);
+    });
 });
 
 describe('TEST:B3:21 / G17(c) writer allowlist', () => {
