@@ -254,6 +254,46 @@ describe('billing reconciliation sweep cron', () => {
         expect(result.details).toMatchObject({ cancellationRetry: { rowsFailed: 1 } });
     });
 
+    it('runs the credited payments check and maps its counters (HOS-1605, AC:B11:12, AC:B11:27)', async () => {
+        // Arrange
+        mockSweep.mockResolvedValue({
+            rowsRead: 4,
+            runId: 'run-id',
+            complete: false,
+            pinged: false,
+            rowsFailed: 1,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [{ subscriptionId: 'paid-row', message: 'charge not found' }],
+            creditedPayments: {
+                examined: 3,
+                chargebacks: 1,
+                outOfFlowRefunds: 1,
+                alreadyOpen: 0,
+                failures: [
+                    { paymentId: 'payment-id', subscriptionId: 'paid-row', message: 'not found' }
+                ]
+            },
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+
+        // Act
+        const result = await billingReconciliationSweepJob.handler(context());
+
+        // Assert
+        expect(mockSweep).toHaveBeenCalledWith(
+            { correlationId: expect.any(String) },
+            expect.objectContaining({ creditedPayments: {} })
+        );
+        expect(result).toMatchObject({ success: false, processed: 4, errors: 1 });
+        expect(result.details).toHaveProperty('failedSubscriptionIds', ['paid-row']);
+        expect(result.details).toMatchObject({
+            creditedPayments: { examined: 3, chargebacks: 1, outOfFlowRefunds: 1 }
+        });
+    });
+
     it('does not call the service during dry run', async () => {
         const result = await billingReconciliationSweepJob.handler(context(true));
         expect(result).toMatchObject({

@@ -85,6 +85,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     markPayments: createPaymentReconciliationMarkPayments(clock),
                     // AC:B11:6: retry our decided cancellations for 3 days, then mark 16.
                     cancellationRetry: { beforeCancelNotice },
+                    // AC:B11:12, AC:B11:27: re-read credited payments with the real defaults.
+                    creditedPayments: {},
                     livenessPing: createSentryCronMonitorPing()
                 }
             );
