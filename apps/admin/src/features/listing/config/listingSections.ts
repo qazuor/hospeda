@@ -11,7 +11,8 @@
  *   - `createListingIdentitySection()` — admin-only core fields:
  *       name, slug, summary, description, richDescription,
  *       destinationId, ownerId,
- *       lifecycleStatus, moderationStatus, moderationNotes, rejectionReason.
+ *       moderationNotes, rejectionReason (the publication state is not a
+ *       form field, HOS-1641).
  *
  *   - `createListingOperationalSection()` — owner-editable operational fields:
  *       contactInfo (phone, email, website, whatsapp),
@@ -40,12 +41,7 @@
  * available type is used with a `// TODO(SPEC-239)` comment.
  */
 
-import {
-    type GastronomyOrExperience,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    PermissionEnum
-} from '@repo/schemas';
+import { type GastronomyOrExperience, PermissionEnum } from '@repo/schemas';
 import {
     FieldTypeEnum,
     LayoutTypeEnum,
@@ -56,26 +52,6 @@ import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Lifecycle status options shared across listing entities.
- * Values mirror `LifecycleStatusEnum` from @repo/schemas.
- */
-const LIFECYCLE_OPTIONS = [
-    { value: LifecycleStatusEnum.DRAFT, label: 'Borrador' },
-    { value: LifecycleStatusEnum.ACTIVE, label: 'Activo' },
-    { value: LifecycleStatusEnum.ARCHIVED, label: 'Archivado' }
-] as const;
-
-/**
- * Moderation status options shared across listing entities.
- * Values mirror `ModerationStatusEnum` from @repo/schemas.
- */
-const MODERATION_OPTIONS = [
-    { value: ModerationStatusEnum.PENDING, label: 'Pendiente' },
-    { value: ModerationStatusEnum.APPROVED, label: 'Aprobado' },
-    { value: ModerationStatusEnum.REJECTED, label: 'Rechazado' }
-] as const;
 
 function permissionsForVertical(vertical: GastronomyOrExperience) {
     return vertical === 'gastronomy'
@@ -101,7 +77,7 @@ function permissionsForVertical(vertical: GastronomyOrExperience) {
  * Returns the SHARED admin-identity section for any listing.
  *
  * Contains: name, slug, summary, description, richDescription, destinationId,
- * ownerId, lifecycleStatus, moderationStatus, moderationNotes,
+ * ownerId, moderationNotes,
  * rejectionReason.
  *
  * Visible in all three modes (`view`, `edit`, `create`), except state/
@@ -272,42 +248,10 @@ export function createListingIdentitySection(
             },
 
             // ------------------------------------------------------------------
-            // Lifecycle & visibility (view/edit only — backend sets defaults on create)
+            // Moderation notes (view/edit only). The listing's state is not a
+            // form field: it is one `publicationStatus`, written only by the
+            // publication transitions (HOS-1641).
             // ------------------------------------------------------------------
-            {
-                id: 'lifecycleStatus',
-                type: FieldTypeEnum.SELECT,
-                required: false,
-                modes: ['view', 'edit'],
-                label: 'Estado del Ciclo de Vida',
-                description: 'Estado actual en el ciclo de vida del comercio',
-                placeholder: 'Seleccionar estado…',
-                permissions: {
-                    view: [permissions.view],
-                    edit: [permissions.editAll]
-                },
-                typeConfig: {
-                    // TYPE-WORKAROUND: LIFECYCLE_OPTIONS is a readonly tuple; SelectFieldConfig expects a mutable array.
-                    options: LIFECYCLE_OPTIONS as unknown as { value: string; label: string }[]
-                }
-            },
-            {
-                id: 'moderationStatus',
-                type: FieldTypeEnum.SELECT,
-                required: false,
-                modes: ['view', 'edit'],
-                label: 'Estado de Moderación',
-                description: 'Estado del proceso de moderación',
-                placeholder: 'Seleccionar estado…',
-                permissions: {
-                    view: [permissions.view],
-                    edit: [permissions.moderateReview]
-                },
-                typeConfig: {
-                    // TYPE-WORKAROUND: MODERATION_OPTIONS is a readonly tuple; SelectFieldConfig expects a mutable array.
-                    options: MODERATION_OPTIONS as unknown as { value: string; label: string }[]
-                }
-            },
             {
                 id: 'moderationNotes',
                 type: FieldTypeEnum.TEXTAREA,

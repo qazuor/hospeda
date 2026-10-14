@@ -2,7 +2,7 @@
  * @file GastronomyCard.tsx
  * List card for a gastronomy listing (SPEC-239 T-059).
  *
- * Displays: name, type badge, owner display name, lifecycle status badge,
+ * Displays: name, type badge, owner display name, publication status,
  * last-modified date.  Used in grid-view layouts where the DataTable is
  * replaced by a card grid.
  */
@@ -127,11 +127,11 @@ export const GastronomyCard = React.memo(function GastronomyCardComponent({
                 </CardHeader>
 
                 <CardContent className="space-y-2 pt-0 text-muted-foreground text-sm">
-                    {/* Status */}
-                    {gastronomy.lifecycleStatus && (
+                    {/* Publication state (HOS-1641) */}
+                    {gastronomy.publicationStatus && (
                         <div className="flex items-center gap-1">
                             <span className="font-medium text-foreground">Estado:</span>
-                            <span>{gastronomy.lifecycleStatus}</span>
+                            <span>{gastronomy.publicationStatus}</span>
                         </div>
                     )}
 

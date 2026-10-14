@@ -2,6 +2,7 @@ import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
+import { getPublicationStatusFilterOptions } from '@/features/listing/config/publication-status-options';
 import { type Accommodation, AccommodationListItemSchema } from '../schemas/accommodations.schemas';
 import { createAccommodationsColumns } from './accommodations.columns';
 
@@ -25,11 +26,9 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
                 labelKey: 'admin-filters.status.label',
                 type: 'select',
                 order: 1,
-                options: [
-                    { value: 'DRAFT', labelKey: 'admin-filters.status.draft' },
-                    { value: 'ACTIVE', labelKey: 'admin-filters.status.active' },
-                    { value: 'ARCHIVED', labelKey: 'admin-filters.status.archived' }
-                ]
+                // The listing's publication state (HOS-1641): the API resolves
+                // `status` to `publicationStatus` on the listing tables.
+                options: [...getPublicationStatusFilterOptions()]
             },
             {
                 paramKey: 'type',
@@ -143,18 +142,8 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
         { accessorKey: 'id', labelKey: 'admin-entities.columns.id', format: 'text' },
         { accessorKey: 'type', labelKey: 'admin-entities.columns.type', format: 'badge' },
         {
-            accessorKey: 'visibility',
-            labelKey: 'admin-entities.columns.visibility',
-            format: 'badge'
-        },
-        {
-            accessorKey: 'lifecycleState',
+            accessorKey: 'publicationStatus',
             labelKey: 'admin-entities.columns.status',
-            format: 'badge'
-        },
-        {
-            accessorKey: 'moderationState',
-            labelKey: 'admin-entities.columns.moderation',
             format: 'badge'
         },
         { accessorKey: 'summary', labelKey: 'admin-entities.columns.summary', format: 'text' },

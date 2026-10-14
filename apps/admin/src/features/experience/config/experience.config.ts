@@ -34,10 +34,8 @@ export type ExperienceListItem = Pick<
     | 'createdAt'
     | 'destination'
     | 'owner'
-> & {
-    /** Lifecycle state string rendered in the status column. */
-    readonly lifecycleStatus?: string | null;
-};
+    | 'publicationStatus'
+>;
 
 // ---------------------------------------------------------------------------
 // Filter options

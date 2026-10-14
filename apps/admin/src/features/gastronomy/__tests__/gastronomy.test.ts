@@ -42,7 +42,7 @@ describe('createGastronomyColumns', () => {
         expect(ids).toContain('priceRange');
         expect(ids).toContain('destination');
         expect(ids).toContain('owner');
-        expect(ids).toContain('lifecycleStatus');
+        expect(ids).toContain('publicationStatus');
         expect(ids).toContain('createdAt');
         expect(ids).toContain('actions');
     });

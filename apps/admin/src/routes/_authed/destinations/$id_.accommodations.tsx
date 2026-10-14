@@ -4,6 +4,7 @@
  * Displays accommodations associated with a specific destination.
  */
 
+import { PublicationStatusEnum } from '@repo/schemas';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Badge } from '@/components/ui/badge';
 import { DestinationSubTabLayout } from '@/features/destinations/components/DestinationSubTabLayout';
@@ -77,13 +78,16 @@ function DestinationAccommodationsPage() {
                                         </Badge>
                                     ) : null}
                                 </div>
-                                {acc.lifecycleState ? (
+                                {acc.publicationStatus ? (
                                     <Badge
                                         variant={
-                                            acc.lifecycleState === 'ACTIVE' ? 'success' : 'outline'
+                                            acc.publicationStatus ===
+                                            PublicationStatusEnum.PUBLISHED
+                                                ? 'success'
+                                                : 'outline'
                                         }
                                     >
-                                        {String(acc.lifecycleState)}
+                                        {String(acc.publicationStatus)}
                                     </Badge>
                                 ) : null}
                             </div>
