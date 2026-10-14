@@ -85,15 +85,16 @@ test.describe('TEST:B13a:23 AC:B13a:23 admin effective-set gate @p1 @admin', () 
         expect(body.data?.vertical).toBe('accommodation');
         expect(body.data?.entitlements).not.toHaveProperty('view_advanced_stats');
 
-        // The section's fields carry no data, so an OPEN gate renders the
-        // section's empty-state body; a closed one renders the premium fallback.
+        // An OPEN gate renders the section's fields that carry a value: only
+        // `averageRating` does (a NOT NULL column, default 0); a closed gate
+        // renders the premium fallback instead.
         const statistics = page.getByRole('region', { name: 'Estadísticas y Métricas' });
         await expect(
             statistics.getByRole('heading', {
                 name: /Estadísticas y Métricas - (Función Premium|Premium Feature|Recurso Premium)/i
             })
         ).toBeVisible();
-        await expect(statistics.getByText('No hay datos para mostrar.')).toHaveCount(0);
+        await expect(statistics.getByText('Calificación Promedio')).toHaveCount(0);
     });
 
     test('opens advanced statistics for an owner whose live subscription grants the key', async ({
@@ -149,12 +150,13 @@ test.describe('TEST:B13a:23 AC:B13a:23 admin effective-set gate @p1 @admin', () 
         expect(body.data?.entitlements).toHaveProperty('view_advanced_stats');
         expect(body.data?.entitlements).toHaveProperty('respond_reviews');
 
-        // The positive assertion goes first: the open gate renders the section
-        // body, which is its empty state because its fields carry no data
-        // (EntityViewSection hides empty fields); only then can the premium
-        // fallback's absence mean anything.
+        // The positive assertion goes first: the open gate renders the fields
+        // that carry a value. EntityViewSection hides empty fields, and of this
+        // section's fields only `averageRating` exists on the listing (NOT NULL,
+        // default 0); `totalViews` and the rest are not columns, so they never
+        // show. Only then can the premium fallback's absence mean anything.
         const statistics = page.getByRole('region', { name: 'Estadísticas y Métricas' });
-        await expect(statistics.getByText('No hay datos para mostrar.')).toBeVisible();
+        await expect(statistics.getByText('Calificación Promedio')).toBeVisible();
         await expect(
             statistics.getByRole('heading', {
                 name: /Estadísticas y Métricas - (Función Premium|Premium Feature|Recurso Premium)/i
