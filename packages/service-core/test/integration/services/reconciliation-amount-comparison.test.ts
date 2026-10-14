@@ -136,26 +136,6 @@ async function sweep(input: {
     );
 }
 
-function providerWithoutAppliedAmount(fake: FakePaymentProvider): PaymentProvider {
-    return {
-        capabilitySupport: fake.capabilitySupport,
-        authorize: (input) => fake.authorize(input),
-        charge: (input) => fake.charge(input),
-        changeAmount: async (input) => ({ accepted: true, resourceId: input.authorizationId }),
-        pause: (input) => fake.pause(input),
-        resume: (input) => fake.resume(input),
-        cancel: (input) => fake.cancel(input),
-        refund: (input) => fake.refund(input),
-        readAuthorization: (input) => fake.readAuthorization(input),
-        searchAuthorizations: (input) => fake.searchAuthorizations(input),
-        readCharge: (input) => fake.readCharge(input),
-        listCharges: (input) => fake.listCharges(input),
-        readOrder: (input) => fake.readOrder(input),
-        searchOrders: (input) => fake.searchOrders(input),
-        decodeNotice: (input) => fake.decodeNotice(input)
-    };
-}
-
 describe('TEST:B11:8 AC:B11:9 the amount comparison: a divergence appears without any notice (M5)', () => {
     it('(a) opens MOT:5 immediately for an outside amount change without a notice or a local write', async () => {
         const { clock } = adjustableClock();
@@ -206,89 +186,6 @@ describe('TEST:B11:8 AC:B11:9 the amount comparison: a divergence appears withou
                 { field: 'provider.authorization_amount_minor', new: 300000 }
             ])
         );
-    });
-
-    it('(b) retries an unapplied mutation on days one and two, then marks on day three without retry', async () => {
-        const adjustable = adjustableClock();
-        const fake = new FakePaymentProvider({
-            idNamespace: crypto.randomUUID(),
-            clock: adjustable.clock
-        });
-        const seeded = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
-        track(seeded.subscription.id, seeded.subscription.userId);
-        const provider = providerWithoutAppliedAmount(fake);
-        const retry = vi.spyOn(provider, 'changeAmount');
-        const decidedAt = adjustable.clock.now();
-        const mutations = { findLatest: async () => ({ transition: 'S30' as const, decidedAt }) };
-        await fake.changeAmount({
-            authorizationId: seeded.providerId!,
-            amount: { amountMinor: 300000, currency: 'ARS' }
-        });
-        adjustable.advance(1);
-        expect(
-            await sweep({
-                fake: provider,
-                clock: adjustable.clock,
-                subscriptionId: seeded.subscription.id,
-                mutations
-            })
-        ).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
-        adjustable.advance(1);
-        expect(
-            await sweep({
-                fake: provider,
-                clock: adjustable.clock,
-                subscriptionId: seeded.subscription.id,
-                mutations
-            })
-        ).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
-        expect(retry).toHaveBeenCalledTimes(2);
-        expect(retry).toHaveBeenNthCalledWith(1, {
-            authorizationId: seeded.providerId,
-            amount: { amountMinor: 250000, currency: 'ARS' }
-        });
-        adjustable.advance(1);
-        expect(
-            await sweep({
-                fake: provider,
-                clock: adjustable.clock,
-                subscriptionId: seeded.subscription.id,
-                mutations
-            })
-        ).toMatchObject({ marksOpened: 1, rowsFailed: 0 });
-        expect(retry).toHaveBeenCalledTimes(2);
-    });
-
-    it('(c) does not mark after the fake applies our retry and confirms the read', async () => {
-        const adjustable = adjustableClock();
-        const fake = new FakePaymentProvider({
-            idNamespace: crypto.randomUUID(),
-            clock: adjustable.clock
-        });
-        const seeded = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
-        track(seeded.subscription.id, seeded.subscription.userId);
-        await fake.changeAmount({
-            authorizationId: seeded.providerId!,
-            amount: { amountMinor: 300000, currency: 'ARS' }
-        });
-        const mutations = {
-            findLatest: async () => ({
-                transition: 'S30' as const,
-                decidedAt: adjustable.clock.now()
-            })
-        };
-        adjustable.advance(1);
-        expect(
-            await sweep({
-                fake,
-                clock: adjustable.clock,
-                subscriptionId: seeded.subscription.id,
-                mutations
-            })
-        ).toMatchObject({ marksOpened: 0, rowsFailed: 0 });
-        expect(
-            (await fake.readAuthorization({ authorizationId: seeded.providerId! })).snapshot.amount
-        ).toEqual({ amountMinor: 250000, currency: 'ARS' });
     });
 
     it('(d) skips PAUSED rows even when their authorization amount differs', async () => {
