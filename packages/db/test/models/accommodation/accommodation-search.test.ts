@@ -958,7 +958,7 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
                 where = clause;
             }
         });
-        getDb.mockReturnValue(db as any);
+        getDb.mockReturnValue(db as unknown as ReturnType<typeof dbUtils.getDb>);
         await model.search(params);
         return where;
     }
@@ -971,7 +971,7 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
                 where = clause;
             }
         });
-        getDb.mockReturnValue(db as any);
+        getDb.mockReturnValue(db as unknown as ReturnType<typeof dbUtils.getDb>);
         await model.countByFilters(params);
         return where;
     }
