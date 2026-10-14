@@ -82,6 +82,7 @@ export * from './billing/notice/provider-delivery-channel.js';
 export * from './billing/notice/provider-notice-delegates.js';
 export * from './billing/notice/provider-notice-mirror.js';
 export * from './billing/notice/provider-notice-ports.js';
+export * from './billing/notice/provider-pause-arrears.js';
 export * from './billing/notice/purge-provider-notifications.service.js';
 export * from './billing/notice/receive-provider-delivery.service.js';
 export {
@@ -119,6 +120,7 @@ export * from './billing/reconciliation/sweep/grace-expiry-check.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
+export * from './billing/reconciliation/sweep/provider-pause-check.js';
 export * from './billing/reconciliation/sweep/reconciliation-divergence.js';
 export * from './billing/reconciliation/sweep/reconciliation-sweep.service.js';
 export * from './billing/reconciliation/sweep/succession-retention-ports.js';

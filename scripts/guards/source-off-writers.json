@@ -87,7 +87,7 @@
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "notice",
-        "reason": "S6 moves GRACE_PERIOD to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
+        "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/revoke-subscription.service.ts",

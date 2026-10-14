@@ -155,7 +155,16 @@ describe('TEST:B7:10 — S19 retains the unpaid-period payment (AC:B7:16)', () =
             const s = await predecessorInGrace({ approveOnAttempt: 3 });
             seeded.push(s.seeded);
             s.expireClock();
+            // HOS-1559 AC:B7:11: this case covers S7 after a succession declared from SUSPENDED.
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'ABANDONED' })
+                .where(eq(subscriptions.id, s.successor.id));
             expect(await s.runS6()).toMatchObject({ outcome: 'SUSPENDED', cancelCall: 'SENT' });
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'PENDING_AUTHORIZATION' })
+                .where(eq(subscriptions.id, s.successor.id));
             const suspended = await subscriptionRow(s.subscriptionId);
             s.fixture.advanceToAttempt(3);
             const coverageBefore = s.coverageSeen.length;
@@ -220,6 +229,11 @@ describe('TEST:B7:10 — S19 retains the unpaid-period payment (AC:B7:16)', () =
             // Arrange
             const s = await predecessorInGrace();
             seeded.push(s.seeded);
+            // HOS-1559 AC:B7:11: this case isolates the S19 write race after the succession ended.
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'ABANDONED' })
+                .where(eq(subscriptions.id, s.successor.id));
             const retained = await paymentFor(s.fixture.initialChargeId);
             s.setBeforeCancel(async () => {
                 await retainInOwnTransaction({
@@ -386,7 +400,16 @@ describe('TEST:B7:10 — S19 retains the unpaid-period payment (AC:B7:16)', () =
             const s = await predecessorInGrace({ approveOnAttempt: 3 });
             seeded.push(s.seeded);
             s.expireClock();
+            // HOS-1559 AC:B7:11: this case covers S7 after a succession declared from SUSPENDED.
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'ABANDONED' })
+                .where(eq(subscriptions.id, s.successor.id));
             expect(await s.runS6()).toMatchObject({ outcome: 'SUSPENDED' });
+            await getServiceTestDb()
+                .update(subscriptions)
+                .set({ status: 'PENDING_AUTHORIZATION' })
+                .where(eq(subscriptions.id, s.successor.id));
             s.fixture.advanceToAttempt(3);
             const retained = await recordChargeFact(
                 { chargeId: s.fixture.chargeId },

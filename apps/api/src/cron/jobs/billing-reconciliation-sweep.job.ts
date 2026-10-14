@@ -5,6 +5,7 @@ import {
     createLostFirstRejectionCheck,
     createPaymentReconciliationMarkPayments,
     createPeriodChargesComparison,
+    createProviderPauseCheck,
     createStateComparison,
     createSuccessorGraceCheck,
     creditedPaymentsFromLedger,
@@ -58,6 +59,16 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         createAmountComparison({ provider, clock })
                     ],
                     rowChecks: [
+                        // AC:B7:9 (DEC-MP-008): grace never outlasts a provider pause.
+                        createProviderPauseCheck({
+                            provider,
+                            clock,
+                            beforeCancelNotice,
+                            payments: creditedPaymentsFromLedger,
+                            planPolicy,
+                            coverageNotices: getCoverageNotices(),
+                            touristVipInheritance
+                        }),
                         createLostFirstRejectionCheck({
                             provider,
                             clock,
