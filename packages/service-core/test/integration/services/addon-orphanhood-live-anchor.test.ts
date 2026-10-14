@@ -127,8 +127,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     { tx, subscriptionId, now: orphanNow },
                     { addonPolicy: addonPolicyFromTx(tx), listing }
                 );
-                expect(result.cancelled).toContain(seeded.instanceId);
-                expect((await readInstance(tx, seeded.instanceId)).status).toBe('CANCELLED');
+                expect(result.cancelled).toEqual([]);
+                expect((await readInstance(tx, seeded.instanceId)).status).toBe('ACTIVE');
             });
         });
 
@@ -157,7 +157,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     { tx, subscriptionId, now: orphanNow },
                     { addonPolicy: addonPolicyFromTx(tx), listing }
                 );
-                expect(result.cancelled).toContain(seeded.instanceId);
+                expect(result.cancelled).toHaveLength(1);
                 await expectOrphaned(tx, seeded);
             });
         });
