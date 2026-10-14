@@ -5,6 +5,7 @@ import {
     type EnterGracePorts,
     enterGraceOnRejectedCharge
 } from '../../subscription/enter-grace.service.js';
+import { noCreditedPayments } from '../../subscription/subscription-billing-ports.js';
 import { readPeriodCharges } from '../period-charges/read-period-charges.js';
 import type { ReconciliationRowCheck } from './reconciliation-sweep.service.js';
 
@@ -23,6 +24,16 @@ export function createLostFirstRejectionCheck(
         if (input.subscription.status !== 'ACTIVE') return;
         if (input.subscription.class !== 'PRINCIPAL' || input.subscription.paymentMethod !== 'CARD')
             return;
+        // DEC-MP-008 📌1 point 1: only a row with a credited payment of its own enters grace from
+        // a lost rejection; the successor of a paying predecessor (AC:B7:4) is a declared border.
+        const payments = ports.payments ?? noCreditedPayments;
+        if (!(await payments.hasCreditedPayment({ subscriptionId: input.subscription.id }))) {
+            logger.info(
+                { subscriptionId: input.subscription.id },
+                "DEC-MP-008 📌1: the successor's lost first rejection is a declared border"
+            );
+            return;
+        }
 
         const result = await readPeriodCharges(
             { authorizationRead: input.read, act: input.act },
