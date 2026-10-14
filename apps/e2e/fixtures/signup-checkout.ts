@@ -3,7 +3,17 @@ import { execSQL } from './db-helpers.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 
-async function monthlyOptionForSlug(slug: 'owner-basico' | 'tourist-vip'): Promise<string> {
+/** The 0144 catalog plans these fixtures hold a monthly option of. */
+export type CatalogSlug = 'owner-basico' | 'owner-premium' | 'tourist-vip';
+
+/**
+ * The monthly billing option of the current catalog version of `slug`,
+ * inserted when the 0144 catalog has none (it seeds no billing options).
+ *
+ * @param slug - The 0144 catalog plan
+ * @returns The billing option id
+ */
+export async function monthlyOptionForSlug(slug: CatalogSlug): Promise<string> {
     const rows = await execSQL<{ id: string }>(
         `WITH current_version AS (
              SELECT plan_version.id
@@ -36,10 +46,21 @@ async function monthlyOptionForSlug(slug: 'owner-basico' | 'tourist-vip'): Promi
     return id;
 }
 
-export async function seedInheritingPlanHolder(options: {
+/**
+ * Seeds an `ACTIVE` `PRINCIPAL` `CARD` subscription of the person, anchored to
+ * the current catalog version of `slug` through its monthly option (inserted
+ * when missing). No preapproval and no `provider_link`: the subscription covers
+ * through the real coverage of B4 and grants that version's keys.
+ *
+ * @param options.userId - The subscriber
+ * @param options.slug - The 0144 catalog plan to anchor to
+ * @returns The id of the seeded subscription
+ */
+export async function seedActivePlanHolder(options: {
     readonly userId: string;
-}): Promise<void> {
-    const optionId = await monthlyOptionForSlug('owner-basico');
+    readonly slug: CatalogSlug;
+}): Promise<{ readonly subscriptionId: string }> {
+    const optionId = await monthlyOptionForSlug(options.slug);
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO subscription (
              user_id, vertical, plan_version_id, billing_option_id,
@@ -54,8 +75,21 @@ export async function seedInheritingPlanHolder(options: {
         [options.userId, optionId]
     );
     if (!rows[0]) {
-        throw new Error('seedInheritingPlanHolder: current owner-basico catalog version not found');
+        throw new Error(`seedActivePlanHolder: current ${options.slug} catalog version not found`);
     }
+    return { subscriptionId: rows[0].id };
+}
+
+/**
+ * Seeds an `ACTIVE` `owner-basico` subscription, whose version inherits Tourist
+ * VIP (TEST:B3:29/30). Delegates to {@link seedActivePlanHolder}.
+ *
+ * @param options.userId - The subscriber
+ */
+export async function seedInheritingPlanHolder(options: {
+    readonly userId: string;
+}): Promise<void> {
+    await seedActivePlanHolder({ userId: options.userId, slug: 'owner-basico' });
 }
 
 export async function touristVipMonthlyOptionId(): Promise<string> {

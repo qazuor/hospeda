@@ -2,14 +2,17 @@
  * TEST:B13a:23 (e2e admin half, AC:B13a:23) — an accommodation gate reads V3.
  * Tags: @p1 @admin
  *
- * Coord-58: bootstrap coverage only grants trials, and the accommodation trial
- * has no screen entitlement. The live E2E therefore covers the absent-key case.
- * The present-key case is covered by route/component tests and moves to B4.
+ * Coord-58: the accommodation trial has no screen entitlement, so an owner
+ * with only a trial meets the closed gate (the absent-key case). The
+ * present-key case lives here too since B4 (HOS-1536, Coord-58): billing's
+ * real coverage turns a live subscription into a source whose ANCHORED version
+ * grants its keys, so an `owner-premium` subscriber opens the gate.
  */
 
 import { expect, test } from '@playwright/test';
 import { createAccommodation, createUser, markAdminToursSeen } from '../../fixtures/api-helpers.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
+import { seedActivePlanHolder } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const ADMIN_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:3000';
@@ -80,5 +83,65 @@ test.describe('TEST:B13a:23 AC:B13a:23 admin effective-set gate @p1 @admin', () 
             })
         ).toBeVisible();
         await expect(page.getByText('Total de Visualizaciones')).toHaveCount(0);
+    });
+
+    test('opens advanced statistics for an owner whose live subscription grants the key', async ({
+        page
+    }) => {
+        const superAdmin = await createUser({ role: 'SUPER_ADMIN' }, { apiBaseUrl: API_URL });
+        userIdsToCleanup.push(superAdmin.id);
+        await markAdminToursSeen({ userId: superAdmin.id });
+
+        // Its OWN owner: the absent-key owner above may sit cached without the key.
+        const owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
+        userIdsToCleanup.push(owner.id);
+        const accommodation = await createAccommodation({
+            ownerId: owner.id,
+            slugPrefix: 'adm-06-key'
+        });
+        await seedActivePlanHolder({ userId: owner.id, slug: 'owner-premium' });
+
+        await page.context().addCookies(
+            superAdmin.sessionCookie.split('; ').map((cookie) => {
+                const [name, ...value] = cookie.split('=');
+                return { name: (name ?? '').trim(), value: value.join('='), url: ADMIN_URL };
+            })
+        );
+
+        const effectiveSetPath = `/api/v1/admin/users/${owner.id}/effective-set?vertical=accommodation`;
+        const effectiveSetResponse = page.waitForResponse(
+            (response) =>
+                response.url().endsWith(effectiveSetPath) && response.request().method() === 'GET'
+        );
+        await page.goto(`${ADMIN_URL}/accommodations/${accommodation.id}`, {
+            waitUntil: 'domcontentloaded'
+        });
+
+        await expect(page.getByRole('heading', { name: 'E2E Test Accommodation' })).toBeVisible({
+            timeout: 30_000
+        });
+        await page.getByRole('button', { name: /Estadísticas y Métricas/i }).click();
+        const response = await effectiveSetResponse;
+        expect(response.status()).toBe(200);
+        const body = (await response.json()) as {
+            data?: {
+                userId?: string;
+                vertical?: string;
+                entitlements?: Record<string, number | string>;
+            };
+        };
+        expect(body.data?.userId).toBe(owner.id);
+        expect(body.data?.vertical).toBe('accommodation');
+        expect(body.data?.entitlements).toHaveProperty('view_advanced_stats');
+        expect(body.data?.entitlements).toHaveProperty('respond_reviews');
+
+        // The positive load assertion goes first: the open section shows its
+        // content, and only then can the premium title's absence mean anything.
+        await expect(page.getByText('Total de Visualizaciones')).toBeVisible();
+        await expect(
+            page.getByRole('heading', {
+                name: /Estadísticas y Métricas - (Función Premium|Premium Feature|Recurso Premium)/i
+            })
+        ).toHaveCount(0);
     });
 });
