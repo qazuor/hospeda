@@ -15,7 +15,7 @@ import { exitGraceOnCreditedPayment } from './exit-grace.service';
 import { reactivateSuspendedOnCreditedPayment } from './reactivate-suspended.service';
 import { enqueueSignupIncompleteNotice } from './signup-incomplete-notice.ts';
 import type { BeforeCancelNotice } from './start-subscription.service';
-import type { SuccessionCloser } from './subscription-billing-ports';
+import type { ScheduledChangeApplier, SuccessionCloser } from './subscription-billing-ports';
 import { findOpenRetentionsBySubscription } from './succession-retained-payment';
 
 const logger = createLogger('subscription-window-expiry');
@@ -33,6 +33,8 @@ export interface ExpireAuthorizationWindowsPorts {
      * `unimplementedSuccessionCloser`, which throws.
      */
     readonly successionCloser?: SuccessionCloser;
+    /** S38's interface, handed to S7 on branch 2 (AC:B7:28); unwired uses S7's failing default. */
+    readonly scheduledChangeApplier?: ScheduledChangeApplier;
 }
 
 export interface ExpireAuthorizationWindowsSummary {
@@ -113,6 +115,9 @@ async function reevaluateRetainedPayments(
                             actorType: 'job',
                             ...(ports.coverageNotices
                                 ? { coverageNotices: ports.coverageNotices }
+                                : {}),
+                            ...(ports.scheduledChangeApplier
+                                ? { scheduledChangeApplier: ports.scheduledChangeApplier }
                                 : {})
                         }
                     );

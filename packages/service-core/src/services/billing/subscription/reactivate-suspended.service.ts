@@ -27,7 +27,12 @@ import {
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
 import { openLatePaymentRejectedMark } from './late-payment-rejected-mark';
+import { applyOverdueScheduledChangeOnReturn } from './scheduled-change-on-return';
 import type { BeforeCancelNotice } from './start-subscription.service';
+import {
+    type ScheduledChangeApplier,
+    unimplementedScheduledChangeApplier
+} from './subscription-billing-ports';
 import { releaseRetainedPayment, retainPaymentForSuccession } from './succession-retained-payment';
 
 const logger = createLogger('reactivate-suspended');
@@ -93,6 +98,8 @@ export interface ReactivateSuspendedPorts {
     readonly beforeCancelNotice?: BeforeCancelNotice;
     /** Whether the user's plan grants Tourist VIP again (AC:B7:31, H10); unwired skips the clause. */
     readonly touristVipInheritance?: TouristVipInheritancePort;
+    /** S38's interface (AC:B7:28); defaults to `unimplementedScheduledChangeApplier`. */
+    readonly scheduledChangeApplier?: ScheduledChangeApplier;
 }
 
 /** The verdict reached inside the row's transaction. */
@@ -204,6 +211,8 @@ async function cancelInheritedTouristVipAfterCommit(input: {
  * condition 2, 3 or 4, or no anchor) it closes that payment's open retention with
  * `REEVALUATED` in the same transaction (branch 2, S3's re-evaluation, HOS-1561
  * H9); `RETAINED` and a lost race leave it open.
+ * Only on `WRITTEN`, in that same transaction, a scheduled change whose date passed
+ * while the row was suspended is handed to S38 (AC:B7:28); its error rolls S7 back.
  * Conditions 2 and 3 open reason 7; condition 4 (a duplicate or a replay of an
  * already paid period) opens nothing (D-3). No anchor opens reason 7 (H4); an
  * authorization neither `authorized` nor `cancelled` writes nothing (H3).
@@ -373,6 +382,13 @@ export async function reactivateSuspendedOnCreditedPayment(
             .returning({ userId: subscriptions.userId, vertical: subscriptions.vertical });
         if (!updated) return { kind: 'LOST_RACE' };
         await releaseRetention();
+        await applyOverdueScheduledChangeOnReturn(
+            { subscriptionId, now: ports.clock.now(), tx },
+            {
+                scheduledChangeApplier:
+                    ports.scheduledChangeApplier ?? unimplementedScheduledChangeApplier
+            }
+        );
         return {
             kind: 'WRITTEN',
             destination,
