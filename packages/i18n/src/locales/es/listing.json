@@ -9,6 +9,20 @@
     },
     "owner": {
         "nav": "Mi comercio",
+        "purgeAddons": {
+            "title": "Se pierden con la ficha, sin devolución:",
+            "clockRuns": "El complemento no se pasa a otra ficha y su plazo sigue corriendo.",
+            "cycle": {
+                "monthly": "por mes",
+                "quarterly": "por trimestre",
+                "semiannual": "por semestre",
+                "annual": "por año"
+            },
+            "until": "hasta el {{date}}",
+            "pending": "(pendiente de autorización)",
+            "loadError": "No pudimos leer los complementos de esta ficha. Probá de nuevo antes de eliminarla.",
+            "retry": "Reintentar"
+        },
         "list": {
             "title": "Mi comercio",
             "subtitle": "Gestioná la información de tus comercios publicados.",

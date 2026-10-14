@@ -9,6 +9,20 @@
     },
     "owner": {
         "nav": "Meu comércio",
+        "purgeAddons": {
+            "title": "Estes complementos se perdem com o anúncio, sem reembolso:",
+            "clockRuns": "O complemento não passa para outro anúncio e o prazo continua correndo.",
+            "cycle": {
+                "monthly": "por mês",
+                "quarterly": "por trimestre",
+                "semiannual": "por semestre",
+                "annual": "por ano"
+            },
+            "until": "até {{date}}",
+            "pending": "(autorização pendente)",
+            "loadError": "Não conseguimos ler os complementos deste anúncio. Tente de novo antes de excluí-lo.",
+            "retry": "Tentar de novo"
+        },
         "list": {
             "title": "Meu comércio",
             "subtitle": "Gerencie as informações dos seus comércios publicados.",

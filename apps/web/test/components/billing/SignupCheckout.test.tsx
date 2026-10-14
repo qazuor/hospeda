@@ -9,7 +9,8 @@ vi.mock('@/lib/api/endpoints-protected', () => ({ billingSubscriptionApi: { star
 const props = {
     locale: 'es' as const,
     billingOptionId: '123e4567-e89b-42d3-a456-426614174000',
-    plansHref: '/es/planes/turistas/'
+    plansHref: '/es/planes/turistas/',
+    trialNotice: null
 };
 const success = {
     ok: true,
@@ -153,5 +154,63 @@ describe('SignupCheckout — B3 UI (B3.md:1045-1053)', () => {
         expect(rejection).toHaveTextContent(expectedCopy);
         expect(rejection).not.toHaveTextContent('billing.checkout.signup');
         expect(rejection).not.toHaveTextContent('English API message');
+    });
+});
+
+describe('TEST:B13a:21c AC:B13a:5 the checkout says both trial halves before confirming', () => {
+    it('shows days, date, both consequences, and places the note before confirm', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                trialNotice={{ kind: 'RUNNING', daysLeft: 11, endsAt: '2026-10-20T08:00:00.000Z' }}
+            />
+        );
+        const notice = screen.getByTestId('signup-checkout-trial-notice');
+        const confirm = screen.getByTestId('signup-checkout-confirm');
+
+        expect(notice).toHaveAttribute('data-kind', 'RUNNING');
+        expect(
+            notice.compareDocumentPosition(confirm) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        expect(notice).toHaveTextContent('te quedan 11 días');
+        expect(notice).toHaveTextContent('20 de octubre de 2026');
+        expect(notice).toHaveTextContent('tu prueba termina y perdés esos días');
+        expect(notice).toHaveTextContent('seguís en tu prueba con esos días');
+    });
+
+    it('shows the conditional copy when the trial lookup is unknown', () => {
+        render(
+            <SignupCheckout
+                {...props}
+                trialNotice={{ kind: 'UNKNOWN' }}
+            />
+        );
+        const notice = screen.getByTestId('signup-checkout-trial-notice');
+
+        expect(notice).toHaveAttribute('data-kind', 'UNKNOWN');
+        expect(notice).toHaveTextContent('Si estás en tu período de prueba en esta vertical');
+        expect(notice).toHaveTextContent('perdés los días que te quedaban');
+        expect(notice).toHaveTextContent('seguís en tu prueba con esos días');
+    });
+
+    it('does not render a block without a notice or after checkout becomes pending', async () => {
+        const { rerender } = render(
+            <SignupCheckout
+                {...props}
+                trialNotice={null}
+            />
+        );
+        expect(screen.queryByTestId('signup-checkout-trial-notice')).not.toBeInTheDocument();
+
+        start.mockResolvedValue(success);
+        rerender(
+            <SignupCheckout
+                {...props}
+                trialNotice={{ kind: 'RUNNING', daysLeft: 2, endsAt: '2026-10-12T12:00:00.000Z' }}
+            />
+        );
+        fireEvent.click(screen.getByTestId('signup-checkout-confirm'));
+        await screen.findByTestId('signup-checkout-pending');
+        expect(screen.queryByTestId('signup-checkout-trial-notice')).not.toBeInTheDocument();
     });
 });

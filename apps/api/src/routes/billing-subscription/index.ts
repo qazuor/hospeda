@@ -1,6 +1,7 @@
 import { eq, getDb, planCatalogModel, users } from '@repo/db';
 import {
     ServiceErrorCode,
+    SignupNoticeResponseSchema,
     StartSubscriptionRequestSchema,
     StartSubscriptionResponseSchema,
     VerticalEnumSchema
@@ -8,7 +9,8 @@ import {
 import { ServiceError, startSubscription } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../utils/actor';
+import { z } from 'zod';
+import { getActorFromContext, isGuestActor } from '../../utils/actor';
 import { getClock } from '../../utils/clock';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
@@ -17,6 +19,7 @@ import { createErrorResponse } from '../../utils/response-helpers';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { beforeCancelNotice } from './before-cancel-notice';
 import { protectedReadSubscriptionRoute } from './read';
+import { readSignupNotice } from './read-signup-notice';
 import { readSignupWindow } from './read-signup-window';
 import { touristVipInheritance } from './tourist-vip-inheritance';
 
@@ -86,8 +89,38 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
     }
 });
 
+/** Read-only trial notice for the selected billing option before signup. */
+export const protectedSignupNoticeRoute = createProtectedRoute({
+    method: 'get',
+    path: '/signup-notice/{billingOptionId}',
+    summary: 'Read the trial notice for a signup option',
+    description: 'Returns the selected vertical and the actor trial before confirming signup.',
+    tags: ['Billing subscriptions'],
+    requestParams: { billingOptionId: z.string().uuid() },
+    responseSchema: SignupNoticeResponseSchema,
+    options: {
+        middlewares: [
+            async (ctx, next) => {
+                if (isGuestActor(getActorFromContext(ctx))) {
+                    throw new ServiceError(
+                        ServiceErrorCode.UNAUTHORIZED,
+                        'Authentication required'
+                    );
+                }
+                await next();
+            }
+        ]
+    },
+    handler: async (ctx: Context, params: Record<string, unknown>) =>
+        readSignupNotice({
+            userId: getActorFromContext(ctx).id,
+            billingOptionId: params.billingOptionId as string
+        })
+});
+
 const router = createRouter();
 router.route('/', protectedStartSubscriptionRoute);
+router.route('/', protectedSignupNoticeRoute);
 export const protectedBillingSubscriptionRoutes = router;
 
 const readRouter = createRouter();

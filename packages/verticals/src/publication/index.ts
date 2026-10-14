@@ -16,6 +16,7 @@ export * from './publication-notices';
 export * from './publication-order';
 export * from './publication-types';
 export * from './publish-listing';
+export * from './purge-inactive-listing';
 export * from './purge-listing';
 export * from './purge-notices';
 export * from './reactivate-listing';

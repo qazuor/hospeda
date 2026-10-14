@@ -11,13 +11,17 @@ export interface EnqueueSignupDeclinedInput {
     readonly tx: DrizzleClient;
     readonly subscription: SelectSubscription;
     readonly declineReason: string | null;
+    readonly successionPredecessor: boolean;
 }
 
-/** Enqueues once per subscription; absent recipients are logged and not enqueued. */
+/**
+ * Enqueues S16's declined-signup facts once per subscription, including whether
+ * it was a succession predecessor; the renderer maps the raw provider detail.
+ */
 export async function enqueueSignupDeclinedNotice(
     input: EnqueueSignupDeclinedInput
 ): Promise<void> {
-    const { tx, subscription, declineReason } = input;
+    const { tx, subscription, declineReason, successionPredecessor } = input;
     const [userRow] = await tx
         .select({ email: users.email })
         .from(users)
@@ -44,7 +48,8 @@ export async function enqueueSignupDeclinedNotice(
             payload: {
                 subscriptionId: subscription.id,
                 vertical: subscription.vertical,
-                declineReason
+                declineReason,
+                successionPredecessor
             },
             dedupKey
         },
