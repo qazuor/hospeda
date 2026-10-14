@@ -1,5 +1,6 @@
 import {
     type DomainEventActorType,
+    type DomainEventChange,
     type DrizzleClient,
     domainEventModel,
     getDb,
@@ -27,6 +28,8 @@ export interface OpenReconciliationMarkInput {
     readonly payment?: HangablePayment;
     readonly actor: { readonly type: DomainEventActorType; readonly id?: string | null };
     readonly correlationId: string;
+    /** AC:B11:10/11 (HOS-1604 H4): the provider charge id, amounts and proposed refund travel in the event; the mark has no column for them. */
+    readonly detail?: readonly DomainEventChange[];
     readonly tx?: DrizzleClient;
 }
 export interface OpenReconciliationMarkPorts {
@@ -49,7 +52,16 @@ const inputSchema = z.object({
         type: z.enum(['owner', 'admin', 'job', 'provider']),
         id: z.uuid().nullable().optional()
     }),
-    correlationId: z.uuid()
+    correlationId: z.uuid(),
+    detail: z
+        .array(
+            z.object({
+                field: z.string().min(1),
+                old: z.unknown().optional(),
+                new: z.unknown().optional()
+            })
+        )
+        .optional()
 });
 
 function fail(code: ServiceErrorCode, message: string, reason: string): ServiceError {
@@ -213,7 +225,8 @@ export async function openReconciliationMark(
             changes: [
                 { field: 'reconciliation_mark.id', new: mark.id },
                 { field: 'reconciliation_mark.reason', new: input.reason },
-                { field: 'reconciliation_mark.outcome', new: outcome }
+                { field: 'reconciliation_mark.outcome', new: outcome },
+                ...(input.detail ?? [])
             ],
             reason: null,
             tx

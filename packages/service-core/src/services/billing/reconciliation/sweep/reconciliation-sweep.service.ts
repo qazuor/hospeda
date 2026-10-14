@@ -115,6 +115,25 @@ export async function runReconciliationSweep(
     let divergences = 0;
     let marksOpened = 0;
     let marksAccumulated = 0;
+    const comparisons = ports.comparisons ?? [];
+    const compareRow = async (comparisonInput: ReconciliationComparisonInput) => {
+        for (const comparison of comparisons) {
+            const found = await comparison(comparisonInput);
+            for (const divergence of found) {
+                divergences++;
+                const recorded = await recordDivergence(
+                    {
+                        subscriptionId: comparisonInput.subscription.id,
+                        divergence,
+                        correlationId
+                    },
+                    ports.markPayments ? { markPayments: ports.markPayments } : {}
+                );
+                if (recorded.markOutcome === 'OPENED') marksOpened++;
+                else marksAccumulated++;
+            }
+        }
+    };
     let afterSubscriptionId: string | undefined;
     const retryPorts = ports.cancellationRetry
         ? {
@@ -140,18 +159,7 @@ export async function runReconciliationSweep(
                 });
                 assertFreshForAct({ read, act });
                 rowsRead++;
-                for (const comparison of ports.comparisons ?? []) {
-                    const found = await comparison({ subscription, providerLink, read, act });
-                    for (const divergence of found) {
-                        divergences++;
-                        const recorded = await recordDivergence(
-                            { subscriptionId: subscription.id, divergence, correlationId },
-                            ports.markPayments ? { markPayments: ports.markPayments } : {}
-                        );
-                        if (recorded.markOutcome === 'OPENED') marksOpened++;
-                        else marksAccumulated++;
-                    }
-                }
+                await compareRow({ subscription, providerLink, read, act });
                 for (const check of ports.rowChecks ?? []) {
                     await check({ subscription, providerLink, read, act });
                 }
@@ -190,7 +198,10 @@ export async function runReconciliationSweep(
 
     let cancellationRetry: ReconciliationSweepSummary['cancellationRetry'];
     if (retryPorts) {
-        const pass = await runOurCancellationRetry({ correlationId, pageSize }, retryPorts);
+        const pass = await runOurCancellationRetry(
+            { correlationId, pageSize },
+            comparisons.length > 0 ? { ...retryPorts, afterRead: compareRow } : retryPorts
+        );
         rowsRead += pass.rowsRead;
         rowsFailed += pass.rowsFailed;
         failures.push(...pass.failures);
