@@ -138,10 +138,12 @@ describe('TEST:1684:5 AC-1684:3 the moderation card is on the three detail route
 describe('TEST:1684:5 AC-1684:3 the card is a functional control, not a read-only badge', () => {
     it('posts through useModerateListingMutation, gated by LISTING_MODERATE, via its dialog', () => {
         const source = cardSource();
+        // The CALL, not the name: an import kept beside a local stub would
+        // still contain the name while the buttons post nothing.
         expect(
             source,
-            'ListingModerationCard does not use useModerateListingMutation: its buttons would post nothing.'
-        ).toContain('useModerateListingMutation');
+            'ListingModerationCard does not call useModerateListingMutation(): its buttons would post nothing.'
+        ).toMatch(/=\s*useModerateListingMutation\(\)/);
         expect(
             source,
             'ListingModerationCard is not gated by PermissionEnum.LISTING_MODERATE, the single moderation permission.'
