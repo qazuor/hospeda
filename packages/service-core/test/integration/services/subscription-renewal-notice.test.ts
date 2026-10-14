@@ -91,7 +91,9 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice at 5 and 1 days, w
                 expect.stringContaining(`sub:${seeded.subscriptionId}:renov:-5d:2001-07-01`)
             ]);
             today = renewalNow('2001-07-01');
-            expect((await run()).enqueued).toBe(0);
+            const chargeDayRun = await run();
+            expect(chargeDayRun.enqueued).toBe(0);
+            expect(chargeDayRun.notDue).toBe(1);
             today = renewalNow('2001-07-02');
             expect((await run()).enqueued).toBe(0);
             expect(await readOutboxRows(tx, seeded.subscriptionId)).toHaveLength(2);
