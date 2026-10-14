@@ -87,10 +87,15 @@ describe('AC:B7:7 — the arrears suspension notice is keyed by the clock that e
     it('keeps the subscription-keyed billing.before-cancel row without an occurrence', async () => {
         const user = await seedUser();
         const subscriptionId = crypto.randomUUID();
-        await beforeCancelNotice.beforeCancel({ subscriptionId, userId: user.id });
         await beforeCancelNotice.beforeCancel({
             subscriptionId,
             userId: user.id,
+            kind: 'AUTHORIZATION_EXPIRED'
+        });
+        await beforeCancelNotice.beforeCancel({
+            subscriptionId,
+            userId: user.id,
+            kind: 'AUTHORIZATION_EXPIRED',
             occurrenceId: subscriptionId
         });
         const rows = await outboxOf(user.id);
