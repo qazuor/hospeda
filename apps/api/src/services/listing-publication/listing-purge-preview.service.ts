@@ -1,6 +1,7 @@
 import type { ListingPurgePreviewResponse } from '@repo/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import { createPlanCatalogInverse } from '@repo/verticals';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 
 const CYCLES = ['monthly', 'quarterly', 'semiannual', 'annual'] as const;
@@ -18,10 +19,9 @@ export async function readListingPurgePreview(input: {
     readonly ownerId: string;
     readonly listingId: string;
 }): Promise<ListingPurgePreviewResponse> {
-    const [
-        { getDb, addonInstances, addonProducts, addons, planCatalogModel },
-        { createPlanCatalogInverse }
-    ] = await Promise.all([import('@repo/db'), import('@repo/verticals')]);
+    const { getDb, addonInstances, addonProducts, addons, planCatalogModel } = await import(
+        '@repo/db'
+    );
     const addonPolicy = createPlanCatalogInverse({ reader: planCatalogModel }).addonPolicy;
     const rows = await getDb()
         .select({
