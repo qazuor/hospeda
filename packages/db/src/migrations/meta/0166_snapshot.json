@@ -1,5 +1,5 @@
 {
-  "id": "79b122f2-a0c9-4fef-ad45-a948ebbd0b50",
+  "id": "12ebeaa1-e7f1-4fbb-aab6-a7748025fc67",
   "prevId": "6af98584-df97-40ed-82bc-81c020c0c59d",
   "version": "7",
   "dialect": "postgresql",
@@ -146,6 +146,26 @@
           "primaryKey": false,
           "notNull": false
         },
+        "owner_suspended": {
+          "name": "owner_suspended",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "plan_restricted": {
+          "name": "plan_restricted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "billing_unpublished_at": {
+          "name": "billing_unpublished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
         "owner_id": {
           "name": "owner_id",
           "type": "uuid",
@@ -182,6 +202,22 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "visibility": {
+          "name": "visibility",
+          "type": "visibility_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PUBLIC'"
+        },
+        "lifecycle_state": {
+          "name": "lifecycle_state",
+          "type": "lifecycle_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
         },
         "reviews_count": {
           "name": "reviews_count",
@@ -253,6 +289,14 @@
           "primaryKey": false,
           "notNull": false
         },
+        "moderation_state": {
+          "name": "moderation_state",
+          "type": "moderation_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
         "extra_info": {
           "name": "extra_info",
           "type": "jsonb",
@@ -297,11 +341,17 @@
           "method": "btree",
           "with": {}
         },
-        "accommodations_publicationStatus_idx": {
-          "name": "accommodations_publicationStatus_idx",
+        "accommodations_visibility_featuredByEntitlement_idx": {
+          "name": "accommodations_visibility_featuredByEntitlement_idx",
           "columns": [
             {
-              "expression": "publication_status",
+              "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "featured_by_entitlement",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -312,8 +362,8 @@
           "method": "btree",
           "with": {}
         },
-        "accommodations_destinationId_publicationStatus_idx": {
-          "name": "accommodations_destinationId_publicationStatus_idx",
+        "accommodations_destinationId_featuredByEntitlement_visibility_idx": {
+          "name": "accommodations_destinationId_featuredByEntitlement_visibility_idx",
           "columns": [
             {
               "expression": "destination_id",
@@ -322,7 +372,94 @@
               "nulls": "last"
             },
             {
-              "expression": "publication_status",
+              "expression": "featured_by_entitlement",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_ownerSuspended_idx": {
+          "name": "accommodations_ownerSuspended_idx",
+          "columns": [
+            {
+              "expression": "owner_suspended",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_planRestricted_idx": {
+          "name": "accommodations_planRestricted_idx",
+          "columns": [
+            {
+              "expression": "plan_restricted",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_visibility_idx": {
+          "name": "accommodations_visibility_idx",
+          "columns": [
+            {
+              "expression": "visibility",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_lifecycle_idx": {
+          "name": "accommodations_lifecycle_idx",
+          "columns": [
+            {
+              "expression": "lifecycle_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_destinationId_visibility_idx": {
+          "name": "accommodations_destinationId_visibility_idx",
+          "columns": [
+            {
+              "expression": "destination_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "visibility",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -383,6 +520,21 @@
           "columns": [
             {
               "expression": "deleted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_moderationState_idx": {
+          "name": "accommodations_moderationState_idx",
+          "columns": [
+            {
+              "expression": "moderation_state",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -8044,7 +8196,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'subscription.provider_cancellation_decided')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -11113,6 +11265,30 @@
           "primaryKey": false,
           "notNull": true
         },
+        "visibility": {
+          "name": "visibility",
+          "type": "visibility_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PUBLIC'"
+        },
+        "lifecycle_state": {
+          "name": "lifecycle_state",
+          "type": "lifecycle_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'DRAFT'"
+        },
+        "moderation_state": {
+          "name": "moderation_state",
+          "type": "moderation_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
         "featured_by_entitlement": {
           "name": "featured_by_entitlement",
           "type": "boolean",
@@ -11195,32 +11371,11 @@
           "method": "btree",
           "with": {}
         },
-        "experiences_publicationStatus_idx": {
-          "name": "experiences_publicationStatus_idx",
+        "experiences_visibility_idx": {
+          "name": "experiences_visibility_idx",
           "columns": [
             {
-              "expression": "publication_status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "experiences_destinationId_publicationStatus_idx": {
-          "name": "experiences_destinationId_publicationStatus_idx",
-          "columns": [
-            {
-              "expression": "destination_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "publication_status",
+              "expression": "visibility",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -11291,6 +11446,21 @@
           "method": "btree",
           "with": {}
         },
+        "experiences_moderationState_idx": {
+          "name": "experiences_moderationState_idx",
+          "columns": [
+            {
+              "expression": "moderation_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "experiences_ownerId_deletedAt_idx": {
           "name": "experiences_ownerId_deletedAt_idx",
           "columns": [
@@ -11302,6 +11472,27 @@
             },
             {
               "expression": "deleted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "experiences_destinationId_visibility_idx": {
+          "name": "experiences_destinationId_visibility_idx",
+          "columns": [
+            {
+              "expression": "destination_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "visibility",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -11940,6 +12131,30 @@
           "primaryKey": false,
           "notNull": true
         },
+        "visibility": {
+          "name": "visibility",
+          "type": "visibility_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PUBLIC'"
+        },
+        "lifecycle_state": {
+          "name": "lifecycle_state",
+          "type": "lifecycle_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'ACTIVE'"
+        },
+        "moderation_state": {
+          "name": "moderation_state",
+          "type": "moderation_status_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
         "featured_by_entitlement": {
           "name": "featured_by_entitlement",
           "type": "boolean",
@@ -12022,32 +12237,11 @@
           "method": "btree",
           "with": {}
         },
-        "gastronomies_publicationStatus_idx": {
-          "name": "gastronomies_publicationStatus_idx",
+        "gastronomies_visibility_idx": {
+          "name": "gastronomies_visibility_idx",
           "columns": [
             {
-              "expression": "publication_status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "gastronomies_destinationId_publicationStatus_idx": {
-          "name": "gastronomies_destinationId_publicationStatus_idx",
-          "columns": [
-            {
-              "expression": "destination_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "publication_status",
+              "expression": "visibility",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -12108,6 +12302,42 @@
           "columns": [
             {
               "expression": "deleted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gastronomies_moderationState_idx": {
+          "name": "gastronomies_moderationState_idx",
+          "columns": [
+            {
+              "expression": "moderation_state",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "gastronomies_destinationId_visibility_idx": {
+          "name": "gastronomies_destinationId_visibility_idx",
+          "columns": [
+            {
+              "expression": "destination_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "visibility",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

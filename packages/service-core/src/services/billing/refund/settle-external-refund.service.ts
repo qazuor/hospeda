@@ -342,6 +342,11 @@ async function applyEffects(
  * stays NULL (H11). If an RF1 `REQUESTED` is open on the payment, the
  * settlement closes THAT row instead of creating another (AC:B5:41).
  *
+ * The amount must fit in the same refundable balance RF1 uses (every non-`FAILED`
+ * refund of the payment is discounted; HOS-1680, D-1), except the `REQUESTED` row
+ * this settlement closes, which never counts against itself. Settling separately
+ * (`SETTLE_SEPARATELY`) therefore counts the request that stays open.
+ *
  * Everything runs in ONE transaction of its own (a person's action, never
  * nested): the payment is locked `FOR UPDATE`, the subject is read in the same
  * transaction, step 3 authorizes from ACC_14's own permission (never roles),
@@ -381,7 +386,12 @@ export async function settleExternalRefund(
             await validateSettlement(tx, input);
             const requested = await findOpenRequest(tx, input);
             const closing = requestToClose(input, requested);
-            await assertWithinBalance({ tx, locked, amount: input.amount });
+            await assertWithinBalance({
+                tx,
+                locked,
+                amount: input.amount,
+                excludeRefundId: closing?.id
+            });
             const refundId = await writeExecuted(tx, input, closing, ports.clock.now());
             const effects = await applyEffects(tx, input, refundId, ports.clock);
             return {

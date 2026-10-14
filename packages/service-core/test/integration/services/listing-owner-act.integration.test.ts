@@ -133,7 +133,9 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                     entityId: listingId,
                     tx
                 });
-                expect(events.map((e) => e.eventType)).toEqual([
+                // `findByEntity` orders by `occurredAt` only: both events are written in this
+                // one transaction and tie on `now()`, so their order is not guaranteed.
+                expect(events.map((e) => e.eventType).sort()).toEqual([
                     'listing.created',
                     'listing.edited'
                 ]);
@@ -193,7 +195,9 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                     entityId: listingId,
                     tx
                 });
-                expect(events.map((e) => e.eventType)).toEqual([
+                // `findByEntity` orders by `occurredAt` only: both events are written in this
+                // one transaction and tie on `now()`, so their order is not guaranteed.
+                expect(events.map((e) => e.eventType).sort()).toEqual([
                     'listing.created',
                     'listing.edited'
                 ]);

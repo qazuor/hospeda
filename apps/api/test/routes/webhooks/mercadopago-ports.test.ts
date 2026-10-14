@@ -50,11 +50,63 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
                 'cancellationSeen',
                 'clock',
                 'coverageNotices',
+                'delegates',
+                'markPayments',
                 'payments',
                 'planPolicy',
                 'provider',
                 'touristVipInheritance'
             ].sort()
+        );
+    });
+});
+
+/** Runs one delegate call and returns what it threw, or `undefined` when it resolved. */
+async function delegateError(
+    pair: 'RESUME_MIRROR' | 'CANCELLED_ON_GRACE' | 'LIVE_PREAPPROVAL_ON_CLOSED_ROW'
+) {
+    const ports = buildMercadoPagoNoticePorts();
+    try {
+        await ports.delegates.delegate({
+            pair,
+            subscriptionId: '00000000-0000-4000-8000-000000000001',
+            readAt: new Date('2026-10-12T12:00:00.000Z'),
+            cancelledSeenAt: null
+        });
+        return undefined;
+    } catch (error) {
+        return error;
+    }
+}
+
+describe('AC:1676:6 the provider notice receiver registers the mirror delegates and the mark payments (HOS-1676)', () => {
+    it('wires markPayments to a real ledger port', () => {
+        // Arrange / Act
+        const ports = buildMercadoPagoNoticePorts();
+
+        // Assert
+        expect(typeof ports.markPayments.hang).toBe('function');
+        expect(typeof ports.delegates.delegate).toBe('function');
+    });
+
+    it('keeps RESUME_MIRROR unregistered: it still throws MIRROR_PAIR_NOT_REGISTERED (H-1)', async () => {
+        // Arrange / Act
+        const error = await delegateError('RESUME_MIRROR');
+
+        // Assert
+        expect(error).toMatchObject({ reason: 'MIRROR_PAIR_NOT_REGISTERED' });
+    });
+
+    it.each([
+        'CANCELLED_ON_GRACE',
+        'LIVE_PREAPPROVAL_ON_CLOSED_ROW'
+    ] as const)('registers %s: whatever the mocked database does, it is not MIRROR_PAIR_NOT_REGISTERED', async (pair) => {
+        // Arrange / Act
+        const error = await delegateError(pair);
+
+        // Assert
+        expect((error as { reason?: unknown } | undefined)?.reason).not.toBe(
+            'MIRROR_PAIR_NOT_REGISTERED'
         );
     });
 });

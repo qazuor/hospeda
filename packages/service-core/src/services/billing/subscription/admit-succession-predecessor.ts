@@ -112,14 +112,16 @@ export async function admitSuccessionPredecessor(
         const read = await ports.provider.readAuthorization({
             authorizationId: row.providerLink.providerId
         });
-        const { snapshot } = assertFreshForAct({ read, act });
+        const { snapshot, readAt } = assertFreshForAct({ read, act });
         if (snapshot.status !== 'active') {
             const action = getProviderNoticeMirror()[snapshot.status].ACTIVE;
             if (action.kind === 'DELEGATE') {
                 try {
                     await (ports.mirror ?? unregisteredMirrorDelegates).delegate({
                         pair: action.pair,
-                        subscriptionId: predecessor.id
+                        subscriptionId: predecessor.id,
+                        readAt,
+                        cancelledSeenAt: row.providerLink.cancelledSeenAt
                     });
                 } catch (error) {
                     logger.error(
