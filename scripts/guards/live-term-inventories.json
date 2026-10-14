@@ -74,7 +74,7 @@
             "file": "packages/service-core/src/services/billing/coverage/can-charge.ts",
             "symbol": "rowCanCharge",
             "row": 27,
-            "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle cuenta toda suscripción de la cuenta en una fila viva menos CANCEL_SCHEDULED; la CANCEL_SCHEDULED y la terminal con provider_link cuentan mientras cancelled_seen_at esté vacío, y la CHARGE_DECLINED hasta que pase el plazo 16 desde esa columna.",
+            "why": "AC:B4:5 (HOS-1534): la respuesta de puedeCobrarle cuenta toda suscripción de la cuenta en una fila viva menos CANCEL_SCHEDULED; la CANCEL_SCHEDULED y la terminal con provider_link cuentan mientras cancelled_seen_at esté vacío, y la CHARGE_DECLINED hasta que pase el plazo 16 desde esa columna; desde HOS-1676 también la CANCELLED del espejo tras un rechazo (CANCELLED_ON_GRACE, con el evento subscription.provider_cancelled_after_rejection), con la misma ventana.",
             "subject": "subscription"
         },
         {

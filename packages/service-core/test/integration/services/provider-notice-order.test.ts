@@ -184,7 +184,9 @@ describe('provider notices, order and acknowledgements', () => {
         expect(pendingMarks).toHaveLength(0);
     });
 
-    it('TEST:B3:18 acknowledges unknown resources and IPN without provider calls', async () => {
+    // H-10 (HOS-1676): an unknown Webhooks resource goes to the B11 handler, which re-reads it by
+    // id once; one the provider does not have is still acknowledged. IPN is never processed.
+    it('TEST:B3:18 acknowledges unknown resources after one by-id read, and IPN without provider calls', async () => {
         const { provider } = await setup();
         const decode = vi.spyOn(provider, 'decodeNotice');
         const reads = vi.spyOn(provider, 'readAuthorization');
@@ -201,7 +203,8 @@ describe('provider notices, order and acknowledgements', () => {
             )
         ).toEqual({ ack: 'OK', outcome: 'IPN_NOT_PROCESSED' });
         expect(decode).toHaveBeenCalledTimes(1);
-        expect(reads).not.toHaveBeenCalled();
+        expect(reads).toHaveBeenCalledTimes(1);
+        expect(reads).toHaveBeenCalledWith({ authorizationId: 'missing' });
     });
 
     it('TEST:B3:18 acknowledges charge and refund notices without processing them', async () => {

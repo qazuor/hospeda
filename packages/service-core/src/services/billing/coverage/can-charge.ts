@@ -24,6 +24,7 @@ import {
 import {
     and,
     type DrizzleClient,
+    domainEvent,
     eq,
     getDb,
     isNull,
@@ -31,6 +32,7 @@ import {
     ne,
     providerLinks,
     reconciliationMarks,
+    sql,
     subscriptions
 } from '@repo/db';
 import type { BillingDeadlineValues } from '@repo/schemas';
@@ -44,6 +46,9 @@ const CANCEL_SCHEDULED = 'CANCEL_SCHEDULED';
 /** The terminal state of a row whose authorization the provider cancelled after a rejection (I-2). */
 const CHARGE_DECLINED = 'CHARGE_DECLINED';
 
+/** The event that marks the mirror's `CANCELLED` after a rejection (HOS-1676 H-2). */
+const PROVIDER_CANCELLED_AFTER_REJECTION = 'subscription.provider_cancelled_after_rejection';
+
 /** One subscription of the account, as `decideCanCharge` reads it. */
 export interface CanChargeRow {
     /** The subscription status (`subscription.status`). */
@@ -52,6 +57,11 @@ export interface CanChargeRow {
     readonly hasProviderLink: boolean;
     /** `provider_link.cancelled_seen_at`: the first re-read that saw it `cancelled`, or null. */
     readonly cancelledSeenAt: Date | null;
+    /**
+     * Whether the mirror cancelled it after a rejected charge (`CANCELLED_ON_GRACE`): the row
+     * has a `subscription.provider_cancelled_after_rejection` event (HOS-1676 H-2, H-3).
+     */
+    readonly providerCancelledAfterRejection: boolean;
 }
 
 /**
@@ -77,8 +87,11 @@ export function cancellationRereadWindowEndsAt(input: {
  *    one too: the manual payer's reopens);
  * 2. a `CANCEL_SCHEDULED` or terminal row with a provider link whose cancellation no re-read saw
  *    yet counts; a `CANCEL_SCHEDULED` without a link counts too (I-4), a terminal one does not;
- * 3. a `CHARGE_DECLINED` row whose cancellation was seen counts until the 16th deadline's window
- *    ends (I-2, I-3);
+ * 3. a row whose authorization the provider cancelled after a rejected charge, and whose
+ *    cancellation was seen, counts until the 16th deadline's window ends (I-2, I-3): a
+ *    `CHARGE_DECLINED` row, or the mirror's `CANCELLED` after a rejection (`CANCELLED_ON_GRACE`,
+ *    marked by its `subscription.provider_cancelled_after_rejection` event; HOS-1676 H-3). The
+ *    mirror's `ACTIVE → CANCELLED` (`PROVIDER_CANCEL`) has no such event and stops at once;
  * 4. anything else does not count.
  */
 function rowCanCharge(input: {
@@ -91,7 +104,7 @@ function rowCanCharge(input: {
     if (live && row.status !== CANCEL_SCHEDULED) return true;
     if (!row.hasProviderLink) return live;
     if (row.cancelledSeenAt === null) return true;
-    if (row.status !== CHARGE_DECLINED) return false;
+    if (row.status !== CHARGE_DECLINED && !row.providerCancelledAfterRejection) return false;
     const endsAt = cancellationRereadWindowEndsAt({
         seenAt: row.cancelledSeenAt,
         days: rereadWindowDays
@@ -149,7 +162,9 @@ async function readAccountSubscriptions(input: {
         .select({
             status: subscriptions.status,
             providerLinkId: providerLinks.id,
-            cancelledSeenAt: providerLinks.cancelledSeenAt
+            cancelledSeenAt: providerLinks.cancelledSeenAt,
+            // The mirror's CANCELLED after a rejection (HOS-1676 H-3): `entity_id` is text.
+            providerCancelledAfterRejection: sql<boolean>`exists (select 1 from ${domainEvent} where ${domainEvent.entityType} = 'subscription' and ${domainEvent.entityId} = ${subscriptions.id}::text and ${domainEvent.eventType} = ${PROVIDER_CANCELLED_AFTER_REJECTION})`
         })
         .from(subscriptions)
         .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
@@ -157,7 +172,8 @@ async function readAccountSubscriptions(input: {
     return rows.map((row) => ({
         status: row.status,
         hasProviderLink: row.providerLinkId !== null,
-        cancelledSeenAt: row.cancelledSeenAt ?? null
+        cancelledSeenAt: row.cancelledSeenAt ?? null,
+        providerCancelledAfterRejection: row.providerCancelledAfterRejection === true
     }));
 }
 

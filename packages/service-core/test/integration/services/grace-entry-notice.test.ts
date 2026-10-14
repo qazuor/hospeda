@@ -268,7 +268,9 @@ describe('TEST:B7:1 grace entry through a rejected-charge notice', () => {
             expect(noticeResult).toMatchObject({ ack: 'OK', outcome: 'DELEGATED' });
             expect(delegate).toHaveBeenCalledWith({
                 pair: 'PROVIDER_PAUSE_IS_ARREARS',
-                subscriptionId: fixture.started.subscriptionId
+                subscriptionId: fixture.started.subscriptionId,
+                readAt: fixture.clock.now(),
+                cancelledSeenAt: null
             });
             expect((await subjectSubscription(fixture.started.subscriptionId)).status).toBe(
                 'GRACE_PERIOD'

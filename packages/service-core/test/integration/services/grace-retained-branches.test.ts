@@ -1,5 +1,5 @@
 import type { CoverageChangedEvent } from '@repo/billing-verticals-contract';
-import { eq, subscriptions } from '@repo/db';
+import { and, coverageLosses, domainEvent, eq, inArray, subscriptions } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { mirrorProviderCancellationOnGrace } from '../../../src/services/billing/notice/mirror-cancelled-on-grace.js';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
@@ -7,6 +7,7 @@ import type { MirrorDelegates } from '../../../src/services/billing/notice/provi
 import type { CoverageNotices } from '../../../src/services/billing/payment/payment-ports.js';
 import { recordChargeFact } from '../../../src/services/billing/payment/record-charge-fact.service.js';
 import { activatePendingWithSignupNotice } from '../../../src/services/billing/subscription/activate-pending-with-signup-notice.js';
+import type { SuccessionCloser } from '../../../src/services/billing/subscription/subscription-billing-ports.js';
 import { closeSuccessionIfPredecessor } from '../../../src/services/billing/subscription/succession-end.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import {
@@ -28,9 +29,22 @@ afterAll(closeServiceTestPool);
 
 const seeded: SeededSuccession[] = [];
 
-/** Retentions first, then marks, outbox and rows (HOS-1561): nothing open outlives a case. */
+/**
+ * Retentions first, then marks, outbox and rows (HOS-1561): nothing open outlives a case. The
+ * branch-5 mirror records `coverage_loss` since HOS-1676 (Coord-376): the users' rows go too.
+ */
 afterEach(async () => {
-    await retireSuccessionCases(seeded.splice(0));
+    const cases = seeded.splice(0);
+    await retireSuccessionCases(cases);
+    if (cases.length > 0)
+        await getServiceTestDb()
+            .delete(coverageLosses)
+            .where(
+                inArray(
+                    coverageLosses.userId,
+                    cases.map((c) => c.userId)
+                )
+            );
 });
 
 type Case = Awaited<ReturnType<typeof predecessorInGrace>>;
@@ -60,6 +74,24 @@ async function expectRetentionUntouched(s: Case, paymentId: string) {
     expect(retentions[0]).toMatchObject({ paymentId, releasedAt: null, releaseReason: null });
     expect(await refundsOf(paymentId)).toHaveLength(0);
     expect(await openMarksOf(s.subscriptionId)).toHaveLength(0);
+}
+
+/** The `subscription.provider_cancelled_after_rejection` events of one row (HOS-1676 H-2). */
+async function afterRejectionEvents(subscriptionId: string) {
+    return getServiceTestDb()
+        .select({
+            reason: domainEvent.reason,
+            actorType: domainEvent.actorType,
+            occurredAt: domainEvent.occurredAt
+        })
+        .from(domainEvent)
+        .where(
+            and(
+                eq(domainEvent.entityType, 'subscription'),
+                eq(domainEvent.entityId, subscriptionId),
+                eq(domainEvent.eventType, 'subscription.provider_cancelled_after_rejection')
+            )
+        );
 }
 
 /** A coverage listener that records each event and the row status committed when it arrives. */
@@ -237,7 +269,40 @@ describe('TEST:B7:16 — the B7 branches call S18 through its internal interface
                     event: { change: 'REMOVED', sourceType: 'SUBSCRIPTION' },
                     statusCommitted: 'CANCELLED'
                 });
+                expect(await afterRejectionEvents(s.subscriptionId)).toEqual([
+                    { reason: 'CANCELLED_ON_GRACE', actorType: 'provider', occurredAt: readAt }
+                ]);
                 await expectRetentionUntouched(s, paymentId);
+            }
+        );
+
+        it.skipIf(!isServiceTestDbAvailable())(
+            'HOS-1676 H-2: when S18 throws, the cancellation rolls back and leaves no after-rejection event',
+            async () => {
+                // Arrange
+                const { s } = await retainingPredecessor();
+                const failingCloser: SuccessionCloser = {
+                    async closeSuccession() {
+                        throw new Error('S18 failed');
+                    }
+                };
+                const coverage = committedCoverageSpy(s.subscriptionId);
+
+                // Act
+                const attempt = mirrorProviderCancellationOnGrace(
+                    { subscriptionId: s.subscriptionId, readAt: s.fixture.clock.now() },
+                    {
+                        clock: s.fixture.clock,
+                        successionCloser: failingCloser,
+                        coverageNotices: coverage.coverageNotices
+                    }
+                );
+
+                // Assert
+                await expect(attempt).rejects.toThrow('S18 failed');
+                expect((await subscriptionRow(s.subscriptionId)).status).toBe('GRACE_PERIOD');
+                expect(await afterRejectionEvents(s.subscriptionId)).toHaveLength(0);
+                expect(coverage.events).toHaveLength(0);
             }
         );
 

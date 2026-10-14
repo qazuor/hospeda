@@ -42,7 +42,15 @@ export interface RecordChargeFactPorts extends DeclineFirstChargePorts {
 
 export type RecordChargeFactResult =
     | { readonly outcome: 'CARD_VALIDATION_IGNORED' }
-    | { readonly outcome: 'NO_SUBSCRIPTION' }
+    | {
+          readonly outcome: 'NO_SUBSCRIPTION';
+          /**
+           * The charge's authorization when it has one we do not link (an unknown
+           * preapproval, B11 §2.4), `null` for a charge with no authorization at all.
+           * The notice receiver hands a non-null id to `handleUnknownAuthorization`.
+           */
+          readonly authorizationId: string | null;
+      }
     | { readonly outcome: 'RECORDED_PENDING'; readonly paymentId: string }
     | {
           readonly outcome: 'CREDITED';
@@ -70,7 +78,8 @@ export async function recordChargeFact(
     const read = await ports.provider.readCharge({ chargeId: input.chargeId });
     const { snapshot: charge } = assertFreshForAct({ read, act });
     if (charge.purpose === 'cardValidation') return { outcome: 'CARD_VALIDATION_IGNORED' };
-    if (charge.authorizationId === null) return { outcome: 'NO_SUBSCRIPTION' };
+    if (charge.authorizationId === null)
+        return { outcome: 'NO_SUBSCRIPTION', authorizationId: null };
 
     const [linked] = await getDb()
         .select({ subscription: subscriptions, providerLink: providerLinks })
@@ -78,7 +87,7 @@ export async function recordChargeFact(
         .innerJoin(subscriptions, eq(subscriptions.id, providerLinks.subscriptionId))
         .where(eq(providerLinks.providerId, charge.authorizationId))
         .limit(1);
-    if (!linked) return { outcome: 'NO_SUBSCRIPTION' };
+    if (!linked) return { outcome: 'NO_SUBSCRIPTION', authorizationId: charge.authorizationId };
 
     let paymentId: string;
     try {

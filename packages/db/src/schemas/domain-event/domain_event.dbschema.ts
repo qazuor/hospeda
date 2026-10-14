@@ -39,6 +39,16 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   the B11 sweep reads both the population and the 3-day retry clock from
  *   (AC:B11:6; B11.md "the instant of the transition is already recorded:
  *   every transition is auditable"; NUCLEO/08 §1.1 criterion 2; HOS-1603).
+ * - `subscription.provider_cancelled_after_rejection`: the `B/03` §10.1 mirror
+ *   moved a `GRACE_PERIOD` row to `CANCELLED` because the provider cancelled
+ *   its preapproval after a rejected charge (mirror pair `CANCELLED_ON_GRACE`).
+ *   Written by `mirrorProviderCancellationOnGrace` in the same transaction as
+ *   the cancellation (`entity_type = 'subscription'`, `entity_id` = its id,
+ *   `reason = 'CANCELLED_ON_GRACE'`, `occurred_at` = the instant of the provider
+ *   re-read, actor `provider`). It tells this `CANCELLED` apart from every other
+ *   one: `canCharge` keeps counting it until the 16th deadline's window ends,
+ *   and the `LIVE_PREAPPROVAL_ON_CLOSED_ROW` pair re-sends the cancellation on
+ *   it (B11 §3; HOS-1676 H-2).
  */
 export const DOMAIN_EVENT_TYPES = [
     'email.undeliverable',
@@ -51,7 +61,8 @@ export const DOMAIN_EVENT_TYPES = [
     'reconciliation.mark_opened',
     'account.closed_on_request',
     'partner_application.email_replaced',
-    'subscription.provider_cancellation_decided'
+    'subscription.provider_cancellation_decided',
+    'subscription.provider_cancelled_after_rejection'
 ] as const;
 
 /** One type of the closed domain event catalog. */

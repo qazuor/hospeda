@@ -9,10 +9,14 @@ import { z } from 'zod';
 import { ServiceError } from '../../../types';
 
 /**
- * The transitions of exception 4 (B11 §3, B11.md:372): the ten transitions and ONE
- * tombstone, the receipt tombstone; plus the twelfth, the cancellation of the inherited
- * Tourist VIP, by the owner's decision (H3 → b, Coord-289). Local literals on purpose:
- * nothing from `@repo/db` is evaluated at module level.
+ * The decisions of exception 4 (B11 §3, B11.md:372): the ten transitions and ONE
+ * tombstone, the receipt tombstone; the twelfth, the cancellation of the inherited
+ * Tourist VIP, by the owner's decision (H3 → b, Coord-289); and the thirteenth,
+ * `REJECTION_REVIVED`, which is not a transition of ours but the live re-read of a
+ * terminal row the provider cancelled after a rejected charge (Coord-351 F3, HOS-1676
+ * H-8): B11 §3 says «desde esa relectura la fila entra a la salvedad 4», so that re-read
+ * records the decision and starts the 3-day clock. Local literals on purpose: nothing
+ * from `@repo/db` is evaluated at module level.
  */
 export const SALVEDAD_4_TRANSITIONS = [
     'S12',
@@ -26,7 +30,9 @@ export const SALVEDAD_4_TRANSITIONS = [
     'S31',
     'S36',
     'RECEPTION_TOMBSTONE',
-    'TOURIST_VIP_INHERITED'
+    'TOURIST_VIP_INHERITED',
+    // Coord-351 F3 · B11 §3: «desde esa relectura la fila entra a la salvedad 4».
+    'REJECTION_REVIVED'
 ] as const;
 
 /** The cancellations of the complement of a terminal addon instance (exception 1, B11.md:374-377). */

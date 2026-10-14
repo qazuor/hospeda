@@ -204,7 +204,9 @@ describe('TEST:B3:39 S1 succession branch, seeded rows, no route', () => {
         });
         expect(delegate).toHaveBeenCalledExactlyOnceWith({
             pair: 'PROVIDER_PAUSE_IS_ARREARS',
-            subscriptionId: seeded.predecessor.id
+            subscriptionId: seeded.predecessor.id,
+            readAt: successionClock.now(),
+            cancelledSeenAt: null
         });
         await expect(run()).rejects.toMatchObject({ reason: 'LAST_CHARGE_NOT_ENTERED' });
         expect(authorize).not.toHaveBeenCalled();
