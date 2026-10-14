@@ -146,6 +146,64 @@ describe('readPeriodCharges', () => {
         ).resolves.toEqual({ verdict: 'UNKNOWN', reason: 'READ_FAILED' });
     });
 
+    describe('Coord-454: a period whose money went back is not CHARGED', () => {
+        async function approvedPeriod() {
+            const clock: Clock = { now: () => new Date('2026-10-12T03:00:00.000Z') };
+            const provider = new FakePaymentProvider({
+                clock,
+                idNamespace: crypto.randomUUID(),
+                honestAbout: [
+                    { lie: 'M8', why: 'the period charge must be approved when it is read' },
+                    { lie: 'M13', why: 'the partial case refunds from the first refund' }
+                ]
+            });
+            const authorizationId = await authorization(provider);
+            const { chargeId } = await provider.charge({
+                authorizationId,
+                amount: { amountMinor: 25_000, currency: 'ARS' },
+                reference: crypto.randomUUID()
+            });
+            const read = async () =>
+                readPeriodCharges(
+                    {
+                        authorizationRead: await provider.readAuthorization({ authorizationId }),
+                        act: { kind: 'decision' as const, startedAt: clock.now() }
+                    },
+                    { provider }
+                );
+            return { provider, chargeId, read };
+        }
+
+        it('a charged-back period charge is NOT_CHARGED', async () => {
+            const { provider, chargeId, read } = await approvedPeriod();
+            await provider.chargeBack({ chargeId });
+
+            await expect(read()).resolves.toEqual({ verdict: 'NOT_CHARGED', chargeId });
+        });
+
+        it('a period charge refunded in full is NOT_CHARGED', async () => {
+            const { provider, chargeId, read } = await approvedPeriod();
+            await provider.refund({
+                chargeId,
+                amount: { amountMinor: 25_000, currency: 'ARS' },
+                reference: 'refund-all'
+            });
+
+            await expect(read()).resolves.toEqual({ verdict: 'NOT_CHARGED', chargeId });
+        });
+
+        it('a period charge refunded in part is still CHARGED', async () => {
+            const { provider, chargeId, read } = await approvedPeriod();
+            await provider.refund({
+                chargeId,
+                amount: { amountMinor: 10_000, currency: 'ARS' },
+                reference: 'refund-part'
+            });
+
+            await expect(read()).resolves.toEqual({ verdict: 'CHARGED', chargeId });
+        });
+    });
+
     it('never reads lastChargedAt: a rejected record that moved it is still NOT_CHARGED', async () => {
         const { clock, provider } = fixture();
         const authorizationId = await authorization(provider);
