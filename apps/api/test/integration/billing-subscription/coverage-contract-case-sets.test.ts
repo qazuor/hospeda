@@ -9,8 +9,8 @@
  *   reader: the only difference between the two harnesses is the billing half.
  * - (iii): the real implementation's own case set (`realCoverageCaseSet`) runs
  *   entire against the real one.
- * - (iv): that own set holds a case the bootstrap does not pass: "an ACTIVE
- *   subscription covers".
+ * - (iv): that own set holds two cases the bootstrap does not pass: "an ACTIVE
+ *   subscription covers" and the G-R2-C case of the ADDON source.
  * - (v): the shared set's distinctive case (PRE_TRIAL, contract §5.1) fails
  *   against a constant implementation, both "always covered" and "never
  *   anything". This block reads no database.
@@ -382,7 +382,7 @@ describe("TEST:B4:9 (AC:B4:9) (iii) the real implementation's own case set passe
 });
 
 describe("TEST:B4:9 (AC:B4:9) (iv) the real implementation's own set has a case the bootstrap does not pass", () => {
-    it('against the bootstrap, exactly "an ACTIVE subscription covers" fails', async () => {
+    it('against the bootstrap, exactly two cases fail: "an ACTIVE subscription covers" and the G-R2-C case', async () => {
         // Arrange
         const cases = collect({
             register: (runner) =>
