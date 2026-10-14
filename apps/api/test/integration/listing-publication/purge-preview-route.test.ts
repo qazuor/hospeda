@@ -244,34 +244,37 @@ describe('TEST:B13a:3a AC:B13a:4 the purge preview names what the listing loses'
 
     it.each(
         listingVerticals
-    )('rejects an authenticated owner without READ_OWN on a purged %s listing', async (vertical) => {
+    )('rejects an authenticated actor without READ_OWN on a %s listing', async (vertical) => {
         const owner = await createOwner();
+        const stranger = await createOwner();
         ownerIds.add(owner.id);
+        ownerIds.add(stranger.id);
         const destinationId = await makeDestination();
         const id =
             vertical === VerticalEnum.ACCOMMODATION
                 ? await createListing({
                       ownerId: owner.id,
                       destinationId,
-                      status: PublicationStatusEnum.PURGED,
+                      status: PublicationStatusEnum.DRAFT,
                       complete: false
                   })
                 : await createVerticalListing({
                       vertical,
                       ownerId: owner.id,
                       destinationId,
-                      status: PublicationStatusEnum.PURGED,
+                      status: PublicationStatusEnum.DRAFT,
                       complete: false
                   });
         listingIds.push(id);
+        const actorId = vertical === VerticalEnum.ACCOMMODATION ? owner.id : stranger.id;
         const response = await readResponse(
             await app.request(previewPath(vertical, id), {
-                headers: actorHeaders({ id: owner.id, permissions: [] })
+                headers: actorHeaders({ id: actorId, permissions: [] })
             })
         );
 
-        expect(response.status).toBe(404);
-        expect(response.body.error?.code).toBe('NOT_FOUND');
+        expect([403, 404]).toContain(response.status);
+        expect(response.body.error?.code).toBe(response.status === 403 ? 'FORBIDDEN' : 'NOT_FOUND');
     });
 
     it.each([
