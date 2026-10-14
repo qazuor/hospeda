@@ -40,7 +40,7 @@ export async function seedOrderInstance(input: {
     readonly status?: string;
     readonly chargeKind?: 'UNA_VEZ' | 'PERIODICO';
     readonly providerOrderId?: string | null;
-    readonly key?: { readonly createdAt?: Date } | null;
+    readonly key?: { readonly createdAt?: Date; readonly operation?: string } | null;
 }): Promise<{
     readonly instanceId: string;
     readonly ownerId: string;
@@ -74,7 +74,7 @@ export async function seedOrderInstance(input: {
             .insert(idempotencyKeys)
             .values({
                 key: `b114-order-key-${crypto.randomUUID()}`,
-                operation: 'ORDER_CREATE',
+                operation: input.key?.operation ?? 'ORDER_CREATE',
                 subjectId: row.id,
                 createdAt: keyAt
             });

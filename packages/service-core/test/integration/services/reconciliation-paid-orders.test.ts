@@ -141,12 +141,18 @@ describe('TEST:B11:12 AC:B11:13 a paid order of an ABANDONED one-time instance o
             const { fake, calls } = spiedFake();
             const { orderId } = fake.placeOrder({ reference: 'no-key', paid: true });
             const { instanceId } = await seedOrderInstance({ providerOrderId: orderId, key: null });
+            const refundKeyed = fake.placeOrder({ reference: 'refund-key', paid: true });
+            const otherKey = await seedOrderInstance({
+                providerOrderId: refundKeyed.orderId,
+                key: { operation: 'REFUND_CREATE' }
+            });
 
             // Act
             const summary = await sweepPaidOrders({ provider: fake });
 
             // Assert
             expect(await paidOrderMarks(instanceId)).toHaveLength(0);
+            expect(await paidOrderMarks(otherKey.instanceId)).toHaveLength(0);
             expect(calls.readOrder).not.toHaveBeenCalled();
             expect(calls.searchOrders).not.toHaveBeenCalled();
             expect(summary.paidOrders?.examined).toBe(0);
