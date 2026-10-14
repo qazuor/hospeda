@@ -18,6 +18,17 @@ import {
 // ---------------------------------------------------------------------------
 
 describe('transformAccommodationEdit', () => {
+    it('maps publicationStatus (HOS-1641) and defaults an absent one to DRAFT', () => {
+        expect(
+            transformAccommodationEdit({ item: { id: 'a', publicationStatus: 'PURGED' } })
+                .publicationStatus
+        ).toBe('PURGED');
+        expect(transformAccommodationEdit({ item: { id: 'a' } }).publicationStatus).toBe('DRAFT');
+        expect(
+            transformAccommodationEdit({ item: { id: 'a', lifecycleState: 'ACTIVE' } })
+        ).not.toHaveProperty('lifecycleState');
+    });
+
     it('should extract all editable fields from a raw API accommodation object', () => {
         const raw = {
             id: 'acc-123',

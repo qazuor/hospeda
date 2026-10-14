@@ -42,7 +42,7 @@ const { t } = createTranslations(locale);
 //
 // It lives on THIS page since HOS-1080, and only this one: it is about what
 // renaming does to the URL, and the name field is here.
-const listingIsPublished = isListingPublished({ lifecycleState: detail.lifecycleState });
+const listingIsPublished = isListingPublished({ publicationStatus: detail.publicationStatus });
 ---
 
 <ListingEditorSectionLayout

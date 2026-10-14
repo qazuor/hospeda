@@ -128,7 +128,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
         ownerId: 'owner-1',
         name: 'Excursión a Colón',
         slug: 'excursion-a-colon',
-        lifecycleState: 'DRAFT',
+        publicationStatus: 'DRAFT',
         destinationId: DESTINATION_1,
         description: 'Descripción original con suficiente longitud para pasar validación.',
         ...overrides

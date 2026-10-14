@@ -6,6 +6,7 @@
  * this page issues exactly one request.
  */
 
+import { PublicationStatusEnum } from '@repo/schemas';
 import { useCallback } from 'react';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -81,7 +82,7 @@ export function CapacityPricingForm({
                     bathrooms: after.bathrooms,
                     hasMainImage
                 },
-                isDraft: after.lifecycleState === 'DRAFT'
+                isDraft: after.publicationStatus === PublicationStatusEnum.DRAFT
             });
         },
         [prompt, hasMainImage]
