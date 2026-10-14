@@ -123,6 +123,7 @@ export * from './billing/subscription/billing-period-end.js';
 export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
 export * from './billing/subscription/complement-s21.js';
 export * from './billing/subscription/decline-first-charge.service.js';
+export * from './billing/subscription/end-scheduled-services.service.js';
 export * from './billing/subscription/enter-grace.service.js';
 export * from './billing/subscription/exit-grace.service.js';
 export * from './billing/subscription/expire-authorization-windows.service.js';
