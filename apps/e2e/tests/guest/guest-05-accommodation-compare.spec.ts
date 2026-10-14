@@ -86,8 +86,7 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
         vipCap = vip.limits?.max_compare_items ?? 0;
         const accs = await execSQL<AccRow>(
             `SELECT id, slug FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 5`

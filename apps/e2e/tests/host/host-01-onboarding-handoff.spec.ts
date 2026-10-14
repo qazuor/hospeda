@@ -147,13 +147,13 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // DB invariants AFTER mini-form (step 7 of spec)
         const accsAfter = await execSQL<{
             id: string;
-            lifecycle_state: string;
+            publication_status: string;
             owner_id: string;
-        }>('SELECT id, lifecycle_state, owner_id FROM accommodations WHERE owner_id = $1', [
+        }>('SELECT id, publication_status, owner_id FROM accommodations WHERE owner_id = $1', [
             user.id
         ]);
         expect(accsAfter.length).toBe(1);
-        expect(accsAfter[0]?.lifecycle_state).toBe('DRAFT');
+        expect(accsAfter[0]?.publication_status).toBe('DRAFT');
         expect(accsAfter[0]?.owner_id).toBe(user.id);
 
         // Promotion is now additive: the HOST hat is granted on top of the
@@ -204,7 +204,7 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // owner-scoped protected PATCH, mirroring what the web editor form
         // submits before "Publicar". `bedrooms`/`bathrooms` are added here
         // (HOS-152) so the draft clears AccommodationService.publish()'s
-        // capacity-completeness guard, which now rejects DRAFT -> ACTIVE
+        // capacity-completeness guard, which now rejects DRAFT -> PUBLISHED
         // unless extraInfo has capacity/minNights/bedrooms/bathrooms all set.
         const fillResponse = await page.request.patch(
             `${API_URL}/api/v1/protected/accommodations/${result.accommodationId}`,
@@ -233,9 +233,9 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // now satisfies the publish capacity-completeness guard — no test-only SQL
         // workaround needed.
 
-        // The publish POST is what transitions DRAFT → ACTIVE and creates
+        // The publish POST is what transitions DRAFT → PUBLISHED and creates
         // the trial subscription (HOS-110 dedicated endpoint — the protected
-        // PATCH schema has no `lifecycleState` field, so publishing goes
+        // PATCH schema has no publication field, so publishing goes
         // through the dedicated endpoint instead of the generic update).
         // Publishing needs no subscription any more (HOS-1352: old billing removed in U1.1).
 
@@ -267,15 +267,14 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
             `publish POST must succeed (got ${publishResponse.status()})`
         ).toBe(true);
 
-        // Step 13 of spec: ACTIVE state + role unchanged
-        const accsPublished = await execSQL<{ lifecycle_state: string; visibility: string }>(
-            'SELECT lifecycle_state, visibility FROM accommodations WHERE id = $1',
+        // Step 13 of spec: PUBLISHED state + role unchanged. Regression
+        // (SPEC-217): the published draft is what the public detail-by-slug page
+        // serves (no 404); `publication_status` is the only column it reads.
+        const accsPublished = await execSQL<{ publication_status: string }>(
+            'SELECT publication_status FROM accommodations WHERE id = $1',
             [result.accommodationId]
         );
-        expect(accsPublished[0]?.lifecycle_state).toBe('ACTIVE');
-        // Regression (SPEC-217): publishing promotes the onboarding draft from
-        // PRIVATE to PUBLIC so the public detail-by-slug page serves it (no 404).
-        expect(accsPublished[0]?.visibility).toBe('PUBLIC');
+        expect(accsPublished[0]?.publication_status).toBe('PUBLISHED');
 
         // No double-promotion: publishing re-runs the grant, and `grantRole` is
         // idempotent on the `(user_id, role)` primary key, so the set is

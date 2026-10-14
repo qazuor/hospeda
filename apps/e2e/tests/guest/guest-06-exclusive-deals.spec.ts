@@ -8,8 +8,8 @@
  *   - Suite seed has the `tourist-vip` and `owner-pro` billing plans in
  *     `billing_plans` with `name = slug` and livemode = false. Seeded by
  *     packages/seed/src/required/billingPlans.seed.ts.
- *   - Suite seed has at least 1 ACTIVE, publicly-visible (destination-linked)
- *     accommodation available via getAnyCityDestinationId().
+ *   - Suite seed has at least 1 PUBLISHED (destination-linked) accommodation
+ *     available via getAnyCityDestinationId().
  *
  * Validates (HOS-21 T-016 subtasks):
  *   - Free tourist: GET /exclusive-deals → 403 ENTITLEMENT_REQUIRED (API), and
@@ -110,6 +110,8 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     let ownerProPlanId: string | null = null;
 
     // ── Shared fixture: owner + visible/restricted accommodations + deals ──
+    // "Visible" is a PUBLISHED listing; "restricted" is one the public never
+    // sees (DRAFT), which is all `publication_status` can say (HOS-1641).
     let ownerId: string | null = null;
     let visibleAccommodationId: string | null = null;
     let restrictedAccommodationId: string | null = null;
@@ -128,15 +130,13 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const visible = await execSQL<AccommodationRow>(
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
-                 owner_id, destination_id, lifecycle_state,
-                 visibility, moderation_state,
+                 owner_id, destination_id,
                  publication_status, inactive_since, deadlines_version,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
-                 $5, $6, 'ACTIVE'::lifecycle_status_enum,
-                 'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum,
-                 CASE WHEN 'ACTIVE'::lifecycle_status_enum = 'ACTIVE' AND 'PUBLIC'::visibility_enum = 'PUBLIC' THEN 'PUBLISHED' ELSE 'DRAFT' END::publication_status_enum, NOW(), 1,
+                 $5, $6,
+                 'PUBLISHED'::publication_status_enum, NOW(), 1,
                  NOW(), NOW()
              ) RETURNING id`,
             [
@@ -153,15 +153,13 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const restricted = await execSQL<AccommodationRow>(
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
-                 owner_id, destination_id, lifecycle_state,
-                 visibility, moderation_state,
+                 owner_id, destination_id,
                  publication_status, inactive_since, deadlines_version,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
-                 $5, $6, 'ACTIVE'::lifecycle_status_enum,
-                 'RESTRICTED'::visibility_enum, 'APPROVED'::moderation_status_enum,
-                 CASE WHEN 'ACTIVE'::lifecycle_status_enum = 'ACTIVE' AND 'RESTRICTED'::visibility_enum = 'PUBLIC' THEN 'PUBLISHED' ELSE 'DRAFT' END::publication_status_enum, NOW(), 1,
+                 $5, $6,
+                 'DRAFT'::publication_status_enum, NOW(), 1,
                  NOW(), NOW()
              ) RETURNING id`,
             [
