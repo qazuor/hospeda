@@ -74,7 +74,7 @@ export function createChargebackDetection(ports: {
                 const opened = await openReconciliationMark(
                     {
                         subject: { kind: 'SUBSCRIPTION', subscriptionId },
-                        reason: CHARGEBACK_REASON,
+                        reason: 'CONTRACARGO' satisfies typeof CHARGEBACK_REASON,
                         payment: { source: 'PAYMENT', id: payment.id },
                         actor: { type: input.actor },
                         correlationId: input.correlationId
