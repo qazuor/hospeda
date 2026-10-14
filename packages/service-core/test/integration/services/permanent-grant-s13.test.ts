@@ -11,6 +11,7 @@ import {
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
+import { FakePaymentProvider } from '@repo/payments/fake';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { grantPermanentGrant } from '../../../src/services/billing/grant/permanent-grant.service.js';
@@ -79,8 +80,11 @@ async function seedCase(vertical = V, status = 'ACTIVE') {
 }
 
 function ports(onNotice: () => Promise<void> = async () => undefined) {
+    const clock = { now: () => now };
     return {
-        clock: { now: () => now },
+        clock,
+        provider: new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock }),
+        beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: { emitCoverageChanged: onNotice },
         orphanhood: {
             addonPolicy: addonPolicyFromTx(getServiceTestDb()),
@@ -279,6 +283,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 },
                 {
                     clock: s.fixture.clock,
+                    provider: new FakePaymentProvider({
+                        idNamespace: crypto.randomUUID(),
+                        clock: s.fixture.clock
+                    }),
+                    beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
                     coverageNotices: { emitCoverageChanged: async () => undefined },
                     orphanhood: {
                         addonPolicy: addonPolicyFromTx(getServiceTestDb()),

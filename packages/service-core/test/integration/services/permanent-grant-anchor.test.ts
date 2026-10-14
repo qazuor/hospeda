@@ -1,4 +1,5 @@
 import { eq, permanentGrants, permanentGrantVerticals, subscriptions } from '@repo/db';
+import { FakePaymentProvider } from '@repo/payments/fake';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import {
@@ -46,8 +47,11 @@ function ports(
         change: string;
     }) => Promise<void> = async () => undefined
 ) {
+    const clock = { now: () => now };
     return {
-        clock: { now: () => now },
+        clock,
+        provider: new FakePaymentProvider({ idNamespace: crypto.randomUUID(), clock }),
+        beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         coverageNotices: { emitCoverageChanged: onNotice },
         orphanhood: {
             addonPolicy: addonPolicyFromTx(getServiceTestDb()),

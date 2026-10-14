@@ -10,6 +10,7 @@ export * from './grace-started.js';
 export * from './payment-credited.js';
 export * from './payment-failure.js';
 export * from './payment-success.js';
+export * from './permanent-grant-cancel.js';
 export * from './plan-change-confirmation.js';
 export * from './plan-price-change-notice.js';
 export * from './purchase-confirmation.js';

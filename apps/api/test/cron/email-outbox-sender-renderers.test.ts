@@ -200,6 +200,11 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
             expected: ['Registramos la revocación que pediste', 'Mercado Pago']
         },
         {
+            template: 'billing.permanent-grant-cancel',
+            payload: { subscriptionId },
+            expected: ['Te otorgamos acceso permanente sin costo en Hospeda', 'Mercado Pago']
+        },
+        {
             // HOS-1683 AC:1683:2: REJECTION_REVIVED's notice before cancelling a live authorization.
             template: 'billing.closed-subscription-authorization-cancel',
             payload: { subscriptionId },

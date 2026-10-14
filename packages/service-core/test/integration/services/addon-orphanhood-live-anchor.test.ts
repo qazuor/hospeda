@@ -1,4 +1,5 @@
 import { addonInstances, eq, subscriptions } from '@repo/db';
+import { FakePaymentProvider } from '@repo/payments/fake';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runOrphanhood } from '../../../src/services/billing/addon/addon-instance-a5';
@@ -225,6 +226,11 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     },
                     {
                         clock: { now: () => orphanNow },
+                        provider: new FakePaymentProvider({
+                            idNamespace: crypto.randomUUID(),
+                            clock: { now: () => orphanNow }
+                        }),
+                        beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
                         coverageNotices: { emitCoverageChanged: async () => undefined },
                         orphanhood: {
                             addonPolicy: addonPolicyFromTx(getServiceTestDb()),
