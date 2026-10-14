@@ -1,6 +1,12 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { createBillingSignupRenderers } from '../../../src/services/outbox/billing-signup-renderers.js';
+import {
+    CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
+    FIRST_CHARGE_DECLINED_CANCEL_SUBJECT,
+    REVOCATION_CANCEL_SUBJECT,
+    SCHEDULED_CANCELLATION_SUBJECT
+} from '../../../src/templates/billing/index.js';
 import { row } from './outbox-batch.harness.js';
 
 const renderers = createBillingSignupRenderers({ siteUrl: 'https://hospeda.test' });
@@ -211,8 +217,55 @@ describe('billing signup outbox renderers', () => {
         ['billing.tourist-vip-inherited-cancel', {}],
         ['billing.tourist-vip-inherited-cancel', { subscriptionId: 42 }],
         ['billing.addon-cancelled', {}],
-        ['billing.addon-cancelled', { subscriptionId: 42 }]
+        ['billing.addon-cancelled', { subscriptionId: 42 }],
+        ['billing.first-charge-declined-cancel', {}],
+        ['billing.first-charge-declined-cancel', { subscriptionId: 42 }],
+        ['billing.revocation-cancel', {}],
+        ['billing.revocation-cancel', { subscriptionId: 42 }],
+        ['billing.closed-subscription-authorization-cancel', {}],
+        ['billing.closed-subscription-authorization-cancel', { subscriptionId: 42 }],
+        ['billing.scheduled-cancellation', {}],
+        ['billing.scheduled-cancellation', { subscriptionId: 42 }]
     ])('rejects invalid payloads for %s', (template, payload) => {
         expect(() => renderers[template]!({ row: row({ template, payload }) })).toThrow(TypeError);
+    });
+});
+
+describe('TEST:1683:4 AC:1683:2 the before-cancel notices of HOS-1683 render', () => {
+    it.each([
+        [
+            'billing.first-charge-declined-cancel',
+            FIRST_CHARGE_DECLINED_CANCEL_SUBJECT,
+            'El primer cobro de tu suscripción fue rechazado, así que cancelamos su autorización de cobro.'
+        ],
+        [
+            'billing.revocation-cancel',
+            REVOCATION_CANCEL_SUBJECT,
+            'La devolución de tu último pago sigue su propio trámite.'
+        ],
+        [
+            'billing.closed-subscription-authorization-cancel',
+            CLOSED_SUBSCRIPTION_AUTHORIZATION_CANCEL_SUBJECT,
+            'de una suscripción tuya que ya no se renueva.'
+        ],
+        [
+            'billing.scheduled-cancellation',
+            SCHEDULED_CANCELLATION_SUBJECT,
+            'El servicio sigue hasta el final del período que ya pagaste.'
+        ]
+    ])('%s renders its own subject and body, without ids or S3 text', async (template, subject, phrase) => {
+        // Arrange
+        const renderer = renderers[template];
+
+        // Act
+        const result = await renderer!({ row: row({ template, payload: { subscriptionId } }) });
+        const html = renderToStaticMarkup(result.react);
+
+        // Assert
+        expect(result.subject).toBe(subject);
+        expect(html).toContain(phrase);
+        expect(html).toContain('Mercado Pago');
+        expect(html).not.toContain(subscriptionId);
+        expect(html).not.toContain('Tu autorización pendiente venció');
     });
 });

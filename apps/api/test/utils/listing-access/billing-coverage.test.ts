@@ -1,7 +1,8 @@
 /**
  * Unit test of the production ports of billing's real coverage (HOS-1532 I-1,
  * X-1): each port is the one the composition root must pass, the clock is read
- * lazily on every call, and `ficha` fails visibly until V6.13 registers it.
+ * lazily on every call, and `ficha` is the real query of verticals over the
+ * listing reader (AC:V6:26, HOS-1483).
  */
 
 import { planCatalogModel } from '@repo/db';
@@ -23,12 +24,17 @@ const mocks = vi.hoisted(() => ({
     resolveTrialAndBaseSources: vi.fn(),
     createBillingCoverage: vi.fn(),
     createBillingCanCharge: vi.fn(),
-    createBillingRetentionStopped: vi.fn()
+    createBillingRetentionStopped: vi.fn(),
+    findListingsById: vi.fn()
 }));
 
 vi.mock('@repo/db', async () => {
     const { createDbMock } = await import('../../helpers/mocks/db-mock');
-    return { ...createDbMock(), planCatalogModel: { tag: 'plan catalog model' } };
+    return {
+        ...createDbMock(),
+        planCatalogModel: { tag: 'plan catalog model' },
+        listingContractModel: { findListingsById: mocks.findListingsById }
+    };
 });
 
 vi.mock('@repo/verticals', async (importOriginal) => ({
@@ -61,6 +67,7 @@ beforeEach(() => {
     mocks.createBillingCoverage.mockClear();
     mocks.createBillingCanCharge.mockClear();
     mocks.createBillingRetentionStopped.mockClear();
+    mocks.findListingsById.mockReset();
 });
 
 describe('buildBillingCoveragePorts', () => {
@@ -100,12 +107,20 @@ describe('buildBillingCoveragePorts', () => {
         expect(mocks.resolveTrialAndBaseSources).toHaveBeenCalledWith({ reader, input });
     });
 
-    it('fails visibly on `ficha` until V6.13 registers it', async () => {
+    it('AC:V6:26 answers `ficha` from the real listing query over the listing reader', async () => {
+        const listingId = '22222222-2222-4222-8222-222222222222';
+        const ownerId = '33333333-3333-4333-8333-333333333333';
+        mocks.findListingsById.mockResolvedValue([
+            { vertical: 'gastronomy', ownerId, publicationStatus: 'PUBLISHED' }
+        ]);
         const { ports } = buildBillingCoveragePorts({ reader });
 
-        await expect(
-            ports.listing({ listingId: '22222222-2222-4222-8222-222222222222' })
-        ).rejects.toMatchObject({ reason: 'LISTING_QUERY_NOT_REGISTERED' });
+        await expect(ports.listing({ listingId })).resolves.toEqual({
+            vertical: VerticalEnum.GASTRONOMY,
+            ownerId,
+            acceptsFeature: true
+        });
+        expect(mocks.findListingsById).toHaveBeenCalledWith({ listingId });
     });
 });
 

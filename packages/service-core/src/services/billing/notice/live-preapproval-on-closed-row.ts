@@ -275,7 +275,8 @@ async function reviveRejection(
         {
             subscriptionId,
             userId: closed.subscription.userId,
-            authorizationId: closed.link.providerId
+            authorizationId: closed.link.providerId,
+            kind: 'LIVE_AUTHORIZATION_ON_CLOSED_ROW'
         },
         {
             provider: ports.provider,

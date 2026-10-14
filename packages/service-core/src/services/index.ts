@@ -119,6 +119,7 @@ export * from './billing/subscription/activate-pending-with-signup-notice.js';
 export * from './billing/subscription/activate-subscription.service.js';
 export * from './billing/subscription/admit-succession-predecessor.js';
 export * from './billing/subscription/arrears-suspension-notice.js';
+export * from './billing/subscription/before-cancel-notice-kinds.js';
 export * from './billing/subscription/billing-period-end.js';
 export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
 export * from './billing/subscription/complement-s21.js';
