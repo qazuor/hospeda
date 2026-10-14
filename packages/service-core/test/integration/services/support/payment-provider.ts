@@ -34,6 +34,8 @@ export function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
         listCharges: (input) =>
             fake.listCharges({ authorizationId: internal(input.authorizationId) }),
         readCharge: (input) => fake.readCharge(input),
+        readOrder: (input) => fake.readOrder(input),
+        searchOrders: (input) => fake.searchOrders(input),
         decodeNotice: (input) => fake.decodeNotice(input)
     };
 }
