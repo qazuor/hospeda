@@ -48,6 +48,7 @@ export const LIVE_SUBSCRIPTION_STATUSES = [
  * FKs link the user, vertical, predecessor/successor, and matching option/version/vertical.
  * La ventana de autorización guarda su versión de plazos y su vencimiento juntos (PLAZO:10).
  * El reloj del grace guarda el rechazo leído y su vencimiento juntos (S4); S5/S6 lo apagan al salir del grace (B7.2).
+ * El aviso de renovación guarda su versión de plazos y la fecha del cobro para la que la guardó, juntos (PLAZO:13).
  */
 export const subscriptions = pgTable(
     'subscription',
@@ -85,6 +86,12 @@ export const subscriptions = pgTable(
         graceStartedAt: timestamp('grace_started_at', { withTimezone: true }),
         /** Vencimiento calculado del grace; S5/S7 lo vacían al salir; S6 lo conserva como ancla del período impago. */
         graceEndsAt: timestamp('grace_ends_at', { withTimezone: true }),
+        /** versión de plazos del aviso de renovación de este ciclo (PLAZO:13) */
+        renewalNoticeDeadlineVersion: integer('renewal_notice_deadline_version').references(
+            () => billingDeadlineVersions.version
+        ),
+        /** la fecha del próximo cobro para la que se guardó esa versión */
+        renewalNoticeChargeAt: timestamp('renewal_notice_charge_at', { withTimezone: true }),
         /** sucede_a */
         succeedsId: uuid('succeeds_id').references((): AnyPgColumn => subscriptions.id),
         /** sucedida_por */
@@ -128,6 +135,10 @@ export const subscriptions = pgTable(
         graceClockPair: check(
             'ck_subscription_grace_clock_pair',
             sql`(${t.graceStartedAt} IS NULL AND ${t.graceEndsAt} IS NULL) OR (${t.graceStartedAt} IS NOT NULL AND ${t.graceEndsAt} IS NOT NULL AND ${t.graceEndsAt} >= ${t.graceStartedAt})`
+        ),
+        renewalNoticePair: check(
+            'ck_subscription_renewal_notice_pair',
+            sql`(${t.renewalNoticeDeadlineVersion} IS NULL AND ${t.renewalNoticeChargeAt} IS NULL) OR (${t.renewalNoticeDeadlineVersion} IS NOT NULL AND ${t.renewalNoticeChargeAt} IS NOT NULL)`
         ),
         optionVersionFk: foreignKey({
             name: 'fk_subscription_billing_option_version',
