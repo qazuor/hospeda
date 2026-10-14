@@ -242,6 +242,22 @@ describe('TEST:B13a:3a AC:B13a:4 the purge preview names what the listing loses'
         expect(malformed.status).toBe(400);
     });
 
+    it('rejects an authenticated actor without READ_OWN for another owner listing', async () => {
+        const owner = await createOwner();
+        const actor = await createOwner();
+        ownerIds.add(owner.id);
+        ownerIds.add(actor.id);
+        const id = await makeListing(VerticalEnum.ACCOMMODATION, owner.id, await makeDestination());
+        const response = await readResponse(
+            await app.request(previewPath(VerticalEnum.ACCOMMODATION, id), {
+                headers: actorHeaders({ id: actor.id, permissions: [] })
+            })
+        );
+
+        expect(response.status).toBe(404);
+        expect(response.body.error?.code).toBe('NOT_FOUND');
+    });
+
     it.each([
         VerticalEnum.GASTRONOMY,
         VerticalEnum.EXPERIENCE
