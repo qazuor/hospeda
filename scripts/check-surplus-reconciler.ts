@@ -119,7 +119,7 @@ function callerErrors(args: {
         errors.push(`G5: ${entry.notifiedBy}:1 notifiedBy does not call ${entry.symbol}`);
     if (!EMITTERS.some((name) => calls.has(name)))
         errors.push(
-            `G5: ${entry.notifiedBy}:${symbolLine ?? 1} notifiedBy emits no surplus reconciler notice`
+            `G5: ${entry.notifiedBy}:${symbolLine ?? 1} notifiedBy emits no surplus reconciler notice after ${entry.symbol}`
         );
     return errors;
 }

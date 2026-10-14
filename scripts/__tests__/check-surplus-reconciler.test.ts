@@ -146,7 +146,7 @@ describe('TEST:B4:10 GUARD:G5 a turn-off notified by its caller (via caller, not
         });
         expect(result.exitCode).toBe(1);
         expect(result.output).toContain(
-            `G5: ${notifier}:1 notifiedBy emits no surplus reconciler notice`
+            `G5: ${notifier}:1 notifiedBy emits no surplus reconciler notice after closeCancelledVip`
         );
     });
     it('(c) rejects a notifier that does not call the writer symbol', () => {
