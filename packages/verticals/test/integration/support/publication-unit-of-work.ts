@@ -30,7 +30,11 @@ export function createPublicationTestAdapter(args: {
     readonly limit: { value: number };
     readonly declaredLimit?: { value: number | null };
     readonly billing?: Pick<BillingForVerticals, 'coverage'>;
-    readonly retention?: { readonly stopped: boolean; readonly pauseEndedAt: Date | null };
+    readonly retention?: {
+        readonly stopped: boolean;
+        readonly pauseEndedAt: Date | null;
+        readonly coverageLostAt?: Date | null;
+    };
     readonly onLocked?: () => Promise<void>;
     readonly beforeSetPublicationStatus?: () => Promise<void>;
     readonly afterEnqueueListingNotice?: () => Promise<void>;
@@ -45,7 +49,7 @@ export function createPublicationTestAdapter(args: {
         async retentionStopped() {
             return {
                 ...(args.retention ?? { stopped: false, pauseEndedAt: null }),
-                coverageLostAt: null
+                coverageLostAt: args.retention?.coverageLostAt ?? null
             };
         }
     };

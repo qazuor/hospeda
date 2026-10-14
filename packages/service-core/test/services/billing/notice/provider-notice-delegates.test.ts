@@ -12,6 +12,14 @@ vi.mock('../../../../src/services/billing/notice/mirror-cancelled-on-grace.js', 
 const liveMock = vi.hoisted(() => ({
     handleLivePreapprovalOnClosedRow: vi.fn()
 }));
+const pauseArrearsMock = vi.hoisted(() => ({
+    handleProviderPauseIsArrears: vi.fn(),
+    handleCancelledOnExpiredGrace: vi.fn()
+}));
+vi.mock(
+    '../../../../src/services/billing/notice/provider-pause-arrears.js',
+    () => pauseArrearsMock
+);
 vi.mock(
     '../../../../src/services/billing/notice/live-preapproval-on-closed-row.js',
     () => liveMock
@@ -42,6 +50,7 @@ import { unimplementedSuccessionCloser } from '../../../../src/services/billing/
 
 const REGISTERED: readonly MirrorPairId[] = [
     'CANCELLED_ON_GRACE',
+    'PROVIDER_PAUSE_IS_ARREARS',
     'LIVE_PREAPPROVAL_ON_CLOSED_ROW'
 ];
 const clock = { now: () => new Date('2026-10-13T12:00:00.000Z') };
@@ -68,12 +77,65 @@ function ports(successionCloser?: SuccessionCloser) {
 beforeEach(() => {
     mirrorMock.mirrorProviderCancellationOnGrace.mockReset();
     liveMock.handleLivePreapprovalOnClosedRow.mockReset();
+    pauseArrearsMock.handleProviderPauseIsArrears.mockReset();
+    pauseArrearsMock.handleCancelledOnExpiredGrace.mockReset();
+    pauseArrearsMock.handleCancelledOnExpiredGrace.mockResolvedValue(false);
     successorMock.readPayingSuccessorInGrace.mockReset();
     successorMock.readPayingSuccessorInGrace.mockResolvedValue(null);
     suspendMock.suspendForArrears.mockReset();
 });
 
 describe('createProviderNoticeMirrorDelegates (HOS-1676 H-5)', () => {
+    it('HOS-1559 TEST:B7:6 AC:B7:9 routes provider pause with the read instant and ports', async () => {
+        const built = ports();
+        const delegates = createProviderNoticeMirrorDelegates(built);
+        await delegates.delegate({
+            pair: 'PROVIDER_PAUSE_IS_ARREARS',
+            subscriptionId,
+            readAt,
+            cancelledSeenAt: null
+        });
+        expect(pauseArrearsMock.handleProviderPauseIsArrears).toHaveBeenCalledWith(
+            { subscriptionId, readAt },
+            expect.objectContaining({
+                provider: built.provider,
+                clock,
+                beforeCancelNotice: built.beforeCancelNotice,
+                payments: creditedPaymentsFromLedger
+            })
+        );
+        const passedPorts = pauseArrearsMock.handleProviderPauseIsArrears.mock.calls[0]?.[1];
+        expect(passedPorts).not.toHaveProperty('coverageNotices');
+        expect(passedPorts).not.toHaveProperty('markPayments');
+        expect(passedPorts).not.toHaveProperty('planPolicy');
+        expect(passedPorts).not.toHaveProperty('unresolvedPeriodCharges');
+    });
+
+    it('HOS-1559 routes expired cancelled grace before successor and mirror', async () => {
+        pauseArrearsMock.handleCancelledOnExpiredGrace.mockResolvedValue(true);
+        await createProviderNoticeMirrorDelegates(ports()).delegate({
+            pair: 'CANCELLED_ON_GRACE',
+            subscriptionId,
+            readAt,
+            cancelledSeenAt: null
+        });
+        expect(successorMock.readPayingSuccessorInGrace).not.toHaveBeenCalled();
+        expect(mirrorMock.mirrorProviderCancellationOnGrace).not.toHaveBeenCalled();
+    });
+
+    it('HOS-1559 propagates provider pause receiver errors', async () => {
+        pauseArrearsMock.handleProviderPauseIsArrears.mockRejectedValue(
+            new Error('provider read failed')
+        );
+        await expect(
+            createProviderNoticeMirrorDelegates(ports()).delegate({
+                pair: 'PROVIDER_PAUSE_IS_ARREARS',
+                subscriptionId,
+                readAt,
+                cancelledSeenAt: null
+            })
+        ).rejects.toThrow('provider read failed');
+    });
     it('AC:B7:4 routes CANCELLED_ON_GRACE on the successor of a paying predecessor in grace to S6, not the mirror', async () => {
         // Arrange
         const graceStartedAt = new Date('2026-10-05T03:00:00.000Z');

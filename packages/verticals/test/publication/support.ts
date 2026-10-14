@@ -33,7 +33,14 @@ export function makeHarness(
         readonly userHasTrialRow?: boolean;
         readonly pseudonymOwnedByOther?: boolean;
         readonly insertConflict?: 'USER_VERTICAL' | 'EMAIL_PSEUDONYM';
-        readonly retention?: { readonly stopped: boolean; readonly pauseEndedAt: Date | null };
+        readonly retention?: {
+            readonly stopped: boolean;
+            readonly pauseEndedAt: Date | null;
+            readonly coverageLostAt?: Date | null;
+        };
+        readonly deletionAnnouncedAt?: Date | null;
+        readonly deletionAfterDays?: number;
+        readonly ownerId?: string;
         readonly archiveOrigins?: ReadonlyMap<string, PublicationStatusEnum>;
         readonly moderationOrigin?:
             | import('../../src/publication/publication-types').PublicationModerationOrigin
@@ -52,7 +59,7 @@ export function makeHarness(
     const records = args.listings ?? [
         {
             id: listingId,
-            ownerId: userId,
+            ownerId: args.ownerId ?? userId,
             publicationStatus: status,
             createdAt: at,
             inactiveSince: args.inactiveSince ?? at
@@ -64,7 +71,7 @@ export function makeHarness(
     ).length;
     const listing: PublicationListing = {
         id: listingId,
-        ownerId: userId,
+        ownerId: args.ownerId ?? userId,
         publicationStatus: status,
         createdAt: at,
         inactiveSince: args.inactiveSince ?? at
@@ -147,9 +154,13 @@ export function makeHarness(
             return {
                 ...listing,
                 publicationStatus: statuses.get(listingId) ?? status,
-                deletionAnnouncedAt: null,
+                deletionAnnouncedAt: args.deletionAnnouncedAt ?? null,
                 deadlinesVersion: 1,
-                deadlines: { archiveAfterDays: 90, deletionAfterDays: 180, draftArchiveMonths: 3 }
+                deadlines: {
+                    archiveAfterDays: 90,
+                    deletionAfterDays: args.deletionAfterDays ?? 180,
+                    draftArchiveMonths: 3
+                }
             };
         },
         async readArchiveOrigins({ listingIds }) {
@@ -281,7 +292,7 @@ export function makeHarness(
             calls.push('retentionStopped');
             return {
                 ...(args.retention ?? { stopped: false, pauseEndedAt: null }),
-                coverageLostAt: null
+                coverageLostAt: args.retention?.coverageLostAt ?? null
             };
         })
     };
