@@ -63,7 +63,11 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
 
 /** Runs one delegate call and returns what it threw, or `undefined` when it resolved. */
 async function delegateError(
-    pair: 'RESUME_MIRROR' | 'CANCELLED_ON_GRACE' | 'LIVE_PREAPPROVAL_ON_CLOSED_ROW'
+    pair:
+        | 'RESUME_MIRROR'
+        | 'CANCELLED_ON_GRACE'
+        | 'PROVIDER_PAUSE_IS_ARREARS'
+        | 'LIVE_PREAPPROVAL_ON_CLOSED_ROW'
 ) {
     const ports = buildMercadoPagoNoticePorts();
     try {
@@ -99,6 +103,7 @@ describe('AC:1676:6 the provider notice receiver registers the mirror delegates 
 
     it.each([
         'CANCELLED_ON_GRACE',
+        'PROVIDER_PAUSE_IS_ARREARS',
         'LIVE_PREAPPROVAL_ON_CLOSED_ROW'
     ] as const)('registers %s: whatever the mocked database does, it is not MIRROR_PAIR_NOT_REGISTERED', async (pair) => {
         // Arrange / Act

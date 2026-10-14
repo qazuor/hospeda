@@ -7,6 +7,8 @@ const {
     mockProvider,
     mockPlanPolicy,
     mockGraceExpiryCheck,
+    mockProviderPauseCheck,
+    mockLostFirstRejectionCheck,
     mockSuccessorGraceCheck
 } = vi.hoisted(() => ({
     mockSuccessorGraceCheck: vi.fn((_ports: unknown) => async () => undefined),
@@ -14,12 +16,16 @@ const {
     mockClock: { now: vi.fn(() => new Date('2026-10-11T12:00:00.000Z')) },
     mockProvider: { readAuthorization: vi.fn() },
     mockPlanPolicy: vi.fn(),
-    mockGraceExpiryCheck: vi.fn((_ports: unknown) => async () => undefined)
+    mockGraceExpiryCheck: vi.fn((_ports: unknown) => async () => undefined),
+    mockProviderPauseCheck: vi.fn((_ports: unknown) => async () => undefined),
+    mockLostFirstRejectionCheck: vi.fn((_ports: unknown) => async () => undefined)
 }));
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
     runReconciliationSweep: mockSweep,
     createGraceExpiryCheck: mockGraceExpiryCheck,
+    createProviderPauseCheck: mockProviderPauseCheck,
+    createLostFirstRejectionCheck: mockLostFirstRejectionCheck,
     createSuccessorGraceCheck: mockSuccessorGraceCheck
 }));
 vi.mock('../../src/utils/clock.js', () => ({ getClock: () => ({ clock: mockClock }) }));
@@ -87,7 +93,12 @@ describe('billing reconciliation sweep cron', () => {
             expect.objectContaining({
                 provider: mockProvider,
                 clock: mockClock,
-                rowChecks: [expect.any(Function), expect.any(Function), expect.any(Function)],
+                rowChecks: [
+                    expect.any(Function),
+                    expect.any(Function),
+                    expect.any(Function),
+                    expect.any(Function)
+                ],
                 zeroCallChecks: {
                     retainedPayments: retainedPaymentsFromLedger,
                     retainedPaymentBranches: noDeterminableRetainedPaymentBranch
@@ -106,8 +117,17 @@ describe('billing reconciliation sweep cron', () => {
         });
         // I-3: the successor grace check runs before the expiry check.
         const rowChecks = mockSweep.mock.calls[0]?.[1]?.rowChecks;
-        expect(rowChecks?.[1]).toBe(mockSuccessorGraceCheck.mock.results[0]?.value);
-        expect(rowChecks?.[2]).toBe(mockGraceExpiryCheck.mock.results[0]?.value);
+        expect(rowChecks?.[0]).toBe(mockProviderPauseCheck.mock.results[0]?.value);
+        expect(rowChecks?.[1]).toBe(mockLostFirstRejectionCheck.mock.results[0]?.value);
+        expect(rowChecks?.[2]).toBe(mockSuccessorGraceCheck.mock.results[0]?.value);
+        expect(rowChecks?.[3]).toBe(mockGraceExpiryCheck.mock.results[0]?.value);
+        expect(mockProviderPauseCheck).toHaveBeenCalledWith(
+            expect.objectContaining({
+                planPolicy: mockPlanPolicy,
+                payments: creditedPaymentsFromLedger,
+                coverageNotices: getCoverageNotices()
+            })
+        );
         // AC:B7:8: the grace expiry check settles a charged period with the real ledger and plan policy.
         expect(mockGraceExpiryCheck).toHaveBeenCalledWith(
             expect.objectContaining({

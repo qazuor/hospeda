@@ -1,13 +1,19 @@
 import { randomUUID } from 'node:crypto';
-import { reconciliationMarkModel } from '@repo/db';
+import { reconciliationMarkModel, type SelectSubscription } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { actStartInstant } from '@repo/payments';
+import {
+    type ActStart,
+    type AuthorizationSnapshot,
+    actStartInstant,
+    type ProviderRead
+} from '@repo/payments';
 import {
     type RecordChargeFactPorts,
     type RecordChargeFactResult,
     recordChargeFact
 } from '../../payment/record-charge-fact.service.js';
 import {
+    type SuspendForArrearsEvent,
     type SuspendForArrearsPorts,
     suspendForArrears
 } from '../../subscription/suspend-for-arrears.service.js';
@@ -87,6 +93,60 @@ export function providerPauseObservedOccurrenceId(input: {
     return `${input.subscriptionId}:provider-pause-observed:${input.graceStartedAt.toISOString()}`;
 }
 
+/** Stable S6 occurrence for a provider pause observed while a row is ACTIVE (I-1).
+ *
+ * @param input.subscriptionId - The paused card principal
+ * @param input.nextChargeAt - The next scheduled charge, if present
+ * @returns The before-cancel notice deduplication occurrence
+ */
+export function providerPauseOnActiveOccurrenceId(input: {
+    readonly subscriptionId: string;
+    readonly nextChargeAt: Date | null;
+}): string {
+    return `${input.subscriptionId}:provider-pause-observed:active:${input.nextChargeAt?.toISOString() ?? 'none'}`;
+}
+
+/** Chooses the S6 event and stable occurrence for a paused card principal.
+ *
+ * @param input.subscription - The row read for this decision
+ * @param input.at - The start instant of the act
+ * @returns The S6 event and notice occurrence, or null when this row is inapplicable
+ */
+export function arrearsPauseDecision(input: {
+    readonly subscription: SelectSubscription;
+    readonly at: Date;
+}): { readonly event: SuspendForArrearsEvent; readonly occurrenceId: string } | null {
+    const { subscription, at } = input;
+    if (subscription.class !== 'PRINCIPAL' || subscription.paymentMethod !== 'CARD') return null;
+    if (subscription.status === 'GRACE_PERIOD') {
+        if (subscription.graceEndsAt !== null && subscription.graceEndsAt <= at)
+            return {
+                event: 'GRACE_EXPIRED',
+                occurrenceId: graceExpiredOccurrenceId({
+                    subscriptionId: subscription.id,
+                    graceEndsAt: subscription.graceEndsAt
+                })
+            };
+        if (subscription.graceStartedAt === null) return null;
+        return {
+            event: 'PROVIDER_PAUSE_OBSERVED',
+            occurrenceId: providerPauseObservedOccurrenceId({
+                subscriptionId: subscription.id,
+                graceStartedAt: subscription.graceStartedAt
+            })
+        };
+    }
+    if (subscription.status === 'ACTIVE')
+        return {
+            event: 'PROVIDER_PAUSE_OBSERVED',
+            occurrenceId: providerPauseOnActiveOccurrenceId({
+                subscriptionId: subscription.id,
+                nextChargeAt: subscription.nextChargeAt
+            })
+        };
+    return null;
+}
+
 /**
  * Settles a period the `B/09` §4 read showed as charged (AC:B7:8, the "re-read
  * of S6" half of AC:B7:6; D-2): re-reads the charge by id, creates its `payment`
@@ -104,6 +164,106 @@ export async function settleChargedPeriod(
     ports: SettleChargedPeriodPorts
 ): Promise<RecordChargeFactResult> {
     return recordChargeFact({ chargeId: input.chargeId }, { ...ports, actorType: 'job' });
+}
+
+/** Runs the `B/09` §4 verdict for any S6 trigger that must first resolve the current period.
+ *
+ * @param input.subscription - The row that produced the period read
+ * @param input.read - The fresh authorization read used by §4
+ * @param input.act - The decision act containing that read
+ * @param input.event - The S6 event selected by the caller
+ * @param input.occurrenceId - The stable notice occurrence selected by the caller
+ * @param ports - S6, settlement, and unresolved-period notice ports
+ */
+export async function runArrearsDecisionAfterPeriodRead(
+    input: {
+        readonly subscription: SelectSubscription;
+        readonly read: ProviderRead<AuthorizationSnapshot>;
+        readonly act: ActStart;
+        readonly event: SuspendForArrearsEvent;
+        readonly occurrenceId: string;
+    },
+    ports: GraceExpiryCheckPorts
+): Promise<void> {
+    const { subscription, read, act, event, occurrenceId } = input;
+    const actStartedAt = actStartInstant({ act }).at.getTime();
+    const unresolvedMarkOpen = await hasOpenUnresolvedPeriodChargeMark({
+        subscriptionId: subscription.id
+    });
+    const result = await readPeriodCharges(
+        { authorizationRead: read, act },
+        { provider: ports.provider }
+    );
+    switch (result.verdict) {
+        case 'NOT_CHARGED':
+        case 'NO_CURRENT_PERIOD': {
+            if (unresolvedMarkOpen) {
+                logger.info(
+                    { subscriptionId: subscription.id, verdict: result.verdict, event },
+                    'Arrears decision waits for S15 while reason 21 is open'
+                );
+                return;
+            }
+            const suspension = await suspendForArrears(
+                { subscriptionId: subscription.id, event, occurrenceId },
+                ports
+            );
+            logger.info(
+                { subscriptionId: subscription.id, verdict: result.verdict, ...suspension },
+                'Arrears decision after period read ran S6'
+            );
+            return;
+        }
+        case 'CHARGED': {
+            const settled = await settleChargedPeriod({ chargeId: result.chargeId }, ports);
+            logger.info(
+                {
+                    subscriptionId: subscription.id,
+                    chargeId: result.chargeId,
+                    outcome: settled.outcome,
+                    ...(settled.outcome === 'CREDITED' && settled.exit
+                        ? { exit: settled.exit.outcome }
+                        : {})
+                },
+                'Arrears decision found a charged period; settled it'
+            );
+            return;
+        }
+        case 'UNKNOWN': {
+            const since = result.latestCharge
+                ? new Date(result.latestCharge.createdAt)
+                : subscription.graceStartedAt;
+            if (since === null) {
+                logger.warn(
+                    { subscriptionId: subscription.id, reason: result.reason },
+                    'Arrears decision has an unresolved period and no instant to age it from'
+                );
+                return;
+            }
+            const age = actStartedAt - since.getTime();
+            if (age >= MARK_AFTER_MS) {
+                await openReconciliationMark({
+                    subject: { kind: 'SUBSCRIPTION', subscriptionId: subscription.id },
+                    reason: 'COBRO_DEL_PERIODO_SIN_RESOLVER',
+                    actor: { type: 'job' },
+                    correlationId: randomUUID()
+                });
+                return;
+            }
+            if (age > NOTIFY_AFTER_MS)
+                await (ports.unresolvedPeriodCharges ?? loggedUnresolvedPeriodCharges).notify({
+                    subscriptionId: subscription.id,
+                    chargeId: result.latestCharge?.chargeId ?? null,
+                    since,
+                    reason: result.reason
+                });
+            return;
+        }
+        default: {
+            const unreachable: never = result;
+            return unreachable;
+        }
+    }
 }
 
 /**
@@ -150,90 +310,18 @@ export function createGraceExpiryCheck(ports: GraceExpiryCheckPorts): Reconcilia
         const actStartedAt = actStartInstant({ act: input.act }).at.getTime();
         if (graceEndsAt.getTime() > actStartedAt) return;
 
-        const unresolvedMarkOpen = await hasOpenUnresolvedPeriodChargeMark({
-            subscriptionId: subscription.id
-        });
-        const result = await readPeriodCharges(
-            { authorizationRead: input.read, act: input.act },
-            { provider: ports.provider }
+        await runArrearsDecisionAfterPeriodRead(
+            {
+                subscription,
+                read: input.read,
+                act: input.act,
+                event: 'GRACE_EXPIRED',
+                occurrenceId: graceExpiredOccurrenceId({
+                    subscriptionId: subscription.id,
+                    graceEndsAt
+                })
+            },
+            ports
         );
-        switch (result.verdict) {
-            case 'NOT_CHARGED':
-            case 'NO_CURRENT_PERIOD': {
-                if (unresolvedMarkOpen) {
-                    logger.info(
-                        { subscriptionId: subscription.id, verdict: result.verdict },
-                        'Grace expired but reason 21 is open; S6 waits for S15'
-                    );
-                    return;
-                }
-                const suspension = await suspendForArrears(
-                    {
-                        subscriptionId: subscription.id,
-                        event: 'GRACE_EXPIRED',
-                        occurrenceId: graceExpiredOccurrenceId({
-                            subscriptionId: subscription.id,
-                            graceEndsAt
-                        })
-                    },
-                    ports
-                );
-                logger.info(
-                    { subscriptionId: subscription.id, verdict: result.verdict, ...suspension },
-                    'Grace expiry check ran S6'
-                );
-                return;
-            }
-            case 'CHARGED': {
-                const settled = await settleChargedPeriod({ chargeId: result.chargeId }, ports);
-                logger.info(
-                    {
-                        subscriptionId: subscription.id,
-                        chargeId: result.chargeId,
-                        outcome: settled.outcome,
-                        ...(settled.outcome === 'CREDITED' && settled.exit
-                            ? { exit: settled.exit.outcome }
-                            : {})
-                    },
-                    'Grace expired with a charged period; settled it'
-                );
-                return;
-            }
-            case 'UNKNOWN': {
-                const since = result.latestCharge
-                    ? new Date(result.latestCharge.createdAt)
-                    : subscription.graceStartedAt;
-                if (since === null) {
-                    logger.warn(
-                        { subscriptionId: subscription.id, reason: result.reason },
-                        'Grace expired with an unresolved period and no instant to age it from'
-                    );
-                    return;
-                }
-                const age = actStartedAt - since.getTime();
-                if (age >= MARK_AFTER_MS) {
-                    await openReconciliationMark({
-                        subject: { kind: 'SUBSCRIPTION', subscriptionId: subscription.id },
-                        reason: 'COBRO_DEL_PERIODO_SIN_RESOLVER',
-                        actor: { type: 'job' },
-                        correlationId: randomUUID()
-                    });
-                    return;
-                }
-                if (age > NOTIFY_AFTER_MS) {
-                    await (ports.unresolvedPeriodCharges ?? loggedUnresolvedPeriodCharges).notify({
-                        subscriptionId: subscription.id,
-                        chargeId: result.latestCharge?.chargeId ?? null,
-                        since,
-                        reason: result.reason
-                    });
-                }
-                return;
-            }
-            default: {
-                const unreachable: never = result;
-                return unreachable;
-            }
-        }
     };
 }

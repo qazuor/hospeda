@@ -1,9 +1,11 @@
-import type { Clock } from '@repo/billing-verticals-contract';
+import type { Clock, VerticalsForBilling } from '@repo/billing-verticals-contract';
 import type { PaymentProvider } from '@repo/payments';
 import { creditedPaymentsFromLedger } from '../payment/payment-ledger.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
+import type { GraceExpiryCheckPorts } from '../reconciliation/sweep/grace-expiry-check.js';
 import { successorProviderCancelledOccurrenceId } from '../reconciliation/sweep/grace-expiry-check.js';
+import type { UnresolvedPeriodCharges } from '../reconciliation/sweep/unresolved-period-charge.port.js';
 import { readPayingSuccessorInGrace } from '../subscription/paying-predecessor-successor.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
@@ -19,6 +21,10 @@ import {
     type MirrorDelegates,
     unregisteredMirrorDelegates
 } from './provider-notice-ports.js';
+import {
+    handleCancelledOnExpiredGrace,
+    handleProviderPauseIsArrears
+} from './provider-pause-arrears.js';
 
 /** Ports of {@link createProviderNoticeMirrorDelegates} (HOS-1676 H-5). */
 export interface ProviderNoticeMirrorDelegatesPorts {
@@ -36,6 +42,25 @@ export interface ProviderNoticeMirrorDelegatesPorts {
     readonly successionCloser?: SuccessionCloser;
     /** The credited-payment read of the AC:B7:4 exception; defaults to the payment ledger. */
     readonly payments?: SubscriptionPayments;
+    /** S5 policy for a credited period found while handling a provider notice. */
+    readonly planPolicy?: VerticalsForBilling['planPolicy'];
+    /** DEC-OBS-001 notice for an unresolved period. */
+    readonly unresolvedPeriodCharges?: UnresolvedPeriodCharges;
+}
+
+function arrearsPorts(ports: ProviderNoticeMirrorDelegatesPorts): GraceExpiryCheckPorts {
+    return {
+        provider: ports.provider,
+        clock: ports.clock,
+        beforeCancelNotice: ports.beforeCancelNotice,
+        payments: ports.payments ?? creditedPaymentsFromLedger,
+        ...(ports.coverageNotices === undefined ? {} : { coverageNotices: ports.coverageNotices }),
+        ...(ports.markPayments === undefined ? {} : { markPayments: ports.markPayments }),
+        ...(ports.planPolicy === undefined ? {} : { planPolicy: ports.planPolicy }),
+        ...(ports.unresolvedPeriodCharges === undefined
+            ? {}
+            : { unresolvedPeriodCharges: ports.unresolvedPeriodCharges })
+    };
 }
 
 /**
@@ -51,8 +76,8 @@ export interface ProviderNoticeMirrorDelegatesPorts {
  *   decided cancellation, send the one S16 would have sent on a revived rejection terminal, or
  *   mark the divergence. Its three answers return (the receiver answers `DELEGATED`); it throws
  *   only on an error (a read, the database, a missing 16th deadline).
- * - Every other pair stays unregistered and throws `MIRROR_PAIR_NOT_REGISTERED` (H-1): they
- *   belong to other pieces (S10, the pause B7.3, S3).
+ * - `PROVIDER_PAUSE_IS_ARREARS` → {@link handleProviderPauseIsArrears} (B7.3, HOS-1559).
+ * - `RESUME_MIRROR`, `CANCELLED_ON_PAUSE` and `CANCELLED_WHILE_PENDING` stay unregistered (H-1).
  *
  * Nothing from `@repo/db` is evaluated when this module loads.
  *
@@ -66,6 +91,14 @@ export function createProviderNoticeMirrorDelegates(
         async delegate(input: MirrorDelegateInput): Promise<void> {
             switch (input.pair) {
                 case 'CANCELLED_ON_GRACE': {
+                    const s6Ports = arrearsPorts(ports);
+                    if (
+                        await handleCancelledOnExpiredGrace(
+                            { subscriptionId: input.subscriptionId, readAt: input.readAt },
+                            s6Ports
+                        )
+                    )
+                        return;
                     // D-8 (04-catalogos §10.1, B11.md:262): on the successor of a paying
                     // predecessor that entered grace by S4's successor branch, `cancelled` is
                     // S6 by its fifth event, not the mirror (AC:B7:4, DEC-SUB-022).
@@ -119,8 +152,14 @@ export function createProviderNoticeMirrorDelegates(
                     );
                     return;
                 }
+                case 'PROVIDER_PAUSE_IS_ARREARS': {
+                    await handleProviderPauseIsArrears(
+                        { subscriptionId: input.subscriptionId, readAt: input.readAt },
+                        arrearsPorts(ports)
+                    );
+                    return;
+                }
                 case 'RESUME_MIRROR':
-                case 'PROVIDER_PAUSE_IS_ARREARS':
                 case 'CANCELLED_ON_PAUSE':
                 case 'CANCELLED_WHILE_PENDING':
                     return unregisteredMirrorDelegates.delegate(input);

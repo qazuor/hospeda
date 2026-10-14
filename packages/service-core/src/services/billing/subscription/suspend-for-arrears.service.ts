@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { readArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
+import { isLiveSuccessionPredecessor } from './late-payment-conditions.js';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
     type CancellationSeenAnnotator,
@@ -24,8 +25,8 @@ const logger = createLogger('suspend-for-arrears');
  * `transition-tables.json`):
  * - `GRACE_EXPIRED` — first event, the grace clock ran out (AC:B7:7);
  * - `PROVIDER_PAUSE_OBSERVED` — second event (`provider_pause_observed`), for now
- *   only the successor of a paying predecessor in grace whose preapproval the
- *   sweep reads `paused` (AC:B7:4); B7.3 adds the `ACTIVE` origin (AC:B7:9);
+ *   a card principal in `ACTIVE` or `GRACE_PERIOD` whose preapproval was read
+ *   `paused` (AC:B7:9; B7.3; from `ACTIVE` the occurrence is stable per next charge);
  * - `SUCCESSOR_PROVIDER_CANCELLED` — fifth event (`successor_provider_cancelled`),
  *   that successor's preapproval read `cancelled` by the sweep or the receiver
  *   (AC:B7:4, DEC-SUB-022).
@@ -39,11 +40,13 @@ export const SUSPEND_FOR_ARREARS_EVENTS = [
 /** One of the S6 events this service implements. */
 export type SuspendForArrearsEvent = (typeof SUSPEND_FOR_ARREARS_EVENTS)[number];
 
-/** The state each S6 event leaves; the `UPDATE` is guarded by it. */
-const ORIGIN_STATUS_BY_EVENT: Readonly<Record<SuspendForArrearsEvent, 'GRACE_PERIOD'>> = {
-    GRACE_EXPIRED: 'GRACE_PERIOD',
-    PROVIDER_PAUSE_OBSERVED: 'GRACE_PERIOD',
-    SUCCESSOR_PROVIDER_CANCELLED: 'GRACE_PERIOD'
+/** States each S6 event may leave; the `UPDATE` is guarded by the state read. */
+const ORIGIN_STATUSES_BY_EVENT: Readonly<
+    Record<SuspendForArrearsEvent, readonly ('ACTIVE' | 'GRACE_PERIOD')[]>
+> = {
+    GRACE_EXPIRED: ['GRACE_PERIOD'],
+    PROVIDER_PAUSE_OBSERVED: ['ACTIVE', 'GRACE_PERIOD'],
+    SUCCESSOR_PROVIDER_CANCELLED: ['GRACE_PERIOD']
 };
 
 const inputSchema = z.strictObject({
@@ -79,6 +82,7 @@ export type SuspendForArrearsResult =
           readonly reason:
               | 'NO_SUBSCRIPTION'
               | 'NOT_IN_GRACE'
+              | 'SUCCESSION_IN_PROGRESS'
               | 'NOT_CARD_PRINCIPAL'
               | 'RETAINED_PAYMENT'
               | 'LOST_RACE';
@@ -121,7 +125,7 @@ export type ArrearsSuspensionWrite = 'SUSPENDED' | 'LOST_RACE' | 'RETAINED_PAYME
  */
 export async function writeArrearsSuspension(input: {
     readonly subscriptionId: string;
-    readonly origin: 'GRACE_PERIOD';
+    readonly origin: 'GRACE_PERIOD' | 'ACTIVE';
     readonly now: Date;
     readonly coverageNotices: CoverageNotices;
 }): Promise<ArrearsSuspensionWrite> {
@@ -200,12 +204,13 @@ export async function writeArrearsSuspension(input: {
 }
 
 /**
- * S6 (AC:B7:7, AC:B7:4). First event: the grace clock ran out and the `B/09` §4
+ * S6 (AC:B7:7, AC:B7:4, AC:B7:9). First event: the grace clock ran out and the `B/09` §4
  * read did not show a credited charge of the period (the caller decided that).
  * Second and fifth events (AC:B7:4): the successor of a paying predecessor in
- * grace whose preapproval was read `paused` or `cancelled` (the caller decided
- * that from a read by id). Every event moves a
- * `GRACE_PERIOD` card principal to `SUSPENDED` and cancels its authorization in
+ * `ACTIVE` or `GRACE_PERIOD` card principal whose preapproval was read `paused`,
+ * or a successor in grace whose preapproval was read `cancelled` (the caller
+ * decided from a read by id). Each event admits only its declared origin state.
+ * Every event moves a card principal to `SUSPENDED` and cancels its authorization in
  * the same act, with S17's re-read rule (DEC-SUB-019):
  *
  * 1. no S19-retained payment of the period (I-7); by default the real read of an
@@ -221,7 +226,9 @@ export async function writeArrearsSuspension(input: {
  * 5. a best-effort confirmation re-read;
  * 6. the `UPDATE` guarded by the origin status, then `REMOVED` after commit.
  *
- * The succession-in-progress guard (AC:B7:11) belongs to B7.3 and is not here.
+ * After the S19 retained-payment guard, AC:B7:11 skips the first, second and
+ * fifth events while a live successor points at this predecessor. The third
+ * event (chargeback, Phase 2) will be exempt from that guard.
  *
  * @param input - The row, the event and its occurrence
  * @param ports - Provider, clock, notice and the optional ports
@@ -232,7 +239,7 @@ export async function suspendForArrears(
     ports: SuspendForArrearsPorts
 ): Promise<SuspendForArrearsResult> {
     const value = inputSchema.parse(input);
-    const origin = ORIGIN_STATUS_BY_EVENT[value.event];
+    const origins = ORIGIN_STATUSES_BY_EVENT[value.event];
 
     const [row] = await getDb()
         .select({ subscription: subscriptions, providerLink: providerLinks })
@@ -242,14 +249,23 @@ export async function suspendForArrears(
         .limit(1);
     if (!row) return { outcome: 'NOT_APPLICABLE', reason: 'NO_SUBSCRIPTION' };
     const { subscription, providerLink } = row;
-    if (subscription.status !== origin)
+    if (!origins.includes(subscription.status as 'ACTIVE' | 'GRACE_PERIOD'))
         return { outcome: 'NOT_APPLICABLE', reason: 'NOT_IN_GRACE' };
+    const origin = subscription.status as 'ACTIVE' | 'GRACE_PERIOD';
     if (subscription.class !== 'PRINCIPAL' || subscription.paymentMethod !== 'CARD')
         return { outcome: 'NOT_APPLICABLE', reason: 'NOT_CARD_PRINCIPAL' };
 
     const retained = ports.retainedPeriodPayment ?? openSuccessionRetentions;
     if (await retained.hasRetainedPeriodPayment({ subscriptionId: subscription.id }))
         return { outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' };
+
+    if (await isLiveSuccessionPredecessor({ subscriptionId: subscription.id })) {
+        logger.info(
+            { subscriptionId: subscription.id, event: value.event },
+            'Arrears suspension waits for the live succession to end'
+        );
+        return { outcome: 'NOT_APPLICABLE', reason: 'SUCCESSION_IN_PROGRESS' };
+    }
 
     // What the suspension notice says (AC:B7:30), read while the row is still in
     // its origin status. It decides nothing; if it throws, S6 throws and the
