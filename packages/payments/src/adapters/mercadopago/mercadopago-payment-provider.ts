@@ -92,12 +92,26 @@ const ReadChargeResponseSchema = z.object({
         .nullable()
         .optional()
         .transform((value) => (value == null ? null : String(value))),
-    status: z.enum(['pending', 'in_process', 'approved', 'rejected']),
+    status: z.enum(['pending', 'in_process', 'approved', 'rejected', 'refunded', 'charged_back']),
     status_detail: z.string().nullable().optional(),
     transaction_amount: z.number().nonnegative(),
     currency_id: z.string().min(1),
     amount_refunded: z.number().nonnegative().optional().default(0)
 });
+
+/**
+ * A refunded or charged-back payment did collect, so it reads `approved`: the
+ * refund travels in `refundedAmount` and the chargeback in `chargedBack` (RC-8).
+ */
+function toChargeStatus({
+    status
+}: {
+    readonly status: z.infer<typeof ReadChargeResponseSchema>['status'];
+}): ChargeSnapshot['status'] {
+    if (status === 'in_process') return 'pending';
+    if (status === 'refunded' || status === 'charged_back') return 'approved';
+    return status;
+}
 
 /** The Mercado Pago payment provider adapter. */
 export class MercadoPagoPaymentProvider implements PaymentProvider {
@@ -298,7 +312,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             method: 'GET'
         });
         const parsed = await parseResponse(ReadChargeResponseSchema, response, 'read');
-        const status = parsed.status === 'in_process' ? 'pending' : parsed.status;
+        const status = toChargeStatus({ status: parsed.status });
         return stampProviderRead({
             clock: this.clock,
             snapshot: {
@@ -322,7 +336,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                 refundedAmount: {
                     amountMinor: Math.round(parsed.amount_refunded * 100),
                     currency: parsed.currency_id
-                }
+                },
+                chargedBack: parsed.status === 'charged_back'
             }
         });
     }

@@ -58,6 +58,7 @@ import {
 } from '../provider/schemas';
 import { createFakeCardValidation } from './fake-card-validation';
 import { applyFakeChargeCycles, fakeCycleRetryInstants } from './fake-charge-cycle';
+import { applyFakeChargeback } from './fake-chargeback';
 import { FakeLedger } from './fake-ledger';
 import type { FakeBehaviourId, FakeLieId } from './fake-lists';
 import { decodeFakeNotice } from './fake-notice';
@@ -262,7 +263,8 @@ export class FakePaymentProvider implements PaymentProvider {
                 refundedAmount: {
                     amountMinor: 0,
                     currency: authorization.snapshot.amount.currency
-                }
+                },
+                chargedBack: false
             },
             version: 1,
             settleAt: null,
@@ -349,7 +351,8 @@ export class FakePaymentProvider implements PaymentProvider {
                         status: late ? 'pending' : 'approved',
                         declineReason: null,
                         amount: { ...value.amount },
-                        refundedAmount: { amountMinor: 0, currency: value.amount.currency }
+                        refundedAmount: { amountMinor: 0, currency: value.amount.currency },
+                        chargedBack: false
                     },
                     version: 1,
                     settleAt: late ? nextChargeBatch({ at: this.now() }) : null,
@@ -589,6 +592,15 @@ export class FakePaymentProvider implements PaymentProvider {
             capability: 'notify'
         });
         return decodeFakeNotice({ delivery: value }).notice;
+    }
+
+    /** Test handle, like `approve` (not a PaymentProvider method): the payer disputes an approved charge. */
+    async chargeBack(input: ChargeRef): Promise<MutationAcknowledgement> {
+        const ref = { schema: ChargeRefSchema, input, capability: 'read' } as const;
+        const { chargeId } = parseProviderInput(ref).value;
+        this.catchUp();
+        applyFakeChargeback({ ledger: this.ledger, chargeId });
+        return { accepted: true, resourceId: chargeId };
     }
 
     /**

@@ -183,6 +183,12 @@ export interface ChargeSnapshot {
     readonly amount: Money;
     /** Cumulative amount refunded so far. */
     readonly refundedAmount: Money;
+    /**
+     * The payer disputed this charge with their bank and the money went back.
+     * `status` stays `approved` because the charge did collect. Documented, not
+     * measured (RC-8).
+     */
+    readonly chargedBack: boolean;
 }
 
 export type ChargePurpose = 'charge' | 'cardValidation';

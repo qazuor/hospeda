@@ -115,7 +115,8 @@ describe('charge', () => {
             status: 'approved',
             declineReason: null,
             amount: ARS(1_800_000),
-            refundedAmount: ARS(0)
+            refundedAmount: ARS(0),
+            chargedBack: false
         });
     });
 
