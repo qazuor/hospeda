@@ -224,6 +224,11 @@ describe('TEST:B3:10 authorization window expiry', () => {
             .where(eq(manualPayments.id, manual.paymentId));
         expect(payment?.status).toBe('DECLARED_UNPAID');
         expect(beforeCancel).toHaveBeenCalledTimes(1);
+        // TEST:1683:3 AC:1683:2: S3 asks with the only kind that says the window expired.
+        expect(beforeCancel.mock.calls[0]?.[0]).toMatchObject({
+            subscriptionId: card.started.subscriptionId,
+            kind: 'AUTHORIZATION_EXPIRED'
+        });
         expect(cancel).toHaveBeenCalledTimes(1);
     });
 
