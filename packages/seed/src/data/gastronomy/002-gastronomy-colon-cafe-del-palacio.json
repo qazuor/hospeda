@@ -9,9 +9,7 @@
     "type": "CAFE",
     "priceRange": "MID",
     "menuUrl": null,
-    "visibility": "PUBLIC",
-    "lifecycleState": "ACTIVE",
-    "moderationState": "APPROVED",
+    "publicationStatus": "PUBLISHED",
     "contactInfo": {
         "personalEmail": "cafedelpalacio@gmail.com",
         "mobilePhone": "+54 9 3447 500002",

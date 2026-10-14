@@ -285,9 +285,7 @@
         }
     ],
     "tagIds": ["017-tag-familia", "039-tag-turismo", "011-tag-cultura", "016-tag-entre-rios"],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC",
+    "publicationStatus": "PUBLISHED",
     "reviewsCount": 0,
-    "averageRating": 0,
-    "moderationState": "APPROVED"
+    "averageRating": 0
 }

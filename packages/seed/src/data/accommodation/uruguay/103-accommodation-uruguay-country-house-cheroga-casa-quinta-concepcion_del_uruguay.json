@@ -325,9 +325,7 @@
         "016-tag-entre-rios",
         "014-tag-ecoturismo"
     ],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC",
+    "publicationStatus": "PUBLISHED",
     "reviewsCount": 0,
-    "averageRating": 0,
-    "moderationState": "APPROVED"
+    "averageRating": 0
 }

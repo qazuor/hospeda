@@ -235,9 +235,7 @@
         "032-tag-relax",
         "016-tag-entre-rios"
     ],
-    "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC",
+    "publicationStatus": "PUBLISHED",
     "reviewsCount": 0,
-    "averageRating": 0,
-    "moderationState": "APPROVED"
+    "averageRating": 0
 }

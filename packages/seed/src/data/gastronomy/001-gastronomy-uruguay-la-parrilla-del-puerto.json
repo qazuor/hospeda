@@ -9,9 +9,7 @@
     "type": "PARRILLA",
     "priceRange": "MID",
     "menuUrl": "https://laparrilladelpu.com.ar/menu",
-    "visibility": "PUBLIC",
-    "lifecycleState": "ACTIVE",
-    "moderationState": "APPROVED",
+    "publicationStatus": "PUBLISHED",
     "contactInfo": {
         "personalEmail": "info@laparrilladelpu.com.ar",
         "mobilePhone": "+54 9 3442 500001",
