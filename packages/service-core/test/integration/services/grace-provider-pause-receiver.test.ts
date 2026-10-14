@@ -323,6 +323,22 @@ describe('HOS-1559 TEST:B7:6 AC:B7:9 AC:B7:11 — el receptor de pausa del prove
     );
 
     it.skipIf(!isServiceTestDbAvailable())(
+        '(g) un reintento aprobado en la relectura corre S5 y no S6',
+        async () => {
+            const s = await providerPauseFixture({ grace: true, approveOnAttempt: 2 });
+            seeded.push(s.seeded);
+            s.advanceToAttempt(2);
+            await s.pause();
+            const result = await receiver(s.fixture);
+            expect(result).toEqual({ ack: 'OK', outcome: 'DELEGATED' });
+            expect((await row(s.subscriptionId)).status).toBe('ACTIVE');
+            expect((await row(s.subscriptionId)).graceStartedAt).toBeNull();
+            expect((await paymentFor(s.failedChargeId ?? '')).status).toBe('SUCCEEDED');
+            expect(s.cancel).not.toHaveBeenCalled();
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
         '(h) DEC-1 abre TRANSICION_NO_DECLARADA para complemento y no escribe su fila',
         async () => {
             const f = await graceFixture();
