@@ -131,9 +131,17 @@
             "file": "packages/verticals/src/publication/retention-clock.ts",
             "symbol": "retentionClockStart",
             "count": 2,
-            "consumers": ["PB4", "PB5"],
+            "consumers": ["PB4", "PB5", "PB9"],
             "role": "helper",
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:455-456"
+        },
+        {
+            "file": "packages/verticals/src/publication/purge-inactive-listing.ts",
+            "symbol": "purgeInactiveListing",
+            "count": 1,
+            "consumers": ["PB9"],
+            "role": "decision",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:863-864; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:196-204"
         },
         {
             "file": "packages/db/src/models/listing/listing-retention.model.ts",
@@ -170,11 +178,6 @@
     ],
     "pendingConsumers": [
         {
-            "id": "PB9",
-            "owner": "V9b",
-            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:121-122; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:862-863"
-        },
-        {
             "id": "NOTICE_BEFORE_DAY_90",
             "owner": "V9b",
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:94; .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:864-865"
@@ -197,6 +200,10 @@
         {
             "id": "ARCHIVE_NOTICE_DATE",
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:865-867"
+        },
+        {
+            "id": "PB9",
+            "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/20-fase-1/V9b.md:196-204"
         }
     ]
 }
