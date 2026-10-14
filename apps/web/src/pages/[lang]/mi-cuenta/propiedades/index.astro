@@ -16,7 +16,7 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum } from '@repo/schemas';
 import type { Accommodation } from '@repo/schemas';
 import { CreditCardIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -154,7 +154,7 @@ try {
         }
 
         const publishedCount = properties.filter(
-            (property) => property.lifecycleState === LifecycleStatusEnum.ACTIVE && property.visibility === 'PUBLIC'
+            (property) => property.publicationStatus === PublicationStatusEnum.PUBLISHED
         ).length;
         usageData = buildUsageBadge({ effectiveSet: usageBadgeResult.effectiveSet, currentUsage: publishedCount });
         hasOwnerPlan = usageBadgeResult.hasOwnerPlan;
@@ -217,7 +217,7 @@ const isEmpty = properties.length === 0;
 // requested onboarding journey. Decision extracted to a pure, unit-tested
 // helper (see `@/lib/host/needs-plan-banner`).
 const hasDraftProperty = properties.some(
-    (property) => property.lifecycleState === LifecycleStatusEnum.DRAFT
+    (property) => property.publicationStatus === PublicationStatusEnum.DRAFT
 );
 const showNeedsPlanBanner = shouldShowNeedsPlanBanner({
     isEmpty,

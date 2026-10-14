@@ -9,10 +9,10 @@
  *  3. Confirm (Sí) → calls POST /api/v1/protected/accommodations/:id/publish,
  *                    disables UI while pending. A dedicated `/publish`
  *                    endpoint is used instead of the generic update PATCH
- *                    because the update schema strips `lifecycleState`,
- *                    which made the naive approach a silent no-op.
+ *                    because publishing is a PB1 transition: no create or
+ *                    update input accepts `publicationStatus` (HOS-1641).
  *  4. Success → reloads the page via window.location.reload() so the card
- *               re-renders with the new ACTIVE status.
+ *               re-renders with the new PUBLISHED status.
  *  5. Error   → shows inline error message, re-enables the button. Two
  *               failures get a dedicated banner instead, because retrying
  *               them changes nothing: `403 subscription_required` (no active
