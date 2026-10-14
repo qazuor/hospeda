@@ -12,8 +12,6 @@ import type {
     CoverageResponse,
     VerticalsForBilling
 } from '@repo/billing-verticals-contract';
-import { ServiceErrorCode } from '@repo/schemas';
-import { ServiceError } from '../../../types';
 import type { SubscriptionPayments } from '../subscription/subscription-billing-ports';
 
 /**
@@ -34,20 +32,3 @@ export interface BillingCoveragePorts {
      */
     readonly trialAndBase: (args: CoverageArgs) => Promise<CoverageResponse>;
 }
-
-/**
- * Fails visibly until `ficha` exists in production. V6.13 (AC:V6:26) builds
- * the real `ficha(idDeFicha)` and replaces this port at the composition root
- * (HOS-1532 decision X-1). Safe meanwhile because no `LISTING` addon instance
- * exists until B10 sells one, and B10 lands after V6.
- */
-export const unregisteredListingQuery: Pick<VerticalsForBilling, 'listing'> = {
-    async listing() {
-        throw new ServiceError(
-            ServiceErrorCode.INTERNAL_ERROR,
-            'Listing query (ficha) is not registered',
-            undefined,
-            'LISTING_QUERY_NOT_REGISTERED'
-        );
-    }
-};
