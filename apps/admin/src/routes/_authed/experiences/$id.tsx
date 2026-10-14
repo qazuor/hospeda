@@ -236,10 +236,14 @@ function ExperienceViewPage() {
                 />
             </div>
 
-            {/* HOS-686 AC-26, read-only since HOS-1641 (Coord-424): the
-                listing's publication state. The action-based moderation control
-                (`POST /:id/moderate`) arrives with HOS-1684. */}
-            <ListingModerationCard publicationStatus={experience?.publicationStatus} />
+            {/* HOS-686 AC-26 + HOS-1684: the listing's publication state and its
+                moderation by action, with reason (`POST /:id/moderate`). */}
+            <ListingModerationCard
+                vertical="experience"
+                entityId={id}
+                entityName={experience?.name ?? id}
+                publicationStatus={experience?.publicationStatus}
+            />
 
             <ExperienceAssignOwner
                 experienceId={id}

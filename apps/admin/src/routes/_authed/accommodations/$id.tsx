@@ -1,4 +1,4 @@
-import { VerticalEnum } from '@repo/schemas';
+import { type PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -10,6 +10,7 @@ import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/use
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { EffectiveSetSubjectProvider } from '@/features/billing/effective-set-subject';
+import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
 import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -39,6 +40,7 @@ function AccommodationViewPage() {
             <AccommodationViewContent
                 id={id}
                 name={accommodation.name ?? id}
+                publicationStatus={accommodation.publicationStatus}
             />
         </EffectiveSetSubjectProvider>
     );
@@ -46,7 +48,15 @@ function AccommodationViewPage() {
 
 const AccommodationPending = createPendingComponent();
 
-function AccommodationViewContent({ id, name }: { readonly id: string; readonly name: string }) {
+function AccommodationViewContent({
+    id,
+    name,
+    publicationStatus
+}: {
+    readonly id: string;
+    readonly name: string;
+    readonly publicationStatus: PublicationStatusEnum | null | undefined;
+}) {
     const navigate = useNavigate();
     const entityData = useAccommodationPage(id);
 
@@ -78,6 +88,16 @@ function AccommodationViewContent({ id, name }: { readonly id: string; readonly 
                         onPurged={() => navigate({ to: '/accommodations' })}
                     />
                 </div>
+
+                {/* HOS-1684: the listing's publication state and its moderation
+                    by action, with reason (`POST /:id/moderate`), as on
+                    gastronomy and experience. */}
+                <ListingModerationCard
+                    vertical="accommodation"
+                    entityId={id}
+                    entityName={name}
+                    publicationStatus={publicationStatus}
+                />
             </div>
 
             <EntityPageBase
