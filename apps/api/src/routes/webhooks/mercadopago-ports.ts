@@ -31,14 +31,12 @@ import { touristVipInheritance } from '../billing-subscription/tourist-vip-inher
  *   "not registered". S5/S7, the credit and the receipt tombstone already
  *   defaulted to this same port, so their conduct does not change.
  * - `delegates`: `createProviderNoticeMirrorDelegates`, which registers the grid
- *   cells `CANCELLED_ON_GRACE` (branch 5, HOS-1561 H7) and
+ *   cells `CANCELLED_ON_GRACE` (branch 5, HOS-1561 H7) and `PROVIDER_PAUSE_IS_ARREARS` (B7.3, HOS-1559),
  *   `LIVE_PREAPPROVAL_ON_CLOSED_ROW` (H-7). The unknown preapproval is not a grid
  *   cell: the receiver itself hands it to `handleUnknownAuthorization`.
  *
- * NOT registered (H-1, H-14): the pairs `RESUME_MIRROR`,
- * `PROVIDER_PAUSE_IS_ARREARS`, `CANCELLED_ON_PAUSE` and `CANCELLED_WHILE_PENDING`
- * keep throwing `MIRROR_PAIR_NOT_REGISTERED` (they belong to S10, the pause B7.3
- * and S3), and there is no `successionCloser`: S18 does not exist yet (B8b), so
+ * NOT registered (H-1, H-14): `RESUME_MIRROR`, `CANCELLED_ON_PAUSE` and
+ * `CANCELLED_WHILE_PENDING` keep throwing `MIRROR_PAIR_NOT_REGISTERED`; there is no `successionCloser`: S18 does not exist yet (B8b), so
  * the receiver and the delegates keep `unimplementedSuccessionCloser`.
  */
 export function buildMercadoPagoNoticePorts() {
@@ -46,11 +44,12 @@ export function buildMercadoPagoNoticePorts() {
     const clock = getClock().clock;
     const coverageNotices = getCoverageNotices();
     const markPayments = createPaymentReconciliationMarkPayments(clock);
+    const planPolicy = createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy;
     return {
         provider,
         clock,
         beforeCancelNotice,
-        planPolicy: createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy,
+        planPolicy,
         payments: creditedPaymentsFromLedger,
         coverageNotices,
         // AC:B7:31: S7, reached through the charge notice, cancels a paid Tourist VIP the plan grants again.
@@ -61,6 +60,8 @@ export function buildMercadoPagoNoticePorts() {
             provider,
             clock,
             beforeCancelNotice,
+            planPolicy,
+            payments: creditedPaymentsFromLedger,
             coverageNotices,
             markPayments
         })
