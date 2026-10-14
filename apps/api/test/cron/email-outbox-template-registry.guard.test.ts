@@ -199,6 +199,21 @@ function row(template: string, payload: Record<string, unknown>): EmailOutboxRow
     };
 }
 
+async function assertTemplateHasRenderer(template: string): Promise<void> {
+    const render = buildOutboxSenderRender({
+        siteUrl: 'https://hospeda.test',
+        readListingNames: async () => new Map()
+    });
+    try {
+        await render({ row: row(template, {}) });
+    } catch (error) {
+        expect(
+            error,
+            `${template} has no production renderer; register it in buildOutboxSenderRender`
+        ).not.toBeInstanceOf(OutboxTemplateNotRegisteredError);
+    }
+}
+
 describe('TEST:1675:2 AC:1675:1 the four pending templates render through the production sender', () => {
     const readListingNames = async ({ ids }: { readonly ids: readonly string[] }) =>
         new Map(ids.map((id) => [id, 'Cabañas del Río'] as const));
@@ -306,18 +321,7 @@ describe('TEST:1675:3 AC:1675:2 every template the outbox enqueues has a product
     it.each(
         TEMPLATES
     )('renders %s through the production sender or reaches its payload validation', async (template) => {
-        const render = buildOutboxSenderRender({
-            siteUrl: 'https://hospeda.test',
-            readListingNames: async () => new Map()
-        });
-        try {
-            await render({ row: row(template, {}) });
-        } catch (error) {
-            expect(
-                error,
-                `${template} has no production renderer; register it in buildOutboxSenderRender`
-            ).not.toBeInstanceOf(OutboxTemplateNotRegisteredError);
-        }
+        await assertTemplateHasRenderer(template);
     });
 
     it('proves the registry probe is rejected and required template families are included', async () => {
@@ -325,6 +329,9 @@ describe('TEST:1675:3 AC:1675:2 every template the outbox enqueues has a product
         await expect(
             render({ row: row('billing.__unregistered-probe__', {}) })
         ).rejects.toBeInstanceOf(OutboxTemplateNotRegisteredError);
+        await expect(assertTemplateHasRenderer('billing.__unregistered-probe__')).rejects.toThrow(
+            'billing.__unregistered-probe__ has no production renderer'
+        );
         for (const template of [
             'billing.signup-declined',
             'billing.grace-started',
