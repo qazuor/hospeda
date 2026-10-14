@@ -24,13 +24,9 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const RULES = ['acc-only', 'drizzle', 'sql', 'listing-file', 'dead-exclusion'] as const;
 /** The rule a violation broke. */
-export type ListingOldColumnRule =
-    | 'acc-only'
-    | 'drizzle'
-    | 'sql'
-    | 'listing-file'
-    | 'dead-exclusion';
+export type ListingOldColumnRule = (typeof RULES)[number];
 
 /** One forbidden read of an old listing column. */
 export interface ListingOldColumnViolation {
@@ -53,11 +49,7 @@ export interface FileExclusion {
     readonly reason: string;
 }
 
-/**
- * A counted sub-entity mention of a rule (d) name in one listing file: the file
- * may hold exactly `count` occurrences of `name`, all belonging to `table`.
- * One more is a violation; one fewer makes the entry stale (dead).
- */
+/** Exactly `count` rule (d) mentions of `name` in `file`, all of `table` (more fails; fewer is dead). */
 export interface SubEntityReference {
     readonly file: string;
     readonly name: string;
@@ -403,11 +395,15 @@ export function findListingOldColumnReads(args: {
     return scanListingOldColumns(args).violations;
 }
 
-/** Whether a repo-relative path is inside the guard's scope. */
-export function isScannedPath(file: string): boolean {
-    if (MIGRATIONS_DIR.test(file)) return false;
-    if (FIXTURE_JSON.test(file)) return true;
-    return /^(?:apps|packages|scripts)\//.test(file) && SOURCE_EXTENSION.test(file);
+/**
+ * Whether a repo-relative path is inside the guard's scope.
+ * @param args.file - Repo-relative path. @returns `{ scanned }`.
+ */
+export function isScannedPath(args: { readonly file: string }): { readonly scanned: boolean } {
+    const { file } = args;
+    if (MIGRATIONS_DIR.test(file)) return { scanned: false };
+    if (FIXTURE_JSON.test(file)) return { scanned: true };
+    return { scanned: /^(?:apps|packages|scripts)\//.test(file) && SOURCE_EXTENSION.test(file) };
 }
 
 function readExclusions(root: string): ListingOldColumnExclusions {
@@ -436,7 +432,10 @@ function listScannedFiles(root: string): readonly string[] {
         encoding: 'utf8',
         maxBuffer: 64 * 1024 * 1024
     });
-    return output.split('\0').filter(Boolean).filter(isScannedPath);
+    return output
+        .split('\0')
+        .filter(Boolean)
+        .filter((file) => isScannedPath({ file }).scanned);
 }
 
 /** Runs the repository scan and returns a report suitable for the CLI or tests. */
@@ -480,20 +479,22 @@ export function run(args: { readonly root?: string } = {}): {
     };
 }
 
-/** CLI entry point. */
-export function main(): number {
+/**
+ * CLI entry point: prints the report and returns its exit code.
+ * @param args.root - Repository root (defaults to this script's parent). @returns `{ exitCode }`.
+ */
+export function main(args: { readonly root?: string } = {}): { readonly exitCode: number } {
     try {
-        const result = run();
+        const result = run({ root: args.root });
         (result.exitCode === 0 ? console.log : console.error)(result.output);
-        return result.exitCode;
+        return { exitCode: result.exitCode };
     } catch (error) {
-        console.error(
-            `ERROR: scan failed: ${error instanceof Error ? error.message : String(error)}`
-        );
-        return 1;
+        const reason = error instanceof Error ? error.message : String(error);
+        console.error(`ERROR: scan failed: ${reason}`);
+        return { exitCode: 1 };
     }
 }
 
 if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-    process.exit(main());
+    process.exit(main().exitCode);
 }

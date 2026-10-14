@@ -137,15 +137,24 @@ describe('TEST:V6:18 AC:V6:32 no file reads the six old listing columns', () => 
         });
 
         it('scans only the two listing fixture folders and never migration history', () => {
-            expect(isScannedPath(fixture)).toBe(true);
-            expect(isScannedPath('packages/seed/src/data/accommodation/destinations/a.json')).toBe(
-                true
+            expect(isScannedPath({ file: fixture }).scanned).toBe(true);
+            expect(
+                isScannedPath({ file: 'packages/seed/src/data/accommodation/destinations/a.json' })
+                    .scanned
+            ).toBe(true);
+            expect(isScannedPath({ file: 'packages/seed/src/data/post/a.json' }).scanned).toBe(
+                false
             );
-            expect(isScannedPath('packages/seed/src/data/post/a.json')).toBe(false);
-            expect(isScannedPath('packages/db/src/migrations/0148_cut_paso_3.sql')).toBe(false);
-            expect(isScannedPath('packages/db/src/migrations/meta/helper.ts')).toBe(false);
-            expect(isScannedPath('apps/api/docs/route-architecture.md')).toBe(false);
-            expect(isScannedPath('scripts/check-listing-clock.ts')).toBe(true);
+            expect(
+                isScannedPath({ file: 'packages/db/src/migrations/0148_cut_paso_3.sql' }).scanned
+            ).toBe(false);
+            expect(
+                isScannedPath({ file: 'packages/db/src/migrations/meta/helper.ts' }).scanned
+            ).toBe(false);
+            expect(isScannedPath({ file: 'apps/api/docs/route-architecture.md' }).scanned).toBe(
+                false
+            );
+            expect(isScannedPath({ file: 'scripts/check-listing-clock.ts' }).scanned).toBe(true);
         });
     });
 
@@ -210,7 +219,7 @@ describe('TEST:V6:18 AC:V6:32 no file reads the six old listing columns', () => 
         const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
         const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         try {
-            expect(main()).toBe(0);
+            expect(main()).toEqual({ exitCode: 0 });
             expect(log).toHaveBeenCalledWith(expect.stringContaining('OK:'));
             expect(error).not.toHaveBeenCalled();
         } finally {
