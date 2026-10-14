@@ -114,6 +114,9 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/subscription/signup-incomplete-notice.ts': [
         'billing.signup-incomplete'
     ],
+    'packages/service-core/src/services/billing/subscription/renewal-notice.ts': [
+        'billing.renewal-upcoming'
+    ],
     'packages/service-core/src/services/billing/subscription/signup-declined-notice.ts': [
         'billing.signup-declined'
     ],

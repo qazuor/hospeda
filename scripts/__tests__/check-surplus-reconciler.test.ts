@@ -41,7 +41,8 @@ function check(files = baseFiles, inventory = [writer], minimum = 1) {
 }
 
 describe('TEST:V6:6 GUARD:G5', () => {
-    it('accepts the repository tree', () => {
+    // Walks the real repository tree: 10s is not enough on a loaded CI runner (HOS-1681).
+    it('accepts the repository tree', { timeout: 30_000 }, () => {
         expect(run().exitCode).toBe(0);
     });
     it('accepts a notice-backed turn-off', () => {

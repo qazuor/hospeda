@@ -15,6 +15,8 @@ import {
     GraceStarted,
     PAYMENT_CREDITED_SUBJECT,
     PaymentCredited,
+    PERMANENT_GRANT_CANCEL_SUBJECT,
+    PermanentGrantCancel,
     REVOCATION_CANCEL_SUBJECT,
     RevocationCancel,
     SCHEDULED_CANCELLATION_SUBJECT,
@@ -97,6 +99,15 @@ function revocationCancel(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de cancelación por revocación');
     return { subject: REVOCATION_CANCEL_SUBJECT, react: <RevocationCancel /> };
+}
+
+function permanentGrantCancel(row: EmailOutboxRow) {
+    const data = objectPayload(row);
+    if (typeof data.subscriptionId !== 'string')
+        throw new TypeError(
+            'Faltan datos requeridos del aviso de cancelación por grant permanente'
+        );
+    return { subject: PERMANENT_GRANT_CANCEL_SUBJECT, react: <PermanentGrantCancel /> };
 }
 
 function closedSubscriptionAuthorizationCancel(row: EmailOutboxRow) {
@@ -311,6 +322,7 @@ export function createBillingSignupRenderers(input: {
         'billing.addon-cancelled': ({ row }) => addonCancelled(row),
         'billing.first-charge-declined-cancel': ({ row }) => firstChargeDeclinedCancel(row),
         'billing.revocation-cancel': ({ row }) => revocationCancel(row),
+        'billing.permanent-grant-cancel': ({ row }) => permanentGrantCancel(row),
         'billing.closed-subscription-authorization-cancel': ({ row }) =>
             closedSubscriptionAuthorizationCancel(row),
         'billing.scheduled-cancellation': ({ row }) => scheduledCancellation(row)

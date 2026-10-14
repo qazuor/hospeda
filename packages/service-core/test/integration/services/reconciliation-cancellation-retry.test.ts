@@ -545,3 +545,23 @@ describe('TEST:1683:2 AC:1683:1 AC:1683:3 the retry repeats each transition kind
             .where(eq(emailOutbox.recipientUserId, row.userId!));
     });
 });
+
+describe('HOS-1582 TEST:B9a:1 AC:B9a:1 — the sweep retries an S13 decision with its own kind', () => {
+    it('asks with PERMANENT_GRANT and retries the preapproval once', async () => {
+        const { fake } = newFake();
+        const row = await decided({ fake, status: 'CANCELLED', transition: 'S13' });
+        const beforeCancel = vi.fn(outboxBeforeCancelNotice({ deliver: true }).beforeCancel);
+        const result = await runDay(0, fake, beforeCancel);
+        expect(result.summary.rowsFailed).toBe(0);
+        expect(beforeCancel).toHaveBeenCalledWith({
+            subscriptionId: row.id,
+            userId: row.userId,
+            kind: 'PERMANENT_GRANT'
+        });
+        expect(BEFORE_CANCEL_KIND_BY_TRANSITION.S13).toBe('PERMANENT_GRANT');
+        expect((await templatesOf(row.userId!)).sort()).toEqual(['billing.permanent-grant-cancel']);
+        await getServiceTestDb()
+            .delete(emailOutbox)
+            .where(eq(emailOutbox.recipientUserId, row.userId!));
+    });
+});
