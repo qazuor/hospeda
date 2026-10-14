@@ -83,7 +83,9 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   **While nothing writes `next_charge_at` yet (HOS-1622 notes, H-1), record this item as
   `BLOCKED (H-1)` in the sign-off, not `PASS`.**
 - **Steps:**
-  1. Set `next_charge_at` to 5 days ahead of the current AR day (read-only update for test).
+  1. On a staging test subscription created for this smoke (never a real customer's row), write
+     `next_charge_at` to 5 days ahead of the current AR day. This is an explicit staging-only write;
+     skip this step and the next two while the item is `BLOCKED (H-1)`.
   2. Run the `subscription-renewal-notice` cron on `staging`.
   3. Check the outbox for a `billing.renewal-upcoming` row.
 - **Expected:** The outbox contains a `billing.renewal-upcoming` email with the occurrence
