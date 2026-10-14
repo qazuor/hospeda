@@ -15,13 +15,10 @@ import type { AccommodationCreateInput, Destination } from '@repo/schemas';
 import {
     AccommodationTypeEnum,
     DestinationTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
     PermissionEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
-    RoleEnum,
-    VisibilityEnum
+    RoleEnum
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { AccommodationService } from '@repo/service-core';
@@ -282,11 +279,8 @@ export function buildHostAccommodationCoreFields(
             title: `Alojamiento Completo - ${spec.displayName} (Seed Test)`,
             description: `Propiedad de prueba (seed) para el test user ${spec.displayName}, usada para ejercitar rutas de owner durante el crawl CSP de staging (HOS-30).`
         },
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        visibility: VisibilityEnum.PUBLIC,
         reviewsCount: 0,
-        averageRating: 0,
-        moderationState: ModerationStatusEnum.APPROVED
+        averageRating: 0
     };
 }
 

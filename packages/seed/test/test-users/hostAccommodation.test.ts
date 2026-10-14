@@ -145,7 +145,7 @@ describe('buildHostAccommodationCoreFields', () => {
         expect(fields.location?.coordinates).toEqual(VALID_COORDINATES);
     });
 
-    it('should mark the fixture as ACTIVE / PUBLIC / APPROVED per seed moderation conventions', () => {
+    it('should carry no publication state: the create input never names one (HOS-1641)', () => {
         // Arrange / Act
         const fields = buildHostAccommodationCoreFields({
             spec: { email: 'host-pro@local.test', displayName: 'Host Pro' },
@@ -155,9 +155,15 @@ describe('buildHostAccommodationCoreFields', () => {
         });
 
         // Assert
-        expect(fields.lifecycleState).toBe('ACTIVE');
-        expect(fields.visibility).toBe('PUBLIC');
-        expect(fields.moderationState).toBe('APPROVED');
+        const keys = Object.keys(fields);
+        for (const stateKey of [
+            'lifecycleState',
+            'visibility',
+            'moderationState',
+            'publicationStatus'
+        ]) {
+            expect(keys).not.toContain(stateKey);
+        }
     });
 
     it('should identify the fixture as seed/test content tied to the owner in name and description', () => {

@@ -6,7 +6,6 @@ import {
     gastronomyFaqs,
     gastronomyReviews,
     getDb,
-    legacyPublicationStatus,
     sql,
     users
 } from '@repo/db';
@@ -171,9 +170,8 @@ interface GastronomySeedData {
     readonly type: string;
     readonly priceRange?: string | null;
     readonly menuUrl?: string | null;
-    readonly visibility: string;
-    readonly lifecycleState: string;
-    readonly moderationState: string;
+    /** Publication state the listing is born with (HOS-1641: replaces the three old state columns). */
+    readonly publicationStatus: string;
     readonly contactInfo?: Record<string, unknown> | null;
     readonly socialNetworks?: Record<string, unknown> | null;
     readonly openingHours?: Record<string, unknown> | null;
@@ -266,9 +264,9 @@ async function seedGastronomyMediaRows({
  * - `idMapper` already holds `destinations.*` and `users.*` mappings.
  *
  * ### Visibility model
- * - Listings 001–005: `visibility=PUBLIC` + `lifecycleState=ACTIVE` →
+ * - Listings 001–005: `publicationStatus=PUBLISHED` →
  *   publicly visible on /gastronomia.
- * - Listing 006: `visibility=PRIVATE` + `lifecycleState=DRAFT` →
+ * - Listing 006: `publicationStatus=DRAFT` →
  *   intentionally NOT visible; demonstrates the gating.
  *
  * ### Idempotency
@@ -570,17 +568,10 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     menuUrl: item.menuUrl ?? null,
                     ownerId: realOwnerId,
                     destinationId: realDestinationId,
-                    visibility: item.visibility as (typeof gastronomies.$inferInsert)['visibility'],
-                    lifecycleState:
-                        item.lifecycleState as (typeof gastronomies.$inferInsert)['lifecycleState'],
-                    publicationStatus: legacyPublicationStatus({
-                        lifecycleState: item.lifecycleState,
-                        visibility: item.visibility
-                    }),
+                    publicationStatus:
+                        item.publicationStatus as (typeof gastronomies.$inferInsert)['publicationStatus'],
                     inactiveSince: now,
                     deadlinesVersion: 1,
-                    moderationState:
-                        item.moderationState as (typeof gastronomies.$inferInsert)['moderationState'],
                     contactInfo: (item.contactInfo ??
                         null) as (typeof gastronomies.$inferInsert)['contactInfo'],
                     socialNetworks: (item.socialNetworks ??
@@ -631,7 +622,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                 });
 
                 logger.debug(
-                    `  ${STATUS_ICONS.Success} [${index + 1}/${items.length}] "${item.name}" (${item.type}) → ${item.destinationId} [${item.visibility}/${item.lifecycleState}]`
+                    `  ${STATUS_ICONS.Success} [${index + 1}/${items.length}] "${item.name}" (${item.type}) → ${item.destinationId} [${item.publicationStatus}]`
                 );
             } else {
                 logger.debug(
