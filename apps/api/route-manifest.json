@@ -2422,6 +2422,10 @@
             "path": "/api/v1/protected/billing/subscriptions"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/billing/subscriptions/signup-notice/:billingOptionId"
+        },
+        {
             "method": "DELETE",
             "path": "/api/v1/protected/comments/:commentId"
         },
