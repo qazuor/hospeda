@@ -49,7 +49,7 @@ const GASTRONOMY_ROW = {
     features: [{ slug: 'river_front', hostReWriteName: null }],
     // Owner-private, present on the protected projection this route reads.
     ownerId: '11111111-1111-4111-8111-111111111111',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     contactInfo: { workPhone: '+54 9 3442 000000', personalEmail: 'dueno@privado.test' },
     adminInfo: { notes: 'internal note' }
 };
@@ -77,7 +77,7 @@ const EXPERIENCE_ROW = {
     media: { featuredImage: { url: 'https://cdn.test/kayak.jpg', moderationState: 'APPROVED' } },
     destination: { name: 'Colón' },
     ownerId: '11111111-1111-4111-8111-111111111111',
-    lifecycleState: 'ACTIVE'
+    publicationStatus: 'PUBLISHED'
 };
 
 describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {

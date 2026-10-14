@@ -78,8 +78,7 @@ function publishedListing(overrides: Record<string, unknown> = {}) {
         ownerId: OWNER_ID,
         name: 'La Parrilla del Puerto',
         slug: 'la-parrilla-del-puerto',
-        lifecycleState: 'ACTIVE',
-        visibility: 'PUBLIC',
+        publicationStatus: 'PUBLISHED',
         ...overrides
     };
 }
@@ -197,27 +196,20 @@ describe.each(CASES)('GET /protected/$label/:id/qr-sheet (HOS-982)', ({
         expect(minted.purpose).toBe('LISTING');
     });
 
-    it('refuses a listing that is not PUBLIC', async () => {
-        stubListing({ visibility: 'PRIVATE' });
+    it.each([
+        'DRAFT',
+        'UNPUBLISHED_BY_BILLING',
+        'ARCHIVED',
+        'MODERATED',
+        'PURGED'
+    ])('refuses a listing that is %s, like an absent one (V6.9b: only PUBLISHED has a page)', async (publicationStatus) => {
+        stubListing({ publicationStatus });
         const res = await buildApp(await importRoute()).request(`/${LISTING_ID}/qr-sheet`);
 
         expect(res.status).toBe(404);
         expect(res.headers.get('content-type')).not.toBe('application/pdf');
-        // And nothing was written: a refused download must not leave a live
+        // And nothing was written: a refused read must not leave a live
         // `qr_codes` row behind for a page that does not exist.
-        expect(mintSpy).not.toHaveBeenCalled();
-    });
-
-    it('refuses a listing that is PUBLIC but not ACTIVE', async () => {
-        // The admin schemas accept `lifecycleState` on its own, so this row
-        // is reachable: a staff PATCH to INACTIVE that leaves `visibility`
-        // standing. The public read answers NOT_FOUND for it, so a sheet
-        // printed here would 404 on every scan, permanently, on paper.
-        stubListing({ lifecycleState: 'INACTIVE' });
-        const res = await buildApp(await importRoute()).request(`/${LISTING_ID}/qr-sheet`);
-
-        expect(res.status).toBe(404);
-        expect(res.headers.get('content-type')).not.toBe('application/pdf');
         expect(mintSpy).not.toHaveBeenCalled();
     });
 

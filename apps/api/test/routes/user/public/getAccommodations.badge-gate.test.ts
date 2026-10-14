@@ -21,9 +21,8 @@
  *
  * Do NOT read that as a claim about the rest of the payload. It is not
  * reader-independent: `AccommodationService._executeSearch` computes
- * `activeOnly` / `excludeOwnerSuspended` / `excludePlanRestricted` as
- * `!hasVipAccess && !isOwnScope`, so an owner or a VIP actor receives rows an
- * anonymous visitor must not see. That is a separate, pre-existing defect of this
+ * `publishedOnly` as `!isOwnScope` (before V6.9b the old flags were also off
+ * for a VIP actor), so an owner receives rows an anonymous visitor must not see. That is a separate, pre-existing defect of this
  * route, out of scope for HOS-341 and tracked as HOS-352.
  *
  * The entitlement bypass was the defect HOS-341 fixed, and it was identical on
@@ -150,12 +149,9 @@ function makeAccommodation(
         extraInfo: null,
         destinationId: 'dddddddd-0000-4000-8000-000000000341',
         ownerId: OWNER_WITH_BADGE,
-        visibility: 'PUBLIC',
-        lifecycleState: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
         updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-        ownerSuspended: false,
-        planRestricted: false,
         ...overrides
     };
 }

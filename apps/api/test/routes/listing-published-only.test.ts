@@ -53,9 +53,7 @@ const row = GastronomySchema.parse({
     description: 'A sufficiently detailed description for this listing.',
     ownerId: '22222222-2222-4222-8222-222222222222',
     destinationId: '55555555-5555-4555-8555-555555555555',
-    lifecycleState: 'ACTIVE',
-    visibility: 'PUBLIC',
-    moderationState: 'APPROVED',
+    publicationStatus: 'PUBLISHED',
     isPriceOnRequest: false,
     featuredByEntitlement: false,
     averageRating: 4.5,
@@ -171,14 +169,13 @@ describe('TEST:V5:6 public gastronomy detail', () => {
         });
         app.route('/', publicGetGastronomyByIdRoute);
         let publicationStatus: PublicationStatusEnum | null = null;
-        let visibility = 'PUBLIC';
         vi.spyOn(GastronomyService.prototype, 'getById').mockImplementation(async (actor, id) => {
             if (id === MISSING_ID) {
                 return {
                     error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
                 };
             }
-            const entity = { ...row, publicationStatus, visibility };
+            const entity = { ...row, publicationStatus };
             try {
                 assertListingReadable({ actor, entity, entityName: GastronomyService.ENTITY_NAME });
             } catch (error) {
@@ -193,16 +190,16 @@ describe('TEST:V5:6 public gastronomy detail', () => {
         expect(missing.status).toBe(404);
         for (const status of [
             PublicationStatusEnum.DRAFT,
+            PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
             PublicationStatusEnum.ARCHIVED,
             PublicationStatusEnum.MODERATED,
+            PublicationStatusEnum.PURGED,
             null
         ]) {
             publicationStatus = status;
-            visibility = status === null ? 'RESTRICTED' : 'PUBLIC';
             expect(await probe(app, LISTING_ID)).toEqual(missing);
         }
         publicationStatus = PublicationStatusEnum.PUBLISHED;
-        visibility = 'PUBLIC';
         expect((await probe(app, LISTING_ID)).status).toBe(200);
     });
 });

@@ -174,7 +174,7 @@ const ACCOMMODATION_FIXTURE = {
     location: { city: 'Concepcion del Uruguay', country: 'Argentina' },
     averageRating: 4.5,
     reviewsCount: 42,
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     seo: {
         title: 'Hotel Test Accommodation SEO Title',
         description:
@@ -188,8 +188,6 @@ const ACCOMMODATION_FIXTURE = {
         bedrooms: 2,
         bathrooms: 1
     },
-    lifecycleState: 'ACTIVE',
-    moderationState: 'APPROVED',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-15T00:00:00.000Z',
     createdById: ADMIN_ID,

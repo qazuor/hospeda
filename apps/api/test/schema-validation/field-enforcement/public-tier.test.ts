@@ -3,7 +3,7 @@
  *
  * Verifies that public endpoints enforce tier-appropriate field exposure at
  * runtime. A service that leaks admin-only fields (`createdById`,
- * `updatedById`, `deletedById`, `deletedAt`, `adminInfo`, `lifecycleState`)
+ * `updatedById`, `deletedById`, `deletedAt`, `adminInfo`, `publicationStatus`)
  * must still produce a public response envelope with those fields stripped by
  * `stripWithSchema` inside `createResponse`.
  *
@@ -50,7 +50,7 @@ const ACCOMMODATION_WITH_ADMIN_FIELDS = {
     location: { city: 'Concepcion del Uruguay', country: 'Argentina' },
     averageRating: 4.5,
     reviewsCount: 42,
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     seo: VALID_SEO,
     price: { price: 150, currency: 'ARS' },
     tags: [],
@@ -67,8 +67,6 @@ const ACCOMMODATION_WITH_ADMIN_FIELDS = {
     deletedById: null,
     deletedAt: null,
     adminInfo: { notes: 'internal notes', favorite: false },
-    lifecycleState: 'ACTIVE',
-    moderationState: 'APPROVED',
     updatedAt: '2024-01-15T00:00:00.000Z'
 };
 
@@ -105,7 +103,8 @@ describe('SPEC-062 T-017 — public tier runtime field enforcement', () => {
             expect(data).not.toHaveProperty('deletedById');
             expect(data).not.toHaveProperty('deletedAt');
             expect(data).not.toHaveProperty('adminInfo');
-            expect(data).not.toHaveProperty('lifecycleState');
+            // V6.9b: everything public is PUBLISHED, so the state is never exposed.
+            expect(data).not.toHaveProperty('publicationStatus');
         });
 
         it('preserves public fields in the response body', async () => {
@@ -119,7 +118,6 @@ describe('SPEC-062 T-017 — public tier runtime field enforcement', () => {
             expect(data).toHaveProperty('slug', 'hotel-strip-test');
             expect(data).toHaveProperty('name');
             expect(data).toHaveProperty('summary');
-            expect(data).toHaveProperty('visibility', 'PUBLIC');
         });
     });
 });

@@ -16,7 +16,7 @@
  * BUG 2 — SECURITY LEAK:
  *   The responseSchema used `AccommodationSchema` (full entity) exposing
  *   `createdById`, `updatedById`, `deletedAt`, `deletedById`, `adminInfo`,
- *   `moderationState`, `lastWarnedAt`, `translationMeta`, etc.
+ *   `publicationStatus`, `lastWarnedAt`, `translationMeta`, etc.
  *   Fix: responseSchema uses `PaginationResultSchema(AccommodationPublicSchema)`
  *   which strips all internal-only fields at the schema layer.
  *
@@ -167,7 +167,7 @@ describe('GET /api/v1/public/accommodations/destination/:id/top-rated — schema
          *   - createdById, updatedById     (BaseAuditFields)
          *   - deletedAt, deletedById       (soft-delete audit)
          *   - adminInfo                    (admin-only moderation notes)
-         *   - moderationState              (internal lifecycle flag)
+         *   - publicationStatus            (internal publication state)
          *   - lastWarnedAt                 (internal operational field)
          *   - translationMeta              (internal translation metadata)
          *   - scheduleData                 (internal scheduling data)
@@ -196,7 +196,7 @@ describe('GET /api/v1/public/accommodations/destination/:id/top-rated — schema
                         'deletedAt',
                         'deletedById',
                         'adminInfo',
-                        'moderationState',
+                        'publicationStatus',
                         'lastWarnedAt',
                         'translationMeta',
                         'scheduleData'
@@ -307,7 +307,7 @@ describe('GET /api/v1/public/accommodations/destination/:id/top-rated — schema
             }
         });
 
-        it('AccommodationPublicSchema strips adminInfo and moderationState', () => {
+        it('AccommodationPublicSchema strips adminInfo and publicationStatus', () => {
             const raw = {
                 id: TEST_UUID,
                 slug: 'test-accommodation',
@@ -320,7 +320,7 @@ describe('GET /api/v1/public/accommodations/destination/:id/top-rated — schema
                 destinationId: TEST_UUID_2,
                 // Admin-only fields that must be stripped
                 adminInfo: { notes: 'Internal admin note', favorite: true },
-                moderationState: 'PENDING',
+                publicationStatus: 'MODERATED',
                 lastWarnedAt: new Date(),
                 translationMeta: { es: { name: { status: 'approved' } } }
             };
@@ -330,7 +330,7 @@ describe('GET /api/v1/public/accommodations/destination/:id/top-rated — schema
             if (result.success) {
                 const data = result.data as Record<string, unknown>;
                 expect(data).not.toHaveProperty('adminInfo');
-                expect(data).not.toHaveProperty('moderationState');
+                expect(data).not.toHaveProperty('publicationStatus');
                 expect(data).not.toHaveProperty('lastWarnedAt');
                 expect(data).not.toHaveProperty('translationMeta');
             }

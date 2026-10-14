@@ -155,7 +155,6 @@ function accommodation(ownerId: string) {
         tags: [],
         socialNetworks: null,
         extraInfo: null,
-        visibility: 'PUBLIC',
         isVerified: true,
         contactInfo: { whatsapp: 123 },
         createdAt: new Date('2026-01-01T00:00:00.000Z')

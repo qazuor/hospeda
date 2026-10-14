@@ -6,8 +6,8 @@
  * with `GastronomyService` replaced by a spy so the exact payload passed to
  * `createForOwner()` can be inspected without a live DB.
  *
- * Covers (AC-19, D-3): `ownerId` is always `actor.id`; `visibility` is always
- * PRIVATE and `lifecycleState` always DRAFT; owner-create schema strips
+ * Covers (AC-19, D-3): `ownerId` is always `actor.id`; no publication state
+ * is ever passed (the model births the listing DRAFT); owner-create schema strips
  * server-owned fields; the owner path goes through `createForOwner`; service
  * errors surface as `ServiceError` with the same code.
  *
@@ -78,8 +78,7 @@ vi.mock('../../../../src/utils/actor', () => ({
 import {
     GastronomyOwnerCreateInputSchema,
     GastronomyTypeEnum,
-    LifecycleStatusEnum,
-    VisibilityEnum
+    PublicationStatusEnum
 } from '@repo/schemas';
 import { handleCreateGastronomyListing } from '../../../../src/routes/gastronomy/protected/create';
 
@@ -137,21 +136,19 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
         expect(createInput.ownerId).toBe(OWNER_ID);
     });
 
-    it('forces visibility=PRIVATE and lifecycleState=DRAFT even when the body supplies other values', async () => {
+    it('never passes a publication state, even when the body supplies one (V6.9b: born DRAFT by the model)', async () => {
         const ctx = createMockContext();
 
         await handleCreateGastronomyListing(ctx as never, {
             ...VALID_GASTRONOMY_BODY,
-            visibility: 'PUBLIC',
-            lifecycleState: 'ACTIVE'
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
 
         const [, createInput] = mockCreateForOwner.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];
-        expect(createInput.visibility).toBe(VisibilityEnum.PRIVATE);
-        expect(createInput.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+        expect(createInput).not.toHaveProperty('publicationStatus');
     });
 
     it('drops a caller-supplied slug end-to-end through the real request pipeline (OQ-3)', async () => {

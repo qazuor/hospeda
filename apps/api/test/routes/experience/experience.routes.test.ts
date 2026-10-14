@@ -167,7 +167,7 @@ const adminNoPanelHeaders: Record<string, string> = {
 //   - tags/openingHours omitted (TagsFields/OpeningHoursFields.optional() — no null)
 //
 // adminExperienceFixture: extends minimalExperience to satisfy ExperienceAdminSchema.
-//   Adds ownerId (required), moderationState (required — has .default('PENDING')).
+//   Adds ownerId (required) and the soft-delete audit fields.
 //
 // minimalReview: satisfies ExperienceReviewSchema.
 //   Only required string/number fields — no null for optional fields.
@@ -180,8 +180,7 @@ const minimalExperience = {
     summary: 'A test experience.',
     description: 'A detailed test experience description for this listing.',
     destinationId: DESTINATION_ID,
-    lifecycleState: 'ACTIVE',
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     averageRating: 4.5,
     reviewsCount: 0,
     priceFrom: 1000,
@@ -203,7 +202,6 @@ const minimalExperience = {
 const adminExperienceFixture = {
     ...minimalExperience,
     ownerId: MOCK_USER_ID,
-    moderationState: 'PENDING',
     deletedAt: null,
     deletedById: null
 };
@@ -584,9 +582,6 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                         priceFrom: 1000,
                         priceUnit: 'PER_PERSON',
                         destinationId: DESTINATION_ID,
-                        lifecycleState: 'ACTIVE',
-                        visibility: 'PUBLIC',
-                        moderationState: 'PENDING',
                         reviewsCount: 0,
                         averageRating: 0,
                         isPriceOnRequest: false,

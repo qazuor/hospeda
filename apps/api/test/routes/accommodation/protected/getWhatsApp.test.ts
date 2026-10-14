@@ -118,8 +118,7 @@ describe('GET /api/v1/protected/accommodations/:id/whatsapp', () => {
             data: {
                 id: VALID_UUID,
                 ownerId: 'owner-other',
-                lifecycleState: 'ACTIVE',
-                visibility: 'PUBLIC',
+                publicationStatus: 'PUBLISHED',
                 contactInfo: { whatsapp: '+5493442123456' }
             },
             error: undefined

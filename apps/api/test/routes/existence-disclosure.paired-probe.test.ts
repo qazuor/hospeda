@@ -323,8 +323,7 @@ describe.each(
                         ownerId: OTHER_OWNER_ID,
                         slug: 'de-otro',
                         name: 'De otro',
-                        lifecycleState: 'ACTIVE',
-                        visibility: 'PUBLIC'
+                        publicationStatus: 'PUBLISHED'
                     } as never
                 };
             }
@@ -423,8 +422,7 @@ describe.each(QR_CODE_CASES)('GET /protected/$label/:id/qr — foreign listing v
                         ownerId: OTHER_OWNER_ID,
                         slug: 'de-otro',
                         name: 'De otro',
-                        lifecycleState: 'ACTIVE',
-                        visibility: 'PUBLIC'
+                        publicationStatus: 'PUBLISHED'
                     } as never
                 };
             }

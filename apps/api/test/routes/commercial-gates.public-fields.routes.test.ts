@@ -68,10 +68,9 @@ vi.mock('@repo/db', async (importOriginal) => ({
     accommodations: {
         id: 'acc.id',
         slug: 'acc.slug',
+        publicationStatus: 'acc.publicationStatus',
         type: 'acc.type',
         destinationId: 'acc.destinationId',
-        lifecycleState: 'acc.lifecycleState',
-        visibility: 'acc.visibility',
         averageRating: 'acc.averageRating',
         deletedAt: 'acc.deletedAt'
     }
@@ -120,8 +119,7 @@ function accommodation(ownerId: string) {
         tags: [],
         socialNetworks: null,
         extraInfo: null,
-        visibility: 'PUBLIC',
-        lifecycleState: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
         isVerified: true,
         contactInfo: { whatsapp: 123 },
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
