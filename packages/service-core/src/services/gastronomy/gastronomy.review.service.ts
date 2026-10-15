@@ -34,6 +34,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    type PublicationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
@@ -48,6 +49,7 @@ import type {
 import { ServiceError } from '../../types';
 import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
+import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
 import { GastronomyService } from './gastronomy.service';
 
 // ---------------------------------------------------------------------------
@@ -592,6 +594,15 @@ export class GastronomyReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ reviews: GastronomyReview[]; total: number }>> {
         try {
+            const gastronomy = await this._gastronomyModel.findById(gastronomyId, ctx?.tx);
+            if (
+                gastronomy &&
+                !listingShowsReviews({
+                    publicationStatus: gastronomy.publicationStatus as PublicationStatusEnum
+                })
+            ) {
+                return { data: { reviews: [], total: 0 } };
+            }
             // Load the `user` relation so the public review list can display
             // reviewer names without a separate N+1 per-review query (Bug B7b fix).
             // The security force-filter (APPROVED + ACTIVE + deletedAt: null) is

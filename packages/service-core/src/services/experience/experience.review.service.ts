@@ -34,6 +34,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    type PublicationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
@@ -48,6 +49,7 @@ import type {
 import { ServiceError } from '../../types';
 import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
+import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
 import { ExperienceService } from './experience.service';
 
 // ---------------------------------------------------------------------------
@@ -501,6 +503,15 @@ export class ExperienceReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ reviews: ExperienceReview[]; total: number }>> {
         try {
+            const experience = await this._experienceModel.findById(experienceId, ctx?.tx);
+            if (
+                experience &&
+                !listingShowsReviews({
+                    publicationStatus: experience.publicationStatus as PublicationStatusEnum
+                })
+            ) {
+                return { data: { reviews: [], total: 0 } };
+            }
             const result = await this.model.findAll(
                 {
                     experienceId,

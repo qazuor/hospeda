@@ -33,6 +33,7 @@ import {
     type EntityFilters,
     LifecycleStatusEnum,
     ModerationStatusEnum,
+    type PublicationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
@@ -51,6 +52,7 @@ import {
 import { entityNotFoundError } from '../../utils/not-found';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
+import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
 import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
 import { computeAccommodationReviewAverage } from './accommodationReview.helpers';
 import {
@@ -697,6 +699,21 @@ export class AccommodationReviewService extends BaseCrudService<
             execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
                 const { accommodationId, page, pageSize } = validated;
+                if (!opts?.includeAllStates) {
+                    const accommodation = await this.accommodationModel.findById(
+                        accommodationId,
+                        ctx?.tx
+                    );
+                    if (
+                        accommodation &&
+                        !listingShowsReviews({
+                            publicationStatus:
+                                accommodation.publicationStatus as PublicationStatusEnum
+                        })
+                    ) {
+                        return { accommodationReviews: [], total: 0 };
+                    }
+                }
                 const baseWhere: Record<string, unknown> = {
                     accommodationId,
                     deletedAt: null
