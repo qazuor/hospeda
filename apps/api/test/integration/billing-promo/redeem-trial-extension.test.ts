@@ -186,4 +186,57 @@ describe('TEST:B9b:6 AC:B9b:6 the redeem route extends a real trial', () => {
             }
         });
     });
+
+    it('maps a real T4 redemption key conflict to 409 without consuming the code', async () => {
+        await testDb.withRollback(async (tx) => {
+            const runtimeDb = getDb();
+            setDb(tx);
+            try {
+                const { code } = await seedExpiredTrialExtension();
+                const [otherUser] = await getDb()
+                    .insert(users)
+                    .values({
+                        email: `promo-trial-conflict-${randomUUID()}@example.test`,
+                        displayName: 'Conflicting trial redemption owner',
+                        emailVerified: true,
+                        lifecycleState: 'ACTIVE'
+                    })
+                    .returning({ id: users.id });
+                if (!otherUser) throw new Error('Could not create conflicting redemption owner');
+                await getDb()
+                    .insert(trialRedemptions)
+                    .values({
+                        userId: otherUser.id,
+                        vertical: 'accommodation',
+                        redemptionKey: `promo-redemption:${promoCodeId}:${userId}`,
+                        appliedDays: 5,
+                        appliedAt: now
+                    });
+                injectPaymentProvider({
+                    provider: new FakePaymentProvider({
+                        clock: { now: () => now },
+                        idNamespace: randomUUID()
+                    })
+                });
+                const response = await app.request(path, {
+                    method: 'POST',
+                    headers: headers(userId!),
+                    body: JSON.stringify({ code, vertical: 'accommodation' })
+                });
+                expect(response.status).toBe(409);
+                expect((await response.json()).error).toMatchObject({
+                    code: 'ALREADY_EXISTS',
+                    reason: 'REDEMPTION_KEY_CONFLICT'
+                });
+                expect(
+                    await getDb()
+                        .select()
+                        .from(promoRedemptions)
+                        .where(eq(promoRedemptions.promoCodeId, promoCodeId!))
+                ).toHaveLength(0);
+            } finally {
+                setDb(runtimeDb);
+            }
+        });
+    });
 });
