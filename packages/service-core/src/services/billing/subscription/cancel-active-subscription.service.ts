@@ -23,15 +23,13 @@ import {
 } from './subscription-billing-ports.js';
 
 const logger = createLogger('cancel-active-subscription');
+const permissionsSchema = z.array(z.nativeEnum(PermissionEnum));
 const actorSchema = z.custom<Actor>((value) => {
     if (typeof value !== 'object' || value === null) return false;
     const candidate = value as { readonly id?: unknown; readonly permissions?: unknown };
     return (
         z.uuid().safeParse(candidate.id).success &&
-        Array.isArray(candidate.permissions) &&
-        candidate.permissions.every((permission) =>
-            Object.values(PermissionEnum).includes(permission as PermissionEnum)
-        )
+        permissionsSchema.safeParse(candidate.permissions).success
     );
 });
 const inputSchema = z.strictObject({ actor: actorSchema, subscriptionId: z.string() });
