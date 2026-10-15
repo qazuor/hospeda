@@ -13,15 +13,13 @@ const input = {
     returnUrl: 'https://example.test/return'
 } as const;
 
-async function setup(options: { readonly refundHonest?: boolean } = {}) {
+async function setup() {
     const provider = new FakePaymentProvider({
         clock,
         idNamespace: crypto.randomUUID(),
         honestAbout: [
             { lie: 'M8', why: 'mutation tests need charges approved immediately' },
-            ...(options.refundHonest
-                ? [{ lie: 'M13' as const, why: 'partial refunds are measured to succeed' }]
-                : [])
+            { lie: 'M13', why: 'partial refunds are measured to succeed in these mutation cases' }
         ],
         withoutBehaviour: [{ behaviour: 'RP12', why: 'these cases create ordinary charges' }]
     });
@@ -133,7 +131,7 @@ describe('TEST:1669:7 AC:1669:0 AC:1669:2 Mercado Pago amount and status mutatio
 
 describe('TEST:1669:8 AC:1669:0 AC:1669:2 Mercado Pago refunds', () => {
     it('refunds total and partial amounts and safely replays the same request', async () => {
-        const { server, adapter } = await setup({ refundHonest: true });
+        const { server, adapter } = await setup();
         try {
             const totalCharge = await approvedCharge({
                 adapter,
@@ -209,7 +207,7 @@ describe('TEST:1669:8 AC:1669:0 AC:1669:2 Mercado Pago refunds', () => {
     });
 
     it('maps an excessive amount with its response cause and an unknown charge to provider errors', async () => {
-        const { server, adapter } = await setup({ refundHonest: true });
+        const { server, adapter } = await setup();
         try {
             const charge = await approvedCharge({
                 adapter,
