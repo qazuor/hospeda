@@ -15,7 +15,10 @@ import {
 } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { requestRefund } from '../../../src/services/billing/refund/request-refund.service';
-import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service';
+import {
+    type RevokeSubscriptionPorts,
+    revokeSubscription
+} from '../../../src/services/billing/subscription/revoke-subscription.service';
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers';
 import {
     seedComplementCharge,
@@ -33,6 +36,14 @@ import {
 
 const created: { instanceId: string; paymentId?: string }[] = [];
 const createdSubscriptions: string[] = [];
+
+/** D-2: a financial no-op is not a valid default for S36's orphanhood port. */
+export function requireOrphanhoodPort(
+    ports: Omit<RevokeSubscriptionPorts, 'orphanhood'>
+): RevokeSubscriptionPorts {
+    // @ts-expect-error `orphanhood` must remain required so A5/S21 cannot silently disappear.
+    return ports;
+}
 
 afterAll(closeServiceTestPool);
 afterEach(async () => {
