@@ -37,7 +37,7 @@ export class ReconciliationTerminalReturnModel {
         const hasOpenMark = sql<boolean>`EXISTS (SELECT 1 FROM reconciliation_mark rm WHERE rm.subscription_id = ${subscriptions.id} AND rm.lifted_at IS NULL)`;
         const hasOpenRetention = sql<boolean>`EXISTS (SELECT 1 FROM succession_retained_payment srp WHERE srp.subscription_id = ${subscriptions.id} AND srp.released_at IS NULL)`;
         const rejectionTerminal = sql<boolean>`(${subscriptions.status} = 'CHARGE_DECLINED' OR EXISTS (SELECT 1 FROM domain_event de WHERE de.entity_type = 'subscription' AND de.entity_id = ${subscriptions.id}::text AND de.event_type = 'subscription.provider_cancelled_after_rejection'))`;
-        const cutoff = sql`CASE ${billingOptions.cycle} WHEN 'monthly' THEN ${input.holdCutoffs.monthly} WHEN 'quarterly' THEN ${input.holdCutoffs.quarterly} WHEN 'semiannual' THEN ${input.holdCutoffs.semiannual} WHEN 'annual' THEN ${input.holdCutoffs.annual} ELSE ${input.holdCutoffs.none} END`;
+        const cutoff = sql`CASE ${billingOptions.cycle} WHEN 'monthly' THEN ${input.holdCutoffs.monthly}::timestamptz WHEN 'quarterly' THEN ${input.holdCutoffs.quarterly}::timestamptz WHEN 'semiannual' THEN ${input.holdCutoffs.semiannual}::timestamptz WHEN 'annual' THEN ${input.holdCutoffs.annual}::timestamptz ELSE ${input.holdCutoffs.none}::timestamptz END`;
         return db
             .select({
                 subscription: subscriptions,
