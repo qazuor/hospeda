@@ -131,6 +131,7 @@ export * from './billing/reconciliation/sweep/credited-payments-check.js';
 export * from './billing/reconciliation/sweep/grace-expiry-check.js';
 export * from './billing/reconciliation/sweep/last-cycle-record.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
+export * from './billing/reconciliation/sweep/mark-escalation.js';
 export * from './billing/reconciliation/sweep/next-charge-sync.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
