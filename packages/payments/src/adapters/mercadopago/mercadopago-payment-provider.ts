@@ -53,6 +53,11 @@ import {
 import { MERCADOPAGO_CAPABILITY_SUPPORT } from './mercadopago-capability-support';
 import { listMercadoPagoCharges } from './mercadopago-charges';
 import { assertResponseOk, notImplemented, parseResponse, providerError } from './mercadopago-http';
+import {
+    changeMercadoPagoAmount,
+    refundMercadoPagoPayment,
+    setMercadoPagoStatus
+} from './mercadopago-mutations';
 import { decodeMercadoPagoNotice } from './mercadopago-notice';
 
 const MercadoPagoOptionsSchema = z.strictObject({
@@ -225,19 +230,27 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     /** Capability 3 · change the amount. */
     async changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement> {
         parseProviderInput({ schema: ChangeAmountInputSchema, input, capability: 'changeAmount' });
-        throw notImplemented({ capability: 'changeAmount' });
+        return changeMercadoPagoAmount({ ...input, send: (args) => this.send(args) });
     }
 
     /** Capability 4 · pause. */
     async pause(input: AuthorizationRef): Promise<MutationAcknowledgement> {
         parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'pauseAndResume' });
-        throw notImplemented({ capability: 'pauseAndResume' });
+        return setMercadoPagoStatus({
+            authorizationId: input.authorizationId,
+            status: 'paused',
+            send: (args) => this.send(args)
+        });
     }
 
     /** Capability 4 · resume. */
     async resume(input: AuthorizationRef): Promise<MutationAcknowledgement> {
         parseProviderInput({ schema: AuthorizationRefSchema, input, capability: 'pauseAndResume' });
-        throw notImplemented({ capability: 'pauseAndResume' });
+        return setMercadoPagoStatus({
+            authorizationId: input.authorizationId,
+            status: 'authorized',
+            send: (args) => this.send(args)
+        });
     }
 
     /** Capability 5 · cancel. */
@@ -256,7 +269,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     /** Capability 6 · refund. */
     async refund(input: RefundInput): Promise<RefundResult> {
         parseProviderInput({ schema: RefundInputSchema, input, capability: 'refund' });
-        throw notImplemented({ capability: 'refund' });
+        return refundMercadoPagoPayment({ ...input, send: (args) => this.send(args) });
     }
 
     /** Capability 7 · read an authorization by id. */

@@ -46,6 +46,17 @@ export function assertResponseOk(response: Response, capability: PaymentCapabili
     throw providerError(code, capability, `Mercado Pago request failed (${response.status})`);
 }
 
+/** Reads a refund error body without losing either its JSON shape or plain text. */
+export async function refundErrorCause(response: Response): Promise<unknown> {
+    const text = await response.text();
+    if (text.length === 0) return text;
+    try {
+        return JSON.parse(text) as unknown;
+    } catch {
+        return text;
+    }
+}
+
 /** Builds a typed payment provider error for an adapter operation. */
 export function providerError(
     code: 'UNAVAILABLE' | 'NOT_FOUND' | 'REJECTED',
