@@ -3,6 +3,10 @@ import { VerticalEnumSchema } from '@repo/schemas';
 import type { CoverageNotices } from '../payment/payment-ports';
 import type { CancelInheritedTouristVipSummary } from './cancel-inherited-tourist-vip.service';
 import { cancelInheritedTouristVips } from './cancel-inherited-tourist-vip.service';
+import {
+    cancelDecidedComplementsAtProvider,
+    type DecidedComplementCancellation
+} from './complement-s11-rule.js';
 import type { ReactivateSuspendedPorts } from './reactivate-suspended.service';
 
 const logger = createLogger('reactivate-suspended');
@@ -77,5 +81,36 @@ export async function cancelInheritedTouristVipAfterCommit(input: {
             'Inherited Tourist VIP cancellation will be retried'
         );
         return undefined;
+    }
+}
+
+/** Executes or defers S11's decided complement provider cancellations after S7 commits. */
+export async function cancelScheduledComplementsAfterCommit(input: {
+    readonly subscriptionId: string;
+    readonly decided: readonly DecidedComplementCancellation[] | undefined;
+    readonly ports: ReactivateSuspendedPorts;
+}): Promise<void> {
+    if (!input.ports.complements) return;
+    if (!input.ports.beforeCancelNotice || !input.decided?.length) {
+        logger.warn(
+            { subscriptionId: input.subscriptionId },
+            'S11 complement provider cancellation deferred to the live sweep'
+        );
+        return;
+    }
+    try {
+        await cancelDecidedComplementsAtProvider(
+            { decided: input.decided },
+            {
+                provider: input.ports.provider,
+                clock: input.ports.clock,
+                beforeCancelNotice: input.ports.beforeCancelNotice
+            }
+        );
+    } catch (error) {
+        logger.error(
+            { subscriptionId: input.subscriptionId, error },
+            'S11 complement provider cancellation failed after S7 commit'
+        );
     }
 }

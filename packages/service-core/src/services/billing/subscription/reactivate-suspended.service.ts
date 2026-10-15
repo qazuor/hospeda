@@ -24,12 +24,17 @@ import type {
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { type ResumeComplementsSummary, resumeComplementsS33 } from './complement-resume-s33.js';
 import {
+    cancelComplementsByS11Rule,
+    type DecidedComplementCancellation
+} from './complement-s11-rule.js';
+import {
     checkLatePaymentConditions,
     type LatePaymentFailedCondition
 } from './late-payment-conditions';
 import { openLatePaymentRejectedMark } from './late-payment-rejected-mark';
 import {
     cancelInheritedTouristVipAfterCommit,
+    cancelScheduledComplementsAfterCommit,
     emitAddedAfterCommit
 } from './reactivate-suspended-after-commit.js';
 import { applyOverdueScheduledChangeOnReturn } from './scheduled-change-on-return';
@@ -119,6 +124,7 @@ type InTransactionVerdict =
           readonly serviceEndsAt: Date | null;
           readonly userId: string | null;
           readonly vertical: string | null;
+          readonly decided?: readonly DecidedComplementCancellation[];
       }
     | {
           readonly kind: 'RETAINED';
@@ -325,12 +331,22 @@ export async function reactivateSuspendedOnCreditedPayment(
                     ports.scheduledChangeApplier ?? unimplementedScheduledChangeApplier
             }
         );
+        const decided =
+            destination === 'CANCEL_SCHEDULED' && ports.complements
+                ? (
+                      await cancelComplementsByS11Rule(
+                          { tx, principalSubscriptionId: subscriptionId, now: ports.clock.now() },
+                          ports.complements
+                      )
+                  ).decided
+                : undefined;
         return {
             kind: 'WRITTEN',
             destination,
             serviceEndsAt,
             userId: updated.userId,
-            vertical: updated.vertical
+            vertical: updated.vertical,
+            ...(decided ? { decided } : {})
         };
     });
 
@@ -392,6 +408,12 @@ export async function reactivateSuspendedOnCreditedPayment(
                 userId: verdict.userId,
                 ports
             });
+            if (verdict.destination === 'CANCEL_SCHEDULED')
+                await cancelScheduledComplementsAfterCommit({
+                    subscriptionId,
+                    decided: verdict.decided,
+                    ports
+                });
             let complements: ResumeComplementsSummary | undefined;
             if (verdict.destination === 'ACTIVE') {
                 if (ports.complements) {
