@@ -127,7 +127,7 @@ export interface AuthorizationSnapshot {
     readonly cadence: BillingCadence;
     /** First charge instant read back from the provider, if one was set. */
     readonly firstChargeAt: string | null;
-    /** The instant the provider will next try to charge, as it reads it (`next_payment_date`); null while pending or when the provider gives none. A paused authorization keeps advancing it without charging (PS-6) and a cancelled one freezes it (GT-1): it does not say a charge will happen, only the provider's calendar. */
+    /** The instant the provider will next try to charge, as it reads it; null while pending or when the provider gives none. A paused authorization keeps advancing it without charging (PS-6) and a cancelled one freezes it (GT-1): it does not say a charge will happen, only the provider's calendar. */
     readonly nextChargeAt: string | null;
     /** Provider-added free period; never our own trial state. */
     readonly freePeriodDays: number | null;
