@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import {
     and,
-    domainEvent,
     eq,
     getDb,
     plans,
     planVersions,
     promoCodes,
     promoRedemptions,
+    setDb,
     trialRedemptions,
     trials,
     users
@@ -23,9 +23,6 @@ const path = '/api/v1/protected/billing/promo-codes/redeem';
 const now = new Date('2026-10-12T12:00:00.000Z');
 const app = initApp({ clock: { now: () => now } });
 let userId: string | undefined;
-let planId: string | undefined;
-let versionId: string | undefined;
-let trialId: string | undefined;
 let promoCodeId: string | undefined;
 
 function headers(actorId: string) {
@@ -69,7 +66,6 @@ async function seedExpiredTrialExtension() {
             })
             .returning({ id: plans.id });
         plan = createdPlan;
-        planId = createdPlan?.id;
     }
     if (!plan) throw new Error('Could not create route test trial plan');
 
@@ -93,7 +89,6 @@ async function seedExpiredTrialExtension() {
             })
             .returning({ id: planVersions.id });
         version = createdVersion;
-        versionId = createdVersion?.id;
     }
     if (!version) throw new Error('Could not create route test plan version');
 
@@ -114,7 +109,6 @@ async function seedExpiredTrialExtension() {
         })
         .returning({ id: trials.id });
     if (!trial) throw new Error('Could not create route test trial');
-    trialId = trial.id;
 
     const [promo] = await db
         .insert(promoCodes)
@@ -141,29 +135,8 @@ async function seedExpiredTrialExtension() {
 }
 
 afterEach(async () => {
-    if (promoCodeId) {
-        await getDb().delete(promoRedemptions).where(eq(promoRedemptions.promoCodeId, promoCodeId));
-        await getDb().delete(promoCodes).where(eq(promoCodes.id, promoCodeId));
-        promoCodeId = undefined;
-    }
-    if (trialId) {
-        await getDb().delete(domainEvent).where(eq(domainEvent.entityId, trialId));
-        await getDb().delete(trialRedemptions).where(eq(trialRedemptions.userId, userId!));
-        await getDb().delete(trials).where(eq(trials.id, trialId));
-        trialId = undefined;
-    }
-    if (userId) {
-        await getDb().delete(users).where(eq(users.id, userId));
-        userId = undefined;
-    }
-    if (versionId) {
-        await getDb().delete(planVersions).where(eq(planVersions.id, versionId));
-        versionId = undefined;
-    }
-    if (planId) {
-        await getDb().delete(plans).where(eq(plans.id, planId));
-        planId = undefined;
-    }
+    promoCodeId = undefined;
+    userId = undefined;
 });
 
 beforeAll(async () => {
@@ -175,34 +148,42 @@ afterAll(async () => testDb.teardown());
 
 describe('TEST:B9b:6 AC:B9b:6 the redeem route extends a real trial', () => {
     it('returns TRIAL_ENDED and leaves the extension code unconsumed', async () => {
-        const { code } = await seedExpiredTrialExtension();
-        injectPaymentProvider({
-            provider: new FakePaymentProvider({
-                clock: { now: () => now },
-                idNamespace: randomUUID()
-            })
+        await testDb.withRollback(async (tx) => {
+            const runtimeDb = getDb();
+            setDb(tx);
+            try {
+                const { code } = await seedExpiredTrialExtension();
+                injectPaymentProvider({
+                    provider: new FakePaymentProvider({
+                        clock: { now: () => now },
+                        idNamespace: randomUUID()
+                    })
+                });
+                const response = await app.request(path, {
+                    method: 'POST',
+                    headers: headers(userId!),
+                    body: JSON.stringify({ code, vertical: 'accommodation' })
+                });
+                expect(response.status).toBe(422);
+                expect((await response.json()).error).toMatchObject({
+                    code: 'VALIDATION_ERROR',
+                    reason: 'TRIAL_ENDED'
+                });
+                expect(
+                    await getDb()
+                        .select()
+                        .from(promoRedemptions)
+                        .where(eq(promoRedemptions.promoCodeId, promoCodeId!))
+                ).toHaveLength(0);
+                expect(
+                    await getDb()
+                        .select()
+                        .from(trialRedemptions)
+                        .where(eq(trialRedemptions.userId, userId!))
+                ).toHaveLength(0);
+            } finally {
+                setDb(runtimeDb);
+            }
         });
-        const response = await app.request(path, {
-            method: 'POST',
-            headers: headers(userId!),
-            body: JSON.stringify({ code, vertical: 'accommodation' })
-        });
-        expect(response.status).toBe(422);
-        expect((await response.json()).error).toMatchObject({
-            code: 'VALIDATION_ERROR',
-            reason: 'TRIAL_ENDED'
-        });
-        expect(
-            await getDb()
-                .select()
-                .from(promoRedemptions)
-                .where(eq(promoRedemptions.promoCodeId, promoCodeId!))
-        ).toHaveLength(0);
-        expect(
-            await getDb()
-                .select()
-                .from(trialRedemptions)
-                .where(eq(trialRedemptions.userId, userId!))
-        ).toHaveLength(0);
     });
 });
