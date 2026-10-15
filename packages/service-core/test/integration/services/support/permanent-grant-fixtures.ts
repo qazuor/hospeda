@@ -44,6 +44,7 @@ export async function seedPermanentGrant(
         readonly beneficiaryUserId: string;
         readonly grantedBy: string;
         readonly anchors: readonly { readonly vertical: string }[];
+        readonly includesAddons?: boolean;
         readonly revoked?: boolean;
     }
 ): Promise<{ readonly grantId: string; readonly anchorIds: string[] }> {
@@ -51,7 +52,7 @@ export async function seedPermanentGrant(
         .insert(permanentGrants)
         .values({
             beneficiaryUserId: input.beneficiaryUserId,
-            includesAddons: false,
+            includesAddons: input.includesAddons ?? false,
             grantedBy: input.grantedBy,
             reason: 'Coord-362 integration fixture',
             ...(input.revoked
@@ -92,6 +93,7 @@ export async function retirePermanentGrantRows(userIds: readonly string[]): Prom
         .from(permanentGrants)
         .where(inArray(permanentGrants.beneficiaryUserId, [...userIds]));
     const grantIds = grants.map(({ id }) => id);
+    await db.delete(addonInstances).where(inArray(addonInstances.ownerId, [...userIds]));
     if (grantIds.length > 0)
         await db
             .delete(permanentGrantVerticals)
@@ -100,7 +102,6 @@ export async function retirePermanentGrantRows(userIds: readonly string[]): Prom
         .delete(permanentGrants)
         .where(inArray(permanentGrants.beneficiaryUserId, [...userIds]));
     await db.delete(courtesyGrants).where(inArray(courtesyGrants.beneficiaryUserId, [...userIds]));
-    await db.delete(addonInstances).where(inArray(addonInstances.ownerId, [...userIds]));
     await getServiceTestPool().query(
         'DELETE FROM subscription_pause WHERE subscription_id IN (SELECT id FROM subscription WHERE user_id = ANY($1::uuid[]))',
         [userIds]

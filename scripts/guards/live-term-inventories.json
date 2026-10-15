@@ -139,6 +139,20 @@
             "row": 20,
             "why": "AC:B5:28 (HOS-1545): la re-evaluación de S21, las filas vivas DE COMPLEMENTO (las seis) cuya instancia ya está CANCELLED: la corrida que murió entre A5 y S21.",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+            "symbol": "readS20ComplementRows",
+            "row": 19,
+            "subject": "subscription",
+            "why": "AC:B9a:4 (HOS-1583): el alcance de S20, toda fila viva DE COMPLEMENTO del beneficiario (las seis)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-s20.ts",
+            "symbol": "readS20Instances",
+            "row": 19,
+            "subject": "addon_instance",
+            "why": "AC:B9a:4 (HOS-1583): el alcance de S20, la instancia en uno de sus dos estados vivos."
         }
     ],
     "grant_vivo_ancla_viva": [
