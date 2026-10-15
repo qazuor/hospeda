@@ -30,14 +30,7 @@ vi.mock('@repo/db', async (importOriginal) => {
             return mockModel;
         }),
         AccommodationModel: vi.fn(function () {
-            return {
-                findById: vi.fn(),
-                findOne: vi.fn(),
-                create: vi.fn(),
-                update: vi.fn(),
-                count: vi.fn(),
-                findAll: vi.fn()
-            };
+            return mockListingModel;
         })
     };
 });
@@ -79,12 +72,21 @@ const mockModel = {
     hardDelete: vi.fn(),
     restore: vi.fn()
 };
+const mockListingModel = {
+    findById: vi.fn(),
+    findOne: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    count: vi.fn(),
+    findAll: vi.fn()
+};
 
 import {
     type AccommodationIdType,
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     type UserIdType
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -119,6 +121,7 @@ describe('AccommodationReviewService — search() public-visibility filter (SPEC
     beforeEach(() => {
         vi.clearAllMocks();
         mockModel.findAll.mockResolvedValue({ items: [], total: 0 });
+        mockListingModel.findById.mockResolvedValue(null);
         service = makeService();
     });
 
@@ -197,6 +200,7 @@ describe('AccommodationReviewService.listByAccommodation — public-visibility f
     beforeEach(() => {
         vi.clearAllMocks();
         mockModel.findAll.mockResolvedValue({ items: [], total: 0 });
+        mockListingModel.findById.mockResolvedValue(null);
         service = makeService();
     });
 
@@ -237,6 +241,48 @@ describe('AccommodationReviewService.listByAccommodation — public-visibility f
         const whereArg = mockModel.findAll.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(whereArg.moderationState).toBe(ModerationStatusEnum.APPROVED);
         expect(whereArg.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+    });
+
+    it('returns empty without reading reviews for a PURGED listing', async () => {
+        mockListingModel.findById.mockResolvedValue({
+            publicationStatus: PublicationStatusEnum.PURGED
+        });
+        const actor = makeActor();
+        const accommodationId = getMockId('accommodation') as AccommodationIdType;
+
+        const result = await service.listByAccommodation(actor, {
+            accommodationId,
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt' as const,
+            sortOrder: 'desc' as const
+        });
+
+        expectSuccess(result);
+        expect(result.data).toEqual({ accommodationReviews: [], total: 0 });
+        expect(mockModel.findAll).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        PublicationStatusEnum.PUBLISHED,
+        PublicationStatusEnum.ARCHIVED
+    ])('continues reading reviews for %s listings', async (publicationStatus) => {
+        mockListingModel.findById.mockResolvedValue({ publicationStatus });
+        const actor = makeActor();
+        const accommodationId = getMockId('accommodation') as AccommodationIdType;
+        mockModel.findAll.mockResolvedValue({ items: [{ id: 'review' }], total: 1 });
+
+        const result = await service.listByAccommodation(actor, {
+            accommodationId,
+            page: 1,
+            pageSize: 10,
+            sortBy: 'createdAt' as const,
+            sortOrder: 'desc' as const
+        });
+
+        expectSuccess(result);
+        expect(result.data?.accommodationReviews).toHaveLength(1);
+        expect(mockModel.findAll).toHaveBeenCalledOnce();
     });
 
     it('omits the moderationState filter when opts.includeAllStates=true (admin/owner path)', async () => {
