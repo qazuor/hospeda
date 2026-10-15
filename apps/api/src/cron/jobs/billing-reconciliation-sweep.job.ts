@@ -121,7 +121,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     cancellationRetry: { beforeCancelNotice },
                     // AC:B11:12, AC:B11:27: re-read credited payments with the real defaults.
                     creditedPayments: {},
-                    // AC:B11:13: zero population until B10 writes order keys; HTTP orders are HOS-1669.
+                    // AC:B11:13: zero population until B10 writes order keys.
                     paidOrders: {},
                     livenessPing: createSentryCronMonitorPing()
                 }

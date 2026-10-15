@@ -19,11 +19,13 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
   - `FakePaymentProvider`, in memory, all eight capabilities, and it **lies
     like the real one** (see "The fake lies, from a closed list" below). It is
     exported only from `@repo/payments/fake`, for tests.
-  - `MercadoPagoPaymentProvider`: `authorize`, `cancel` and `readAuthorization`
-    call the provider over native `fetch`; `decodeNotice` reads Mercado Pago
-    Webhooks (`subscription_preapproval` and `payment`; other types are
-    `INVALID_NOTICE`). The API route verifies the Webhooks signature. Remaining
-    capabilities still refuse with `NOT_IMPLEMENTED`. No SDK is installed.
+  - `MercadoPagoPaymentProvider`: `authorize`, `cancel`, `changeAmount`,
+    `pause`, `resume`, `refund`, authorization and charge reads, charge listing,
+    authorization search, and order reads/search call Mercado Pago over native
+    `fetch`. `charge` is deliberately rejected because recurring charges run
+    on Mercado Pago's schedule. `decodeNotice` reads Mercado Pago Webhooks
+    (`subscription_preapproval` and `payment`; other types are `INVALID_NOTICE`).
+    The API route verifies the Webhooks signature. No SDK is installed.
 - **Capability support, declared per provider** (`capabilitySupport`): for each
   capability, `full`, `partial` with every gap and whether our side emulates,
   degrades or blocks it, or `none`. Mercado Pago's three half-capabilities
@@ -85,7 +87,7 @@ an amount change), M6 (notices late, repeated or never; a refund in three
 deliveries and two formats; a charge once per channel), M8 (a charge lands at
 minute :02 of the next hour), M10 (the broken link), M11 (an open link never
 expires), M13 (the first partial refund refused as not refundable), M1 on
-creation and M9 on a future first charge; and RP1 to RP9, RP11 and RP13 (RP7, RP8 and RP11 are switchable by name; RP13, the order search bounds of EX-57, is a rule). One-time orders enter the fake only through the test handle `placeOrder`; the HTTP adapter answers `readOrder`/`searchOrders` with `NOT_IMPLEMENTED` until HOS-1669.
+creation and M9 on a future first charge; and RP1 to RP9, RP11 and RP13 (RP7, RP8 and RP11 are switchable by name; RP13, the order search bounds of EX-57, is a rule). One-time orders enter the fake only through the test handle `placeOrder`; the fake HTTP server serves provider-shaped `readOrder`/`searchOrders` responses from those orders.
 The other rows (M2, M12; RP10, RP12) stay in the list and arrive with the units that add their surface to the interface. The fake implements M7 and RP7, RP8 and RP11.
 
 Every delay of the fake runs on the injected clock: advance it to see a late

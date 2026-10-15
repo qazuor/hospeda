@@ -1,26 +1,17 @@
 import {
     and,
-    billingDeadlineVersions,
     domainEvent,
     emailOutbox,
     eq,
     getDb,
+    payments,
     providerLinks,
     providerNotifications,
     subscriptions
 } from '@repo/db';
-import { MercadoPagoPaymentProvider } from '@repo/payments';
-import { FAKE_NOTICE_DELAY_MS, FakePaymentProvider } from '@repo/payments/fake';
-import { type FakeProviderServer, startFakeProviderServer } from '@repo/payments/fake-server';
-import { createAdjustableClock } from '@repo/test-clock';
+import { FAKE_NOTICE_DELAY_MS } from '@repo/payments/fake';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { initApp } from '../../../src/app';
-import { validateApiEnv } from '../../../src/utils/env';
-import { testDb } from '../../e2e/setup/test-database';
 import {
-    createLifter,
-    createSignupOption,
-    createSubjects,
     noticeRowsOf,
     postDelivery,
     retireSubjects,
@@ -29,66 +20,28 @@ import {
     signedNotice,
     signup
 } from './mercadopago-delegates-fixtures';
+import { startPeriodChargesFixture } from './mercadopago-period-charges-fixtures';
 
-const clock = createAdjustableClock({ start: new Date('2026-10-12T12:00:00.000Z') });
-const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
-const subjects = createSubjects();
-let server: FakeProviderServer;
-let app: ReturnType<typeof initApp>;
-let billingOptionId: string;
-let lifterId: string;
+let fixture: Awaited<ReturnType<typeof startPeriodChargesFixture>>;
 
 beforeAll(async () => {
-    process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
-    process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET = SIGNING_KEY;
-    await testDb.setup();
-    validateApiEnv();
-    server = await startFakeProviderServer({ provider: fake, clock });
-    app = initApp({
-        clock,
-        paymentProvider: new MercadoPagoPaymentProvider({
-            clock,
-            baseUrl: server.url,
-            accessToken: 'test-token'
-        })
-    });
-    await getDb()
-        .insert(billingDeadlineVersions)
-        .values({
-            version: 1,
-            values: {
-                '10': { cardHours: 72, manualDays: 7 },
-                '11': { noticeDays: 60, contactDays: [30, 7] },
-                '12': { noticeDays: 60, contactDays: [30, 7] },
-                '13': { daysBefore: [5, 1] },
-                '14': { daysBefore: 7 },
-                '15': { hoursRemaining: 24 },
-                '16': { days: 7 },
-                '17': { days: 7 },
-                '18': { days: 180 },
-                '19': { minutes: 60 }
-            }
-        })
-        .onConflictDoNothing();
-    billingOptionId = await createSignupOption();
-    lifterId = await createLifter();
+    fixture = await startPeriodChargesFixture();
 });
-afterEach(async () => retireSubjects(subjects, lifterId));
+afterEach(async () => retireSubjects(fixture.subjects, fixture.lifterId));
 afterAll(async () => {
-    await server.close();
-    await testDb.teardown();
+    await fixture.stop();
 });
 
 async function deliver(delivery: SignedDelivery) {
-    subjects.deliveries.push(delivery);
-    const response = await postDelivery(app, delivery);
+    fixture.subjects.deliveries.push(delivery);
+    const response = await postDelivery(fixture.app, delivery);
     expect(response.status, await response.clone().text()).toBe(200);
     expect(await response.json()).toMatchObject({ success: true, data: { received: true } });
     expect((await noticeRowsOf(delivery)).map((item) => item.channel)).toEqual(['WEBHOOKS']);
 }
 
 async function dueDelivery(type: 'subscription_preapproval' | 'payment', id: string) {
-    const delivery = server
+    const delivery = fixture.server
         .mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY })
         .deliveries.find(
             (item) => item.query.includes(`type=${type}`) && item.query.includes(`data.id=${id}`)
@@ -101,7 +54,7 @@ async function dueDelivery(type: 'subscription_preapproval' | 'payment', id: str
     if (!link) throw new Error(`Expected provider link for ${id}`);
     // The fake can omit a notice; the test still delivers the observed provider state by Webhooks.
     return signedNotice({
-        clock,
+        clock: fixture.clock,
         type,
         id,
         version: String(BigInt(link.lastAppliedVersion ?? '0') + 1n)
@@ -109,29 +62,32 @@ async function dueDelivery(type: 'subscription_preapproval' | 'payment', id: str
 }
 
 async function activeSignup() {
-    const created = await signup({ app, billingOptionId, subjects });
-    server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
-    await fake.approve({ authorizationId: created.authorizationId });
-    clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+    const created = await signup({
+        app: fixture.app,
+        billingOptionId: fixture.billingOptionId,
+        subjects: fixture.subjects
+    });
+    fixture.server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
+    await fixture.fake.approve({ authorizationId: created.authorizationId });
+    fixture.clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
     await deliver(await dueDelivery('subscription_preapproval', created.authorizationId));
     return created;
 }
 
-describe('HOS-1559 AC:B7:9 — el receptor real registra la pausa del proveedor', () => {
-    it('I-8: paused ACTIVE is processed while listCharges remains UNKNOWN (HOS-1669)', async () => {
+describe('HOS-1669 TEST:1669:5 AC:B7:9 — S6 distingue el período cobrado del rechazado', () => {
+    it('I-8: un período cobrado queda ACTIVE tras pausar y se verifica por HTTP real', async () => {
         const created = await activeSignup();
-        const charge = await fake.charge({
+        const charge = await fixture.fake.charge({
             authorizationId: created.authorizationId,
             amount: { amountMinor: 100000, currency: 'ARS' },
-            reference: 'hos1559-provider-pause'
+            reference: `hos1669-charged-${crypto.randomUUID()}`
         });
-        clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
-        await fake.readCharge({ chargeId: charge.chargeId });
+        fixture.clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        await fixture.fake.readCharge({ chargeId: charge.chargeId });
         await deliver(await dueDelivery('payment', charge.chargeId));
-        // HOS-1669: the real adapter listCharges is NOT_IMPLEMENTED; once it reads charges this must become SUSPENDED.
-        server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
-        await fake.pause({ authorizationId: created.authorizationId });
-        clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        fixture.server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
+        await fixture.fake.pause({ authorizationId: created.authorizationId });
+        fixture.clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
         const delivery = await dueDelivery('subscription_preapproval', created.authorizationId);
         await deliver(delivery);
         expect(
@@ -140,14 +96,33 @@ describe('HOS-1559 AC:B7:9 — el receptor real registra la pausa del proveedor'
                 .from(providerNotifications)
                 .where(eq(providerNotifications.body, delivery.body))
         ).toHaveLength(1);
+        const callsBeforeSweep = fixture.server.requests().length;
+        const sweep = await fixture.runSweep();
+        expect((sweep.details?.failedSubscriptionIds ?? []) as string[]).not.toContain(
+            created.subscriptionId
+        );
+        const chargeRequests = fixture.server
+            .requests()
+            .slice(callsBeforeSweep)
+            .filter((request) => request.method === 'GET');
+        expect(
+            chargeRequests.some(
+                (request) =>
+                    request.path ===
+                    `/authorized_payments/search?preapproval_id=${encodeURIComponent(created.authorizationId)}&limit=10&offset=0`
+            )
+        ).toBe(true);
+        expect(
+            chargeRequests.some((request) => request.path === `/v1/payments/${charge.chargeId}`)
+        ).toBe(true);
         const [row] = await getDb()
             .select({ status: subscriptions.status })
             .from(subscriptions)
             .where(eq(subscriptions.id, created.subscriptionId));
         expect(row?.status).toBe('ACTIVE');
         expect(
-            (await fake.readAuthorization({ authorizationId: created.authorizationId })).snapshot
-                .status
+            (await fixture.fake.readAuthorization({ authorizationId: created.authorizationId }))
+                .snapshot.status
         ).toBe('paused');
         expect(
             await getDb()
@@ -162,26 +137,92 @@ describe('HOS-1559 AC:B7:9 — el receptor real registra la pausa del proveedor'
         ).toEqual([]);
     });
 
-    it('expired grace cancelled is processed without mirroring to CANCELLED', async () => {
+    it('el rechazo último con una pausa encola S6, espera el aviso y cancela tras enviarlo', async () => {
+        const created = await activeSignup();
+        const paid = await fixture.fake.charge({
+            authorizationId: created.authorizationId,
+            amount: { amountMinor: 100000, currency: 'ARS' },
+            reference: `hos1669-prior-paid-${crypto.randomUUID()}`
+        });
+        fixture.clock.advance({ ms: 60 * 60 * 1000 });
+        await fixture.fake.readCharge({ chargeId: paid.chargeId });
+        await deliver(await dueDelivery('payment', paid.chargeId));
+        expect(
+            await getDb()
+                .select({ id: payments.id })
+                .from(payments)
+                .where(eq(payments.subscriptionId, created.subscriptionId))
+        ).toHaveLength(1);
+        await fixture.fake.declineCharge({
+            authorizationId: created.authorizationId,
+            declineReason: 'issuer_declined'
+        });
+        fixture.clock.advance({ ms: 60 * 60 * 1000 });
+        fixture.server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
+        await fixture.fake.pause({ authorizationId: created.authorizationId });
+        fixture.clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        await deliver(await dueDelivery('subscription_preapproval', created.authorizationId));
+
+        const deferred = await fixture.runSweep();
+        expect((deferred.details?.failedSubscriptionIds ?? []) as string[]).not.toContain(
+            created.subscriptionId
+        );
+        const [waiting] = await getDb()
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, created.subscriptionId));
+        expect(waiting?.status).toBe('ACTIVE');
+        const pendingNotices = await getDb()
+            .select({ id: emailOutbox.id, status: emailOutbox.status })
+            .from(emailOutbox)
+            .where(
+                and(
+                    eq(emailOutbox.recipientUserId, created.userId),
+                    eq(emailOutbox.template, 'billing.arrears-suspension')
+                )
+            );
+        expect(pendingNotices).toHaveLength(1);
+        expect(pendingNotices[0]?.status).toBe('pending');
+
+        await fixture.markOutboxSent({
+            userId: created.userId,
+            template: 'billing.arrears-suspension'
+        });
+        const decided = await fixture.runSweep();
+        expect((decided.details?.failedSubscriptionIds ?? []) as string[]).not.toContain(
+            created.subscriptionId
+        );
+        const [suspended] = await getDb()
+            .select({ status: subscriptions.status })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, created.subscriptionId));
+        expect(suspended?.status).toBe('SUSPENDED');
+        expect(
+            (await fixture.fake.readAuthorization({ authorizationId: created.authorizationId }))
+                .snapshot.status
+        ).toBe('cancelled');
+    });
+
+    it('expired grace is suspended when the provider already cancelled it', async () => {
         const created = await activeSignup();
         await getDb()
             .update(subscriptions)
             .set({
                 status: 'GRACE_PERIOD',
-                graceStartedAt: new Date(clock.now().getTime() - 9 * 86_400_000),
-                graceEndsAt: new Date(clock.now().getTime() - 1)
+                graceStartedAt: new Date(fixture.clock.now().getTime() - 9 * 86_400_000),
+                graceEndsAt: new Date(fixture.clock.now().getTime() - 1)
             })
             .where(eq(subscriptions.id, created.subscriptionId));
-        server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
-        await fake.cancel({ authorizationId: created.authorizationId });
-        clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
+        fixture.server.mercadoPagoDeliveries({ webhookSecret: SIGNING_KEY });
+        await fixture.fake.cancel({ authorizationId: created.authorizationId });
+        fixture.clock.advance({ ms: FAKE_NOTICE_DELAY_MS });
         const delivery = await dueDelivery('subscription_preapproval', created.authorizationId);
         await deliver(delivery);
         const [row] = await getDb()
             .select({ status: subscriptions.status })
             .from(subscriptions)
             .where(eq(subscriptions.id, created.subscriptionId));
-        expect(row?.status).toBe('GRACE_PERIOD');
+        expect(row?.status).toBe('SUSPENDED');
         const events = await getDb()
             .select({ eventType: domainEvent.eventType })
             .from(domainEvent)
