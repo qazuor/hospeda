@@ -18,6 +18,7 @@ export * from './listing-purge-preview.schema.js';
 export * from './orphan-payment-queue.schema.js';
 export * from './payer-email.schema.js';
 export * from './payment-reconciliation.schema.js';
+export * from './permanent-grant.schema.js';
 export * from './plan-change.schema.js';
 export * from './promo-code.schema.js';
 export * from './promo-redemption.schema.js';
