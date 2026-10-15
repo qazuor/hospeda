@@ -11,7 +11,6 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import {
     addonInstances,
-    addonProducts,
     and,
     type DrizzleClient,
     eq,
@@ -39,11 +38,8 @@ import {
     recordAuthorizationSeenAlive,
     recordCancellationSeen
 } from '../subscription/subscription-billing-ports';
-import {
-    type AddonScopeType,
-    findOrphanhoodCandidates,
-    isAddonInstanceOrphaned
-} from './addon-orphanhood';
+import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
+import { findOrphanhoodCandidates, isAddonInstanceOrphaned } from './addon-orphanhood';
 import type { AddonOrphanhoodPorts } from './addon-orphanhood-ports';
 
 const logger = createLogger('addon-instance-a5');
@@ -108,39 +104,6 @@ function invalid(issues: unknown): never {
 
 function isA5Origin(status: string): status is A5Origin {
     return status === 'PENDING_AUTHORIZATION' || status === 'ACTIVE';
-}
-
-/** Where the instance emitted its source, by the scope of its anchored version (notas I-7). */
-async function coverageVerticalsOf(input: {
-    readonly tx: DrizzleClient;
-    readonly scopeType: AddonScopeType;
-    readonly targetId: string | null;
-    readonly compatibleVerticals: readonly string[];
-    readonly ports: A5Ports;
-}): Promise<readonly string[]> {
-    switch (input.scopeType) {
-        case 'USER':
-        case 'GLOBAL':
-            return input.compatibleVerticals;
-        case 'VERTICAL_SUBSCRIPTION': {
-            if (!input.targetId) return [];
-            const [target] = await input.tx
-                .select({ vertical: subscriptions.vertical })
-                .from(subscriptions)
-                .where(eq(subscriptions.id, input.targetId))
-                .limit(1);
-            return target?.vertical ? [target.vertical] : [];
-        }
-        case 'LISTING': {
-            if (!input.targetId) return [];
-            const listing = await input.ports.listing({ listingId: input.targetId });
-            return [listing.vertical];
-        }
-        default: {
-            const exhaustive: never = input.scopeType;
-            return exhaustive;
-        }
-    }
 }
 
 /**
@@ -241,19 +204,6 @@ export async function applyA5(
             providerCancellation
         }
     };
-}
-
-/** The compatible verticals of the instance's product (USER/GLOBAL emit only there). */
-async function compatibleVerticalsOf(input: {
-    readonly tx: DrizzleClient;
-    readonly productId: string;
-}): Promise<readonly string[]> {
-    const [product] = await input.tx
-        .select({ compatibleVerticals: addonProducts.compatibleVerticals })
-        .from(addonProducts)
-        .where(eq(addonProducts.id, input.productId))
-        .limit(1);
-    return product?.compatibleVerticals ?? [];
 }
 
 /** S21 on the complement and, when it wrote a card row with a link now, the decision `A5`. */
