@@ -1,6 +1,7 @@
 import { eq, providerLinks, reconciliationMarkModel, subscriptions } from '@repo/db';
-import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNextChargeSync } from '../../../src/services/billing/reconciliation/sweep/next-charge-sync.js';
+import type { ReconciliationRowCheck } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service.js';
 import { runReconciliationSweep } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service.js';
 import { sendRenewalNotices } from '../../../src/services/billing/subscription/send-renewal-notices.service.js';
 import { closeServiceTestPool, getServiceTestDb } from './helpers.js';
@@ -30,14 +31,17 @@ function track(row: {
     owned.push({ subscriptionId: row.subscription.id, userId: row.subscription.userId });
 }
 
-async function sweep(provider: ReturnType<typeof createReconciliationFake>['provider']) {
+async function sweep(
+    provider: ReturnType<typeof createReconciliationFake>['provider'],
+    rowCheck: ReconciliationRowCheck = createNextChargeSync()
+) {
     return withSeededReconciliationInventory(() =>
         runReconciliationSweep(
             {},
             {
                 provider,
                 clock: reconciliationClock,
-                rowChecks: [createNextChargeSync()]
+                rowChecks: [rowCheck]
             }
         )
     );
@@ -145,7 +149,9 @@ describe('TEST:1685:4 the sweep copies the provider next payment date', () => {
         const { fake, provider } = createReconciliationFake();
         const row = await seedSubscription({ status, withLink: true, fake });
         track(row);
-        await sweep(provider);
+        const sync = vi.fn(async () => true);
+        await sweep(provider, createNextChargeSync({ sync }));
+        expect(sync).not.toHaveBeenCalled();
         expect(await readNextChargeAt(row.subscription.id)).toBeNull();
     });
 
