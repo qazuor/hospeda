@@ -1,5 +1,8 @@
 import { PermissionEnum } from '../../enums/permission.enum.js';
 
+/** Reason exposed to the panel when a SUPER_ADMIN-only permission is assigned directly. */
+export const SUPER_ADMIN_ONLY_PERMISSION_REASON = 'SUPER_ADMIN_ONLY_PERMISSION';
+
 /**
  * Closed set of permissions that come only with the `SUPER_ADMIN` role
  * (V5.md:873-880). Each owning piece must add its permission here whenever a

@@ -4,6 +4,8 @@ import {
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode,
+    SUPER_ADMIN_EXCLUSIVE_PERMISSIONS,
+    SUPER_ADMIN_ONLY_PERMISSION_REASON,
     type UserIdType
 } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -84,6 +86,23 @@ describe('PermissionService.assignPermissionToUser', () => {
         });
     });
 
+    it.each(
+        SUPER_ADMIN_EXCLUSIVE_PERMISSIONS
+    )('rejects direct %s overrides for both effects before model writes', async (permission) => {
+        for (const effect of [PermissionEffectEnum.GRANT, PermissionEffectEnum.DENY]) {
+            const result = await service.assignPermissionToUser(actor, {
+                ...validInput,
+                permission,
+                effect
+            });
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe(SUPER_ADMIN_ONLY_PERMISSION_REASON);
+            expect(userPermissionModelMock.create).not.toHaveBeenCalled();
+            expect(userPermissionModelMock.update).not.toHaveBeenCalled();
+            expect(getUserRolesMock).not.toHaveBeenCalled();
+        }
+    });
+
     it('should invalidate cache and emit audit after a successful assignment', async () => {
         userPermissionModelMock.findOne.mockResolvedValue(undefined);
         userPermissionModelMock.create.mockResolvedValue({});
@@ -159,7 +178,10 @@ describe('PermissionService.assignPermissionToUser', () => {
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
         actor = createActor({ permissions: [] });
-        const result = await service.assignPermissionToUser(actor, validInput);
+        const result = await service.assignPermissionToUser(actor, {
+            ...validInput,
+            permission: SUPER_ADMIN_EXCLUSIVE_PERMISSIONS[0]
+        });
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
     });

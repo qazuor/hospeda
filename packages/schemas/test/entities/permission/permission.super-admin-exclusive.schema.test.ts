@@ -4,11 +4,15 @@ import {
     isSuperAdminExclusivePermission,
     SUPER_ADMIN_EXCLUSIVE_PERMISSIONS,
     SUPER_ADMIN_ONLY_ACTION_KEYS,
+    SUPER_ADMIN_ONLY_PERMISSION_REASON,
     withoutSuperAdminExclusivePermissions
 } from '../../../src/entities/permission/permission.super-admin-exclusive.schema.js';
 import { PermissionEnum } from '../../../src/enums/permission.enum.js';
 
 describe('SUPER_ADMIN_EXCLUSIVE_PERMISSIONS', () => {
+    it('exports the assignment rejection reason used by the panel', () => {
+        expect(SUPER_ADMIN_ONLY_PERMISSION_REASON).toBe('SUPER_ADMIN_ONLY_PERMISSION');
+    });
     it('contains exactly the closed list in order', () => {
         expect([...SUPER_ADMIN_EXCLUSIVE_PERMISSIONS]).toEqual([
             PermissionEnum.MAINTENANCE_MODE_WRITE,

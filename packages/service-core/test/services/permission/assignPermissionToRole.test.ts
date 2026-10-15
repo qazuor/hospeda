@@ -1,5 +1,11 @@
 import type { RRolePermissionModel, RUserPermissionModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    SUPER_ADMIN_EXCLUSIVE_PERMISSIONS,
+    SUPER_ADMIN_ONLY_PERMISSION_REASON
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissionService } from '../../../src/services/permission/permission.service';
 import { createActor } from '../../factories/actorFactory';
@@ -48,9 +54,23 @@ describe('PermissionService.assignPermissionToRole', () => {
         expect(result.error).toBeUndefined();
     });
 
+    it.each(
+        SUPER_ADMIN_EXCLUSIVE_PERMISSIONS
+    )('rejects direct %s assignments for every role', async (permission) => {
+        for (const role of [RoleEnum.CLIENT_MANAGER, RoleEnum.ADMIN, RoleEnum.SUPER_ADMIN]) {
+            const result = await service.assignPermissionToRole(actor, { role, permission });
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe(SUPER_ADMIN_ONLY_PERMISSION_REASON);
+        }
+        expect(rolePermissionModelMock.create).not.toHaveBeenCalled();
+    });
+
     it('should return FORBIDDEN if actor lacks permission', async () => {
         actor = createActor({ permissions: [] });
-        const result = await service.assignPermissionToRole(actor, validInput);
+        const result = await service.assignPermissionToRole(actor, {
+            ...validInput,
+            permission: SUPER_ADMIN_EXCLUSIVE_PERMISSIONS[0]
+        });
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(result.data).toBeUndefined();
     });
