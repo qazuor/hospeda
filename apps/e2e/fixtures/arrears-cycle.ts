@@ -193,6 +193,50 @@ export async function runCron(args: {
     return data;
 }
 
+/** Create a card subscription through the protected billing API. */
+export async function createApiCardSubscription(args: {
+    readonly user: CreatedUser;
+    readonly billingOptionId: string;
+}): Promise<{ readonly subscriptionId: string; readonly authorizationId: string }> {
+    const response = await fetch(`${API_URL}/api/v1/protected/billing/subscriptions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', cookie: args.user.sessionCookie },
+        body: JSON.stringify({ billingOptionId: args.billingOptionId })
+    });
+    const text = await response.text();
+    if (response.status !== 201) {
+        throw new Error(
+            `Expected API card signup to create a subscription; got ${response.status}: ${text}`
+        );
+    }
+    const body = JSON.parse(text) as {
+        readonly data?: { readonly subscriptionId?: string };
+    };
+    const subscriptionId = body.data?.subscriptionId;
+    if (!subscriptionId) throw new Error('Expected API card signup to return a subscription id.');
+    const links = await execSQL<{ provider_id: string }>(
+        'SELECT provider_id FROM provider_link WHERE subscription_id = $1',
+        [subscriptionId]
+    );
+    const authorizationId = links[0]?.provider_id;
+    if (!authorizationId) throw new Error(`Expected provider authorization for ${subscriptionId}.`);
+    return { subscriptionId, authorizationId };
+}
+
+/** Decode HTML character references before checking visible email content. */
+export function decodeHtmlEntities(value: string): string {
+    return value
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;|&apos;/g, "'")
+        .replace(/&#x([\da-f]+);/gi, (_, code: string) =>
+            String.fromCodePoint(Number.parseInt(code, 16))
+        )
+        .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number.parseInt(code, 10)))
+        .replace(/&amp;/g, '&');
+}
+
 /** Read failed subscription IDs defensively from cron details. */
 export function sweepFailedIds(data: CronData): readonly string[] {
     return data.details?.failedSubscriptionIds ?? [];

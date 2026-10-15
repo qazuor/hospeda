@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     type CronData,
     cancelRequestsFor,
+    decodeHtmlEntities,
     expiryMinusPauseMargin,
     formatMarketDate,
     sweepFailedIds
@@ -39,6 +40,10 @@ describe('HOS-1565', () => {
         const result = cancelRequestsFor({ requests, authorizationId: 'auth-a' });
 
         expect(result).toEqual([requests[0]]);
+    });
+
+    it('decodes email HTML entities without decoding nested entities twice', () => {
+        expect(decodeHtmlEntities('&lt;a&gt;&amp;lt;&#x27;&#39;')).toBe("<a>&lt;''");
     });
 
     it('formats a near-midnight instant by the Buenos Aires market date', () => {
