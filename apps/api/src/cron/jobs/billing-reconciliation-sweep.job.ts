@@ -19,6 +19,8 @@ import { beforeCancelNotice } from '../../routes/billing-subscription/before-can
 import { touristVipInheritance } from '../../routes/billing-subscription/tourist-vip-inheritance.js';
 import { getClock } from '../../utils/clock.js';
 import { createSentryCronMonitorPing } from '../../utils/cron-monitor-ping.js';
+import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-coverage.js';
+import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
@@ -49,6 +51,9 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             const provider = getPaymentProvider();
             const clock = getClock().clock;
             const { planPolicy } = createPlanCatalogInverse({ reader: planCatalogModel });
+            const { addonPolicy, listing } = buildBillingCoveragePorts({
+                reader: createBootstrapCoverageReader()
+            }).ports;
             const summary = await runReconciliationSweep(
                 { correlationId: ctx.correlationId },
                 {
@@ -111,7 +116,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     // whose succession ended without its act opens PAGO_PENDIENTE_SIN_RAMA.
                     zeroCallChecks: {
                         retainedPayments: retainedPaymentsFromLedger,
-                        retainedPaymentBranches: noDeterminableRetainedPaymentBranch
+                        retainedPaymentBranches: noDeterminableRetainedPaymentBranch,
+                        addonOrphanhood: { addonPolicy, listing }
                     },
                     // The mark opened for a retained payment hangs it (AC:B5:32); without
                     // the real ledger port each one fails as "not registered". The sweep
