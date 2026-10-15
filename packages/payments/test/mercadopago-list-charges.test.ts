@@ -163,10 +163,12 @@ describe('HOS-1669 TEST:1669:2 AC:1669:0 listCharges response edges and failures
                     }))
                 })
             )
-            .mockResolvedValueOnce(response({ paging: { total: 12 }, results: [] }));
+            .mockResolvedValueOnce(response({ paging: { total: 12 }, results: [] }))
+            .mockResolvedValue(response({ paging: { total: 12 }, results: [] }));
         await expect(provider(fetch).listCharges({ authorizationId: 'a' })).rejects.toMatchObject({
             code: 'UNAVAILABLE'
         });
+        expect(fetch).toHaveBeenCalledTimes(2);
     });
 
     it('(h) maps HTTP errors, timeout, missing credentials, and invalid JSON to provider errors', async () => {
