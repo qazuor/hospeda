@@ -2,8 +2,9 @@
  * S21 (TRANS:B:S21; AC:B5:28): the complement subscription follows its instance. When the
  * addon instance hanging from a live COMPLEMENTO row reaches `CANCELLED` —by any clause of
  * `A5` or by `A6`— the row goes to `CANCELLED` in the same act: no grace, no end-of-service
- * date (notas I-4), never through `CANCEL_SCHEDULED`, no automatic refund and nothing sent to
- * the provider (the one preapproval is cancelled by `A5`/`A6`, never twice). Its condition is a
+ * date (notas I-4), never through `CANCEL_SCHEDULED`; it decides on the already credited last
+ * charge and may request RF1 or open a reconciliation mark, but moves no money and sends
+ * nothing to the provider (the one preapproval is cancelled by `A5`/`A6`, never twice). Its condition is a
  * STATE, so it is re-evaluated: {@link findComplementsAwaitingS21} finds the run that died
  * between `A5` and `S21`. It runs in the caller's transaction and never commits.
  */
@@ -23,6 +24,13 @@ import { createLogger } from '@repo/logger';
 import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
+import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
+import {
+    type ComplementChargeOutcome,
+    S21_CAUSES,
+    type S21Cause,
+    settleComplementLastCharge
+} from './complement-s21-charge';
 
 const logger = createLogger('complement-s21');
 
@@ -31,7 +39,11 @@ export type ComplementLiveStatus = (typeof LIVE_SUBSCRIPTION_STATUSES)[number];
 
 /** What S21 did. */
 export type S21Result =
-    | { readonly outcome: 'CANCELLED'; readonly from: ComplementLiveStatus }
+    | {
+          readonly outcome: 'CANCELLED';
+          readonly from: ComplementLiveStatus;
+          readonly charge: ComplementChargeOutcome;
+      }
     | { readonly outcome: 'ALREADY_CANCELLED' }
     | { readonly outcome: 'NOT_APPLICABLE' };
 
@@ -56,6 +68,18 @@ function isComplementLiveStatus(status: string): status is ComplementLiveStatus 
 const applySchema = z.object({
     complementSubscriptionId: z.uuid(),
     now: z.date(),
+    cause: z.enum(S21_CAUSES).optional(),
+    markPayments: z
+        .custom<ReconciliationMarkPayments>(
+            (value) =>
+                value !== null &&
+                typeof value === 'object' &&
+                'hang' in value &&
+                typeof value.hang === 'function' &&
+                'countUnresolved' in value &&
+                typeof value.countUnresolved === 'function'
+        )
+        .optional(),
     tx: z.custom<DrizzleClient>((value) => value !== undefined && value !== null)
 });
 
@@ -80,8 +104,9 @@ function invalid(issues: unknown): never {
  * `CHARGE_DECLINED`: notas I-13); `ALREADY_CANCELLED` without writing anything (idempotent).
  * Otherwise ONE write guarded by the state read under the lock: `CANCELLED`, the grace clock
  * off, `service_ends_at` untouched; from `PAUSED` it closes the open pause with
- * `actual_end_at = now`. It never calls the provider, enqueues mail, creates a refund or opens
- * a mark. The write is the subscription's own, so the inventory of G5 names `applyS21`.
+ * `actual_end_at = now`. It never calls the provider or enqueues mail; after the write it only
+ * decides about the already credited last charge, requesting an RF1 or opening its mark when
+ * required, without moving money. The write is the subscription's own, so G5 names `applyS21`.
  *
  * @param input.tx - The caller's transaction
  * @param input.complementSubscriptionId - The COMPLEMENTO row
@@ -93,10 +118,13 @@ export async function applyS21(input: {
     readonly tx: DrizzleClient;
     readonly complementSubscriptionId: string;
     readonly now: Date;
+    readonly cause?: S21Cause;
+    readonly markPayments?: ReconciliationMarkPayments;
 }): Promise<S21Result> {
     const parsed = applySchema.safeParse(input);
     if (!parsed.success) invalid(parsed.error.issues);
     const { tx, complementSubscriptionId, now } = input;
+    const cause = input.cause ?? 'OTHER_CAUSE';
     const [row] = await tx
         .select({ status: subscriptions.status, class: subscriptions.class })
         .from(subscriptions)
@@ -112,7 +140,7 @@ export async function applyS21(input: {
         );
     if (row.class !== 'COMPLEMENTO') return { outcome: 'NOT_APPLICABLE' };
     const [instance] = await tx
-        .select({ status: addonInstances.status })
+        .select({ status: addonInstances.status, productId: addonInstances.productId })
         .from(addonInstances)
         .where(eq(addonInstances.complementSubscriptionId, complementSubscriptionId))
         .limit(1);
@@ -150,7 +178,11 @@ export async function applyS21(input: {
                 'S21 cancelled a PAUSED complement that had no open pause to close'
             );
     }
-    return { outcome: 'CANCELLED', from };
+    const charge = await settleComplementLastCharge(
+        { tx, complementSubscriptionId, productId: instance.productId, cause, now },
+        { markPayments: input.markPayments }
+    );
+    return { outcome: 'CANCELLED', from, charge };
 }
 
 /**

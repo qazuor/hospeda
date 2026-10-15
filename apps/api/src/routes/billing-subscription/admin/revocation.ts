@@ -20,6 +20,8 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { getClock } from '../../../utils/clock';
+import { buildBillingCoveragePorts } from '../../../utils/listing-access/billing-coverage';
+import { createBootstrapCoverageReader } from '../../../utils/listing-access/bootstrap-coverage-reader';
 import { getCoverageNotices } from '../../../utils/listing-access/coverage-notices';
 import { getPaymentProvider } from '../../../utils/payment-provider';
 import { createErrorResponse } from '../../../utils/response-helpers';
@@ -175,6 +177,9 @@ export const adminRevokeSubscriptionRoute = createAdminRoute({
         const input = SubscriptionRevocationRequestSchema.parse(body);
         const actor = getActorFromContext(ctx);
         try {
+            const { addonPolicy, listing } = buildBillingCoveragePorts({
+                reader: createBootstrapCoverageReader()
+            }).ports;
             const result = await revokeSubscription(
                 {
                     actor,
@@ -186,6 +191,7 @@ export const adminRevokeSubscriptionRoute = createAdminRoute({
                     clock: getClock().clock,
                     beforeCancelNotice,
                     coverageNotices: getCoverageNotices(),
+                    orphanhood: { addonPolicy, listing },
                     cancellationSeen: providerLinkCancellationSeen
                 }
             );
@@ -201,6 +207,7 @@ export const adminRevokeSubscriptionRoute = createAdminRoute({
                     motive: 'REVOCATION',
                     subjectId: await auditSubjectOf(result.subscriptionId),
                     origin: result.origin,
+                    orphanedAddonIds: result.orphanedAddonIds,
                     refundId: result.refundId,
                     ...(result.payment.source === 'PAYMENT'
                         ? { paymentId: result.payment.id }

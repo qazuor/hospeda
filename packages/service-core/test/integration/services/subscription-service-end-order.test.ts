@@ -9,6 +9,13 @@
  * in 2001 (notas I-5): it neither sees nor locks other suites' committed rows, and nothing here is
  * committed.
  */
+import {
+    domainEventModel,
+    eq,
+    reconciliationMarkPayments,
+    reconciliationMarks,
+    refunds
+} from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { endScheduledServices } from '../../../src/services/billing/subscription/end-scheduled-services.service';
@@ -21,6 +28,7 @@ import {
     readDecisions,
     readInstance,
     readSubscription,
+    seedComplementCharge,
     seedOrphanInstance,
     seedOrphanOwner
 } from './support/addon-orphan-fixtures';
@@ -43,6 +51,120 @@ const W = VerticalEnum.GASTRONOMY;
 describe.skipIf(!isServiceTestDbAvailable())(
     'HOS-1569 TEST:B8a:6 AC:B8a:6 the order of S12 with the orphanhood: principals first, then the complements left',
     () => {
+        it('TEST:B5:14 S12 principal runs before A5 and S21 at the shared end date', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const h = serviceEndHarness();
+                const F = serviceEndPast;
+                const { userId } = await seedOrphanOwner(tx);
+                const { subscriptionId: principalId } = await seedServiceEndPrincipal(tx, {
+                    userId,
+                    vertical: V,
+                    status: 'CANCEL_SCHEDULED',
+                    serviceEndsAt: F
+                });
+                const { ports } = serviceEndPorts(tx, h);
+                const { subscriptionId: complementId } = await seedServiceEndComplement(tx, {
+                    userId,
+                    vertical: V,
+                    status: 'CANCEL_SCHEDULED',
+                    serviceEndsAt: F,
+                    authorizationId: await fakePreapproval(h.fake, { cancelled: true })
+                });
+                const { paymentId } = await seedComplementCharge(tx, {
+                    subscriptionId: complementId,
+                    factAt: new Date('2001-05-01T00:00:00.000Z'),
+                    coveredPeriodStart: new Date('2001-05-15T00:00:00.000Z')
+                });
+                const { instanceId } = await seedOrphanInstance(tx, {
+                    ownerId: userId,
+                    scopeType: 'USER',
+                    compatibleVerticals: [V],
+                    status: 'ACTIVE',
+                    complementSubscriptionId: complementId
+                });
+
+                const result = await endScheduledServices({ limit: 100, db: tx }, ports);
+
+                expect((await readSubscription(tx, principalId)).status).toBe('CANCELLED');
+                expect((await readInstance(tx, instanceId)).status).toBe('CANCELLED');
+                expect((await readSubscription(tx, complementId)).status).toBe('CANCELLED');
+                expect(
+                    result.rows.find((row) => row.subscriptionId === principalId)?.orphaned
+                ).toContain(instanceId);
+                expect(result.complements.cancelled).toBe(0);
+                expect(result.rows.some((row) => row.subscriptionId === complementId)).toBe(false);
+                const marks = await tx
+                    .select()
+                    .from(reconciliationMarks)
+                    .where(eq(reconciliationMarks.subscriptionId, complementId));
+                expect(marks.map((mark) => mark.reason)).toEqual([
+                    'COMPLEMENTO_CON_PERIODO_COBRADO_POR_OTRA_CAUSA'
+                ]);
+                const hung = await tx
+                    .select()
+                    .from(reconciliationMarkPayments)
+                    .where(eq(reconciliationMarkPayments.paymentId, paymentId));
+                expect(hung).toHaveLength(1);
+                expect(
+                    await tx.select().from(refunds).where(eq(refunds.paymentId, paymentId))
+                ).toEqual([]);
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'subscription',
+                    entityId: complementId,
+                    tx
+                });
+                expect(
+                    events.filter(
+                        (event) => event.eventType === 'subscription.provider_cancellation_decided'
+                    )
+                ).toMatchObject([{ reason: 'A5' }]);
+                expect(h.cancel).not.toHaveBeenCalled();
+
+                const { userId: endedUserId } = await seedOrphanOwner(tx);
+                const { subscriptionId: endedPrincipal } = await seedServiceEndPrincipal(tx, {
+                    userId: endedUserId,
+                    vertical: V,
+                    status: 'CANCEL_SCHEDULED',
+                    serviceEndsAt: F
+                });
+                const { subscriptionId: endedComplement } = await seedServiceEndComplement(tx, {
+                    userId: endedUserId,
+                    vertical: V,
+                    status: 'CANCEL_SCHEDULED',
+                    serviceEndsAt: F,
+                    authorizationId: await fakePreapproval(h.fake, { cancelled: true })
+                });
+                const { paymentId: endedPayment } = await seedComplementCharge(tx, {
+                    subscriptionId: endedComplement,
+                    factAt: new Date('2001-04-01T00:00:00.000Z'),
+                    coveredPeriodStart: new Date('2001-04-01T00:00:00.000Z')
+                });
+                await seedOrphanInstance(tx, {
+                    ownerId: endedUserId,
+                    scopeType: 'USER',
+                    compatibleVerticals: [V],
+                    status: 'ACTIVE',
+                    complementSubscriptionId: endedComplement
+                });
+                const endedResult = await endScheduledServices({ limit: 100, db: tx }, ports);
+                expect((await readSubscription(tx, endedPrincipal)).status).toBe('CANCELLED');
+                expect(
+                    await tx
+                        .select()
+                        .from(reconciliationMarks)
+                        .where(eq(reconciliationMarks.subscriptionId, endedComplement))
+                ).toEqual([]);
+                expect(
+                    await tx.select().from(refunds).where(eq(refunds.paymentId, endedPayment))
+                ).toEqual([]);
+                expect(endedResult.rows.some((row) => row.subscriptionId === endedComplement)).toBe(
+                    false
+                );
+                expect((await readInstance(tx, instanceId)).status).toBe('CANCELLED');
+                expect(h.cancel).not.toHaveBeenCalled();
+            });
+        });
+
         it('the LISTING ends CANCELLED by S21 inside the orphanhood (decision A5); the USER ends CANCELLED by its own S12 with its instance off', async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange
