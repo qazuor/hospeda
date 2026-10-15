@@ -6,6 +6,7 @@ import type { ReconciliationMarkPayments } from '../reconciliation/reconciliatio
 import type { GraceExpiryCheckPorts } from '../reconciliation/sweep/grace-expiry-check.js';
 import { successorProviderCancelledOccurrenceId } from '../reconciliation/sweep/grace-expiry-check.js';
 import type { UnresolvedPeriodCharges } from '../reconciliation/sweep/unresolved-period-charge.port.js';
+import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import { readPayingSuccessorInGrace } from '../subscription/paying-predecessor-successor.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
@@ -46,6 +47,8 @@ export interface ProviderNoticeMirrorDelegatesPorts {
     readonly planPolicy?: VerticalsForBilling['planPolicy'];
     /** DEC-OBS-001 notice for an unresolved period. */
     readonly unresolvedPeriodCharges?: UnresolvedPeriodCharges;
+    /** Optional S32 policy readers used by S6 on the successor-cancel event. */
+    readonly complements?: ComplementPolicyPorts;
 }
 
 function arrearsPorts(ports: ProviderNoticeMirrorDelegatesPorts): GraceExpiryCheckPorts {
@@ -59,7 +62,8 @@ function arrearsPorts(ports: ProviderNoticeMirrorDelegatesPorts): GraceExpiryChe
         ...(ports.planPolicy === undefined ? {} : { planPolicy: ports.planPolicy }),
         ...(ports.unresolvedPeriodCharges === undefined
             ? {}
-            : { unresolvedPeriodCharges: ports.unresolvedPeriodCharges })
+            : { unresolvedPeriodCharges: ports.unresolvedPeriodCharges }),
+        ...(ports.complements === undefined ? {} : { complements: ports.complements })
     };
 }
 
@@ -120,7 +124,10 @@ export function createProviderNoticeMirrorDelegates(
                                 provider: ports.provider,
                                 clock: ports.clock,
                                 beforeCancelNotice: ports.beforeCancelNotice,
-                                coverageNotices: ports.coverageNotices
+                                coverageNotices: ports.coverageNotices,
+                                ...(ports.complements === undefined
+                                    ? {}
+                                    : { complements: ports.complements })
                             }
                         );
                         return;

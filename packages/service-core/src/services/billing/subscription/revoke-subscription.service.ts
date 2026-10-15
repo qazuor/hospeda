@@ -13,14 +13,17 @@
  */
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient } from '@repo/db';
-import { and, eq, getDb, isNull, providerLinks, subscriptionPauses, subscriptions } from '@repo/db';
+import { and, eq, getDb, isNull, subscriptionPauses, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
-import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
-import { z } from 'zod';
-import type { Actor } from '../../../types';
-import { isSystemActor } from '../../../utils/system-actor';
+import {
+    type AddonProviderCancellationResult,
+    cancelAddonComplementsAtProvider,
+    emitAddonCoverageRemoved,
+    runOrphanhood
+} from '../addon/addon-instance-a5';
+import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import type { CoverageNotices } from '../payment/payment-ports';
 import {
@@ -29,12 +32,24 @@ import {
 } from '../reconciliation/cancel-our-authorization';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import type { RefundSource } from '../refund/refund-source';
+import { requestOneTimeAddonRefunds } from './revocation-addon-refunds';
+import { revocationRejection as reject } from './revocation-payment';
 import {
-    type RevocablePayment,
-    revocationRejection as reject,
-    resolveRevokedPayment
-} from './revocation-payment';
+    type RevocationOrigin,
+    type RevocationReading,
+    readRevocation
+} from './revocation-reading';
 import { requestRevocationRefund } from './revocation-refund';
+
+export {
+    previewSubscriptionRevocation,
+    REVOCATION_ORIGINS,
+    type RevocationOrigin,
+    type SubscriptionRevocationPreview
+} from './revocation-reading';
+
+import { z } from 'zod';
+import type { Actor } from '../../../types';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service';
 import {
     type CancellationSeenAnnotator,
@@ -44,15 +59,7 @@ import {
 } from './subscription-billing-ports';
 
 const logger = createLogger('revoke-subscription');
-
-/** The administrative action S36 executes: one constant for the helper and the step (Coord-178). */
-const ACTION = 'ACC_8' as const;
-
-/** The states S36 leaves (TRANS:B:S36 «desde»; PAUSED with either reason). */
-export const REVOCATION_ORIGINS = ['ACTIVE', 'GRACE_PERIOD', 'CANCEL_SCHEDULED', 'PAUSED'] as const;
-
-/** One state S36 leaves. */
-export type RevocationOrigin = (typeof REVOCATION_ORIGINS)[number];
+const idSchema = z.uuid();
 
 /** What the provider half of S36 ended in (I-6). */
 export type RevocationCancelCall =
@@ -68,29 +75,9 @@ export interface RevokeSubscriptionPorts {
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly coverageNotices: CoverageNotices;
+    readonly orphanhood: AddonOrphanhoodPorts;
     /** Defaults to the no-op; the route passes `providerLinkCancellationSeen`. */
     readonly cancellationSeen?: CancellationSeenAnnotator;
-}
-
-/** The confirmation of action 8 with reason revocation: the three things it does (D-3). */
-export interface SubscriptionRevocationPreview {
-    readonly subscriptionId: string;
-    readonly origin: RevocationOrigin;
-    readonly payment: {
-        readonly source: RefundSource['kind'];
-        readonly id: string;
-        readonly amount: number;
-        readonly currency: string | null;
-        readonly chargedAt: Date;
-        readonly ownerSubscriptionId: string;
-    };
-    readonly windowEndsAt: Date;
-    readonly effects: {
-        /** False for a manual payer or a row without provider link: nothing to cancel. */
-        readonly cancelsAuthorization: boolean;
-        readonly endsServiceAt: 'NOW';
-        readonly requestsRefund: true;
-    };
 }
 
 /** Result of S36. */
@@ -104,6 +91,12 @@ export interface RevokeSubscriptionResult {
     readonly cancelCall: RevocationCancelCall;
     /** Present when the before-cancel notice is not deliverable and the call went anyway. */
     readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
+    readonly orphanedAddonIds: readonly string[];
+    readonly oneTimeAddonRefunds: readonly {
+        readonly instanceId: string;
+        readonly refundId: string;
+    }[];
+    readonly addonCancelCalls: readonly AddonProviderCancellationResult[];
 }
 
 /** Which origin closes a pause (h). Exhaustive by origin, never a ternary. */
@@ -124,96 +117,6 @@ const CANCEL_CALL_BY_OUTCOME: Readonly<
     CONFIRMED: 'SENT',
     SENT_UNCONFIRMED: 'SENT'
 };
-
-const idSchema = z.uuid();
-
-function isRevocationOrigin(status: string): status is RevocationOrigin {
-    return (REVOCATION_ORIGINS as readonly string[]).includes(status);
-}
-
-/** Everything steps a–f decided, read inside one transaction. */
-interface RevocationReading {
-    readonly subscriptionId: string;
-    readonly userId: string | null;
-    readonly vertical: string | null;
-    readonly origin: RevocationOrigin;
-    readonly authorizationId: string | null;
-    readonly cardPayer: boolean;
-    readonly payment: RevocablePayment;
-    readonly windowEndsAt: Date;
-}
-
-/**
- * Steps a–f, shared by the preview and the act. With `lock` the subscription is read
- * `FOR UPDATE` (the act); without it (the read-only preview) it is a plain read. Any read
- * error throws: authorization fails closed, never on partial data.
- */
-async function readRevocation(input: {
-    readonly tx: DrizzleClient;
-    readonly actor: Actor;
-    readonly subscriptionId: string;
-    readonly expectedPaymentId?: string;
-    readonly now: Date;
-    readonly lock: boolean;
-}): Promise<RevocationReading> {
-    const { tx } = input;
-    // a. the row, locked by the act
-    const query = tx
-        .select()
-        .from(subscriptions)
-        .where(eq(subscriptions.id, input.subscriptionId))
-        .limit(1);
-    const [subscription] = input.lock ? await query.for('update') : await query;
-    if (!subscription) throw reject('SUBSCRIPTION_NOT_FOUND', 'Subscription not found');
-
-    // b. step 3 of the administrative action, with the subject read in THIS transaction
-    const permitted = isAdministrativeActionPermitted({
-        action: ACTION,
-        actorPermissions: input.actor.permissions
-    });
-    const step = resolveAdministrativeActionStep({
-        action: ACTION,
-        actorId: input.actor.id,
-        subjectId: subscription.userId,
-        permitted,
-        isSystemActor: isSystemActor(input.actor)
-    });
-    if (!step.allowed) throw reject('ADMINISTRATIVE_ACTION_FORBIDDEN', 'Forbidden');
-
-    // c. only the contract (I-1), only from the four origins
-    if (subscription.class !== 'PRINCIPAL')
-        throw reject('REVOCATION_NOT_PRINCIPAL', 'Only a principal subscription is revoked');
-    if (!isRevocationOrigin(subscription.status))
-        throw reject(
-            'REVOCATION_STATE_NOT_ALLOWED',
-            `A ${subscription.status} subscription cannot be revoked`
-        );
-
-    // d–f. the last credited payment through `sucedida_por`, its window, the preview's payment
-    const { payment, windowEndsAt } = await resolveRevokedPayment({
-        tx,
-        subscriptionId: subscription.id,
-        now: input.now,
-        expectedPaymentId: input.expectedPaymentId,
-        lock: input.lock
-    });
-
-    const [link] = await tx
-        .select({ providerId: providerLinks.providerId })
-        .from(providerLinks)
-        .where(eq(providerLinks.subscriptionId, subscription.id))
-        .limit(1);
-    return {
-        subscriptionId: subscription.id,
-        userId: subscription.userId,
-        vertical: subscription.vertical,
-        origin: subscription.status,
-        authorizationId: link?.providerId ?? null,
-        cardPayer: subscription.paymentMethod === 'CARD',
-        payment,
-        windowEndsAt
-    };
-}
 
 /**
  * The single write of S36 on `subscription` (G5 `via: "notice"`): `<origin> → CANCELLED`,
@@ -274,43 +177,6 @@ async function writeRevocation(input: {
  * @returns The preview
  * @throws ServiceError with a `RevokeSubscriptionRejection` reason
  */
-export async function previewSubscriptionRevocation(
-    input: { readonly actor: Actor; readonly subscriptionId: string },
-    ports: { readonly clock: Clock }
-): Promise<SubscriptionRevocationPreview> {
-    if (!idSchema.safeParse(input.subscriptionId).success)
-        throw reject('SUBSCRIPTION_NOT_FOUND', 'Subscription not found');
-    const reading = await getDb().transaction(
-        (tx) =>
-            readRevocation({
-                tx,
-                actor: input.actor,
-                subscriptionId: input.subscriptionId,
-                now: ports.clock.now(),
-                lock: false
-            }),
-        { accessMode: 'read only' }
-    );
-    return {
-        subscriptionId: reading.subscriptionId,
-        origin: reading.origin,
-        payment: {
-            source: reading.payment.source.kind,
-            id: reading.payment.source.id,
-            amount: reading.payment.amount,
-            currency: reading.payment.currency,
-            chargedAt: reading.payment.chargedAt,
-            ownerSubscriptionId: reading.payment.ownerSubscriptionId
-        },
-        windowEndsAt: reading.windowEndsAt,
-        effects: {
-            cancelsAuthorization: reading.cardPayer && reading.authorizationId !== null,
-            endsServiceAt: 'NOW',
-            requestsRefund: true
-        }
-    };
-}
-
 /** Step k: `REMOVED` after the commit; a failure is logged and undoes nothing (I-7). */
 async function emitRemoved(input: {
     readonly reading: RevocationReading;
@@ -470,19 +336,44 @@ export async function revokeSubscription(
             now,
             clock: ports.clock
         });
-        // S18 (AC:B5:34, HOS-1547) and the orphaning A5/S21 (AC:B5:24, HOS-1546) run here, AFTER the RF1 and the flag off, inside this transaction.
-        return { reading, refundId };
+        // HOS-1547 inserts closeSuccessionIfPredecessor right before this call.
+        const { cancelled } = await runOrphanhood(
+            { tx, subscriptionId: reading.subscriptionId, now, s21Cause: 'REVOCATION' },
+            ports.orphanhood
+        );
+        const oneTime = await requestOneTimeAddonRefunds({
+            tx,
+            cancelled,
+            now,
+            clock: ports.clock
+        });
+        return { reading, refundId, cancelled, oneTime };
     });
 
-    const { reading, refundId } = committed;
+    const { reading, refundId, cancelled, oneTime } = committed;
     await emitRemoved({ reading, coverageNotices: ports.coverageNotices });
     const provider = await cancelAtProvider({ reading, ports });
+    await emitAddonCoverageRemoved({ cancelled, coverageNotices: ports.coverageNotices });
+    const addonCancelCalls = (
+        await cancelAddonComplementsAtProvider(
+            { cancelled },
+            {
+                provider: ports.provider,
+                clock: ports.clock,
+                beforeCancelNotice: ports.beforeCancelNotice,
+                cancellationSeen: ports.cancellationSeen
+            }
+        )
+    ).results;
     logger.info(
         {
             subscriptionId: reading.subscriptionId,
             origin: reading.origin,
             refundId,
-            cancelCall: provider.cancelCall
+            cancelCall: provider.cancelCall,
+            orphanedAddonCount: cancelled.length,
+            oneTimeAddonRefundCount: oneTime.refunds.length,
+            addonCancelCallCount: addonCancelCalls.length
         },
         'Subscription revoked (S36)'
     );
@@ -494,6 +385,12 @@ export async function revokeSubscription(
         refundAmount: reading.payment.amount,
         payment: { source: reading.payment.source.kind, id: reading.payment.source.id },
         cancelCall: provider.cancelCall,
+        orphanedAddonIds: cancelled.map(({ instanceId }) => instanceId),
+        oneTimeAddonRefunds: oneTime.refunds.map(({ instanceId, refundId }) => ({
+            instanceId,
+            refundId
+        })),
+        addonCancelCalls,
         ...(provider.escalated ? { escalated: provider.escalated } : {})
     };
 }

@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports';
 import { readArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
+import { type PauseComplementsSummary, pauseComplementsS32 } from './complement-pause-s32.js';
+import type { ComplementPolicyPorts } from './complement-ports.js';
 import { isLiveSuccessionPredecessor } from './late-payment-conditions.js';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import {
@@ -71,6 +73,8 @@ export type SuspendForArrearsResult =
           readonly cancelCall: 'SENT' | 'NOT_NEEDED';
           /** Present when the before-cancel notice is not deliverable and was escalated (D-8). */
           readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
+          /** S32 outcomes when this composition root supplied complement policy ports. */
+          readonly complements?: PauseComplementsSummary;
       }
     | {
           readonly outcome: 'DEFERRED';
@@ -97,6 +101,8 @@ export interface SuspendForArrearsPorts {
     readonly retainedPeriodPayment?: RetainedPeriodPayment;
     readonly cancellationSeen?: CancellationSeenAnnotator;
     readonly coverageNotices?: CoverageNotices;
+    /** Optional S32 policy readers; composition roots wire these in the API corrida. */
+    readonly complements?: ComplementPolicyPorts;
 }
 
 /** What the single write of S6 did. */
@@ -396,6 +402,22 @@ export async function suspendForArrears(
     if (write === 'RETAINED_PAYMENT')
         return { outcome: 'NOT_APPLICABLE', reason: 'RETAINED_PAYMENT' };
     if (write === 'LOST_RACE') return { outcome: 'NOT_APPLICABLE', reason: 'LOST_RACE' };
+    let complements: PauseComplementsSummary | undefined;
+    if (ports.complements) {
+        try {
+            complements = await pauseComplementsS32(
+                { principalSubscriptionId: subscription.id, trigger: 'PRINCIPAL_SUSPENDED' },
+                { provider: ports.provider, clock: ports.clock, policy: ports.complements }
+            );
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, error },
+                'S32 could not pause complements after suspension'
+            );
+        }
+    } else {
+        logger.warn({ subscriptionId: subscription.id }, 'S32 complement ports are not wired');
+    }
     logger.info(
         { subscriptionId: subscription.id, event: value.event, cancelCall },
         'Subscription suspended for arrears'
@@ -404,6 +426,7 @@ export async function suspendForArrears(
         outcome: 'SUSPENDED',
         subscriptionId: subscription.id,
         cancelCall,
+        ...(complements === undefined ? {} : { complements }),
         ...(escalated ? { escalated } : {})
     };
 }

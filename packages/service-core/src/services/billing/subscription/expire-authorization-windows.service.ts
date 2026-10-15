@@ -11,6 +11,7 @@ import {
     cancelInheritedTouristVips,
     type TouristVipInheritancePort
 } from './cancel-inherited-tourist-vip.service';
+import type { ComplementPolicyPorts } from './complement-ports.js';
 import { exitGraceOnCreditedPayment } from './exit-grace.service';
 import { reactivateSuspendedOnCreditedPayment } from './reactivate-suspended.service';
 import { enqueueSignupIncompleteNotice } from './signup-incomplete-notice.ts';
@@ -35,6 +36,7 @@ export interface ExpireAuthorizationWindowsPorts {
     readonly successionCloser?: SuccessionCloser;
     /** S38's interface, handed to S7 on branch 2 (AC:B7:28); unwired uses S7's failing default. */
     readonly scheduledChangeApplier?: ScheduledChangeApplier;
+    readonly complements?: ComplementPolicyPorts;
 }
 
 export interface ExpireAuthorizationWindowsSummary {
@@ -118,7 +120,8 @@ async function reevaluateRetainedPayments(
                                 : {}),
                             ...(ports.scheduledChangeApplier
                                 ? { scheduledChangeApplier: ports.scheduledChangeApplier }
-                                : {})
+                                : {}),
+                            ...(ports.complements ? { complements: ports.complements } : {})
                         }
                     );
                     reevaluated++;

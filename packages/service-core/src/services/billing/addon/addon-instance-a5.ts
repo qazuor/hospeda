@@ -11,7 +11,6 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import {
     addonInstances,
-    addonProducts,
     and,
     type DrizzleClient,
     eq,
@@ -32,6 +31,7 @@ import {
 } from '../reconciliation/cancel-our-authorization';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision';
 import { applyS21 } from '../subscription/complement-s21';
+import { S21_CAUSES, type S21Cause } from '../subscription/complement-s21-charge';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service';
 import {
     type CancellationSeenAnnotator,
@@ -39,11 +39,8 @@ import {
     recordAuthorizationSeenAlive,
     recordCancellationSeen
 } from '../subscription/subscription-billing-ports';
-import {
-    type AddonScopeType,
-    findOrphanhoodCandidates,
-    isAddonInstanceOrphaned
-} from './addon-orphanhood';
+import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
+import { findOrphanhoodCandidates, isAddonInstanceOrphaned } from './addon-orphanhood';
 import type { AddonOrphanhoodPorts } from './addon-orphanhood-ports';
 
 const logger = createLogger('addon-instance-a5');
@@ -87,12 +84,14 @@ export type A5Ports = Pick<AddonOrphanhoodPorts, 'addonPolicy' | 'listing'>;
 const applySchema = z.object({
     instanceId: z.uuid(),
     clause: z.enum(['ORPHANED', 'WITHDRAWN']),
+    s21Cause: z.enum(S21_CAUSES).optional(),
     now: z.date(),
     tx: z.custom<DrizzleClient>((value) => value !== undefined && value !== null)
 });
 
 const runSchema = z.object({
     subscriptionId: z.uuid(),
+    s21Cause: z.enum(S21_CAUSES).optional(),
     now: z.date(),
     tx: z.custom<DrizzleClient>((value) => value !== undefined && value !== null)
 });
@@ -108,39 +107,6 @@ function invalid(issues: unknown): never {
 
 function isA5Origin(status: string): status is A5Origin {
     return status === 'PENDING_AUTHORIZATION' || status === 'ACTIVE';
-}
-
-/** Where the instance emitted its source, by the scope of its anchored version (notas I-7). */
-async function coverageVerticalsOf(input: {
-    readonly tx: DrizzleClient;
-    readonly scopeType: AddonScopeType;
-    readonly targetId: string | null;
-    readonly compatibleVerticals: readonly string[];
-    readonly ports: A5Ports;
-}): Promise<readonly string[]> {
-    switch (input.scopeType) {
-        case 'USER':
-        case 'GLOBAL':
-            return input.compatibleVerticals;
-        case 'VERTICAL_SUBSCRIPTION': {
-            if (!input.targetId) return [];
-            const [target] = await input.tx
-                .select({ vertical: subscriptions.vertical })
-                .from(subscriptions)
-                .where(eq(subscriptions.id, input.targetId))
-                .limit(1);
-            return target?.vertical ? [target.vertical] : [];
-        }
-        case 'LISTING': {
-            if (!input.targetId) return [];
-            const listing = await input.ports.listing({ listingId: input.targetId });
-            return [listing.vertical];
-        }
-        default: {
-            const exhaustive: never = input.scopeType;
-            return exhaustive;
-        }
-    }
 }
 
 /**
@@ -167,6 +133,7 @@ export async function applyA5(
         readonly instanceId: string;
         readonly clause: A5Clause;
         readonly now: Date;
+        readonly s21Cause?: S21Cause;
     },
     ports: A5Ports
 ): Promise<A5Result> {
@@ -212,7 +179,8 @@ export async function applyA5(
         ? await closeComplement({
               tx,
               complementSubscriptionId: instance.complementSubscriptionId,
-              now
+              now,
+              s21Cause: input.s21Cause
           })
         : null;
 
@@ -243,27 +211,20 @@ export async function applyA5(
     };
 }
 
-/** The compatible verticals of the instance's product (USER/GLOBAL emit only there). */
-async function compatibleVerticalsOf(input: {
-    readonly tx: DrizzleClient;
-    readonly productId: string;
-}): Promise<readonly string[]> {
-    const [product] = await input.tx
-        .select({ compatibleVerticals: addonProducts.compatibleVerticals })
-        .from(addonProducts)
-        .where(eq(addonProducts.id, input.productId))
-        .limit(1);
-    return product?.compatibleVerticals ?? [];
-}
-
 /** S21 on the complement and, when it wrote a card row with a link now, the decision `A5`. */
 async function closeComplement(input: {
     readonly tx: DrizzleClient;
     readonly complementSubscriptionId: string;
     readonly now: Date;
+    readonly s21Cause?: S21Cause;
 }): Promise<CancelledAddon['providerCancellation']> {
     const { tx, complementSubscriptionId, now } = input;
-    const s21 = await applyS21({ tx, complementSubscriptionId, now });
+    const s21 = await applyS21({
+        tx,
+        complementSubscriptionId,
+        now,
+        cause: input.s21Cause
+    });
     if (s21.outcome !== 'CANCELLED') return null;
     const [complement] = await tx
         .select({
@@ -313,7 +274,12 @@ async function closeComplement(input: {
  * @returns `{ cancelled }`: the instances A5 cancelled as `ORPHANED`
  */
 export async function runOrphanhood(
-    input: { readonly tx: DrizzleClient; readonly subscriptionId: string; readonly now: Date },
+    input: {
+        readonly tx: DrizzleClient;
+        readonly subscriptionId: string;
+        readonly now: Date;
+        readonly s21Cause?: S21Cause;
+    },
     ports: AddonOrphanhoodPorts
 ): Promise<{ readonly cancelled: readonly CancelledAddon[] }> {
     const parsed = runSchema.safeParse(input);
@@ -360,7 +326,7 @@ export async function runOrphanhood(
         );
         if (!orphaned) continue;
         const result = await applyA5(
-            { tx, instanceId: candidate.id, clause: 'ORPHANED', now },
+            { tx, instanceId: candidate.id, clause: 'ORPHANED', now, s21Cause: input.s21Cause },
             ports
         );
         if (result.outcome === 'CANCELLED') cancelled.push(result.addon);
