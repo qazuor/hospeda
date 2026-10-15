@@ -318,6 +318,55 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
         ).toEqual([]);
     });
 
+    it('records a failed anchor read for one instance and processes the next instance', async () => {
+        const { fake } = createReconciliationFake();
+        const orphan = await seedCommittedOrphans({ fake, count: 2 });
+        const subjects = orphan.addons.map(({ instanceId, complementId }) => ({
+            instanceId,
+            complementId
+        }));
+        seeded.push(...subjects);
+        const { ports: basePorts } = orphanPorts(getServiceTestDb() as never);
+        let reads = 0;
+        const ports = {
+            ...basePorts,
+            liveAnchors: {
+                async hasLiveAnchor() {
+                    reads++;
+                    if (reads === 1) throw new Error('anchor reader failed');
+                    return false;
+                }
+            }
+        };
+        isolateUnrelatedChecks();
+        const summary = await runZeroCallChecks(
+            { correlationId: crypto.randomUUID() },
+            {
+                addonOrphanhood: ports,
+                markPayments,
+                retainedPayments: { listRetainedPayments: async () => [] },
+                retainedPaymentBranches: { resolveByBranch: async () => ({ kind: 'NO_BRANCH' }) }
+            }
+        );
+        const result = summary.results.find(({ check }) => check === 'ADDON_LIVE_ON_DEAD_TARGET');
+        expect(result).toMatchObject({ examined: 2, marksOpened: 1 });
+        expect(
+            summary.failures.filter(({ subjectId }) =>
+                subjects.some(({ instanceId }) => instanceId === subjectId)
+            )
+        ).toHaveLength(1);
+        const marks = await getServiceTestDb()
+            .select()
+            .from(reconciliationMarks)
+            .where(
+                inArray(
+                    reconciliationMarks.subscriptionId,
+                    subjects.map(({ complementId }) => complementId)
+                )
+            );
+        expect(marks).toHaveLength(1);
+    });
+
     it('marks a live target when its title anchor grant has been revoked', async () => {
         const { fake } = createReconciliationFake();
         const orphan = await seedCommittedOrphans({ fake });
