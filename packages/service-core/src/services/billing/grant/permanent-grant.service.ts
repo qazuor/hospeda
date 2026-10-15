@@ -4,33 +4,19 @@
  * a reference and is not checked against políticaDePlan(v).vigente (AC:B9a:11,
  * HOS-1585); the real GRANT coverage source arrives with HOS-1585.
  */
-import type { Clock } from '@repo/billing-verticals-contract';
-import {
-    and,
-    eq,
-    getDb,
-    inArray,
-    permanentGrants,
-    permanentGrantVerticals,
-    providerLinks,
-    subscriptions
-} from '@repo/db';
-import type { PaymentProvider } from '@repo/payments';
+import { and, eq, getDb, permanentGrants, permanentGrantVerticals } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import {
     cancelAddonComplementsAtProvider,
     emitAddonCoverageRemoved
 } from '../addon/addon-instance-a5.js';
-import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
-import type { CoverageNotices } from '../payment/payment-ports.js';
-import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
-import type { CancellationSeenAnnotator } from '../subscription/subscription-billing-ports.js';
 import {
     anchorInputSchema,
     grantSchema,
     invalidPermanentGrantInput
 } from './permanent-grant-inputs.js';
+import type { PermanentGrantPorts } from './permanent-grant-ports.js';
 import {
     cancelS13AtProvider,
     emitS13CoverageNotices,
@@ -42,22 +28,6 @@ import {
     runS20InTransaction,
     type S20ProviderResult
 } from './permanent-grant-s20.js';
-
-/**
- * Dependencies used by permanent-grant acts.
- *
- * The caller authorizes ACC_2 before invoking these services (AC:B9a:9,
- * HOS-1584); HOS-1582 exposes no route for either act. Coverage notifications
- * and orphanhood/provider ports handle their respective post-commit effects.
- */
-export interface PermanentGrantPorts {
-    readonly clock: Clock;
-    readonly coverageNotices: CoverageNotices;
-    readonly orphanhood: AddonOrphanhoodPorts;
-    readonly provider: PaymentProvider;
-    readonly beforeCancelNotice: BeforeCancelNotice;
-    readonly cancellationSeen?: CancellationSeenAnnotator;
-}
 
 /**
  * Creates a permanent grant with its initial vertical anchors and applies S13
@@ -357,143 +327,5 @@ export async function anchorPermanentGrantVertical(
     };
 }
 
-/** Reanudar es volver a correr el acto entero, no llevar un cursor (TRANS:B:S13, contexto §4). */
-export async function resumePermanentGrant(
-    input: { readonly permanentGrantId: string; readonly actorId: string },
-    ports: PermanentGrantPorts
-): Promise<{
-    readonly permanentGrantId: string;
-    readonly providerCalls: readonly {
-        readonly subscriptionId: string;
-        readonly cancelCall: S13CancelCall;
-        readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
-    }[];
-    readonly addonProviderCalls: readonly S20ProviderResult[];
-}> {
-    const now = ports.clock.now();
-    const committed = await getDb().transaction(async (tx) => {
-        const [grant] = await tx
-            .select({
-                id: permanentGrants.id,
-                beneficiaryUserId: permanentGrants.beneficiaryUserId,
-                affected: permanentGrants.affectedSubscriptionIds,
-                revokedAt: permanentGrants.revokedAt,
-                includesAddons: permanentGrants.includesAddons
-            })
-            .from(permanentGrants)
-            .where(eq(permanentGrants.id, input.permanentGrantId))
-            .for('update');
-        if (!grant)
-            throw new ServiceError(
-                ServiceErrorCode.NOT_FOUND,
-                'Permanent grant not found',
-                undefined,
-                'PERMANENT_GRANT_NOT_FOUND'
-            );
-        if (grant.revokedAt !== null)
-            throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
-                'Permanent grant is not live',
-                undefined,
-                'PERMANENT_GRANT_NOT_LIVE'
-            );
-        const anchors = await tx
-            .select({ id: permanentGrantVerticals.id, vertical: permanentGrantVerticals.vertical })
-            .from(permanentGrantVerticals)
-            .where(eq(permanentGrantVerticals.permanentGrantId, grant.id));
-        const local = await runS13InTransaction(
-            {
-                tx,
-                permanentGrantId: grant.id,
-                beneficiaryUserId: grant.beneficiaryUserId,
-                verticals: anchors.map(({ vertical }) => vertical),
-                now,
-                actorId: input.actorId
-            },
-            { orphanhood: ports.orphanhood }
-        );
-        const s20 = await runS20InTransaction(
-            {
-                tx,
-                includesAddons: grant.includesAddons,
-                permanentGrantId: grant.id,
-                beneficiaryUserId: grant.beneficiaryUserId,
-                anchors,
-                now,
-                actorId: input.actorId
-            },
-            { orphanhood: ports.orphanhood }
-        );
-        const ids = [
-            ...new Set([
-                ...grant.affected,
-                ...local.cancelled.map(({ subscriptionId }) => subscriptionId),
-                ...s20.rows.map(({ subscriptionId }) => subscriptionId)
-            ])
-        ];
-        const rows = ids.length
-            ? await tx
-                  .select({
-                      subscriptionId: subscriptions.id,
-                      userId: subscriptions.userId,
-                      vertical: subscriptions.vertical,
-                      class: subscriptions.class,
-                      origin: subscriptions.status,
-                      authorizationId: providerLinks.providerId,
-                      cardPayer: subscriptions.paymentMethod
-                  })
-                  .from(subscriptions)
-                  .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
-                  .where(inArray(subscriptions.id, ids))
-            : [];
-        const providerRows = rows.map((row) => {
-            const userId = row.userId;
-            const vertical = row.vertical;
-            if (typeof userId !== 'string' || typeof vertical !== 'string')
-                throw new ServiceError(
-                    ServiceErrorCode.INTERNAL_ERROR,
-                    'Invalid affected S13 subscription row'
-                );
-            return {
-                ...row,
-                userId,
-                vertical,
-                origin: 'CANCELLED' as const,
-                cardPayer: row.cardPayer === 'CARD'
-            };
-        });
-        return { grant, local, s20, rows: providerRows };
-    });
-    await emitS13CoverageNotices({
-        beneficiaryUserId: committed.grant.beneficiaryUserId,
-        anchoredVerticals: [],
-        movedVerticals: committed.local.cancelled.map(({ vertical }) => vertical),
-        coverageNotices: ports.coverageNotices
-    });
-    const principalRows = committed.rows.filter(({ class: rowClass }) => rowClass === 'PRINCIPAL');
-    const complementRows = committed.rows
-        .filter(({ class: rowClass }) => rowClass === 'COMPLEMENTO')
-        .map(({ subscriptionId, userId, authorizationId, cardPayer }) => ({
-            subscriptionId,
-            userId,
-            authorizationId,
-            cardPayer
-        }));
-    const providerResult = await cancelS13AtProvider({ rows: principalRows }, ports);
-    const addonProviderCalls = await cancelS20AtProvider({ rows: complementRows }, ports);
-    if (committed.local.orphanedAddons.length > 0) {
-        await emitAddonCoverageRemoved({
-            cancelled: committed.local.orphanedAddons,
-            coverageNotices: ports.coverageNotices
-        });
-        await cancelAddonComplementsAtProvider(
-            { cancelled: committed.local.orphanedAddons },
-            ports
-        );
-    }
-    return {
-        permanentGrantId: committed.grant.id,
-        providerCalls: providerResult.results,
-        addonProviderCalls
-    };
-}
+export type { PermanentGrantPorts } from './permanent-grant-ports.js';
+export { resumePermanentGrant } from './permanent-grant-resume.js';
