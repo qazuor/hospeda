@@ -1,5 +1,6 @@
 import {
     addonInstances,
+    emailOutbox,
     eq,
     inArray,
     permanentGrants,
@@ -27,7 +28,13 @@ import {
 
 const seeded: Array<{ instanceId: string; complementId: string }> = [];
 const grantOwners: string[] = [];
-const markPayments = { hang: async () => {}, countUnresolved: async () => 0 };
+const hungPayments: unknown[] = [];
+const markPayments = {
+    hang: async (payment: unknown) => {
+        hungPayments.push(payment);
+    },
+    countUnresolved: async () => 0
+};
 
 function isolateUnrelatedChecks(): void {
     vi.spyOn(
@@ -55,6 +62,7 @@ afterEach(async () => {
     seeded.length = 0;
     await retireCommittedOrphanRows();
     await retirePermanentGrantRows(grantOwners.splice(0));
+    hungPayments.length = 0;
     await vi.restoreAllMocks();
 });
 
@@ -92,6 +100,7 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
             portsWithTripwire
         );
         expect(calls).toBe(0);
+        expect(hungPayments).toEqual([]);
         const result = summary.results.find(({ check }) => check === 'ADDON_LIVE_ON_DEAD_TARGET');
         expect(result).toMatchObject({
             examined: 1,
@@ -118,6 +127,12 @@ describe('TEST:B5:15 fourth zero-call sweep check', () => {
             (await readSubscription(getServiceTestDb() as never, subject.complementId)).status
         ).toBe('ACTIVE');
         expect(await readDecisions(getServiceTestDb() as never, subject.complementId)).toEqual([]);
+        expect(
+            await getServiceTestDb()
+                .select({ id: emailOutbox.id })
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, orphan.userId))
+        ).toEqual([]);
     });
 
     it('includes PENDING_AUTHORIZATION and skips terminal instances', async () => {
